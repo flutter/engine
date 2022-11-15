@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/render_target.h"
 
@@ -18,7 +19,11 @@ class CommandBufferGLES final : public CommandBuffer {
  private:
   friend class ContextGLES;
 
-  CommandBufferGLES();
+  ReactorGLES::Ref reactor_;
+  bool is_valid_ = false;
+
+  CommandBufferGLES(std::weak_ptr<const Context> context,
+                    ReactorGLES::Ref reactor);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
@@ -27,14 +32,16 @@ class CommandBufferGLES final : public CommandBuffer {
   bool IsValid() const override;
 
   // |CommandBuffer|
-  bool SubmitCommands(CompletionCallback callback) override;
+  bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  void ReserveSpotInQueue() override;
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> CreateRenderPass(
-      RenderTarget target) const override;
+  std::shared_ptr<BlitPass> OnCreateBlitPass() const override;
+
+  // |CommandBuffer|
+  std::shared_ptr<ComputePass> OnCreateComputePass() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferGLES);
 };

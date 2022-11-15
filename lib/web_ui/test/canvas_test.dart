@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -31,7 +29,7 @@ Future<void> testMain() async {
     }) {
       test(description, () {
         testFn(BitmapCanvas(canvasSize, RenderStrategy()));
-        testFn(DomCanvas(html.document.createElement('flt-picture')));
+        testFn(DomCanvas(domDocument.createElement('flt-picture')));
         testFn(mockCanvas = MockEngineCanvas());
         whenDone?.call();
       });
@@ -57,8 +55,9 @@ Future<void> testMain() async {
 
       call = mockCanvas.methodCallLog[1];
       expect(call.methodName, 'drawParagraph');
-      expect(call.arguments['paragraph'], paragraph);
-      expect(call.arguments['offset'], const ui.Offset(10, 10));
+      final Map<dynamic, dynamic> arguments = call.arguments as Map<dynamic, dynamic>;
+      expect(arguments['paragraph'], paragraph);
+      expect(arguments['offset'], const ui.Offset(10, 10));
     });
 
     testCanvas('ignores paragraphs that were not laid out',

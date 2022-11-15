@@ -4,8 +4,11 @@
 
 #include "impeller/blobcat/blob_writer.h"
 
+#include <array>
 #include <filesystem>
 #include <optional>
+
+#include "impeller/blobcat/blob_flatbuffers.h"
 
 namespace impeller {
 
@@ -13,12 +16,14 @@ BlobWriter::BlobWriter() = default;
 
 BlobWriter::~BlobWriter() = default;
 
-std::optional<Blob::ShaderType> InferShaderTypefromFileExtension(
+std::optional<BlobShaderType> InferShaderTypefromFileExtension(
     const std::filesystem::path& path) {
   if (path == ".vert") {
-    return Blob::ShaderType::kVertex;
+    return BlobShaderType::kVertex;
   } else if (path == ".frag") {
-    return Blob::ShaderType::kFragment;
+    return BlobShaderType::kFragment;
+  } else if (path == ".comp") {
+    return BlobShaderType::kCompute;
   }
   return std::nullopt;
 }
@@ -31,7 +36,7 @@ bool BlobWriter::AddBlobAtPath(const std::string& std_path) {
     return false;
   }
 
-  if (path.extension() != ".gles") {
+  if (path.extension() != ".gles" && path.extension() != ".vkspv") {
     FML_LOG(ERROR) << "File path doesn't have a known shader extension "
                    << path;
     return false;
@@ -43,7 +48,8 @@ bool BlobWriter::AddBlobAtPath(const std::string& std_path) {
   auto shader_type = InferShaderTypefromFileExtension(path.extension());
 
   if (!shader_type.has_value()) {
-    FML_LOG(ERROR) << "Could not infer shader type from file extension.";
+    FML_LOG(ERROR) << "Could not infer shader type from file extension: "
+                   << path.extension().string();
     return false;
   }
 
@@ -62,19 +68,13 @@ bool BlobWriter::AddBlobAtPath(const std::string& std_path) {
     return false;
   }
 
-  return AddBlob(shader_type.value(), std::move(shader_name),
-                 std::move(file_mapping));
+  return AddBlob(shader_type.value(), shader_name, std::move(file_mapping));
 }
 
-bool BlobWriter::AddBlob(Blob::ShaderType type,
+bool BlobWriter::AddBlob(BlobShaderType type,
                          std::string name,
                          std::shared_ptr<fml::Mapping> mapping) {
   if (name.empty() || !mapping || mapping->GetMapping() == nullptr) {
-    return false;
-  }
-
-  if (name.length() >= Blob::kMaxNameLength) {
-    FML_LOG(ERROR) << "Blob name length was too long.";
     return false;
   }
 
@@ -83,62 +83,38 @@ bool BlobWriter::AddBlob(Blob::ShaderType type,
   return true;
 }
 
+constexpr fb::Stage ToStage(BlobShaderType type) {
+  switch (type) {
+    case BlobShaderType::kVertex:
+      return fb::Stage::kVertex;
+    case BlobShaderType::kFragment:
+      return fb::Stage::kFragment;
+    case BlobShaderType::kCompute:
+      return fb::Stage::kCompute;
+  }
+  FML_UNREACHABLE();
+}
+
 std::shared_ptr<fml::Mapping> BlobWriter::CreateMapping() const {
-  BlobHeader header;
-  header.blob_count = blob_descriptions_.size();
-
-  uint64_t offset = sizeof(BlobHeader) + (sizeof(Blob) * header.blob_count);
-
-  std::vector<Blob> blobs;
-  {
-    blobs.resize(header.blob_count);
-    for (size_t i = 0; i < header.blob_count; i++) {
-      const auto& desc = blob_descriptions_[i];
-      blobs[i].type = desc.type;
-      blobs[i].offset = offset;
-      blobs[i].length = desc.mapping->GetSize();
-      std::memcpy(reinterpret_cast<void*>(blobs[i].name), desc.name.data(),
-                  desc.name.size());
-      offset += blobs[i].length;
+  fb::BlobLibraryT blobs;
+  for (const auto& blob_description : blob_descriptions_) {
+    auto mapping = blob_description.mapping;
+    if (!mapping) {
+      return nullptr;
     }
+    auto desc = std::make_unique<fb::BlobT>();
+    desc->name = blob_description.name;
+    desc->stage = ToStage(blob_description.type);
+    desc->mapping = {mapping->GetMapping(),
+                     mapping->GetMapping() + mapping->GetSize()};
+    blobs.items.emplace_back(std::move(desc));
   }
-
-  {
-    auto buffer = std::make_shared<std::vector<uint8_t>>();
-    buffer->resize(offset, 0);
-
-    size_t write_offset = 0u;
-
-    // Write the header.
-    {
-      const size_t write_length = sizeof(header);
-      std::memcpy(buffer->data() + write_offset, &header, write_length);
-      write_offset += write_length;
-    }
-
-    // Write the blob descriptions.
-    {
-      const size_t write_length = blobs.size() * sizeof(Blob);
-      std::memcpy(buffer->data() + write_offset, blobs.data(), write_length);
-      write_offset += write_length;
-    }
-
-    // Write the blobs themselves.
-    {
-      for (size_t i = 0; i < header.blob_count; i++) {
-        const auto& desc = blob_descriptions_[i];
-        const size_t write_length = desc.mapping->GetSize();
-        std::memcpy(buffer->data() + write_offset, desc.mapping->GetMapping(),
-                    write_length);
-        write_offset += write_length;
-      }
-    }
-    FML_CHECK(write_offset == offset);
-    return std::make_shared<fml::NonOwnedMapping>(
-        buffer->data(), buffer->size(),
-        [buffer](const uint8_t* data, size_t size) {});
-  }
-  return nullptr;
+  auto builder = std::make_shared<flatbuffers::FlatBufferBuilder>();
+  builder->Finish(fb::BlobLibrary::Pack(*builder.get(), &blobs),
+                  fb::BlobLibraryIdentifier());
+  return std::make_shared<fml::NonOwnedMapping>(builder->GetBufferPointer(),
+                                                builder->GetSize(),
+                                                [builder](auto, auto) {});
 }
 
 }  // namespace impeller

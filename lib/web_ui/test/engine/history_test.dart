@@ -6,12 +6,11 @@
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:quiver/testing/async.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show window;
+import 'package:ui/src/engine.dart' show DomEventListener, window;
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
@@ -118,9 +117,7 @@ void testMain() {
 
       // The flutter entry is the current entry.
       expect(strategy.currentEntry, flutterEntry);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('disposes of its listener without touching history', () async {
       const String unwrappedOriginState = 'initial state';
@@ -217,9 +214,7 @@ void testMain() {
       // The url of the current entry (flutter entry) should go back to /home.
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -285,10 +280,7 @@ void testMain() {
       // 3. The active entry doesn't belong to our history anymore because we
       // navigated past it.
       expect(originalStrategy.currentEntryIndex, -1);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+    }, skip: browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -329,9 +321,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('user types unknown url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -355,9 +345,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 1);
       expect(strategy.currentEntry.state, flutterState);
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
   });
 
   group('$MultiEntriesBrowserHistory', () {
@@ -385,9 +373,7 @@ void testMain() {
       final TestHistoryEntry taggedOriginEntry = strategy.history[0];
       expect(taggedOriginEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(taggedOriginEntry.url, '/initial');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('disposes of its listener without touching history', () async {
       const String untaggedState = 'initial state';
@@ -482,9 +468,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 0);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('multiple browser back clicks', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -533,10 +517,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 0);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+    }, skip: browserEngine == BrowserEngine.webkit);
 
     test('handle user-provided url', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -579,9 +560,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 0);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('initial state', 0));
       expect(strategy.currentEntry.url, '/home');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('forward button works', () async {
       final TestUrlStrategy strategy = TestUrlStrategy.fromEntry(
@@ -631,9 +610,7 @@ void testMain() {
       expect(strategy.currentEntryIndex, 2);
       expect(strategy.currentEntry.state, _tagStateWithSerialCount('page2 state', 2));
       expect(strategy.currentEntry.url, '/page2');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50836
-        skip: browserEngine == BrowserEngine.edge);
+    });
   });
 
   group('$HashUrlStrategy', () {
@@ -723,12 +700,12 @@ class TestPlatformLocation extends PlatformLocation {
   String get search => throw UnimplementedError();
 
   @override
-  void addPopStateListener(html.EventListener fn) {
+  void addPopStateListener(DomEventListener fn) {
     throw UnimplementedError();
   }
 
   @override
-  void removePopStateListener(html.EventListener fn) {
+  void removePopStateListener(DomEventListener fn) {
     throw UnimplementedError();
   }
 

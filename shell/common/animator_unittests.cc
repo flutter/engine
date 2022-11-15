@@ -35,10 +35,8 @@ class FakeAnimatorDelegate : public Animator::Delegate {
   MOCK_METHOD1(OnAnimatorUpdateLatestFrameTargetTime,
                void(fml::TimePoint frame_target_time));
 
-  MOCK_METHOD2(
-      OnAnimatorDraw,
-      void(std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-           std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder));
+  MOCK_METHOD1(OnAnimatorDraw,
+               void(std::shared_ptr<LayerTreePipeline> pipeline));
 
   void OnAnimatorDrawLastLayerTree(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) override {}
@@ -82,8 +80,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
         flutter::PlatformData(), task_runners, settings,
         [vsync_clock, &create_vsync_waiter](Shell& shell) {
           return ShellTestPlatformView::Create(
-              shell, shell.GetTaskRunners(), vsync_clock,
-              std::move(create_vsync_waiter),
+              shell, shell.GetTaskRunners(), vsync_clock, create_vsync_waiter,
               ShellTestPlatformView::BackendType::kDefaultBackend, nullptr);
         },
         [](Shell& shell) { return std::make_unique<Rasterizer>(shell); });
@@ -106,7 +103,7 @@ TEST_F(ShellTest, VSyncTargetTime) {
   ASSERT_EQ(GetLatestFrameTargetTime(shell.get()), vsync_waiter_target_time);
 
   // teardown.
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
@@ -159,7 +156,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
       [&] {
         ASSERT_FALSE(delegate.notify_idle_called_);
         auto layer_tree =
-            std::make_unique<LayerTree>(SkISize::Make(600, 800), 1.0);
+            std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
         animator->Render(std::move(layer_tree));
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
@@ -242,7 +239,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyDelegateIfPipelineIsNotEmpty) {
 
     PostTaskSync(task_runners.GetUITaskRunner(), [&] {
       auto layer_tree =
-          std::make_unique<LayerTree>(SkISize::Make(600, 800), 1.0);
+          std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
       animator->Render(std::move(layer_tree));
     });
   }

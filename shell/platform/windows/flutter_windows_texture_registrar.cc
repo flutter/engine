@@ -4,9 +4,9 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 
-#include <iostream>
 #include <mutex>
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/windows/external_texture_d3d.h"
 #include "flutter/shell/platform/windows/external_texture_pixelbuffer.h"
@@ -31,7 +31,7 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
 
   if (texture_info->type == kFlutterDesktopPixelBufferTexture) {
     if (!texture_info->pixel_buffer_config.callback) {
-      std::cerr << "Invalid pixel buffer texture callback." << std::endl;
+      FML_LOG(ERROR) << "Invalid pixel buffer texture callback.";
       return kInvalidTexture;
     }
 
@@ -47,7 +47,7 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
         surface_type == kFlutterDesktopGpuSurfaceTypeD3d11Texture2D) {
       auto callback = SAFE_ACCESS(gpu_surface_config, callback, nullptr);
       if (!callback) {
-        std::cerr << "Invalid GPU surface descriptor callback." << std::endl;
+        FML_LOG(ERROR) << "Invalid GPU surface descriptor callback.";
         return kInvalidTexture;
       }
 
@@ -58,7 +58,7 @@ int64_t FlutterWindowsTextureRegistrar::RegisterTexture(
     }
   }
 
-  std::cerr << "Attempted to register texture of unsupport type." << std::endl;
+  FML_LOG(ERROR) << "Attempted to register texture of unsupport type.";
   return kInvalidTexture;
 }
 
@@ -77,20 +77,28 @@ int64_t FlutterWindowsTextureRegistrar::EmplaceTexture(
   return texture_id;
 }
 
-bool FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id) {
-  {
-    std::lock_guard<std::mutex> lock(map_mutex_);
-    auto it = textures_.find(texture_id);
-    if (it == textures_.end()) {
-      return false;
-    }
-    textures_.erase(it);
-  }
-
+void FlutterWindowsTextureRegistrar::UnregisterTexture(int64_t texture_id,
+                                                       fml::closure callback) {
   engine_->task_runner()->RunNowOrPostTask([engine = engine_, texture_id]() {
     engine->UnregisterExternalTexture(texture_id);
   });
-  return true;
+
+  bool posted = engine_->PostRasterThreadTask([this, texture_id, callback]() {
+    {
+      std::lock_guard<std::mutex> lock(map_mutex_);
+      auto it = textures_.find(texture_id);
+      if (it != textures_.end()) {
+        textures_.erase(it);
+      }
+    }
+    if (callback) {
+      callback();
+    }
+  });
+
+  if (!posted && callback) {
+    callback();
+  }
 }
 
 bool FlutterWindowsTextureRegistrar::MarkTextureFrameAvailable(

@@ -18,26 +18,12 @@ homepage: https://flutter.dev
 # relative to this directory into //third_party/dart
 
 environment:
-  sdk: ">=2.2.2 <3.0.0"
+  sdk: ">=2.12.0 <3.0.0"
 
 dependencies:
   args: any
-  async: any
-  charcode: any
-  collection: any
-  convert: any
-  crypto: any
-  front_end: any
   frontend_server: any
-  kernel: any
-  logging: any
-  meta: any
-  package_config: any
   path: any
-  source_span: any
-  typed_data: any
-  usage: any
-  vm: any
 
 dev_dependencies:
   litetest: any
@@ -57,16 +43,10 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg/bazel_worker
   build_integration:
     path: ../../third_party/dart/pkg/build_integration
-  charcode:
-    path: ../../third_party/dart/third_party/pkg/charcode
-  cli_util:
-    path: ../../third_party/dart/third_party/pkg/cli_util
   collection:
     path: ../../third_party/dart/third_party/pkg/collection
   compiler:
     path: ../../third_party/dart/pkg/compiler
-  convert:
-    path: ../../third_party/dart/third_party/pkg/convert
   crypto:
     path: ../../third_party/dart/third_party/pkg/crypto
   dart2js_info:
@@ -83,28 +63,26 @@ dependency_overrides:
     path: ../../third_party/dart/pkg/frontend_server
   http_parser:
     path: ../../third_party/dart/third_party/pkg/http_parser
+  js_ast:
+    path: ../../third_party/dart/pkg/js_ast
+  js_runtime:
+    path: ../../third_party/dart/pkg/js_runtime
+  js_shared:
+    path: ../../third_party/dart/pkg/js_shared
   kernel:
     path: ../../third_party/dart/pkg/kernel
   litetest:
     path: ../testing/litetest
-  logging:
-    path: ../../third_party/dart/third_party/pkg/logging
-  matcher:
-    path: ../../third_party/dart/third_party/pkg/matcher
   meta:
     path: ../../third_party/dart/pkg/meta
-  mime:
-    path: ../../third_party/dart/third_party/pkg/mime
   package_config:
-    path: ../../third_party/dart/third_party/pkg_tested/package_config
+    path: ../../third_party/dart/third_party/pkg/package_config
   path:
     path: ../../third_party/dart/third_party/pkg/path
   protobuf:
     path: ../../third_party/dart/third_party/pkg/protobuf/protobuf
   shelf:
-    path: ../../third_party/dart/third_party/pkg/shelf
-  shelf_static:
-    path: ../../third_party/dart/third_party/pkg/shelf_static
+    path: ../../third_party/dart/third_party/pkg/shelf/pkgs/shelf
   smith:
     path: ../../third_party/dart/pkg/smith
   source_maps:
@@ -125,5 +103,9 @@ dependency_overrides:
     path: ../../third_party/dart/third_party/pkg/usage
   vm:
     path: ../../third_party/dart/pkg/vm
+  vm_service:
+    path: ../../third_party/dart/pkg/vm_service
+  vm_snapshot_analysis:
+    path: ../../third_party/dart/pkg/vm_snapshot_analysis
   yaml:
     path: ../../third_party/dart/third_party/pkg/yaml

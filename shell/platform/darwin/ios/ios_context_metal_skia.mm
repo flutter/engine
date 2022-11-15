@@ -6,39 +6,20 @@
 
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #import "flutter/shell/platform/darwin/ios/ios_external_texture_metal.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
 namespace flutter {
 
-IOSContextMetalSkia::IOSContextMetalSkia() {
-  darwin_context_metal_ = fml::scoped_nsobject<FlutterDarwinContextMetal>{
-      [[FlutterDarwinContextMetal alloc] initWithDefaultMTLDevice]};
-
-  if (!darwin_context_metal_) {
-    return;
-  }
-
-  main_command_queue_.reset([darwin_context_metal_.get().commandQueue retain]);
-
-  CVMetalTextureCacheRef texture_cache_raw = NULL;
-  auto cv_return = CVMetalTextureCacheCreate(kCFAllocatorDefault,  // allocator
-                                             NULL,  // cache attributes (NULL default)
-                                             darwin_context_metal_.get().device,  // metal device
-                                             NULL,  // texture attributes (NULL default)
-                                             &texture_cache_raw  // [out] cache
-  );
-  if (cv_return != kCVReturnSuccess) {
-    FML_DLOG(ERROR) << "Could not create Metal texture cache.";
-    return;
-  }
-  texture_cache_.Reset(texture_cache_raw);
+IOSContextMetalSkia::IOSContextMetalSkia(MsaaSampleCount msaa_samples) : IOSContext(msaa_samples) {
+  darwin_context_metal_ = fml::scoped_nsobject<FlutterDarwinContextMetalSkia>{
+      [[FlutterDarwinContextMetalSkia alloc] initWithDefaultMTLDevice]};
 }
 
 IOSContextMetalSkia::~IOSContextMetalSkia() = default;
 
-fml::scoped_nsobject<FlutterDarwinContextMetal> IOSContextMetalSkia::GetDarwinContext() const {
+fml::scoped_nsobject<FlutterDarwinContextMetalSkia> IOSContextMetalSkia::GetDarwinContext() const {
   return darwin_context_metal_;
 }
 

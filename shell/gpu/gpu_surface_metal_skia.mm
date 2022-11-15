@@ -7,6 +7,8 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
+#include <utility>
+
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
@@ -33,25 +35,35 @@ namespace {
 sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
                                                id<MTLTexture> texture,
                                                GrSurfaceOrigin origin,
-                                               int sample_cnt,
+                                               MsaaSampleCount sample_cnt,
                                                SkColorType color_type,
                                                sk_sp<SkColorSpace> color_space,
                                                const SkSurfaceProps* props) {
   GrMtlTextureInfo info;
   info.fTexture.reset([texture retain]);
   GrBackendTexture backend_texture(texture.width, texture.height, GrMipmapped::kNo, info);
-  return SkSurface::MakeFromBackendTexture(context, backend_texture, origin, sample_cnt, color_type,
-                                           color_space, props);
+  return SkSurface::MakeFromBackendTexture(context, backend_texture, origin,
+                                           static_cast<int>(sample_cnt), color_type,
+                                           std::move(color_space), props);
 }
 }  // namespace
 
 GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                                          sk_sp<GrDirectContext> context,
+                                         MsaaSampleCount msaa_samples,
                                          bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
-      render_to_surface_(render_to_surface) {}
+      msaa_samples_(msaa_samples),
+      render_to_surface_(render_to_surface) {
+  // If this preference is explicitly set, we allow for disabling partial repaint.
+  NSNumber* disablePartialRepaint =
+      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
+  if (disablePartialRepaint != nil) {
+    disable_partial_repaint_ = disablePartialRepaint.boolValue;
+  }
+}
 
 GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 
@@ -85,7 +97,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; });
+        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; }, frame_size);
   }
 
   PrecompileKnownSkSLsIfNecessary();
@@ -120,20 +132,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     return nullptr;
   }
 
-  // TODO(dnfield): Enable MSAA behind a flag if the settings say to.
-  // https://github.com/flutter/flutter/issues/100392
-  // Rough outline of steps needed:
-  // Create memoryless texture
-  // auto texture = drawable.get().texture;
-  // MTLTextureDescriptor* desc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:
-  // texture.pixelFormat width: texture.width height: texture.height: mipmapped: texture.mipmapped];
-  // desc.sampleCount = 4;
-  // Type should be multisample, count 4 or 8 (4 always supported)
-  // Give the new texture to skia in this call, using the same sampleCount value
-  // Resolve texture
   auto surface = CreateSurfaceFromMetalTexture(context_.get(), drawable.get().texture,
                                                kTopLeft_GrSurfaceOrigin,  // origin
-                                               1,                         // sample count
+                                               msaa_samples_,             // sample count
                                                kBGRA_8888_SkColorType,    // color type
                                                nullptr,                   // colorspace
                                                nullptr                    // surface properties
@@ -157,17 +158,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
       canvas->flush();
     }
 
-    uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
-    for (auto& entry : damage_) {
-      if (entry.first != texture) {
-        // Accumulate damage for other framebuffers
-        if (surface_frame.submit_info().frame_damage) {
-          entry.second.join(*surface_frame.submit_info().frame_damage);
+    if (!disable_partial_repaint_) {
+      uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
+      for (auto& entry : damage_) {
+        if (entry.first != texture) {
+          // Accumulate damage for other framebuffers
+          if (surface_frame.submit_info().frame_damage) {
+            entry.second.join(*surface_frame.submit_info().frame_damage);
+          }
         }
       }
+      // Reset accumulated damage for current framebuffer
+      damage_[texture] = SkIRect::MakeEmpty();
     }
-    // Reset accumulated damage for current framebuffer
-    damage_[texture] = SkIRect::MakeEmpty();
 
     return delegate_->PresentDrawable(drawable);
   };
@@ -175,15 +178,19 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
-  // front buffer)
-  uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
-  auto i = damage_.find(texture);
-  if (i != damage_.end()) {
-    framebuffer_info.existing_damage = i->second;
+  if (!disable_partial_repaint_) {
+    // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
+    // front buffer)
+    uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
+    auto i = damage_.find(texture);
+    if (i != damage_.end()) {
+      framebuffer_info.existing_damage = i->second;
+    }
+    framebuffer_info.supports_partial_repaint = true;
   }
-  framebuffer_info.supports_partial_repaint = true;
-  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback);
+
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
+                                        frame_info);
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
@@ -197,8 +204,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
   }
 
   sk_sp<SkSurface> surface =
-      CreateSurfaceFromMetalTexture(context_.get(), mtl_texture, kTopLeft_GrSurfaceOrigin, 1,
-                                    kBGRA_8888_SkColorType, nullptr, nullptr);
+      CreateSurfaceFromMetalTexture(context_.get(), mtl_texture, kTopLeft_GrSurfaceOrigin,
+                                    msaa_samples_, kBGRA_8888_SkColorType, nullptr, nullptr);
 
   if (!surface) {
     FML_LOG(ERROR) << "Could not create the SkSurface from the metal texture.";
@@ -224,8 +231,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  return std::make_unique<SurfaceFrame>(std::move(surface), std::move(framebuffer_info),
-                                        submit_callback);
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
+                                        frame_info);
 }
 
 // |Surface|

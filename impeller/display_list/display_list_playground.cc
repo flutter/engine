@@ -36,14 +36,14 @@ bool DisplayListPlayground::OpenPlaygroundHere(
     return false;
   }
   return Playground::OpenPlaygroundHere(
-      [&context, &callback](RenderPass& pass) -> bool {
+      [&context, &callback](RenderTarget& render_target) -> bool {
         auto list = callback();
 
         DisplayListDispatcher dispatcher;
         list->Dispatch(dispatcher);
         auto picture = dispatcher.EndRecordingAsPicture();
 
-        return context.Render(picture, pass);
+        return context.Render(picture, render_target);
       });
 }
 
@@ -52,12 +52,14 @@ static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
   if (!mapping) {
     return nullptr;
   }
-  return SkData::MakeWithProc(
+  auto data = SkData::MakeWithProc(
       mapping->GetMapping(), mapping->GetSize(),
       [](const void* ptr, void* context) {
         delete reinterpret_cast<fml::Mapping*>(context);
       },
-      mapping.release());
+      mapping.get());
+  mapping.release();
+  return data;
 }
 
 SkFont DisplayListPlayground::CreateTestFontOfSize(SkScalar scalar) {

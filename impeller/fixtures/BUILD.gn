@@ -5,35 +5,79 @@
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
-import("//flutter/impeller/tools/impeller.gni")
-
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
   shaders = [
-    "box_fade.vert",
+    "array.frag",
+    "array.vert",
     "box_fade.frag",
-    "instanced_draw.vert",
+    "box_fade.vert",
+    "colors.vert",
+    "colors.frag",
+    "impeller.frag",
+    "impeller.vert",
+    "inactive_uniforms.frag",
+    "inactive_uniforms.vert",
     "instanced_draw.frag",
-    "test_texture.vert",
+    "instanced_draw.vert",
+    "mipmaps.frag",
+    "mipmaps.vert",
+    "sample.comp",
+    "simple.vert",
     "test_texture.frag",
+    "test_texture.vert",
   ]
+
+  if (impeller_enable_opengles) {
+    gles_exclusions = [ "sample.comp" ]
+  }
+}
+
+impellerc("runtime_stages") {
+  shaders = [
+    "ink_sparkle.frag",
+    "runtime_stage_example.frag",
+  ]
+  sl_file_extension = "iplr"
+  shader_target_flag = "--runtime-stage-metal"
+  iplr = true
 }
 
 test_fixtures("file_fixtures") {
   fixtures = [
+    "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
+    "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
+    "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
     "airplane.jpg",
     "bay_bridge.jpg",
+    "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
     "kalimba.jpg",
+    "resources_limit.vert",
+    "sample.comp",
+    "sample.frag",
+    "sample.tesc",
+    "sample.tese",
     "sample.vert",
+    "sample_with_binding.vert",
+    "sa%m#ple.vert",
     "struct_def_bug.vert",
-    "types.h",
+    "table_mountain_nx.png",
+    "table_mountain_ny.png",
+    "table_mountain_nz.png",
+    "table_mountain_px.png",
+    "table_mountain_py.png",
+    "table_mountain_pz.png",
     "test_texture.frag",
-    "//flutter/third_party/txt/third_party/fonts/Roboto-Regular.ttf",
-    "//flutter/third_party/txt/third_party/fonts/NotoColorEmoji.ttf",
-    "//flutter/third_party/txt/third_party/fonts/HomemadeApple.ttf",
+    "types.h",
   ]
+  if (host_os == "mac") {
+    fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
+  }
+  fixtures +=
+      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
+  deps = [ ":runtime_stages" ]
 }
 
 group("fixtures") {

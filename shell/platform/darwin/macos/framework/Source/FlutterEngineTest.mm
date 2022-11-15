@@ -39,6 +39,24 @@ TEST_F(FlutterEngineTest, CanLaunch) {
   EXPECT_TRUE(engine.running);
 }
 
+TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  std::string executable_name = [[engine executableName] UTF8String];
+  ASSERT_FALSE(executable_name.empty());
+  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
+
+  // Block until notified by the Dart test of the value of Platform.executable.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("NotifyStringValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      const auto dart_string = tonic::DartConverter<std::string>::FromDart(
+                          Dart_GetNativeArgument(args, 0));
+                      EXPECT_EQ(executable_name, dart_string);
+                      latch.Signal();
+                    }));
+  latch.Wait();
+}
+
 TEST_F(FlutterEngineTest, MessengerSend) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -81,6 +99,67 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   // Verify hello world was written to stdout.
   std::string logs = buffer.str();
   EXPECT_TRUE(logs.find("Hello logging") != std::string::npos);
+}
+
+TEST_F(FlutterEngineTest, BackgroundIsBlack) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      CALayer* rootLayer = engine.viewController.flutterView.layer;
+                      EXPECT_TRUE(rootLayer.backgroundColor != nil);
+                      if (rootLayer.backgroundColor != nil) {
+                        NSColor* actualBackgroundColor =
+                            [NSColor colorWithCGColor:rootLayer.backgroundColor];
+                        EXPECT_EQ(actualBackgroundColor, [NSColor blackColor]);
+                      }
+                      latch.Signal();
+                    }));
+  latch.Wait();
+}
+
+TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+  // Launch the test entrypoint.
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
+  // Latch to ensure the entire layer tree has been generated and presented.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+                      CALayer* rootLayer = engine.viewController.flutterView.layer;
+                      EXPECT_TRUE(rootLayer.backgroundColor != nil);
+                      if (rootLayer.backgroundColor != nil) {
+                        NSColor* actualBackgroundColor =
+                            [NSColor colorWithCGColor:rootLayer.backgroundColor];
+                        EXPECT_EQ(actualBackgroundColor, [NSColor whiteColor]);
+                      }
+                      latch.Signal();
+                    }));
+  latch.Wait();
 }
 
 TEST_F(FlutterEngineTest, CanToggleAccessibility) {
@@ -127,6 +206,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -144,6 +224,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));
@@ -220,6 +301,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -237,6 +319,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));
@@ -309,6 +392,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -326,6 +410,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   update_node_callback(&child1, (void*)CFBridgingRetain(engine));
@@ -357,7 +442,7 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
 
 TEST_F(FlutterEngineTest, NativeCallbacks) {
   FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"native_callback"]);
+  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
   EXPECT_TRUE(engine.running);
 
   fml::AutoResetWaitableEvent latch;
@@ -384,7 +469,7 @@ TEST(FlutterEngine, DISABLED_Compositor) {
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
 
-  EXPECT_TRUE([engine runWithEntrypoint:@"can_composite_platform_views"]);
+  EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
@@ -500,6 +585,42 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
 
   [engine.binaryMessenger sendOnChannel:@"test/send_message" message:channel_data];
   EXPECT_EQ(record, 21);
+}
+
+TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  // Call hasStrings and expect it to be false.
+  __block bool calledAfterClear = false;
+  __block bool valueAfterClear;
+  FlutterResult resultAfterClear = ^(id result) {
+    calledAfterClear = true;
+    NSNumber* valueNumber = [result valueForKey:@"value"];
+    valueAfterClear = [valueNumber boolValue];
+  };
+  FlutterMethodCall* methodCallAfterClear =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
+  [engineMock handleMethodCall:methodCallAfterClear result:resultAfterClear];
+  EXPECT_TRUE(calledAfterClear);
+  EXPECT_FALSE(valueAfterClear);
+}
+
+TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
+  id engineMock = CreateMockFlutterEngine(@"some string");
+
+  // Call hasStrings and expect it to be true.
+  __block bool called = false;
+  __block bool value;
+  FlutterResult result = ^(id result) {
+    called = true;
+    NSNumber* valueNumber = [result valueForKey:@"value"];
+    value = [valueNumber boolValue];
+  };
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
+  [engineMock handleMethodCall:methodCall result:result];
+  EXPECT_TRUE(called);
+  EXPECT_TRUE(value);
 }
 
 }  // namespace flutter::testing

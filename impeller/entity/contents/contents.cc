@@ -5,8 +5,10 @@
 #include "impeller/entity/contents/contents.h"
 #include <optional>
 
+#include "fml/logging.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -29,22 +31,29 @@ Contents::Contents() = default;
 
 Contents::~Contents() = default;
 
+Contents::StencilCoverage Contents::GetStencilCoverage(
+    const Entity& entity,
+    const std::optional<Rect>& current_stencil_coverage) const {
+  return {.type = StencilCoverage::Type::kNone,
+          .coverage = current_stencil_coverage};
+}
+
 std::optional<Snapshot> Contents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity) const {
-  auto bounds = GetCoverage(entity);
-  if (!bounds.has_value()) {
+  auto coverage = GetCoverage(entity);
+  if (!coverage.has_value()) {
     return std::nullopt;
   }
 
   auto texture = renderer.MakeSubpass(
-      ISize::Ceil(bounds->size),
-      [&contents = *this, &entity, &bounds](const ContentContext& renderer,
-                                            RenderPass& pass) -> bool {
+      ISize::Ceil(coverage->size),
+      [&contents = *this, &entity, &coverage](const ContentContext& renderer,
+                                              RenderPass& pass) -> bool {
         Entity sub_entity;
-        sub_entity.SetBlendMode(Entity::BlendMode::kSourceOver);
+        sub_entity.SetBlendMode(BlendMode::kSourceOver);
         sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-bounds->origin)) *
+            Matrix::MakeTranslation(Vector3(-coverage->origin)) *
             entity.GetTransformation());
         return contents.Render(renderer, sub_entity, pass);
       });
@@ -54,7 +63,26 @@ std::optional<Snapshot> Contents::RenderToSnapshot(
   }
 
   return Snapshot{.texture = texture,
-                  .transform = Matrix::MakeTranslation(bounds->origin)};
+                  .transform = Matrix::MakeTranslation(coverage->origin)};
+}
+
+bool Contents::ShouldRender(const Entity& entity,
+                            const std::optional<Rect>& stencil_coverage) const {
+  if (!stencil_coverage.has_value()) {
+    return false;
+  }
+  if (Entity::BlendModeShouldCoverWholeScreen(entity.GetBlendMode())) {
+    return true;
+  }
+
+  auto coverage = GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return false;
+  }
+  if (coverage == Rect::MakeMaximum()) {
+    return true;
+  }
+  return stencil_coverage->IntersectsWithRect(coverage.value());
 }
 
 }  // namespace impeller

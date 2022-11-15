@@ -5,6 +5,7 @@
 import("//flutter/testing/dart/compile_test.gni")
 
 tests = [
+  "assets_test.dart",
   "canvas_test.dart",
   "channel_buffers_test.dart",
   "codec_test.dart",
@@ -21,9 +22,11 @@ tests = [
   "http_disallow_http_connections_test.dart",
   "image_descriptor_test.dart",
   "image_dispose_test.dart",
+  "image_events_test.dart",
   "image_filter_test.dart",
   "image_resize_test.dart",
   "image_shader_test.dart",
+  "image_test.dart",
   "isolate_name_server_test.dart",
   "isolate_test.dart",
   "lerp_test.dart",
@@ -32,11 +35,11 @@ tests = [
   "paragraph_builder_test.dart",
   "paragraph_test.dart",
   "path_test.dart",
+  "picture_test.dart",
   "platform_view_test.dart",
   "plugin_utilities_test.dart",
   "semantics_test.dart",
   "serial_gc_test.dart",
-  "spirv_exception_test.dart",
   "task_order_test.dart",
   "text_test.dart",
   "window_test.dart",
@@ -46,7 +49,7 @@ foreach(test, tests) {
   compile_flutter_dart_test("compile_$test") {
     dart_file = test
     dart_kernel = "$root_gen_dir/$test.dill"
-    packages = ".packages"
+    packages = ".dart_tool/package_config.json"
   }
 }
 

@@ -1,20 +1,47 @@
 # Prefix check with "-" to ignore.
-Checks: "google-*,\
+# Note: Some of the checks here are used as errors selectively, see
+# //ci/lint.sh
+Checks: "bugprone-use-after-move,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
+google-*,\
+modernize-use-default-member-init,\
+readability-identifier-naming,\
 -google-objc-global-variable-declaration,\
 -google-objc-avoid-throwing-exception,\
 -clang-analyzer-nullability.NullPassedToNonnull,\
 -clang-analyzer-nullability.NullablePassedToNonnull,\
 -clang-analyzer-nullability.NullReturnedFromNonnull,\
--clang-analyzer-nullability.NullableReturnedFromNonnull"
+-clang-analyzer-nullability.NullableReturnedFromNonnull,\
+performance-move-const-arg,\
+performance-unnecessary-value-param"
 
 # Only warnings treated as errors are reported
 # in the "ci/lint.sh" script and pre-push git hook.
 # Add checks when all warnings are fixed
 # to prevent new warnings being introduced.
 # https://github.com/flutter/flutter/issues/93279
-WarningsAsErrors: "clang-analyzer-*,\
+# Note: There are platform specific warnings as errors in
+# //ci/lint.sh
+WarningsAsErrors: "bugprone-use-after-move,\
+clang-analyzer-*,\
+readability-identifier-naming,\
 clang-diagnostic-*,\
 google-objc-*,\
 google-explicit-constructor"
+
+CheckOptions:
+  - key:    modernize-use-default-member-init.UseAssignment
+    value:  true
+  - key:    readability-identifier-naming.EnumConstantCase
+    value:  'CamelCase'
+  - key:    readability-identifier-naming.EnumConstantPrefix
+    value:  'k'
+  - key:    readability-identifier-naming.GlobalConstantCase
+    value:  'CamelCase'
+  - key:    readability-identifier-naming.GlobalConstantPrefix
+    value:  'k'
+  - key:    readability-identifier-naming.PrivateMemberCase
+    value:  'lower_case'
+  - key:    readability-identifier-naming.PrivateMemberSuffix
+    value:  '_'

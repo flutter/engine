@@ -41,17 +41,15 @@ void TransformLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "TransformLayer::Preroll");
-
   SkMatrix child_matrix;
   child_matrix.setConcat(matrix, transform_);
   context->mutators_stack.PushTransform(transform_);
   SkRect previous_cull_rect = context->cull_rect;
-  SkMatrix inverse_transform_;
+  SkMatrix inverse_transform;
   // Perspective projections don't produce rectangles that are useful for
   // culling for some reason.
-  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform_)) {
-    inverse_transform_.mapRect(&context->cull_rect);
+  if (!transform_.hasPerspective() && transform_.invert(&inverse_transform)) {
+    inverse_transform.mapRect(&context->cull_rect);
   } else {
     context->cull_rect = kGiantRect;
   }
@@ -71,7 +69,6 @@ void TransformLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void TransformLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "TransformLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.internal_nodes_canvas, true);

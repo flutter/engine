@@ -33,9 +33,12 @@ bool Main(const fml::CommandLine& command_line) {
   }
 
   auto current_directory =
-      fml::OpenDirectory(std::filesystem::current_path().native().c_str(),
+      fml::OpenDirectory(std::filesystem::current_path().string().c_str(),
                          false, fml::FilePermission::kReadWrite);
-  if (!fml::WriteAtomically(current_directory, output.c_str(), *blob)) {
+  auto output_path =
+      std::filesystem::absolute(std::filesystem::current_path() / output);
+  if (!fml::WriteAtomically(current_directory, output_path.string().c_str(),
+                            *blob)) {
     std::cerr << "Could not write shader blob to path " << output << std::endl;
     return false;
   }
@@ -46,7 +49,7 @@ bool Main(const fml::CommandLine& command_line) {
 }  // namespace impeller
 
 int main(int argc, char const* argv[]) {
-  return impeller::Main(fml::CommandLineFromArgcArgv(argc, argv))
+  return impeller::Main(fml::CommandLineFromPlatformOrArgcArgv(argc, argv))
              ? EXIT_SUCCESS
              : EXIT_FAILURE;
 }

@@ -18,14 +18,14 @@ bool AndroidSurfaceMock::GLContextClearCurrent() {
   return true;
 }
 
-bool AndroidSurfaceMock::GLContextPresent(
-    uint32_t fbo_id,
-    const std::optional<SkIRect>& damage) {
+bool AndroidSurfaceMock::GLContextPresent(const GLPresentInfo& present_info) {
   return true;
 }
 
-intptr_t AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
-  return 0;
+GLFBOInfo AndroidSurfaceMock::GLContextFBO(GLFrameInfo frame_info) const {
+  return GLFBOInfo{
+      .fbo_id = 0,
+  };
 }
 
 }  // namespace flutter

@@ -36,7 +36,7 @@ void testMain() {
 
   test('PathRef.getRRect with zero radius', () {
     final SurfacePath path = SurfacePath();
-    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, const Radius.circular(0));
+    final RRect rrect = RRect.fromLTRBR(0, 0, 10, 10, Radius.zero);
     path.addRRect(rrect);
     expect(path.toRoundedRect(), isNull);
     expect(path.toRect(), rrect.outerRect);
@@ -63,6 +63,30 @@ void testMain() {
     path.addRRect(rrect);
     expect(path.toRoundedRect(), isNull);
     expect(path.toRect(), rrect.outerRect);
+  });
+
+  test('PathRef.getRect returns a Rect from a valid Path and null otherwise', () {
+    final SurfacePath path = SurfacePath();
+    // Draw a line
+    path.moveTo(0,0);
+    path.lineTo(10,0);
+    expect(path.pathRef.getRect(), isNull);
+    // Draw two other lines to get a valid rectangle
+    path.lineTo(10,10);
+    path.lineTo(0,10);
+    expect(path.pathRef.getRect(), const Rect.fromLTWH(0, 0, 10, 10));
+  });
+
+  // Regression test for https://github.com/flutter/flutter/issues/111750
+  test('PathRef.getRect returns Rect with positive width and height', () {
+    final SurfacePath path = SurfacePath();
+    // Draw a rectangle starting from bottom right corner
+    path.moveTo(10,10);
+    path.lineTo(0,10);
+    path.lineTo(0,0);
+    path.lineTo(10,0);
+    // pathRef.getRect() should return a rectangle with positive height and width
+    expect(path.pathRef.getRect(), const Rect.fromLTWH(0, 0, 10, 10));
   });
 
   // This test demonstrates the issue with attempting to reconstruct an RRect

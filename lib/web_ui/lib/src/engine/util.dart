@@ -5,13 +5,13 @@
 library util;
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'vector_math.dart';
 
@@ -78,7 +78,7 @@ String matrix4ToCssTransform(Matrix4 matrix) {
 /// Applies a transform to the [element].
 ///
 /// See [float64ListToCssTransform] for details on how the CSS value is chosen.
-void setElementTransform(html.Element element, Float32List matrix4) {
+void setElementTransform(DomElement element, Float32List matrix4) {
   element.style
     ..transformOrigin = '0 0 0'
     ..transform = float64ListToCssTransform(matrix4);
@@ -344,6 +344,17 @@ String? colorToCssString(ui.Color? color) {
     return null;
   }
   final int value = color.value;
+  return colorValueToCssString(value);
+}
+
+// Converts a color value (as an int) into a CSS-compatible value.
+String? colorValueToCssString(int? value) {
+  if (value == null) {
+    return null;
+  }
+  if (value == 0xFF000000) {
+    return '#000000';
+  }
   if ((0xff000000 & value) == 0xff000000) {
     final String hexValue = (value & 0xFFFFFF).toRadixString(16);
     final int hexValueLength = hexValue.length;
@@ -493,7 +504,7 @@ Float32List offsetListToFloat32List(List<ui.Offset> offsetList) {
 ///
 /// * Use 3D transform instead of 2D: this does not work because it causes text
 ///   blurriness: https://github.com/flutter/flutter/issues/32274
-void applyWebkitClipFix(html.Element? containerElement) {
+void applyWebkitClipFix(DomElement? containerElement) {
   if (browserEngine == BrowserEngine.webkit) {
     containerElement!.style.zIndex = '0';
   }
@@ -523,7 +534,7 @@ int clampInt(int value, int min, int max) {
 ///
 /// This function can be overridden in tests. This could be useful, for example,
 /// to verify that warnings are printed under certain circumstances.
-void Function(String) printWarning = html.window.console.warn;
+void Function(String) printWarning = domWindow.console.warn;
 
 /// Determines if lists [a] and [b] are deep equivalent.
 ///
@@ -552,15 +563,10 @@ String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
 }
 
-/// Checks if the dynamic [object] is equal to null.
-bool unsafeIsNull(dynamic object) {
-  return object == null;
-}
-
-/// A typed variant of [html.Window.fetch].
-Future<html.Body> httpFetch(String url) async {
-  final dynamic result = await html.window.fetch(url);
-  return result as html.Body;
+/// A typed variant of [domWindow.fetch].
+Future<DomResponse> httpFetch(String url) async {
+  final Object? result = await domWindow.fetch(url);
+  return result! as DomResponse;
 }
 
 /// Extensions to [Map] that make it easier to treat it as a JSON object. The
@@ -647,7 +653,7 @@ extension JsonExtensions on Map<dynamic, dynamic> {
 ///     Input: [0, 1, 2, 3]
 ///     Output: 0x00 0x01 0x02 0x03
 String bytesToHexString(List<int> data) {
-  return data.map((int byte) => '0x' + byte.toRadixString(16).padLeft(2, '0')).join(' ');
+  return data.map((int byte) => '0x${byte.toRadixString(16).padLeft(2, '0')}').join(' ');
 }
 
 /// Sets a style property on [element].
@@ -655,7 +661,7 @@ String bytesToHexString(List<int> data) {
 /// [name] is the name of the property. [value] is the value of the property.
 /// If [value] is null, removes the style property.
 void setElementStyle(
-    html.Element element, String name, String? value) {
+    DomElement element, String name, String? value) {
   if (value == null) {
     element.style.removeProperty(name);
   } else {
@@ -663,7 +669,7 @@ void setElementStyle(
   }
 }
 
-void setClipPath(html.Element element, String? value) {
+void setClipPath(DomElement element, String? value) {
   if (browserEngine == BrowserEngine.webkit) {
     if (value == null) {
       element.style.removeProperty('-webkit-clip-path');
@@ -679,13 +685,13 @@ void setClipPath(html.Element element, String? value) {
 }
 
 void setThemeColor(ui.Color color) {
-  html.MetaElement? theme =
-      html.document.querySelector('#flutterweb-theme') as html.MetaElement?;
+  DomHTMLMetaElement? theme =
+      domDocument.querySelector('#flutterweb-theme') as DomHTMLMetaElement?;
   if (theme == null) {
-    theme = html.MetaElement()
+    theme = createDomHTMLMetaElement()
       ..id = 'flutterweb-theme'
       ..name = 'theme-color';
-    html.document.head!.append(theme);
+    domDocument.head!.append(theme);
   }
   theme.content = colorToCssString(color)!;
 }
@@ -694,7 +700,7 @@ bool? _ellipseFeatureDetected;
 
 /// Draws CanvasElement ellipse with fallback.
 void drawEllipse(
-    html.CanvasRenderingContext2D context,
+    DomCanvasRenderingContext2D context,
     double centerX,
     double centerY,
     double radiusX,
@@ -718,7 +724,7 @@ void drawEllipse(
 }
 
 /// Removes all children of a DOM node.
-void removeAllChildren(html.Node node) {
+void removeAllChildren(DomNode node) {
   while (node.lastChild != null) {
     node.lastChild!.remove();
   }

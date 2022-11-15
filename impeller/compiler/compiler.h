@@ -15,8 +15,8 @@
 #include "impeller/compiler/source_options.h"
 #include "impeller/compiler/types.h"
 #include "shaderc/shaderc.hpp"
-#include "third_party/spirv_cross/spirv_msl.hpp"
-#include "third_party/spirv_cross/spirv_parser.hpp"
+#include "spirv_msl.hpp"
+#include "spirv_parser.hpp"
 
 namespace impeller {
 namespace compiler {
@@ -24,7 +24,7 @@ namespace compiler {
 class Compiler {
  public:
   Compiler(const fml::Mapping& source_mapping,
-           SourceOptions options,
+           const SourceOptions& options,
            Reflector::Options reflector_options);
 
   ~Compiler();
@@ -33,7 +33,7 @@ class Compiler {
 
   std::unique_ptr<fml::Mapping> GetSPIRVAssembly() const;
 
-  std::unique_ptr<fml::Mapping> GetSLShaderSource() const;
+  std::shared_ptr<fml::Mapping> GetSLShaderSource() const;
 
   std::string GetErrorMessages() const;
 
@@ -47,7 +47,7 @@ class Compiler {
  private:
   SourceOptions options_;
   std::shared_ptr<shaderc::SpvCompilationResult> spv_result_;
-  std::shared_ptr<std::string> sl_string_;
+  std::shared_ptr<fml::Mapping> sl_mapping_;
   std::stringstream error_stream_;
   std::unique_ptr<Reflector> reflector_;
   std::vector<std::string> included_file_names_;
@@ -55,7 +55,9 @@ class Compiler {
 
   std::string GetSourcePrefix() const;
 
-  std::string GetDependencyNames(std::string separator) const;
+  std::string GetDependencyNames(const std::string& separator) const;
+
+  void SetBindingBase(shaderc::CompileOptions& compiler_opts) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Compiler);
 };

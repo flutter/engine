@@ -8,12 +8,13 @@
 #include <vector>
 
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/embedder/test_utils/key_codes.h"
+#include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
 #include "gtest/gtest.h"
 
 namespace flutter {
+namespace testing {
 
 namespace {
 
@@ -71,11 +72,6 @@ UINT DefaultMapVkToScan(UINT virtual_key, bool extended) {
                        extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
 }
 
-}  // namespace
-
-namespace testing {
-
-namespace {
 constexpr uint64_t kScanCodeKeyA = 0x1e;
 constexpr uint64_t kScanCodeAltLeft = 0x38;
 constexpr uint64_t kScanCodeNumpad1 = 0x4f;
@@ -86,8 +82,9 @@ constexpr uint64_t kScanCodeShiftRight = 0x36;
 
 constexpr uint64_t kVirtualKeyA = 0x41;
 
-using namespace ::flutter::testing::keycodes;
 }  // namespace
+
+using namespace ::flutter::testing::keycodes;
 
 TEST(KeyboardKeyEmbedderHandlerTest, ConvertChar32ToUtf8) {
   std::string result;
@@ -945,7 +942,10 @@ TEST(KeyboardKeyEmbedderHandlerTest,
       VK_NUMLOCK, kScanCodeNumLock, WM_KEYDOWN, 0, true, false,
       [&last_handled](bool handled) { last_handled = handled; });
   EXPECT_EQ(last_handled, false);
-  EXPECT_EQ(results.size(), 3);
+  // 4 total events should be fired:
+  // Pre-synchronization toggle, pre-sync press,
+  // main event, and post-sync press.
+  EXPECT_EQ(results.size(), 4);
   event = &results[0];
   EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
   EXPECT_EQ(event->physical, kPhysicalNumLock);

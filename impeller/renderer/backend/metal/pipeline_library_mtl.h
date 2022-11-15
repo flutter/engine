@@ -6,9 +6,6 @@
 
 #include <Metal/Metal.h>
 
-#include <memory>
-#include <unordered_map>
-
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/pipeline_library.h"
 
@@ -26,18 +23,26 @@ class PipelineLibraryMTL final : public PipelineLibrary {
  private:
   friend ContextMTL;
 
-  using Pipelines =
-      std::unordered_map<PipelineDescriptor,
-                         std::shared_future<std::shared_ptr<Pipeline>>,
-                         ComparableHash<PipelineDescriptor>,
-                         ComparableEqual<PipelineDescriptor>>;
   id<MTLDevice> device_ = nullptr;
-  Pipelines pipelines_;
+  PipelineMap pipelines_;
+  ComputePipelineMap compute_pipelines_;
 
   PipelineLibraryMTL(id<MTLDevice> device);
 
   // |PipelineLibrary|
-  PipelineFuture GetRenderPipeline(PipelineDescriptor descriptor) override;
+  bool IsValid() const override;
+
+  // |PipelineLibrary|
+  PipelineFuture<PipelineDescriptor> GetPipeline(
+      PipelineDescriptor descriptor) override;
+
+  // |PipelineLibrary|
+  PipelineFuture<ComputePipelineDescriptor> GetPipeline(
+      ComputePipelineDescriptor descriptor) override;
+
+  // |PipelineLibrary|
+  void RemovePipelinesWithEntryPoint(
+      std::shared_ptr<const ShaderFunction> function) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryMTL);
 };

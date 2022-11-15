@@ -4,14 +4,17 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <optional>
 #include <vector>
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
+#include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -22,6 +25,9 @@ class ContentContext;
 class EntityPass {
  public:
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
+  using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
+      FilterInput::Ref,
+      const Matrix& effect_transform)>;
 
   EntityPass();
 
@@ -44,32 +50,88 @@ class EntityPass {
   EntityPass* GetSuperpass() const;
 
   bool Render(ContentContext& renderer,
-              RenderPass& parent_pass,
-              Point position = Point()) const;
+              const RenderTarget& render_target) const;
 
-  void IterateAllEntities(std::function<bool(Entity&)> iterator);
+  void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
   void SetTransformation(Matrix xformation);
 
   void SetStencilDepth(size_t stencil_depth);
 
-  void SetBlendMode(Entity::BlendMode blend_mode);
+  void SetBlendMode(BlendMode blend_mode);
+
+  void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
+
+  std::optional<Rect> GetSubpassCoverage(
+      const EntityPass& subpass,
+      std::optional<Rect> coverage_crop) const;
+
+  std::optional<Rect> GetElementsCoverage(
+      std::optional<Rect> coverage_crop) const;
 
  private:
+  struct EntityResult {
+    enum Status {
+      /// The entity was successfully resolved and can be rendered.
+      kSuccess,
+      /// An unexpected rendering error occurred while resolving the Entity.
+      kFailure,
+      /// The entity should be skipped because rendering it will contribute
+      /// nothing to the frame.
+      kSkip,
+    };
+
+    /// @brief  The resulting entity that should be rendered. If `std::nullopt`,
+    ///         there is nothing to render.
+    Entity entity;
+    /// @brief  This is set to `false` if there was an unexpected rendering
+    ///         error while resolving the Entity.
+    Status status = kFailure;
+
+    static EntityResult Success(Entity e) { return {e, kSuccess}; }
+    static EntityResult Failure() { return {{}, kFailure}; }
+    static EntityResult Skip() { return {{}, kSkip}; }
+  };
+
+  EntityResult GetEntityForElement(const EntityPass::Element& element,
+                                   ContentContext& renderer,
+                                   InlinePassContext& pass_context,
+                                   ISize root_pass_size,
+                                   Point position,
+                                   uint32_t pass_depth,
+                                   size_t stencil_depth_floor) const;
+
+  bool OnRender(
+      ContentContext& renderer,
+      ISize root_pass_size,
+      const RenderTarget& render_target,
+      Point position,
+      Point parent_position,
+      uint32_t pass_depth,
+      size_t stencil_depth_floor = 0,
+      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
+
   std::vector<Element> elements_;
 
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
-  Entity::BlendMode blend_mode_ = Entity::BlendMode::kSourceOver;
+  BlendMode blend_mode_ = BlendMode::kSourceOver;
+  bool cover_whole_screen_ = false;
+
+  /// This value is incremented whenever something is added to the pass that
+  /// requires reading from the backdrop texture. Currently, this can happen in
+  /// the following scenarios:
+  ///   1. An entity with an "advanced blend" is added to the pass.
+  ///   2. A subpass with a backdrop filter is added to the pass.
+  uint32_t reads_from_pass_texture_ = 0;
+
+  std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
+
   std::unique_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
   std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_ =
       std::make_shared<LazyGlyphAtlas>();
-
-  std::optional<Rect> GetSubpassCoverage(const EntityPass& subpass) const;
-
-  std::optional<Rect> GetElementsCoverage() const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
 };

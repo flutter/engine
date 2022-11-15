@@ -35,35 +35,8 @@ import 'tangent.dart';
 ///   3. if we encounter Move without a preceding Close, and forceClose is true, goto #2
 ///   4. if we encounter Line | Quad | Cubic after Close, cons up a Move
 class SurfacePath implements ui.Path {
-  // Initial valid of last move to index so we can detect if a move to
-  // needs to be inserted after contour closure. See [close].
-  static const int kInitialLastMoveToIndexValue = 0;
-
-  PathRef pathRef;
-  ui.PathFillType _fillType = ui.PathFillType.nonZero;
-  // Skia supports inverse winding as part of path fill type.
-  // For Flutter inverse is always false.
-  bool _isInverseFillType = false;
-  // Store point index + 1 of last moveTo instruction.
-  // If contour has been closed or path is in initial state, the value is
-  // negated.
-  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
-  int _convexityType = SPathConvexityType.kUnknown;
-  int _firstDirection = SPathDirection.kUnknown;
-
   SurfacePath() : pathRef = PathRef() {
     _resetFields();
-  }
-
-  void _resetFields() {
-    fLastMoveToIndex = kInitialLastMoveToIndexValue;
-    _fillType = ui.PathFillType.nonZero;
-    _resetAfterEdit();
-  }
-
-  void _resetAfterEdit() {
-    _convexityType = SPathConvexityType.kUnknown;
-    _firstDirection = SPathDirection.kUnknown;
   }
 
   /// Creates a copy of another [Path].
@@ -81,6 +54,30 @@ class SurfacePath implements ui.Path {
   SurfacePath.shallowCopy(SurfacePath source)
       : pathRef = PathRef.shallowCopy(source.pathRef) {
     _copyFields(source);
+  }
+
+  // Initial valid of last move to index so we can detect if a move to
+  // needs to be inserted after contour closure. See [close].
+  static const int kInitialLastMoveToIndexValue = 0;
+
+  PathRef pathRef;
+  ui.PathFillType _fillType = ui.PathFillType.nonZero;
+  // Store point index + 1 of last moveTo instruction.
+  // If contour has been closed or path is in initial state, the value is
+  // negated.
+  int fLastMoveToIndex = kInitialLastMoveToIndexValue;
+  int _convexityType = SPathConvexityType.kUnknown;
+  int _firstDirection = SPathDirection.kUnknown;
+
+  void _resetFields() {
+    fLastMoveToIndex = kInitialLastMoveToIndexValue;
+    _fillType = ui.PathFillType.nonZero;
+    _resetAfterEdit();
+  }
+
+  void _resetAfterEdit() {
+    _convexityType = SPathConvexityType.kUnknown;
+    _firstDirection = SPathDirection.kUnknown;
   }
 
   void _copyFields(SurfacePath source) {
@@ -795,7 +792,7 @@ class SurfacePath implements ui.Path {
 
     // The arc may be slightly bigger than 1/4 circle, so allow up to 1/3rd.
     final int segments =
-        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil().toInt();
+        (thetaArc / (2.0 * math.pi / 3.0)).abs().ceil();
     final double thetaWidth = thetaArc / segments;
     final double t = math.tan(thetaWidth / 2.0);
     if (!t.isFinite) {
@@ -1173,10 +1170,10 @@ class SurfacePath implements ui.Path {
         points[p] += offsetX;
         points[p + 1] += offsetY;
       } else {
-        final double x = offsetX + points[p];
-        final double y = offsetY + points[p + 1];
-        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + matrix4[12];
-        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + matrix4[13];
+        final double x = points[p];
+        final double y = points[p + 1];
+        points[p] = (matrix4[0] * x) + (matrix4[4] * y) + (matrix4[12] + offsetX);
+        points[p + 1] = (matrix4[1] * x) + (matrix4[5] * y) + (matrix4[13] + offsetY);
       }
     }
     _resetAfterEdit();
@@ -1209,9 +1206,8 @@ class SurfacePath implements ui.Path {
   @override
   bool contains(ui.Offset point) {
     assert(offsetIsValid(point));
-    final bool isInverse = _isInverseFillType;
     if (pathRef.isEmpty) {
-      return isInverse;
+      return false;
     }
     // Check bounds including right/bottom.
     final ui.Rect bounds = getBounds();
@@ -1219,7 +1215,7 @@ class SurfacePath implements ui.Path {
     final double y = point.dy;
     if (x < bounds.left || y < bounds.top || x > bounds.right ||
         y > bounds.bottom) {
-      return isInverse;
+      return false;
     }
     final PathWinding windings = PathWinding(pathRef, point.dx, point.dy);
     final bool evenOddFill = ui.PathFillType.evenOdd == _fillType;
@@ -1228,39 +1224,39 @@ class SurfacePath implements ui.Path {
       w &= 1;
     }
     if (w != 0) {
-      return !isInverse;
+      return true;
     }
     final int onCurveCount = windings.onCurveCount;
     if (onCurveCount <= 1) {
-      return (onCurveCount != 0) ^ isInverse;
+      return onCurveCount != 0;
     }
     if ((onCurveCount & 1) != 0 || evenOddFill) {
-      return (onCurveCount & 1) != 0 ^ (isInverse ? 1 : 0);
+      return (onCurveCount & 1) != 0;
     }
     // If the point touches an even number of curves, and the fill is winding,
     // check for coincidence. Count coincidence as places where the on curve
     // points have identical tangents.
     final PathIterator iter = PathIterator(pathRef, true);
-    final Float32List _buffer = Float32List(8 + 10);
+    final Float32List buffer = Float32List(8 + 10);
     final List<ui.Offset> tangents = <ui.Offset>[];
     bool done = false;
     do {
       final int oldCount = tangents.length;
-      switch (iter.next(_buffer)) {
+      switch (iter.next(buffer)) {
         case SPath.kMoveVerb:
         case SPath.kCloseVerb:
           break;
         case SPath.kLineVerb:
-          tangentLine(_buffer, x, y, tangents);
+          tangentLine(buffer, x, y, tangents);
           break;
         case SPath.kQuadVerb:
-          tangentQuad(_buffer, x, y, tangents);
+          tangentQuad(buffer, x, y, tangents);
           break;
         case SPath.kConicVerb:
-          tangentConic(_buffer, x, y, iter.conicWeight, tangents);
+          tangentConic(buffer, x, y, iter.conicWeight, tangents);
           break;
         case SPath.kCubicVerb:
-          tangentCubic(_buffer, x, y, tangents);
+          tangentCubic(buffer, x, y, tangents);
           break;
         case SPath.kDoneVerb:
           done = true;
@@ -1288,7 +1284,7 @@ class SurfacePath implements ui.Path {
         }
       }
     } while (!done);
-    return tangents.isEmpty ? isInverse : !isInverse;
+    return tangents.isNotEmpty;
   }
 
   /// Returns a copy of the path with all the segments of every

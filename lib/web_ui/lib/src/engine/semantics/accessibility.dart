@@ -3,12 +3,22 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
-import '../../engine.dart'  show registerHotRestartListener;
+import '../../engine.dart' show registerHotRestartListener;
+import '../dom.dart';
 import '../services.dart';
 import '../util.dart';
+
+/// Determines the assertiveness level of the accessibility announcement.
+///
+/// It is used to set the priority with which assistive technology should treat announcements.
+///
+/// The order of this enum must match the order of the values in semantics_event.dart in framework.
+enum Assertiveness {
+  polite,
+  assertive,
+}
 
 /// Singleton for accessing accessibility announcements from the platform.
 final AccessibilityAnnouncements accessibilityAnnouncements =
@@ -17,6 +27,12 @@ final AccessibilityAnnouncements accessibilityAnnouncements =
 /// Attaches accessibility announcements coming from the 'flutter/accessibility'
 /// channel as temporary elements to the DOM.
 class AccessibilityAnnouncements {
+  AccessibilityAnnouncements._() {
+    registerHotRestartListener(() {
+      _removeElementTimer?.cancel();
+    });
+  }
+
   /// Initializes the [AccessibilityAnnouncements] singleton if it is not
   /// already initialized.
   static AccessibilityAnnouncements get instance {
@@ -24,12 +40,6 @@ class AccessibilityAnnouncements {
   }
 
   static AccessibilityAnnouncements? _instance;
-
-  AccessibilityAnnouncements._() {
-    registerHotRestartListener(() {
-      _removeElementTimer?.cancel();
-    });
-  }
 
   /// Timer that times when the accessibility element should be removed from the
   /// DOM.
@@ -52,9 +62,9 @@ class AccessibilityAnnouncements {
   /// This element has aria-live attribute.
   ///
   /// It also has id 'accessibility-element' for testing purposes.
-  html.HtmlElement? _element;
+  DomHTMLElement? _element;
 
-  html.HtmlElement get _domElement => _element ??= _createElement();
+  DomHTMLElement get _domElement => _element ??= _createElement();
 
   /// Decodes the message coming from the 'flutter/accessibility' channel.
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
@@ -63,21 +73,25 @@ class AccessibilityAnnouncements {
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
-      _initLiveRegion(message);
+      /// The default value for politeness is `polite`.
+      final int ariaLivePolitenessIndex = dataMap.tryInt('assertiveness') ?? 0;
+      final Assertiveness ariaLivePoliteness = Assertiveness.values[ariaLivePolitenessIndex];
+      _initLiveRegion(message, ariaLivePoliteness);
       _removeElementTimer = Timer(durationA11yMessageIsOnDom, () {
         _element!.remove();
       });
     }
   }
 
-  void _initLiveRegion(String message) {
-    _domElement.setAttribute('aria-live', 'polite');
+  void _initLiveRegion(String message, Assertiveness ariaLivePoliteness) {
+    final String assertiveLevel = (ariaLivePoliteness == Assertiveness.assertive) ? 'assertive' : 'polite';
+    _domElement.setAttribute('aria-live', assertiveLevel);
     _domElement.text = message;
-    html.document.body!.append(_domElement);
+    domDocument.body!.append(_domElement);
   }
 
-  html.LabelElement _createElement() {
-    final html.LabelElement liveRegion = html.LabelElement();
+  DomHTMLLabelElement _createElement() {
+    final DomHTMLLabelElement liveRegion = createDomHTMLLabelElement();
     liveRegion.setAttribute('id', 'accessibility-element');
     liveRegion.style
       ..position = 'fixed'

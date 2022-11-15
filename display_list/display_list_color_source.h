@@ -5,14 +5,22 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_COLOR_SOURCE_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_COLOR_SOURCE_H_
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_attributes.h"
 #include "flutter/display_list/display_list_color.h"
+#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/display_list_runtime_effect.h"
+#include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
+#include "third_party/skia/include/effects/SkRuntimeEffect.h"
 
 namespace flutter {
 
@@ -22,6 +30,7 @@ class DlLinearGradientColorSource;
 class DlRadialGradientColorSource;
 class DlConicalGradientColorSource;
 class DlSweepGradientColorSource;
+class DlRuntimeEffectColorSource;
 class DlUnknownColorSource;
 
 // The DisplayList ColorSource class. This class implements all of the
@@ -41,6 +50,7 @@ enum class DlColorSourceType {
   kRadialGradient,
   kConicalGradient,
   kSweepGradient,
+  kRuntimeEffect,
   kUnknown
 };
 
@@ -102,10 +112,15 @@ class DlColorSource
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
 
+  static std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
+      sk_sp<DlRuntimeEffect> runtime_effect,
+      std::vector<std::shared_ptr<DlColorSource>> samplers,
+      std::shared_ptr<std::vector<uint8_t>> uniform_data);
+
   virtual bool is_opaque() const = 0;
 
   virtual std::shared_ptr<DlColorSource> with_sampling(
-      const SkSamplingOptions& options) const {
+      DlImageSampling options) const {
     return shared();
   }
 
@@ -139,6 +154,19 @@ class DlColorSource
   // Sweep Gradient type of ColorSource, otherwise return nullptr.
   virtual const DlSweepGradientColorSource* asSweepGradient() const {
     return nullptr;
+  }
+
+  virtual const DlRuntimeEffectColorSource* asRuntimeEffect() const {
+    return nullptr;
+  }
+
+  // If this filter contains images, specifies the owning context for those
+  // images.
+  // Images with a DlImage::OwningContext::kRaster must only call skia_object
+  // on the raster task runner.
+  // A nullopt return means there is no image.
+  virtual std::optional<DlImage::OwningContext> owning_context() const {
+    return std::nullopt;
   }
 
  protected:
@@ -200,14 +228,13 @@ class DlMatrixColorSourceBase : public DlColorSource {
 class DlImageColorSource final : public SkRefCnt,
                                  public DlMatrixColorSourceBase {
  public:
-  // TODO(100984): Color sources must be DlImages instead of SkImages.
-  DlImageColorSource(sk_sp<const SkImage> image,
+  DlImageColorSource(sk_sp<const DlImage> image,
                      DlTileMode horizontal_tile_mode,
                      DlTileMode vertical_tile_mode,
-                     SkSamplingOptions sampling = DisplayList::LinearSampling,
+                     DlImageSampling sampling = DlImageSampling::kLinear,
                      const SkMatrix* matrix = nullptr)
       : DlMatrixColorSourceBase(matrix),
-        sk_image_(image),
+        image_(image),
         horizontal_tile_mode_(horizontal_tile_mode),
         vertical_tile_mode_(vertical_tile_mode),
         sampling_(sampling) {}
@@ -219,43 +246,50 @@ class DlImageColorSource final : public SkRefCnt,
   }
 
   std::shared_ptr<DlColorSource> with_sampling(
-      const SkSamplingOptions& sampling) const override {
-    return std::make_shared<DlImageColorSource>(
-        sk_image_, horizontal_tile_mode_, vertical_tile_mode_, sampling,
-        matrix_ptr());
+      DlImageSampling sampling) const override {
+    return std::make_shared<DlImageColorSource>(image_, horizontal_tile_mode_,
+                                                vertical_tile_mode_, sampling,
+                                                matrix_ptr());
   }
 
   DlColorSourceType type() const override { return DlColorSourceType::kImage; }
   size_t size() const override { return sizeof(*this); }
 
-  bool is_opaque() const override { return sk_image_->isOpaque(); }
+  bool is_opaque() const override { return image_->isOpaque(); }
 
-  sk_sp<const SkImage> image() const { return sk_image_; }
+  std::optional<DlImage::OwningContext> owning_context() const override {
+    return image_->owning_context();
+  }
+
+  sk_sp<const DlImage> image() const { return image_; }
   DlTileMode horizontal_tile_mode() const { return horizontal_tile_mode_; }
   DlTileMode vertical_tile_mode() const { return vertical_tile_mode_; }
-  SkSamplingOptions sampling() const { return sampling_; }
+  DlImageSampling sampling() const { return sampling_; }
 
   virtual sk_sp<SkShader> skia_object() const override {
-    return sk_image_->makeShader(ToSk(horizontal_tile_mode_),
-                                 ToSk(vertical_tile_mode_), sampling_,
-                                 matrix_ptr());
+    if (!image_->skia_image()) {
+      return nullptr;
+    }
+    return image_->skia_image()->makeShader(ToSk(horizontal_tile_mode_),
+                                            ToSk(vertical_tile_mode_),
+                                            ToSk(sampling_), matrix_ptr());
   }
 
  protected:
   bool equals_(DlColorSource const& other) const override {
     FML_DCHECK(other.type() == DlColorSourceType::kImage);
     auto that = static_cast<DlImageColorSource const*>(&other);
-    return (sk_image_ == that->sk_image_ && matrix() == that->matrix() &&
+    return (image_->Equals(that->image_) && matrix() == that->matrix() &&
             horizontal_tile_mode_ == that->horizontal_tile_mode_ &&
             vertical_tile_mode_ == that->vertical_tile_mode_ &&
             sampling_ == that->sampling_);
   }
 
  private:
-  sk_sp<const SkImage> sk_image_;
+  sk_sp<const DlImage> image_;
   DlTileMode horizontal_tile_mode_;
   DlTileMode vertical_tile_mode_;
-  SkSamplingOptions sampling_;
+  DlImageSampling sampling_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlImageColorSource);
 };
@@ -626,9 +660,100 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlSweepGradientColorSource);
 };
 
+class DlRuntimeEffectColorSource final : public DlColorSource {
+ public:
+  DlRuntimeEffectColorSource(
+      sk_sp<DlRuntimeEffect> runtime_effect,
+      std::vector<std::shared_ptr<DlColorSource>> samplers,
+      std::shared_ptr<std::vector<uint8_t>> uniform_data)
+      : runtime_effect_(std::move(runtime_effect)),
+        samplers_(std::move(samplers)),
+        uniform_data_(std::move(uniform_data)) {}
+
+  const DlRuntimeEffectColorSource* asRuntimeEffect() const override {
+    return this;
+  }
+
+  std::shared_ptr<DlColorSource> shared() const override {
+    return std::make_shared<DlRuntimeEffectColorSource>(
+        runtime_effect_, samplers_, uniform_data_);
+  }
+
+  DlColorSourceType type() const override {
+    return DlColorSourceType::kRuntimeEffect;
+  }
+  size_t size() const override { return sizeof(*this); }
+
+  bool is_opaque() const override { return false; }
+
+  const sk_sp<DlRuntimeEffect> runtime_effect() const {
+    return runtime_effect_;
+  }
+  const std::vector<std::shared_ptr<DlColorSource>> samplers() const {
+    return samplers_;
+  }
+  const std::shared_ptr<std::vector<uint8_t>> uniform_data() const {
+    return uniform_data_;
+  }
+
+  sk_sp<SkShader> skia_object() const override {
+    if (!runtime_effect_) {
+      return nullptr;
+    }
+    if (!runtime_effect_->skia_runtime_effect()) {
+      return nullptr;
+    }
+    std::vector<sk_sp<SkShader>> sk_samplers(samplers_.size());
+    for (size_t i = 0; i < samplers_.size(); i++) {
+      sk_samplers[i] = samplers_[i]->skia_object();
+    }
+
+    auto ref = new std::shared_ptr<std::vector<uint8_t>>(uniform_data_);
+    auto uniform_data = SkData::MakeWithProc(
+        uniform_data_->data(), uniform_data_->size(),
+        [](const void* ptr, void* context) {
+          delete reinterpret_cast<std::shared_ptr<std::vector<uint8_t>>*>(
+              context);
+        },
+        ref);
+
+    return runtime_effect_->skia_runtime_effect()->makeShader(
+        uniform_data, sk_samplers.data(), sk_samplers.size());
+  }
+
+ protected:
+  bool equals_(DlColorSource const& other) const override {
+    FML_DCHECK(other.type() == DlColorSourceType::kRuntimeEffect);
+    auto that = static_cast<DlRuntimeEffectColorSource const*>(&other);
+    if (runtime_effect_ != that->runtime_effect_) {
+      return false;
+    }
+    if (uniform_data_ != that->uniform_data_) {
+      return false;
+    }
+    if (samplers_.size() != that->samplers_.size()) {
+      return false;
+    }
+    for (size_t i = 0; i < samplers_.size(); i++) {
+      if (samplers_[i] != that->samplers_[i]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+ private:
+  sk_sp<DlRuntimeEffect> runtime_effect_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
+  std::shared_ptr<std::vector<uint8_t>> uniform_data_;
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRuntimeEffectColorSource);
+};
+
 class DlUnknownColorSource final : public DlColorSource {
  public:
-  DlUnknownColorSource(sk_sp<SkShader> shader) : sk_shader_(shader) {}
+  DlUnknownColorSource(sk_sp<SkShader> shader)
+      : sk_shader_(std::move(shader)) {}
 
   std::shared_ptr<DlColorSource> shared() const override {
     return std::make_shared<DlUnknownColorSource>(sk_shader_);

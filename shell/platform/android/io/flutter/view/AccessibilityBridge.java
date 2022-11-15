@@ -9,6 +9,7 @@ import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.database.ContentObserver;
 import android.graphics.Rect;
 import android.net.Uri;
@@ -119,6 +120,9 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // framework generated IDs
   // and the most significant 16 bits are used for engine generated IDs.
   private static final int MIN_ENGINE_GENERATED_NODE_ID = 1 << 16;
+
+  // Font weight adjustment for bold text. FontWeight.Bold - FontWeight.Normal = w700 - w400 = 300.
+  private static final int BOLD_TEXT_WEIGHT_ADJUSTMENT = 300;
 
   /// Value is derived from ACTION_TYPE_MASK in AccessibilityNodeInfo.java
   private static int FIRST_RESOURCE_ID = 267386881;
@@ -257,6 +261,30 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
 
   @Nullable private OnAccessibilityChangeListener onAccessibilityChangeListener;
 
+  // Whether the users are using assistive technologies to interact with the devices.
+  //
+  // The getter returns true when at least one of the assistive technologies is running:
+  // TalkBack, SwitchAccess, or VoiceAccess.
+  @VisibleForTesting
+  public boolean getAccessibleNavigation() {
+    return accessibleNavigation;
+  }
+
+  private boolean accessibleNavigation = false;
+
+  private void setAccessibleNavigation(boolean value) {
+    if (accessibleNavigation == value) {
+      return;
+    }
+    accessibleNavigation = value;
+    if (accessibleNavigation) {
+      accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    } else {
+      accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
+  }
+
   // Set to true after {@code release} has been invoked.
   private boolean isReleased = false;
 
@@ -331,6 +359,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityChannel.setAccessibilityMessageHandler(accessibilityMessageHandler);
                 accessibilityChannel.onAndroidAccessibilityEnabled();
               } else {
+                setAccessibleNavigation(false);
                 accessibilityChannel.setAccessibilityMessageHandler(null);
                 accessibilityChannel.onAndroidAccessibilityDisabled();
               }
@@ -409,7 +438,6 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     this.contentResolver = contentResolver;
     this.accessibilityViewEmbedder = accessibilityViewEmbedder;
     this.platformViewsAccessibilityDelegate = platformViewsAccessibilityDelegate;
-
     // Tell Flutter whether accessibility is initially active or not. Then register a listener
     // to be notified of changes in the future.
     accessibilityStateChangeListener.onAccessibilityStateChanged(accessibilityManager.isEnabled());
@@ -425,13 +453,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
               if (isReleased) {
                 return;
               }
-              if (isTouchExplorationEnabled) {
-                accessibilityFeatureFlags |= AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
-              } else {
+              if (!isTouchExplorationEnabled) {
+                setAccessibleNavigation(false);
                 onTouchExplorationExit();
-                accessibilityFeatureFlags &= ~AccessibilityFeature.ACCESSIBLE_NAVIGATION.value;
               }
-              sendLatestAccessibilityFlagsToFlutter();
 
               if (onAccessibilityChangeListener != null) {
                 onAccessibilityChangeListener.onAccessibilityChanged(
@@ -453,6 +478,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       animationScaleObserver.onChange(false);
       Uri transitionUri = Settings.Global.getUriFor(Settings.Global.TRANSITION_ANIMATION_SCALE);
       this.contentResolver.registerContentObserver(transitionUri, false, animationScaleObserver);
+    }
+
+    // Tells Flutter whether the text should be bolded or not. If the user changes bold text
+    // setting, the configuration will change and trigger a re-build of the accesibiltyBridge.
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+      setBoldTextFlag();
     }
 
     platformViewsAccessibilityDelegate.attachAccessibilityBridge(this);
@@ -518,6 +549,26 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
                 accessibilityFocusedSemanticsNode, o -> o.hasFlag(Flag.HAS_IMPLICIT_SCROLLING)));
   }
 
+  @TargetApi(31)
+  @RequiresApi(31)
+  private void setBoldTextFlag() {
+    if (rootAccessibilityView == null || rootAccessibilityView.getResources() == null) {
+      return;
+    }
+    int fontWeightAdjustment =
+        rootAccessibilityView.getResources().getConfiguration().fontWeightAdjustment;
+    boolean shouldBold =
+        fontWeightAdjustment != Configuration.FONT_WEIGHT_ADJUSTMENT_UNDEFINED
+            && fontWeightAdjustment >= BOLD_TEXT_WEIGHT_ADJUSTMENT;
+
+    if (shouldBold) {
+      accessibilityFeatureFlags |= AccessibilityFeature.BOLD_TEXT.value;
+    } else {
+      accessibilityFeatureFlags &= AccessibilityFeature.BOLD_TEXT.value;
+    }
+    sendLatestAccessibilityFlagsToFlutter();
+  }
+
   @VisibleForTesting
   public AccessibilityNodeInfo obtainAccessibilityNodeInfo(View rootView, int virtualViewId) {
     return AccessibilityNodeInfo.obtain(rootView, virtualViewId);
@@ -551,6 +602,7 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
   // Suppressing Lint warning for new API, as we are version guarding all calls to newer APIs
   @SuppressLint("NewApi")
   public AccessibilityNodeInfo createAccessibilityNodeInfo(int virtualViewId) {
+    setAccessibleNavigation(true);
     if (virtualViewId >= MIN_ENGINE_GENERATED_NODE_ID) {
       // The node is in the engine generated range, and is provided by the accessibility view
       // embedder.
@@ -571,6 +623,26 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     SemanticsNode semanticsNode = flutterSemanticsTree.get(virtualViewId);
     if (semanticsNode == null) {
       return null;
+    }
+
+    // Generate accessibility node for platform views using a virtual display.
+    //
+    // In this case, register the accessibility node in the view embedder,
+    // so the accessibility tree can be mirrored as a subtree of the Flutter accessibility tree.
+    // This is in constrast to hybrid composition where the embedded view is in the view hiearchy,
+    // so it doesn't need to be mirrored.
+    //
+    // See the case down below for how hybrid composition is handled.
+    if (semanticsNode.platformViewId != -1) {
+      if (platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
+        View embeddedView =
+            platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
+        if (embeddedView == null) {
+          return null;
+        }
+        Rect bounds = semanticsNode.getGlobalRect();
+        return accessibilityViewEmbedder.getRootNode(embeddedView, semanticsNode.id, bounds);
+      }
     }
 
     AccessibilityNodeInfo result =
@@ -813,7 +885,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     // Scopes routes are not focusable, only need to set the content
     // for non-scopes-routes semantics nodes.
     if (semanticsNode.hasFlag(Flag.IS_TEXT_FIELD)) {
-      result.setText(semanticsNode.getValueLabelHint());
+      result.setText(semanticsNode.getValue());
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        result.setHintText(semanticsNode.getTextFieldHint());
+      }
     } else if (!semanticsNode.hasFlag(Flag.SCOPES_ROUTE)) {
       CharSequence content = semanticsNode.getValueLabelHint();
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -885,12 +960,19 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(child.platformViewId);
 
-        // Add the embedded view as a child of the current accessibility node if it's using
-        // hybrid composition.
-        result.addChild(embeddedView);
-      } else {
-        result.addChild(rootAccessibilityView, child.id);
+        // Add the embedded view as a child of the current accessibility node if it's not
+        // using a virtual display.
+        //
+        // In this case, the view is in the Activity's view hierarchy, so it doesn't need to be
+        // mirrored.
+        //
+        // See the case above for how virtual displays are handled.
+        if (!platformViewsAccessibilityDelegate.usesVirtualDisplay(child.platformViewId)) {
+          result.addChild(embeddedView);
+          continue;
+        }
       }
+      result.addChild(rootAccessibilityView, child.id);
     }
     return result;
   }
@@ -1297,9 +1379,10 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       newText = arguments.getString(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE);
     }
     accessibilityChannel.dispatchSemanticsAction(virtualViewId, Action.SET_TEXT, newText);
-    // The voice access expects the semantics node to update immediately. We update the semantics
+    // The voice access expects the semantics node to update immediately. Update the semantics
     // node based on prediction. If the result is incorrect, it will be updated in the next frame.
     node.value = newText;
+    node.valueAttributes = null;
     return true;
   }
 
@@ -1405,6 +1488,24 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * View#onHoverEvent(MotionEvent)}.
    */
   public boolean onAccessibilityHoverEvent(MotionEvent event) {
+    return onAccessibilityHoverEvent(event, false);
+  }
+
+  /**
+   * A hover {@link MotionEvent} has occurred in the {@code View} that corresponds to this {@code
+   * AccessibilityBridge}.
+   *
+   * <p>If {@code ignorePlatformViews} is true, if hit testing for the event finds a platform view,
+   * the event will not be handled. This is useful when handling accessibility events for views
+   * overlaying platform views. See {@code PlatformOverlayView} for details.
+   *
+   * <p>This method returns true if Flutter's accessibility system handled the hover event, false
+   * otherwise.
+   *
+   * <p>This method should be invoked from the corresponding {@code View}'s {@link
+   * View#onHoverEvent(MotionEvent)}.
+   */
+  public boolean onAccessibilityHoverEvent(MotionEvent event, boolean ignorePlatformViews) {
     if (!accessibilityManager.isTouchExplorationEnabled()) {
       return false;
     }
@@ -1413,17 +1514,21 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     }
 
     SemanticsNode semanticsNodeUnderCursor =
-        getRootSemanticsNode().hitTest(new float[] {event.getX(), event.getY(), 0, 1});
+        getRootSemanticsNode()
+            .hitTest(new float[] {event.getX(), event.getY(), 0, 1}, ignorePlatformViews);
     // semanticsNodeUnderCursor can be null when hovering over non-flutter UI such as
     // the Android navigation bar due to hitTest() bounds checking.
     if (semanticsNodeUnderCursor != null && semanticsNodeUnderCursor.platformViewId != -1) {
+      if (ignorePlatformViews) {
+        return false;
+      }
       return accessibilityViewEmbedder.onAccessibilityHoverEvent(
           semanticsNodeUnderCursor.id, event);
     }
 
     if (event.getAction() == MotionEvent.ACTION_HOVER_ENTER
         || event.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
-      handleTouchExploration(event.getX(), event.getY());
+      handleTouchExploration(event.getX(), event.getY(), ignorePlatformViews);
     } else if (event.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
       onTouchExplorationExit();
     } else {
@@ -1456,12 +1561,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * a {@link AccessibilityEvent#TYPE_VIEW_HOVER_ENTER} event for the new hover node, followed by a
    * {@link AccessibilityEvent#TYPE_VIEW_HOVER_EXIT} event for the old hover node.
    */
-  private void handleTouchExploration(float x, float y) {
+  private void handleTouchExploration(float x, float y, boolean ignorePlatformViews) {
     if (flutterSemanticsTree.isEmpty()) {
       return;
     }
     SemanticsNode semanticsNodeUnderCursor =
-        getRootSemanticsNode().hitTest(new float[] {x, y, 0, 1});
+        getRootSemanticsNode().hitTest(new float[] {x, y, 0, 1}, ignorePlatformViews);
     if (semanticsNodeUnderCursor != hoveredObject) {
       // sending ENTER before EXIT is how Android wants it
       if (semanticsNodeUnderCursor != null) {
@@ -1521,7 +1626,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       if (semanticsNode.hadPreviousConfig) {
         updated.add(semanticsNode);
       }
-      if (semanticsNode.platformViewId != -1) {
+      if (semanticsNode.platformViewId != -1
+          && !platformViewsAccessibilityDelegate.usesVirtualDisplay(semanticsNode.platformViewId)) {
         View embeddedView =
             platformViewsAccessibilityDelegate.getPlatformViewById(semanticsNode.platformViewId);
         if (embeddedView != null) {
@@ -2050,7 +2156,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
     IS_FOCUSABLE(1 << 21),
     IS_LINK(1 << 22),
     IS_SLIDER(1 << 23),
-    IS_KEYBOARD_KEY(1 << 24);
+    IS_KEYBOARD_KEY(1 << 24),
+    IS_CHECK_STATE_MIXED(1 << 25);
 
     final int value;
 
@@ -2534,7 +2641,15 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return globalRect;
     }
 
-    private SemanticsNode hitTest(float[] point) {
+    /**
+     * Hit tests {@code point} to find the deepest focusable node in the node tree at that point.
+     *
+     * @param point The point to hit test against this node.
+     * @param stopAtPlatformView Whether to return a platform view if found, regardless of whether
+     *     or not it is focusable.
+     * @return The found node, or null if no relevant node was found at the given point.
+     */
+    private SemanticsNode hitTest(float[] point, boolean stopAtPlatformView) {
       final float w = point[3];
       final float x = point[0] / w;
       final float y = point[1] / w;
@@ -2546,12 +2661,13 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
         }
         child.ensureInverseTransform();
         Matrix.multiplyMV(transformedPoint, 0, child.inverseTransform, 0, point, 0);
-        final SemanticsNode result = child.hitTest(transformedPoint);
+        final SemanticsNode result = child.hitTest(transformedPoint, stopAtPlatformView);
         if (result != null) {
           return result;
         }
       }
-      return isFocusable() ? this : null;
+      final boolean foundPlatformView = stopAtPlatformView && platformViewId != -1;
+      return isFocusable() || foundPlatformView ? this : null;
     }
 
     // TODO(goderbauer): This should be decided by the framework once we have more information
@@ -2612,6 +2728,12 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       if (forceUpdate) {
         if (globalTransform == null) {
           globalTransform = new float[16];
+        }
+        if (transform == null) {
+          if (BuildConfig.DEBUG) {
+            throw new AssertionError("transform has not been initialized");
+          }
+          transform = new float[16];
         }
         Matrix.multiplyMM(globalTransform, 0, ancestorTransform, 0, transform, 0);
 
@@ -2685,18 +2807,47 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
       return Math.max(a, Math.max(b, Math.max(c, d)));
     }
 
-    private CharSequence getValueLabelHint() {
-      CharSequence[] array;
+    private CharSequence getValue() {
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-        array = new CharSequence[] {value, label, hint};
+        return value;
       } else {
-        array =
-            new CharSequence[] {
-              createSpannableString(value, valueAttributes),
-              createSpannableString(label, labelAttributes),
-              createSpannableString(hint, hintAttributes),
-            };
+        return createSpannableString(value, valueAttributes);
       }
+    }
+
+    private CharSequence getLabel() {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        return label;
+      } else {
+        return createSpannableString(label, labelAttributes);
+      }
+    }
+
+    private CharSequence getHint() {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+        return hint;
+      } else {
+        return createSpannableString(hint, hintAttributes);
+      }
+    }
+
+    private CharSequence getValueLabelHint() {
+      CharSequence[] array = new CharSequence[] {getValue(), getLabel(), getHint()};
+      CharSequence result = null;
+      for (CharSequence word : array) {
+        if (word != null && word.length() > 0) {
+          if (result == null || result.length() == 0) {
+            result = word;
+          } else {
+            result = TextUtils.concat(result, ", ", word);
+          }
+        }
+      }
+      return result;
+    }
+
+    private CharSequence getTextFieldHint() {
+      CharSequence[] array = new CharSequence[] {getLabel(), getHint()};
       CharSequence result = null;
       for (CharSequence word : array) {
         if (word != null && word.length() > 0) {
@@ -2757,6 +2908,8 @@ public class AccessibilityBridge extends AccessibilityNodeProvider {
    * @param eventOrigin the view in the embedded view's hierarchy that sent the event.
    * @return True if the event was sent.
    */
+  // AccessibilityEvent has many irrelevant cases that would be confusing to list.
+  @SuppressLint("SwitchIntDef")
   public boolean externalViewRequestSendAccessibilityEvent(
       View embeddedView, View eventOrigin, AccessibilityEvent event) {
     if (!accessibilityViewEmbedder.requestSendAccessibilityEvent(

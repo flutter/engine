@@ -2,16 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' hide TextStyle;
-import 'package:web_engine_tester/golden_tester.dart';
 
-import '../common.dart';
 import '../matchers.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -25,38 +22,11 @@ Future<void> testMain() async {
   const Color redAccentColor = Color(0xFFFF1744);
   const double kDashLength = 5.0;
 
-  // Commit a recording canvas to a bitmap, and compare with the expected
-  Future<void> _checkScreenshot(RecordingCanvas rc, String fileName,
-      {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
-    final EngineCanvas engineCanvas = BitmapCanvas(screenRect,
-        RenderStrategy());
-    rc.endRecording();
-    rc.apply(engineCanvas, screenRect);
-
-    // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
-    if (isIosSafari) {
-      // Shrink to fit on the iPhone screen.
-      sceneElement.style.position = 'absolute';
-      sceneElement.style.transformOrigin = '0 0 0';
-      sceneElement.style.transform = 'scale(0.3)';
-    }
-    try {
-      sceneElement.append(engineCanvas.rootElement);
-      html.document.body!.append(sceneElement);
-      await matchGoldenFile('$fileName.png', region: region);
-    } finally {
-      // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
-      sceneElement.remove();
-    }
-  }
-
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   test('Should calculate tangent on line', () async {
@@ -153,7 +123,7 @@ Future<void> testMain() async {
       }
     }
     rc.drawPath(dashedPath, redPaint);
-    await _checkScreenshot(rc, 'path_dash_quadratic');
+    await canvasScreenshot(rc, 'path_dash_quadratic', canvasRect: screenRect);
   });
 
   // Test for extractPath to draw 5 pixel length dashed line using cubic curve.
@@ -207,6 +177,6 @@ Future<void> testMain() async {
       }
     }
     rc.drawPath(dashedPath, redPaint);
-    await _checkScreenshot(rc, 'path_dash_cubic');
+    await canvasScreenshot(rc, 'path_dash_cubic', canvasRect: screenRect);
   });
 }

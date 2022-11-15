@@ -11,6 +11,7 @@
 #include "flutter/fml/synchronization/semaphore.h"
 #include "impeller/geometry/size.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/render_target.h"
 
 namespace impeller {
 
@@ -21,7 +22,7 @@ class Renderer {
  public:
   static constexpr size_t kDefaultMaxFramesInFlight = 3u;
 
-  using RenderCallback = std::function<bool(RenderPass& pass)>;
+  using RenderCallback = std::function<bool(RenderTarget& render_target)>;
 
   Renderer(std::shared_ptr<Context> context,
            size_t max_frames_in_flight = kDefaultMaxFramesInFlight);
@@ -30,7 +31,8 @@ class Renderer {
 
   bool IsValid() const;
 
-  bool Render(std::unique_ptr<Surface> surface, RenderCallback callback) const;
+  bool Render(std::unique_ptr<Surface> surface,
+              const RenderCallback& callback) const;
 
   std::shared_ptr<Context> GetContext() const;
 

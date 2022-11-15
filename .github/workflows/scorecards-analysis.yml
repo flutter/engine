@@ -9,7 +9,23 @@ on:
 permissions: read-all
 
 jobs:
-  analysis:
+  vuln-scan:
+    name: Vulnerability scanning
+    runs-on: ubuntu-latest
+    if: ${{ github.repository == 'flutter/engine' }}
+    steps:
+      - name: "Checkout code"
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+        with:
+          persist-credentials: false
+      - name: "setup python"
+        uses: actions/setup-python@13ae5bb136fac2878aff31522b9efb785519f984
+        with:
+          python-version: '3.7.7' # install the python version needed
+      - name: "execute py script"
+        run: python ci/deps_parser.py
+
+  scorecards:
     name: Scorecards analysis
     runs-on: ubuntu-latest
     if: ${{ github.repository == 'flutter/engine' }}
@@ -18,23 +34,15 @@ jobs:
       security-events: write
       actions: read
       contents: read
-
+      # Needed to access OIDC token.
+      id-token: write
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579
+        uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
         with:
           persist-credentials: false
-
-      - name: setup python
-        uses: actions/setup-python@0ebf233433c08fb9061af664d501c3f3ff0e9e20
-        with:
-          python-version: '3.7.7' # install the python version needed
-
-      - name: execute py script
-        run: python ci/deps_parser.py
-
       - name: "Run analysis"
-        uses: ossf/scorecard-action@c8416b0b2bf627c349ca92fc8e3de51a64b005cf
+        uses: ossf/scorecard-action@e363bfca00e752f91de7b7d2a77340e2e523cb18
         with:
           results_file: results.sarif
           results_format: sarif
@@ -49,7 +57,7 @@ jobs:
 
       # Upload the results as artifacts (optional).
       - name: "Upload artifact"
-        uses: actions/upload-artifact@82c141cc518b40d92cc801eee768e7aafc9c2fa2
+        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8
         with:
           name: SARIF file
           path: results.sarif
@@ -57,6 +65,6 @@ jobs:
 
       # Upload the results to GitHub's code scanning dashboard.
       - name: "Upload to code-scanning"
-        uses: github/codeql-action/upload-sarif@5f532563584d71fdef14ee64d17bafb34f751ce5
+        uses: github/codeql-action/upload-sarif@c3b6fce4ee2ca25bc1066aa3bf73962fda0e8898
         with:
           sarif_file: results.sarif

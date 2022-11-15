@@ -6,8 +6,6 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
-import 'common.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -17,18 +15,16 @@ void testMain() {
     expect(windowFlutterCanvasKit, isNull);
 
     // First initialization should make CanvasKit available through `window`.
-    await initializeCanvasKit();
+    await renderer.initialize();
     expect(windowFlutterCanvasKit, isNotNull);
 
     // Remember the initial instance.
     final CanvasKit firstCanvasKitInstance = windowFlutterCanvasKit!;
 
     // Try to load CanvasKit again.
-    await initializeCanvasKit();
+    await renderer.initialize();
 
     // Should find the existing instance and reuse it.
     expect(firstCanvasKitInstance, windowFlutterCanvasKit);
-
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

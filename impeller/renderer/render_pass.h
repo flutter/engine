@@ -33,9 +33,9 @@ class RenderPass {
 
   virtual bool IsValid() const = 0;
 
-  virtual void SetLabel(std::string label) = 0;
+  void SetLabel(std::string label);
 
-  virtual HostBuffer& GetTransientsBuffer() = 0;
+  HostBuffer& GetTransientsBuffer();
 
   //----------------------------------------------------------------------------
   /// @brief      Record a command for subsequent encoding to the underlying
@@ -46,22 +46,27 @@ class RenderPass {
   ///
   /// @return     If the command was valid for subsequent commitment.
   ///
-  virtual bool AddCommand(Command command) = 0;
+  bool AddCommand(Command command);
 
   //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
   ///
-  /// @param      transients_allocator  The transients allocator.
-  ///
   /// @return     If the commands were encoded to the underlying command
   ///             buffer.
   ///
-  virtual bool EncodeCommands(Allocator& transients_allocator) const = 0;
+  bool EncodeCommands() const;
 
  protected:
+  const std::weak_ptr<const Context> context_;
   const RenderTarget render_target_;
+  std::shared_ptr<HostBuffer> transients_buffer_;
+  std::vector<Command> commands_;
 
-  RenderPass(RenderTarget target);
+  RenderPass(std::weak_ptr<const Context> context, const RenderTarget& target);
+
+  virtual void OnSetLabel(std::string label) = 0;
+
+  virtual bool OnEncodeCommands(const Context& context) const = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPass);

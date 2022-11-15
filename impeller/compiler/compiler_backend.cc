@@ -4,17 +4,24 @@
 
 #include "impeller/compiler/compiler_backend.h"
 
+#include "impeller/base/comparable.h"
+
 namespace impeller {
 namespace compiler {
 
-CompilerBackend::CompilerBackend(MSLCompiler compiler) : compiler_(compiler) {}
+CompilerBackend::CompilerBackend(MSLCompiler compiler)
+    : CompilerBackend(Type::kMSL, compiler) {}
 
-CompilerBackend::CompilerBackend(GLSLCompiler compiler) : compiler_(compiler) {}
+CompilerBackend::CompilerBackend(GLSLCompiler compiler)
+    : CompilerBackend(Type::kGLSL, compiler) {}
+
+CompilerBackend::CompilerBackend(SkSLCompiler compiler)
+    : CompilerBackend(Type::kSkSL, compiler) {}
 
 CompilerBackend::CompilerBackend() = default;
 
-CompilerBackend::CompilerBackend(Compiler compiler)
-    : compiler_(std::move(compiler)){};
+CompilerBackend::CompilerBackend(Type type, Compiler compiler)
+    : type_(type), compiler_(std::move(compiler)){};
 
 CompilerBackend::~CompilerBackend() = default;
 
@@ -25,18 +32,19 @@ const spirv_cross::Compiler* CompilerBackend::operator->() const {
 uint32_t CompilerBackend::GetExtendedMSLResourceBinding(
     ExtendedResourceIndex index,
     spirv_cross::ID id) const {
+  if (auto compiler = GetMSLCompiler()) {
+    switch (index) {
+      case ExtendedResourceIndex::kPrimary:
+        return compiler->get_automatic_msl_resource_binding(id);
+      case ExtendedResourceIndex::kSecondary:
+        return compiler->get_automatic_msl_resource_binding_secondary(id);
+        break;
+    }
+  }
+  if (auto compiler = GetGLSLCompiler()) {
+    return compiler->get_decoration(id, spv::Decoration::DecorationBinding);
+  }
   const auto kOOBIndex = static_cast<uint32_t>(-1);
-  auto compiler = GetMSLCompiler();
-  if (!compiler) {
-    return kOOBIndex;
-  }
-  switch (index) {
-    case ExtendedResourceIndex::kPrimary:
-      return compiler->get_automatic_msl_resource_binding(id);
-    case ExtendedResourceIndex::kSecondary:
-      return compiler->get_automatic_msl_resource_binding_secondary(id);
-      break;
-  }
   return kOOBIndex;
 }
 
@@ -49,6 +57,10 @@ const spirv_cross::Compiler* CompilerBackend::GetCompiler() const {
     return compiler;
   }
 
+  if (auto compiler = GetSkSLCompiler()) {
+    return compiler;
+  }
+
   return nullptr;
 }
 
@@ -58,6 +70,9 @@ spirv_cross::Compiler* CompilerBackend::GetCompiler() {
   }
   if (auto* glsl = std::get_if<GLSLCompiler>(&compiler_)) {
     return glsl->get();
+  }
+  if (auto* sksl = std::get_if<SkSLCompiler>(&compiler_)) {
+    return sksl->get();
   }
   return nullptr;
 }
@@ -76,8 +91,19 @@ const spirv_cross::CompilerGLSL* CompilerBackend::GetGLSLCompiler() const {
   return nullptr;
 }
 
+const CompilerSkSL* CompilerBackend::GetSkSLCompiler() const {
+  if (auto* sksl = std::get_if<SkSLCompiler>(&compiler_)) {
+    return sksl->get();
+  }
+  return nullptr;
+}
+
 CompilerBackend::operator bool() const {
   return !!GetCompiler();
+}
+
+CompilerBackend::Type CompilerBackend::GetType() const {
+  return type_;
 }
 
 }  // namespace compiler

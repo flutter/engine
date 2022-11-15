@@ -3,15 +3,17 @@
 // found in the LICENSE file.
 
 #include "flutter/testing/testing.h"
-#include "impeller/playground/playground.h"
+#include "impeller/playground/playground_test.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 #include "impeller/typographer/backends/skia/text_render_context_skia.h"
+#include "impeller/typographer/lazy_glyph_atlas.h"
+#include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkTextBlob.h"
 
 namespace impeller {
 namespace testing {
 
-using TypographerTest = Playground;
+using TypographerTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(TypographerTest);
 
 TEST_P(TypographerTest, CanConvertTextBlob) {
@@ -34,13 +36,138 @@ TEST_P(TypographerTest, CanCreateRenderContext) {
 
 TEST_P(TypographerTest, CanCreateGlyphAtlas) {
   auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
   ASSERT_TRUE(context && context->IsValid());
   SkFont sk_font;
   auto blob = SkTextBlob::MakeFromString("hello", sk_font);
   ASSERT_TRUE(blob);
-  auto atlas = context->CreateGlyphAtlas(TextFrameFromTextBlob(blob));
+  auto atlas =
+      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+                                TextFrameFromTextBlob(blob));
   ASSERT_NE(atlas, nullptr);
-  OpenPlaygroundHere([](auto&) { return true; });
+  OpenPlaygroundHere([](RenderTarget&) { return true; });
+}
+
+static sk_sp<SkData> OpenFixtureAsSkData(const char* fixture_name) {
+  auto mapping = flutter::testing::OpenFixtureAsMapping(fixture_name);
+  if (!mapping) {
+    return nullptr;
+  }
+  auto data = SkData::MakeWithProc(
+      mapping->GetMapping(), mapping->GetSize(),
+      [](const void* ptr, void* context) {
+        delete reinterpret_cast<fml::Mapping*>(context);
+      },
+      mapping.get());
+  mapping.release();
+  return data;
+}
+
+TEST_P(TypographerTest, LazyAtlasTracksColor) {
+#if FML_OS_MACOSX
+  auto mapping = OpenFixtureAsSkData("Apple Color Emoji.ttc");
+#else
+  auto mapping = OpenFixtureAsSkData("NotoColorEmoji.ttf");
+#endif
+  ASSERT_TRUE(mapping);
+  SkFont emoji_font(SkTypeface::MakeFromData(mapping), 50.0);
+  SkFont sk_font;
+
+  auto blob = SkTextBlob::MakeFromString("hello", sk_font);
+  ASSERT_TRUE(blob);
+  auto frame = TextFrameFromTextBlob(blob);
+
+  ASSERT_FALSE(frame.HasColor());
+
+  LazyGlyphAtlas lazy_atlas;
+  ASSERT_FALSE(lazy_atlas.HasColor());
+
+  lazy_atlas.AddTextFrame(frame);
+
+  ASSERT_FALSE(lazy_atlas.HasColor());
+
+  frame = TextFrameFromTextBlob(SkTextBlob::MakeFromString("😀 ", emoji_font));
+
+  ASSERT_TRUE(frame.HasColor());
+
+  lazy_atlas.AddTextFrame(frame);
+
+  ASSERT_TRUE(lazy_atlas.HasColor());
+}
+
+TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("AGH", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas =
+      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+                                TextFrameFromTextBlob(blob));
+  ASSERT_NE(atlas, nullptr);
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+
+  // The 3 unique glyphs should not evenly fit into a square texture, so we
+  // should have a rectangular one.
+  ASSERT_EQ(atlas->GetTexture()->GetSize().width * 2,
+            atlas->GetTexture()->GetSize().height);
+}
+
+TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+  auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
+  ASSERT_TRUE(blob);
+  auto atlas =
+      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+                                TextFrameFromTextBlob(blob));
+  ASSERT_NE(atlas, nullptr);
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+  ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
+
+  // now attempt to re-create an atlas with the same text blob.
+
+  auto next_atlas =
+      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
+                                TextFrameFromTextBlob(blob));
+  ASSERT_EQ(atlas, next_atlas);
+  ASSERT_EQ(atlas_context->GetGlyphAtlas(), atlas);
+}
+
+TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {
+  auto context = TextRenderContext::Create(GetContext());
+  auto atlas_context = std::make_shared<GlyphAtlasContext>();
+  ASSERT_TRUE(context && context->IsValid());
+  SkFont sk_font;
+
+  auto blob = SkTextBlob::MakeFromString(
+      "QWERTYUIOPASDFGHJKLZXCVBNMqewrtyuiopasdfghjklzxcvbnm,.<>[]{};':"
+      "2134567890-=!@#$%^&*()_+"
+      "œ∑´®†¥¨ˆøπ““‘‘åß∂ƒ©˙∆˚¬…æ≈ç√∫˜µ≤≥≥≥≥÷¡™£¢∞§¶•ªº–≠⁄€‹›ﬁﬂ‡°·‚—±Œ„´‰Á¨Ø∏”’/"
+      "* Í˝ */¸˛Ç◊ı˜Â¯˘¿",
+      sk_font);
+  ASSERT_TRUE(blob);
+
+  TextFrame frame;
+  size_t count = 0;
+  TextRenderContext::FrameIterator iterator = [&]() -> const TextFrame* {
+    if (count < 8) {
+      count++;
+      frame = TextFrameFromTextBlob(blob, 0.6 * count);
+      return &frame;
+    }
+    return nullptr;
+  };
+  auto atlas = context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap,
+                                         atlas_context, iterator);
+  ASSERT_NE(atlas, nullptr);
+  ASSERT_NE(atlas->GetTexture(), nullptr);
+
+  ASSERT_EQ(atlas->GetTexture()->GetSize().width * 2,
+            atlas->GetTexture()->GetSize().height);
 }
 
 }  // namespace testing

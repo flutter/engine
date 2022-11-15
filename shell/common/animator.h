@@ -40,22 +40,21 @@ class Animator final {
         fml::TimePoint frame_target_time) = 0;
 
     virtual void OnAnimatorDraw(
-        std::shared_ptr<Pipeline<flutter::LayerTree>> pipeline,
-        std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
+        std::shared_ptr<LayerTreePipeline> pipeline) = 0;
 
     virtual void OnAnimatorDrawLastLayerTree(
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) = 0;
   };
 
   Animator(Delegate& delegate,
-           TaskRunners task_runners,
+           const TaskRunners& task_runners,
            std::unique_ptr<VsyncWaiter> waiter);
 
   ~Animator();
 
   void RequestFrame(bool regenerate_layer_tree = true);
 
-  void Render(std::unique_ptr<flutter::LayerTree> layer_tree);
+  void Render(std::shared_ptr<flutter::LayerTree> layer_tree);
 
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
@@ -83,8 +82,6 @@ class Animator final {
   void EnqueueTraceFlowId(uint64_t trace_flow_id);
 
  private:
-  using LayerTreePipeline = Pipeline<flutter::LayerTree>;
-
   void BeginFrame(std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
 
   bool CanReuseLastLayerTree();

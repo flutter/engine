@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "embedder.h"
@@ -149,6 +150,28 @@ TEST_F(EmbedderTest, CanTerminateCleanly) {
   builder.SetDartEntrypoint("terminateExitCodeHandler");
   auto engine = builder.LaunchEngine();
   ASSERT_TRUE(engine.is_valid());
+}
+
+TEST_F(EmbedderTest, ExecutableNameNotNull) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  // Supply a callback to Dart for the test fixture to pass Platform.executable
+  // back to us.
+  fml::AutoResetWaitableEvent latch;
+  context.AddNativeCallback(
+      "NotifyStringValue", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
+        const auto dart_string = tonic::DartConverter<std::string>::FromDart(
+            Dart_GetNativeArgument(args, 0));
+        EXPECT_EQ("/path/to/binary", dart_string);
+        latch.Signal();
+      }));
+
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("executableNameNotNull");
+  builder.SetExecutableName("/path/to/binary");
+  auto engine = builder.LaunchEngine();
+  latch.Wait();
 }
 
 std::atomic_size_t EmbedderTestTaskRunner::sEmbedderTaskRunnerIdentifiers = {};
@@ -930,6 +953,9 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer);
 
+  // setup the screenshot promise.
+  auto rendered_scene = context.GetNextSceneImage();
+
   fml::CountDownLatch latch(1);
   context.GetCompositor().SetNextPresentCallback(
       [&](const FlutterLayer** layers, size_t layers_count) {
@@ -1029,8 +1055,7 @@ TEST_F(EmbedderTest, VerifyB143464703WithSoftwareBackend) {
             kSuccess);
   ASSERT_TRUE(engine.is_valid());
 
-  auto rendered_scene = context.GetNextSceneImage();
-
+  // wait for scene to be rendered.
   latch.Wait();
 
   // TODO(https://github.com/flutter/flutter/issues/53784): enable this on all
@@ -1179,7 +1204,7 @@ TEST_F(EmbedderTest, InvalidAOTDataSourcesMustReturnError) {
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, nullptr), kInvalidArguments);
 
   // Invalid FlutterEngineAOTDataSourceType type specified.
-  data_in.type = FlutterEngineAOTDataSourceType(-1);
+  data_in.type = static_cast<FlutterEngineAOTDataSourceType>(-1);
   ASSERT_EQ(FlutterEngineCreateAOTData(&data_in, &data_out), kInvalidArguments);
   ASSERT_EQ(data_out, nullptr);
 
@@ -1272,6 +1297,233 @@ TEST_F(EmbedderTest, CanLaunchAndShutdownWithAValidElfSource) {
   engine.reset();
 }
 
+#if defined(__clang_analyzer__)
+#define TEST_VM_SNAPSHOT_DATA nullptr
+#define TEST_VM_SNAPSHOT_INSTRUCTIONS nullptr
+#define TEST_ISOLATE_SNAPSHOT_DATA nullptr
+#define TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS nullptr
+#endif
+
+//------------------------------------------------------------------------------
+/// PopulateJITSnapshotMappingCallbacks should successfully change the callbacks
+/// of the snapshots in the engine's settings when JIT snapshots are explicitly
+/// defined.
+///
+TEST_F(EmbedderTest, CanSuccessfullyPopulateSpecificJITSnapshotCallbacks) {
+// TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_data.c_str());
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions.c_str());
+
+  auto engine = builder.LaunchEngine();
+
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  const Settings settings = shell.GetSettings();
+
+  ASSERT_NE(settings.vm_snapshot_data(), nullptr);
+  ASSERT_NE(settings.vm_snapshot_instr(), nullptr);
+  ASSERT_NE(settings.isolate_snapshot_data(), nullptr);
+  ASSERT_NE(settings.isolate_snapshot_instr(), nullptr);
+  ASSERT_NE(settings.dart_library_sources_kernel(), nullptr);
+}
+
+//------------------------------------------------------------------------------
+/// PopulateJITSnapshotMappingCallbacks should still be able to successfully
+/// change the callbacks of the snapshots in the engine's settings when JIT
+/// snapshots are explicitly defined. However, if those snapshot locations are
+/// invalid, the callbacks should return a nullptr.
+///
+TEST_F(EmbedderTest, JITSnapshotCallbacksFailWithInvalidLocation) {
+// TODO(#107263): Inconsistent snapshot paths in the Linux Fuchsia FEMU test.
+#if defined(OS_FUCHSIA)
+  GTEST_SKIP() << "Inconsistent paths in Fuchsia.";
+#endif  // OS_FUCHSIA
+
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Explicitly define the locations of the invalid JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_vm_data");
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_vm_instructions");
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_data");
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_instructions");
+
+  auto engine = builder.LaunchEngine();
+
+  flutter::Shell& shell = ToEmbedderEngine(engine.get())->GetShell();
+  const Settings settings = shell.GetSettings();
+
+  ASSERT_EQ(settings.vm_snapshot_data(), nullptr);
+  ASSERT_EQ(settings.vm_snapshot_instr(), nullptr);
+  ASSERT_EQ(settings.isolate_snapshot_data(), nullptr);
+  ASSERT_EQ(settings.isolate_snapshot_instr(), nullptr);
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to run explicitly specified snapshots in JIT mode
+/// (i.e. when those are present in known locations).
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithSpecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+  const std::string isolate_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_DATA});
+  const std::string isolate_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_ISOLATE_SNAPSHOT_INSTRUCTIONS});
+
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_data.c_str());
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(isolate_snapshot_instructions.c_str());
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to run in JIT mode when only some snapshots are
+/// specified.
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithSomeSpecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Construct the location of valid JIT snapshots.
+  const std::string src_path = GetSourcePath();
+  const std::string vm_snapshot_data =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_DATA});
+  const std::string vm_snapshot_instructions =
+      fml::paths::JoinPaths({src_path, TEST_VM_SNAPSHOT_INSTRUCTIONS});
+
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().vm_snapshot_data =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_data.c_str());
+  builder.GetProjectArgs().vm_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>(vm_snapshot_instructions.c_str());
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to run in JIT mode even when the specfied
+/// snapshots are invalid. It should be able to resolve them as it would when
+/// the snapshots are not specified.
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithInvalidJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  // Explicitly define the locations of the JIT snapshots
+  builder.GetProjectArgs().isolate_snapshot_data =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_data");
+  builder.GetProjectArgs().isolate_snapshot_instructions =
+      reinterpret_cast<const uint8_t*>("invalid_snapshot_instructions");
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+  ASSERT_EQ(FlutterEngineRunInitialized(engine.get()), kInvalidArguments);
+}
+
+//------------------------------------------------------------------------------
+/// The embedder must be able to launch even when the snapshots are not
+/// explicitly defined in JIT mode. It must be able to resolve those snapshots.
+///
+TEST_F(EmbedderTest, CanLaunchEngineWithUnspecifiedJITSnapshots) {
+  // This test is only relevant in JIT mode.
+  if (DartVM::IsRunningPrecompiledCode()) {
+    GTEST_SKIP();
+    return;
+  }
+
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_data, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().vm_snapshot_instructions, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_data, nullptr);
+  ASSERT_EQ(builder.GetProjectArgs().isolate_snapshot_instructions, nullptr);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+}
+
 TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
   EmbedderConfigBuilder builder(context);
@@ -1314,6 +1566,107 @@ TEST_F(EmbedderTest, InvalidFlutterWindowMetricsEvent) {
   ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
             kInvalidArguments);
 }
+
+static void expectSoftwareRenderingOutputMatches(
+    EmbedderTest& test,
+    std::string entrypoint,
+    FlutterSoftwarePixelFormat pixfmt,
+    const std::vector<uint8_t>& bytes) {
+  auto& context =
+      test.GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+
+  EmbedderConfigBuilder builder(context);
+  fml::AutoResetWaitableEvent latch;
+  bool matches = false;
+
+  builder.SetSoftwareRendererConfig();
+  builder.SetCompositor();
+  builder.SetDartEntrypoint(std::move(entrypoint));
+  builder.SetRenderTargetType(
+      EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer2,
+      pixfmt);
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  context.GetCompositor().SetNextPresentCallback(
+      [&matches, &bytes, &latch](const FlutterLayer** layers,
+                                 size_t layers_count) {
+        ASSERT_EQ(layers[0]->type, kFlutterLayerContentTypeBackingStore);
+        ASSERT_EQ(layers[0]->backing_store->type,
+                  kFlutterBackingStoreTypeSoftware2);
+        matches = SurfacePixelDataMatchesBytes(
+            static_cast<SkSurface*>(
+                layers[0]->backing_store->software2.user_data),
+            bytes);
+        latch.Signal();
+      });
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 1;
+  event.height = 1;
+  event.pixel_ratio = 1.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  latch.Wait();
+  ASSERT_TRUE(matches);
+
+  engine.reset();
+}
+
+template <typename T>
+static void expectSoftwareRenderingOutputMatches(
+    EmbedderTest& test,
+    std::string entrypoint,
+    FlutterSoftwarePixelFormat pixfmt,
+    T pixelvalue) {
+  uint8_t* bytes = reinterpret_cast<uint8_t*>(&pixelvalue);
+  return expectSoftwareRenderingOutputMatches(
+      test, std::move(entrypoint), pixfmt,
+      std::vector<uint8_t>(bytes, bytes + sizeof(T)));
+}
+
+#define SW_PIXFMT_TEST_F(dart_entrypoint, pixfmt, matcher)                \
+  TEST_F(EmbedderTest,                                                    \
+         SoftwareRenderingPixelFormats_##dart_entrypoint##_##pixfmt) {    \
+    expectSoftwareRenderingOutputMatches(*this, #dart_entrypoint, pixfmt, \
+                                         matcher);                        \
+  }
+
+// Don't test the pixel formats that contain padding (so an X) and the kNative32
+// pixel format here, so we don't add any flakiness.
+SW_PIXFMT_TEST_F(draw_solid_red, kRGB565, (uint16_t)0xF800);
+SW_PIXFMT_TEST_F(draw_solid_red, kRGBA4444, (uint16_t)0xF00F);
+SW_PIXFMT_TEST_F(draw_solid_red,
+                 kRGBA8888,
+                 (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_red,
+                 kBGRA8888,
+                 (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_red, kGray8, (uint8_t)0x36);
+
+SW_PIXFMT_TEST_F(draw_solid_green, kRGB565, (uint16_t)0x07E0);
+SW_PIXFMT_TEST_F(draw_solid_green, kRGBA4444, (uint16_t)0x0F0F);
+SW_PIXFMT_TEST_F(draw_solid_green,
+                 kRGBA8888,
+                 (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_green,
+                 kBGRA8888,
+                 (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_green, kGray8, (uint8_t)0xB6);
+
+SW_PIXFMT_TEST_F(draw_solid_blue, kRGB565, (uint16_t)0x001F);
+SW_PIXFMT_TEST_F(draw_solid_blue, kRGBA4444, (uint16_t)0x00FF);
+SW_PIXFMT_TEST_F(draw_solid_blue,
+                 kRGBA8888,
+                 (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_blue,
+                 kBGRA8888,
+                 (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
+SW_PIXFMT_TEST_F(draw_solid_blue, kGray8, (uint8_t)0x12);
 
 //------------------------------------------------------------------------------
 // Key Data
@@ -1362,8 +1715,9 @@ TEST_F(EmbedderTest, KeyDataIsCorrectlySerialized) {
     echoed_event.type =
         UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
             Dart_GetNativeArgument(args, 0)));
-    echoed_event.timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
-        Dart_GetNativeArgument(args, 1));
+    echoed_event.timestamp =
+        static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
+            Dart_GetNativeArgument(args, 1)));
     echoed_event.physical = tonic::DartConverter<uint64_t>::FromDart(
         Dart_GetNativeArgument(args, 2));
     echoed_event.logical = tonic::DartConverter<uint64_t>::FromDart(
@@ -1450,8 +1804,9 @@ TEST_F(EmbedderTest, KeyDataAreBuffered) {
 
   auto native_echo_event = [&](Dart_NativeArguments args) {
     echoed_events.push_back(FlutterKeyEvent{
-        .timestamp = (double)tonic::DartConverter<uint64_t>::FromDart(
-            Dart_GetNativeArgument(args, 1)),
+        .timestamp =
+            static_cast<double>(tonic::DartConverter<uint64_t>::FromDart(
+                Dart_GetNativeArgument(args, 1))),
         .type =
             UnserializeKeyEventKind(tonic::DartConverter<uint64_t>::FromDart(
                 Dart_GetNativeArgument(args, 0))),
@@ -1774,6 +2129,44 @@ TEST_F(EmbedderTest, CanScheduleFrame) {
   ASSERT_EQ(FlutterEngineScheduleFrame(engine.get()), kSuccess);
 
   check_latch.Wait();
+}
+
+TEST_F(EmbedderTest, CanSetNextFrameCallback) {
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
+  EmbedderConfigBuilder builder(context);
+  builder.SetSoftwareRendererConfig();
+  builder.SetDartEntrypoint("draw_solid_red");
+
+  auto engine = builder.LaunchEngine();
+  ASSERT_TRUE(engine.is_valid());
+
+  // Register the callback that is executed once the next frame is drawn.
+  fml::AutoResetWaitableEvent callback_latch;
+  VoidCallback callback = [](void* user_data) {
+    fml::AutoResetWaitableEvent* callback_latch =
+        static_cast<fml::AutoResetWaitableEvent*>(user_data);
+
+    callback_latch->Signal();
+  };
+
+  auto result = FlutterEngineSetNextFrameCallback(engine.get(), callback,
+                                                  &callback_latch);
+  ASSERT_EQ(result, kSuccess);
+
+  // Send a window metrics events so frames may be scheduled.
+  FlutterWindowMetricsEvent event = {};
+  event.struct_size = sizeof(event);
+  event.width = 800;
+  event.height = 600;
+  event.pixel_ratio = 1.0;
+  event.physical_view_inset_top = 0.0;
+  event.physical_view_inset_right = 0.0;
+  event.physical_view_inset_bottom = 0.0;
+  event.physical_view_inset_left = 0.0;
+  ASSERT_EQ(FlutterEngineSendWindowMetricsEvent(engine.get(), &event),
+            kSuccess);
+
+  callback_latch.Wait();
 }
 
 #if defined(FML_OS_MACOSX)

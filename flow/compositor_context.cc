@@ -5,20 +5,23 @@
 #include "flutter/flow/compositor_context.h"
 
 #include <optional>
+#include <utility>
 #include "flutter/flow/layers/layer_tree.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
 namespace flutter {
 
 std::optional<SkRect> FrameDamage::ComputeClipRect(
-    flutter::LayerTree& layer_tree) {
+    flutter::LayerTree& layer_tree,
+    bool has_raster_cache) {
   if (layer_tree.root_layer()) {
     PaintRegionMap empty_paint_region_map;
     DiffContext context(layer_tree.frame_size(),
                         layer_tree.device_pixel_ratio(),
                         layer_tree.paint_region_map(),
                         prev_layer_tree_ ? prev_layer_tree_->paint_region_map()
-                                         : empty_paint_region_map);
+                                         : empty_paint_region_map,
+                        has_raster_cache);
     context.PushCullRect(SkRect::MakeIWH(layer_tree.frame_size().width(),
                                          layer_tree.frame_size().height()));
     {
@@ -46,11 +49,14 @@ std::optional<SkRect> FrameDamage::ComputeClipRect(
 }
 
 CompositorContext::CompositorContext()
-    : raster_time_(fixed_refresh_rate_updater_),
+    : texture_registry_(std::make_shared<TextureRegistry>()),
+      raster_time_(fixed_refresh_rate_updater_),
       ui_time_(fixed_refresh_rate_updater_) {}
 
 CompositorContext::CompositorContext(Stopwatch::RefreshRateUpdater& updater)
-    : raster_time_(updater), ui_time_(updater) {}
+    : texture_registry_(std::make_shared<TextureRegistry>()),
+      raster_time_(updater),
+      ui_time_(updater) {}
 
 CompositorContext::~CompositorContext() = default;
 
@@ -75,12 +81,14 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     const SkMatrix& root_surface_transformation,
     bool instrumentation_enabled,
     bool surface_supports_readback,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-    DisplayListBuilder* display_list_builder) {
+    fml::RefPtr<fml::RasterThreadMerger>
+        raster_thread_merger,  // NOLINT(performance-unnecessary-value-param)
+    DisplayListBuilder* display_list_builder,
+    impeller::AiksContext* aiks_context) {
   return std::make_unique<ScopedFrame>(
       *this, gr_context, canvas, view_embedder, root_surface_transformation,
       instrumentation_enabled, surface_supports_readback, raster_thread_merger,
-      display_list_builder);
+      display_list_builder, aiks_context);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -92,16 +100,18 @@ CompositorContext::ScopedFrame::ScopedFrame(
     bool instrumentation_enabled,
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-    DisplayListBuilder* display_list_builder)
+    DisplayListBuilder* display_list_builder,
+    impeller::AiksContext* aiks_context)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
       display_list_builder_(display_list_builder),
+      aiks_context_(aiks_context),
       view_embedder_(view_embedder),
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
       surface_supports_readback_(surface_supports_readback),
-      raster_thread_merger_(raster_thread_merger) {
+      raster_thread_merger_(std::move(raster_thread_merger)) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }
 
@@ -116,7 +126,9 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
   TRACE_EVENT0("flutter", "CompositorContext::ScopedFrame::Raster");
 
   std::optional<SkRect> clip_rect =
-      frame_damage ? frame_damage->ComputeClipRect(layer_tree) : std::nullopt;
+      frame_damage
+          ? frame_damage->ComputeClipRect(layer_tree, !ignore_raster_cache)
+          : std::nullopt;
 
   bool root_needs_readback = layer_tree.Preroll(
       *this, ignore_raster_cache, clip_rect ? *clip_rect : kGiantRect);
@@ -160,12 +172,12 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
 }
 
 void CompositorContext::OnGrContextCreated() {
-  texture_registry_.OnGrContextCreated();
+  texture_registry_->OnGrContextCreated();
   raster_cache_.Clear();
 }
 
 void CompositorContext::OnGrContextDestroyed() {
-  texture_registry_.OnGrContextDestroyed();
+  texture_registry_->OnGrContextDestroyed();
   raster_cache_.Clear();
 }
 

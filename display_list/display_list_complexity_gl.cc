@@ -50,9 +50,16 @@ unsigned int DisplayListGLComplexityCalculator::GLHelper::BatchedComplexity() {
 
 void DisplayListGLComplexityCalculator::GLHelper::saveLayer(
     const SkRect* bounds,
-    const SaveLayerOptions options) {
+    const SaveLayerOptions options,
+    const DlImageFilter* backdrop) {
   if (IsComplex()) {
     return;
+  }
+  if (backdrop) {
+    // Flutter does not offer this operation so this value can only ever be
+    // non-null for a frame-wide builder which is not currently evaluated for
+    // complexity.
+    AccumulateComplexity(Ceiling());
   }
   save_layer_count_++;
 }
@@ -526,7 +533,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawVertices(
 void DisplayListGLComplexityCalculator::GLHelper::drawImage(
     const sk_sp<DlImage> image,
     const SkPoint point,
-    const SkSamplingOptions& sampling,
+    DlImageSampling sampling,
     bool render_with_attributes) {
   if (IsComplex()) {
     return;
@@ -609,7 +616,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
     const sk_sp<DlImage> image,
     const SkIRect& center,
     const SkRect& dst,
-    SkFilterMode filter,
+    DlFilterMode filter,
     bool render_with_attributes) {
   if (IsComplex()) {
     return;

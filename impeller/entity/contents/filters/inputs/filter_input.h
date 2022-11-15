@@ -38,12 +38,17 @@ class FilterInput {
 
   static FilterInput::Ref Make(Variant input);
 
+  static FilterInput::Ref Make(std::shared_ptr<Texture> input,
+                               Matrix local_transform);
+
   static FilterInput::Vector Make(std::initializer_list<Variant> inputs);
 
   virtual Variant GetInput() const = 0;
 
   virtual std::optional<Snapshot> GetSnapshot(const ContentContext& renderer,
                                               const Entity& entity) const = 0;
+
+  std::optional<Rect> GetLocalCoverage(const Entity& entity) const;
 
   virtual std::optional<Rect> GetCoverage(const Entity& entity) const = 0;
 

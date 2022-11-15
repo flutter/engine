@@ -29,6 +29,15 @@ function engine-is-stderr-tty {
   [[ -t 2 ]]
 }
 
+# engine-debug prints a line to stderr with a cyan DEBUG: prefix.
+function engine-debug {
+  if engine-is-stderr-tty; then
+    echo -e >&2 "\033[1;36mDEBUG:\033[0m $*"
+  else
+    echo -e >&2 "DEBUG: $*"
+  fi
+}
+
 # engine-info prints a line to stderr with a green INFO: prefix.
 function engine-info {
   if engine-is-stderr-tty; then
@@ -60,6 +69,27 @@ function ensure_fuchsia_dir() {
   if [[ -z "${FUCHSIA_DIR}" ]]; then
     engine-error "A valid fuchsia.git checkout is required." \
      "Make sure you have a valid FUCHSIA_DIR."
+    exit 1
+  fi
+}
+
+function ensure_engine_dir() {
+  if [[ -z "${ENGINE_DIR}" ]]; then
+    engine-error "ENGINE_DIR must be set to the src folder of your Flutter Engine checkout."
+    exit 1
+  fi
+}
+
+function ensure_ninja() {
+  if ! [ -x "$(command -v ninja)" ]; then
+    engine-error '`ninja` is not in your $PATH. Do you have depot_tools installed and in your $PATH? https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up'
+    exit 1
+  fi
+}
+
+function ensure_autoninja() {
+  if ! [ -x "$(command -v autoninja)" ]; then
+    engine-error '`autoninja` is not in your $PATH. Do you have depot_tools installed and in your $PATH? https://commondatastorage.googleapis.com/chrome-infra-docs/flat/depot_tools/docs/html/depot_tools_tutorial.html#_setting_up'
     exit 1
   fi
 }

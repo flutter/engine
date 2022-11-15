@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../picture.dart';
@@ -54,8 +54,8 @@ class PaintRequest {
   PaintRequest({
     required this.canvasSize,
     required this.paintCallback,
-  })  : assert(canvasSize != null), // ignore: unnecessary_null_comparison
-        assert(paintCallback != null); // ignore: unnecessary_null_comparison
+  })  : assert(canvasSize != null),
+        assert(paintCallback != null);
 
   final ui.Size canvasSize;
   final ui.VoidCallback paintCallback;
@@ -117,12 +117,12 @@ class PersistedPicture extends PersistedLeafSurface {
   bool _requiresRepaint = false;
 
   /// Cache for reusing elements such as images across picture updates.
-  CrossFrameCache<html.HtmlElement>? _elementCache =
-      CrossFrameCache<html.HtmlElement>();
+  CrossFrameCache<DomHTMLElement>? _elementCache =
+      CrossFrameCache<DomHTMLElement>();
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-picture');
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-picture');
 
     // The DOM elements used to render pictures are used purely to put pixels on
     // the screen. They have no semantic information. If an assistive technology
@@ -644,7 +644,7 @@ class PersistedPicture extends PersistedLeafSurface {
   void debugPrintChildren(StringBuffer buffer, int indent) {
     super.debugPrintChildren(buffer, indent);
     if (rootElement != null && rootElement!.firstChild != null) {
-      final html.Element firstChild = rootElement!.firstChild! as html.Element;
+      final DomElement firstChild = rootElement!.firstChild! as DomElement;
       final String canvasTag = firstChild.tagName.toLowerCase();
       final int canvasHash = firstChild.hashCode;
       buffer.writeln('${'  ' * (indent + 1)}<$canvasTag @$canvasHash />');

@@ -19,17 +19,18 @@ enum PlaceholderAlignment {
 }
 
 class FontWeight {
-  const FontWeight._(this.index);
+  const FontWeight._(this.index, this.value);
   final int index;
-  static const FontWeight w100 = FontWeight._(0);
-  static const FontWeight w200 = FontWeight._(1);
-  static const FontWeight w300 = FontWeight._(2);
-  static const FontWeight w400 = FontWeight._(3);
-  static const FontWeight w500 = FontWeight._(4);
-  static const FontWeight w600 = FontWeight._(5);
-  static const FontWeight w700 = FontWeight._(6);
-  static const FontWeight w800 = FontWeight._(7);
-  static const FontWeight w900 = FontWeight._(8);
+  final int value;
+  static const FontWeight w100 = FontWeight._(0, 100);
+  static const FontWeight w200 = FontWeight._(1, 200);
+  static const FontWeight w300 = FontWeight._(2, 300);
+  static const FontWeight w400 = FontWeight._(3, 400);
+  static const FontWeight w500 = FontWeight._(4, 500);
+  static const FontWeight w600 = FontWeight._(5, 600);
+  static const FontWeight w700 = FontWeight._(6, 700);
+  static const FontWeight w800 = FontWeight._(7, 800);
+  static const FontWeight w900 = FontWeight._(8, 900);
   static const FontWeight normal = w400;
   static const FontWeight bold = w700;
   static const List<FontWeight> values = <FontWeight>[
@@ -44,7 +45,7 @@ class FontWeight {
     w900
   ];
   static FontWeight? lerp(FontWeight? a, FontWeight? b, double t) {
-    assert(t != null); // ignore: unnecessary_null_comparison
+    assert(t != null);
     if (a == null && b == null) {
       return null;
     }
@@ -74,10 +75,10 @@ class FontWeight {
 
 class FontFeature {
   const FontFeature(this.feature, [this.value = 1])
-      : assert(feature != null), // ignore: unnecessary_null_comparison
+      : assert(feature != null),
         assert(feature.length == 4,
             'Feature tag must be exactly four characters long.'),
-        assert(value != null), // ignore: unnecessary_null_comparison
+        assert(value != null),
         assert(value >= 0, 'Feature value must be zero or a positive integer.');
   const FontFeature.enable(String feature) : this(feature, 1);
   const FontFeature.disable(String feature) : this(feature, 0);
@@ -173,7 +174,7 @@ class FontFeature {
   }
 
   @override
-  int get hashCode => hashValues(feature, value);
+  int get hashCode => Object.hash(feature, value);
 
   @override
   String toString() => "FontFeature('$feature', $value)";
@@ -192,15 +193,16 @@ class FontVariation {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is FontVariation
         && other.axis == axis
         && other.value == value;
   }
 
   @override
-  int get hashCode => hashValues(axis, value);
+  int get hashCode => Object.hash(axis, value);
 
   @override
   String toString() => "FontVariation('$axis', $value)";
@@ -301,7 +303,7 @@ class TextHeightBehavior {
 
   @override
   int get hashCode {
-    return hashValues(
+    return Object.hash(
       applyHeightToFirstAscent,
       applyHeightToLastDescent,
     );
@@ -340,55 +342,29 @@ abstract class TextStyle {
     List<Shadow>? shadows,
     List<FontFeature>? fontFeatures,
     List<FontVariation>? fontVariations,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkTextStyle(
-        color: color,
-        decoration: decoration,
-        decorationColor: decorationColor,
-        decorationStyle: decorationStyle,
-        decorationThickness: decorationThickness,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        textBaseline: textBaseline,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        locale: locale,
-        background: background as engine.CkPaint?,
-        foreground: foreground as engine.CkPaint?,
-        shadows: shadows,
-        fontFeatures: fontFeatures,
-      );
-    } else {
-      return engine.EngineTextStyle(
-        color: color,
-        decoration: decoration,
-        decorationColor: decorationColor,
-        decorationStyle: decorationStyle,
-        decorationThickness: decorationThickness,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        textBaseline: textBaseline,
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        letterSpacing: letterSpacing,
-        wordSpacing: wordSpacing,
-        height: height,
-        locale: locale,
-        background: background,
-        foreground: foreground,
-        shadows: shadows,
-        fontFeatures: fontFeatures,
-        fontVariations: fontVariations,
-      );
-    }
-  }
+  }) => engine.renderer.createTextStyle(
+    color: color,
+    decoration: decoration,
+    decorationColor: decorationColor,
+    decorationStyle: decorationStyle,
+    decorationThickness: decorationThickness,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    textBaseline: textBaseline,
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    letterSpacing: letterSpacing,
+    wordSpacing: wordSpacing,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    locale: locale,
+    background: background,
+    foreground: foreground,
+    shadows: shadows,
+    fontFeatures: fontFeatures,
+    fontVariations: fontVariations,
+  );
 }
 
 abstract class ParagraphStyle {
@@ -406,39 +382,20 @@ abstract class ParagraphStyle {
     StrutStyle? strutStyle,
     String? ellipsis,
     Locale? locale,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkParagraphStyle(
-        textAlign: textAlign,
-        textDirection: textDirection,
-        maxLines: maxLines,
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        height: height,
-        textHeightBehavior: textHeightBehavior,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        strutStyle: strutStyle,
-        ellipsis: ellipsis,
-        locale: locale,
-      );
-    } else {
-      return engine.EngineParagraphStyle(
-        textAlign: textAlign,
-        textDirection: textDirection,
-        maxLines: maxLines,
-        fontFamily: fontFamily,
-        fontSize: fontSize,
-        height: height,
-        textHeightBehavior: textHeightBehavior,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        strutStyle: strutStyle,
-        ellipsis: ellipsis,
-        locale: locale,
-      );
-    }
-  }
+  }) => engine.renderer.createParagraphStyle(
+    textAlign: textAlign,
+    textDirection: textDirection,
+    maxLines: maxLines,
+    fontFamily: fontFamily,
+    fontSize: fontSize,
+    height: height,
+    textHeightBehavior: textHeightBehavior,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    strutStyle: strutStyle,
+    ellipsis: ellipsis,
+    locale: locale,
+  );
 }
 
 abstract class StrutStyle {
@@ -487,33 +444,17 @@ abstract class StrutStyle {
     FontWeight? fontWeight,
     FontStyle? fontStyle,
     bool? forceStrutHeight,
-  }) {
-    if (engine.useCanvasKit) {
-      return engine.CkStrutStyle(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        leading: leading,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        forceStrutHeight: forceStrutHeight,
-      );
-    } else {
-      return engine.EngineStrutStyle(
-        fontFamily: fontFamily,
-        fontFamilyFallback: fontFamilyFallback,
-        fontSize: fontSize,
-        height: height,
-        leadingDistribution: leadingDistribution,
-        leading: leading,
-        fontWeight: fontWeight,
-        fontStyle: fontStyle,
-        forceStrutHeight: forceStrutHeight,
-      );
-    }
-  }
+  }) => engine.renderer.createStrutStyle(
+    fontFamily: fontFamily,
+    fontFamilyFallback: fontFamilyFallback,
+    fontSize: fontSize,
+    height: height,
+    leadingDistribution: leadingDistribution,
+    leading: leading,
+    fontWeight: fontWeight,
+    fontStyle: fontStyle,
+    forceStrutHeight: forceStrutHeight,
+  );
 }
 
 // The order of this enum must match the order of the values in TextDirection.h's TextDirection.
@@ -561,7 +502,7 @@ class TextBox {
   }
 
   @override
-  int get hashCode => hashValues(left, top, right, bottom, direction);
+  int get hashCode => Object.hash(left, top, right, bottom, direction);
 
   @override
   String toString() {
@@ -578,8 +519,8 @@ class TextPosition {
   const TextPosition({
     required this.offset,
     this.affinity = TextAffinity.downstream,
-  })  : assert(offset != null), // ignore: unnecessary_null_comparison
-        assert(affinity != null); // ignore: unnecessary_null_comparison
+  })  : assert(offset != null),
+        assert(affinity != null);
   final int offset;
   final TextAffinity affinity;
 
@@ -594,7 +535,7 @@ class TextPosition {
   }
 
   @override
-  int get hashCode => hashValues(offset, affinity);
+  int get hashCode => Object.hash(offset, affinity);
 
   @override
   String toString() {
@@ -642,7 +583,7 @@ class TextRange {
   }
 
   @override
-  int get hashCode => hashValues(
+  int get hashCode => Object.hash(
         start.hashCode,
         end.hashCode,
       );
@@ -654,7 +595,7 @@ class TextRange {
 class ParagraphConstraints {
   const ParagraphConstraints({
     required this.width,
-  }) : assert(width != null); // ignore: unnecessary_null_comparison
+  }) : assert(width != null);
   final double width;
 
   @override
@@ -729,15 +670,13 @@ abstract class Paragraph {
   TextRange getLineBoundary(TextPosition position);
   List<TextBox> getBoxesForPlaceholders();
   List<LineMetrics> computeLineMetrics();
+  void dispose();
+  bool get debugDisposed;
 }
 
 abstract class ParagraphBuilder {
-  factory ParagraphBuilder(ParagraphStyle style) {
-    if (engine.useCanvasKit) {
-      return engine.CkParagraphBuilder(style);
-    }
-    return engine.CanvasParagraphBuilder(style as engine.EngineParagraphStyle);
-  }
+  factory ParagraphBuilder(ParagraphStyle style) =>
+    engine.renderer.createParagraphBuilder(style);
   void pushStyle(TextStyle style);
   void pop();
   void addText(String text);
@@ -754,14 +693,7 @@ abstract class ParagraphBuilder {
   });
 }
 
-Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) {
-  if (engine.useCanvasKit) {
-    return engine.skiaFontCollection
-        .loadFontFromList(list, fontFamily: fontFamily)
-        .then((_) => engine.sendFontChangeMessage());
-  } else {
-    return engine.fontCollection
-        .loadFontFromList(list, fontFamily: fontFamily!)
-        .then((_) => engine.sendFontChangeMessage());
-  }
+Future<void> loadFontFromList(Uint8List list, {String? fontFamily}) async {
+  await engine.renderer.fontCollection.loadFontFromList(list, fontFamily: fontFamily);
+  engine.sendFontChangeMessage();
 }

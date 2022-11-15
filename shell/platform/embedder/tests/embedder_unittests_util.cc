@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <limits>
+#include <utility>
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_backingstore_producer.h"
 #include "flutter/shell/platform/embedder/tests/embedder_unittests_util.h"
@@ -32,7 +33,7 @@ sk_sp<SkSurface> CreateRenderSurface(const FlutterLayer& layer,
 }
 
 // Normalizes the color-space, color-type and alpha-type for comparison.
-static sk_sp<SkData> NormalizeImage(sk_sp<SkImage> image) {
+static sk_sp<SkData> NormalizeImage(const sk_sp<SkImage>& image) {
   // To avoid clipping, convert to a very wide gamut, and a high bit depth.
   sk_sp<SkColorSpace> norm_colorspace = SkColorSpace::MakeRGB(
       SkNamedTransferFn::kRec2020, SkNamedGamut::kRec2020);
@@ -56,7 +57,7 @@ static sk_sp<SkData> NormalizeImage(sk_sp<SkImage> image) {
   return data;
 }
 
-bool RasterImagesAreSame(sk_sp<SkImage> a, sk_sp<SkImage> b) {
+bool RasterImagesAreSame(const sk_sp<SkImage>& a, const sk_sp<SkImage>& b) {
   if (!a || !b) {
     return false;
   }
@@ -127,7 +128,7 @@ void ConfigureBackingStore(FlutterBackingStore& backing_store,
 
 bool WriteImageToDisk(const fml::UniqueFD& directory,
                       const std::string& name,
-                      sk_sp<SkImage> image) {
+                      const sk_sp<SkImage>& image) {
   if (!image) {
     return false;
   }
@@ -144,7 +145,7 @@ bool WriteImageToDisk(const fml::UniqueFD& directory,
 }
 
 bool ImageMatchesFixture(const std::string& fixture_file_name,
-                         sk_sp<SkImage> scene_image) {
+                         const sk_sp<SkImage>& scene_image) {
   fml::FileMapping fixture_image_mapping(OpenFixture(fixture_file_name));
 
   FML_CHECK(fixture_image_mapping.GetSize() != 0u)
@@ -204,11 +205,59 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
   return ImageMatchesFixture(fixture_file_name, scene_image.get());
 }
 
+bool SurfacePixelDataMatchesBytes(SkSurface* surface,
+                                  const std::vector<uint8_t>& bytes) {
+  SkPixmap pixmap;
+  auto ok = surface->peekPixels(&pixmap);
+  if (!ok) {
+    return false;
+  }
+
+  auto matches = (pixmap.rowBytes() == bytes.size()) &&
+                 (memcmp(bytes.data(), pixmap.addr(), bytes.size()) == 0);
+
+  if (!matches) {
+    FML_LOG(ERROR) << "SkImage pixel data didn't match bytes.";
+
+    {
+      const uint8_t* addr = static_cast<const uint8_t*>(pixmap.addr());
+      std::stringstream stream;
+      for (size_t i = 0; i < pixmap.computeByteSize(); ++i) {
+        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase
+               << std::hex << static_cast<int>(addr[i]);
+        if (i != pixmap.computeByteSize() - 1) {
+          stream << ", ";
+        }
+      }
+      FML_LOG(ERROR) << "  Actual:   " << stream.str();
+    }
+    {
+      std::stringstream stream;
+      for (auto b = bytes.begin(); b != bytes.end(); ++b) {
+        stream << "0x" << std::setfill('0') << std::setw(2) << std::uppercase
+               << std::hex << static_cast<int>(*b);
+        if (b != bytes.end() - 1) {
+          stream << ", ";
+        }
+      }
+      FML_LOG(ERROR) << "  Expected: " << stream.str();
+    }
+  }
+
+  return matches;
+}
+
+bool SurfacePixelDataMatchesBytes(std::future<SkSurface*>& surface_future,
+                                  const std::vector<uint8_t>& bytes) {
+  return SurfacePixelDataMatchesBytes(surface_future.get(), bytes);
+}
+
 void FilterMutationsByType(
     const FlutterPlatformViewMutation** mutations,
     size_t count,
     FlutterPlatformViewMutationType type,
-    std::function<void(const FlutterPlatformViewMutation& mutation)> handler) {
+    const std::function<void(const FlutterPlatformViewMutation& mutation)>&
+        handler) {
   if (mutations == nullptr) {
     return;
   }
@@ -226,7 +275,8 @@ void FilterMutationsByType(
 void FilterMutationsByType(
     const FlutterPlatformView* view,
     FlutterPlatformViewMutationType type,
-    std::function<void(const FlutterPlatformViewMutation& mutation)> handler) {
+    const std::function<void(const FlutterPlatformViewMutation& mutation)>&
+        handler) {
   return FilterMutationsByType(view->mutations, view->mutations_count, type,
                                handler);
 }

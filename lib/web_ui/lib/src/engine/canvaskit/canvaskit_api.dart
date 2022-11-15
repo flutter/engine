@@ -7,31 +7,23 @@
 /// Prefer keeping the original CanvasKit names so it is easier to locate
 /// the API behind these bindings in the Skia source code.
 // ignore_for_file: non_constant_identifier_names
-
-// ignore_for_file: public_member_api_docs
 @JS()
 library canvaskit_api;
 
 import 'dart:async';
-import 'dart:html' as html;
-import 'dart:js' as js;
+import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../configuration.dart';
+import '../dom.dart';
+import '../initialization.dart';
 import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
-
-/// Whether to use a CanvasKit implementation provided by a JavaScript
-/// `window.h5vcc.canvasKit` object.
-///
-/// Cobalt may use this object to expose a native implementation of the
-/// CanvasKit bindings. If this exists, use it instead of using the normal
-/// downloaded CanvasKit library.
-final bool useH5vccCanvasKit = h5vcc != null;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.
@@ -46,21 +38,6 @@ external set windowFlutterCanvasKit(CanvasKit? value);
 
 @JS('window.flutterCanvasKit')
 external CanvasKit? get windowFlutterCanvasKit;
-
-@JS('window.h5vcc')
-external H5vcc? get h5vcc;
-
-@JS('window.h5vcc')
-external set debugH5vccSetter(H5vcc? value);
-
-@JS()
-@anonymous
-@staticInterop
-abstract class H5vcc {}
-
-extension H5vccExtension on H5vcc {
-  external CanvasKit? get canvasKit;
-}
 
 @JS()
 @anonymous
@@ -109,6 +86,7 @@ extension CanvasKitExtension on CanvasKit {
   external SkParagraphStyle ParagraphStyle(
       SkParagraphStyleProperties properties);
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
+  external SkSurface MakeWebGLCanvasSurface(DomCanvasElement canvas);
   external SkSurface MakeSurface(
     int width,
     int height,
@@ -132,7 +110,7 @@ extension CanvasKitExtension on CanvasKit {
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
   external SkTypefaceFactory get Typeface;
   external int GetWebGLContext(
-      html.CanvasElement canvas, SkWebGLContextOptions options);
+      DomCanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
   external SkSurface? MakeOnScreenGLSurface(
     SkGrContext grContext,
@@ -140,7 +118,7 @@ extension CanvasKitExtension on CanvasKit {
     int height,
     ColorSpace colorSpace,
   );
-  external SkSurface MakeSWCanvasSurface(html.CanvasElement canvas);
+  external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
 
   /// Creates an image from decoded pixels represented as a list of bytes.
   ///
@@ -159,15 +137,14 @@ extension CanvasKitExtension on CanvasKit {
     SkPartialImageInfo info,
   );
 
-  /// Gets a Skia surface from Cobalt's h5vcc object.
-  ///
-  /// This is only applicable when running on Cobalt and when using Cobalt's
-  /// h5vcc CanvasKit bindings.
-  ///
-  /// On Cobalt, this is the only way to get a Skia surface. Other CanvasKit
-  /// Make...Surface methods are not supported.
-  external SkSurface getH5vccSkSurface();
+  /// Retrieve the RuntimeEffect namespace for null checking.
+  external Object? get RuntimeEffect;
 }
+
+// TODO(jonahwilliams): remove this once all CanvasKit versions
+// are built in the SDK.
+// https://github.com/flutter/flutter/issues/114260
+final bool isRuntimeEffectAvailable = windowFlutterCanvasKit?.RuntimeEffect != null;
 
 @JS('window.CanvasKitInit')
 external CanvasKitInitPromise CanvasKitInit(CanvasKitInitOptions options);
@@ -1241,10 +1218,11 @@ Float32List toSkMatrixFromFloat32(Float32List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1255,10 +1233,11 @@ Float32List toSkMatrixFromFloat64(Float64List matrix4) {
   final Float32List skMatrix = Float32List(9);
   for (int i = 0; i < 9; ++i) {
     final int matrix4Index = _skMatrixIndexToMatrix4Index[i];
-    if (matrix4Index < matrix4.length)
+    if (matrix4Index < matrix4.length) {
       skMatrix[i] = matrix4[matrix4Index];
-    else
+    } else {
       skMatrix[i] = 0.0;
+    }
   }
   return skMatrix;
 }
@@ -1569,6 +1548,15 @@ ui.Rect fromSkRect(Float32List skRect) {
   return ui.Rect.fromLTRB(skRect[0], skRect[1], skRect[2], skRect[3]);
 }
 
+ui.Rect rectFromSkIRect(Int32List skIRect) {
+  return ui.Rect.fromLTRB(
+    skIRect[0].toDouble(),
+    skIRect[1].toDouble(),
+    skIRect[2].toDouble(),
+    skIRect[3].toDouble(),
+  );
+}
+
 // TODO(hterkelsen): Use a shared malloc'ed array for performance.
 Float32List toSkRRect(ui.RRect rrect) {
   final Float32List skRRect = Float32List(12);
@@ -1683,6 +1671,7 @@ extension SkCanvasExtension on SkCanvas {
     SkClipOp clipOp,
     bool doAntiAlias,
   );
+  external Int32List getDeviceClipBounds();
   external void drawArc(
     Float32List oval,
     double startAngleDegrees,
@@ -1816,6 +1805,7 @@ extension SkCanvasExtension on SkCanvas {
   external void skew(double x, double y);
   external void concat(Float32List matrix);
   external void translate(double x, double y);
+  external List<dynamic> getLocalToDevice();
   external void drawPicture(SkPicture picture);
   external void drawParagraph(
     SkParagraph paragraph,
@@ -1839,11 +1829,6 @@ extension SkPictureExtension on SkPicture {
 class SkParagraphBuilderNamespace {}
 
 extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
-  external SkParagraphBuilder Make(
-    SkParagraphStyle paragraphStyle,
-    SkFontMgr? fontManager,
-  );
-
   external SkParagraphBuilder MakeFromFontProvider(
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
@@ -1891,6 +1876,7 @@ extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   external set ellipsis(String? value);
   external set textStyle(SkTextStyleProperties? value);
   external set strutStyle(SkStrutStyleProperties? strutStyle);
+  external set replaceTabCharacters(bool? bool);
 }
 
 @JS()
@@ -2016,6 +2002,7 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   external set fontStyle(SkFontStyle? value);
   external set shadows(List<SkTextShadow>? value);
   external set fontFeatures(List<SkFontFeature>? value);
+  external set fontVariations(List<SkFontVariation>? value);
 }
 
 @JS()
@@ -2068,6 +2055,16 @@ extension SkFontFeatureExtension on SkFontFeature {
 @JS()
 @anonymous
 @staticInterop
+class SkFontVariation {}
+
+extension SkFontVariationExtension on SkFontVariation {
+  external set axis(String? value);
+  external set value(double? value);
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkTypeface {}
 
 @JS('window.flutterCanvasKit.Font')
@@ -2099,7 +2096,7 @@ class TypefaceFontProvider extends SkFontMgr {
   external factory TypefaceFontProvider();
 }
 
-extension TypefaceFontProviderExtension on SkFontMgr {
+extension TypefaceFontProviderExtension on TypefaceFontProvider {
   external void registerFont(Uint8List font, String family);
 }
 
@@ -2264,7 +2261,7 @@ abstract class Collector {
 class ProductionCollector implements Collector {
   ProductionCollector() {
     _skObjectFinalizationRegistry =
-        SkObjectFinalizationRegistry(js.allowInterop((SkDeletable deletable) {
+        SkObjectFinalizationRegistry(allowInterop((SkDeletable deletable) {
       // This is called when GC decides to collect the wrapper object and
       // notify us, which may happen after the object is already deleted
       // explicitly, e.g. when its ref count drops to zero. When that happens
@@ -2332,7 +2329,7 @@ class ProductionCollector implements Collector {
   /// emptied out to prevent memory leaks. This may happen, for example, when the
   /// same object is deleted more than once.
   void collectSkiaObjectsNow() {
-    html.window.performance.mark('SkObject collection-start');
+    domWindow.performance.mark('SkObject collection-start');
     final int length = _skiaObjectCollectionQueue.length;
     dynamic firstError;
     StackTrace? firstStackTrace;
@@ -2364,8 +2361,8 @@ class ProductionCollector implements Collector {
     }
     _skiaObjectCollectionQueue = <SkDeletable>[];
 
-    html.window.performance.mark('SkObject collection-end');
-    html.window.performance.measure('SkObject collection',
+    domWindow.performance.mark('SkObject collection-end');
+    domWindow.performance.measure('SkObject collection',
         'SkObject collection-start', 'SkObject collection-end');
 
     // It's safe to throw the error here, now that we've processed the queue.
@@ -2519,6 +2516,41 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
   external int get width;
 }
 
+/// Helper interop methods for [patchCanvasKitModule].
+@JS()
+external set _flutterWebCachedModule(Object? module);
+
+@JS()
+external Object? get _flutterWebCachedModule;
+
+@JS()
+external set _flutterWebCachedExports(Object? exports);
+
+@JS()
+external Object? get _flutterWebCachedExports;
+
+@JS('Object')
+external Object get objectConstructor;
+
+@JS()
+external Object? get exports;
+
+@JS()
+external Object? get module;
+
+@JS('window.flutterCanvasKit.RuntimeEffect')
+@anonymous
+@staticInterop
+class SkRuntimeEffect {}
+
+@JS('window.flutterCanvasKit.RuntimeEffect.Make')
+external SkRuntimeEffect? MakeRuntimeEffect(String program);
+
+extension SkSkRuntimeEffectExtension on SkRuntimeEffect {
+  external SkShader? makeShader(List<Object> uniforms);
+  external SkShader? makeShaderWithChildren(List<Object> uniforms, List<Object?> children);
+}
+
 /// Monkey-patch the top-level `module` and `exports` objects so that
 /// CanvasKit doesn't attempt to register itself as an anonymous module.
 ///
@@ -2539,43 +2571,88 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
 // TODO(hterkelsen): Rather than this monkey-patch hack, we should
 // build CanvasKit ourselves. See:
 // https://github.com/flutter/flutter/issues/52588
-void patchCanvasKitModule(html.ScriptElement canvasKitScript) {
+void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   // First check if `exports` and `module` are already defined. If so, then
   // CommonJS is being used, and we shouldn't have any problems.
-  final js.JsFunction objectConstructor = js.context['Object'] as js.JsFunction;
-  if (js.context['exports'] == null) {
-    final js.JsObject exportsAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (exports == null) {
+    final Object? exportsAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
-        if (html.document.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+        if (domDocument.currentScript == canvasKitScript) {
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedExports'];
+          return _flutterWebCachedExports;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedExports'] = value;
+        _flutterWebCachedExports = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'exports', exportsAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'exports', exportsAccessor]);
   }
-  if (js.context['module'] == null) {
-    final js.JsObject moduleAccessor = js.JsObject.jsify(<String, dynamic>{
+  if (module == null) {
+    final Object? moduleAccessor = js_util.jsify(<String, dynamic>{
       'get': allowInterop(() {
-        if (html.document.currentScript == canvasKitScript) {
-          return js.JsObject(objectConstructor);
+        if (domDocument.currentScript == canvasKitScript) {
+          return objectConstructor;
         } else {
-          return js.context['_flutterWebCachedModule'];
+          return _flutterWebCachedModule;
         }
       }),
       'set': allowInterop((dynamic value) {
-        js.context['_flutterWebCachedModule'] = value;
+        _flutterWebCachedModule = value;
       }),
       'configurable': true,
     });
-    objectConstructor.callMethod(
-        'defineProperty', <dynamic>[js.context, 'module', moduleAccessor]);
+    js_util.callMethod(objectConstructor,
+        'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
-  html.document.head!.append(canvasKitScript);
+  domDocument.head!.appendChild(canvasKitScript);
+}
+
+String get canvasKitBuildUrl =>
+  configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitJavaScriptBindingsUrl =>
+    '${canvasKitBuildUrl}canvaskit.js';
+String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+    canvasKitBase + file;
+
+/// Download and initialize the CanvasKit module.
+///
+/// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
+/// and intialize the CanvasKit wasm.
+Future<CanvasKit> downloadCanvasKit() async {
+  await _downloadCanvasKitJs();
+  final Completer<CanvasKit> canvasKitInitCompleter = Completer<CanvasKit>();
+  final CanvasKitInitPromise canvasKitInitPromise =
+      CanvasKitInit(CanvasKitInitOptions(
+    locateFile: allowInterop((String file, String unusedBase) =>
+        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+  ));
+  canvasKitInitPromise.then(allowInterop((CanvasKit ck) {
+    canvasKitInitCompleter.complete(ck);
+  }));
+  return canvasKitInitCompleter.future;
+}
+
+/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
+Future<void> _downloadCanvasKitJs() {
+  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
+
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = createTrustedScriptUrl(canvasKitJavaScriptUrl);
+
+  final Completer<void> canvasKitLoadCompleter = Completer<void>();
+  late DomEventListener callback;
+  void loadEventHandler(DomEvent _) {
+    canvasKitLoadCompleter.complete();
+    canvasKitScript.removeEventListener('load', callback);
+  }
+  callback = allowInterop(loadEventHandler);
+  canvasKitScript.addEventListener('load', callback);
+
+  patchCanvasKitModule(canvasKitScript);
+
+  return canvasKitLoadCompleter.future;
 }

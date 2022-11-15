@@ -108,8 +108,6 @@ void ContainerLayer::Add(std::shared_ptr<Layer> layer) {
 }
 
 void ContainerLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "ContainerLayer::Preroll");
-
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, matrix, &child_paint_bounds);
   set_paint_bounds(child_paint_bounds);
@@ -134,15 +132,19 @@ void ContainerLayer::PrerollChildren(PrerollContext* context,
   // Platform views have no children, so context->has_platform_view should
   // always be false.
   FML_DCHECK(!context->has_platform_view);
+  FML_DCHECK(!context->has_texture_layer);
+
   bool child_has_platform_view = false;
   bool child_has_texture_layer = false;
   bool subtree_can_inherit_opacity = context->subtree_can_inherit_opacity;
 
   for (auto& layer : layers_) {
-    // Reset context->has_platform_view to false so that layers aren't treated
-    // as if they have a platform view based on one being previously found in a
-    // sibling tree.
+    // Reset context->has_platform_view and context->has_texture_layer to false
+    // so that layers aren't treated as if they have a platform view or texture
+    // layer based on one being previously found in a sibling tree.
     context->has_platform_view = false;
+    context->has_texture_layer = false;
+
     // Initialize the "inherit opacity" flag to false and allow the layer to
     // override the answer during its |Preroll|
     context->subtree_can_inherit_opacity = false;
@@ -186,21 +188,6 @@ void ContainerLayer::PaintChildren(PaintContext& context) const {
     if (layer->needs_painting(context)) {
       layer->Paint(context);
     }
-  }
-}
-
-void ContainerLayer::TryToPrepareRasterCache(
-    PrerollContext* context,
-    Layer* layer,
-    const SkMatrix& matrix,
-    RasterCacheLayerStrategy strategy) {
-  if (!context->has_platform_view && !context->has_texture_layer &&
-      context->raster_cache &&
-      SkRect::Intersects(context->cull_rect, layer->paint_bounds())) {
-    context->raster_cache->Prepare(context, layer, matrix, strategy);
-  } else if (context->raster_cache) {
-    // Don't evict raster cache entry during partial repaint
-    context->raster_cache->Touch(layer, matrix, strategy);
   }
 }
 

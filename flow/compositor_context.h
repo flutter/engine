@@ -66,7 +66,7 @@ class FrameDamage {
 
   // Adds additional damage (accumulated for double / triple buffering).
   // This is area that will be repainted alongside any changed part.
-  void AddAdditonalDamage(const SkIRect& damage) {
+  void AddAdditionalDamage(const SkIRect& damage) {
     additional_damage_.join(damage);
   }
 
@@ -81,7 +81,8 @@ class FrameDamage {
   // If previous layer tree is not specified, clip rect will be nullopt,
   // but the paint region of layer_tree will be calculated so that it can be
   // used for diffing of subsequent frames.
-  std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree);
+  std::optional<SkRect> ComputeClipRect(flutter::LayerTree& layer_tree,
+                                        bool has_raster_cache);
 
   // See Damage::frame_damage.
   std::optional<SkIRect> GetFrameDamage() const {
@@ -113,7 +114,8 @@ class CompositorContext {
                 bool instrumentation_enabled,
                 bool surface_supports_readback,
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-                DisplayListBuilder* display_list_builder);
+                DisplayListBuilder* display_list_builder,
+                impeller::AiksContext* aiks_context);
 
     virtual ~ScopedFrame();
 
@@ -135,6 +137,8 @@ class CompositorContext {
 
     GrDirectContext* gr_context() const { return gr_context_; }
 
+    impeller::AiksContext* aiks_context() const { return aiks_context_; }
+
     virtual RasterStatus Raster(LayerTree& layer_tree,
                                 bool ignore_raster_cache,
                                 FrameDamage* frame_damage);
@@ -144,6 +148,7 @@ class CompositorContext {
     GrDirectContext* gr_context_;
     SkCanvas* canvas_;
     DisplayListBuilder* display_list_builder_;
+    impeller::AiksContext* aiks_context_;
     ExternalViewEmbedder* view_embedder_;
     const SkMatrix& root_surface_transformation_;
     const bool instrumentation_enabled_;
@@ -167,7 +172,8 @@ class CompositorContext {
       bool instrumentation_enabled,
       bool surface_supports_readback,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
-      DisplayListBuilder* display_list_builder);
+      DisplayListBuilder* display_list_builder,
+      impeller::AiksContext* aiks_context);
 
   void OnGrContextCreated();
 
@@ -175,7 +181,9 @@ class CompositorContext {
 
   RasterCache& raster_cache() { return raster_cache_; }
 
-  TextureRegistry& texture_registry() { return texture_registry_; }
+  std::shared_ptr<TextureRegistry> texture_registry() {
+    return texture_registry_;
+  }
 
   const Stopwatch& raster_time() const { return raster_time_; }
 
@@ -185,7 +193,7 @@ class CompositorContext {
 
  private:
   RasterCache raster_cache_;
-  TextureRegistry texture_registry_;
+  std::shared_ptr<TextureRegistry> texture_registry_;
   Stopwatch raster_time_;
   Stopwatch ui_time_;
   LayerSnapshotStore layer_snapshot_store_;

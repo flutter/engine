@@ -38,6 +38,8 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, depth_attachment_descriptor_);
   fml::HashCombineSeed(seed, front_stencil_attachment_descriptor_);
   fml::HashCombineSeed(seed, back_stencil_attachment_descriptor_);
+  fml::HashCombineSeed(seed, winding_order_);
+  fml::HashCombineSeed(seed, cull_mode_);
   return seed;
 }
 
@@ -53,7 +55,9 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
          front_stencil_attachment_descriptor_ ==
              other.front_stencil_attachment_descriptor_ &&
          back_stencil_attachment_descriptor_ ==
-             other.back_stencil_attachment_descriptor_;
+             other.back_stencil_attachment_descriptor_ &&
+         winding_order_ == other.winding_order_ &&
+         cull_mode_ == other.cull_mode_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -90,7 +94,7 @@ PipelineDescriptor& PipelineDescriptor::SetVertexDescriptor(
 PipelineDescriptor& PipelineDescriptor::SetColorAttachmentDescriptor(
     size_t index,
     ColorAttachmentDescriptor desc) {
-  color_attachment_descriptors_[index] = std::move(desc);
+  color_attachment_descriptors_[index] = desc;
   return *this;
 }
 
@@ -105,6 +109,15 @@ PipelineDescriptor::GetColorAttachmentDescriptor(size_t index) const {
   auto found = color_attachment_descriptors_.find(index);
   return found == color_attachment_descriptors_.end() ? nullptr
                                                       : &found->second;
+}
+
+const ColorAttachmentDescriptor*
+PipelineDescriptor::GetLegacyCompatibleColorAttachment() const {
+  // Legacy renderers may only render to a single color attachment at index 0u.
+  if (color_attachment_descriptors_.size() != 1u) {
+    return nullptr;
+  }
+  return GetColorAttachmentDescriptor(0u);
 }
 
 PipelineDescriptor& PipelineDescriptor::SetDepthPixelFormat(
@@ -174,6 +187,14 @@ PipelineDescriptor::GetStageEntrypoints() const {
   return entrypoints_;
 }
 
+std::shared_ptr<const ShaderFunction> PipelineDescriptor::GetEntrypointForStage(
+    ShaderStage stage) const {
+  if (auto found = entrypoints_.find(stage); found != entrypoints_.end()) {
+    return found->second;
+  }
+  return nullptr;
+}
+
 const std::string& PipelineDescriptor::GetLabel() const {
   return label_;
 }
@@ -185,6 +206,35 @@ PixelFormat PipelineDescriptor::GetDepthPixelFormat() const {
 std::optional<StencilAttachmentDescriptor>
 PipelineDescriptor::GetBackStencilAttachmentDescriptor() const {
   return back_stencil_attachment_descriptor_;
+}
+
+bool PipelineDescriptor::HasStencilAttachmentDescriptors() const {
+  return front_stencil_attachment_descriptor_.has_value() ||
+         back_stencil_attachment_descriptor_.has_value();
+}
+
+void PipelineDescriptor::SetCullMode(CullMode mode) {
+  cull_mode_ = mode;
+}
+
+CullMode PipelineDescriptor::GetCullMode() const {
+  return cull_mode_;
+}
+
+void PipelineDescriptor::SetWindingOrder(WindingOrder order) {
+  winding_order_ = order;
+}
+
+WindingOrder PipelineDescriptor::GetWindingOrder() const {
+  return winding_order_;
+}
+
+void PipelineDescriptor::SetPrimitiveType(PrimitiveType type) {
+  primitive_type_ = type;
+}
+
+PrimitiveType PipelineDescriptor::GetPrimitiveType() const {
+  return primitive_type_;
 }
 
 }  // namespace impeller

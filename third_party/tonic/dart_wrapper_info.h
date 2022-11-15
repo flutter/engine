@@ -15,7 +15,9 @@ typedef void (*DartWrappableAccepter)(DartWrappable*);
 struct DartWrapperInfo {
   const char* library_name;
   const char* interface_name;
-  const size_t size_in_bytes;
+
+  DartWrapperInfo(const char* library_name, const char* interface_name)
+      : library_name(library_name), interface_name(interface_name) {}
 
  private:
   DartWrapperInfo(const DartWrapperInfo&) = delete;

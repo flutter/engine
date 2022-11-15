@@ -9,8 +9,11 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <string>
+#include <string_view>
 #include <vector>
 
+#include "flutter/fml/closure.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
@@ -22,8 +25,9 @@
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
-#include "flutter/shell/platform/windows/window_proc_delegate_manager_win32.h"
+#include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
@@ -63,8 +67,13 @@ static void WindowsPlatformThreadPrioritySetter(
 // run in headless mode.
 class FlutterWindowsEngine {
  public:
+  // Creates a new Flutter engine with an injectible windows registry.
+  FlutterWindowsEngine(const FlutterProjectBundle& project,
+                       std::unique_ptr<WindowsRegistry> windows_registry);
+
   // Creates a new Flutter engine object configured to run |project|.
-  explicit FlutterWindowsEngine(const FlutterProjectBundle& project);
+  explicit FlutterWindowsEngine(const FlutterProjectBundle& project)
+      : FlutterWindowsEngine(project, std::make_unique<WindowsRegistry>()) {}
 
   virtual ~FlutterWindowsEngine();
 
@@ -72,11 +81,22 @@ class FlutterWindowsEngine {
   FlutterWindowsEngine(FlutterWindowsEngine const&) = delete;
   FlutterWindowsEngine& operator=(FlutterWindowsEngine const&) = delete;
 
-  // Starts running the engine with the given entrypoint. If null, defaults to
-  // main().
+  // Starts running the entrypoint function specifed in the project bundle. If
+  // unspecified, defaults to main().
   //
   // Returns false if the engine couldn't be started.
-  bool RunWithEntrypoint(const char* entrypoint);
+  bool Run();
+
+  // Starts running the engine with the given entrypoint. If the empty string
+  // is specified, defaults to the entrypoint function specified in the project
+  // bundle, or main() if both are unspecified.
+  //
+  // Returns false if the engine couldn't be started or if conflicting,
+  // non-default values are passed here and in the project bundle..
+  //
+  // DEPRECATED: Prefer setting the entrypoint in the FlutterProjectBundle
+  // passed to the constructor and calling the no-parameter overload.
+  bool Run(std::string_view entrypoint);
 
   // Returns true if the engine is currently running.
   bool running() { return engine_ != nullptr; }
@@ -124,7 +144,7 @@ class FlutterWindowsEngine {
     return accessibility_bridge_;
   }
 
-  WindowProcDelegateManagerWin32* window_proc_delegate_manager() {
+  WindowProcDelegateManager* window_proc_delegate_manager() {
     return window_proc_delegate_manager_.get();
   }
 
@@ -160,6 +180,12 @@ class FlutterWindowsEngine {
   // Informs the engine that the system font list has changed.
   void ReloadSystemFonts();
 
+  // Informs the engine that a new frame is needed to redraw the content.
+  void ScheduleFrame();
+
+  // Set the callback that is called when the next frame is drawn.
+  void SetNextFrameCallback(fml::closure callback);
+
   // Attempts to register the texture with the given |texture_id|.
   bool RegisterExternalTexture(int64_t texture_id);
 
@@ -169,6 +195,9 @@ class FlutterWindowsEngine {
   // Notifies the engine about a new frame being available for the
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
+
+  // Posts the given callback onto the raster thread.
+  bool PostRasterThreadTask(fml::closure callback);
 
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
@@ -184,8 +213,45 @@ class FlutterWindowsEngine {
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
 
+  // Update the high contrast feature state.
+  void UpdateHighContrastEnabled(bool enabled);
+
+  // Returns the flags for all currently enabled accessibility features
+  int EnabledAccessibilityFeatures() const;
+
+  // Returns true if the high contrast feature is enabled.
+  bool high_contrast_enabled() const { return high_contrast_enabled_; }
+
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
+
+  // Register a root isolate create callback.
+  //
+  // The root isolate create callback is invoked at creation of the root Dart
+  // isolate in the app. This may be used to be notified that execution of the
+  // main Dart entrypoint is about to begin, and is used by test infrastructure
+  // to register a native function resolver that can register and resolve
+  // functions marked as native in the Dart code.
+  //
+  // This must be called before calling |Run|.
+  void SetRootIsolateCreateCallback(const fml::closure& callback) {
+    root_isolate_create_callback_ = callback;
+  }
+
+  // Returns the executable name for this process or "Flutter" if unknown.
+  std::string GetExecutableName() const;
+
+  // Updates accessibility, e.g. switch to high contrast mode
+  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
+
+ protected:
+  // Creates an accessibility bridge with the provided parameters.
+  //
+  // By default this method calls AccessibilityBridge's constructor. Exposing
+  // this method allows unit tests to override in order to capture information.
+  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+      FlutterWindowsEngine* engine,
+      FlutterWindowsView* view);
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -196,6 +262,9 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
+                                  const FlutterDesktopMessage* message);
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -257,10 +326,21 @@ class FlutterWindowsEngine {
 
   bool semantics_enabled_ = false;
 
+  bool high_contrast_enabled_ = false;
+
   std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
-  std::unique_ptr<WindowProcDelegateManagerWin32> window_proc_delegate_manager_;
+  std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;
+
+  // The root isolate creation callback.
+  fml::closure root_isolate_create_callback_;
+
+  // The on frame drawn callback.
+  fml::closure next_frame_callback_;
+
+  // Wrapper providing Windows registry access.
+  std::unique_ptr<WindowsRegistry> windows_registry_;
 };
 
 }  // namespace flutter

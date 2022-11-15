@@ -61,7 +61,7 @@ struct PipelineBuilder {
       const Context& context,
       PipelineDescriptor& desc) {
     // Setup debug instrumentation.
-    desc.SetLabel(SPrintF("%s Pipeline", VertexShader::kLabel.data()));
+    desc.SetLabel(SPrintF("%s Pipeline", FragmentShader::kLabel.data()));
 
     // Resolve pipeline entrypoints.
     {
@@ -93,6 +93,22 @@ struct PipelineBuilder {
             << VertexShader::kLabel << "'.";
         return false;
       }
+      if (!vertex_descriptor->SetDescriptorSetLayouts(
+              VertexShader::kDescriptorSetLayouts)) {
+        VALIDATION_LOG << "Cound not configure vertex descriptor set layout for"
+                          " pipeline named '"
+                       << VertexShader::kLabel << "'.";
+        return false;
+      }
+
+      if (!vertex_descriptor->SetDescriptorSetLayouts(
+              FragmentShader::kDescriptorSetLayouts)) {
+        VALIDATION_LOG << "Cound not configure vertex descriptor set layout for"
+                          " pipeline named '"
+                       << VertexShader::kLabel << "'.";
+        return false;
+      }
+
       desc.SetVertexDescriptor(std::move(vertex_descriptor));
     }
 
@@ -101,9 +117,9 @@ struct PipelineBuilder {
       // Configure the sole color attachments pixel format. This is by
       // convention.
       ColorAttachmentDescriptor color0;
-      color0.format = PixelFormat::kDefaultColor;
+      color0.format = context.GetColorAttachmentPixelFormat();
       color0.blending_enabled = true;
-      desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+      desc.SetColorAttachmentDescriptor(0u, color0);
     }
 
     // Setup default stencil buffer descriptions.

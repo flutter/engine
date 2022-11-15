@@ -11,9 +11,6 @@ import io.flutter.BuildConfig;
 import io.flutter.Log;
 import io.flutter.plugin.common.BinaryMessenger.BinaryMessageHandler;
 import io.flutter.plugin.common.BinaryMessenger.BinaryReply;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.ByteBuffer;
 
 /**
@@ -173,8 +170,10 @@ public class MethodChannel {
      * <p>Any uncaught exception thrown by this method will be caught by the channel implementation
      * and logged, and an error result will be sent back to Flutter.
      *
-     * <p>The handler is called on the platform thread (Android main thread). For more details see
-     * <a href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in
+     * <p>The handler is called on the platform thread (Android main thread) by default, or
+     * otherwise on the thread specified by the {@link BinaryMessenger.TaskQueue} provided to the
+     * associated {@link MethodChannel} when it was created. See also <a
+     * href="https://github.com/flutter/flutter/wiki/The-Engine-architecture#threading">Threading in
      * the Flutter Engine</a>.
      *
      * @param call A {@link MethodCall}.
@@ -190,10 +189,7 @@ public class MethodChannel {
    * Flutter methods provide implementations of this interface for handling results received from
    * Flutter.
    *
-   * <p>All methods of this class must be called on the platform thread (Android main thread). For
-   * more details see <a
-   * href="https://github.com/flutter/engine/wiki/Threading-in-the-Flutter-Engine">Threading in the
-   * Flutter Engine</a>.
+   * <p>All methods of this class can be invoked on any thread.
    */
   public interface Result {
     /**
@@ -281,14 +277,8 @@ public class MethodChannel {
         Log.e(TAG + name, "Failed to handle method call", e);
         reply.reply(
             codec.encodeErrorEnvelopeWithStacktrace(
-                "error", e.getMessage(), null, getStackTrace(e)));
+                "error", e.getMessage(), null, Log.getStackTraceString(e)));
       }
-    }
-
-    private String getStackTrace(Exception e) {
-      Writer result = new StringWriter();
-      e.printStackTrace(new PrintWriter(result));
-      return result.toString();
     }
   }
 }

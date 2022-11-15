@@ -5,10 +5,13 @@
 #ifndef FLUTTER_FLOW_LAYERS_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_LAYER_H_
 
+#include <algorithm>
 #include <memory>
+#include <unordered_set>
 #include <vector>
 
 #include "flutter/common/graphics/texture.h"
+#include "flutter/display_list/display_list_builder_multiplexer.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
@@ -24,7 +27,6 @@
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/skia/include/core/SkMatrix.h"
 #include "third_party/skia/include/core/SkPath.h"
-#include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
@@ -34,6 +36,12 @@ namespace flutter {
 namespace testing {
 class MockLayer;
 }  // namespace testing
+
+class ContainerLayer;
+class DisplayListLayer;
+class PerformanceOverlayLayer;
+class TextureLayer;
+class RasterCacheItem;
 
 static constexpr SkRect kGiantRect = SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
@@ -52,15 +60,15 @@ struct PrerollContext {
   // These allow us to paint in the end of subtree Preroll.
   const Stopwatch& raster_time;
   const Stopwatch& ui_time;
-  TextureRegistry& texture_registry;
+  std::shared_ptr<TextureRegistry> texture_registry;
   const bool checkerboard_offscreen_layers;
   const float frame_device_pixel_ratio = 1.0f;
 
   // These allow us to track properties like elevation, opacity, and the
-  // prescence of a platform view during Preroll.
+  // presence of a platform view during Preroll.
   bool has_platform_view = false;
   // These allow us to track properties like elevation, opacity, and the
-  // prescence of a texture layer during Preroll.
+  // presence of a texture layer during Preroll.
   bool has_texture_layer = false;
 
   // This field indicates whether the subtree rooted at this layer can
@@ -99,16 +107,58 @@ struct PrerollContext {
   //    from your Preroll method. (eg. layers that always apply a
   //    saveLayer when rendering anyway can apply the opacity there)
   bool subtree_can_inherit_opacity = false;
+
+  std::vector<RasterCacheItem*>* raster_cached_entries;
+
+  // This flag will be set to true iff the frame will be constructing
+  // a DisplayList for the layer tree. This flag is mostly of note to
+  // the embedders that must decide between creating SkPicture or
+  // DisplayList objects for the inter-view slices of the layer tree.
+  bool display_list_enabled = false;
 };
 
-class ContainerLayer;
-class PictureLayer;
-class DisplayListLayer;
-class PerformanceOverlayLayer;
-class TextureLayer;
+struct PaintContext {
+  // When splitting the scene into multiple canvases (e.g when embedding
+  // a platform view on iOS) during the paint traversal we apply the non leaf
+  // flow layers to all canvases, and leaf layers just to the "current"
+  // canvas. Applying the non leaf layers to all canvases ensures that when
+  // we switch a canvas (when painting a PlatformViewLayer) the next canvas
+  // has the exact same state as the current canvas.
+  // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
+  // and applies the operations to all canvases.
+  // The leaf_nodes_canvas is the "current" canvas and is used by leaf
+  // layers.
+  SkCanvas* internal_nodes_canvas;
+  SkCanvas* leaf_nodes_canvas;
+  GrDirectContext* gr_context;
+  SkColorSpace* dst_color_space;
+  ExternalViewEmbedder* view_embedder;
+  const Stopwatch& raster_time;
+  const Stopwatch& ui_time;
+  std::shared_ptr<TextureRegistry> texture_registry;
+  const RasterCache* raster_cache;
+  const bool checkerboard_offscreen_layers;
+  const float frame_device_pixel_ratio = 1.0f;
+
+  // Snapshot store to collect leaf layer snapshots. The store is non-null
+  // only when leaf layer tracing is enabled.
+  LayerSnapshotStore* layer_snapshot_store = nullptr;
+  bool enable_leaf_layer_tracing = false;
+
+  // The following value should be used to modulate the opacity of the
+  // layer during |Paint|. If the layer does not set the corresponding
+  // |layer_can_inherit_opacity()| flag, then this value should always
+  // be |SK_Scalar1|. The value is to be applied as if by using a
+  // |saveLayer| with an |SkPaint| initialized to this alphaf value and
+  // a |kSrcOver| blend mode.
+  SkScalar inherited_opacity = SK_Scalar1;
+  DisplayListBuilder* leaf_nodes_builder = nullptr;
+  DisplayListBuilderMultiplexer* builder_multiplexer = nullptr;
+  impeller::AiksContext* aiks_context;
+};
 
 // Represents a single composited layer. Created on the UI thread but then
-// subquently used on the Rasterizer thread.
+// subsequently used on the Rasterizer thread.
 class Layer {
  public:
   Layer();
@@ -165,76 +215,51 @@ class Layer {
     bool prev_surface_needs_readback_;
   };
 
-  struct PaintContext {
-    // When splitting the scene into multiple canvases (e.g when embedding
-    // a platform view on iOS) during the paint traversal we apply the non leaf
-    // flow layers to all canvases, and leaf layers just to the "current"
-    // canvas. Applying the non leaf layers to all canvases ensures that when
-    // we switch a canvas (when painting a PlatformViewLayer) the next canvas
-    // has the exact same state as the current canvas.
-    // The internal_nodes_canvas is a SkNWayCanvas which is used by non leaf
-    // and applies the operations to all canvases.
-    // The leaf_nodes_canvas is the "current" canvas and is used by leaf
-    // layers.
-    SkCanvas* internal_nodes_canvas;
-    SkCanvas* leaf_nodes_canvas;
-    GrDirectContext* gr_context;
-    ExternalViewEmbedder* view_embedder;
-    const Stopwatch& raster_time;
-    const Stopwatch& ui_time;
-    TextureRegistry& texture_registry;
-    const RasterCache* raster_cache;
-    const bool checkerboard_offscreen_layers;
-    const float frame_device_pixel_ratio = 1.0f;
-
-    // Snapshot store to collect leaf layer snapshots. The store is non-null
-    // only when leaf layer tracing is enabled.
-    LayerSnapshotStore* layer_snapshot_store = nullptr;
-    bool enable_leaf_layer_tracing = false;
-
-    // The following value should be used to modulate the opacity of the
-    // layer during |Paint|. If the layer does not set the corresponding
-    // |layer_can_inherit_opacity()| flag, then this value should always
-    // be |SK_Scalar1|. The value is to be applied as if by using a
-    // |saveLayer| with an |SkPaint| initialized to this alphaf value and
-    // a |kSrcOver| blend mode.
-    SkScalar inherited_opacity = SK_Scalar1;
-    DisplayListBuilder* leaf_nodes_builder = nullptr;
-  };
-
   class AutoCachePaint {
    public:
     explicit AutoCachePaint(PaintContext& context) : context_(context) {
       needs_paint_ = context.inherited_opacity < SK_Scalar1;
       if (needs_paint_) {
-        paint_.setAlphaf(context.inherited_opacity);
+        sk_paint_.setAlphaf(context.inherited_opacity);
+        dl_paint_.setAlpha(SkScalarRoundToInt(context.inherited_opacity * 255));
         context.inherited_opacity = SK_Scalar1;
       }
     }
 
-    ~AutoCachePaint() { context_.inherited_opacity = paint_.getAlphaf(); }
+    ~AutoCachePaint() { context_.inherited_opacity = sk_paint_.getAlphaf(); }
 
-    void setImageFilter(sk_sp<SkImageFilter> filter) {
-      paint_.setImageFilter(filter);
+    void setImageFilter(const DlImageFilter* filter) {
+      sk_paint_.setImageFilter(!filter ? nullptr : filter->skia_object());
+      dl_paint_.setImageFilter(filter);
       update_needs_paint();
     }
 
-    void setColorFilter(sk_sp<SkColorFilter> filter) {
-      paint_.setColorFilter(filter);
+    void setColorFilter(const DlColorFilter* filter) {
+      sk_paint_.setColorFilter(!filter ? nullptr : filter->skia_object());
+      dl_paint_.setColorFilter(filter);
       update_needs_paint();
     }
 
-    const SkPaint* paint() { return needs_paint_ ? &paint_ : nullptr; }
+    void setBlendMode(DlBlendMode mode) {
+      sk_paint_.setBlendMode(ToSk(mode));
+      dl_paint_.setBlendMode(mode);
+      update_needs_paint();
+    }
+
+    const SkPaint* sk_paint() { return needs_paint_ ? &sk_paint_ : nullptr; }
+    const DlPaint* dl_paint() { return needs_paint_ ? &dl_paint_ : nullptr; }
 
    private:
     PaintContext& context_;
-    SkPaint paint_;
+    SkPaint sk_paint_;
+    DlPaint dl_paint_;
     bool needs_paint_;
 
     void update_needs_paint() {
-      needs_paint_ = paint_.getImageFilter() != nullptr ||
-                     paint_.getColorFilter() != nullptr ||
-                     paint_.getAlphaf() < SK_Scalar1;
+      needs_paint_ = sk_paint_.getImageFilter() != nullptr ||
+                     sk_paint_.getColorFilter() != nullptr ||
+                     !sk_paint_.isSrcOver() ||
+                     sk_paint_.getAlphaf() < SK_Scalar1;
     }
   };
 
@@ -300,6 +325,8 @@ class Layer {
 
   virtual void Paint(PaintContext& context) const = 0;
 
+  virtual void PaintChildren(PaintContext& context) const { FML_DCHECK(false); }
+
   bool subtree_has_platform_view() const { return subtree_has_platform_view_; }
   void set_subtree_has_platform_view(bool value) {
     subtree_has_platform_view_ = value;
@@ -359,8 +386,10 @@ class Layer {
 
   uint64_t unique_id() const { return unique_id_; }
 
+  virtual RasterCacheKeyID caching_key_id() const {
+    return RasterCacheKeyID(unique_id_, RasterCacheKeyType::kLayer);
+  }
   virtual const ContainerLayer* as_container_layer() const { return nullptr; }
-  virtual const PictureLayer* as_picture_layer() const { return nullptr; }
   virtual const DisplayListLayer* as_display_list_layer() const {
     return nullptr;
   }

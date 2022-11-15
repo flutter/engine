@@ -19,15 +19,60 @@
             "ninja": {
                 "config": "host_debug_unopt",
                 "targets": [
-                    "flutter/lib/spirv/test/exception_shaders:spirv_compile_exception_shaders"
+                    "flutter",
+                    "flutter/sky/packages"
                 ]
             },
             "tests": []
         },
         {
+          "archives": [],
+          "drone_dimensions": [
+              "device_type=none",
+              "os=Linux"
+          ],
+          "gclient_custom_vars": {
+              "download_android_deps": false
+          },
+          "gn": [
+              "--runtime-mode",
+              "debug",
+              "--unoptimized",
+              "--prebuilt-dart-sdk",
+              "--enable-impeller-vulkan",
+              "--target-dir",
+              "host_debug_impeller_vulkan"
+          ],
+          "name": "host_debug_impeller_vulkan",
+          "ninja": {
+              "config": "host_debug_impeller_vulkan",
+              "targets": [
+                  "flutter",
+                  "flutter/sky/packages"
+              ]
+          },
+          "tests": [
+            {
+                "language": "python",
+                "name": "Host Tests for host_debug_impeller_vulkan",
+                "parameters": [
+                    "--variant",
+                    "host_debug_impeller_vulkan",
+                    "--type",
+                    "impeller-vulkan",
+                    "--engine-capture-core-dump"
+                ],
+                "script": "flutter/testing/run_tests.py",
+                "type": "local"
+            }
+        ]
+      },
+      {
             "archives": [
                 {
+                    "name": "host_debug",
                     "base_path": "out/host_debug/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_debug/zip_archives/linux-x64/artifacts.zip",
                         "out/host_debug/zip_archives/linux-x64/linux-x64-embedder.zip",
@@ -35,9 +80,8 @@
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip",
                         "out/host_debug/zip_archives/flutter-web-sdk-linux-x64.zip",
-                        "out/host_debug/zip_archives/linux-x64-flutter-gtk.zip"
-                    ],
-                    "name": "host_debug"
+                        "out/host_debug/zip_archives/linux-x64/linux-x64-flutter-gtk.zip"
+                    ]
                 }
             ],
             "drone_dimensions": [
@@ -62,7 +106,7 @@
                     "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/build/archives:flutter_web_sdk",
+                    "flutter/web_sdk",
                     "flutter/tools/font-subset",
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
@@ -72,11 +116,12 @@
         {
             "archives": [
                 {
+                    "name": "host_profile",
                     "base_path": "out/host_profile/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_profile/zip_archives/linux-x64-profile/linux-x64-flutter-gtk.zip"
-                    ],
-                    "name": "host_profile"
+                    ]
                 }
             ],
             "drone_dimensions": [
@@ -120,12 +165,13 @@
         {
             "archives": [
                 {
+                    "name": "host_release",
                     "base_path": "out/host_release/zip_archives/",
+                    "type": "gcs",
                     "include_paths": [
                         "out/host_release/zip_archives/flutter_patched_sdk_product.zip",
                         "out/host_release/zip_archives/linux-x64-release/linux-x64-flutter-gtk.zip"
-                    ],
-                    "name": "host_release"
+                    ]
                 }
             ],
             "drone_dimensions": [
@@ -147,8 +193,7 @@
                 "targets": [
                     "flutter:unittests",
                     "flutter/build/archives:flutter_patched_sdk",
-                    "flutter/shell/platform/linux:flutter_gtk",
-                    "flutter/build/archives:flutter_web_sdk"
+                    "flutter/shell/platform/linux:flutter_gtk"
                 ]
             },
             "tests": [

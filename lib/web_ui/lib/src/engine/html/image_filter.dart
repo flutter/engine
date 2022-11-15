@@ -2,22 +2,21 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
 
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
     implements ui.ImageFilterEngineLayer {
-  PersistedImageFilter(PersistedImageFilter? oldLayer, this.filter) : super(oldLayer);
+  PersistedImageFilter(PersistedImageFilter? super.oldLayer, this.filter);
 
   final ui.ImageFilter filter;
 
   @override
-  html.Element createElement() {
+  DomElement createElement() {
     return defaultCreateElement('flt-image-filter');
   }
 

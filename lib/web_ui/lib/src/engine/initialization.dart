@@ -4,31 +4,31 @@
 
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:html' as html;
 
 import 'package:ui/src/engine/assets.dart';
 import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/canvaskit/initialization.dart';
+import 'package:ui/src/engine/configuration.dart';
 import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/keyboard.dart';
 import 'package:ui/src/engine/mouse_cursor.dart';
 import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/platform_dispatcher.dart';
 import 'package:ui/src/engine/platform_views/content_manager.dart';
 import 'package:ui/src/engine/profiler.dart';
+import 'package:ui/src/engine/raw_keyboard.dart';
+import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/src/engine/safe_browser_api.dart';
-import 'package:ui/src/engine/text/font_collection.dart';
-import 'package:ui/src/engine/text/line_break_properties.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui;
+
+import 'dom.dart';
 
 /// The mode the app is running in.
 /// Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
 const bool kReleaseMode =
-    bool.fromEnvironment('dart.vm.product', defaultValue: false);
+    bool.fromEnvironment('dart.vm.product');
 /// A constant that is true if the application was compiled in profile mode.
 const bool kProfileMode =
-    bool.fromEnvironment('dart.vm.profile', defaultValue: false);
+    bool.fromEnvironment('dart.vm.profile');
 /// A constant that is true if the application was compiled in debug mode.
 const bool kDebugMode = !kReleaseMode && !kProfileMode;
 /// Returns mode of the app is running in as a string.
@@ -127,6 +127,7 @@ void debugResetEngineInitializationState() {
 ///    puts UI elements on the page.
 Future<void> initializeEngineServices({
   AssetManager? assetManager,
+  JsFlutterConfiguration? jsConfiguration
 }) async {
   if (_initializationState != DebugEngineInitializationState.uninitialized) {
     assert(() {
@@ -140,14 +141,8 @@ Future<void> initializeEngineServices({
   }
   _initializationState = DebugEngineInitializationState.initializingServices;
 
-  if (!useCanvasKit) {
-    scheduleMicrotask(() {
-      // Access [lineLookup] to force the lazy unpacking of line break data
-      // now. Removing this line won't break anything. It's just an optimization
-      // to make the unpacking happen while we are waiting for network requests.
-      lineLookup;
-    });
-  }
+  // Store `jsConfiguration` so user settings are available to the engine.
+  configuration.setUserConfiguration(jsConfiguration);
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.
@@ -178,7 +173,7 @@ Future<void> initializeEngineServices({
     // fires.
     if (!waitingForAnimation) {
       waitingForAnimation = true;
-      html.window.requestAnimationFrame((num highResTime) {
+      domWindow.requestAnimationFrame(allowInterop((num highResTime) {
         frameTimingsOnVsync();
 
         // Reset immediately, because `frameHandler` can schedule more frames.
@@ -210,23 +205,16 @@ Future<void> initializeEngineServices({
           //                implement it properly.
           EnginePlatformDispatcher.instance.invokeOnDrawFrame();
         }
-      });
+      }));
     }
   };
 
-  // This needs to be after `initializeEngine` because that is where the
-  // canvaskit script is added to the page.
-  if (useCanvasKit) {
-    await initializeCanvasKit();
-  }
-
   assetManager ??= const AssetManager();
-  await _setAssetManager(assetManager);
-  if (useCanvasKit) {
-    await skiaFontCollection.ensureFontsLoaded();
-  } else {
-    await _fontCollection!.ensureFontsLoaded();
-  }
+  _setAssetManager(assetManager);
+
+  Future<void> initializeRendererCallback () async => renderer.initialize();
+  await Future.wait<void>(<Future<void>>[initializeRendererCallback(), _downloadAssetFonts()]);
+  renderer.fontCollection.registerDownloadedFonts();
   _initializationState = DebugEngineInitializationState.initializedServices;
 }
 
@@ -252,7 +240,7 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
-  Keyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
+  RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
   _initializationState = DebugEngineInitializationState.initialized;
@@ -261,39 +249,24 @@ Future<void> initializeEngineUi() async {
 AssetManager get assetManager => _assetManager!;
 AssetManager? _assetManager;
 
-FontCollection get fontCollection => _fontCollection!;
-FontCollection? _fontCollection;
-
-Future<void> _setAssetManager(AssetManager assetManager) async {
-  // ignore: unnecessary_null_comparison
+void _setAssetManager(AssetManager assetManager) {
   assert(assetManager != null, 'Cannot set assetManager to null');
   if (assetManager == _assetManager) {
     return;
   }
 
   _assetManager = assetManager;
+}
 
-  if (useCanvasKit) {
-    ensureSkiaFontCollectionInitialized();
-  } else {
-    _fontCollection ??= FontCollection();
-    _fontCollection!.clear();
-  }
+Future<void> _downloadAssetFonts() async {
+  renderer.fontCollection.clear();
 
   if (_assetManager != null) {
-    if (useCanvasKit) {
-      await skiaFontCollection.registerFonts(_assetManager!);
-    } else {
-      await _fontCollection!.registerFonts(_assetManager!);
-    }
+    await renderer.fontCollection.downloadAssetFonts(_assetManager!);
   }
 
   if (ui.debugEmulateFlutterTesterEnvironment) {
-    if (useCanvasKit) {
-      skiaFontCollection.debugRegisterTestFonts();
-    } else {
-      _fontCollection!.debugRegisterTestFonts();
-    }
+    await renderer.fontCollection.debugDownloadTestFonts();
   }
 }
 
@@ -306,6 +279,19 @@ void _addUrlStrategyListener() {
     jsSetUrlStrategy = null;
   });
 }
+
+/// Whether to disable the font fallback system.
+///
+/// We need to disable font fallbacks for some framework tests because
+/// Flutter error messages may contain an arrow symbol which is not
+/// covered by ASCII fonts. This causes us to try to download the
+/// Noto Sans Symbols font, which kicks off a `Timer` which doesn't
+/// complete before the Widget tree is disposed (this is by design).
+bool get debugDisableFontFallbacks => _debugDisableFontFallbacks;
+set debugDisableFontFallbacks(bool value) {
+  _debugDisableFontFallbacks = value;
+}
+bool _debugDisableFontFallbacks = false;
 
 /// The shared instance of PlatformViewManager shared across the engine to handle
 /// rendering of PlatformViews into the web app.

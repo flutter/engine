@@ -16,26 +16,10 @@ namespace flutter {
 
 static constexpr const char* kVsyncFlowName = "VsyncFlow";
 
-#if defined(OS_FUCHSIA)
-//  ________  _________  ________  ________
-// |\   ____\|\___   ___\\   __  \|\   __  \
-// \ \  \___|\|___ \  \_\ \  \|\  \ \  \|\  \
-//  \ \_____  \   \ \  \ \ \  \\\  \ \   ____\
-//   \|____|\  \   \ \  \ \ \  \\\  \ \  \___|
-//     ____\_\  \   \ \__\ \ \_______\ \__\
-//    |\_________\   \|__|  \|_______|\|__|
-//    \|_________|
-//
-// Fuchsia benchmarks depend on this trace event's name.  Please do not change
-// it without checking that the changes are compatible with Fuchsia benchmarks
-// first!
-static constexpr const char* kVsyncTraceName = "vsync callback";
-#else
 static constexpr const char* kVsyncTraceName = "VsyncProcessCallback";
-#endif
 
-VsyncWaiter::VsyncWaiter(TaskRunners task_runners)
-    : task_runners_(std::move(task_runners)) {}
+VsyncWaiter::VsyncWaiter(const TaskRunners& task_runners)
+    : task_runners_(task_runners) {}
 
 VsyncWaiter::~VsyncWaiter() = default;
 
@@ -56,7 +40,7 @@ void VsyncWaiter::AsyncWaitForVsync(const Callback& callback) {
       TRACE_EVENT_INSTANT0("flutter", "MultipleCallsToVsyncInFrameInterval");
       return;
     }
-    callback_ = std::move(callback);
+    callback_ = callback;
     if (!secondary_callbacks_.empty()) {
       // Return directly as `AwaitVSync` is already called by
       // `ScheduleSecondaryCallback`.
@@ -78,7 +62,8 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
 
   {
     std::scoped_lock lock(callback_mutex_);
-    auto [_, inserted] = secondary_callbacks_.emplace(id, std::move(callback));
+    bool secondary_callbacks_originally_empty = secondary_callbacks_.empty();
+    auto [_, inserted] = secondary_callbacks_.emplace(id, callback);
     if (!inserted) {
       // Multiple schedules must result in a single callback per frame interval.
       TRACE_EVENT_INSTANT0("flutter",
@@ -90,6 +75,11 @@ void VsyncWaiter::ScheduleSecondaryCallback(uintptr_t id,
       // `AsyncWaitForVsync`.
       return;
     }
+    if (!secondary_callbacks_originally_empty) {
+      // Return directly as `AwaitVSync` is already called by
+      // `ScheduleSecondaryCallback`.
+      return;
+    }
   }
   AwaitVSyncForSecondaryCallback();
 }
@@ -98,6 +88,17 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
                                fml::TimePoint frame_target_time,
                                bool pause_secondary_tasks) {
   FML_DCHECK(fml::TimePoint::Now() >= frame_start_time);
+
+  // The event named "VSYNC" is special in `chrome://tracing` tool - it will
+  // have a zebra visualization.
+  fml::tracing::TraceTimelineEvent(
+      "flutter", "VSYNC", frame_start_time.ToEpochDelta().ToMicroseconds(), 0,
+      Dart_Timeline_Event_Begin, {"frame_start_time", "frame_target_time"},
+      {std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds()),
+       std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds())});
+  fml::tracing::TraceTimelineEvent(
+      "flutter", "VSYNC", frame_target_time.ToEpochDelta().ToMicroseconds(), 0,
+      Dart_Timeline_Event_End, {}, {});
 
   Callback callback;
   std::vector<fml::closure> secondary_callbacks;
@@ -154,7 +155,7 @@ void VsyncWaiter::FireCallback(fml::TimePoint frame_start_time,
   }
 
   for (auto& secondary_callback : secondary_callbacks) {
-    task_runners_.GetUITaskRunner()->PostTask(std::move(secondary_callback));
+    task_runners_.GetUITaskRunner()->PostTask(secondary_callback);
   }
 }
 

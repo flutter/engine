@@ -21,8 +21,6 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
   switch (format) {
     case MTLPixelFormatInvalid:
       return PixelFormat::kUnknown;
-    case MTLPixelFormatR8Unorm:
-      return PixelFormat::kR8UNormInt;
     case MTLPixelFormatBGRA8Unorm:
       return PixelFormat::kB8G8R8A8UNormInt;
     case MTLPixelFormatBGRA8Unorm_sRGB:
@@ -43,8 +41,12 @@ constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kUnknown:
       return MTLPixelFormatInvalid;
+    case PixelFormat::kA8UNormInt:
+      return MTLPixelFormatA8Unorm;
     case PixelFormat::kR8UNormInt:
       return MTLPixelFormatR8Unorm;
+    case PixelFormat::kR8G8UNormInt:
+      return MTLPixelFormatRG8Unorm;
     case PixelFormat::kB8G8R8A8UNormInt:
       return MTLPixelFormatBGRA8Unorm;
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
@@ -140,10 +142,6 @@ constexpr MTLBlendOperation ToMTLBlendOperation(BlendOperation type) {
       return MTLBlendOperationSubtract;
     case BlendOperation::kReverseSubtract:
       return MTLBlendOperationReverseSubtract;
-    case BlendOperation::kMin:
-      return MTLBlendOperationMin;
-    case BlendOperation::kMax:
-      return MTLBlendOperationMax;
   }
   return MTLBlendOperationAdd;
 };
@@ -253,6 +251,8 @@ constexpr MTLStoreAction ToMTLStoreAction(StoreAction action) {
       return MTLStoreActionStore;
     case StoreAction::kMultisampleResolve:
       return MTLStoreActionMultisampleResolve;
+    case StoreAction::kStoreAndMultisampleResolve:
+      return MTLStoreActionStoreAndMultisampleResolve;
   }
   return MTLStoreActionDontCare;
 }
@@ -265,6 +265,8 @@ constexpr StoreAction FromMTLStoreAction(MTLStoreAction action) {
       return StoreAction::kStore;
     case MTLStoreActionMultisampleResolve:
       return StoreAction::kMultisampleResolve;
+    case MTLStoreActionStoreAndMultisampleResolve:
+      return StoreAction::kStoreAndMultisampleResolve;
     default:
       break;
   }
@@ -279,6 +281,18 @@ constexpr MTLSamplerMinMagFilter ToMTLSamplerMinMagFilter(MinMagFilter filter) {
       return MTLSamplerMinMagFilterLinear;
   }
   return MTLSamplerMinMagFilterNearest;
+}
+
+constexpr MTLSamplerMipFilter ToMTLSamplerMipFilter(MipFilter filter) {
+  switch (filter) {
+    case MipFilter::kNone:
+      return MTLSamplerMipFilterNotMipmapped;
+    case MipFilter::kNearest:
+      return MTLSamplerMipFilterNearest;
+    case MipFilter::kLinear:
+      return MTLSamplerMipFilterLinear;
+  }
+  return MTLSamplerMipFilterNotMipmapped;
 }
 
 constexpr MTLSamplerAddressMode ToMTLSamplerAddressMode(
@@ -304,6 +318,8 @@ constexpr MTLTextureType ToMTLTextureType(TextureType type) {
       return MTLTextureType2D;
     case TextureType::kTexture2DMultisample:
       return MTLTextureType2DMultisample;
+    case TextureType::kTextureCube:
+      return MTLTextureTypeCube;
   }
   return MTLTextureType2D;
 }

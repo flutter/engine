@@ -27,7 +27,7 @@ static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
 }
 
 GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 std::shared_ptr<impeller::Context> context)
+                                                 const std::shared_ptr<impeller::Context>& context)
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
@@ -77,16 +77,18 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
         display_list->Dispatch(impeller_dispatcher);
         auto picture = impeller_dispatcher.EndRecordingAsPicture();
 
-        return renderer->Render(std::move(surface),
-                                fml::MakeCopyable([aiks_context, picture = std::move(picture)](
-                                                      impeller::RenderPass& pass) -> bool {
-                                  return aiks_context->Render(picture, pass);
-                                }));
+        return renderer->Render(
+            std::move(surface),
+            fml::MakeCopyable([aiks_context, picture = std::move(picture)](
+                                  impeller::RenderTarget& render_target) -> bool {
+              return aiks_context->Render(picture, render_target);
+            }));
       });
 
   return std::make_unique<SurfaceFrame>(nullptr,                          // surface
                                         SurfaceFrame::FramebufferInfo{},  // framebuffer info
                                         submit_callback,                  // submit callback
+                                        frame_info,                       // frame size
                                         nullptr,                          // context result
                                         true                              // display list fallback
   );
@@ -117,6 +119,11 @@ bool GPUSurfaceMetalImpeller::AllowsDrawingWhenGpuDisabled() const {
 // |Surface|
 bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
   return false;
+}
+
+// |Surface|
+impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
+  return aiks_context_.get();
 }
 
 }  // namespace flutter

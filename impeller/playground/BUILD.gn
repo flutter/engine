@@ -6,8 +6,6 @@ import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 impeller_component("playground") {
-  testonly = true
-
   sources = [
     "playground.cc",
     "playground.h",
@@ -16,6 +14,8 @@ impeller_component("playground") {
     "widgets.cc",
     "widgets.h",
   ]
+
+  deps = [ "../renderer/backend" ]
 
   if (impeller_enable_metal) {
     sources += [
@@ -31,12 +31,19 @@ impeller_component("playground") {
     ]
   }
 
+  if (impeller_enable_vulkan) {
+    sources += [
+      "backend/vulkan/playground_impl_vk.cc",
+      "backend/vulkan/playground_impl_vk.h",
+    ]
+  }
+
   public_deps = [
     "../entity:entity_shaders",
     "../fixtures:shader_fixtures",
     "../renderer",
     "imgui:imgui_impeller_backend",
-    "//flutter/testing",
+    "//flutter/fml",
     "//third_party/glfw",
     "//third_party/imgui:imgui_glfw",
   ]
@@ -49,6 +56,22 @@ impeller_component("playground") {
       "QuartzCore.framework",
     ]
   }
+}
+
+impeller_component("playground_test") {
+  testonly = true
+
+  sources = [
+    "compute_playground_test.cc",
+    "compute_playground_test.h",
+    "playground_test.cc",
+    "playground_test.h",
+  ]
+
+  public_deps = [
+    ":playground",
+    "//flutter/testing",
+  ]
 }
 
 config("playground_config") {

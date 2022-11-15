@@ -4,25 +4,14 @@
 
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
 
+#include "impeller/renderer/backend/metal/blit_pass_mtl.h"
+#include "impeller/renderer/backend/metal/compute_pass_mtl.h"
 #include "impeller/renderer/backend/metal/render_pass_mtl.h"
 
 namespace impeller {
-namespace {
-// TODO(dnfield): remove this declaration when we no longer need to build on
-// machines with lower SDK versions than 11.0.
-#if !defined(MAC_OS_VERSION_11_0) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_11_0
-typedef NS_ENUM(NSInteger, MTLCommandEncoderErrorState) {
-  MTLCommandEncoderErrorStateUnknown = 0,
-  MTLCommandEncoderErrorStateCompleted = 1,
-  MTLCommandEncoderErrorStateAffected = 2,
-  MTLCommandEncoderErrorStatePending = 3,
-  MTLCommandEncoderErrorStateFaulted = 4,
-} API_AVAILABLE(macos(11.0), ios(14.0));
-#endif
 
 API_AVAILABLE(ios(14.0), macos(11.0))
-NSString* MTLCommandEncoderErrorStateToString(
+static NSString* MTLCommandEncoderErrorStateToString(
     MTLCommandEncoderErrorState state) {
   switch (state) {
     case MTLCommandEncoderErrorStateUnknown:
@@ -39,14 +28,6 @@ NSString* MTLCommandEncoderErrorStateToString(
   return @"unknown";
 }
 
-// TODO(dnfield): This can be removed when all bots have been sufficiently
-// upgraded for MAC_OS_VERSION_12_0.
-#if !defined(MAC_OS_VERSION_12_0) || \
-    MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_12_0
-constexpr int MTLCommandBufferErrorAccessRevoked = 4;
-constexpr int MTLCommandBufferErrorStackOverflow = 12;
-#endif
-
 static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   switch (code) {
     case MTLCommandBufferErrorNone:
@@ -57,8 +38,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"timeout";
     case MTLCommandBufferErrorPageFault:
       return @"page fault";
-    case MTLCommandBufferErrorAccessRevoked:
-      return @"access revoked / blacklisted";
     case MTLCommandBufferErrorNotPermitted:
       return @"not permitted";
     case MTLCommandBufferErrorOutOfMemory:
@@ -67,8 +46,6 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
       return @"invalid resource";
     case MTLCommandBufferErrorMemoryless:
       return @"memory-less";
-    case MTLCommandBufferErrorStackOverflow:
-      return @"stack overflow";
     default:
       break;
   }
@@ -76,13 +53,13 @@ static NSString* MTLCommandBufferErrorToString(MTLCommandBufferError code) {
   return [NSString stringWithFormat:@"<unknown> %zu", code];
 }
 
-static void LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
+static bool LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
   if (!buffer) {
-    return;
+    return true;
   }
 
   if (buffer.status == MTLCommandBufferStatusCompleted) {
-    return;
+    return true;
   }
 
   std::stringstream stream;
@@ -130,10 +107,10 @@ static void LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
 
   stream << "<<<<<<<";
   VALIDATION_LOG << stream.str();
+  return false;
 }
-}  // namespace
 
-id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
+static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
   if (@available(iOS 14.0, macOS 11.0, *)) {
     auto desc = [[MTLCommandBufferDescriptor alloc] init];
     // Degrades CPU performance slightly but is well worth the cost for typical
@@ -144,18 +121,14 @@ id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
   return [queue commandBuffer];
 }
 
-CommandBufferMTL::CommandBufferMTL(id<MTLCommandQueue> queue)
-    : buffer_(CreateCommandBuffer(queue)) {
-  if (!buffer_) {
-    return;
-  }
-  is_valid_ = true;
-}
+CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context>& context,
+                                   id<MTLCommandQueue> queue)
+    : CommandBuffer(context), buffer_(CreateCommandBuffer(queue)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
 bool CommandBufferMTL::IsValid() const {
-  return is_valid_;
+  return buffer_ != nil;
 }
 
 void CommandBufferMTL::SetLabel(const std::string& label) const {
@@ -178,20 +151,16 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
   return CommandBufferMTL::Status::kError;
 }
 
-bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
-  if (!buffer_) {
-    // Already committed. This is caller error.
-    if (callback) {
-      callback(Status::kError);
-    }
-    return false;
-  }
-
+bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   if (callback) {
-    [buffer_ addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-      LogMTLCommandBufferErrorIfPresent(buffer);
-      callback(ToCommitResult(buffer.status));
-    }];
+    [buffer_
+        addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+          [[maybe_unused]] auto result =
+              LogMTLCommandBufferErrorIfPresent(buffer);
+          FML_DCHECK(result)
+              << "Must not have errors during command buffer submission.";
+          callback(ToCommitResult(buffer.status));
+        }];
   }
 
   [buffer_ commit];
@@ -200,18 +169,41 @@ bool CommandBufferMTL::SubmitCommands(CompletionCallback callback) {
   return true;
 }
 
-void CommandBufferMTL::ReserveSpotInQueue() {
-  [buffer_ enqueue];
-}
-
-std::shared_ptr<RenderPass> CommandBufferMTL::CreateRenderPass(
-    RenderTarget target) const {
+std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
+    RenderTarget target) {
   if (!buffer_) {
     return nullptr;
   }
 
   auto pass = std::shared_ptr<RenderPassMTL>(
-      new RenderPassMTL(buffer_, std::move(target)));
+      new RenderPassMTL(context_, target, buffer_));
+  if (!pass->IsValid()) {
+    return nullptr;
+  }
+
+  return pass;
+}
+
+std::shared_ptr<BlitPass> CommandBufferMTL::OnCreateBlitPass() const {
+  if (!buffer_) {
+    return nullptr;
+  }
+
+  auto pass = std::shared_ptr<BlitPassMTL>(new BlitPassMTL(buffer_));
+  if (!pass->IsValid()) {
+    return nullptr;
+  }
+
+  return pass;
+}
+
+std::shared_ptr<ComputePass> CommandBufferMTL::OnCreateComputePass() const {
+  if (!buffer_) {
+    return nullptr;
+  }
+
+  auto pass =
+      std::shared_ptr<ComputePassMTL>(new ComputePassMTL(context_, buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }

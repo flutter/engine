@@ -68,6 +68,7 @@ FLUTTER_ASSERT_ARC
 - (UIView*)hostView;
 - (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
+- (void)startLiveTextInput;
 @end
 
 @interface FlutterTextInputPluginTest : XCTestCase
@@ -88,7 +89,7 @@ FLUTTER_ASSERT_ARC
 
   textInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
 
-  viewController = [FlutterViewController new];
+  viewController = [[FlutterViewController alloc] init];
   textInputPlugin.viewController = viewController;
 
   // Clear pasteboard between tests.
@@ -165,9 +166,20 @@ FLUTTER_ASSERT_ARC
 }
 
 #pragma mark - Tests
+
+- (void)testInvokeStartLiveTextInput {
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInput.startLiveTextInput" arguments:nil];
+  FlutterTextInputPlugin* mockPlugin = OCMPartialMock(textInputPlugin);
+  [mockPlugin handleMethodCall:methodCall
+                        result:^(id _Nullable result){
+                        }];
+  OCMVerify([mockPlugin startLiveTextInput]);
+}
+
 - (void)testNoDanglingEnginePointer {
   __weak FlutterTextInputPlugin* weakFlutterTextInputPlugin;
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   __weak FlutterEngine* weakFlutterEngine;
 
   FlutterTextInputView* currentView;
@@ -404,6 +416,100 @@ FLUTTER_ASSERT_ARC
   UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(0, 30)];
   NSString* substring = [inputView textInRange:range];
   XCTAssertEqualObjects(substring, @"bbbbaaaabbbbaaaa");
+}
+
+- (void)testDeletingBackward {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ดี "];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+
+  // Thai vowel is removed.
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳ด");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦🇺🇳");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰👨‍👩‍👧‍👦");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text 🥰");
+  [inputView deleteBackward];
+
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀 text ");
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+  [inputView deleteBackward];
+
+  XCTAssertEqualObjects(inputView.text, @"ឹ😀");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"ឹ");
+  [inputView deleteBackward];
+  XCTAssertEqualObjects(inputView.text, @"");
+}
+
+// This tests the workaround to fix an iOS 16 bug
+// See: https://github.com/flutter/flutter/issues/111494
+- (void)testSystemOnlyAddingPartialComposedCharacter {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"👨‍👩‍👧‍👦"];
+  [inputView deleteBackward];
+
+  // Insert the first unichar in the emoji.
+  [inputView insertText:[@"👨‍👩‍👧‍👦" substringWithRange:NSMakeRange(0, 1)]];
+  [inputView insertText:@"아"];
+
+  XCTAssertEqualObjects(inputView.text, @"👨‍👩‍👧‍👦아");
+
+  // Deleting 아.
+  [inputView deleteBackward];
+  // 👨‍👩‍👧‍👦 should be the current string.
+
+  [inputView insertText:@"😀"];
+  [inputView deleteBackward];
+  // Insert the first unichar in the emoji.
+  [inputView insertText:[@"😀" substringWithRange:NSMakeRange(0, 1)]];
+  [inputView insertText:@"아"];
+  XCTAssertEqualObjects(inputView.text, @"👨‍👩‍👧‍👦😀아");
+
+  // Deleting 아.
+  [inputView deleteBackward];
+  // 👨‍👩‍👧‍👦😀 should be the current string.
+
+  [inputView deleteBackward];
+  // Insert the first unichar in the emoji.
+  [inputView insertText:[@"😀" substringWithRange:NSMakeRange(0, 1)]];
+  [inputView insertText:@"아"];
+
+  XCTAssertEqualObjects(inputView.text, @"👨‍👩‍👧‍👦😀아");
+}
+
+- (void)testCachedComposedCharacterClearedAtKeyboardInteraction {
+  NSDictionary* config = self.mutableTemplateCopy;
+  [self setClientId:123 configuration:config];
+  NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
+  FlutterTextInputView* inputView = inputFields[0];
+
+  [inputView insertText:@"👨‍👩‍👧‍👦"];
+  [inputView deleteBackward];
+  [inputView shouldChangeTextInRange:OCMClassMock([UITextRange class]) replacementText:@""];
+
+  // Insert the first unichar in the emoji.
+  NSString* brokenEmoji = [@"👨‍👩‍👧‍👦" substringWithRange:NSMakeRange(0, 1)];
+  [inputView insertText:brokenEmoji];
+  [inputView insertText:@"아"];
+
+  NSString* finalText = [NSString stringWithFormat:@"%@아", brokenEmoji];
+  XCTAssertEqualObjects(inputView.text, finalText);
 }
 
 - (void)testPastingNonTextDisallowed {
@@ -1090,6 +1196,7 @@ FLUTTER_ASSERT_ARC
       @"composingExtent" : @3
     }];
     OCMVerify([mockInputView setInputDelegate:[OCMArg isNotNil]]);
+    [inputView removeFromSuperview];
   }
 }
 
@@ -1110,7 +1217,11 @@ FLUTTER_ASSERT_ARC
 #pragma mark - UITextInput methods - Tests
 
 - (void)testUpdateFirstRectForRange {
-  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [self setClientId:123 configuration:self.mutableTemplateCopy];
+
+  FlutterTextInputView* inputView = textInputPlugin.activeView;
+  textInputPlugin.viewController.view.frame = CGRectMake(0, 0, 0, 0);
+
   [inputView
       setTextInputState:@{@"text" : @"COMPOSING", @"composingBase" : @1, @"composingExtent" : @3}];
 
@@ -1119,6 +1230,13 @@ FLUTTER_ASSERT_ARC
   // yOffset = 200.
   NSArray* yOffsetMatrix = @[ @1, @0, @0, @0, @0, @1, @0, @0, @0, @0, @1, @0, @0, @200, @0, @1 ];
   NSArray* zeroMatrix = @[ @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0, @0 ];
+  // This matrix can be generated by running this dart code snippet:
+  // Matrix4.identity()..scale(3.0)..rotateZ(math.pi/2)..translate(1.0, 2.0,
+  // 3.0);
+  NSArray* affineMatrix = @[
+    @(0.0), @(3.0), @(0.0), @(0.0), @(-3.0), @(0.0), @(0.0), @(0.0), @(0.0), @(0.0), @(3.0), @(0.0),
+    @(-6.0), @(3.0), @(9.0), @(1.0)
+  ];
 
   // Invalid since we don't have the transform or the rect.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
@@ -1152,6 +1270,22 @@ FLUTTER_ASSERT_ARC
   // Invalid marked rect is invalid.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
+
+  // Use a 3d affine transform that does 3d-scaling, z-index rotating and 3d translation.
+  [inputView setEditableTransform:affineMatrix];
+  [inputView setMarkedRect:testRect];
+  XCTAssertTrue(
+      CGRectEqualToRect(CGRectMake(-306, 3, 300, 300), [inputView firstRectForRange:range]));
+
+  NSAssert(inputView.superview, @"inputView is not in the view hierarchy!");
+  const CGPoint offset = CGPointMake(113, 119);
+  CGRect currentFrame = inputView.frame;
+  currentFrame.origin = offset;
+  inputView.frame = currentFrame;
+  // Moving the input view within the FlutterView shouldn't affect the coordinates,
+  // since the framework sends us global coordinates.
+  XCTAssertTrue(CGRectEqualToRect(CGRectMake(-306 - 113, 3 - 119, 300, 300),
+                                  [inputView firstRectForRange:range]));
 }
 
 - (void)testFirstRectForRangeReturnsCorrectSelectionRect {
@@ -1720,6 +1854,38 @@ FLUTTER_ASSERT_ARC
   [self commitAutofillContextAndVerify];
 }
 
+- (void)testScribbleSetSelectionRects {
+  NSMutableDictionary* regularField = self.mutableTemplateCopy;
+  NSDictionary* editingValue = @{
+    @"text" : @"REGULAR_TEXT_FIELD",
+    @"composingBase" : @0,
+    @"composingExtent" : @3,
+    @"selectionBase" : @1,
+    @"selectionExtent" : @4
+  };
+  [regularField setValue:@{
+    @"uniqueIdentifier" : @"field1",
+    @"hints" : @[ @"hint2" ],
+    @"editingValue" : editingValue,
+  }
+                  forKey:@"autofill"];
+  [regularField addEntriesFromDictionary:editingValue];
+  [self setClientId:123 configuration:regularField];
+  XCTAssertEqual(self.installedInputViews.count, 1ul);
+  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
+
+  NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
+  NSArray* selectionRects = [NSArray arrayWithObjects:selectionRect, nil];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"Scribble.setSelectionRects"
+                                        arguments:selectionRects];
+  [textInputPlugin handleMethodCall:methodCall
+                             result:^(id _Nullable result){
+                             }];
+
+  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 1u);
+}
+
 - (void)testDecommissionedViewAreNotReusedByAutofill {
   // Regression test for https://github.com/flutter/flutter/issues/84407.
   NSMutableDictionary* configuration = self.mutableTemplateCopy;
@@ -1825,7 +1991,7 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginRetainsFlutterTextInputView {
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
   myInputPlugin.viewController = flutterViewController;
 
@@ -1858,12 +2024,34 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testFlutterTextInputPluginHostViewNotNil {
-  FlutterViewController* flutterViewController = [FlutterViewController new];
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
   FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
   [flutterEngine runWithEntrypoint:nil];
   flutterEngine.viewController = flutterViewController;
   XCTAssertNotNil(flutterEngine.textInputPlugin.viewController);
   XCTAssertNotNil([flutterEngine.textInputPlugin hostView]);
+}
+
+- (void)testSetPlatformViewClient {
+  FlutterViewController* flutterViewController = [[FlutterViewController alloc] init];
+  FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
+  myInputPlugin.viewController = flutterViewController;
+
+  FlutterMethodCall* setClientCall = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setClient"
+                     arguments:@[ [NSNumber numberWithInt:123], self.mutablePasswordTemplateCopy ]];
+  [myInputPlugin handleMethodCall:setClientCall
+                           result:^(id _Nullable result){
+                           }];
+  UIView* activeView = myInputPlugin.textInputView;
+  XCTAssertNotNil(activeView.superview, @"activeView must be added to the view hierarchy.");
+  FlutterMethodCall* setPlatformViewClientCall = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setPlatformViewClient"
+                     arguments:@{@"platformViewId" : [NSNumber numberWithLong:456]}];
+  [myInputPlugin handleMethodCall:setPlatformViewClientCall
+                           result:^(id _Nullable result){
+                           }];
+  XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
 }
 
 @end

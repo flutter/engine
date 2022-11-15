@@ -19,6 +19,7 @@ GfxPlatformView::GfxPlatformView(
     fuchsia::ui::pointer::MouseSourceHandle mouse_source,
     fuchsia::ui::views::FocuserHandle focuser,
     fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused,
+    fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry,
     fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
         session_listener_request,
     fit::closure on_session_listener_error_callback,
@@ -33,7 +34,8 @@ GfxPlatformView::GfxPlatformView(
     AwaitVsyncCallback await_vsync_callback,
     AwaitVsyncForSecondaryCallbackCallback
         await_vsync_for_secondary_callback_callback)
-    : PlatformView(delegate,
+    : PlatformView(false /* is_flatland */,
+                   delegate,
                    std::move(task_runners),
                    std::move(view_ref),
                    std::move(external_view_embedder),
@@ -43,6 +45,7 @@ GfxPlatformView::GfxPlatformView(
                    std::move(mouse_source),
                    std::move(focuser),
                    std::move(view_ref_focused),
+                   std::move(pointerinjector_registry),
                    std::move(wireframe_enabled_callback),
                    std::move(on_update_view_callback),
                    std::move(on_create_surface_callback),
@@ -154,28 +157,6 @@ void GfxPlatformView::OnScenicEvent(
             break;
         }
         break;
-      case fuchsia::ui::scenic::Event::Tag::kInput:
-        switch (event.input().Which()) {
-          case fuchsia::ui::input::InputEvent::Tag::kFocus:
-            break;  // Focus handled elsewhere.
-          case fuchsia::ui::input::InputEvent::Tag::kPointer: {
-            // Only received when TouchSource not plugged in.
-            OnHandlePointerEvent(event.input().pointer());
-            break;
-          }
-          case fuchsia::ui::input::InputEvent::Tag::kKeyboard: {
-            // All devices should receive key events via input3.KeyboardListener
-            // instead.
-            FML_LOG(WARNING) << "Keyboard event from Scenic: ignored";
-            break;
-          }
-          case fuchsia::ui::input::InputEvent::Tag::Invalid: {
-            FML_DCHECK(false)
-                << "Flutter PlatformView::OnScenicEvent: Got an invalid INPUT "
-                   "event.";
-          }
-        }
-        break;
       default: {
         break;
       }
@@ -231,19 +212,19 @@ void GfxPlatformView::OnScenicEvent(
     const float pixel_ratio = *view_pixel_ratio_;
     const std::array<float, 2> logical_size = *view_logical_size_;
     SetViewportMetrics({
-        pixel_ratio,                    // device_pixel_ratio
-        logical_size[0] * pixel_ratio,  // physical_width
-        logical_size[1] * pixel_ratio,  // physical_height
-        0.0f,                           // physical_padding_top
-        0.0f,                           // physical_padding_right
-        0.0f,                           // physical_padding_bottom
-        0.0f,                           // physical_padding_left
-        0.0f,                           // physical_view_inset_top
-        0.0f,                           // physical_view_inset_right
-        0.0f,                           // physical_view_inset_bottom
-        0.0f,                           // physical_view_inset_left
-        0.0f,                           // p_physical_system_gesture_inset_top
-        0.0f,                           // p_physical_system_gesture_inset_right
+        pixel_ratio,                                // device_pixel_ratio
+        std::round(logical_size[0] * pixel_ratio),  // physical_width
+        std::round(logical_size[1] * pixel_ratio),  // physical_height
+        0.0f,                                       // physical_padding_top
+        0.0f,                                       // physical_padding_right
+        0.0f,                                       // physical_padding_bottom
+        0.0f,                                       // physical_padding_left
+        0.0f,                                       // physical_view_inset_top
+        0.0f,                                       // physical_view_inset_right
+        0.0f,  // physical_view_inset_bottom
+        0.0f,  // physical_view_inset_left
+        0.0f,  // p_physical_system_gesture_inset_top
+        0.0f,  // p_physical_system_gesture_inset_right
         0.0f,  // p_physical_system_gesture_inset_bottom
         0.0f,  // p_physical_system_gesture_inset_left,
         -1.0,  // p_physical_touch_slop,
@@ -293,6 +274,9 @@ bool GfxPlatformView::OnChildViewDisconnected(
       << "  }"
       << "}";
   auto call = out.str();
+
+  // A disconnected view cannot listen to pointer events.
+  pointer_injector_delegate_->OnDestroyView(view_id_mapping->second);
 
   std::unique_ptr<flutter::PlatformMessage> message =
       std::make_unique<flutter::PlatformMessage>(
@@ -349,6 +333,7 @@ void GfxPlatformView::OnCreateView(ViewCallback on_view_created,
 
           FML_DCHECK(weak->child_view_ids_.count(resource_id) == 0);
           weak->child_view_ids_[resource_id] = view_id;
+          weak->pointer_injector_delegate_->OnCreateView(view_id);
         });
       };
   on_create_view_callback_(view_id_raw, std::move(on_view_created),
@@ -357,10 +342,10 @@ void GfxPlatformView::OnCreateView(ViewCallback on_view_created,
 
 void GfxPlatformView::OnDisposeView(int64_t view_id_raw) {
   auto on_view_unbound =
-      [weak = weak_factory_.GetWeakPtr(),
+      [weak = weak_factory_.GetWeakPtr(), view_id = view_id_raw,
        platform_task_runner = task_runners_.GetPlatformTaskRunner()](
           scenic::ResourceId resource_id) {
-        platform_task_runner->PostTask([weak, resource_id]() {
+        platform_task_runner->PostTask([weak, resource_id, view_id]() {
           if (!weak) {
             FML_LOG(WARNING)
                 << "ViewHolder unbound from PlatformView after PlatformView"
@@ -370,6 +355,7 @@ void GfxPlatformView::OnDisposeView(int64_t view_id_raw) {
 
           FML_DCHECK(weak->child_view_ids_.count(resource_id) == 1);
           weak->child_view_ids_.erase(resource_id);
+          weak->pointer_injector_delegate_->OnDestroyView(view_id);
         });
       };
   on_destroy_view_callback_(view_id_raw, std::move(on_view_unbound));

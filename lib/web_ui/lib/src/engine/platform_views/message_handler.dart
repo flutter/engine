@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:typed_data';
 
+import '../dom.dart';
 import '../services.dart';
 import '../util.dart';
 import 'content_manager.dart';
@@ -13,9 +13,9 @@ import 'content_manager.dart';
 /// Copied here so there's no circular dependencies.
 typedef _PlatformMessageResponseCallback = void Function(ByteData? data);
 
-/// A function that handle a newly created [html.Element] with the contents of a
+/// A function that handle a newly created [DomElement] with the contents of a
 /// platform view with a unique [int] id.
-typedef PlatformViewContentHandler = void Function(html.Element);
+typedef PlatformViewContentHandler = void Function(DomElement);
 
 /// This class handles incoming framework messages to create/dispose Platform Views.
 ///
@@ -39,16 +39,15 @@ typedef PlatformViewContentHandler = void Function(html.Element);
 /// some extra cleanup of its internal state, but it can do it automatically. See
 /// [HtmlViewEmbedder.disposeViews]
 class PlatformViewMessageHandler {
-  final MethodCodec _codec = const StandardMethodCodec();
-
-  final PlatformViewManager _contentManager;
-  final PlatformViewContentHandler? _contentHandler;
-
   PlatformViewMessageHandler({
     required PlatformViewManager contentManager,
     PlatformViewContentHandler? contentHandler,
   }) : _contentManager = contentManager,
        _contentHandler = contentHandler;
+
+  final MethodCodec _codec = const StandardMethodCodec();
+  final PlatformViewManager _contentManager;
+  final PlatformViewContentHandler? _contentHandler;
 
   /// Handle a `create` Platform View message.
   ///
@@ -73,8 +72,10 @@ class PlatformViewMessageHandler {
     if (!_contentManager.knowsViewType(viewType)) {
       callback(_codec.encodeErrorEnvelope(
         code: 'unregistered_view_type',
-        message: 'trying to create a view with an unregistered type',
-        details: 'unregistered view type: $viewType',
+        message: 'A HtmlElementView widget is trying to create a platform view '
+            'with an unregistered type: <$viewType>.',
+        details: 'If you are the author of the PlatformView, make sure '
+            '`registerViewFactory` is invoked.',
       ));
       return;
     }
@@ -89,7 +90,7 @@ class PlatformViewMessageHandler {
     }
 
     // TODO(hterkelsen): How can users add extra `args` from the HtmlElementView widget?
-    final html.Element content = _contentManager.renderContent(
+    final DomElement content = _contentManager.renderContent(
       viewType,
       viewId,
       args,

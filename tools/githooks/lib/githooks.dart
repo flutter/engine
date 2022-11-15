@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 import 'dart:io' as io;
 
 import 'package:args/args.dart';
@@ -21,6 +19,10 @@ Future<int> run(List<String> args) async {
 
   // Add top-level arguments.
   runner.argParser
+    ..addFlag(
+      'enable-clang-tidy',
+      help: 'Enable running clang-tidy on changed files.',
+    )
     ..addOption(
       'flutter',
       abbr: 'f',
@@ -30,7 +32,6 @@ Future<int> run(List<String> args) async {
       'verbose',
       abbr: 'v',
       help: 'Runs with verbose logging',
-      defaultsTo: false,
     );
 
   if (args.isEmpty) {

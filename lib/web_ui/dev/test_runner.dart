@@ -21,40 +21,35 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     argParser
       ..addFlag(
         'debug',
-        defaultsTo: false,
         help: 'Pauses the browser before running a test, giving you an '
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
       )
       ..addFlag(
         'watch',
-        defaultsTo: false,
         abbr: 'w',
         help: 'Run in watch mode so the tests re-run whenever a change is '
             'made.',
       )
-      ..addFlag('use-system-flutter',
-          defaultsTo: false,
-          help:
-              'integration tests are using flutter repository for various tasks'
-              ', such as flutter drive, flutter pub get. If this flag is set, felt '
-              'will use flutter command without cloning the repository. This flag '
-              'can save internet bandwidth. However use with caution. Note that '
-              'since flutter repo is always synced to youngest commit older than '
-              'the engine commit for the tests running in CI, the tests results '
-              'won\'t be consistent with CIs when this flag is set. flutter '
-              'command should be set in the PATH for this flag to be useful.'
-              'This flag can also be used to test local Flutter changes.')
+      ..addFlag(
+        'use-system-flutter',
+        help: 'integration tests are using flutter repository for various tasks'
+            ', such as flutter drive, flutter pub get. If this flag is set, felt '
+            'will use flutter command without cloning the repository. This flag '
+            'can save internet bandwidth. However use with caution. Note that '
+            'since flutter repo is always synced to youngest commit older than '
+            'the engine commit for the tests running in CI, the tests results '
+            "won't be consistent with CIs when this flag is set. flutter "
+            'command should be set in the PATH for this flag to be useful.'
+            'This flag can also be used to test local Flutter changes.')
       ..addFlag(
         'require-skia-gold',
-        defaultsTo: false,
         help:
             'Whether we require Skia Gold to be available or not. When this '
             'flag is true, the tests will fail if Skia Gold is not available.',
       )
       ..addFlag(
         'update-screenshot-goldens',
-        defaultsTo: false,
         help:
             'When running screenshot tests writes them to the file system into '
             '.dart_tool/goldens. Use this option to bulk-update all screenshots, '
@@ -68,8 +63,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'fail-early',
-        defaultsTo: false,
-        negatable: true,
         help: 'If set, causes the test runner to exit upon the first test '
               'failure. If not set, the test runner will continue running '
               'test despite failures and will report them after all tests '
@@ -80,6 +73,15 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Optional. The path to a local build of CanvasKit to use in '
               'tests. If omitted, the test runner uses the default CanvasKit '
               'build.',
+      )
+      ..addFlag(
+        'wasm',
+        help: 'Whether the test we are running are compiled to webassembly.'
+      )
+      ..addFlag(
+        'use-local-canvaskit',
+        help: 'Optional. Whether or not to use the locally built version of '
+              'CanvasKit in the tests.',
       );
   }
 
@@ -92,6 +94,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get isWatchMode => boolArg('watch');
 
   bool get failEarly => boolArg('fail-early');
+
+  bool get isWasm => boolArg('wasm');
 
   /// Whether to start the browser in debug mode.
   ///
@@ -122,6 +126,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
   String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
+  /// Whether or not to use the locally built version of CanvasKit.
+  bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
+
   @override
   Future<bool> run() async {
     final List<FilePath> testFiles = runAllTests
@@ -130,22 +137,41 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CompileTestsStep(testFiles: testFiles),
+      CompileTestsStep(testFiles: testFiles, useLocalCanvasKit: useLocalCanvasKit, isWasm: isWasm),
       RunTestsStep(
         browserName: browserName,
         testFiles: testFiles,
         isDebug: isDebug,
+        isWasm: isWasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         requireSkiaGold: requireSkiaGold,
         overridePathToCanvasKit: overridePathToCanvasKit,
       ),
     ]);
-    await testPipeline.run();
+
+    try {
+      await testPipeline.run();
+      if (isWatchMode) {
+        print('');
+        print('Initial test succeeded!');
+      }
+    } catch(error, stackTrace) {
+      if (isWatchMode) {
+        // The error is printed but not rethrown in watch mode because
+        // failures are expected. The idea is that the developer corrects the
+        // error, saves the file, and the pipeline reruns.
+        print('');
+        print('Initial test failed!\n');
+        print(error);
+        print(stackTrace);
+      } else {
+        rethrow;
+      }
+    }
 
     if (isWatchMode) {
       final FilePath dir = FilePath.fromWebUi('');
       print('');
-      print('Initial test run is done!');
       print(
           'Watching ${dir.relativeToCwd}/lib and ${dir.relativeToCwd}/test to re-run tests');
       print('');

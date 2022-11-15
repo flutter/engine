@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -21,8 +20,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   test('Blend circles with difference and color', () async {
@@ -58,10 +57,7 @@ Future<void> testMain() async {
           ..color = const Color.fromARGB(128, 255, 0, 0));
     rc.restore();
 
-    await canvasScreenshot(rc, 'canvas_blend_circle_diff_color',
-        region: const Rect.fromLTWH(0, 0, 500, 500),
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
-            operatingSystem == OperatingSystem.iOs ? 1.0 : 0);
+    await canvasScreenshot(rc, 'canvas_blend_circle_diff_color');
   });
 
   test('Blend circle and text with multiply', () async {
@@ -97,19 +93,16 @@ Future<void> testMain() async {
     rc.drawImage(createTestImage(), const Offset(135.0, 130.0),
         SurfacePaint()..blendMode = BlendMode.multiply);
     rc.restore();
-    await canvasScreenshot(rc, 'canvas_blend_image_multiply',
-        region: const Rect.fromLTWH(0, 0, 500, 500),
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
-        operatingSystem == OperatingSystem.iOs ? 2.0 : 0);
+    await canvasScreenshot(rc, 'canvas_blend_image_multiply');
   });
 }
 
 HtmlImage createTestImage() {
   const int width = 100;
   const int height = 50;
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -119,7 +112,7 @@ HtmlImage createTestImage() {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

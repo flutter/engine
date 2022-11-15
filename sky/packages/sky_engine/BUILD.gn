@@ -22,6 +22,7 @@ import("//third_party/dart/sdk/lib/js/js_sources.gni")
 import("//third_party/dart/sdk/lib/js_util/js_util_sources.gni")
 import("//third_party/dart/sdk/lib/math/math_sources.gni")
 import("//third_party/dart/sdk/lib/typed_data/typed_data_sources.gni")
+import("//third_party/dart/sdk/lib/wasm/wasm_sources.gni")
 
 if (!is_fuchsia) {
   copy("copy_sky_engine_authors") {
@@ -137,17 +138,19 @@ copy("math") {
       [ "$root_gen_dir/dart-pkg/sky_engine/lib/math/{{source_file_part}}" ]
 }
 
-copy("spirv") {
-  sources = [ "//flutter/lib/spirv/lib" ]
-  outputs = [ "$root_gen_dir/dart-pkg/sky_engine/lib/spirv" ]
-}
-
 copy("typed_data") {
   lib_path = rebase_path("typed_data", "", dart_sdk_lib_path)
   sources = rebase_path(typed_data_sdk_sources, "", lib_path)
   outputs = [
     "$root_gen_dir/dart-pkg/sky_engine/lib/typed_data/{{source_file_part}}",
   ]
+}
+
+copy("wasm") {
+  lib_path = rebase_path("wasm", "", dart_sdk_lib_path)
+  sources = rebase_path(wasm_sdk_sources, "", lib_path)
+  outputs =
+      [ "$root_gen_dir/dart-pkg/sky_engine/lib/wasm/{{source_file_part}}" ]
 }
 
 copy("copy_dart_ui") {
@@ -182,8 +185,8 @@ group("copy_dart_sdk") {
     ":js",
     ":js_util",
     ":math",
-    ":spirv",
     ":typed_data",
+    ":wasm",
   ]
 }
 
@@ -208,6 +211,7 @@ generated_file("_embedder_yaml") {
     "  \"dart:math\": \"math/math.dart\"",
     "  \"dart:typed_data\": \"typed_data/typed_data.dart\"",
     "  \"dart:ui\": \"ui/ui.dart\"",
+    "  \"dart:wasm\": \"wasm/wasm_types.dart\"",
     "",
     "  \"dart:_http\": \"_http/http.dart\"",
     "  \"dart:_interceptors\": \"_interceptors/interceptors.dart\"",
@@ -215,7 +219,6 @@ generated_file("_embedder_yaml") {
     "  # public API, e.g. List being Iterable by virtue of implementing",
     "  # EfficientLengthIterable. Not including this library yields analysis errors.",
     "  \"dart:_internal\": \"internal/internal.dart\"",
-    "  \"dart:_spirv\": \"spirv/spirv.dart\"",
     "  \"dart:nativewrappers\": \"_empty.dart\"",
   ]
 }

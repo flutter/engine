@@ -7,6 +7,7 @@ import 'dart:io' as io;
 import 'package:path/path.dart' as pathlib;
 // TODO(yjbanov): remove hacks when this is fixed:
 //                https://github.com/dart-lang/test/issues/1521
+import 'package:skia_gold_client/skia_gold_client.dart';
 import 'package:test_api/src/backend/group.dart' as hack;
 import 'package:test_api/src/backend/live_test.dart' as hack;
 import 'package:test_api/src/backend/runtime.dart' as hack;
@@ -15,7 +16,6 @@ import 'package:test_core/src/runner/configuration/reporters.dart' as hack;
 import 'package:test_core/src/runner/engine.dart' as hack;
 import 'package:test_core/src/runner/hack_register_platform.dart' as hack;
 import 'package:test_core/src/runner/reporter.dart' as hack;
-import 'package:web_test_utils/skia_client.dart';
 
 import '../browser.dart';
 import '../common.dart';
@@ -38,18 +38,18 @@ class RunTestsStep implements PipelineStep {
     required this.requireSkiaGold,
     this.testFiles,
     required this.overridePathToCanvasKit,
-  }) : _browserEnvironment = getBrowserEnvironment(browserName);
+    required this.isWasm
+  });
 
   final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
+  final bool isWasm;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
 
   /// Require Skia Gold to be available and reachable.
   final bool requireSkiaGold;
-
-  final BrowserEnvironment _browserEnvironment;
 
   @override
   String get description => 'run_tests';
@@ -63,20 +63,58 @@ class RunTestsStep implements PipelineStep {
   @override
   Future<void> run() async {
     await _prepareTestResultsDirectory();
-    await _browserEnvironment.prepare();
+
+    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(browserName, enableWasmGC: isWasm);
+    await browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
-    await _runTestBatch(
-      testFiles: testFiles,
-      browserEnvironment: _browserEnvironment,
-      expectFailure: false,
-      isDebug: isDebug,
-      doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
-      skiaClient: skiaClient,
-      overridePathToCanvasKit: overridePathToCanvasKit,
-    );
+    final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
+
+    if (sortedTests.htmlTests.isNotEmpty) {
+      await _runTestBatch(
+        testFiles: sortedTests.htmlTests,
+        renderer: Renderer.html,
+        browserEnvironment: browserEnvironment,
+        expectFailure: false,
+        isDebug: isDebug,
+        isWasm: isWasm,
+        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
+      );
+    }
+
+    if (sortedTests.canvasKitTests.isNotEmpty) {
+      await _runTestBatch(
+        testFiles: sortedTests.canvasKitTests,
+        renderer: Renderer.canvasKit,
+        browserEnvironment: browserEnvironment,
+        expectFailure: false,
+        isDebug: isDebug,
+        isWasm: isWasm,
+        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
+      );
+    }
+
+    if (sortedTests.skwasmTests.isNotEmpty) {
+      await _runTestBatch(
+        testFiles: sortedTests.skwasmTests,
+        renderer: Renderer.skwasm,
+        browserEnvironment: browserEnvironment,
+        expectFailure: false,
+        isDebug: isDebug,
+        isWasm: isWasm,
+        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+        skiaClient: skiaClient,
+        overridePathToCanvasKit: overridePathToCanvasKit,
+      );
+    }
+
+    await browserEnvironment.cleanup();
 
     if (io.exitCode != 0) {
       throw ToolExit('Some tests failed');
@@ -86,7 +124,7 @@ class RunTestsStep implements PipelineStep {
   Future<SkiaGoldClient?> _createSkiaClient() async {
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       environment.webUiSkiaGoldDirectory,
-      browserName: browserName,
+      dimensions: <String, String> {'Browser': browserName},
     );
 
     if (await _checkSkiaClient(skiaClient)) {
@@ -104,7 +142,7 @@ class RunTestsStep implements PipelineStep {
   Future<bool> _checkSkiaClient(SkiaGoldClient skiaClient) async {
     // Now let's check whether Skia Gold is reachable or not.
     if (isLuci) {
-      if (SkiaGoldClient.isAvailable) {
+      if (isSkiaGoldClientAvailable) {
         try {
           await skiaClient.auth();
           return true;
@@ -141,7 +179,9 @@ Future<void> _prepareTestResultsDirectory() async {
 /// value if any tests fail.
 Future<void> _runTestBatch({
   required List<FilePath> testFiles,
+  required Renderer renderer,
   required bool isDebug,
+  required bool isWasm,
   required BrowserEnvironment browserEnvironment,
   required bool doUpdateScreenshotGoldens,
   required bool expectFailure,
@@ -152,6 +192,10 @@ Future<void> _runTestBatch({
     environment.webUiRootDir.path,
     browserEnvironment.packageTestConfigurationYamlFile,
   );
+  final String precompiledBuildDir = pathlib.join(
+    environment.webUiBuildDir.path,
+    getBuildDirForRenderer(renderer),
+  );
   final List<String> testArgs = <String>[
     ...<String>['-r', 'compact'],
     // Disable concurrency. Running with concurrency proved to be flaky.
@@ -161,10 +205,10 @@ Future<void> _runTestBatch({
     if (expectFailure)
       '--reporter=name-only',
     '--platform=${browserEnvironment.packageTestRuntime.identifier}',
-    '--precompiled=${environment.webUiBuildDir.path}',
+    '--precompiled=$precompiledBuildDir',
     '--configuration=$configurationFilePath',
     '--',
-    ...testFiles.map((FilePath f) => f.relativeToWebUi).toList(),
+    ...testFiles.map((FilePath f) => f.relativeToWebUi),
   ];
 
   if (expectFailure) {
@@ -181,11 +225,13 @@ Future<void> _runTestBatch({
   ], () {
     return BrowserPlatform.start(
       browserEnvironment: browserEnvironment,
+      renderer: renderer,
       // It doesn't make sense to update a screenshot for a test that is
       // expected to fail.
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
       overridePathToCanvasKit: overridePathToCanvasKit,
+      isWasm: isWasm,
     );
   });
 

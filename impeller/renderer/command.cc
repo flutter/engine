@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/command.h"
 
+#include <utility>
+
 #include "impeller/base/validation.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/vertex_descriptor.h"
@@ -16,26 +18,44 @@ bool Command::BindVertices(const VertexBuffer& buffer) {
     return false;
   }
 
-  vertex_bindings.buffers[VertexDescriptor::kReservedVertexBufferIndex] =
-      buffer.vertex_buffer;
+  vertex_bindings.buffers[VertexDescriptor::kReservedVertexBufferIndex] = {
+      nullptr, buffer.vertex_buffer};
   index_buffer = buffer.index_buffer;
   index_count = buffer.index_count;
   index_type = buffer.index_type;
   return true;
 }
 
-bool Command::BindResource(ShaderStage stage, size_t binding, BufferView view) {
+BufferView Command::GetVertexBuffer() const {
+  auto found = vertex_bindings.buffers.find(
+      VertexDescriptor::kReservedVertexBufferIndex);
+  if (found != vertex_bindings.buffers.end()) {
+    return found->second.resource;
+  }
+  return {};
+}
+
+bool Command::BindResource(ShaderStage stage,
+                           const ShaderUniformSlot& slot,
+                           const ShaderMetadata& metadata,
+                           const BufferView& view) {
   if (!view) {
     return false;
   }
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.buffers[binding] = view;
+      vertex_bindings.uniforms[slot.ext_res_0] = slot;
+      vertex_bindings.buffers[slot.ext_res_0] = {&metadata, view};
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.buffers[binding] = view;
+      fragment_bindings.uniforms[slot.ext_res_0] = slot;
+      fragment_bindings.buffers[slot.ext_res_0] = {&metadata, view};
       return true;
+    case ShaderStage::kCompute:
+      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
+    case ShaderStage::kTessellationControl:
+    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kUnknown:
       return false;
   }
@@ -45,7 +65,8 @@ bool Command::BindResource(ShaderStage stage, size_t binding, BufferView view) {
 
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
-                           std::shared_ptr<const Texture> texture) {
+                           const ShaderMetadata& metadata,
+                           const std::shared_ptr<const Texture>& texture) {
   if (!texture || !texture->IsValid()) {
     return false;
   }
@@ -56,11 +77,15 @@ bool Command::BindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.textures[slot.texture_index] = texture;
+      vertex_bindings.textures[slot.texture_index] = {&metadata, texture};
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.textures[slot.texture_index] = texture;
+      fragment_bindings.textures[slot.texture_index] = {&metadata, texture};
       return true;
+    case ShaderStage::kCompute:
+      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
+    case ShaderStage::kTessellationControl:
+    case ShaderStage::kTessellationEvaluation:
     case ShaderStage::kUnknown:
       return false;
   }
@@ -70,7 +95,8 @@ bool Command::BindResource(ShaderStage stage,
 
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
-                           std::shared_ptr<const Sampler> sampler) {
+                           const ShaderMetadata& metadata,
+                           const std::shared_ptr<const Sampler>& sampler) {
   if (!sampler || !sampler->IsValid()) {
     return false;
   }
@@ -81,12 +107,18 @@ bool Command::BindResource(ShaderStage stage,
 
   switch (stage) {
     case ShaderStage::kVertex:
-      vertex_bindings.samplers[slot.sampler_index] = sampler;
+      vertex_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
+      vertex_bindings.sampled_images[slot.sampler_index] = slot;
       return true;
     case ShaderStage::kFragment:
-      fragment_bindings.samplers[slot.sampler_index] = sampler;
+      fragment_bindings.samplers[slot.sampler_index] = {&metadata, sampler};
+      fragment_bindings.sampled_images[slot.sampler_index] = slot;
       return true;
+    case ShaderStage::kCompute:
+      VALIDATION_LOG << "Use ComputeCommands for compute shader stages.";
     case ShaderStage::kUnknown:
+    case ShaderStage::kTessellationControl:
+    case ShaderStage::kTessellationEvaluation:
       return false;
   }
 
@@ -95,10 +127,11 @@ bool Command::BindResource(ShaderStage stage,
 
 bool Command::BindResource(ShaderStage stage,
                            const SampledImageSlot& slot,
-                           std::shared_ptr<const Texture> texture,
-                           std::shared_ptr<const Sampler> sampler) {
-  return BindResource(stage, slot, texture) &&
-         BindResource(stage, slot, sampler);
+                           const ShaderMetadata& metadata,
+                           const std::shared_ptr<const Texture>& texture,
+                           const std::shared_ptr<const Sampler>& sampler) {
+  return BindResource(stage, slot, metadata, texture) &&
+         BindResource(stage, slot, metadata, sampler);
 }
 
 }  // namespace impeller

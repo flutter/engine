@@ -12,8 +12,7 @@
  * A keyboard event goes through a few sections, each can choose to handled the
  * event, and only unhandled events can move to the next section:
  *
- * - Pre-filtering: Events during IME are sent to the system immediately
- *   (to be implemented).
+ * - Pre-filtering: Events during IME are sent to the system immediately.
  * - Keyboard: Dispatch to the embedder responder and the channel responder
  *   simultaneously. After both responders have responded (asynchronously), the
  *   event is considered handled if either responder handles.
@@ -39,5 +38,14 @@
  * the next responder afterwards.
  */
 - (void)handleEvent:(nonnull NSEvent*)event;
+
+/**
+ * Returns yes if is event currently being redispatched.
+ *
+ * In some instances (i.e. emoji shortcut) the event may be redelivered by cocoa
+ * as key equivalent to FlutterTextInput, in which case it shouldn't be
+ * processed again.
+ */
+- (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
 
 @end

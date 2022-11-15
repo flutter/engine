@@ -159,16 +159,16 @@ ComponentV1::ComponentV1(
       continue;
     }
 
-    zx::channel dir;
+    fidl::InterfaceHandle<fuchsia::io::Directory> dir;
     if (path == kServiceRootPath) {
       svc_ = std::make_unique<sys::ServiceDirectory>(
           std::move(startup_info.flat_namespace.directories.at(i)));
-      dir = svc_->CloneChannel().TakeChannel();
+      dir = svc_->CloneChannel();
     } else {
       dir = std::move(startup_info.flat_namespace.directories.at(i));
     }
 
-    zx_handle_t dir_handle = dir.release();
+    zx_handle_t dir_handle = dir.TakeChannel().release();
     if (fdio_ns_bind(fdio_ns_.get(), path.data(), dir_handle) != ZX_OK) {
       FML_LOG(ERROR) << "Could not bind path to namespace: " << path;
       zx_handle_close(dir_handle);
@@ -199,7 +199,7 @@ ComponentV1::ComponentV1(
     outgoing_dir_->Serve(fuchsia::io::OpenFlags::RIGHT_READABLE |
                              fuchsia::io::OpenFlags::RIGHT_WRITABLE |
                              fuchsia::io::OpenFlags::DIRECTORY,
-                         std::move(launch_info.directory_request));
+                         launch_info.directory_request.TakeChannel());
   }
 
   directory_request_ = directory_ptr_.NewRequest();
@@ -221,32 +221,31 @@ ComponentV1::ComponentV1(
                             fuchsia::io::OpenFlags::RIGHT_WRITABLE,
                         cloned_directory_ptr_.NewRequest());
 
-  cloned_directory_ptr_.events().OnOpen =
-      [this](zx_status_t status, std::unique_ptr<fuchsia::io::NodeInfo> info) {
-        cloned_directory_ptr_.Unbind();
-        if (status != ZX_OK) {
-          FML_LOG(ERROR)
-              << "could not bind out directory for flutter component("
-              << debug_label_ << "): " << zx_status_get_string(status);
-          return;
-        }
-        const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
-        // add other directories as RemoteDirs.
-        for (auto& dir_str : other_dirs) {
-          fuchsia::io::DirectoryHandle dir;
-          auto request = dir.NewRequest().TakeChannel();
-          auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
-                                                dir_str, request.release());
-          if (status == ZX_OK) {
-            outgoing_dir_->AddEntry(
-                dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
-          } else {
-            FML_LOG(ERROR) << "could not add out directory entry(" << dir_str
-                           << ") for flutter component(" << debug_label_
-                           << "): " << zx_status_get_string(status);
-          }
-        }
-      };
+  cloned_directory_ptr_.events().OnOpen = [this](zx_status_t status,
+                                                 auto unused) {
+    cloned_directory_ptr_.Unbind();
+    if (status != ZX_OK) {
+      FML_LOG(ERROR) << "could not bind out directory for flutter component("
+                     << debug_label_ << "): " << zx_status_get_string(status);
+      return;
+    }
+    const char* other_dirs[] = {"debug", "ctrl", "diagnostics"};
+    // add other directories as RemoteDirs.
+    for (auto& dir_str : other_dirs) {
+      fuchsia::io::DirectoryHandle dir;
+      auto request = dir.NewRequest().TakeChannel();
+      auto status = fdio_service_connect_at(directory_ptr_.channel().get(),
+                                            dir_str, request.release());
+      if (status == ZX_OK) {
+        outgoing_dir_->AddEntry(
+            dir_str, std::make_unique<vfs::RemoteDir>(dir.TakeChannel()));
+      } else {
+        FML_LOG(ERROR) << "could not add out directory entry(" << dir_str
+                       << ") for flutter component(" << debug_label_
+                       << "): " << zx_status_get_string(status);
+      }
+    }
+  };
 
   cloned_directory_ptr_.set_error_handler(
       [this](zx_status_t status) { cloned_directory_ptr_.Unbind(); });
@@ -418,13 +417,13 @@ ComponentV1::ComponentV1(
 
   settings_.log_message_callback = [](const std::string& tag,
                                       const std::string& message) {
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       std::cout << tag << ": ";
     }
     std::cout << message << std::endl;
   };
 
-  settings_.dart_flags = {"--lazy_async_stacks"};
+  settings_.dart_flags = {};
 
   // Don't collect CPU samples from Dart VM C++ code.
   settings_.dart_flags.push_back("--no_profile_vm");
@@ -519,7 +518,7 @@ void ComponentV1::OnEngineTerminate(const Engine* shell_holder) {
 
   shell_holders_.erase(found);
 
-  if (shell_holders_.size() == 0) {
+  if (shell_holders_.empty()) {
     FML_VLOG(-1) << "Killing component because all shell holders have been "
                     "terminated.";
     Kill();

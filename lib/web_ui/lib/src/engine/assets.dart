@@ -3,32 +3,37 @@
 // found in the LICENSE file.
 
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'dom.dart';
-import 'text/font_collection.dart';
 import 'util.dart';
+
+const String ahemFontFamily = 'Ahem';
+const String ahemFontUrl = '/assets/fonts/ahem.ttf';
+const String robotoFontFamily = 'Roboto';
+const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
+const String robotoVariableFontFamily = 'RobotoVariable';
+const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
 
 /// This class downloads assets over the network.
 ///
 /// The assets are resolved relative to [assetsDir] inside the directory
 /// containing the currently executing JS script.
 class AssetManager {
+  /// Initializes [AssetManager] with path to assets relative to baseUrl.
+  const AssetManager({this.assetsDir = _defaultAssetsDir});
+
   static const String _defaultAssetsDir = 'assets';
 
   /// The directory containing the assets.
   final String assetsDir;
 
-  /// Initializes [AssetManager] with path to assets relative to baseUrl.
-  const AssetManager({this.assetsDir = _defaultAssetsDir});
-
   String? get _baseUrl {
     return domWindow.document
         .querySelectorAll('meta')
-        .where((Object? domNode) => domInstanceOfString(domNode,
+        .where((DomElement domNode) => domInstanceOfString(domNode,
                 'HTMLMetaElement'))
-        .map((Object? domNode) => domNode! as DomHTMLMetaElement)
+        .map((DomElement domNode) => domNode as DomHTMLMetaElement)
         .firstWhereOrNull(
             (DomHTMLMetaElement element) => element.name == 'assetBase')
         ?.content;
@@ -55,29 +60,37 @@ class AssetManager {
     if (Uri.parse(asset).hasScheme) {
       return Uri.encodeFull(asset);
     }
-    return Uri.encodeFull((_baseUrl ?? '') + '$assetsDir/$asset');
+    return Uri.encodeFull('${_baseUrl ?? ''}$assetsDir/$asset');
   }
 
-  /// Loads an asset using an [html.HttpRequest] and returns data as [ByteData].
+  /// Loads an asset using an [DomXMLHttpRequest] and returns data as [ByteData].
   Future<ByteData> load(String asset) async {
     final String url = getAssetUrl(asset);
     try {
-      final html.HttpRequest request =
-          await html.HttpRequest.request(url, responseType: 'arraybuffer');
+      final DomXMLHttpRequest request =
+          await domHttpRequest(url, responseType: 'arraybuffer');
 
       final ByteBuffer response = request.response as ByteBuffer;
       return response.asByteData();
-    } on html.ProgressEvent catch (e) {
-      final html.EventTarget? target = e.target;
-      if (target is html.HttpRequest) {
-        if (target.status == 404 && asset == 'AssetManifest.json') {
+    } catch (e) {
+      if (!domInstanceOfString(e, 'ProgressEvent')){
+        rethrow;
+      }
+      final DomProgressEvent p = e as DomProgressEvent;
+      final DomEventTarget? target = p.target;
+      if (domInstanceOfString(target,'XMLHttpRequest')) {
+        final DomXMLHttpRequest request = target! as DomXMLHttpRequest;
+        if (request.status == 404 && asset == 'AssetManifest.json') {
           printWarning('Asset manifest does not exist at `$url` – ignoring.');
           return Uint8List.fromList(utf8.encode('{}')).buffer.asByteData();
         }
-        throw AssetManagerException(url, target.status!);
+        throw AssetManagerException(url, request.status!);
       }
 
-      printWarning('Caught ProgressEvent with target: $target');
+      final String? constructorName = target == null ? 'null' :
+          domGetConstructorName(target);
+      printWarning('Caught ProgressEvent with unknown target: '
+          '$constructorName');
       rethrow;
     }
   }
@@ -85,14 +98,14 @@ class AssetManager {
 
 /// Thrown to indicate http failure during asset loading.
 class AssetManagerException implements Exception {
+  /// Initializes exception with request url and http status.
+  AssetManagerException(this.url, this.httpStatus);
+
   /// Http request url for asset.
   final String url;
 
   /// Http status of response.
   final int httpStatus;
-
-  /// Initializes exception with request url and http status.
-  AssetManagerException(this.url, this.httpStatus);
 
   @override
   String toString() => 'Failed to load asset at "$url" ($httpStatus)';

@@ -4,9 +4,11 @@
 
 #include "flutter/display_list/display_list_color_source.h"
 
-namespace flutter {
+#include "flutter/display_list/display_list_runtime_effect.h"
+#include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/fml/logging.h"
 
-static constexpr int kGradientStaticRecaptureCount = 24;
+namespace flutter {
 
 std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
   if (sk_shader == nullptr) {
@@ -18,8 +20,8 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
     SkImage* image = sk_shader->isAImage(&local_matrix, xy);
     if (image) {
       return std::make_shared<DlImageColorSource>(
-          sk_ref_sp(image), ToDl(xy[0]), ToDl(xy[1]),
-          DisplayList::LinearSampling, &local_matrix);
+          DlImage::Make(image), ToDl(xy[0]), ToDl(xy[1]),
+          DlImageSampling::kLinear, &local_matrix);
     }
   }
   // Skia provides |SkShader->asAGradient(&info)| method to access the
@@ -27,62 +29,11 @@ std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
   // of parameters which are missing, including the local matrix in every
   // gradient, and the sweep angles in the sweep gradients.
   //
-  // Since the matrix is a rarely used property and since most sweep
-  // gradients swing full circle, we will simply assume an Identity matrix
-  // and 0,360 for the Sweep gradient.
-  // Possibly the most likely "missing attribute" that might be different
-  // would be the sweep gradients which might be a full circle, but might
-  // have their starting angle in a custom direction.
-  SkColor colors[kGradientStaticRecaptureCount];
-  SkScalar stops[kGradientStaticRecaptureCount];
-  SkShader::GradientInfo info = {};
-  info.fColorCount = kGradientStaticRecaptureCount;
-  info.fColors = colors;
-  info.fColorOffsets = stops;
-  SkShader::GradientType type = sk_shader->asAGradient(&info);
-  if (type != SkShader::kNone_GradientType &&
-      info.fColorCount > kGradientStaticRecaptureCount) {
-    int count = info.fColorCount;
-    info.fColors = new SkColor[count];
-    info.fColorOffsets = new SkScalar[count];
-    sk_shader->asAGradient(&info);
-    FML_DCHECK(count == info.fColorCount);
-  }
-  DlTileMode mode = ToDl(info.fTileMode);
-  DlColor* dl_colors = reinterpret_cast<DlColor*>(info.fColors);
-  std::shared_ptr<DlColorSource> source;
-  switch (type) {
-    case SkShader::kNone_GradientType:
-      source = std::make_shared<DlUnknownColorSource>(sk_ref_sp(sk_shader));
-      break;
-    case SkShader::kColor_GradientType:
-      source = std::make_shared<DlColorColorSource>(info.fColors[0]);
-      break;
-    case SkShader::kLinear_GradientType:
-      source = MakeLinear(info.fPoint[0], info.fPoint[1], info.fColorCount,
-                          dl_colors, info.fColorOffsets, mode);
-      break;
-    case SkShader::kRadial_GradientType:
-      source = MakeRadial(info.fPoint[0], info.fRadius[0], info.fColorCount,
-                          dl_colors, info.fColorOffsets, mode);
-      break;
-    case SkShader::kConical_GradientType:
-      source = MakeConical(info.fPoint[0], info.fRadius[0], info.fPoint[1],
-                           info.fRadius[1], info.fColorCount, dl_colors,
-                           info.fColorOffsets, mode);
-      break;
-    case SkShader::kSweep_GradientType:
-      source = MakeSweep(info.fPoint[0], 0, 360, info.fColorCount, dl_colors,
-                         info.fColorOffsets, mode);
-      break;
-  }
-  if (info.fColors != colors) {
-    delete info.fColors;
-  }
-  if (info.fColorOffsets != stops) {
-    delete info.fColorOffsets;
-  }
-  return source;
+  // Since we can't reproduce every Gradient, and customers rely on using
+  // gradients with matrices in text code, we have to just use an Unknown
+  // ColorSource to express all gradients.
+  // (see: https://github.com/flutter/flutter/issues/102947)
+  return std::make_shared<DlUnknownColorSource>(sk_ref_sp(sk_shader));
 }
 
 static void DlGradientDeleter(void* p) {
@@ -178,6 +129,15 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
                                            colors, stops, tile_mode, matrix),
             DlGradientDeleter);
   return std::move(ret);
+}
+
+std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(
+    sk_sp<DlRuntimeEffect> runtime_effect,
+    std::vector<std::shared_ptr<DlColorSource>> samplers,
+    std::shared_ptr<std::vector<uint8_t>> uniform_data) {
+  FML_DCHECK(uniform_data != nullptr);
+  return std::make_shared<DlRuntimeEffectColorSource>(
+      std::move(runtime_effect), std::move(samplers), std::move(uniform_data));
 }
 
 }  // namespace flutter

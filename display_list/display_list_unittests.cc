@@ -2,844 +2,41 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <memory>
+#include <string>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+
 #include "flutter/display_list/display_list.h"
+#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
+#include "flutter/display_list/display_list_paint.h"
+#include "flutter/display_list/display_list_rtree.h"
+#include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
-#include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/effects/SkBlenders.h"
-#include "third_party/skia/include/effects/SkDashPathEffect.h"
-#include "third_party/skia/include/effects/SkGradientShader.h"
-#include "third_party/skia/include/effects/SkImageFilters.h"
 
 namespace flutter {
 namespace testing {
 
-constexpr SkPoint end_points[] = {
-    {0, 0},
-    {100, 100},
-};
-const DlColor colors[] = {
-    DlColor::kGreen(),
-    DlColor::kYellow(),
-    DlColor::kBlue(),
-};
-constexpr float stops[] = {
-    0.0,
-    0.5,
-    1.0,
-};
-std::vector<uint32_t> color_vector(colors, colors + 3);
-std::vector<float> stops_vector(stops, stops + 3);
+static std::vector<testing::DisplayListInvocationGroup> allGroups =
+    CreateAllGroups();
 
-// clang-format off
-constexpr float rotate_color_matrix[20] = {
-    0, 1, 0, 0, 0,
-    0, 0, 1, 0, 0,
-    1, 0, 0, 0, 0,
-    0, 0, 0, 1, 0,
-};
-constexpr float invert_color_matrix[20] = {
-    -1.0,    0,    0, 1.0,   0,
-       0, -1.0,    0, 1.0,   0,
-       0,    0, -1.0, 1.0,   0,
-     1.0,  1.0,  1.0, 1.0,   0,
-};
-// clang-format on
-
-const SkScalar TestDashes1[] = {4.0, 2.0};
-const SkScalar TestDashes2[] = {1.0, 1.5};
-
-constexpr SkPoint TestPoints[] = {
-    {10, 10},
-    {20, 20},
-    {10, 20},
-    {20, 10},
-};
-#define TestPointCount sizeof(TestPoints) / (sizeof(TestPoints[0]))
-
-static const SkSamplingOptions NearestSampling =
-    SkSamplingOptions(SkFilterMode::kNearest, SkMipmapMode::kNone);
-static const SkSamplingOptions LinearSampling =
-    SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone);
-
-static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
-  sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(w, h);
-  SkCanvas* canvas = surface->getCanvas();
-  SkPaint p0, p1;
-  p0.setStyle(SkPaint::kFill_Style);
-  p0.setColor(SK_ColorGREEN);
-  p1.setStyle(SkPaint::kFill_Style);
-  p1.setColor(SK_ColorBLUE);
-  p1.setAlpha(128);
-  for (int y = 0; y < w; y += checker_size) {
-    for (int x = 0; x < h; x += checker_size) {
-      SkPaint& cellp = ((x + y) & 1) == 0 ? p0 : p1;
-      canvas->drawRect(SkRect::MakeXYWH(x, y, checker_size, checker_size),
-                       cellp);
-    }
-  }
-  return DlImage::Make(surface->makeImageSnapshot());
+#ifndef NDEBUG
+TEST(DisplayList, CallMethodAfterBuild) {
+  DisplayListCanvasRecorder recorder(kTestBounds);
+  recorder.drawRect(kTestBounds, SkPaint());
+  recorder.Build();
+  EXPECT_DEATH_IF_SUPPORTED(
+      recorder.drawRect(kTestBounds, SkPaint()),
+      "Calling method on DisplayListCanvasRecorder after Build\\(\\)");
 }
-
-static auto TestImage1 = MakeTestImage(40, 40, 5);
-static auto TestImage2 = MakeTestImage(50, 50, 5);
-
-static const sk_sp<SkBlender> TestBlender1 =
-    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
-static const sk_sp<SkBlender> TestBlender2 =
-    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
-static const sk_sp<SkBlender> TestBlender3 =
-    SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
-static const DlImageColorSource TestSource1(TestImage1->skia_image(),
-                                            DlTileMode::kClamp,
-                                            DlTileMode::kMirror,
-                                            LinearSampling);
-static const std::shared_ptr<DlColorSource> TestSource2 =
-    DlColorSource::MakeLinear(end_points[0],
-                              end_points[1],
-                              3,
-                              colors,
-                              stops,
-                              DlTileMode::kMirror);
-static const std::shared_ptr<DlColorSource> TestSource3 =
-    DlColorSource::MakeRadial(end_points[0],
-                              10.0,
-                              3,
-                              colors,
-                              stops,
-                              DlTileMode::kMirror);
-static const std::shared_ptr<DlColorSource> TestSource4 =
-    DlColorSource::MakeConical(end_points[0],
-                               10.0,
-                               end_points[1],
-                               200.0,
-                               3,
-                               colors,
-                               stops,
-                               DlTileMode::kDecal);
-static const std::shared_ptr<DlColorSource> TestSource5 =
-    DlColorSource::MakeSweep(end_points[0],
-                             0.0,
-                             360.0,
-                             3,
-                             colors,
-                             stops,
-                             DlTileMode::kDecal);
-static const DlBlendColorFilter TestBlendColorFilter1(DlColor::kRed(),
-                                                      DlBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter2(DlColor::kBlue(),
-                                                      DlBlendMode::kDstATop);
-static const DlBlendColorFilter TestBlendColorFilter3(DlColor::kRed(),
-                                                      DlBlendMode::kDstIn);
-static const DlMatrixColorFilter TestMatrixColorFilter1(rotate_color_matrix);
-static const DlMatrixColorFilter TestMatrixColorFilter2(invert_color_matrix);
-static const DlBlurImageFilter TestBlurImageFilter1(5.0,
-                                                    5.0,
-                                                    DlTileMode::kClamp);
-static const DlBlurImageFilter TestBlurImageFilter2(6.0,
-                                                    5.0,
-                                                    DlTileMode::kClamp);
-static const DlBlurImageFilter TestBlurImageFilter3(5.0,
-                                                    6.0,
-                                                    DlTileMode::kClamp);
-static const DlBlurImageFilter TestBlurImageFilter4(5.0,
-                                                    5.0,
-                                                    DlTileMode::kDecal);
-static const DlDilateImageFilter TestDilateImageFilter1(5.0, 5.0);
-static const DlDilateImageFilter TestDilateImageFilter2(6.0, 5.0);
-static const DlDilateImageFilter TestDilateImageFilter3(5.0, 6.0);
-static const DlErodeImageFilter TestErodeImageFilter1(5.0, 5.0);
-static const DlErodeImageFilter TestErodeImageFilter2(6.0, 5.0);
-static const DlErodeImageFilter TestErodeImageFilter3(5.0, 6.0);
-static const DlMatrixImageFilter TestMatrixImageFilter1(SkMatrix::RotateDeg(45),
-                                                        NearestSampling);
-static const DlMatrixImageFilter TestMatrixImageFilter2(SkMatrix::RotateDeg(85),
-                                                        NearestSampling);
-static const DlMatrixImageFilter TestMatrixImageFilter3(SkMatrix::RotateDeg(45),
-                                                        LinearSampling);
-static const DlComposeImageFilter TestComposeImageFilter1(
-    TestBlurImageFilter1,
-    TestMatrixImageFilter1);
-static const DlComposeImageFilter TestComposeImageFilter2(
-    TestBlurImageFilter2,
-    TestMatrixImageFilter1);
-static const DlComposeImageFilter TestComposeImageFilter3(
-    TestBlurImageFilter1,
-    TestMatrixImageFilter2);
-static const DlColorFilterImageFilter TestCFImageFilter1(TestBlendColorFilter1);
-static const DlColorFilterImageFilter TestCFImageFilter2(TestBlendColorFilter2);
-static const sk_sp<SkPathEffect> TestPathEffect1 =
-    SkDashPathEffect::Make(TestDashes1, 2, 0.0f);
-static const sk_sp<SkPathEffect> TestPathEffect2 =
-    SkDashPathEffect::Make(TestDashes2, 2, 0.0f);
-static const DlBlurMaskFilter TestMaskFilter1(kNormal_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter TestMaskFilter2(kNormal_SkBlurStyle, 5.0);
-static const DlBlurMaskFilter TestMaskFilter3(kSolid_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter TestMaskFilter4(kInner_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter TestMaskFilter5(kOuter_SkBlurStyle, 3.0);
-constexpr SkRect TestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
-static const SkRRect TestRRect = SkRRect::MakeRectXY(TestBounds, 5, 5);
-static const SkRRect TestRRectRect = SkRRect::MakeRect(TestBounds);
-static const SkRRect TestInnerRRect =
-    SkRRect::MakeRectXY(TestBounds.makeInset(5, 5), 2, 2);
-static const SkPath TestPathRect = SkPath::Rect(TestBounds);
-static const SkPath TestPathOval = SkPath::Oval(TestBounds);
-static const SkPath TestPath1 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, true);
-static const SkPath TestPath2 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {0, 10}, {10, 0}}, true);
-static const SkPath TestPath3 =
-    SkPath::Polygon({{0, 0}, {10, 10}, {10, 0}, {0, 10}}, false);
-static const SkMatrix TestMatrix1 = SkMatrix::Scale(2, 2);
-static const SkMatrix TestMatrix2 = SkMatrix::RotateDeg(45);
-
-static std::shared_ptr<const DlVertices> TestVertices1 =
-    DlVertices::Make(DlVertexMode::kTriangles,  //
-                     3,
-                     TestPoints,
-                     nullptr,
-                     colors);
-static std::shared_ptr<const DlVertices> TestVertices2 =
-    DlVertices::Make(DlVertexMode::kTriangleFan,  //
-                     3,
-                     TestPoints,
-                     nullptr,
-                     colors);
-
-static constexpr int TestDivs1[] = {10, 20, 30};
-static constexpr int TestDivs2[] = {15, 20, 25};
-static constexpr int TestDivs3[] = {15, 25};
-static constexpr SkCanvas::Lattice::RectType TestRTypes[] = {
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-};
-static constexpr SkColor TestLatticeColors[] = {
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-};
-static constexpr SkIRect TestLatticeSrcRect = {1, 1, 39, 39};
-
-static sk_sp<SkPicture> MakeTestPicture(int w, int h, SkColor color) {
-  SkPictureRecorder recorder;
-  SkRTreeFactory rtree_factory;
-  SkCanvas* cv = recorder.beginRecording(TestBounds, &rtree_factory);
-  SkPaint paint;
-  paint.setColor(color);
-  paint.setStyle(SkPaint::kFill_Style);
-  cv->drawRect(SkRect::MakeWH(w, h), paint);
-  return recorder.finishRecordingAsPicture();
-}
-static sk_sp<SkPicture> TestPicture1 = MakeTestPicture(20, 20, SK_ColorGREEN);
-static sk_sp<SkPicture> TestPicture2 = MakeTestPicture(25, 25, SK_ColorBLUE);
-
-static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
-  DisplayListBuilder builder;
-  builder.setColor(color);
-  builder.drawRect(SkRect::MakeWH(w, h));
-  return builder.Build();
-}
-static sk_sp<DisplayList> TestDisplayList1 =
-    MakeTestDisplayList(20, 20, SK_ColorGREEN);
-static sk_sp<DisplayList> TestDisplayList2 =
-    MakeTestDisplayList(25, 25, SK_ColorBLUE);
-
-static sk_sp<SkTextBlob> MakeTextBlob(std::string string) {
-  return SkTextBlob::MakeFromText(string.c_str(), string.size(), SkFont(),
-                                  SkTextEncoding::kUTF8);
-}
-static sk_sp<SkTextBlob> TestBlob1 = MakeTextBlob("TestBlob1");
-static sk_sp<SkTextBlob> TestBlob2 = MakeTextBlob("TestBlob2");
-
-// ---------------
-// Test Suite data
-// ---------------
-
-typedef const std::function<void(DisplayListBuilder&)> DlInvoker;
-
-struct DisplayListInvocation {
-  unsigned int op_count_;
-  size_t byte_count_;
-
-  // in some cases, running the sequence through an SkCanvas will result
-  // in fewer ops/bytes. Attribute invocations are recorded in an SkPaint
-  // and not forwarded on, and SkCanvas culls unused save/restore/transforms.
-  int sk_op_count_;
-  size_t sk_byte_count_;
-
-  DlInvoker invoker;
-  bool supports_group_opacity_ = false;
-
-  bool sk_version_matches() {
-    return (static_cast<int>(op_count_) == sk_op_count_ &&
-            byte_count_ == sk_byte_count_);
-  }
-
-  // A negative sk_op_count means "do not test this op".
-  // Used mainly for these cases:
-  // - we cannot encode a DrawShadowRec (Skia private header)
-  // - SkCanvas cannot receive a DisplayList
-  // - SkCanvas may or may not inline an SkPicture
-  bool sk_testing_invalid() { return sk_op_count_ < 0; }
-
-  bool is_empty() { return byte_count_ == 0; }
-
-  bool supports_group_opacity() { return supports_group_opacity_; }
-
-  unsigned int op_count() { return op_count_; }
-  // byte count for the individual ops, no DisplayList overhead
-  size_t raw_byte_count() { return byte_count_; }
-  // byte count for the ops with DisplayList overhead, comparable
-  // to |DisplayList.byte_count().
-  size_t byte_count() { return sizeof(DisplayList) + byte_count_; }
-
-  int sk_op_count() { return sk_op_count_; }
-  // byte count for the ops with DisplayList overhead as translated
-  // through an SkCanvas interface, comparable to |DisplayList.byte_count().
-  size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
-
-  sk_sp<DisplayList> Build() {
-    DisplayListBuilder builder;
-    invoker(builder);
-    return builder.Build();
-  }
-};
-
-struct DisplayListInvocationGroup {
-  std::string op_name;
-  std::vector<DisplayListInvocation> variants;
-};
-
-std::vector<DisplayListInvocationGroup> allGroups = {
-  { "SetAntiAlias", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setAntiAlias(true);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setAntiAlias(false);}},
-    }
-  },
-  { "SetDither", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setDither(true);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setDither(false);}},
-    }
-  },
-  { "SetInvertColors", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(true);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setInvertColors(false);}},
-    }
-  },
-  { "SetStrokeCap", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kRound);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kSquare);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeCap(DlStrokeCap::kButt);}},
-    }
-  },
-  { "SetStrokeJoin", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kBevel);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kRound);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeJoin(DlStrokeJoin::kMiter);}},
-    }
-  },
-  { "SetStyle", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kStroke);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kStrokeAndFill);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStyle(DlDrawStyle::kFill);}},
-    }
-  },
-  { "SetStrokeWidth", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(1.0);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(5.0);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeWidth(0.0);}},
-    }
-  },
-  { "SetStrokeMiter", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeMiter(0.0);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setStrokeMiter(5.0);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setStrokeMiter(4.0);}},
-    }
-  },
-  { "SetColor", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorGREEN);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorBLUE);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColor(SK_ColorBLACK);}},
-    }
-  },
-  { "SetBlendModeOrBlender", {
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kSrcIn);}},
-      {0, 8, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kDstIn);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender2);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setBlender(TestBlender3);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlendMode(DlBlendMode::kSrcOver);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setBlender(nullptr);}},
-    }
-  },
-  { "SetColorSource", {
-      {0, 112, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(&TestSource1);}},
-      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource2.get());}},
-      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource3.get());}},
-      {0, 88 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource4.get());}},
-      {0, 80 + 6 * 4, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(TestSource5.get());}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorSource(nullptr);}},
-    }
-  },
-  { "SetImageFilter", {
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter1);}},
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter2);}},
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter3);}},
-      {0, 32, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestBlurImageFilter4);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter2);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestDilateImageFilter3);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter2);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestErodeImageFilter3);}},
-      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter1);}},
-      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter2);}},
-      {0, 80, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestMatrixImageFilter3);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter2);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestComposeImageFilter3);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestCFImageFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(&TestCFImageFilter2);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setImageFilter(nullptr);}},
-    }
-  },
-  { "SetColorFilter", {
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter2);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestBlendColorFilter3);}},
-      {0, 96, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestMatrixColorFilter1);}},
-      {0, 96, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(&TestMatrixColorFilter2);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(DlSrgbToLinearGammaColorFilter::instance.get());}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(DlLinearToSrgbGammaColorFilter::instance.get());}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setColorFilter(nullptr);}},
-    }
-  },
-  { "SetPathEffect", {
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect1);}},
-      {0, 16, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(TestPathEffect2);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setPathEffect(nullptr);}},
-    }
-  },
-  { "SetMaskFilter", {
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(&TestMaskFilter1);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(&TestMaskFilter2);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(&TestMaskFilter3);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(&TestMaskFilter4);}},
-      {0, 24, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(&TestMaskFilter5);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.setMaskFilter(nullptr);}},
-    }
-  },
-  { "Save(Layer)+Restore", {
-    // There are many reasons that save and restore can elide content, including
-    // whether or not there are any draw operations between them, whether or not
-    // there are any state changes to restore, and whether group rendering (opacity)
-    // optimizations can allow attributes to be distributed to the children.
-    // To prevent those cases we include at least one clip operation and 2 overlapping
-    // rendering primitives between each save/restore pair.
-      {5, 88, 5, 88, [](DisplayListBuilder& b) {
-        b.save();
-        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-        b.drawRect({5, 5, 15, 15});
-        b.drawRect({10, 10, 20, 20});
-        b.restore();
-      }},
-      {5, 88, 5, 88, [](DisplayListBuilder& b) {
-        b.saveLayer(nullptr, false);
-        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-        b.drawRect({5, 5, 15, 15});
-        b.drawRect({10, 10, 20, 20});
-        b.restore();
-      }},
-      {5, 88, 5, 88, [](DisplayListBuilder& b) {
-        b.saveLayer(nullptr, true);
-        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-        b.drawRect({5, 5, 15, 15});
-        b.drawRect({10, 10, 20, 20});
-        b.restore();
-      }},
-      {5, 104, 5, 104, [](DisplayListBuilder& b) {
-        b.saveLayer(&TestBounds, false);
-        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-        b.drawRect({5, 5, 15, 15});
-        b.drawRect({10, 10, 20, 20});
-        b.restore();
-      }},
-      {5, 104, 5, 104, [](DisplayListBuilder& b) {
-        b.saveLayer(&TestBounds, true);
-        b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
-        b.drawRect({5, 5, 15, 15});
-        b.drawRect({10, 10, 20, 20});
-        b.restore();
-      }},
-    }
-  },
-  { "Translate", {
-      // cv.translate(0, 0) is ignored
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.translate(10, 10);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.translate(10, 15);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.translate(15, 10);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.translate(0, 0);}},
-    }
-  },
-  { "Scale", {
-      // cv.scale(1, 1) is ignored
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.scale(2, 2);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.scale(2, 3);}},
-      {1, 16, 1, 16, [](DisplayListBuilder& b) {b.scale(3, 2);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.scale(1, 1);}},
-    }
-  },
-  { "Rotate", {
-      // cv.rotate(0) is ignored, otherwise expressed as concat(rotmatrix)
-      {1, 8, 1, 32, [](DisplayListBuilder& b) {b.rotate(30);}},
-      {1, 8, 1, 32, [](DisplayListBuilder& b) {b.rotate(45);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.rotate(0);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.rotate(360);}},
-    }
-  },
-  { "Skew", {
-      // cv.skew(0, 0) is ignored, otherwise expressed as concat(skewmatrix)
-      {1, 16, 1, 32, [](DisplayListBuilder& b) {b.skew(0.1, 0.1);}},
-      {1, 16, 1, 32, [](DisplayListBuilder& b) {b.skew(0.1, 0.2);}},
-      {1, 16, 1, 32, [](DisplayListBuilder& b) {b.skew(0.2, 0.1);}},
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.skew(0, 0);}},
-    }
-  },
-  { "Transform2DAffine", {
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transform2DAffine(0, 1, 12, 1, 0, 33);}},
-      // b.transform(identity) is ignored
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transform2DAffine(1, 0, 0, 0, 1, 0);}},
-    }
-  },
-  { "TransformFullPerspective", {
-      {1, 72, 1, 72, [](DisplayListBuilder& b) {b.transformFullPerspective(0, 1, 0, 12,
-                                                                           1, 0, 0, 33,
-                                                                           3, 2, 5, 29,
-                                                                           0, 0, 0, 12);}},
-      // b.transform(2D affine) is reduced to 2x3
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.transformFullPerspective(2, 1, 0, 4,
-                                                                           1, 3, 0, 5,
-                                                                           0, 0, 1, 0,
-                                                                           0, 0, 0, 1);}},
-      // b.transform(identity) is ignored
-      {0, 0, 0, 0, [](DisplayListBuilder& b) {b.transformFullPerspective(1, 0, 0, 0,
-                                                                         0, 1, 0, 0,
-                                                                         0, 0, 1, 0,
-                                                                         0, 0, 0, 1);}},
-    }
-  },
-  { "ClipRect", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kIntersect, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds.makeOffset(1, 1),
-                                                           SkClipOp::kIntersect, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kIntersect, false);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kDifference, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipRect(TestBounds, SkClipOp::kDifference, false);}},
-    }
-  },
-  { "ClipRRect", {
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kIntersect, true);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect.makeOffset(1, 1),
-                                                            SkClipOp::kIntersect, true);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kIntersect, false);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kDifference, true);}},
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipRRect(TestRRect, SkClipOp::kDifference, false);}},
-    }
-  },
-  { "ClipPath", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kIntersect, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath2, SkClipOp::kIntersect, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath3, SkClipOp::kIntersect, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kIntersect, false);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kDifference, true);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPath1, SkClipOp::kDifference, false);}},
-      // clipPath(rect) becomes clipRect
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.clipPath(TestPathRect, SkClipOp::kIntersect, true);}},
-      // clipPath(oval) becomes clipRRect
-      {1, 64, 1, 64, [](DisplayListBuilder& b) {b.clipPath(TestPathOval, SkClipOp::kIntersect, true);}},
-    }
-  },
-  { "DrawPaint", {
-      {1, 8, 1, 8, [](DisplayListBuilder& b) {b.drawPaint();}},
-    }
-  },
-  { "DrawColor", {
-      // cv.drawColor becomes cv.drawPaint(paint)
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, DlBlendMode::kSrcIn);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorBLUE, DlBlendMode::kDstIn);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawColor(SK_ColorCYAN, DlBlendMode::kSrcIn);}},
-    }
-  },
-  { "DrawLine", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawLine({0, 0}, {10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawLine({0, 1}, {10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawLine({0, 0}, {20, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawLine({0, 0}, {10, 20});}},
-    }
-  },
-  { "DrawRect", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawRect({0, 0, 10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawRect({0, 1, 10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawRect({0, 0, 20, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawRect({0, 0, 10, 20});}},
-    }
-  },
-  { "DrawOval", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawOval({0, 0, 10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawOval({0, 1, 10, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawOval({0, 0, 20, 10});}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawOval({0, 0, 10, 20});}},
-    }
-  },
-  { "DrawCircle", {
-      // cv.drawCircle becomes cv.drawOval
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawCircle({0, 0}, 10);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawCircle({0, 5}, 10);}},
-      {1, 16, 1, 24, [](DisplayListBuilder& b) {b.drawCircle({0, 0}, 20);}},
-    }
-  },
-  { "DrawRRect", {
-      {1, 56, 1, 56, [](DisplayListBuilder& b) {b.drawRRect(TestRRect);}},
-      {1, 56, 1, 56, [](DisplayListBuilder& b) {b.drawRRect(TestRRect.makeOffset(5, 5));}},
-    }
-  },
-  { "DrawDRRect", {
-      {1, 112, 1, 112, [](DisplayListBuilder& b) {b.drawDRRect(TestRRect, TestInnerRRect);}},
-      {1, 112, 1, 112, [](DisplayListBuilder& b) {b.drawDRRect(TestRRect.makeOffset(5, 5),
-                                                               TestInnerRRect.makeOffset(4, 4));}},
-    }
-  },
-  { "DrawPath", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawPath(TestPath1);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawPath(TestPath2);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawPath(TestPath3);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawPath(TestPathRect);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawPath(TestPathOval);}},
-    }
-  },
-  { "DrawArc", {
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.drawArc(TestBounds, 45, 270, false);}},
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.drawArc(TestBounds.makeOffset(1, 1),
-                                                          45, 270, false);}},
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.drawArc(TestBounds, 30, 270, false);}},
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.drawArc(TestBounds, 45, 260, false);}},
-      {1, 32, 1, 32, [](DisplayListBuilder& b) {b.drawArc(TestBounds, 45, 270, true);}},
-    }
-  },
-  { "DrawPoints", {
-      {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
-       [](DisplayListBuilder& b) {b.drawPoints(SkCanvas::kPoints_PointMode,
-                                               TestPointCount,
-                                               TestPoints);}},
-      {1, 8 + (TestPointCount - 1) * 8, 1, 8 + (TestPointCount - 1) * 8,
-       [](DisplayListBuilder& b) {b.drawPoints(SkCanvas::kPoints_PointMode,
-                                               TestPointCount - 1,
-                                               TestPoints);}},
-      {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
-       [](DisplayListBuilder& b) {b.drawPoints(SkCanvas::kLines_PointMode,
-                                               TestPointCount,
-                                               TestPoints);}},
-      {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
-       [](DisplayListBuilder& b) {b.drawPoints(SkCanvas::kPolygon_PointMode,
-                                               TestPointCount,
-                                               TestPoints);}},
-    }
-  },
-  { "DrawVertices", {
-      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, DlBlendMode::kSrcIn);}},
-      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices1, DlBlendMode::kDstIn);}},
-      {1, 112, 1, 16, [](DisplayListBuilder& b) {b.drawVertices(TestVertices2, DlBlendMode::kSrcIn);}},
-    }
-  },
-  { "DrawImage", {
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, NearestSampling, false);}},
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, NearestSampling, true);}},
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {20, 10}, NearestSampling, false);}},
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 20}, NearestSampling, false);}},
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage1, {10, 10}, LinearSampling, false);}},
-      {1, 48, -1, 48, [](DisplayListBuilder& b) {b.drawImage(TestImage2, {10, 10}, NearestSampling, false);}},
-    }
-  },
-  { "DrawImageRect", {
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                NearestSampling, false);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                NearestSampling, true);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                NearestSampling, false,
-                                                                SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                                                                NearestSampling, false);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                                                                NearestSampling, false);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                LinearSampling, false);}},
-      {1, 80, -1, 80, [](DisplayListBuilder& b) {b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                                                                NearestSampling, false);}},
-    }
-  },
-  { "DrawImageNine", {
-      // SkVanvas::drawImageNine is immediately converted to drawImageLattice
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest, false);}},
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest, true);}},
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest, false);}},
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
-                                                                SkFilterMode::kNearest, false);}},
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
-                                                                SkFilterMode::kLinear, false);}},
-      {1, 48, -1, 80, [](DisplayListBuilder& b) {b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
-                                                                SkFilterMode::kNearest, false);}},
-    }
-  },
-  { "DrawImageLattice", {
-      // Lattice:
-      // const int*      fXDivs;     //!< x-axis values dividing bitmap
-      // const int*      fYDivs;     //!< y-axis values dividing bitmap
-      // const RectType* fRectTypes; //!< array of fill types
-      // int             fXCount;    //!< number of x-coordinates
-      // int             fYCount;    //!< number of y-coordinates
-      // const SkIRect*  fBounds;    //!< source bounds to draw from
-      // const SkColor*  fColors;    //!< array of colors
-      // size = 64 + fXCount * 4 + fYCount * 4
-      // if fColors and fRectTypes are not null, add (fXCount + 1) * (fYCount + 1) * 5
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 45}, SkFilterMode::kNearest, false);}},
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs2, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      // One less yDiv does not change the allocation due to 8-byte alignment
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 2, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kLinear, false);}},
-      {1, 96, -1, 96, [](DisplayListBuilder& b) {b.setColor(SK_ColorMAGENTA);
-                                                b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, true);}},
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage2,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      // Supplying fBounds does not change size because the Op record always includes it
-      {1, 88, -1, 88, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                   {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
-                                                                   {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-      {1, 128, -1, 128, [](DisplayListBuilder& b) {b.drawImageLattice(TestImage1,
-                                                                     {TestDivs3, TestDivs3, TestRTypes, 2, 2, nullptr, TestLatticeColors},
-                                                                     {10, 10, 40, 40}, SkFilterMode::kNearest, false);}},
-    }
-  },
-  { "DrawAtlas", {
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, nullptr, false);}},
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, nullptr, true);}},
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {0, 1, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, nullptr, false);}},
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 25, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, nullptr, false);}},
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    LinearSampling, nullptr, false);}},
-      {1, 48 + 32 + 32, -1, 48 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        b.drawAtlas(TestImage1, xforms, texs, nullptr, 2, DlBlendMode::kDstIn,
-                    NearestSampling, nullptr, false);}},
-      {1, 64 + 32 + 32, -1, 64 + 32 + 32, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static SkRect cullRect = { 0, 0, 200, 200 };
-        b.drawAtlas(TestImage2, xforms, texs, nullptr, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, &cullRect, false);}},
-      {1, 48 + 32 + 32 + 8, -1, 48 + 32 + 32 + 8, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
-        b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, nullptr, false);}},
-      {1, 64 + 32 + 32 + 8, -1, 64 + 32 + 32 + 8, [](DisplayListBuilder& b) {
-        static SkRSXform xforms[] = { {1, 0, 0, 0}, {0, 1, 0, 0} };
-        static SkRect texs[] = { { 10, 10, 20, 20 }, {20, 20, 30, 30} };
-        static DlColor colors[] = { DlColor::kBlue(), DlColor::kGreen() };
-        static SkRect cullRect = { 0, 0, 200, 200 };
-        b.drawAtlas(TestImage1, xforms, texs, colors, 2, DlBlendMode::kSrcIn,
-                    NearestSampling, &cullRect, false);}},
-    }
-  },
-  { "DrawPicture", {
-      // cv.drawPicture cannot be compared as SkCanvas may inline it
-      {1, 16, -1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, nullptr, false);}},
-      {1, 16, -1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture2, nullptr, false);}},
-      {1, 16, -1, 16, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, nullptr, true);}},
-      {1, 56, -1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix1, false);}},
-      {1, 56, -1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix2, false);}},
-      {1, 56, -1, 56, [](DisplayListBuilder& b) {b.drawPicture(TestPicture1, &TestMatrix1, true);}},
-    }
-  },
-  { "DrawDisplayList", {
-      // cv.drawDL does not exist
-      {1, 16, -1, 16, [](DisplayListBuilder& b) {b.drawDisplayList(TestDisplayList1);}},
-      {1, 16, -1, 16, [](DisplayListBuilder& b) {b.drawDisplayList(TestDisplayList2);}},
-    }
-  },
-  { "DrawTextBlob", {
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 10, 10);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 20, 10);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob1, 10, 20);}},
-      {1, 24, 1, 24, [](DisplayListBuilder& b) {b.drawTextBlob(TestBlob2, 10, 10);}},
-    }
-  },
-  // The -1 op counts below are to indicate to the framework not to test
-  // SkCanvas conversion of these ops as it converts the operation into a
-  // format that is not exposed publicly and so we cannot recapture the
-  // operation.
-  // See: https://bugs.chromium.org/p/skia/issues/detail?id=12125
-  { "DrawShadow", {
-      // cv shadows are turned into an opaque ShadowRec which is not exposed
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 1.0);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath2, SK_ColorGREEN, 1.0, false, 1.0);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorBLUE, 1.0, false, 1.0);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 2.0, false, 1.0);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, true, 1.0);}},
-      {1, 32, -1, 32, [](DisplayListBuilder& b) {b.drawShadow(TestPath1, SK_ColorGREEN, 1.0, false, 2.5);}},
-    }
-  },
-};
+#endif  // NDEBUG
 
 TEST(DisplayList, SingleOpSizes) {
   for (auto& group : allGroups) {
@@ -848,7 +45,7 @@ TEST(DisplayList, SingleOpSizes) {
       sk_sp<DisplayList> dl = invocation.Build();
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
       ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
-      EXPECT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
+      ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
     }
   }
 }
@@ -933,17 +130,17 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
 
 TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
   for (auto& group : allGroups) {
-    std::vector<sk_sp<DisplayList>> listsA;
-    std::vector<sk_sp<DisplayList>> listsB;
+    std::vector<sk_sp<DisplayList>> lists_a;
+    std::vector<sk_sp<DisplayList>> lists_b;
     for (size_t i = 0; i < group.variants.size(); i++) {
-      listsA.push_back(group.variants[i].Build());
-      listsB.push_back(group.variants[i].Build());
+      lists_a.push_back(group.variants[i].Build());
+      lists_b.push_back(group.variants[i].Build());
     }
 
-    for (size_t i = 0; i < listsA.size(); i++) {
-      sk_sp<DisplayList> listA = listsA[i];
-      for (size_t j = 0; j < listsB.size(); j++) {
-        sk_sp<DisplayList> listB = listsB[j];
+    for (size_t i = 0; i < lists_a.size(); i++) {
+      sk_sp<DisplayList> listA = lists_a[i];
+      for (size_t j = 0; j < lists_b.size(); j++) {
+        sk_sp<DisplayList> listB = lists_b[j];
         auto desc = group.op_name + "(variant " + std::to_string(i + 1) +
                     " ==? variant " + std::to_string(j + 1) + ")";
         if (i == j ||
@@ -1316,40 +513,19 @@ TEST(DisplayList, DisplayListBlenderRefHandling) {
   class BlenderRefTester : public virtual AttributeRefTester {
    public:
     void setRefToPaint(SkPaint& paint) const override {
-      paint.setBlender(blender);
+      paint.setBlender(blender_);
     }
     void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setBlender(blender);
+      builder.setBlender(blender_);
     }
-    bool ref_is_unique() const override { return blender->unique(); }
+    bool ref_is_unique() const override { return blender_->unique(); }
 
    private:
-    sk_sp<SkBlender> blender =
+    sk_sp<SkBlender> blender_ =
         SkBlenders::Arithmetic(0.25, 0.25, 0.25, 0.25, true);
   };
 
   BlenderRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
-}
-
-TEST(DisplayList, DisplayListPathEffectRefHandling) {
-  class PathEffectRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setPathEffect(path_effect);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setPathEffect(path_effect);
-    }
-    bool ref_is_unique() const override { return path_effect->unique(); }
-
-   private:
-    sk_sp<SkPathEffect> path_effect =
-        SkDashPathEffect::Make(TestDashes1, 2, 0.0);
-  };
-
-  PathEffectRefTester tester;
   tester.test();
   ASSERT_TRUE(tester.ref_is_unique());
 }
@@ -1416,7 +592,7 @@ TEST(DisplayList, DisplayListTransformResetHandling) {
 }
 
 TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
-  auto run_tests = [](std::string name,
+  auto run_tests = [](const std::string& name,
                       void build(DisplayListBuilder & builder),
                       bool expect_for_op, bool expect_with_kSrc) {
     {
@@ -1469,37 +645,37 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
                                 TestPoints);
              , false);
   RUN_TESTS2(builder.drawVertices(TestVertices1, DlBlendMode::kSrc);, false);
-  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, LinearSampling, true););
-  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, LinearSampling, false);
+  RUN_TESTS(builder.drawImage(TestImage1, {0, 0}, kLinearSampling, true););
+  RUN_TESTS2(builder.drawImage(TestImage1, {0, 0}, kLinearSampling, false);
              , true);
   RUN_TESTS(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                  NearestSampling, true););
+                                  kNearestSampling, true););
   RUN_TESTS2(builder.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
-                                   NearestSampling, false);
+                                   kNearestSampling, false);
              , true);
   RUN_TESTS(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
-                                  SkFilterMode::kLinear, true););
+                                  DlFilterMode::kLinear, true););
   RUN_TESTS2(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
-                                   SkFilterMode::kLinear, false);
+                                   DlFilterMode::kLinear, false);
              , true);
   RUN_TESTS(builder.drawImageLattice(
       TestImage1,
-      {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, SkFilterMode::kNearest, true););
+      {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
+      {10, 10, 40, 40}, DlFilterMode::kNearest, true););
   RUN_TESTS2(builder.drawImageLattice(
       TestImage1,
-      {TestDivs1, TestDivs1, nullptr, 3, 3, &TestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, SkFilterMode::kNearest, false);
+      {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
+      {10, 10, 40, 40}, DlFilterMode::kNearest, false);
              , true);
   static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
   static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
   RUN_TESTS2(
       builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                        DlBlendMode::kSrcIn, NearestSampling, nullptr, true);
+                        DlBlendMode::kSrcIn, kNearestSampling, nullptr, true);
       , false);
   RUN_TESTS2(
       builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
-                        DlBlendMode::kSrcIn, NearestSampling, nullptr, false);
+                        DlBlendMode::kSrcIn, kNearestSampling, nullptr, false);
       , false);
   RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, true););
   RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, false);, true);
@@ -1513,7 +689,7 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
     RUN_TESTS2(builder.drawDisplayList(display_list);, false);
   }
   RUN_TESTS(builder.drawTextBlob(TestBlob1, 0, 0););
-  RUN_TESTS2(builder.drawShadow(TestPath1, SK_ColorBLACK, 1.0, false, 1.0);
+  RUN_TESTS2(builder.drawShadow(kTestPath1, SK_ColorBLACK, 1.0, false, 1.0);
              , false);
 
 #undef RUN_TESTS2
@@ -1596,7 +772,7 @@ TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
   builder.saveLayer(nullptr, true);
   builder.drawRect({50, 50, 100, 100});
   // This image filter should be ignored since it was not set before saveLayer
-  builder.setImageFilter(&TestBlurImageFilter1);
+  builder.setImageFilter(&kTestBlurImageFilter1);
   builder.restore();
   SkRect bounds = builder.Build()->bounds();
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
@@ -1608,15 +784,16 @@ class SaveLayerOptionsExpector : public virtual Dispatcher,
                                  public IgnoreTransformDispatchHelper,
                                  public IgnoreDrawDispatchHelper {
  public:
-  explicit SaveLayerOptionsExpector(SaveLayerOptions expected) {
+  explicit SaveLayerOptionsExpector(const SaveLayerOptions& expected) {
     expected_.push_back(expected);
   }
 
   explicit SaveLayerOptionsExpector(std::vector<SaveLayerOptions> expected)
-      : expected_(expected) {}
+      : expected_(std::move(expected)) {}
 
   void saveLayer(const SkRect* bounds,
-                 const SaveLayerOptions options) override {
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override {
     EXPECT_EQ(options, expected_[save_layer_count_]);
     save_layer_count_++;
   }
@@ -1720,7 +897,7 @@ TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
 
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setImageFilter(&TestBlurImageFilter1);
+  builder.setImageFilter(&kTestBlurImageFilter1);
   builder.saveLayer(nullptr, true);
   builder.setImageFilter(nullptr);
   builder.drawRect({10, 10, 20, 20});
@@ -1736,7 +913,7 @@ TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
 
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
-  builder.setColorFilter(&TestMatrixColorFilter1);
+  builder.setColorFilter(&kTestMatrixColorFilter1);
   builder.saveLayer(nullptr, true);
   builder.setColorFilter(nullptr);
   builder.drawRect({10, 10, 20, 20});
@@ -1770,7 +947,7 @@ TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
   builder.saveLayer(nullptr, true);
-  builder.setImageFilter(&TestBlurImageFilter1);
+  builder.setImageFilter(&kTestBlurImageFilter1);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -1785,7 +962,7 @@ TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
   DisplayListBuilder builder;
   builder.setColor(SkColorSetARGB(127, 255, 255, 255));
   builder.saveLayer(nullptr, true);
-  builder.setColorFilter(&TestMatrixColorFilter1);
+  builder.setColorFilter(&kTestMatrixColorFilter1);
   builder.drawRect({10, 10, 20, 20});
   builder.restore();
 
@@ -1890,7 +1067,8 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
         builder.save();
         builder.clipRect({1172, 245, 1218, 294}, SkClipOp::kIntersect, true);
         {
-          builder.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
+          builder.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
+                            nullptr);
           {
             builder.save();
             builder.transform2DAffine(1.4375, 0, 1164.09,  //
@@ -1929,6 +1107,1128 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 304u);
+}
+
+TEST(DisplayList, TranslateAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.translate(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Translate(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, ScaleAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.scale(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Scale(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, RotateAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.rotate(12.3);
+  SkMatrix matrix = SkMatrix::RotateDeg(12.3);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, SkewAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.skew(12.3, 14.5);
+  SkMatrix matrix = SkMatrix::Skew(12.3, 14.5);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, TransformAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.transform2DAffine(3, 0, 12.3,  //
+                            1, 5, 14.5);
+  SkMatrix matrix = SkMatrix::MakeAll(3, 0, 12.3,  //
+                                      1, 5, 14.5,  //
+                                      0, 0, 1);
+  SkM44 m44 = SkM44(matrix);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, FullTransformAffectsCurrentTransform) {
+  DisplayListBuilder builder;
+  builder.transformFullPerspective(3, 0, 4, 12.3,  //
+                                   1, 5, 3, 14.5,  //
+                                   0, 0, 7, 16.2,  //
+                                   0, 0, 0, 1);
+  SkMatrix matrix = SkMatrix::MakeAll(3, 0, 12.3,  //
+                                      1, 5, 14.5,  //
+                                      0, 0, 1);
+  SkM44 m44 = SkM44(3, 0, 4, 12.3,  //
+                    1, 5, 3, 14.5,  //
+                    0, 0, 7, 16.2,  //
+                    0, 0, 0, 1);
+  SkM44 cur_m44 = builder.getTransformFullPerspective();
+  SkMatrix cur_matrix = builder.getTransform();
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+  builder.translate(10, 10);
+  // CurrentTransform has changed
+  ASSERT_NE(builder.getTransformFullPerspective(), m44);
+  ASSERT_NE(builder.getTransform(), cur_matrix);
+  // Previous return values have not
+  ASSERT_EQ(cur_m44, m44);
+  ASSERT_EQ(cur_matrix, matrix);
+}
+
+TEST(DisplayList, ClipRectAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(5, 5.5, 10.5, 13);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds_1 = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkRect clip_bounds_2 = SkRect::MakeLTRB(10, 10, 20, 20);
+  builder.save();
+  builder.clipRect(clip_bounds_1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipRect(clip_bounds_1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipRect(clip_bounds_1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipRect(clip_bounds_2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds_1);
+  builder.restore();
+}
+
+TEST(DisplayList, ClipRRectAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  SkRRect clip = SkRRect::MakeRectXY(clip_bounds, 3, 2);
+  builder.clipRRect(clip, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(5, 5.5, 10.5, 13);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds_1 = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkRect clip_bounds_2 = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkRRect clip1 = SkRRect::MakeRectXY(clip_bounds_1, 3, 2);
+  SkRRect clip2 = SkRRect::MakeRectXY(clip_bounds_2, 3, 2);
+
+  builder.save();
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipRRect(clip1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipRRect(clip2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds_1);
+  builder.restore();
+}
+
+TEST(DisplayList, ClipPathAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, false);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(4, 4.5, 11.5, 14);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds = SkRect::MakeLTRB(0, 0, 10, 10);
+  SkPath clip1 = SkPath().addCircle(2.5, 2.5, 2.5).addCircle(7.5, 7.5, 2.5);
+  SkPath clip2 = SkPath().addCircle(12.5, 12.5, 2.5).addCircle(17.5, 17.5, 2.5);
+
+  builder.save();
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  builder.translate(10, 0);
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  ASSERT_TRUE(builder.getDestinationClipBounds().isEmpty());
+  builder.restore();
+
+  builder.save();
+  builder.clipPath(clip1, SkClipOp::kIntersect, false);
+  builder.translate(-10, -10);
+  builder.clipPath(clip2, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+}
+
+TEST(DisplayList, DiffClipRectDoesNotAffectClipBounds) {
+  DisplayListBuilder builder;
+  SkRect diff_clip = SkRect::MakeLTRB(0, 0, 15, 15);
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing after kDifference clip
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.clipRect(diff_clip, SkClipOp::kDifference, false);
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, DiffClipRRectDoesNotAffectClipBounds) {
+  DisplayListBuilder builder;
+  SkRRect diff_clip = SkRRect::MakeRectXY({0, 0, 15, 15}, 1, 1);
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  SkRRect clip = SkRRect::MakeRectXY({10.2, 11.3, 20.4, 25.7}, 3, 2);
+  builder.clipRRect(clip, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing after kDifference clip
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.clipRRect(diff_clip, SkClipOp::kDifference, false);
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, DiffClipPathDoesNotAffectClipBounds) {
+  DisplayListBuilder builder;
+  SkPath diff_clip = SkPath().addRect({0, 0, 15, 15});
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  // Save initial return values for testing after kDifference clip
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_bounds);
+
+  builder.clipPath(diff_clip, SkClipOp::kDifference, false);
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  ASSERT_EQ(builder.getLocalClipBounds(), cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), cull_rect);
+}
+
+TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListBuilder builder(cull_rect);
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kDifference, false);
+
+  ASSERT_EQ(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, FlatDrawPointsProducesBounds) {
+  SkPoint horizontal_points[2] = {{10, 10}, {20, 10}};
+  SkPoint vertical_points[2] = {{10, 10}, {10, 20}};
+  {
+    DisplayListBuilder builder;
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, horizontal_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(20, 10));
+    EXPECT_GE(bounds.width(), 10);
+  }
+  {
+    DisplayListBuilder builder;
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, vertical_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(10, 20));
+    EXPECT_GE(bounds.height(), 10);
+  }
+  {
+    DisplayListBuilder builder;
+    builder.drawPoints(SkCanvas::kPoints_PointMode, 1, horizontal_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+  }
+  {
+    DisplayListBuilder builder;
+    builder.setStrokeWidth(2);
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, horizontal_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(20, 10));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 21, 11));
+  }
+  {
+    DisplayListBuilder builder;
+    builder.setStrokeWidth(2);
+    builder.drawPoints(SkCanvas::kPolygon_PointMode, 2, vertical_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_TRUE(bounds.contains(10, 20));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 11, 21));
+  }
+  {
+    DisplayListBuilder builder;
+    builder.setStrokeWidth(2);
+    builder.drawPoints(SkCanvas::kPoints_PointMode, 1, horizontal_points);
+    SkRect bounds = builder.Build()->bounds();
+    EXPECT_TRUE(bounds.contains(10, 10));
+    EXPECT_EQ(bounds, SkRect::MakeLTRB(9, 9, 11, 11));
+  }
+}
+
+static void test_rtree(const sk_sp<const DlRTree>& rtree,
+                       const SkRect& query,
+                       std::vector<SkRect> expected_rects,
+                       const std::vector<int>& expected_indices) {
+  std::vector<int> indices;
+  rtree->search(query, &indices);
+  EXPECT_EQ(indices, expected_indices);
+  EXPECT_EQ(indices.size(), expected_indices.size());
+  std::list<SkRect> rects = rtree->searchNonOverlappingDrawnRects(query);
+  // ASSERT_EQ(rects.size(), expected_indices.size());
+  auto iterator = rects.cbegin();
+  for (int i : expected_indices) {
+    EXPECT_TRUE(iterator != rects.cend());
+    EXPECT_EQ(*iterator++, expected_rects[i]);
+  }
+}
+
+TEST(DisplayList, RTreeOfSimpleScene) {
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  builder.drawRect({50, 50, 60, 60});
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfSaveRestoreScene) {
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  builder.save();
+  builder.drawRect({50, 50, 60, 60});
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 3 on all sides
+  auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 50,50,60,60
+  // by the saveLayer filter during the restore operation
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
+  {
+    DisplayListBuilder builder;
+    builder.drawRect({10, 10, 20, 20});
+    builder.save();  // This save op is unnecessary
+    builder.drawRect({50, 50, 60, 60});
+    builder.restore();
+
+    DisplayListBuilder builder2;
+    builder2.drawRect({10, 10, 20, 20});
+    builder2.drawRect({50, 50, 60, 60});
+    ASSERT_TRUE(DisplayListsEQ_Verbose(builder.Build(), builder2.Build()));
+  }
+
+  {
+    DisplayListBuilder builder;
+    builder.drawRect({10, 10, 20, 20});
+    builder.save();
+    builder.translate(1.0, 1.0);
+    {
+      builder.save();  // unnecessary
+      builder.drawRect({50, 50, 60, 60});
+      builder.restore();
+    }
+
+    builder.restore();
+
+    DisplayListBuilder builder2;
+    builder2.drawRect({10, 10, 20, 20});
+    builder2.save();
+    builder2.translate(1.0, 1.0);
+    { builder2.drawRect({50, 50, 60, 60}); }
+    builder2.restore();
+    ASSERT_TRUE(DisplayListsEQ_Verbose(builder.Build(), builder2.Build()));
+  }
+}
+
+TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.save();
+  builder1.translate(10, 10);
+  builder1.scale(2, 2);
+  builder1.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.translate(10, 10);
+  builder2.scale(2, 2);
+  builder2.clipRect({10, 10, 20, 20}, SkClipOp::kIntersect, false);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.saveLayer(nullptr, false);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.scale(2, 2);
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.saveLayer(nullptr, false);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.scale(2, 2);
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
+  SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
+  SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
+  // clang-format off
+  const float alpha_matrix[] = {
+    0, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 0, 1,
+  };
+  // clang-format on
+  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  // Making sure hiding a problematic ColorFilter as an ImageFilter
+  // will generate the same behavior as setting it as a ColorFilter
+
+  DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.save();
+    DlPaint paint;
+    paint.setImageFilter(&color_filter_image_filter);
+    builder.drawRect(rect, paint);
+    builder.restore();
+    sk_sp<DisplayList> display_list1 = builder.Build();
+
+    DisplayListBuilder builder2(build_bounds);
+    DlPaint paint2;
+    paint2.setImageFilter(&color_filter_image_filter);
+    builder2.drawRect(rect, paint2);
+    sk_sp<DisplayList> display_list2 = builder2.Build();
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  {
+    DisplayListBuilder builder(build_bounds);
+    builder.save();
+    builder.saveLayer(&build_bounds, true);
+    DlPaint paint;
+    paint.setImageFilter(&color_filter_image_filter);
+    builder.drawRect(rect, paint);
+    builder.restore();
+    builder.restore();
+    sk_sp<DisplayList> display_list1 = builder.Build();
+
+    DisplayListBuilder builder2(build_bounds);
+    builder2.saveLayer(&build_bounds, true);
+    DlPaint paint2;
+    paint2.setImageFilter(&color_filter_image_filter);
+    builder2.drawRect(rect, paint2);
+    builder2.restore();
+    sk_sp<DisplayList> display_list2 = builder2.Build();
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+}
+
+TEST(DisplayList, TransformTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform(SkM44::Translate(10, 100));
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44::Translate(10, 100));
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transform(SkM44::Translate(10, 100));
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.save();
+  builder2.transform(SkM44::Translate(10, 100));
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, Transform2DTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform2DAffine(0, 1, 12, 1, 0, 33);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transform2DAffine(0, 1, 12, 1, 0, 33);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, TransformPerspectiveTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0, 0,
+                                    0, 12);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0, 0,
+                                    0, 12);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ResetTransformTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transformReset();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.transformReset();
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, SkewTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.skew(10, 10);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.skew(10, 10);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, TranslateTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.translate(10, 10);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.translate(10, 10);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ScaleTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.scale(0.5, 0.5);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.scale(0.5, 0.5);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipRectTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                    true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), SkClipOp::kIntersect,
+                    true);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipRRectTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRRect(kTestRRect, SkClipOp::kIntersect, true);
+
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipRRect(kTestRRect, SkClipOp::kIntersect, true);
+
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, ClipPathTriggersDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipPath(kTestPath1, SkClipOp::kIntersect, true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.save();
+  builder2.clipPath(kTestPath1, SkClipOp::kIntersect, true);
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.restore();
+  builder2.transform(SkM44());
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTranslateDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.translate(0, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPScaleDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.scale(1.0, 1.0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPRotationDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.rotate(360);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPSkewDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.skew(0, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransformDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.transform(SkM44());
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransform2DDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.transform2DAffine(1, 0, 0, 0, 1, 0);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.transformFullPerspective(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+                                      0, 1);
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.drawRect({0, 0, 100, 100});
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+
+  {
+    DisplayListBuilder builder1;
+    builder1.save();
+    builder1.save();
+    builder1.transformFullPerspective(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0,
+                                      0, 1);
+    builder1.transformReset();
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    builder1.drawRect({0, 0, 100, 100});
+    builder1.restore();
+    auto display_list1 = builder1.Build();
+
+    DisplayListBuilder builder2;
+    builder2.save();
+    builder2.transformReset();
+    builder2.drawRect({0, 0, 100, 100});
+    builder2.restore();
+    builder2.drawRect({0, 0, 100, 100});
+
+    auto display_list2 = builder2.Build();
+
+    ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+  }
+}
+
+TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
+  DisplayListBuilder builder1;
+  builder1.save();
+  builder1.save();
+  builder1.clipRect(SkRect::MakeLTRB(0, SK_ScalarNaN, SK_ScalarNaN, 0),
+                    SkClipOp::kIntersect, true);
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  builder1.drawRect({0, 0, 100, 100});
+  builder1.restore();
+  auto display_list1 = builder1.Build();
+
+  DisplayListBuilder builder2;
+  builder2.drawRect({0, 0, 100, 100});
+  builder2.drawRect({0, 0, 100, 100});
+  auto display_list2 = builder2.Build();
+
+  ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
+}
+
+TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
+  DisplayListBuilder builder;
+  // blur filter with sigma=1 expands by 30 on all sides
+  auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
+  DlPaint default_paint = DlPaint();
+  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  builder.drawRect({10, 10, 20, 20}, default_paint);
+  builder.clipRect({50, 50, 60, 60}, SkClipOp::kIntersect, false);
+  builder.saveLayer(nullptr, &filter_paint);
+  // the following rectangle will be expanded to 23,23,87,87
+  // by the saveLayer filter during the restore operation
+  // but it will then be clipped to 50,50,60,60
+  builder.drawRect({53, 53, 57, 57}, default_paint);
+  builder.restore();
+  auto display_list = builder.Build();
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Missing all drawRect calls
+  test_rtree(rtree, {5, 5, 10, 10}, rects, {});
+  test_rtree(rtree, {20, 20, 25, 25}, rects, {});
+  test_rtree(rtree, {45, 45, 50, 50}, rects, {});
+  test_rtree(rtree, {60, 60, 65, 65}, rects, {});
+
+  // Hitting just 1 of the drawRects
+  test_rtree(rtree, {5, 5, 11, 11}, rects, {0});
+  test_rtree(rtree, {19, 19, 25, 25}, rects, {0});
+  test_rtree(rtree, {45, 45, 51, 51}, rects, {1});
+  test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
+
+  // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
 }  // namespace testing

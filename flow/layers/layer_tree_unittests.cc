@@ -2,10 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <stddef.h>
 #include "flutter/flow/layers/layer_tree.h"
 
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/layers/container_layer.h"
+#include "flutter/flow/raster_cache.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/canvas_test.h"
@@ -14,7 +16,6 @@
 
 namespace flutter {
 namespace testing {
-
 class LayerTreeTest : public CanvasTest {
  public:
   LayerTreeTest()
@@ -26,6 +27,7 @@ class LayerTreeTest : public CanvasTest {
                                                        root_transform_,
                                                        false,
                                                        true,
+                                                       nullptr,
                                                        nullptr,
                                                        nullptr)) {}
 
@@ -96,8 +98,8 @@ TEST_F(LayerTreeTest, Multiple) {
   const SkPath child_path2 = SkPath().addRect(8.0f, 2.0f, 16.5f, 14.5f);
   const SkPaint child_paint1(SkColors::kGray);
   const SkPaint child_paint2(SkColors::kGreen);
-  auto mock_layer1 = std::make_shared<MockLayer>(
-      child_path1, child_paint1, true /* fake_has_platform_view */);
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
+  mock_layer1->set_fake_has_platform_view(true);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
@@ -162,8 +164,7 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
   const SkPath child_path2 = SkPath().addRect(8.0f, 2.0f, 16.5f, 14.5f);
   const SkPaint child_paint1(SkColors::kGray);
   const SkPaint child_paint2(SkColors::kGreen);
-  auto mock_layer1 = std::make_shared<MockLayer>(
-      child_path1, child_paint1, false /* fake_has_platform_view */);
+  auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer1);
@@ -194,16 +195,10 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
 }
 
 TEST_F(LayerTreeTest, PrerollContextInitialization) {
-  // This EXPECT macro will ensure that if any fields get added to the
-  // PrerollContext that this test must be revisited and updated.
-  // If any fields get removed or replaced, then the expect_defaults closure
-  // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(PrerollContext), size_t(104));
-
   MutatorsStack mock_mutators;
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
-  TextureRegistry mock_registry;
+  std::shared_ptr<TextureRegistry> mock_registry;
 
   auto expect_defaults = [&mock_mutators, &mock_raster_time, &mock_ui_time,
                           &mock_registry](const PrerollContext& context) {
@@ -217,7 +212,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
 
     EXPECT_EQ(&context.raster_time, &mock_raster_time);
     EXPECT_EQ(&context.ui_time, &mock_ui_time);
-    EXPECT_EQ(&context.texture_registry, &mock_registry);
+    EXPECT_EQ(context.texture_registry.get(), mock_registry.get());
     EXPECT_EQ(context.checkerboard_offscreen_layers, false);
     EXPECT_EQ(context.frame_device_pixel_ratio, 1.0f);
 
@@ -225,6 +220,7 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
     EXPECT_EQ(context.has_texture_layer, false);
 
     EXPECT_EQ(context.subtree_can_inherit_opacity, false);
+    EXPECT_EQ(context.raster_cached_entries, nullptr);
   };
 
   // These 4 initializers are required because they are handled by reference
@@ -238,25 +234,19 @@ TEST_F(LayerTreeTest, PrerollContextInitialization) {
 }
 
 TEST_F(LayerTreeTest, PaintContextInitialization) {
-  // This EXPECT macro will ensure that if any fields get added to the
-  // PaintContext that this test must be revisited and updated.
-  // If any fields get removed or replaced, then the expect_defaults closure
-  // will fail to compile, again bringing attention to updating this test.
-  EXPECT_EQ(sizeof(Layer::PaintContext), size_t(96));
-
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
-  TextureRegistry mock_registry;
+  std::shared_ptr<TextureRegistry> mock_registry;
 
   auto expect_defaults = [&mock_raster_time, &mock_ui_time,
-                          &mock_registry](const Layer::PaintContext& context) {
+                          &mock_registry](const PaintContext& context) {
     EXPECT_EQ(context.internal_nodes_canvas, nullptr);
     EXPECT_EQ(context.leaf_nodes_canvas, nullptr);
     EXPECT_EQ(context.gr_context, nullptr);
     EXPECT_EQ(context.view_embedder, nullptr);
     EXPECT_EQ(&context.raster_time, &mock_raster_time);
     EXPECT_EQ(&context.ui_time, &mock_ui_time);
-    EXPECT_EQ(&context.texture_registry, &mock_registry);
+    EXPECT_EQ(context.texture_registry.get(), mock_registry.get());
     EXPECT_EQ(context.raster_cache, nullptr);
     EXPECT_EQ(context.checkerboard_offscreen_layers, false);
     EXPECT_EQ(context.frame_device_pixel_ratio, 1.0f);
@@ -266,10 +256,11 @@ TEST_F(LayerTreeTest, PaintContextInitialization) {
 
     EXPECT_EQ(context.inherited_opacity, SK_Scalar1);
     EXPECT_EQ(context.leaf_nodes_builder, nullptr);
+    EXPECT_EQ(context.builder_multiplexer, nullptr);
   };
 
   // These 4 initializers are required because they are handled by reference
-  Layer::PaintContext context{
+  PaintContext context{
       .raster_time = mock_raster_time,
       .ui_time = mock_ui_time,
       .texture_registry = mock_registry,

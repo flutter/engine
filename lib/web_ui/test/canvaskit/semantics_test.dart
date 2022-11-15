@@ -24,6 +24,5 @@ Future<void> testMain() async {
     setUpCanvasKitTest();
 
     runSemanticsTests();
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }

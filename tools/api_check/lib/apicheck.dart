@@ -5,11 +5,14 @@
 import 'dart:convert' show LineSplitter;
 import 'dart:io';
 
-import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
 import 'package:analyzer/dart/analysis/analysis_context.dart';
+import 'package:analyzer/dart/analysis/analysis_context_collection.dart';
+import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
+import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 /// Returns all indexed fields in [className].
 ///
@@ -24,7 +27,7 @@ List<String> getDartClassFields({
   final AnalysisContext context = collection.contextFor(sourcePath);
   final AnalysisSession session = context.currentSession;
 
-  final result = session.getParsedUnit(sourcePath);
+  final SomeParsedUnitResult result = session.getParsedUnit(sourcePath);
   if (result is! ParsedUnitResult) {
     return <String>[];
   }
@@ -32,12 +35,12 @@ List<String> getDartClassFields({
   // Locate all fields matching the expression in the class.
   final RegExp fieldExp = RegExp(r'_k(\w*)Index');
   final List<String> fields = <String>[];
-  for (CompilationUnitMember unitMember in result.unit.declarations) {
-    if (unitMember is ClassDeclaration && unitMember.name.name == className) {
-      for (ClassMember classMember in unitMember.members) {
+  for (final CompilationUnitMember unitMember in result.unit.declarations) {
+    if (unitMember is ClassDeclaration && unitMember.name.lexeme == className) {
+      for (final ClassMember classMember in unitMember.members) {
         if (classMember is FieldDeclaration) {
-          for (VariableDeclaration field in classMember.fields.variables) {
-            final String fieldName = field.name.name;
+          for (final VariableDeclaration field in classMember.fields.variables) {
+            final String fieldName = field.name.lexeme;
             final RegExpMatch? match = fieldExp.firstMatch(fieldName);
             if (match != null) {
               fields.add(match.group(1)!);
@@ -58,7 +61,7 @@ List<String> getCppEnumValues({
   required String sourcePath,
   required String enumName,
 }) {
-  List<String> lines = File(sourcePath).readAsLinesSync();
+  final List<String> lines = File(sourcePath).readAsLinesSync();
   final int enumEnd = lines.indexOf('} $enumName;');
   if (enumEnd < 0) {
     return <String>[];
@@ -67,7 +70,7 @@ List<String> getCppEnumValues({
   if (enumStart < 0 || enumStart >= enumEnd) {
     return <String>[];
   }
-  final valueExp = RegExp('^\\s*k$enumName(\\w*)');
+  final RegExp valueExp = RegExp('^\\s*k$enumName(\\w*)');
   return _extractMatchingExpression(
     lines: lines.sublist(enumStart + 1, enumEnd),
     regexp: valueExp,
@@ -85,7 +88,7 @@ List<String> getCppEnumClassValues({
     source: File(sourcePath).readAsStringSync(),
     startExp: RegExp('enum class $enumName .* {'),
   );
-  final valueExp = RegExp(r'^\s*k(\w*)');
+  final RegExp valueExp = RegExp(r'^\s*k(\w*)');
   return _extractMatchingExpression(lines: lines, regexp: valueExp);
 }
 
@@ -113,8 +116,8 @@ List<String> _extractMatchingExpression({
   required Iterable<String> lines,
   required RegExp regexp,
 }) {
-  List<String> values = <String>[];
-  for (String line in lines) {
+  final List<String> values = <String>[];
+  for (final String line in lines) {
     final RegExpMatch? match = regexp.firstMatch(line);
     if (match != null) {
       values.add(match.group(1)!);
@@ -155,4 +158,22 @@ List<String> _getBlockStartingWith({
   }
   final int blockEnd = pos;
   return LineSplitter.split(source, blockStart, blockEnd).toList();
+}
+
+/// Apply a visitor to all compilation units in the dart:ui library.
+void visitUIUnits(String flutterRoot, AstVisitor<void> visitor) {
+  final String uiRoot = '$flutterRoot/lib/ui';
+  final FeatureSet analyzerFeatures = FeatureSet.fromEnableFlags2(
+    sdkLanguageVersion: Version.parse('2.17.0'),
+    flags: <String>['non-nullable'],
+  );
+  final ParseStringResult uiResult = parseFile(path: '$uiRoot/ui.dart', featureSet: analyzerFeatures);
+  for (final PartDirective part in uiResult.unit.directives.whereType<PartDirective>()) {
+    final String partPath = part.uri.stringValue!;
+    final ParseStringResult partResult = parseFile(path: '$uiRoot/$partPath', featureSet: analyzerFeatures);
+
+    for (final CompilationUnitMember unitMember in partResult.unit.declarations) {
+      unitMember.accept(visitor);
+    }
+  }
 }

@@ -11,7 +11,6 @@ import '../util.dart';
 import '../validators.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
-import 'initialization.dart';
 import 'skia_object_cache.dart';
 
 abstract class CkShader extends ManagedSkiaObject<SkShader>
@@ -22,16 +21,36 @@ abstract class CkShader extends ManagedSkiaObject<SkShader>
   void delete() {
     rawSkiaObject?.delete();
   }
+
+  bool _disposed = false;
+
+  @override
+  bool get debugDisposed {
+    late bool disposed;
+    assert(() {
+      disposed = _disposed;
+      return true;
+    }());
+    return disposed;
+  }
+
+  @override
+  void dispose() {
+    assert(() {
+      _disposed = true;
+      return true;
+    }());
+  }
 }
 
 class CkGradientSweep extends CkShader implements ui.Gradient {
   CkGradientSweep(this.center, this.colors, this.colorStops, this.tileMode,
       this.startAngle, this.endAngle, this.matrix4)
       : assert(offsetIsValid(center)),
-        assert(colors != null), // ignore: unnecessary_null_comparison
-        assert(tileMode != null), // ignore: unnecessary_null_comparison
-        assert(startAngle != null), // ignore: unnecessary_null_comparison
-        assert(endAngle != null), // ignore: unnecessary_null_comparison
+        assert(colors != null),
+        assert(tileMode != null),
+        assert(startAngle != null),
+        assert(endAngle != null),
         assert(startAngle < endAngle),
         assert(matrix4 == null || matrix4IsValid(matrix4)) {
     validateColorStops(colors, colorStops);
@@ -77,8 +96,8 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
     Float32List? matrix,
   )   : assert(offsetIsValid(from)),
         assert(offsetIsValid(to)),
-        assert(colors != null), // ignore: unnecessary_null_comparison
-        assert(tileMode != null), // ignore: unnecessary_null_comparison
+        assert(colors != null),
+        assert(tileMode != null),
         matrix4 = matrix {
     if (assertionsEnabled) {
       assert(matrix4 == null || matrix4IsValid(matrix4!));
@@ -95,8 +114,6 @@ class CkGradientLinear extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
-
     return canvasKit.Shader.MakeLinearGradient(
       toSkPoint(from),
       toSkPoint(to),
@@ -124,8 +141,6 @@ class CkGradientRadial extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
-
     return canvasKit.Shader.MakeRadialGradient(
       toSkPoint(center),
       radius,
@@ -156,7 +171,6 @@ class CkGradientConical extends CkShader implements ui.Gradient {
 
   @override
   SkShader createDefault() {
-    assert(useCanvasKit);
     return canvasKit.Shader.MakeTwoPointConicalGradient(
       toSkPoint(focal),
       focalRadius,
@@ -184,6 +198,10 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   final Float64List matrix4;
   final ui.FilterQuality? filterQuality;
   final CkImage _image;
+
+  int get imageWidth => _image.width;
+
+  int get imageHeight => _image.height;
 
   ui.FilterQuality? _cachedQuality;
   @override
@@ -223,5 +241,11 @@ class CkImageShader extends CkShader implements ui.ImageShader {
   @override
   void delete() {
     rawSkiaObject?.delete();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _image.dispose();
   }
 }

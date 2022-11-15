@@ -5,12 +5,14 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_PAINT_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_PAINT_H_
 
+#include <memory>
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_color.h"
 #include "flutter/display_list/display_list_color_filter.h"
 #include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_image_filter.h"
 #include "flutter/display_list/display_list_mask_filter.h"
+#include "flutter/display_list/display_list_path_effect.h"
 
 namespace flutter {
 
@@ -164,7 +166,7 @@ class DlPaint {
     return colorFilter_;
   }
   const DlColorFilter* getColorFilterPtr() const { return colorFilter_.get(); }
-  DlPaint& setColorFilter(std::shared_ptr<DlColorFilter> filter) {
+  DlPaint& setColorFilter(std::shared_ptr<const DlColorFilter> filter) {
     colorFilter_ = filter ? filter->shared() : nullptr;
     return *this;
   }
@@ -177,7 +179,7 @@ class DlPaint {
     return imageFilter_;
   }
   const DlImageFilter* getImageFilterPtr() const { return imageFilter_.get(); }
-  DlPaint& setImageFilter(std::shared_ptr<DlImageFilter> filter) {
+  DlPaint& setImageFilter(std::shared_ptr<const DlImageFilter> filter) {
     imageFilter_ = filter;
     return *this;
   }
@@ -196,6 +198,15 @@ class DlPaint {
   }
   DlPaint& setMaskFilter(const DlMaskFilter* filter) {
     maskFilter_ = filter ? filter->shared() : nullptr;
+    return *this;
+  }
+
+  std::shared_ptr<const DlPathEffect> getPathEffect() const {
+    return pathEffect_;
+  }
+  const DlPathEffect* getPathEffectPtr() const { return pathEffect_.get(); }
+  DlPaint& setPathEffect(std::shared_ptr<DlPathEffect> pathEffect) {
+    pathEffect_ = pathEffect;
     return *this;
   }
 
@@ -236,8 +247,8 @@ class DlPaint {
   std::shared_ptr<const DlColorFilter> colorFilter_;
   std::shared_ptr<const DlImageFilter> imageFilter_;
   std::shared_ptr<const DlMaskFilter> maskFilter_;
+  std::shared_ptr<const DlPathEffect> pathEffect_;
   // missing (as compared to SkPaint):
-  // DlPathEffect - waiting for https://github.com/flutter/engine/pull/32159
   // DlBlender - not planning on using that object in a pure DisplayList world
 };
 

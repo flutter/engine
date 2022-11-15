@@ -10,6 +10,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -25,14 +26,10 @@ class SolidColorContents final : public Contents {
 
   ~SolidColorContents() override;
 
-  static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
+  static std::unique_ptr<SolidColorContents> Make(const Path& path,
+                                                  Color color);
 
-  static VertexBuffer CreateSolidFillVertices(const Path& path,
-                                              HostBuffer& buffer);
-
-  void SetPath(Path path);
-
-  void SetCover(bool cover);
+  void SetGeometry(std::unique_ptr<Geometry> geometry);
 
   void SetColor(Color color);
 
@@ -42,13 +39,16 @@ class SolidColorContents final : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
+  bool ShouldRender(const Entity& entity,
+                    const std::optional<Rect>& stencil_coverage) const override;
+
+  // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
  private:
-  Path path_;
-  bool cover_ = false;
+  std::unique_ptr<Geometry> geometry_;
 
   Color color_;
 

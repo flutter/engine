@@ -9,18 +9,32 @@ config("impeller_public_config") {
 
   defines = []
 
-  if (impeller_supports_platform) {
-    defines += [ "IMPELLER_SUPPORTS_PLATFORM=1" ]
-  }
-
   if (impeller_supports_rendering) {
     defines += [ "IMPELLER_SUPPORTS_RENDERING=1" ]
   }
 
+  if (impeller_enable_metal) {
+    defines += [ "IMPELLER_ENABLE_METAL=1" ]
+  }
+
+  if (impeller_enable_opengles) {
+    defines += [ "IMPELLER_ENABLE_OPENGLES=1" ]
+  }
+
+  if (impeller_enable_vulkan) {
+    defines += [ "IMPELLER_ENABLE_VULKAN=1" ]
+  }
+
+  if (impeller_trace_all_gl_calls) {
+    defines += [ "IMPELLER_TRACE_ALL_GL_CALLS" ]
+  }
+
+  if (impeller_error_check_all_gl_calls) {
+    defines += [ "IMPELLER_ERROR_CHECK_ALL_GL_CALLS" ]
+  }
+
   if (is_win) {
     defines += [
-      "_USE_MATH_DEFINES",
-
       # TODO(dnfield): https://github.com/flutter/flutter/issues/50053
       "_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING",
     ]
@@ -42,12 +56,15 @@ group("impeller") {
       "entity",
       "image",
       "renderer",
+      "renderer/backend",
       "typographer",
     ]
   }
 }
 
-executable("impeller_unittests") {
+impeller_component("impeller_unittests") {
+  target_type = "executable"
+
   testonly = true
 
   deps = [
@@ -56,6 +73,7 @@ executable("impeller_unittests") {
     "blobcat:blobcat_unittests",
     "compiler:compiler_unittests",
     "geometry:geometry_unittests",
+    "runtime_stage:runtime_stage_unittests",
     "tessellator:tessellator_unittests",
   ]
 

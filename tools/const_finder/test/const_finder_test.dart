@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: avoid_dynamic_calls
+
 import 'dart:convert' show jsonEncode;
 import 'dart:io';
 
@@ -34,11 +36,11 @@ void expectInstances(dynamic value, dynamic expected) {
 }
 
 final String basePath =
-    path.canonicalize(path.join(path.dirname(Platform.script.path), '..'));
+    path.canonicalize(path.join(path.dirname(Platform.script.toFilePath()), '..'));
 final String fixtures = path.join(basePath, 'test', 'fixtures');
 final String box = path.join(fixtures, 'lib', 'box.dart');
 final String consts = path.join(fixtures, 'lib', 'consts.dart');
-final String dotPackages = path.join(fixtures, '.packages');
+final String packageConfig = path.join(fixtures, '.dart_tool', 'package_config.json');
 final String constsAndNon = path.join(fixtures, 'lib', 'consts_and_non.dart');
 final String boxDill = path.join(fixtures, 'box.dill');
 final String constsDill = path.join(fixtures, 'consts.dill');
@@ -119,6 +121,9 @@ void _checkNonConsts() {
     classLibraryUri: 'package:const_finder_fixtures/target.dart',
     className: 'Target',
   );
+  final String fixturesUrl = Platform.isWindows
+    ? '/$fixtures'.replaceAll(Platform.pathSeparator, '/')
+    : fixtures;
 
   expectInstances(
     finder.findInstances(),
@@ -134,27 +139,27 @@ void _checkNonConsts() {
       ],
       'nonConstantLocations': <dynamic>[
         <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'file': 'file://$fixturesUrl/lib/consts_and_non.dart',
           'line': 14,
           'column': 26,
         },
         <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'file': 'file://$fixturesUrl/lib/consts_and_non.dart',
           'line': 16,
           'column': 26,
         },
         <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'file': 'file://$fixturesUrl/lib/consts_and_non.dart',
           'line': 16,
           'column': 41,
         },
         <String, dynamic>{
-          'file': 'file://$fixtures/lib/consts_and_non.dart',
+          'file': 'file://$fixturesUrl/lib/consts_and_non.dart',
           'line': 17,
           'column': 26,
         },
         <String, dynamic>{
-          'file': 'file://$fixtures/pkg/package.dart',
+          'file': 'file://$fixturesUrl/pkg/package.dart',
           'line': 14,
           'column': 25,
         }
@@ -172,7 +177,7 @@ Future<void> main(List<String> args) async {
   final String frontendServer = args[0];
   final String sdkRoot = args[1];
   try {
-    void _checkProcessResult(ProcessResult result) {
+    void checkProcessResult(ProcessResult result) {
       if (result.exitCode != 0) {
         stdout.writeln(result.stdout);
         stderr.writeln(result.stderr);
@@ -183,35 +188,35 @@ Future<void> main(List<String> args) async {
     stdout.writeln('Generating kernel fixtures...');
     stdout.writeln(consts);
 
-    _checkProcessResult(Process.runSync(dart, <String>[
+    checkProcessResult(Process.runSync(dart, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
       '--target=flutter',
       '--aot',
       '--tfa',
-      '--packages=$dotPackages',
+      '--packages=$packageConfig',
       '--output-dill=$boxDill',
       box,
     ]));
 
-    _checkProcessResult(Process.runSync(dart, <String>[
+    checkProcessResult(Process.runSync(dart, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
       '--target=flutter',
       '--aot',
       '--tfa',
-      '--packages=$dotPackages',
+      '--packages=$packageConfig',
       '--output-dill=$constsDill',
       consts,
     ]));
 
-    _checkProcessResult(Process.runSync(dart, <String>[
+    checkProcessResult(Process.runSync(dart, <String>[
       frontendServer,
       '--sdk-root=$sdkRoot',
       '--target=flutter',
       '--aot',
       '--tfa',
-      '--packages=$dotPackages',
+      '--packages=$packageConfig',
       '--output-dill=$constsAndNonDill',
       constsAndNon,
     ]));

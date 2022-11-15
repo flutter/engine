@@ -4,10 +4,13 @@
 
 #include "impeller/entity/contents/filters/inputs/texture_filter_input.h"
 
+#include <utility>
+
 namespace impeller {
 
-TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture)
-    : texture_(texture) {}
+TextureFilterInput::TextureFilterInput(std::shared_ptr<Texture> texture,
+                                       Matrix local_transform)
+    : texture_(std::move(texture)), local_transform_(local_transform) {}
 
 TextureFilterInput::~TextureFilterInput() = default;
 
@@ -23,13 +26,12 @@ std::optional<Snapshot> TextureFilterInput::GetSnapshot(
 
 std::optional<Rect> TextureFilterInput::GetCoverage(
     const Entity& entity) const {
-  return Rect::MakeSize(Size(texture_->GetSize()))
+  return Rect::MakeSize(texture_->GetSize())
       .TransformBounds(GetTransform(entity));
 }
 
 Matrix TextureFilterInput::GetLocalTransform(const Entity& entity) const {
-  // Compute the local transform such that the texture is centered.
-  return Matrix::MakeTranslation(-Point(texture_->GetSize()) / 2);
+  return local_transform_;
 }
 
 }  // namespace impeller

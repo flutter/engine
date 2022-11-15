@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: use_raw_strings
+// ignore_for_file: use_raw_strings, prefer_interpolation_to_compose_strings
 
 // COMMON PATTERNS
 
@@ -270,13 +270,13 @@ class LicenseFileReferencePattern {
     this.pattern,
     this.needsCopyright = true
   });
-  final int firstPrefixIndex;
-  final int indentPrefixIndex;
-  final int copyrightIndex;
-  final int authorIndex;
-  final int fileIndex;
+  final int? firstPrefixIndex;
+  final int? indentPrefixIndex;
+  final int? copyrightIndex;
+  final int? authorIndex;
+  final int? fileIndex;
   final bool needsCopyright;
-  final RegExp pattern;
+  final RegExp? pattern;
 }
 
 final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileReferencePattern>[
@@ -288,7 +288,6 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     firstPrefixIndex: 1,
     indentPrefixIndex: 2,
     fileIndex: 3,
-    needsCopyright: true,
     pattern: RegExp(
       kIndent +
       r'This code is released under the libpng license. For conditions of distribution and use, see the disclaimer and license in (png.h)\b'.replaceAll(' ', _linebreak),
@@ -507,7 +506,6 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
     firstPrefixIndex: 1,
     indentPrefixIndex: 2,
     fileIndex: 3,
-    needsCopyright: true,
     pattern: RegExp(
       kIndent +
       r'Licensed under the OpenSSL license \(the "License"\)\. You may not use '
@@ -634,12 +632,12 @@ class MultipleVersionedLicenseReferencePattern {
     this.pattern
   });
 
-  final int firstPrefixIndex;
-  final int indentPrefixIndex;
-  final List<int> licenseIndices;
+  final int? firstPrefixIndex;
+  final int? indentPrefixIndex;
+  final List<int>? licenseIndices;
   final bool checkLocalFirst;
-  final Map<int, int> versionIndices;
-  final RegExp pattern;
+  final Map<int, int>? versionIndices;
+  final RegExp? pattern;
 }
 
 final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <MultipleVersionedLicenseReferencePattern>[
@@ -1651,7 +1649,7 @@ final List<RegExp> csLicenses = <RegExp>[
     r'^(?:\1\2)?GNU General Public License for more details.\n'
     r'^(?:\1\2)?\n*'
     r'^(?:\1\2)?You should have received a copy of the GNU General Public License\n'
-    r'^(?:\1\2)?along with this program.  If not, see <http://www.gnu.org/licenses/>.  \*/\n'
+    r'^(?:\1\2)?along with this program.  If not, see <https?://www.gnu.org/licenses/>.  \*/\n'
     r'^(?:\1\2)?\n*' +
     kIndent +
     r'As a special exception, you may create a larger work that contains\n'
@@ -2043,10 +2041,10 @@ final List<RegExp> csFallbacks = <RegExp>[
 
 class ForwardReferencePattern {
   ForwardReferencePattern({ this.firstPrefixIndex, this.indentPrefixIndex, this.pattern, this.targetPattern });
-  final int firstPrefixIndex;
-  final int indentPrefixIndex;
-  final RegExp pattern;
-  final RegExp targetPattern;
+  final int? firstPrefixIndex;
+  final int? indentPrefixIndex;
+  final RegExp? pattern;
+  final RegExp? targetPattern;
 }
 
 final List<ForwardReferencePattern> csForwardReferenceLicenses = <ForwardReferencePattern>[

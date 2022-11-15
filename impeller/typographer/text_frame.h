@@ -43,7 +43,7 @@ class TextFrame {
   ///
   /// @return     If the text run could be added to this frame.
   ///
-  bool AddTextRun(TextRun run);
+  bool AddTextRun(const TextRun& run);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a reference to all the text runs in this frame.
@@ -52,8 +52,13 @@ class TextFrame {
   ///
   const std::vector<TextRun>& GetRuns() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Whether any run in this frame has color.
+  bool HasColor() const;
+
  private:
   std::vector<TextRun> runs_;
+  bool has_color_ = false;
 };
 
 }  // namespace impeller

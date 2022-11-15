@@ -6,38 +6,38 @@
 
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 
-#if IMPELLER_SUPPORTS_PLATFORM
+#if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_decoder_impeller.h"
-#endif  // IMPELLER_SUPPORTS_PLATFORM
+#endif  // IMPELLER_SUPPORTS_RENDERING
 
 namespace flutter {
 
 std::unique_ptr<ImageDecoder> ImageDecoder::Make(
     const Settings& settings,
-    TaskRunners runners,
+    const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     fml::WeakPtr<IOManager> io_manager) {
-#if IMPELLER_SUPPORTS_PLATFORM
+#if IMPELLER_SUPPORTS_RENDERING
   if (settings.enable_impeller) {
     return std::make_unique<ImageDecoderImpeller>(
-        std::move(runners),                 //
+        runners,                            //
         std::move(concurrent_task_runner),  //
         std::move(io_manager)               //
     );
   }
-#endif  // IMPELLER_SUPPORTS_PLATFORM
+#endif  // IMPELLER_SUPPORTS_RENDERING
   return std::make_unique<ImageDecoderSkia>(
-      std::move(runners),                 //
+      runners,                            //
       std::move(concurrent_task_runner),  //
       std::move(io_manager)               //
   );
 }
 
 ImageDecoder::ImageDecoder(
-    TaskRunners runners,
+    const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
     fml::WeakPtr<IOManager> io_manager)
-    : runners_(std::move(runners)),
+    : runners_(runners),
       concurrent_task_runner_(std::move(concurrent_task_runner)),
       io_manager_(std::move(io_manager)),
       weak_factory_(this) {

@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
-import 'dart:svg' as svg;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../engine_canvas.dart';
+import '../svg.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -22,10 +22,10 @@ import 'shaders/shader.dart';
 
 /// A canvas that renders to DOM elements and CSS properties.
 class DomCanvas extends EngineCanvas with SaveElementStackTracking {
-  @override
-  final html.Element rootElement;
-
   DomCanvas(this.rootElement);
+
+  @override
+  final DomElement rootElement;
 
   /// Prepare to reuse this canvas by clearing it's current contents.
   @override
@@ -52,14 +52,14 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     // TODO(yjbanov): implement blendMode
-    final html.Element box = html.Element.tag('draw-color');
+    final DomElement box = createDomElement('draw-color');
     box.style
       ..position = 'absolute'
       ..top = '0'
       ..right = '0'
       ..bottom = '0'
       ..left = '0'
-      ..backgroundColor = colorToCssString(color);
+      ..backgroundColor = colorToCssString(color)!;
     currentElement.append(box);
   }
 
@@ -75,14 +75,16 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawRect(ui.Rect rect, SurfacePaintData paint) {
+    rect = adjustRectForDom(rect, paint);
     currentElement.append(
         buildDrawRectElement(rect, paint, 'draw-rect', currentTransform));
   }
 
   @override
   void drawRRect(ui.RRect rrect, SurfacePaintData paint) {
-    final html.Element element = buildDrawRectElement(
-        rrect.outerRect, paint, 'draw-rrect', currentTransform);
+    final ui.Rect outerRect = adjustRectForDom(rrect.outerRect, paint);
+    final DomElement element = buildDrawRectElement(
+        outerRect, paint, 'draw-rrect', currentTransform);
     applyRRectBorderRadius(element.style, rrect);
     currentElement.append(element);
   }
@@ -126,7 +128,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawParagraph(ui.Paragraph paragraph, ui.Offset offset) {
-    final html.Element paragraphElement = drawParagraphElement(
+    final DomElement paragraphElement = drawParagraphElement(
         paragraph as CanvasParagraph, offset,
         transform: currentTransform);
     currentElement.append(paragraphElement);
@@ -160,10 +162,79 @@ ui.Color blurColor(ui.Color color, double sigma) {
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
 }
 
-html.HtmlElement buildDrawRectElement(
+/// When drawing a shape (rect, rrect, circle, etc) in DOM/CSS, the [rect] given
+/// by Flutter needs to be adjusted to what DOM/CSS expect.
+///
+/// This method takes Flutter's [rect] and produces a new rect that can be used
+/// to generate the correct CSS properties to match Flutter's expectations.
+///
+///
+/// Here's what Flutter's given [rect] and [paint.strokeWidth] represent:
+///
+///     top-left    ↓
+///              ┌──↓──────────────────────┐
+///             →→→→x                   x  │←←
+///              │    ┌───────────────┐    │ |
+///              │    │               │    │ |
+///              │    │               │    │ | height
+///              │    │               │    │ |
+///              │    └───────────────┘    │ |
+///              │  x                   x  │←←
+///              └─────────────────────────┘
+/// stroke-width ↑----↑                 ↑
+///                 ↑-------------------↑ width
+///
+///
+///
+/// In the DOM/CSS, here's how the coordinates should look like:
+///
+///   top-left   ↓
+///            →→x─────────────────────────┐
+///              │                         │
+///              │    x───────────────x    │←←
+///              │    │               │    │ |
+///              │    │               │    │ | height
+///              │    │               │    │ |
+///              │    x───────────────x    │←←
+///              │                         │
+///              └─────────────────────────┘
+/// border-width ↑----↑               ↑
+///                   ↑---------------↑ width
+///
+/// As shown in the drawing above, the width/height don't start at the top-left
+/// coordinates. Instead, they start from the inner top-left (inside the border).
+ui.Rect adjustRectForDom(ui.Rect rect, SurfacePaintData paint) {
+  double left = math.min(rect.left, rect.right);
+  double top = math.min(rect.top, rect.bottom);
+  double width = rect.width.abs();
+  double height = rect.height.abs();
+
+  final bool isStroke = paint.style == ui.PaintingStyle.stroke;
+  final double strokeWidth = paint.strokeWidth ?? 0.0;
+  if (isStroke && strokeWidth > 0.0) {
+    left -= strokeWidth / 2.0;
+    top -= strokeWidth / 2.0;
+
+    // width and height shouldn't go below zero.
+    width = math.max(0, width - strokeWidth);
+    height = math.max(0, height - strokeWidth);
+  }
+
+  if (left != rect.left ||
+      top != rect.top ||
+      width != rect.width ||
+      height != rect.height) {
+    return ui.Rect.fromLTWH(left, top, width, height);
+  }
+  return rect;
+}
+
+DomHTMLElement buildDrawRectElement(
     ui.Rect rect, SurfacePaintData paint, String tagName, Matrix4 transform) {
-  final html.HtmlElement rectangle =
-      html.document.createElement(tagName) as html.HtmlElement;
+  assert(rect.left <= rect.right);
+  assert(rect.top <= rect.bottom);
+  final DomHTMLElement rectangle = domDocument.createElement(tagName) as
+      DomHTMLElement;
   assert(() {
     rectangle.setAttribute('flt-rect', '$rect');
     rectangle.setAttribute('flt-paint', '$paint');
@@ -172,36 +243,21 @@ html.HtmlElement buildDrawRectElement(
   String effectiveTransform;
   final bool isStroke = paint.style == ui.PaintingStyle.stroke;
   final double strokeWidth = paint.strokeWidth ?? 0.0;
-  final double left = math.min(rect.left, rect.right);
-  final double right = math.max(rect.left, rect.right);
-  final double top = math.min(rect.top, rect.bottom);
-  final double bottom = math.max(rect.top, rect.bottom);
   if (transform.isIdentity()) {
-    if (isStroke) {
-      effectiveTransform =
-          'translate(${left - (strokeWidth / 2.0)}px, ${top - (strokeWidth / 2.0)}px)';
-    } else {
-      effectiveTransform = 'translate(${left}px, ${top}px)';
-    }
+    effectiveTransform = 'translate(${rect.left}px, ${rect.top}px)';
   } else {
-    // Clone to avoid mutating _transform.
-    final Matrix4 translated = transform.clone();
-    if (isStroke) {
-      translated.translate(
-          left - (strokeWidth / 2.0), top - (strokeWidth / 2.0));
-    } else {
-      translated.translate(left, top);
-    }
+    // Clone to avoid mutating `transform`.
+    final Matrix4 translated = transform.clone()..translate(rect.left, rect.top);
     effectiveTransform = matrix4ToCssTransform(translated);
   }
-  final html.CssStyleDeclaration style = rectangle.style;
+  final DomCSSStyleDeclaration style = rectangle.style;
   style
     ..position = 'absolute'
     ..transformOrigin = '0 0 0'
     ..transform = effectiveTransform;
 
   String cssColor =
-      paint.color == null ? '#000000' : colorToCssString(paint.color)!;
+      paint.color == null ? '#000000' : colorValueToCssString(paint.color)!;
 
   if (paint.maskFilter != null) {
     final double sigma = paint.maskFilter!.webOnlySigma;
@@ -209,22 +265,20 @@ html.HtmlElement buildDrawRectElement(
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
-      cssColor = colorToCssString(
-          blurColor(paint.color ?? const ui.Color(0xFF000000), sigma))!;
+      cssColor = colorToCssString(blurColor(ui.Color(paint.color), sigma))!;
     } else {
       style.filter = 'blur(${sigma}px)';
     }
   }
 
+  style
+    ..width = '${rect.width}px'
+    ..height = '${rect.height}px';
+
   if (isStroke) {
-    style
-      ..width = '${right - left - strokeWidth}px'
-      ..height = '${bottom - top - strokeWidth}px'
-      ..border = '${_borderStrokeToCssUnit(strokeWidth)} solid $cssColor';
+    style.border = '${_borderStrokeToCssUnit(strokeWidth)} solid $cssColor';
   } else {
     style
-      ..width = '${right - left}px'
-      ..height = '${bottom - top}px'
       ..backgroundColor = cssColor
       ..backgroundImage = _getBackgroundImageCssValue(paint.shader, rect);
   }
@@ -249,7 +303,7 @@ String _getBackgroundImageUrl(ui.Shader? shader, ui.Rect bounds) {
   return '';
 }
 
-void applyRRectBorderRadius(html.CssStyleDeclaration style, ui.RRect rrect) {
+void applyRRectBorderRadius(DomCSSStyleDeclaration style, ui.RRect rrect) {
   if (rrect.tlRadiusX == rrect.trRadiusX &&
       rrect.tlRadiusX == rrect.blRadiusX &&
       rrect.tlRadiusX == rrect.brRadiusX &&
@@ -279,27 +333,26 @@ String _borderStrokeToCssUnit(double value) {
   return '${value.toStringAsFixed(3)}px';
 }
 
-svg.SvgSvgElement pathToSvgElement(
+SVGSVGElement pathToSvgElement(
     SurfacePath path, SurfacePaintData paint, String width, String height) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final svg.SvgSvgElement root = svg.SvgSvgElement()
+  final SVGSVGElement root = createSVGSVGElement()
     ..setAttribute('width', '${width}px')
     ..setAttribute('height', '${height}px')
     ..setAttribute('viewBox', '0 0 $width $height');
 
-  final svg.PathElement svgPath = svg.PathElement();
+  final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
-  final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
   if (paint.style == ui.PaintingStyle.stroke ||
       (paint.style != ui.PaintingStyle.fill &&
           paint.strokeWidth != 0 &&
           paint.strokeWidth != null)) {
-    svgPath.setAttribute('stroke', colorToCssString(color)!);
+    svgPath.setAttribute('stroke', colorValueToCssString(paint.color)!);
     svgPath.setAttribute('stroke-width', '${paint.strokeWidth ?? 1.0}');
     svgPath.setAttribute('fill', 'none');
   } else if (paint.color != null) {
-    svgPath.setAttribute('fill', colorToCssString(color)!);
+    svgPath.setAttribute('fill', colorValueToCssString(paint.color)!);
   } else {
     svgPath.setAttribute('fill', '#000000');
   }

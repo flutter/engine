@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// @dart = 2.12
-
 import 'package:async_helper/async_minitest.dart';
 import 'package:expect/expect.dart';
 
@@ -110,5 +108,26 @@ Matcher startsWith(String s) => (dynamic d) {
   final String h = d as String;
   if (!h.startsWith(s)) {
     Expect.fail('Expected "$h" to start with "$s"');
+  }
+};
+
+/// Gives a matcher that asserts that the value being matched is a [String] that
+/// ends with `s`.
+Matcher endsWith(String s) => (dynamic d) {
+  expect(d, isInstanceOf<String>());
+  final String h = d as String;
+  if (!h.endsWith(s)) {
+    Expect.fail('Expected "$h" to end with "$s"');
+  }
+};
+
+/// Gives a matcher that asserts that the value being matched is a [String] that
+/// regexp matches with `pattern`.
+Matcher hasMatch(String pattern) => (dynamic d) {
+  expect(d, isInstanceOf<String>());
+  final String h = d as String;
+  final RegExp regExp = RegExp(pattern);
+  if (!regExp.hasMatch(h)) {
+    Expect.fail('Expected "$h" to match with "$pattern"');
   }
 };

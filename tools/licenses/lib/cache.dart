@@ -6,12 +6,14 @@ Map<Key, dynamic> _cache = <Key, dynamic>{};
 const int _maxSize = 10;
 
 T cache<T>(Key key, T Function() getter) {
-  T result = _cache[key] as T;
-  if (result != null) {
+  T result;
+  if (_cache[key] != null) {
+    result = _cache[key] as T;
     _cache.remove(key);
   } else {
-    if (_cache.length == _maxSize)
+    if (_cache.length == _maxSize) {
       _cache.remove(_cache.keys.first);
+    }
     result = getter();
     assert(result is! Function);
   }
@@ -26,12 +28,13 @@ abstract class Key {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other))
+    if (identical(this, other)) {
       return true;
-    if (runtimeType != other.runtimeType)
+    }
+    if (runtimeType != other.runtimeType) {
       return false;
-    return other is Key
-        && other._value == _value;
+    }
+    return other is Key && other._value == _value;
   }
 
   @override

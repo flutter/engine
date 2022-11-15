@@ -75,10 +75,10 @@ void Path::SetContourClosed(bool is_closed) {
 }
 
 void Path::EnumerateComponents(
-    Applier<LinearPathComponent> linear_applier,
-    Applier<QuadraticPathComponent> quad_applier,
-    Applier<CubicPathComponent> cubic_applier,
-    Applier<ContourComponent> contour_applier) const {
+    const Applier<LinearPathComponent>& linear_applier,
+    const Applier<QuadraticPathComponent>& quad_applier,
+    const Applier<CubicPathComponent>& cubic_applier,
+    const Applier<ContourComponent>& contour_applier) const {
   size_t currentIndex = 0;
   for (const auto& component : components_) {
     switch (component.type) {
@@ -221,8 +221,7 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(
-    const SmoothingApproximation& approximation) const {
+Path::Polyline Path::CreatePolyline(Scalar tolerance) const {
   Polyline polyline;
 
   std::optional<Point> previous_contour_point;
@@ -232,12 +231,10 @@ Path::Polyline Path::CreatePolyline(
       return;
     }
 
-    polyline.points.reserve(polyline.points.size() + collection.size());
-
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
           previous_contour_point.value() == point) {
-        // Slip over duplicate points in the same contour.
+        // Skip over duplicate points in the same contour.
         continue;
       }
       previous_contour_point = point;
@@ -253,10 +250,10 @@ Path::Polyline Path::CreatePolyline(
         collect_points(linears_[component.index].CreatePolyline());
         break;
       case ComponentType::kQuadratic:
-        collect_points(quads_[component.index].CreatePolyline(approximation));
+        collect_points(quads_[component.index].CreatePolyline(tolerance));
         break;
       case ComponentType::kCubic:
-        collect_points(cubics_[component.index].CreatePolyline(approximation));
+        collect_points(cubics_[component.index].CreatePolyline(tolerance));
         break;
       case ComponentType::kContour:
         if (component_i == components_.size() - 1) {

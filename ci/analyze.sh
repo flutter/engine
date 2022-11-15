@@ -30,7 +30,6 @@ function follow_links() (
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../.."; pwd -P)"
 FLUTTER_DIR="$SRC_DIR/flutter"
-SKY_ENGINE_DIR="$SRC_DIR/out/host_debug_unopt/gen/dart-pkg/sky_engine"
 DART_BIN="$SRC_DIR/out/host_debug_unopt/dart-sdk/bin"
 DART="$DART_BIN/dart"
 
@@ -47,38 +46,27 @@ echo "Using dart from $DART_BIN"
 "$DART" --version
 echo ""
 
-(cd $SKY_ENGINE_DIR && "$DART" pub get --offline)
-"$DART" analyze "$SKY_ENGINE_DIR/lib/ui/ui.dart"
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/lib/ui"
 
-"$DART" analyze "$FLUTTER_DIR/lib/spirv"
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/ci"
 
-"$DART" analyze "$FLUTTER_DIR/ci"
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/flutter_frontend_server"
 
-"$DART" analyze "$FLUTTER_DIR/flutter_frontend_server"
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/tools"
 
-"$DART" analyze "$FLUTTER_DIR/tools/licenses"
-
-"$DART" analyze "$FLUTTER_DIR/testing/litetest"
-
-"$DART" analyze "$FLUTTER_DIR/testing/benchmark"
-
-"$DART" analyze "$FLUTTER_DIR/testing/smoke_test_failure"
-
-"$DART" analyze "$FLUTTER_DIR/testing/dart"
-
-"$DART" analyze "$FLUTTER_DIR/testing/scenario_app"
-
-"$DART" analyze "$FLUTTER_DIR/testing/symbols"
-
-"$DART" analyze "$FLUTTER_DIR/tools/githooks"
-
-"$DART" analyze "$FLUTTER_DIR/tools/clang_tidy"
+(cd "$FLUTTER_DIR/testing/skia_gold_client"; "$DART" pub get)
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/testing"
 
 echo ""
 
 # Check that dart libraries conform.
 echo "Checking the integrity of the Web SDK"
 (cd "$FLUTTER_DIR/web_sdk"; "$DART" pub get)
+(cd "$FLUTTER_DIR/web_sdk/web_test_utils"; "$DART" pub get)
+(cd "$FLUTTER_DIR/web_sdk/web_engine_tester"; "$DART" pub get)
+
+"$DART" analyze --fatal-infos --fatal-warnings "$FLUTTER_DIR/web_sdk"
+
 WEB_SDK_TEST_FILES="$FLUTTER_DIR/web_sdk/test/*"
 for testFile in $WEB_SDK_TEST_FILES
 do

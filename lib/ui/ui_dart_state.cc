@@ -5,6 +5,7 @@
 #include "flutter/lib/ui/ui_dart_state.h"
 
 #include <iostream>
+#include <utility>
 
 #include "flutter/fml/message_loop.h"
 #include "flutter/lib/ui/window/platform_configuration.h"
@@ -29,23 +30,27 @@ UIDartState::Context::Context(const TaskRunners& task_runners)
 
 UIDartState::Context::Context(
     const TaskRunners& task_runners,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
     fml::WeakPtr<IOManager> io_manager,
     fml::RefPtr<SkiaUnrefQueue> unref_queue,
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
     std::string advisory_script_uri,
     std::string advisory_script_entrypoint,
-    std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
+    std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
+    std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
+    bool enable_impeller)
     : task_runners(task_runners),
-      snapshot_delegate(snapshot_delegate),
-      io_manager(io_manager),
-      unref_queue(unref_queue),
-      image_decoder(image_decoder),
-      image_generator_registry(image_generator_registry),
-      advisory_script_uri(advisory_script_uri),
-      advisory_script_entrypoint(advisory_script_entrypoint),
-      volatile_path_tracker(volatile_path_tracker) {}
+      snapshot_delegate(std::move(snapshot_delegate)),
+      io_manager(std::move(io_manager)),
+      unref_queue(std::move(unref_queue)),
+      image_decoder(std::move(image_decoder)),
+      image_generator_registry(std::move(image_generator_registry)),
+      advisory_script_uri(std::move(advisory_script_uri)),
+      advisory_script_entrypoint(std::move(advisory_script_entrypoint)),
+      volatile_path_tracker(std::move(volatile_path_tracker)),
+      concurrent_task_runner(std::move(concurrent_task_runner)),
+      enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
     TaskObserverAdd add_callback,
@@ -56,18 +61,16 @@ UIDartState::UIDartState(
     std::shared_ptr<IsolateNameServer> isolate_name_server,
     bool is_root_isolate,
     bool enable_skparagraph,
-    bool enable_display_list,
     const UIDartState::Context& context)
     : add_callback_(std::move(add_callback)),
       remove_callback_(std::move(remove_callback)),
       logger_prefix_(std::move(logger_prefix)),
       is_root_isolate_(is_root_isolate),
-      unhandled_exception_callback_(unhandled_exception_callback),
-      log_message_callback_(log_message_callback),
+      unhandled_exception_callback_(std::move(unhandled_exception_callback)),
+      log_message_callback_(std::move(log_message_callback)),
       isolate_name_server_(std::move(isolate_name_server)),
       enable_skparagraph_(enable_skparagraph),
-      enable_display_list_(enable_display_list),
-      context_(std::move(context)) {
+      context_(context) {
   AddOrRemoveTaskObserver(true /* add */);
 }
 
@@ -77,6 +80,10 @@ UIDartState::~UIDartState() {
 
 const std::string& UIDartState::GetAdvisoryScriptURI() const {
   return context_.advisory_script_uri;
+}
+
+bool UIDartState::IsImpellerEnabled() const {
+  return context_.enable_impeller;
 }
 
 void UIDartState::DidSetIsolate() {
@@ -90,12 +97,13 @@ void UIDartState::DidSetIsolate() {
 
 void UIDartState::ThrowIfUIOperationsProhibited() {
   if (!UIDartState::Current()->IsRootIsolate()) {
+    Dart_EnterScope();
     Dart_ThrowException(
         tonic::ToDart("UI actions are only available on root isolate."));
   }
 }
 
-void UIDartState::SetDebugName(const std::string debug_name) {
+void UIDartState::SetDebugName(const std::string& debug_name) {
   debug_name_ = debug_name;
   if (platform_configuration_) {
     platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
@@ -109,11 +117,18 @@ UIDartState* UIDartState::Current() {
 
 void UIDartState::SetPlatformConfiguration(
     std::unique_ptr<PlatformConfiguration> platform_configuration) {
+  FML_DCHECK(IsRootIsolate());
   platform_configuration_ = std::move(platform_configuration);
   if (platform_configuration_) {
     platform_configuration_->client()->UpdateIsolateDescription(debug_name_,
                                                                 main_port_);
   }
+}
+
+void UIDartState::SetPlatformMessageHandler(
+    std::weak_ptr<PlatformMessageHandler> handler) {
+  FML_DCHECK(!IsRootIsolate());
+  platform_message_handler_ = std::move(handler);
 }
 
 const TaskRunners& UIDartState::GetTaskRunners() const {
@@ -131,6 +146,11 @@ fml::RefPtr<flutter::SkiaUnrefQueue> UIDartState::GetSkiaUnrefQueue() const {
 std::shared_ptr<VolatilePathTracker> UIDartState::GetVolatilePathTracker()
     const {
   return context_.volatile_path_tracker;
+}
+
+std::shared_ptr<fml::ConcurrentTaskRunner>
+UIDartState::GetConcurrentTaskRunner() const {
+  return context_.concurrent_task_runner;
 }
 
 void UIDartState::ScheduleMicrotask(Dart_Handle closure) {
@@ -161,7 +181,8 @@ void UIDartState::AddOrRemoveTaskObserver(bool add) {
   }
 }
 
-fml::WeakPtr<SnapshotDelegate> UIDartState::GetSnapshotDelegate() const {
+fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>
+UIDartState::GetSnapshotDelegate() const {
   return context_.snapshot_delegate;
 }
 
@@ -197,14 +218,14 @@ void UIDartState::LogMessage(const std::string& tag,
                         (int)message.size(), message.c_str());
 #elif defined(FML_OS_IOS)
     std::stringstream stream;
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       stream << tag << ": ";
     }
     stream << message;
     std::string log = stream.str();
     syslog(1 /* LOG_ALERT */, "%.*s", (int)log.size(), log.c_str());
 #else
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       std::cout << tag << ": ";
     }
     std::cout << message << std::endl;
@@ -216,8 +237,27 @@ bool UIDartState::enable_skparagraph() const {
   return enable_skparagraph_;
 }
 
-bool UIDartState::enable_display_list() const {
-  return enable_display_list_;
+Dart_Handle UIDartState::HandlePlatformMessage(
+    std::unique_ptr<PlatformMessage> message) {
+  if (platform_configuration_) {
+    platform_configuration_->client()->HandlePlatformMessage(
+        std::move(message));
+  } else {
+    std::shared_ptr<PlatformMessageHandler> handler =
+        platform_message_handler_.lock();
+    if (handler) {
+      handler->HandlePlatformMessage(std::move(message));
+    } else {
+      return tonic::ToDart(
+          "No platform channel handler registered for background isolate.");
+    }
+  }
+
+  return Dart_Null();
+}
+
+int64_t UIDartState::GetRootIsolateToken() const {
+  return IsRootIsolate() ? reinterpret_cast<int64_t>(this) : 0;
 }
 
 }  // namespace flutter

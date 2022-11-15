@@ -16,6 +16,9 @@ bool get _workAroundBug91333 => operatingSystem == OperatingSystem.iOs;
 enum BrowserEngine {
   /// The engine that powers Chrome, Samsung Internet Browser, UC Browser,
   /// Microsoft Edge, Opera, and others.
+  ///
+  /// Blink is assumed in case when a more precise browser engine wasn't
+  /// detected.
   blink,
 
   /// The engine that powers Safari.
@@ -23,18 +26,6 @@ enum BrowserEngine {
 
   /// The engine that powers Firefox.
   firefox,
-
-  /// The engine that powers Edge.
-  edge,
-
-  /// The engine that powers Internet Explorer 11.
-  ie11,
-
-  /// The engine that powers Samsung stock browser. It is based on blink.
-  samsung,
-
-  /// We were unable to detect the current browser engine.
-  unknown,
 }
 
 /// html webgl version qualifier constants.
@@ -47,7 +38,7 @@ abstract class WebGLVersion {
 }
 
 /// Lazily initialized current browser engine.
-late final BrowserEngine _browserEngine = _detectBrowserEngine();
+final BrowserEngine _browserEngine = _detectBrowserEngine();
 
 /// Override the value of [browserEngine].
 ///
@@ -70,51 +61,28 @@ BrowserEngine _detectBrowserEngine() {
   return detectBrowserEngineByVendorAgent(vendor, agent);
 }
 
-/// Detects samsung blink variants.
-///
-///  Example patterns:
-///    Note 2 : GT-N7100
-///    Note 3 : SM-N900T
-///    Tab 4 : SM-T330NU
-///    Galaxy S4: SHV-E330S
-///    Galaxy Note2: SHV-E250L
-///    Note: SAMSUNG-SGH-I717
-///    SPH/SCH are very old Palm models.
-bool _isSamsungBrowser(String agent) {
-  final RegExp exp = RegExp(
-      r'SAMSUNG|SGH-[I|N|T]|GT-[I|N]|SM-[A|N|P|T|Z]|SHV-E|SCH-[I|J|R|S]|SPH-L');
-  return exp.hasMatch(agent.toUpperCase());
-}
-
 /// Detects browser engine for a given vendor and agent string.
 ///
 /// Used for testing this library.
 @visibleForTesting
 BrowserEngine detectBrowserEngineByVendorAgent(String vendor, String agent) {
   if (vendor == 'Google Inc.') {
-    // Samsung browser is based on blink, check for variant.
-    if (_isSamsungBrowser(agent)) {
-      return BrowserEngine.samsung;
-    }
     return BrowserEngine.blink;
   } else if (vendor == 'Apple Computer, Inc.') {
     return BrowserEngine.webkit;
-  } else if (agent.contains('edge/')) {
-    return BrowserEngine.edge;
   } else if (agent.contains('Edg/')) {
     // Chromium based Microsoft Edge has `Edg` in the user-agent.
     // https://docs.microsoft.com/en-us/microsoft-edge/web-platform/user-agent-string
     return BrowserEngine.blink;
-  } else if (agent.contains('trident/7.0')) {
-    return BrowserEngine.ie11;
   } else if (vendor == '' && agent.contains('firefox')) {
     // An empty string means firefox:
     // https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vendor
     return BrowserEngine.firefox;
   }
-  // Assume unknown otherwise, but issue a warning.
-  print('WARNING: failed to detect current browser engine.');
-  return BrowserEngine.unknown;
+
+  // Assume Blink otherwise, but issue a warning.
+  print('WARNING: failed to detect current browser engine. Assuming this is a Chromium-compatible browser.');
+  return BrowserEngine.blink;
 }
 
 /// Operating system where the current browser runs.
@@ -142,7 +110,7 @@ enum OperatingSystem {
 }
 
 /// Lazily initialized current operating system.
-late final OperatingSystem _operatingSystem = detectOperatingSystem();
+final OperatingSystem _operatingSystem = detectOperatingSystem();
 
 /// Returns the [OperatingSystem] the current browsers works on.
 ///
@@ -185,7 +153,7 @@ OperatingSystem detectOperatingSystem({
     return OperatingSystem.iOs;
   } else if (userAgent.contains('Android')) {
     // The Android OS reports itself as "Linux armv8l" in
-    // [html.window.navigator.platform]. So we have to check the user-agent to
+    // [domWindow.navigator.platform]. So we have to check the user-agent to
     // determine if the OS is Android or not.
     return OperatingSystem.android;
   } else if (platform.startsWith('Linux')) {
@@ -235,6 +203,25 @@ bool get isIOS15 {
   return operatingSystem == OperatingSystem.iOs &&
       domWindow.navigator.userAgent.contains('OS 15_');
 }
+
+/// If set to true pretends that the current browser is iOS Safari.
+///
+/// Useful for tests. Do not use in production code.
+@visibleForTesting
+bool debugEmulateIosSafari = false;
+
+/// Returns true if the browser is iOS Safari, false otherwise.
+bool get isIosSafari => debugEmulateIosSafari || _isActualIosSafari;
+
+bool get _isActualIosSafari =>
+    browserEngine == BrowserEngine.webkit &&
+    operatingSystem == OperatingSystem.iOs;
+
+/// Whether the current browser is Safari.
+bool get isSafari => browserEngine == BrowserEngine.webkit;
+
+/// Whether the current browser is Firefox.
+bool get isFirefox => browserEngine == BrowserEngine.firefox;
 
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;

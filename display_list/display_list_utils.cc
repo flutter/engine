@@ -20,7 +20,7 @@
 namespace flutter {
 
 // clang-format off
-constexpr float invert_color_matrix[20] = {
+constexpr float kInvertColorMatrix[20] = {
   -1.0,    0,    0, 1.0, 0,
      0, -1.0,    0, 1.0, 0,
      0,    0, -1.0, 1.0, 0,
@@ -33,6 +33,9 @@ void SkPaintDispatchHelper::save_opacity(SkScalar child_opacity) {
   set_opacity(child_opacity);
 }
 void SkPaintDispatchHelper::restore_opacity() {
+  if (save_stack_.empty()) {
+    return;
+  }
   set_opacity(save_stack_.back().opacity);
   save_stack_.pop_back();
 }
@@ -85,8 +88,8 @@ void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
 }
-void SkPaintDispatchHelper::setPathEffect(sk_sp<SkPathEffect> effect) {
-  paint_.setPathEffect(effect);
+void SkPaintDispatchHelper::setPathEffect(const DlPathEffect* effect) {
+  paint_.setPathEffect(effect ? effect->skia_object() : nullptr);
 }
 void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
   paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
@@ -97,7 +100,7 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
     return color_filter_ ? color_filter_->skia_object() : nullptr;
   }
   sk_sp<SkColorFilter> invert_filter =
-      SkColorFilters::Matrix(invert_color_matrix);
+      SkColorFilters::Matrix(kInvertColorMatrix);
   if (color_filter_) {
     invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
   }
@@ -163,6 +166,9 @@ void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
 }
 void SkMatrixDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   matrix_ = saved_.back();
   matrix33_ = matrix_.asM33();
   saved_.pop_back();
@@ -175,39 +181,51 @@ void SkMatrixDispatchHelper::reset() {
 void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rect, is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rect, is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
                                          bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(rrect.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(rrect.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
                                         bool is_aa) {
-  if (clip_op == SkClipOp::kIntersect) {
-    intersect(path.getBounds(), is_aa);
+  switch (clip_op) {
+    case SkClipOp::kIntersect:
+      intersect(path.getBounds(), is_aa);
+      break;
+    case SkClipOp::kDifference:
+      break;
   }
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
-  SkRect devClipBounds = matrix().mapRect(rect);
+  SkRect dev_clip_bounds = matrix().mapRect(rect);
   if (is_aa) {
-    devClipBounds.roundOut(&devClipBounds);
+    dev_clip_bounds.roundOut(&dev_clip_bounds);
   }
   if (has_clip_) {
-    if (!bounds_.intersect(devClipBounds)) {
+    if (!bounds_.intersect(dev_clip_bounds)) {
       bounds_.setEmpty();
     }
   } else {
     has_clip_ = true;
-    if (devClipBounds.isEmpty()) {
+    if (dev_clip_bounds.isEmpty()) {
       bounds_.setEmpty();
     } else {
-      bounds_ = devClipBounds;
+      bounds_ = dev_clip_bounds;
     }
   }
 }
@@ -221,6 +239,9 @@ void ClipBoundsDispatchHelper::save() {
   }
 }
 void ClipBoundsDispatchHelper::restore() {
+  if (saved_.empty()) {
+    return;
+  }
   bounds_ = saved_.back();
   saved_.pop_back();
   has_clip_ = (bounds_.fLeft <= bounds_.fRight &&  //
@@ -237,11 +258,130 @@ void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
   }
 }
 
+void RectBoundsAccumulator::accumulate(const SkRect& r) {
+  if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
+    rect_.accumulate(r.fLeft, r.fTop);
+    rect_.accumulate(r.fRight, r.fBottom);
+  }
+}
+
+void RectBoundsAccumulator::save() {
+  saved_rects_.emplace_back(rect_);
+  rect_ = AccumulationRect();
+}
+void RectBoundsAccumulator::restore() {
+  if (!saved_rects_.empty()) {
+    SkRect layer_bounds = rect_.bounds();
+    pop_and_accumulate(layer_bounds, nullptr);
+  }
+}
+bool RectBoundsAccumulator::restore(
+    std::function<bool(const SkRect&, SkRect&)> mapper,
+    const SkRect* clip) {
+  bool success = true;
+  if (!saved_rects_.empty()) {
+    SkRect layer_bounds = rect_.bounds();
+    success = mapper(layer_bounds, layer_bounds);
+    pop_and_accumulate(layer_bounds, clip);
+  }
+  return success;
+}
+void RectBoundsAccumulator::pop_and_accumulate(SkRect& layer_bounds,
+                                               const SkRect* clip) {
+  FML_DCHECK(!saved_rects_.empty());
+
+  rect_ = saved_rects_.back();
+  saved_rects_.pop_back();
+
+  if (clip == nullptr || layer_bounds.intersect(*clip)) {
+    accumulate(layer_bounds);
+  }
+}
+
+RectBoundsAccumulator::AccumulationRect::AccumulationRect() {
+  min_x_ = std::numeric_limits<SkScalar>::infinity();
+  min_y_ = std::numeric_limits<SkScalar>::infinity();
+  max_x_ = -std::numeric_limits<SkScalar>::infinity();
+  max_y_ = -std::numeric_limits<SkScalar>::infinity();
+}
+void RectBoundsAccumulator::AccumulationRect::accumulate(SkScalar x,
+                                                         SkScalar y) {
+  if (min_x_ > x) {
+    min_x_ = x;
+  }
+  if (min_y_ > y) {
+    min_y_ = y;
+  }
+  if (max_x_ < x) {
+    max_x_ = x;
+  }
+  if (max_y_ < y) {
+    max_y_ = y;
+  }
+}
+SkRect RectBoundsAccumulator::AccumulationRect::bounds() const {
+  return (max_x_ >= min_x_ && max_y_ >= min_y_)
+             ? SkRect::MakeLTRB(min_x_, min_y_, max_x_, max_y_)
+             : SkRect::MakeEmpty();
+}
+
+void RTreeBoundsAccumulator::accumulate(const SkRect& r) {
+  if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
+    rects_.push_back(r);
+  }
+}
+bool RTreeBoundsAccumulator::is_empty() const {
+  return rects_.empty();
+}
+bool RTreeBoundsAccumulator::is_not_empty() const {
+  return !rects_.empty();
+}
+void RTreeBoundsAccumulator::save() {
+  saved_offsets_.push_back(rects_.size());
+}
+void RTreeBoundsAccumulator::restore() {
+  if (saved_offsets_.empty()) {
+    return;
+  }
+
+  saved_offsets_.pop_back();
+}
+bool RTreeBoundsAccumulator::restore(
+    std::function<bool(const SkRect& original, SkRect& modified)> map,
+    const SkRect* clip) {
+  if (saved_offsets_.empty()) {
+    return true;
+  }
+
+  size_t previous_size = saved_offsets_.back();
+  saved_offsets_.pop_back();
+
+  bool success = true;
+  for (size_t i = previous_size; i < rects_.size(); i++) {
+    SkRect original = rects_[i];
+    if (!map(original, original)) {
+      success = false;
+    }
+    if (clip == nullptr || original.intersect(*clip)) {
+      rects_[previous_size++] = original;
+    }
+  }
+  rects_.resize(previous_size);
+  return success;
+}
+sk_sp<DlRTree> RTreeBoundsAccumulator::rtree() const {
+  FML_DCHECK(saved_offsets_.empty());
+  DlRTreeFactory factory;
+  sk_sp<DlRTree> rtree = factory.getInstance();
+  rtree->insert(rects_.data(), rects_.size());
+  return rtree;
+}
+
 DisplayListBoundsCalculator::DisplayListBoundsCalculator(
+    BoundsAccumulator& accumulator,
     const SkRect* cull_rect)
-    : ClipBoundsDispatchHelper(cull_rect) {
+    : ClipBoundsDispatchHelper(cull_rect), accumulator_(accumulator) {
   layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
-  accumulator_ = layer_infos_.back()->layer_accumulator();
 }
 void DisplayListBoundsCalculator::setStrokeCap(DlStrokeCap cap) {
   cap_is_square_ = (cap == DlStrokeCap::kSquare);
@@ -277,8 +417,8 @@ void DisplayListBoundsCalculator::setImageFilter(const DlImageFilter* filter) {
 void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
 }
-void DisplayListBoundsCalculator::setPathEffect(sk_sp<SkPathEffect> effect) {
-  path_effect_ = std::move(effect);
+void DisplayListBoundsCalculator::setPathEffect(const DlPathEffect* effect) {
+  path_effect_ = effect ? effect->shared() : nullptr;
 }
 void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
   mask_filter_ = filter ? filter->shared() : nullptr;
@@ -286,11 +426,12 @@ void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
 void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
-  layer_infos_.emplace_back(std::make_unique<LayerData>(accumulator_));
-  accumulator_ = layer_infos_.back()->layer_accumulator();
+  layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
+  accumulator_.save();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
-                                            const SaveLayerOptions options) {
+                                            const SaveLayerOptions options,
+                                            const DlImageFilter* backdrop) {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   if (options.renders_with_attributes()) {
@@ -303,20 +444,22 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
       AccumulateUnbounded();
     }
 
-    layer_infos_.emplace_back(
-        std::make_unique<LayerData>(accumulator_, image_filter_));
+    layer_infos_.emplace_back(std::make_unique<LayerData>(image_filter_));
   } else {
-    layer_infos_.emplace_back(
-        std::make_unique<LayerData>(accumulator_, nullptr));
+    layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
   }
 
-  accumulator_ = layer_infos_.back()->layer_accumulator();
+  accumulator_.save();
 
   // Even though Skia claims that the bounds are only a hint, they actually
   // use them as the temporary layer bounds during rendering the layer, so
   // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
+  }
+  if (backdrop) {
+    // A backdrop will affect up to the entire surface, bounded by the clip
+    AccumulateUnbounded();
   }
 }
 void DisplayListBoundsCalculator::restore() {
@@ -327,47 +470,33 @@ void DisplayListBoundsCalculator::restore() {
     // Remember a few pieces of information from the current layer info
     // for later processing.
     LayerData* layer_info = layer_infos_.back().get();
-    BoundsAccumulator* outer_accumulator = layer_info->restore_accumulator();
     bool is_unbounded = layer_info->is_unbounded();
 
     // Before we pop_back we will get the current layer bounds from the
     // current accumulator and adjust ot as required based on the filter.
-    SkRect layer_bounds = accumulator_->bounds();
     std::shared_ptr<DlImageFilter> filter = layer_info->filter();
+    const SkRect* clip = has_clip() ? &clip_bounds() : nullptr;
     if (filter) {
-      SkIRect filter_bounds;
-      if (filter->map_device_bounds(layer_bounds.roundOut(), matrix(),
-                                    filter_bounds)) {
-        layer_bounds.set(filter_bounds);
-
-        // We could leave the clipping to the code below that will
-        // finally accumulate the layer bounds, but the bounds do
-        // not normally need clipping unless they were modified by
-        // entering this filtering code path.
-        if (has_clip() && !layer_bounds.intersect(clip_bounds())) {
-          layer_bounds.setEmpty();
-        }
-      } else {
-        // If the filter cannot compute bounds then it might take an
-        // unbounded amount of space. This can sometimes happen if it
-        // modifies transparent black which means its affect will not
-        // be bounded by the transparent pixels outside of the layer
-        // drawable.
+      if (!accumulator_.restore(
+              [filter = filter, matrix = matrix()](const SkRect& input,
+                                                   SkRect& output) {
+                SkIRect output_bounds;
+                bool ret = filter->map_device_bounds(input.roundOut(), matrix,
+                                                     output_bounds);
+                output.set(output_bounds);
+                return ret;
+              },
+              clip)) {
         is_unbounded = true;
       }
+    } else {
+      accumulator_.restore();
     }
 
     // Restore the accumulator before popping the LayerInfo so that
     // it nevers points to an out of scope instance.
-    accumulator_ = outer_accumulator;
     layer_infos_.pop_back();
 
-    // Finally accumulate the impact of the layer into the new scope.
-    // Note that the bounds were already accumulated in device pixels
-    // and clipped to any clips involved so we do not need to go
-    // through any transforms or clips to accuulate them into this
-    // layer.
-    accumulator_->accumulate(layer_bounds);
     if (is_unbounded) {
       AccumulateUnbounded();
     }
@@ -430,11 +559,11 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
                                              uint32_t count,
                                              const SkPoint pts[]) {
   if (count > 0) {
-    BoundsAccumulator ptBounds;
+    RectBoundsAccumulator pt_bounds;
     for (size_t i = 0; i < count; i++) {
-      ptBounds.accumulate(pts[i]);
+      pt_bounds.accumulate(pts[i]);
     }
-    SkRect point_bounds = ptBounds.bounds();
+    SkRect point_bounds = pt_bounds.bounds();
     switch (mode) {
       case SkCanvas::kPoints_PointMode:
         AccumulateOpBounds(point_bounds, kDrawPointsAsPointsFlags);
@@ -459,7 +588,7 @@ void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             bool render_with_attributes) {
   SkRect bounds = SkRect::MakeXYWH(point.fX, point.fY,  //
                                    image->width(), image->height());
@@ -472,7 +601,7 @@ void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<DlImage> image,
     const SkRect& src,
     const SkRect& dst,
-    const SkSamplingOptions& sampling,
+    DlImageSampling sampling,
     bool render_with_attributes,
     SkCanvas::SrcRectConstraint constraint) {
   DisplayListAttributeFlags flags = render_with_attributes
@@ -483,7 +612,7 @@ void DisplayListBoundsCalculator::drawImageRect(
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
                                                 const SkRect& dst,
-                                                SkFilterMode filter,
+                                                DlFilterMode filter,
                                                 bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageNineWithPaintFlags
@@ -494,7 +623,7 @@ void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<DlImage> image,
     const SkCanvas::Lattice& lattice,
     const SkRect& dst,
-    SkFilterMode filter,
+    DlFilterMode filter,
     bool render_with_attributes) {
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageLatticeWithPaintFlags
@@ -507,23 +636,23 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             const DlColor colors[],
                                             int count,
                                             DlBlendMode mode,
-                                            const SkSamplingOptions& sampling,
+                                            DlImageSampling sampling,
                                             const SkRect* cullRect,
                                             bool render_with_attributes) {
   SkPoint quad[4];
-  BoundsAccumulator atlasBounds;
+  RectBoundsAccumulator atlas_bounds;
   for (int i = 0; i < count; i++) {
     const SkRect& src = tex[i];
     xform[i].toQuad(src.width(), src.height(), quad);
     for (int j = 0; j < 4; j++) {
-      atlasBounds.accumulate(quad[j]);
+      atlas_bounds.accumulate(quad[j]);
     }
   }
-  if (atlasBounds.is_not_empty()) {
+  if (atlas_bounds.is_not_empty()) {
     DisplayListAttributeFlags flags = render_with_attributes  //
                                           ? kDrawAtlasWithPaintFlags
                                           : kDrawAtlasFlags;
-    AccumulateOpBounds(atlasBounds.bounds(), flags);
+    AccumulateOpBounds(atlas_bounds.bounds(), flags);
   }
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
@@ -580,14 +709,13 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
   if (flags.is_geometric()) {
     // Path effect occurs before stroking...
     DisplayListSpecialGeometryFlags special_flags =
-        flags.WithPathEffect(path_effect_);
+        flags.WithPathEffect(path_effect_.get());
     if (path_effect_) {
-      SkPaint p;
-      p.setPathEffect(path_effect_);
-      if (!p.canComputeFastBounds()) {
+      auto effect_bounds = path_effect_->effect_bounds(bounds);
+      if (!effect_bounds.has_value()) {
         return false;
       }
-      bounds = p.computeFastBounds(bounds, &bounds);
+      bounds = effect_bounds.value();
     }
 
     if (flags.is_stroked(style_)) {
@@ -630,7 +758,7 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
 
 void DisplayListBoundsCalculator::AccumulateUnbounded() {
   if (has_clip()) {
-    accumulator_->accumulate(clip_bounds());
+    accumulator_.accumulate(clip_bounds());
   } else {
     layer_infos_.back()->set_unbounded();
   }
@@ -647,7 +775,7 @@ void DisplayListBoundsCalculator::AccumulateOpBounds(
 void DisplayListBoundsCalculator::AccumulateBounds(SkRect& bounds) {
   matrix().mapRect(&bounds);
   if (!has_clip() || bounds.intersect(clip_bounds())) {
-    accumulator_->accumulate(bounds);
+    accumulator_.accumulate(bounds);
   }
 }
 

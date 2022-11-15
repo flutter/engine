@@ -12,7 +12,7 @@ TextureLayer::TextureLayer(const SkPoint& offset,
                            const SkSize& size,
                            int64_t texture_id,
                            bool freeze,
-                           const SkSamplingOptions& sampling)
+                           DlImageSampling sampling)
     : offset_(offset),
       size_(size),
       texture_id_(texture_id),
@@ -41,8 +41,6 @@ void TextureLayer::Diff(DiffContext* context, const Layer* old_layer) {
 }
 
 void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "TextureLayer::Preroll");
-
   set_paint_bounds(SkRect::MakeXYWH(offset_.x(), offset_.y(), size_.width(),
                                     size_.height()));
   context->has_texture_layer = true;
@@ -50,18 +48,26 @@ void TextureLayer::Preroll(PrerollContext* context, const SkMatrix& matrix) {
 }
 
 void TextureLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "TextureLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
   std::shared_ptr<Texture> texture =
-      context.texture_registry.GetTexture(texture_id_);
+      context.texture_registry
+          ? context.texture_registry->GetTexture(texture_id_)
+          : nullptr;
   if (!texture) {
     TRACE_EVENT_INSTANT0("flutter", "null texture");
     return;
   }
   AutoCachePaint cache_paint(context);
-  texture->Paint(*context.leaf_nodes_canvas, paint_bounds(), freeze_,
-                 context.gr_context, sampling_, cache_paint.paint());
+  Texture::PaintContext ctx{
+      .canvas = context.leaf_nodes_canvas,
+      .builder = context.leaf_nodes_builder,
+      .gr_context = context.gr_context,
+      .aiks_context = context.aiks_context,
+      .sk_paint = cache_paint.sk_paint(),
+      .dl_paint = cache_paint.dl_paint(),
+  };
+  texture->Paint(ctx, paint_bounds(), freeze_, ToSk(sampling_));
 }
 
 }  // namespace flutter

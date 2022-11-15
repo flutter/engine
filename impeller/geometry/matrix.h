@@ -5,6 +5,8 @@
 #pragma once
 
 #include <cmath>
+#include <iomanip>
+#include <limits>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -27,7 +29,7 @@ namespace impeller {
 ///               * Left-handed coordinate system. Positive rotation is
 ///                 clockwise about axis of rotation.
 ///               * Lower left corner is -1.0, -1.0.
-///               * Upper left corner is  1.0,  1.0.
+///               * Upper right corner is  1.0,  1.0.
 ///               * Visible z-space is from 0.0 to 1.0.
 ///                 * This is NOT the same as OpenGL! Be careful.
 ///               * NDC origin is at (0.0, 0.0, 0.5).
@@ -61,6 +63,33 @@ struct Matrix {
   // clang-format on
 
   Matrix(const MatrixDecomposition& decomposition);
+
+  // clang-format off
+  static constexpr Matrix MakeColumn(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m1,  m2,  m3,
+                  m4,  m5,  m6,  m7,
+                  m8,  m9,  m10, m11,
+                  m12, m13, m14, m15);
+
+  }
+  // clang-format on
+
+  // clang-format off
+  static constexpr Matrix MakeRow(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m4,  m8,   m12,
+                  m1,  m5,  m9,   m13,
+                  m2,  m6,  m10,  m14,
+                  m3,  m7,  m11,  m15);
+  }
+  // clang-format on
 
   static constexpr Matrix MakeTranslation(const Vector3& t) {
     // clang-format off
@@ -236,15 +265,50 @@ struct Matrix {
 
   Scalar GetMaxBasisLength() const;
 
+  constexpr Vector3 GetBasisX() const { return Vector3(m[0], m[1], m[2]); }
+
+  constexpr Vector3 GetBasisY() const { return Vector3(m[4], m[5], m[6]); }
+
+  constexpr Vector3 GetBasisZ() const { return Vector3(m[8], m[9], m[10]); }
+
   constexpr Vector3 GetScale() const {
-    return Vector3(Vector3(m[0], m[1], m[2]).Length(),
-                   Vector3(m[4], m[5], m[6]).Length(),
-                   Vector3(m[8], m[9], m[10]).Length());
+    return Vector3(GetBasisX().Length(), GetBasisY().Length(),
+                   GetBasisZ().Length());
+  }
+
+  constexpr Scalar GetDirectionScale(Vector3 direction) const {
+    return 1.0 / (this->Basis().Invert() * direction.Normalize()).Length() *
+           direction.Length();
   }
 
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool IsAligned(Scalar tolerance = 0) const {
+    int v[] = {!ScalarNearlyZero(m[0], tolerance),  //
+               !ScalarNearlyZero(m[1], tolerance),  //
+               !ScalarNearlyZero(m[2], tolerance),  //
+               !ScalarNearlyZero(m[4], tolerance),  //
+               !ScalarNearlyZero(m[5], tolerance),  //
+               !ScalarNearlyZero(m[6], tolerance),  //
+               !ScalarNearlyZero(m[8], tolerance),  //
+               !ScalarNearlyZero(m[9], tolerance),  //
+               !ScalarNearlyZero(m[10], tolerance)};
+    // Check if all three basis vectors are aligned to an axis.
+    if (v[0] + v[1] + v[2] != 1 ||  //
+        v[3] + v[4] + v[5] != 1 ||  //
+        v[6] + v[7] + v[8] != 1) {
+      return false;
+    }
+    // Ensure that none of the basis vectors overlap.
+    if (v[0] + v[3] + v[6] != 1 ||  //
+        v[1] + v[4] + v[7] != 1 ||  //
+        v[2] + v[5] + v[8] != 1) {
+      return false;
+    }
+    return true;
   }
 
   constexpr bool IsIdentity() const {
@@ -294,14 +358,30 @@ struct Matrix {
   }
 
   constexpr Vector3 operator*(const Vector3& v) const {
-    return Vector3(v.x * m[0] + v.y * m[4] + v.z * m[8] + m[12],
+    Scalar w = v.x * m[3] + v.y * m[7] + v.z * m[11] + m[15];
+    Vector3 result(v.x * m[0] + v.y * m[4] + v.z * m[8] + m[12],
                    v.x * m[1] + v.y * m[5] + v.z * m[9] + m[13],
                    v.x * m[2] + v.y * m[6] + v.z * m[10] + m[14]);
+
+    // This is Skia's behavior, but it may be reasonable to allow UB for the w=0
+    // case.
+    if (w) {
+      w = 1 / w;
+    }
+    return result * w;
   }
 
   constexpr Point operator*(const Point& v) const {
-    return Point(v.x * m[0] + v.y * m[4] + m[12],
+    Scalar w = v.x * m[3] + v.y * m[7] + m[15];
+    Point result(v.x * m[0] + v.y * m[4] + m[12],
                  v.x * m[1] + v.y * m[5] + m[13]);
+
+    // This is Skia's behavior, but it may be reasonable to allow UB for the w=0
+    // case.
+    if (w) {
+      w = 1 / w;
+    }
+    return result * w;
   }
 
   constexpr Vector4 TransformDirection(const Vector4& v) const {
@@ -329,6 +409,49 @@ struct Matrix {
     const auto translate = MakeTranslation({-1.0, 1.0, 0.5});
     return translate * scale;
   }
+
+  static constexpr Matrix MakePerspective(Radians fov_y,
+                                          Scalar aspect_ratio,
+                                          Scalar z_near,
+                                          Scalar z_far) {
+    Scalar height = std::tan(fov_y.radians * 0.5);
+    Scalar width = height * aspect_ratio;
+
+    // clang-format off
+    return {
+      1.0f / width, 0.0f,           0.0f,                                 0.0f,
+      0.0f,         1.0f / height,  0.0f,                                 0.0f,
+      0.0f,         0.0f,           z_far / (z_near - z_far),            -1.0f,
+      0.0f,         0.0f,          -(z_far * z_near) / (z_far - z_near),  0.0f,
+    };
+    // clang-format on
+  }
+
+  template <class T>
+  static constexpr Matrix MakePerspective(Radians fov_y,
+                                          TSize<T> size,
+                                          Scalar z_near,
+                                          Scalar z_far) {
+    return MakePerspective(fov_y, static_cast<Scalar>(size.width) / size.height,
+                           z_near, z_far);
+  }
+
+  static constexpr Matrix MakeLookAt(Vector3 position,
+                                     Vector3 target,
+                                     Vector3 up) {
+    Vector3 forward = (target - position).Normalize();
+    Vector3 right = up.Cross(forward);
+    up = forward.Cross(right);
+
+    // clang-format off
+    return {
+       right.x,              up.x,              forward.x,             0.0f,
+       right.y,              up.y,              forward.y,             0.0f,
+       right.z,              up.z,              forward.z,             0.0f,
+      -right.Dot(position), -up.Dot(position), -forward.Dot(position), 1.0f
+    };
+    // clang-format on
+  }
 };
 
 static_assert(sizeof(struct Matrix) == sizeof(Scalar) * 16,
@@ -338,10 +461,10 @@ static_assert(sizeof(struct Matrix) == sizeof(Scalar) * 16,
 
 namespace std {
 inline std::ostream& operator<<(std::ostream& out, const impeller::Matrix& m) {
-  out << "(";
+  out << "(" << std::endl << std::fixed;
   for (size_t i = 0; i < 4u; i++) {
     for (size_t j = 0; j < 4u; j++) {
-      out << m.e[i][j] << ",";
+      out << std::setw(15) << m.e[j][i] << ",";
     }
     out << std::endl;
   }

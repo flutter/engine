@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../html_image_codec.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
@@ -61,7 +61,7 @@ void skiaDecodeImageFromPixels(
     );
 
     if (skImage == null) {
-      html.window.console.warn('Failed to create image from pixels.');
+      domWindow.console.warn('Failed to create image from pixels.');
       return;
     }
 
@@ -82,11 +82,10 @@ class ImageCodecException implements Exception {
 
 const String _kNetworkImageMessage = 'Failed to load network image.';
 
-typedef HttpRequestFactory = html.HttpRequest Function();
-// ignore: prefer_function_declarations_over_variables
-HttpRequestFactory httpRequestFactory = () => html.HttpRequest();
+typedef HttpRequestFactory = DomXMLHttpRequest Function();
+HttpRequestFactory httpRequestFactory = () => createDomXMLHttpRequest();
 void debugRestoreHttpRequestFactory() {
-  httpRequestFactory = () => html.HttpRequest();
+  httpRequestFactory = () => createDomXMLHttpRequest();
 }
 
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia after
@@ -95,7 +94,7 @@ Future<ui.Codec> skiaInstantiateWebImageCodec(
     String url, WebOnlyImageCodecChunkCallback? chunkCallback) async {
   final Uint8List list = await fetchImage(url, chunkCallback);
   if (browserSupportsImageDecoder) {
-    return CkBrowserImageDecoder.create(data: list, debugSource: url.toString());
+    return CkBrowserImageDecoder.create(data: list, debugSource: url);
   } else {
     return CkAnimatedImage.decodeFromBytes(list, url);
   }
@@ -106,23 +105,24 @@ Future<Uint8List> fetchImage(
     String url, WebOnlyImageCodecChunkCallback? chunkCallback) {
   final Completer<Uint8List> completer = Completer<Uint8List>();
 
-  final html.HttpRequest request = httpRequestFactory();
-  request.open('GET', url, async: true);
+  final DomXMLHttpRequest request = httpRequestFactory();
+  request.open('GET', url, true);
   request.responseType = 'arraybuffer';
   if (chunkCallback != null) {
-    request.onProgress.listen((html.ProgressEvent event) {
+    request.addEventListener('progress', allowInterop((DomEvent event)  {
+      event = event as DomProgressEvent;
       chunkCallback.call(event.loaded!, event.total!);
-    });
+    }));
   }
 
-  request.onError.listen((html.ProgressEvent event) {
+  request.addEventListener('error', allowInterop((DomEvent event) {
     completer.completeError(ImageCodecException('$_kNetworkImageMessage\n'
         'Image URL: $url\n'
         'Trying to load an image from another domain? Find answers at:\n'
         'https://flutter.dev/docs/development/platform-integration/web-images'));
-  });
+  }));
 
-  request.onLoad.listen((html.ProgressEvent event) {
+  request.addEventListener('load', allowInterop((DomEvent event) {
     final int status = request.status!;
     final bool accepted = status >= 200 && status < 300;
     final bool fileUri = status == 0; // file:// URIs have status of 0.
@@ -140,7 +140,7 @@ Future<Uint8List> fetchImage(
     }
 
     completer.complete(Uint8List.view(request.response as ByteBuffer));
-  });
+  }));
 
   request.send();
   return completer.future;
@@ -149,9 +149,7 @@ Future<Uint8List> fetchImage(
 /// A [ui.Image] backed by an `SkImage` from Skia.
 class CkImage implements ui.Image, StackTraceDebugger {
   CkImage(SkImage skImage, { this.videoFrame }) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+    _init();
     if (browserSupportsFinalizationRegistry) {
       box = SkiaObjectBox<CkImage, SkImage>(this, skImage);
     } else {
@@ -199,16 +197,21 @@ class CkImage implements ui.Image, StackTraceDebugger {
     }
   }
 
-  CkImage.cloneOf(this.box) {
-    if (assertionsEnabled) {
-      _debugStackTrace = StackTrace.current;
-    }
+  CkImage.cloneOf(this.box, {this.videoFrame}) {
+    _init();
     box.ref(this);
   }
 
+  void _init() {
+    if (assertionsEnabled) {
+      _debugStackTrace = StackTrace.current;
+    }
+    ui.Image.onCreate?.call(this);
+  }
+
   @override
-  StackTrace get debugStackTrace => _debugStackTrace!;
-  StackTrace? _debugStackTrace;
+  StackTrace get debugStackTrace => _debugStackTrace;
+  late StackTrace _debugStackTrace;
 
   // Use a box because `SkImage` may be deleted either due to this object
   // being garbage-collected, or by an explicit call to [delete].
@@ -241,6 +244,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
       !_disposed,
       'Cannot dispose an image that has already been disposed.',
     );
+    ui.Image.onDispose?.call(this);
     _disposed = true;
     box.unref(this);
   }
@@ -257,7 +261,7 @@ class CkImage implements ui.Image, StackTraceDebugger {
   @override
   CkImage clone() {
     assert(_debugCheckIsNotDisposed());
-    return CkImage.cloneOf(box);
+    return CkImage.cloneOf(box, videoFrame: videoFrame?.clone());
   }
 
   @override
@@ -344,10 +348,10 @@ class CkImage implements ui.Image, StackTraceDebugger {
 
 /// Data for a single frame of an animated image.
 class AnimatedImageFrameInfo implements ui.FrameInfo {
+  AnimatedImageFrameInfo(this._duration, this._image);
+
   final Duration _duration;
   final CkImage _image;
-
-  AnimatedImageFrameInfo(this._duration, this._image);
 
   @override
   Duration get duration => _duration;

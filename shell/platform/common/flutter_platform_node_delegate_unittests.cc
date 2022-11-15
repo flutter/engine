@@ -13,11 +13,8 @@ namespace flutter {
 namespace testing {
 
 TEST(FlutterPlatformNodeDelegateTest, NodeDelegateHasUniqueId) {
-  TestAccessibilityBridgeDelegate* delegate =
-      new TestAccessibilityBridgeDelegate();
-  std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(std::move(ptr));
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
 
   // Add node 0: root.
   FlutterSemanticsNode node0{sizeof(FlutterSemanticsNode), 0};
@@ -41,11 +38,8 @@ TEST(FlutterPlatformNodeDelegateTest, NodeDelegateHasUniqueId) {
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
-  TestAccessibilityBridgeDelegate* delegate =
-      new TestAccessibilityBridgeDelegate();
-  std::unique_ptr<TestAccessibilityBridgeDelegate> ptr(delegate);
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(std::move(ptr));
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -57,6 +51,7 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -68,29 +63,28 @@ TEST(FlutterPlatformNodeDelegateTest, canPerfomActions) {
   ui::AXActionData action_data;
   action_data.action = ax::mojom::Action::kDoDefault;
   accessibility->AccessibilityPerformAction(action_data);
-  EXPECT_EQ(delegate->performed_actions.size(), size_t{1});
-  EXPECT_EQ(delegate->performed_actions[0],
+  EXPECT_EQ(bridge->performed_actions.size(), size_t{1});
+  EXPECT_EQ(bridge->performed_actions[0],
             FlutterSemanticsAction::kFlutterSemanticsActionTap);
 
   action_data.action = ax::mojom::Action::kFocus;
   accessibility->AccessibilityPerformAction(action_data);
-  EXPECT_EQ(delegate->performed_actions.size(), size_t{2});
+  EXPECT_EQ(bridge->performed_actions.size(), size_t{2});
   EXPECT_EQ(
-      delegate->performed_actions[1],
+      bridge->performed_actions[1],
       FlutterSemanticsAction::kFlutterSemanticsActionDidGainAccessibilityFocus);
 
   action_data.action = ax::mojom::Action::kScrollToMakeVisible;
   accessibility->AccessibilityPerformAction(action_data);
-  EXPECT_EQ(delegate->performed_actions.size(), size_t{3});
-  EXPECT_EQ(delegate->performed_actions[2],
+  EXPECT_EQ(bridge->performed_actions.size(), size_t{3});
+  EXPECT_EQ(bridge->performed_actions[2],
             FlutterSemanticsAction::kFlutterSemanticsActionShowOnScreen);
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   // Set up a flutter accessibility node.
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(
-          std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
@@ -102,6 +96,7 @@ TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
   bridge->AddFlutterSemanticsNodeUpdate(&root);
@@ -113,9 +108,8 @@ TEST(FlutterPlatformNodeDelegateTest, canGetAXNode) {
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(
-          std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -123,6 +117,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -138,6 +133,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {0, 0, 50, 50};  // LTRB
@@ -158,9 +154,8 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateBoundsCorrectly) {
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(
-          std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -168,6 +163,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -183,6 +179,7 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {90, 90, 100, 100};  // LTRB
@@ -203,9 +200,8 @@ TEST(FlutterPlatformNodeDelegateTest, canCalculateOffScreenBoundsCorrectly) {
 }
 
 TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
-  std::shared_ptr<AccessibilityBridge> bridge =
-      std::make_shared<AccessibilityBridge>(
-          std::make_unique<TestAccessibilityBridgeDelegate>());
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root;
   root.id = 0;
   root.label = "root";
@@ -213,6 +209,7 @@ TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
   root.value = "";
   root.increased_value = "";
   root.decreased_value = "";
+  root.tooltip = "";
   root.child_count = 1;
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
@@ -228,6 +225,7 @@ TEST(FlutterPlatformNodeDelegateTest, canUseOwnerBridge) {
   child1.value = "";
   child1.increased_value = "";
   child1.decreased_value = "";
+  child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
   child1.rect = {0, 0, 50, 50};  // LTRB

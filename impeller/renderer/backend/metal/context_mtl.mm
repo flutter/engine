@@ -9,6 +9,7 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
+#include "impeller/base/platform/darwin/work_queue_darwin.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/sampler_descriptor.h"
 
@@ -40,42 +41,52 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     shader_library_ = std::move(library);
   }
 
-  // Setup command queues.
-  render_queue_ = device_.newCommandQueue;
-  transfer_queue_ = device_.newCommandQueue;
-
-  if (!render_queue_ || !transfer_queue_) {
-    return;
+  // Setup command queue.
+  {
+    command_queue_ = device_.newCommandQueue;
+    if (!command_queue_) {
+      VALIDATION_LOG << "Could not setup the command queue.";
+      return;
+    }
+    command_queue_.label = @"Impeller Command Queue";
   }
 
-  render_queue_.label = @"Impeller Render Queue";
-  transfer_queue_.label = @"Impeller Transfer Queue";
-
   // Setup the pipeline library.
-  {  //
+  {
     pipeline_library_ =
         std::shared_ptr<PipelineLibraryMTL>(new PipelineLibraryMTL(device_));
   }
 
   // Setup the sampler library.
-  {  //
+  {
     sampler_library_ =
         std::shared_ptr<SamplerLibraryMTL>(new SamplerLibraryMTL(device_));
   }
 
+  // Setup the resource allocator.
   {
-    transients_allocator_ = std::shared_ptr<AllocatorMTL>(
-        new AllocatorMTL(device_, "Impeller Transients Allocator"));
-    if (!transients_allocator_) {
-      return;
-    }
-
-    permanents_allocator_ = std::shared_ptr<AllocatorMTL>(
+    resource_allocator_ = std::shared_ptr<AllocatorMTL>(
         new AllocatorMTL(device_, "Impeller Permanents Allocator"));
-    if (!permanents_allocator_) {
+    if (!resource_allocator_) {
+      VALIDATION_LOG << "Could not setup the resource allocator.";
       return;
     }
   }
+
+  // Setup the work queue.
+  {
+    work_queue_ = WorkQueueDarwin::Create();
+    if (!work_queue_) {
+      VALIDATION_LOG << "Could not setup the work queue.";
+      return;
+    }
+  }
+
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
+  // Setup the gpu tracer.
+  { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
+#endif
 
   is_valid_ = true;
 }
@@ -147,7 +158,7 @@ static id<MTLDevice> CreateMetalDevice() {
   return ::MTLCreateSystemDefaultDevice();
 }
 
-std::shared_ptr<Context> ContextMTL::Create(
+std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::string>& shader_library_paths) {
   auto device = CreateMetalDevice();
   auto context = std::shared_ptr<ContextMTL>(new ContextMTL(
@@ -159,7 +170,7 @@ std::shared_ptr<Context> ContextMTL::Create(
   return context;
 }
 
-std::shared_ptr<Context> ContextMTL::Create(
+std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
     const std::string& label) {
   auto device = CreateMetalDevice();
@@ -175,28 +186,38 @@ std::shared_ptr<Context> ContextMTL::Create(
 
 ContextMTL::~ContextMTL() = default;
 
+// |Context|
 bool ContextMTL::IsValid() const {
   return is_valid_;
 }
 
+// |Context|
 std::shared_ptr<ShaderLibrary> ContextMTL::GetShaderLibrary() const {
   return shader_library_;
 }
 
+// |Context|
 std::shared_ptr<PipelineLibrary> ContextMTL::GetPipelineLibrary() const {
   return pipeline_library_;
 }
 
+// |Context|
 std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
   return sampler_library_;
 }
 
-std::shared_ptr<CommandBuffer> ContextMTL::CreateRenderCommandBuffer() const {
-  return CreateCommandBufferInQueue(render_queue_);
+// |Context|
+std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
+  return CreateCommandBufferInQueue(command_queue_);
 }
 
-std::shared_ptr<CommandBuffer> ContextMTL::CreateTransferCommandBuffer() const {
-  return CreateCommandBufferInQueue(transfer_queue_);
+// |Context|
+std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
+  return work_queue_;
+}
+
+std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {
+  return gpu_tracer_;
 }
 
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
@@ -205,23 +226,25 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
     return nullptr;
   }
 
-  auto buffer = std::shared_ptr<CommandBufferMTL>(new CommandBufferMTL(queue));
+  auto buffer = std::shared_ptr<CommandBufferMTL>(
+      new CommandBufferMTL(weak_from_this(), queue));
   if (!buffer->IsValid()) {
     return nullptr;
   }
   return buffer;
 }
 
-std::shared_ptr<Allocator> ContextMTL::GetPermanentsAllocator() const {
-  return permanents_allocator_;
-}
-
-std::shared_ptr<Allocator> ContextMTL::GetTransientsAllocator() const {
-  return transients_allocator_;
+std::shared_ptr<Allocator> ContextMTL::GetResourceAllocator() const {
+  return resource_allocator_;
 }
 
 id<MTLDevice> ContextMTL::GetMTLDevice() const {
   return device_;
+}
+
+// |Context|
+bool ContextMTL::SupportsOffscreenMSAA() const {
+  return true;
 }
 
 }  // namespace impeller

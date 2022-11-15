@@ -14,7 +14,6 @@ import '../shadow.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
-import 'bitmap_canvas.dart';
 import 'painting.dart';
 import 'path/path.dart';
 import 'path/path_utils.dart';
@@ -24,45 +23,16 @@ import 'shaders/image_shader.dart';
 /// Enable this to print every command applied by a canvas.
 const bool _debugDumpPaintCommands = false;
 
-// Returns the squared length of the x, y (of a border radius)
-// It normalizes x, y values before working with them, by
-// assuming anything < 0 to be 0, because flutter may pass
-// negative radii (which Skia assumes to be 0), see:
-// https://skia.org/user/api/SkRRect_Reference#SkRRect_inset
-double _measureBorderRadius(double x, double y) {
-  final double clampedX = x < 0 ? 0 : x;
-  final double clampedY = y < 0 ? 0 : y;
-  return clampedX * clampedX + clampedY * clampedY;
-}
-
-class RawRecordingCanvas extends BitmapCanvas implements ui.PictureRecorder {
-  RawRecordingCanvas(ui.Size size)
-      : super(ui.Offset.zero & size, RenderStrategy());
-
-  @override
-  void dispose() {
-    clear();
-  }
-
-  RecordingCanvas beginRecording(ui.Rect bounds) => throw UnsupportedError('');
-
-  @override
-  ui.Picture endRecording() => throw UnsupportedError('');
-
-  RecordingCanvas? _canvas; // ignore: unused_field
-
-  bool _isRecording = true; // ignore: unused_field
-
-  @override
-  bool get isRecording => true;
-
-  ui.Rect? cullRect;
-}
+// Returns the squared length of the x, y (of a border radius).
+double _measureBorderRadius(double x, double y) => x*x + y*y;
 
 /// Records canvas commands to be applied to a [EngineCanvas].
 ///
 /// See [Canvas] for docs for these methods.
 class RecordingCanvas {
+  RecordingCanvas(ui.Rect? bounds)
+      : _paintBounds = _PaintBounds(bounds ?? ui.Rect.largest);
+
   /// Computes [_pictureBounds].
   final _PaintBounds _paintBounds;
 
@@ -90,9 +60,6 @@ class RecordingCanvas {
     }
     throw UnsupportedError('For debugging only.');
   }
-
-  RecordingCanvas(ui.Rect? bounds)
-      : _paintBounds = _PaintBounds(bounds ?? ui.Rect.largest);
 
   final RenderStrategy renderStrategy = RenderStrategy();
 
@@ -269,6 +236,12 @@ class RecordingCanvas {
     _saveCount--;
   }
 
+  void restoreToCount(int count) {
+    while (count < _saveCount && _saveCount > 1) {
+      restore();
+    }
+  }
+
   void translate(double dx, double dy) {
     assert(!_recordingEnded);
     _paintBounds.translate(dx, dy);
@@ -292,6 +265,8 @@ class RecordingCanvas {
     _paintBounds.transform(matrix4);
     _commands.add(PaintTransform(matrix4));
   }
+
+  Float32List getCurrentMatrixUnsafe() => _paintBounds._currentMatrix.storage;
 
   void skew(double sx, double sy) {
     assert(!_recordingEnded);
@@ -330,6 +305,8 @@ class RecordingCanvas {
     renderStrategy.hasArbitraryPaint = true;
     _commands.add(command);
   }
+
+  ui.Rect? getDestinationClipBounds() => _paintBounds.getDestinationClipBounds();
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     assert(!_recordingEnded);
@@ -511,6 +488,20 @@ class RecordingCanvas {
         drawRRect(rrect, paint);
         return;
       }
+      // Use drawRect for straight line paths painted with a zero strokeWidth
+      final ui.Rect? line = sPath.toStraightLine();
+      if (line != null && paint.strokeWidth == 0) {
+        final double left = math.min(line.left, line.right);
+        final double top = math.min(line.top, line.bottom);
+        final double width = line.width.abs();
+        final double height = line.height.abs();
+        final double inflatedHeight = line.height == 0 ? 1 : height;
+        final double inflatedWidth = line.width == 0 ? 1 : width;
+        final ui.Size inflatedSize = ui.Size(inflatedWidth, inflatedHeight);
+        paint.style = ui.PaintingStyle.fill;
+        drawRect(ui.Offset(left, top) & inflatedSize, paint);
+        return;
+      }
     }
     final SurfacePath sPath = path as SurfacePath;
     if (!sPath.pathRef.isEmpty) {
@@ -680,9 +671,9 @@ class RecordingCanvas {
 
   /// Prints the commands recorded by this canvas to the console.
   void debugDumpCommands() {
-    print('/' * 40 + ' CANVAS COMMANDS ' + '/' * 40);
+    print('${'/' * 40} CANVAS COMMANDS ${'/' * 40}');
     _commands.forEach(print);
-    print('/' * 37 + ' END OF CANVAS COMMANDS ' + '/' * 36);
+    print('${'/' * 37} END OF CANVAS COMMANDS ${'/' * 36}');
   }
 }
 
@@ -766,10 +757,10 @@ class PaintRestore extends PaintCommand {
 }
 
 class PaintTranslate extends PaintCommand {
+  PaintTranslate(this.dx, this.dy);
+
   final double dx;
   final double dy;
-
-  PaintTranslate(this.dx, this.dy);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -787,10 +778,10 @@ class PaintTranslate extends PaintCommand {
 }
 
 class PaintScale extends PaintCommand {
+  PaintScale(this.sx, this.sy);
+
   final double sx;
   final double sy;
-
-  PaintScale(this.sx, this.sy);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -808,9 +799,9 @@ class PaintScale extends PaintCommand {
 }
 
 class PaintRotate extends PaintCommand {
-  final double radians;
-
   PaintRotate(this.radians);
+
+  final double radians;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -828,9 +819,9 @@ class PaintRotate extends PaintCommand {
 }
 
 class PaintTransform extends PaintCommand {
-  final Float32List matrix4;
-
   PaintTransform(this.matrix4);
+
+  final Float32List matrix4;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -848,10 +839,10 @@ class PaintTransform extends PaintCommand {
 }
 
 class PaintSkew extends PaintCommand {
+  PaintSkew(this.sx, this.sy);
+
   final double sx;
   final double sy;
-
-  PaintSkew(this.sx, this.sy);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -869,10 +860,10 @@ class PaintSkew extends PaintCommand {
 }
 
 class PaintClipRect extends DrawCommand {
+  PaintClipRect(this.rect, this.clipOp);
+
   final ui.Rect rect;
   final ui.ClipOp clipOp;
-
-  PaintClipRect(this.rect, this.clipOp);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -890,9 +881,9 @@ class PaintClipRect extends DrawCommand {
 }
 
 class PaintClipRRect extends DrawCommand {
-  final ui.RRect rrect;
-
   PaintClipRRect(this.rrect);
+
+  final ui.RRect rrect;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -910,9 +901,9 @@ class PaintClipRRect extends DrawCommand {
 }
 
 class PaintClipPath extends DrawCommand {
-  final SurfacePath path;
-
   PaintClipPath(this.path);
+
+  final SurfacePath path;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -930,10 +921,10 @@ class PaintClipPath extends DrawCommand {
 }
 
 class PaintDrawColor extends DrawCommand {
+  PaintDrawColor(this.color, this.blendMode);
+
   final ui.Color color;
   final ui.BlendMode blendMode;
-
-  PaintDrawColor(this.color, this.blendMode);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -951,11 +942,11 @@ class PaintDrawColor extends DrawCommand {
 }
 
 class PaintDrawLine extends DrawCommand {
+  PaintDrawLine(this.p1, this.p2, this.paint);
+
   final ui.Offset p1;
   final ui.Offset p2;
   final SurfacePaintData paint;
-
-  PaintDrawLine(this.p1, this.p2, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -973,9 +964,9 @@ class PaintDrawLine extends DrawCommand {
 }
 
 class PaintDrawPaint extends DrawCommand {
-  final SurfacePaintData paint;
-
   PaintDrawPaint(this.paint);
+
+  final SurfacePaintData paint;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -993,10 +984,11 @@ class PaintDrawPaint extends DrawCommand {
 }
 
 class PaintDrawVertices extends DrawCommand {
+  PaintDrawVertices(this.vertices, this.blendMode, this.paint);
+
   final ui.Vertices vertices;
   final ui.BlendMode blendMode;
   final SurfacePaintData paint;
-  PaintDrawVertices(this.vertices, this.blendMode, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1014,10 +1006,11 @@ class PaintDrawVertices extends DrawCommand {
 }
 
 class PaintDrawPoints extends DrawCommand {
+  PaintDrawPoints(this.pointMode, this.points, this.paint);
+
   final Float32List points;
   final ui.PointMode pointMode;
   final SurfacePaintData paint;
-  PaintDrawPoints(this.pointMode, this.points, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1035,10 +1028,10 @@ class PaintDrawPoints extends DrawCommand {
 }
 
 class PaintDrawRect extends DrawCommand {
+  PaintDrawRect(this.rect, this.paint);
+
   final ui.Rect rect;
   final SurfacePaintData paint;
-
-  PaintDrawRect(this.rect, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1056,10 +1049,10 @@ class PaintDrawRect extends DrawCommand {
 }
 
 class PaintDrawRRect extends DrawCommand {
+  PaintDrawRRect(this.rrect, this.paint);
+
   final ui.RRect rrect;
   final SurfacePaintData paint;
-
-  PaintDrawRRect(this.rrect, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1077,10 +1070,6 @@ class PaintDrawRRect extends DrawCommand {
 }
 
 class PaintDrawDRRect extends DrawCommand {
-  final ui.RRect outer;
-  final ui.RRect inner;
-  final SurfacePaintData paint;
-  ui.Path? path;
   PaintDrawDRRect(this.outer, this.inner, this.paint) {
     path = ui.Path()
       ..fillType = ui.PathFillType.evenOdd
@@ -1088,6 +1077,11 @@ class PaintDrawDRRect extends DrawCommand {
       ..addRRect(inner)
       ..close();
   }
+
+  final ui.RRect outer;
+  final ui.RRect inner;
+  final SurfacePaintData paint;
+  ui.Path? path;
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1106,10 +1100,10 @@ class PaintDrawDRRect extends DrawCommand {
 }
 
 class PaintDrawOval extends DrawCommand {
+  PaintDrawOval(this.rect, this.paint);
+
   final ui.Rect rect;
   final SurfacePaintData paint;
-
-  PaintDrawOval(this.rect, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1127,11 +1121,11 @@ class PaintDrawOval extends DrawCommand {
 }
 
 class PaintDrawCircle extends DrawCommand {
+  PaintDrawCircle(this.c, this.radius, this.paint);
+
   final ui.Offset c;
   final double radius;
   final SurfacePaintData paint;
-
-  PaintDrawCircle(this.c, this.radius, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1149,10 +1143,10 @@ class PaintDrawCircle extends DrawCommand {
 }
 
 class PaintDrawPath extends DrawCommand {
+  PaintDrawPath(this.path, this.paint);
+
   final SurfacePath path;
   final SurfacePaintData paint;
-
-  PaintDrawPath(this.path, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1194,11 +1188,11 @@ class PaintDrawShadow extends DrawCommand {
 }
 
 class PaintDrawImage extends DrawCommand {
+  PaintDrawImage(this.image, this.offset, this.paint);
+
   final ui.Image image;
   final ui.Offset offset;
   final SurfacePaintData paint;
-
-  PaintDrawImage(this.image, this.offset, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1216,12 +1210,12 @@ class PaintDrawImage extends DrawCommand {
 }
 
 class PaintDrawImageRect extends DrawCommand {
+  PaintDrawImageRect(this.image, this.src, this.dst, this.paint);
+
   final ui.Image image;
   final ui.Rect src;
   final ui.Rect dst;
   final SurfacePaintData paint;
-
-  PaintDrawImageRect(this.image, this.src, this.dst, this.paint);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1239,10 +1233,10 @@ class PaintDrawImageRect extends DrawCommand {
 }
 
 class PaintDrawParagraph extends DrawCommand {
+  PaintDrawParagraph(this.paragraph, this.offset);
+
   final CanvasParagraph paragraph;
   final ui.Offset offset;
-
-  PaintDrawParagraph(this.paragraph, this.offset);
 
   @override
   void apply(EngineCanvas canvas) {
@@ -1252,7 +1246,7 @@ class PaintDrawParagraph extends DrawCommand {
   @override
   String toString() {
     if (assertionsEnabled) {
-      return 'DrawParagraph(${paragraph.toPlainText()}, $offset)';
+      return 'DrawParagraph(${paragraph.plainText}, $offset)';
     } else {
       return super.toString();
     }
@@ -1260,14 +1254,14 @@ class PaintDrawParagraph extends DrawCommand {
 }
 
 class Subpath {
+  Subpath(this.startX, this.startY) : commands = <PathCommand>[];
+
   double startX = 0.0;
   double startY = 0.0;
   double currentX = 0.0;
   double currentY = 0.0;
 
   final List<PathCommand> commands;
-
-  Subpath(this.startX, this.startY) : commands = <PathCommand>[];
 
   Subpath shift(ui.Offset offset) {
     final Subpath result = Subpath(startX + offset.dx, startY + offset.dy)
@@ -1306,10 +1300,10 @@ abstract class PathCommand {
 }
 
 class MoveTo extends PathCommand {
+  const MoveTo(this.x, this.y);
+
   final double x;
   final double y;
-
-  const MoveTo(this.x, this.y);
 
   @override
   MoveTo shifted(ui.Offset offset) {
@@ -1333,10 +1327,10 @@ class MoveTo extends PathCommand {
 }
 
 class LineTo extends PathCommand {
+  const LineTo(this.x, this.y);
+
   final double x;
   final double y;
-
-  const LineTo(this.x, this.y);
 
   @override
   LineTo shifted(ui.Offset offset) {
@@ -1360,6 +1354,9 @@ class LineTo extends PathCommand {
 }
 
 class Ellipse extends PathCommand {
+  const Ellipse(this.x, this.y, this.radiusX, this.radiusY, this.rotation,
+      this.startAngle, this.endAngle, this.anticlockwise);
+
   final double x;
   final double y;
   final double radiusX;
@@ -1368,9 +1365,6 @@ class Ellipse extends PathCommand {
   final double startAngle;
   final double endAngle;
   final bool anticlockwise;
-
-  const Ellipse(this.x, this.y, this.radiusX, this.radiusY, this.rotation,
-      this.startAngle, this.endAngle, this.anticlockwise);
 
   @override
   Ellipse shifted(ui.Offset offset) {
@@ -1492,12 +1486,12 @@ class Ellipse extends PathCommand {
 }
 
 class QuadraticCurveTo extends PathCommand {
+  const QuadraticCurveTo(this.x1, this.y1, this.x2, this.y2);
+
   final double x1;
   final double y1;
   final double x2;
   final double y2;
-
-  const QuadraticCurveTo(this.x1, this.y1, this.x2, this.y2);
 
   @override
   QuadraticCurveTo shifted(ui.Offset offset) {
@@ -1532,14 +1526,14 @@ class QuadraticCurveTo extends PathCommand {
 }
 
 class BezierCurveTo extends PathCommand {
+  const BezierCurveTo(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
+
   final double x1;
   final double y1;
   final double x2;
   final double y2;
   final double x3;
   final double y3;
-
-  const BezierCurveTo(this.x1, this.y1, this.x2, this.y2, this.x3, this.y3);
 
   @override
   BezierCurveTo shifted(ui.Offset offset) {
@@ -1576,12 +1570,12 @@ class BezierCurveTo extends PathCommand {
 }
 
 class RectCommand extends PathCommand {
+  const RectCommand(this.x, this.y, this.width, this.height);
+
   final double x;
   final double y;
   final double width;
   final double height;
-
-  const RectCommand(this.x, this.y, this.width, this.height);
 
   @override
   RectCommand shifted(ui.Offset offset) {
@@ -1633,9 +1627,9 @@ class RectCommand extends PathCommand {
 }
 
 class RRectCommand extends PathCommand {
-  final ui.RRect rrect;
-
   const RRectCommand(this.rrect);
+
+  final ui.RRect rrect;
 
   @override
   RRectCommand shifted(ui.Offset offset) {
@@ -1681,6 +1675,8 @@ class CloseCommand extends PathCommand {
 }
 
 class _PaintBounds {
+  _PaintBounds(this.maxPaintBounds);
+
   // Bounds of maximum area that is paintable by canvas ops.
   final ui.Rect maxPaintBounds;
 
@@ -1705,8 +1701,6 @@ class _PaintBounds {
       _currentClipRight = 0.0,
       _currentClipBottom = 0.0;
 
-  _PaintBounds(this.maxPaintBounds);
-
   void translate(double dx, double dy) {
     if (dx != 0.0 || dy != 0.0) {
       _currentMatrixIsIdentity = false;
@@ -1718,7 +1712,7 @@ class _PaintBounds {
     if (sx != 1.0 || sy != 1.0) {
       _currentMatrixIsIdentity = false;
     }
-    _currentMatrix.scale(sx, sy);
+    _currentMatrix.scale(sx, sy, 1.0);
   }
 
   void rotateZ(double radians) {
@@ -1797,6 +1791,19 @@ class _PaintBounds {
       command.topBound = _currentClipTop;
       command.rightBound = _currentClipRight;
       command.bottomBound = _currentClipBottom;
+    }
+  }
+
+  ui.Rect? getDestinationClipBounds() {
+    if (!_clipRectInitialized) {
+      return null;
+    } else {
+      return ui.Rect.fromLTRB(
+        _currentClipLeft,
+        _currentClipTop,
+        _currentClipRight,
+        _currentClipBottom,
+      );
     }
   }
 
@@ -2028,6 +2035,8 @@ double _getPaintSpread(SurfacePaint paint) {
 /// Contains metrics collected by recording canvas to provide data for
 /// rendering heuristics (canvas use vs DOM).
 class RenderStrategy {
+  RenderStrategy();
+
   /// Whether paint commands contain image elements.
   bool hasImageElements = false;
 
@@ -2046,8 +2055,6 @@ class RenderStrategy {
   /// element tree. When this is set to true, we prevent canvas usage in
   /// bitmap canvas and instead render using dom primitives and svg only.
   bool isInsideSvgFilterTree = false;
-
-  RenderStrategy();
 
   /// Merges render strategy settings from a child recording.
   void merge(RenderStrategy childStrategy) {

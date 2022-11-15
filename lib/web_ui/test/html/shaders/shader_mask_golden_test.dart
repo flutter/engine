@@ -2,17 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart'
-    hide ClipRectEngineLayer, BackdropFilterEngineLayer;
+    hide BackdropFilterEngineLayer, ClipRectEngineLayer;
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
-
-import '../../common.dart';
 
 /// To debug compositing failures on browsers, set this flag to true and run
 /// flutter run -d chrome --web-renderer=html
@@ -40,13 +36,13 @@ Future<void> testMain() async {
 
   setUp(() async {
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final html.Node scene in
-        flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in
+        flutterViewEmbedder.sceneHostElement!.querySelectorAll('flt-scene').cast<DomNode>()) {
       scene.remove();
     }
     initWebGl();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   /// Should render the picture unmodified.
@@ -104,7 +100,7 @@ Future<void> testMain() async {
   test('Renders text with linear gradient shader mask', () async {
     _renderTextScene(BlendMode.srcIn);
     await matchGoldenFile('shadermask_linear_text.png',
-        region: const Rect.fromLTWH(0, 0, 360, 200), maxDiffRatePercent: 2.0);
+        region: const Rect.fromLTWH(0, 0, 360, 200));
   }, skip: isSafari || isFirefox);
 }
 
@@ -159,8 +155,7 @@ void _renderCirclesScene(BlendMode blendMode) {
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
       colors, stops, TileMode.clamp, Matrix4.identity().storage);
 
-  builder.pushShaderMask(shader, shaderBounds, blendMode,
-      oldLayer: null);
+  builder.pushShaderMask(shader, shaderBounds, blendMode);
   final Picture circles2 = _drawTestPictureWithCircles(region, 180, 10);
   builder.addPicture(Offset.zero, circles2);
   builder.pop();
@@ -214,8 +209,7 @@ void _renderTextScene(BlendMode blendMode) {
       Offset(320 - shaderBounds.left, 150 - shaderBounds.top),
       colors, stops, TileMode.clamp, Matrix4.identity().storage);
 
-  builder.pushShaderMask(shader, shaderBounds, blendMode,
-      oldLayer: null);
+  builder.pushShaderMask(shader, shaderBounds, blendMode);
 
   final Picture textPicture2 = _drawTestPictureWithText(region, 180, 10);
   builder.addPicture(Offset.zero, textPicture2);

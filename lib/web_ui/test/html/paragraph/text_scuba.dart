@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -11,16 +10,16 @@ import 'package:ui/ui.dart' as ui;
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
+import 'helper.dart';
 
 /// Class that controls some details of how screenshotting is made.
 ///
 /// (For Googlers: Not really related with internal Scuba anymore)
 class EngineScubaTester {
+  EngineScubaTester(this.viewportSize);
+
   /// The size of the browser window used in this scuba test.
   final ui.Size viewportSize;
-
-  EngineScubaTester(this.viewportSize);
 
   static Future<EngineScubaTester> initialize(
       {ui.Size viewportSize = const ui.Size(2400, 1800)}) async {
@@ -45,14 +44,10 @@ class EngineScubaTester {
   Future<void> diffScreenshot(
     String fileName, {
     ui.Rect? region,
-    double? maxDiffRatePercent,
-    bool write = false,
   }) async {
     await matchGoldenFile(
       '$fileName.png',
       region: region ?? viewportRegion,
-      maxDiffRatePercent: maxDiffRatePercent,
-      write: write,
     );
   }
 
@@ -64,11 +59,9 @@ class EngineScubaTester {
     EngineCanvas canvas,
     String fileName, {
     ui.Rect? region,
-    double? maxDiffRatePercent,
-    bool write = false,
   }) async {
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -77,7 +70,7 @@ class EngineScubaTester {
     }
     try {
       sceneElement.append(canvas.rootElement);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       String screenshotName = '${fileName}_${canvas.runtimeType}';
       if (canvas is BitmapCanvas) {
         screenshotName += '+canvas_measurement';
@@ -85,8 +78,6 @@ class EngineScubaTester {
       await diffScreenshot(
         screenshotName,
         region: region,
-        maxDiffRatePercent: maxDiffRatePercent,
-        write: write,
       );
     } finally {
       // The page is reused across tests, so remove the element after taking the
@@ -96,17 +87,14 @@ class EngineScubaTester {
   }
 }
 
-typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
-
 /// Runs the given test [body] with each type of canvas.
-void testEachCanvas(String description, CanvasTest body,
-    {double? maxDiffRate}) {
+void testEachCanvas(String description, CanvasTest body) {
   const ui.Rect bounds = ui.Rect.fromLTWH(0, 0, 600, 800);
   test('$description (bitmap + canvas measurement)', () async {
     return body(BitmapCanvas(bounds, RenderStrategy()));
   });
   test('$description (dom)', () {
-    return body(DomCanvas(html.document.createElement('flt-picture')));
+    return body(DomCanvas(domDocument.createElement('flt-picture')));
   });
 }
 
@@ -130,14 +118,4 @@ CanvasParagraph paragraph(
   final CanvasParagraph paragraph = builder.build() as CanvasParagraph;
   paragraph.layout(ui.ParagraphConstraints(width: maxWidth));
   return paragraph;
-}
-
-/// Configures the test to use bundled Roboto and Ahem fonts to avoid golden
-/// screenshot differences due to differences in the preinstalled system fonts.
-void setUpStableTestFonts() {
-  setUpAll(() async {
-    await ui.webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
-  });
 }

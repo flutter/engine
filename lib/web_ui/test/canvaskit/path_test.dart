@@ -19,7 +19,7 @@ void testMain() {
     setUpCanvasKitTest();
 
     test('Using CanvasKit', () {
-      expect(useCanvasKit, isTrue);
+      expect(renderer is CanvasKitRenderer, isTrue);
     });
 
     test(CkPathMetrics, () {
@@ -190,7 +190,5 @@ void testMain() {
       expect(original.getBounds(), rect1);
       expect(copy.getBounds(), rect1.expandToInclude(rect2));
     });
-  },
-      skip:
-          isIosSafari); // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
+  });
 }

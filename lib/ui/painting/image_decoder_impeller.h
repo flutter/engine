@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
+#include "impeller/geometry/size.h"
 
 namespace impeller {
 class Context;
@@ -19,9 +20,9 @@ namespace flutter {
 class ImageDecoderImpeller final : public ImageDecoder {
  public:
   ImageDecoderImpeller(
-      TaskRunners runners,
+      const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-      fml::WeakPtr<IOManager> io_manager);
+      const fml::WeakPtr<IOManager>& io_manager);
 
   ~ImageDecoderImpeller() override;
 
@@ -31,10 +32,18 @@ class ImageDecoderImpeller final : public ImageDecoder {
               uint32_t target_height,
               const ImageResult& result) override;
 
+  static std::shared_ptr<SkBitmap> DecompressTexture(
+      ImageDescriptor* descriptor,
+      SkISize target_size,
+      impeller::ISize max_texture_size);
+
+  static sk_sp<DlImage> UploadTexture(
+      const std::shared_ptr<impeller::Context>& context,
+      std::shared_ptr<SkBitmap> bitmap);
+
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
-  size_t label_count_ = 1u;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };

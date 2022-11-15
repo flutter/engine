@@ -10,6 +10,14 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter_runner {
+namespace {
+
+// Since the flatland hit-region can be transformed (rotated, scaled or
+// translated), we must ensure that the size of the hit-region will not cause
+// overflows on operations (like FLT_MAX would).
+constexpr float kMaxHitRegionSize = 1'000'000.f;
+
+}  // namespace
 
 FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
     fuchsia::ui::views::ViewCreationToken view_creation_token,
@@ -28,6 +36,24 @@ FlatlandExternalViewEmbedder::FlatlandExternalViewEmbedder(
   root_transform_id_ = flatland_->NextTransformId();
   flatland_->flatland()->CreateTransform(root_transform_id_);
   flatland_->flatland()->SetRootTransform(root_transform_id_);
+
+  if (intercept_all_input) {
+    input_interceptor_transform_ = flatland_->NextTransformId();
+    flatland_->flatland()->CreateTransform(*input_interceptor_transform_);
+
+    flatland_->flatland()->AddChild(root_transform_id_,
+                                    *input_interceptor_transform_);
+    child_transforms_.emplace_back(*input_interceptor_transform_);
+
+    // Attach full-screen hit testing shield. Note that since the hit-region
+    // may be transformed (translated, rotated), we do not want to set
+    // width/height to FLT_MAX. This will cause a numeric overflow.
+    flatland_->flatland()->SetHitRegions(
+        *input_interceptor_transform_,
+        {{{0, 0, kMaxHitRegionSize, kMaxHitRegionSize},
+          fuchsia::ui::composition::HitTestInteraction::
+              SEMANTICALLY_INVISIBLE}});
+  }
 }
 
 FlatlandExternalViewEmbedder::~FlatlandExternalViewEmbedder() = default;
@@ -56,6 +82,11 @@ std::vector<SkCanvas*> FlatlandExternalViewEmbedder::GetCurrentCanvases() {
   return canvases;
 }
 
+std::vector<flutter::DisplayListBuilder*>
+FlatlandExternalViewEmbedder::GetCurrentBuilders() {
+  return std::vector<flutter::DisplayListBuilder*>();
+}
+
 void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<flutter::EmbeddedViewParams> params) {
@@ -67,12 +98,13 @@ void FlatlandExternalViewEmbedder::PrerollCompositeEmbeddedView(
   frame_composition_order_.push_back(handle);
 }
 
-SkCanvas* FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+flutter::EmbedderPaintContext
+FlatlandExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   zx_handle_t handle = static_cast<zx_handle_t>(view_id);
   auto found = frame_layers_.find(handle);
   FML_CHECK(found != frame_layers_.end());
 
-  return found->second.canvas_spy->GetSpyingCanvas();
+  return {found->second.canvas_spy->GetSpyingCanvas(), nullptr};
 }
 
 flutter::PostPrerollResult FlatlandExternalViewEmbedder::PostPrerollAction(
@@ -90,8 +122,7 @@ void FlatlandExternalViewEmbedder::BeginFrame(
   // Reset for new frame.
   Reset();
   frame_size_ = frame_size;
-
-  // TODO(fxbug.dev/94000): Handle device pixel ratio.
+  frame_dpr_ = device_pixel_ratio;
 
   // Create the root layer.
   frame_layers_.emplace(
@@ -166,6 +197,10 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
   {
     TRACE_EVENT0("flutter", "SubmitLayers");
 
+    // First re-scale everything according to the DPR.
+    const float inv_dpr = 1.0f / frame_dpr_;
+    flatland_->flatland()->SetScale(root_transform_id_, {inv_dpr, inv_dpr});
+
     size_t flatland_layer_index = 0;
     for (const auto& layer_id : frame_composition_order_) {
       const auto& layer = frame_layers_.find(layer_id);
@@ -178,7 +213,14 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
         // Get the FlatlandView structure corresponding to the platform view.
         auto found = flatland_views_.find(layer_id.value());
-        FML_CHECK(found != flatland_views_.end());
+        FML_CHECK(found != flatland_views_.end())
+            << "No FlatlandView for layer_id = " << layer_id.value()
+            << ". This typically indicates that the Dart code in "
+               "Fuchsia's fuchsia_scenic_flutter library failed to create "
+               "the platform view, leading to a crash later down the road in "
+               "the Flutter Engine code that tries to find that platform view. "
+               "Check the Flutter Framework for changes to PlatformView that "
+               "might have caused a regression.";
         auto& viewport = found->second;
 
         // Compute mutators, and size for the platform view.
@@ -190,39 +232,55 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
 
         if (viewport.pending_create_viewport_callback) {
           if (view_size.fWidth && view_size.fHeight) {
-            viewport.pending_create_viewport_callback(view_size);
+            viewport.pending_create_viewport_callback(
+                view_size, viewport.pending_occlusion_hint);
             viewport.size = view_size;
+            viewport.occlusion_hint = viewport.pending_occlusion_hint;
           } else {
             FML_DLOG(WARNING)
                 << "Failed to create viewport because width or height is zero.";
           }
         }
 
-        // TODO(fxbug.dev/64201): Handle clips.
-
         // Set transform for the viewport.
-        // TODO(fxbug.dev/94000): Handle scaling.
         if (view_mutators.transform != viewport.mutators.transform) {
           flatland_->flatland()->SetTranslation(
               viewport.transform_id,
               {static_cast<int32_t>(view_mutators.transform.getTranslateX()),
                static_cast<int32_t>(view_mutators.transform.getTranslateY())});
+
+          flatland_->flatland()->SetScale(
+              viewport.transform_id, {view_mutators.transform.getScaleX(),
+                                      view_mutators.transform.getScaleY()});
           viewport.mutators.transform = view_mutators.transform;
         }
 
         // TODO(fxbug.dev/94000): Set HitTestBehavior.
-        // TODO(fxbug.dev/94000): Set opacity.
+        // TODO(fxbug.dev/94000): Set ClipRegions.
 
-        // Set size
-        // TODO(): Set occlusion hint, and focusable.
-        if (view_size != viewport.size) {
+        // Set opacity.
+        if (view_mutators.opacity != viewport.mutators.opacity) {
+          flatland_->flatland()->SetOpacity(viewport.transform_id,
+                                            view_mutators.opacity);
+          viewport.mutators.opacity = view_mutators.opacity;
+        }
+
+        // Set size and occlusion hint.
+        if (view_size != viewport.size ||
+            viewport.pending_occlusion_hint != viewport.occlusion_hint) {
           fuchsia::ui::composition::ViewportProperties properties;
           properties.set_logical_size(
               {static_cast<uint32_t>(view_size.fWidth),
                static_cast<uint32_t>(view_size.fHeight)});
+          properties.set_inset(
+              {static_cast<int32_t>(viewport.pending_occlusion_hint.fTop),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fRight),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fBottom),
+               static_cast<int32_t>(viewport.pending_occlusion_hint.fLeft)});
           flatland_->flatland()->SetViewportProperties(viewport.viewport_id,
                                                        std::move(properties));
           viewport.size = view_size;
+          viewport.occlusion_hint = viewport.pending_occlusion_hint;
         }
 
         // Attach the FlatlandView to the main scene graph.
@@ -283,17 +341,30 @@ void FlatlandExternalViewEmbedder::SubmitFrame(
         child_transforms_.emplace_back(
             flatland_layers_[flatland_layer_index].transform_id);
 
-        // Attach full-screen hit testing shield.
+        // Attach full-screen hit testing shield. Note that since the hit-region
+        // may be transformed (translated, rotated), we do not want to set
+        // width/height to FLT_MAX. This will cause a numeric overflow.
         flatland_->flatland()->SetHitRegions(
             flatland_layers_[flatland_layer_index].transform_id,
-            {{{0, 0, std::numeric_limits<float>::max(),
-               std::numeric_limits<float>::max()},
+            {{{0, 0, kMaxHitRegionSize, kMaxHitRegionSize},
               fuchsia::ui::composition::HitTestInteraction::
                   SEMANTICALLY_INVISIBLE}});
       }
 
       // Reset for the next pass:
       flatland_layer_index++;
+    }
+
+    // TODO(fxbug.dev/104956): Setting per-layer overlay hit region for Flatland
+    // external view embedder should match with what is being done in GFX
+    // external view embedder.
+    // Set up the input interceptor at the top of the
+    // scene, if applicable.  It will capture all input, and any unwanted input
+    // will be reinjected into embedded views.
+    if (input_interceptor_transform_.has_value()) {
+      flatland_->flatland()->AddChild(root_transform_id_,
+                                      *input_interceptor_transform_);
+      child_transforms_.emplace_back(*input_interceptor_transform_);
     }
   }
 
@@ -358,14 +429,18 @@ void FlatlandExternalViewEmbedder::CreateView(
   FlatlandView new_view = {.transform_id = transform_id,
                            .viewport_id = viewport_id};
   flatland_->flatland()->CreateTransform(new_view.transform_id);
-  fuchsia::ui::composition::ChildViewWatcherPtr child_view_watcher;
+  fuchsia::ui::composition::ChildViewWatcherHandle child_view_watcher;
   new_view.pending_create_viewport_callback =
       [this, transform_id, viewport_id, view_id,
-       child_view_watcher_request =
-           child_view_watcher.NewRequest()](const SkSize& size) mutable {
+       child_view_watcher_request = child_view_watcher.NewRequest()](
+          const SkSize& size, const SkRect& inset) mutable {
         fuchsia::ui::composition::ViewportProperties properties;
         properties.set_logical_size({static_cast<uint32_t>(size.fWidth),
                                      static_cast<uint32_t>(size.fHeight)});
+        properties.set_inset({static_cast<int32_t>(inset.fTop),
+                              static_cast<int32_t>(inset.fRight),
+                              static_cast<int32_t>(inset.fBottom),
+                              static_cast<int32_t>(inset.fLeft)});
         flatland_->flatland()->CreateViewport(
             viewport_id, {zx::channel((zx_handle_t)view_id)},
             std::move(properties), std::move(child_view_watcher_request));
@@ -411,14 +486,17 @@ void FlatlandExternalViewEmbedder::SetViewProperties(
   auto found = flatland_views_.find(view_id);
   FML_CHECK(found != flatland_views_.end());
 
-  // TODO(fxbug.dev/94000): Set occlusion_hint, hit_testable and focusable. Note
-  // that pending_create_viewport_callback might not have run at this point.
+  // Note that pending_create_viewport_callback might not have run at this
+  // point.
+  auto& viewport = found->second;
+  viewport.pending_occlusion_hint = occlusion_hint;
 }
 
 void FlatlandExternalViewEmbedder::Reset() {
   frame_layers_.clear();
   frame_composition_order_.clear();
   frame_size_ = SkISize::Make(0, 0);
+  frame_dpr_ = 1.f;
 
   // Clear all children from root.
   for (const auto& transform : child_transforms_) {
@@ -442,28 +520,28 @@ FlatlandExternalViewEmbedder::ParseMutatorStack(
   for (auto i = mutators_stack.Begin(); i != mutators_stack.End(); ++i) {
     const auto& mutator = *i;
     switch (mutator->GetType()) {
-      case flutter::MutatorType::opacity: {
+      case flutter::MutatorType::kOpacity: {
         mutators.opacity *= std::clamp(mutator->GetAlphaFloat(), 0.f, 1.f);
       } break;
-      case flutter::MutatorType::transform: {
+      case flutter::MutatorType::kTransform: {
         total_transform.preConcat(mutator->GetMatrix());
         transform_accumulator.preConcat(mutator->GetMatrix());
       } break;
-      case flutter::MutatorType::clip_rect: {
+      case flutter::MutatorType::kClipRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRect(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_rrect: {
+      case flutter::MutatorType::kClipRRect: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetRRect().getBounds(),
         });
         transform_accumulator = SkMatrix::I();
       } break;
-      case flutter::MutatorType::clip_path: {
+      case flutter::MutatorType::kClipPath: {
         mutators.clips.emplace_back(TransformedClip{
             .transform = transform_accumulator,
             .rect = mutator->GetPath().getBounds(),

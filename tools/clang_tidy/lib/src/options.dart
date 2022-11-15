@@ -10,6 +10,16 @@ import 'package:path/path.dart' as path;
 // Path to root of the flutter/engine repository containing this script.
 final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(path.fromUri(io.Platform.script)))));
 
+
+/// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
+String? _platformSpecificWarningsAsErrors(ArgResults options) {
+  if (options['target-variant'] == 'host_debug' && io.Platform.isMacOS) {
+    return options['mac-host-warnings-as-errors'] as String?;
+  }
+  return null;
+}
+
+
 /// A class for organizing the options to the Engine linter, and the files
 /// that it operates on.
 class Options {
@@ -20,8 +30,10 @@ class Options {
     this.verbose = false,
     this.checksArg = '',
     this.lintAll = false,
+    this.lintHead = false,
     this.fix = false,
     this.errorMessage,
+    this.warningsAsErrors,
     StringSink? errSink,
   }) : checks = checksArg.isNotEmpty ? '--checks=$checksArg' : null,
        _errSink = errSink ?? io.stderr;
@@ -60,8 +72,10 @@ class Options {
       checksArg: options.wasParsed('checks') ? options['checks'] as String : '',
       lintAll: io.Platform.environment['FLUTTER_LINT_ALL'] != null ||
                options['lint-all'] as bool,
+      lintHead: options['lint-head'] as bool,
       fix: options['fix'] as bool,
       errSink: errSink,
+      warningsAsErrors: _platformSpecificWarningsAsErrors(options),
     );
   }
 
@@ -104,18 +118,19 @@ class Options {
     )
     ..addFlag(
       'lint-all',
-      help: 'lint all of the sources, regardless of FLUTTER_NOLINT.',
-      defaultsTo: false,
+      help: 'Lint all of the sources, regardless of FLUTTER_NOLINT.',
+    )
+    ..addFlag(
+      'lint-head',
+      help: 'Lint files changed in the tip-of-tree commit.',
     )
     ..addFlag(
       'fix',
       help: 'Apply suggested fixes.',
-      defaultsTo: false,
     )
     ..addFlag(
       'verbose',
       help: 'Print verbose output.',
-      defaultsTo: false,
     )
     ..addOption(
       'compile-commands',
@@ -131,6 +146,9 @@ class Options {
       valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
       defaultsTo: 'host_debug',
     )
+    ..addOption('mac-host-warnings-as-errors',
+        help:
+            'checks that will be treated as errors when running debug_host on mac.')
     ..addOption(
       'src-dir',
       help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
@@ -156,15 +174,20 @@ class Options {
   /// The root of the flutter/engine repository.
   final io.Directory repoPath = io.Directory(_engineRoot);
 
-  /// Arguments to plumb through to clang-tidy formatted as a command line
-  /// argument.
+  /// Argument sent as `warnings-as-errors` to clang-tidy.
+  final String? warningsAsErrors;
+
+  /// Checks argument as supplied to the command-line.
   final String checksArg;
 
-  /// Check arguments to plumb through to clang-tidy.
+  /// Check argument to be supplied to the clang-tidy subprocess.
   final String? checks;
 
   /// Whether all files should be linted.
   final bool lintAll;
+
+  /// Whether to lint only files changed in the tip-of-tree commit.
+  final bool lintHead;
 
   /// Whether checks should apply available fix-ups to the working copy.
   final bool fix;
@@ -181,7 +204,8 @@ class Options {
       _errSink.writeln(message);
     }
     _errSink.writeln(
-      'Usage: bin/main.dart [--help] [--lint-all] [--fix] [--verbose] [--diff-branch] [--target-variant variant] [--src-dir path/to/engine/src]',
+      'Usage: bin/main.dart [--help] [--lint-all] [--lint-head] [--fix] [--verbose] '
+      '[--diff-branch] [--target-variant variant] [--src-dir path/to/engine/src]',
     );
     _errSink.writeln(_argParser.usage);
   }
@@ -199,6 +223,10 @@ class Options {
 
     if (compileCommandsParsed && argResults.wasParsed('src-dir')) {
       return 'ERROR: --compile-commands option cannot be used with --src-dir.';
+    }
+
+    if (argResults.wasParsed('lint-all') && argResults.wasParsed('lint-head')) {
+      return 'ERROR: At most one of --lint-all and --lint-head can be passed.';
     }
 
     if (!buildCommandsPath.existsSync()) {

@@ -28,6 +28,13 @@ import '../../util.dart';
 ///  method.addStatement('${u1.name} = vec4(1.0, 1.0, 1.0, 0.0);');
 ///  source = builder.build();
 class ShaderBuilder {
+  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = false;
+
+  ShaderBuilder.fragment(this.version) :
+        isWebGl2 = version == WebGLVersion.webgl2,
+        _isFragmentShader = true;
+
   /// WebGL version.
   final int version;
   final List<ShaderDeclaration> declarations = <ShaderDeclaration>[];
@@ -58,13 +65,6 @@ class ShaderBuilder {
 
   /// Lazily allocated fragment color output.
   ShaderDeclaration? _fragmentColorDeclaration;
-
-  ShaderBuilder(this.version) : isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = false;
-
-  ShaderBuilder.fragment(this.version) :
-        isWebGl2 = version == WebGLVersion.webgl2,
-        _isFragmentShader = true;
 
   /// Returns fragment color declaration for fragment shader.
   ///
@@ -345,10 +345,6 @@ abstract class ShaderStorageQualifier {
 
 /// Shader variable and constant declaration.
 class ShaderDeclaration {
-  final String name;
-  final int dataType;
-  final int storage;
-  final String constValue;
   ShaderDeclaration(this.name, this.dataType, this.storage)
       : assert(!_isGLSLReservedWord(name)),
         constValue = '';
@@ -356,6 +352,11 @@ class ShaderDeclaration {
   /// Constructs a constant.
   ShaderDeclaration.constant(this.name, this.dataType, this.constValue)
       : storage = ShaderStorageQualifier.kConst;
+
+  final String name;
+  final int dataType;
+  final int storage;
+  final String constValue;
 }
 
 // These are used only in debug mode to assert if used as variable name.
@@ -414,7 +415,7 @@ const List<String> _kReservedWords = <String>[
   'image2DArrayShadow', 'image2DShadow', 'image3D', 'imageBuffer',
   'imageCube', 'inline', 'input', 'interface', 'long',
   'namespace', 'noinline', 'output', 'packed', 'partition', 'public',
-  'row_majo', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
+  'row_major', 'sampler3DRect', 'short', 'sizeof', 'static', 'superp', 'template', 'this',
   'typedef', 'uimage1D', 'uimage1DArray', 'uimage2D', 'uimage2DArray',
   'uimage3D', 'uimageBuffer', 'uimageCube', 'union', 'unsigned',
   'using', 'volatile',

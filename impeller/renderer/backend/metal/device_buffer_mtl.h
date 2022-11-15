@@ -27,32 +27,30 @@ class DeviceBufferMTL final
   friend class AllocatorMTL;
 
   const id<MTLBuffer> buffer_;
-  const size_t size_;
-  const StorageMode mode_;
+  const MTLStorageMode storage_mode_;
 
-  DeviceBufferMTL(id<MTLBuffer> buffer, size_t size, StorageMode mode);
-
-  // |DeviceBuffer|
-  bool CopyHostBuffer(const uint8_t* source,
-                      Range source_range,
-                      size_t offset) override;
+  DeviceBufferMTL(DeviceBufferDescriptor desc,
+                  id<MTLBuffer> buffer,
+                  MTLStorageMode storage_mode);
 
   // |DeviceBuffer|
-  std::shared_ptr<Texture> MakeTexture(TextureDescriptor desc,
-                                       size_t offset) const override;
+  uint8_t* OnGetContents() const override;
+
+  // |DeviceBuffer|
+  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
+                                     const TextureDescriptor& descriptor,
+                                     uint16_t row_bytes) const override;
+
+  // |DeviceBuffer|
+  bool OnCopyHostBuffer(const uint8_t* source,
+                        Range source_range,
+                        size_t offset) override;
 
   // |DeviceBuffer|
   bool SetLabel(const std::string& label) override;
 
   // |DeviceBuffer|
   bool SetLabel(const std::string& label, Range range) override;
-
-  // |DeviceBuffer|
-  BufferView AsBufferView() const override;
-
-  // |Buffer|
-  std::shared_ptr<const DeviceBuffer> GetDeviceBuffer(
-      Allocator& allocator) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DeviceBufferMTL);
 };

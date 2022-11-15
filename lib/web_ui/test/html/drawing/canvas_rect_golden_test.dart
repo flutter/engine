@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -32,7 +30,7 @@ Future<void> testMain() async {
 
     paintRects(canvas);
 
-    html.document.body!.append(canvas.rootElement);
+    domDocument.body!.append(canvas.rootElement);
     await matchGoldenFile('canvas_rect_flipped.png', region: region);
   });
 }
@@ -41,26 +39,26 @@ void paintRects(BitmapCanvas canvas) {
 
     canvas.drawRect(const Rect.fromLTRB(30, 40, 100, 50),
       SurfacePaintData()
-        ..color = const Color(0xFF4CAF50) //Colors.green
+        ..color = 0xFF4CAF50 //Colors.green
         ..strokeWidth = 1.0
         ..style = PaintingStyle.stroke);
 
     // swap left and right.
     canvas.drawRect(const Rect.fromLTRB(100, 150, 30, 140),
       SurfacePaintData()
-        ..color = const Color(0xFFF44336) //Colors.red
+        ..color = 0xFFF44336 //Colors.red
         ..strokeWidth = 1.0
         ..style = PaintingStyle.stroke);
 
     // Repeat above for fill
     canvas.drawRect(const Rect.fromLTRB(30, 240, 100, 250),
       SurfacePaintData()
-        ..color = const Color(0xFF4CAF50) //Colors.green
+        ..color = 0xFF4CAF50 //Colors.green
         ..style = PaintingStyle.fill);
 
     // swap left and right.
     canvas.drawRect(const Rect.fromLTRB(100, 350, 30, 340),
       SurfacePaintData()
-        ..color = const Color(0xFFF44336) //Colors.red
+        ..color = 0xFFF44336 //Colors.red
         ..style = PaintingStyle.fill);
 }

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 
 import 'package:test/bootstrap/browser.dart';
@@ -11,7 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
-import '../common.dart';
+import 'paragraph/helper.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -25,7 +24,7 @@ Future<void> testMain() async {
 
   void appendToScene() {
     // Create a <flt-scene> element to make sure our CSS reset applies correctly.
-    final html.Element testScene = html.Element.tag('flt-scene');
+    final DomElement testScene = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       testScene.style.position = 'absolute';
@@ -105,8 +104,7 @@ Future<void> testMain() async {
 
     appendToScene();
 
-    await matchGoldenFile('misaligned_canvas_test.png', region: region,
-      maxDiffRatePercent: 1.0);
+    await matchGoldenFile('misaligned_canvas_test.png', region: region);
   });
 
   test('fill the whole canvas with color even when transformed', () async {
@@ -119,8 +117,7 @@ Future<void> testMain() async {
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_color_when_transformed.png',
-        region: region,
-        maxDiffRatePercent: 5.0);
+        region: region);
   });
 
   test('fill the whole canvas with paint even when transformed', () async {
@@ -129,14 +126,13 @@ Future<void> testMain() async {
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawPaint(SurfacePaintData()
-      ..color = const Color.fromRGBO(0, 255, 0, 1.0)
+      ..color = const Color.fromRGBO(0, 255, 0, 1.0).value
       ..style = PaintingStyle.fill);
 
     appendToScene();
 
     await matchGoldenFile('bitmap_canvas_fills_paint_when_transformed.png',
-        region: region,
-        maxDiffRatePercent: 5.0);
+        region: region);
   });
 
   // This test reproduces text blurriness when two pieces of text appear inside
@@ -178,7 +174,7 @@ Future<void> testMain() async {
     canvas.drawParagraph(paragraph, Offset(8.5, 8.5 + innerClip.top));
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((html.Element e) => e.innerText).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String>((DomElement e) => e.innerText).toList(),
       <String>['Am I blurry?', 'Am I blurry?'],
       reason: 'Expected to render text using HTML',
     );
@@ -188,8 +184,6 @@ Future<void> testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_high_quality_text.png',
       region: canvasSize,
-      maxDiffRatePercent: 0.0,
-      pixelComparison: PixelComparison.precise,
     );
   }, testOn: 'chrome');
 
@@ -215,7 +209,7 @@ Future<void> testMain() async {
     canvas.debugChildOverdraw = true;
 
     final SurfacePaintData pathPaint = SurfacePaintData()
-      ..color = const Color(0xFF7F7F7F)
+      ..color = 0xFF7F7F7F
       ..style = PaintingStyle.fill;
 
     const double r = 200.0;
@@ -232,11 +226,16 @@ Future<void> testMain() async {
       ..lineTo(-r, 0)
       ..close()).shift(const Offset(250, 250));
 
+    final SurfacePaintData borderPaint = SurfacePaintData()
+      ..color = black.value
+      ..style = PaintingStyle.stroke;
+
     canvas.drawPath(path, pathPaint);
     canvas.drawParagraph(paragraph, const Offset(180, 50));
+    canvas.drawRect(Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
 
     expect(
-      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((html.Element e) => e.text).toList(),
+      canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
       <String>[text],
       reason: 'Expected to render text using HTML',
     );
@@ -252,7 +251,7 @@ Future<void> testMain() async {
     sb.pop();
     sb.pop();
     final SurfaceScene scene = sb.build() as SurfaceScene;
-    final html.Element sceneElement = scene.webOnlyRootElement!;
+    final DomElement sceneElement = scene.webOnlyRootElement!;
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -266,8 +265,6 @@ Future<void> testMain() async {
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',
       region: canvasSize,
-      maxDiffRatePercent: 1.0,
-      pixelComparison: PixelComparison.precise,
     );
   });
 

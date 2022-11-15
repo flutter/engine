@@ -3,8 +3,15 @@
 # found in the LICENSE file.
 
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/shell/version/version.gni")
 
 impeller_component("compiler_lib") {
+  include_dirs = [ "//third_party/vulkan-deps/spirv-cross/src/" ]
+
+  # Current versions of libcxx have deprecated some of the UTF-16 string
+  # conversion APIs.
+  defines = [ "_LIBCPP_DISABLE_DEPRECATION_WARNINGS" ]
+
   sources = [
     "code_gen_template.h",
     "compiler.cc",
@@ -17,8 +24,12 @@ impeller_component("compiler_lib") {
     "logger.h",
     "reflector.cc",
     "reflector.h",
+    "runtime_stage_data.cc",
+    "runtime_stage_data.h",
     "source_options.cc",
     "source_options.h",
+    "spirv_sksl.cc",
+    "spirv_sksl.h",
     "switches.cc",
     "switches.h",
     "types.cc",
@@ -30,10 +41,51 @@ impeller_component("compiler_lib") {
   public_deps = [
     "../base",
     "../geometry",
+    "../runtime_stage",
     "//flutter/fml",
+
+    # All third_party deps must be reflected below in the impellerc_license
+    # target.
     "//third_party/inja",
     "//third_party/shaderc_flutter",
     "//third_party/spirv_cross_flutter",
+  ]
+}
+
+generated_file("impellerc_license") {
+  source_path = rebase_path(".", "//flutter")
+  git_url = "https://github.com/flutter/engine/tree/$engine_version"
+  outputs = [ "$target_gen_dir/LICENSE.impellerc.md" ]
+  contents = [
+    "# impellerc",
+    "",
+    "This tool is used by the Flutter SDK to compile shaders.",
+    "",
+    "Source code for this tool: [flutter/engine/$source_path]($git_url/$source_path).",
+    "",
+    "## Licenses",
+    "",
+    "### impellerc",
+    "",
+    read_file("//flutter/sky/packages/sky_engine/LICENSE", "string"),
+    "",
+
+    # These licenses are ignored by the main license checker, since they are not
+    # shipped to end-application binaries and only shipped as part of developer
+    # tooling in impellerc. Add them here.
+    "## Additional open source licenses",
+    "",
+    "### inja",
+    "",
+    read_file("//third_party/inja/LICENSE", "string"),
+    "",
+    "### shaderc",
+    "",
+    read_file("//third_party/shaderc/LICENSE", "string"),
+    "",
+    "### spirv_cross",
+    "",
+    read_file("//third_party/vulkan-deps/spirv-cross/src/LICENSE", "string"),
   ]
 }
 
@@ -42,11 +94,21 @@ impeller_component("impellerc") {
 
   sources = [ "impellerc_main.cc" ]
 
-  deps = [ ":compiler_lib" ]
+  deps = [
+    ":compiler_lib",
+    "shader_lib",
+  ]
+
+  metadata = {
+    entitlement_file_path = [ "impellerc" ]
+  }
 }
 
 group("compiler") {
-  deps = [ ":impellerc" ]
+  deps = [
+    ":impellerc",
+    ":impellerc_license",
+  ]
 }
 
 impeller_component("compiler_unittests") {

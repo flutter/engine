@@ -12,10 +12,11 @@
 
 namespace impeller {
 
-class PipelineMTL final : public Pipeline,
-                          public BackendCast<PipelineMTL, Pipeline> {
+class PipelineMTL final
+    : public Pipeline<PipelineDescriptor>,
+      public BackendCast<PipelineMTL, Pipeline<PipelineDescriptor>> {
  public:
-  // |PipelineMTL|
+  // |Pipeline|
   ~PipelineMTL() override;
 
   id<MTLRenderPipelineState> GetMTLRenderPipelineState() const;
@@ -25,17 +26,16 @@ class PipelineMTL final : public Pipeline,
  private:
   friend class PipelineLibraryMTL;
 
-  Type type_ = Type::kUnknown;
   id<MTLRenderPipelineState> pipeline_state_;
   id<MTLDepthStencilState> depth_stencil_state_;
   bool is_valid_ = false;
 
   PipelineMTL(std::weak_ptr<PipelineLibrary> library,
-              PipelineDescriptor desc,
+              const PipelineDescriptor& desc,
               id<MTLRenderPipelineState> state,
               id<MTLDepthStencilState> depth_stencil_state);
 
-  // |PipelineMTL|
+  // |Pipeline|
   bool IsValid() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineMTL);

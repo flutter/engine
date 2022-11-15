@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
@@ -70,7 +69,7 @@ void testMain() {
       final Path subPath = Path();
       subPath.moveTo(50.0, 60.0);
       subPath.lineTo(200.0, 200.0);
-      path.extendWithPath(subPath, const Offset(0.0, 0.0));
+      path.extendWithPath(subPath, Offset.zero);
       path.reset();
       path.relativeLineTo(5.0, 5.0);
       expect(path.pathRef.countPoints(), 2);
@@ -192,7 +191,6 @@ void testMain() {
       expect(path.toRoundedRect(), rrect);
       path = SurfacePath();
       rrect = RRect.fromRectAndCorners(bounds,
-          topLeft: const Radius.elliptical(0, 0),
           topRight: const Radius.elliptical(3, 4),
           bottomLeft: const Radius.elliptical(5, 6),
           bottomRight: const Radius.elliptical(7, 8));
@@ -202,7 +200,6 @@ void testMain() {
       path = SurfacePath();
       rrect = RRect.fromRectAndCorners(bounds,
           topLeft: const Radius.elliptical(1, 2),
-          topRight: const Radius.elliptical(0, 0),
           bottomLeft: const Radius.elliptical(5, 6),
           bottomRight: const Radius.elliptical(7, 8));
       path.addRRect(rrect);
@@ -212,7 +209,6 @@ void testMain() {
       rrect = RRect.fromRectAndCorners(bounds,
           topLeft: const Radius.elliptical(1, 2),
           topRight: const Radius.elliptical(3, 4),
-          bottomLeft: const Radius.elliptical(0, 0),
           bottomRight: const Radius.elliptical(7, 8));
       path.addRRect(rrect);
       expect(path.getBounds(), bounds);
@@ -221,8 +217,7 @@ void testMain() {
       rrect = RRect.fromRectAndCorners(bounds,
           topLeft: const Radius.elliptical(1, 2),
           topRight: const Radius.elliptical(3, 4),
-          bottomLeft: const Radius.elliptical(5, 6),
-          bottomRight: const Radius.elliptical(0, 0));
+          bottomLeft: const Radius.elliptical(5, 6));
       path.addRRect(rrect);
       expect(path.getBounds(), bounds);
       expect(path.toRoundedRect(), rrect);
@@ -412,7 +407,7 @@ void testMain() {
 
     // Regression test for https://github.com/flutter/flutter/issues/44470
     test('Should handle contains for devicepixelratio != 1.0', () {
-      js_util.setProperty(html.window, 'devicePixelRatio', 4.0);
+      js_util.setProperty(domWindow, 'devicePixelRatio', 4.0);
       window.debugOverrideDevicePixelRatio(4.0);
       final Path path = Path()
         ..moveTo(50, 0)
@@ -421,7 +416,7 @@ void testMain() {
         ..lineTo(50, 0)
         ..close();
       expect(path.contains(const Offset(50, 50)), isTrue);
-      js_util.setProperty(html.window, 'devicePixelRatio', 1.0);
+      js_util.setProperty(domWindow, 'devicePixelRatio', 1.0);
       window.debugOverrideDevicePixelRatio(1.0);
       // TODO(ferhat): Investigate failure on CI. Locally this passes.
       // [Exception... "Failure"  nsresult: "0x80004005 (NS_ERROR_FAILURE)"

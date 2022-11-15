@@ -48,6 +48,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override {
     return std::vector<SkCanvas*>();
   }
+  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
+    return std::vector<flutter::DisplayListBuilder*>();
+  }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -63,7 +66,9 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
   void PrerollCompositeEmbeddedView(
       int view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return nullptr; }
+  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {nullptr, nullptr};
+  }
 };
 
 class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
@@ -271,6 +276,12 @@ class PlatformViewBuilder {
     return *this;
   }
 
+  PlatformViewBuilder& SetPointerinjectorRegistry(
+      fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry) {
+    pointerinjector_registry_ = std::move(pointerinjector_registry);
+    return *this;
+  }
+
   PlatformViewBuilder& SetSessionListenerRequest(
       fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener> request) {
     session_listener_request_ = std::move(request);
@@ -310,13 +321,14 @@ class PlatformViewBuilder {
   // Once Build is called, the instance is no longer usable.
   GfxPlatformView Build() {
     EXPECT_FALSE(std::exchange(built_, true))
-        << "Build() was already called, this buider is good for one use only.";
+        << "Build() was already called, this builder is good for one use only.";
     return GfxPlatformView(
         delegate_, task_runners_, std::move(view_ref_pair_.view_ref),
         external_external_view_embedder_, std::move(ime_service_),
         std::move(keyboard_), std::move(touch_source_),
         std::move(mouse_source_), std::move(focuser_),
-        std::move(view_ref_focused_), std::move(session_listener_request_),
+        std::move(view_ref_focused_), std::move(pointerinjector_registry_),
+        std::move(session_listener_request_),
         std::move(on_session_listener_error_callback_),
         std::move(wireframe_enabled_callback_),
         std::move(on_create_view_callback_),
@@ -343,6 +355,7 @@ class PlatformViewBuilder {
   fuchsia::ui::pointer::MouseSourceHandle mouse_source_;
   fuchsia::ui::views::ViewRefFocusedHandle view_ref_focused_;
   fuchsia::ui::views::FocuserHandle focuser_;
+  fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry_;
   fidl::InterfaceRequest<fuchsia::ui::scenic::SessionListener>
       session_listener_request_;
   fit::closure on_session_listener_error_callback_;
@@ -632,10 +645,11 @@ TEST_F(PlatformViewTests, SetViewportMetrics) {
       })));
   session_listener->OnScenicEvent(std::move(events));
   RunLoopUntilIdle();
-  EXPECT_EQ(delegate.metrics(),
-            flutter::ViewportMetrics(
-                valid_pixel_ratio, valid_pixel_ratio * valid_max_bound,
-                valid_pixel_ratio * valid_max_bound, -1.0));
+  EXPECT_EQ(
+      delegate.metrics(),
+      flutter::ViewportMetrics(
+          valid_pixel_ratio, std::round(valid_pixel_ratio * valid_max_bound),
+          std::round(valid_pixel_ratio * valid_max_bound), -1.0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics
@@ -1480,118 +1494,6 @@ TEST_F(PlatformViewTests, TouchSourceLogicalToPhysicalConversion) {
   EXPECT_EQ(flutter_events[0].physical_y, 20.f);
   EXPECT_EQ(flutter_events[1].physical_x, 20.f);
   EXPECT_EQ(flutter_events[1].physical_y, 20.f);
-}
-
-TEST_F(PlatformViewTests, DownPointerNumericNudge) {
-  constexpr float kSmallDiscrepancy = -0.00003f;
-
-  fuchsia::ui::scenic::SessionListenerPtr session_listener;
-  MockPlatformViewDelegate delegate;
-  flutter::TaskRunners task_runners("test_runners", nullptr, nullptr, nullptr,
-                                    nullptr);
-  flutter_runner::GfxPlatformView platform_view =
-      PlatformViewBuilder(delegate, std::move(task_runners))
-          .SetSessionListenerRequest(session_listener.NewRequest())
-          .Build();
-  RunLoopUntilIdle();
-  EXPECT_EQ(delegate.pointer_packets().size(), 0u);
-
-  std::vector<fuchsia::ui::scenic::Event> events;
-  events.emplace_back(
-      fuchsia::ui::scenic::Event::WithGfx(
-          fuchsia::ui::gfx::Event::WithViewPropertiesChanged(
-              fuchsia::ui::gfx::ViewPropertiesChangedEvent{
-                  .view_id = 0,
-                  .properties =
-                      fuchsia::ui::gfx::ViewProperties{
-                          .bounding_box =
-                              fuchsia::ui::gfx::BoundingBox{
-                                  .min =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 0.f,
-                                          .y = 0.f,
-                                          .z = 0.f,
-                                      },
-                                  .max =
-                                      fuchsia::ui::gfx::vec3{
-                                          .x = 100.f,
-                                          .y = 100.f,
-                                          .z = 100.f,
-                                      },
-                              },
-                      },
-              })));
-  events.emplace_back(fuchsia::ui::scenic::Event::WithGfx(
-      fuchsia::ui::gfx::Event::WithMetrics(fuchsia::ui::gfx::MetricsEvent{
-          .node_id = 0,
-          .metrics =
-              fuchsia::ui::gfx::Metrics{
-                  .scale_x = 1.f,
-                  .scale_y = 1.f,
-                  .scale_z = 1.f,
-              },
-      })));
-  events.emplace_back(fuchsia::ui::scenic::Event::WithInput(
-      fuchsia::ui::input::InputEvent::WithPointer(
-          fuchsia::ui::input::PointerEvent{
-              .event_time = 1111,
-              .device_id = 2222,
-              .pointer_id = 3333,
-              .type = fuchsia::ui::input::PointerEventType::TOUCH,
-              .phase = fuchsia::ui::input::PointerEventPhase::ADD,
-              .x = 50.f,
-              .y = kSmallDiscrepancy,  // floating point inaccuracy
-              .radius_major = 0.f,
-              .radius_minor = 0.f,
-              .buttons = 0u,
-          })));
-  events.emplace_back(fuchsia::ui::scenic::Event::WithInput(
-      fuchsia::ui::input::InputEvent::WithPointer(
-          fuchsia::ui::input::PointerEvent{
-              .event_time = 1111,
-              .device_id = 2222,
-              .pointer_id = 3333,
-              .type = fuchsia::ui::input::PointerEventType::TOUCH,
-              .phase = fuchsia::ui::input::PointerEventPhase::DOWN,
-              .x = 50.f,
-              .y = kSmallDiscrepancy,  // floating point inaccuracy
-              .radius_major = 0.f,
-              .radius_minor = 0.f,
-              .buttons = 0u,
-          })));
-  events.emplace_back(fuchsia::ui::scenic::Event::WithInput(
-      fuchsia::ui::input::InputEvent::WithPointer(
-          fuchsia::ui::input::PointerEvent{
-              .event_time = 1111,
-              .device_id = 2222,
-              .pointer_id = 3333,
-              .type = fuchsia::ui::input::PointerEventType::TOUCH,
-              .phase = fuchsia::ui::input::PointerEventPhase::MOVE,
-              .x = 50.f,
-              .y = kSmallDiscrepancy,  // floating point inaccuracy
-              .radius_major = 0.f,
-              .radius_minor = 0.f,
-              .buttons = 0u,
-          })));
-  session_listener->OnScenicEvent(std::move(events));
-  RunLoopUntilIdle();
-  ASSERT_EQ(delegate.pointer_packets().size(), 3u);
-
-  // Embedder issues pointer data in a bytestream format, PointerDataPacket.
-  // Use this handy utility to recover data as a C struct, PointerData.
-  std::vector<std::unique_ptr<flutter::PointerDataPacket>> packets =
-      delegate.TakePointerDataPackets();
-  std::vector<flutter::PointerData> add, down, move;
-  UnpackPointerPacket(add, std::move(packets[0]));
-  UnpackPointerPacket(down, std::move(packets[1]));
-  UnpackPointerPacket(move, std::move(packets[2]));
-
-  EXPECT_EQ(add[0].physical_x, 50.f);
-  EXPECT_EQ(add[0].physical_y, kSmallDiscrepancy);
-  EXPECT_EQ(down[0].physical_x, 50.f);
-  EXPECT_EQ(down[0].physical_y, 0.f);  // clamping happened
-  EXPECT_EQ(move[0].physical_x, 50.f);
-  EXPECT_EQ(move[0].physical_y, kSmallDiscrepancy);
 }
 
 }  // namespace flutter_runner::testing

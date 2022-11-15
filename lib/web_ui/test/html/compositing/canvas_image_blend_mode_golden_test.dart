@@ -17,15 +17,11 @@ void main() {
 SurfacePaint makePaint() => Paint() as SurfacePaint;
 
 Future<void> testMain() async {
-  const double screenWidth = 500.0;
-  const double screenHeight = 500.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   const Color red = Color(0xFFFF0000);
@@ -89,11 +85,9 @@ Future<void> testMain() async {
               ..colorFilter = EngineColorFilter.mode(black, blendMode));
       }
       rc.restore();
-      await canvasScreenshot(rc, 'canvas_image_blend_group$blendGroup',
-          maxDiffRatePercent: 8.0, region: screenRect);
+      await canvasScreenshot(rc, 'canvas_image_blend_group$blendGroup');
     },
-        skip: browserEngine == BrowserEngine.webkit &&
-            operatingSystem == OperatingSystem.iOs);
+        skip: isSafari);
   }
 
   // Regression test for https://github.com/flutter/flutter/issues/56971
@@ -115,8 +109,7 @@ Future<void> testMain() async {
     rc.drawParagraph(paragraph, const Offset(textLeft, textTop));
 
     rc.restore();
-    await canvasScreenshot(rc, 'canvas_image_blend_and_text',
-        maxDiffRatePercent: 8.0, region: screenRect);
+    await canvasScreenshot(rc, 'canvas_image_blend_and_text');
   });
 }
 

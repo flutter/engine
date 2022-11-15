@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/android/external_view_embedder/surface_pool.h"
 
+#include <utility>
+
 namespace flutter {
 
 OverlayLayer::OverlayLayer(int id,
@@ -22,8 +24,8 @@ SurfacePool::~SurfacePool() = default;
 std::shared_ptr<OverlayLayer> SurfacePool::GetLayer(
     GrDirectContext* gr_context,
     const AndroidContext& android_context,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
-    std::shared_ptr<AndroidSurfaceFactory> surface_factory) {
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
+    const std::shared_ptr<AndroidSurfaceFactory>& surface_factory) {
   std::lock_guard lock(mutex_);
   // Destroy current layers in the pool if the frame size has changed.
   if (requested_frame_size_ != current_frame_size_) {
@@ -80,18 +82,18 @@ void SurfacePool::RecycleLayers() {
 
 bool SurfacePool::HasLayers() {
   std::lock_guard lock(mutex_);
-  return layers_.size() > 0;
+  return !layers_.empty();
 }
 
 void SurfacePool::DestroyLayers(
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
   std::lock_guard lock(mutex_);
   DestroyLayersLocked(jni_facade);
 }
 
 void SurfacePool::DestroyLayersLocked(
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade) {
-  if (layers_.size() == 0) {
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade) {
+  if (layers_.empty()) {
     return;
   }
   jni_facade->FlutterViewDestroyOverlaySurfaces();

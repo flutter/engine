@@ -22,6 +22,9 @@ declare_args() {
 
   # Whether to use a prebuilt Dart SDK instead of building one.
   flutter_prebuilt_dart_sdk = false
+
+  # Whether to build the flutter web sdk outline/DDC artifacts.
+  flutter_build_web_sdk = false
 }
 
 # feature_defines_list ---------------------------------------------------------
@@ -68,23 +71,23 @@ if (is_ios || is_mac) {
 
 # A combo of host os name and cpu is used in several locations to
 # generate the names of the archived artifacts.
-_platform_name = host_os
-if (_platform_name == "mac") {
-  _platform_name = "darwin"
-} else if (_platform_name == "win") {
-  _platform_name = "windows"
+platform_name = host_os
+if (platform_name == "mac") {
+  platform_name = "darwin"
+} else if (platform_name == "win") {
+  platform_name = "windows"
 }
 
-full_platform_name = "$_platform_name-$host_cpu"
+full_platform_name = "$platform_name-$host_cpu"
 
-_platform_target_name = target_os
-if (_platform_target_name == "mac") {
-  _platform_target_name = "darwin"
-} else if (_platform_target_name == "win") {
-  _platform_target_name = "windows"
+target_platform_name = target_os
+if (target_platform_name == "mac") {
+  platform_target_name = "darwin"
+} else if (target_platform_name == "win") {
+  target_platform_name = "windows"
 }
 
-full_target_platform_name = "$_platform_target_name-$target_cpu"
+full_target_platform_name = "$target_platform_name-$target_cpu"
 
 # Prebuilt Dart SDK location
 
@@ -105,9 +108,6 @@ if (flutter_prebuilt_dart_sdk) {
 
   _target_prebuilt_dart_sdk_config = "$_target_os_name-$target_cpu"
   _host_prebuilt_dart_sdk_config = "$_host_os_name-$host_cpu"
-  _target_prebuilt_dart_sdk_archive = "//flutter/prebuilts/dartsdk-$_target_prebuilt_dart_sdk_config-release.zip"
-  _host_prebuilt_dart_sdk_archive =
-      "//flutter/prebuilts/dartsdk-$_host_prebuilt_dart_sdk_config-release.zip"
 
   target_prebuilt_dart_sdk =
       "//flutter/prebuilts/$_target_prebuilt_dart_sdk_config/dart-sdk"
@@ -117,14 +117,12 @@ if (flutter_prebuilt_dart_sdk) {
   # There is no prebuilt Dart SDK targeting Fuchsia, but we also don't need
   # one, so even when the build is targeting Fuchsia, use the prebuilt
   # Dart SDK for the host.
-  if (current_toolchain == host_toolchain || is_fuchsia) {
+  if (current_toolchain == host_toolchain || is_fuchsia || is_wasm) {
     prebuilt_dart_sdk = host_prebuilt_dart_sdk
     prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
-    prebuilt_dart_sdk_archive = _host_prebuilt_dart_sdk_archive
   } else {
     prebuilt_dart_sdk = target_prebuilt_dart_sdk
     prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
-    prebuilt_dart_sdk_archive = _target_prebuilt_dart_sdk_archive
   }
 }
 

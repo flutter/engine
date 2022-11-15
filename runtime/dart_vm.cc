@@ -53,7 +53,6 @@ static const char* kDartAllConfigsArgs[] = {
     // clang-format off
     "--enable_mirrors=false",
     "--background_compilation",
-    "--lazy_async_stacks",
     // 'mark_when_idle' appears to cause a regression, turning off for now.
     // "--mark_when_idle",
     // clang-format on
@@ -256,7 +255,7 @@ static void EmbedderInformationCallback(Dart_EmbedderInformation* info) {
 }
 
 std::shared_ptr<DartVM> DartVM::Create(
-    Settings settings,
+    const Settings& settings,
     fml::RefPtr<const DartSnapshot> vm_snapshot,
     fml::RefPtr<const DartSnapshot> isolate_snapshot,
     std::shared_ptr<IsolateNameServer> isolate_name_server) {
@@ -272,7 +271,7 @@ std::shared_ptr<DartVM> DartVM::Create(
 
   // Note: std::make_shared unviable due to hidden constructor.
   return std::shared_ptr<DartVM>(
-      new DartVM(std::move(vm_data), std::move(isolate_name_server)));
+      new DartVM(vm_data, std::move(isolate_name_server)));
 }
 
 static std::atomic_size_t gVMLaunchCount;
@@ -281,13 +280,13 @@ size_t DartVM::GetVMLaunchCount() {
   return gVMLaunchCount;
 }
 
-DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
+DartVM::DartVM(const std::shared_ptr<const DartVMData>& vm_data,
                std::shared_ptr<IsolateNameServer> isolate_name_server)
     : settings_(vm_data->GetSettings()),
       concurrent_message_loop_(fml::ConcurrentMessageLoop::Create()),
       skia_concurrent_executor_(
           [runner = concurrent_message_loop_->GetTaskRunner()](
-              fml::closure work) { runner->PostTask(work); }),
+              const fml::closure& work) { runner->PostTask(work); }),
       vm_data_(vm_data),
       isolate_name_server_(std::move(isolate_name_server)),
       service_protocol_(std::make_shared<ServiceProtocol>()) {
@@ -434,7 +433,7 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     ::free(flags_error);
   }
 
-  DartUI::InitForGlobal();
+  dart::bin::SetExecutableName(settings_.executable_name.c_str());
 
   {
     TRACE_EVENT0("flutter", "Dart_Initialize");
@@ -468,19 +467,19 @@ DartVM::DartVM(std::shared_ptr<const DartVMData> vm_data,
     // Send the earliest available timestamp in the application lifecycle to
     // timeline. The difference between this timestamp and the time we render
     // the very first frame gives us a good idea about Flutter's startup time.
-    // Use a duration event so about:tracing will consider this event when
-    // deciding the earliest event to use as time 0.
-    if (settings_.engine_start_timestamp.count()) {
-      Dart_TimelineEvent(
-          "FlutterEngineMainEnter",                  // label
-          settings_.engine_start_timestamp.count(),  // timestamp0
-          Dart_TimelineGetMicros(),                  // timestamp1_or_async_id
-          Dart_Timeline_Event_Duration,              // event type
-          0,                                         // argument_count
-          nullptr,                                   // argument_names
-          nullptr                                    // argument_values
-      );
-    }
+    // Use an instant event because the call to Dart_TimelineGetMicros
+    // may behave differently before and after the Dart VM is initialized.
+    // As this call is immediately after initialization of the Dart VM,
+    // we are interested in only one timestamp.
+    int64_t micros = Dart_TimelineGetMicros();
+    Dart_TimelineEvent("FlutterEngineMainEnter",     // label
+                       micros,                       // timestamp0
+                       micros,                       // timestamp1_or_async_id
+                       Dart_Timeline_Event_Instant,  // event type
+                       0,                            // argument_count
+                       nullptr,                      // argument_names
+                       nullptr                       // argument_values
+    );
   }
 
   Dart_SetFileModifiedCallback(&DartFileModifiedCallback);

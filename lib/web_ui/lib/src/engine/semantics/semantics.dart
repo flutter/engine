@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -12,6 +11,7 @@ import '../../engine.dart'  show registerHotRestartListener;
 import '../alarm_clock.dart';
 import '../browser_detection.dart';
 import '../configuration.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import '../platform_dispatcher.dart';
 import '../util.dart';
@@ -25,6 +25,150 @@ import 'scrollable.dart';
 import 'semantics_helper.dart';
 import 'tappable.dart';
 import 'text_field.dart';
+
+class EngineAccessibilityFeatures implements ui.AccessibilityFeatures {
+  const EngineAccessibilityFeatures(this._index);
+
+  static const int _kAccessibleNavigation = 1 << 0;
+  static const int _kInvertColorsIndex = 1 << 1;
+  static const int _kDisableAnimationsIndex = 1 << 2;
+  static const int _kBoldTextIndex = 1 << 3;
+  static const int _kReduceMotionIndex = 1 << 4;
+  static const int _kHighContrastIndex = 1 << 5;
+  static const int _kOnOffSwitchLabelsIndex = 1 << 6;
+
+  // A bitfield which represents each enabled feature.
+  final int _index;
+
+  @override
+  bool get accessibleNavigation => _kAccessibleNavigation & _index != 0;
+  @override
+  bool get invertColors => _kInvertColorsIndex & _index != 0;
+  @override
+  bool get disableAnimations => _kDisableAnimationsIndex & _index != 0;
+  @override
+  bool get boldText => _kBoldTextIndex & _index != 0;
+  @override
+  bool get reduceMotion => _kReduceMotionIndex & _index != 0;
+  @override
+  bool get highContrast => _kHighContrastIndex & _index != 0;
+  @override
+  bool get onOffSwitchLabels => _kOnOffSwitchLabelsIndex & _index != 0;
+
+  @override
+  String toString() {
+    final List<String> features = <String>[];
+    if (accessibleNavigation) {
+      features.add('accessibleNavigation');
+    }
+    if (invertColors) {
+      features.add('invertColors');
+    }
+    if (disableAnimations) {
+      features.add('disableAnimations');
+    }
+    if (boldText) {
+      features.add('boldText');
+    }
+    if (reduceMotion) {
+      features.add('reduceMotion');
+    }
+    if (highContrast) {
+      features.add('highContrast');
+    }
+    if (onOffSwitchLabels) {
+      features.add('onOffSwitchLabels');
+    }
+    return 'AccessibilityFeatures$features';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (other.runtimeType != runtimeType) {
+      return false;
+    }
+    return other is EngineAccessibilityFeatures && other._index == _index;
+  }
+
+  @override
+  int get hashCode => _index.hashCode;
+
+  EngineAccessibilityFeatures copyWith({
+      bool? accessibleNavigation,
+      bool? invertColors,
+      bool? disableAnimations,
+      bool? boldText,
+      bool? reduceMotion,
+      bool? highContrast,
+      bool? onOffSwitchLabels})
+  {
+    final EngineAccessibilityFeaturesBuilder builder = EngineAccessibilityFeaturesBuilder(0);
+
+    builder.accessibleNavigation = accessibleNavigation ?? this.accessibleNavigation;
+    builder.invertColors = invertColors ?? this.invertColors;
+    builder.disableAnimations = disableAnimations ?? this.disableAnimations;
+    builder.boldText = boldText ?? this.boldText;
+    builder.reduceMotion = reduceMotion ?? this.reduceMotion;
+    builder.highContrast = highContrast ?? this.highContrast;
+    builder.onOffSwitchLabels = onOffSwitchLabels ?? this.onOffSwitchLabels;
+
+    return builder.build();
+  }
+}
+
+class EngineAccessibilityFeaturesBuilder {
+  EngineAccessibilityFeaturesBuilder(this._index);
+
+  int _index = 0;
+
+  bool get accessibleNavigation => EngineAccessibilityFeatures._kAccessibleNavigation & _index != 0;
+  bool get invertColors => EngineAccessibilityFeatures._kInvertColorsIndex & _index != 0;
+  bool get disableAnimations => EngineAccessibilityFeatures._kDisableAnimationsIndex & _index != 0;
+  bool get boldText => EngineAccessibilityFeatures._kBoldTextIndex & _index != 0;
+  bool get reduceMotion => EngineAccessibilityFeatures._kReduceMotionIndex & _index != 0;
+  bool get highContrast => EngineAccessibilityFeatures._kHighContrastIndex & _index != 0;
+  bool get onOffSwitchLabels => EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex & _index != 0;
+
+  set accessibleNavigation(bool value) {
+    const int accessibleNavigation = EngineAccessibilityFeatures._kAccessibleNavigation;
+    _index = value? _index | accessibleNavigation : _index & ~accessibleNavigation;
+  }
+
+  set invertColors(bool value) {
+    const int invertColors = EngineAccessibilityFeatures._kInvertColorsIndex;
+    _index = value? _index | invertColors : _index & ~invertColors;
+  }
+
+  set disableAnimations(bool value) {
+    const int disableAnimations = EngineAccessibilityFeatures._kDisableAnimationsIndex;
+    _index = value? _index | disableAnimations : _index & ~disableAnimations;
+  }
+
+  set boldText(bool value) {
+    const int boldText = EngineAccessibilityFeatures._kBoldTextIndex;
+    _index = value? _index | boldText : _index & ~boldText;
+  }
+
+  set reduceMotion(bool value) {
+    const int reduceMotion = EngineAccessibilityFeatures._kReduceMotionIndex;
+    _index = value? _index | reduceMotion : _index & ~reduceMotion;
+  }
+
+  set highContrast(bool value) {
+    const int highContrast = EngineAccessibilityFeatures._kHighContrastIndex;
+    _index = value? _index | highContrast : _index & ~highContrast;
+  }
+
+  set onOffSwitchLabels(bool value) {
+    const int onOffSwitchLabels = EngineAccessibilityFeatures._kOnOffSwitchLabelsIndex;
+    _index = value? _index | onOffSwitchLabels : _index & ~onOffSwitchLabels;
+  }
+
+  /// Creates and returns an instance of EngineAccessibilityFeatures based on the value of _index
+  EngineAccessibilityFeatures build() {
+    return EngineAccessibilityFeatures(_index);
+  }
+}
 
 /// Contains updates for the semantics tree.
 ///
@@ -238,7 +382,7 @@ abstract class RoleManager {
   ///
   /// A single role object manages exactly one [SemanticsObject].
   RoleManager(this.role, this.semanticsObject)
-      : assert(semanticsObject != null); // ignore: unnecessary_null_comparison
+      : assert(semanticsObject != null);
 
   /// Role identifier.
   final Role role;
@@ -622,7 +766,7 @@ class SemanticsObject {
   final EngineSemanticsOwner owner;
 
   /// The DOM element used to convey semantics information to the browser.
-  final html.Element element = html.Element.tag('flt-semantics');
+  final DomElement element = domDocument.createElement('flt-semantics');
 
   /// Bitfield showing which fields have been updated but have not yet been
   /// applied to the DOM.
@@ -643,9 +787,9 @@ class SemanticsObject {
   /// is not created. This is necessary for "aria-label" to function correctly.
   /// The browser will ignore the [label] of HTML element that contain child
   /// elements.
-  html.Element? getOrCreateChildContainer() {
+  DomElement? getOrCreateChildContainer() {
     if (_childContainerElement == null) {
-      _childContainerElement = html.Element.tag('flt-semantics-container');
+      _childContainerElement = createDomElement('flt-semantics-container');
       _childContainerElement!.style
         ..position = 'absolute'
         // Ignore pointer events on child container so that platform views
@@ -661,7 +805,7 @@ class SemanticsObject {
   ///
   /// This element is used to correct for [_rect] offsets. It is only non-`null`
   /// when there are non-zero children (i.e. when [hasChildren] is `true`).
-  html.Element? _childContainerElement;
+  DomElement? _childContainerElement;
 
   /// The parent of this semantics object.
   SemanticsObject? _parent;
@@ -725,7 +869,7 @@ class SemanticsObject {
   void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
-    assert(update.flags != null); // ignore: unnecessary_null_comparison
+    assert(update.flags != null);
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
@@ -926,7 +1070,7 @@ class SemanticsObject {
     final Int32List childrenInTraversalOrder = _childrenInTraversalOrder!;
     final Int32List childrenInHitTestOrder = _childrenInHitTestOrder!;
     final int childCount = childrenInHitTestOrder.length;
-    final html.Element? containerElement = getOrCreateChildContainer();
+    final DomElement? containerElement = getOrCreateChildContainer();
 
     assert(childrenInTraversalOrder.length == childrenInHitTestOrder.length);
 
@@ -1040,7 +1184,7 @@ class SemanticsObject {
       }
     }
 
-    html.Element? refNode;
+    DomElement? refNode;
     for (int i = childCount - 1; i >= 0; i -= 1) {
       final SemanticsObject child = childrenInRenderOrder[i];
       if (!stationaryIds.contains(child.id)) {
@@ -1073,8 +1217,13 @@ class SemanticsObject {
     if (condition) {
       element.setAttribute('role', ariaRoleName);
     } else if (element.getAttribute('role') == ariaRoleName) {
-      element.attributes.remove('role');
+      element.removeAttribute('role');
     }
+  }
+
+  /// Removes the `role` HTML attribue, if any.
+  void clearAriaRole() {
+    element.removeAttribute('role');
   }
 
   /// Role managers.
@@ -1163,7 +1312,7 @@ class SemanticsObject {
       ..width = '${_rect!.width}px'
       ..height = '${_rect!.height}px';
 
-    final html.Element? containerElement =
+    final DomElement? containerElement =
         hasChildren ? getOrCreateChildContainer() : null;
 
     final bool hasZeroRectOffset = _rect!.top == 0.0 && _rect!.left == 0.0;
@@ -1193,7 +1342,7 @@ class SemanticsObject {
       } else {
         // Clone to avoid mutating _transform.
         effectiveTransform = Matrix4.fromFloat32List(transform).clone()
-          ..translate(_rect!.left, _rect!.top, 0.0);
+          ..translate(_rect!.left, _rect!.top);
         effectiveTransformIsIdentity = effectiveTransform.isIdentity();
       }
     } else if (!hasIdentityTransform) {
@@ -1231,7 +1380,7 @@ class SemanticsObject {
   /// handle traversal order.
   ///
   /// See https://github.com/flutter/flutter/issues/73347.
-  static void _clearSemanticElementTransform(html.Element element) {
+  static void _clearSemanticElementTransform(DomElement element) {
     element.style
       ..removeProperty('transform-origin')
       ..removeProperty('transform');
@@ -1329,8 +1478,8 @@ class EngineSemanticsOwner {
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    assert(child != null); // ignore: unnecessary_null_comparison
-    assert(parent != null); // ignore: unnecessary_null_comparison
+    assert(child != null);
+    assert(parent != null);
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -1377,7 +1526,7 @@ class EngineSemanticsOwner {
         object.element.remove();
       } else {
         assert(object._parent == parent);
-        assert(object.element.parent == parent._childContainerElement);
+        assert(object.element.parentNode == parent._childContainerElement);
       }
     }
     _detachments = <SemanticsObject?>[];
@@ -1404,9 +1553,7 @@ class EngineSemanticsOwner {
   }
 
   /// The top-level DOM element of the semantics DOM element tree.
-  html.Element? _rootSemanticsElement;
-
-  // ignore: prefer_function_declarations_over_variables
+  DomElement? _rootSemanticsElement;
   TimestampFunction _now = () => DateTime.now();
 
   void debugOverrideTimestampFunction(TimestampFunction value) {
@@ -1433,6 +1580,15 @@ class EngineSemanticsOwner {
     if (value == _semanticsEnabled) {
       return;
     }
+    final EngineAccessibilityFeatures original =
+        EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
+        as EngineAccessibilityFeatures;
+    final ui.PlatformConfiguration newConfiguration =
+        EnginePlatformDispatcher.instance.configuration.copyWith(
+            accessibilityFeatures:
+                original.copyWith(accessibleNavigation: value));
+    EnginePlatformDispatcher.instance.configuration = newConfiguration;
+
     _semanticsEnabled = value;
 
     if (!_semanticsEnabled) {
@@ -1462,7 +1618,7 @@ class EngineSemanticsOwner {
   /// The default mode is [AccessibilityMode.unknown].
   AccessibilityMode get mode => _mode;
   set mode(AccessibilityMode value) {
-    assert(value != null); // ignore: unnecessary_null_comparison
+    assert(value != null);
     _mode = value;
   }
 
@@ -1499,8 +1655,8 @@ class EngineSemanticsOwner {
   /// This is used to deduplicate gestures detected by Flutter and gestures
   /// detected by the browser. Flutter-detected gestures have higher precedence.
   void _temporarilyDisableBrowserGestureMode() {
-    const Duration _kDebounceThreshold = Duration(milliseconds: 500);
-    _getGestureModeClock()!.datetime = _now().add(_kDebounceThreshold);
+    const Duration kDebounceThreshold = Duration(milliseconds: 500);
+    _getGestureModeClock()!.datetime = _now().add(kDebounceThreshold);
     if (_gestureMode != GestureMode.pointerEvents) {
       _gestureMode = GestureMode.pointerEvents;
       _notifyGestureModeListeners();
@@ -1537,13 +1693,14 @@ class EngineSemanticsOwner {
   /// is likely that the gesture detected from the pointer even will do the
   /// right thing. However, if a standalone gesture is received, map it onto a
   /// [ui.SemanticsAction] to be processed by the framework.
-  bool receiveGlobalEvent(html.Event event) {
+  bool receiveGlobalEvent(DomEvent event) {
     // For pointer event reference see:
     //
     // https://developer.mozilla.org/en-US/docs/Web/API/Pointer_events
-    const List<String> _pointerEventTypes = <String>[
+    const List<String> pointerEventTypes = <String>[
       'pointerdown',
       'pointermove',
+      'pointerleave',
       'pointerup',
       'pointercancel',
       'touchstart',
@@ -1552,12 +1709,13 @@ class EngineSemanticsOwner {
       'touchcancel',
       'mousedown',
       'mousemove',
+      'mouseleave',
       'mouseup',
       'keyup',
       'keydown',
     ];
 
-    if (_pointerEventTypes.contains(event.type)) {
+    if (pointerEventTypes.contains(event.type)) {
       _temporarilyDisableBrowserGestureMode();
     }
 
@@ -1569,7 +1727,7 @@ class EngineSemanticsOwner {
   /// Callbacks are called synchronously. HTML DOM updates made in a callback
   /// take effect in the current animation frame and/or the current message loop
   /// event.
-  List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
+  final List<GestureModeCallback?> _gestureModeListeners = <GestureModeCallback?>[];
 
   /// Calls the [callback] every time the current [GestureMode] changes.
   ///

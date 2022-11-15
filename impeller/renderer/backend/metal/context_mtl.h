@@ -13,6 +13,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
+#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/context.h"
@@ -23,10 +24,10 @@ namespace impeller {
 class ContextMTL final : public Context,
                          public BackendCast<ContextMTL, Context> {
  public:
-  static std::shared_ptr<Context> Create(
+  static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::string>& shader_library_paths);
 
-  static std::shared_ptr<Context> Create(
+  static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
       const std::string& label);
 
@@ -37,13 +38,13 @@ class ContextMTL final : public Context,
 
  private:
   id<MTLDevice> device_ = nullptr;
-  id<MTLCommandQueue> render_queue_ = nullptr;
-  id<MTLCommandQueue> transfer_queue_ = nullptr;
+  id<MTLCommandQueue> command_queue_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
   std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
   std::shared_ptr<SamplerLibrary> sampler_library_;
-  std::shared_ptr<AllocatorMTL> permanents_allocator_;
-  std::shared_ptr<AllocatorMTL> transients_allocator_;
+  std::shared_ptr<AllocatorMTL> resource_allocator_;
+  std::shared_ptr<WorkQueue> work_queue_;
+  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
   bool is_valid_ = false;
 
   ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
@@ -52,10 +53,7 @@ class ContextMTL final : public Context,
   bool IsValid() const override;
 
   // |Context|
-  std::shared_ptr<Allocator> GetPermanentsAllocator() const override;
-
-  // |Context|
-  std::shared_ptr<Allocator> GetTransientsAllocator() const override;
+  std::shared_ptr<Allocator> GetResourceAllocator() const override;
 
   // |Context|
   std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override;
@@ -67,10 +65,16 @@ class ContextMTL final : public Context,
   std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateRenderCommandBuffer() const override;
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
-  std::shared_ptr<CommandBuffer> CreateTransferCommandBuffer() const override;
+  std::shared_ptr<WorkQueue> GetWorkQueue() const override;
+
+  // |Context|
+  std::shared_ptr<GPUTracer> GetGPUTracer() const override;
+
+  // |Context|
+  bool SupportsOffscreenMSAA() const override;
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

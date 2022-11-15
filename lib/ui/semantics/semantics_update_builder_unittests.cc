@@ -74,8 +74,7 @@ TEST_F(SemanticsUpdateBuilderTest, CanHandleAttributedStrings) {
   AddNativeCallback("SemanticsUpdate",
                     CREATE_NATIVE_ENTRY(nativeSemanticsUpdate));
 
-  std::unique_ptr<Shell> shell =
-      CreateShell(std::move(settings), std::move(task_runners));
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
 
   ASSERT_TRUE(shell->IsSetup());
   auto configuration = RunConfiguration::InferFromSettings(settings);
@@ -86,7 +85,7 @@ TEST_F(SemanticsUpdateBuilderTest, CanHandleAttributedStrings) {
   });
 
   message_latch->Wait();
-  DestroyShell(std::move(shell), std::move(task_runners));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 }  // namespace testing

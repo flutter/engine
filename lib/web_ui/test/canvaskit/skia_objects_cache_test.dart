@@ -21,8 +21,7 @@ void main() {
 void testMain() {
   group('skia_objects_cache', () {
     _tests();
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 }
 
 void _tests() {
@@ -39,7 +38,7 @@ void _tests() {
   group(ManagedSkiaObject, () {
     test('implements create, cache, delete, resurrect, delete lifecycle', () {
       final FakeRasterizer fakeRasterizer = FakeRasterizer();
-      EnginePlatformDispatcher.instance.rasterizer = fakeRasterizer;
+      CanvasKitRenderer.instance.rasterizer = fakeRasterizer;
 
       // Trigger first create
       final TestSkiaObject testObject = TestSkiaObject();
@@ -317,8 +316,6 @@ void _tests() {
 ///
 /// Can be [clone]d such that the clones share the same ref counted box.
 class TestBoxWrapper implements StackTraceDebugger {
-  static int resurrectCount = 0;
-
   TestBoxWrapper() {
     if (assertionsEnabled) {
       _debugStackTrace = StackTrace.current;
@@ -336,6 +333,8 @@ class TestBoxWrapper implements StackTraceDebugger {
     }
     box.ref(this);
   }
+
+  static int resurrectCount = 0;
 
   @override
   StackTrace get debugStackTrace => _debugStackTrace;
@@ -393,13 +392,13 @@ class TestJsConstructor implements JsConstructor {
 }
 
 class TestSkiaObject extends ManagedSkiaObject<SkPaint> {
+  TestSkiaObject({this.isExpensive = false});
+
   int createDefaultCount = 0;
   int resurrectCount = 0;
   int deleteCount = 0;
 
   final bool isExpensive;
-
-  TestSkiaObject({this.isExpensive = false});
 
   @override
   SkPaint createDefault() {

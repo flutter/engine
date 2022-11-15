@@ -17,11 +17,12 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   auto runner = thread->GetTaskRunner();
   return runner;
 }
-}
+}  // namespace
 
 @interface VSyncClient (Testing)
 
 - (CADisplayLink*)getDisplayLink;
+- (void)onDisplayLink:(CADisplayLink*)link;
 
 @end
 
@@ -29,6 +30,26 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 @end
 
 @implementation VsyncWaiterIosTest
+
+- (void)testSetAllowPauseAfterVsyncCorrect {
+  auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
+  VSyncClient* vsyncClient = [[[VSyncClient alloc]
+      initWithTaskRunner:thread_task_runner
+                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
+      autorelease];
+  CADisplayLink* link = [vsyncClient getDisplayLink];
+  vsyncClient.allowPauseAfterVsync = NO;
+  [vsyncClient await];
+  [vsyncClient onDisplayLink:link];
+  XCTAssertFalse(link.isPaused);
+
+  vsyncClient.allowPauseAfterVsync = YES;
+  [vsyncClient await];
+  [vsyncClient onDisplayLink:link];
+  XCTAssertTrue(link.isPaused);
+
+  [vsyncClient release];
+}
 
 - (void)testSetCorrectVariableRefreshRates {
   auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
@@ -47,7 +68,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, maxFrameRate);
     XCTAssertEqual(link.preferredFrameRateRange.preferred, maxFrameRate);
     XCTAssertEqual(link.preferredFrameRateRange.minimum, maxFrameRate / 2);
-  } else if (@available(iOS 10.0, *)) {
+  } else {
     XCTAssertEqual(link.preferredFramesPerSecond, maxFrameRate);
   }
   [vsyncClient release];
@@ -70,7 +91,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, 0);
     XCTAssertEqual(link.preferredFrameRateRange.preferred, 0);
     XCTAssertEqual(link.preferredFrameRateRange.minimum, 0);
-  } else if (@available(iOS 10.0, *)) {
+  } else {
     XCTAssertEqual(link.preferredFramesPerSecond, 0);
   }
   [vsyncClient release];
@@ -89,9 +110,28 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
     XCTAssertEqual(link.preferredFrameRateRange.maximum, 0);
     XCTAssertEqual(link.preferredFrameRateRange.preferred, 0);
     XCTAssertEqual(link.preferredFrameRateRange.minimum, 0);
-  } else if (@available(iOS 10.0, *)) {
+  } else {
     XCTAssertEqual(link.preferredFramesPerSecond, 0);
   }
+  [vsyncClient release];
+}
+
+- (void)testAwaitAndPauseWillWorkCorrectly {
+  auto thread_task_runner = CreateNewThread("VsyncWaiterIosTest");
+  VSyncClient* vsyncClient = [[[VSyncClient alloc]
+      initWithTaskRunner:thread_task_runner
+                callback:[](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {}]
+      autorelease];
+
+  CADisplayLink* link = [vsyncClient getDisplayLink];
+  XCTAssertTrue(link.isPaused);
+
+  [vsyncClient await];
+  XCTAssertFalse(link.isPaused);
+
+  [vsyncClient pause];
+  XCTAssertTrue(link.isPaused);
+
   [vsyncClient release];
 }
 

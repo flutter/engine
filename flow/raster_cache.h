@@ -11,9 +11,13 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_complexity.h"
 #include "flutter/flow/raster_cache_key.h"
+#include "flutter/flow/raster_cache_util.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/trace_event.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkMatrix.h"
+#include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
@@ -48,7 +52,9 @@ class RasterCacheResult {
 };
 
 class Layer;
+class RasterCacheItem;
 struct PrerollContext;
+struct PaintContext;
 
 struct RasterCacheMetrics {
   /**
@@ -72,178 +78,79 @@ struct RasterCacheMetrics {
   size_t in_use_bytes = 0;
 
   /**
-   * The total cache entries that had images during this frame whether
-   * they were used in the frame or held memory during the frame and then
-   * were evicted after it ended.
+   * The total cache entries that had images during this frame.
    */
-  size_t total_count() const { return in_use_count + eviction_count; }
+  size_t total_count() const { return in_use_count; }
 
   /**
-   * The size of all of the cached images during this frame whether
-   * they were used in the frame or held memory during the frame and then
-   * were evicted after it ended.
+   * The size of all of the cached images during this frame.
    */
-  size_t total_bytes() const { return in_use_bytes + eviction_bytes; }
+  size_t total_bytes() const { return in_use_bytes; }
 };
 
+/**
+ * RasterCache is used to cache rasterized layers or display lists to improve
+ * performance.
+ *
+ * Life cycle of RasterCache methods:
+ * - Preroll stage
+ *   - LayerTree::Preroll - for each Layer in the tree:
+ *     - RasterCacheItem::PrerollSetup
+ *         At the start of each layer's preroll, add cache items to
+ *         `PrerollContext::raster_cached_entries`.
+ *     - RasterCacheItem::PrerollFinalize
+ *         At the end of each layer's preroll, may mark cache entries as
+ *         encountered by the current frame.
+ * - Paint stage
+ *   - RasterCache::EvictUnusedCacheEntries
+ *       Evict cached images that are no longer used.
+ *   - LayerTree::TryToPrepareRasterCache
+ *       Create cache image for each cache entry if it does not exist.
+ *   - LayerTree::Paint - for each layer in the tree:
+ *       If layers or display lists are cached as cached images, the method
+ *       `RasterCache::Draw` will be used to draw those cache images.
+ *   - RasterCache::EndFrame:
+ *       Computes used counts and memory then reports cache metrics.
+ */
 class RasterCache {
  public:
-  // The default max number of picture and display list raster caches to be
-  // generated per frame. Generating too many caches in one frame may cause jank
-  // on that frame. This limit allows us to throttle the cache and distribute
-  // the work across multiple frames.
-  static constexpr int kDefaultPictureAndDispLayListCacheLimitPerFrame = 3;
+  struct Context {
+    GrDirectContext* gr_context;
+    const SkColorSpace* dst_color_space;
+    const SkMatrix& matrix;
+    const SkRect& logical_rect;
+    const char* flow_type;
+  };
 
-  explicit RasterCache(size_t access_threshold = 3,
-                       size_t picture_and_display_list_cache_limit_per_frame =
-                           kDefaultPictureAndDispLayListCacheLimitPerFrame);
+  std::unique_ptr<RasterCacheResult> Rasterize(
+      const RasterCache::Context& context,
+      const std::function<void(SkCanvas*)>& draw_function,
+      const std::function<void(SkCanvas*, const SkRect& rect)>&
+          draw_checkerboard) const;
+
+  explicit RasterCache(
+      size_t access_threshold = 3,
+      size_t picture_and_display_list_cache_limit_per_frame =
+          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame);
 
   virtual ~RasterCache() = default;
 
-  /**
-   * @brief Rasterize a picture object and produce a RasterCacheResult
-   * to be stored in the cache.
-   *
-   * @param picture the SkPicture object to be cached.
-   * @param context the GrDirectContext used for rendering.
-   * @param ctm the transformation matrix used for rendering.
-   * @param dst_color_space the destination color space that the cached
-   *        rendering will be drawn into
-   * @param checkerboard a flag indicating whether or not a checkerboard
-   *        pattern should be rendered into the cached image for debug
-   *        analysis
-   * @return a RasterCacheResult that can draw the rendered picture into
-   *         the destination using a simple image blit
-   */
-  virtual std::unique_ptr<RasterCacheResult> RasterizePicture(
-      SkPicture* picture,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const;
-  virtual std::unique_ptr<RasterCacheResult> RasterizeDisplayList(
-      DisplayList* display_list,
-      GrDirectContext* context,
-      const SkMatrix& ctm,
-      SkColorSpace* dst_color_space,
-      bool checkerboard) const;
-
-  /**
-   * @brief Rasterize an engine Layer and produce a RasterCacheResult
-   * to be stored in the cache.
-   *
-   * @param context the PrerollContext containing important information
-   *        needed for rendering a layer.
-   * @param layer the Layer object to be cached.
-   * @param ctm the transformation matrix used for rendering.
-   * @param checkerboard a flag indicating whether or not a checkerboard
-   *        pattern should be rendered into the cached image for debug
-   *        analysis
-   * @return a RasterCacheResult that can draw the rendered layer into
-   *         the destination using a simple image blit
-   */
-  virtual std::unique_ptr<RasterCacheResult> RasterizeLayer(
-      PrerollContext* context,
-      Layer* layer,
-      RasterCacheLayerStrategy strategy,
-      const SkMatrix& ctm,
-      bool checkerboard) const;
-
-  static SkIRect GetDeviceBounds(const SkRect& rect, const SkMatrix& ctm) {
-    SkRect device_rect;
-    ctm.mapRect(&device_rect, rect);
-    SkIRect bounds;
-    device_rect.roundOut(&bounds);
-    return bounds;
-  }
-
-  /**
-   * @brief Snap the translation components of the matrix to integers.
-   *
-   * The snapping will only happen if the matrix only has scale and translation
-   * transformations.
-   *
-   * @param ctm the current transformation matrix.
-   * @return SkMatrix the snapped transformation matrix.
-   */
-  static SkMatrix GetIntegralTransCTM(const SkMatrix& ctm) {
-    // Avoid integral snapping if the matrix has complex transformation to avoid
-    // the artifact observed in https://github.com/flutter/flutter/issues/41654.
-    if (!ctm.isScaleTranslate()) {
-      return ctm;
-    }
-    SkMatrix result = ctm;
-    result[SkMatrix::kMTransX] = SkScalarRoundToScalar(ctm.getTranslateX());
-    result[SkMatrix::kMTransY] = SkScalarRoundToScalar(ctm.getTranslateY());
-    return result;
-  }
-
-  // Return true if the cache is generated.
-  //
-  // We may return false and not generate the cache if
-  // 1. There are too many pictures to be cached in the current frame.
-  //    (See also kDefaultPictureAndDispLayListCacheLimitPerFrame.)
-  // 2. The picture is not worth rasterizing
-  // 3. The matrix is singular
-  // 4. The picture is accessed too few times
-  bool Prepare(PrerollContext* context,
-               SkPicture* picture,
-               bool is_complex,
-               bool will_change,
-               const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
-  bool Prepare(PrerollContext* context,
-               DisplayList* display_list,
-               bool is_complex,
-               bool will_change,
-               const SkMatrix& untranslated_matrix,
-               const SkPoint& offset = SkPoint());
-
-  // If there is cache entry for this picture, display list or layer, mark it as
-  // used for this frame in order to not get evicted. This is needed during
-  // partial repaint for layers that are outside of current clip and are culled
-  // away.
-  void Touch(SkPicture* picture, const SkMatrix& transformation_matrix);
-  void Touch(DisplayList* display_list, const SkMatrix& transformation_matrix);
-  void Touch(
-      Layer* layer,
-      const SkMatrix& ctm,
-      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer);
-
-  void Prepare(
-      PrerollContext* context,
-      Layer* layer,
-      const SkMatrix& ctm,
-      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer);
-
-  // Find the raster cache for the picture and draw it to the canvas.
-  //
-  // Return true if it's found and drawn.
-  bool Draw(const SkPicture& picture,
+  // Draws this item if it should be rendered from the cache and returns
+  // true iff it was successfully drawn. Typically this should only fail
+  // if the item was disabled due to conditions discovered during |Preroll|
+  // or if the attempt to populate the entry failed due to bounds overflow
+  // conditions.
+  bool Draw(const RasterCacheKeyID& id,
             SkCanvas& canvas,
-            const SkPaint* paint = nullptr) const;
+            const SkPaint* paint) const;
 
-  // Find the raster cache for the display list and draw it to the canvas.
-  //
-  // Return true if it's found and drawn.
-  bool Draw(const DisplayList& display_list,
-            SkCanvas& canvas,
-            const SkPaint* paint = nullptr) const;
+  bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
-  // Find the raster cache for the layer and draw it to the canvas.
-  //
-  // Additional paint can be given to change how the raster cache is drawn
-  // (e.g., draw the raster cache with some opacity).
-  //
-  // Return true if the layer raster cache is found and drawn.
-  bool Draw(
-      const Layer* layer,
-      SkCanvas& canvas,
-      RasterCacheLayerStrategy strategey = RasterCacheLayerStrategy::kLayer,
-      const SkPaint* paint = nullptr) const;
+  void BeginFrame();
 
-  void PrepareNewFrame();
-  void CleanupAfterFrame();
+  void EvictUnusedCacheEntries();
+
+  void EndFrame();
 
   void Clear();
 
@@ -298,49 +205,61 @@ class RasterCache {
    */
   int access_threshold() const { return access_threshold_; }
 
+  bool GenerateNewCacheInThisFrame() const {
+    // Disabling caching when access_threshold is zero is historic behavior.
+    return access_threshold_ != 0 && display_list_cached_this_frame_ <
+                                         display_list_cache_limit_per_frame_;
+  }
+
+  /**
+   * @brief The entry whose RasterCacheKey is generated by RasterCacheKeyID
+   * and matrix is marked as encountered by the current frame. The entry
+   * will be created if it does not exist. Optionally the entry will be marked
+   * as visible in the current frame if the caller determines that it
+   * intersects the cull rect. The access_count of the entry will be
+   * increased if it is visible, or if it was ever visible.
+   * @return the number of times the entry has been hit since it was created.
+   * For a new entry that will be 1 if it is visible, or zero if non-visible.
+   */
+  int MarkSeen(const RasterCacheKeyID& id,
+               const SkMatrix& matrix,
+               bool visible) const;
+
+  /**
+   * Returns the access count (i.e. accesses_since_visible) for the given
+   * entry in the cache, or -1 if no such entry exists.
+   */
+  int GetAccessCount(const RasterCacheKeyID& id, const SkMatrix& matrix) const;
+
+  bool UpdateCacheEntry(
+      const RasterCacheKeyID& id,
+      const Context& raster_cache_context,
+      const std::function<void(SkCanvas*)>& render_function) const;
+
  private:
   struct Entry {
-    bool used_this_frame = false;
-    size_t access_count = 0;
+    bool encountered_this_frame = false;
+    bool visible_this_frame = false;
+    size_t accesses_since_visible = 0;
     std::unique_ptr<RasterCacheResult> image;
   };
 
-  void Touch(const RasterCacheKey& cache_key);
+  void UpdateMetrics();
 
-  bool Draw(const RasterCacheKey& cache_key,
-            SkCanvas& canvas,
-            const SkPaint* paint) const;
-
-  void SweepOneCacheAfterFrame(RasterCacheKey::Map<Entry>& cache,
-                               RasterCacheMetrics& picture_metrics,
-                               RasterCacheMetrics& layer_metrics);
-
-  bool GenerateNewCacheInThisFrame() const {
-    // Disabling caching when access_threshold is zero is historic behavior.
-    return access_threshold_ != 0 &&
-           picture_cached_this_frame_ + display_list_cached_this_frame_ <
-               picture_and_display_list_cache_limit_per_frame_;
-  }
-
-  std::optional<RasterCacheKey> TryToMakeRasterCacheKeyForLayer(
-      const Layer* layer,
-      RasterCacheLayerStrategy strategy,
-      const SkMatrix& ctm) const;
-
-  const SkRect& GetPaintBoundsFromLayer(
-      Layer* layer,
-      RasterCacheLayerStrategy strategy) const;
+  RasterCacheMetrics& GetMetricsForKind(RasterCacheKeyKind kind);
 
   const size_t access_threshold_;
-  const size_t picture_and_display_list_cache_limit_per_frame_;
-  size_t picture_cached_this_frame_ = 0;
-  size_t display_list_cached_this_frame_ = 0;
+  const size_t display_list_cache_limit_per_frame_;
+  mutable size_t display_list_cached_this_frame_ = 0;
   RasterCacheMetrics layer_metrics_;
   RasterCacheMetrics picture_metrics_;
   mutable RasterCacheKey::Map<Entry> cache_;
   bool checkerboard_images_;
 
   void TraceStatsToTimeline() const;
+
+  friend class RasterCacheItem;
+  friend class LayerRasterCacheItem;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RasterCache);
 };

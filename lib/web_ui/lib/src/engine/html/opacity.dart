@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'surface.dart';
@@ -13,8 +12,7 @@ import 'surface.dart';
 /// A surface that makes its children transparent.
 class PersistedOpacity extends PersistedContainerSurface
     implements ui.OpacityEngineLayer {
-  PersistedOpacity(PersistedOpacity? oldLayer, this.alpha, this.offset)
-      : super(oldLayer);
+  PersistedOpacity(PersistedOpacity? super.oldLayer, this.alpha, this.offset);
 
   final int alpha;
   final ui.Offset offset;
@@ -42,8 +40,8 @@ class PersistedOpacity extends PersistedContainerSurface
       Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override
-  html.Element createElement() {
-    final html.Element element = html.document.createElement('flt-opacity');
+  DomElement createElement() {
+    final DomElement element = domDocument.createElement('flt-opacity');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;
@@ -51,7 +49,7 @@ class PersistedOpacity extends PersistedContainerSurface
 
   @override
   void apply() {
-    final html.Element element = rootElement!;
+    final DomElement element = rootElement!;
     setElementStyle(element, 'opacity', '${alpha / 255}');
     element.style.transform = 'translate(${offset.dx}px, ${offset.dy}px)';
   }

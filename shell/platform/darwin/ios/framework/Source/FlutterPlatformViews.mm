@@ -17,9 +17,24 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
-#import "flutter/shell/platform/darwin/ios/ios_surface_gl.h"
+
+@implementation UIView (FirstResponder)
+- (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
+  if (self.isFirstResponder) {
+    return YES;
+  }
+  for (UIView* subview in self.subviews) {
+    if (subview.flt_hasFirstResponderInViewHierarchySubtree) {
+      return YES;
+    }
+  }
+  return NO;
+}
+@end
 
 namespace flutter {
+// Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
+BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
@@ -68,8 +83,8 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
     // |    |    wrapper   |    |  == mask =>  | overlay_view |
     // |    +--------------+    |              +--------------+
     // +------------------------+
-    overlay_view_wrapper.get().clipsToBounds = YES;
-    [overlay_view_wrapper.get() addSubview:overlay_view];
+    layer->overlay_view_wrapper.get().clipsToBounds = YES;
+    [layer->overlay_view_wrapper.get() addSubview:layer->overlay_view];
     layers_.push_back(layer);
   }
   std::shared_ptr<FlutterPlatformViewLayer> layer = layers_[available_layer_index_];
@@ -129,7 +144,8 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
   NSDictionary<NSString*, id>* args = [call arguments];
 
   long viewId = [args[@"id"] longValue];
-  std::string viewType([args[@"viewType"] UTF8String]);
+  NSString* viewTypeString = args[@"viewType"];
+  std::string viewType(viewTypeString.UTF8String);
 
   if (views_.count(viewId) != 0) {
     result([FlutterError errorWithCode:@"recreating_view"
@@ -139,10 +155,18 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
 
   NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
   if (factory == nil) {
-    result([FlutterError errorWithCode:@"unregistered_view_type"
-                               message:@"trying to create a view with an unregistered type"
-                               details:[NSString stringWithFormat:@"unregistered view type: '%@'",
-                                                                  args[@"viewType"]]]);
+    result([FlutterError
+        errorWithCode:@"unregistered_view_type"
+              message:[NSString stringWithFormat:@"A UIKitView widget is trying to create a "
+                                                 @"PlatformView with an unregistered type: < %@ >",
+                                                 viewTypeString]
+              details:@"If you are the author of the PlatformView, make sure `registerViewFactory` "
+                      @"is invoked.\n"
+                      @"See: "
+                      @"https://docs.flutter.dev/development/platform-integration/"
+                      @"platform-views#on-the-platform-side-1 for more details.\n"
+                      @"If you are not the author of the PlatformView, make sure to call "
+                      @"`GeneratedPluginRegistrant.register`."]);
     return;
   }
 
@@ -255,7 +279,7 @@ void FlutterPlatformViewsController::CancelFrame() {
 // Make this method check if there are pending view operations instead.
 // Also rename it to `HasPendingViewOperations`.
 bool FlutterPlatformViewsController::HasPlatformViewThisOrNextFrame() {
-  return composition_order_.size() > 0 || active_composition_order_.size() > 0;
+  return !composition_order_.empty() || !active_composition_order_.empty();
 }
 
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
@@ -277,7 +301,6 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
     // Eventually, the frame is submitted once this method returns `kSuccess`.
     // At that point, the raster tasks are handled on the platform thread.
     CancelFrame();
-    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
     return PostPrerollResult::kSkipAndRetryFrame;
   }
   // If the post preroll action is successful, we will display platform views in the current frame.
@@ -289,17 +312,39 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
   return PostPrerollResult::kSuccess;
 }
 
+void FlutterPlatformViewsController::EndFrame(
+    bool should_resubmit_frame,
+    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+  if (should_resubmit_frame) {
+    raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
+  }
+}
+
+void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter,
+    const SkRect& filter_rect) {
+  for (int64_t id : visited_platform_views_) {
+    EmbeddedViewParams params = current_composition_params_[id];
+    params.PushImageFilter(filter, filter_rect);
+    current_composition_params_[id] = params;
+  }
+}
+
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
     int view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   // All the CATransactions should be committed by the end of the last frame,
   // so catransaction_added_ must be false.
   FML_DCHECK(!catransaction_added_);
-  picture_recorders_[view_id] = std::make_unique<SkPictureRecorder>();
 
-  auto rtree_factory = RTreeFactory();
-  platform_view_rtrees_[view_id] = rtree_factory.getInstance();
-  picture_recorders_[view_id]->beginRecording(SkRect::Make(frame_size_), &rtree_factory);
+  SkRect view_bounds = SkRect::Make(frame_size_);
+  std::unique_ptr<EmbedderViewSlice> view;
+  if (params->display_list_enabled()) {
+    view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+  } else {
+    view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
+  }
+  slices_.insert_or_assign(view_id, std::move(view));
 
   composition_order_.push_back(view_id);
 
@@ -319,13 +364,31 @@ UIView* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
   return [touch_interceptors_[view_id].get() embeddedView];
 }
 
+long FlutterPlatformViewsController::FindFirstResponderPlatformViewId() {
+  for (auto const& [id, root_view] : root_views_) {
+    if ((UIView*)(root_view.get()).flt_hasFirstResponderInViewHierarchySubtree) {
+      return id;
+    }
+  }
+  return -1;
+}
+
 std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
   std::vector<SkCanvas*> canvases;
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t view_id = composition_order_[i];
-    canvases.push_back(picture_recorders_[view_id]->getRecordingCanvas());
+    canvases.push_back(slices_[view_id]->canvas());
   }
   return canvases;
+}
+
+std::vector<DisplayListBuilder*> FlutterPlatformViewsController::GetCurrentBuilders() {
+  std::vector<DisplayListBuilder*> builders;
+  for (size_t i = 0; i < composition_order_.size(); i++) {
+    int64_t view_id = composition_order_[i];
+    builders.push_back(slices_[view_id]->builder());
+  }
+  return builders;
 }
 
 int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
@@ -363,35 +426,76 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                CGRectGetWidth(flutter_view.bounds),
                                CGRectGetHeight(flutter_view.bounds))] autorelease];
 
+  NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
+
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
-      case transform: {
+      case kTransform: {
         CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
         finalTransform = CATransform3DConcat(transform, finalTransform);
         break;
       }
-      case clip_rect:
+      case kClipRect:
         [maskView clipRect:(*iter)->GetRect() matrix:finalTransform];
         break;
-      case clip_rrect:
+      case kClipRRect:
         [maskView clipRRect:(*iter)->GetRRect() matrix:finalTransform];
         break;
-      case clip_path:
+      case kClipPath:
         [maskView clipPath:(*iter)->GetPath() matrix:finalTransform];
         break;
-      case opacity:
+      case kOpacity:
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
+      case kBackdropFilter: {
+        // Only support DlBlurImageFilter for BackdropFilter.
+        if (!canApplyBlurBackdrop || !(*iter)->GetFilterMutation().GetFilter().asBlur()) {
+          break;
+        }
+        CGRect filterRect =
+            flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+        // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
+        // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
+        // filtered.
+        if (CGRectIsNull(CGRectIntersection(filterRect, clipView.frame))) {
+          break;
+        }
+        CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
+        CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
+        // sigma_x is arbitrarily chosen as the radius value because Quartz sets
+        // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
+        // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
+        // to blur the PlatformView.
+        CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
+        UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+            initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+        PlatformViewFilter* filter =
+            [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
+                                            blurRadius:blurRadius
+                                      visualEffectView:visualEffectView] autorelease];
+        if (!filter) {
+          canApplyBlurBackdrop = NO;
+        } else {
+          [blurFilters addObject:filter];
+        }
+        break;
+      }
     }
     ++iter;
   }
+
+  if (canApplyBlurBackdrop) {
+    [clipView applyBlurBackdropFilters:blurFilters];
+  }
+
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.
-  // So we need to revese this translate so the platform view can layout at the correct offset.
+  // Thus, this translate needs to be reversed so the platform view can layout at the correct
+  // offset.
   //
-  // Note that we don't apply this transform matrix the clippings because clippings happen on the
-  // mask view, whose origin is always (0,0) to the flutter_view.
+  // Note that the transforms are not applied to the clipping paths because clipping paths happen on
+  // the mask view, whose origin is always (0,0) to the flutter_view.
   CATransform3D reverseTranslate =
       CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
   embedded_view.layer.transform = CATransform3DConcat(finalTransform, reverseTranslate);
@@ -401,7 +505,25 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
-  UIView* touchInterceptor = touch_interceptors_[view_id].get();
+  FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  FML_DCHECK(CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero));
+  if (non_zero_origin_views_.find(view_id) == non_zero_origin_views_.end() &&
+      !CGPointEqualToPoint([touchInterceptor embeddedView].frame.origin, CGPointZero)) {
+    non_zero_origin_views_.insert(view_id);
+    NSLog(
+        @"A Embedded PlatformView's origin is not CGPointZero.\n"
+         "  View id: %@\n"
+         "  View info: \n %@ \n"
+         "A non-zero origin might cause undefined behavior.\n"
+         "See https://github.com/flutter/flutter/issues/109700 for more details.\n"
+         "If you are the author of the PlatformView, please update the implementation of the "
+         "PlatformView to have a (0, 0) origin.\n"
+         "If you have a valid case of using a non-zero origin, "
+         "please leave a comment at https://github.com/flutter/flutter/issues/109700 with details.",
+        @(view_id), [touchInterceptor embeddedView]);
+  }
+#endif
   touchInterceptor.layer.transform = CATransform3DIdentity;
   touchInterceptor.frame = frame;
   touchInterceptor.alpha = 1;
@@ -419,16 +541,16 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   ApplyMutators(mutatorStack, touchInterceptor);
 }
 
-SkCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
+EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
-    return picture_recorders_[view_id]->getRecordingCanvas();
+    return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
   }
   CompositeWithParams(view_id, current_composition_params_[view_id]);
   views_to_recomposite_.erase(view_id);
-  return picture_recorders_[view_id]->getRecordingCanvas();
+  return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
 }
 
 void FlutterPlatformViewsController::Reset() {
@@ -441,12 +563,12 @@ void FlutterPlatformViewsController::Reset() {
   views_.clear();
   composition_order_.clear();
   active_composition_order_.clear();
-  picture_recorders_.clear();
-  platform_view_rtrees_.clear();
+  slices_.clear();
   current_composition_params_.clear();
   clip_count_.clear();
   views_to_recomposite_.clear();
   layer_pool_->RecycleLayers();
+  visited_platform_views_.clear();
 }
 
 SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
@@ -473,12 +595,15 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   DisposeViews();
 
   SkCanvas* background_canvas = frame->SkiaCanvas();
+  DisplayListBuilder* background_builder = frame->GetDisplayListBuilder().get();
 
   // Resolve all pending GPU operations before allocating a new surface.
   background_canvas->flush();
+
   // Clipping the background canvas before drawing the picture recorders requires to
   // save and restore the clip context.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
 
@@ -487,8 +612,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   for (size_t i = 0; i < num_platform_views; i++) {
     int64_t platform_view_id = composition_order_[i];
-    sk_sp<RTree> rtree = platform_view_rtrees_[platform_view_id];
-    sk_sp<SkPicture> picture = picture_recorders_[platform_view_id]->finishRecordingAsPicture();
+    EmbedderViewSlice* slice = slices_[platform_view_id].get();
+    slice->end_recording();
 
     // Check if the current picture contains overlays that intersect with the
     // current platform view or any of the previous platform views.
@@ -496,7 +621,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       int64_t current_platform_view_id = composition_order_[j - 1];
       SkRect platform_view_rect = GetPlatformViewRect(current_platform_view_id);
       std::list<SkRect> intersection_rects =
-          rtree->searchNonOverlappingDrawnRects(platform_view_rect);
+          slice->searchNonOverlappingDrawnRects(platform_view_rect);
       auto allocation_size = intersection_rects.size();
 
       // For testing purposes, the overlay id is used to find the overlay view.
@@ -533,7 +658,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         // Get a new host layer.
         std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
                                                                    ios_context,               //
-                                                                   picture,                   //
+                                                                   slice,                     //
                                                                    joined_rect,               //
                                                                    current_platform_view_id,  //
                                                                    overlay_id                 //
@@ -543,8 +668,16 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         overlay_id++;
       }
     }
-    background_canvas->drawPicture(picture);
+    if (background_builder) {
+      slice->render_into(background_builder);
+    } else {
+      slice->render_into(background_canvas);
+    }
   }
+
+  // Manually trigger the SkAutoCanvasRestore before we submit the frame
+  save.restore();
+
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
   RemoveUnusedLayers();
@@ -596,7 +729,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
     std::shared_ptr<IOSContext> ios_context,
-    sk_sp<SkPicture> picture,
+    EmbedderViewSlice* slice,
     SkRect rect,
     int64_t view_id,
     int64_t overlay_id) {
@@ -609,14 +742,18 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   // This wrapper view masks the overlay view.
   overlay_view_wrapper.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                           rect.width() / screenScale, rect.height() / screenScale);
-  // Set a unique view identifier, so the overlay wrapper can be identified in unit tests.
+  // Set a unique view identifier, so the overlay_view_wrapper can be identified in XCUITests.
   overlay_view_wrapper.accessibilityIdentifier =
       [NSString stringWithFormat:@"platform_view[%lld].overlay[%lld]", view_id, overlay_id];
 
   UIView* overlay_view = layer->overlay_view.get();
   // Set the size of the overlay view.
   // This size is equal to the device screen size.
-  overlay_view.frame = flutter_view_.get().bounds;
+  overlay_view.frame = [flutter_view_.get() convertRect:flutter_view_.get().bounds
+                                                 toView:overlay_view_wrapper];
+  // Set a unique view identifier, so the overlay_view can be identified in XCUITests.
+  overlay_view.accessibilityIdentifier =
+      [NSString stringWithFormat:@"platform_view[%lld].overlay_view[%lld]", view_id, overlay_id];
 
   std::unique_ptr<SurfaceFrame> frame = layer->surface->AcquireFrame(frame_size_);
   // If frame is null, AcquireFrame already printed out an error message.
@@ -625,10 +762,11 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   }
   SkCanvas* overlay_canvas = frame->SkiaCanvas();
   overlay_canvas->clear(SK_ColorTRANSPARENT);
-  // Offset the picture since its absolute position on the scene is determined
-  // by the position of the overlay view.
-  overlay_canvas->translate(-rect.x(), -rect.y());
-  overlay_canvas->drawPicture(picture);
+  if (frame->GetDisplayListBuilder()) {
+    slice->render_into(frame->GetDisplayListBuilder().get());
+  } else {
+    slice->render_into(overlay_canvas);
+  }
 
   layer->did_submit_last_frame = frame->Submit();
   return layer;
@@ -689,8 +827,9 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
 }
 
 void FlutterPlatformViewsController::ResetFrameState() {
-  picture_recorders_.clear();
+  slices_.clear();
   composition_order_.clear();
+  visited_platform_views_.clear();
 }
 
 }  // namespace flutter

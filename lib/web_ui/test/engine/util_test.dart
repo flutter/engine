@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -14,7 +13,7 @@ final Float32List identityTransform = Matrix4.identity().storage;
 final Float32List xTranslation = (Matrix4.identity()..translate(10)).storage;
 final Float32List yTranslation = (Matrix4.identity()..translate(0, 10)).storage;
 final Float32List zTranslation = (Matrix4.identity()..translate(0, 0, 10)).storage;
-final Float32List scaleAndTranslate2d = (Matrix4.identity()..scale(2, 3, 1)..translate(4, 5, 0)).storage;
+final Float32List scaleAndTranslate2d = (Matrix4.identity()..scale(2, 3, 1)..translate(4, 5)).storage;
 final Float32List rotation2d = (Matrix4.identity()..rotateZ(0.2)).storage;
 
 void main() {
@@ -107,13 +106,13 @@ void testMain() {
   });
 
   test('can set style properties on elements', () {
-    final html.Element element = html.document.createElement('div');
+    final DomElement element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'red');
     expect(element.style.color, 'red');
   });
 
   test('can remove style properties from elements', () {
-    final html.Element element = html.document.createElement('div');
+    final DomElement element = domDocument.createElement('div');
     setElementStyle(element, 'color', 'blue');
     expect(element.style.color, 'blue');
     setElementStyle(element, 'color', null);

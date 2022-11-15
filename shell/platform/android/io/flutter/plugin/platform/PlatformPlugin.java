@@ -4,6 +4,7 @@
 
 package io.flutter.plugin.platform;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.ActivityManager.TaskDescription;
 import android.content.ClipData;
@@ -223,19 +224,29 @@ public class PlatformPlugin {
         new View.OnSystemUiVisibilityChangeListener() {
           @Override
           public void onSystemUiVisibilityChange(int visibility) {
-            if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
-              // The system bars are visible. Make any desired adjustments to
-              // your UI, such as showing the action bar or other navigational
-              // controls. Another common action is to set a timer to dismiss
-              // the system bars and restore the fullscreen mode that was
-              // previously enabled.
-              platformChannel.systemChromeChanged(false);
-            } else {
-              // The system bars are NOT visible. Make any desired adjustments
-              // to your UI, such as hiding the action bar or other
-              // navigational controls.
-              platformChannel.systemChromeChanged(true);
-            }
+            // `platformChannel.systemChromeChanged` may trigger a callback that eventually results
+            // in a call to `setSystemUiVisibility`.
+            // `setSystemUiVisibility` must not be called in the same frame as when
+            // `onSystemUiVisibilityChange` is received though.
+            //
+            // As such, post `platformChannel.systemChromeChanged` to the view handler to ensure
+            // that downstream callbacks are trigged on the next frame.
+            decorView.post(
+                () -> {
+                  if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
+                    // The system bars are visible. Make any desired adjustments to
+                    // your UI, such as showing the action bar or other navigational
+                    // controls. Another common action is to set a timer to dismiss
+                    // the system bars and restore the fullscreen mode that was
+                    // previously enabled.
+                    platformChannel.systemChromeChanged(true);
+                  } else {
+                    // The system bars are NOT visible. Make any desired adjustments
+                    // to your UI, such as hiding the action bar or other
+                    // navigational controls.
+                    platformChannel.systemChromeChanged(false);
+                  }
+                });
           }
         });
   }
@@ -243,8 +254,7 @@ public class PlatformPlugin {
   private void setSystemChromeEnabledSystemUIMode(PlatformChannel.SystemUiMode systemUiMode) {
     int enabledOverlays;
 
-    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+    if (systemUiMode == PlatformChannel.SystemUiMode.LEAN_BACK) {
       // LEAN BACK
       // Available starting at SDK 16
       // Should not show overlays, tap to reveal overlays, needs onChange callback
@@ -364,6 +374,7 @@ public class PlatformPlugin {
   }
 
   @SuppressWarnings("deprecation")
+  @TargetApi(21)
   private void setSystemChromeSystemUIOverlayStyle(
       PlatformChannel.SystemChromeStyle systemChromeStyle) {
     Window window = activity.getWindow();

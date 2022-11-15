@@ -26,7 +26,8 @@ TEST(MallocMapping, MoveConstructor) {
   MallocMapping moved = std::move(mapping);
 
   ASSERT_EQ(nullptr,
-            mapping.GetMapping());  // NOLINT(clang-analyzer-cplusplus.Move)
+            mapping.GetMapping());  // NOLINT(clang-analyzer-cplusplus.Move,
+                                    // bugprone-use-after-move)
   ASSERT_EQ(0u, mapping.GetSize());
   ASSERT_NE(nullptr, moved.GetMapping());
   ASSERT_EQ(length, moved.GetSize());
@@ -58,6 +59,12 @@ TEST(MallocMapping, IsDontNeedSafe) {
   MallocMapping mapping(reinterpret_cast<uint8_t*>(malloc(length)), length);
   ASSERT_NE(nullptr, mapping.GetMapping());
   ASSERT_FALSE(mapping.IsDontNeedSafe());
+}
+
+TEST(MallocMapping, CopySizeZero) {
+  char ch = 'a';
+  MallocMapping mapping = MallocMapping::Copy(&ch, &ch);
+  ASSERT_EQ(0u, mapping.GetSize());
 }
 
 }  // namespace fml

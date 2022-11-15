@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/gles/reactor_gles.h"
 #include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
@@ -19,10 +20,25 @@ class PipelineLibraryGLES final : public PipelineLibrary {
  private:
   friend ContextGLES;
 
-  PipelineLibraryGLES();
+  ReactorGLES::Ref reactor_;
+  PipelineMap pipelines_;
+
+  PipelineLibraryGLES(ReactorGLES::Ref reactor);
 
   // |PipelineLibrary|
-  PipelineFuture GetRenderPipeline(PipelineDescriptor descriptor) override;
+  bool IsValid() const override;
+
+  // |PipelineLibrary|
+  PipelineFuture<PipelineDescriptor> GetPipeline(
+      PipelineDescriptor descriptor) override;
+
+  // |PipelineLibrary|
+  PipelineFuture<ComputePipelineDescriptor> GetPipeline(
+      ComputePipelineDescriptor descriptor) override;
+
+  // |PipelineLibrary|
+  void RemovePipelinesWithEntryPoint(
+      std::shared_ptr<const ShaderFunction> function) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PipelineLibraryGLES);
 };

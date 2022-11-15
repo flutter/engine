@@ -240,7 +240,7 @@ class PointerDataConverter {
       print('>> device=$device change=$change buttons=$buttons');
     }
     final bool isDown = buttons != 0;
-    assert(change != null); // ignore: unnecessary_null_comparison
+    assert(change != null);
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
       switch (change) {
@@ -623,6 +623,8 @@ class PointerDataConverter {
     } else {
       switch (signalKind) {
         case ui.PointerSignalKind.scroll:
+        case ui.PointerSignalKind.scrollInertiaCancel:
+        case ui.PointerSignalKind.scale:
           final bool alreadyAdded = _pointers.containsKey(device);
           _ensureStateForPointer(device, physicalX, physicalY);
           if (!alreadyAdded) {

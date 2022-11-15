@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show utf8, LineSplitter;
+import 'dart:convert' show LineSplitter, utf8;
 import 'dart:io' as io;
 
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as path;
 import 'package:process_runner/process_runner.dart';
+
+import 'options.dart';
 
 /// The url prefix for issues that must be attached to the directive in files
 /// that disables linting.
@@ -129,12 +131,14 @@ class Command {
   }
 
   /// The job for the process runner for the lint needed for this command.
-  WorkerJob createLintJob(String? checks, bool fix) {
+  WorkerJob createLintJob(Options options) {
     final List<String> args = <String>[
       filePath,
-      if (checks != null)
-        checks,
-      if (fix) ...<String>[
+      if (options.warningsAsErrors != null)
+        '--warnings-as-errors=${options.warningsAsErrors}',
+      if (options.checks != null)
+        options.checks!,
+      if (options.fix) ...<String>[
         '--fix',
         '--format-style=file',
       ],
@@ -145,6 +149,7 @@ class Command {
       <String>[tidyPath, ...args],
       workingDirectory: directory,
       name: 'clang-tidy on $filePath',
+      printOutput: options.verbose,
     );
   }
 }

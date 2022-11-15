@@ -12,10 +12,6 @@
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
 
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-#include "flutter/flow/raster_cache.h"
-#endif
-
 namespace flutter {
 namespace testing {
 
@@ -96,15 +92,24 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
        MockCanvas::DrawCall{
            1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-       MockCanvas::DrawCall{
-           1, MockCanvas::SetMatrixData{SkM44(
-                  RasterCache::GetIntegralTransCTM(layer_offset_matrix))}},
-#endif
        MockCanvas::DrawCall{
            1, MockCanvas::DrawRectData{picture_bounds, SkPaint()}},
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
+}
+
+TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
+  const SkPoint layer_offset = SkPoint::Make(10, 10);
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  auto display_list = builder.Build();
+  auto layer = std::make_shared<DisplayListLayer>(
+      layer_offset, SkiaGPUObject(display_list, unref_queue()), true, false);
+
+  SkRect original_cull_rect = preroll_context()->cull_rect;
+  use_mock_raster_cache();
+  layer->Preroll(preroll_context(), SkMatrix::I());
+  ASSERT_EQ(preroll_context()->cull_rect, original_cull_rect);
 }
 
 TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
@@ -137,29 +142,15 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
 
   auto save_layer_bounds =
       picture_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
-  auto opacity_integral_matrix =
-      RasterCache::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
-  SkMatrix layer_offset_matrix = opacity_integral_matrix;
-  layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
-  auto layer_offset_integral_matrix =
-      RasterCache::GetIntegralTransCTM(layer_offset_matrix);
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(opacity_offset.fX, opacity_offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integral_matrix);
-#endif
       /* display_list_layer::Paint() */ {
         expected_builder.save();
         {
           expected_builder.translate(layer_offset.fX, layer_offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-          expected_builder.transformReset();
-          expected_builder.transform(layer_offset_integral_matrix);
-#endif
           expected_builder.setColor(opacity_alpha << 24);
           expected_builder.saveLayer(&save_layer_bounds, true);
           /* display_list contents */ {  //
@@ -214,21 +205,11 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
   auto save_layer_bounds =
       display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
   save_layer_bounds.roundOut(&save_layer_bounds);
-  auto opacity_integral_matrix =
-      RasterCache::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
-  SkMatrix layer_offset_matrix = opacity_integral_matrix;
-  layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
-  auto layer_offset_integral_matrix =
-      RasterCache::GetIntegralTransCTM(layer_offset_matrix);
   DisplayListBuilder expected_builder;
   /* opacity_layer::Paint() */ {
     expected_builder.save();
     {
       expected_builder.translate(opacity_offset.fX, opacity_offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-      expected_builder.transformReset();
-      expected_builder.transform(opacity_integral_matrix);
-#endif
       expected_builder.setColor(opacity_alpha << 24);
       expected_builder.saveLayer(&save_layer_bounds, true);
       {
@@ -236,10 +217,6 @@ TEST_F(DisplayListLayerTest, IncompatibleDisplayListOpacityInheritance) {
           expected_builder.save();
           {
             expected_builder.translate(layer_offset.fX, layer_offset.fY);
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-            expected_builder.transformReset();
-            expected_builder.transform(layer_offset_integral_matrix);
-#endif
             expected_builder.drawDisplayList(child_display_list);
           }
           expected_builder.restore();
@@ -275,9 +252,9 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   EXPECT_FALSE(context->subtree_can_inherit_opacity);
 
   // Pump the DisplayListLayer until it is ready to cache its DL
-  display_list_layer->Paint(paint_context());
-  display_list_layer->Paint(paint_context());
-  display_list_layer->Paint(paint_context());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
+  display_list_layer->Preroll(preroll_context(), SkMatrix());
 
   int opacity_alpha = 0x7F;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
@@ -302,11 +279,11 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   //       display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
   //   save_layer_bounds.roundOut(&save_layer_bounds);
   //   auto opacity_integral_matrix =
-  //       RasterCache::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
+  //       RasterCacheUtil::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
   //   SkMatrix layer_offset_matrix = opacity_integral_matrix;
   //   layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
   //   auto layer_offset_integral_matrix =
-  //       RasterCache::GetIntegralTransCTM(layer_offset_matrix);
+  //       RasterCacheUtil::GetIntegralTransCTM(layer_offset_matrix);
   //   // Using a recorder instead of a DisplayListBuilder so we can hand it
   //   // off to the RasterCache::Draw() method
   //   DisplayListCanvasRecorder recorder(SkRect::MakeWH(1000, 1000));
@@ -314,18 +291,10 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   //     recorder.save();
   //     {
   //       recorder.translate(opacity_offset.fX, opacity_offset.fY);
-  // #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  //       recorder.resetMatrix();
-  //       recorder.concat(opacity_integral_matrix);
-  // #endif
   //       /* display_list_layer::Paint() */ {
   //         recorder.save();
   //         {
   //           recorder.translate(layer_offset.fX, layer_offset.fY);
-  // #ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  //           recorder.resetMatrix();
-  //           recorder.concat(layer_offset_integral_matrix);
-  // #endif
   //           SkPaint p;
   //           p.setAlpha(opacity_alpha);
   //           context->raster_cache->Draw(*display_list, recorder, &p);
@@ -370,12 +339,23 @@ TEST_F(DisplayListLayerDiffTest, FractionalTranslation) {
   tree1.root()->Add(
       CreateDisplayListLayer(display_list, SkPoint::Make(0.5, 0.5)));
 
-  auto damage = DiffLayerTree(tree1, MockLayerTree());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
-#else
+  auto damage =
+      DiffLayerTree(tree1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0,
+                    /*use_raster_cache=*/false);
   EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(10, 10, 61, 61));
-#endif
+}
+
+TEST_F(DisplayListLayerDiffTest, FractionalTranslationWithRasterCache) {
+  auto display_list = CreateDisplayList(SkRect::MakeLTRB(10, 10, 60, 60), 1);
+
+  MockLayerTree tree1;
+  tree1.root()->Add(
+      CreateDisplayListLayer(display_list, SkPoint::Make(0.5, 0.5)));
+
+  auto damage =
+      DiffLayerTree(tree1, MockLayerTree(), SkIRect::MakeEmpty(), 0, 0,
+                    /*use_raster_cache=*/true);
+  EXPECT_EQ(damage.frame_damage, SkIRect::MakeLTRB(11, 11, 61, 61));
 }
 
 TEST_F(DisplayListLayerDiffTest, DisplayListCompare) {
@@ -445,6 +425,98 @@ TEST_F(DisplayListLayerTest, NoLayerTreeSnapshotsWhenDisabledByDefault) {
 
   auto& snapshot_store = layer_snapshot_store();
   EXPECT_EQ(0u, snapshot_store.Size());
+}
+
+TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
+  const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
+  const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkRect missed_cull_rect = SkRect::MakeLTRB(100, 100, 200, 200);
+  const SkRect hit_cull_rect = SkRect::MakeLTRB(0, 0, 200, 200);
+  DisplayListBuilder builder;
+  builder.drawRect(picture_bounds);
+  auto display_list = builder.Build();
+  auto layer = std::make_shared<DisplayListLayer>(
+      layer_offset, SkiaGPUObject(display_list, unref_queue()), true, false);
+
+  auto raster_cache_item = layer->raster_cache_item();
+  use_mock_raster_cache();
+
+  // First Preroll the DisplayListLayer a few times where it does not intersect
+  // the cull rect. No caching progress should occur during this time, the
+  // access_count should remain 0 because the DisplayList was never "visible".
+  preroll_context()->cull_rect = missed_cull_rect;
+  for (int i = 0; i < 10; i++) {
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix::I());
+    ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
+    ASSERT_TRUE(raster_cache_item->GetId().has_value());
+    ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
+                  raster_cache_item->GetId().value(), SkMatrix::I()),
+              0);
+    ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
+    ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
+              size_t(0));
+    ASSERT_FALSE(raster_cache_item->TryToPrepareRasterCache(paint_context()));
+    ASSERT_FALSE(raster_cache_item->Draw(paint_context(), nullptr));
+  }
+
+  // Next Preroll the DisplayListLayer once where it does intersect
+  // the cull rect. No caching progress should occur during this time
+  // since this is the first frame in which it was visible, but the
+  // count should start incrementing.
+  preroll_context()->cull_rect = hit_cull_rect;
+  preroll_context()->raster_cached_entries->clear();
+  layer->Preroll(preroll_context(), SkMatrix());
+  ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
+  ASSERT_TRUE(raster_cache_item->GetId().has_value());
+  ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
+                raster_cache_item->GetId().value(), SkMatrix::I()),
+            1);
+  ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
+  ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
+            size_t(0));
+  ASSERT_FALSE(raster_cache_item->TryToPrepareRasterCache(paint_context()));
+  ASSERT_FALSE(raster_cache_item->Draw(paint_context(), nullptr));
+
+  // Now we can Preroll the DisplayListLayer again with a cull rect that
+  // it does not intersect and it should continue to count these operations
+  // even though it is not visible. No actual caching should occur yet,
+  // even though we will surpass its threshold.
+  preroll_context()->cull_rect = missed_cull_rect;
+  for (int i = 0; i < 10; i++) {
+    preroll_context()->raster_cached_entries->clear();
+    layer->Preroll(preroll_context(), SkMatrix());
+    ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
+    ASSERT_TRUE(raster_cache_item->GetId().has_value());
+    ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
+                  raster_cache_item->GetId().value(), SkMatrix::I()),
+              i + 2);
+    ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
+    ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
+              size_t(0));
+    ASSERT_FALSE(raster_cache_item->TryToPrepareRasterCache(paint_context()));
+    ASSERT_FALSE(raster_cache_item->Draw(paint_context(), nullptr));
+  }
+
+  // Finally Preroll the DisplayListLayer again where it does intersect
+  // the cull rect. Since we should have exhausted our access count
+  // threshold in the loop above, these operations should result in the
+  // DisplayList being cached.
+  preroll_context()->cull_rect = hit_cull_rect;
+  preroll_context()->raster_cached_entries->clear();
+  layer->Preroll(preroll_context(), SkMatrix());
+  ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kCurrent);
+  ASSERT_TRUE(raster_cache_item->GetId().has_value());
+  ASSERT_EQ(preroll_context()->raster_cache->GetAccessCount(
+                raster_cache_item->GetId().value(), SkMatrix::I()),
+            12);
+  ASSERT_EQ(preroll_context()->raster_cached_entries->size(), size_t(1));
+  ASSERT_EQ(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
+            size_t(0));
+  ASSERT_TRUE(raster_cache_item->TryToPrepareRasterCache(paint_context()));
+  ASSERT_GT(preroll_context()->raster_cache->EstimatePictureCacheByteSize(),
+            size_t(0));
+  ASSERT_TRUE(raster_cache_item->Draw(paint_context(), nullptr));
 }
 
 }  // namespace testing

@@ -57,6 +57,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 
   if (self) {
     current_refresh_rate_ = [DisplayLinkManager displayRefreshRate];
+    _allowPauseAfterVsync = YES;
     callback_ = std::move(callback);
     display_link_ = fml::scoped_nsobject<CADisplayLink> {
       [[CADisplayLink displayLinkWithTarget:self selector:@selector(onDisplayLink:)] retain]
@@ -87,7 +88,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   if (@available(iOS 15.0, *)) {
     display_link_.get().preferredFrameRateRange =
         CAFrameRateRangeMake(minFrameRate, maxFrameRate, maxFrameRate);
-  } else if (@available(iOS 10.0, *)) {
+  } else {
     display_link_.get().preferredFramesPerSecond = maxFrameRate;
   }
 }
@@ -96,18 +97,17 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   display_link_.get().paused = NO;
 }
 
+- (void)pause {
+  display_link_.get().paused = YES;
+}
+
 - (void)onDisplayLink:(CADisplayLink*)link {
-  TRACE_EVENT0("flutter", "VSYNC");
+  TRACE_EVENT0("flutter", "VsyncCallback");
 
   CFTimeInterval delay = CACurrentMediaTime() - link.timestamp;
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);
 
-  CFTimeInterval duration;
-  if (@available(iOS 10.0, *)) {
-    duration = link.targetTimestamp - link.timestamp;
-  } else {
-    duration = link.duration;
-  }
+  CFTimeInterval duration = link.targetTimestamp - link.timestamp;
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(duration);
 
   std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
@@ -116,7 +116,9 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   current_refresh_rate_ = round(1 / (frame_target_time - frame_start_time).ToSecondsF());
 
   recorder->RecordVsync(frame_start_time, frame_target_time);
-  display_link_.get().paused = YES;
+  if (_allowPauseAfterVsync) {
+    display_link_.get().paused = YES;
+  }
   callback_(std::move(recorder));
 }
 
@@ -143,27 +145,23 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 @implementation DisplayLinkManager
 
 + (double)displayRefreshRate {
-  if (@available(iOS 10.3, *)) {
-    fml::scoped_nsobject<CADisplayLink> display_link = fml::scoped_nsobject<CADisplayLink> {
-      [[CADisplayLink displayLinkWithTarget:[[[DisplayLinkManager alloc] init] autorelease]
-                                   selector:@selector(onDisplayLink:)] retain]
-    };
-    display_link.get().paused = YES;
-    auto preferredFPS = display_link.get().preferredFramesPerSecond;  // iOS 10.0
+  fml::scoped_nsobject<CADisplayLink> display_link = fml::scoped_nsobject<CADisplayLink> {
+    [[CADisplayLink displayLinkWithTarget:[[[DisplayLinkManager alloc] init] autorelease]
+                                 selector:@selector(onDisplayLink:)] retain]
+  };
+  display_link.get().paused = YES;
+  auto preferredFPS = display_link.get().preferredFramesPerSecond;
 
-    // From Docs:
-    // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
-    // frame rate is equal to the maximum refresh rate of the display, as indicated by the
-    // maximumFramesPerSecond property.
+  // From Docs:
+  // The default value for preferredFramesPerSecond is 0. When this value is 0, the preferred
+  // frame rate is equal to the maximum refresh rate of the display, as indicated by the
+  // maximumFramesPerSecond property.
 
-    if (preferredFPS != 0) {
-      return preferredFPS;
-    }
-
-    return [UIScreen mainScreen].maximumFramesPerSecond;  // iOS 10.3
-  } else {
-    return 60.0;
+  if (preferredFPS != 0) {
+    return preferredFPS;
   }
+
+  return [UIScreen mainScreen].maximumFramesPerSecond;
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {

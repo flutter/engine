@@ -11,7 +11,7 @@
 namespace impeller {
 
 PaintPassDelegate::PaintPassDelegate(Paint paint, std::optional<Rect> coverage)
-    : paint_(std::move(paint)), coverage_(std::move(coverage)) {}
+    : paint_(std::move(paint)), coverage_(coverage) {}
 
 // |EntityPassDelgate|
 PaintPassDelegate::~PaintPassDelegate() = default;
@@ -23,7 +23,7 @@ std::optional<Rect> PaintPassDelegate::GetCoverageRect() {
 
 // |EntityPassDelgate|
 bool PaintPassDelegate::CanElide() {
-  return paint_.blend_mode == Entity::BlendMode::kDestination;
+  return paint_.blend_mode == BlendMode::kDestination;
 }
 
 // |EntityPassDelgate|
@@ -33,15 +33,15 @@ bool PaintPassDelegate::CanCollapseIntoParentPass() {
 
 // |EntityPassDelgate|
 std::shared_ptr<Contents> PaintPassDelegate::CreateContentsForSubpassTarget(
-    std::shared_ptr<Texture> target) {
-  auto contents = std::make_shared<TextureContents>();
-  contents->SetPath(PathBuilder{}
-                        .AddRect(Rect::MakeSize(Size(target->GetSize())))
-                        .TakePath());
+    std::shared_ptr<Texture> target,
+    const Matrix& effect_transform) {
+  auto contents = TextureContents::MakeRect(Rect::MakeSize(target->GetSize()));
   contents->SetTexture(target);
-  contents->SetSourceRect(Rect::MakeSize(Size(target->GetSize())));
+  contents->SetSourceRect(Rect::MakeSize(target->GetSize()));
   contents->SetOpacity(paint_.color.alpha);
-  return contents;
+  contents->SetDeferApplyingOpacity(true);
+  return paint_.WithFiltersForSubpassTarget(std::move(contents),
+                                            effect_transform);
 }
 
 }  // namespace impeller

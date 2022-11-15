@@ -27,6 +27,10 @@
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
 
+#if defined(FML_OS_WIN)
+#include <combaseapi.h>
+#endif  // defined(FML_OS_WIN)
+
 #if defined(FML_OS_POSIX)
 #include <signal.h>
 #endif  // defined(FML_OS_POSIX)
@@ -56,21 +60,35 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
 
   // |ExternalViewEmbedder|
-  SkCanvas* CompositeEmbeddedView(int view_id) override { return &canvas_; }
+  std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
+
+  // |ExternalViewEmbedder|
+  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+    return {&canvas_, nullptr};
+  }
 
  private:
   SkCanvas canvas_;
 };
 
+class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
+ public:
+  TesterGPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
+                           bool render_to_surface)
+      : GPUSurfaceSoftware(delegate, render_to_surface) {}
+
+  bool EnableRasterCache() const override { return false; }
+};
+
 class TesterPlatformView : public PlatformView,
                            public GPUSurfaceSoftwareDelegate {
  public:
-  TesterPlatformView(Delegate& delegate, TaskRunners task_runners)
-      : PlatformView(delegate, std::move(task_runners)) {}
+  TesterPlatformView(Delegate& delegate, const TaskRunners& task_runners)
+      : PlatformView(delegate, task_runners) {}
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override {
-    auto surface = std::make_unique<GPUSurfaceSoftware>(
+    auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
         this, true /* render to surface */);
     FML_DCHECK(surface->IsValid());
     return surface;
@@ -143,9 +161,9 @@ class ScriptCompletionTaskObserver {
       return;
     }
 
-    if (!has_terminated) {
+    if (!has_terminated_) {
       // Only try to terminate the loop once.
-      has_terminated = true;
+      has_terminated_ = true;
       fml::TaskRunner::RunNowOrPostTask(main_task_runner_, []() {
         fml::MessageLoop::GetCurrent().Terminate();
       });
@@ -157,7 +175,7 @@ class ScriptCompletionTaskObserver {
   fml::RefPtr<fml::TaskRunner> main_task_runner_;
   bool run_forever_ = false;
   std::optional<DartErrorCode> last_error_;
-  bool has_terminated = false;
+  bool has_terminated_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ScriptCompletionTaskObserver);
 };
@@ -226,7 +244,8 @@ int RunTester(const flutter::Settings& settings,
       };
 
   Shell::CreateCallback<Rasterizer> on_create_rasterizer = [](Shell& shell) {
-    return std::make_unique<Rasterizer>(shell);
+    return std::make_unique<Rasterizer>(
+        shell, Rasterizer::MakeGpuImageBehavior::kBitmap);
   };
 
   auto shell = Shell::Create(flutter::PlatformData(),  //
@@ -353,7 +372,7 @@ int main(int argc, char* argv[]) {
   dart::bin::SetExecutableName(argv[0]);
   dart::bin::SetExecutableArguments(argc - 1, argv);
 
-  auto command_line = fml::CommandLineFromArgcArgv(argc, argv);
+  auto command_line = fml::CommandLineFromPlatformOrArgcArgv(argc, argv);
 
   if (command_line.HasOption(flutter::FlagForSwitch(flutter::Switch::Help))) {
     flutter::PrintUsage("flutter_tester");
@@ -361,18 +380,18 @@ int main(int argc, char* argv[]) {
   }
 
   auto settings = flutter::SettingsFromCommandLine(command_line);
-  if (command_line.positional_args().size() > 0) {
+  if (!command_line.positional_args().empty()) {
     // The tester may not use the switch for the main dart file path. Specifying
     // it as a positional argument instead.
     settings.application_kernel_asset = command_line.positional_args()[0];
   }
 
-  if (settings.application_kernel_asset.size() == 0) {
+  if (settings.application_kernel_asset.empty()) {
     FML_LOG(ERROR) << "Dart kernel file not specified.";
     return EXIT_FAILURE;
   }
 
-  if (settings.icu_data_path.size() == 0) {
+  if (settings.icu_data_path.empty()) {
     settings.icu_data_path = "icudtl.dat";
   }
 
@@ -381,14 +400,14 @@ int main(int argc, char* argv[]) {
 
   settings.log_message_callback = [](const std::string& tag,
                                      const std::string& message) {
-    if (tag.size() > 0) {
+    if (!tag.empty()) {
       std::cout << tag << ": ";
     }
     std::cout << message << std::endl;
   };
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
 
   settings.task_observer_remove = [](intptr_t key) {
@@ -403,6 +422,10 @@ int main(int argc, char* argv[]) {
     ::exit(1);
     return true;
   };
+
+#if defined(FML_OS_WIN)
+  CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+#endif  // defined(FML_OS_WIN)
 
   return flutter::RunTester(settings,
                             command_line.HasOption(flutter::FlagForSwitch(

@@ -36,6 +36,8 @@ class MockDelegate : public Engine::Delegate {
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
   MOCK_METHOD0(GetCurrentTimePoint, fml::TimePoint());
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     const std::shared_ptr<PlatformMessageHandler>&());
 };
 
 class MockResponse : public PlatformMessageResponse {
@@ -48,11 +50,12 @@ class MockRuntimeDelegate : public RuntimeDelegate {
  public:
   MOCK_METHOD0(DefaultRouteName, std::string());
   MOCK_METHOD1(ScheduleFrame, void(bool));
-  MOCK_METHOD1(Render, void(std::unique_ptr<flutter::LayerTree>));
+  MOCK_METHOD1(Render, void(std::shared_ptr<flutter::LayerTree>));
   MOCK_METHOD2(UpdateSemantics,
                void(SemanticsNodeUpdates, CustomAccessibilityActionUpdates));
   MOCK_METHOD1(HandlePlatformMessage, void(std::unique_ptr<PlatformMessage>));
   MOCK_METHOD0(GetFontCollection, FontCollection&());
+  MOCK_METHOD0(GetAssetManager, std::shared_ptr<AssetManager>());
   MOCK_METHOD0(OnRootIsolateCreated, void());
   MOCK_METHOD2(UpdateIsolateDescription, void(const std::string, int64_t));
   MOCK_METHOD1(SetNeedsReportTimings, void(bool));
@@ -60,11 +63,14 @@ class MockRuntimeDelegate : public RuntimeDelegate {
                std::unique_ptr<std::vector<std::string>>(
                    const std::vector<std::string>&));
   MOCK_METHOD1(RequestDartDeferredLibrary, void(intptr_t));
+  MOCK_CONST_METHOD0(GetPlatformMessageHandler,
+                     std::weak_ptr<PlatformMessageHandler>());
 };
 
 class MockRuntimeController : public RuntimeController {
  public:
-  MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
+  MockRuntimeController(RuntimeDelegate& client,
+                        const TaskRunners& p_task_runners)
       : RuntimeController(client, p_task_runners) {}
   MOCK_METHOD0(IsRootIsolateRunning, bool());
   MOCK_METHOD1(DispatchPlatformMessage, bool(std::unique_ptr<PlatformMessage>));
@@ -77,7 +83,7 @@ class MockRuntimeController : public RuntimeController {
 std::unique_ptr<PlatformMessage> MakePlatformMessage(
     const std::string& channel,
     const std::map<std::string, std::string>& values,
-    fml::RefPtr<PlatformMessageResponse> response) {
+    const fml::RefPtr<PlatformMessageResponse>& response) {
   rapidjson::Document document;
   auto& allocator = document.GetAllocator();
   document.SetObject();
@@ -140,6 +146,7 @@ class EngineTest : public testing::FixtureTest {
   fml::WeakPtr<IOManager> io_manager_;
   std::unique_ptr<RuntimeController> runtime_controller_;
   std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner_;
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
 }  // namespace
 
@@ -269,7 +276,7 @@ TEST_F(EngineTest, SpawnSharesFontLibrary) {
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               std::string(), io_manager_);
+                               std::string(), io_manager_, snapshot_delegate_);
     EXPECT_TRUE(spawn != nullptr);
     EXPECT_EQ(&engine->GetFontCollection(), &spawn->GetFontCollection());
   });
@@ -295,7 +302,7 @@ TEST_F(EngineTest, SpawnWithCustomInitialRoute) {
         /*runtime_controller=*/std::move(mock_runtime_controller));
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               "/foo", io_manager_);
+                               "/foo", io_manager_, snapshot_delegate_);
     EXPECT_TRUE(spawn != nullptr);
     ASSERT_EQ("/foo", spawn->InitialRoute());
   });
@@ -331,7 +338,7 @@ TEST_F(EngineTest, SpawnResetsViewportMetrics) {
     EXPECT_EQ(old_platform_data.viewport_metrics.physical_height, kViewHeight);
 
     auto spawn = engine->Spawn(delegate_, dispatcher_maker_, settings_, nullptr,
-                               std::string(), io_manager_);
+                               std::string(), io_manager_, snapshot_delegate_);
     EXPECT_TRUE(spawn != nullptr);
     auto& new_viewport_metrics =
         spawn->GetRuntimeController()->GetPlatformData().viewport_metrics;
@@ -362,8 +369,9 @@ TEST_F(EngineTest, SpawnWithCustomSettings) {
     Settings custom_settings = settings_;
     custom_settings.persistent_isolate_data =
         std::make_shared<fml::DataMapping>("foo");
-    auto spawn = engine->Spawn(delegate_, dispatcher_maker_, custom_settings,
-                               nullptr, std::string(), io_manager_);
+    auto spawn =
+        engine->Spawn(delegate_, dispatcher_maker_, custom_settings, nullptr,
+                      std::string(), io_manager_, snapshot_delegate_);
     EXPECT_TRUE(spawn != nullptr);
     auto new_persistent_isolate_data =
         const_cast<RuntimeController*>(spawn->GetRuntimeController())

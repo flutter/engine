@@ -4,8 +4,12 @@
 
 #import "flutter/shell/platform/darwin/ios/platform_message_handler_ios.h"
 
+#import "flutter/fml/trace_event.h"
+#import "flutter/lib/ui/window/platform_message.h"
 #import "flutter/shell/platform/darwin/common/buffer_conversions.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+
+static uint64_t platform_message_counter = 1;
 
 @protocol FlutterTaskQueue
 - (void)dispatch:(dispatch_block_t)block;
@@ -44,10 +48,13 @@ PlatformMessageHandlerIos::PlatformMessageHandlerIos(TaskRunners task_runners)
     : task_runners_(task_runners) {}
 
 void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
-  FML_CHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
+  // This can be called from any isolate's thread.
   fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
   HandlerInfo handler_info;
   {
+    // TODO(gaaclarke): This mutex is a bottleneck for multiple isolates sending
+    // messages at the same time. This could be potentially changed to a
+    // read-write lock.
     std::lock_guard lock(message_handlers_mutex_);
     auto it = message_handlers_.find(message->channel());
     if (it != message_handlers_.end()) {
@@ -61,8 +68,12 @@ void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMe
       data = ConvertMappingToNSData(message->releaseData());
     }
 
+    uint64_t platform_message_id = platform_message_counter++;
+    TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler", platform_message_id,
+                             "channel", message->channel().c_str());
     dispatch_block_t run_handler = ^{
       handler(data, ^(NSData* reply) {
+        TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleHandler", platform_message_id);
         // Called from any thread.
         if (completer) {
           if (reply) {

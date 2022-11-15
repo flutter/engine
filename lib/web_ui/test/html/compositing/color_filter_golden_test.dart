@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -21,14 +20,14 @@ void main() {
 Future<void> testMain() async {
   setUpAll(() async {
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   setUp(() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
-    for (final html.Node scene in html.document.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in domDocument.querySelectorAll('flt-scene')) {
       scene.remove();
     }
   });
@@ -42,12 +41,11 @@ Future<void> testMain() async {
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
-    html.document.body!.append(builder.build().webOnlyRootElement!);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     // TODO(ferhat): update golden for this test after canvas sandwich detection is
     // added to RecordingCanvas.
-    await matchGoldenFile('color_filter_blendMode_color.png', region: region,
-        maxDiffRatePercent: 12.0);
+    await matchGoldenFile('color_filter_blendMode_color.png', region: region);
   });
 
   test('Should apply matrix color filter to image', () async {
@@ -65,9 +63,8 @@ Future<void> testMain() async {
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
-    html.document.body!.append(builder.build().webOnlyRootElement!);
-    await matchGoldenFile('color_filter_matrix.png', region: region,
-        maxDiffRatePercent: 12.0);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+    await matchGoldenFile('color_filter_matrix.png', region: region);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/85733
@@ -83,9 +80,8 @@ Future<void> testMain() async {
     final Picture circles1 = _drawTestPictureWithCircles(30, 30);
     builder.addPicture(Offset.zero, circles1);
     builder.pop();
-    html.document.body!.append(builder.build().webOnlyRootElement!);
-    await matchGoldenFile('color_filter_mode.png', region: region,
-        maxDiffRatePercent: 12.0);
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+    await matchGoldenFile('color_filter_mode.png', region: region);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/59451.
@@ -111,11 +107,10 @@ Future<void> testMain() async {
     builder2.addPicture(const Offset(10, 0), circles1);
     builder2.pop();
 
-    html.document.body!.append(builder2.build().webOnlyRootElement!);
+    domDocument.body!.append(builder2.build().webOnlyRootElement!);
 
     await matchGoldenFile('color_filter_blendMode_overlay.png',
-        region: region,
-        maxDiffRatePercent: 12.0);
+        region: region);
   });
 }
 
@@ -178,9 +173,9 @@ Picture _drawBackground() {
 }
 
 HtmlImage createTestImage({int width = 200, int height = 150}) {
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -190,7 +185,7 @@ HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

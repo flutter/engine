@@ -16,7 +16,7 @@ _flutter_framework_dir = "$root_out_dir/Flutter.framework"
 
 shell_gpu_configuration("ios_gpu_configuration") {
   enable_software = true
-  enable_gl = true
+  enable_gl = false
   enable_vulkan = false
   enable_metal = shell_enable_metal
 }
@@ -79,16 +79,21 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterRestorationPlugin.mm",
     "framework/Source/FlutterSemanticsScrollView.h",
     "framework/Source/FlutterSemanticsScrollView.mm",
+    "framework/Source/FlutterSpellCheckPlugin.h",
+    "framework/Source/FlutterSpellCheckPlugin.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
     "framework/Source/FlutterUIPressProxy.h",
     "framework/Source/FlutterUIPressProxy.mm",
+    "framework/Source/FlutterUndoManagerDelegate.h",
+    "framework/Source/FlutterUndoManagerPlugin.h",
+    "framework/Source/FlutterUndoManagerPlugin.mm",
     "framework/Source/FlutterView.h",
     "framework/Source/FlutterView.mm",
     "framework/Source/FlutterViewController.mm",
     "framework/Source/FlutterViewController_Internal.h",
-    "framework/Source/KeyCodeMap.mm",
+    "framework/Source/KeyCodeMap.g.mm",
     "framework/Source/KeyCodeMap_Internal.h",
     "framework/Source/SemanticsObject.h",
     "framework/Source/SemanticsObject.mm",
@@ -106,24 +111,14 @@ source_set("flutter_framework_source") {
     "framework/Source/vsync_waiter_ios.mm",
     "ios_context.h",
     "ios_context.mm",
-    "ios_context_gl.h",
-    "ios_context_gl.mm",
     "ios_context_software.h",
     "ios_context_software.mm",
-    "ios_external_texture_gl.h",
-    "ios_external_texture_gl.mm",
     "ios_external_view_embedder.h",
     "ios_external_view_embedder.mm",
-    "ios_render_target_gl.h",
-    "ios_render_target_gl.mm",
     "ios_surface.h",
     "ios_surface.mm",
-    "ios_surface_gl.h",
-    "ios_surface_gl.mm",
     "ios_surface_software.h",
     "ios_surface_software.mm",
-    "ios_switchable_gl_context.h",
-    "ios_switchable_gl_context.mm",
     "platform_message_handler_ios.h",
     "platform_message_handler_ios.mm",
     "platform_view_ios.h",
@@ -180,7 +175,6 @@ source_set("flutter_framework_source") {
     "AudioToolbox.framework",
     "CoreMedia.framework",
     "CoreVideo.framework",
-    "OpenGLES.framework",
     "QuartzCore.framework",
     "UIKit.framework",
   ]
@@ -207,6 +201,7 @@ source_set("ios_test_flutter_mrc") {
     "framework/Source/FlutterEngineTest_mrc.mm",
     "framework/Source/FlutterPlatformPluginTest.mm",
     "framework/Source/FlutterPlatformViewsTest.mm",
+    "framework/Source/FlutterViewControllerTest_mrc.mm",
     "framework/Source/FlutterViewTest.mm",
     "framework/Source/VsyncWaiterIosTest.mm",
     "framework/Source/accessibility_bridge_test.mm",
@@ -215,6 +210,7 @@ source_set("ios_test_flutter_mrc") {
   deps = [
     ":flutter_framework_source",
     "//flutter/common:common",
+    "//flutter/lib/ui:ui",
     "//flutter/shell/common:common",
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
@@ -261,7 +257,9 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterKeyboardManagerTest.mm",
     "framework/Source/FlutterPluginAppLifeCycleDelegateTest.mm",
     "framework/Source/FlutterRestorationPluginTest.mm",
+    "framework/Source/FlutterSpellCheckPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
+    "framework/Source/FlutterUndoManagerPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
     "framework/Source/connection_collection_test.mm",
@@ -342,9 +340,6 @@ action("copy_framework_info_plist") {
     "--minversion",
     ios_deployment_target,
   ]
-  if (enable_bitcode) {
-    args += [ "--bitcode" ]
-  }
 }
 
 copy("copy_framework_module_map") {
@@ -376,12 +371,6 @@ copy("copy_framework_icu") {
   outputs = [ "$_flutter_framework_dir/{{source_file_part}}" ]
 }
 
-copy("copy_framework_podspec") {
-  visibility = [ ":*" ]
-  sources = [ "framework/Flutter.podspec" ]
-  outputs = [ "$root_out_dir/Flutter.podspec" ]
-}
-
 copy("copy_license") {
   visibility = [ ":*" ]
   sources = [ "//LICENSE" ]
@@ -391,11 +380,7 @@ copy("copy_license") {
 shared_library("copy_and_verify_framework_module") {
   framework_search_path = rebase_path("$root_out_dir")
   visibility = [ ":*" ]
-  cflags_objc = [
-    "-F$framework_search_path",
-    "-fmodules",
-    "-Wnon-modular-include-in-framework-module",
-  ]
+  cflags_objc = [ "-F$framework_search_path" ]
 
   sources = [ "framework/Source/FlutterUmbrellaImport.m" ]
   deps = [
@@ -413,7 +398,6 @@ group("universal_flutter_framework") {
     ":copy_framework_icu",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
-    ":copy_framework_podspec",
     ":copy_license",
   ]
 

@@ -36,8 +36,7 @@ void testMain() {
       );
       vertices.delete();
     });
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
-  }, skip: isIosSafari);
+  });
 
   test('Vertices are not anti-aliased by default', () async {
     const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 500);
@@ -60,11 +59,9 @@ void testMain() {
     final LayerSceneBuilder builder = LayerSceneBuilder();
     builder.pushOffset(0, 0);
     builder.addPicture(ui.Offset.zero, verticesPicture);
-    EnginePlatformDispatcher.instance.rasterizer!
+    CanvasKitRenderer.instance.rasterizer
         .draw(builder.build().layerTree);
     await matchGoldenFile('canvaskit_vertices_antialiased.png', region: region);
-
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isSafari);
 }
 
@@ -72,12 +69,12 @@ CkVertices _testVertices() {
   return ui.Vertices(
     ui.VertexMode.triangles,
     const <ui.Offset>[
-      ui.Offset(0, 0),
+      ui.Offset.zero,
       ui.Offset(10, 10),
       ui.Offset(0, 20),
     ],
     textureCoordinates: const <ui.Offset>[
-      ui.Offset(0, 0),
+      ui.Offset.zero,
       ui.Offset(10, 10),
       ui.Offset(0, 20),
     ],

@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -20,12 +18,12 @@ Future<void> testMain() async {
     debugShowClipLayers = true;
     SurfaceSceneBuilder.debugForgetFrameScene();
     await webOnlyInitializePlatform();
-    fontCollection.debugRegisterTestFonts();
-    await fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   tearDown(() {
-    for (final html.Node scene in html.document.querySelectorAll('flt-scene')) {
+    for (final DomNode scene in domDocument.querySelectorAll('flt-scene')) {
       scene.remove();
     }
   });
@@ -43,7 +41,7 @@ Future<void> testMain() async {
     const Rect region = Rect.fromLTWH(0, 0, 400, 400);
 
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    final Picture testPicture = _drawTestPicture(region, useColor: false);
+    final Picture testPicture = _drawTestPicture(region);
     builder.addPicture(Offset.zero, testPicture);
     await sceneScreenshot(builder, 'canvas_draw_paint', region: region);
   }, skip: true); // TODO(ferhat): matchGolden fails when a div covers viewport.);

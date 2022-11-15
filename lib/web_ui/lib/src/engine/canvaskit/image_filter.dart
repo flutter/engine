@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/vector_math.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../util.dart';
@@ -104,6 +105,15 @@ class _CkBlurImageFilter extends CkImageFilter {
 
   @override
   SkImageFilter _initSkiaObject() {
+    /// Return the identity matrix when both sigmaX and sigmaY are 0. Replicates
+    /// effect of applying no filter
+    if (sigmaX == 0 && sigmaY == 0) {
+      return canvasKit.ImageFilter.MakeMatrixTransform(
+        toSkMatrixFromFloat32(Matrix4.identity().storage),
+        toSkFilterOptions(ui.FilterQuality.none),
+        null
+      );
+    }
     return canvasKit.ImageFilter.MakeBlur(
       sigmaX,
       sigmaY,
@@ -124,7 +134,7 @@ class _CkBlurImageFilter extends CkImageFilter {
   }
 
   @override
-  int get hashCode => ui.hashValues(sigmaX, sigmaY, tileMode);
+  int get hashCode => Object.hash(sigmaX, sigmaY, tileMode);
 
   @override
   String toString() {
@@ -135,7 +145,7 @@ class _CkBlurImageFilter extends CkImageFilter {
 class _CkMatrixImageFilter extends CkImageFilter {
   _CkMatrixImageFilter(
       {required Float64List matrix, required this.filterQuality})
-      : this.matrix = Float64List.fromList(matrix), // ignore: unnecessary_this
+      : matrix = Float64List.fromList(matrix),
         super._();
 
   final Float64List matrix;
@@ -161,7 +171,7 @@ class _CkMatrixImageFilter extends CkImageFilter {
   }
 
   @override
-  int get hashCode => ui.hashValues(filterQuality, ui.hashList(matrix));
+  int get hashCode => Object.hash(filterQuality, Object.hashAll(matrix));
 
   @override
   String toString() => 'ImageFilter.matrix($matrix, $filterQuality)';

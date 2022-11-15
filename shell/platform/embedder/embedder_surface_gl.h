@@ -6,7 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_GL_H_
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 
@@ -18,12 +18,13 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   struct GLDispatchTable {
     std::function<bool(void)> gl_make_current_callback;           // required
     std::function<bool(void)> gl_clear_current_callback;          // required
-    std::function<bool(uint32_t)> gl_present_callback;            // required
+    std::function<bool(GLPresentInfo)> gl_present_callback;       // required
     std::function<intptr_t(GLFrameInfo)> gl_fbo_callback;         // required
     std::function<bool(void)> gl_make_resource_current_callback;  // optional
     std::function<SkMatrix(void)>
-        gl_surface_transformation_callback;              // optional
-    std::function<void*(const char*)> gl_proc_resolver;  // optional
+        gl_surface_transformation_callback;                          // optional
+    std::function<void*(const char*)> gl_proc_resolver;              // optional
+    std::function<GLFBOInfo(intptr_t)> gl_populate_existing_damage;  // required
   };
 
   EmbedderSurfaceGL(
@@ -56,11 +57,10 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id,
-                        const std::optional<SkIRect>& damage) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 
   // |GPUSurfaceGLDelegate|
   bool GLContextFBOResetAfterPresent() const override;
@@ -70,6 +70,9 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
 
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
+
+  // |GPUSurfaceGLDelegate|
+  SurfaceFrame::FramebufferInfo GLContextFramebufferInfo() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderSurfaceGL);
 };

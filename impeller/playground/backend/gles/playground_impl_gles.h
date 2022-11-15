@@ -16,16 +16,18 @@ class PlaygroundImplGLES final : public PlaygroundImpl {
   ~PlaygroundImplGLES();
 
  private:
-  // |PlaygroundImpl|
-  std::shared_ptr<Context> CreateContext() const override;
+  class ReactorWorker;
+
+  static void DestroyWindowHandle(WindowHandle handle);
+  using UniqueHandle = std::unique_ptr<void, decltype(&DestroyWindowHandle)>;
+  UniqueHandle handle_;
+  std::shared_ptr<ReactorWorker> worker_;
 
   // |PlaygroundImpl|
-  bool SetupWindow(WindowHandle handle,
-                   std::shared_ptr<Context> context) override;
+  std::shared_ptr<Context> GetContext() const override;
 
   // |PlaygroundImpl|
-  bool TeardownWindow(WindowHandle handle,
-                      std::shared_ptr<Context> context) override;
+  WindowHandle GetWindowHandle() const override;
 
   // |PlaygroundImpl|
   std::unique_ptr<Surface> AcquireSurfaceFrame(

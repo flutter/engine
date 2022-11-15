@@ -2,11 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
+import '../dom.dart';
 import '../embedder.dart';
 import 'bitmap_canvas.dart';
 import 'color_filter.dart';
@@ -27,19 +26,19 @@ import 'surface.dart';
 class PersistedShaderMask extends PersistedContainerSurface
     implements ui.ShaderMaskEngineLayer {
   PersistedShaderMask(
-    PersistedShaderMask? oldLayer,
+    PersistedShaderMask? super.oldLayer,
     this.shader,
     this.maskRect,
     this.blendMode,
     this.filterQuality,
-  ) : super(oldLayer);
+  );
 
-  html.Element? _childContainer;
+  DomElement? _childContainer;
   final ui.Shader shader;
   final ui.Rect maskRect;
   final ui.BlendMode blendMode;
   final ui.FilterQuality filterQuality;
-  html.Element? _shaderElement;
+  DomElement? _shaderElement;
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
   @override
@@ -52,12 +51,13 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element? get childContainer => _childContainer;
+  DomElement? get childContainer => _childContainer;
 
   @override
   void discard() {
     super.discard();
     flutterViewEmbedder.removeResource(_shaderElement);
+    _shaderElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -72,9 +72,9 @@ class PersistedShaderMask extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-shader-mask');
-    final html.Element container = html.Element.tag('flt-mask-interior');
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-shader-mask');
+    final DomElement container = createDomElement('flt-mask-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);

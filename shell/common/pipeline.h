@@ -9,6 +9,8 @@
 #include <memory>
 #include <mutex>
 
+#include "flutter/flow/frame_timings.h"
+#include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_counted.h"
 #include "flutter/fml/synchronization/semaphore.h"
@@ -100,7 +102,7 @@ class Pipeline {
   };
 
   explicit Pipeline(uint32_t depth)
-      : depth_(depth), empty_(depth), available_(0), inflight_(0) {}
+      : empty_(depth), available_(0), inflight_(0) {}
 
   ~Pipeline() = default;
 
@@ -178,7 +180,6 @@ class Pipeline {
   }
 
  private:
-  const uint32_t depth_;
   fml::Semaphore empty_;
   fml::Semaphore available_;
   std::atomic<int> inflight_;
@@ -218,6 +219,17 @@ class Pipeline {
 
   FML_DISALLOW_COPY_AND_ASSIGN(Pipeline);
 };
+
+struct LayerTreeItem {
+  LayerTreeItem(std::shared_ptr<LayerTree> layer_tree,
+                std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder)
+      : layer_tree(std::move(layer_tree)),
+        frame_timings_recorder(std::move(frame_timings_recorder)) {}
+  std::shared_ptr<LayerTree> layer_tree;
+  std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder;
+};
+
+using LayerTreePipeline = Pipeline<LayerTreeItem>;
 
 }  // namespace flutter
 

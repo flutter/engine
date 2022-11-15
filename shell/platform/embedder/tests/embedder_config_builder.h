@@ -85,6 +85,8 @@ class EmbedderConfigBuilder {
 
   void SetLocalizationCallbackHooks();
 
+  void SetExecutableName(std::string executable_name);
+
   void SetDartEntrypoint(std::string entrypoint);
 
   void AddCommandLineArgument(std::string arg);
@@ -102,8 +104,11 @@ class EmbedderConfigBuilder {
 
   FlutterCompositor& GetCompositor();
 
+  FlutterRendererConfig& GetRendererConfig();
+
   void SetRenderTargetType(
-      EmbedderTestBackingStoreProducer::RenderTargetType type);
+      EmbedderTestBackingStoreProducer::RenderTargetType type,
+      FlutterSoftwarePixelFormat software_pixfmt = kNative32);
 
   UniqueEngine LaunchEngine() const;
 

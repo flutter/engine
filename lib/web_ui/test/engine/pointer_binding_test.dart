@@ -2,16 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine.dart' show flutterViewEmbedder, window;
-import 'package:ui/src/engine/browser_detection.dart';
-import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/pointer_binding.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+
+import '../keyboard_converter_test.dart';
 
 const int _kNoButtonChange = -1;
 const PointerSupportDetector _defaultSupportDetector = PointerSupportDetector();
@@ -36,42 +34,60 @@ void _testEach<T extends _BasicEventContext>(
   }
 }
 
-/// Some methods in this class are skipped for iOS-Safari.
-// TODO(mdebbar): https://github.com/flutter/flutter/issues/60033
-bool get isIosSafari => browserEngine == BrowserEngine.webkit &&
-    operatingSystem == OperatingSystem.iOs;
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final html.Element glassPane = flutterViewEmbedder.glassPaneElement!;
-  double dpi = 1.0;
+  final DomElement glassPane = flutterViewEmbedder.glassPaneElement!;
+  late double dpi;
 
   setUp(() {
     ui.window.onPointerDataPacket = null;
     dpi = window.devicePixelRatio;
   });
 
+  KeyboardConverter createKeyboardConverter(List<ui.KeyData> keyDataList) {
+    return KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      return true;
+    });
+  }
+
+  test('ios workaround', () {
+    debugEmulateIosSafari = true;
+    addTearDown(() {
+      debugEmulateIosSafari = false;
+    });
+
+    final MockSafariPointerEventWorkaround mockSafariPointer =
+        MockSafariPointerEventWorkaround();
+    SafariPointerEventWorkaround.instance = mockSafariPointer;
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+    final PointerBinding instance = PointerBinding(createDomHTMLDivElement(), keyboardConverter);
+    expect(mockSafariPointer.workAroundInvoked, isIosSafari);
+    instance.dispose();
+  }, skip: !isSafari);
+
   test('_PointerEventContext generates expected events', () {
     if (!_PointerEventContext().isSupported) {
       return;
     }
 
-    html.PointerEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.PointerEvent));
-      return e as html.PointerEvent;
+    DomPointerEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'PointerEvent'), isTrue);
+      return e as DomPointerEvent;
     }
 
-    List<html.PointerEvent> expectCorrectTypes(List<html.Event> events) {
+    List<DomPointerEvent> expectCorrectTypes(List<DomEvent> events) {
       return events.map(expectCorrectType).toList();
     }
 
     final _PointerEventContext context = _PointerEventContext();
-    html.PointerEvent event;
-    List<html.PointerEvent> events;
+    DomPointerEvent event;
+    List<DomPointerEvent> events;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('pointerdown'));
@@ -161,6 +177,14 @@ void testMain() {
     expect(events[1].client.x, equals(222));
     expect(events[1].client.y, equals(223));
 
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('pointerleave'));
+    expect(event.pointerId, equals(1));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
+
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('pointerup'));
     expect(event.pointerId, equals(1));
@@ -221,6 +245,19 @@ void testMain() {
     expect(events[1].buttons, equals(0));
     expect(events[1].client.x, equals(0));
     expect(events[1].client.y, equals(0));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   test('_TouchEventContext generates expected events', () {
@@ -228,18 +265,18 @@ void testMain() {
       return;
     }
 
-    html.TouchEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.TouchEvent));
-      return e as html.TouchEvent;
+    DomTouchEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'TouchEvent'), isTrue);
+      return e as DomTouchEvent;
     }
 
-    List<html.TouchEvent> expectCorrectTypes(List<html.Event> events) {
+    List<DomTouchEvent> expectCorrectTypes(List<DomEvent> events) {
       return events.map(expectCorrectType).toList();
     }
 
     final _TouchEventContext context = _TouchEventContext();
-    html.TouchEvent event;
-    List<html.TouchEvent> events;
+    DomTouchEvent event;
+    List<DomTouchEvent> events;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
@@ -317,6 +354,19 @@ void testMain() {
     expect(events[0].changedTouches![1].identifier, equals(105));
     expect(events[0].changedTouches![1].client.x, equals(322));
     expect(events[0].changedTouches![1].client.y, equals(323));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, true);
+    expect(event.ctrlKey, true);
+    expect(event.metaKey, true);
+    expect(event.shiftKey, true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.altKey, false);
+    expect(event.ctrlKey, false);
+    expect(event.metaKey, false);
+    expect(event.shiftKey, false);
   });
 
   test('_MouseEventContext generates expected events', () {
@@ -324,13 +374,13 @@ void testMain() {
       return;
     }
 
-    html.MouseEvent expectCorrectType(html.Event e) {
-      expect(e.runtimeType, equals(html.MouseEvent));
-      return e as html.MouseEvent;
+    DomMouseEvent expectCorrectType(DomEvent e) {
+      expect(domInstanceOfString(e, 'MouseEvent'), isTrue);
+      return e as DomMouseEvent;
     }
 
     final _MouseEventContext context = _MouseEventContext();
-    html.MouseEvent event;
+    DomMouseEvent event;
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('mousedown'));
@@ -378,6 +428,13 @@ void testMain() {
     expect(event.client.x, equals(214));
     expect(event.client.y, equals(215));
 
+    event = expectCorrectType(context.mouseLeave(clientX: 1000, clientY: 2000, buttons: 6));
+    expect(event.type, equals('mouseleave'));
+    expect(event.button, equals(0));
+    expect(event.buttons, equals(6));
+    expect(event.client.x, equals(1000));
+    expect(event.client.y, equals(2000));
+
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('mouseup'));
     expect(event.button, equals(0));
@@ -399,6 +456,19 @@ void testMain() {
     expect(event.buttons, equals(0));
     expect(event.client.x, equals(400));
     expect(event.client.y, equals(401));
+
+    context.pressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), true);
+    expect(event.getModifierState('Control'), true);
+    expect(event.getModifierState('Meta'), true);
+    expect(event.getModifierState('Shift'), true);
+    context.unpressAllModifiers();
+    event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
+    expect(event.getModifierState('Alt'), false);
+    expect(event.getModifierState('Control'), false);
+    expect(event.getModifierState('Meta'), false);
+    expect(event.getModifierState('Shift'), false);
   });
 
   // ALL ADAPTERS
@@ -448,6 +518,283 @@ void testMain() {
     },
   );
 
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'synthesize modifier keys left down event if left or right are not pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should synthesize a modifier left key down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state doesn't contain
+      // the modifier left key nor the modifier right key.
+      void shouldSynthesizeLeftDownIfNotPressed(String key) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalLeft = kWebLogicalLocationMap[key]![kLocationLeft]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.down,
+          physical: physicalLeft,
+          logical: logicalLeft,
+          character: null,
+          synthesized: true,
+        );
+      }
+
+      context.altPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Alt');
+      context.unpressAllModifiers();
+      context.ctrlPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Control');
+      context.unpressAllModifiers();
+      context.metaPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Meta');
+      context.unpressAllModifiers();
+      context.shiftPressed = true;
+      shouldSynthesizeLeftDownIfNotPressed('Shift');
+      context.unpressAllModifiers();
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'should not synthesize modifier keys down event if left or right are pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should not synthesize a modifier down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state contains
+      // the modifier left key.
+      void shouldNotSynthesizeDownIfLeftPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      // Should not synthesize a modifier down event when DOM event indicates
+      // that the modifier key is pressed and known pressing state contains
+      // the modifier right key.
+      void shouldNotSynthesizeDownIfRightPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      context.altPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Alt', kAlt);
+      shouldNotSynthesizeDownIfRightPressed('Alt', kAlt);
+      context.unpressAllModifiers();
+      context.ctrlPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Control', kCtrl);
+      shouldNotSynthesizeDownIfRightPressed('Control', kCtrl);
+      context.unpressAllModifiers();
+      context.metaPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Meta', kMeta);
+      shouldNotSynthesizeDownIfRightPressed('Meta', kMeta);
+      context.unpressAllModifiers();
+      context.shiftPressed = true;
+      shouldNotSynthesizeDownIfLeftPressed('Shift', kShift);
+      shouldNotSynthesizeDownIfRightPressed('Shift', kShift);
+      context.unpressAllModifiers();
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'synthesize modifier keys up event if left or right are pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should synthesize a modifier left key up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state contains
+      // the modifier left key.
+      void shouldSynthesizeLeftUpIfLeftPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalLeft = kWebLogicalLocationMap[key]![kLocationLeft]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.up,
+          physical: physicalLeft,
+          logical: logicalLeft,
+          character: null,
+          synthesized: true,
+        );
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+      }
+
+      // Should synthesize a modifier right key up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state contains
+      // the modifier right key.
+      void shouldSynthesizeRightUpIfRightPressed(String key, int modifiers) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+        final int logicalRight = kWebLogicalLocationMap[key]![kLocationRight]!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 1);
+        expectKeyData(keyDataList.last,
+          type: ui.KeyEventType.up,
+          physical: physicalRight,
+          logical: logicalRight,
+          character: null,
+          synthesized: true,
+        );
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+      }
+
+      context.altPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Alt', kAlt);
+      shouldSynthesizeRightUpIfRightPressed('Alt', kAlt);
+      context.ctrlPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Control', kCtrl);
+      shouldSynthesizeRightUpIfRightPressed('Control', kCtrl);
+      context.metaPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Meta', kMeta);
+      shouldSynthesizeRightUpIfRightPressed('Meta', kMeta);
+      context.shiftPressed = false;
+      shouldSynthesizeLeftUpIfLeftPressed('Shift', kShift);
+      shouldSynthesizeRightUpIfRightPressed('Shift', kShift);
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'should not synthesize modifier keys up event if left or right are not pressed',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      // Should not synthesize a modifier up event when DOM event indicates
+      // that the modifier key is not pressed and known pressing state does
+      // not contain the modifier left key nor the modifier right key.
+      void shouldNotSynthesizeUpIfNotPressed(String key) {
+        final int physicalLeft = kWebToPhysicalKey['${key}Left']!;
+        final int physicalRight = kWebToPhysicalKey['${key}Right']!;
+
+        final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+        final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+        PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        keyDataList.clear(); // Remove key data generated by handleEvent
+
+        glassPane.dispatchEvent(context.primaryDown());
+        expect(keyDataList.length, 0);
+      }
+
+      context.altPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Alt');
+      context.ctrlPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Control');
+      context.metaPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Meta');
+      context.shiftPressed = false;
+      shouldNotSynthesizeUpIfNotPressed('Shift');
+    },
+  );
+
+  _testEach<_BasicEventContext>(
+    <_BasicEventContext>[
+      _PointerEventContext(),
+      _MouseEventContext(),
+      _TouchEventContext(),
+    ],
+    'should synthesize modifier keys up event for AltGraph',
+    (_BasicEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+      final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
+      PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
+
+      final int physicalAltRight = kWebToPhysicalKey['AltRight']!;
+      final int logicalAltGraph = kWebLogicalLocationMap['AltGraph']![0]!;
+
+      // Simulate pressing `AltGr` key.
+      keyboardConverter.handleEvent(keyDownEvent('AltRight', 'AltGraph'));
+      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), true);
+      keyDataList.clear(); // Remove key data generated by handleEvent.
+
+      glassPane.dispatchEvent(context.primaryDown());
+      expect(keyDataList.length, 1);
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.up,
+        physical: physicalAltRight,
+        logical: logicalAltGraph,
+        character: null,
+        synthesized: true,
+      );
+      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), false);
+    },
+  );
+
   _testEach<_ButtonedEventMixin>(
     <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
@@ -461,8 +808,8 @@ void testMain() {
         packets.add(packet);
       };
 
-      final html.Element semanticsPlaceholder =
-          html.Element.tag('flt-semantics-placeholder');
+      final DomElement semanticsPlaceholder =
+          createDomElement('flt-semantics-placeholder');
       glassPane.append(semanticsPlaceholder);
 
       // Press on the semantics placeholder.
@@ -502,7 +849,7 @@ void testMain() {
       packets.clear();
 
       // Release the pointer on the semantics placeholder.
-      html.window.dispatchEvent(context.primaryUp(
+      domWindow.dispatchEvent(context.primaryUp(
         clientX: 100.0,
         clientY: 200.0,
       ));
@@ -705,6 +1052,104 @@ void testMain() {
   _testEach<_ButtonedEventMixin>(
     <_ButtonedEventMixin>[
       if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'converts scroll delta to physical pixels (Firefox)',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      const double dpi = 2.5;
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      debugBrowserEngineOverride = BrowserEngine.firefox;
+      window.debugOverrideDevicePixelRatio(dpi);
+
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 10,
+        deltaY: 10,
+      ));
+
+      expect(packets, hasLength(1));
+
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      // Scroll deltas should be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0 * dpi));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      // Scroll deltas should be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0 * dpi));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0 * dpi));
+
+      window.debugOverrideDevicePixelRatio(1.0);
+      debugOperatingSystemOverride = null;
+      debugBrowserEngineOverride = null;
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'scroll delta are already in physical pixels (Chrome)',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+
+      const double dpi = 2.5;
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      debugBrowserEngineOverride = BrowserEngine.blink;
+      window.debugOverrideDevicePixelRatio(dpi);
+
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 10,
+        deltaY: 10,
+      ));
+
+      expect(packets, hasLength(1));
+
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      // Scroll deltas should NOT be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0));
+
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      // Scroll deltas should NOT be multiplied by `dpi`.
+      expect(packets[0].data[0].scrollDeltaX, equals(10.0));
+      expect(packets[0].data[0].scrollDeltaY, equals(10.0));
+
+      window.debugOverrideDevicePixelRatio(1.0);
+      debugOperatingSystemOverride = null;
+      debugBrowserEngineOverride = null;
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext()
     ],
     'does calculate delta and pointer identifier correctly',
@@ -835,7 +1280,7 @@ void testMain() {
       if (!isIosSafari) _PointerEventContext(),
       if (!isIosSafari) _MouseEventContext(),
     ],
-    'correctly converts buttons of down, move and up events',
+    'correctly converts buttons of down, move, leave, and up events',
     (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
@@ -995,6 +1440,30 @@ void testMain() {
       expect(packets[0].data[0].synthesized, isFalse);
       expect(packets[0].data[0].physicalX, equals(40 * dpi));
       expect(packets[0].data[0].physicalY, equals(41 * dpi));
+      expect(packets[0].data[0].buttons, equals(0));
+      packets.clear();
+
+      // Leave
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 1,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, isEmpty);
+      packets.clear();
+
+      glassPane.dispatchEvent(context.mouseLeave(
+        buttons: 0,
+        clientX: 1000.0,
+        clientY: 2000.0,
+      ));
+      expect(packets, hasLength(1));
+      expect(packets[0].data, hasLength(1));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.hover));
+      expect(packets[0].data[0].synthesized, isFalse);
+      expect(packets[0].data[0].physicalX, equals(1000 * dpi));
+      expect(packets[0].data[0].physicalY, equals(2000 * dpi));
       expect(packets[0].data[0].buttons, equals(0));
       packets.clear();
     },
@@ -1226,7 +1695,7 @@ void testMain() {
       _PointerEventContext(),
     ],
     'correctly handles missing right mouse button up when followed by move',
-        (_ButtonedEventMixin context) {
+    (_ButtonedEventMixin context) {
       PointerBinding.instance!.debugOverrideDetector(context);
       // This can happen with the following gesture sequence:
       //
@@ -1780,20 +2249,19 @@ void testMain() {
       packets.clear();
 
       // Move outside the glasspane.
-      html.window.dispatchEvent(context.primaryMove(
+      domWindow.dispatchEvent(context.primaryMove(
         clientX: 900.0,
         clientY: 1900.0,
       ));
       expect(packets, hasLength(1));
       expect(packets[0].data, hasLength(1));
       expect(packets[0].data[0].change, equals(ui.PointerChange.move));
-      expect(packets[0].data[0].physicalX,
-          equals(900.0  * dpi));
+      expect(packets[0].data[0].physicalX, equals(900.0 * dpi));
       expect(packets[0].data[0].physicalY, equals(1900.0 * dpi));
       packets.clear();
 
       // Release outside the glasspane.
-      html.window.dispatchEvent(context.primaryUp(
+      domWindow.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
         clientY: 2000.0,
       ));
@@ -2091,6 +2559,30 @@ void testMain() {
 
   _testEach<_PointerEventContext>(
     <_PointerEventContext>[
+      if (!isIosSafari) _PointerEventContext(),
+    ],
+    'ignores pointer up or pointer cancel events for unknown device',
+    (_PointerEventContext context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      context.multiTouchUp(const <_TouchDetails>[
+        _TouchDetails(pointer: 23, clientX: 200, clientY: 202),
+      ]).forEach(glassPane.dispatchEvent);
+      expect(packets, hasLength(0));
+
+      context.multiTouchCancel(const <_TouchDetails>[
+        _TouchDetails(pointer: 24, clientX: 200, clientY: 202),
+      ]).forEach(glassPane.dispatchEvent);
+      expect(packets, hasLength(0));
+    },
+  );
+
+  _testEach<_PointerEventContext>(
+    <_PointerEventContext>[
       _PointerEventContext(),
     ],
     'handles random pointer id on up events',
@@ -2241,46 +2733,84 @@ void testMain() {
   );
 }
 
+class MockSafariPointerEventWorkaround implements SafariPointerEventWorkaround {
+  bool workAroundInvoked = false;
+
+  @override
+  void workAroundMissingPointerEvents() {
+    workAroundInvoked = true;
+  }
+}
+
 abstract class _BasicEventContext implements PointerSupportDetector {
   String get name;
 
   bool get isSupported;
 
+  // Accepted modifier keys are 'Alt', 'Control', 'Meta' and 'Shift'.
+  // https://www.w3.org/TR/uievents-key/#keys-modifier defines more modifiers,
+  // but only the four main modifiers could be set from MouseEvent, PointerEvent
+  // and TouchEvent constructors.
+  bool altPressed = false;
+  bool ctrlPressed = false;
+  bool metaPressed = false;
+  bool shiftPressed = false;
+
   // Generate an event that is:
   //
   //  * For mouse, a left click
   //  * For touch, a touch down
-  html.Event primaryDown({double clientX, double clientY});
+  DomEvent primaryDown({double clientX, double clientY});
 
   // Generate an event that is:
   //
   //  * For mouse, a drag with LMB down
   //  * For touch, a touch drag
-  html.Event primaryMove({double clientX, double clientY});
+  DomEvent primaryMove({double clientX, double clientY});
 
   // Generate an event that is:
   //
   //  * For mouse, release LMB
   //  * For touch, a touch up
-  html.Event primaryUp({double clientX, double clientY});
+  DomEvent primaryUp({double clientX, double clientY});
+
+  void pressAllModifiers() {
+    altPressed = true;
+    ctrlPressed = true;
+    metaPressed = true;
+    shiftPressed = true;
+  }
+
+  void unpressAllModifiers() {
+    altPressed = false;
+    ctrlPressed = false;
+    metaPressed = false;
+    shiftPressed = false;
+  }
 }
 
 mixin _ButtonedEventMixin on _BasicEventContext {
   // Generate an event that is a mouse down with the specific buttons.
-  html.Event mouseDown(
+  DomEvent mouseDown(
       {double? clientX, double? clientY, int? button, int? buttons});
 
   // Generate an event that is a mouse drag with the specific buttons, or button
   // changes during the drag.
   //
   // If there is no button change, assign `button` with _kNoButtonChange.
-  html.Event mouseMove(
-      {double? clientX, double? clientY, required int button, required int buttons});
+  DomEvent mouseMove(
+      {double? clientX,
+      double? clientY,
+      required int button,
+      required int buttons});
+
+  // Generate an event that moves the mouse outside of the tracked area.
+  DomEvent mouseLeave({double? clientX, double? clientY, required int buttons});
 
   // Generate an event that releases all mouse buttons.
-  html.Event mouseUp({double? clientX, double? clientY, int? button, int? buttons});
+  DomEvent mouseUp({double? clientX, double? clientY, int? button, int? buttons});
 
-  html.Event hover({double? clientX, double? clientY}) {
+  DomEvent hover({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 0,
       button: _kNoButtonChange,
@@ -2290,7 +2820,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryDown({double? clientX, double? clientY}) {
+  DomEvent primaryDown({double? clientX, double? clientY}) {
     return mouseDown(
       buttons: 1,
       button: 0,
@@ -2300,7 +2830,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double? clientX, double? clientY}) {
+  DomEvent primaryMove({double? clientX, double? clientY}) {
     return mouseMove(
       buttons: 1,
       button: _kNoButtonChange,
@@ -2310,7 +2840,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double? clientX, double? clientY}) {
+  DomEvent primaryUp({double? clientX, double? clientY}) {
     return mouseUp(
       button: 0,
       clientX: clientX,
@@ -2318,14 +2848,14 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     );
   }
 
-  html.Event wheel({
+  DomEvent wheel({
     required int? buttons,
     required double? clientX,
     required double? clientY,
     required double? deltaX,
     required double? deltaY,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(html.window, 'WheelEvent');
+    final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
     final List<dynamic> eventArgs = <dynamic>[
       'wheel',
       <String, dynamic>{
@@ -2336,7 +2866,7 @@ mixin _ButtonedEventMixin on _BasicEventContext {
         'deltaY': deltaY,
       }
     ];
-    return js_util.callConstructor<html.Event>(
+    return js_util.callConstructor<DomEvent>(
       jsWheelEvent,
       js_util.jsify(eventArgs) as List<Object?>,
     );
@@ -2352,13 +2882,13 @@ class _TouchDetails {
 }
 
 mixin _MultiPointerEventMixin on _BasicEventContext {
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches);
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches);
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches);
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches);
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches);
 
   @override
-  html.Event primaryDown({double? clientX, double? clientY}) {
+  DomEvent primaryDown({double? clientX, double? clientY}) {
     return multiTouchDown(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2369,7 +2899,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryMove({double? clientX, double? clientY}) {
+  DomEvent primaryMove({double? clientX, double? clientY}) {
     return multiTouchMove(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2380,7 +2910,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
   }
 
   @override
-  html.Event primaryUp({double? clientX, double? clientY}) {
+  DomEvent primaryUp({double? clientX, double? clientY}) {
     return multiTouchUp(<_TouchDetails>[
       _TouchDetails(
         pointer: 1,
@@ -2396,8 +2926,7 @@ mixin _MultiPointerEventMixin on _BasicEventContext {
 class _TouchEventContext extends _BasicEventContext
     with _MultiPointerEventMixin
     implements PointerSupportDetector {
-  _TouchEventContext() :
-    _target = html.document.createElement('div');
+  _TouchEventContext() : _target = domDocument.createElement('div');
 
   @override
   String get name => 'TouchAdapter';
@@ -2414,14 +2943,14 @@ class _TouchEventContext extends _BasicEventContext
   @override
   bool get hasMouseEvents => false;
 
-  html.EventTarget _target;
+  final DomEventTarget _target;
 
-  html.Touch _createTouch({
+  DomTouch _createTouch({
     int? identifier,
     double? clientX,
     double? clientY,
   }) {
-    return html.Touch(<String, dynamic>{
+    return createDomTouch(<String, dynamic>{
       'identifier': identifier,
       'clientX': clientX,
       'clientY': clientY,
@@ -2429,9 +2958,9 @@ class _TouchEventContext extends _BasicEventContext
     });
   }
 
-  html.TouchEvent _createTouchEvent(
+  DomTouchEvent _createTouchEvent(
       String eventType, List<_TouchDetails> touches) {
-    return html.TouchEvent(
+    return createDomTouchEvent(
       eventType,
       <String, dynamic>{
         'changedTouches': touches
@@ -2443,28 +2972,32 @@ class _TouchEventContext extends _BasicEventContext
               ),
             )
             .toList(),
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shiftPressed,
       },
     );
   }
 
   @override
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchstart', touches)];
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchstart', touches)];
   }
 
   @override
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchmove', touches)];
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchmove', touches)];
   }
 
   @override
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchend', touches)];
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchend', touches)];
   }
 
   @override
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
-    return <html.Event>[_createTouchEvent('touchcancel', touches)];
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches) {
+    return <DomEvent>[_createTouchEvent('touchcancel', touches)];
   }
 }
 
@@ -2491,7 +3024,7 @@ class _MouseEventContext extends _BasicEventContext
   bool get hasMouseEvents => true;
 
   @override
-  html.Event mouseDown({
+  DomEvent mouseDown({
     double? clientX,
     double? clientY,
     int? button,
@@ -2507,7 +3040,7 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove({
+  DomEvent mouseMove({
     double? clientX,
     double? clientY,
     required int button,
@@ -2518,7 +3051,9 @@ class _MouseEventContext extends _BasicEventContext
         hasButtonChange && (buttons & convertButtonToButtons(button)) != 0;
     final String adjustedType = !hasButtonChange
         ? 'mousemove'
-        : changeIsButtonDown ? 'mousedown' : 'mouseup';
+        : changeIsButtonDown
+            ? 'mousedown'
+            : 'mouseup';
     final int adjustedButton = hasButtonChange ? button : 0;
     return _createMouseEvent(
       adjustedType,
@@ -2530,7 +3065,22 @@ class _MouseEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({
+  DomEvent mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+  }) {
+    return _createMouseEvent(
+      'mouseleave',
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+    );
+  }
+
+  @override
+  DomEvent mouseUp({
     double? clientX,
     double? clientY,
     int? button,
@@ -2545,7 +3095,7 @@ class _MouseEventContext extends _BasicEventContext
     );
   }
 
-  html.MouseEvent _createMouseEvent(
+  DomMouseEvent _createMouseEvent(
     String type, {
     int? buttons,
     int? button,
@@ -2553,7 +3103,7 @@ class _MouseEventContext extends _BasicEventContext
     double? clientY,
   }) {
     final Function jsMouseEvent =
-        js_util.getProperty<Function>(html.window, 'MouseEvent');
+        js_util.getProperty<Function>(domWindow, 'MouseEvent');
     final List<dynamic> eventArgs = <dynamic>[
       type,
       <String, dynamic>{
@@ -2561,9 +3111,13 @@ class _MouseEventContext extends _BasicEventContext
         'button': button,
         'clientX': clientX,
         'clientY': clientY,
+        'altKey': altPressed,
+        'ctrlKey': ctrlPressed,
+        'metaKey': metaPressed,
+        'shiftKey': shiftPressed,
       }
     ];
-    return js_util.callConstructor<html.MouseEvent>(
+    return js_util.callConstructor<DomMouseEvent>(
       jsMouseEvent,
       js_util.jsify(eventArgs) as List<Object?>,
     );
@@ -2593,7 +3147,7 @@ class _PointerEventContext extends _BasicEventContext
   bool get hasMouseEvents => false;
 
   @override
-  List<html.Event> multiTouchDown(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchDown(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _downWithFullDetails(
               pointer: details.pointer,
@@ -2607,7 +3161,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseDown({
+  DomEvent mouseDown({
     double? clientX,
     double? clientY,
     int? button,
@@ -2624,7 +3178,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _downWithFullDetails({
+  DomEvent _downWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2632,18 +3186,22 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointerdown', <String, dynamic>{
+    return createDomPointerEvent('pointerdown', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
       'clientX': clientX,
       'clientY': clientY,
       'pointerType': pointerType,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shiftPressed,
     });
   }
 
   @override
-  List<html.Event> multiTouchMove(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchMove(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _moveWithFullDetails(
               pointer: details.pointer,
@@ -2657,7 +3215,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseMove({
+  DomEvent mouseMove({
     double? clientX,
     double? clientY,
     required int button,
@@ -2674,7 +3232,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _moveWithFullDetails({
+  DomEvent _moveWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2682,7 +3240,7 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointermove', <String, dynamic>{
+    return createDomPointerEvent('pointermove', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2693,7 +3251,42 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchUp(List<_TouchDetails> touches) {
+  DomEvent mouseLeave({
+    double? clientX,
+    double? clientY,
+    required int buttons,
+    int pointerId = 1,
+  }) {
+    return _leaveWithFullDetails(
+      pointer: pointerId,
+      buttons: buttons,
+      button: 0,
+      clientX: clientX,
+      clientY: clientY,
+      pointerType: 'mouse',
+    );
+  }
+
+  DomEvent _leaveWithFullDetails({
+    double? clientX,
+    double? clientY,
+    int? button,
+    int? buttons,
+    int? pointer,
+    String? pointerType,
+  }) {
+    return createDomPointerEvent('pointerleave', <String, dynamic>{
+      'pointerId': pointer,
+      'button': button,
+      'buttons': buttons,
+      'clientX': clientX,
+      'clientY': clientY,
+      'pointerType': pointerType,
+    });
+  }
+
+  @override
+  List<DomEvent> multiTouchUp(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) => _upWithFullDetails(
               pointer: details.pointer,
@@ -2706,7 +3299,7 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  html.Event mouseUp({
+  DomEvent mouseUp({
     double? clientX,
     double? clientY,
     int? button,
@@ -2723,7 +3316,7 @@ class _PointerEventContext extends _BasicEventContext
     );
   }
 
-  html.Event _upWithFullDetails({
+  DomEvent _upWithFullDetails({
     double? clientX,
     double? clientY,
     int? button,
@@ -2731,7 +3324,7 @@ class _PointerEventContext extends _BasicEventContext
     int? pointer,
     String? pointerType,
   }) {
-    return html.PointerEvent('pointerup', <String, dynamic>{
+    return createDomPointerEvent('pointerup', <String, dynamic>{
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,
@@ -2742,10 +3335,10 @@ class _PointerEventContext extends _BasicEventContext
   }
 
   @override
-  List<html.Event> multiTouchCancel(List<_TouchDetails> touches) {
+  List<DomEvent> multiTouchCancel(List<_TouchDetails> touches) {
     return touches
         .map((_TouchDetails details) =>
-            html.PointerEvent('pointercancel', <String, dynamic>{
+            createDomPointerEvent('pointercancel', <String, dynamic>{
               'pointerId': details.pointer,
               'button': 0,
               'buttons': 0,

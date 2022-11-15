@@ -55,6 +55,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
+#include "flutter/shell/platform/embedder/pixel_formats.h"
 #include "flutter/shell/platform/embedder/platform_view_embedder.h"
 #include "rapidjson/rapidjson.h"
 #include "rapidjson/writer.h"
@@ -78,6 +79,8 @@ const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 // - lib/ui/platform_dispatcher.dart, _kFlutterKeyDataChannel
 // - shell/platform/darwin/ios/framework/Source/FlutterEngine.mm,
 //   FlutterKeyDataChannel
+// - io/flutter/embedding/android/KeyData.java,
+//   CHANNEL
 //
 // Not to be confused with "flutter/keyevent", which is used to send raw
 // key event data in a platform-dependent format.
@@ -219,11 +222,33 @@ static void* DefaultGLProcResolver(const char* name) {
 }
 #endif  // FML_OS_LINUX || FML_OS_WIN
 
-static flutter::Shell::CreateCallback<flutter::PlatformView>
+#ifdef SHELL_ENABLE_GL
+// Auxiliary function used to translate rectangles of type SkIRect to
+// FlutterRect.
+static FlutterRect SkIRectToFlutterRect(const SkIRect sk_rect) {
+  FlutterRect flutter_rect = {static_cast<double>(sk_rect.fLeft),
+                              static_cast<double>(sk_rect.fTop),
+                              static_cast<double>(sk_rect.fRight),
+                              static_cast<double>(sk_rect.fBottom)};
+  return flutter_rect;
+}
+
+// Auxiliary function used to translate rectangles of type FlutterRect to
+// SkIRect.
+static const SkIRect FlutterRectToSkIRect(FlutterRect flutter_rect) {
+  SkIRect rect = {static_cast<int32_t>(flutter_rect.left),
+                  static_cast<int32_t>(flutter_rect.top),
+                  static_cast<int32_t>(flutter_rect.right),
+                  static_cast<int32_t>(flutter_rect.bottom)};
+  return rect;
+}
+#endif
+
+static inline flutter::Shell::CreateCallback<flutter::PlatformView>
 InferOpenGLPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -238,15 +263,45 @@ InferOpenGLPlatformViewCreationCallback(
   auto gl_clear_current = [ptr = config->open_gl.clear_current,
                            user_data]() -> bool { return ptr(user_data); };
 
-  auto gl_present = [present = config->open_gl.present,
-                     present_with_info = config->open_gl.present_with_info,
-                     user_data](uint32_t fbo_id) -> bool {
+  auto gl_present =
+      [present = config->open_gl.present,
+       present_with_info = config->open_gl.present_with_info,
+       user_data](flutter::GLPresentInfo gl_present_info) -> bool {
     if (present) {
       return present(user_data);
     } else {
-      FlutterPresentInfo present_info = {};
-      present_info.struct_size = sizeof(FlutterPresentInfo);
-      present_info.fbo_id = fbo_id;
+      // Format the frame and buffer damages accordingly. Note that, since the
+      // current compute damage algorithm only returns one rectangle for damage
+      // we are assuming the number of rectangles provided in frame and buffer
+      // damage are always 1. Once the function that computes damage implements
+      // support for multiple damage rectangles, GLPresentInfo should also
+      // contain the number of damage rectangles.
+      const size_t num_rects = 1;
+
+      std::array<FlutterRect, num_rects> frame_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.frame_damage))};
+      std::array<FlutterRect, num_rects> buffer_damage_rect = {
+          SkIRectToFlutterRect(*(gl_present_info.buffer_damage))};
+
+      FlutterDamage frame_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = frame_damage_rect.size(),
+          .damage = frame_damage_rect.data(),
+      };
+      FlutterDamage buffer_damage{
+          .struct_size = sizeof(FlutterDamage),
+          .num_rects = buffer_damage_rect.size(),
+          .damage = buffer_damage_rect.data(),
+      };
+
+      // Construct the present information concerning the frame being rendered.
+      FlutterPresentInfo present_info = {
+          .struct_size = sizeof(FlutterPresentInfo),
+          .fbo_id = gl_present_info.fbo_id,
+          .frame_damage = frame_damage,
+          .buffer_damage = buffer_damage,
+      };
+
       return present_with_info(user_data, &present_info);
     }
   };
@@ -264,6 +319,50 @@ InferOpenGLPlatformViewCreationCallback(
       frame_info.size = {gl_frame_info.width, gl_frame_info.height};
       return fbo_with_frame_info_callback(user_data, &frame_info);
     }
+  };
+
+  auto gl_populate_existing_damage =
+      [populate_existing_damage = config->open_gl.populate_existing_damage,
+       user_data](intptr_t id) -> flutter::GLFBOInfo {
+    // If no populate_existing_damage was provided, disable partial
+    // repaint.
+    if (!populate_existing_damage) {
+      return flutter::GLFBOInfo{
+          .fbo_id = static_cast<uint32_t>(id),
+          .partial_repaint_enabled = false,
+          .existing_damage = SkIRect::MakeEmpty(),
+      };
+    }
+
+    // Given the FBO's ID, get its existing damage.
+    FlutterDamage existing_damage;
+    populate_existing_damage(user_data, id, &existing_damage);
+
+    bool partial_repaint_enabled = true;
+    SkIRect existing_damage_rect;
+
+    // Verify that at least one damage rectangle was provided.
+    if (existing_damage.num_rects <= 0 || existing_damage.damage == nullptr) {
+      FML_LOG(INFO) << "No damage was provided. Forcing full repaint.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else if (existing_damage.num_rects > 1) {
+      // Log message notifying users that multi-damage is not yet available in
+      // case they try to make use of it.
+      FML_LOG(INFO) << "Damage with multiple rectangles not yet supported. "
+                       "Repainting the whole frame.";
+      existing_damage_rect = SkIRect::MakeEmpty();
+      partial_repaint_enabled = false;
+    } else {
+      existing_damage_rect = FlutterRectToSkIRect(*(existing_damage.damage));
+    }
+
+    // Pass the information about this FBO to the rendering backend.
+    return flutter::GLFBOInfo{
+        .fbo_id = static_cast<uint32_t>(id),
+        .partial_repaint_enabled = partial_repaint_enabled,
+        .existing_damage = existing_damage_rect,
+    };
   };
 
   const FlutterOpenGLRendererConfig* open_gl_config = &config->open_gl;
@@ -323,6 +422,7 @@ InferOpenGLPlatformViewCreationCallback(
       gl_make_resource_current_callback,   // gl_make_resource_current_callback
       gl_surface_transformation_callback,  // gl_surface_transformation_callback
       gl_proc_resolver,                    // gl_proc_resolver
+      gl_populate_existing_damage,         // gl_populate_existing_damage
   };
 
   return fml::MakeCopyable(
@@ -347,7 +447,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferMetalPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -395,6 +495,8 @@ InferMetalPlatformViewCreationCallback(
               config->metal.present_command_queue),
           metal_dispatch_table, view_embedder);
 
+  // The static leak checker gets confused by the use of fml::MakeCopyable.
+  // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   return fml::MakeCopyable(
       [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
        external_view_embedder = view_embedder](flutter::Shell& shell) mutable {
@@ -415,7 +517,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferVulkanPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -454,8 +556,13 @@ InferVulkanPlatformViewCreationCallback(
     return ptr(user_data, &image_desc);
   };
 
+  auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
+  auto proc_addr =
+      vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
+
   flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
-      .get_instance_proc_address = vulkan_get_instance_proc_address,
+      .get_instance_proc_address =
+          reinterpret_cast<PFN_vkGetInstanceProcAddr>(proc_addr),
       .get_next_image = vulkan_get_next_image,
       .present_image = vulkan_present_image_callback,
   };
@@ -465,8 +572,7 @@ InferVulkanPlatformViewCreationCallback(
 
   std::unique_ptr<flutter::EmbedderSurfaceVulkan> embedder_surface =
       std::make_unique<flutter::EmbedderSurfaceVulkan>(
-          config->vulkan.version,
-          static_cast<VkInstance>(config->vulkan.instance),
+          config->vulkan.version, vk_instance,
           config->vulkan.enabled_instance_extension_count,
           config->vulkan.enabled_instance_extensions,
           config->vulkan.enabled_device_extension_count,
@@ -498,7 +604,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -535,7 +641,7 @@ static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferPlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
-    flutter::PlatformViewEmbedder::PlatformDispatchTable
+    const flutter::PlatformViewEmbedder::PlatformDispatchTable&
         platform_dispatch_table,
     std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
         external_view_embedder) {
@@ -689,6 +795,51 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
   }
   if (surface) {
     captures.release();  // Skia has assumed ownership of the struct.
+  }
+  return surface;
+}
+
+static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterBackingStoreConfig& config,
+    const FlutterSoftwareBackingStore2* software) {
+  const auto color_info = getSkColorInfo(software->pixel_format);
+  if (!color_info) {
+    return nullptr;
+  }
+
+  const auto image_info = SkImageInfo::Make(
+      SkISize::Make(config.size.width, config.size.height), *color_info);
+
+  struct Captures {
+    VoidCallback destruction_callback;
+    void* user_data;
+  };
+  auto captures = std::make_unique<Captures>();
+  captures->destruction_callback = software->destruction_callback;
+  captures->user_data = software->user_data;
+  auto release_proc = [](void* pixels, void* context) {
+    auto captures = reinterpret_cast<Captures*>(context);
+    if (captures->destruction_callback) {
+      captures->destruction_callback(captures->user_data);
+    }
+  };
+
+  auto surface = SkSurface::MakeRasterDirectReleaseProc(
+      image_info,                               // image info
+      const_cast<void*>(software->allocation),  // pixels
+      software->row_bytes,                      // row bytes
+      release_proc,                             // release proc
+      captures.release()                        // release context
+  );
+
+  if (!surface) {
+    FML_LOG(ERROR)
+        << "Could not wrap embedder supplied software render buffer.";
+    if (software->destruction_callback) {
+      software->destruction_callback(software->user_data);
+    }
+    return nullptr;
   }
   return surface;
 }
@@ -850,6 +1001,10 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
       render_surface = MakeSkSurfaceFromBackingStore(context, config,
                                                      &backing_store.software);
       break;
+    case kFlutterBackingStoreTypeSoftware2:
+      render_surface = MakeSkSurfaceFromBackingStore(context, config,
+                                                     &backing_store.software2);
+      break;
     case kFlutterBackingStoreTypeMetal:
       render_surface =
           MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal);
@@ -1004,7 +1159,52 @@ FlutterEngineResult FlutterEngineCollectAOTData(FlutterEngineAOTData data) {
   return kSuccess;
 }
 
-void PopulateSnapshotMappingCallbacks(
+// Constructs appropriate mapping callbacks if JIT snapshot locations have been
+// explictly specified.
+void PopulateJITSnapshotMappingCallbacks(const FlutterProjectArgs* args,
+                                         flutter::Settings& settings) {
+  auto make_mapping_callback = [](const char* path, bool executable) {
+    return [path, executable]() {
+      if (executable) {
+        return fml::FileMapping::CreateReadExecute(path);
+      } else {
+        return fml::FileMapping::CreateReadOnly(path);
+      }
+    };
+  };
+
+  // Users are allowed to specify only certain snapshots if they so desire.
+  if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_data), false);
+  }
+
+  if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    settings.vm_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->vm_snapshot_instructions), true);
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    settings.isolate_snapshot_data = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_data), false);
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+    settings.isolate_snapshot_instr = make_mapping_callback(
+        reinterpret_cast<const char*>(args->isolate_snapshot_instructions),
+        true);
+  }
+
+#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
+  settings.dart_library_sources_kernel = []() {
+    return std::make_unique<fml::NonOwnedMapping>(kPlatformStrongDill,
+                                                  kPlatformStrongDillSize);
+  };
+#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
+        // FLUTTER_RUNTIME_MODE_DEBUG)
+}
+
+void PopulateAOTSnapshotMappingCallbacks(
     const FlutterProjectArgs* args,
     flutter::Settings& settings) {  // NOLINT(google-runtime-references)
   // There are no ownership concerns here as all mappings are owned by the
@@ -1015,50 +1215,218 @@ void PopulateSnapshotMappingCallbacks(
     };
   };
 
-  if (flutter::DartVM::IsRunningPrecompiledCode()) {
-    if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data =
-          make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
+  if (SAFE_ACCESS(args, aot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data =
+        make_mapping_callback(args->aot_data->vm_snapshot_data, 0);
 
-      settings.vm_snapshot_instr =
-          make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
+    settings.vm_snapshot_instr =
+        make_mapping_callback(args->aot_data->vm_snapshot_instrs, 0);
 
-      settings.isolate_snapshot_data =
-          make_mapping_callback(args->aot_data->vm_isolate_data, 0);
+    settings.isolate_snapshot_data =
+        make_mapping_callback(args->aot_data->vm_isolate_data, 0);
 
-      settings.isolate_snapshot_instr =
-          make_mapping_callback(args->aot_data->vm_isolate_instrs, 0);
-    }
-
-    if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
-      settings.vm_snapshot_data = make_mapping_callback(
-          args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
-    }
-
-    if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
-      settings.vm_snapshot_instr = make_mapping_callback(
-          args->vm_snapshot_instructions,
-          SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
-    }
-
-    if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
-      settings.isolate_snapshot_data = make_mapping_callback(
-          args->isolate_snapshot_data,
-          SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
-    }
-
-    if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
-      settings.isolate_snapshot_instr = make_mapping_callback(
-          args->isolate_snapshot_instructions,
-          SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
-    }
+    settings.isolate_snapshot_instr =
+        make_mapping_callback(args->aot_data->vm_isolate_instrs, 0);
   }
 
-#if !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG)
-  settings.dart_library_sources_kernel =
-      make_mapping_callback(kPlatformStrongDill, kPlatformStrongDillSize);
-#endif  // !OS_FUCHSIA && (FLUTTER_RUNTIME_MODE ==
-        // FLUTTER_RUNTIME_MODE_DEBUG)
+  if (SAFE_ACCESS(args, vm_snapshot_data, nullptr) != nullptr) {
+    settings.vm_snapshot_data = make_mapping_callback(
+        args->vm_snapshot_data, SAFE_ACCESS(args, vm_snapshot_data_size, 0));
+  }
+
+  if (SAFE_ACCESS(args, vm_snapshot_instructions, nullptr) != nullptr) {
+    settings.vm_snapshot_instr = make_mapping_callback(
+        args->vm_snapshot_instructions,
+        SAFE_ACCESS(args, vm_snapshot_instructions_size, 0));
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_data, nullptr) != nullptr) {
+    settings.isolate_snapshot_data =
+        make_mapping_callback(args->isolate_snapshot_data,
+                              SAFE_ACCESS(args, isolate_snapshot_data_size, 0));
+  }
+
+  if (SAFE_ACCESS(args, isolate_snapshot_instructions, nullptr) != nullptr) {
+    settings.isolate_snapshot_instr = make_mapping_callback(
+        args->isolate_snapshot_instructions,
+        SAFE_ACCESS(args, isolate_snapshot_instructions_size, 0));
+  }
+}
+
+// Translates engine semantic nodes to embedder semantic nodes.
+FlutterSemanticsNode CreateEmbedderSemanticsNode(
+    const flutter::SemanticsNode& node) {
+  SkMatrix transform = node.transform.asM33();
+  FlutterTransformation flutter_transform{
+      transform.get(SkMatrix::kMScaleX), transform.get(SkMatrix::kMSkewX),
+      transform.get(SkMatrix::kMTransX), transform.get(SkMatrix::kMSkewY),
+      transform.get(SkMatrix::kMScaleY), transform.get(SkMatrix::kMTransY),
+      transform.get(SkMatrix::kMPersp0), transform.get(SkMatrix::kMPersp1),
+      transform.get(SkMatrix::kMPersp2)};
+  return {
+      sizeof(FlutterSemanticsNode),
+      node.id,
+      static_cast<FlutterSemanticsFlag>(node.flags),
+      static_cast<FlutterSemanticsAction>(node.actions),
+      node.textSelectionBase,
+      node.textSelectionExtent,
+      node.scrollChildren,
+      node.scrollIndex,
+      node.scrollPosition,
+      node.scrollExtentMax,
+      node.scrollExtentMin,
+      node.elevation,
+      node.thickness,
+      node.label.c_str(),
+      node.hint.c_str(),
+      node.value.c_str(),
+      node.increasedValue.c_str(),
+      node.decreasedValue.c_str(),
+      static_cast<FlutterTextDirection>(node.textDirection),
+      FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
+                  node.rect.fBottom},
+      flutter_transform,
+      node.childrenInTraversalOrder.size(),
+      node.childrenInTraversalOrder.data(),
+      node.childrenInHitTestOrder.data(),
+      node.customAccessibilityActions.size(),
+      node.customAccessibilityActions.data(),
+      node.platformViewId,
+  };
+}
+
+// Translates engine semantic custom actions to embedder semantic custom
+// actions.
+FlutterSemanticsCustomAction CreateEmbedderSemanticsCustomAction(
+    const flutter::CustomAccessibilityAction& action) {
+  return {
+      sizeof(FlutterSemanticsCustomAction),
+      action.id,
+      static_cast<FlutterSemanticsAction>(action.overrideId),
+      action.label.c_str(),
+      action.hint.c_str(),
+  };
+}
+
+// Create a callback to notify the embedder of semantic updates
+// using the new embedder callback 'update_semantics_callback'.
+flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+CreateNewEmbedderSemanticsUpdateCallback(
+    FlutterUpdateSemanticsCallback update_semantics_callback,
+    void* user_data) {
+  return [update_semantics_callback, user_data](
+             const flutter::SemanticsNodeUpdates& nodes,
+             const flutter::CustomAccessibilityActionUpdates& actions) {
+    std::vector<FlutterSemanticsNode> embedder_nodes;
+    for (const auto& value : nodes) {
+      embedder_nodes.push_back(CreateEmbedderSemanticsNode(value.second));
+    }
+
+    std::vector<FlutterSemanticsCustomAction> embedder_custom_actions;
+    for (const auto& value : actions) {
+      embedder_custom_actions.push_back(
+          CreateEmbedderSemanticsCustomAction(value.second));
+    }
+
+    FlutterSemanticsUpdate update{
+        .struct_size = sizeof(FlutterSemanticsUpdate),
+        .nodes_count = embedder_nodes.size(),
+        .nodes = embedder_nodes.data(),
+        .custom_actions_count = embedder_custom_actions.size(),
+        .custom_actions = embedder_custom_actions.data(),
+    };
+
+    update_semantics_callback(&update, user_data);
+  };
+}
+
+// Create a callback to notify the embedder of semantic updates
+// using the legacy embedder callbacks 'update_semantics_node_callback' and
+// 'update_semantics_custom_action_callback'.
+flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+CreateLegacyEmbedderSemanticsUpdateCallback(
+    FlutterUpdateSemanticsNodeCallback update_semantics_node_callback,
+    FlutterUpdateSemanticsCustomActionCallback
+        update_semantics_custom_action_callback,
+    void* user_data) {
+  return [update_semantics_node_callback,
+          update_semantics_custom_action_callback,
+          user_data](const flutter::SemanticsNodeUpdates& nodes,
+                     const flutter::CustomAccessibilityActionUpdates& actions) {
+    // First, queue all node and custom action updates.
+    if (update_semantics_node_callback != nullptr) {
+      for (const auto& value : nodes) {
+        const FlutterSemanticsNode embedder_node =
+            CreateEmbedderSemanticsNode(value.second);
+        update_semantics_node_callback(&embedder_node, user_data);
+      }
+    }
+
+    if (update_semantics_custom_action_callback != nullptr) {
+      for (const auto& value : actions) {
+        const FlutterSemanticsCustomAction embedder_action =
+            CreateEmbedderSemanticsCustomAction(value.second);
+        update_semantics_custom_action_callback(&embedder_action, user_data);
+      }
+    }
+
+    // Second, mark node and action batches completed now that all
+    // updates are queued.
+    if (update_semantics_node_callback != nullptr) {
+      const FlutterSemanticsNode batch_end_sentinel = {
+          sizeof(FlutterSemanticsNode),
+          kFlutterSemanticsNodeIdBatchEnd,
+      };
+      update_semantics_node_callback(&batch_end_sentinel, user_data);
+    }
+
+    if (update_semantics_custom_action_callback != nullptr) {
+      const FlutterSemanticsCustomAction batch_end_sentinel = {
+          sizeof(FlutterSemanticsCustomAction),
+          kFlutterSemanticsCustomActionIdBatchEnd,
+      };
+      update_semantics_custom_action_callback(&batch_end_sentinel, user_data);
+    }
+  };
+}
+
+// Creates a callback that receives semantic updates from the engine
+// and notifies the embedder's callback(s). Returns null if the embedder
+// did not register any callbacks.
+flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+CreateEmbedderSemanticsUpdateCallback(const FlutterProjectArgs* args,
+                                      void* user_data) {
+  // The embedder can register the new callback, or the legacy callbacks, or
+  // nothing at all. Handle the case where the embedder registered the 'new'
+  // callback.
+  if (SAFE_ACCESS(args, update_semantics_callback, nullptr) != nullptr) {
+    return CreateNewEmbedderSemanticsUpdateCallback(
+        args->update_semantics_callback, user_data);
+  }
+
+  // Handle the case where the embedder registered 'legacy' callbacks.
+  FlutterUpdateSemanticsNodeCallback update_semantics_node_callback = nullptr;
+  if (SAFE_ACCESS(args, update_semantics_node_callback, nullptr) != nullptr) {
+    update_semantics_node_callback = args->update_semantics_node_callback;
+  }
+
+  FlutterUpdateSemanticsCustomActionCallback
+      update_semantics_custom_action_callback = nullptr;
+  if (SAFE_ACCESS(args, update_semantics_custom_action_callback, nullptr) !=
+      nullptr) {
+    update_semantics_custom_action_callback =
+        args->update_semantics_custom_action_callback;
+  }
+
+  if (update_semantics_node_callback != nullptr ||
+      update_semantics_custom_action_callback != nullptr) {
+    return CreateLegacyEmbedderSemanticsUpdateCallback(
+        update_semantics_node_callback, update_semantics_custom_action_callback,
+        user_data);
+  }
+
+  // Handle the case where the embedder registered no callbacks.
+  return nullptr;
 }
 
 FlutterEngineResult FlutterEngineRun(size_t version,
@@ -1159,7 +1527,11 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     }
   }
 
-  PopulateSnapshotMappingCallbacks(args, settings);
+  if (flutter::DartVM::IsRunningPrecompiledCode()) {
+    PopulateAOTSnapshotMappingCallbacks(args, settings);
+  } else {
+    PopulateJITSnapshotMappingCallbacks(args, settings);
+  }
 
   settings.icu_data_path = icu_data_path;
   settings.assets_path = args->assets_path;
@@ -1179,8 +1551,8 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.application_kernel_asset = kApplicationKernelSnapshotFileName;
   }
 
-  settings.task_observer_add = [](intptr_t key, fml::closure callback) {
-    fml::MessageLoop::GetCurrent().AddTaskObserver(key, std::move(callback));
+  settings.task_observer_add = [](intptr_t key, const fml::closure& callback) {
+    fml::MessageLoop::GetCurrent().AddTaskObserver(key, callback);
   };
   settings.task_observer_remove = [](intptr_t key) {
     fml::MessageLoop::GetCurrent().RemoveTaskObserver(key);
@@ -1204,90 +1576,20 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
     settings.log_tag = SAFE_ACCESS(args, log_tag, nullptr);
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsNodesCallback
-      update_semantics_nodes_callback = nullptr;
-  if (SAFE_ACCESS(args, update_semantics_node_callback, nullptr) != nullptr) {
-    update_semantics_nodes_callback =
-        [ptr = args->update_semantics_node_callback,
-         user_data](flutter::SemanticsNodeUpdates update) {
-          for (const auto& value : update) {
-            const auto& node = value.second;
-            SkMatrix transform = node.transform.asM33();
-            FlutterTransformation flutter_transform{
-                transform.get(SkMatrix::kMScaleX),
-                transform.get(SkMatrix::kMSkewX),
-                transform.get(SkMatrix::kMTransX),
-                transform.get(SkMatrix::kMSkewY),
-                transform.get(SkMatrix::kMScaleY),
-                transform.get(SkMatrix::kMTransY),
-                transform.get(SkMatrix::kMPersp0),
-                transform.get(SkMatrix::kMPersp1),
-                transform.get(SkMatrix::kMPersp2)};
-            const FlutterSemanticsNode embedder_node{
-                sizeof(FlutterSemanticsNode),
-                node.id,
-                static_cast<FlutterSemanticsFlag>(node.flags),
-                static_cast<FlutterSemanticsAction>(node.actions),
-                node.textSelectionBase,
-                node.textSelectionExtent,
-                node.scrollChildren,
-                node.scrollIndex,
-                node.scrollPosition,
-                node.scrollExtentMax,
-                node.scrollExtentMin,
-                node.elevation,
-                node.thickness,
-                node.label.c_str(),
-                node.hint.c_str(),
-                node.value.c_str(),
-                node.increasedValue.c_str(),
-                node.decreasedValue.c_str(),
-                static_cast<FlutterTextDirection>(node.textDirection),
-                FlutterRect{node.rect.fLeft, node.rect.fTop, node.rect.fRight,
-                            node.rect.fBottom},
-                flutter_transform,
-                node.childrenInTraversalOrder.size(),
-                node.childrenInTraversalOrder.data(),
-                node.childrenInHitTestOrder.data(),
-                node.customAccessibilityActions.size(),
-                node.customAccessibilityActions.data(),
-                node.platformViewId,
-            };
-            ptr(&embedder_node, user_data);
-          }
-          const FlutterSemanticsNode batch_end_sentinel = {
-              sizeof(FlutterSemanticsNode),
-              kFlutterSemanticsNodeIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
-        };
+  if (args->update_semantics_callback != nullptr &&
+      (args->update_semantics_node_callback != nullptr ||
+       args->update_semantics_custom_action_callback != nullptr)) {
+    return LOG_EMBEDDER_ERROR(
+        kInvalidArguments,
+        "Multiple semantics update callbacks provided. "
+        "Embedders should provide either `update_semantics_callback` "
+        "or both `update_semantics_nodes_callback` and "
+        "`update_semantics_custom_actions_callback`.");
   }
 
-  flutter::PlatformViewEmbedder::UpdateSemanticsCustomActionsCallback
-      update_semantics_custom_actions_callback = nullptr;
-  if (SAFE_ACCESS(args, update_semantics_custom_action_callback, nullptr) !=
-      nullptr) {
-    update_semantics_custom_actions_callback =
-        [ptr = args->update_semantics_custom_action_callback,
-         user_data](flutter::CustomAccessibilityActionUpdates actions) {
-          for (const auto& value : actions) {
-            const auto& action = value.second;
-            const FlutterSemanticsCustomAction embedder_action = {
-                sizeof(FlutterSemanticsCustomAction),
-                action.id,
-                static_cast<FlutterSemanticsAction>(action.overrideId),
-                action.label.c_str(),
-                action.hint.c_str(),
-            };
-            ptr(&embedder_action, user_data);
-          }
-          const FlutterSemanticsCustomAction batch_end_sentinel = {
-              sizeof(FlutterSemanticsCustomAction),
-              kFlutterSemanticsCustomActionIdBatchEnd,
-          };
-          ptr(&batch_end_sentinel, user_data);
-        };
-  }
+  flutter::PlatformViewEmbedder::UpdateSemanticsCallback
+      update_semantics_callback =
+          CreateEmbedderSemanticsUpdateCallback(args, user_data);
 
   flutter::PlatformViewEmbedder::PlatformMessageResponseCallback
       platform_message_response_callback = nullptr;
@@ -1380,8 +1682,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_nodes_callback,            //
-          update_semantics_custom_actions_callback,   //
+          update_semantics_callback,                  //
           platform_message_response_callback,         //
           vsync_callback,                             //
           compute_platform_resolved_locale_callback,  //
@@ -1499,7 +1800,7 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
 
   if (SAFE_ACCESS(args, custom_dart_entrypoint, nullptr) != nullptr) {
     auto dart_entrypoint = std::string{args->custom_dart_entrypoint};
-    if (dart_entrypoint.size() != 0) {
+    if (!dart_entrypoint.empty()) {
       run_configuration.SetEntrypoint(std::move(dart_entrypoint));
     }
   }
@@ -1649,7 +1950,7 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
   }
 
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
-             std::move(metrics))
+             metrics)
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInvalidArguments,
                                   "Viewport metrics were invalid.");
@@ -1709,6 +2010,10 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kNone;
     case kFlutterPointerSignalKindScroll:
       return flutter::PointerData::SignalKind::kScroll;
+    case kFlutterPointerSignalKindScrollInertiaCancel:
+      return flutter::PointerData::SignalKind::kScrollInertiaCancel;
+    case kFlutterPointerSignalKindScale:
+      return flutter::PointerData::SignalKind::kScale;
   }
   return flutter::PointerData::SignalKind::kNone;
 }
@@ -2255,9 +2560,9 @@ FlutterEngineResult FlutterEngineRunTask(FLUTTER_API_SYMBOL(FlutterEngine)
 
 static bool DispatchJSONPlatformMessage(FLUTTER_API_SYMBOL(FlutterEngine)
                                             engine,
-                                        rapidjson::Document document,
+                                        const rapidjson::Document& document,
                                         const std::string& channel_name) {
-  if (channel_name.size() == 0) {
+  if (channel_name.empty()) {
     return false;
   }
 
@@ -2337,8 +2642,7 @@ FlutterEngineResult FlutterEngineUpdateLocales(FLUTTER_API_SYMBOL(FlutterEngine)
   }
   document.AddMember("args", args, allocator);
 
-  return DispatchJSONPlatformMessage(engine, std::move(document),
-                                     "flutter/localization")
+  return DispatchJSONPlatformMessage(engine, document, "flutter/localization")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(kInternalInconsistency,
                                   "Could not send message to update locale of "
@@ -2488,8 +2792,7 @@ FlutterEngineResult FlutterEngineNotifyLowMemoryWarning(
   document.SetObject();
   document.AddMember("type", "memoryPressure", allocator);
 
-  return DispatchJSONPlatformMessage(raw_engine, std::move(document),
-                                     "flutter/system")
+  return DispatchJSONPlatformMessage(raw_engine, document, "flutter/system")
              ? kSuccess
              : LOG_EMBEDDER_ERROR(
                    kInternalInconsistency,
@@ -2588,6 +2891,36 @@ FlutterEngineResult FlutterEngineScheduleFrame(FLUTTER_API_SYMBOL(FlutterEngine)
                                   "Could not schedule frame.");
 }
 
+FlutterEngineResult FlutterEngineSetNextFrameCallback(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    VoidCallback callback,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (callback == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "Next frame callback was null.");
+  }
+
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+
+  fml::WeakPtr<flutter::PlatformView> weak_platform_view =
+      embedder_engine->GetShell().GetPlatformView();
+
+  if (!weak_platform_view) {
+    return LOG_EMBEDDER_ERROR(kInternalInconsistency,
+                              "Platform view unavailable.");
+  }
+
+  weak_platform_view->SetNextFrameCallback(
+      [callback, user_data]() { callback(user_data); });
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -2639,6 +2972,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
            FlutterEnginePostCallbackOnAllNativeThreads);
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
+  SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
 #undef SET_PROC
 
   return kSuccess;

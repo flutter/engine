@@ -9,21 +9,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../html/paragraph/helper.dart';
 
-const ui.Color white = ui.Color(0xFFFFFFFF);
-const ui.Color black = ui.Color(0xFF000000);
-const ui.Color red = ui.Color(0xFFFF0000);
-const ui.Color green = ui.Color(0xFF00FF00);
-const ui.Color blue = ui.Color(0xFF0000FF);
-
-final EngineParagraphStyle ahemStyle = EngineParagraphStyle(
-  fontFamily: 'ahem',
-  fontSize: 10,
-);
-
-ui.ParagraphConstraints constrain(double width) {
-  return ui.ParagraphConstraints(width: width);
-}
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -370,7 +355,7 @@ Future<void> testMain() async {
       );
     });
 
-    test('pops boxes when segments are popped', () {
+    test('reverts to last line break opportunity', () {
       final CanvasParagraph paragraph = rich(ahemStyle, (ui.ParagraphBuilder builder) {
         // Lines:
         //   "AAA "
@@ -382,6 +367,10 @@ Future<void> testMain() async {
         builder.pushStyle(EngineTextStyle.only(color: green));
         builder.addText('DD');
       });
+
+      String getTextForFragment(LayoutFragment fragment) {
+        return paragraph.plainText.substring(fragment.start, fragment.end);
+      }
 
       // The layout algorithm will keep appending segments to the line builder
       // until it reaches: "AAA B_". At that point, it'll try to add the "C" but
@@ -395,32 +384,35 @@ Future<void> testMain() async {
       // we want to make sure that the "B" box is also popped.
       paragraph.layout(constrain(60));
 
-      final EngineLineMetrics firstLine = paragraph.computeLineMetrics()[0];
-      final EngineLineMetrics secondLine = paragraph.computeLineMetrics()[1];
+      final ParagraphLine firstLine = paragraph.lines[0];
+      final ParagraphLine secondLine = paragraph.lines[1];
 
-      // There should be no "B" in the first line's boxes.
-      expect(firstLine.boxes, hasLength(2));
+      // There should be no "B" in the first line's fragments.
+      expect(firstLine.fragments, hasLength(2));
 
-      expect((firstLine.boxes[0] as SpanBox).toText(), 'AAA');
-      expect((firstLine.boxes[0] as SpanBox).left, 0.0);
+      expect(getTextForFragment(firstLine.fragments[0]), 'AAA');
+      expect(firstLine.fragments[0].left, 0.0);
 
-      expect((firstLine.boxes[1] as SpanBox).toText(), ' ');
-      expect((firstLine.boxes[1] as SpanBox).left, 30.0);
+      expect(getTextForFragment(firstLine.fragments[1]), ' ');
+      expect(firstLine.fragments[1].left, 30.0);
 
-      // Make sure the second line isn't missing any boxes.
-      expect(secondLine.boxes, hasLength(4));
+      // Make sure the second line isn't missing any fragments.
+      expect(secondLine.fragments, hasLength(5));
 
-      expect((secondLine.boxes[0] as SpanBox).toText(), 'B');
-      expect((secondLine.boxes[0] as SpanBox).left, 0.0);
+      expect(getTextForFragment(secondLine.fragments[0]), 'B');
+      expect(secondLine.fragments[0].left, 0.0);
 
-      expect((secondLine.boxes[1] as SpanBox).toText(), '_C');
-      expect((secondLine.boxes[1] as SpanBox).left, 10.0);
+      expect(getTextForFragment(secondLine.fragments[1]), '_');
+      expect(secondLine.fragments[1].left, 10.0);
 
-      expect((secondLine.boxes[2] as SpanBox).toText(), ' ');
-      expect((secondLine.boxes[2] as SpanBox).left, 30.0);
+      expect(getTextForFragment(secondLine.fragments[2]), 'C');
+      expect(secondLine.fragments[2].left, 20.0);
 
-      expect((secondLine.boxes[3] as SpanBox).toText(), 'DD');
-      expect((secondLine.boxes[3] as SpanBox).left, 40.0);
+      expect(getTextForFragment(secondLine.fragments[3]), ' ');
+      expect(secondLine.fragments[3].left, 30.0);
+
+      expect(getTextForFragment(secondLine.fragments[4]), 'DD');
+      expect(secondLine.fragments[4].left, 40.0);
     });
   });
 
@@ -443,7 +435,7 @@ Future<void> testMain() async {
       );
       // At the top left corner of the line.
       expect(
-        paragraph.getPositionForOffset(const ui.Offset(0, 0)),
+        paragraph.getPositionForOffset(ui.Offset.zero),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the line.
@@ -511,7 +503,7 @@ Future<void> testMain() async {
       );
       // At the top left corner of the line.
       expect(
-        paragraph.getPositionForOffset(const ui.Offset(0, 0)),
+        paragraph.getPositionForOffset(ui.Offset.zero),
         pos(0, ui.TextAffinity.downstream),
       );
       // At the beginning of the first line.
@@ -767,6 +759,14 @@ Future<void> testMain() async {
     expect(paragraph.getWordBoundary(const ui.TextPosition(offset: 17)), endRange);
   });
 
+  test('$CanvasParagraph.getWordBoundary can handle text affinity', () {
+    final ui.Paragraph paragraph = plain(ahemStyle, 'Lorem ipsum dolor');
+
+    const ui.TextRange loremRange = ui.TextRange(start: 0, end: 5);
+    expect(paragraph.getWordBoundary(const ui.TextPosition(offset: 4)), loremRange);
+    expect(paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream)), loremRange);
+  });
+
   test('$CanvasParagraph.longestLine', () {
     final ui.Paragraph paragraph = plain(ahemStyle, 'abcd\nabcde abc');
     paragraph.layout(const ui.ParagraphConstraints(width: 80.0));
@@ -779,6 +779,27 @@ Future<void> testMain() async {
 
     expect(paragraph.width, 30);
     expect(paragraph.height, 10);
+  });
+
+  test('Render after dispose', () {
+    final ui.Paragraph paragraph = plain(ahemStyle, 'abc');
+    paragraph.layout(const ui.ParagraphConstraints(width: 30.8));
+
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    final ui.Canvas canvas = ui.Canvas(recorder);
+    canvas.drawParagraph(paragraph, ui.Offset.zero);
+    final ui.Picture picture = recorder.endRecording();
+
+    paragraph.dispose();
+
+    final ui.SceneBuilder builder = ui.SceneBuilder();
+    builder.addPicture(ui.Offset.zero, picture);
+    final ui.Scene scene = builder.build();
+
+    ui.window.render(scene);
+
+    picture.dispose();
+    scene.dispose();
   });
 }
 

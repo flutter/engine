@@ -11,6 +11,8 @@
 --------------------------------------------------------------------------------
 ```
 
+![Impeller](docs/assets/showcase.png)
+
 ⚠️ Impeller is a Prototype and Work-In-Progress. Proceed with caution. ⚠️
 
 Impeller is a rendering runtime for Flutter with the following objectives:
@@ -148,4 +150,42 @@ states of completion:
   necessary. It is possible for callers to perform reflection at runtime but
   there are no Impeller components that do this currently.
 
-![Shader Compilation Pipeline](docs/shader_pipeline.png)
+![Shader Compilation Pipeline](docs/assets/shader_pipeline.png)
+
+## Try Impeller in Flutter
+
+Impeller is available under the `--enable-impeller` flag on iOS and Android.
+This flag can be specified to `flutter run`.
+
+If the application needs to be launched with Impeller enabled without using the
+Flutter tool, follow the platform specific steps below.
+
+### iOS
+
+To your `Info.plist` file, add under the top-level `<dict>` tag:
+```
+  <key>FLTEnableImpeller</key>
+  <true/>
+```
+
+### Android
+
+To your `AndroidManifest.xml` file, add under the `<application>` tag:
+```
+  <meta-data
+    android:name="io.flutter.embedding.android.EnableImpeller"
+    android:value="true" />
+```
+
+## Documentation, References, and Additional Reading
+
+* [Frequently Asked Questions](docs/faq.md)
+* [Impellers Coordinate System](docs/coordinate_system.md)
+* [How to Setup Xcode for GPU Frame Captures with Metal.](docs/xcode_frame_capture.md)
+* [How to Setup RenderDoc Frame Captures with Vulkan.](docs/renderdoc_frame_capture.md)
+* [Learning to Read GPU Frame Captures](docs/read_frame_captures.md)
+* [How to Enable Metal Validation for Command Line Apps.](docs/metal_validation.md)
+* [How Impeller Works Around The Lack of Uniform Buffers in Open GL ES 2.0.](docs/ubo_gles2.md)
+* [Guidance for writing efficient shaders](docs/shader_optimization.md)
+* [How color blending works in Impeller](docs/blending.md)
+* [Enabling Vulkan Validation Layers on Android](docs/android_validation_layers.md)

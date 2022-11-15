@@ -4,10 +4,7 @@
 
 #include "flutter/shell/platform/windows/external_texture_d3d.h"
 
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-#include <iostream>
-
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
 
 namespace flutter {
@@ -45,7 +42,7 @@ bool ExternalTextureD3d::PopulateTexture(size_t width,
   // Populate the texture object used by the engine.
   opengl_texture->target = GL_TEXTURE_2D;
   opengl_texture->name = gl_texture_;
-  opengl_texture->format = GL_RGBA;
+  opengl_texture->format = GL_RGBA8_OES;
   opengl_texture->destruction_callback = nullptr;
   opengl_texture->user_data = nullptr;
   opengl_texture->width = SAFE_ACCESS(descriptor, visible_width, 0);
@@ -107,7 +104,7 @@ bool ExternalTextureD3d::CreateOrUpdateTexture(
     if (egl_surface_ == EGL_NO_SURFACE ||
         eglBindTexImage(surface_manager_->egl_display(), egl_surface_,
                         EGL_BACK_BUFFER) == EGL_FALSE) {
-      std::cerr << "Binding D3D surface failed." << std::endl;
+      FML_LOG(ERROR) << "Binding D3D surface failed.";
     }
     last_surface_handle_ = handle;
   }

@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
+import 'dart:convert';
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -13,7 +14,6 @@ import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
 
-import '../../common.dart';
 import '../screenshot.dart';
 
 void main() {
@@ -32,10 +32,30 @@ Future<void> testMain() async {
     final RecordingCanvas rc =
         RecordingCanvas(const Rect.fromLTRB(0, 0, 400, 300));
     rc.save();
-    rc.drawImage(createTestImage(), const Offset(0, 0), SurfacePaint());
+    rc.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image');
+  });
+
+  test('Images from raw data are composited when picture is roundtripped through toImage', () async {
+    final Uint8List imageData = base64Decode(base64PngData);
+    final Codec codec = await instantiateImageCodec(imageData);
+    final FrameInfo frameInfo = await codec.getNextFrame();
+
+    const Rect bounds = Rect.fromLTRB(0, 0, 400, 300);
+    final EnginePictureRecorder recorder = EnginePictureRecorder();
+    final RecordingCanvas scratchCanvas = recorder.beginRecording(bounds);
+    scratchCanvas.save();
+    scratchCanvas.drawImage(frameInfo.image, Offset.zero, SurfacePaint());
+    scratchCanvas.restore();
+    final Picture picture = recorder.endRecording();
+    final Image image = await picture.toImage(400, 300);
+
+    final RecordingCanvas rc = RecordingCanvas(bounds);
+    rc.save();
+    rc.drawImage(image, Offset.zero, SurfacePaint());
+    rc.restore();
+    await canvasScreenshot(rc, 'draw_raw_image');
   });
 
   test('Paints image with transform', () async {
@@ -44,10 +64,9 @@ Future<void> testMain() async {
     rc.save();
     rc.translate(50.0, 100.0);
     rc.rotate(math.pi / 4.0);
-    rc.drawImage(createTestImage(), const Offset(0, 0), SurfacePaint());
+    rc.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_with_transform');
   });
 
   test('Paints image with transform and offset', () async {
@@ -58,8 +77,7 @@ Future<void> testMain() async {
     rc.rotate(math.pi / 4.0);
     rc.drawImage(createTestImage(), const Offset(30, 20), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_with_transform_and_offset',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_with_transform_and_offset');
   });
 
   test('Paints image with transform using destination', () async {
@@ -74,8 +92,7 @@ Future<void> testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_transform');
   });
 
   test('Paints image with source and destination', () async {
@@ -91,8 +108,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_source',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_source');
   });
 
   test('Paints image with source and destination and round clip', () async {
@@ -110,8 +126,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_source_and_clip',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_source_and_clip');
   });
 
   test('Paints image with transform using source and destination', () async {
@@ -129,8 +144,7 @@ Future<void> testMain() async {
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight),
         SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_image_rect_with_transform_source',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_image_rect_with_transform_source');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -151,8 +165,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -173,8 +186,7 @@ Future<void> testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTRB(100, 30, 2 * testWidth, 2 * testHeight), SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_below_image',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_below_image');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -196,8 +208,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -223,8 +234,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_transform',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_transform');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -252,8 +262,7 @@ Future<void> testMain() async {
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_stack',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rect_with_stack');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -275,8 +284,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rrect',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_rrect');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/44845
@@ -303,8 +311,7 @@ Future<void> testMain() async {
           ..strokeWidth = 3
           ..color = const Color.fromARGB(128, 0, 0, 0));
     rc.restore();
-    await canvasScreenshot(rc, 'draw_circle_on_image_clip_path',
-        region: const Rect.fromLTWH(0, 0, 500, 500));
+    await canvasScreenshot(rc, 'draw_circle_on_image_clip_path');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/53078
@@ -343,7 +350,6 @@ Future<void> testMain() async {
     await canvasScreenshot(
       rc,
       'draw_text_composite_order_below',
-      maxDiffRatePercent: 1.1,
       region: const Rect.fromLTWH(0, 0, 350, 300),
     );
   });
@@ -360,10 +366,10 @@ Future<void> testMain() async {
     final Picture picture = recorder.endRecording();
 
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    builder.addPicture(const Offset(0, 0), picture);
+    builder.addPicture(Offset.zero, picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -372,9 +378,9 @@ Future<void> testMain() async {
     }
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('draw_nine_slice.png',
-          region: region, maxDiffRatePercent: 0);
+          region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -399,10 +405,10 @@ Future<void> testMain() async {
     final Picture picture = recorder.endRecording();
 
     final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
-    builder.addPicture(const Offset(0, 0), picture);
+    builder.addPicture(Offset.zero, picture);
 
     // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
+    final DomElement sceneElement = createDomElement('flt-scene');
     if (isIosSafari) {
       // Shrink to fit on the iPhone screen.
       sceneElement.style.position = 'absolute';
@@ -411,9 +417,9 @@ Future<void> testMain() async {
     }
     try {
       sceneElement.append(builder.build().webOnlyRootElement!);
-      html.document.body!.append(sceneElement);
+      domDocument.body!.append(sceneElement);
       await matchGoldenFile('draw_nine_slice_empty_center.png',
-          region: region, maxDiffRatePercent: 0);
+          region: region);
     } finally {
       // The page is reused across tests, so remove the element after taking the
       // Scuba screenshot.
@@ -439,7 +445,7 @@ Future<void> testMain() async {
       ..close());
     canvas.drawImage(createNineSliceImage(), Offset.zero, SurfacePaint());
     await canvasScreenshot(canvas, 'draw_clipped_and_transformed_image',
-        region: region, maxDiffRatePercent: 1.0);
+        region: region);
   });
 
   /// Regression test for https://github.com/flutter/flutter/issues/61245
@@ -447,7 +453,7 @@ Future<void> testMain() async {
     const Rect region = Rect.fromLTRB(0, 0, 200, 200);
     final RecordingCanvas canvas = RecordingCanvas(region);
     canvas.translate(10, 10);
-    canvas.drawImage(createTestImage(), const Offset(0, 0), SurfacePaint());
+    canvas.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     final Matrix4 transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.0005); // perspective
@@ -455,7 +461,6 @@ Future<void> testMain() async {
     canvas.drawImage(createTestImage(), const Offset(0, 100), SurfacePaint());
     await canvasScreenshot(canvas, 'draw_3d_image',
         region: region,
-        maxDiffRatePercent: 6.0,
         setupPerspective: true);
   });
 
@@ -465,7 +470,7 @@ Future<void> testMain() async {
     final RecordingCanvas canvas = RecordingCanvas(region);
     canvas.drawRect(region, SurfacePaint()..color = const Color(0xFFE0E0E0));
     canvas.translate(10, 10);
-    canvas.drawImage(createTestImage(), const Offset(0, 0), SurfacePaint());
+    canvas.drawImage(createTestImage(), Offset.zero, SurfacePaint());
     final Matrix4 transform = Matrix4.identity()
       ..setRotationY(0.8)
       ..setEntry(3, 2, 0.0005); // perspective
@@ -476,7 +481,6 @@ Future<void> testMain() async {
     canvas.drawRect(const Rect.fromLTWH(50, 150, 50, 20), SurfacePaint()..color = const Color(0x80000000));
     await canvasScreenshot(canvas, 'draw_3d_image_clipped',
         region: region,
-        maxDiffRatePercent: 5.0,
         setupPerspective: true);
   });
 
@@ -500,7 +504,6 @@ Future<void> testMain() async {
         SurfacePaint()..color = const Color(0x80E010E0));
     await canvasScreenshot(canvas, 'draw_3d_rect_clipped',
         region: region,
-        maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
 
@@ -525,7 +528,6 @@ Future<void> testMain() async {
     canvas.drawCircle(const Offset(360, 370), 30, SurfacePaint()..color = const Color(0x80E010E0));
     await canvasScreenshot(canvas, 'draw_3d_oval_clipped',
         region: region,
-        maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
 
@@ -557,7 +559,6 @@ Future<void> testMain() async {
     canvas.drawCircle(const Offset(100, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path',
         region: region,
-        maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
 
@@ -590,13 +591,11 @@ Future<void> testMain() async {
     canvas.drawCircle(const Offset(100, 50), 4, SurfacePaint()..color = const Color(0xFF000000));
     await canvasScreenshot(canvas, 'draw_3d_path_clipped',
         region: region,
-        maxDiffRatePercent: 1.0,
         setupPerspective: true);
   });
 }
-
 // 9 slice test image that has a shiny/glass look.
-const String base64ImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUh'
+const String base64PngData = 'iVBORw0KGgoAAAANSUh'
     'EUgAAADwAAAA8CAYAAAA6/NlyAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPo'
     'AAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAApGVYSWZNTQAqAAAACAAFARIAAwAAAAEAAQA'
     'AARoABQAAAAEAAABKARsABQAAAAEAAABSATEAAgAAACAAAABah2kABAAAAAEAAAB6AAAAAAAA'
@@ -723,20 +722,21 @@ const String base64ImageData = 'data:image/png;base64,iVBORw0KGgoAAAANSUh'
     'Z2x0yEXi0PeqFO87AiFGCkemvOKYkSF/6yS1vnLOWTaHN/VcmnSWt0eHThELBHBiCGisGra'
     'SI5l6R3qD0q05ZR4TNVHES7bnltEgcg6JF3uVlyFsBpdB+lzgdRTMHeejneZR0H1BrnKECH'
     '7GyVy1BAmcsr17WxYs78QNqQF4bppFXqX9BBqIrzmcExwueASjAFzlaWncpqEpJCXVc7wv'
-    'Nj7eT/BbztCaofk+k0AAAAAElFTkSuQmCC';
+    'Nj7eT/BbztCaofk+k0AAAAAyBMj8AAAAAElFTkSuQmCC';
+const String base64ImageUrl = 'data:image/png;base64,$base64PngData';
 
 HtmlImage createNineSliceImage() {
   return HtmlImage(
-    html.ImageElement()..src = base64ImageData,
+    createDomHTMLImageElement()..src = base64ImageUrl,
     60,
     60,
   );
 }
 
 HtmlImage createTestImage({int width = 100, int height = 50}) {
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas =
+      createDomCanvasElement(width: width, height: height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, 33, 50);
   ctx.fill();
@@ -746,7 +746,7 @@ HtmlImage createTestImage({int width = 100, int height = 50}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(66, 0, 33, 50);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final DomHTMLImageElement imageElement = createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return HtmlImage(imageElement, width, height);
 }

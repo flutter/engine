@@ -2,16 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' as engine;
 import 'package:ui/ui.dart' hide TextStyle;
 
-import 'package:web_engine_tester/golden_tester.dart';
-
-import '../common.dart';
+import 'screenshot.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -23,41 +19,11 @@ Future<void> testMain() async {
   const double screenHeight = 800.0;
   const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
 
-  // Commit a recording canvas to a bitmap, and compare with the expected
-  Future<void> _checkScreenshot(engine.RecordingCanvas rc, String fileName,
-      {Rect region = const Rect.fromLTWH(0, 0, 500, 500)}) async {
-    final engine.EngineCanvas engineCanvas = engine.BitmapCanvas(screenRect,
-        engine.RenderStrategy());
-
-    rc.endRecording();
-    rc.apply(engineCanvas, screenRect);
-
-    // Wrap in <flt-scene> so that our CSS selectors kick in.
-    final html.Element sceneElement = html.Element.tag('flt-scene');
-    if (isIosSafari) {
-      // Shrink to fit on the iPhone screen.
-      sceneElement.style.position = 'absolute';
-      sceneElement.style.transformOrigin = '0 0 0';
-      sceneElement.style.transform = 'scale(0.3)';
-    }
-
-    try {
-      sceneElement.append(engineCanvas.rootElement);
-      html.document.body!.append(sceneElement);
-      // TODO(yjbanov): 10% diff rate is excessive. Update goldens.
-      await matchGoldenFile('$fileName.png', region: region);
-    } finally {
-      // The page is reused across tests, so remove the element after taking the
-      // Scuba screenshot.
-      sceneElement.remove();
-    }
-  }
-
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    engine.fontCollection.debugRegisterTestFonts();
-    await engine.fontCollection.ensureFontsLoaded();
+    await engine.renderer.fontCollection.debugDownloadTestFonts();
+    engine.renderer.fontCollection.registerDownloadedFonts();
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/49429
@@ -86,7 +52,7 @@ Future<void> testMain() async {
     // The rectangle should paint without clipping since we restored
     // context.
     rc.drawRect(const Rect.fromLTWH(0, 0, 4, 200), paint);
-    await _checkScreenshot(rc, 'context_save_restore_transform');
+    await canvasScreenshot(rc, 'context_save_restore_transform', canvasRect: screenRect);
   });
 
   test('Should restore clip path', () async {
@@ -111,6 +77,6 @@ Future<void> testMain() async {
     // The rectangle should paint without clipping since we restored
     // context.
     rc.drawRect(const Rect.fromLTWH(0, 0, 200, 200), goodPaint as engine.SurfacePaint);
-    await _checkScreenshot(rc, 'context_save_restore_clip');
+    await canvasScreenshot(rc, 'context_save_restore_clip', canvasRect: screenRect);
   });
 }

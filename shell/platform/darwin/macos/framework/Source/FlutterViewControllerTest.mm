@@ -20,9 +20,10 @@
 - (bool)testKeyEventsArePropagatedIfNotHandled;
 - (bool)testKeyEventsAreNotPropagatedIfHandled;
 - (bool)testFlagsChangedEventsArePropagatedIfNotHandled;
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp;
 - (bool)testKeyboardIsRestartedOnEngineRestart;
 - (bool)testTrackpadGesturesAreSentToFramework;
+- (bool)testViewWillAppearCalledMultipleTimes;
+- (bool)testFlutterViewIsConfigured;
 
 + (void)respondFalseForSendEvent:(const FlutterKeyEvent&)event
                         callback:(nullable FlutterKeyEventCallback)callback
@@ -32,6 +33,25 @@
 namespace flutter::testing {
 
 namespace {
+
+id MockGestureEvent(NSEventType type, NSEventPhase phase, double magnification, double rotation) {
+  id event = [OCMockObject mockForClass:[NSEvent class]];
+  NSPoint locationInWindow = NSMakePoint(0, 0);
+  CGFloat deltaX = 0;
+  CGFloat deltaY = 0;
+  NSTimeInterval timestamp = 1;
+  NSUInteger modifierFlags = 0;
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(type)] type];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(phase)] phase];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(locationInWindow)] locationInWindow];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(deltaX)] deltaX];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(deltaY)] deltaY];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(timestamp)] timestamp];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(modifierFlags)] modifierFlags];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(magnification)] magnification];
+  [(NSEvent*)[[event stub] andReturnValue:OCMOCK_VALUE(rotation)] rotation];
+  return event;
+}
 
 // Allocates and returns an engine configured for the test fixture resource configuration.
 FlutterEngine* CreateTestEngine() {
@@ -51,47 +71,8 @@ NSResponder* mockResponder() {
 }
 }  // namespace
 
-TEST(FlutterViewController, HasStringsWhenPasteboardEmpty) {
-  // Mock FlutterViewController so that it behaves like the pasteboard is empty.
-  id viewControllerMock = CreateMockViewController(nil);
-
-  // Call hasStrings and expect it to be false.
-  __block bool calledAfterClear = false;
-  __block bool valueAfterClear;
-  FlutterResult resultAfterClear = ^(id result) {
-    calledAfterClear = true;
-    NSNumber* valueNumber = [result valueForKey:@"value"];
-    valueAfterClear = [valueNumber boolValue];
-  };
-  FlutterMethodCall* methodCallAfterClear =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewControllerMock handleMethodCall:methodCallAfterClear result:resultAfterClear];
-  EXPECT_TRUE(calledAfterClear);
-  EXPECT_FALSE(valueAfterClear);
-}
-
-TEST(FlutterViewController, HasStringsWhenPasteboardFull) {
-  // Mock FlutterViewController so that it behaves like the pasteboard has a
-  // valid string.
-  id viewControllerMock = CreateMockViewController(@"some string");
-
-  // Call hasStrings and expect it to be true.
-  __block bool called = false;
-  __block bool value;
-  FlutterResult result = ^(id result) {
-    called = true;
-    NSNumber* valueNumber = [result valueForKey:@"value"];
-    value = [valueNumber boolValue];
-  };
-  FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"Clipboard.hasStrings" arguments:nil];
-  [viewControllerMock handleMethodCall:methodCall result:result];
-  EXPECT_TRUE(called);
-  EXPECT_TRUE(value);
-}
-
 TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
-  FlutterViewController* viewControllerMock = CreateMockViewController(nil);
+  FlutterViewController* viewControllerMock = CreateMockViewController();
 
   [viewControllerMock loadView];
   auto subViews = [viewControllerMock.view subviews];
@@ -111,7 +92,13 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   EXPECT_EQ(accessibilityChildren[0], viewControllerMock.flutterView);
 }
 
-TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabled) {
+TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
+  FlutterViewController* viewControllerMock = CreateMockViewController();
+  [viewControllerMock loadView];
+  EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
+}
+
+TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
@@ -126,21 +113,17 @@ TEST(FlutterViewController, SetsFlutterViewFirstResponderWhenAccessibilityDisabl
                                                    backing:NSBackingStoreBuffered
                                                      defer:NO];
   window.contentView = viewController.view;
+  NSView* dummyView = [[NSView alloc] initWithFrame:CGRectZero];
+  [viewController.view addSubview:dummyView];
   // Attaches FlutterTextInputPlugin to the view;
-  [viewController.view addSubview:viewController.textInputPlugin];
+  [dummyView addSubview:viewController.textInputPlugin];
   // Makes sure the textInputPlugin can be the first responder.
   EXPECT_TRUE([window makeFirstResponder:viewController.textInputPlugin]);
   EXPECT_EQ([window firstResponder], viewController.textInputPlugin);
-  // Sends a notification to turn off the accessibility.
-  NSDictionary* userInfo = @{
-    @"AXEnhancedUserInterface" : @(NO),
-  };
-  NSNotification* accessibilityOff = [NSNotification notificationWithName:@""
-                                                                   object:nil
-                                                                 userInfo:userInfo];
-  [viewController onAccessibilityStatusChanged:accessibilityOff];
-  // FlutterView becomes the first responder.
-  EXPECT_EQ([window firstResponder], viewController.flutterView);
+  EXPECT_FALSE(viewController.textInputPlugin.superview == viewController.view);
+  [viewController onAccessibilityStatusChanged:NO];
+  // FlutterView becomes child of view controller
+  EXPECT_TRUE(viewController.textInputPlugin.superview == viewController.view);
 }
 
 TEST(FlutterViewController, CanSetMouseTrackingModeBeforeViewLoaded) {
@@ -170,16 +153,20 @@ TEST(FlutterViewControllerTest, TestFlagsChangedEventsArePropagatedIfNotHandled)
       [[FlutterViewControllerTestObjC alloc] testFlagsChangedEventsArePropagatedIfNotHandled]);
 }
 
-TEST(FlutterViewControllerTest, TestPerformKeyEquivalentSynthesizesKeyUp) {
-  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testPerformKeyEquivalentSynthesizesKeyUp]);
-}
-
 TEST(FlutterViewControllerTest, TestKeyboardIsRestartedOnEngineRestart) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testKeyboardIsRestartedOnEngineRestart]);
 }
 
 TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testTrackpadGesturesAreSentToFramework]);
+}
+
+TEST(FlutterViewControllerTest, testViewWillAppearCalledMultipleTimes) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testViewWillAppearCalledMultipleTimes]);
+}
+
+TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
+  ASSERT_TRUE([[FlutterViewControllerTestObjC alloc] testFlutterViewIsConfigured]);
 }
 
 }  // namespace flutter::testing
@@ -276,6 +263,27 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   } @catch (...) {
     return false;
   }
+  return true;
+}
+
+- (bool)testFlutterViewIsConfigured {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+
+  id renderer_ = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engineMock];
+  OCMStub([engineMock renderer]).andReturn(renderer_);
+
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController loadView];
+
+  @try {
+    // Make sure "renderer" was called during "loadView", which means "flutterView" is created
+    OCMVerify([engineMock renderer]);
+  } @catch (...) {
+    return false;
+  }
+
   return true;
 }
 
@@ -387,86 +395,6 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   return true;
 }
 
-- (bool)testPerformKeyEquivalentSynthesizesKeyUp {
-  id engineMock = OCMClassMock([FlutterEngine class]);
-  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
-      [engineMock binaryMessenger])
-      .andReturn(binaryMessengerMock);
-  OCMStub([[engineMock ignoringNonObjectArgs] sendKeyEvent:FlutterKeyEvent {}
-                                                  callback:nil
-                                                  userData:nil])
-      .andCall([FlutterViewControllerTestObjC class],
-               @selector(respondFalseForSendEvent:callback:userData:));
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
-                                                                                nibName:@""
-                                                                                 bundle:nil];
-  id responderMock = flutter::testing::mockResponder();
-  viewController.nextResponder = responderMock;
-  NSDictionary* expectedKeyDownEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keydown",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyDownEvent =
-      [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyDownEvent];
-  NSDictionary* expectedKeyUpEvent = @{
-    @"keymap" : @"macos",
-    @"type" : @"keyup",
-    @"keyCode" : @(65),
-    @"modifiers" : @(538968064),
-    @"characters" : @".",
-    @"charactersIgnoringModifiers" : @".",
-  };
-  NSData* encodedKeyUpEvent = [[FlutterJSONMessageCodec sharedInstance] encode:expectedKeyUpEvent];
-  CGEventRef cgEvent = CGEventCreateKeyboardEvent(NULL, 65, TRUE);
-  NSEvent* event = [NSEvent eventWithCGEvent:cgEvent];
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyDownEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-      [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                 message:encodedKeyUpEvent
-                             binaryReply:[OCMArg any]])
-      .andDo((^(NSInvocation* invocation) {
-        FlutterBinaryReply handler;
-        [invocation getArgument:&handler atIndex:4];
-        NSDictionary* reply = @{
-          @"handled" : @(true),
-        };
-        NSData* encodedReply = [[FlutterJSONMessageCodec sharedInstance] encode:reply];
-        handler(encodedReply);
-      }));
-  [viewController viewWillAppear];  // Initializes the event channel.
-  [viewController performKeyEquivalent:event];
-  @try {
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyDownEvent
-                               binaryReply:[OCMArg any]]);
-    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-        [binaryMessengerMock sendOnChannel:@"flutter/keyevent"
-                                   message:encodedKeyUpEvent
-                               binaryReply:[OCMArg any]]);
-  } @catch (...) {
-    return false;
-  }
-  return true;
-}
-
 - (bool)testKeyboardIsRestartedOnEngineRestart {
   id engineMock = OCMClassMock([FlutterEngine class]);
   id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
@@ -549,6 +477,7 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
                                                                                  bundle:nil];
   [viewController loadView];
 
+  // Test for pan events.
   // Start gesture.
   CGEventRef cgEventStart = CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventStart, kCGEventScrollWheel);
@@ -602,6 +531,46 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
 
+  // Start system momentum.
+  CGEventRef cgEventMomentumStart = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMomentumStart, kCGScrollWheelEventScrollPhase, 0);
+  CGEventSetIntegerValueField(cgEventMomentumStart, kCGScrollWheelEventMomentumPhase,
+                              kCGMomentumScrollPhaseBegin);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMomentumStart]];
+  EXPECT_FALSE(called);
+
+  // Mock a touch on the trackpad.
+  id touchMock = OCMClassMock([NSTouch class]);
+  NSSet* touchSet = [NSSet setWithObject:touchMock];
+  id touchEventMock = OCMClassMock([NSEvent class]);
+  OCMStub([touchEventMock allTouches]).andReturn(touchSet);
+  CGPoint touchLocation = {0, 0};
+  OCMStub([touchEventMock locationInWindow]).andReturn(touchLocation);
+
+  // Scroll inertia cancel event should be issued.
+  called = false;
+  [viewController touchesBeganWithEvent:touchEventMock];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScrollInertiaCancel);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+
+  // End system momentum.
+  CGEventRef cgEventMomentumEnd = CGEventCreateCopy(cgEventStart);
+  CGEventSetIntegerValueField(cgEventMomentumEnd, kCGScrollWheelEventScrollPhase, 0);
+  CGEventSetIntegerValueField(cgEventMomentumEnd, kCGScrollWheelEventMomentumPhase,
+                              kCGMomentumScrollPhaseEnd);
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventMomentumEnd]];
+  EXPECT_FALSE(called);
+
+  // Scroll inertia cancel event should not be issued after momentum has ended.
+  called = false;
+  [viewController touchesBeganWithEvent:touchEventMock];
+  EXPECT_FALSE(called);
+
   // May-begin and cancel are used while macOS determines which type of gesture to choose.
   CGEventRef cgEventMayBegin = CGEventCreateCopy(cgEventStart);
   CGEventSetIntegerValueField(cgEventMayBegin, kCGScrollWheelEventScrollPhase,
@@ -643,6 +612,116 @@ TEST(FlutterViewControllerTest, TestTrackpadGesturesAreSentToFramework) {
   EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
   EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
 
+  // Test for scale events.
+  // Start gesture.
+  called = false;
+  [viewController magnifyWithEvent:flutter::testing::MockGestureEvent(NSEventTypeMagnify,
+                                                                      NSEventPhaseBegan, 1, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Update gesture.
+  called = false;
+  [viewController magnifyWithEvent:flutter::testing::MockGestureEvent(NSEventTypeMagnify,
+                                                                      NSEventPhaseChanged, 1, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 0);
+  EXPECT_EQ(last_event.pan_y, 0);
+  EXPECT_EQ(last_event.scale, 2);  // macOS uses logarithmic scaling values, the linear value for
+                                   // flutter here should be 2^1 = 2.
+  EXPECT_EQ(last_event.rotation, 0);
+
+  // Make sure the scale values accumulate.
+  called = false;
+  [viewController magnifyWithEvent:flutter::testing::MockGestureEvent(NSEventTypeMagnify,
+                                                                      NSEventPhaseChanged, 1, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 0);
+  EXPECT_EQ(last_event.pan_y, 0);
+  EXPECT_EQ(last_event.scale, 4);  // macOS uses logarithmic scaling values, the linear value for
+                                   // flutter here should be 2^(1+1) = 2.
+  EXPECT_EQ(last_event.rotation, 0);
+
+  // End gesture.
+  called = false;
+  [viewController magnifyWithEvent:flutter::testing::MockGestureEvent(NSEventTypeMagnify,
+                                                                      NSEventPhaseEnded, 0, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Test for rotation events.
+  // Start gesture.
+  called = false;
+  [viewController rotateWithEvent:flutter::testing::MockGestureEvent(NSEventTypeRotate,
+                                                                     NSEventPhaseBegan, 1, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomStart);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  // Update gesture.
+  called = false;
+  [viewController rotateWithEvent:flutter::testing::MockGestureEvent(
+                                      NSEventTypeRotate, NSEventPhaseChanged, 0, -180)];  // degrees
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 0);
+  EXPECT_EQ(last_event.pan_y, 0);
+  EXPECT_EQ(last_event.scale, 1);
+  EXPECT_EQ(last_event.rotation, M_PI);  // radians
+
+  // Make sure the rotation values accumulate.
+  called = false;
+  [viewController rotateWithEvent:flutter::testing::MockGestureEvent(
+                                      NSEventTypeRotate, NSEventPhaseChanged, 0, -360)];  // degrees
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomUpdate);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.pan_x, 0);
+  EXPECT_EQ(last_event.pan_y, 0);
+  EXPECT_EQ(last_event.scale, 1);
+  EXPECT_EQ(last_event.rotation, 3 * M_PI);  // radians
+
+  // End gesture.
+  called = false;
+  [viewController rotateWithEvent:flutter::testing::MockGestureEvent(NSEventTypeRotate,
+                                                                     NSEventPhaseEnded, 0, 0)];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+  EXPECT_EQ(last_event.phase, kPanZoomEnd);
+  EXPECT_EQ(last_event.device_kind, kFlutterPointerDeviceKindTrackpad);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindNone);
+
+  return true;
+}
+
+- (bool)testViewWillAppearCalledMultipleTimes {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
+                                                                                nibName:@""
+                                                                                 bundle:nil];
+  [viewController viewWillAppear];
+  [viewController viewWillAppear];
   return true;
 }
 

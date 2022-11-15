@@ -2,12 +2,12 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//build/fuchsia/sdk.gni")
 import("//flutter/tools/executable_action.gni")
 import("//flutter/tools/fuchsia/dart/dart_library.gni")
 import("//flutter/tools/fuchsia/dart/toolchain.gni")
 import("//flutter/tools/fuchsia/fidl/fidl.gni")
 import("//flutter/tools/fuchsia/fidl/toolchain.gni")
+import("//flutter/tools/fuchsia/gn-sdk/config/config.gni")
 
 # Generates some Dart bindings for a FIDL library.
 #
@@ -19,7 +19,11 @@ template("fidl_dart") {
   assert(current_toolchain == dart_toolchain,
          "This template can only be used in the $dart_toolchain toolchain.")
 
-  not_needed(invoker, [ "sources" ])
+  not_needed(invoker,
+             [
+               "meta",
+               "sources",
+             ])
 
   main_target_name = target_name
   generation_target_name = "${target_name}_dart_generate"
@@ -41,7 +45,7 @@ template("fidl_dart") {
   executable_action(generation_target_name) {
     visibility = [ ":*" ]
 
-    tool = "${fuchsia_sdk_path}/tools/fidlgen_dart"
+    tool = "${fuchsia_tool_dir}/fidlgen_dart"
 
     inputs = [ json_representation ]
 

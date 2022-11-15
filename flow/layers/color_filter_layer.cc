@@ -4,19 +4,32 @@
 
 #include "flutter/flow/layers/color_filter_layer.h"
 
+#include "flutter/display_list/display_list_comparable.h"
+#include "flutter/display_list/display_list_paint.h"
+#include "flutter/flow/raster_cache_item.h"
+#include "flutter/flow/raster_cache_util.h"
+
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer(sk_sp<SkColorFilter> filter)
-    : filter_(std::move(filter)), render_count_(1) {}
+ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter)
+    : CacheableContainerLayer(
+          RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
+          true),
+      filter_(std::move(filter)) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);
   auto* prev = static_cast<const ColorFilterLayer*>(old_layer);
   if (!context->IsSubtreeDirty()) {
     FML_DCHECK(prev);
-    if (filter_ != prev->filter_) {
+    if (NotEquals(filter_, prev->filter_)) {
       context->MarkSubtreeDirty(context->GetOldLayerPaintRegion(old_layer));
     }
+  }
+
+  if (context->has_raster_cache()) {
+    context->SetTransform(
+        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
   }
 
   DiffChildren(context, prev);
@@ -28,48 +41,45 @@ void ColorFilterLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
   Layer::AutoPrerollSaveLayerState save =
       Layer::AutoPrerollSaveLayerState::Create(context);
-  ContainerLayer::Preroll(context, matrix);
+  SkMatrix child_matrix = matrix;
+  AutoCache cache =
+      AutoCache(layer_raster_cache_item_.get(), context, child_matrix);
 
+  ContainerLayer::Preroll(context, child_matrix);
   // We always use a saveLayer (or a cached rendering), so we
   // can always apply opacity in those cases.
   context->subtree_can_inherit_opacity = true;
-
-  if (render_count_ >= kMinimumRendersBeforeCachingFilterLayer) {
-    TryToPrepareRasterCache(context, this, matrix,
-                            RasterCacheLayerStrategy::kLayer);
-  } else {
-    render_count_++;
-    TryToPrepareRasterCache(context, this, matrix,
-                            RasterCacheLayerStrategy::kLayerChildren);
-  }
 }
 
 void ColorFilterLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "ColorFilterLayer::Paint");
   FML_DCHECK(needs_painting(context));
 
-  AutoCachePaint cache_paint(context);
-
   if (context.raster_cache) {
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayer,
-                                   cache_paint.paint())) {
-      return;
+    context.internal_nodes_canvas->setMatrix(
+        RasterCacheUtil::GetIntegralTransCTM(
+            context.leaf_nodes_canvas->getTotalMatrix()));
+    AutoCachePaint cache_paint(context);
+    if (layer_raster_cache_item_->IsCacheChildren()) {
+      cache_paint.setColorFilter(filter_.get());
     }
-
-    cache_paint.setColorFilter(filter_);
-    if (context.raster_cache->Draw(this, *context.leaf_nodes_canvas,
-                                   RasterCacheLayerStrategy::kLayerChildren,
-                                   cache_paint.paint())) {
+    if (layer_raster_cache_item_->Draw(context, cache_paint.sk_paint())) {
       return;
     }
   }
 
-  cache_paint.setColorFilter(filter_);
-
-  Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
-      context, paint_bounds(), cache_paint.paint());
-  PaintChildren(context);
+  AutoCachePaint cache_paint(context);
+  cache_paint.setColorFilter(filter_.get());
+  if (context.leaf_nodes_builder) {
+    FML_DCHECK(context.builder_multiplexer);
+    context.builder_multiplexer->saveLayer(&paint_bounds(),
+                                           cache_paint.dl_paint());
+    PaintChildren(context);
+    context.builder_multiplexer->restore();
+  } else {
+    Layer::AutoSaveLayer save = Layer::AutoSaveLayer::Create(
+        context, paint_bounds(), cache_paint.sk_paint());
+    PaintChildren(context);
+  }
 }
 
 }  // namespace flutter

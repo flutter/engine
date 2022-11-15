@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'surface.dart';
@@ -14,8 +14,7 @@ import 'surface.dart';
 /// A surface that transforms its children using CSS transform.
 class PersistedTransform extends PersistedContainerSurface
     implements ui.TransformEngineLayer {
-  PersistedTransform(PersistedTransform? oldLayer, this._matrixStorage)
-      : super(oldLayer);
+  PersistedTransform(PersistedTransform? super.oldLayer, this._matrixStorage);
 
   /// The storage representing the transform of this surface.
   final Float32List _matrixStorage;
@@ -41,8 +40,8 @@ class PersistedTransform extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = html.document.createElement('flt-transform');
+  DomElement createElement() {
+    final DomElement element = domDocument.createElement('flt-transform');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;

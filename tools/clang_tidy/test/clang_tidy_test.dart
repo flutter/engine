@@ -6,8 +6,37 @@ import 'dart:io' as io show File, Platform, stderr;
 
 import 'package:clang_tidy/clang_tidy.dart';
 import 'package:clang_tidy/src/command.dart';
+import 'package:clang_tidy/src/options.dart';
 import 'package:litetest/litetest.dart';
 import 'package:process_runner/process_runner.dart';
+
+// Recorded locally from clang-tidy.
+const String _tidyOutput = '''
+/runtime.dart_isolate.o" in /Users/aaclarke/dev/engine/src/out/host_debug exited with code 1
+3467 warnings generated.
+/Users/aaclarke/dev/engine/src/flutter/runtime/dart_isolate.cc:167:32: error: std::move of the const variable 'dart_entrypoint_args' has no effect; remove std::move() or make the variable non-const [performance-move-const-arg,-warnings-as-errors]
+                               std::move(dart_entrypoint_args))) {
+                               ^~~~~~~~~~                    ~
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error
+:
+3467 warnings generated.
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error
+
+
+
+''';
+
+const String _tidyTrimmedOutput = '''
+/Users/aaclarke/dev/engine/src/flutter/runtime/dart_isolate.cc:167:32: error: std::move of the const variable 'dart_entrypoint_args' has no effect; remove std::move() or make the variable non-const [performance-move-const-arg,-warnings-as-errors]
+                               std::move(dart_entrypoint_args))) {
+                               ^~~~~~~~~~                    ~
+Suppressed 3474 warnings (3466 in non-user code, 8 NOLINT).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+1 warning treated as error''';
 
 Future<int> main(List<String> args) async {
   if (args.isEmpty) {
@@ -34,6 +63,10 @@ Future<int> main(List<String> args) async {
     expect(clangTidy.options.help, isTrue);
     expect(result, equals(0));
     expect(errBuffer.toString(), contains('Usage: '));
+  });
+
+  test('trimmed clang-tidy output', () {
+    expect(_tidyTrimmedOutput, equals(ClangTidy.trimOutput(_tidyOutput)));
   });
 
   test('Error when --compile-commands and --target-variant are used together', () async {
@@ -98,8 +131,8 @@ Future<int> main(List<String> args) async {
 
     expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
-    expect(errBuffer.toString(), contains(
-      "ERROR: Build commands path /does/not/exist doesn't exist.",
+    expect(errBuffer.toString().split('\n')[0], hasMatch(
+      r"ERROR: Build commands path .*/does/not/exist doesn't exist.",
     ));
   });
 
@@ -121,8 +154,33 @@ Future<int> main(List<String> args) async {
 
     expect(clangTidy.options.help, isFalse);
     expect(result, equals(1));
+    expect(errBuffer.toString().split('\n')[0], hasMatch(
+      r'ERROR: Build commands path .*/does/not/exist'
+      r'[/\\]out[/\\]ios_debug_unopt[/\\]compile_commands.json'
+      r" doesn't exist.",
+    ));
+  });
+
+  test('Error when --lint-all and --lint-head are used together', () async {
+    final StringBuffer outBuffer = StringBuffer();
+    final StringBuffer errBuffer = StringBuffer();
+    final ClangTidy clangTidy = ClangTidy.fromCommandLine(
+      <String>[
+        '--compile-commands',
+        '/unused',
+        '--lint-all',
+        '--lint-head',
+      ],
+      outSink: outBuffer,
+      errSink: errBuffer,
+    );
+
+    final int result = await clangTidy.run();
+
+    expect(clangTidy.options.help, isFalse);
+    expect(result, equals(1));
     expect(errBuffer.toString(), contains(
-      "ERROR: Build commands path /does/not/exist/out/ios_debug_unopt/compile_commands.json doesn't exist.",
+      'ERROR: At most one of --lint-all and --lint-head can be passed.',
     ));
   });
 
@@ -187,7 +245,7 @@ Future<int> main(List<String> args) async {
     );
 
     // This file needs to exist, and be UTF8 line-parsable.
-    final String filePath = io.Platform.script.path;
+    final String filePath = io.Platform.script.toFilePath();
     final List<dynamic> buildCommandsData = <Map<String, dynamic>>[
       <String, dynamic>{
         'directory': '/unused',
@@ -203,25 +261,24 @@ Future<int> main(List<String> args) async {
     expect(commands, isNotEmpty);
     final Command command = commands.first;
     expect(command.tidyPath, contains('clang/bin/clang-tidy'));
-    final WorkerJob jobNoFix = command.createLintJob(null, false);
-    expect(jobNoFix.command, <String>[
-      '../../buildtools/mac-x64/clang/bin/clang-tidy',
-      filePath,
-      '--',
-      '',
-      filePath,
-    ]);
+    final Options noFixOptions = Options(buildCommandsPath: io.File('.'));
+    expect(noFixOptions.fix, isFalse);
+    final WorkerJob jobNoFix = command.createLintJob(noFixOptions);
+    expect(jobNoFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
+    expect(jobNoFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
+    expect(jobNoFix.command[2], '--');
+    expect(jobNoFix.command[3], '');
+    expect(jobNoFix.command[4], endsWith(filePath));
 
-    final WorkerJob jobWithFix = command.createLintJob(null, true);
-    expect(jobWithFix.command, <String>[
-      '../../buildtools/mac-x64/clang/bin/clang-tidy',
-      filePath,
-      '--fix',
-      '--format-style=file',
-      '--',
-      '',
-      filePath,
-    ]);
+    final Options fixOptions = Options(buildCommandsPath: io.File('.'), fix: true);
+    final WorkerJob jobWithFix = command.createLintJob(fixOptions);
+    expect(jobWithFix.command[0], endsWith('../../buildtools/mac-x64/clang/bin/clang-tidy'));
+    expect(jobWithFix.command[1], endsWith(filePath.replaceAll('/', io.Platform.pathSeparator)));
+    expect(jobWithFix.command[2], '--fix');
+    expect(jobWithFix.command[3], '--format-style=file');
+    expect(jobWithFix.command[4], '--');
+    expect(jobWithFix.command[5], '');
+    expect(jobWithFix.command[6], endsWith(filePath));
   });
 
   test('Command getLintAction flags third_party files', () async {

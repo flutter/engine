@@ -2,15 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-import 'dart:svg' as svg;
-
 import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../canvaskit/color_filter.dart';
 import '../color_filter.dart';
+import '../dom.dart';
 import '../embedder.dart';
+import '../svg.dart';
 import '../util.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
@@ -19,20 +18,19 @@ import 'surface.dart';
 /// A surface that applies an [ColorFilter] to its children.
 class PersistedColorFilter extends PersistedContainerSurface
     implements ui.ColorFilterEngineLayer {
-  PersistedColorFilter(PersistedColorFilter? oldLayer, this.filter)
-      : super(oldLayer);
+  PersistedColorFilter(PersistedColorFilter? super.oldLayer, this.filter);
 
   @override
-  html.Element? get childContainer => _childContainer;
+  DomElement? get childContainer => _childContainer;
 
   /// The dedicated child container element that's separate from the
   /// [rootElement] is used to compensate for the coordinate system shift
   /// introduced by the [rootElement] translation.
-  html.Element? _childContainer;
+  DomElement? _childContainer;
 
   /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
-  html.Element? _filterElement;
+  DomElement? _filterElement;
   bool containerVisible = true;
 
   @override
@@ -54,6 +52,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void discard() {
     super.discard();
     flutterViewEmbedder.removeResource(_filterElement);
+    _filterElement = null;
     // Do not detach the child container from the root. It is permanently
     // attached. The elements are reused together and are detached from the DOM
     // together.
@@ -61,9 +60,9 @@ class PersistedColorFilter extends PersistedContainerSurface
   }
 
   @override
-  html.Element createElement() {
-    final html.Element element = defaultCreateElement('flt-color-filter');
-    final html.Element container = html.Element.tag('flt-filter-interior');
+  DomElement createElement() {
+    final DomElement element = defaultCreateElement('flt-color-filter');
+    final DomElement container = createDomElement('flt-filter-interior');
     container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
@@ -92,7 +91,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void _applyBlendModeFilter(CkBlendModeColorFilter colorFilter) {
     final ui.Color filterColor = colorFilter.color;
     ui.BlendMode colorFilterBlendMode = colorFilter.blendMode;
-    final html.CssStyleDeclaration style = childContainer!.style;
+    final DomCSSStyleDeclaration style = childContainer!.style;
     switch (colorFilterBlendMode) {
       case ui.BlendMode.clear:
       case ui.BlendMode.dstOut:
@@ -143,7 +142,7 @@ class PersistedColorFilter extends PersistedContainerSurface
     if (colorFilterBlendMode == ui.BlendMode.saturation ||
         colorFilterBlendMode == ui.BlendMode.multiply ||
         colorFilterBlendMode == ui.BlendMode.modulate) {
-      style.backgroundColor = colorToCssString(filterColor);
+      style.backgroundColor = colorToCssString(filterColor)!;
     }
   }
 
@@ -254,8 +253,6 @@ const int kOperatorArithmetic = 6;
 
 /// Builds an [SvgFilter].
 class SvgFilterBuilder {
-  static int _filterIdCounter = 0;
-
   SvgFilterBuilder() : id = '_fcf${++_filterIdCounter}' {
     filter.id = id;
 
@@ -270,21 +267,24 @@ class SvgFilterBuilder {
     filter.height!.baseVal!.valueAsString = '100%';
   }
 
+  static int _filterIdCounter = 0;
+
   final String id;
-  final svg.SvgSvgElement root = kSvgResourceHeader.clone(false) as svg.SvgSvgElement;
-  final svg.FilterElement filter = svg.FilterElement();
+  final SVGSVGElement root = kSvgResourceHeader.cloneNode(false) as
+      SVGSVGElement;
+  final SVGFilterElement filter = createSVGFilterElement();
 
   set colorInterpolationFilters(String filters) {
     filter.setAttribute('color-interpolation-filters', filters);
   }
 
   void setFeColorMatrix(List<double> matrix, { required String result }) {
-    final svg.FEColorMatrixElement element = svg.FEColorMatrixElement();
+    final SVGFEColorMatrixElement element = createSVGFEColorMatrixElement();
     element.type!.baseVal = kMatrixType;
     element.result!.baseVal = result;
-    final svg.NumberList value = element.values!.baseVal!;
+    final SVGNumberList value = element.values!.baseVal!;
     for (int i = 0; i < matrix.length; i++) {
-      value.appendItem(root.createSvgNumber()..value = matrix[i]);
+      value.appendItem(root.createSVGNumber()..value = matrix[i]);
     }
     filter.append(element);
   }
@@ -294,7 +294,7 @@ class SvgFilterBuilder {
     required String floodOpacity,
     required String result,
   }) {
-    final svg.FEFloodElement element = svg.FEFloodElement();
+    final SVGFEFloodElement element = createSVGFEFloodElement();
     element.setAttribute('flood-color', floodColor);
     element.setAttribute('flood-opacity', floodOpacity);
     element.result!.baseVal = result;
@@ -306,7 +306,7 @@ class SvgFilterBuilder {
     required String in2,
     required int mode,
   }) {
-    final svg.FEBlendElement element = svg.FEBlendElement();
+    final SVGFEBlendElement element = createSVGFEBlendElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.mode!.baseVal = mode;
@@ -323,7 +323,7 @@ class SvgFilterBuilder {
     num? k4,
     required String result,
   }) {
-    final svg.FECompositeElement element = svg.SvgElement.tag('feComposite') as svg.FECompositeElement;
+    final SVGFECompositeElement element = createSVGFECompositeElement();
     element.in1!.baseVal = in1;
     element.in2!.baseVal = in2;
     element.operator!.baseVal = operator;
@@ -349,17 +349,17 @@ class SvgFilterBuilder {
     required double width,
     required double height,
   }) {
-    final svg.FEImageElement element = svg.FEImageElement();
+    final SVGFEImageElement element = createSVGFEImageElement();
     element.href!.baseVal = href;
     element.result!.baseVal = result;
 
     // WebKit will not render if x/y/width/height is specified. So we return
     // explicit size here unless running on WebKit.
     if (browserEngine != BrowserEngine.webkit) {
-      element.x!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, 0);
-      element.y!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, 0);
-      element.width!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, width);
-      element.height!.baseVal!.newValueSpecifiedUnits(svg.Length.SVG_LENGTHTYPE_NUMBER, height);
+      element.x!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
+      element.y!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, 0);
+      element.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, width);
+      element.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, height);
     }
     filter.append(element);
   }
@@ -374,7 +374,7 @@ class SvgFilter {
   SvgFilter._(this.id, this.element);
 
   final String id;
-  final svg.SvgSvgElement element;
+  final SVGSVGElement element;
 }
 
 SvgFilter svgFilterFromColorMatrix(List<double> matrix) {

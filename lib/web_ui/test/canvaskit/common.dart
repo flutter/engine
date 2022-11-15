@@ -3,14 +3,13 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'package:web_engine_tester/golden_tester.dart';
-
-export '../common.dart';
 
 /// Used in tests instead of [ProductionCollector] to control Skia object
 /// collection explicitly, and to prevent leaks across tests.
@@ -23,8 +22,9 @@ const MethodCodec codec = StandardMethodCodec();
 /// Common test setup for all CanvasKit unit-tests.
 void setUpCanvasKitTest() {
   setUpAll(() async {
-    expect(useCanvasKit, true, reason: 'This test must run in CanvasKit mode.');
+    expect(renderer, isA<CanvasKitRenderer>(), reason: 'This test must run in CanvasKit mode.');
     debugResetBrowserSupportsFinalizationRegistry();
+    debugDisableFontFallbacks = false;
     await initializeEngine(assetManager: WebOnlyMockAssetManager());
   });
 
@@ -176,20 +176,41 @@ class TestCollector implements Collector {
   }
 }
 
+Future<void> matchSceneGolden(String goldenFile, LayerScene scene, {
+  required ui.Rect region,
+}) async {
+  CanvasKitRenderer.instance.rasterizer.draw(scene.layerTree);
+  await matchGoldenFile(goldenFile, region: region);
+}
+
 /// Checks that a [picture] matches the [goldenFile].
 ///
 /// The picture is drawn onto the UI at [ui.Offset.zero] with no additional
 /// layers.
 Future<void> matchPictureGolden(String goldenFile, CkPicture picture,
-    {required ui.Rect region, bool write = false}) async {
-  final EnginePlatformDispatcher dispatcher =
-      ui.window.platformDispatcher as EnginePlatformDispatcher;
+    {required ui.Rect region}) async {
   final LayerSceneBuilder sb = LayerSceneBuilder();
   sb.pushOffset(0, 0);
   sb.addPicture(ui.Offset.zero, picture);
-  dispatcher.rasterizer!.draw(sb.build().layerTree);
-  await matchGoldenFile(goldenFile,
-      region: region, maxDiffRatePercent: 0.0, write: write);
+  CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+  await matchGoldenFile(goldenFile, region: region);
+}
+
+Future<bool> matchImage(ui.Image left, ui.Image right) async {
+  if (left.width != right.width || left.height != right.height) {
+    return false;
+  }
+  int getPixel(ByteData data, int x, int y) => data.getUint32((x + y * left.width) * 4);
+  final ByteData leftData = (await left.toByteData())!;
+  final ByteData rightData = (await right.toByteData())!;
+  for (int y = 0; y < left.height; y++) {
+    for (int x = 0; x < left.width; x++) {
+      if (getPixel(leftData, x, y) != getPixel(rightData, x, y)) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 /// Sends a platform message to create a Platform View with the given id and viewType.

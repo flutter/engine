@@ -4,7 +4,6 @@
 
 import 'dart:async';
 import 'dart:convert';
-import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -19,10 +18,10 @@ void main() {
 Future<void> testMain() async {
   await initializeTestFlutterViewEmbedder();
   group('loadFontFromList', () {
-    const String _testFontUrl = '/assets/fonts/ahem.ttf';
+    const String testFontUrl = '/assets/fonts/ahem.ttf';
 
     tearDown(() {
-      html.document.fonts!.clear();
+      domDocument.fonts!.clear();
     });
 
     test('surfaces error from invalid font buffer', () async {
@@ -31,15 +30,13 @@ Future<void> testMain() async {
           throwsA(const TypeMatcher<Exception>()));
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loads Blehm font from buffer', () async {
       expect(_containsFontFamily('Blehm'), isFalse);
 
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
@@ -47,9 +44,7 @@ Future<void> testMain() async {
       expect(_containsFontFamily('Blehm'), isTrue);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loading font should clear measurement caches', () async {
       final EngineParagraphStyle style = EngineParagraphStyle();
@@ -64,8 +59,8 @@ Future<void> testMain() async {
 
       // Now, loads a new font using loadFontFromList. This should clear the
       // cache
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
@@ -75,9 +70,7 @@ Future<void> testMain() async {
       expect(Spanometer.rulers.length, 0);
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
 
     test('loading font should send font change message', () async {
       final ui.PlatformMessageCallback? oldHandler = ui.window.onPlatformMessage;
@@ -91,32 +84,30 @@ Future<void> testMain() async {
             buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
         message = utf8.decode(list);
       };
-      final html.HttpRequest response = await html.HttpRequest.request(
-          _testFontUrl,
+      final DomXMLHttpRequest response = await domHttpRequest(
+          testFontUrl,
           responseType: 'arraybuffer');
       await ui.loadFontFromList(Uint8List.view(response.response as ByteBuffer),
           fontFamily: 'Blehm');
       final Completer<void> completer = Completer<void>();
-      html.window.requestAnimationFrame( (_) { completer.complete(); } );
-      await (completer.future); // ignore: unnecessary_parenthesis
+      domWindow.requestAnimationFrame(allowInterop((_) { completer.complete();}) );
+      await completer.future;
       window.onPlatformMessage = oldHandler;
       expect(actualName, 'flutter/system');
       expect(message, '{"type":"fontsChange"}');
     },
         // TODO(hterkelsen): https://github.com/flutter/flutter/issues/56702
-        // TODO(hterkelsen): https://github.com/flutter/flutter/issues/50770
-        skip: browserEngine == BrowserEngine.edge ||
-            browserEngine == BrowserEngine.webkit);
+        skip: browserEngine == BrowserEngine.webkit);
   });
 }
 
 bool _containsFontFamily(String family) {
   bool found = false;
-  html.document.fonts!.forEach((html.FontFace fontFace,
-      html.FontFace fontFaceAgain, html.FontFaceSet fontFaceSet) {
+  domDocument.fonts!.forEach(allowInterop((DomFontFace fontFace,
+      DomFontFace fontFaceAgain, DomFontFaceSet fontFaceSet) {
     if (fontFace.family == family) {
       found = true;
     }
-  });
+  }));
   return found;
 }

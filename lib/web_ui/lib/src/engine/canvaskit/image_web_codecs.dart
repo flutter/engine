@@ -10,7 +10,6 @@
 
 import 'dart:async';
 import 'dart:convert' show base64;
-import 'dart:html' as html;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -18,6 +17,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../alarm_clock.dart';
+import '../dom.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
@@ -42,6 +42,14 @@ void debugRestoreWebDecoderExpireDuration() {
 
 /// Image decoder backed by the browser's `ImageDecoder`.
 class CkBrowserImageDecoder implements ui.Codec {
+  CkBrowserImageDecoder._({
+    required this.contentType,
+    required this.targetWidth,
+    required this.targetHeight,
+    required this.data,
+    required this.debugSource,
+  });
+
   static Future<CkBrowserImageDecoder> create({
     required Uint8List data,
     required String debugSource,
@@ -55,7 +63,7 @@ class CkBrowserImageDecoder implements ui.Codec {
     if (contentType == null) {
       final String fileHeader;
       if (data.isNotEmpty) {
-        fileHeader = '[' + bytesToHexString(data.sublist(0, math.min(10, data.length))) + ']';
+        fileHeader = '[${bytesToHexString(data.sublist(0, math.min(10, data.length)))}]';
       } else {
         fileHeader = 'empty';
       }
@@ -78,14 +86,6 @@ class CkBrowserImageDecoder implements ui.Codec {
     await decoder._getOrCreateWebDecoder();
     return decoder;
   }
-
-  CkBrowserImageDecoder._({
-    required this.contentType,
-    required this.targetWidth,
-    required this.targetHeight,
-    required this.data,
-    required this.debugSource,
-  });
 
   final String contentType;
   final int? targetWidth;
@@ -202,16 +202,16 @@ class CkBrowserImageDecoder implements ui.Codec {
 
       return webDecoder;
     } catch (error) {
-      if (error is html.DomException) {
-        if (error.name == html.DomException.NOT_SUPPORTED) {
+      if (domInstanceOfString(error, 'DOMException')) {
+        if ((error as DomException).name == DomException.notSupported) {
           throw ImageCodecException(
-            'Image file format ($contentType) is not supported by this browser\'s ImageDecoder API.\n'
+            "Image file format ($contentType) is not supported by this browser's ImageDecoder API.\n"
             'Image source: $debugSource',
           );
         }
       }
       throw ImageCodecException(
-        'Failed to decode image using the browser\'s ImageDecoder API.\n'
+        "Failed to decode image using the browser's ImageDecoder API.\n"
         'Image source: $debugSource\n'
         'Original browser error: $error'
       );
@@ -246,7 +246,7 @@ class CkBrowserImageDecoder implements ui.Codec {
 
     if (skImage == null) {
       throw ImageCodecException(
-        'Failed to create image from pixel data decoded using the browser\'s ImageDecoder.',
+        "Failed to create image from pixel data decoded using the browser's ImageDecoder.",
       );
     }
 
@@ -455,11 +455,10 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
   final int width = videoFrame.displayWidth;
   final int height = videoFrame.displayHeight;
-  final html.CanvasElement canvas = html.CanvasElement()
-    ..width = width
-    ..height = height;
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
+      height);
+  final DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.drawImage(videoFrame, 0, 0);
-  final String pngBase64 = canvas.toDataUrl().substring('data:image/png;base64,'.length);
+  final String pngBase64 = canvas.toDataURL().substring('data:image/png;base64,'.length);
   return base64.decode(pngBase64);
 }

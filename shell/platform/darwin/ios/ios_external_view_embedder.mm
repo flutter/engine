@@ -65,7 +65,13 @@ std::vector<SkCanvas*> IOSExternalViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
+std::vector<DisplayListBuilder*> IOSExternalViewEmbedder::GetCurrentBuilders() {
+  FML_CHECK(platform_views_controller_);
+  return platform_views_controller_->GetCurrentBuilders();
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext IOSExternalViewEmbedder::CompositeEmbeddedView(int view_id) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::CompositeEmbeddedView");
   FML_CHECK(platform_views_controller_);
   return platform_views_controller_->CompositeEmbeddedView(view_id);
@@ -84,12 +90,24 @@ void IOSExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
 void IOSExternalViewEmbedder::EndFrame(bool should_resubmit_frame,
                                        fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
   TRACE_EVENT0("flutter", "IOSExternalViewEmbedder::EndFrame");
-  FML_CHECK(platform_views_controller_);
+  platform_views_controller_->EndFrame(should_resubmit_frame, raster_thread_merger);
 }
 
 // |ExternalViewEmbedder|
 bool IOSExternalViewEmbedder::SupportsDynamicThreadMerging() {
   return true;
+}
+
+// |ExternalViewEmbedder|
+void IOSExternalViewEmbedder::PushFilterToVisitedPlatformViews(
+    std::shared_ptr<const DlImageFilter> filter,
+    const SkRect& filter_rect) {
+  platform_views_controller_->PushFilterToVisitedPlatformViews(filter, filter_rect);
+}
+
+// |ExternalViewEmbedder|
+void IOSExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
+  platform_views_controller_->PushVisitedPlatformView(view_id);
 }
 
 }  // namespace flutter

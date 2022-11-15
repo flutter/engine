@@ -1,8 +1,6 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-
-// @dart = 2.12
 part of dart.ui;
 
 /// A view into which a Flutter [Scene] is drawn.
@@ -264,8 +262,23 @@ abstract class FlutterView {
   ///   scheduling of frames.
   /// * [RendererBinding], the Flutter framework class which manages layout and
   ///   painting.
-  void render(Scene scene) => _render(scene, this);
-  void _render(Scene scene, FlutterView view) native 'PlatformConfiguration_render';
+  void render(Scene scene) => _render(scene);
+
+  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::Render')
+  external static void _render(Scene scene);
+
+  /// Change the retained semantics data about this [FlutterView].
+  ///
+  /// If [PlatformDispatcher.semanticsEnabled] is true, the user has requested that this function
+  /// be called whenever the semantic content of this [FlutterView]
+  /// changes.
+  ///
+  /// This function disposes the given update, which means the semantics update
+  /// cannot be used further.
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+
+  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
+  external static void _updateSemantics(SemanticsUpdate update);
 }
 
 /// A top-level platform window displaying a Flutter layer tree drawn from a
@@ -316,8 +329,8 @@ class FlutterWindow extends FlutterView {
 /// [window], or [PlatformDispatcher.instance]. See the documentation for
 /// [PlatformDispatcher.instance] for more details about this recommendation.
 class SingletonFlutterWindow extends FlutterWindow {
-  SingletonFlutterWindow._(Object windowId, PlatformDispatcher platformDispatcher)
-      : super._(windowId, platformDispatcher);
+  SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
+      : super._();
 
   /// A callback that is invoked whenever the [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], [PlatformDispatcher.views], or
@@ -424,6 +437,15 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   double get textScaleFactor => platformDispatcher.textScaleFactor;
+
+  /// Whether the spell check service is supported on the current platform.
+  ///
+  /// {@macro dart.ui.window.accessorForwardWarning}
+  ///
+  /// This option is used by [EditableTextState] to define its
+  /// [SpellCheckConfiguration] when spell check is enabled, but no spell check
+  /// service is specified.
+  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
 
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
@@ -712,17 +734,6 @@ class SingletonFlutterWindow extends FlutterWindow {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
 
-  /// Change the retained semantics data about this window.
-  ///
-  /// {@macro dart.ui.window.functionForwardWarning}
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
-
   /// Sends a message to a platform-specific plugin.
   ///
   /// {@macro dart.ui.window.functionForwardWarning}
@@ -833,27 +844,35 @@ class AccessibilityFeatures {
   @override
   String toString() {
     final List<String> features = <String>[];
-    if (accessibleNavigation)
+    if (accessibleNavigation) {
       features.add('accessibleNavigation');
-    if (invertColors)
+    }
+    if (invertColors) {
       features.add('invertColors');
-    if (disableAnimations)
+    }
+    if (disableAnimations) {
       features.add('disableAnimations');
-    if (boldText)
+    }
+    if (boldText) {
       features.add('boldText');
-    if (reduceMotion)
+    }
+    if (reduceMotion) {
       features.add('reduceMotion');
-    if (highContrast)
+    }
+    if (highContrast) {
       features.add('highContrast');
-    if (onOffSwitchLabels)
+    }
+    if (onOffSwitchLabels) {
       features.add('onOffSwitchLabels');
+    }
     return 'AccessibilityFeatures$features';
   }
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is AccessibilityFeatures
         && other._index == _index;
   }
@@ -966,15 +985,16 @@ class GestureSettings {
 
   @override
   bool operator ==(Object other) {
-    if (other.runtimeType != runtimeType)
+    if (other.runtimeType != runtimeType) {
       return false;
+    }
     return other is GestureSettings &&
       other.physicalTouchSlop == physicalTouchSlop &&
       other.physicalDoubleTapSlop == physicalDoubleTapSlop;
   }
 
   @override
-  int get hashCode => hashValues(physicalTouchSlop, physicalDoubleTapSlop);
+  int get hashCode => Object.hash(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
   String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';

@@ -87,6 +87,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send initial bounds to embedder.  Must occur after engine has initialized.
   void SendInitialBounds();
 
+  // Send the initial accessibility features to the window
+  void SendInitialAccessibilityFeatures();
+
+  // Set the text of the alert, and create it if it does not yet exist.
+  void AnnounceAlert(const std::wstring& text);
+
+  // |WindowBindingHandlerDelegate|
+  void UpdateHighContrastEnabled(bool enabled) override;
+
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
@@ -98,6 +107,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;
+
+  // |WindowBindingHandlerDelegate|
+  void OnWindowRepaint() override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerMove(double x,
@@ -120,8 +132,23 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                    FlutterPointerMouseButtons button) override;
 
   // |WindowBindingHandlerDelegate|
-  void OnPointerLeave(FlutterPointerDeviceKind device_kind,
+  void OnPointerLeave(double x,
+                      double y,
+                      FlutterPointerDeviceKind device_kind,
                       int32_t device_id = 0) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomStart(int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomUpdate(int32_t device_id,
+                                      double pan_x,
+                                      double pan_y,
+                                      double scale,
+                                      double rotation) override;
+
+  // |WindowBindingHandlerDelegate|
+  virtual void OnPointerPanZoomEnd(int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
   void OnText(const std::u16string&) override;
@@ -157,6 +184,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
+  void OnScrollInertiaCancel(int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
 
   // |WindowBindingHandlerDelegate|
@@ -184,6 +214,11 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
       BinaryMessenger* messenger);
 
+  virtual void NotifyWinEventWrapper(DWORD event,
+                                     HWND hwnd,
+                                     LONG idObject,
+                                     LONG idChild);
+
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep
   // track of which buttons have been pressed, so it's the embedding's
@@ -205,6 +240,12 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
     // The currently pressed buttons, as represented in FlutterPointerEvent.
     uint64_t buttons = 0;
+
+    // The x position where the last pan/zoom started.
+    double pan_zoom_start_x = 0;
+
+    // The y position where the last pan/zoom started.
+    double pan_zoom_start_y = 0;
   };
 
   // States a resize event can be in.
@@ -243,7 +284,17 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Win32 api doesn't have "mouse enter" event. Therefore, there is no
   // SendPointerEnter method. A mouse enter event is tracked then the "move"
   // event is called.
-  void SendPointerLeave(PointerState* state);
+  void SendPointerLeave(double x, double y, PointerState* state);
+
+  void SendPointerPanZoomStart(int32_t device_id, double x, double y);
+
+  void SendPointerPanZoomUpdate(int32_t device_id,
+                                double pan_x,
+                                double pan_y,
+                                double scale,
+                                double rotation);
+
+  void SendPointerPanZoomEnd(int32_t device_id);
 
   // Reports a keyboard character to Flutter engine.
   void SendText(const std::u16string&);
@@ -290,6 +341,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   int scroll_offset_multiplier,
                   FlutterPointerDeviceKind device_kind,
                   int32_t device_id);
+
+  // Reports scroll inertia cancel events to Flutter engine.
+  void SendScrollInertiaCancel(int32_t device_id, double x, double y);
 
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,

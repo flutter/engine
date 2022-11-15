@@ -35,6 +35,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -164,12 +166,14 @@ import java.util.List;
  *
  * <p><strong>Launch Screen and Splash Screen</strong>
  *
- * <p>{@code FlutterActivity} supports the display of an Android "launch screen" as well as a
- * Flutter-specific "splash screen". The launch screen is displayed while the Android application
- * loads. It is only applicable if {@code FlutterActivity} is the first {@code Activity} displayed
- * upon loading the app. After the launch screen passes, a splash screen is optionally displayed.
- * The splash screen is displayed for as long as it takes Flutter to initialize and render its first
- * frame.
+ * <p>{@code FlutterActivity} supports the display of an Android "launch screen", which is displayed
+ * while the Android application loads. It is only applicable if {@code FlutterActivity} is the
+ * first {@code Activity} displayed upon loading the app.
+ *
+ * <p>Prior to Flutter 2.5, {@code FlutterActivity} supported the display of a Flutter-specific
+ * "splash screen" that would be displayed after the launch screen passes. This has since been
+ * deprecated. If a launch screen is specified, it will automatically persist for as long as it
+ * takes Flutter to initialize and render its first frame.
  *
  * <p>Use Android themes to display a launch screen. Create two themes: a launch theme and a normal
  * theme. In the launch theme, set {@code windowBackground} to the desired {@code Drawable} for the
@@ -197,13 +201,6 @@ import java.util.List;
  * <p>Flutter also requires initialization time. To specify a splash screen for Flutter
  * initialization, subclass {@code FlutterActivity} and override {@link #provideSplashScreen()}. See
  * {@link SplashScreen} for details on implementing a splash screen.
- *
- * <p>Flutter ships with a splash screen that automatically displays the exact same {@code
- * windowBackground} as the launch theme discussed previously. To use that splash screen, include
- * the following metadata in AndroidManifest.xml for this {@code FlutterActivity}:
- *
- * <p>{@code <meta-data android:name="io.flutter.embedding.android.SplashScreenDrawable"
- * android:resource="@drawable/launch_background" /> }
  *
  * <p><strong>Alternative Activity</strong> {@link FlutterFragmentActivity} is also available, which
  * is similar to {@code FlutterActivity} but it extends {@code FragmentActivity}. You should use
@@ -500,12 +497,60 @@ public class FlutterActivity extends Activity
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
+    registerOnBackInvokedCallback();
+
     configureWindowForTransparency();
 
     setContentView(createFlutterView());
 
     configureStatusBarForFullscreenFlutterExperience();
   }
+
+  /**
+   * Registers the callback with OnBackInvokedDispatcher to capture back navigation gestures and
+   * pass them to the framework.
+   *
+   * <p>This replaces the deprecated onBackPressed method override in order to support API 33's
+   * predictive back navigation feature.
+   *
+   * <p>The callback must be unregistered in order to prevent unpredictable behavior once outside
+   * the Flutter app.
+   */
+  @VisibleForTesting
+  public void registerOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher()
+          .registerOnBackInvokedCallback(
+              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
+    }
+  }
+
+  /**
+   * Unregisters the callback from OnBackInvokedDispatcher.
+   *
+   * <p>This should be called when the activity is no longer in use to prevent unpredictable
+   * behavior such as being stuck and unable to press back.
+   */
+  @VisibleForTesting
+  public void unregisterOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
+    }
+  }
+
+  private final OnBackInvokedCallback onBackInvokedCallback =
+      Build.VERSION.SDK_INT >= 33
+          ? new OnBackInvokedCallback() {
+            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
+            // a google3 bug where the linter is not properly running against API 33, causing
+            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
+            @SuppressWarnings("Override")
+            @Override
+            public void onBackInvoked() {
+              onBackPressed();
+            }
+          }
+          : null;
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
@@ -685,7 +730,9 @@ public class FlutterActivity extends Activity
    *
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
-  private void release() {
+  @VisibleForTesting
+  public void release() {
+    unregisterOnBackInvokedCallback();
     if (delegate != null) {
       delegate.release();
       delegate = null;
@@ -1133,7 +1180,7 @@ public class FlutterActivity extends Activity
    * {@link io.flutter.embedding.engine.FlutterEngine} to outlive this {@code FlutterActivity} so
    * that it can be used later in a different {@code Activity}. To accomplish this, the {@link
    * io.flutter.embedding.engine.FlutterEngine} may need to be disconnected from this {@code
-   * FluttterActivity} at an unusual time, preventing this {@code FlutterActivity} from correctly
+   * FlutterActivity} at an unusual time, preventing this {@code FlutterActivity} from correctly
    * managing the relationship between the {@link io.flutter.embedding.engine.FlutterEngine} and
    * itself.
    */

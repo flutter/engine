@@ -4,6 +4,8 @@
 
 // TODO(yjbanov): rename this file to web_only_api.dart.
 //                https://github.com/flutter/flutter/issues/100394
+//                Rather than extending this file with new APIs, we
+//                should instead use js interop.
 
 // This file contains extra web-only API that non-web engines do not have.
 //
@@ -64,8 +66,8 @@ Future<void> webOnlyWarmupEngine({
 }) async {
   // Create the object that knows how to bootstrap an app from JS and Dart.
   final engine.AppBootstrap bootstrap = engine.AppBootstrap(
-    initEngine: () async {
-      await engine.initializeEngineServices();
+    initializeEngine: ([engine.JsFlutterConfiguration? configuration]) async {
+      await engine.initializeEngineServices(jsConfiguration: configuration);
     }, runApp: () async {
       if (registerPlugins != null) {
         registerPlugins();
@@ -79,19 +81,16 @@ Future<void> webOnlyWarmupEngine({
 
   // Should the app "autoStart"?
   bool autoStart = true;
-  try {
+  if (engine.flutter != null && engine.loader != null) {
     autoStart = engine.didCreateEngineInitializer == null;
-  } catch (e) {
-    // Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'loader')
-    autoStart = true;
   }
   if (autoStart) {
     // The user does not want control of the app, bootstrap immediately.
-    print('Flutter Web Bootstrap: Auto');
+    engine.domWindow.console.debug('Flutter Web Bootstrap: Auto.');
     await bootstrap.autoStart();
   } else {
     // Yield control of the bootstrap procedure to the user.
-    print('Flutter Web Bootstrap: Programmatic');
+    engine.domWindow.console.debug('Flutter Web Bootstrap: Programmatic.');
     engine.didCreateEngineInitializer!(bootstrap.prepareEngineInitializer());
   }
 }
@@ -110,6 +109,7 @@ set debugEmulateFlutterTesterEnvironment(bool value) {
     engine.window.webOnlyDebugPhysicalSizeOverride =
         logicalSize * window.devicePixelRatio;
   }
+  engine.debugDisableFontFallbacks = value;
 }
 
 bool _debugEmulateFlutterTesterEnvironment = false;
@@ -129,13 +129,13 @@ void webOnlySetPluginHandler(Future<void> Function(String, ByteData?, PlatformMe
   engine.pluginMessageCallHandler = handler;
 }
 
-/// A function which takes a unique `id` and creates an HTML element.
-typedef PlatformViewFactory = html.Element Function(int viewId);
-
 /// A registry for factories that create platform views.
 class PlatformViewRegistry {
-  /// Register [viewTypeId] as being creating by the given [factory].
-  bool registerViewFactory(String viewTypeId, PlatformViewFactory viewFactory,
+  /// Register [viewTypeId] as being creating by the given [viewFactory].
+  /// [viewFactory] can be any function that takes an integer and returns an
+  /// `HTMLElement` DOM object.
+  bool registerViewFactory(String viewTypeId,
+      Object Function(int viewId) viewFactory,
       {bool isVisible = true}) {
     // TODO(web): Deprecate this once there's another way of calling `registerFactory` (js interop?)
     return engine.platformViewManager

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -17,15 +16,11 @@ void main() {
 }
 
 Future<void> testMain() async {
-  const double screenWidth = 500.0;
-  const double screenHeight = 500.0;
-  const Rect screenRect = Rect.fromLTWH(0, 0, screenWidth, screenHeight);
-
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    engine.fontCollection.debugRegisterTestFonts();
-    await engine.fontCollection.ensureFontsLoaded();
+    await engine.renderer.fontCollection.debugDownloadTestFonts();
+    engine.renderer.fontCollection.registerDownloadedFonts();
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
@@ -43,8 +38,7 @@ Future<void> testMain() async {
     rc.drawImageRect(testImage, Rect.fromLTRB(0, 0, testWidth, testHeight),
         Rect.fromLTWH(100, 30, testWidth, testHeight), engine.SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_oval',
-      region: screenRect);
+    await canvasScreenshot(rc, 'image_clipped_by_oval');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/48683
@@ -68,8 +62,7 @@ Future<void> testMain() async {
           ..color = const Color(0xFF00FF00)
           ..style = PaintingStyle.fill);
     rc.restore();
-    await canvasScreenshot(rc, 'triangle_clipped_by_oval',
-      region: screenRect);
+    await canvasScreenshot(rc, 'triangle_clipped_by_oval');
   });
 
   // Regression test for https://github.com/flutter/flutter/issues/78782
@@ -97,7 +90,8 @@ Future<void> testMain() async {
     rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
         const Rect.fromLTWH(-50, 0, testWidth, testHeight), engine.SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_triangle_off_screen');
+    await canvasScreenshot(rc, 'image_clipped_by_triangle_off_screen',
+        region: const Rect.fromLTWH(0, 0, 600, 800));
   });
 
   // Tests oval clipping using border radius 50%.
@@ -122,14 +116,15 @@ Future<void> testMain() async {
     rc.drawImageRect(createTestImage(), const Rect.fromLTRB(0, 0, testWidth, testHeight),
         const Rect.fromLTWH(-50, 0, testWidth, testHeight), engine.SurfacePaint());
     rc.restore();
-    await canvasScreenshot(rc, 'image_clipped_by_oval_path');
+    await canvasScreenshot(rc, 'image_clipped_by_oval_path',
+        region: const Rect.fromLTWH(0, 0, 600, 800));
   });
 }
 
 engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
-  final html.CanvasElement canvas =
-      html.CanvasElement(width: width, height: height);
-  final html.CanvasRenderingContext2D ctx = canvas.context2D;
+  final engine.DomCanvasElement canvas =
+      engine.createDomCanvasElement(width: width, height: height);
+  final engine.DomCanvasRenderingContext2D ctx = canvas.context2D;
   ctx.fillStyle = '#E04040';
   ctx.fillRect(0, 0, width / 3, height);
   ctx.fill();
@@ -139,7 +134,7 @@ engine.HtmlImage createTestImage({int width = 200, int height = 150}) {
   ctx.fillStyle = '#2040E0';
   ctx.fillRect(2 * width / 3, 0, width / 3, height);
   ctx.fill();
-  final html.ImageElement imageElement = html.ImageElement();
+  final engine.DomHTMLImageElement imageElement = engine.createDomHTMLImageElement();
   imageElement.src = js_util.callMethod<String>(canvas, 'toDataURL', <dynamic>[]);
   return engine.HtmlImage(imageElement, width, height);
 }

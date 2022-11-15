@@ -9,6 +9,7 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_dispatcher.h"
+#include "flutter/display_list/display_list_path_effect.h"
 
 namespace flutter {
 namespace testing {
@@ -53,12 +54,14 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void setInvertColors(bool invert) override;
   void setBlendMode(DlBlendMode mode) override;
   void setBlender(sk_sp<SkBlender> blender) override;
-  void setPathEffect(sk_sp<SkPathEffect> effect) override;
+  void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;
 
   void save() override;
-  void saveLayer(const SkRect* bounds, const SaveLayerOptions options) override;
+  void saveLayer(const SkRect* bounds,
+                 const SaveLayerOptions options,
+                 const DlImageFilter* backdrop) override;
   void restore() override;
 
   void translate(SkScalar tx, SkScalar ty) override;
@@ -101,23 +104,23 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  bool render_with_attributes) override;
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
-                     const SkSamplingOptions& sampling,
+                     DlImageSampling sampling,
                      bool render_with_attributes,
                      SkCanvas::SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
-                     SkFilterMode filter,
+                     DlFilterMode filter,
                      bool render_with_attributes) override;
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
-                        SkFilterMode filter,
+                        DlFilterMode filter,
                         bool render_with_attributes) override;
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
@@ -125,7 +128,7 @@ class DisplayListStreamDispatcher final : public Dispatcher {
                  const DlColor colors[],
                  int count,
                  DlBlendMode mode,
-                 const SkSamplingOptions& sampling,
+                 DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override;
   void drawPicture(const sk_sp<SkPicture> picture,
@@ -146,15 +149,20 @@ class DisplayListStreamDispatcher final : public Dispatcher {
   int cur_indent_;
   int indent_;
 
-  void indent() { cur_indent_ += indent_; }
-  void outdent() { cur_indent_ -= indent_; }
+  void indent() { indent(indent_); }
+  void outdent() { outdent(indent_); }
+  void indent(int spaces) { cur_indent_ += spaces; }
+  void outdent(int spaces) { cur_indent_ -= spaces; }
 
   template <class T>
   std::ostream& out_array(std::string name, int count, const T array[]);
 
   std::ostream& startl();
 
+  void out(const DlColorFilter& filter);
   void out(const DlColorFilter* filter);
+  void out(const DlImageFilter& filter);
+  void out(const DlImageFilter* filter);
 };
 
 }  // namespace testing

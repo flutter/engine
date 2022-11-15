@@ -33,6 +33,9 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   }
 
   if (status_ == Status::kComplete) {
+    if (!cached_image_->image()) {
+      return tonic::ToDart("Decoded image has been disposed");
+    }
     tonic::DartInvoke(callback_handle,
                       {tonic::ToDart(cached_image_), tonic::ToDart(0)});
     return Dart_Null();
@@ -108,10 +111,6 @@ Dart_Handle SingleFrameCodec::getNextFrame(Dart_Handle callback_handle) {
   status_ = Status::kInProgress;
 
   return Dart_Null();
-}
-
-size_t SingleFrameCodec::GetAllocationSize() const {
-  return sizeof(*this);
 }
 
 }  // namespace flutter

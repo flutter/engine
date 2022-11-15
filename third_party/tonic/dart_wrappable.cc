@@ -38,7 +38,7 @@ Dart_Handle DartWrappable::CreateDartWrapper(DartState* dart_state) {
   TONIC_DCHECK(!CheckAndHandleError(res));
 
   this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
-  dart_wrapper_.Set(dart_state, wrapper, this, GetAllocationSize(),
+  dart_wrapper_.Set(dart_state, wrapper, this, sizeof(*this),
                     &FinalizeDartWrapper);
 
   return wrapper;
@@ -59,7 +59,7 @@ void DartWrappable::AssociateWithDartWrapper(Dart_Handle wrapper) {
   this->RetainDartWrappableReference();  // Balanced in FinalizeDartWrapper.
 
   DartState* dart_state = DartState::Current();
-  dart_wrapper_.Set(dart_state, wrapper, this, GetAllocationSize(),
+  dart_wrapper_.Set(dart_state, wrapper, this, sizeof(*this),
                     &FinalizeDartWrapper);
 }
 
@@ -78,10 +78,6 @@ void DartWrappable::FinalizeDartWrapper(void* isolate_callback_data,
   wrappable->ReleaseDartWrappableReference();  // Balanced in CreateDartWrapper.
 }
 
-size_t DartWrappable::GetAllocationSize() const {
-  return GetDartWrapperInfo().size_in_bytes;
-}
-
 Dart_PersistentHandle DartWrappable::GetTypeForWrapper(
     tonic::DartState* dart_state,
     const tonic::DartWrapperInfo& wrapper_info) {
@@ -89,6 +85,9 @@ Dart_PersistentHandle DartWrappable::GetTypeForWrapper(
 }
 
 DartWrappable* DartConverterWrappable::FromDart(Dart_Handle handle) {
+  if (Dart_IsNull(handle)) {
+    return nullptr;
+  }
   intptr_t peer = 0;
   Dart_Handle result =
       Dart_GetNativeInstanceField(handle, DartWrappable::kPeerIndex, &peer);

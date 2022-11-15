@@ -8,7 +8,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/swiftshader/include/vulkan/vulkan_core.h"
+#include "vulkan/vulkan_core.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -52,13 +52,14 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
   opengl_renderer_config_.present_with_info =
       [](void* context, const FlutterPresentInfo* present_info) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
-        present_info->fbo_id);
+        *present_info);
   };
   opengl_renderer_config_.fbo_with_frame_info_callback =
       [](void* context, const FlutterFrameInfo* frame_info) -> uint32_t {
     return reinterpret_cast<EmbedderTestContextGL*>(context)->GLGetFramebuffer(
         *frame_info);
   };
+  opengl_renderer_config_.populate_existing_damage = nullptr;
   opengl_renderer_config_.make_resource_current = [](void* context) -> bool {
     return reinterpret_cast<EmbedderTestContextGL*>(context)
         ->GLMakeResourceCurrent();
@@ -102,8 +103,8 @@ EmbedderConfigBuilder::EmbedderConfigBuilder(
             SkImage::MakeFromBitmap(bitmap));
       };
 
-  // The first argument is treated as the executable name. Don't make tests have
-  // to do this manually.
+  // The first argument is always the executable name. Don't make tests have to
+  // do this manually.
   AddCommandLineArgument("embedder_unittest");
 
   if (preference != InitializationPreference::kNoInitialize) {
@@ -160,7 +161,10 @@ void EmbedderConfigBuilder::SetOpenGLPresentCallBack() {
   FML_CHECK(renderer_config_.type == FlutterRendererType::kOpenGL);
   renderer_config_.open_gl.present = [](void* context) -> bool {
     // passing a placeholder fbo_id.
-    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(0);
+    return reinterpret_cast<EmbedderTestContextGL*>(context)->GLPresent(
+        FlutterPresentInfo{
+            .fbo_id = 0,
+        });
   };
 #endif
 }
@@ -243,10 +247,12 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
+  project_args_.update_semantics_callback =
+      context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =
-      EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook();
+      context_.GetUpdateSemanticsNodeCallbackHook();
   project_args_.update_semantics_custom_action_callback =
-      EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook();
+      context_.GetUpdateSemanticsCustomActionCallbackHook();
 }
 
 void EmbedderConfigBuilder::SetLogMessageCallbackHook() {
@@ -264,8 +270,15 @@ void EmbedderConfigBuilder::SetLocalizationCallbackHooks() {
       EmbedderTestContext::GetComputePlatformResolvedLocaleCallbackHook();
 }
 
+void EmbedderConfigBuilder::SetExecutableName(std::string executable_name) {
+  if (executable_name.empty()) {
+    return;
+  }
+  command_line_arguments_[0] = std::move(executable_name);
+}
+
 void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {
-  if (entrypoint.size() == 0) {
+  if (entrypoint.empty()) {
     return;
   }
 
@@ -274,7 +287,7 @@ void EmbedderConfigBuilder::SetDartEntrypoint(std::string entrypoint) {
 }
 
 void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
-  if (arg.size() == 0) {
+  if (arg.empty()) {
     return;
   }
 
@@ -282,7 +295,7 @@ void EmbedderConfigBuilder::AddCommandLineArgument(std::string arg) {
 }
 
 void EmbedderConfigBuilder::AddDartEntrypointArgument(std::string arg) {
-  if (arg.size() == 0) {
+  if (arg.empty()) {
     return;
   }
 
@@ -303,6 +316,10 @@ void EmbedderConfigBuilder::SetupVsyncCallback() {
     auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
     context->RunVsyncCallback(baton);
   };
+}
+
+FlutterRendererConfig& EmbedderConfigBuilder::GetRendererConfig() {
+  return renderer_config_;
 }
 
 void EmbedderConfigBuilder::SetRenderTaskRunner(
@@ -359,13 +376,14 @@ FlutterCompositor& EmbedderConfigBuilder::GetCompositor() {
 }
 
 void EmbedderConfigBuilder::SetRenderTargetType(
-    EmbedderTestBackingStoreProducer::RenderTargetType type) {
+    EmbedderTestBackingStoreProducer::RenderTargetType type,
+    FlutterSoftwarePixelFormat software_pixfmt) {
   auto& compositor = context_.GetCompositor();
   // TODO(wrightgeorge): figure out a better way of plumbing through the
   // GrDirectContext
   compositor.SetBackingStoreProducer(
       std::make_unique<EmbedderTestBackingStoreProducer>(
-          compositor.GetGrContext(), type));
+          compositor.GetGrContext(), type, software_pixfmt));
 }
 
 UniqueEngine EmbedderConfigBuilder::LaunchEngine() const {
@@ -387,7 +405,7 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     args.push_back(arg.c_str());
   }
 
-  if (args.size() > 0) {
+  if (!args.empty()) {
     project_args.command_line_argv = args.data();
     project_args.command_line_argc = args.size();
   } else {
@@ -404,7 +422,7 @@ UniqueEngine EmbedderConfigBuilder::SetupEngine(bool run) const {
     dart_args.push_back(arg.c_str());
   }
 
-  if (dart_args.size() > 0) {
+  if (!dart_args.empty()) {
     project_args.dart_entrypoint_argv = dart_args.data();
     project_args.dart_entrypoint_argc = dart_args.size();
   } else {
@@ -494,9 +512,9 @@ void EmbedderConfigBuilder::InitializeVulkanRendererConfig() {
   vulkan_renderer_config_.get_instance_proc_address_callback =
       [](void* context, FlutterVulkanInstanceHandle instance,
          const char* name) -> void* {
-    return reinterpret_cast<EmbedderTestContextVulkan*>(context)
-        ->vulkan_context_->vk_->GetInstanceProcAddr(
-            reinterpret_cast<VkInstance>(instance), name);
+    auto proc_addr = reinterpret_cast<EmbedderTestContextVulkan*>(context)
+                         ->vulkan_context_->vk_->GetInstanceProcAddr;
+    return reinterpret_cast<void*>(proc_addr);
   };
   vulkan_renderer_config_.get_next_image_callback =
       [](void* context,

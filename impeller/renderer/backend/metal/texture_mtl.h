@@ -15,28 +15,42 @@ namespace impeller {
 class TextureMTL final : public Texture,
                          public BackendCast<TextureMTL, Texture> {
  public:
-  TextureMTL(TextureDescriptor desc, id<MTLTexture> texture);
+  TextureMTL(TextureDescriptor desc,
+             id<MTLTexture> texture,
+             bool wrapped = false);
+
+  static std::shared_ptr<TextureMTL> Wrapper(TextureDescriptor desc,
+                                             id<MTLTexture> texture);
 
   // |Texture|
   ~TextureMTL() override;
 
-  // |Texture|
-  void SetLabel(const std::string_view& label) override;
+  id<MTLTexture> GetMTLTexture() const;
+
+  bool IsWrapped() const;
+
+ private:
+  id<MTLTexture> texture_ = nullptr;
+  bool is_valid_ = false;
+  bool is_wrapped_ = false;
 
   // |Texture|
-  bool SetContents(const uint8_t* contents, size_t length) override;
+  void SetLabel(std::string_view label) override;
+
+  // |Texture|
+  bool OnSetContents(const uint8_t* contents,
+                     size_t length,
+                     size_t slice) override;
+
+  // |Texture|
+  bool OnSetContents(std::shared_ptr<const fml::Mapping> mapping,
+                     size_t slice) override;
 
   // |Texture|
   bool IsValid() const override;
 
   // |Texture|
   ISize GetSize() const override;
-
-  id<MTLTexture> GetMTLTexture() const;
-
- private:
-  id<MTLTexture> texture_ = nullptr;
-  bool is_valid_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextureMTL);
 };

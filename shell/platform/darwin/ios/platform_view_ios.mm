@@ -55,13 +55,15 @@ PlatformViewIOS::PlatformViewIOS(
     IOSRenderingAPI rendering_api,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
     flutter::TaskRunners task_runners)
-    : PlatformViewIOS(delegate,
-                      IOSContext::Create(rendering_api,
-                                         delegate.OnPlatformViewGetSettings().enable_impeller
-                                             ? IOSRenderingBackend::kImpeller
-                                             : IOSRenderingBackend::kSkia),
-                      platform_views_controller,
-                      task_runners) {}
+    : PlatformViewIOS(
+          delegate,
+          IOSContext::Create(
+              rendering_api,
+              delegate.OnPlatformViewGetSettings().enable_impeller ? IOSRenderingBackend::kImpeller
+                                                                   : IOSRenderingBackend::kSkia,
+              static_cast<MsaaSampleCount>(delegate.OnPlatformViewGetSettings().msaa_samples)),
+          platform_views_controller,
+          task_runners) {}
 
 PlatformViewIOS::~PlatformViewIOS() = default;
 
@@ -229,15 +231,13 @@ std::unique_ptr<std::vector<std::string>> PlatformViewIOS::ComputePlatformResolv
   std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
 
   if (result != nullptr && [result count] > 0) {
-    if (@available(ios 10.0, *)) {
-      NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
-      NSString* languageCode = [locale languageCode];
-      out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
-      NSString* countryCode = [locale countryCode];
-      out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
-      NSString* scriptCode = [locale scriptCode];
-      out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
-    }
+    NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+    NSString* languageCode = [locale languageCode];
+    out->emplace_back(languageCode == nullptr ? "" : languageCode.UTF8String);
+    NSString* countryCode = [locale countryCode];
+    out->emplace_back(countryCode == nullptr ? "" : countryCode.UTF8String);
+    NSString* scriptCode = [locale scriptCode];
+    out->emplace_back(scriptCode == nullptr ? "" : scriptCode.UTF8String);
   }
   return out;
 }

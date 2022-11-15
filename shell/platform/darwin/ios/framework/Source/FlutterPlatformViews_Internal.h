@@ -45,8 +45,54 @@
 
 @end
 
-// The parent view handles clipping to its subviews.
+// An object represents a blur filter.
+//
+// This object produces a `backdropFilterView`.
+// To blur a View, add `backdropFilterView` as a subView of the View.
+@interface PlatformViewFilter : NSObject
+
+// Determines the rect of the blur effect in the coordinate system of `backdropFilterView`'s
+// parentView.
+@property(assign, nonatomic, readonly) CGRect frame;
+
+// Determines the blur intensity.
+//
+// It is set as the value of `inputRadius` of the `gaussianFilter` that is internally used.
+@property(assign, nonatomic, readonly) CGFloat blurRadius;
+
+// This is the view to use to blur the PlatformView.
+//
+// It is a modified version of UIKit's `UIVisualEffectView`.
+// The inputRadius can be customized and it doesn't add any color saturation to the blurred view.
+@property(nonatomic, retain, readonly) UIVisualEffectView* backdropFilterView;
+
+// For testing only.
++ (void)resetPreparation;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+// Initialize the filter object.
+//
+// The `frame` determines the rect of the blur effect in the coordinate system of
+// `backdropFilterView`'s parentView. The `blurRadius` determines the blur intensity. It is set as
+// the value of `inputRadius` of the `gaussianFilter` that is internally used. The
+// `UIVisualEffectView` is the view that is used to add the blur effects. It is modified to become
+// `backdropFilterView`, which better supports the need of Flutter.
+//
+// Note: if the implementation of UIVisualEffectView changes in a way that affects the
+// implementation in `PlatformViewFilter`, this method will return nil.
+- (instancetype)initWithFrame:(CGRect)frame
+                   blurRadius:(CGFloat)blurRadius
+             visualEffectView:(UIVisualEffectView*)visualEffectView NS_DESIGNATED_INITIALIZER;
+
+@end
+
+// The parent view handles clipping to its subViews.
 @interface ChildClippingView : UIView
+
+// Applies blur backdrop filters to the ChildClippingView with blur values from
+// filters.
+- (void)applyBlurBackdropFilters:(NSArray<PlatformViewFilter*>*)filters;
 
 @end
 
@@ -58,6 +104,9 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
 // Reset the anchor of `layer` to match the transform operation from flow.
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
+
+CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
+BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2);
 
 class IOSContextGL;
 class IOSSurface;
@@ -160,9 +209,14 @@ class FlutterPlatformViewsController {
 
   PostPrerollResult PostPrerollAction(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
 
+  void EndFrame(bool should_resubmit_frame,
+                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+
   std::vector<SkCanvas*> GetCurrentCanvases();
 
-  SkCanvas* CompositeEmbeddedView(int view_id);
+  std::vector<DisplayListBuilder*> GetCurrentBuilders();
+
+  EmbedderPaintContext CompositeEmbeddedView(int view_id);
 
   // The rect of the platform view at index view_id. This rect has been translated into the
   // host view coordinate system. Units are device screen pixels.
@@ -176,6 +230,17 @@ class FlutterPlatformViewsController {
                    std::unique_ptr<SurfaceFrame> frame);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
+
+  // Returns the platform view id if the platform view (or any of its descendant view) is the first
+  // responder. Returns -1 if no such platform view is found.
+  long FindFirstResponderPlatformViewId();
+
+  // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
+  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter,
+                                        const SkRect& filter_rect);
+
+  // Pushes the view id of a visted platform view to the list of visied platform views.
+  void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
  private:
   static const size_t kMaxLayerAllocations = 2;
@@ -220,7 +285,7 @@ class FlutterPlatformViewsController {
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
                                                      std::shared_ptr<IOSContext> ios_context,
-                                                     sk_sp<SkPicture> picture,
+                                                     EmbedderViewSlice* slice,
                                                      SkRect rect,
                                                      int64_t view_id,
                                                      int64_t overlay_id);
@@ -244,15 +309,11 @@ class FlutterPlatformViewsController {
   // The pool of reusable view layers. The pool allows to recycle layer in each frame.
   std::unique_ptr<FlutterPlatformViewLayerPool> layer_pool_;
 
-  // The platform view's R-tree keyed off the view id, which contains any subsequent
-  // draw operation until the next platform view or the last leaf node in the layer tree.
-  //
-  // The R-trees are deleted by the FlutterPlatformViewsController.reset().
-  std::map<int64_t, sk_sp<RTree>> platform_view_rtrees_;
-
-  // The platform view's picture recorder keyed off the view id, which contains any subsequent
+  // The platform view's |EmbedderViewSlice| keyed off the view id, which contains any subsequent
   // operation until the next platform view or the end of the last leaf node in the layer tree.
-  std::map<int64_t, std::unique_ptr<SkPictureRecorder>> picture_recorders_;
+  //
+  // The Slices are deleted by the FlutterPlatformViewsController.reset().
+  std::map<int64_t, std::unique_ptr<EmbedderViewSlice>> slices_;
 
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
@@ -288,6 +349,9 @@ class FlutterPlatformViewsController {
   // The last ID in this vector belond to the that is composited on top of all others.
   std::vector<int64_t> composition_order_;
 
+  // A vector of visited platform view IDs.
+  std::vector<int64_t> visited_platform_views_;
+
   // The latest composition order that was presented in Present().
   std::vector<int64_t> active_composition_order_;
 
@@ -302,6 +366,14 @@ class FlutterPlatformViewsController {
 
   // WeakPtrFactory must be the last member.
   std::unique_ptr<fml::WeakPtrFactory<FlutterPlatformViewsController>> weak_factory_;
+
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
+  // A set to keep track of embedded views that does not have (0, 0) origin.
+  // An insertion triggers a warning message about non-zero origin logged on the debug console.
+  // See https://github.com/flutter/flutter/issues/109700 for details.
+  std::unordered_set<int64_t> non_zero_origin_views_;
+#endif
+
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformViewsController);
 };
 
@@ -327,6 +399,11 @@ class FlutterPlatformViewsController {
 
 // Get embedded view
 - (UIView*)embeddedView;
+@end
+
+@interface UIView (FirstResponder)
+// Returns YES if a view or any of its descendant view is the first responder. Returns NO otherwise.
+@property(nonatomic, readonly) BOOL flt_hasFirstResponderInViewHierarchySubtree;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_

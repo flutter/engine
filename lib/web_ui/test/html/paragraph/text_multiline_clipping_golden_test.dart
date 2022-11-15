@@ -8,6 +8,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
+import '../screenshot.dart';
 import 'text_scuba.dart';
 
 typedef PaintTest = void Function(RecordingCanvas recordingCanvas);
@@ -150,7 +151,6 @@ const Color deepOrange = Color(0xFFFF5722);
 
 void paintTextWithClipRoundRect(RecordingCanvas canvas) {
   final RRect roundRect = RRect.fromRectAndCorners(testBounds.inflate(-40),
-      topLeft: Radius.zero,
       topRight: const Radius.elliptical(45, 40),
       bottomLeft: const Radius.elliptical(50, 40),
       bottomRight: const Radius.circular(30));

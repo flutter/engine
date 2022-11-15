@@ -13,16 +13,21 @@
 
 namespace flutter {
 
+namespace {
+// The maximum duration to block the platform thread for while waiting
+// for a window resize operation to complete.
+constexpr std::chrono::milliseconds kWindowResizeTimeout{100};
+
 /// Returns true if the surface will be updated as part of the resize process.
 ///
 /// This is called on window resize to determine if the platform thread needs
 /// to be blocked until the frame with the right size has been rendered. It
 /// should be kept in-sync with how the engine deals with a new surface request
 /// as seen in `CreateOrUpdateSurface` in `GPUSurfaceGL`.
-static bool SurfaceWillUpdate(size_t cur_width,
-                              size_t cur_height,
-                              size_t target_width,
-                              size_t target_height) {
+bool SurfaceWillUpdate(size_t cur_width,
+                       size_t cur_height,
+                       size_t target_width,
+                       size_t target_height) {
   // TODO (https://github.com/flutter/flutter/issues/65061) : Avoid special
   // handling for zero dimensions.
   bool non_zero_target_dims = target_height > 0 && target_width > 0;
@@ -30,6 +35,7 @@ static bool SurfaceWillUpdate(size_t cur_width,
       (cur_height != target_height) || (cur_width != target_width);
   return non_zero_target_dims && not_same_size;
 }
+}  // namespace
 
 FlutterWindowsView::FlutterWindowsView(
     std::unique_ptr<WindowBindingHandler> window_binding) {
@@ -57,7 +63,8 @@ void FlutterWindowsView::SetEngine(
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
-  platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
+  platform_handler_ =
+      std::make_unique<PlatformHandler>(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
                                                     binding_handler_.get());
 
@@ -111,11 +118,8 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
 
 void FlutterWindowsView::ForceRedraw() {
   if (resize_status_ == ResizeState::kDone) {
-    // Request new frame
-    // TODO(knopp): Replace with more specific call once there is API for it
-    // https://github.com/flutter/flutter/issues/69716
-    SendWindowMetrics(resize_target_width_, resize_target_height_,
-                      binding_handler_->GetDpiScale());
+    // Request new frame.
+    engine_->ScheduleFrame();
   }
 }
 
@@ -150,10 +154,15 @@ void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
     // Block the platform thread until:
     //   1. GetFrameBufferId is called with the right frame size.
     //   2. Any pending SwapBuffers calls have been invoked.
-    resize_cv_.wait(lock, [&resize_status = resize_status_] {
-      return resize_status == ResizeState::kDone;
-    });
+    resize_cv_.wait_for(lock, kWindowResizeTimeout,
+                        [&resize_status = resize_status_] {
+                          return resize_status == ResizeState::kDone;
+                        });
   }
+}
+
+void FlutterWindowsView::OnWindowRepaint() {
+  ForceRedraw();
 }
 
 void FlutterWindowsView::OnPointerMove(double x,
@@ -189,9 +198,28 @@ void FlutterWindowsView::OnPointerUp(
   }
 }
 
-void FlutterWindowsView::OnPointerLeave(FlutterPointerDeviceKind device_kind,
+void FlutterWindowsView::OnPointerLeave(double x,
+                                        double y,
+                                        FlutterPointerDeviceKind device_kind,
                                         int32_t device_id) {
-  SendPointerLeave(GetOrCreatePointerState(device_kind, device_id));
+  SendPointerLeave(x, y, GetOrCreatePointerState(device_kind, device_id));
+}
+
+void FlutterWindowsView::OnPointerPanZoomStart(int32_t device_id) {
+  PointerLocation point = binding_handler_->GetPrimaryPointerLocation();
+  SendPointerPanZoomStart(device_id, point.x, point.y);
+}
+
+void FlutterWindowsView::OnPointerPanZoomUpdate(int32_t device_id,
+                                                double pan_x,
+                                                double pan_y,
+                                                double scale,
+                                                double rotation) {
+  SendPointerPanZoomUpdate(device_id, pan_x, pan_y, scale, rotation);
+}
+
+void FlutterWindowsView::OnPointerPanZoomEnd(int32_t device_id) {
+  SendPointerPanZoomEnd(device_id);
 }
 
 void FlutterWindowsView::OnText(const std::u16string& text) {
@@ -234,6 +262,11 @@ void FlutterWindowsView::OnScroll(double x,
                                   int32_t device_id) {
   SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier, device_kind,
              device_id);
+}
+
+void FlutterWindowsView::OnScrollInertiaCancel(int32_t device_id) {
+  PointerLocation point = binding_handler_->GetPrimaryPointerLocation();
+  SendScrollInertiaCancel(device_id, point.x, point.y);
 }
 
 void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
@@ -362,9 +395,55 @@ void FlutterWindowsView::SendPointerUp(double x,
   }
 }
 
-void FlutterWindowsView::SendPointerLeave(PointerState* state) {
+void FlutterWindowsView::SendPointerLeave(double x,
+                                          double y,
+                                          PointerState* state) {
   FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
   event.phase = FlutterPointerPhase::kRemove;
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomStart(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  state->pan_zoom_start_x = x;
+  state->pan_zoom_start_y = y;
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  event.phase = FlutterPointerPhase::kPanZoomStart;
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomUpdate(int32_t device_id,
+                                                  double pan_x,
+                                                  double pan_y,
+                                                  double scale,
+                                                  double rotation) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  FlutterPointerEvent event = {};
+  event.x = state->pan_zoom_start_x;
+  event.y = state->pan_zoom_start_y;
+  event.pan_x = pan_x;
+  event.pan_y = pan_y;
+  event.scale = scale;
+  event.rotation = rotation;
+  event.phase = FlutterPointerPhase::kPanZoomUpdate;
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendPointerPanZoomEnd(int32_t device_id) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+  FlutterPointerEvent event = {};
+  event.x = state->pan_zoom_start_x;
+  event.y = state->pan_zoom_start_y;
+  event.phase = FlutterPointerPhase::kPanZoomEnd;
   SendPointerEventWithData(event, state);
 }
 
@@ -422,6 +501,21 @@ void FlutterWindowsView::SendScroll(double x,
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   event.scroll_delta_x = delta_x * scroll_offset_multiplier;
   event.scroll_delta_y = delta_y * scroll_offset_multiplier;
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  event.signal_kind =
+      FlutterPointerSignalKind::kFlutterPointerSignalKindScrollInertiaCancel;
   SetEventPhaseFromCursorButtonState(&event, state);
   SendPointerEventWithData(event, state);
 }
@@ -531,6 +625,8 @@ void FlutterWindowsView::CreateRenderSurface() {
     PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
     engine_->surface_manager()->CreateSurface(GetRenderTarget(), bounds.width,
                                               bounds.height);
+    resize_target_width_ = bounds.width;
+    resize_target_height_ = bounds.height;
   }
 }
 
@@ -538,6 +634,14 @@ void FlutterWindowsView::DestroyRenderSurface() {
   if (engine_ && engine_->surface_manager()) {
     engine_->surface_manager()->DestroySurface();
   }
+}
+
+void FlutterWindowsView::SendInitialAccessibilityFeatures() {
+  binding_handler_->SendInitialAccessibilityFeatures();
+}
+
+void FlutterWindowsView::UpdateHighContrastEnabled(bool enabled) {
+  engine_->UpdateHighContrastEnabled(enabled);
 }
 
 WindowsRenderTarget* FlutterWindowsView::GetRenderTarget() const {
@@ -550,6 +654,27 @@ PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
   return engine_.get();
+}
+
+void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
+  AccessibilityRootNode* root_node =
+      binding_handler_->GetAccessibilityRootNode();
+  AccessibilityAlert* alert =
+      binding_handler_->GetAccessibilityRootNode()->GetOrCreateAlert();
+  alert->SetText(text);
+  HWND hwnd = GetPlatformWindow();
+  NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
+                        AccessibilityRootNode::kAlertChildId);
+}
+
+void FlutterWindowsView::NotifyWinEventWrapper(DWORD event,
+                                               HWND hwnd,
+                                               LONG idObject,
+                                               LONG idChild) {
+  if (hwnd) {
+    NotifyWinEvent(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
+                   AccessibilityRootNode::kAlertChildId);
+  }
 }
 
 }  // namespace flutter

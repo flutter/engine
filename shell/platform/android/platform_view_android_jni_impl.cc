@@ -49,6 +49,10 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_texture_wrapper_class = nullptr;
 
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_java_long_class = nullptr;
 
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_bitmap_class = nullptr;
+
+static fml::jni::ScopedJavaGlobalRef<jclass>* g_bitmap_config_class = nullptr;
+
 // Called By Native
 
 static jmethodID g_flutter_callback_info_constructor = nullptr;
@@ -114,6 +118,12 @@ static jmethodID g_on_display_overlay_surface_method = nullptr;
 static jmethodID g_overlay_surface_id_method = nullptr;
 
 static jmethodID g_overlay_surface_surface_method = nullptr;
+
+static jmethodID g_bitmap_create_bitmap_method = nullptr;
+
+static jmethodID g_bitmap_copy_pixels_from_buffer_method = nullptr;
+
+static jmethodID g_bitmap_config_value_of = nullptr;
 
 // Mutators
 static fml::jni::ScopedJavaGlobalRef<jclass>* g_mutators_stack_class = nullptr;
@@ -241,20 +251,17 @@ static void RunBundleAndSnapshotFromLibrary(JNIEnv* env,
                                             jstring jLibraryUrl,
                                             jobject jAssetManager,
                                             jobject jEntrypointArgs) {
-  auto asset_manager = std::make_shared<flutter::AssetManager>();
-
-  asset_manager->PushBack(std::make_unique<flutter::APKAssetProvider>(
-      env,                                             // jni environment
-      jAssetManager,                                   // asset manager
-      fml::jni::JavaStringToString(env, jBundlePath))  // apk asset dir
+  auto apk_asset_provider = std::make_unique<flutter::APKAssetProvider>(
+      env,                                            // jni environment
+      jAssetManager,                                  // asset manager
+      fml::jni::JavaStringToString(env, jBundlePath)  // apk asset dir
   );
-
   auto entrypoint = fml::jni::JavaStringToString(env, jEntrypoint);
   auto libraryUrl = fml::jni::JavaStringToString(env, jLibraryUrl);
   auto entrypoint_args = fml::jni::StringListToVector(env, jEntrypointArgs);
 
-  ANDROID_SHELL_HOLDER->Launch(asset_manager, entrypoint, libraryUrl,
-                               entrypoint_args);
+  ANDROID_SHELL_HOLDER->Launch(std::move(apk_asset_provider), entrypoint,
+                               libraryUrl, entrypoint_args);
 }
 
 static jobject LookupCallbackInformation(JNIEnv* env,
@@ -340,70 +347,31 @@ static jobject GetBitmap(JNIEnv* env, jobject jcaller, jlong shell_holder) {
     return nullptr;
   }
 
-  const SkISize& frame_size = screenshot.frame_size;
-  jsize pixels_size = frame_size.width() * frame_size.height();
-  jintArray pixels_array = env->NewIntArray(pixels_size);
-  if (pixels_array == nullptr) {
-    return nullptr;
-  }
-
-  jint* pixels = env->GetIntArrayElements(pixels_array, nullptr);
-  if (pixels == nullptr) {
-    return nullptr;
-  }
-
-  auto* pixels_src = static_cast<const int32_t*>(screenshot.data->data());
-
-  // Our configuration of Skia does not support rendering to the
-  // BitmapConfig.ARGB_8888 format expected by android.graphics.Bitmap.
-  // Convert from kRGBA_8888 to kBGRA_8888 (equivalent to ARGB_8888).
-  for (int i = 0; i < pixels_size; i++) {
-    int32_t src_pixel = pixels_src[i];
-    uint8_t* src_bytes = reinterpret_cast<uint8_t*>(&src_pixel);
-    std::swap(src_bytes[0], src_bytes[2]);
-    pixels[i] = src_pixel;
-  }
-
-  env->ReleaseIntArrayElements(pixels_array, pixels, 0);
-
-  jclass bitmap_class = env->FindClass("android/graphics/Bitmap");
-  if (bitmap_class == nullptr) {
-    return nullptr;
-  }
-
-  jmethodID create_bitmap = env->GetStaticMethodID(
-      bitmap_class, "createBitmap",
-      "([IIILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
-  if (create_bitmap == nullptr) {
-    return nullptr;
-  }
-
-  jclass bitmap_config_class = env->FindClass("android/graphics/Bitmap$Config");
-  if (bitmap_config_class == nullptr) {
-    return nullptr;
-  }
-
-  jmethodID bitmap_config_value_of = env->GetStaticMethodID(
-      bitmap_config_class, "valueOf",
-      "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
-  if (bitmap_config_value_of == nullptr) {
-    return nullptr;
-  }
-
   jstring argb = env->NewStringUTF("ARGB_8888");
   if (argb == nullptr) {
     return nullptr;
   }
 
   jobject bitmap_config = env->CallStaticObjectMethod(
-      bitmap_config_class, bitmap_config_value_of, argb);
+      g_bitmap_config_class->obj(), g_bitmap_config_value_of, argb);
   if (bitmap_config == nullptr) {
     return nullptr;
   }
 
-  return env->CallStaticObjectMethod(bitmap_class, create_bitmap, pixels_array,
-                                     frame_size.width(), frame_size.height(),
-                                     bitmap_config);
+  auto bitmap = env->CallStaticObjectMethod(
+      g_bitmap_class->obj(), g_bitmap_create_bitmap_method,
+      screenshot.frame_size.width(), screenshot.frame_size.height(),
+      bitmap_config);
+
+  fml::jni::ScopedJavaLocalRef<jobject> buffer(
+      env,
+      env->NewDirectByteBuffer(const_cast<uint8_t*>(screenshot.data->bytes()),
+                               screenshot.data->size()));
+
+  env->CallVoidMethod(bitmap, g_bitmap_copy_pixels_from_buffer_method,
+                      buffer.obj());
+
+  return bitmap;
 }
 
 static void DispatchPlatformMessage(JNIEnv* env,
@@ -948,6 +916,43 @@ bool RegisterApi(JNIEnv* env) {
     return false;
   }
 
+  g_bitmap_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/graphics/Bitmap"));
+  if (g_bitmap_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate Bitmap Class";
+    return false;
+  }
+
+  g_bitmap_create_bitmap_method = env->GetStaticMethodID(
+      g_bitmap_class->obj(), "createBitmap",
+      "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;");
+  if (g_bitmap_create_bitmap_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.createBitmap method";
+    return false;
+  }
+
+  g_bitmap_copy_pixels_from_buffer_method = env->GetMethodID(
+      g_bitmap_class->obj(), "copyPixelsFromBuffer", "(Ljava/nio/Buffer;)V");
+  if (g_bitmap_copy_pixels_from_buffer_method == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.copyPixelsFromBuffer method";
+    return false;
+  }
+
+  g_bitmap_config_class = new fml::jni::ScopedJavaGlobalRef<jclass>(
+      env, env->FindClass("android/graphics/Bitmap$Config"));
+  if (g_bitmap_config_class->is_null()) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.Config Class";
+    return false;
+  }
+
+  g_bitmap_config_value_of = env->GetStaticMethodID(
+      g_bitmap_config_class->obj(), "valueOf",
+      "(Ljava/lang/String;)Landroid/graphics/Bitmap$Config;");
+  if (g_bitmap_config_value_of == nullptr) {
+    FML_LOG(ERROR) << "Could not locate Bitmap.Config.valueOf method";
+    return false;
+  }
+
   return true;
 }
 
@@ -1143,7 +1148,7 @@ PlatformViewAndroidJNIImpl::~PlatformViewAndroidJNIImpl() = default;
 void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message,
     int responseId) {
-  // Called from the ui thread.
+  // Called from any thread.
   JNIEnv* env = fml::jni::AttachCurrentThread();
 
   auto java_object = java_object_.get(env);
@@ -1163,7 +1168,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewHandlePlatformMessage(
     fml::MallocMapping mapping = message->releaseData();
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), message_array.obj(), responseId,
-                        mapping.Release());
+                        reinterpret_cast<jlong>(mapping.Release()));
   } else {
     env->CallVoidMethod(java_object.obj(), g_handle_platform_message_method,
                         java_channel.obj(), nullptr, responseId, nullptr);
@@ -1322,18 +1327,6 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureUpdateTexImage(
   FML_CHECK(fml::jni::CheckException(env));
 }
 
-// The bounds we set for the canvas are post composition.
-// To fill the canvas we need to ensure that the transformation matrix
-// on the `SurfaceTexture` will be scaled to fill. We rescale and preseve
-// the scaled aspect ratio.
-SkSize ScaleToFill(float scaleX, float scaleY) {
-  const double epsilon = std::numeric_limits<double>::epsilon();
-  // scaleY is negative.
-  const double minScale = fmin(scaleX, fabs(scaleY));
-  const double rescale = 1.0f / (minScale + epsilon);
-  return SkSize::Make(scaleX * rescale, scaleY * rescale);
-}
-
 void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
     JavaLocalRef surface_texture,
     SkMatrix& transform) {
@@ -1358,12 +1351,34 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureGetTransformMatrix(
   FML_CHECK(fml::jni::CheckException(env));
 
   float* m = env->GetFloatArrayElements(transformMatrix.obj(), nullptr);
-  float scaleX = m[0], scaleY = m[5];
-  const SkSize scaled = ScaleToFill(scaleX, scaleY);
+
+  // SurfaceTexture 4x4 Column Major -> Skia 3x3 Row Major
+
+  // SurfaceTexture 4x4 (Column Major):
+  // | m[0] m[4] m[ 8] m[12] |
+  // | m[1] m[5] m[ 9] m[13] |
+  // | m[2] m[6] m[10] m[14] |
+  // | m[3] m[7] m[11] m[15] |
+
+  // According to Android documentation, the 4x4 matrix returned should be used
+  // with texture coordinates in the form (s, t, 0, 1). Since the z component is
+  // always 0.0, we are free to ignore any element that multiplies with the z
+  // component. Converting this to a 3x3 matrix is easy:
+
+  // SurfaceTexture 3x3 (Column Major):
+  // | m[0] m[4] m[12] |
+  // | m[1] m[5] m[13] |
+  // | m[3] m[7] m[15] |
+
+  // Skia (Row Major):
+  // | m[0] m[1] m[2] |
+  // | m[3] m[4] m[5] |
+  // | m[6] m[7] m[8] |
+
   SkScalar matrix3[] = {
-      scaled.fWidth, m[1],           m[2],   //
-      m[4],          scaled.fHeight, m[6],   //
-      m[8],          m[9],           m[10],  //
+      m[0], m[4], m[12],  //
+      m[1], m[5], m[13],  //
+      m[3], m[7], m[15],  //
   };
   env->ReleaseFloatArrayElements(transformMatrix.obj(), m, JNI_ABORT);
   transform.set9(matrix3);
@@ -1412,7 +1427,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
-      case transform: {
+      case kTransform: {
         const SkMatrix& matrix = (*iter)->GetMatrix();
         SkScalar matrix_array[9];
         matrix.get9(matrix_array);
@@ -1425,7 +1440,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
                             transformMatrix.obj());
         break;
       }
-      case clip_rect: {
+      case kClipRect: {
         const SkRect& rect = (*iter)->GetRect();
         env->CallVoidMethod(
             mutatorsStack, g_mutators_stack_push_cliprect_method,
@@ -1433,7 +1448,7 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
             static_cast<int>(rect.right()), static_cast<int>(rect.bottom()));
         break;
       }
-      case clip_rrect: {
+      case kClipRRect: {
         const SkRRect& rrect = (*iter)->GetRRect();
         const SkRect& rect = rrect.rect();
         const SkVector& upper_left = rrect.radii(SkRRect::kUpperLeft_Corner);
@@ -1455,8 +1470,9 @@ void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
       }
       // TODO(cyanglaz): Implement other mutators.
       // https://github.com/flutter/flutter/issues/58426
-      case clip_path:
-      case opacity:
+      case kClipPath:
+      case kOpacity:
+      case kBackdropFilter:
         break;
     }
     ++iter;

@@ -4,15 +4,33 @@
 
 #include "impeller/base/validation.h"
 
+#include <atomic>
+
 #include "flutter/fml/logging.h"
 
 namespace impeller {
 
+static std::atomic_int32_t sValidationLogsDisabledCount = 0;
+
+ScopedValidationDisable::ScopedValidationDisable() {
+  sValidationLogsDisabledCount++;
+}
+
+ScopedValidationDisable::~ScopedValidationDisable() {
+  sValidationLogsDisabledCount--;
+}
+
 ValidationLog::ValidationLog() = default;
 
 ValidationLog::~ValidationLog() {
-  FML_LOG(ERROR) << stream_.str();
-  ImpellerValidationBreak();
+  if (sValidationLogsDisabledCount <= 0) {
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_RELEASE)
+    FML_LOG(ERROR) << stream_.str();
+    ImpellerValidationBreak();
+#else
+    FML_LOG(FATAL) << stream_.str();
+#endif
+  }
 }
 
 std::ostream& ValidationLog::GetStream() {

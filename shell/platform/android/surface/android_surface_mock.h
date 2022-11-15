@@ -5,7 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_MOCK_H_
 #define FLUTTER_SHELL_PLATFORM_ANDROID_ANDROID_SURFACE_MOCK_H_
 
-#include "flutter/shell/gpu/gpu_surface_gl.h"
+#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/surface/android_surface.h"
 #include "gmock/gmock.h"
 
@@ -48,11 +48,10 @@ class AndroidSurfaceMock final : public GPUSurfaceGLDelegate,
   bool GLContextClearCurrent() override;
 
   // |GPUSurfaceGLDelegate|
-  bool GLContextPresent(uint32_t fbo_id,
-                        const std::optional<SkIRect>& damage) override;
+  bool GLContextPresent(const GLPresentInfo& present_info) override;
 
   // |GPUSurfaceGLDelegate|
-  intptr_t GLContextFBO(GLFrameInfo frame_info) const override;
+  GLFBOInfo GLContextFBO(GLFrameInfo frame_info) const override;
 };
 
 }  // namespace flutter

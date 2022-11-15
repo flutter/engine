@@ -37,8 +37,13 @@ std::vector<SkCanvas*> MockViewEmbedder::GetCurrentCanvases() {
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* MockViewEmbedder::CompositeEmbeddedView(int view_id) {
-  return nullptr;
+std::vector<DisplayListBuilder*> MockViewEmbedder::GetCurrentBuilders() {
+  return std::vector<DisplayListBuilder*>({});
+}
+
+// |ExternalViewEmbedder|
+EmbedderPaintContext MockViewEmbedder::CompositeEmbeddedView(int view_id) {
+  return {nullptr, nullptr};
 }
 
 }  // namespace testing

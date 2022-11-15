@@ -4,9 +4,15 @@
 
 #include "flutter/flow/layers/display_list_layer.h"
 
+#include <utility>
+
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
+#include "flutter/flow/layer_snapshot_store.h"
+#include "flutter/flow/layers/cacheable_layer.h"
 #include "flutter/flow/layers/offscreen_surface.h"
+#include "flutter/flow/raster_cache.h"
+#include "flutter/flow/raster_cache_util.h"
 
 namespace flutter {
 
@@ -14,10 +20,14 @@ DisplayListLayer::DisplayListLayer(const SkPoint& offset,
                                    SkiaGPUObject<DisplayList> display_list,
                                    bool is_complex,
                                    bool will_change)
-    : offset_(offset),
-      display_list_(std::move(display_list)),
-      is_complex_(is_complex),
-      will_change_(will_change) {}
+    : offset_(offset), display_list_(std::move(display_list)) {
+  if (display_list_.skia_object() != nullptr) {
+    bounds_ = display_list_.skia_object()->bounds().makeOffset(offset_.x(),
+                                                               offset_.y());
+    display_list_raster_cache_item_ = DisplayListRasterCacheItem::Make(
+        display_list_.skia_object().get(), offset_, is_complex, will_change);
+  }
+}
 
 bool DisplayListLayer::IsReplacing(DiffContext* context,
                                    const Layer* layer) const {
@@ -42,10 +52,10 @@ void DisplayListLayer::Diff(DiffContext* context, const Layer* old_layer) {
 #endif
   }
   context->PushTransform(SkMatrix::Translate(offset_.x(), offset_.y()));
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context->SetTransform(
-      RasterCache::GetIntegralTransCTM(context->GetTransform()));
-#endif
+  if (context->has_raster_cache()) {
+    context->SetTransform(
+        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+  }
   context->AddLayerBounds(display_list()->bounds());
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
 }
@@ -87,47 +97,32 @@ bool DisplayListLayer::Compare(DiffContext::Statistics& statistics,
 
 void DisplayListLayer::Preroll(PrerollContext* context,
                                const SkMatrix& matrix) {
-  TRACE_EVENT0("flutter", "DisplayListLayer::Preroll");
-
   DisplayList* disp_list = display_list();
+  SkMatrix child_matrix = matrix;
 
-  SkRect bounds = disp_list->bounds().makeOffset(offset_.x(), offset_.y());
-
+  AutoCache cache =
+      AutoCache(display_list_raster_cache_item_.get(), context, child_matrix);
   if (disp_list->can_apply_group_opacity()) {
     context->subtree_can_inherit_opacity = true;
   }
-
-  if (auto* cache = context->raster_cache) {
-    TRACE_EVENT0("flutter", "DisplayListLayer::RasterCache (Preroll)");
-    if (context->cull_rect.intersects(bounds)) {
-      if (cache->Prepare(context, disp_list, is_complex_, will_change_, matrix,
-                         offset_)) {
-        context->subtree_can_inherit_opacity = true;
-      }
-    } else {
-      // Don't evict raster cache entry during partial repaint
-      cache->Touch(disp_list, matrix);
-    }
-  }
-  set_paint_bounds(bounds);
+  set_paint_bounds(bounds_);
 }
 
 void DisplayListLayer::Paint(PaintContext& context) const {
-  TRACE_EVENT0("flutter", "DisplayListLayer::Paint");
   FML_DCHECK(display_list_.skia_object());
   FML_DCHECK(needs_painting(context));
 
   SkAutoCanvasRestore save(context.leaf_nodes_canvas, true);
   context.leaf_nodes_canvas->translate(offset_.x(), offset_.y());
-#ifndef SUPPORT_FRACTIONAL_TRANSLATION
-  context.leaf_nodes_canvas->setMatrix(RasterCache::GetIntegralTransCTM(
-      context.leaf_nodes_canvas->getTotalMatrix()));
-#endif
-
   if (context.raster_cache) {
+    context.leaf_nodes_canvas->setMatrix(RasterCacheUtil::GetIntegralTransCTM(
+        context.leaf_nodes_canvas->getTotalMatrix()));
+  }
+
+  if (context.raster_cache && display_list_raster_cache_item_) {
     AutoCachePaint cache_paint(context);
-    if (context.raster_cache->Draw(*display_list(), *context.leaf_nodes_canvas,
-                                   cache_paint.paint())) {
+    if (display_list_raster_cache_item_->Draw(context,
+                                              cache_paint.sk_paint())) {
       TRACE_EVENT_INSTANT0("flutter", "raster cache hit");
       return;
     }
@@ -138,30 +133,35 @@ void DisplayListLayer::Paint(PaintContext& context) const {
     auto offscreen_surface =
         std::make_unique<OffscreenSurface>(context.gr_context, canvas_size);
 
+    const auto& ctm = context.leaf_nodes_canvas->getTotalMatrix();
+
     const auto start_time = fml::TimePoint::Now();
     {
       // render display list to offscreen surface.
       auto* canvas = offscreen_surface->GetCanvas();
       SkAutoCanvasRestore save(canvas, true);
       canvas->clear(SK_ColorTRANSPARENT);
-      canvas->setMatrix(context.leaf_nodes_canvas->getTotalMatrix());
+      canvas->setMatrix(ctm);
       display_list()->RenderTo(canvas, context.inherited_opacity);
       canvas->flush();
     }
     const fml::TimeDelta offscreen_render_time =
         fml::TimePoint::Now() - start_time;
 
+    const SkRect device_bounds =
+        RasterCacheUtil::GetDeviceBounds(paint_bounds(), ctm);
     sk_sp<SkData> raster_data = offscreen_surface->GetRasterData(true);
-    context.layer_snapshot_store->Add(unique_id(), offscreen_render_time,
-                                      raster_data);
+    LayerSnapshotData snapshot_data(unique_id(), offscreen_render_time,
+                                    raster_data, device_bounds);
+    context.layer_snapshot_store->Add(snapshot_data);
   }
 
   if (context.leaf_nodes_builder) {
     AutoCachePaint save_paint(context);
     int restore_count = context.leaf_nodes_builder->getSaveCount();
-    if (save_paint.paint() != nullptr) {
-      DlPaint paint = DlPaint().setAlpha(save_paint.paint()->getAlpha());
-      context.leaf_nodes_builder->saveLayer(&paint_bounds(), &paint);
+    if (save_paint.dl_paint() != nullptr) {
+      context.leaf_nodes_builder->saveLayer(&paint_bounds(),
+                                            save_paint.dl_paint());
     }
     context.leaf_nodes_builder->drawDisplayList(display_list_.skia_object());
     context.leaf_nodes_builder->restoreToCount(restore_count);

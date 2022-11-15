@@ -13,7 +13,7 @@
 namespace flutter {
 namespace testing {
 
-/// Mock for the |WindowWin32| base class.
+/// Mock for the |Window| base class.
 class MockWindowBindingHandler : public WindowBindingHandler {
  public:
   MockWindowBindingHandler();
@@ -35,6 +35,9 @@ class MockWindowBindingHandler : public WindowBindingHandler {
   MOCK_METHOD0(OnResetImeComposing, void());
   MOCK_METHOD3(OnBitmapSurfaceUpdated,
                bool(const void* allocation, size_t row_bytes, size_t height));
+  MOCK_METHOD0(GetPrimaryPointerLocation, PointerLocation());
+  MOCK_METHOD0(SendInitialAccessibilityFeatures, void());
+  MOCK_METHOD0(GetAccessibilityRootNode, AccessibilityRootNode*());
 };
 
 }  // namespace testing

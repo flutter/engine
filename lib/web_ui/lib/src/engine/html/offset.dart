@@ -2,10 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:ui/ui.dart' as ui;
 
+import '../dom.dart';
 import '../util.dart';
 import '../vector_math.dart';
 import 'surface.dart';
@@ -13,7 +12,7 @@ import 'surface.dart';
 /// A surface that translates its children using CSS transform and translate.
 class PersistedOffset extends PersistedContainerSurface
     implements ui.OffsetEngineLayer {
-  PersistedOffset(PersistedOffset? oldLayer, this.dx, this.dy) : super(oldLayer);
+  PersistedOffset(PersistedOffset? super.oldLayer, this.dx, this.dy);
 
   /// Horizontal displacement.
   final double dx;
@@ -40,8 +39,8 @@ class PersistedOffset extends PersistedContainerSurface
       _localTransformInverse ??= Matrix4.translationValues(-dx, -dy, 0);
 
   @override
-  html.Element createElement() {
-    final html.Element element = html.document.createElement('flt-offset');
+  DomElement createElement() {
+    final DomElement element = domDocument.createElement('flt-offset');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
     return element;

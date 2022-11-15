@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:html' as html;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -23,26 +21,28 @@ void testMain() {
     });
 
     test('Surface allocates canvases efficiently', () {
-      final Surface surface = SurfaceFactory.instance.getSurface();
+      final Surface? surface = SurfaceFactory.instance.getSurface();
       final CkSurface originalSurface =
-          surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
-      final html.CanvasElement original = surface.htmlCanvas!;
+          surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
+      final DomCanvasElement original = surface.htmlCanvas!;
 
       // Expect exact requested dimensions.
       expect(original.width, 9);
       expect(original.height, 19);
       expect(original.style.width, '9px');
       expect(original.style.height, '19px');
+      expect(original.style.transform, _isTranslate(0, 0));
       expect(originalSurface.width(), 9);
       expect(originalSurface.height(), 19);
 
-      // Shrinking reuses the existing canvas straight-up.
+      // Shrinking reuses the existing canvas but translates it so Skia renders into the visible area.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final html.CanvasElement shrunk = surface.htmlCanvas!;
+      final DomCanvasElement shrunk = surface.htmlCanvas!;
       expect(shrunk, same(original));
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
+      expect(shrunk.style.transform, _isTranslate(0, -4));
       expect(shrunkSurface, isNot(same(original)));
       expect(shrunkSurface.width(), 5);
       expect(shrunkSurface.height(), 15);
@@ -51,7 +51,7 @@ void testMain() {
       // by 40% to accommodate future increases.
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
-      final html.CanvasElement firstIncrease = surface.htmlCanvas!;
+      final DomCanvasElement firstIncrease = surface.htmlCanvas!;
       expect(firstIncrease, isNot(same(original)));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
@@ -60,21 +60,23 @@ void testMain() {
       expect(firstIncrease.height, 28);
       expect(firstIncrease.style.width, '14px');
       expect(firstIncrease.style.height, '28px');
+      expect(firstIncrease.style.transform, _isTranslate(0, -8));
       expect(firstIncreaseSurface.width(), 10);
       expect(firstIncreaseSurface.height(), 20);
 
       // Subsequent increases within 40% reuse the old canvas.
       final CkSurface secondIncreaseSurface =
           surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
-      final html.CanvasElement secondIncrease = surface.htmlCanvas!;
+      final DomCanvasElement secondIncrease = surface.htmlCanvas!;
       expect(secondIncrease, same(firstIncrease));
+      expect(secondIncrease.style.transform, _isTranslate(0, -6));
       expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
       expect(secondIncreaseSurface.width(), 11);
       expect(secondIncreaseSurface.height(), 22);
 
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
-      final html.CanvasElement huge = surface.htmlCanvas!;
+      final DomCanvasElement huge = surface.htmlCanvas!;
       expect(huge, isNot(same(secondIncrease)));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
@@ -83,29 +85,48 @@ void testMain() {
       expect(huge.height, 56);
       expect(huge.style.width, '28px');
       expect(huge.style.height, '56px');
+      expect(huge.style.transform, _isTranslate(0, -16));
       expect(hugeSurface.width(), 20);
       expect(hugeSurface.height(), 40);
 
       // Shrink again. Reuse the last allocated surface.
       final CkSurface shrunkSurface2 =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
-      final html.CanvasElement shrunk2 = surface.htmlCanvas!;
+      final DomCanvasElement shrunk2 = surface.htmlCanvas!;
       expect(shrunk2, same(huge));
+      expect(shrunk2.style.width, '28px');
+      expect(shrunk2.style.height, '56px');
+      expect(shrunk2.style.transform, _isTranslate(0, -41));
       expect(shrunkSurface2, isNot(same(hugeSurface)));
       expect(shrunkSurface2.width(), 5);
       expect(shrunkSurface2.height(), 15);
+
+      // Doubling the DPR should halve the CSS width, height, and translation of the canvas.
+      // This tests https://github.com/flutter/flutter/issues/77084
+      window.debugOverrideDevicePixelRatio(2.0);
+      final CkSurface dpr2Surface2 =
+          surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
+      final DomCanvasElement dpr2Canvas = surface.htmlCanvas!;
+      expect(dpr2Canvas, same(huge));
+      expect(dpr2Canvas.style.width, '14px');
+      expect(dpr2Canvas.style.height, '28px');
+      expect(dpr2Canvas.style.transform, _isTranslate(0, -20.5));
+      expect(dpr2Surface2, isNot(same(hugeSurface)));
+      expect(dpr2Surface2.width(), 5);
+      expect(dpr2Surface2.height(), 15);
+
       // Skipping on Firefox for now since Firefox headless doesn't support WebGL
       // This causes issues in the test since we create a Canvas-backed surface,
       // which cannot be a different size from the canvas.
       // TODO(hterkelsen): See if we can give a custom size for software
       //     surfaces.
-    }, skip: isFirefox || isIosSafari);
+    }, skip: isFirefox);
 
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface surface = SurfaceFactory.instance.getSurface();
-        expect(surface.debugForceNewContext, isTrue);
+        final Surface? surface = SurfaceFactory.instance.getSurface();
+        expect(surface!.debugForceNewContext, isTrue);
         final CkSurface before =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         expect(surface.debugForceNewContext, isFalse);
@@ -118,8 +139,8 @@ void testMain() {
         expect(afterAcquireFrame, same(before));
 
         // Emulate WebGL context loss.
-        final html.CanvasElement canvas =
-            surface.htmlElement.children.single as html.CanvasElement;
+        final DomCanvasElement canvas =
+            surface.htmlElement.children.single as DomCanvasElement;
         final dynamic ctx = canvas.getContext('webgl2');
         expect(ctx, isNotNull);
         final dynamic loseContextExtension =
@@ -158,6 +179,7 @@ void testMain() {
       expect(original.height(), 16);
       expect(surface.htmlCanvas!.style.width, '10px');
       expect(surface.htmlCanvas!.style.height, '16px');
+      expect(surface.htmlCanvas!.style.transform, _isTranslate(0, 0));
 
       // Increase device-pixel ratio: this makes CSS pixels bigger, so we need
       // fewer of them to cover the browser window.
@@ -168,6 +190,7 @@ void testMain() {
       expect(highDpr.height(), 16);
       expect(surface.htmlCanvas!.style.width, '5px');
       expect(surface.htmlCanvas!.style.height, '8px');
+      expect(surface.htmlCanvas!.style.transform, _isTranslate(0, 0));
 
       // Decrease device-pixel ratio: this makes CSS pixels smaller, so we need
       // more of them to cover the browser window.
@@ -178,6 +201,36 @@ void testMain() {
       expect(lowDpr.height(), 16);
       expect(surface.htmlCanvas!.style.width, '20px');
       expect(surface.htmlCanvas!.style.height, '32px');
+      expect(surface.htmlCanvas!.style.transform, _isTranslate(0, 0));
+
+      // See https://github.com/flutter/flutter/issues/77084#issuecomment-1120151172
+      window.debugOverrideDevicePixelRatio(2.0);
+      final CkSurface changeRatioAndSize =
+          surface.acquireFrame(const ui.Size(9.9, 15.9)).skiaSurface;
+      expect(changeRatioAndSize.width(), 10);
+      expect(changeRatioAndSize.height(), 16);
+      expect(surface.htmlCanvas!.style.width, '5px');
+      expect(surface.htmlCanvas!.style.height, '8px');
+      expect(surface.htmlCanvas!.style.transform, _isTranslate(0, 0));
     });
-  }, skip: isIosSafari);
+  });
+}
+
+/// Checks that the CSS 'transform' property is a translation in a cross-browser way.
+///
+/// Assumes that the `x` and `y` values are round enough for their `toString` values
+/// to match the stringified CSS length value.
+Matcher _isTranslate(double x, double y) {
+  // When the y coordinate is zero, Firefox omits it, e.g.:
+  //   Chrome/Safari/Edge: translate(0px, 0px)
+  //   Firefox:            translate(0px)
+  final String fullFormat = 'translate(${x}px, ${y}px)';
+  if (y != 0) {
+    return equals(fullFormat);
+  } else {
+    return anyOf(
+      fullFormat,  // Non-Firefox browsers use this format.
+      'translate(${x}px)',  // Firefox omits y when it's zero.
+    );
+  }
 }

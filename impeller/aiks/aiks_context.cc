@@ -28,13 +28,21 @@ bool AiksContext::IsValid() const {
   return is_valid_;
 }
 
-bool AiksContext::Render(const Picture& picture, RenderPass& parent_pass) {
+std::shared_ptr<Context> AiksContext::GetContext() const {
+  return context_;
+}
+
+const ContentContext& AiksContext::GetContentContext() const {
+  return *content_context_;
+}
+
+bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
   if (!IsValid()) {
     return false;
   }
 
   if (picture.pass) {
-    return picture.pass->Render(*content_context_, parent_pass);
+    return picture.pass->Render(*content_context_, render_target);
   }
 
   return true;

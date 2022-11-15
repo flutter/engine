@@ -8,6 +8,7 @@
 #include <memory>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/fml/macros.h"
@@ -102,10 +103,11 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::function<void(int64_t)>& idle_notification_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      const std::shared_ptr<const fml::Mapping>& persistent_isolate_data,
       fml::WeakPtr<IOManager> io_manager,
       fml::WeakPtr<ImageDecoder> image_decoder,
-      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry) const;
+      fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -144,7 +146,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
-      fml::closure root_isolate_create_callback,
+      const fml::closure& root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       const std::vector<std::string>& dart_entrypoint_args,
@@ -552,7 +554,8 @@ class RuntimeController : public PlatformConfigurationClient {
     return context_.unref_queue;
   }
 
-  const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
+  const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& GetSnapshotDelegate()
+      const {
     return context_.snapshot_delegate;
   }
 
@@ -562,7 +565,7 @@ class RuntimeController : public PlatformConfigurationClient {
 
  protected:
   /// Constructor for Mocks.
-  RuntimeController(RuntimeDelegate& p_client, TaskRunners task_runners);
+  RuntimeController(RuntimeDelegate& p_client, const TaskRunners& task_runners);
 
  private:
   struct Locale {
@@ -613,6 +616,9 @@ class RuntimeController : public PlatformConfigurationClient {
 
   // |PlatformConfigurationClient|
   FontCollection& GetFontCollection() override;
+
+  // |PlatformConfigurationClient|
+  std::shared_ptr<AssetManager> GetAssetManager() override;
 
   // |PlatformConfigurationClient|
   void UpdateIsolateDescription(const std::string isolate_name,

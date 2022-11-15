@@ -2,7 +2,9 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
+import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("display_list") {
@@ -14,6 +16,8 @@ source_set("display_list") {
     "display_list_blend_mode.h",
     "display_list_builder.cc",
     "display_list_builder.h",
+    "display_list_builder_multiplexer.cc",
+    "display_list_builder_multiplexer.h",
     "display_list_canvas_dispatcher.cc",
     "display_list_canvas_dispatcher.h",
     "display_list_canvas_recorder.cc",
@@ -45,6 +49,13 @@ source_set("display_list") {
     "display_list_ops.h",
     "display_list_paint.cc",
     "display_list_paint.h",
+    "display_list_path_effect.cc",
+    "display_list_path_effect.h",
+    "display_list_rtree.cc",
+    "display_list_rtree.h",
+    "display_list_runtime_effect.cc",
+    "display_list_runtime_effect.h",
+    "display_list_sampling_options.h",
     "display_list_tile_mode.h",
     "display_list_utils.cc",
     "display_list_utils.h",
@@ -55,6 +66,7 @@ source_set("display_list") {
 
   public_deps = [
     "//flutter/fml",
+    "//flutter/impeller/runtime_stage",
     "//third_party/skia",
   ]
 }
@@ -93,7 +105,9 @@ if (enable_unittests) {
       "display_list_image_filter_unittests.cc",
       "display_list_mask_filter_unittests.cc",
       "display_list_paint_unittests.cc",
+      "display_list_path_effect_unittests.cc",
       "display_list_unittests.cc",
+      "display_list_utils_unittests.cc",
       "display_list_vertices_unittests.cc",
     ]
 
@@ -110,6 +124,12 @@ if (enable_unittests) {
     if (is_win) {
       # Required for M_PI and others.
       defines += [ "_USE_MATH_DEFINES" ]
+    }
+
+    # This is needed for //third_party/googletest for linking zircon symbols.
+    if (is_fuchsia) {
+      libs =
+          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
     }
   }
 
@@ -132,6 +152,26 @@ if (enable_unittests) {
       # Required for M_PI and others.
       defines += [ "_USE_MATH_DEFINES" ]
     }
+
+    # This is needed for //third_party/googletest for linking zircon symbols.
+    if (is_fuchsia) {
+      libs =
+          [ "${fuchsia_sdk_path}/arch/${target_cpu}/sysroot/lib/libzircon.so" ]
+    }
+  }
+
+  executable("display_list_builder_benchmarks") {
+    testonly = true
+
+    sources = [ "display_list_builder_benchmarks.cc" ]
+
+    deps = [
+      ":display_list",
+      ":display_list_fixtures",
+      ":display_list_testing",
+      "//flutter/benchmarking",
+      "//flutter/testing:testing_lib",
+    ]
   }
 }
 
@@ -179,7 +219,16 @@ source_set("display_list_benchmarks_source") {
   }
 
   # iOS and Fuchsia don't support OpenGL
-  if (!is_fuchsia && !is_ios) {
+  _enable_gl_benchmarks = !is_fuchsia && !is_ios
+
+  # TODO (https://github.com/flutter/flutter/issues/107357):
+  # impeller_enable_vulkan currently requires skia to not use VMA, which inturn
+  # causes linkage problems with swiftshader.
+  if (impeller_enable_vulkan) {
+    _enable_gl_benchmarks = false
+  }
+
+  if (_enable_gl_benchmarks) {
     defines += [ "ENABLE_OPENGL_BENCHMARKS" ]
     sources += [
       "display_list_benchmarks_gl.cc",

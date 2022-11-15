@@ -11,16 +11,19 @@
 #include <unordered_map>
 #include <vector>
 
+#include "flutter/assets/asset_manager.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/window/pointer_data_packet.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
 #include "third_party/tonic/dart_persistent_value.h"
+#include "third_party/tonic/typed_data/dart_byte_data.h"
 
 namespace flutter {
 class FontCollection;
 class PlatformMessage;
+class PlatformMessageHandler;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -97,6 +100,11 @@ class PlatformConfigurationClient {
   ///             collections of them. MinikinFontForTest is used for FontFamily
   ///             creation.
   virtual FontCollection& GetFontCollection() = 0;
+
+  //--------------------------------------------------------------------------
+  /// @brief      Returns the current collection of assets available on the
+  ///             platform.
+  virtual std::shared_ptr<AssetManager> GetAssetManager() = 0;
 
   //--------------------------------------------------------------------------
   /// @brief      Notifies this client of the name of the root isolate and its
@@ -382,15 +390,6 @@ class PlatformConfiguration final {
   void ReportTimings(std::vector<int64_t> timings);
 
   //----------------------------------------------------------------------------
-  /// @brief      Registers the native handlers for Dart functions that this
-  ///             class handles.
-  ///
-  /// @param[in] natives The natives registry that the functions will be
-  ///                    registered with.
-  ///
-  static void RegisterNatives(tonic::DartLibraryNatives* natives);
-
-  //----------------------------------------------------------------------------
   /// @brief      Retrieves the Window with the given ID managed by the
   ///             `PlatformConfiguration`.
   ///
@@ -442,6 +441,83 @@ class PlatformConfiguration final {
   int next_response_id_ = 1;
   std::unordered_map<int, fml::RefPtr<PlatformMessageResponse>>
       pending_responses_;
+};
+
+//----------------------------------------------------------------------------
+/// An inteface that the result of `Dart_CurrentIsolateGroupData` should
+/// implement for registering background isolates to work.
+class PlatformMessageHandlerStorage {
+ public:
+  virtual ~PlatformMessageHandlerStorage() = default;
+  virtual void SetPlatformMessageHandler(
+      int64_t root_isolate_token,
+      std::weak_ptr<PlatformMessageHandler> handler) = 0;
+
+  virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
+      int64_t root_isolate_token) const = 0;
+};
+
+//----------------------------------------------------------------------------
+// API exposed as FFI calls in Dart.
+//
+// These are probably not supposed to be called directly, and should instead
+// be called through their sibling API in `PlatformConfiguration` or
+// `PlatformConfigurationClient`.
+//
+// These are intentionally undocumented. Refer instead to the sibling methods
+// above.
+//----------------------------------------------------------------------------
+class PlatformConfigurationNativeApi {
+ public:
+  static std::string DefaultRouteName();
+
+  static void ScheduleFrame();
+
+  static void Render(Scene* scene);
+
+  static void UpdateSemantics(SemanticsUpdate* update);
+
+  static void SetNeedsReportTimings(bool value);
+
+  static Dart_Handle GetPersistentIsolateData();
+
+  static Dart_Handle ComputePlatformResolvedLocale(
+      Dart_Handle supportedLocalesHandle);
+
+  static void SetIsolateDebugName(const std::string& name);
+
+  static Dart_Handle SendPlatformMessage(const std::string& name,
+                                         Dart_Handle callback,
+                                         Dart_Handle data_handle);
+
+  static Dart_Handle SendPortPlatformMessage(const std::string& name,
+                                             Dart_Handle identifier,
+                                             Dart_Handle send_port,
+                                             Dart_Handle data_handle);
+
+  static void RespondToPlatformMessage(int response_id,
+                                       const tonic::DartByteData& data);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
+  ///             the requested `performance_mode`. Returns the old performance
+  ///             mode.
+  ///
+  ///             Requesting a performance mode doesn't guarantee any
+  ///             performance characteristics. This is best effort, and should
+  ///             be used after careful consideration of the various GC
+  ///             trade-offs.
+  ///
+  /// @param[in]  performance_mode The requested performance mode. Please refer
+  ///                              to documentation of `Dart_PerformanceMode`
+  ///                              for more details about what each performance
+  ///                              mode does.
+  ///
+  static int RequestDartPerformanceMode(int mode);
+
+  static int64_t GetRootIsolateToken();
+
+  static void RegisterBackgroundIsolate(int64_t root_isolate_token);
 };
 
 }  // namespace flutter

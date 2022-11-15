@@ -1017,6 +1017,14 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accName(VARIANT var_id, BSTR* name_bstr) {
 
   bool has_name = target->HasStringAttribute(ax::mojom::StringAttribute::kName);
   std::u16string name = target->GetNameAsString16();
+
+  // Simply appends the tooltip, if any, to the end of the MSAA name.
+  const std::u16string tooltip =
+      target->GetString16Attribute(ax::mojom::StringAttribute::kTooltip);
+  if (!tooltip.empty()) {
+    AppendTextToString(tooltip, &name);
+  }
+
   auto status = GetData().GetImageAnnotationStatus();
   switch (status) {
     case ax::mojom::ImageAnnotationStatus::kNone:
@@ -3421,7 +3429,7 @@ int AXPlatformNodeWin::MSAARole() {
       return ROLE_SYSTEM_TITLEBAR;
 
     case ax::mojom::Role::kToggleButton:
-      return ROLE_SYSTEM_PUSHBUTTON;
+      return ROLE_SYSTEM_CHECKBUTTON;
 
     case ax::mojom::Role::kTextField:
     case ax::mojom::Role::kSearchBox:

@@ -22,10 +22,10 @@ constexpr fml::TimeDelta kNotifyIdleTaskWaitTime =
 }  // namespace
 
 Animator::Animator(Delegate& delegate,
-                   TaskRunners task_runners,
+                   const TaskRunners& task_runners,
                    std::unique_ptr<VsyncWaiter> waiter)
     : delegate_(delegate),
-      task_runners_(std::move(task_runners)),
+      task_runners_(task_runners),
       waiter_(std::move(waiter)),
 #if SHELL_ENABLE_METAL
       layer_tree_pipeline_(std::make_shared<LayerTreePipeline>(2)),
@@ -104,10 +104,6 @@ void Animator::BeginFrame(
   // We have acquired a valid continuation from the pipeline and are ready
   // to service potential frame.
   FML_DCHECK(producer_continuation_);
-  fml::tracing::TraceEventAsyncComplete(
-      "flutter", "VsyncSchedulingOverhead",
-      frame_timings_recorder_->GetVsyncStartTime(),
-      frame_timings_recorder_->GetBuildStartTime());
   const fml::TimePoint frame_target_time =
       frame_timings_recorder_->GetVsyncTargetTime();
   dart_frame_deadline_ = FxlToDartOrEarlier(frame_target_time);
@@ -144,7 +140,7 @@ void Animator::BeginFrame(
   }
 }
 
-void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
+void Animator::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
   has_rendered_ = true;
   last_layer_tree_size_ = layer_tree->frame_size();
 
@@ -163,26 +159,25 @@ void Animator::Render(std::unique_ptr<flutter::LayerTree> layer_tree) {
   delegate_.OnAnimatorUpdateLatestFrameTargetTime(
       frame_timings_recorder_->GetVsyncTargetTime());
 
+  auto layer_tree_item = std::make_unique<LayerTreeItem>(
+      std::move(layer_tree), std::move(frame_timings_recorder_));
   // Commit the pending continuation.
   PipelineProduceResult result =
-      producer_continuation_.Complete(std::move(layer_tree));
+      producer_continuation_.Complete(std::move(layer_tree_item));
 
   if (!result.success) {
-    frame_timings_recorder_.reset();
     FML_DLOG(INFO) << "No pending continuation to commit";
     return;
   }
 
   if (!result.is_first_item) {
-    frame_timings_recorder_.reset();
     // It has been successfully pushed to the pipeline but not as the first
     // item. Eventually the 'Rasterizer' will consume it, so we don't need to
     // notify the delegate.
     return;
   }
 
-  delegate_.OnAnimatorDraw(layer_tree_pipeline_,
-                           std::move(frame_timings_recorder_));
+  delegate_.OnAnimatorDraw(layer_tree_pipeline_);
 }
 
 const std::weak_ptr<VsyncWaiter> Animator::GetVsyncWaiter() const {
@@ -196,6 +191,10 @@ bool Animator::CanReuseLastLayerTree() {
 
 void Animator::DrawLastLayerTree(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+  // This method is very cheap, but this makes it explicitly clear in trace
+  // files.
+  TRACE_EVENT0("flutter", "Animator::DrawLastLayerTree");
+
   pending_frame_semaphore_.Signal();
   // In this case BeginFrame doesn't get called, we need to
   // adjust frame timings to update build start and end times,
@@ -209,6 +208,12 @@ void Animator::DrawLastLayerTree(
 
 void Animator::RequestFrame(bool regenerate_layer_tree) {
   if (regenerate_layer_tree) {
+    // This event will be closed by BeginFrame. BeginFrame will only be called
+    // if regenerating the layer tree. If a frame has been requested to update
+    // an external texture, this will be false and no BeginFrame call will
+    // happen.
+    TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
+                             frame_request_number_);
     regenerate_layer_tree_ = true;
   }
 
@@ -226,13 +231,10 @@ void Animator::RequestFrame(bool regenerate_layer_tree) {
   // To support that, we need edge triggered wakes on VSync.
 
   task_runners_.GetUITaskRunner()->PostTask(
-      [self = weak_factory_.GetWeakPtr(),
-       frame_request_number = frame_request_number_]() {
+      [self = weak_factory_.GetWeakPtr()]() {
         if (!self) {
           return;
         }
-        TRACE_EVENT_ASYNC_BEGIN0("flutter", "Frame Request Pending",
-                                 frame_request_number);
         self->AwaitVSync();
       });
   frame_scheduled_ = true;
