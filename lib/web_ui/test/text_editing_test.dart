@@ -2580,7 +2580,7 @@ Future<void> testMain() async {
       final DomHTMLElement input = editingStrategy!.activeDomElement;
       expect(input.style.getPropertyValue('forced-color-adjust'), 'none');
     // TODO(hterkelsen): https://github.com/flutter/flutter/issues/115327
-    }, skip: isSafari);
+    }, skip: isFirefox || isSafari);
   });
 }
 
