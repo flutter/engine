@@ -240,17 +240,17 @@ class KeyboardConverter {
   // are comprehended.
   final bool onMacOs;
   // Maps logical keys from key event properties.
-  final keyboard_layouts.LayoutMapping _mapping;
+  final keyboard_layouts.LocaleKeymap _mapping;
 
-  static keyboard_layouts.LayoutMapping _mappingFromPlatform(OperatingSystem platform) {
+  static keyboard_layouts.LocaleKeymap _mappingFromPlatform(OperatingSystem platform) {
     switch (platform) {
       case OperatingSystem.iOs:
       case OperatingSystem.macOs:
-        return keyboard_layouts.LayoutMapping.darwin();
+        return keyboard_layouts.LocaleKeymap.darwin();
       case OperatingSystem.windows:
-        return keyboard_layouts.LayoutMapping.win();
+        return keyboard_layouts.LocaleKeymap.win();
       default:
-        return keyboard_layouts.LayoutMapping.linux();
+        return keyboard_layouts.LocaleKeymap.linux();
     }
   }
 

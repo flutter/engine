@@ -6,4 +6,4 @@
 library web_locale_keymap;
 
 export 'web_locale_keymap/key_mappings.g.dart';
-export 'web_locale_keymap/types.dart';
+export 'web_locale_keymap/locale_keymap.dart';
