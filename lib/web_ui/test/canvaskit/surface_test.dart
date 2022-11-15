@@ -169,7 +169,9 @@ void testMain() {
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
         // A new context is created.
         expect(afterContextLost, isNot(same(before)));
-      }
+      },
+      // Firefox can't create a WebGL2 context in headless mode.
+      skip: isFirefox,
     );
 
     // Regression test for https://github.com/flutter/flutter/issues/75286
