@@ -77,7 +77,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
   void apply() {
     EngineImageFilter backendFilter;
     if (filter is ui.ColorFilter) {
-      backendFilter = (filter as EngineColorFilter).toRendererColorFilter() as EngineHtmlColorFilter;
+      backendFilter = createHtmlColorFilter(filter as EngineColorFilter)!;
     } else {
       backendFilter = filter as EngineImageFilter;
     }
@@ -135,7 +135,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
         /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
         if (_svgFilter == null) {
             return;
-        }
+      }
       } else if (backendFilter is MatrixHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
       }

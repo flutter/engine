@@ -166,24 +166,6 @@ class HtmlRenderer implements Renderer {
   }
 
   @override
-  ui.ColorFilter createLinearToSrgbGammaColorFilter(ui.ColorFilter creator) {
-    throw UnimplementedError('ColorFilter.linearToSrgbGamma not implemented for HTML renderer.');
-  }
-
-  @override
-  MatrixHtmlColorFilter createMatrixColorFilter(ui.ColorFilter creator, List<double> matrix)
-  => MatrixHtmlColorFilter(creator, matrix);
-
-  @override
-  ModeHtmlColorFilter createModeColorFilter(ui.ColorFilter creator, ui.Color color, ui.BlendMode blendMode)
-  => ModeHtmlColorFilter(creator, color, blendMode);
-
-  @override
-  ui.ColorFilter createSrgbToLinearGammaColorFilter(ui.ColorFilter creator) {
-    throw UnimplementedError('ColorFilter.SrgbToLinearGamma not implemented for HTML renderer');
-  }
-
-  @override
   Future<ui.Codec> instantiateImageCodec(
     Uint8List list, {
     int? targetWidth,

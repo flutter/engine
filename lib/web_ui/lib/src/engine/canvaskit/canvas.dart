@@ -9,6 +9,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../color_filter.dart';
 import 'canvaskit_api.dart';
+import 'color_filter.dart';
 import 'image.dart';
 import 'image_filter.dart';
 import 'painting.dart';
@@ -293,7 +294,7 @@ class CkCanvas {
       [CkPaint? paint]) {
         final CkManagedSkImageFilterConvertible convertible;
         if (filter is ui.ColorFilter) {
-          convertible = (filter as EngineColorFilter).toRendererColorFilter() as CkManagedSkImageFilterConvertible;
+          convertible = createCkColorFilter(filter as EngineColorFilter)!;
         }
         else {
           convertible = filter as CkManagedSkImageFilterConvertible;
@@ -1169,8 +1170,13 @@ class CkSaveLayerWithFilterCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    final CkManagedSkImageFilterConvertible convertible =
-        filter as CkManagedSkImageFilterConvertible;
+    final CkManagedSkImageFilterConvertible convertible;
+        if (filter is ui.ColorFilter) {
+          convertible = createCkColorFilter(filter as EngineColorFilter)!;
+        }
+        else {
+          convertible = filter as CkManagedSkImageFilterConvertible;
+        }
     return canvas.saveLayer(
       paint?.skiaObject,
       toSkRect(bounds),

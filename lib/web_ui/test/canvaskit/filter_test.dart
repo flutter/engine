@@ -17,23 +17,23 @@ void main() {
 void testMain() {
   List<CkColorFilter> createColorFilters() {
      return <CkColorFilter>[
-       const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.srcOver).toRendererColorFilter() as CkColorFilter,
-       const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.dstOver).toRendererColorFilter() as CkColorFilter,
-       const EngineColorFilter.mode(ui.Color(0x87654321), ui.BlendMode.dstOver).toRendererColorFilter() as CkColorFilter,
-       const EngineColorFilter.matrix(<double>[
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.srcOver))!,
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x12345678), ui.BlendMode.dstOver))!,
+       createCkColorFilter(const EngineColorFilter.mode(ui.Color(0x87654321), ui.BlendMode.dstOver))!,
+       createCkColorFilter(const EngineColorFilter.matrix(<double>[
           1, 0, 0, 0, 0,
           0, 1, 0, 0, 0,
           0, 0, 1, 0, 0,
           0, 0, 0, 1, 0,
-       ]).toRendererColorFilter() as CkColorFilter,
-       EngineColorFilter.matrix(Float32List.fromList(<double>[
+       ]))!,
+       createCkColorFilter(EngineColorFilter.matrix(Float32List.fromList(<double>[
           2, 0, 0, 0, 0,
           0, 2, 0, 0, 0,
           0, 0, 2, 0, 0,
           0, 0, 0, 2, 0,
-       ])).toRendererColorFilter() as CkColorFilter,
-       const EngineColorFilter.linearToSrgbGamma().toRendererColorFilter() as CkColorFilter,
-       const EngineColorFilter.srgbToLinearGamma().toRendererColorFilter() as CkColorFilter,
+       ])))!,
+       createCkColorFilter(const EngineColorFilter.linearToSrgbGamma())!,
+       createCkColorFilter(const EngineColorFilter.srgbToLinearGamma())!,
     ];
   }
 
@@ -127,9 +127,11 @@ void testMain() {
     });
 
     test('using a colorFilter', () async {
-      final CkColorFilter colorFilter = const EngineColorFilter.mode(
-        ui.Color.fromARGB(255, 0, 255, 0),
-        ui.BlendMode.srcIn).toRendererColorFilter() as CkColorFilter;
+      final CkColorFilter colorFilter = createCkColorFilter(
+        const EngineColorFilter.mode(
+          ui.Color.fromARGB(255, 0, 255, 0),
+          ui.BlendMode.srcIn
+          ))!;
 
       const ui.Rect region = ui.Rect.fromLTRB(0, 0, 500, 250);
 

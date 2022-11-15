@@ -16,7 +16,6 @@ import '../profiler.dart';
 import '../renderer.dart';
 import 'canvaskit_api.dart';
 import 'canvaskit_canvas.dart';
-import 'color_filter.dart';
 import 'fonts.dart';
 import 'image.dart';
 import 'image_filter.dart';
@@ -194,27 +193,6 @@ class CanvasKitRenderer implements Renderer {
   // TODO(ferhat): add implementation
     throw UnimplementedError('ImageFilter.compose not implemented for CanvasKit.');
   }
-
-  @override
-  CkMatrixColorFilter createMatrixColorFilter(
-    ui.ColorFilter creator,
-    List<double> matrix
-  ) => CkMatrixColorFilter(creator, matrix);
-
-  @override
-  CkBlendModeColorFilter createModeColorFilter(
-    ui.ColorFilter creator,
-    ui.Color color,
-    ui.BlendMode blendMode
-  ) => CkBlendModeColorFilter(creator, color, blendMode);
-
-  @override
-  CkLinearToSrgbGammaColorFilter createLinearToSrgbGammaColorFilter(ui.ColorFilter creator) =>
-    CkLinearToSrgbGammaColorFilter(creator);
-
-  @override
-  CkSrgbToLinearGammaColorFilter createSrgbToLinearGammaColorFilter(ui.ColorFilter creator) =>
-    CkSrgbToLinearGammaColorFilter(creator);
 
   @override
   Future<ui.Codec> instantiateImageCodec(

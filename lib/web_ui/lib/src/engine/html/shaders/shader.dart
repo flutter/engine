@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../../browser_detection.dart';
+import '../../color_filter.dart';
 import '../../dom.dart';
 import '../../embedder.dart';
 import '../../safe_browser_api.dart';
@@ -778,9 +779,8 @@ class _MatrixEngineImageFilter extends EngineImageFilter {
 ///
 /// Currently only 'mode' and 'matrix' are supported.
 abstract class EngineHtmlColorFilter implements EngineImageFilter {
-  EngineHtmlColorFilter(this.creator);
+  EngineHtmlColorFilter();
 
-  final ui.ColorFilter creator;
   String? filterId;
 
   @override
@@ -796,7 +796,7 @@ abstract class EngineHtmlColorFilter implements EngineImageFilter {
 }
 
 class ModeHtmlColorFilter extends EngineHtmlColorFilter {
-  ModeHtmlColorFilter(super.creator, this.color, this.blendMode);
+  ModeHtmlColorFilter(this.color, this.blendMode);
 
   final ui.Color color;
   ui.BlendMode blendMode;
@@ -859,7 +859,7 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
 }
 
 class MatrixHtmlColorFilter extends EngineHtmlColorFilter {
-  MatrixHtmlColorFilter(super.creator, this.matrix);
+  MatrixHtmlColorFilter(this.matrix);
 
   final List<double> matrix;
 
@@ -870,4 +870,34 @@ class MatrixHtmlColorFilter extends EngineHtmlColorFilter {
     filterId = svgFilter.id;
     return svgFilter.element;
   }
+}
+
+/// Convert the current [ColorFIlter] to an EngineHtmlColorFilter
+///
+/// This workaround allows ColorFilter to be const constructible and
+/// efficiently comparable, so that widgets can check for COlorFIlter equality to
+/// avoid repainting.
+EngineHtmlColorFilter? createHtmlColorFilter(EngineColorFilter? colorFilter) {
+  if (colorFilter == null) {
+    return null;
+  }
+  switch (colorFilter.type) {
+      case ColorFilterType.mode:
+        if (colorFilter.color == null || colorFilter.blendMode == null) {
+          return null;
+        }
+        return ModeHtmlColorFilter(colorFilter.color!, colorFilter.blendMode!);
+      case ColorFilterType.matrix:
+        if (colorFilter.matrix == null) {
+          return null;
+        }
+        assert(colorFilter.matrix!.length == 20, 'Color Matrix must have 20 entries.');
+        return MatrixHtmlColorFilter(colorFilter.matrix!);
+      case ColorFilterType.linearToSrgbGamma:
+        throw UnimplementedError('ColorFilter.linearToSrgbGamma not implemented for HTML renderer');
+      case ColorFilterType.srgbToLinearGamma:
+        throw UnimplementedError('ColorFilter.srgbToLinearGamma not implemented for HTML renderer.');
+      default:
+        throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
+    }
 }

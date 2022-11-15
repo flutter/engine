@@ -646,7 +646,7 @@ class BitmapCanvas extends EngineCanvas {
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image as HtmlImage;
     final ui.BlendMode? blendMode = paint.blendMode;
-    final EngineHtmlColorFilter? colorFilter = paint.colorFilter;
+    final EngineHtmlColorFilter? colorFilter = createHtmlColorFilter(paint.colorFilter);
     DomHTMLElement imgElement;
     if (colorFilter is ModeHtmlColorFilter) {
       imgElement = _createImageElementWithBlend(
