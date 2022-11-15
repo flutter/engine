@@ -64,6 +64,8 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
 
   vk::ImageView GetImageView() const;
 
+  vk::Buffer GetStagingBuffer() const;
+
   TextureInfoVK* GetTextureInfo() const;
 
  private:

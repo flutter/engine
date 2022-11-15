@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "vk_mem_alloc.h"
 
 namespace impeller {
 
@@ -114,7 +115,9 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   image_create_info.tiling = vk::ImageTiling::eOptimal;
   image_create_info.initialLayout = vk::ImageLayout::eUndefined;
   image_create_info.usage = vk::ImageUsageFlagBits::eSampled |
-                            vk::ImageUsageFlagBits::eColorAttachment;
+                            vk::ImageUsageFlagBits::eColorAttachment |
+                            vk::ImageUsageFlagBits::eTransferDst |
+                            vk::ImageUsageFlagBits::eTransferSrc;
 
   VmaAllocationCreateInfo alloc_create_info = {};
   alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
@@ -159,8 +162,9 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
       vk::BufferCreateInfo()
           .setUsage(vk::BufferUsageFlagBits::eUniformBuffer |
+                    vk::BufferUsageFlagBits::eTransferSrc |
                     vk::BufferUsageFlagBits::eTransferDst)
-          .setSize(desc.GetByteSizeOfBaseMipLevel())
+          .setSize(desc.GetByteSizeOfBaseMipLevel() * 8)
           .setSharingMode(vk::SharingMode::eExclusive));
 
   VmaAllocationCreateInfo allocCreateInfo = {};
@@ -174,6 +178,16 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   auto staging_result = vk::Result{vmaCreateBuffer(
       allocator_, &buffer_create_info, &allocCreateInfo, &staging_buffer,
       &staging_allocation, &staging_allocation_info)};
+
+  VkMemoryPropertyFlags memPropFlags;
+  vmaGetAllocationMemoryProperties(allocator_, staging_allocation,
+                                   &memPropFlags);
+  if (memPropFlags & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT) {
+    FML_LOG(ERROR) << "Host visible memory for staging buffer was successfully "
+                      "allocated";
+  } else {
+    VALIDATION_LOG << "Unable to create a staging buffer";
+  }
 
   if (staging_result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to allocate a staging buffer: "

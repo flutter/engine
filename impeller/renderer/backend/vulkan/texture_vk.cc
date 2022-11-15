@@ -15,9 +15,9 @@ TextureVK::TextureVK(TextureDescriptor desc,
 
 TextureVK::~TextureVK() {
   if (!IsWrapped() && IsValid()) {
-    const auto& texture = texture_info_->allocated_texture;
-    vmaDestroyImage(*texture.allocator, texture.image,
-                    texture.image_allocation);
+    // const auto& texture = texture_info_->allocated_texture;
+    // vmaDestroyImage(*texture.allocator, texture.image,
+    //                 texture.image_allocation);
   }
 }
 
@@ -106,6 +106,19 @@ vk::Image TextureVK::GetImage() const {
       return vk::Image{texture_info_->allocated_texture.image};
     case TextureBackingTypeVK::kWrappedTexture:
       return texture_info_->wrapped_texture.swapchain_image->GetImage();
+  }
+}
+
+vk::Buffer TextureVK::GetStagingBuffer() const {
+  switch (texture_info_->backing_type) {
+    case TextureBackingTypeVK::kUnknownType:
+      FML_CHECK(false) << "Unknown texture backing type";
+      return nullptr;
+    case TextureBackingTypeVK::kAllocatedTexture:
+      return vk::Buffer{texture_info_->allocated_texture.staging_buffer};
+    case TextureBackingTypeVK::kWrappedTexture:
+      FML_CHECK(false) << "Wrapped textures do not have staging buffers";
+      return nullptr;
   }
 }
 

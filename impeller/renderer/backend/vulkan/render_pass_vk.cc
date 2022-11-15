@@ -20,6 +20,7 @@
 #include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
 #include "vulkan/vulkan_structs.hpp"
+#include "vulkan/vulkan_to_string.hpp"
 
 namespace impeller {
 
@@ -123,6 +124,12 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
     if (!EncodeCommand(frame_num, context, command)) {
       return false;
     }
+  }
+
+  if (!TransitionImageLayout(frame_num, tex_info.swapchain_image->GetImage(),
+                             vk::ImageLayout::eUndefined,
+                             vk::ImageLayout::eColorAttachmentOptimal)) {
+    return false;
   }
 
   command_buffer_->endRenderPass();
@@ -302,8 +309,7 @@ bool RenderPassVK::UpdateDescriptorSets(uint32_t frame_num,
       return false;
     }
 
-    const auto& texture_vk =
-        TextureVK::Cast(*bindings.textures.at(index).resource);
+    auto& texture_vk = TextureVK::Cast(*bindings.textures.at(index).resource);
 
     const Sampler& sampler = *sampler_handle.resource;
     const SamplerVK& sampler_vk = SamplerVK::Cast(sampler);
@@ -312,12 +318,21 @@ bool RenderPassVK::UpdateDescriptorSets(uint32_t frame_num,
 
     if (!TransitionImageLayout(frame_num, texture_vk.GetImage(),
                                vk::ImageLayout::eUndefined,
-                               vk::ImageLayout::eGeneral)) {
+                               vk::ImageLayout::eTransferDstOptimal)) {
+      return false;
+    }
+
+    // we need to upload the data from staging buffer to the image.
+    CopyBufferToImage(frame_num, texture_vk);
+
+    if (!TransitionImageLayout(frame_num, texture_vk.GetImage(),
+                               vk::ImageLayout::eTransferDstOptimal,
+                               vk::ImageLayout::eShaderReadOnlyOptimal)) {
       return false;
     }
 
     vk::DescriptorImageInfo desc_image_info;
-    desc_image_info.setImageLayout(vk::ImageLayout::eGeneral);
+    desc_image_info.setImageLayout(vk::ImageLayout::eShaderReadOnlyOptimal);
     desc_image_info.setSampler(sampler_vk.GetSamplerVK());
     desc_image_info.setImageView(texture_vk.GetImageView());
     image_infos.push_back(desc_image_info);
@@ -402,10 +417,18 @@ bool RenderPassVK::TransitionImageLayout(uint32_t frame_num,
     return false;
   }
 
+  std::string cmd_buf_name = "TransitionImageLayout_" +
+                             std::to_string(frame_num) +
+                             " from: " + vk::to_string(layout_old) +
+                             " to: " + vk::to_string(layout_new);
+  ContextVK::SetDebugName(device_, transition_cmd.get(), cmd_buf_name);
+
   vk::ImageMemoryBarrier barrier =
       vk::ImageMemoryBarrier()
-          .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentRead)
-          .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite)
+          .setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite |
+                            vk::AccessFlagBits::eTransferWrite)
+          .setDstAccessMask(vk::AccessFlagBits::eColorAttachmentRead |
+                            vk::AccessFlagBits::eShaderRead)
           .setOldLayout(layout_old)
           .setNewLayout(layout_new)
           .setSrcQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED)
@@ -418,10 +441,9 @@ bool RenderPassVK::TransitionImageLayout(uint32_t frame_num,
                   .setLevelCount(1)
                   .setBaseArrayLayer(0)
                   .setLayerCount(1));
-  transition_cmd->pipelineBarrier(
-      vk::PipelineStageFlagBits::eColorAttachmentOutput,
-      vk::PipelineStageFlagBits::eColorAttachmentOutput, {}, nullptr, nullptr,
-      barrier);
+  transition_cmd->pipelineBarrier(vk::PipelineStageFlagBits::eAllGraphics,
+                                  vk::PipelineStageFlagBits::eAllGraphics, {},
+                                  nullptr, nullptr, barrier);
 
   res = transition_cmd->end();
   if (res != vk::Result::eSuccess) {
@@ -430,6 +452,62 @@ bool RenderPassVK::TransitionImageLayout(uint32_t frame_num,
   }
 
   surface_producer_->QueueCommandBuffer(frame_num, std::move(transition_cmd));
+  return true;
+}
+
+bool RenderPassVK::CopyBufferToImage(uint32_t frame_num,
+                                     const TextureVK& texture_vk) const {
+  auto pool = command_buffer_.getPool();
+  vk::CommandBufferAllocateInfo alloc_info =
+      vk::CommandBufferAllocateInfo()
+          .setCommandPool(pool)
+          .setLevel(vk::CommandBufferLevel::ePrimary)
+          .setCommandBufferCount(1);
+  auto cmd_buf_res = device_.allocateCommandBuffersUnique(alloc_info);
+  if (cmd_buf_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to allocate command buffer: "
+                   << vk::to_string(cmd_buf_res.result);
+    return false;
+  }
+
+  auto copy_cmd = std::move(cmd_buf_res.value[0]);
+
+  const auto& size = texture_vk.GetTextureDescriptor().size;
+
+  // actual copy happens here
+  vk::BufferImageCopy region =
+      vk::BufferImageCopy()
+          .setBufferOffset(0)
+          .setBufferRowLength(0)
+          .setBufferImageHeight(0)
+          .setImageSubresource(
+              vk::ImageSubresourceLayers()
+                  .setAspectMask(vk::ImageAspectFlagBits::eColor)
+                  .setMipLevel(0)
+                  .setBaseArrayLayer(0)
+                  .setLayerCount(1))
+          .setImageOffset(vk::Offset3D(0, 0, 0))
+          .setImageExtent(vk::Extent3D(size.width, size.height, 1));
+
+  vk::CommandBufferBeginInfo begin_info;
+  auto res = copy_cmd->begin(begin_info);
+
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
+    return false;
+  }
+
+  copy_cmd->copyBufferToImage(texture_vk.GetStagingBuffer(),
+                              texture_vk.GetImage(),
+                              vk::ImageLayout::eTransferDstOptimal, region);
+
+  res = copy_cmd->end();
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(res);
+    return false;
+  }
+
+  surface_producer_->QueueCommandBuffer(frame_num, std::move(copy_cmd));
   return true;
 }
 

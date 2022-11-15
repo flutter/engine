@@ -47,7 +47,8 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
     case AndroidRenderingAPI::kOpenGLES:
       if (enable_impeller_) {
 // TODO(kaushikiska@): Enable this after wiring a preference for Vulkan backend.
-#if false
+#if true
+        FML_LOG(ERROR) << "running impeller vulkan!!!!!!!!";
         return std::make_unique<AndroidSurfaceVulkanImpeller>(android_context_,
                                                               jni_facade_);
 
