@@ -1,104 +1,16 @@
-import 'data.dart';
+import 'common.dart';
 import 'layout_types.dart';
 
-const int kUseKeyCode = 1;
-
-const Map<String, String> _kFullLayoutGoals = <String, String>{
-  'KeyA': 'A',
-  'KeyB': 'B',
-  'KeyC': 'C',
-  'KeyD': 'D',
-  'KeyE': 'E',
-  'KeyF': 'F',
-  'KeyG': 'G',
-  'KeyH': 'H',
-  'KeyI': 'I',
-  'KeyJ': 'J',
-  'KeyK': 'K',
-  'KeyL': 'L',
-  'KeyM': 'M',
-  'KeyN': 'N',
-  'KeyO': 'O',
-  'KeyP': 'P',
-  'KeyQ': 'Q',
-  'KeyR': 'R',
-  'KeyS': 'S',
-  'KeyT': 'T',
-  'KeyU': 'U',
-  'KeyV': 'V',
-  'KeyW': 'W',
-  'KeyX': 'X',
-  'KeyY': 'Y',
-  'KeyZ': 'Z',
-  'Digit1': '1',
-  'Digit2': '2',
-  'Digit3': '3',
-  'Digit4': '4',
-  'Digit5': '5',
-  'Digit6': '6',
-  'Digit7': '7',
-  'Digit8': '8',
-  'Digit9': '9',
-  'Digit0': '0',
-  'Minus': '-',
-  'Equal': '=',
-  'BracketLeft': '[',
-  'BracketRight': ']',
-  'Backslash': r'\',
-  'Semicolon': ';',
-  'Quote': "'",
-  'Backquote': '`',
-  'Comma': ',',
-  'Period': '.',
-  'Slash': '/',
-};
-
-final int _kLowerA = 'a'.codeUnitAt(0);
-final int _kUpperA = 'A'.codeUnitAt(0);
-final int _kLowerZ = 'z'.codeUnitAt(0);
-final int _kUpperZ = 'Z'.codeUnitAt(0);
-final int _k0 = '0'.codeUnitAt(0);
-final int _k9 = '9'.codeUnitAt(0);
-
-bool _isAscii(String key) {
-  if (key.length != 1) {
-    return false;
-  }
-  // 0x20 is the first printable character in ASCII.
-  return key.codeUnitAt(0) >= 0x20 && key.codeUnitAt(0) <= 0x7F;
-}
-
-bool _isAlnum(String char) {
-  if (char.length != 1) {
-    return false;
-  }
-  final int charCode = char.codeUnitAt(0);
-  return (charCode >= _kLowerA && charCode <= _kLowerZ)
-      || (charCode >= _kUpperA && charCode <= _kUpperZ)
-      || (charCode >= _k0 && charCode <= _k9);
-}
-
-bool _isLetterChar(int charCode) {
-  return (charCode >= _kLowerA && charCode <= _kLowerZ)
-      || (charCode >= _kUpperA && charCode <= _kUpperZ);
-}
-
+// Maps all mandatory goals from the character to eventScanCode.
+//
+// Mandatory goals are all the alnum keys. These keys must be assigned at the
+// end of layout planning.
 final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntries(
   kLayoutGoals
     .entries
-    .where((MapEntry<String, String?> entry) => entry.value != null)
+    .where((MapEntry<String, String> entry) => isAlnum(entry.value))
     .map((MapEntry<String, String?> entry) => MapEntry<String, String>(entry.value!, entry.key))
 );
-
-int? _heuristicDetector(String code, String key) {
-  if (_isAlnum(key)) {
-    return key.toLowerCase().codeUnitAt(0);
-  }
-  if (!_isAscii(key)) {
-    return _kFullLayoutGoals[code]!.codeUnitAt(0);
-  }
-  return null;
-}
 
 /// Returns a mapping from eventCode to logical key for this layout.
 ///
@@ -140,7 +52,7 @@ Map<String, int> buildLayout(Map<String, LayoutEntry> entries) {
 }
 
 bool _isLetterOrMappedToKeyCode(int charCode) {
-  return _isLetterChar(charCode) || charCode == kUseKeyCode;
+  return isLetterChar(charCode) || charCode == kUseKeyCode;
 }
 
 /// Summarize all layouts into a huge table of EventCode -> EventKey ->
@@ -163,7 +75,7 @@ Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
         // Found conflict. Assert that all such cases can be solved with
         // keyCode.
         if (codeMap.containsKey(eventKey) && codeMap[eventKey] != logicalKey) {
-          assert(_isLetterChar(logicalKey));
+          assert(isLetterChar(logicalKey));
           assert(_isLetterOrMappedToKeyCode(codeMap[eventKey]!), '$eventCode, $eventKey, ${codeMap[eventKey]!}');
           codeMap[eventKey] = kUseKeyCode;
         } else {
@@ -175,7 +87,7 @@ Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
   // Remove mapping results that can be derived using heuristics.
   result.removeWhere((String eventCode, Map<String, int> codeMap) {
     codeMap.removeWhere((String eventKey, int logicalKey) =>
-      _heuristicDetector(eventCode, eventKey) == logicalKey,
+      heuristicDetector(eventCode, eventKey) == logicalKey,
     );
     return codeMap.isEmpty;
   });

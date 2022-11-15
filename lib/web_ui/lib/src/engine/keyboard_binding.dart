@@ -99,6 +99,15 @@ Duration _eventTimeStampToDuration(num milliseconds) {
   return Duration(milliseconds: ms, microseconds: micro);
 }
 
+// Returns a function that caches the result of `body`, ensuring that `body` is
+// only run once.
+ValueGetter<T> _cached<T>(ValueGetter<T> body) {
+  T? cache;
+  return () {
+    return cache ??= body();
+  };
+}
+
 class KeyboardBinding {
   KeyboardBinding._() {
     _addEventListener('keydown', allowInterop((DomEvent domEvent) {
@@ -380,7 +389,7 @@ class KeyboardConverter {
 
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
-    final int logicalKey = () {
+    final ValueGetter<int> logicalKey = _cached<int>(() {
       // Dead keys.
       if (eventKey == _kLogicalDead) {
         return _deadKeyToLogicalKey(physicalKey, event);
@@ -405,7 +414,7 @@ class KeyboardConverter {
       }
       // Minted logical keys.
       return eventKey.hashCode + _kWebKeyIdPlane;
-    }();
+    });
 
     assert(event.type == 'keydown' || event.type == 'keyup');
     final bool isPhysicalDown = event.type == 'keydown' ||
@@ -427,7 +436,7 @@ class KeyboardConverter {
           timeStamp: timeStamp,
           type: ui.KeyEventType.up,
           physical: physicalKey,
-          logical: logicalKey,
+          logical: logicalKey(),
           character: null,
           synthesized: true,
         ),
@@ -462,7 +471,7 @@ class KeyboardConverter {
             timeStamp: timeStamp,
             type: ui.KeyEventType.up,
             physical: physicalKey,
-            logical: logicalKey,
+            logical: logicalKey(),
             character: null,
             synthesized: true,
           ));
@@ -495,7 +504,7 @@ class KeyboardConverter {
     switch (type) {
       case ui.KeyEventType.down:
         assert(lastLogicalRecord == null);
-        nextLogicalRecord = logicalKey;
+        nextLogicalRecord = logicalKey();
         break;
       case ui.KeyEventType.up:
         assert(lastLogicalRecord != null);
@@ -520,7 +529,7 @@ class KeyboardConverter {
     _kLogicalKeyToModifierGetter.forEach((int testeeLogicalKey, _ModifierGetter getModifier) {
       // Do not synthesize for the key of the current event. The event is the
       // ground truth.
-      if (logicalKey == testeeLogicalKey) {
+      if (logicalKey() == testeeLogicalKey) {
         return;
       }
       if (_pressingRecords.containsValue(testeeLogicalKey) && !getModifier(event)) {
@@ -546,7 +555,7 @@ class KeyboardConverter {
     // Update key guards
     if (logicalKeyIsCharacter) {
       if (nextLogicalRecord != null) {
-        _startGuardingKey(physicalKey, logicalKey, timeStamp);
+        _startGuardingKey(physicalKey, logicalKey(), timeStamp);
       } else {
         _stopGuardingKey(physicalKey);
       }
@@ -557,7 +566,7 @@ class KeyboardConverter {
       timeStamp: timeStamp,
       type: type,
       physical: physicalKey,
-      logical: lastLogicalRecord ?? logicalKey,
+      logical: lastLogicalRecord ?? logicalKey(),
       character: type == ui.KeyEventType.up ? null : character,
       synthesized: false,
     );

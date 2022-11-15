@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:meta/meta.dart' show immutable;
 import 'package:path/path.dart' as path;
 
-import 'data.dart';
+import 'common.dart';
 import 'json_get.dart';
 import 'layout_types.dart';
 
@@ -51,12 +51,12 @@ const String githubQuery = '''
 ''';
 
 /// All goals in the form of KeyboardEvent.key.
-final List<String> kGoalKeys = kLayoutGoals.keys.toList();
+final List<String> _kGoalKeys = kLayoutGoals.keys.toList();
 
 /// A map from the key of `kLayoutGoals` (KeyboardEvent.key) to an
 /// auto-incremental index.
 final Map<String, int> kGoalToIndex = Map<String, int>.fromEntries(
-  kGoalKeys.asMap().entries.map(
+  _kGoalKeys.asMap().entries.map(
     (MapEntry<int, String> entry) => MapEntry<String, int>(entry.value, entry.key)),
 );
 
@@ -217,7 +217,7 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
     );
   });
 
-  for (final String goalKey in kGoalKeys) {
+  for (final String goalKey in _kGoalKeys) {
     entries.putIfAbsent(goalKey, () => LayoutEntry.empty);
   }
 
