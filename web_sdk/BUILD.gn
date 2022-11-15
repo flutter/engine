@@ -20,11 +20,11 @@ web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
                              ],
                              "list lines")
 
-web_keyboard_layouts_sources =
+web_locale_keymap_sources =
     exec_script("//third_party/dart/tools/list_dart_files.py",
                 [
                   "absolute",
-                  rebase_path("//flutter/third_party/web_keyboard_layouts/lib"),
+                  rebase_path("//flutter/third_party/web_locale_keymap/lib"),
                 ],
                 "list lines")
 
@@ -111,11 +111,11 @@ sdk_rewriter("web_ui_library_sources") {
   exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
 }
 
-sdk_rewriter("web_keyboard_layouts_library") {
-  library_name = "web_keyboard_layouts"
-  api_file = "//flutter/third_party/web_keyboard_layouts/lib/web_keyboard_layouts.dart"
-  input_dir = "//flutter/third_party/web_keyboard_layouts/lib/web_keyboard_layouts/"
-  output_dir = "$root_out_dir/flutter_web_sdk/lib/web_keyboard_layouts/"
+sdk_rewriter("web_locale_keymap_library") {
+  library_name = "web_locale_keymap"
+  api_file = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
+  input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/web_locale_keymap/"
 }
 
 sdk_rewriter("web_engine_library") {
@@ -166,7 +166,7 @@ template("_dartdevc") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
-        ":web_keyboard_layouts_library",
+        ":web_locale_keymap_library",
         ":web_ui_library",
         ":web_ui_library_sources",
       ]
@@ -197,7 +197,7 @@ template("_dartdevc") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
-        ":web_keyboard_layouts_library",
+        ":web_locale_keymap_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//third_party/dart:create_sdk",
@@ -229,7 +229,7 @@ template("_kernel_worker") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
-        ":web_keyboard_layouts_library",
+        ":web_locale_keymap_library",
         ":web_ui_library",
         ":web_ui_library_sources",
       ]
@@ -261,7 +261,7 @@ template("_kernel_worker") {
         ":skwasm_impl_library",
         ":skwasm_stub_library",
         ":web_engine_library",
-        ":web_keyboard_layouts_library",
+        ":web_locale_keymap_library",
         ":web_ui_library",
         ":web_ui_library_sources",
         "//third_party/dart:create_sdk",
@@ -287,7 +287,7 @@ template("_compile_platform") {
   assert(defined(invoker.output_dill),
          "output_dill must be defined for $target_name")
   _kernel_worker(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_keyboard_layouts_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
 
     outputs = [ invoker.output_dill ]
 
@@ -326,7 +326,7 @@ template("_compile_platform") {
       "--source",
       "dart:_skwasm_stub",
       "--source",
-      "dart:web_keyboard_layouts",
+      "dart:web_locale_keymap",
     ]
     if (flutter_prebuilt_dart_sdk) {
       args += [
@@ -457,7 +457,7 @@ template("_compile_ddc_modules") {
          "auto_detect must be defined for $target_name")
 
   _dartdevc(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_keyboard_layouts_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
 
     packages = dart_sdk_package_config
 
@@ -498,7 +498,7 @@ template("_compile_ddc_modules") {
       "dart:ui",
       "dart:_engine",
       "dart:_skwasm_stub",
-      "dart:web_keyboard_layouts",
+      "dart:web_locale_keymap",
       "--no-summarize",
       "--packages",
       "file:///" + rebase_path(dart_sdk_package_config),
@@ -607,7 +607,7 @@ if (!is_fuchsia) {
       ":skwasm_impl_library",
       ":skwasm_stub_library",
       ":web_engine_library",
-      ":web_keyboard_layouts_library",
+      ":web_locale_keymap_library",
       ":web_ui_library",
       ":web_ui_library_sources",
     ]
@@ -646,7 +646,7 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_canvaskit_platform_dart2js_sound")
     sources += get_target_outputs(":flutter_canvaskit_platform_dart2js_unsound")
 
-    sources += get_target_outputs(":web_keyboard_layouts_library")
+    sources += get_target_outputs(":web_locale_keymap_library")
     sources += get_target_outputs(":web_ui_library")
     sources += get_target_outputs(":web_ui_library_sources")
     sources += get_target_outputs(":skwasm_stub_library")

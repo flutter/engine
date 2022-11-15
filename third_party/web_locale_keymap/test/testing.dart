@@ -1,6 +1,6 @@
 // import 'package:litetest/litetest.dart';
 import 'package:test/test.dart';
-import 'package:web_keyboard_layouts/web_keyboard_layouts.dart';
+import 'package:web_locale_keymap/web_locale_keymap.dart';
 
 final int _kLowerA = 'a'.codeUnitAt(0);
 final int _kUpperA = 'A'.codeUnitAt(0);

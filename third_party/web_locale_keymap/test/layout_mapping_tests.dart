@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:web_keyboard_layouts/web_keyboard_layouts.dart';
+import 'package:web_locale_keymap/web_locale_keymap.dart';
 
 import 'test_cases.g.dart';
 

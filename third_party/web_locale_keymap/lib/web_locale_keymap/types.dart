@@ -1,7 +1,7 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) 2022 Google LLC
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+//---------------------------------------------------------------------------------------------
+//  Copyright (c) 2022 Google LLC
+//  Licensed under the MIT License. See License.txt in the project root for license information.
+//--------------------------------------------------------------------------------------------*/
 
 import 'key_mappings.g.dart';
 

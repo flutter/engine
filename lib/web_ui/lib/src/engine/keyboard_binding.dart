@@ -4,7 +4,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:web_keyboard_layouts/web_keyboard_layouts.dart' as keyboard_layouts;
+import 'package:web_locale_keymap/web_locale_keymap.dart' as keyboard_layouts;
 
 import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';

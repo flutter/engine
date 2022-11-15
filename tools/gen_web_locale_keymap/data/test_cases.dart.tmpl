@@ -14,7 +14,7 @@
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
 
 import 'package:test/test.dart';
-import 'package:web_keyboard_layouts/web_keyboard_layouts.dart';
+import 'package:web_locale_keymap/web_locale_keymap.dart';
 import 'testing.dart';
 
 void testWin(LayoutMapping mapping) {

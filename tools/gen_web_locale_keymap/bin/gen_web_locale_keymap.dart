@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:gen_web_keyboard_layouts/benchmark_detector.dart';
 import 'package:gen_web_keyboard_layouts/github.dart';
+import 'package:gen_web_keyboard_layouts/layout_types.dart';
 import 'package:path/path.dart' as path;
 
 const String kEnvGithubToken = 'GITHUB_TOKEN';
@@ -145,8 +146,8 @@ Future<void> main(List<String> rawArguments) async {
 
   final String? envGithubToken = env[kEnvGithubToken];
   if (envGithubToken == null) {
-    print('Error: Environment variable GITHUB_TOKEN not found.\n\n'
-          'Set the environment variable GITHUB_TOKEN as a GitHub personal access\n'
+    print('Error: Environment variable $kEnvGithubToken not found.\n\n'
+          'Set the environment variable $kEnvGithubToken as a GitHub personal access\n'
           'token for authentication. This token is only used for quota controlling\n'
           'and does not need any scopes. Create one at\n'
           'https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token.',
@@ -155,13 +156,13 @@ Future<void> main(List<String> rawArguments) async {
   }
 
   // The root of this package. The folder that is called
-  // 'gen_web_keyboard_layouts' and contains 'pubspec.yaml'.
+  // 'gen_web_locale_keymap' and contains 'pubspec.yaml'.
   final Directory packageRoot = Directory(path.dirname(Platform.script.toFilePath())).parent;
 
   // The root of the output package. The folder that is called
-  // 'web_keyboard_layouts' and contains 'pubspec.yaml'.
+  // 'web_locale_keymap' and contains 'pubspec.yaml'.
   final String outputRoot = path.join(packageRoot.parent.parent.path,
-        'third_party', 'web_keyboard_layouts');
+        'third_party', 'web_locale_keymap');
 
   final GithubResult githubResult = await fetchFromGithub(
     githubToken: envGithubToken,
@@ -178,7 +179,7 @@ Future<void> main(List<String> rawArguments) async {
 
   // Generate the definition file.
   _writeFileTo(
-    path.join(outputRoot, 'lib', 'web_keyboard_layouts'),
+    path.join(outputRoot, 'lib', 'web_locale_keymap'),
     'key_mappings.g.dart',
     _renderTemplate(
       File(path.join(packageRoot.path, 'data', 'key_mappings.dart.tmpl')).readAsStringSync(),

@@ -36,8 +36,8 @@ export 'dart:_engine'
 ];
 
 final List<Replacer> keyboardLayoutsPatterns = <Replacer>[
-  AllReplacer(RegExp(r'library\s+web_keyboard_layouts;'), 'library dart.web_keyboard_layouts;'),
-  AllReplacer(RegExp(r'part\s+of\s+web_keyboard_layouts;'), 'part of dart.web_keyboard_layouts;'),
+  AllReplacer(RegExp(r'library\s+web_locale_keymap;'), 'library dart.web_locale_keymap;'),
+  AllReplacer(RegExp(r'part\s+of\s+web_locale_keymap;'), 'part of dart.web_locale_keymap;'),
   AllReplacer(RegExp(
     r'''
 export\s*'src/engine.dart'
@@ -63,7 +63,7 @@ import 'dart:_js_annotations';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:web_keyboard_layouts' as keyboard_layouts;
+import 'dart:web_locale_keymap' as keyboard_layouts;
 $extraImports
 '''
     ),

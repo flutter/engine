@@ -8,8 +8,8 @@ environment:
 dependencies:
   js: 0.6.4
   meta: ^1.7.0
-  web_keyboard_layouts:
-    path: ../../third_party/web_keyboard_layouts
+  web_locale_keymap:
+    path: ../../third_party/web_locale_keymap
 
 dev_dependencies:
   archive: 3.1.2
