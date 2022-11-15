@@ -14,7 +14,7 @@ static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
 // This method allows creating a custom cursor with rawBGRA buffer, returns a
-// unique int key to identify the cursor.
+// unique int64_t key to identify the cursor.
 static constexpr char kCreateCustomCursorMethod[] =
     "createCustomCursor/windows";
 // A list of bytes, the custom cursor's rawBGRA buffer.
@@ -29,13 +29,13 @@ static constexpr char kCustomCursorWidthKey[] = "width";
 // An int value for the height of the custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
 
-// This method allows setting a custom cursor with a unique key of the custom
-// cursor.
+// This method allows setting a custom cursor with a unique int64_t key of the
+// custom cursor.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
 // An int64_t value for the key of the custom cursor.
 static constexpr char kCustomCursorKey[] = "key";
 
-// This method allows deleting a custom cursor with a unique key.
+// This method allows deleting a custom cursor with a unique int64_t key.
 static constexpr char kDeleteCustomCursorMethod[] =
     "deleteCustomCursor/windows";
 
