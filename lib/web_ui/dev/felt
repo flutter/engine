@@ -73,9 +73,7 @@ else
 fi
 
 WEB_UI_DIR="${FLUTTER_DIR}/lib/web_ui"
-DEV_DIR="${WEB_UI_DIR}/dev"
 DART_PATH="$DART_SDK_DIR/bin/dart"
-SCRIPT_PATH="${DEV_DIR}/felt.dart"
 
 if [[ "$FELT_DEBUG" == "true" || "$FELT_DEBUG" == "1" ]]
 then
@@ -129,5 +127,6 @@ then
   set -e
 fi
 
+cd $WEB_UI_DIR
 install_deps
-$DART_SDK_DIR/bin/dart $FELT_DEBUG_FLAGS --packages="$WEB_UI_DIR/.dart_tool/package_config.json" "$SCRIPT_PATH" $@
+(cd $WEB_UI_DIR && $DART_SDK_DIR/bin/dart run $FELT_DEBUG_FLAGS dev/felt.dart $@)
