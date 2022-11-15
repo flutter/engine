@@ -113,7 +113,8 @@ sdk_rewriter("web_ui_library_sources") {
 
 sdk_rewriter("web_locale_keymap_library") {
   library_name = "web_locale_keymap"
-  api_file = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
+  api_file =
+      "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
   input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/web_locale_keymap/"
 }
@@ -287,7 +288,8 @@ template("_compile_platform") {
   assert(defined(invoker.output_dill),
          "output_dill must be defined for $target_name")
   _kernel_worker(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
+    inputs =
+        [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
 
     outputs = [ invoker.output_dill ]
 
@@ -457,7 +459,8 @@ template("_compile_ddc_modules") {
          "auto_detect must be defined for $target_name")
 
   _dartdevc(target_name) {
-    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
+    inputs =
+        [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
 
     packages = dart_sdk_package_config
 
