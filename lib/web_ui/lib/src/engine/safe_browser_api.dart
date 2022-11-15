@@ -134,9 +134,6 @@ num? parseFloat(String source) {
   return result;
 }
 
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(domWindow, 'FontFace');
-
 final bool supportsFontsClearApi =
     js_util.hasProperty(domDocument, 'fonts') &&
         js_util.hasProperty(domDocument.fonts!, 'clear');
