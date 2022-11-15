@@ -804,46 +804,46 @@ class ModeHtmlColorFilter extends EngineHtmlColorFilter {
   @override
   DomElement? makeSvgFilter(DomElement? filterElement) {
     switch (blendMode) {
-          case ui.BlendMode.clear:
-          case ui.BlendMode.dstOut:
-          case ui.BlendMode.srcOut:
-            filterElement!.style.visibility = 'hidden';
-            return null;
-          case ui.BlendMode.dst:
-          case ui.BlendMode.dstIn:
-            // Noop.
-            return null;
-          case ui.BlendMode.src:
-          case ui.BlendMode.srcOver:
-            // Uses source filter color.
-            // Since we don't have a size, we can't use background color.
-            // Use svg filter srcIn instead.
-            blendMode = ui.BlendMode.srcIn;
-            break;
-          case ui.BlendMode.dstOver:
-          case ui.BlendMode.srcIn:
-          case ui.BlendMode.srcATop:
-          case ui.BlendMode.dstATop:
-          case ui.BlendMode.xor:
-          case ui.BlendMode.plus:
-          case ui.BlendMode.modulate:
-          case ui.BlendMode.screen:
-          case ui.BlendMode.overlay:
-          case ui.BlendMode.darken:
-          case ui.BlendMode.lighten:
-          case ui.BlendMode.colorDodge:
-          case ui.BlendMode.colorBurn:
-          case ui.BlendMode.hardLight:
-          case ui.BlendMode.softLight:
-          case ui.BlendMode.difference:
-          case ui.BlendMode.exclusion:
-          case ui.BlendMode.multiply:
-          case ui.BlendMode.hue:
-          case ui.BlendMode.saturation:
-          case ui.BlendMode.color:
-          case ui.BlendMode.luminosity:
-            break;
-        }
+      case ui.BlendMode.clear:
+      case ui.BlendMode.dstOut:
+      case ui.BlendMode.srcOut:
+        filterElement!.style.visibility = 'hidden';
+        return null;
+      case ui.BlendMode.dst:
+      case ui.BlendMode.dstIn:
+        // Noop.
+        return null;
+      case ui.BlendMode.src:
+      case ui.BlendMode.srcOver:
+        // Uses source filter color.
+        // Since we don't have a size, we can't use background color.
+        // Use svg filter srcIn instead.
+        blendMode = ui.BlendMode.srcIn;
+        break;
+      case ui.BlendMode.dstOver:
+      case ui.BlendMode.srcIn:
+      case ui.BlendMode.srcATop:
+      case ui.BlendMode.dstATop:
+      case ui.BlendMode.xor:
+      case ui.BlendMode.plus:
+      case ui.BlendMode.modulate:
+      case ui.BlendMode.screen:
+      case ui.BlendMode.overlay:
+      case ui.BlendMode.darken:
+      case ui.BlendMode.lighten:
+      case ui.BlendMode.colorDodge:
+      case ui.BlendMode.colorBurn:
+      case ui.BlendMode.hardLight:
+      case ui.BlendMode.softLight:
+      case ui.BlendMode.difference:
+      case ui.BlendMode.exclusion:
+      case ui.BlendMode.multiply:
+      case ui.BlendMode.hue:
+      case ui.BlendMode.saturation:
+      case ui.BlendMode.color:
+      case ui.BlendMode.luminosity:
+        break;
+    }
 
     final SvgFilter svgFilter = svgFilterFromBlendMode(color, blendMode);
     flutterViewEmbedder.addResource(svgFilter.element);
