@@ -7,7 +7,6 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:gen_web_keyboard_layouts/benchmark_detector.dart';
 import 'package:gen_web_keyboard_layouts/github.dart';
-import 'package:gen_web_keyboard_layouts/layout_types.dart';
 import 'package:path/path.dart' as path;
 
 const String kEnvGithubToken = 'GITHUB_TOKEN';
@@ -169,7 +168,7 @@ Future<void> main(List<String> rawArguments) async {
     force: parsedArguments['force'] as bool,
     cacheRoot: path.join(packageRoot.path, '.cache'),
   );
-  // Build store.
+
   final List<Layout> winLayouts = githubResult.layouts.where((Layout layout) =>
             layout.platform == LayoutPlatform.win).toList();
   final List<Layout> linuxLayouts = githubResult.layouts.where((Layout layout) =>
