@@ -145,7 +145,7 @@ void testMain() {
             surface.htmlElement.children.single as DomCanvasElement;
         final Object ctx = canvas.getContext('webgl2')!;
         final Object loseContextExtension = js_util.callMethod(
-          ctx, 
+          ctx,
           'getExtension',
           <String>['WEBGL_lose_context'],
         );
