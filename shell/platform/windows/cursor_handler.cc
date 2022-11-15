@@ -24,14 +24,15 @@ static constexpr char kCustomCursorBufferKey[] = "buffer";
 static constexpr char kCustomCursorHotXKey[] = "hotX";
 // A double, the y coordinate of the custom cursor's hotspot, starting from top.
 static constexpr char kCustomCursorHotYKey[] = "hotY";
-// An int value for the width of custom cursor.
+// An int value for the width of the custom cursor.
 static constexpr char kCustomCursorWidthKey[] = "width";
-// An int value for the height of custom cursor.
+// An int value for the height of the custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
 
 // This method allows setting a custom cursor with a unique key of the custom
 // cursor.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
+// And int64_t value for the key of the custom cursor.
 static constexpr char kCustomCursorKey[] = "key";
 
 // This method allows deleting a custom cursor with a unique key.
