@@ -72,7 +72,6 @@ class RunTestsStep implements PipelineStep {
 
     final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
-    int exitCode = 0;
     bool testsPassed = true;
 
     if (sortedTests.htmlTests.isNotEmpty) {
