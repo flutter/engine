@@ -19,7 +19,6 @@ class PersistedBackdropFilter extends PersistedContainerSurface
     implements ui.BackdropFilterEngineLayer {
   PersistedBackdropFilter(PersistedBackdropFilter? super.oldLayer, this.filter);
 
-  // final EngineImageFilter filter;
   final ui.ImageFilter filter;
 
   /// The dedicated child container element that's separate from the
@@ -135,7 +134,7 @@ class PersistedBackdropFilter extends PersistedContainerSurface
         /// Some blendModes do not make an svgFilter. See [EngineHtmlColorFilter.makeSvgFilter()]
         if (_svgFilter == null) {
             return;
-      }
+        }
       } else if (backendFilter is MatrixHtmlColorFilter) {
         _svgFilter = backendFilter.makeSvgFilter(_filterElement);
       }

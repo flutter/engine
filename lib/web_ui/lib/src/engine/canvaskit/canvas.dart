@@ -292,13 +292,13 @@ class CkCanvas {
 
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter,
       [CkPaint? paint]) {
-        final CkManagedSkImageFilterConvertible convertible;
-        if (filter is ui.ColorFilter) {
-          convertible = createCkColorFilter(filter as EngineColorFilter)!;
-        }
-        else {
-          convertible = filter as CkManagedSkImageFilterConvertible;
-        }
+      final CkManagedSkImageFilterConvertible convertible;
+      if (filter is ui.ColorFilter) {
+        convertible = createCkColorFilter(filter as EngineColorFilter)!;
+      }
+      else {
+        convertible = filter as CkManagedSkImageFilterConvertible;
+      }
     return skCanvas.saveLayer(
       paint?.skiaObject,
       toSkRect(bounds),
@@ -1171,12 +1171,12 @@ class CkSaveLayerWithFilterCommand extends CkPaintCommand {
   @override
   void apply(SkCanvas canvas) {
     final CkManagedSkImageFilterConvertible convertible;
-        if (filter is ui.ColorFilter) {
-          convertible = createCkColorFilter(filter as EngineColorFilter)!;
-        }
-        else {
-          convertible = filter as CkManagedSkImageFilterConvertible;
-        }
+    if (filter is ui.ColorFilter) {
+      convertible = createCkColorFilter(filter as EngineColorFilter)!;
+      }
+    else {
+      convertible = filter as CkManagedSkImageFilterConvertible;
+      }
     return canvas.saveLayer(
       paint?.skiaObject,
       toSkRect(bounds),
