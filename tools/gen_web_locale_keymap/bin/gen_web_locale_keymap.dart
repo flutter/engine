@@ -5,7 +5,7 @@
 import 'dart:io';
 
 import 'package:args/args.dart';
-import 'package:gen_web_keyboard_layouts/benchmark_detector.dart';
+import 'package:gen_web_keyboard_layouts/benchmark_planner.dart';
 import 'package:gen_web_keyboard_layouts/github.dart';
 import 'package:gen_web_keyboard_layouts/layout_types.dart';
 import 'package:path/path.dart' as path;

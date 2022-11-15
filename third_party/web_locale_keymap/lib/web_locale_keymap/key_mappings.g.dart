@@ -101,7 +101,7 @@ bool isAlnum(String char) {
 /// the event's code and key.
 ///
 /// This greatly reduces the entries needed in the final mapping.
-int? heuristicDetector(String code, String key) {
+int? heuristicMapper(String code, String key) {
   if (isAlnum(key)) {
     return key.toLowerCase().codeUnitAt(0);
   }

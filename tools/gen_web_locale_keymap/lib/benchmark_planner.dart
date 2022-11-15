@@ -20,6 +20,9 @@ final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntri
 ///
 /// If a eventCode does not exist in this map, then this event's logical key
 /// should be derived on the fly.
+///
+/// This function defines the benchmark planning algorithm if there were a way
+/// to know the current keyboard layout.
 Map<String, int> planLayout(Map<String, LayoutEntry> entries) {
   // The logical key is derived in the following rules:
   //
@@ -93,7 +96,7 @@ Map<String, Map<String, int>> combineLayouts(Iterable<Layout> layouts) {
   // Remove mapping results that can be derived using heuristics.
   result.removeWhere((String eventCode, Map<String, int> codeMap) {
     codeMap.removeWhere((String eventKey, int logicalKey) =>
-      heuristicDetector(eventCode, eventKey) == logicalKey,
+      heuristicMapper(eventCode, eventKey) == logicalKey,
     );
     return codeMap.isEmpty;
   });

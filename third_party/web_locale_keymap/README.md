@@ -1,4 +1,4 @@
-# Web Keyboard Layouts
+# Web Locale Keymap
 
 # Usage
 
