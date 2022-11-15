@@ -72,6 +72,8 @@ class RunTestsStep implements PipelineStep {
 
     final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
+    int exitCode = 0;
+
     if (sortedTests.htmlTests.isNotEmpty) {
       await _runTestBatch(
         testFiles: sortedTests.htmlTests,
@@ -84,6 +86,7 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      exitCode |= io.exitCode;
     }
 
     if (sortedTests.canvasKitTests.isNotEmpty) {
@@ -98,6 +101,7 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      exitCode |= io.exitCode;
     }
 
     if (sortedTests.skwasmTests.isNotEmpty) {
@@ -112,11 +116,13 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+
+      exitCode |= io.exitCode;
     }
 
     await browserEnvironment.cleanup();
 
-    if (io.exitCode != 0) {
+    if (exitCode != 0) {
       throw ToolExit('Some tests failed');
     }
   }
