@@ -170,18 +170,17 @@ sk_sp<DisplayList> LayerTree::Flatten(
 
   DisplayListCanvasRecorder recorder(bounds);
 
-  LayerStateStack state_stack;
-  state_stack.set_checkerboard_func(nullptr);
-
-  MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
 
+  LayerStateStack preroll_state_stack;
+  // No root surface transformation. So assume identity.
+  preroll_state_stack.set_preroll_delegate(bounds);
   PrerollContext preroll_context{
       // clang-format off
       .raster_cache                  = nullptr,
       .gr_context                    = gr_context,
       .view_embedder                 = nullptr,
-      .state_stack                   = state_stack,
+      .state_stack                   = preroll_state_stack,
       .dst_color_space               = nullptr,
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
@@ -191,9 +190,11 @@ sk_sp<DisplayList> LayerTree::Flatten(
       // clang-format on
   };
 
+  LayerStateStack paint_state_stack;
+  paint_state_stack.set_delegate(recorder);
   PaintContext paint_context = {
       // clang-format off
-      .state_stack                   = state_stack,
+      .state_stack                   = paint_state_stack,
       .canvas                        = &recorder,
       .builder                       = recorder.builder().get(),
       .gr_context                    = gr_context,
@@ -212,16 +213,10 @@ sk_sp<DisplayList> LayerTree::Flatten(
   // Even if we don't have a root layer, we still need to create an empty
   // picture.
   if (root_layer_) {
-    // No root surface transformation. So assume identity.
-    state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
     root_layer_->Preroll(&preroll_context);
-    FML_DCHECK(state_stack.is_empty());
-    FML_DCHECK(state_stack.device_cull_rect() == kGiantRect);
-    FML_DCHECK(state_stack.transform_4x4() == SkM44());
 
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting(paint_context)) {
-      state_stack.set_delegate(recorder.builder());
       root_layer_->Paint(paint_context);
     }
   }
