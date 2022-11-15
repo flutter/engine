@@ -2437,7 +2437,6 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         LayerStateStack state_stack;
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
-        MutatorsStack mutators_stack;
         PaintContext paint_context = {
             // clang-format off
             .state_stack                   = state_stack,
@@ -2495,9 +2494,11 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
         // 2.2. Rasterize the picture layer.
         LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
+        state_stack.set_preroll_delegate(SkMatrix::I());
         layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
         layer_raster_cache_item.PrerollFinalize(&preroll_context,
                                                 SkMatrix::I());
+        state_stack.set_delegate(&dummy_canvas);
         layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
         layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         rasterized.set_value(true);
