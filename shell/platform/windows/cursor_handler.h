@@ -39,6 +39,9 @@ HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
                             int width,
                             int height);
 
+// Get the corresponding mask bitmap from the source bitmap.
+void GetMaskBitmaps(HBITMAP bitmap, HBITMAP& mask_bitmap);
+
 }  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_CURSOR_HANDLER_H_
