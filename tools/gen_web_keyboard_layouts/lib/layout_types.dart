@@ -42,6 +42,7 @@ class LayoutEntry {
   static final LayoutEntry empty = LayoutEntry(
     const <String>['', '', '', '']);
 
+  /// The value of KeyboardEvent.key for dead keys.
   static const String kDeadKey = 'Dead';
 }
 

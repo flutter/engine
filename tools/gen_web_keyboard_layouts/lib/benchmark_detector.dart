@@ -12,11 +12,11 @@ final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntri
     .map((MapEntry<String, String?> entry) => MapEntry<String, String>(entry.value!, entry.key))
 );
 
-/// Returns a mapping from eventCode to logical key for this layout.
+/// Plan a layout into a map from eventCode to logical key.
 ///
 /// If a eventCode does not exist in this map, then this event's logical key
 /// should be derived on the fly.
-Map<String, int> buildLayout(Map<String, LayoutEntry> entries) {
+Map<String, int> planLayout(Map<String, LayoutEntry> entries) {
   // The logical key is derived in the following rules:
   //
   //  1. If any clue (the four possible printables) of the key is a mandatory
@@ -55,17 +55,19 @@ bool _isLetterOrMappedToKeyCode(int charCode) {
   return isLetterChar(charCode) || charCode == kUseKeyCode;
 }
 
-/// Summarize all layouts into a huge table of EventCode -> EventKey ->
-/// logicalKey.
+/// Plan all layouts, and summarize them into a huge table of EventCode ->
+/// EventKey -> logicalKey.
 ///
 /// The resulting logicalKey can also be kUseKeyCode.
 ///
 /// If a eventCode does not exist in this map, then this event's logical key
 /// should be derived on the fly.
-Map<String, Map<String, int>> buildMap(Iterable<Layout> layouts) {
+///
+/// Entries that can be derived using heuristics are omitted.
+Map<String, Map<String, int>> combineLayouts(Iterable<Layout> layouts) {
   final Map<String, Map<String, int>> result = <String, Map<String, int>>{};
   for (final Layout layout in layouts) {
-    buildLayout(layout.entries).forEach((String eventCode, int logicalKey) {
+    planLayout(layout.entries).forEach((String eventCode, int logicalKey) {
       final Map<String, int> codeMap = result.putIfAbsent(eventCode, () => <String, int>{});
       final LayoutEntry entry = layout.entries[eventCode]!;
       for (final String eventKey in entry.printables) {
