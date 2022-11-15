@@ -107,6 +107,7 @@ void FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
 
 void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {
   current_cursor_ = cursor;
+  ::SetCursor(current_cursor_);
 }
 
 void FlutterWindow::OnWindowResized() {

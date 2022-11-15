@@ -13,8 +13,10 @@ static constexpr char kChannelName[] = "flutter/mousecursor";
 static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
-// This method allows setting a custom cursor with rawBGRA buffer.
-static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
+// This method allows creating a custom cursor with rawBGRA buffer, returns a
+// unique int key to identify the cursor.
+static constexpr char kCreateCustomCursorMethod[] =
+    "createCustomCursor/windows";
 // A list of bytes, the custom cursor's rawBGRA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
 // A double, the x coordinate of the custom cursor's hotspot, starting from
@@ -26,6 +28,15 @@ static constexpr char kCustomCursorHotYKey[] = "hotY";
 static constexpr char kCustomCursorWidthKey[] = "width";
 // An int value for the height of custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
+
+// This method allows setting a custom cursor with a unique key of the custom
+// cursor.
+static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
+static constexpr char kCustomCursorKey[] = "key";
+
+// This method allows deleting a custom cursor with a unique key.
+static constexpr char kDeleteCustomCursorMethod[] =
+    "deleteCustomCursor/windows";
 
 namespace flutter {
 
@@ -58,7 +69,7 @@ void CursorHandler::HandleMethodCall(
     const auto& kind = std::get<std::string>(kind_iter->second);
     delegate_->UpdateFlutterCursor(kind);
     result->Success();
-  } else if (method.compare(kSetCustomCursorMethod) == 0) {
+  } else if (method.compare(kCreateCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto buffer_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorBufferKey)));
@@ -111,8 +122,42 @@ void CursorHandler::HandleMethodCall(
                     "Argument must contains a valid rawBGRA bitmap");
       return;
     }
+    // push the cursor into the cache vector of this handler.
+    custom_cursors_.emplace_back(std::move(cursor));
+    result->Success(flutter::EncodableValue(custom_cursors_.size() - 1));
+  } else if (method.compare(kSetCustomCursorMethod) == 0) {
+    const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
+    auto key_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorKey)));
+    if (key_iter == arguments.end()) {
+      result->Error("Argument error",
+                    "Missing argument key while trying to set a custom cursor");
+      return;
+    }
+    auto key = std::get<int>(key_iter->second);
+    if (key < 0 || key >= custom_cursors_.size()) {
+      result->Error("Argument error", "The argument key must be valid");
+      return;
+    }
+    HCURSOR cursor = custom_cursors_[key];
     delegate_->SetFlutterCursor(cursor);
-    ::SetCursor(cursor);
+    result->Success();
+  } else if (method.compare(kDeleteCustomCursorMethod) == 0) {
+    const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
+    auto key_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorKey)));
+    if (key_iter == arguments.end()) {
+      result->Error(
+          "Argument error",
+          "Missing argument key while trying to delete a custom cursor");
+      return;
+    }
+    auto key = std::get<int>(key_iter->second);
+    if (key < 0 || key >= custom_cursors_.size()) {
+      result->Error("Argument error", "The argument key must be valid");
+      return;
+    }
+    custom_cursors_.erase(custom_cursors_.begin() + key);
     result->Success();
   } else {
     result->NotImplemented();
