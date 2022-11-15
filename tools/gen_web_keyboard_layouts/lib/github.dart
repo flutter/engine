@@ -16,10 +16,14 @@ import 'layout_types.dart';
 /// Signature for function that asynchonously returns a value.
 typedef AsyncGetter<T> = Future<T> Function();
 
-const String githubCacheFileName = 'github-response.json';
-const String githubTargetFolder = 'src/vs/workbench/services/keybinding/browser/keyboardLayouts';
+/// The filename of the local cache for the GraphQL response.
+const String _githubCacheFileName = 'github-response.json';
 
-const String githubQuery = '''
+/// The file of the remote repo to query.
+const String _githubTargetFolder = 'src/vs/workbench/services/keybinding/browser/keyboardLayouts';
+
+/// The full query string for GraphQL.
+const String _githubQuery = '''
 {
   repository(owner: "microsoft", name: "vscode") {
     defaultBranchRef {
@@ -28,7 +32,7 @@ const String githubQuery = '''
           history(first: 1) {
             nodes {
               oid
-              file(path: "$githubTargetFolder") {
+              file(path: "$_githubTargetFolder") {
                 extension lineCount object {
                   ... on Tree {
                     entries {
@@ -55,7 +59,7 @@ final List<String> _kGoalKeys = kLayoutGoals.keys.toList();
 
 /// A map from the key of `kLayoutGoals` (KeyboardEvent.key) to an
 /// auto-incremental index.
-final Map<String, int> kGoalToIndex = Map<String, int>.fromEntries(
+final Map<String, int> _kGoalToIndex = Map<String, int>.fromEntries(
   _kGoalKeys.asMap().entries.map(
     (MapEntry<int, String> entry) => MapEntry<String, int>(entry.value, entry.key)),
 );
@@ -97,9 +101,14 @@ Future<String> _tryCached(String cachePath, bool forceRefresh, AsyncGetter<Strin
   return result;
 }
 
+/// Make a GraphQL request, cache it, and return the result.
+///
+/// If `forceRefresh` is false, this function tries to read the cache file at
+/// `cachePath`. Regardless of `forceRefresh`, the response is always recorded
+/// in the cache file.
 Future<Map<String, dynamic>> _fetchGithub(String githubToken, bool forceRefresh, String cachePath) async {
   final String response = await _tryCached(cachePath, forceRefresh, () async {
-    final String condensedQuery = githubQuery
+    final String condensedQuery = _githubQuery
         .replaceAll(RegExp(r'\{ +'), '{')
         .replaceAll(RegExp(r' +\}'), '}');
     final http.Response response = await http.post(
@@ -136,6 +145,8 @@ _GitHubFile _jsonGetGithubFile(JsonContext<JsonArray> files, int index) {
   );
 }
 
+/// Parses a literal JavaScript string that represents a character, which might
+/// have been escaped or empty.
 String _parsePrintable(String rawString, int isDeadKey) {
   // Parse a char represented in unicode hex, such as \u001b.
   final RegExp hexParser = RegExp(r'^\\u([0-9a-fA-F]+)$');
@@ -173,6 +184,7 @@ LayoutPlatform _platformFromGithubString(String origin) {
   }
 }
 
+/// Parses a single layout file.
 Layout _parseLayoutFromGithubFile(_GitHubFile file) {
   final Map<String, LayoutEntry> entries = <String, LayoutEntry>{};
 
@@ -192,7 +204,7 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
     // KeyboardKey.key, such as "KeyZ".
     final String eventKey = lineMatch.group(1)!;
     // Only record goals.
-    if (!kGoalToIndex.containsKey(eventKey)) {
+    if (!_kGoalToIndex.containsKey(eventKey)) {
       return;
     }
 
@@ -235,6 +247,7 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
   return layout;
 }
 
+/// Sort layouts by language first, then by platform.
 int _sortLayout(Layout a, Layout b) {
   int result = a.language.compareTo(b.language);
   if (result == 0) {
@@ -243,7 +256,28 @@ int _sortLayout(Layout a, Layout b) {
   return result;
 }
 
-Future<List<Layout>> fetchFromGithub({
+/// The overall results returned from the GitHub request.
+class GithubResult {
+  /// Create a [GithubResult].
+  const GithubResult(this.layouts, this.url);
+
+  /// All layouts, sorted.
+  final List<Layout> layouts;
+
+  /// The URL that points to the source folder of the VSCode GitHub repo,
+  /// containing the correct commit hash.
+  final String url;
+}
+
+/// Fetch necessary information from the VSCode GitHub repo.
+///
+/// The GraphQL request is made using the token `githubToken` (which requires
+/// no extra access). The response is cached in files under directory
+/// `cacheRoot`.
+///
+/// If `force` is false, this function tries to read the cache. Regardless of
+/// `force`, the response is always recorded in the cache.
+Future<GithubResult> fetchFromGithub({
   required String githubToken,
   required bool force,
   required String cacheRoot,
@@ -252,7 +286,7 @@ Future<List<Layout>> fetchFromGithub({
   final Map<String, dynamic> githubBody = await _fetchGithub(
     githubToken,
     force,
-    path.join(cacheRoot, githubCacheFileName),
+    path.join(cacheRoot, _githubCacheFileName),
   );
 
   // Parse the result from GitHub.
@@ -260,7 +294,7 @@ Future<List<Layout>> fetchFromGithub({
     JsonContext.root(githubBody),
     'data.repository.defaultBranchRef.target.history.nodes.0',
   );
-  // final String commitId = jsonGetKey<String>(commitJson, 'oid').current;
+  final String commitId = jsonGetKey<String>(commitJson, 'oid').current;
   final JsonContext<JsonArray> fileListJson = jsonGetPath<JsonArray>(
     commitJson,
     'file.object.entries',
@@ -279,5 +313,8 @@ Future<List<Layout>> fetchFromGithub({
     .toList()
     ..sort(_sortLayout);
 
-  return layouts;
+  final String url = 'https://github.com/microsoft/vscode/tree/$commitId/$_githubTargetFolder';
+  return GithubResult(layouts, url);
+
+//
 }

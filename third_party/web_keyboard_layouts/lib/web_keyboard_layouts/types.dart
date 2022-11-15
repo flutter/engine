@@ -1,99 +1,14 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
-// Licensed under the MIT License. See License.txt in the project root for license information.
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) 2022 Google LLC
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
 
 import 'key_mappings.g.dart';
 
-const int kUseKeyCode = 1;
-
-const Map<String, String> _kFullLayoutGoals = <String, String>{
-  'KeyA': 'A',
-  'KeyB': 'B',
-  'KeyC': 'C',
-  'KeyD': 'D',
-  'KeyE': 'E',
-  'KeyF': 'F',
-  'KeyG': 'G',
-  'KeyH': 'H',
-  'KeyI': 'I',
-  'KeyJ': 'J',
-  'KeyK': 'K',
-  'KeyL': 'L',
-  'KeyM': 'M',
-  'KeyN': 'N',
-  'KeyO': 'O',
-  'KeyP': 'P',
-  'KeyQ': 'Q',
-  'KeyR': 'R',
-  'KeyS': 'S',
-  'KeyT': 'T',
-  'KeyU': 'U',
-  'KeyV': 'V',
-  'KeyW': 'W',
-  'KeyX': 'X',
-  'KeyY': 'Y',
-  'KeyZ': 'Z',
-  'Digit1': '1',
-  'Digit2': '2',
-  'Digit3': '3',
-  'Digit4': '4',
-  'Digit5': '5',
-  'Digit6': '6',
-  'Digit7': '7',
-  'Digit8': '8',
-  'Digit9': '9',
-  'Digit0': '0',
-  'Minus': '-',
-  'Equal': '=',
-  'BracketLeft': '[',
-  'BracketRight': ']',
-  'Backslash': r'\',
-  'Semicolon': ';',
-  'Quote': "'",
-  'Backquote': '`',
-  'Comma': ',',
-  'Period': '.',
-  'Slash': '/',
-};
-
-final int _kLowerA = 'a'.codeUnitAt(0);
-final int _kUpperA = 'A'.codeUnitAt(0);
-final int _kLowerZ = 'z'.codeUnitAt(0);
-final int _kUpperZ = 'Z'.codeUnitAt(0);
-final int _k0 = '0'.codeUnitAt(0);
-final int _k9 = '9'.codeUnitAt(0);
-
-bool _isAscii(String key) {
-  if (key.length != 1) {
-    return false;
-  }
-  // 0x20 is the first printable character in ASCII.
-  return key.codeUnitAt(0) >= 0x20 && key.codeUnitAt(0) <= 0x7F;
-}
-
-bool _isAlnum(String char) {
-  if (char.length != 1) {
-    return false;
-  }
-  final int charCode = char.codeUnitAt(0);
-  return (charCode >= _kLowerA && charCode <= _kLowerZ)
-      || (charCode >= _kUpperA && charCode <= _kUpperZ)
-      || (charCode >= _k0 && charCode <= _k9);
-}
-
-int? _heuristicDetector(String code, String key) {
-  if (_isAlnum(key)) {
-    return key.toLowerCase().codeUnitAt(0);
-  }
-  if (!_isAscii(key)) {
-    return _kFullLayoutGoals[code]!.codeUnitAt(0);
-  }
-  return null;
-}
-
 class LayoutMapping {
-  LayoutMapping.win() : _mapping = kWinMapping;
-  LayoutMapping.linux() : _mapping = kLinuxMapping;
-  LayoutMapping.darwin() : _mapping = kDarwinMapping;
+  LayoutMapping.win() : _mapping = kMappingDataWin;
+  LayoutMapping.linux() : _mapping = kMappingDataLinux;
+  LayoutMapping.darwin() : _mapping = kMappingDataDarwin;
 
   static int? _characterToLogicalKey(String? key) {
     // We have yet to find a case where length >= 2 is useful.
@@ -110,7 +25,7 @@ class LayoutMapping {
       return eventKeyCode;
     }
     if (result == null) {
-      final int? heuristicResult = _heuristicDetector(eventCode ?? '', eventKey ?? '');
+      final int? heuristicResult = heuristicDetector(eventCode ?? '', eventKey ?? '');
       if (heuristicResult != null) {
         return heuristicResult;
       }

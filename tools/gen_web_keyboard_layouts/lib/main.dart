@@ -8,7 +8,6 @@ import 'package:meta/meta.dart' show immutable;
 import 'package:path/path.dart' as path;
 
 import 'benchmark_detector.dart';
-import 'data.dart';
 import 'github.dart';
 import 'layout_types.dart';
 
@@ -158,19 +157,17 @@ ${layoutEntries.join('\n')}
 }
 
 Future<void> generate(Options options) async {
-  final List<Layout> layouts = await fetchFromGithub(
+  final GithubResult githubResult = await fetchFromGithub(
     githubToken: options.githubToken,
     force: options.force,
     cacheRoot: options.cacheRoot,
   );
   // Build store.
-  final LayoutStore store = LayoutStore(kLayoutGoals, layouts);
-
-  final List<Layout> winLayouts = store.layouts.where((Layout layout) =>
+  final List<Layout> winLayouts = githubResult.layouts.where((Layout layout) =>
             layout.platform == LayoutPlatform.win).toList();
-  final List<Layout> linuxLayouts = store.layouts.where((Layout layout) =>
+  final List<Layout> linuxLayouts = githubResult.layouts.where((Layout layout) =>
             layout.platform == LayoutPlatform.linux).toList();
-  final List<Layout> darwinLayouts = store.layouts.where((Layout layout) =>
+  final List<Layout> darwinLayouts = githubResult.layouts.where((Layout layout) =>
             layout.platform == LayoutPlatform.darwin).toList();
 
   // Generate the definition file.
@@ -180,9 +177,11 @@ Future<void> generate(Options options) async {
     _renderTemplate(
       File(path.join(options.dataRoot, 'key_mappings.dart.tmpl')).readAsStringSync(),
       <String, String>{
+        'COMMIT_URL': githubResult.url,
         'WIN_MAPPING': _buildMapString(winLayouts),
         'LINUX_MAPPING': _buildMapString(linuxLayouts),
         'DARWIN_MAPPING': _buildMapString(darwinLayouts),
+        'COMMON': _readSharedSegment(path.join(options.libRoot, 'common.dart')),
       },
     ),
   );
@@ -200,12 +199,4 @@ Future<void> generate(Options options) async {
       },
     ),
   );
-
-
-  // // Generate the JSON file.
-  // _writeFileTo(
-  //   options.dataRoot,
-  //   'definitions_uncompressed.g.json',
-  //   const JsonEncoder.withIndent('  ').convert(jsonifyStore(store)),
-  // );
 }
