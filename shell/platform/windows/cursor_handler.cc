@@ -141,19 +141,13 @@ HCURSOR GetCursorFromBuffer(const std::vector<uint8_t>& buffer,
   HBITMAP bitmap =
       CreateDIBSection(display_dc, &bmi, DIB_RGB_COLORS, (void**)&pixels, 0, 0);
   ReleaseDC(0, display_dc);
-  if (!bitmap) {
-    return nullptr;
-  }
-  if (!pixels) {
+  if (!bitmap || !pixels) {
     return nullptr;
   }
   int bytes_per_line = width * 4;
   for (int y = 0; y < height; ++y) {
     memcpy(pixels + y * bytes_per_line, &buffer[bytes_per_line * y],
            bytes_per_line);
-  }
-  if (bitmap == nullptr) {
-    return nullptr;
   }
   HBITMAP mask;
   GetMaskBitmaps(bitmap, mask);
