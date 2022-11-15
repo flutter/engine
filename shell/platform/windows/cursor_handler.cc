@@ -32,7 +32,7 @@ static constexpr char kCustomCursorHeightKey[] = "height";
 // This method allows setting a custom cursor with a unique key of the custom
 // cursor.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
-// And int64_t value for the key of the custom cursor.
+// An int64_t value for the key of the custom cursor.
 static constexpr char kCustomCursorKey[] = "key";
 
 // This method allows deleting a custom cursor with a unique key.
