@@ -30,7 +30,7 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
-  DomElement? _filterElement; // apply the svg filter to the child container
+  DomElement? _filterElement;
   bool containerVisible = true;
 
   @override

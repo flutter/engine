@@ -872,7 +872,7 @@ class MatrixHtmlColorFilter extends EngineHtmlColorFilter {
   }
 }
 
-/// Convert the current [ColorFIlter] to an EngineHtmlColorFilter
+/// Convert the current [ColorFilter] to an EngineHtmlColorFilter
 ///
 /// This workaround allows ColorFilter to be const constructible and
 /// efficiently comparable, so that widgets can check for COlorFIlter equality to
