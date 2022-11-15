@@ -84,8 +84,8 @@ def parse_deps_file(deps_flat_file):
   compared to an upstream, prints list of those deps
   """
   queries = []  # list of queries to submit in bulk request to OSV API
-  deps = open(deps_flat_file, 'r')
-  lines = deps.readlines()
+  with open(deps_flat_file, 'r') as file:
+    lines = file.readlines()
 
   headers = {
       'Content-Type': 'application/json',
