@@ -152,7 +152,7 @@ final List<RegExp> copyrightStatementPatterns = <RegExp>[
   RegExp(r'^California, Lawrence Berkeley Laboratory\.$'),
 
   RegExp(r'^ *Condition of use and distribution are the same than zlib :$'),
-  RegExp(r'^The MIT License:$'),
+  RegExp(r'^(The )?MIT License:?$'),
 
   RegExp(r'^$'), // TODO(ianh): file an issue on what happens if you omit the close quote
 
