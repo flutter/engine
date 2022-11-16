@@ -13,6 +13,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
@@ -20,11 +21,10 @@ class Context;
 
 /**
  * @brief Create a host visible texture that contains the gradient defined
- * by the provided colors and stops.
+ * by the provided gradient data.
  */
 std::shared_ptr<Texture> CreateGradientTexture(
-    const std::vector<Color>& colors,
-    const std::vector<Scalar>& stops,
+    const GradientData& gradient_data,
     const std::shared_ptr<impeller::Context>& context);
 
 }  // namespace impeller

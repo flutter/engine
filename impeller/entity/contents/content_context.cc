@@ -155,6 +155,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
   linear_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
+  linear_gradient_fixed_fill_pipelines_[{}] =
+      CreateDefaultPipeline<LinearGradientFixedFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
   sweep_gradient_fill_pipelines_[{}] =

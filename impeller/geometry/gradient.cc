@@ -9,12 +9,16 @@
 
 namespace impeller {
 
-static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
-  auto converted = color.ToR8G8B8A8();
-  colors->push_back(converted[0]);
-  colors->push_back(converted[1]);
-  colors->push_back(converted[2]);
-  colors->push_back(converted[3]);
+static void AppendColor(const Color& color, GradientData* data) {
+  if (data->texture_size > 16) {
+    auto converted = color.ToR8G8B8A8();
+    data->color_bytes.push_back(converted[0]);
+    data->color_bytes.push_back(converted[1]);
+    data->color_bytes.push_back(converted[2]);
+    data->color_bytes.push_back(converted[3]);
+  } else {
+    data->colors.push_back(color);
+  }
 }
 
 GradientData CreateGradientBuffer(const std::vector<Color>& colors,
@@ -43,12 +47,20 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
     texture_size = std::min(
         static_cast<uint32_t>(std::round(1.0 / minimum_delta)) + 1, 1024u);
   }
-  std::vector<uint8_t> color_stop_channels;
-  color_stop_channels.reserve(texture_size * 4);
+  GradientData data = {
+      .color_bytes = {},
+      .colors = {},
+      .texture_size = texture_size,
+  };
+  if (texture_size > 16) {
+    data.color_bytes.reserve(texture_size * 4);
+  } else {
+    data.colors.reserve(texture_size);
+  }
 
   if (texture_size == colors.size() && colors.size() <= 1024) {
     for (auto i = 0u; i < colors.size(); i++) {
-      AppendColor(colors[i], &color_stop_channels);
+      AppendColor(colors[i], &data);
     }
   } else {
     Color previous_color = colors[0];
@@ -56,7 +68,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
     auto previous_color_index = 0;
 
     // The first index is always equal to the first color, exactly.
-    AppendColor(previous_color, &color_stop_channels);
+    AppendColor(previous_color, &data);
 
     for (auto i = 1u; i < texture_size - 1; i++) {
       auto scaled_i = i / (texture_size - 1.0);
@@ -64,7 +76,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
       auto next_stop = stops[previous_color_index + 1];
       // We're almost exactly equal to the next stop.
       if (ScalarNearlyEqual(scaled_i, next_stop)) {
-        AppendColor(next_color, &color_stop_channels);
+        AppendColor(next_color, &data);
 
         previous_color = next_color;
         previous_stop = next_stop;
@@ -74,7 +86,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
         auto t = (scaled_i - previous_stop) / (next_stop - previous_stop);
         auto mixed_color = Color::lerp(previous_color, next_color, t);
 
-        AppendColor(mixed_color, &color_stop_channels);
+        AppendColor(mixed_color, &data);
       } else {
         // We've slightly overshot the previous stop.
         previous_color = next_color;
@@ -86,16 +98,13 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
         auto t = (scaled_i - previous_stop) / (next_stop - previous_stop);
         auto mixed_color = Color::lerp(previous_color, next_color, t);
 
-        AppendColor(mixed_color, &color_stop_channels);
+        AppendColor(mixed_color, &data);
       }
     }
     // The last index is always equal to the last color, exactly.
-    AppendColor(colors.back(), &color_stop_channels);
+    AppendColor(colors.back(), &data);
   }
-  return GradientData{
-      .color_bytes = std::move(color_stop_channels),
-      .texture_size = texture_size,
-  };
+  return data;
 }
 
 }  // namespace impeller

@@ -11,6 +11,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
@@ -55,8 +56,9 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
   using VS = SweepGradientFillPipeline::VertexShader;
   using FS = SweepGradientFillPipeline::FragmentShader;
 
+  auto gradient_data = CreateGradientBuffer(colors_, stops_);
   auto gradient_texture =
-      CreateGradientTexture(colors_, stops_, renderer.GetContext());
+      CreateGradientTexture(gradient_data, renderer.GetContext());
   if (gradient_texture == nullptr) {
     return false;
   }

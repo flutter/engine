@@ -63,6 +63,7 @@
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
+#include "impeller/entity/linear_gradient_fixed_fill.frag.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
 
@@ -76,6 +77,8 @@ namespace impeller {
 
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
+using LinearGradientFixedFillPipeline =
+    RenderPipelineT<GradientFillVertexShader, LinearGradientFixedFillFragmentShader>;
 using SolidFillPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
@@ -208,6 +211,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetLinearGradientFixedFillPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(linear_gradient_fixed_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
@@ -414,6 +422,7 @@ class ContentContext {
   // map.
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
+  mutable Variants<LinearGradientFixedFillPipeline> linear_gradient_fixed_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;

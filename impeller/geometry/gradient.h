@@ -16,6 +16,7 @@ namespace impeller {
 // If texture_size is 0 then the gradient is invalid.
 struct GradientData {
   std::vector<uint8_t> color_bytes;
+  std::vector<Color> colors;
   uint32_t texture_size;
 };
 

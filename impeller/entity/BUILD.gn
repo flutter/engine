@@ -42,6 +42,7 @@ impeller_shaders("entity_shaders") {
     "shaders/linear_to_srgb_filter.frag",
     "shaders/linear_to_srgb_filter.vert",
     "shaders/linear_gradient_fill.frag",
+    "shaders/linear_gradient_fixed_fill.frag",
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
     "shaders/position_color.vert",
