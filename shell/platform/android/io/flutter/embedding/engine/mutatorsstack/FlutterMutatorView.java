@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
+import android.view.SurfaceView;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
@@ -176,6 +177,14 @@ public class FlutterMutatorView extends FrameLayout {
     // for the current platform view.
     // See AccessibilityBridge for more.
     return super.requestSendAccessibilityEvent(child, event);
+  }
+
+  @Override
+  public void setVisibility(int visibility) {
+    final View childView = this.getChildAt(0);
+    if (childView != null && childView instanceof SurfaceView) {
+      childView.setVisibility(visibility);
+    }
   }
 
   @Override
