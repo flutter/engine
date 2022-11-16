@@ -57,6 +57,7 @@ final List<RegExp> copyrightStatementLeadingPatterns = <RegExp>[
   RegExp(r'^ *(?:Portions(?: are)? )?Copyright .+$', caseSensitive: false),
   RegExp(r'^.*All rights? reserved\.$', caseSensitive: false),
   RegExp(r'^ *\(C\) .+$', caseSensitive: false),
+  RegExp(r'^Copyright \(C\) .+$', caseSensitive: false),
   RegExp(r'^:copyright: .+$', caseSensitive: false),
   RegExp(r'[-_a-zA-Z0-9()]+ function provided freely by .+'),
   RegExp(r'^.+ optimized code \(C\) COPYRIGHT .+$', caseSensitive: false),
@@ -78,6 +79,7 @@ final List<RegExp> copyrightStatementPatterns = <RegExp>[
   RegExp(r'^\(Version [-0-9.:, ]+ Copyright .+\)$', caseSensitive: false),
   RegExp(r'^.*(?:All )?rights? reserved\.$', caseSensitive: false),
   RegExp(r'^ *\(C\) .+$', caseSensitive: false),
+  RegExp(r'^Copyright \(C\) .+$', caseSensitive: false),
   RegExp(r'^:copyright: .+$', caseSensitive: false),
   RegExp(r'^ *[0-9][0-9][0-9][0-9].+ [<(].+@.+[)>]$'),
   RegExp(r'^                   [^ ].* [<(].+@.+[)>]$'), // that's exactly the number of spaces to line up with the X if "Copyright (c) 2011 X" is on the previous line
