@@ -84,8 +84,6 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   ui::AXUniqueId unique_id_;
 };
 
-gfx::AcceleratedWidget GetDefaultTarget();
-
 }  // namespace ui
 
 #endif  // UI_ACCESSIBILITY_PLATFORM_AX_FRAGMENT_ROOT_WIN_H_

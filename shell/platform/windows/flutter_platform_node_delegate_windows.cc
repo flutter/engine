@@ -109,7 +109,7 @@ void FlutterPlatformNodeDelegateWindows::SetFocus() {
 }
 
 gfx::AcceleratedWidget FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
-  return ui::GetDefaultTarget();
+  return view_->GetPlatformWindow();
 }
 
 }  // namespace flutter
