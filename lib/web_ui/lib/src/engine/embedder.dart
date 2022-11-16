@@ -215,37 +215,6 @@ class FlutterViewEmbedder {
     KeyboardBinding.initInstance();
     PointerBinding.initInstance(glassPaneElement, KeyboardBinding.instance!.converter);
 
-    if (domWindow.visualViewport == null && isWebKit) {
-      // Older Safari versions sometimes give us bogus innerWidth/innerHeight
-      // values when the page loads. When it changes the values to correct ones
-      // it does not notify of the change via `onResize`. As a workaround, we
-      // set up a temporary periodic timer that polls innerWidth and triggers
-      // the resizeListener so that the framework can react to the change.
-      //
-      // Safari 13 has implemented visualViewport API so it doesn't need this
-      // timer.
-      //
-      // VisualViewport API is not enabled in Firefox as well. On the other hand
-      // Firefox returns correct values for innerHeight, innerWidth.
-      // Firefox also triggers domWindow.onResize therefore this timer does
-      // not need to be set up for Firefox.
-      final int initialInnerWidth = domWindow.innerWidth!.toInt();
-      // Counts how many times screen size was checked. It is checked up to 5
-      // times.
-      int checkCount = 0;
-      Timer.periodic(const Duration(milliseconds: 100), (Timer t) {
-        checkCount += 1;
-        if (initialInnerWidth != domWindow.innerWidth) {
-          // Window size changed. Notify.
-          t.cancel();
-          _metricsDidChange(null);
-        } else if (checkCount > 5) {
-          // Checked enough times. Stop.
-          t.cancel();
-        }
-      });
-    }
-
     _applicationDom.setMetricsChangeHandler(_metricsDidChange);
     _applicationDom.setLanguageChangeHandler(_languageDidChange);
 
