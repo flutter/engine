@@ -173,4 +173,5 @@ export 'engine/vector_math.dart';
 export 'engine/view_embedder/application_dom.dart';
 export 'engine/view_embedder/custom_element_application_dom.dart';
 export 'engine/view_embedder/full_page_application_dom.dart';
+export 'engine/view_embedder/hot_restart_cache_handler.dart';
 export 'engine/window.dart';
