@@ -1083,10 +1083,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _textureRegistry;
 }
 
-// - (void)setTextureRegistry:(FlutterTextureRegistry*)textureRegistry {
-
-// }
-
 // For test only. Ideally we should create a dependency injector for all dependencies and
 // remove this.
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
