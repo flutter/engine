@@ -1224,8 +1224,16 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       if (currentFrameUsedPlatformViewIds.contains(viewId)
           && (isFrameRenderedUsingImageReaders || !synchronizeToNativeViewHierarchy)) {
         parentView.setVisibility(View.VISIBLE);
+        final View childView = ((FlutterMutatorView) parentView).getChildAt(0);
+        if (childView != null && childView instanceof SurfaceView) {
+          childView.setVisibility(View.VISIBLE);
+        }
       } else {
         parentView.setVisibility(View.GONE);
+        final View childView = ((FlutterMutatorView) parentView).getChildAt(0);
+        if (childView != null && childView instanceof SurfaceView) {
+          childView.setVisibility(View.GONE);
+        }
       }
     }
   }
