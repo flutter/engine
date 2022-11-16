@@ -156,6 +156,11 @@ static std::shared_ptr<ColorSourceFactory> ToColorSourceFactory(
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setColorSource(
     const flutter::DlColorSource* dl_color_source) {
+  if (!dl_color_source) {
+    paint_.color_source = nullptr;
+    return;
+  }
+
   paint_.color_source = ToColorSourceFactory(dl_color_source->shared());
 
   if (const flutter::DlColorColorSource* color = dl_color_source->asColor()) {
