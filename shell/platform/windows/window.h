@@ -26,11 +26,12 @@
 
 namespace flutter {
 
+class WindowAXFragmentRootDelegate;
+
 // A class abstraction for a high DPI aware Win32 Window.  Intended to be
 // inherited from by classes that wish to specialize with custom
 // rendering and input handling.
-class Window : public KeyboardManager::WindowDelegate,
-               public ui::AXFragmentRootDelegateWin {
+class Window : public KeyboardManager::WindowDelegate {
  public:
   Window();
   Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
@@ -214,15 +215,6 @@ class Window : public KeyboardManager::WindowDelegate,
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
-  // | AXFragmentRootDelegateWin |
-  gfx::NativeViewAccessible GetChildOfAXFragmentRoot() override;
-
-  // | AXFragmentRootDelegateWin |
-  gfx::NativeViewAccessible GetParentOfAXFragmentRoot() override;
-
-  // | AXFragmentRootDelegateWin |
-  bool IsAXFragmentRootAControlElement() override;
-
  protected:
   // Win32's DefWindowProc.
   //
@@ -314,6 +306,30 @@ class Window : public KeyboardManager::WindowDelegate,
 
   // Implements IRawElementProviderFragmentRoot when UIA is enabled.
   std::unique_ptr<ui::AXFragmentRootWin> ax_fragment_root_;
+
+  // Delegate for Fragment.
+  std::unique_ptr<WindowAXFragmentRootDelegate> ax_fragment_delegate_;
+
+  // Allow WindowAXFragmentRootDelegate to access protected method.
+  friend class WindowAXFragmentRootDelegate;
+};
+
+// A delegate class to the window.
+class WindowAXFragmentRootDelegate : public ui::AXFragmentRootDelegateWin {
+ public:
+  // | AXFragmentRootDelegateWin |
+  gfx::NativeViewAccessible GetChildOfAXFragmentRoot() override;
+
+  // | AXFragmentRootDelegateWin |
+  gfx::NativeViewAccessible GetParentOfAXFragmentRoot() override;
+
+  // | AXFragmentRootDelegateWin |
+  bool IsAXFragmentRootAControlElement() override;
+
+  WindowAXFragmentRootDelegate(Window& window);
+
+ private:
+  Window& window_;
 };
 
 }  // namespace flutter

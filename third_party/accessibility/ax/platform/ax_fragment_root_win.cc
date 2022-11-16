@@ -283,6 +283,11 @@ class AXFragmentRootMapWin {
     return nullptr;
   }
 
+  std::pair<gfx::AcceleratedWidget, AXFragmentRootWin*> GetDefaultIterator() {
+    const auto& entry = map_.begin();
+    return {entry->first, entry->second};
+  }
+
  private:
   std::unordered_map<gfx::AcceleratedWidget, AXFragmentRootWin*> map_;
 };
@@ -423,6 +428,12 @@ int AXFragmentRootWin::GetIndexInParentOfChild() const {
     }
   }
   return 0;
+}
+
+gfx::AcceleratedWidget GetDefaultTarget() {
+  AXFragmentRootMapWin& map = AXFragmentRootMapWin::GetInstance();
+  auto pair = map.GetDefaultIterator();
+  return pair.first;
 }
 
 }  // namespace ui

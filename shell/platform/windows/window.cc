@@ -203,7 +203,10 @@ LRESULT Window::OnGetObject(UINT const message,
   gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
   if (is_uia_request && root_view) {
     if (!ax_fragment_root_) {
-      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(window_handle_, this);
+      if (!ax_fragment_delegate_) {
+        ax_fragment_delegate_ = std::make_unique<WindowAXFragmentRootDelegate>(*this);
+      }
+      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(window_handle_, ax_fragment_delegate_.get());
     }
 
     // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
@@ -216,8 +219,10 @@ LRESULT Window::OnGetObject(UINT const message,
       // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
       reference_result =
           UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+    } else {
+      FML_LOG(ERROR) << "Failed to query AX fragment root.";
     }
-  } else if (is_msaa_request && root_view) {
+  } else if (is_msaa_request && root_view && FALSE) { // TODO(schectman) revert this FALSE check; it's just for testing
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();
@@ -671,16 +676,18 @@ void Window::CreateAccessibilityRootNode() {
   accessibility_root_ = AccessibilityRootNode::Create();
 }
 
-gfx::NativeViewAccessible Window::GetChildOfAXFragmentRoot() {
-  return GetNativeViewAccessible();
+gfx::NativeViewAccessible WindowAXFragmentRootDelegate::GetChildOfAXFragmentRoot() {
+  return window_.GetNativeViewAccessible();
 }
 
-gfx::NativeViewAccessible Window::GetParentOfAXFragmentRoot() {
+gfx::NativeViewAccessible WindowAXFragmentRootDelegate::GetParentOfAXFragmentRoot() {
   return nullptr;
 }
 
-bool Window::IsAXFragmentRootAControlElement() {
+bool WindowAXFragmentRootDelegate::IsAXFragmentRootAControlElement() {
   return true;
 }
+
+WindowAXFragmentRootDelegate::WindowAXFragmentRootDelegate(Window& window) : window_(window) {}
 
 }  // namespace flutter

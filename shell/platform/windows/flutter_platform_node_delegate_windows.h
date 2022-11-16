@@ -48,6 +48,9 @@ class FlutterPlatformNodeDelegateWindows : public FlutterPlatformNodeDelegate {
   // this object.
   void SetFocus();
 
+  // | AXPlatformNodeDelegate |
+  gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
+
  private:
   ui::AXPlatformNode* ax_platform_node_;
   std::weak_ptr<AccessibilityBridge> bridge_;

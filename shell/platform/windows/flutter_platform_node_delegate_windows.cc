@@ -10,6 +10,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/third_party/accessibility/ax/ax_clipping_behavior.h"
 #include "flutter/third_party/accessibility/ax/ax_coordinate_system.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
 
 namespace flutter {
 
@@ -105,6 +106,10 @@ void FlutterPlatformNodeDelegateWindows::SetFocus() {
   varchild.vt = VT_I4;
   varchild.lVal = CHILDID_SELF;
   GetNativeViewAccessible()->accSelect(SELFLAG_TAKEFOCUS, varchild);
+}
+
+gfx::AcceleratedWidget FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
+  return ui::GetDefaultTarget();
 }
 
 }  // namespace flutter

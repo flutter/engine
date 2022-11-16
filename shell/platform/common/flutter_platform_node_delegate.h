@@ -143,7 +143,6 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   ///             platform node delegate. This pointer is only safe in the
   ///             platform thread.
   std::weak_ptr<OwnerBridge> GetOwnerBridge() const;
-
  private:
   ui::AXNode* ax_node_;
   std::weak_ptr<OwnerBridge> bridge_;
