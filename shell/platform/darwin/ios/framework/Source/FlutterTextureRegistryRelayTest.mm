@@ -14,7 +14,7 @@ FLUTTER_ASSERT_ARC
 @interface FlutterTextureRegistryRelayTest : XCTestCase
 @end
 
-@implementation FlutterTextureRegistryRelayTest 
+@implementation FlutterTextureRegistryRelayTest
 
 - (void)testCreate {
   id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
@@ -25,28 +25,28 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testRegisterTexture {
-    id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
   FlutterTextureRegistryRelay* relay =
       [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
-      id texture = OCMProtocolMock(@protocol(FlutterTexture));
-      [relay registerTexture: texture];
-      OCMVerify([textureRegistry registerTexture: texture]); 
+  id texture = OCMProtocolMock(@protocol(FlutterTexture));
+  [relay registerTexture:texture];
+  OCMVerify([textureRegistry registerTexture:texture]);
 }
 
 - (void)testTextureFrameAvailable {
- id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
   FlutterTextureRegistryRelay* relay =
       [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
-      [relay textureFrameAvailable: 0];
-      OCMVerify([textureRegistry textureFrameAvailable: 0]); 
+  [relay textureFrameAvailable:0];
+  OCMVerify([textureRegistry textureFrameAvailable:0]);
 }
 
 - (void)testUnregisterTexture {
- id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
   FlutterTextureRegistryRelay* relay =
       [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
-      [relay unregisterTexture: 0];
-      OCMVerify([textureRegistry unregisterTexture: 0]); 
+  [relay unregisterTexture:0];
+  OCMVerify([textureRegistry unregisterTexture:0]);
 }
 
 @end

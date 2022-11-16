@@ -20,13 +20,13 @@
 #include "flutter/shell/common/variable_refresh_rate_display.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
@@ -88,7 +88,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @interface FlutterEngine () <FlutterIndirectScribbleDelegate,
                              FlutterUndoManagerDelegate,
                              FlutterTextInputDelegate,
-                             FlutterBinaryMessenger, FlutterTextureRegistry>
+                             FlutterBinaryMessenger,
+                             FlutterTextureRegistry>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;

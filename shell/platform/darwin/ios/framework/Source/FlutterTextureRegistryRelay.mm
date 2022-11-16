@@ -8,7 +8,7 @@
 
 @implementation FlutterTextureRegistryRelay : NSObject
 
-#pragma mark - FlutterTextureRegistry 
+#pragma mark - FlutterTextureRegistry
 
 - (instancetype)initWithParent:(NSObject<FlutterTextureRegistry>*)parent {
   self = [super init];
@@ -19,28 +19,28 @@
 }
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
-    if(self.parent) {
-        return [self.parent registerTexture: texture];
-    }else{
-        FML_LOG(WARNING) << "Using on an empty registry.";
-    }
-    return 0;
+  if (self.parent) {
+    return [self.parent registerTexture:texture];
+  } else {
+    FML_LOG(WARNING) << "Using on an empty registry.";
+  }
+  return 0;
 }
 
 - (void)textureFrameAvailable:(int64_t)textureId {
-    if(self.parent) {
-        return [self.parent textureFrameAvailable: textureId];
-    }else{
-        FML_LOG(WARNING) << "Using on an empty registry.";
-    }
+  if (self.parent) {
+    return [self.parent textureFrameAvailable:textureId];
+  } else {
+    FML_LOG(WARNING) << "Using on an empty registry.";
+  }
 }
 
 - (void)unregisterTexture:(int64_t)textureId {
-    if(self.parent) {
-        return [self.parent unregisterTexture: textureId];
-    }else{
-        FML_LOG(WARNING) << "Using on an empty registry.";
-    }
+  if (self.parent) {
+    return [self.parent unregisterTexture:textureId];
+  } else {
+    FML_LOG(WARNING) << "Using on an empty registry.";
+  }
 }
 
 @end
