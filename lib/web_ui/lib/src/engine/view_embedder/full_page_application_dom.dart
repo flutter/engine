@@ -10,12 +10,6 @@ import 'application_dom.dart';
 
 
 class FullPageApplicationDom extends ApplicationDom {
-
-  /// Configures the screen, such as scaling.
-  ///
-  /// Created in [applyViewportMeta].
-  late DomHTMLMetaElement? _viewportMeta;
-
   @override
   final String type = 'full-page';
 
@@ -76,15 +70,15 @@ class FullPageApplicationDom extends ApplicationDom {
 
     // The meta viewport is always removed by the for method above, so we don't
     // need to do anything else here, other than create it again.
-    _viewportMeta = createDomHTMLMetaElement()
+    final DomHTMLMetaElement viewportMeta = createDomHTMLMetaElement()
       ..setAttribute('flt-viewport', '')
       ..name = 'viewport'
       ..content = 'width=device-width, initial-scale=1.0, '
           'maximum-scale=1.0, user-scalable=no';
 
-    domDocument.head!.append(_viewportMeta!);
+    domDocument.head!.append(viewportMeta);
 
-    registerElementForCleanup(_viewportMeta!);
+    registerElementForCleanup(viewportMeta);
   }
 
   void createGlassPane() {}
