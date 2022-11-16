@@ -1,4 +1,4 @@
-Signature: 8067dd8f1e3f82ba9b3ffa8b166ea1d0
+Signature: a38d989a65e89b541478fcd0cf677d0e
 
 UNUSED LICENSES:
 
@@ -7250,7 +7250,6 @@ FILE: ../../../third_party/skia/src/core/SkMatrixInvert.cpp
 FILE: ../../../third_party/skia/src/core/SkMatrixInvert.h
 FILE: ../../../third_party/skia/src/core/SkMesh.cpp
 FILE: ../../../third_party/skia/src/core/SkMeshPriv.h
-FILE: ../../../third_party/skia/src/core/SkUniform.h
 FILE: ../../../third_party/skia/src/core/SkVMBlitter.h
 FILE: ../../../third_party/skia/src/core/SkYUVAInfoLocation.h
 FILE: ../../../third_party/skia/src/effects/SkBlenders.cpp
@@ -7338,6 +7337,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/Texture.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureInfo.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxy.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxy.h
+FILE: ../../../third_party/skia/src/gpu/graphite/Uniform.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UniformManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UniformManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/BoundsManager.h
