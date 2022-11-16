@@ -61,8 +61,8 @@ abstract class ApplicationDom {
   /// Like "flt-renderer" or "flt-build-mode".
   void setHostAttribute(String name, String value);
 
-  /// Sets the glassPane element into the hostElement.
-  void assembleGlassPane() {}
+  /// Attaches the glassPane element into the hostElement.
+  void attachGlassPane(DomElement glassPaneElement);
 
   void addScene(DomElement? sceneElement) {}
 

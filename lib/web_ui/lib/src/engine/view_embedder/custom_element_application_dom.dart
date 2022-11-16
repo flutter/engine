@@ -23,7 +23,7 @@ class CustomElementApplicationDom extends ApplicationDom {
     required String font,
   }) {}
   void setHostAttribute(String name, String value) {}
-  void assembleGlassPane() {}
+  void attachGlassPane(DomElement glassPaneElement) {}
 
   void addScene(DomElement? sceneElement) {}
 

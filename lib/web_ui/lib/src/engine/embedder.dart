@@ -26,8 +26,6 @@ import 'window.dart';
 /// Manages several top-level elements that host Flutter-generated content,
 /// including:
 ///
-/// - [hostElement], the root in which the user wants to place a Flutter app.
-///   (container for the `glassPaneElement`)
 /// - [glassPaneElement], the root element of a Flutter view.
 /// - [glassPaneShadow], the shadow root used to isolate Flutter-rendered
 ///   content from the surrounding page content, including from the platform
@@ -37,10 +35,20 @@ import 'window.dart';
 /// - [sceneHostElement], the anchor that provides a stable location in the DOM
 ///   tree for the [sceneElement].
 /// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
+///
+/// The incoming [hostElement] parameter specifies the root element in the DOM
+/// into which Flutter will be rendered.
+///
+/// The hostElement is abstracted by an [ApplicationDom] instance, which has
+/// different behavior depending on the `hostElement` value:
+///
+/// - A `null` `hostElement` will preserve Flutter web's original behavior, where
+///   it takes over the whole screen.
+/// - A non-`null` `hostElement` will render flutter inside that element.
 class FlutterViewEmbedder {
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate ApplicationDom using its factory...
-    // TODO: Pass the correct object here!
+    // TODO(dit): Pass the correct object here!
     _applicationDom = ApplicationDom.create(hostElement: null);
 
     reset();
@@ -131,8 +139,6 @@ class FlutterViewEmbedder {
     _resourcesHost?.remove();
     _resourcesHost = null;
 
-    final DomHTMLBodyElement bodyElement = domDocument.body!;
-
     _applicationDom.setHostAttribute(
       'flt-renderer',
       '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
@@ -149,22 +155,14 @@ class FlutterViewEmbedder {
     // Set meta-viewport
     _applicationDom.applyViewportMeta();
 
-    // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
-    //            it can intercept input events.
-    _glassPaneElement?.remove();
+    // Create and inject the [_glassPaneElement].
     final DomElement glassPaneElement = domDocument.createElement(glassPaneTagName);
     _glassPaneElement = glassPaneElement;
-    glassPaneElement.style
-      ..position = 'absolute'
-      ..top = '0'
-      ..right = '0'
-      ..bottom = '0'
-      ..left = '0';
 
-    // This must be appended to the body, so the engine can create a host node
-    // properly.
-    bodyElement.append(glassPaneElement);
-    _applicationDom.registerElementForCleanup(glassPaneElement);
+    // This must be appended to the applicationDom now, so the engine can create
+    // a host node (ShadowDOM or a fallback) properly.
+    // The applicationDom takes care of cleaning up the glassPane on hot restart.
+    _applicationDom.attachGlassPane(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.

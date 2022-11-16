@@ -81,11 +81,20 @@ class FullPageApplicationDom extends ApplicationDom {
     registerElementForCleanup(viewportMeta);
   }
 
-  void createGlassPane() {}
-  void createSceneHost() {}
-  void createSemanticsHost() {}
-  void prepareAccessibilityPlaceholder() {}
-  void assembleGlassPane() {}
+  @override
+  void attachGlassPane(DomElement glassPaneElement) {
+    /// Tweaks style so the glassPane works well with the hostElement.
+    glassPaneElement.style
+      ..position = 'absolute'
+      ..top = '0'
+      ..right = '0'
+      ..bottom = '0'
+      ..left = '0';
+
+    domDocument.body!.append(glassPaneElement);
+
+    registerElementForCleanup(glassPaneElement);
+  }
 
   void addScene(DomElement? sceneElement) {}
 
@@ -111,5 +120,4 @@ class FullPageApplicationDom extends ApplicationDom {
 
     registerSubscriptionForCleanup(subscription);
   }
-
 }
