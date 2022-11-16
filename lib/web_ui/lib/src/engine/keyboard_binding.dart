@@ -4,7 +4,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
-import 'package:web_locale_keymap/web_locale_keymap.dart' as keyboard_layouts;
+import 'package:web_locale_keymap/web_locale_keymap.dart' as locale_keymap;
 
 import '../engine.dart'  show registerHotRestartListener;
 import 'browser_detection.dart';
@@ -240,17 +240,17 @@ class KeyboardConverter {
   // are comprehended.
   final bool onMacOs;
   // Maps logical keys from key event properties.
-  final keyboard_layouts.LocaleKeymap _mapping;
+  final locale_keymap.LocaleKeymap _mapping;
 
-  static keyboard_layouts.LocaleKeymap _mappingFromPlatform(OperatingSystem platform) {
+  static locale_keymap.LocaleKeymap _mappingFromPlatform(OperatingSystem platform) {
     switch (platform) {
       case OperatingSystem.iOs:
       case OperatingSystem.macOs:
-        return keyboard_layouts.LocaleKeymap.darwin();
+        return locale_keymap.LocaleKeymap.darwin();
       case OperatingSystem.windows:
-        return keyboard_layouts.LocaleKeymap.win();
+        return locale_keymap.LocaleKeymap.win();
       default:
-        return keyboard_layouts.LocaleKeymap.linux();
+        return locale_keymap.LocaleKeymap.linux();
     }
   }
 
