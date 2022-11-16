@@ -47,7 +47,7 @@ abstract class ApplicationDom {
   String get type;
 
   /// Sets-up the viewport Meta-Tag for the app.
-  void applyViewportMeta() {}
+  void applyViewportMeta();
 
   /// Sets the global styles for the hostElement of this Flutter web app.
   ///
@@ -64,13 +64,13 @@ abstract class ApplicationDom {
   /// Attaches the glassPane element into the hostElement.
   void attachGlassPane(DomElement glassPaneElement);
 
-  void addScene(DomElement? sceneElement) {}
+  void addScene(DomElement? sceneElement);
 
   /// Register a listener for window resize events
-  void setMetricsChangeHandler(void Function(DomEvent? event) handler) {}
+  void setMetricsChangeHandler(void Function(DomEvent? event) handler);
 
   /// Register a listener for locale change events.
-  void setLanguageChangeHandler(void Function(DomEvent event) handler) {}
+  void setLanguageChangeHandler(void Function(DomEvent event) handler);
 
   /// A callback that runs when hot restart is triggered.
   ///
