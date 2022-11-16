@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 
