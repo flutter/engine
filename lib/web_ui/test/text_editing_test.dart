@@ -2560,13 +2560,13 @@ Future<void> testMain() async {
       );
 
       final DomHTMLElement input = editingStrategy!.activeDomElement;
-      expect(input.style.color, 'transparent');
-      expect(input.style.background, 'transparent');
-      expect(input.style.backgroundColor, 'transparent');
-      expect(input.style.caretColor, 'transparent');
-      expect(input.style.outline, 'none');
-      expect(input.style.border.split(' '), contains('none'));
-      expect(input.style.textShadow, 'none');
+      expect(input.style.color, contains('transparent'));
+      expect(input.style.background, contains('transparent'));
+      expect(input.style.backgroundColor, contains('transparent'));
+      expect(input.style.caretColor, contains('transparent'));
+      expect(input.style.outline, contains('none'));
+      expect(input.style.border, contains('none'));
+      expect(input.style.textShadow, contains('none'));
     });
 
     test('prevents effect of (forced-colors: active)', () {
