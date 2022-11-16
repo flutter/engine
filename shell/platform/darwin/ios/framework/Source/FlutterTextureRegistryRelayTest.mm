@@ -16,12 +16,6 @@ FLUTTER_ASSERT_ARC
 
 @implementation FlutterTextureRegistryRelayTest 
 
-- (void)setUp {
-}
-
-- (void)tearDown {
-}
-
 - (void)testCreate {
   id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
   FlutterTextureRegistryRelay* relay =
@@ -30,48 +24,29 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(textureRegistry, relay.parent);
 }
 
-- (void)testPassesCallOn {
-//   id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-//   FlutterBinaryMessengerRelay* relay =
-//       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-//   char messageData[] = {'a', 'a', 'r', 'o', 'n'};
-//   NSData* message = [NSData dataWithBytes:messageData length:sizeof(messageData)];
-//   NSString* channel = @"foobar";
-//   [relay sendOnChannel:channel message:message binaryReply:nil];
-//   OCMVerify([messenger sendOnChannel:channel message:message binaryReply:nil]);
+- (void)testRegisterTexture {
+    id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  FlutterTextureRegistryRelay* relay =
+      [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
+      id texture = OCMProtocolMock(@protocol(FlutterTexture));
+      [relay registerTexture: texture];
+      OCMVerify([textureRegistry registerTexture: texture]); 
 }
 
-- (void)testDoesntPassCallOn {
-//   id messenger = OCMStrictProtocolMock(@protocol(FlutterBinaryMessenger));
-//   FlutterBinaryMessengerRelay* relay =
-//       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-//   char messageData[] = {'a', 'a', 'r', 'o', 'n'};
-//   NSData* message = [NSData dataWithBytes:messageData length:sizeof(messageData)];
-//   NSString* channel = @"foobar";
-//   relay.parent = nil;
-//   [relay sendOnChannel:channel message:message binaryReply:nil];
+- (void)testTextureFrameAvailable {
+ id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  FlutterTextureRegistryRelay* relay =
+      [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
+      [relay textureFrameAvailable: 0];
+      OCMVerify([textureRegistry textureFrameAvailable: 0]); 
 }
 
-- (void)testSetMessageHandlerWithTaskQueue {
-//   id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-//   FlutterBinaryMessengerRelay* relay =
-//       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-//   NSString* channel = @"foobar";
-//   NSObject<FlutterTaskQueue>* taskQueue = OCMProtocolMock(@protocol(FlutterTaskQueue));
-//   FlutterBinaryMessageHandler handler = ^(NSData* _Nullable, FlutterBinaryReply _Nonnull) {
-//   };
-//   [relay setMessageHandlerOnChannel:channel binaryMessageHandler:handler taskQueue:taskQueue];
-//   OCMVerify([messenger setMessageHandlerOnChannel:channel
-//                              binaryMessageHandler:handler
-//                                         taskQueue:taskQueue]);
-}
-
-- (void)testMakeBackgroundTaskQueue {
-//   id messenger = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
-//   FlutterBinaryMessengerRelay* relay =
-//       [[FlutterBinaryMessengerRelay alloc] initWithParent:messenger];
-//   [relay makeBackgroundTaskQueue];
-//   OCMVerify([messenger makeBackgroundTaskQueue]);
+- (void)testUnregisterTexture {
+ id textureRegistry = OCMProtocolMock(@protocol(FlutterTextureRegistry));
+  FlutterTextureRegistryRelay* relay =
+      [[FlutterTextureRegistryRelay alloc] initWithParent:textureRegistry];
+      [relay unregisterTexture: 0];
+      OCMVerify([textureRegistry unregisterTexture: 0]); 
 }
 
 @end
