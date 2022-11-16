@@ -55,11 +55,7 @@ class FlutterViewEmbedder {
   late ApplicationDom _applicationDom;
 
   // The tag name for the root view of the flutter app (glass-pane)
-  static const String _glassPaneTagName = 'flt-glass-pane';
-
-  /// Contains Flutter-specific CSS rules, such as default margins and
-  /// paddings.
-  DomHTMLStyleElement? _styleElement;
+  static const String glassPaneTagName = 'flt-glass-pane';
 
   /// The element that contains the [sceneElement].
   ///
@@ -132,18 +128,8 @@ class FlutterViewEmbedder {
   void reset() {
     final bool isWebKit = browserEngine == BrowserEngine.webkit;
 
-    _styleElement?.remove();
-    _styleElement = createDomHTMLStyleElement();
     _resourcesHost?.remove();
     _resourcesHost = null;
-    domDocument.head!.append(_styleElement!);
-    _applicationDom.registerElementForCleanup(_styleElement!);
-    final DomCSSStyleSheet sheet = _styleElement!.sheet! as DomCSSStyleSheet;
-    applyGlobalCssRulesToSheet(
-      sheet,
-      browserEngine: browserEngine,
-      hasAutofillOverlay: browserHasAutofillOverlay(),
-    );
 
     final DomHTMLBodyElement bodyElement = domDocument.body!;
 
@@ -189,7 +175,7 @@ class FlutterViewEmbedder {
     // IMPORTANT: the glass pane element must come after the scene element in the DOM node list so
     //            it can intercept input events.
     _glassPaneElement?.remove();
-    final DomElement glassPaneElement = domDocument.createElement(_glassPaneTagName);
+    final DomElement glassPaneElement = domDocument.createElement(glassPaneTagName);
     _glassPaneElement = glassPaneElement;
     glassPaneElement.style
       ..position = 'absolute'
@@ -450,125 +436,6 @@ class FlutterViewEmbedder {
   }
 
   String get currentHtml => _rootApplicationElement?.outerHTML ?? '';
-}
-
-// Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
-void applyGlobalCssRulesToSheet(
-  DomCSSStyleSheet sheet, {
-  required BrowserEngine browserEngine,
-  required bool hasAutofillOverlay,
-  String glassPaneTagName = FlutterViewEmbedder._glassPaneTagName,
-}) {
-  final bool isWebKit = browserEngine == BrowserEngine.webkit;
-  final bool isFirefox = browserEngine == BrowserEngine.firefox;
-  // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
-  // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
-
-  if (isFirefox) {
-    // For firefox set line-height, otherwise textx at same font-size will
-    // measure differently in ruler.
-    //
-    // - See: https://github.com/flutter/flutter/issues/44803
-    sheet.insertRule(
-      'flt-paragraph, flt-span {line-height: 100%;}',
-      sheet.cssRules.length.toInt(),
-    );
-  }
-
-  // This undoes browser's default painting and layout attributes of range
-  // input, which is used in semantics.
-  sheet.insertRule(
-    '''
-    flt-semantics input[type=range] {
-      appearance: none;
-      -webkit-appearance: none;
-      width: 100%;
-      position: absolute;
-      border: none;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-    }
-    ''',
-    sheet.cssRules.length.toInt(),
-  );
-
-  if (isWebKit) {
-    sheet.insertRule(
-        'flt-semantics input[type=range]::-webkit-slider-thumb {'
-        '  -webkit-appearance: none;'
-        '}',
-        sheet.cssRules.length.toInt());
-  }
-
-  if (isFirefox) {
-    sheet.insertRule(
-        'input::-moz-selection {'
-        '  background-color: transparent;'
-        '}',
-        sheet.cssRules.length.toInt());
-    sheet.insertRule(
-        'textarea::-moz-selection {'
-        '  background-color: transparent;'
-        '}',
-        sheet.cssRules.length.toInt());
-  } else {
-    // On iOS, the invisible semantic text field has a visible cursor and
-    // selection highlight. The following 2 CSS rules force everything to be
-    // transparent.
-    sheet.insertRule(
-        'input::selection {'
-        '  background-color: transparent;'
-        '}',
-        sheet.cssRules.length.toInt());
-    sheet.insertRule(
-        'textarea::selection {'
-        '  background-color: transparent;'
-        '}',
-        sheet.cssRules.length.toInt());
-  }
-  sheet.insertRule('''
-    flt-semantics input,
-    flt-semantics textarea,
-    flt-semantics [contentEditable="true"] {
-    caret-color: transparent;
-  }
-  ''', sheet.cssRules.length.toInt());
-
-  // By default on iOS, Safari would highlight the element that's being tapped
-  // on using gray background. This CSS rule disables that.
-  if (isWebKit) {
-    sheet.insertRule('''
-      $glassPaneTagName * {
-      -webkit-tap-highlight-color: transparent;
-    }
-    ''', sheet.cssRules.length.toInt());
-  }
-
-  // Hide placeholder text
-  sheet.insertRule(
-    '''
-    .flt-text-editing::placeholder {
-      opacity: 0;
-    }
-    ''',
-    sheet.cssRules.length.toInt(),
-  );
-
-  // This css prevents an autofill overlay brought by the browser during
-  // text field autofill by delaying the transition effect.
-  // See: https://github.com/flutter/flutter/issues/61132.
-  if (browserHasAutofillOverlay()) {
-    sheet.insertRule('''
-      .transparentTextEditing:-webkit-autofill,
-      .transparentTextEditing:-webkit-autofill:hover,
-      .transparentTextEditing:-webkit-autofill:focus,
-      .transparentTextEditing:-webkit-autofill:active {
-        -webkit-transition-delay: 99999s;
-      }
-    ''', sheet.cssRules.length.toInt());
-  }
 }
 
 /// The embedder singleton.

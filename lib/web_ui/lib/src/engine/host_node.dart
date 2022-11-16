@@ -13,6 +13,11 @@ import 'text_editing/text_editing.dart';
 /// (preferred Flutter rendering method) and [DomDocument] (fallback).
 ///
 /// Not to be confused with [DomDocumentOrShadowRoot].
+///
+/// This also handles the stylesheet that is applied to the different types of
+/// HostNodes; for ShadowDOM there's not much to do, but for ElementNodes, the
+/// stylesheet is "namespaced" by the `flt-glass-pane` prefix, so it "only"
+/// affects things that Flutter web owns.
 abstract class HostNode {
   /// Retrieves the [DomElement] that currently has focus.
   ///
@@ -104,8 +109,6 @@ class ShadowDomHostNode implements HostNode {
     final DomHTMLStyleElement shadowRootStyleElement = createDomHTMLStyleElement();
     // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
     _shadow.appendChild(shadowRootStyleElement);
-
-    // TODO(dit): Apply only rules for the shadow root
     applyGlobalCssRulesToSheet(
       shadowRootStyleElement.sheet! as DomCSSStyleSheet,
       browserEngine: browserEngine,
@@ -165,6 +168,18 @@ class ShadowDomHostNode implements HostNode {
 class ElementHostNode implements HostNode {
   /// Build a HostNode by attaching a child [DomElement] to the `root` element.
   ElementHostNode(DomElement root) {
+    // Append the stylesheet here, so this class is completely symmetric to the
+    // ShadowDOM version.
+    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
+    // The styleElement must be appended to the DOM, or its `sheet` will be null later.
+    root.appendChild(styleElement);
+    applyGlobalCssRulesToSheet(
+      styleElement.sheet! as DomCSSStyleSheet,
+      browserEngine: browserEngine,
+      hasAutofillOverlay: browserHasAutofillOverlay(),
+      cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
+    );
+
     _element = domDocument.createElement('flt-element-host-node');
     root.appendChild(_element);
   }
@@ -199,4 +214,106 @@ class ElementHostNode implements HostNode {
 
   @override
   void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
+}
+
+// Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
+void applyGlobalCssRulesToSheet(
+  DomCSSStyleSheet sheet, {
+  required BrowserEngine browserEngine,
+  required bool hasAutofillOverlay,
+  String cssSelectorPrefix = '',
+}) {
+  final bool isWebKit = browserEngine == BrowserEngine.webkit;
+  final bool isFirefox = browserEngine == BrowserEngine.firefox;
+  // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
+  // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
+
+  // By default on iOS, Safari would highlight the element that's being tapped
+  // on using gray background. This CSS rule disables that.
+  if (isWebKit) {
+    sheet.insertRule('''
+      $cssSelectorPrefix * {
+      -webkit-tap-highlight-color: transparent;
+    }
+    ''', sheet.cssRules.length.toInt());
+  }
+
+  if (isFirefox) {
+    // For firefox set line-height, otherwise text at same font-size will
+    // measure differently in ruler.
+    //
+    // - See: https://github.com/flutter/flutter/issues/44803
+    sheet.insertRule('''
+      $cssSelectorPrefix flt-paragraph,
+      $cssSelectorPrefix flt-span {
+        line-height: 100%;
+      }
+    ''', sheet.cssRules.length.toInt());
+  }
+
+  // This undoes browser's default painting and layout attributes of range
+  // input, which is used in semantics.
+  sheet.insertRule('''
+    $cssSelectorPrefix flt-semantics input[type=range] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 100%;
+      position: absolute;
+      border: none;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      left: 0;
+    }
+  ''', sheet.cssRules.length.toInt());
+
+  if (isWebKit) {
+    sheet.insertRule('''
+      $cssSelectorPrefix flt-semantics input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+      }
+    ''', sheet.cssRules.length.toInt());
+  }
+
+  // The invisible semantic text field may have a visible cursor and selection
+  // highlight. The following 2 CSS rules force everything to be transparent.
+  sheet.insertRule('''
+    $cssSelectorPrefix input::selection {
+      background-color: transparent;
+    }
+  ''', sheet.cssRules.length.toInt());
+  sheet.insertRule('''
+    $cssSelectorPrefix textarea::selection {
+      background-color: transparent;
+    }
+  ''', sheet.cssRules.length.toInt());
+
+  sheet.insertRule('''
+    $cssSelectorPrefix flt-semantics input,
+    $cssSelectorPrefix flt-semantics textarea,
+    $cssSelectorPrefix flt-semantics [contentEditable="true"] {
+      caret-color: transparent;
+    }
+    ''', sheet.cssRules.length.toInt());
+
+  // Hide placeholder text
+  sheet.insertRule('''
+    $cssSelectorPrefix .flt-text-editing::placeholder {
+      opacity: 0;
+    }
+  ''', sheet.cssRules.length.toInt());
+
+  // This css prevents an autofill overlay brought by the browser during
+  // text field autofill by delaying the transition effect.
+  // See: https://github.com/flutter/flutter/issues/61132.
+  if (browserHasAutofillOverlay()) {
+    sheet.insertRule('''
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:hover,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:focus,
+      $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:active {
+        -webkit-transition-delay: 99999s;
+      }
+    ''', sheet.cssRules.length.toInt());
+  }
 }
