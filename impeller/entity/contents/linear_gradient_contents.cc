@@ -48,7 +48,7 @@ bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
   auto gradient_data = CreateGradientBuffer(colors_, stops_);
-  if (gradient_data.texture_size < 16) {
+  if (gradient_data.texture_size > 16) {
     return RenderTexture(gradient_data, renderer, entity, pass);
   }
   return RenderFixed(gradient_data, renderer, entity, pass);

@@ -11,9 +11,9 @@
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/renderer/texture.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
-#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 

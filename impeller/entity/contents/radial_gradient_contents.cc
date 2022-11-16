@@ -10,9 +10,9 @@
 #include "impeller/entity/contents/gradient_generator.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry.h"
+#include "impeller/geometry/gradient.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
-#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
