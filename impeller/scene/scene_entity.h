@@ -42,7 +42,7 @@ class SceneEntity {
  private:
   virtual bool OnRender(SceneEncoder& encoder, const Camera& camera) const;
 
-  SceneEntity* parent_;
+  SceneEntity* parent_ = nullptr;
   std::vector<std::shared_ptr<SceneEntity>> children_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(SceneEntity);
