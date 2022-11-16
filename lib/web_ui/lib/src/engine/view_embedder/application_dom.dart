@@ -47,13 +47,25 @@ abstract class ApplicationDom {
   /// Keeps a list of elements to be cleaned up at hot-restart.
   HotRestartCacheHandler? _hotRestartCache;
 
+  /// Returns the 'type' (a String for debugging) of the ApplicationDom instance.
+  String get type;
+
   /// Sets-up the viewport Meta-Tag for the app.
   void applyViewportMeta() {}
 
-  void createGlassPane() {}
-  void createSceneHost() {}
-  void createSemanticsHost() {}
-  void prepareAccessibilityPlaceholder() {}
+  /// Sets the global styles for the hostElement of this Flutter web app.
+  ///
+  /// [font] is the CSS shorthand property to set all the different font properties.
+  void setHostStyles({
+    required String font,
+  });
+
+  /// Sets an attribute in the hostElement.
+  ///
+  /// Like "flt-renderer" or "flt-build-mode".
+  void setHostAttribute(String name, String value);
+
+  /// Sets the glassPane element into the hostElement.
   void assembleGlassPane() {}
 
   void addScene(DomElement? sceneElement) {}

@@ -133,41 +133,18 @@ class FlutterViewEmbedder {
 
     final DomHTMLBodyElement bodyElement = domDocument.body!;
 
-    bodyElement.setAttribute(
+    _applicationDom.setHostAttribute(
       'flt-renderer',
       '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
     );
-    bodyElement.setAttribute('flt-build-mode', buildMode);
-
-    setElementStyle(bodyElement, 'position', 'fixed');
-    setElementStyle(bodyElement, 'top', '0');
-    setElementStyle(bodyElement, 'right', '0');
-    setElementStyle(bodyElement, 'bottom', '0');
-    setElementStyle(bodyElement, 'left', '0');
-    setElementStyle(bodyElement, 'overflow', 'hidden');
-    setElementStyle(bodyElement, 'padding', '0');
-    setElementStyle(bodyElement, 'margin', '0');
-
-    // TODO(yjbanov): fix this when KVM I/O support is added. Currently scroll
-    //                using drag, and text selection interferes.
-    setElementStyle(bodyElement, 'user-select', 'none');
-    setElementStyle(bodyElement, '-webkit-user-select', 'none');
-    setElementStyle(bodyElement, '-ms-user-select', 'none');
-    setElementStyle(bodyElement, '-moz-user-select', 'none');
-
-    // This is required to prevent the browser from doing any native touch
-    // handling. If this is not done, the browser doesn't report 'pointermove'
-    // events properly.
-    setElementStyle(bodyElement, 'touch-action', 'none');
-
-    // These are intentionally outrageous font parameters to make sure that the
-    // apps fully specify their text styles.
-    setElementStyle(bodyElement, 'font', defaultCssFont);
-    setElementStyle(bodyElement, 'color', 'red');
-
+    _applicationDom.setHostAttribute('flt-build-mode', buildMode);
+    _applicationDom.setHostAttribute('flt-application-dom', _applicationDom.type);
     // TODO(mdebbar): Disable spellcheck until changes in the framework and
     // engine are complete.
-    bodyElement.spellcheck = false;
+    _applicationDom.setHostAttribute('spellcheck', 'false');
+
+    // Set the global styles needed by flutter.
+    _applicationDom.setHostStyles(font: defaultCssFont);
 
     // Set meta-viewport
     _applicationDom.applyViewportMeta();

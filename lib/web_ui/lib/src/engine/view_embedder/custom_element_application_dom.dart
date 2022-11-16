@@ -15,11 +15,14 @@ class CustomElementApplicationDom extends ApplicationDom {
 
   final DomElement _hostElement;
 
+  @override
+  final String type = 'custom-element';
+
   void applyViewportMeta() {}
-  void createGlassPane() {}
-  void createSceneHost() {}
-  void createSemanticsHost() {}
-  void prepareAccessibilityPlaceholder() {}
+  void setHostStyles({
+    required String font,
+  }) {}
+  void setHostAttribute(String name, String value) {}
   void assembleGlassPane() {}
 
   void addScene(DomElement? sceneElement) {}
@@ -27,5 +30,4 @@ class CustomElementApplicationDom extends ApplicationDom {
   void setMetricsChangeHandler(void Function(DomEvent? event) handler) {}
   void setLanguageChangeHandler(void Function(DomEvent event) handler) {}
   void registerPostHotRestartCleanup(List<DomElement> elements) {}
-
 }
