@@ -10,7 +10,6 @@ import 'package:ui/src/engine/fonts.dart';
 
 import '../assets.dart';
 import '../dom.dart';
-import '../safe_browser_api.dart';
 import '../util.dart';
 import 'layout_service.dart';
 
@@ -108,8 +107,6 @@ class HtmlFontCollection implements FontCollection {
 
 /// Manages a collection of fonts and ensures they are loaded.
 class FontManager {
-
-  FontManager();
 
   /// Fonts that started the downloading process. Once the fonts have downloaded
   /// without error, they are moved to [_downloadedFonts]. Those fonts
