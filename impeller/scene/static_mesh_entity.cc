@@ -21,7 +21,8 @@ void StaticMeshEntity::SetMaterial(std::shared_ptr<Material> material) {
 }
 
 // |SceneEntity|
-bool StaticMeshEntity::OnRender(SceneEncoder& encoder, const Camera& camera) const {
+bool StaticMeshEntity::OnRender(SceneEncoder& encoder,
+                                const Camera& camera) const {
   return true;
 }
 

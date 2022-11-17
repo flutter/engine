@@ -16,8 +16,6 @@ namespace scene {
 class Scene;
 
 class SceneEncoder {
-
-
  private:
   SceneEncoder();
 
