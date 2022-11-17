@@ -90,8 +90,8 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 
 - (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size {
   FlutterView* view = [_viewProvider getView:viewId];
+  NSAssert(view != nil, "Can't create texture on a non-existent view 0x%x.", viewId);
   if (view == nil) {
-    FML_LOG(WARNING) << "Can't create texture on a non-existent view.";
     // FlutterMetalTexture has texture `null`, therefore is discarded.
     return FlutterMetalTexture{};
   }
