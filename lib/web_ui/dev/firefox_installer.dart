@@ -42,6 +42,7 @@ Future<BrowserInstallation> getOrInstallFirefox(
   // bot will download Firefox from CIPD and place it in a cache and set the
   // environment variable FIREFOX_EXECUTABLE.
   if (io.Platform.environment.containsKey(_firefoxExecutableVar)) {
+    infoLog.writeln('Using Firefox from cache: ${io.Platform.environment[_firefoxExecutableVar]}');
     return BrowserInstallation(
       version: 'cipd',
       executable: io.Platform.environment[_firefoxExecutableVar]!,

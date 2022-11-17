@@ -39,6 +39,7 @@ Future<BrowserInstallation> getOrInstallChrome(
   // then the bot will download Chrome from CIPD and place it in a cache and
   // set the environment variable CHROME_EXECUTABLE.
   if (io.Platform.environment.containsKey(_chromeExecutableVar)) {
+    infoLog.writeln('Using Chrome from cache: ${io.Platform.environment[_chromeExecutableVar]}');
     return BrowserInstallation(
       version: 'cipd',
       executable: io.Platform.environment[_chromeExecutableVar]!,
