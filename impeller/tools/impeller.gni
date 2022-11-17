@@ -240,10 +240,6 @@ template("impellerc") {
   if (defined(invoker.json) && invoker.json) {
     json = invoker.json
   }
-  gles_language_version = "100"
-  if (defined(invoker.gles_language_version)) {
-    gles_language_version = invoker.gles_language_version
-  }
 
   # Not needed on every path.
   not_needed([
@@ -281,9 +277,13 @@ template("impellerc") {
       "--include={{source_dir}}",
       "--include=$shader_lib_dir",
       "--depfile=$depfile_intermediate_path",
-      "--gles-language-version=$gles_language_version",
       "$shader_target_flag",
     ]
+
+    if (defined(invoker.gles_language_version)) {
+      gles_language_version = invoker.gles_language_version
+      args += ["--gles-language-version=$gles_language_version"]
+    }
 
     if (json) {
       args += [ "--json" ]
