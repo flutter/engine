@@ -51,7 +51,7 @@ bool SceneEntity::Add(const std::shared_ptr<SceneEntity>& child) {
     return false;
   }
 
-  children_.push_back(std::move(child));
+  children_.push_back(child);
   child->parent_ = this;
   return true;
 }
