@@ -226,12 +226,35 @@ std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
     return nullptr;
   }
 
-  auto buffer = std::shared_ptr<CommandBufferMTL>(
-      new CommandBufferMTL(weak_from_this(), queue));
+  auto weak_this = weak_from_this();
+  auto buffer = std::shared_ptr<CommandBufferMTL>(new CommandBufferMTL(
+      weak_this, queue, [weak_this](id<MTLCommandBuffer> buffer) {
+        auto strong_this = weak_this.lock();
+        if (strong_this) {
+          auto& context_mtl =
+              ContextMTL::Cast(const_cast<Context&>(*strong_this));
+          context_mtl.last_submitted_buffer_ = buffer;
+        }
+      }));
   if (!buffer->IsValid()) {
     return nullptr;
   }
   return buffer;
+}
+
+// |Context|
+bool ContextMTL::WaitUntilCommandsCompleted() {
+  if (!last_submitted_buffer_) {
+    return true;
+  }
+
+  if (last_submitted_buffer_.status == MTLCommandBufferStatusCompleted) {
+    return true;
+  }
+
+  [last_submitted_buffer_ waitUntilCompleted];
+  last_submitted_buffer_ = nullptr;
+  return true;
 }
 
 std::shared_ptr<Allocator> ContextMTL::GetResourceAllocator() const {

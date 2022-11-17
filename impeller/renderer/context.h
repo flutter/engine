@@ -39,6 +39,8 @@ class Context : public std::enable_shared_from_this<Context> {
 
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
+  virtual bool WaitUntilCommandsCompleted() = 0;
+
   virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
 
   //----------------------------------------------------------------------------

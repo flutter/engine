@@ -123,6 +123,15 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 }
 
 // |Context|
+bool ContextGLES::WaitUntilCommandsCompleted() {
+  const auto result = reactor_->React();
+  if (result) {
+    reactor_->GetProcTable().Finish();
+  }
+  return result;
+}
+
+// |Context|
 std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
   return work_queue_;
 }

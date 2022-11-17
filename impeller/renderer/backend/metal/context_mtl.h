@@ -39,6 +39,7 @@ class ContextMTL final : public Context,
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;
+  id<MTLCommandBuffer> last_submitted_buffer_ = nullptr;
   std::shared_ptr<ShaderLibraryMTL> shader_library_;
   std::shared_ptr<PipelineLibraryMTL> pipeline_library_;
   std::shared_ptr<SamplerLibrary> sampler_library_;
@@ -66,6 +67,9 @@ class ContextMTL final : public Context,
 
   // |Context|
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
+
+  // |Context|
+  bool WaitUntilCommandsCompleted() override;
 
   // |Context|
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;

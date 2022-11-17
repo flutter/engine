@@ -625,6 +625,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
       if (!buffer->SubmitCommands()) {
         return false;
       }
+
+      context->WaitUntilCommandsCompleted();
     }
 
     {

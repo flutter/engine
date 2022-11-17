@@ -528,6 +528,15 @@ std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
                                  surface_producer_.get());
 }
 
+bool ContextVK::WaitUntilCommandsCompleted() {
+  auto result = device_->waitIdle();
+  if (result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to wait device idle: " << vk::to_string(result);
+    return false;
+  }
+  return true;
+}
+
 vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }

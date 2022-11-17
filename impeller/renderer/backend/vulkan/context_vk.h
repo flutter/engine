@@ -137,6 +137,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
+  bool WaitUntilCommandsCompleted() override;
+
+  // |Context|
   PixelFormat GetColorAttachmentPixelFormat() const override;
 
   // |Context|

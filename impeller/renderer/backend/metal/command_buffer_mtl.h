@@ -13,6 +13,8 @@ namespace impeller {
 
 class CommandBufferMTL final : public CommandBuffer {
  public:
+  using SubmitCallback = std::function<void(id<MTLCommandBuffer>)>;
+
   // |CommandBuffer|
   ~CommandBufferMTL() override;
 
@@ -20,9 +22,11 @@ class CommandBufferMTL final : public CommandBuffer {
   friend class ContextMTL;
 
   id<MTLCommandBuffer> buffer_ = nullptr;
+  SubmitCallback submit_callback_ = nullptr;
 
   CommandBufferMTL(const std::weak_ptr<const Context>& context,
-                   id<MTLCommandQueue> queue);
+                   id<MTLCommandQueue> queue,
+                   SubmitCallback submit_callback);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;

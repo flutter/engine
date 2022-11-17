@@ -122,8 +122,11 @@ static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
 }
 
 CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context>& context,
-                                   id<MTLCommandQueue> queue)
-    : CommandBuffer(context), buffer_(CreateCommandBuffer(queue)) {}
+                                   id<MTLCommandQueue> queue,
+                                   SubmitCallback submit_callback)
+    : CommandBuffer(context),
+      buffer_(CreateCommandBuffer(queue)),
+      submit_callback_(submit_callback) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
@@ -164,6 +167,10 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   }
 
   [buffer_ commit];
+  if (submit_callback_) {
+    submit_callback_(buffer_);
+  }
+
   [buffer_ waitUntilScheduled];
   buffer_ = nil;
   return true;

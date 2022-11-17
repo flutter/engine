@@ -73,6 +73,9 @@ class ContextGLES final : public Context,
   // |Context|
   bool SupportsOffscreenMSAA() const override;
 
+  // |Context|
+  bool WaitUntilCommandsCompleted() override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };
 
