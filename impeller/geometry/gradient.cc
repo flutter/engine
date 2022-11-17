@@ -168,9 +168,9 @@ std::optional<std::vector<Color>> CreateGradientColors(
       auto mixed_color = Color::lerp(previous_color, next_color, t);
       data.push_back(mixed_color);
     }
-    // The last index is always equal to the last color, exactly.
-    data.push_back(colors.back());
   }
+  // The last index is always equal to the last color, exactly.
+  data.push_back(colors.back());
   return data;
 }
 
