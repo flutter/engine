@@ -2465,6 +2465,19 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       result->intVal = static_cast<int>(ComputeExpandCollapseState());
       break;
 
+    case UIA_ToggleToggleStatePropertyId:{
+      ToggleState state;
+      get_ToggleState(&state);
+      result->vt = VT_I4;
+      result->lVal = state;
+      break;
+    }
+
+    case UIA_ValueValuePropertyId:
+      result->vt = VT_BSTR;
+      result->bstrVal = GetValueAttributeAsBstr(this);
+      break;
+
     // Not currently implemented.
     case UIA_AnnotationObjectsPropertyId:
     case UIA_AnnotationTypesPropertyId:
