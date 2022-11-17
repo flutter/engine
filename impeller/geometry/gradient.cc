@@ -10,7 +10,7 @@
 namespace impeller {
 
 static void AppendColor(const Color& color, GradientData* data) {
-  if (data->texture_size > 16) {
+  if (data->texture_size > FIXED_GRADIENT_SIZE) {
     auto converted = color.ToR8G8B8A8();
     data->color_bytes.push_back(converted[0]);
     data->color_bytes.push_back(converted[1]);
@@ -52,7 +52,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
       .colors = {},
       .texture_size = texture_size,
   };
-  if (texture_size > 16) {
+  if (texture_size > FIXED_GRADIENT_SIZE) {
     data.color_bytes.reserve(texture_size * 4);
   } else {
     data.colors.reserve(texture_size);

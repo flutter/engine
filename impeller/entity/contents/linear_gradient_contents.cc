@@ -47,11 +47,16 @@ void LinearGradientContents::SetTileMode(Entity::TileMode tile_mode) {
 bool LinearGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
+#ifdef FML_OS_ANDROID
   auto gradient_data = CreateGradientBuffer(colors_, stops_);
-  if (gradient_data.texture_size > 16) {
+  return RenderTexture(gradient_data, renderer, entity, pass);
+#else
+  auto gradient_data = CreateGradientBuffer(colors_, stops_);
+  if (gradient_data.texture_size > FIXED_GRADIENT_SIZE) {
     return RenderTexture(gradient_data, renderer, entity, pass);
   }
   return RenderFixed(gradient_data, renderer, entity, pass);
+#endif  // FML_OS_ANDROID
 }
 
 bool LinearGradientContents::RenderTexture(const GradientData& gradient_data,
@@ -117,6 +122,7 @@ bool LinearGradientContents::RenderTexture(const GradientData& gradient_data,
   return true;
 }
 
+#ifndef FML_OS_ANDROID
 bool LinearGradientContents::RenderFixed(const GradientData& gradient_data,
                                          const ContentContext& renderer,
                                          const Entity& entity,
@@ -167,5 +173,6 @@ bool LinearGradientContents::RenderFixed(const GradientData& gradient_data,
   }
   return true;
 }
+#endif  // FML_OS_ANDROID
 
 }  // namespace impeller

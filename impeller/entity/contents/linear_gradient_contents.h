@@ -48,10 +48,12 @@ class LinearGradientContents final : public ColorSourceContents {
                      const Entity& entity,
                      RenderPass& pass) const;
 
+#ifndef FML_OS_ANDROID
   bool RenderFixed(const GradientData& gradient_data,
                    const ContentContext& renderer,
                    const Entity& entity,
                    RenderPass& pass) const;
+#endif // FML_OS_ANDROID
 
   Point start_point_;
   Point end_point_;

@@ -14,6 +14,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
@@ -41,6 +42,18 @@ class RadialGradientContents final : public ColorSourceContents {
   void SetTileMode(Entity::TileMode tile_mode);
 
  private:
+  bool RenderTexture(const GradientData& gradient_data,
+                     const ContentContext& renderer,
+                     const Entity& entity,
+                     RenderPass& pass) const;
+
+#ifndef FML_OS_ANDROID
+  bool RenderFixed(const GradientData& gradient_data,
+                   const ContentContext& renderer,
+                   const Entity& entity,
+                   RenderPass& pass) const;
+#endif // FML_OS_ANDROID
+
   Point center_;
   Scalar radius_;
   std::vector<Color> colors_;

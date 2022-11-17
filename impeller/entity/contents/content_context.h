@@ -50,6 +50,7 @@
 #include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
+#include "impeller/entity/radial_gradient_fixed_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
 #include "impeller/entity/solid_fill.frag.h"
@@ -57,6 +58,7 @@
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
 #include "impeller/entity/srgb_to_linear_filter.vert.h"
 #include "impeller/entity/sweep_gradient_fill.frag.h"
+#include "impeller/entity/sweep_gradient_fixed_fill.frag.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
@@ -77,15 +79,23 @@ namespace impeller {
 
 using LinearGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, LinearGradientFillFragmentShader>;
-using LinearGradientFixedFillPipeline =
-    RenderPipelineT<GradientFillVertexShader,
-                    LinearGradientFixedFillFragmentShader>;
 using SolidFillPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
 using SweepGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
+#ifndef FML_OS_ANDROID
+using LinearGradientFixedFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    LinearGradientFixedFillFragmentShader>;
+using RadialGradientFixedFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    RadialGradientFixedFillFragmentShader>;
+using SweepGradientFixedFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    SweepGradientFixedFillFragmentShader>;
+#endif  // FML_OS_ANDROID
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
@@ -214,10 +224,22 @@ class ContentContext {
     return GetPipeline(linear_gradient_fill_pipelines_, opts);
   }
 
+#ifndef FML_OS_ANDROID
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetLinearGradientFixedFillPipeline(ContentContextOptions opts) const {
     return GetPipeline(linear_gradient_fixed_fill_pipelines_, opts);
   }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetRadialGradientFixedFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(radial_gradient_fixed_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetSweepGradientFixedFillPipeline(ContentContextOptions opts) const {
+    return GetPipeline(sweep_gradient_fixed_fill_pipelines_, opts);
+  }
+#endif  // FML_OS_ANDROID
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
@@ -423,10 +445,16 @@ class ContentContext {
   // map.
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
-  mutable Variants<LinearGradientFixedFillPipeline>
-      linear_gradient_fixed_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
+#ifndef FML_OS_ANDROID
+  mutable Variants<LinearGradientFixedFillPipeline>
+      linear_gradient_fixed_fill_pipelines_;
+  mutable Variants<RadialGradientFixedFillPipeline>
+      radial_gradient_fixed_fill_pipelines_;
+  mutable Variants<SweepGradientFixedFillPipeline>
+      sweep_gradient_fixed_fill_pipelines_;
+#endif  // FML_OS_ANDROID
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;

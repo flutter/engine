@@ -51,12 +51,81 @@ const std::vector<Scalar>& SweepGradientContents::GetStops() const {
 }
 
 bool SweepGradientContents::Render(const ContentContext& renderer,
-                                   const Entity& entity,
-                                   RenderPass& pass) const {
+                                    const Entity& entity,
+                                    RenderPass& pass) const {
+#ifdef FML_OS_ANDROID
+  auto gradient_data = CreateGradientBuffer(colors_, stops_);
+  return RenderTexture(gradient_data, renderer, entity, pass);
+#else
+  auto gradient_data = CreateGradientBuffer(colors_, stops_);
+  if (gradient_data.texture_size > FIXED_GRADIENT_SIZE) {
+    return RenderTexture(gradient_data, renderer, entity, pass);
+  }
+  return RenderFixed(gradient_data, renderer, entity, pass);
+#endif  // FML_OS_ANDROID
+}
+
+#ifndef FML_OS_ANDROID
+bool SweepGradientContents::RenderFixed(const GradientData& gradient_data,
+                                          const ContentContext& renderer,
+                                          const Entity& entity,
+                                          RenderPass& pass) const {
+  using VS = SweepGradientFixedFillPipeline::VertexShader;
+  using FS = SweepGradientFixedFillPipeline::FragmentShader;
+
+  FS::GradientInfo gradient_info;
+  gradient_info.center = center_;
+  gradient_info.bias = bias_;
+  gradient_info.scale = scale_;
+  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  gradient_info.alpha = GetAlpha();
+  gradient_info.colors_length = gradient_data.texture_size;
+  for (auto i = 0u; i < gradient_data.colors.size(); i++) {
+    gradient_info.colors[i] = gradient_data.colors[i];
+  }
+
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
+  frame_info.matrix = GetInverseMatrix();
+
+  Command cmd;
+  cmd.label = "SweepGradientFixedFill";
+  cmd.stencil_reference = entity.GetStencilDepth();
+  auto geometry_result =
+      GetGeometry()->GetPositionBuffer(renderer, entity, pass);
+
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetSweepGradientFixedFillPipeline(options);
+
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  FS::BindGradientInfo(
+      cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+
+  if (!pass.AddCommand(std::move(cmd))) {
+    return false;
+  }
+
+  if (geometry_result.prevent_overdraw) {
+    return ClipRestoreContents().Render(renderer, entity, pass);
+  }
+  return true;
+}
+#endif // FML_OS_ANDROID
+
+bool SweepGradientContents::RenderTexture(const GradientData& gradient_data,
+                                          const ContentContext& renderer,
+                                          const Entity& entity,
+                                          RenderPass& pass) const {
   using VS = SweepGradientFillPipeline::VertexShader;
   using FS = SweepGradientFillPipeline::FragmentShader;
 
-  auto gradient_data = CreateGradientBuffer(colors_, stops_);
   auto gradient_texture =
       CreateGradientTexture(gradient_data, renderer.GetContext());
   if (gradient_texture == nullptr) {

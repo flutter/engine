@@ -5,10 +5,10 @@
 #include <impeller/gradient.glsl>
 
 uniform GradientInfo {
-  vec2 start_point;
-  vec2 end_point;
-  float alpha;
+  vec2 center;
+  float radius;
   float tile_mode;
+  float alpha;
   float colors_length;
   vec4 colors[FIXED_GRADIENT_SIZE];
 } gradient_info;
@@ -18,12 +18,8 @@ in vec2 v_position;
 out vec4 frag_color;
 
 void main() {
-  float len = length(gradient_info.end_point - gradient_info.start_point);
-  float dot = dot(
-    v_position - gradient_info.start_point,
-    gradient_info.end_point - gradient_info.start_point
-  );
-  float t = dot / (len * len);
+  float len = length(v_position - gradient_info.center);
+  float t = len / gradient_info.radius;
   frag_color = IPComputeFixedGradient(
     t,
     gradient_info.colors,

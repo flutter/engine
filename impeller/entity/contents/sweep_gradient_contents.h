@@ -15,6 +15,7 @@
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
@@ -42,6 +43,18 @@ class SweepGradientContents final : public ColorSourceContents {
   const std::vector<Scalar>& GetStops() const;
 
  private:
+  bool RenderTexture(const GradientData& gradient_data,
+                     const ContentContext& renderer,
+                     const Entity& entity,
+                     RenderPass& pass) const;
+
+#ifndef FML_OS_ANDROID
+  bool RenderFixed(const GradientData& gradient_data,
+                   const ContentContext& renderer,
+                   const Entity& entity,
+                   RenderPass& pass) const;
+#endif // FML_OS_ANDROID
+
   Point center_;
   Scalar bias_;
   Scalar scale_;

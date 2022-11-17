@@ -13,6 +13,12 @@
 
 namespace impeller {
 
+#ifdef FML_OS_ANDROID
+constexpr uint32_t FIXED_GRADIENT_SIZE = 0;
+#else
+constexpr uint32_t FIXED_GRADIENT_SIZE = 16;
+#endif // FML_OS_ANDROID
+
 // If texture_size is 0 then the gradient is invalid.
 struct GradientData {
   std::vector<uint8_t> color_bytes;
