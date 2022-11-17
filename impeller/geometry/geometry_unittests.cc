@@ -1761,7 +1761,7 @@ TEST(GeometryTest, Gradient) {
 
     auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLORS_NEAR(gradient.colors, colors);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
     ASSERT_EQ(gradient.texture_size, 2u);
   }
 
@@ -1784,7 +1784,7 @@ TEST(GeometryTest, Gradient) {
 
     auto gradient = CreateGradientBuffer(colors, stops);
 
-    ASSERT_COLORS_NEAR(gradient.colors, colors);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, colors);
     ASSERT_EQ(gradient.texture_size, 4u);
   }
 
@@ -1802,7 +1802,7 @@ TEST(GeometryTest, Gradient) {
         Color::lerp(Color::Blue(), Color::Green(), 0.6666),
         Color::Green(),
     };
-    ASSERT_COLORS_NEAR(gradient.colors, lerped_colors);
+    ASSERT_COLOR_BUFFER_NEAR(gradient.color_bytes, lerped_colors);
     ASSERT_EQ(gradient.texture_size, 5u);
   }
 
@@ -1818,8 +1818,6 @@ TEST(GeometryTest, Gradient) {
     auto gradient = CreateGradientBuffer(colors, stops);
 
     ASSERT_EQ(gradient.texture_size, 1024u);
-    // Large gradients use color buffer for textures
-    ASSERT_EQ(gradient.colors.size(), 0u);
     ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
   }
 }

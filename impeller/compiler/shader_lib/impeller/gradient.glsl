@@ -7,29 +7,22 @@
 
 #include <impeller/texture.glsl>
 
-#define FIXED_GRADIENT_SIZE 16
-
-/// Compute a gradient color from a buffer of up to 16 colors.
+/// Compute the indexes and mix coefficient used to mix colors for an
+/// arbitrarily sized color gradient.
 ///
-/// The provided value for `t` will be processed according to the `tile_mode`.
-/// If the `tile_mode` is decal and t is less than 0 or greater than 1, vec4(0)
-/// will be returned.
-vec4 IPComputeFixedGradient(float t, vec4[FIXED_GRADIENT_SIZE] colors, float colors_length, float tile_mode) {
-  if ((t < 0.0 || t > 1.0) && tile_mode == kTileModeDecal) {
-    return vec4(0);
-  }
-
-  t = IPFloatTile(t, tile_mode);
+/// The returned values are the lower index, upper index, and mix
+/// coefficient.
+vec3 IPComputeFixedGradientValues(float t, float colors_length) {
   if (colors_length == 2) {
-    return mix(colors[0], colors[1], t);
+    return vec3(0, 1, t);
   }
 
   float rough_index =  colors_length * t;
   float lower_index = floor(rough_index);
-  int upper_index = int(ceil(rough_index));
+  float upper_index = ceil(rough_index);
   float scale = rough_index - lower_index;
 
-  return mix(colors[int(lower_index)], colors[upper_index], scale);
+  return vec3(lower_index, upper_index, scale);
 }
 
 #endif

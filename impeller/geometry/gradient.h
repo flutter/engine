@@ -13,22 +13,15 @@
 
 namespace impeller {
 
-#ifdef FML_OS_ANDROID
-constexpr uint32_t FIXED_GRADIENT_SIZE = 0;
-#else
-constexpr uint32_t FIXED_GRADIENT_SIZE = 16;
-#endif  // FML_OS_ANDROID
-
 // If texture_size is 0 then the gradient is invalid.
 struct GradientData {
   std::vector<uint8_t> color_bytes;
-  std::vector<Color> colors;
   uint32_t texture_size;
 };
 
 /**
- * @brief Populate a vector with the interpolated colors for the linear gradient
- * described colors and stops.
+ * @brief Populate a vector with the interpolated color bytes for the linear
+ * gradient described by colors and stops.
  *
  * @param colors
  * @param stops
@@ -36,5 +29,20 @@ struct GradientData {
  */
 GradientData CreateGradientBuffer(const std::vector<Color>& colors,
                                   const std::vector<Scalar>& stops);
+
+/**
+ * @brief Populate a vector with the interpolated colors for the linear gradient
+ * described  by colors and stops.
+ *
+ * If the returned result is std::nullopt, the original color buffer can be used
+ * instead.
+ *
+ * @param colors
+ * @param stops
+ * @return GradientData
+ */
+std::optional<std::vector<Color>> CreateGradientColors(
+    const std::vector<Color>& colors,
+    const std::vector<Scalar>& stops);
 
 }  // namespace impeller

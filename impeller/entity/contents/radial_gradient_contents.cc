@@ -48,23 +48,15 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
 bool RadialGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-#ifdef FML_OS_ANDROID
-  auto gradient_data = CreateGradientBuffer(colors_, stops_);
-  return RenderTexture(gradient_data, renderer, entity, pass);
-#else
-  auto gradient_data = CreateGradientBuffer(colors_, stops_);
-  if (gradient_data.texture_size > FIXED_GRADIENT_SIZE) {
-    return RenderTexture(gradient_data, renderer, entity, pass);
+  if (renderer.GetBackendFeatures().ssbo_support) {
+    return RenderSSBO(renderer, entity, pass);
   }
-  return RenderFixed(gradient_data, renderer, entity, pass);
-#endif  // FML_OS_ANDROID
+  return RenderTexture(renderer, entity, pass);
 }
 
-#ifndef FML_OS_ANDROID
-bool RadialGradientContents::RenderFixed(const GradientData& gradient_data,
-                                         const ContentContext& renderer,
-                                         const Entity& entity,
-                                         RenderPass& pass) const {
+bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass) const {
   using VS = RadialGradientFixedFillPipeline::VertexShader;
   using FS = RadialGradientFixedFillPipeline::FragmentShader;
 
@@ -73,10 +65,13 @@ bool RadialGradientContents::RenderFixed(const GradientData& gradient_data,
   gradient_info.radius = radius_;
   gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
   gradient_info.alpha = GetAlpha();
-  gradient_info.colors_length = gradient_data.texture_size;
-  for (auto i = 0u; i < gradient_data.colors.size(); i++) {
-    gradient_info.colors[i] = gradient_data.colors[i];
-  }
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto colors = CreateGradientColors(colors_, stops_).value_or(colors_);
+
+  gradient_info.colors_length = colors.size();
+  auto color_buffer = host_buffer.Emplace(
+      colors.data(), colors.size() * sizeof(Color), alignof(Color));
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -100,6 +95,7 @@ bool RadialGradientContents::RenderFixed(const GradientData& gradient_data,
   cmd.BindVertices(geometry_result.vertex_buffer);
   FS::BindGradientInfo(
       cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  FS::BindColorData(cmd, color_buffer);
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   if (!pass.AddCommand(std::move(cmd))) {
@@ -111,15 +107,14 @@ bool RadialGradientContents::RenderFixed(const GradientData& gradient_data,
   }
   return true;
 }
-#endif  // FML_OS_ANDROID
 
-bool RadialGradientContents::RenderTexture(const GradientData& gradient_data,
-                                           const ContentContext& renderer,
+bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
                                            const Entity& entity,
                                            RenderPass& pass) const {
   using VS = RadialGradientFillPipeline::VertexShader;
   using FS = RadialGradientFillPipeline::FragmentShader;
 
+  auto gradient_data = CreateGradientBuffer(colors_, stops_);
   auto gradient_texture =
       CreateGradientTexture(gradient_data, renderer.GetContext());
   if (gradient_texture == nullptr) {

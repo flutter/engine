@@ -43,17 +43,13 @@ class SweepGradientContents final : public ColorSourceContents {
   const std::vector<Scalar>& GetStops() const;
 
  private:
-  bool RenderTexture(const GradientData& gradient_data,
-                     const ContentContext& renderer,
+  bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
                      RenderPass& pass) const;
 
-#ifndef FML_OS_ANDROID
-  bool RenderFixed(const GradientData& gradient_data,
-                   const ContentContext& renderer,
-                   const Entity& entity,
-                   RenderPass& pass) const;
-#endif  // FML_OS_ANDROID
+  bool RenderSSBO(const ContentContext& renderer,
+                  const Entity& entity,
+                  RenderPass& pass) const;
 
   Point center_;
   Scalar bias_;

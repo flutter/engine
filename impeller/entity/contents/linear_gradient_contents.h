@@ -43,17 +43,13 @@ class LinearGradientContents final : public ColorSourceContents {
   void SetTileMode(Entity::TileMode tile_mode);
 
  private:
-  bool RenderTexture(const GradientData& gradient_data,
-                     const ContentContext& renderer,
+  bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
                      RenderPass& pass) const;
 
-#ifndef FML_OS_ANDROID
-  bool RenderFixed(const GradientData& gradient_data,
-                   const ContentContext& renderer,
-                   const Entity& entity,
-                   RenderPass& pass) const;
-#endif  // FML_OS_ANDROID
+  bool RenderSSBO(const ContentContext& renderer,
+                  const Entity& entity,
+                  RenderPass& pass) const;
 
   Point start_point_;
   Point end_point_;
