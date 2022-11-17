@@ -13,11 +13,7 @@
 /// The returned values are the lower index, upper index, and mix
 /// coefficient.
 vec3 IPComputeFixedGradientValues(float t, float colors_length) {
-  if (colors_length == 2) {
-    return vec3(0, 1, t);
-  }
-
-  float rough_index =  colors_length * t;
+  float rough_index = (colors_length - 1) * t;
   float lower_index = floor(rough_index);
   float upper_index = ceil(rough_index);
   float scale = rough_index - lower_index;
