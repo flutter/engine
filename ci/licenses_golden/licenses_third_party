@@ -1,4 +1,4 @@
-Signature: 3253fb53101f65b5cf30852bdef8b5fc
+Signature: ec3a799e0dff31096626517f97cca9e0
 
 UNUSED LICENSES:
 
@@ -14109,6 +14109,7 @@ FILE: ../../../third_party/dart/runtime/vm/heap/gc_shared.h
 FILE: ../../../third_party/dart/runtime/vm/heap/page.cc
 FILE: ../../../third_party/dart/runtime/vm/heap/page.h
 FILE: ../../../third_party/dart/runtime/vm/instructions.cc
+FILE: ../../../third_party/dart/runtime/vm/kernel_test.cc
 FILE: ../../../third_party/dart/runtime/vm/malloc_hooks_riscv.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.cc
 FILE: ../../../third_party/dart/runtime/vm/os_thread_absl.h
@@ -17356,6 +17357,7 @@ FILE: ../../../third_party/dart/sdk/lib/html/html_common/conversions_dart2js.dar
 FILE: ../../../third_party/dart/sdk/lib/html/html_common/html_common.dart
 FILE: ../../../third_party/dart/sdk/lib/libraries.json
 FILE: ../../../third_party/dart/sdk/lib/vmservice_libraries.json
+FILE: ../../../third_party/dart/sdk/version
 FILE: ../../../third_party/dart/third_party/clang.tar.gz.sha1
 ----------------------------------------------------------------------------------------------------
 Copyright 2012, the Dart project authors.

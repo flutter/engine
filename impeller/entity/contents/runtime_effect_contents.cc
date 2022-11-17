@@ -144,8 +144,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   ///
 
   VS::VertInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  frame_info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
@@ -189,6 +188,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         uniform_slot.ext_res_0 = buffer_index;
         cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
                          buffer_view);
+        buffer_index++;
         break;
       }
       case kBoolean:
@@ -206,8 +206,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
                        << ".";
         return true;
     }
-
-    buffer_index++;
   }
 
   pass.AddCommand(std::move(cmd));

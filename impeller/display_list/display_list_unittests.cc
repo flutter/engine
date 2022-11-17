@@ -2,12 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <array>
 #include <cmath>
+#include <memory>
 #include <vector>
 
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color.h"
 #include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_color_source.h"
 #include "display_list/display_list_image_filter.h"
 #include "display_list/display_list_paint.h"
 #include "display_list/display_list_tile_mode.h"
@@ -20,11 +23,12 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
-#include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkPathBuilder.h"
+#include "third_party/skia/include/core/SkRRect.h"
 
 namespace impeller {
 namespace testing {
@@ -658,6 +662,9 @@ TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
 TEST_P(DisplayListTest, CanDrawShadow) {
   flutter::DisplayListBuilder builder;
 
+  auto content_scale = GetContentScale() * 0.8;
+  builder.scale(content_scale.x, content_scale.y);
+
   constexpr size_t star_spikes = 5;
   constexpr SkScalar half_spike_rotation = kPi / star_spikes;
   constexpr SkScalar radius = 40;
@@ -677,24 +684,24 @@ TEST_P(DisplayListTest, CanDrawShadow) {
   std::array<SkPath, 4> paths = {
       SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
       SkPath{}.addRRect(
-          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(20, 0, 200, 100), 30, 30)),
       SkPath{}.addCircle(100, 50, 50),
       SkPath{}.addPoly(star.data(), star.size(), true),
   };
   builder.setColor(flutter::DlColor::kWhite());
   builder.drawPaint();
   builder.setColor(flutter::DlColor::kCyan());
-  builder.translate(100, 100);
+  builder.translate(100, 50);
   for (size_t x = 0; x < paths.size(); x++) {
     builder.save();
-    for (size_t y = 0; y < 5; y++) {
-      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+    for (size_t y = 0; y < 6; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 8, false,
                          1);
       builder.drawPath(paths[x]);
-      builder.translate(0, 200);
+      builder.translate(0, 150);
     }
     builder.restore();
-    builder.translate(300, 0);
+    builder.translate(250, 0);
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1007,6 +1014,43 @@ TEST_P(DisplayListTest, CanDrawCorrectlyWithColorFilterAndImageFilter) {
   paint.setColorFilter(green_color_filter);
   paint.setImageFilter(blue_image_filter);
   builder.drawRect(SkRect::MakeLTRB(100, 100, 500, 500), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
+  auto blur_filter = std::make_shared<flutter::DlBlurMaskFilter>(
+      SkBlurStyle::kNormal_SkBlurStyle, 10);
+
+  flutter::DisplayListBuilder builder;
+
+  std::array<flutter::DlColor, 2> colors = {flutter::DlColor::kBlue(),
+                                            flutter::DlColor::kGreen()};
+  std::array<float, 2> stops = {0, 1};
+  std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
+      std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
+      flutter::DlColorSource::MakeLinear(
+          SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
+          stops.data(), flutter::DlTileMode::kClamp)};
+
+  int offset = 100;
+  for (auto color_source : color_sources) {
+    flutter::DlPaint paint;
+    paint.setColorSource(color_source);
+    paint.setMaskFilter(blur_filter);
+
+    paint.setDrawStyle(flutter::DlDrawStyle::kFill);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(100, offset, 100, 50), 30, 30),
+        paint);
+    paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+    paint.setStrokeWidth(10);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(300, offset, 100, 50), 30, 30),
+        paint);
+
+    offset += 100;
+  }
+
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

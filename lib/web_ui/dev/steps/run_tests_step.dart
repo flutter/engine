@@ -72,6 +72,8 @@ class RunTestsStep implements PipelineStep {
 
     final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
 
+    bool testsPassed = true;
+
     if (sortedTests.htmlTests.isNotEmpty) {
       await _runTestBatch(
         testFiles: sortedTests.htmlTests,
@@ -84,6 +86,7 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
     if (sortedTests.canvasKitTests.isNotEmpty) {
@@ -98,9 +101,13 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
-    if (sortedTests.skwasmTests.isNotEmpty) {
+    // TODO(jacksongardner): enable this test suite on safari
+    // For some reason, Safari is flaky when running the Skwasm test suite
+    // See https://github.com/flutter/flutter/issues/115312
+    if (browserName != kSafari && sortedTests.skwasmTests.isNotEmpty) {
       await _runTestBatch(
         testFiles: sortedTests.skwasmTests,
         renderer: Renderer.skwasm,
@@ -112,11 +119,12 @@ class RunTestsStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
     await browserEnvironment.cleanup();
 
-    if (io.exitCode != 0) {
+    if (!testsPassed) {
       throw ToolExit('Some tests failed');
     }
   }
