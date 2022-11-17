@@ -102,17 +102,14 @@ class HtmlFontCollection implements FontCollection {
   void clear() {
     _assetFontManager = null;
     _testFontManager = null;
-    if (supportsFontsClearApi) {
-      domDocument.fonts!.clear();
-    }
+    domDocument.fonts!.clear();
   }
 }
 
 /// Manages a collection of fonts and ensures they are loaded.
 class FontManager {
-  factory FontManager() = FontManager._;
 
-  FontManager._();
+  FontManager();
 
   /// Fonts that started the downloading process. Once the fonts have downloaded
   /// without error, they are moved to [_downloadedFonts]. Those fonts
