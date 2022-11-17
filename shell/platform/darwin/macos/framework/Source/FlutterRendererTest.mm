@@ -7,7 +7,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -34,18 +34,18 @@ void SetEngineDefaultView(FlutterEngine* engine, id flutterView) {
 
 }  // namespace
 
-TEST(FlutterMetalRenderer, PresentDelegatesToFlutterView) {
+TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
-  FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
+  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   SetEngineDefaultView(engine, mockFlutterView);
   [(FlutterView*)[mockFlutterView expect] present];
   [renderer present:kFlutterDefaultViewId];
 }
 
-TEST(FlutterMetalRenderer, TextureReturnedByFlutterView) {
+TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
-  FlutterMetalRenderer* renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:engine];
+  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
   id mockFlutterView = OCMClassMock([FlutterView class]);
   SetEngineDefaultView(engine, mockFlutterView);
   FlutterFrameInfo frameInfo;

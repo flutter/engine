@@ -12,7 +12,18 @@
 /**
  * Rendering backend agnostic FlutterRendererConfig provider to be used by the embedder API.
  */
-@protocol FlutterRenderer <FlutterTextureRegistry, FlutterTextureRegistrarDelegate>
+@interface FlutterRenderer
+    : FlutterTextureRegistrar <FlutterTextureRegistry, FlutterTextureRegistrarDelegate>
+
+/**
+ * Interface to the system GPU. Used to issue all the rendering commands.
+ */
+@property(nonatomic, readonly, nonnull) id<MTLDevice> device;
+
+/**
+ * Used to get the command buffers for the MTLDevice to render to.
+ */
+@property(nonatomic, readonly, nonnull) id<MTLCommandQueue> commandQueue;
 
 /**
  * Intializes the renderer with the given FlutterEngine.
@@ -33,5 +44,16 @@
  * Tells the renderer that there is no Flutter content available for this frame.
  */
 - (void)presentWithoutContent:(uint64_t)viewId;
+
+/**
+ * Creates a Metal texture for the given view with the given size.
+ */
+- (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size;
+
+/**
+ * Populates the texture registry with the provided metalTexture.
+ */
+- (BOOL)populateTextureWithIdentifier:(int64_t)textureID
+                         metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture;
 
 @end
