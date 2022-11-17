@@ -87,6 +87,10 @@ gfx::NativeViewAccessible AXPlatformNodeDelegateBase::GetParent() {
   return nullptr;
 }
 
+gfx::NativeViewAccessible AXPlatformNodeDelegateBase::GetLowestPlatformAncestor() const {
+  return nullptr;
+}
+
 int AXPlatformNodeDelegateBase::GetChildCount() const {
   return 0;
 }

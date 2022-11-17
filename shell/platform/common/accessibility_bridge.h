@@ -12,8 +12,10 @@
 
 #include "flutter/third_party/accessibility/ax/ax_event_generator.h"
 #include "flutter/third_party/accessibility/ax/ax_tree.h"
+#include "flutter/third_party/accessibility/ax/ax_tree_manager.h"
 #include "flutter/third_party/accessibility/ax/ax_tree_observer.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h"
 
 #include "flutter_platform_node_delegate.h"
 
@@ -39,6 +41,7 @@ namespace flutter {
 class AccessibilityBridge
     : public std::enable_shared_from_this<AccessibilityBridge>,
       public FlutterPlatformNodeDelegate::OwnerBridge,
+      public ui::AXPlatformTreeManager,
       private ui::AXTreeObserver {
  public:
   //-----------------------------------------------------------------------------
@@ -105,6 +108,31 @@ class AccessibilityBridge
   ///             all pending events.
   const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents()
       const;
+
+  // AXTreeManager methods.
+
+  ui::AXNode* GetNodeFromTree(const ui::AXTreeID tree_id,
+                                  const ui::AXNode::AXID node_id) const override;
+
+  ui::AXNode* GetNodeFromTree(const ui::AXNode::AXID node_id) const override;
+
+  ui::AXTreeID GetTreeID() const override;
+
+  ui::AXTreeID GetParentTreeID() const override;
+
+  ui::AXNode* GetRootAsAXNode() const override;
+
+  ui::AXNode* GetParentNodeFromParentTreeAsAXNode() const override;
+
+  ui::AXTree* GetTree() const override;
+
+  // AXPlatformTreeManger methods.
+
+  ui::AXPlatformNode* GetPlatformNodeFromTree(const ui::AXNode::AXID node_id) const override;
+
+  ui::AXPlatformNode* GetPlatformNodeFromTree(const ui::AXNode& node) const override;
+
+  ui::AXPlatformNodeDelegate* RootDelegate() const override;
 
  protected:
   //---------------------------------------------------------------------------
@@ -176,7 +204,7 @@ class AccessibilityBridge
   std::unordered_map<AccessibilityNodeId,
                      std::shared_ptr<FlutterPlatformNodeDelegate>>
       id_wrapper_map_;
-  ui::AXTree tree_;
+  std::unique_ptr<ui::AXTree> tree_;
   ui::AXEventGenerator event_generator_;
   std::unordered_map<int32_t, SemanticsNode> pending_semantics_node_updates_;
   std::unordered_map<int32_t, SemanticsCustomAction>

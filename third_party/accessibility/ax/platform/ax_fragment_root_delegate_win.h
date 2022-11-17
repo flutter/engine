@@ -13,6 +13,8 @@ namespace ui {
 // to relate the fragment root to its neighbors in a loosely coupled way.
 class AXFragmentRootDelegateWin {
  public:
+  virtual ~AXFragmentRootDelegateWin() = default;
+
   // In our design, a fragment root can have at most one child.
   // See AXFragmentRootWin for more details.
   virtual gfx::NativeViewAccessible GetChildOfAXFragmentRoot() = 0;

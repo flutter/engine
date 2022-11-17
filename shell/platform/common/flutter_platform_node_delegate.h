@@ -8,6 +8,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/third_party/accessibility/ax/ax_event_generator.h"
+#include "flutter/third_party/accessibility/ax/ax_node_position.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
 
 namespace flutter {
@@ -125,6 +126,11 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
       const ui::AXClippingBehavior clipping_behavior,
       ui::AXOffscreenResult* offscreen_result) const override;
 
+  // |ui:AXPlatformNodeDelegateBase|
+  gfx::NativeViewAccessible GetLowestPlatformAncestor() const override;
+
+  ui::AXNodePosition::AXPositionInstance CreateTextPositionAt(int offset) const override;
+
   //------------------------------------------------------------------------------
   /// @brief      Called only once, immediately after construction. The
   ///             constructor doesn't take any arguments because in the Windows
@@ -143,6 +149,14 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   ///             platform node delegate. This pointer is only safe in the
   ///             platform thread.
   std::weak_ptr<OwnerBridge> GetOwnerBridge() const;
+
+  virtual ui::AXPlatformNode* GetPlatformNode() const;
+
+  virtual ui::AXPlatformNode* GetFromNodeID(int32_t id) override;
+
+  virtual ui::AXPlatformNode* GetFromTreeIDAndNodeID(const ui::AXTreeID& tree_id, int32_t node_id) override;
+
+  virtual const ui::AXTree::Selection GetUnignoredSelection() const override;
 
  private:
   ui::AXNode* ax_node_;

@@ -20,6 +20,16 @@ AXEmbeddedObjectBehavior g_ax_embedded_object_behavior =
     AXEmbeddedObjectBehavior::kSuppressCharacter;
 #endif  // defined(OS_WIN)
 
+ScopedAXEmbeddedObjectBehaviorSetter::ScopedAXEmbeddedObjectBehaviorSetter(
+    AXEmbeddedObjectBehavior behavior) {
+  prev_behavior_ = g_ax_embedded_object_behavior;
+  g_ax_embedded_object_behavior = behavior;
+}
+
+ScopedAXEmbeddedObjectBehaviorSetter::~ScopedAXEmbeddedObjectBehaviorSetter() {
+  g_ax_embedded_object_behavior = prev_behavior_;
+}
+
 // static
 AXNodePosition::AXPositionInstance AXNodePosition::CreatePosition(
     const AXNode& node,
@@ -286,9 +296,10 @@ bool AXNodePosition::IsInLineBreakingObject() const {
   if (IsNullPosition())
     return false;
   BASE_DCHECK(GetAnchor());
-  return GetAnchor()->data().GetBoolAttribute(
+  return /*GetAnchor()->data().GetBoolAttribute(
              ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
-         !GetAnchor()->IsInListMarker();
+         !GetAnchor()->IsInListMarker();*/ true; // TODO(schectman) see if when everything breaks
+  // Need to figure out who actually gets this attribute since we don't use it currently
 }
 
 ax::mojom::Role AXNodePosition::GetAnchorRole() const {

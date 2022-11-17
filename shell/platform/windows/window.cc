@@ -205,7 +205,7 @@ LRESULT Window::OnGetObject(UINT const message,
   // TODO(schectman): UIA is currently disabled by default.
   // https://github.com/flutter/flutter/issues/114547
   if (is_uia_request && root_view) {
-#ifdef FLUTTER_ENGINE_USE_UIA
+#ifndef FLUTTER_ENGINE_USE_UIA
     if (!ax_fragment_root_) {
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
           window_handle_, GetAxFragmentRootDelegate());
@@ -223,7 +223,7 @@ LRESULT Window::OnGetObject(UINT const message,
       FML_LOG(ERROR) << "Failed to query AX fragment root.";
     }
 #endif  // FLUTTER_ENGINE_USE_UIA
-  } else if (is_msaa_request && root_view) {
+  } else if (is_msaa_request && root_view && FALSE) {
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();

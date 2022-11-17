@@ -105,6 +105,16 @@ enum class AXEmbeddedObjectBehavior {
 // overridden for testing.
 AX_EXPORT extern AXEmbeddedObjectBehavior g_ax_embedded_object_behavior;
 
+class AX_EXPORT ScopedAXEmbeddedObjectBehaviorSetter {
+ public:
+  explicit ScopedAXEmbeddedObjectBehaviorSetter(
+      AXEmbeddedObjectBehavior behavior);
+  ~ScopedAXEmbeddedObjectBehaviorSetter();
+
+ private:
+  AXEmbeddedObjectBehavior prev_behavior_;
+};
+
 // Forward declarations.
 template <class AXPositionType, class AXNodeType>
 class AXPosition;

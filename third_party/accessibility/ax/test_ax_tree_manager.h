@@ -35,7 +35,7 @@ class TestAXTreeManager : public AXTreeManager {
   TestAXTreeManager& operator=(const TestAXTreeManager& manager) = delete;
 
   void DestroyTree();
-  AXTree* GetTree() const;
+  AXTree* GetTree() const override;
   // Takes ownership of |tree|.
   void SetTree(std::unique_ptr<AXTree> tree);
 
