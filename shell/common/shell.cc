@@ -851,6 +851,14 @@ void Shell::OnPlatformViewDestroyed() {
   // This incorrect assumption can lead to deadlock.
   rasterizer_->DisableThreadMergerIfNeeded();
 
+  // Notify the Dart VM that the PlatformView has been destroyed and some
+  // cleanup activity can be done (e.g: garbage collect the Dart heap).
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
+    if (engine) {
+      engine->NotifyDestroyed();
+    }
+  });
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -899,12 +907,6 @@ void Shell::OnPlatformViewDestroyed() {
   // Overall, the longer term plan is to remove this implementation once
   // https://github.com/flutter/flutter/issues/96679 is fixed.
   rasterizer_->TeardownExternalViewEmbedder();
-
-  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
-    if (engine) {
-      engine->NotifyDestroyed();
-    }
-  });
 }
 
 // |PlatformView::Delegate|

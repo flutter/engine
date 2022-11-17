@@ -3948,7 +3948,7 @@ TEST_F(ShellTest, NotifyDestroyed) {
   ASSERT_TRUE(ValidateShell(shell.get()));
 
   fml::CountDownLatch latch(1);
-  AddNativeCallback("NotifyDestroyedBool", CREATE_NATIVE_ENTRY([&](auto args) {
+  AddNativeCallback("NotifyDestroyed", CREATE_NATIVE_ENTRY([&](auto args) {
                       auto runtime_controller = const_cast<RuntimeController*>(
                           shell->GetEngine()->GetRuntimeController());
                       bool success = runtime_controller->NotifyDestroyed();

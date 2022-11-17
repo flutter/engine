@@ -214,7 +214,7 @@ void performanceModeImpactsNotifyIdle() {
 
 @pragma('vm:entry-point')
 void callNotifyDestroyed() {
-  notifyDestroyedBool();
+  notifyDestroyed();
 }
 
 @pragma('vm:external-name', 'NotifyMessage')
@@ -429,8 +429,8 @@ Future<void> runCallback(IsolateParam param) async {
 @pragma('vm:entry-point')
 @pragma('vm:external-name', 'NotifyNativeBool')
 external void notifyNativeBool(bool value);
-@pragma('vm:external-name', 'NotifyDestroyedBool')
-external void notifyDestroyedBool();
+@pragma('vm:external-name', 'NotifyDestroyed')
+external void notifyDestroyed();
 
 @pragma('vm:entry-point')
 Future<void> testPluginUtilitiesCallbackHandle() async {
