@@ -108,7 +108,6 @@ std::optional<std::vector<Color>> CreateGradientColors(
     return std::nullopt;
   }
 
-  uint32_t color_count;
   auto minimum_delta = 1.0;
   for (size_t i = 1; i < stops.size(); i++) {
     auto value = stops[i] - stops[i - 1];
@@ -119,11 +118,11 @@ std::optional<std::vector<Color>> CreateGradientColors(
     if (value < minimum_delta) {
       minimum_delta = value;
     }
-    // Avoid creating buffers that are absurdly large due to stops that are
-    // very close together.
-    color_count = std::min(
-        static_cast<uint32_t>(std::round(1.0 / minimum_delta)) + 1, 1024u);
   }
+  // Avoid creating buffers that are absurdly large due to stops that are
+  // very close together.
+  uint32_t color_count = std::min(
+      static_cast<uint32_t>(std::round(1.0 / minimum_delta)) + 1, 1024u);
 
   if (color_count == colors.size()) {
     // Use original buffer.

@@ -1292,7 +1292,7 @@ FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fixed_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
@@ -1301,7 +1301,7 @@ FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fixed_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/runtime_effect.vert
@@ -1310,7 +1310,7 @@ FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fixed_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
@@ -1451,6 +1451,7 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h
+FILE: ../../../flutter/impeller/renderer/backend_features.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
