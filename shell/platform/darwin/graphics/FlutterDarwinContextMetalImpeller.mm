@@ -7,10 +7,10 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
 #include "flutter/impeller/entity/mtl/entity_shaders.h"
-#include "impeller/entity/mtl/modern_shaders.h"
 #include "flutter/impeller/renderer/backend/metal/context_mtl.h"
 #include "flutter/shell/common/context_options.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#include "impeller/entity/mtl/modern_shaders.h"
 
 FLUTTER_ASSERT_ARC
 
