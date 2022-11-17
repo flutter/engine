@@ -64,6 +64,9 @@ abstract class ApplicationDom {
   /// Attaches the glassPane element into the hostElement.
   void attachGlassPane(DomElement glassPaneElement);
 
+  /// Attaches the resourceHost element into the hostElement.
+  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo });
+
   void addScene(DomElement? sceneElement);
 
   /// Register a listener for window resize events

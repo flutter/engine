@@ -24,7 +24,7 @@ class CustomElementApplicationDom extends ApplicationDom {
   }) {}
   void setHostAttribute(String name, String value) {}
   void attachGlassPane(DomElement glassPaneElement) {}
-
+  void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo }) {}
   void addScene(DomElement? sceneElement) {}
 
   void setMetricsChangeHandler(void Function(DomEvent? event) handler) {}

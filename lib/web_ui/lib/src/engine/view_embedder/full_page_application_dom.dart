@@ -96,6 +96,13 @@ class FullPageApplicationDom extends ApplicationDom {
     registerElementForCleanup(glassPaneElement);
   }
 
+  @override
+  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo }) {
+    domDocument.body!.insertBefore(resourceHost, nextTo);
+
+    registerElementForCleanup(resourceHost);
+  }
+
   void addScene(DomElement? sceneElement) {}
 
   @override

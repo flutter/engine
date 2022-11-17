@@ -134,11 +134,6 @@ class FlutterViewEmbedder {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
-    final bool isWebKit = browserEngine == BrowserEngine.webkit;
-
-    _resourcesHost?.remove();
-    _resourcesHost = null;
-
     _applicationDom.setHostAttribute(
       'flt-renderer',
       '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
@@ -357,15 +352,15 @@ class FlutterViewEmbedder {
   void addResource(DomElement element) {
     final bool isWebKit = browserEngine == BrowserEngine.webkit;
     if (_resourcesHost == null) {
-      _resourcesHost = createDomHTMLDivElement()
+      final DomElement resourcesHost = domDocument.createElement('flt-svg-filters')
         ..style.visibility = 'hidden';
       if (isWebKit) {
-        final DomNode bodyNode = domDocument.body!;
-        bodyNode.insertBefore(_resourcesHost!, bodyNode.firstChild);
+        // The resourcesHost *must* be a sibling of the glassPaneElement.
+        _applicationDom.attachResourcesHost(resourcesHost, nextTo: glassPaneElement);
       } else {
-        _glassPaneShadow!.node.insertBefore(
-            _resourcesHost!, _glassPaneShadow!.node.firstChild);
+        glassPaneShadow!.node.insertBefore(resourcesHost, glassPaneShadow!.node.firstChild);
       }
+      _resourcesHost = resourcesHost;
     }
     _resourcesHost!.append(element);
   }
