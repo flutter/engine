@@ -268,6 +268,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _textureRegistry.parent = nil;
   [_binaryMessenger release];
   [_textureRegistry release];
+  _textureRegistry = nil;
   [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];

@@ -11,36 +11,32 @@
 #pragma mark - FlutterTextureRegistry
 
 - (instancetype)initWithParent:(NSObject<FlutterTextureRegistry>*)parent {
-  self = [super init];
-  if (self != nil) {
+  if (self = [super init]) {
     self.parent = parent;
   }
   return self;
 }
 
 - (int64_t)registerTexture:(NSObject<FlutterTexture>*)texture {
-  if (self.parent) {
-    return [self.parent registerTexture:texture];
-  } else {
+  if (!self.parent) {
     FML_LOG(WARNING) << "Using on an empty registry.";
+    return 0;
   }
-  return 0;
+  return [self.parent registerTexture:texture];
 }
 
 - (void)textureFrameAvailable:(int64_t)textureId {
-  if (self.parent) {
-    return [self.parent textureFrameAvailable:textureId];
-  } else {
+  if (!self.parent) {
     FML_LOG(WARNING) << "Using on an empty registry.";
   }
+  return [self.parent textureFrameAvailable:textureId];
 }
 
 - (void)unregisterTexture:(int64_t)textureId {
-  if (self.parent) {
-    return [self.parent unregisterTexture:textureId];
-  } else {
+  if (!self.parent) {
     FML_LOG(WARNING) << "Using on an empty registry.";
   }
+  return [self.parent unregisterTexture:textureId];
 }
 
 @end
