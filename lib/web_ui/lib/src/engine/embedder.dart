@@ -17,7 +17,6 @@ import 'pointer_binding.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
-import 'util.dart';
 import 'view_embedder/application_dom.dart';
 import 'window.dart';
 
@@ -35,17 +34,18 @@ import 'window.dart';
 /// - [sceneHostElement], the anchor that provides a stable location in the DOM
 ///   tree for the [sceneElement].
 /// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
-///
-/// The incoming [hostElement] parameter specifies the root element in the DOM
-/// into which Flutter will be rendered.
-///
-/// The hostElement is abstracted by an [ApplicationDom] instance, which has
-/// different behavior depending on the `hostElement` value:
-///
-/// - A `null` `hostElement` will preserve Flutter web's original behavior, where
-///   it takes over the whole screen.
-/// - A non-`null` `hostElement` will render flutter inside that element.
 class FlutterViewEmbedder {
+  /// Creates a FlutterViewEmbedder.
+  ///
+  /// The incoming [hostElement] parameter specifies the root element in the DOM
+  /// into which Flutter will be rendered.
+  ///
+  /// The hostElement is abstracted by an [ApplicationDom] instance, which has
+  /// different behavior depending on the `hostElement` value:
+  ///
+  /// - A `null` `hostElement` will preserve Flutter web's original behavior, where
+  ///   it takes over the whole screen.
+  /// - A non-`null` `hostElement` will render flutter inside that element.
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate ApplicationDom using its factory...
     // TODO(dit): Pass the correct object here!
@@ -124,8 +124,6 @@ class FlutterViewEmbedder {
   HostNode? get glassPaneShadow => _glassPaneShadow;
   HostNode? _glassPaneShadow;
 
-  final DomElement rootElement = domDocument.body!;
-
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
   static const double defaultFontSize = 14;
@@ -155,8 +153,10 @@ class FlutterViewEmbedder {
     _glassPaneElement = glassPaneElement;
 
     // This must be appended to the applicationDom now, so the engine can create
-    // a host node (ShadowDOM or a fallback) properly.
-    // The applicationDom takes care of cleaning up the glassPane on hot restart.
+    // a host node (ShadowDOM or a fallback) next.
+    //
+    // The applicationDom will take care of cleaning up the glassPane on hot
+    // restart.
     _applicationDom.attachGlassPane(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
@@ -332,17 +332,6 @@ class FlutterViewEmbedder {
     }
   }
 
-  /// The element corresponding to the only child of the root surface.
-  DomElement? get _rootApplicationElement {
-    final DomElement lastElement = rootElement.children.last;
-    for (final DomElement child in lastElement.children) {
-      if (child.tagName == 'FLT-SCENE') {
-        return child;
-      }
-    }
-    return null;
-  }
-
   /// Add an element as a global resource to be referenced by CSS.
   ///
   /// This call create a global resource host element on demand and either
@@ -373,8 +362,6 @@ class FlutterViewEmbedder {
     assert(element.parentNode == _resourcesHost);
     element.remove();
   }
-
-  String get currentHtml => _rootApplicationElement?.outerHTML ?? '';
 }
 
 /// The embedder singleton.
