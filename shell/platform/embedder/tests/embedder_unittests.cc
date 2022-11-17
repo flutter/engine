@@ -1654,7 +1654,7 @@ SW_PIXFMT_TEST_F(GreenRGBA4444x0F0F,
                  draw_solid_green,
                  kRGBA4444,
                  (uint16_t)0x0F0F);
-SW_PIXFMT_TEST_F(GreenBGRA8888x00xFFx00xFF,
+SW_PIXFMT_TEST_F(GreenRGBA8888x00xFFx00xFF,
                  draw_solid_green,
                  kRGBA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
@@ -1669,7 +1669,8 @@ SW_PIXFMT_TEST_F(BlueRGBA4444x00FF,
                  draw_solid_blue,
                  kRGBA4444,
                  (uint16_t)0x00FF);
-SW_PIXFMT_TEST_F(draw_solid_blue,
+SW_PIXFMT_TEST_F(BlueRGBA8888x00x00xFFxFF,
+                 draw_solid_blue,
                  kRGBA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
 SW_PIXFMT_TEST_F(BlueBGRA8888xFFx00x00xFF,
