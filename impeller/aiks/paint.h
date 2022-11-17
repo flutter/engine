@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/aiks/color_source_factory.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -29,7 +30,6 @@ struct Paint {
       FilterInput::Ref,
       bool is_solid_color,
       const Matrix& effect_transform)>;
-  using ColorSourceProc = std::function<std::shared_ptr<ColorSourceContents>()>;
 
   enum class Style {
     kFill,
@@ -46,9 +46,9 @@ struct Paint {
         const Matrix& effect_matrix) const;
   };
 
-  Color color = Color::Black();
-  std::optional<ColorSourceProc> color_source;
+  std::shared_ptr<ColorSourceFactory> color_source;
 
+  Color color = Color::Black();
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
   Join stroke_join = Join::kMiter;
