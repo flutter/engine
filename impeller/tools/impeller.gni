@@ -282,7 +282,7 @@ template("impellerc") {
 
     if (defined(invoker.gles_language_version)) {
       gles_language_version = invoker.gles_language_version
-      args += ["--gles-language-version=$gles_language_version"]
+      args += [ "--gles-language-version=$gles_language_version" ]
     }
 
     if (json) {
