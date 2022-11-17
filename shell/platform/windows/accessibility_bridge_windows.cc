@@ -31,53 +31,72 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
 
   switch (event_type) {
     case ui::AXEventGenerator::Event::ALERT:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_ALERT);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kAlert);
+      // DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_ALERT);
       break;
     case ui::AXEventGenerator::Event::CHECKED_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
       break;
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_REORDER);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kChildrenChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_REORDER);
+      break;
+    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
       break;
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_FOCUS);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kFocus);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_FOCUS);
       SetFocus(win_delegate);
       break;
     case ui::AXEventGenerator::Event::IGNORED_CHANGED:
       if (ax_node->IsIgnored()) {
-        DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_HIDE);
+        DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kHide);
+        //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_HIDE);
       }
       break;
     case ui::AXEventGenerator::Event::IMAGE_ANNOTATION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kTextChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
       break;
     case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate,
-                                    EVENT_OBJECT_LIVEREGIONCHANGED);
+                                    ax::mojom::Event::kLiveRegionChanged);
+      /*DispatchWinAccessibilityEvent(win_delegate,
+                                    EVENT_OBJECT_LIVEREGIONCHANGED);*/
       break;
     case ui::AXEventGenerator::Event::NAME_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kTextChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
       break;
     case ui::AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kScrollPositionChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
       break;
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kScrollPositionChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SELECTIONWITHIN);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kSelectedChildrenChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SELECTIONWITHIN);
       break;
     case ui::AXEventGenerator::Event::SUBTREE_CREATED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SHOW);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kShow);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SHOW);
       break;
     case ui::AXEventGenerator::Event::VALUE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
       break;
     case ui::AXEventGenerator::Event::WIN_IACCESSIBLE_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_STATECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kStateChanged);
+      //DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_STATECHANGE);
       break;
     case ui::AXEventGenerator::Event::ACCESS_KEY_CHANGED:
     case ui::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED:
@@ -90,7 +109,6 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
     case ui::AXEventGenerator::Event::CONTROLS_CHANGED:
     case ui::AXEventGenerator::Event::DESCRIBED_BY_CHANGED:
     case ui::AXEventGenerator::Event::DESCRIPTION_CHANGED:
-    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
     case ui::AXEventGenerator::Event::DOCUMENT_TITLE_CHANGED:
     case ui::AXEventGenerator::Event::DROPEFFECT_CHANGED:
     case ui::AXEventGenerator::Event::ENABLED_CHANGED:
@@ -151,7 +169,8 @@ AccessibilityBridgeWindows::CreateFlutterPlatformNodeDelegate() {
 
 void AccessibilityBridgeWindows::DispatchWinAccessibilityEvent(
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
-    DWORD event_type) {
+    ax::mojom::Event event_type) {
+  // TODO(schectman) change FlutterPlatformNodeDelegateWindows method too
   node_delegate->DispatchWinAccessibilityEvent(event_type);
 }
 

@@ -41,7 +41,7 @@ class AccessibilityBridgeWindows : public AccessibilityBridge {
   // This is a virtual method for the convenience of unit tests.
   virtual void DispatchWinAccessibilityEvent(
       std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
-      DWORD event_type);
+      ax::mojom::Event event_type);
 
   // Sets the accessibility focus to the accessibility node associated with the
   // specified semantics node.

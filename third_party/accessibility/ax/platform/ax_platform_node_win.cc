@@ -5216,6 +5216,8 @@ std::optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
   switch (event) {
     case ax::mojom::Event::kAlert:
       return UIA_SystemAlertEventId;
+    case ax::mojom::Event::kDocumentSelectionChanged:
+      return UIA_Text_TextChangedEventId;
     case ax::mojom::Event::kFocus:
     case ax::mojom::Event::kFocusContext:
     case ax::mojom::Event::kFocusAfterMenuClose:
@@ -5581,6 +5583,8 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
         }
       }
       break;
+
+    // TODO(schectman) add implementations for text and textchild
 
     case UIA_TogglePatternId:
       if (SupportsToggle(data.role)) {

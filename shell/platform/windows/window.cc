@@ -222,7 +222,7 @@ LRESULT Window::OnGetObject(UINT const message,
     } else {
       FML_LOG(ERROR) << "Failed to query AX fragment root.";
     }
-  } else if (is_msaa_request && root_view && FALSE) { // TODO(schectman) revert this FALSE check; it's just for testing
+  } else if (is_msaa_request && root_view) { // TODO(schectman) revert this FALSE check; it's just for testing
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();
