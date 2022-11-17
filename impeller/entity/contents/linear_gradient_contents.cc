@@ -119,8 +119,8 @@ bool LinearGradientContents::RenderTexture(const ContentContext& renderer,
 bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
                                         const Entity& entity,
                                         RenderPass& pass) const {
-  using VS = LinearGradientFixedFillPipeline::VertexShader;
-  using FS = LinearGradientFixedFillPipeline::FragmentShader;
+  using VS = LinearGradientSSBOFillPipeline::VertexShader;
+  using FS = LinearGradientSSBOFillPipeline::FragmentShader;
 
   FS::GradientInfo gradient_info;
   gradient_info.start_point = start_point_;
@@ -141,7 +141,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
   frame_info.matrix = GetInverseMatrix();
 
   Command cmd;
-  cmd.label = "LinearGradientFixedFill";
+  cmd.label = "LinearGradientSSBOFill";
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto geometry_result =
@@ -152,7 +152,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetLinearGradientFixedFillPipeline(options);
+  cmd.pipeline = renderer.GetLinearGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   FS::BindGradientInfo(

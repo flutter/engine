@@ -72,11 +72,9 @@
 
 #include "impeller/typographer/glyph_atlas.h"
 
-#include "impeller/entity/linear_gradient_fixed_fill.frag.h"
-#include "impeller/entity/radial_gradient_fixed_fill.frag.h"
-#include "impeller/entity/sweep_gradient_fixed_fill.frag.h"
-
-#include "impeller/entity/contents/backend_features.h"
+#include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
+#include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
+#include "impeller/entity/sweep_gradient_ssbo_fill.frag.h"
 
 namespace impeller {
 
@@ -88,15 +86,15 @@ using RadialGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
 using SweepGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
-using LinearGradientFixedFillPipeline =
+using LinearGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
-                    LinearGradientFixedFillFragmentShader>;
-using RadialGradientFixedFillPipeline =
+                    LinearGradientSsboFillFragmentShader>;
+using RadialGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
-                    RadialGradientFixedFillFragmentShader>;
-using SweepGradientFixedFillPipeline =
+                    RadialGradientSsboFillFragmentShader>;
+using SweepGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
-                    SweepGradientFixedFillFragmentShader>;
+                    SweepGradientSsboFillFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
@@ -226,21 +224,21 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetLinearGradientFixedFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(backend_features_.ssbo_support);
-    return GetPipeline(linear_gradient_fixed_fill_pipelines_, opts);
+  GetLinearGradientSSBOFillPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    return GetPipeline(linear_gradient_ssbo_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetRadialGradientFixedFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(backend_features_.ssbo_support);
-    return GetPipeline(radial_gradient_fixed_fill_pipelines_, opts);
+  GetRadialGradientSSBOFillPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    return GetPipeline(radial_gradient_ssbo_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetSweepGradientFixedFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(backend_features_.ssbo_support);
-    return GetPipeline(sweep_gradient_fixed_fill_pipelines_, opts);
+  GetSweepGradientSSBOFillPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
@@ -451,12 +449,12 @@ class ContentContext {
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
-  mutable Variants<LinearGradientFixedFillPipeline>
-      linear_gradient_fixed_fill_pipelines_;
-  mutable Variants<RadialGradientFixedFillPipeline>
-      radial_gradient_fixed_fill_pipelines_;
-  mutable Variants<SweepGradientFixedFillPipeline>
-      sweep_gradient_fixed_fill_pipelines_;
+  mutable Variants<LinearGradientSSBOFillPipeline>
+      linear_gradient_ssbo_fill_pipelines_;
+  mutable Variants<RadialGradientSSBOFillPipeline>
+      radial_gradient_ssbo_fill_pipelines_;
+  mutable Variants<SweepGradientSSBOFillPipeline>
+      sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
@@ -524,7 +522,6 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
-  BackendFeatures backend_features_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };

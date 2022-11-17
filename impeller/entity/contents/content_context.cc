@@ -150,11 +150,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   if (!context_ || !context_->IsValid()) {
     return;
   }
-#ifdef FML_OS_ANDROID
-  backend_features_ = kLegacyBackendFeatures;
-#else
-  backend_features_ = kModernBackendFeatures;
-#endif  // FML_OS_ANDROID
 
   solid_fill_pipelines_[{}] =
       CreateDefaultPipeline<SolidFillPipeline>(*context_);
@@ -162,13 +157,13 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
-  if (backend_features_.ssbo_support) {
-    linear_gradient_fixed_fill_pipelines_[{}] =
-        CreateDefaultPipeline<LinearGradientFixedFillPipeline>(*context_);
-    radial_gradient_fixed_fill_pipelines_[{}] =
-        CreateDefaultPipeline<RadialGradientFixedFillPipeline>(*context_);
-    sweep_gradient_fixed_fill_pipelines_[{}] =
-        CreateDefaultPipeline<SweepGradientFixedFillPipeline>(*context_);
+  if (context_->GetBackendFeatures().ssbo_support) {
+    linear_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<LinearGradientSSBOFillPipeline>(*context_);
+    radial_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<RadialGradientSSBOFillPipeline>(*context_);
+    sweep_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
   }
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
@@ -317,7 +312,7 @@ std::shared_ptr<Context> ContentContext::GetContext() const {
 }
 
 const BackendFeatures& ContentContext::GetBackendFeatures() const {
-  return backend_features_;
+  return context_->GetBackendFeatures();
 }
 
 }  // namespace impeller

@@ -62,8 +62,8 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
 bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
                                        const Entity& entity,
                                        RenderPass& pass) const {
-  using VS = SweepGradientFixedFillPipeline::VertexShader;
-  using FS = SweepGradientFixedFillPipeline::FragmentShader;
+  using VS = SweepGradientSSBOFillPipeline::VertexShader;
+  using FS = SweepGradientSSBOFillPipeline::FragmentShader;
 
   FS::GradientInfo gradient_info;
   gradient_info.center = center_;
@@ -85,7 +85,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
   frame_info.matrix = GetInverseMatrix();
 
   Command cmd;
-  cmd.label = "SweepGradientFixedFill";
+  cmd.label = "SweepGradientSSBOFill";
   cmd.stencil_reference = entity.GetStencilDepth();
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
@@ -96,7 +96,7 @@ bool SweepGradientContents::RenderSSBO(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetSweepGradientFixedFillPipeline(options);
+  cmd.pipeline = renderer.GetSweepGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   FS::BindGradientInfo(

@@ -24,6 +24,7 @@
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend_features.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -586,6 +587,10 @@ std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
 
 PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
   return ToPixelFormat(surface_format_);
+}
+
+const BackendFeatures& ContextVK::GetBackendFeatures() const {
+  return kModernBackendFeatures;
 }
 
 }  // namespace impeller
