@@ -16,7 +16,7 @@
 #include "impeller/scene/scene.h"
 #include "impeller/scene/static_mesh_entity.h"
 
-#include "third_party/tinygltf/tiny_gltf.h"
+// #include "third_party/tinygltf/tiny_gltf.h"
 
 namespace impeller {
 namespace scene {
