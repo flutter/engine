@@ -352,7 +352,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
   CGFloat keyboardHeight = 400;
-  CGRect keyboardFrame = CGRectMake(0, screenHeight - keyboardHeight - 10, screenWidth, keyboardHeight);
+  CGRect keyboardFrame =
+      CGRectMake(0, screenHeight - keyboardHeight - 10, screenWidth, keyboardHeight);
   BOOL isLocal = YES;
   NSNotification* notification = [NSNotification
       notificationWithName:@""
@@ -411,7 +412,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGRect screenRect = CGRectMake(0, 0, 810, 1080);
   CGRect keyboardFrame = CGRectMake(0, 760, 810, 320);
 
-  CGFloat inset = [viewControllerMock calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
+  CGFloat inset = [viewControllerMock calculateKeyboardInset:screenRect
+                                               keyboardFrame:keyboardFrame];
 
   // 1080 - 760 = 320
   XCTAssertTrue(inset == 320 * UIScreen.mainScreen.scale);
@@ -429,7 +431,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGRect screenRect = CGRectMake(0, 0, 810, 1080);
   CGRect keyboardFrame = CGRectMake(0, 760, 810, 300);
 
-  CGFloat inset = [viewControllerMock calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
+  CGFloat inset = [viewControllerMock calculateKeyboardInset:screenRect
+                                               keyboardFrame:keyboardFrame];
 
   // 1080 - 760 = 320, which is greater than 300, so should be 300
   XCTAssertTrue(inset == 300 * UIScreen.mainScreen.scale);
