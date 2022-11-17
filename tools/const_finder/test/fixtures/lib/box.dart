@@ -14,7 +14,7 @@ class Box {
   final Object? content2;
 }
 
-const Box? box1_0 = Box(null, null);
+const Box box1_0 = Box(null, null);
 const Box box1_1 = Box(box1_0, box1_0);
 const Box box1_2 = Box(box1_1, box1_1);
 const Box box1_3 = Box(box1_2, box1_2);
@@ -115,7 +115,7 @@ const Box box1_97 = Box(box1_96, box1_96);
 const Box box1_98 = Box(box1_97, box1_97);
 const Box box1_99 = Box(box1_98, box1_98);
 
-const Box? box2_0 = Box(null, null);
+const Box box2_0 = Box(null, null);
 const Box box2_1 = Box(box2_0, box2_0);
 const Box box2_2 = Box(box2_1, box2_1);
 const Box box2_3 = Box(box2_2, box2_2);
