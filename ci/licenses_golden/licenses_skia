@@ -1,4 +1,4 @@
-Signature: d528a0ae5850cfd8a93dfcffa338c6cc
+Signature: 296710f1a3267c4d9fe76cd264e618c8
 
 UNUSED LICENSES:
 
@@ -7768,6 +7768,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/KeyContext.h
 FILE: ../../../third_party/skia/src/gpu/graphite/KeyHelpers.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/KeyHelpers.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Log.h
+FILE: ../../../third_party/skia/src/gpu/graphite/PaintOptionsPriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParams.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PaintParamsKey.cpp
@@ -7776,7 +7777,9 @@ FILE: ../../../third_party/skia/src/gpu/graphite/PietRenderTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/PietRenderTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/PipelineData.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/PipelineData.h
+FILE: ../../../third_party/skia/src/gpu/graphite/Precompile.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Precompile.h
+FILE: ../../../third_party/skia/src/gpu/graphite/PrecompileBasePriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/QueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/RecorderPriv.h
