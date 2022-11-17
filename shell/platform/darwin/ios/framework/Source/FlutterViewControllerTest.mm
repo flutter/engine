@@ -321,7 +321,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
       notificationWithName:@""
                     object:nil
                   userInfo:@{
-                    @"UIKeyboardFrameBeginUserInfoKey" : [NSValue valueWithCGRect:keyboardBeginFrame],
+                    @"UIKeyboardFrameBeginUserInfoKey" :
+                        [NSValue valueWithCGRect:keyboardBeginFrame],
                     @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardEndFrame],
                     @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
                     @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
