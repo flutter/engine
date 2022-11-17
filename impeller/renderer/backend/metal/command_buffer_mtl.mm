@@ -126,7 +126,7 @@ CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context>& context,
                                    SubmitCallback submit_callback)
     : CommandBuffer(context),
       buffer_(CreateCommandBuffer(queue)),
-      submit_callback_(submit_callback) {}
+      submit_callback_(std::move(submit_callback)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
