@@ -51,8 +51,8 @@ const std::vector<Scalar>& SweepGradientContents::GetStops() const {
 }
 
 bool SweepGradientContents::Render(const ContentContext& renderer,
-                                    const Entity& entity,
-                                    RenderPass& pass) const {
+                                   const Entity& entity,
+                                   RenderPass& pass) const {
 #ifdef FML_OS_ANDROID
   auto gradient_data = CreateGradientBuffer(colors_, stops_);
   return RenderTexture(gradient_data, renderer, entity, pass);
@@ -67,9 +67,9 @@ bool SweepGradientContents::Render(const ContentContext& renderer,
 
 #ifndef FML_OS_ANDROID
 bool SweepGradientContents::RenderFixed(const GradientData& gradient_data,
-                                          const ContentContext& renderer,
-                                          const Entity& entity,
-                                          RenderPass& pass) const {
+                                        const ContentContext& renderer,
+                                        const Entity& entity,
+                                        RenderPass& pass) const {
   using VS = SweepGradientFixedFillPipeline::VertexShader;
   using FS = SweepGradientFixedFillPipeline::FragmentShader;
 
@@ -117,7 +117,7 @@ bool SweepGradientContents::RenderFixed(const GradientData& gradient_data,
   }
   return true;
 }
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
 
 bool SweepGradientContents::RenderTexture(const GradientData& gradient_data,
                                           const ContentContext& renderer,

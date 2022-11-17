@@ -12,10 +12,10 @@
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/gradient.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/scalar.h"
-#include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
@@ -53,7 +53,7 @@ class SweepGradientContents final : public ColorSourceContents {
                    const ContentContext& renderer,
                    const Entity& entity,
                    RenderPass& pass) const;
-#endif // FML_OS_ANDROID
+#endif  // FML_OS_ANDROID
 
   Point center_;
   Scalar bias_;
