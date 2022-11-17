@@ -699,6 +699,9 @@ FILE: ../../../flutter/display_list/display_list_image_skia.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.h
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker_unittests.cc
 FILE: ../../../flutter/display_list/display_list_ops.cc
 FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc
@@ -777,6 +780,9 @@ FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.cc
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.h
+FILE: ../../../flutter/flow/layers/layer_state_stack.cc
+FILE: ../../../flutter/flow/layers/layer_state_stack.h
+FILE: ../../../flutter/flow/layers/layer_state_stack_unittests.cc
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
@@ -1030,8 +1036,6 @@ FILE: ../../../flutter/impeller/aiks/aiks_playground.h
 FILE: ../../../flutter/impeller/aiks/aiks_unittests.cc
 FILE: ../../../flutter/impeller/aiks/canvas.cc
 FILE: ../../../flutter/impeller/aiks/canvas.h
-FILE: ../../../flutter/impeller/aiks/color_source_factory.cc
-FILE: ../../../flutter/impeller/aiks/color_source_factory.h
 FILE: ../../../flutter/impeller/aiks/image.cc
 FILE: ../../../flutter/impeller/aiks/image.h
 FILE: ../../../flutter/impeller/aiks/paint.cc
@@ -1131,10 +1135,6 @@ FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
-FILE: ../../../flutter/impeller/display_list/conversion_utilities.cc
-FILE: ../../../flutter/impeller/display_list/conversion_utilities.h
-FILE: ../../../flutter/impeller/display_list/display_list_color_source_factory.cc
-FILE: ../../../flutter/impeller/display_list/display_list_color_source_factory.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.cc
@@ -2629,8 +2629,8 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngin
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h
@@ -2638,12 +2638,10 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeybo
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerUnittests.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h
@@ -2661,6 +2659,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResiz
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
