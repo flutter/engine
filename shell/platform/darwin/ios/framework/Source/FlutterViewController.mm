@@ -1348,7 +1348,15 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   CGRect screenRect = [[UIScreen mainScreen] bounds];
   CGFloat screenHeight = CGRectGetHeight(screenRect);
-  CGFloat keyboardBottom = CGRectGetMaxY(keyboardFrame);
+  CGRect keyboardBeginFrame = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue];
+  CGFloat keyboardBeginWidth = CGRectGetWidth(keyboardBeginFrame);
+
+  // Ignore notification when keyboard is in process of being rotated.
+  // When the keyboard's width at the beginning of the animation equals the screen's
+  // current height, we can assume the keyboard was rotated.
+  if (screenHeight == keyboardBeginWidth) {
+    return;
+  }
 
   // If the keyboard is partially or fully showing at the bottom of the screen,
   // calculate and set the inset.
@@ -1357,6 +1365,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // To handle, if the keyboard is above the bottom of the screen, set the inset to 0.
   // If keyboard is not within the screen (it's usually below), set inset to 0.
   CGFloat calculatedInset = 0;
+  CGFloat keyboardBottom = CGRectGetMaxY(keyboardFrame);
   if (keyboardBottom >= screenHeight && CGRectIntersectsRect(keyboardFrame, screenRect)) {
     calculatedInset = [self calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
   }

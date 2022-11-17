@@ -304,6 +304,35 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 10);
 }
 
+- (void)testKeyboardWillChangeFrameRotating {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+
+  // keyboard is empty
+  CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
+  CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
+  CGRect keyboardBeginFrame = CGRectMake(0, screenWidth - 320, screenHeight, 320);
+  CGRect keyboardEndFrame = CGRectMake(0, screenHeight - 320, screenWidth, 320);
+  BOOL isLocal = YES;
+  NSNotification* notification = [NSNotification
+      notificationWithName:@""
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : [NSValue valueWithCGRect:keyboardBeginFrame],
+                    @"UIKeyboardFrameEndUserInfoKey" : [NSValue valueWithCGRect:keyboardEndFrame],
+                    @"UIKeyboardAnimationDurationUserInfoKey" : [NSNumber numberWithDouble:0.25],
+                    @"UIKeyboardIsLocalUserInfoKey" : [NSNumber numberWithBool:isLocal]
+                  }];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  viewControllerMock.targetViewInsetBottom = 10;
+
+  [viewControllerMock keyboardWillChangeFrame:notification];
+  XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 10);
+}
+
 - (void)testKeyboardWillChangeFrameKeyboardInScreenAtBottom {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
