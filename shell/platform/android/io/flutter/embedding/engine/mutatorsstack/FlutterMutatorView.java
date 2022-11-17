@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Path;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewTreeObserver;
 import android.view.accessibility.AccessibilityEvent;
@@ -18,7 +19,6 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.embedding.android.AndroidTouchProcessor;
 import io.flutter.util.ViewUtils;
-import android.view.SurfaceView;
 
 /**
  * A view that applies the {@link io.flutter.embedding.engine.mutatorsstack.FlutterMutatorsStack} to
