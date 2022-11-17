@@ -67,8 +67,6 @@ abstract class ApplicationDom {
   /// Attaches the resourceHost element into the hostElement.
   void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo });
 
-  void addScene(DomElement? sceneElement);
-
   /// Register a listener for window resize events
   void setMetricsChangeHandler(void Function(DomEvent? event) handler);
 

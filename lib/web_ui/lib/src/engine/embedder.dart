@@ -60,6 +60,8 @@ class FlutterViewEmbedder {
     }());
   }
 
+  /// The applicationDom abstracts all the things that "modify the DOM" in this
+  /// class, especially at the root level of the web-app.
   late ApplicationDom _applicationDom;
 
   // The tag name for the root view of the flutter app (glass-pane)

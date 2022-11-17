@@ -46,7 +46,7 @@ class FullPageApplicationDom extends ApplicationDom {
     // These are intentionally outrageous font parameters to make sure that the
     // apps fully specify their text styles.
     setElementStyle(bodyElement, 'font', font);
-    setElementStyle(bodyElement, 'color', 'red');
+    setElementStyle(bodyElement, 'color', 'red'); // Controversial
   }
 
   @override
@@ -102,8 +102,6 @@ class FullPageApplicationDom extends ApplicationDom {
 
     registerElementForCleanup(resourceHost);
   }
-
-  void addScene(DomElement? sceneElement) {}
 
   @override
   void setMetricsChangeHandler(void Function(DomEvent? event) handler) {
