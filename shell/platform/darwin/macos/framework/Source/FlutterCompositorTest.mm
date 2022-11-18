@@ -10,16 +10,16 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 #import "flutter/testing/testing.h"
 
-@interface FlutterViewMockProviderMetal : NSObject <FlutterViewProvider> {
+@interface FlutterViewMockProvider : NSObject <FlutterViewProvider> {
   FlutterView* _defaultView;
 }
 /**
- * Create a FlutterViewMockProviderMetal with the provided view as the default view.
+ * Create a FlutterViewMockProvider with the provided view as the default view.
  */
 - (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view;
 @end
 
-@implementation FlutterViewMockProviderMetal
+@implementation FlutterViewMockProvider
 
 - (nonnull instancetype)initWithDefaultView:(nonnull FlutterView*)view {
   self = [super init];
@@ -43,8 +43,7 @@ namespace {
 
 id<FlutterViewProvider> MockViewProvider() {
   FlutterView* viewMock = OCMClassMock([FlutterView class]);
-  FlutterMetalRenderBackingStore* backingStoreMock =
-      OCMClassMock([FlutterMetalRenderBackingStore class]);
+  FlutterRenderBackingStore* backingStoreMock = OCMClassMock([FlutterRenderBackingStore class]);
   __block id<MTLTexture> textureMock = OCMProtocolMock(@protocol(MTLTexture));
   OCMStub([backingStoreMock texture]).andReturn(textureMock);
 
@@ -58,7 +57,7 @@ id<FlutterViewProvider> MockViewProvider() {
       })
       .andReturn(backingStoreMock);
 
-  return [[FlutterViewMockProviderMetal alloc] initWithDefaultView:viewMock];
+  return [[FlutterViewMockProvider alloc] initWithDefaultView:viewMock];
 }
 }  // namespace
 
