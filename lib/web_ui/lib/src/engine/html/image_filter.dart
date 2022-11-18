@@ -11,6 +11,7 @@ import '../util.dart';
 import '../vector_math.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
+import 'surface_stats.dart';
 
 /// A surface that applies an [imageFilter] to its children.
 class PersistedImageFilter extends PersistedContainerSurface
@@ -43,11 +44,17 @@ class PersistedImageFilter extends PersistedContainerSurface
       Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   DomElement? _svgFilter;
+  @override
+  DomElement? get childContainer => _childContainer;
+  DomElement? _childContainer;
 
   @override
   void adoptElements(PersistedImageFilter oldSurface) {
     super.adoptElements(oldSurface);
     _svgFilter = oldSurface._svgFilter;
+    _childContainer = oldSurface._childContainer;
+    oldSurface._svgFilter = null;
+    oldSurface._childContainer = null;
   }
 
   @override
@@ -55,13 +62,25 @@ class PersistedImageFilter extends PersistedContainerSurface
     super.discard();
     flutterViewEmbedder.removeResource(_svgFilter);
     _svgFilter = null;
+    _childContainer = null;
   }
 
   @override
   DomElement createElement() {
     final DomElement element = defaultCreateElement('flt-image-filter');
+    final DomElement container = defaultCreateElement('flt-image-filter-interior');
+    if (debugExplainSurfaceStats) {
+      // This creates an additional interior element. Count it too.
+      surfaceStatsFor(this).allocatedDomNodeCount++;
+    }
+
+    setElementStyle(container, 'position', 'absolute');
+    setElementStyle(container, 'transform-origin', '0 0 0');
     setElementStyle(element, 'position', 'absolute');
     setElementStyle(element, 'transform-origin', '0 0 0');
+
+    _childContainer = container;
+    element.appendChild(container);
     return element;
   }
 
@@ -85,8 +104,11 @@ class PersistedImageFilter extends PersistedContainerSurface
       _svgFilter = backendFilter.makeSvgFilter(rootElement);
     }
 
-    rootElement!.style.filter = backendFilter.filterAttribute;
-    rootElement!.style.transform = backendFilter.transformAttribute;
+    _childContainer!.style.filter = backendFilter.filterAttribute;
+    _childContainer!.style.transform = backendFilter.transformAttribute;
+    rootElement!.style
+      ..left = '${offset.dx}px'
+      ..top = '${offset.dy}px';
   }
 
   @override

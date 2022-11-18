@@ -79,7 +79,8 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   SkIRect filter_out_bounds;
   filter_->map_device_bounds(filter_in_bounds, SkMatrix::I(),
                              filter_out_bounds);
-  child_bounds = SkRect::Make(filter_out_bounds);
+  child_bounds.set(filter_out_bounds);
+  child_bounds.offset(offset_);
 
   set_paint_bounds(child_bounds);
 
