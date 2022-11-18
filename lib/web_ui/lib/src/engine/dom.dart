@@ -1428,6 +1428,77 @@ extension DomCSSRuleListExtension on DomCSSRuleList {
   external double get length;
 }
 
+/// ResizeObserver constructor.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
+@JS()
+@staticInterop
+abstract class DomResizeObserver {}
+
+/// Creates a DomResizeObserver with a callback.
+///
+/// Internally converts the `List<dynamic>` of entries into the expected
+/// `List<DomResizeObserverEntry>`
+DomResizeObserver? createDomResizeObserver(DomResizeObserverCallbackFn fn) {
+  return domCallConstructorString('ResizeObserver', <Object?>[
+    allowInterop(
+      (List<dynamic> entries, DomResizeObserver observer) {
+        fn(entries.cast<DomResizeObserverEntry>(), observer);
+      }
+    ),
+  ]) as DomResizeObserver?;
+}
+
+/// ResizeObserver instance methods.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#instance_methods
+extension DomResizeObserverExtension on DomResizeObserver {
+  external void disconnect();
+  external void observe(DomElement target, [DomResizeObserverObserveOptions options]);
+  external void unobserve(DomElement target);
+}
+
+/// Options object passed to the `observe` method of a [DomResizeObserver].
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver/observe#parameters
+@JS()
+@staticInterop
+@anonymous
+abstract class DomResizeObserverObserveOptions {
+  external factory DomResizeObserverObserveOptions({
+    String box,
+  });
+}
+
+/// Type of the function used to create a Resize Observer.
+typedef DomResizeObserverCallbackFn = void Function(List<DomResizeObserverEntry> entries, DomResizeObserver observer);
+
+/// The object passed to the [DomResizeObserverCallbackFn], which allows access to the new dimensions of the observed element.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry
+@JS()
+@staticInterop
+abstract class DomResizeObserverEntry {}
+
+/// ResizeObserverEntry instance properties.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry#instance_properties
+extension DomResizeObserverEntryExtension on DomResizeObserverEntry {
+  /// A DOMRectReadOnly object containing the new size of the observed element when the callback is run.
+  ///
+  /// Note that this is better supported than the above two properties, but it
+  /// is left over from an earlier implementation of the Resize Observer API, is
+  /// still included in the spec for web compat reasons, and may be deprecated
+  /// in future versions.
+  external DomRectReadOnly get contentRect;
+  external DomElement get target;
+  // Some more future getters:
+  //
+  // borderBoxSize
+  // contentBoxSize
+  // devicePixelContentBoxSize
+}
+
 /// A factory to create `TrustedTypePolicy` objects.
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/TrustedTypePolicyFactory
 @JS()
