@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import android.content.Context;
 import android.graphics.Matrix;
 import android.view.MotionEvent;
+import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -228,6 +229,17 @@ public class FlutterMutatorViewTest {
     final boolean eventSent =
         wrapperView.requestSendAccessibilityEvent(embeddedView, mock(AccessibilityEvent.class));
     assertFalse(eventSent);
+  }
+
+  @Test
+  public void validateSurfaceViewAsChildVisibility() {
+    final FlutterMutatorView mutatorView = new FlutterMutatorView(ctx);
+    final SurfaceView childView = new SurfaceView(ctx);
+    mutatorView.addView(childView);
+    mutatorView.setVisibility(View.VISIBLE);
+    assertTrue(childView.getVisibility() == View.VISIBLE);
+    mutatorView.setVisibility(View.GONE);
+    assertTrue(childView.getVisibility() == View.GONE);
   }
 
   @Implements(ViewGroup.class)
