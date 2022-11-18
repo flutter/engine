@@ -48,8 +48,7 @@ class FlutterViewEmbedder {
   /// - A non-`null` `hostElement` will render flutter inside that element.
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate ApplicationDom using its factory...
-    // TODO(dit): Pass the correct object here!
-    _applicationDom = ApplicationDom.create(hostElement: null);
+    _applicationDom = ApplicationDom.create(hostElement: hostElement);
 
     reset();
 
