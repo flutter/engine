@@ -6,10 +6,10 @@
 
 #include <utility>
 
-#include "flutter/impeller/display_list/display_list_image_impeller.h"
-#include "flutter/impeller/renderer/backend/gles/texture_gles.h"
 #include "impeller/aiks/aiks_context.h"
+#include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
+#include "impeller/renderer/backend/gles/texture_gles.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
