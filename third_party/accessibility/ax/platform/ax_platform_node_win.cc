@@ -5597,7 +5597,9 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       }
       break;
 
-    // TODO(schectman) add implementations for text and textchild
+    // TODO(schectman): add implementations for ITextProvider and ITextRangeProvider interfaces.
+    // https://github.com/flutter/flutter/issues/114547 and
+    // https://github.com/flutter/flutter/issues/109804
 
     case UIA_TogglePatternId:
       if (SupportsToggle(data.role)) {

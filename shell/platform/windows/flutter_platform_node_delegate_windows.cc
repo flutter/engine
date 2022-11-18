@@ -93,16 +93,6 @@ gfx::Rect FlutterPlatformNodeDelegateWindows::GetBoundsRect(
 void FlutterPlatformNodeDelegateWindows::DispatchWinAccessibilityEvent(
     ax::mojom::Event event_type) {
   ax_platform_node_->NotifyAccessibilityEvent(event_type);
-
-  /*
-  HWND hwnd = view_->GetPlatformWindow();
-  if (!hwnd) {
-    return;
-  }
-  assert(ax_platform_node_);
-  ::NotifyWinEvent(event_type, hwnd, OBJID_CLIENT,
-                   -ax_platform_node_->GetUniqueId());*/
-  // TODO(schectman) this may be a good place to call NotifyAccessibilityEvent, if I change the input param to use mojom events.
 }
 
 void FlutterPlatformNodeDelegateWindows::SetFocus() {
