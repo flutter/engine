@@ -4,8 +4,8 @@
 
 import 'package:js/js.dart';
 
-import '../dom.dart';
-import '../util.dart' show assertionsEnabled, setElementStyle;
+import '../../dom.dart';
+import '../../util.dart' show assertionsEnabled, setElementStyle;
 import 'application_dom.dart';
 
 

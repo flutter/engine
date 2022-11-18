@@ -4,7 +4,7 @@
 
 import 'dart:async';
 
-import '../dom.dart';
+import '../../dom.dart';
 import 'application_dom.dart';
 
 class CustomElementApplicationDom extends ApplicationDom {

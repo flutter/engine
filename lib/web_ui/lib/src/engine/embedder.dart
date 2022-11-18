@@ -17,7 +17,7 @@ import 'pointer_binding.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
-import 'view_embedder/application_dom.dart';
+import 'view_embedder/application_dom/application_dom.dart';
 import 'window.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.

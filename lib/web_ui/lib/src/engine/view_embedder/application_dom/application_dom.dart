@@ -4,11 +4,11 @@
 
 import 'package:meta/meta.dart';
 
-import '../dom.dart';
+import '../../dom.dart';
 
+import '../hot_restart_cache_handler.dart';
 import 'custom_element_application_dom.dart';
 import 'full_page_application_dom.dart';
-import 'hot_restart_cache_handler.dart';
 
 /// Provides the API that the FlutterViewEmbedder uses to interact with the DOM.
 ///
