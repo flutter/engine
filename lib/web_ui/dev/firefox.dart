@@ -22,7 +22,7 @@ class FirefoxEnvironment implements BrowserEnvironment {
 
   @override
   Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
-    return Firefox(url, _installation, debug: debug);
+    return Firefox(url, this, debug: debug);
   }
 
   @override
@@ -56,7 +56,8 @@ class FirefoxEnvironment implements BrowserEnvironment {
 class Firefox extends Browser {
   /// Starts a new instance of Firefox open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Firefox(Uri url, BrowserInstallation installation, {bool debug = false}) {
+  factory Firefox(Uri url, FirefoxEnvironment firefoxEnvironment, {bool debug = false}) {
+    final BrowserInstallation installation = firefoxEnvironment._installation;
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Firefox._(BrowserProcess(() async {
       // Using a profile on opening will prevent popups related to profiles.

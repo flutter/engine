@@ -15,8 +15,6 @@ import 'common.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 
-const String _chromeExecutableVar = 'CHROME_EXECUTABLE';
-
 /// Returns the installation of Chrome, installing it if necessary.
 ///
 /// If [requestedVersion] is null, uses the version specified on the
@@ -34,18 +32,6 @@ Future<BrowserInstallation> getOrInstallChrome(
   StringSink? infoLog,
 }) async {
   infoLog ??= io.stdout;
-
-  // When running on LUCI, if we specify the "chrome_and_driver" dependency,
-  // then the bot will download Chrome from CIPD and place it in a cache and
-  // set the environment variable CHROME_EXECUTABLE.
-  if (io.Platform.environment.containsKey(_chromeExecutableVar)) {
-    infoLog.writeln('Using Chrome from $_chromeExecutableVar variable: '
-      '${io.Platform.environment[_chromeExecutableVar]}');
-    return BrowserInstallation(
-      version: 'cipd',
-      executable: io.Platform.environment[_chromeExecutableVar]!,
-    );
-  }
 
   if (requestedVersion == 'system') {
     return BrowserInstallation(
