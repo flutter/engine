@@ -159,7 +159,7 @@ targets:
       emulator_arch: "x64"
     timeout: 60
 
-  - name: Linux Fuchsia ARM FEMU
+  - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
     bringup: true
     properties:
