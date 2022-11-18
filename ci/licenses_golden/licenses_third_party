@@ -1,4 +1,4 @@
-Signature: ec3a799e0dff31096626517f97cca9e0
+Signature: 5bc56fd172a9f0f462ab8af40700f7e0
 
 UNUSED LICENSES:
 
@@ -14127,6 +14127,7 @@ FILE: ../../../third_party/dart/sdk/lib/_internal/vm/lib/record_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/async_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/bool.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/class_id.dart
+FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/convert_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/core_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/date_patch.dart
 FILE: ../../../third_party/dart/sdk/lib/_internal/wasm/lib/developer.dart
