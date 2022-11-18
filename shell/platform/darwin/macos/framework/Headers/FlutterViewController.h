@@ -115,6 +115,6 @@ FLUTTER_DARWIN_EXPORT
  * }
  * ```
  */
-@property(readwrite, nonatomic, nullable) NSColor* backgroundColor;
+@property(readwrite, nonatomic, nullable, strong) NSColor* backgroundColor;
 
 @end
