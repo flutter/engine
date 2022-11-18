@@ -457,7 +457,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   UIWindow* mockWindow = OCMClassMock([UIWindow class]);
   OCMStub([mockWindow frame]).andReturn(appFrame);
   OCMStub([mockView window]).andReturn(mockWindow);
-  OCMStub([mockView safeAreaInsets]).andReturn(UIEdgeInsetsMake(20,20,20,20));
+  OCMStub([mockView safeAreaInsets]).andReturn(UIEdgeInsetsMake(20, 20, 20, 20));
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
   viewControllerMock.targetViewInsetBottom = 400;
   viewControllerMock.view = mockView;
