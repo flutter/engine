@@ -181,6 +181,7 @@ public class FlutterMutatorView extends FrameLayout {
 
   @Override
   public void setVisibility(int visibility) {
+    super.setVisibility(visibility);
     final View childView = this.getChildAt(0);
     if (childView != null && childView instanceof SurfaceView) {
       childView.setVisibility(visibility);
