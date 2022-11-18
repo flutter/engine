@@ -1381,6 +1381,16 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
           event.preventDefault();
         }
       }
+
+      // During IME composition, Tab fires twice which causes issues.
+      // Intercepting the keydown event during composition and stopping
+      // propagation allows us to prevent triggering the extra keydown event in
+      // raw_keyboard.dart
+      if (event.isComposing && event.key == 'Tab') {
+        print(event.type);
+        print('stopping propagation');
+        event.stopPropagation();
+      }
     }
   }
 
