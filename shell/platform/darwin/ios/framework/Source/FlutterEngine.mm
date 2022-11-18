@@ -527,14 +527,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   // This will be invoked once the shell is done setting up and the isolate ID
   // for the UI isolate is available.
   fml::WeakPtr<FlutterEngine> weakSelf = [self getWeakPtr];
-  __block FlutterBinaryMessageHandler handler;
-  handler = ^(NSData* message, FlutterBinaryReply reply) {
-    if (weakSelf) {
-      weakSelf.get().isolateId = [[FlutterStringCodec sharedInstance] decode:message];
-    }
-  };
-  Block_release(handler);
-  [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate" binaryMessageHandler:handler];
+  [_binaryMessenger setMessageHandlerOnChannel:@"flutter/isolate"
+                          binaryMessageHandler:^(NSData* message, FlutterBinaryReply reply) {
+                            if (weakSelf) {
+                              weakSelf.get().isolateId =
+                                  [[FlutterStringCodec sharedInstance] decode:message];
+                            }
+                          }];
 
   _localizationChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/localization"
