@@ -5218,6 +5218,10 @@ std::optional<DWORD> AXPlatformNodeWin::MojoEventToMSAAEvent(
       return EVENT_OBJECT_SHOW;
     case ax::mojom::Event::kValueChanged:
       return EVENT_OBJECT_VALUECHANGE;
+#ifdef EVENT_OBJECT_TEXTSELECTIONCHANGED
+    case ax::mojom::Event::kDocumentSelectionChanged:
+      return EVENT_OBJECT_TEXTSELECTIONCHANGED;
+#endif
     default:
       return std::nullopt;
   }
