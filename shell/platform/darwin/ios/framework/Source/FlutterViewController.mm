@@ -1300,11 +1300,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   CGRect screenRect = [[UIScreen mainScreen] bounds];
-  CGFloat calculatedInset = 0;
+
+  // In Slide Over view, the keyboard's dimensions/position does not include the space
+  // below the app, even though the keyboard may be at the bottom of the screen.
+  // To handle, shift the Y origin by the amount of space below the app.
+  CGFloat screenHeight = CGRectGetHeight(screenRect);
+  CGFloat screenWidth = CGRectGetWidth(screenRect);
+  CGFloat appHeight = CGRectGetHeight(self.view.window.frame);
+  CGFloat appWidth = CGRectGetWidth(self.view.window.frame);
+  if (self.view.safeAreaInsets.bottom > 0 && appWidth < screenWidth) {
+    // In Slide Over view, the app is vertically centered with space above and below,
+    // which is why we divide by 2 to get the space below.
+    keyboardFrame.origin.y += (screenHeight - appHeight) / 2;
+  }
 
   // If keyboard is within the screen and it's not empty, calculate and set the inset.
   // If keyboard is not within the screen (it's usually below), set inset to 0.
   // If keyboard frame is empty (usually because it was dragged and dropped), set inset to 0.
+  CGFloat calculatedInset = 0;
   if (CGRectIntersectsRect(keyboardFrame, screenRect) && !isEmpty) {
     calculatedInset = [self calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
   }
@@ -1341,7 +1354,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
 
   // Ignore notification when keyboard has zero width/height
-  // This happens when keyboard is dragged
+  // This happens when keyboard is dragged.
   if (CGRectIsEmpty(keyboardFrame)) {
     return;
   }
@@ -1356,6 +1369,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // current height, we can assume the keyboard was rotated.
   if (screenHeight == keyboardBeginWidth) {
     return;
+  }
+
+  // In Slide Over view, the keyboard's dimensions/position does not include the space
+  // below the app, even though the keyboard may be at the bottom of the screen.
+  // To handle, shift the Y origin by the amount of space below the app.
+  CGFloat screenWidth = CGRectGetWidth(screenRect);
+  CGFloat appHeight = CGRectGetHeight(self.view.window.frame);
+  CGFloat appWidth = CGRectGetWidth(self.view.window.frame);
+  if (self.view.safeAreaInsets.bottom > 0 && appWidth < screenWidth) {
+    // In Slide Over view, the app is vertically centered with space above and below,
+    // which is why we divide by 2 to get the space below.
+    keyboardFrame.origin.y += (screenHeight - appHeight) / 2;
   }
 
   // If the keyboard is partially or fully showing at the bottom of the screen,
@@ -1387,13 +1412,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   CGFloat screenHeight = CGRectGetHeight(screenRect);
   CGFloat keyboardTop = CGRectGetMinY(keyboardFrame);
   CGFloat portionOfKeyboardShowing = screenHeight - keyboardTop;
-
-  // Double check inset does not exceed the height of the keyboard.
-  // This can sometimes happen with Slide Over view when there's a safe area padding.
-  CGFloat keyboardHeight = CGRectGetHeight(keyboardFrame);
-  if (portionOfKeyboardShowing > keyboardHeight) {
-    portionOfKeyboardShowing = keyboardHeight;
-  }
 
   // The keyboard is treated as an inset since we want to effectively reduce the window size by
   // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
