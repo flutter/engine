@@ -264,9 +264,8 @@ targets:
 
   - name: Linux Web Engine
     recipe: engine/web_engine
-    bringup: true
+    bringup: true # https://github.com/flutter/flutter/issues/115404
     properties:
-      add_recipes_cq: "true"
       cores: "32"
       gcs_goldens_bucket: flutter_logs
       gclient_variables: >-
