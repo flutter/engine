@@ -270,7 +270,8 @@ TEST(AccessibilityBridgeWindows, OnAccessibilityEventFocusChanged) {
                                  ax::mojom::EventFrom::kNone,
                                  {}}});
   ASSERT_EQ(bridge->dispatched_events().size(), 1);
-  EXPECT_EQ(bridge->dispatched_events()[0].event_type, ax::mojom::Event::kFocus);
+  EXPECT_EQ(bridge->dispatched_events()[0].event_type,
+            ax::mojom::Event::kFocus);
 
   ASSERT_EQ(bridge->focused_nodes().size(), 1);
   EXPECT_EQ(bridge->focused_nodes()[0], 1);

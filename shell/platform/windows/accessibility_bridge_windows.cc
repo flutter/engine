@@ -34,13 +34,16 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
       DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kAlert);
       break;
     case ui::AXEventGenerator::Event::CHECKED_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kChildrenChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kChildrenChanged);
       break;
     case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
+      DispatchWinAccessibilityEvent(
+          win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
       break;
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kFocus);
@@ -52,35 +55,43 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
       }
       break;
     case ui::AXEventGenerator::Event::IMAGE_ANNOTATION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kTextChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kTextChanged);
       break;
     case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate,
                                     ax::mojom::Event::kLiveRegionChanged);
       break;
     case ui::AXEventGenerator::Event::NAME_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kTextChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kTextChanged);
       break;
     case ui::AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kScrollPositionChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kScrollPositionChanged);
       break;
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kScrollPositionChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kScrollPositionChanged);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kSelectedChildrenChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kSelectedChildrenChanged);
       break;
     case ui::AXEventGenerator::Event::SUBTREE_CREATED:
       DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kShow);
       break;
     case ui::AXEventGenerator::Event::VALUE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kValueChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::WIN_IACCESSIBLE_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kStateChanged);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kStateChanged);
       break;
     case ui::AXEventGenerator::Event::ACCESS_KEY_CHANGED:
     case ui::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED:

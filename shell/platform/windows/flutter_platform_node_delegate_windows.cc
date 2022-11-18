@@ -102,7 +102,8 @@ void FlutterPlatformNodeDelegateWindows::SetFocus() {
   GetNativeViewAccessible()->accSelect(SELFLAG_TAKEFOCUS, varchild);
 }
 
-gfx::AcceleratedWidget FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
+gfx::AcceleratedWidget
+FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
   return view_->GetPlatformWindow();
 }
 

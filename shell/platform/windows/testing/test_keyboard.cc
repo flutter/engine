@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
-#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/shell/platform/windows/windowsx_shim.h"
 
 #include <rapidjson/document.h>
 

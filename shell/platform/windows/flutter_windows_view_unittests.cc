@@ -4,10 +4,10 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
+#include <UIAutomation.h>
 #include <comdef.h>
 #include <comutil.h>
 #include <oleacc.h>
-#include <UIAutomation.h>
 
 #include <future>
 #include <iostream>
@@ -247,14 +247,16 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
 
   // Verify value property matches our label.
   VARIANT varvalue{};
-  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ValueValuePropertyId, &varvalue), S_OK);
+  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ValueValuePropertyId, &varvalue),
+            S_OK);
   EXPECT_EQ(varvalue.vt, VT_BSTR);
   value = _com_util::ConvertBSTRToString(varvalue.bstrVal);
   EXPECT_EQ(value, "value");
 
   // Verify node control type is text.
   varrole = {};
-  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ControlTypePropertyId, &varrole), S_OK);
+  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ControlTypePropertyId, &varrole),
+            S_OK);
   EXPECT_EQ(varrole.vt, VT_I4);
   EXPECT_EQ(varrole.lVal, UIA_TextControlTypeId);
 }
@@ -690,10 +692,12 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     // Perform similar tests for UIA value;
     IRawElementProviderSimple* uia_node;
     native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
     EXPECT_EQ(native_state.lVal, ToggleState_On);
 
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=true"), nullptr);
   }
 
@@ -729,10 +733,12 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     // Perform similar tests for UIA value;
     IRawElementProviderSimple* uia_node;
     native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
     EXPECT_EQ(native_state.lVal, ToggleState_Off);
 
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=false"), nullptr);
   }
 
@@ -769,10 +775,12 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     // Perform similar tests for UIA value;
     IRawElementProviderSimple* uia_node;
     native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
     EXPECT_EQ(native_state.lVal, ToggleState_Indeterminate);
 
-    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state)));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=mixed"), nullptr);
   }
 }
@@ -845,11 +853,16 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
     native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
-    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ControlTypePropertyId, &varrole), S_OK);
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ControlTypePropertyId, &varrole),
+              S_OK);
     EXPECT_EQ(varrole.lVal, UIA_ButtonControlTypeId);
-    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId, &native_state), S_OK);
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId,
+                                         &native_state),
+              S_OK);
     EXPECT_EQ(native_state.lVal, ToggleState_On);
-    ASSERT_EQ(uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state), S_OK);
+    ASSERT_EQ(
+        uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state),
+        S_OK);
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"pressed=true"), nullptr);
   }
 
@@ -885,9 +898,13 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     // Test similarly on UIA node.
     IRawElementProviderSimple* uia_node;
     native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
-    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId, &native_state), S_OK);
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId,
+                                         &native_state),
+              S_OK);
     EXPECT_EQ(native_state.lVal, ToggleState_Off);
-    ASSERT_EQ(uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state), S_OK);
+    ASSERT_EQ(
+        uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state),
+        S_OK);
     EXPECT_NE(std::wcsstr(native_state.bstrVal, L"pressed=false"), nullptr);
   }
 }
@@ -935,8 +952,12 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   EXPECT_EQ(tooltip, "tooltip");
 
   // Check that MSAA name contains the tooltip.
-  IAccessible* native_view = bridge->GetFlutterPlatformNodeDelegateFromID(AccessibilityBridge::kRootNodeId).lock()->GetNativeViewAccessible();
-  VARIANT varchild = {.vt=VT_I4, .lVal=CHILDID_SELF};
+  IAccessible* native_view = bridge
+                                 ->GetFlutterPlatformNodeDelegateFromID(
+                                     AccessibilityBridge::kRootNodeId)
+                                 .lock()
+                                 ->GetNativeViewAccessible();
+  VARIANT varchild = {.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR bname;
   ASSERT_EQ(native_view->get_accName(varchild, &bname), S_OK);
   EXPECT_NE(std::wcsstr(bname, L"tooltip"), nullptr);

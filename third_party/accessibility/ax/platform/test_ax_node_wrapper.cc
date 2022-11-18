@@ -58,7 +58,8 @@ class TestAXTreeObserver : public AXTreeObserver {
     if (iter != g_node_id_to_wrapper_map.end()) {
       TestAXNodeWrapper* wrapper = iter->second;
       const auto& focus_iter = g_focused_node_in_tree.find(tree);
-      if (focus_iter != g_focused_node_in_tree.end() && focus_iter->second->id() == node_id) {
+      if (focus_iter != g_focused_node_in_tree.end() &&
+          focus_iter->second->id() == node_id) {
         g_focused_node_in_tree.erase(tree);
       }
       delete wrapper;

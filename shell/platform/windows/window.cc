@@ -207,9 +207,11 @@ LRESULT Window::OnGetObject(UINT const message,
   if (is_uia_request && root_view) {
     if (!ax_fragment_root_) {
       if (!ax_fragment_delegate_) {
-        ax_fragment_delegate_ = std::make_unique<WindowAXFragmentRootDelegate>(*this);
+        ax_fragment_delegate_ =
+            std::make_unique<WindowAXFragmentRootDelegate>(*this);
       }
-      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(window_handle_, ax_fragment_delegate_.get());
+      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
+          window_handle_, ax_fragment_delegate_.get());
     }
 
     // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
@@ -217,11 +219,11 @@ LRESULT Window::OnGetObject(UINT const message,
     // Retrieve UIA object for the root view.
     Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
     if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
-        IID_PPV_ARGS(&root)))) {
+            IID_PPV_ARGS(&root)))) {
       // Return the UIA object via UiaReturnRawElementProvider(). See:
       // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
-      reference_result =
-          UiaReturnRawElementProvider(window_handle_, wparam, lparam, root.Get());
+      reference_result = UiaReturnRawElementProvider(window_handle_, wparam,
+                                                     lparam, root.Get());
     } else {
       FML_LOG(ERROR) << "Failed to query AX fragment root.";
     }
@@ -682,11 +684,13 @@ void Window::CreateAccessibilityRootNode() {
   accessibility_root_ = AccessibilityRootNode::Create();
 }
 
-gfx::NativeViewAccessible WindowAXFragmentRootDelegate::GetChildOfAXFragmentRoot() {
+gfx::NativeViewAccessible
+WindowAXFragmentRootDelegate::GetChildOfAXFragmentRoot() {
   return window_.GetNativeViewAccessible();
 }
 
-gfx::NativeViewAccessible WindowAXFragmentRootDelegate::GetParentOfAXFragmentRoot() {
+gfx::NativeViewAccessible
+WindowAXFragmentRootDelegate::GetParentOfAXFragmentRoot() {
   return nullptr;
 }
 
@@ -694,6 +698,7 @@ bool WindowAXFragmentRootDelegate::IsAXFragmentRootAControlElement() {
   return true;
 }
 
-WindowAXFragmentRootDelegate::WindowAXFragmentRootDelegate(Window& window) : window_(window) {}
+WindowAXFragmentRootDelegate::WindowAXFragmentRootDelegate(Window& window)
+    : window_(window) {}
 
 }  // namespace flutter

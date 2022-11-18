@@ -2465,7 +2465,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       result->intVal = static_cast<int>(ComputeExpandCollapseState());
       break;
 
-    case UIA_ToggleToggleStatePropertyId:{
+    case UIA_ToggleToggleStatePropertyId: {
       ToggleState state;
       get_ToggleState(&state);
       result->vt = VT_I4;
@@ -5601,9 +5601,10 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       }
       break;
 
-    // TODO(schectman): add implementations for ITextProvider and ITextRangeProvider interfaces.
-    // https://github.com/flutter/flutter/issues/114547 and
-    // https://github.com/flutter/flutter/issues/109804
+      // TODO(schectman): add implementations for ITextProvider and
+      // ITextRangeProvider interfaces.
+      // https://github.com/flutter/flutter/issues/114547 and
+      // https://github.com/flutter/flutter/issues/109804
 
     case UIA_TogglePatternId:
       if (SupportsToggle(data.role)) {

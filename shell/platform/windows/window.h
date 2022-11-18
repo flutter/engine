@@ -20,9 +20,9 @@
 #include "flutter/shell/platform/windows/text_input_manager.h"
 #include "flutter/shell/platform/windows/windows_proc_table.h"
 #include "flutter/shell/platform/windows/windowsx_shim.h"
-#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
+#include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
 
