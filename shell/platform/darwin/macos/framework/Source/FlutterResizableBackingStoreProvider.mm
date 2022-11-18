@@ -8,10 +8,10 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
-@implementation FlutterMetalResizableBackingStoreProvider {
+@implementation FlutterResizableBackingStoreProvider {
   id<MTLDevice> _device;
   id<MTLCommandQueue> _commandQueue;
-  id<FlutterSurfaceManager> _surfaceManager;
+  FlutterSurfaceManager* _surfaceManager;
 }
 
 - (instancetype)initWithDevice:(id<MTLDevice>)device
@@ -21,9 +21,9 @@
   if (self) {
     _device = device;
     _commandQueue = commandQueue;
-    _surfaceManager = [[FlutterMetalSurfaceManager alloc] initWithDevice:device
-                                                            commandQueue:commandQueue
-                                                                   layer:layer];
+    _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
+                                                       commandQueue:commandQueue
+                                                              layer:layer];
   }
   return self;
 }

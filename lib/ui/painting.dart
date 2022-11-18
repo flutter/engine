@@ -1409,6 +1409,14 @@ class Paint {
       );
       return true;
     }());
+    assert(() {
+      if (value is FragmentShader) {
+        if (!value._validateSamplers()) {
+          throw Exception('Invalid FragmentShader ${value._debugName ?? ''}: missing sampler');
+        }
+      }
+      return true;
+    }());
     _ensureObjectsInitialized()[_kShaderIndex] = value;
   }
 
@@ -4151,9 +4159,15 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     _constructor();
     final String result = _initFromAsset(assetKey);
     if (result.isNotEmpty) {
-      throw result; // ignore: only_throw_errors
+      throw Exception(result);
     }
+    assert(() {
+      _debugName = assetKey;
+      return true;
+    }());
   }
+
+  String? _debugName;
 
   // TODO(zra): Document custom shaders on the website and add a link to it
   // here. https://github.com/flutter/flutter/issues/107929.
@@ -4222,7 +4236,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   external String _initFromAsset(String assetKey);
 
   /// Returns a fresh instance of [FragmentShader].
-  FragmentShader fragmentShader() => FragmentShader._(this);
+  FragmentShader fragmentShader() => FragmentShader._(this, debugName: _debugName);
 }
 
 /// A [Shader] generated from a [FragmentProgram].
@@ -4239,7 +4253,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
 /// are required to exist simultaneously, they must be obtained from two
 /// different calls to [FragmentProgram.fragmentShader].
 class FragmentShader extends Shader {
-  FragmentShader._(FragmentProgram program) : super._() {
+  FragmentShader._(FragmentProgram program, { String? debugName }) : _debugName = debugName, super._() {
     _floats = _constructor(
       program,
       program._uniformFloatCount,
@@ -4247,17 +4261,63 @@ class FragmentShader extends Shader {
     );
   }
 
-  static final Float32List _kEmptyFloat32List = Float32List(0);
+  final String? _debugName;
 
-  late Float32List _floats;
+  static final Float32List _kEmptyFloat32List = Float32List(0);
+  Float32List _floats = _kEmptyFloat32List;
 
   /// Sets the float uniform at [index] to [value].
+  ///
+  /// All uniforms defined in a fragment shader that are not samplers must be
+  /// set through this method. This includes floats and vec2, vec3, and vec4.
+  /// The correct index for each uniform is determined by the order of the
+  /// uniforms as defined in the fragment program, ignoring any samplers. For
+  /// data types that are composed of multiple floats such as a vec4, more than
+  /// one call to [setFloat] is required.
+  ///
+  /// For example, given the following uniforms in a fragment program:
+  ///
+  /// ```glsl
+  /// uniform float uScale;
+  /// uniform sampler2D uTexture;
+  /// uniform vec2 uMagnitude;
+  /// uniform vec4 uColor;
+  /// ```
+  ///
+  /// Then the corresponding Dart code to correctly initialize these uniforms
+  /// is:
+  ///
+  /// ```dart
+  /// void updateShader(ui.FragmentShader shader, Color color, ImageShader sampler) {
+  ///   shader.setFloat(0, 23);  // uScale
+  ///   shader.setFloat(1, 114); // uMagnitude x
+  ///   shader.setFloat(2, 83);  // uMagnitude y
+  ///
+  ///   // Convert color to premultiplied opacity.
+  ///   shader.setFloat(3, color.red / 255 * color.opacity);   // uColor r
+  ///   shader.setFloat(4, color.green / 255 * color.opacity); // uColor g
+  ///   shader.setFloat(5, color.blue / 255 * color.opacity);  // uColor b
+  ///   shader.setFloat(6, color.opacity);                     // uColor a
+  ///
+  ///   // initialize sampler uniform.
+  ///   shader.setSampler(0, sampler);
+  /// }
+  /// ```
+  ///
+  /// Note how the indexes used does not count the `sampler2D` uniform. This
+  /// uniform will be set separately with [setSampler], with the index starting
+  /// over at 0.
+  ///
+  /// Any float uniforms that are left uninitialized will default to `0`.
   void setFloat(int index, double value) {
     assert(!debugDisposed, 'Tried to accesss uniforms on a disposed Shader: $this');
     _floats[index] = value;
   }
 
   /// Sets the sampler uniform at [index] to [sampler].
+  ///
+  /// The index provided to setSampler is the index of the sampler uniform defined
+  /// in the fragment program, excluding all non-sampler uniforms.
   ///
   /// All the sampler uniforms that a shader expects must be provided or the
   /// results will be undefined.
@@ -4283,6 +4343,9 @@ class FragmentShader extends Shader {
 
   @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetSampler')
   external void _setSampler(int index, ImageShader sampler);
+
+  @FfiNative<Bool Function(Pointer<Void>)>('ReusableFragmentShader::ValidateSamplers')
+  external bool _validateSamplers();
 
   @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
   external void _dispose();

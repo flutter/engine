@@ -219,6 +219,12 @@ bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
 
   tonic::DartState::Scope scope(root_isolate);
 
+  Dart_PerformanceMode performance_mode =
+      PlatformConfigurationNativeApi::GetDartPerformanceMode();
+  if (performance_mode == Dart_PerformanceMode::Dart_PerformanceMode_Latency) {
+    return false;
+  }
+
   Dart_NotifyIdle(deadline.ToEpochDelta().ToMicroseconds());
 
   // Idle notifications being in isolate scope are part of the contract.
@@ -226,6 +232,19 @@ bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
     TRACE_EVENT0("flutter", "EmbedderIdleNotification");
     idle_notification_callback_(deadline.ToEpochDelta().ToMicroseconds());
   }
+  return true;
+}
+
+bool RuntimeController::NotifyDestroyed() {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return false;
+  }
+
+  tonic::DartState::Scope scope(root_isolate);
+
+  Dart_NotifyDestroyed();
+
   return true;
 }
 
