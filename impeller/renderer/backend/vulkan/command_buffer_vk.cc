@@ -64,7 +64,8 @@ bool CommandBufferVK::IsValid() const {
   return is_valid_;
 }
 
-bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
+bool CommandBufferVK::OnSubmitCommands(SyncMode sync_mode,
+                                       CompletionCallback callback) {
   // TODO(https://github.com/flutter/flutter/issues/112387)
   // This needs to be the place where the command buffer, renderpass,
   // and the various descriptor sets in use by the command buffer are

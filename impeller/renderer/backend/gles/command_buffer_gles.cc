@@ -29,8 +29,22 @@ bool CommandBufferGLES::IsValid() const {
 }
 
 // |CommandBuffer|
-bool CommandBufferGLES::OnSubmitCommands(CompletionCallback callback) {
+bool CommandBufferGLES::OnSubmitCommands(SyncMode sync_mode,
+                                         CompletionCallback callback) {
   const auto result = reactor_->React();
+  if (result) {
+    const auto& gl = reactor_->GetProcTable();
+    switch (sync_mode) {
+      case CommandBuffer::SyncMode::kWaitUntilScheduled:
+        gl.Flush();
+        break;
+      case CommandBuffer::SyncMode::kWaitUntilCompleted:
+        gl.Finish();
+        break;
+      case CommandBuffer::SyncMode::kDontCare:
+        break;
+    }
+  }
   if (callback) {
     callback(result ? CommandBuffer::Status::kCompleted
                     : CommandBuffer::Status::kError);

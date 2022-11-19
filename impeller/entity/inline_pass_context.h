@@ -19,7 +19,8 @@ class InlinePassContext {
 
   InlinePassContext(std::shared_ptr<Context> context,
                     const RenderTarget& render_target,
-                    uint32_t pass_texture_reads);
+                    uint32_t pass_texture_reads,
+                    bool wait_until_completed);
   ~InlinePassContext();
 
   bool IsValid() const;
@@ -38,6 +39,7 @@ class InlinePassContext {
   std::shared_ptr<RenderPass> pass_;
   uint32_t pass_count_ = 0;
   uint32_t total_pass_reads_ = 0;
+  bool wait_until_completed_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(InlinePassContext);
 };

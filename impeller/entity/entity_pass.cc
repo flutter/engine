@@ -184,7 +184,8 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 }
 
 bool EntityPass::Render(ContentContext& renderer,
-                        const RenderTarget& render_target) const {
+                        const RenderTarget& render_target,
+                        bool wait_until_completed) const {
   if (reads_from_pass_texture_ > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
@@ -214,7 +215,11 @@ bool EntityPass::Render(ContentContext& renderer,
     if (!render_pass->EncodeCommands()) {
       return false;
     }
-    if (!command_buffer->SubmitCommands()) {
+
+    auto sync_mode = wait_until_completed
+                         ? CommandBuffer::SyncMode::kWaitUntilCompleted
+                         : CommandBuffer::SyncMode::kDontCare;
+    if (!command_buffer->SubmitCommands(sync_mode)) {
       return false;
     }
 
@@ -222,7 +227,7 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   return OnRender(renderer, render_target.GetRenderTargetSize(), render_target,
-                  Point(), Point(), 0);
+                  Point(), Point(), 0, 0, nullptr, wait_until_completed);
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
@@ -378,20 +383,20 @@ struct StencilLayer {
   size_t stencil_depth;
 };
 
-bool EntityPass::OnRender(
-    ContentContext& renderer,
-    ISize root_pass_size,
-    const RenderTarget& render_target,
-    Point position,
-    Point parent_position,
-    uint32_t pass_depth,
-    size_t stencil_depth_floor,
-    std::shared_ptr<Contents> backdrop_filter_contents) const {
+bool EntityPass::OnRender(ContentContext& renderer,
+                          ISize root_pass_size,
+                          const RenderTarget& render_target,
+                          Point position,
+                          Point parent_position,
+                          uint32_t pass_depth,
+                          size_t stencil_depth_floor,
+                          std::shared_ptr<Contents> backdrop_filter_contents,
+                          bool wait_until_completed) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, render_target,
-                                 reads_from_pass_texture_);
+  InlinePassContext pass_context(
+      context, render_target, reads_from_pass_texture_, wait_until_completed);
   if (!pass_context.IsValid()) {
     return false;
   }
@@ -401,7 +406,12 @@ bool EntityPass::OnRender(
       .stencil_depth = stencil_depth_floor}};
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
-                         &renderer, &stencil_stack](Entity& element_entity) {
+                         &renderer, &stencil_stack,
+                         wait_until_completed](Entity& element_entity) {
+    // Make sure only one 'RenderPass' is created when 'wait_until_completed' is
+    // true.
+    FML_DCHECK(!wait_until_completed ||
+               (wait_until_completed && pass_context.IsActive()));
     auto result = pass_context.GetRenderPass(pass_depth);
 
     if (!result.pass) {

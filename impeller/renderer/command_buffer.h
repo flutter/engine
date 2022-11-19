@@ -45,6 +45,12 @@ class CommandBuffer {
     kCompleted,
   };
 
+  enum class SyncMode {
+    kDontCare,
+    kWaitUntilScheduled,
+    kWaitUntilCompleted,
+  };
+
   using CompletionCallback = std::function<void(Status)>;
 
   virtual ~CommandBuffer();
@@ -61,9 +67,12 @@ class CommandBuffer {
   ///
   /// @param[in]  callback  The completion callback.
   ///
+  [[nodiscard]] bool SubmitCommands(SyncMode sync_mode,
+                                    const CompletionCallback& callback);
+
   [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
 
-  [[nodiscard]] bool SubmitCommands();
+  [[nodiscard]] bool SubmitCommands(SyncMode sync_mode = SyncMode::kDontCare);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a render pass to record render commands into.
@@ -100,7 +109,8 @@ class CommandBuffer {
 
   virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
 
-  [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
+  [[nodiscard]] virtual bool OnSubmitCommands(SyncMode sync_mode,
+                                              CompletionCallback callback) = 0;
 
   virtual std::shared_ptr<ComputePass> OnCreateComputePass() const = 0;
 

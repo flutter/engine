@@ -36,13 +36,16 @@ const ContentContext& AiksContext::GetContentContext() const {
   return *content_context_;
 }
 
-bool AiksContext::Render(const Picture& picture, RenderTarget& render_target) {
+bool AiksContext::Render(const Picture& picture,
+                         RenderTarget& render_target,
+                         bool wait_until_completed) {
   if (!IsValid()) {
     return false;
   }
 
   if (picture.pass) {
-    return picture.pass->Render(*content_context_, render_target);
+    return picture.pass->Render(*content_context_, render_target,
+                                wait_until_completed);
   }
 
   return true;

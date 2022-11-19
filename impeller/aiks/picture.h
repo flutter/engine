@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <cstdbool>
 #include <deque>
 #include <memory>
 #include <optional>
@@ -21,13 +22,16 @@ struct Picture {
 
   std::optional<Snapshot> Snapshot(AiksContext& context);
 
-  std::shared_ptr<Image> ToImage(AiksContext& context, ISize size);
+  std::shared_ptr<Image> ToImage(AiksContext& context,
+                                 ISize size,
+                                 bool wait_until_completed = false);
 
  private:
   std::shared_ptr<Texture> RenderToTexture(
       AiksContext& context,
       ISize size,
-      std::optional<const Matrix> translate = std::nullopt);
+      std::optional<const Matrix> translate = std::nullopt,
+      bool wait_until_completed = false);
 };
 
 }  // namespace impeller

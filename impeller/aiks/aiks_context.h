@@ -28,7 +28,9 @@ class AiksContext {
 
   const ContentContext& GetContentContext() const;
 
-  bool Render(const Picture& picture, RenderTarget& render_target);
+  bool Render(const Picture& picture,
+              RenderTarget& render_target,
+              bool wait_until_completed = false);
 
  private:
   std::shared_ptr<Context> context_;

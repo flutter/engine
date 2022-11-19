@@ -151,7 +151,8 @@ static CommandBuffer::Status ToCommitResult(MTLCommandBufferStatus status) {
   return CommandBufferMTL::Status::kError;
 }
 
-bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
+bool CommandBufferMTL::OnSubmitCommands(SyncMode sync_mode,
+                                        CompletionCallback callback) {
   if (callback) {
     [buffer_
         addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
@@ -162,9 +163,16 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
           callback(ToCommitResult(buffer.status));
         }];
   }
-
   [buffer_ commit];
-  [buffer_ waitUntilScheduled];
+
+  switch (sync_mode) {
+    case SyncMode::kWaitUntilCompleted:
+      [buffer_ waitUntilCompleted];
+    case SyncMode::kWaitUntilScheduled:
+    case SyncMode::kDontCare:
+      [buffer_ waitUntilScheduled];
+  }
+
   buffer_ = nil;
   return true;
 }

@@ -22,24 +22,28 @@ std::optional<Snapshot> Picture::Snapshot(AiksContext& context) {
 
   const auto translate = Matrix::MakeTranslation(-coverage.value().origin);
   auto texture =
-      RenderToTexture(context, ISize(coverage.value().size), translate);
+      RenderToTexture(context, ISize(coverage.value().size), translate, false);
   return impeller::Snapshot{
       .texture = std::move(texture),
       .transform = Matrix::MakeTranslation(coverage.value().origin)};
 }
 
-std::shared_ptr<Image> Picture::ToImage(AiksContext& context, ISize size) {
+std::shared_ptr<Image> Picture::ToImage(AiksContext& context,
+                                        ISize size,
+                                        bool wait_until_completed) {
   if (size.IsEmpty()) {
     return nullptr;
   }
-  auto texture = RenderToTexture(context, size);
+  auto texture =
+      RenderToTexture(context, size, std::nullopt, wait_until_completed);
   return texture ? std::make_shared<Image>(texture) : nullptr;
 }
 
 std::shared_ptr<Texture> Picture::RenderToTexture(
     AiksContext& context,
     ISize size,
-    std::optional<const Matrix> translate) {
+    std::optional<const Matrix> translate,
+    bool wait_until_completed) {
   FML_DCHECK(!size.IsEmpty());
 
   pass->IterateAllEntities([&translate](auto& entity) -> bool {
@@ -64,7 +68,7 @@ std::shared_ptr<Texture> Picture::RenderToTexture(
     return nullptr;
   }
 
-  if (!context.Render(*this, target)) {
+  if (!context.Render(*this, target, wait_until_completed)) {
     VALIDATION_LOG << "Could not render Picture to Texture.";
     return nullptr;
   }

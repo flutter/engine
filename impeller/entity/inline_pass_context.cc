@@ -15,10 +15,12 @@ namespace impeller {
 
 InlinePassContext::InlinePassContext(std::shared_ptr<Context> context,
                                      const RenderTarget& render_target,
-                                     uint32_t pass_texture_reads)
+                                     uint32_t pass_texture_reads,
+                                     bool wait_until_completed)
     : context_(std::move(context)),
       render_target_(render_target),
-      total_pass_reads_(pass_texture_reads) {}
+      total_pass_reads_(pass_texture_reads),
+      wait_until_completed_(wait_until_completed) {}
 
 InlinePassContext::~InlinePassContext() {
   EndPass();
@@ -47,8 +49,10 @@ bool InlinePassContext::EndPass() {
   if (!pass_->EncodeCommands()) {
     return false;
   }
-
-  if (!command_buffer_->SubmitCommands()) {
+  auto sync_mode = wait_until_completed_
+                       ? CommandBuffer::SyncMode::kWaitUntilCompleted
+                       : CommandBuffer::SyncMode::kDontCare;
+  if (!command_buffer_->SubmitCommands(sync_mode)) {
     return false;
   }
 

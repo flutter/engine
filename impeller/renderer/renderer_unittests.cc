@@ -622,7 +622,8 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
 
       pass->EncodeCommands(context->GetResourceAllocator());
 
-      if (!buffer->SubmitCommands()) {
+      if (!buffer->SubmitCommands(
+              CommandBuffer::SyncMode::kWaitUntilCompleted)) {
         return false;
       }
     }

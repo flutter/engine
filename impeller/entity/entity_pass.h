@@ -50,7 +50,8 @@ class EntityPass {
   EntityPass* GetSuperpass() const;
 
   bool Render(ContentContext& renderer,
-              const RenderTarget& render_target) const;
+              const RenderTarget& render_target,
+              bool wait_until_completed = false) const;
 
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
@@ -101,15 +102,15 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(
-      ContentContext& renderer,
-      ISize root_pass_size,
-      const RenderTarget& render_target,
-      Point position,
-      Point parent_position,
-      uint32_t pass_depth,
-      size_t stencil_depth_floor = 0,
-      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
+  bool OnRender(ContentContext& renderer,
+                ISize root_pass_size,
+                const RenderTarget& render_target,
+                Point position,
+                Point parent_position,
+                uint32_t pass_depth,
+                size_t stencil_depth_floor = 0,
+                std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
+                bool wait_until_completed = false) const;
 
   std::vector<Element> elements_;
 

@@ -32,7 +32,8 @@ class CommandBufferGLES final : public CommandBuffer {
   bool IsValid() const override;
 
   // |CommandBuffer|
-  bool OnSubmitCommands(CompletionCallback callback) override;
+  bool OnSubmitCommands(SyncMode sync_mode,
+                        CompletionCallback callback) override;
 
   // |CommandBuffer|
   std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
