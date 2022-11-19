@@ -25,14 +25,16 @@
 //    B’ = k*R + l*G + m*B + n*A + o;
 //    A’ = p*R + q*G + r*B + s*A + t;
 //
-// That resulting color [R’, G’, B’, A’] then has each channel clamped to the 0 to 255 range.
+// That resulting color [R’, G’, B’, A’] then has each channel clamped to the 0
+// to 255 range.
 
 uniform FragInfo {
   mat4 color_m;
   vec4 color_v;
   float texture_sampler_y_coord_scale;
   float input_alpha;
-} frag_info;
+}
+frag_info;
 
 uniform sampler2D input_texture;
 
