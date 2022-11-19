@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <cstdbool>
 #include <deque>
 #include <memory>
 #include <optional>

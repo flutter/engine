@@ -395,8 +395,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(
-      context, render_target, reads_from_pass_texture_, wait_until_completed);
+  InlinePassContext pass_context(context, render_target,
+                                 reads_from_pass_texture_);
   if (!pass_context.IsValid()) {
     return false;
   }
@@ -406,12 +406,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
       .stencil_depth = stencil_depth_floor}};
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
-                         &renderer, &stencil_stack,
-                         wait_until_completed](Entity& element_entity) {
-    // Make sure only one 'RenderPass' is created when 'wait_until_completed' is
-    // true.
-    FML_DCHECK(!wait_until_completed ||
-               (wait_until_completed && pass_context.IsActive()));
+                         &renderer, &stencil_stack](Entity& element_entity) {
     auto result = pass_context.GetRenderPass(pass_depth);
 
     if (!result.pass) {
@@ -556,6 +551,11 @@ bool EntityPass::OnRender(ContentContext& renderer,
     if (!render_element(result.entity)) {
       return false;
     }
+  }
+
+  if (wait_until_completed) {
+    FML_DCHECK(pass_context.IsActive());
+    pass_context.EndPass(wait_until_completed);
   }
 
   return true;
