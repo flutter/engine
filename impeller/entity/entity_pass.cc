@@ -554,6 +554,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
   }
 
   if (wait_until_completed) {
+    FML_DCHECK(reads_from_pass_texture_ == 0);
     FML_DCHECK(pass_context.IsActive());
     pass_context.EndPass(wait_until_completed);
   }
