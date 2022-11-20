@@ -263,6 +263,7 @@ abstract class _BaseAdapter {
   final _PointerDataCallback _callback;
   final PointerDataConverter _pointerDataConverter;
   final KeyboardConverter _keyboardConverter;
+  DomWheelEvent? _lastWheelEvent;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -348,7 +349,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     return (wheelDelta - (-3 * delta)).abs() > 1;
   }
 
-  bool _isTrackpadEvent(DomWheelEvent event) {
+  bool _isTrackpadEvent(DomWheelEvent event, DomWheelEvent? lastWheelEvent) {
     // This function relies on deprecated and non-standard implementation
     // details. Useful reference material can be found below.
     //
@@ -366,9 +367,17 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     if ((event.deltaX % 120 == 0) && (event.deltaY % 120 == 0)) {
       // While not in any formal web standard, `blink` and `webkit` browsers use
       // a delta of 120 to represent one mouse wheel turn. If both dimensions of
-      // the delta are divisible by 120, this event is almost certainly not from
-      // a trackpad.
-      return false;
+      // the delta are divisible by 120, this event is probably from a mouse.
+      final num deltaXChange = (event.deltaX - (lastWheelEvent?.deltaX ?? 0)).abs();
+      final num deltaYChange = (event.deltaY - (lastWheelEvent?.deltaY ?? 0)).abs();
+      if ((lastWheelEvent == null) ||
+          (deltaXChange == 0 && deltaYChange == 0) ||
+          !(deltaXChange < 10 && deltaYChange < 10)) {
+        // A trackpad event might by chance have a delta of exactly 120, so
+        // make sure this event does not have a similar delta to the previous
+        // one before calling it a mouse event.
+        return false;
+      }
     }
     if (_isAcceleratedMouseWheelDelta(event.deltaX, event.wheelDeltaX) ||
         _isAcceleratedMouseWheelDelta(event.deltaY, event.wheelDeltaY)) {
@@ -385,7 +394,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if (_isTrackpadEvent(event)) {
+    if (_isTrackpadEvent(event, _lastWheelEvent)) {
       kind = ui.PointerDeviceKind.trackpad;
     }
 
@@ -431,6 +440,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       scrollDeltaX: deltaX,
       scrollDeltaY: deltaY,
     );
+    _lastWheelEvent = event;
     return data;
   }
 
