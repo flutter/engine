@@ -5,8 +5,8 @@
 #ifndef GAUSSIAN_GLSL_
 #define GAUSSIAN_GLSL_
 
-#include <impeller/types.glsl>
 #include <impeller/constants.glsl>
+#include <impeller/types.glsl>
 
 /// Gaussian distribution function.
 float16_t IPGaussian(float16_t x, float16_t sigma) {
@@ -18,7 +18,8 @@ float16_t IPGaussian(float16_t x, float16_t sigma) {
 float16_t IPErf(float16_t x) {
   float16_t a = abs(x);
   // 0.278393*x + 0.230389*x^2 + 0.078108*x^4 + 1
-  float16_t b = (0.278393hf + (0.230389hf + 0.078108hf * a * a) * a) * a + 1.0hf;
+  float16_t b =
+      (0.278393hf + (0.230389hf + 0.078108hf * a * a) * a) * a + 1.0hf;
   return sign(x) * (1.0hf - 1.0hf / (b * b * b * b));
 }
 

@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 uniform sampler2D y_texture;
 uniform sampler2D uv_texture;
@@ -19,7 +19,8 @@ uniform FragInfo {
   float16_t yuv_color_space;
   mat4 matrix;
 <<<<<<< HEAD
-} frag_info;
+}
+frag_info;
 =======
   float yuv_color_space;
 }
@@ -37,8 +38,12 @@ void main() {
   }
 
 <<<<<<< HEAD
-  yuv.x = IPSample(y_texture, v_position, frag_info.texture_sampler_y_coord_scale).x;
-  yuv.yz = IPSample(uv_texture, v_position, frag_info.texture_sampler_y_coord_scale).xy;
+  yuv.x =
+      IPSample(y_texture, v_position, frag_info.texture_sampler_y_coord_scale)
+          .x;
+  yuv.yz =
+      IPSample(uv_texture, v_position, frag_info.texture_sampler_y_coord_scale)
+          .xy;
   frag_color = f16mat4(frag_info.matrix) * f16vec4(yuv - yuv_offset, 1.0hf);
 =======
   yuv.x =

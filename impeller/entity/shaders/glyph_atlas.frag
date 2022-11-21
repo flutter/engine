@@ -10,7 +10,8 @@ uniform FragInfo {
 <<<<<<< HEAD
   f16vec2 atlas_size;
   f16vec4 text_color;
-} frag_info;
+}
+frag_info;
 
 in f16vec2 v_unit_vertex;
 in f16vec2 v_atlas_position;
@@ -35,15 +36,13 @@ void main() {
   f16vec2 scale_perspective = v_atlas_glyph_size / frag_info.atlas_size;
   f16vec2 offset = v_atlas_position / frag_info.atlas_size;
   if (v_color_glyph == 1.0hf) {
-    frag_color = f16vec4(texture(
-      glyph_atlas_sampler,
-      v_unit_vertex * scale_perspective + offset
-    ));
+    frag_color = f16vec4(texture(glyph_atlas_sampler,
+                                 v_unit_vertex * scale_perspective + offset));
   } else {
-    frag_color = f16vec4(texture(
-      glyph_atlas_sampler,
-      v_unit_vertex * scale_perspective + offset
-    ).aaaa) * frag_info.text_color;
+    frag_color = f16vec4(texture(glyph_atlas_sampler,
+                                 v_unit_vertex * scale_perspective + offset)
+                             .aaaa) *
+                 frag_info.text_color;
 =======
   vec2 uv_size = v_source_glyph_size / frag_info.atlas_size;
   vec2 offset = v_source_position / frag_info.atlas_size;

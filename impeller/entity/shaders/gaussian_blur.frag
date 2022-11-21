@@ -13,10 +13,10 @@
 //     reduced in the first pass by sampling the source textures with a mip
 //     level of log2(min_radius).
 
-#include <impeller/types.glsl>
 #include <impeller/constants.glsl>
 #include <impeller/gaussian.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 uniform sampler2D texture_sampler;
 uniform sampler2D alpha_mask_sampler;
@@ -74,8 +74,9 @@ void main() {
       frag_info.alpha_mask_sampler_y_coord_scale,  // y coordinate scale
       frag_info.tile_mode                          // tile mode
   );
-  float16_t blur_factor = frag_info.inner_blur_factor * float16_t(src_color.a > 0.0hf) +
-                      frag_info.outer_blur_factor * float16_t(src_color.a == 0.0hf);
+  float16_t blur_factor =
+      frag_info.inner_blur_factor * float16_t(src_color.a > 0.0hf) +
+      frag_info.outer_blur_factor * float16_t(src_color.a == 0.0hf);
 
   frag_color = blur_color * blur_factor + src_color * frag_info.src_factor;
 }

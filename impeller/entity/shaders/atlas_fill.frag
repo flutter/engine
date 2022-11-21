@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 uniform sampler2D texture_sampler;
 
@@ -21,7 +21,7 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 sampled = IPSample(texture_sampler, v_texture_coords,
-                          frag_info.texture_sampler_y_coord_scale);
+                             frag_info.texture_sampler_y_coord_scale);
   if (frag_info.has_vertex_color == 1.0hf) {
     frag_color = sampled.aaaa * v_color * frag_info.alpha;
   } else {

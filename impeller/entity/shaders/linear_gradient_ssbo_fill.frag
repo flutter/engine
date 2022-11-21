@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 readonly buffer ColorData {
 <<<<<<< HEAD
   f16vec4 colors[];
-} color_data;
+}
+color_data;
 
 uniform GradientInfo {
   f16vec2 start_point;
@@ -17,7 +18,8 @@ uniform GradientInfo {
   float16_t alpha;
   float16_t tile_mode;
   float16_t colors_length;
-} gradient_info;
+}
+gradient_info;
 =======
   vec4 colors[];
 }
@@ -40,10 +42,8 @@ out f16vec4 frag_color;
 void main() {
 <<<<<<< HEAD
   float16_t len = length(gradient_info.end_point - gradient_info.start_point);
-  float16_t dot = dot(
-    v_position - gradient_info.start_point,
-    gradient_info.end_point - gradient_info.start_point
-  );
+  float16_t dot = dot(v_position - gradient_info.start_point,
+                      gradient_info.end_point - gradient_info.start_point);
   float16_t t = dot / (len * len);
 =======
   float len = length(gradient_info.end_point - gradient_info.start_point);
@@ -60,8 +60,10 @@ void main() {
   f16vec3 values = IPComputeFixedGradientValues(t, gradient_info.colors_length);
 
 <<<<<<< HEAD
-  frag_color = mix(color_data.colors[int(values.x)], color_data.colors[int(values.y)], values.z);
-  frag_color = f16vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
+  frag_color = mix(color_data.colors[int(values.x)],
+                   color_data.colors[int(values.y)], values.z);
+  frag_color = f16vec4(frag_color.xyz * frag_color.a, frag_color.a) *
+               gradient_info.alpha;
 =======
   frag_color = mix(color_data.colors[int(values.x)],
                    color_data.colors[int(values.y)], values.z);

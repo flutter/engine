@@ -5,9 +5,9 @@
 #ifndef BLENDING_GLSL_
 #define BLENDING_GLSL_
 
-#include <impeller/types.glsl>
 #include <impeller/branching.glsl>
 #include <impeller/constants.glsl>
+#include <impeller/types.glsl>
 
 //------------------------------------------------------------------------------
 /// HSV utilities.
@@ -29,7 +29,8 @@ f16vec3 IPClipColor(f16vec3 color) {
     color = lum + (((color - lum) * lum) / (lum - mn + kEhCloseEnough));
   }
   if (mx > 1.0hf) {
-    color = lum + (((color - lum) * (1.0hf - lum)) / (mx - lum + kEhCloseEnough));
+    color =
+        lum + (((color - lum) * (1.0hf - lum)) / (mx - lum + kEhCloseEnough));
   }
   return color;
 }
@@ -66,7 +67,8 @@ f16vec3 IPBlendScreen(f16vec3 dst, f16vec3 src) {
 
 f16vec3 IPBlendHardLight(f16vec3 dst, f16vec3 src) {
   // https://www.w3.org/TR/compositing-1/#blendinghardlight
-  return IPVec3Choose(dst * (2.0hf * src), IPBlendScreen(dst, 2.0hf * src - 1.0hf), src);
+  return IPVec3Choose(dst * (2.0hf * src),
+                      IPBlendScreen(dst, 2.0hf * src - 1.0hf), src);
 }
 
 f16vec3 IPBlendOverlay(f16vec3 dst, f16vec3 src) {
@@ -144,13 +146,14 @@ f16vec3 IPBlendColorBurn(f16vec3 dst, f16vec3 src) {
 f16vec3 IPBlendSoftLight(f16vec3 dst, f16vec3 src) {
   // https://www.w3.org/TR/compositing-1/#blendingsoftlight
 
-  f16vec3 D = IPVec3ChooseCutoff(((16.0hf * dst - 12.0hf) * dst + 4.0hf) * dst,  //
-                              sqrt(dst),                          //
-                              dst,                                //
-                              0.25hf);
+  f16vec3 D =
+      IPVec3ChooseCutoff(((16.0hf * dst - 12.0hf) * dst + 4.0hf) * dst,  //
+                         sqrt(dst),                                      //
+                         dst,                                            //
+                         0.25hf);
 
   return IPVec3Choose(dst - (1.0hf - 2.0hf * src) * dst * (1.0hf - dst),  //
-                      dst + (2.0hf * src - 1.0hf) * (D - dst),        //
+                      dst + (2.0hf * src - 1.0hf) * (D - dst),            //
                       src);
 }
 

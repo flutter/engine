@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/transform.glsl>
+#include <impeller/types.glsl>
 
 uniform VertInfo {
   mat4 mvp;
 <<<<<<< HEAD
   f16vec4 color;
-} vert_info;
+}
+vert_info;
 =======
   vec4 color;
 }

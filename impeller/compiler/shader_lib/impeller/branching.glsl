@@ -5,8 +5,8 @@
 #ifndef BRANCHING_GLSL_
 #define BRANCHING_GLSL_
 
-#include <impeller/types.glsl>
 #include <impeller/constants.glsl>
+#include <impeller/types.glsl>
 
 /// Perform an equality check for each vec3 component.
 ///
@@ -14,8 +14,8 @@
 BoolV3 IPVec3IsEqual(f16vec3 x, float16_t y) {
   f16vec3 diff = abs(x - y);
   return f16vec3(diff.r < kEhCloseEnough,  //
-              diff.g < kEhCloseEnough,  //
-              diff.b < kEhCloseEnough);
+                 diff.g < kEhCloseEnough,  //
+                 diff.b < kEhCloseEnough);
 }
 
 /// Perform a branchless greater than check.
@@ -40,7 +40,10 @@ BoolF IPFloatIsLessThan(float16_t x, float16_t y) {
 }
 
 /// For each vec3 component, if value > cutoff, return b, otherwise return a.
-f16vec3 IPVec3ChooseCutoff(f16vec3 a, f16vec3 b, f16vec3 value, float16_t cutoff) {
+f16vec3 IPVec3ChooseCutoff(f16vec3 a,
+                           f16vec3 b,
+                           f16vec3 value,
+                           float16_t cutoff) {
   return mix(a, b, IPVec3IsGreaterThan(value, f16vec3(cutoff)));
 }
 

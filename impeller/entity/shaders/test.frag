@@ -8,7 +8,8 @@ uniform sampler2D texture_sampler;
 
 uniform GradientInfo {
   float16_t bias;
-} gradient_info;
+}
+gradient_info;
 
 in vec2 v_position;
 

@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/gaussian.glsl>
+#include <impeller/types.glsl>
 
 uniform FragInfo {
   f16vec4 color;
@@ -21,7 +21,8 @@ const float16_t kSampleCount = 5.0hf;
 
 float16_t RRectDistance(f16vec2 sample_position, f16vec2 half_size) {
   vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
-  return float16_t(length(max(space, 0.0hf)) + min(max(space.x, space.y), 0.0hf)) -
+  return float16_t(length(max(space, 0.0hf)) +
+                   min(max(space.x, space.y), 0.0hf)) -
          frag_info.corner_radius;
 }
 
@@ -30,12 +31,12 @@ float16_t RRectDistance(f16vec2 sample_position, f16vec2 half_size) {
 float16_t RRectShadowX(f16vec2 sample_position, f16vec2 half_size) {
   // Compute the X direction distance field (not incorporating the Y distance)
   // for the rounded rect.
-  float16_t space =
-      min(0.0hf, half_size.y - frag_info.corner_radius - abs(sample_position.y));
+  float16_t space = min(
+      0.0hf, half_size.y - frag_info.corner_radius - abs(sample_position.y));
   float16_t rrect_distance =
       half_size.x - frag_info.corner_radius +
       sqrt(max(0.0hf, frag_info.corner_radius * frag_info.corner_radius -
-                      space * space));
+                          space * space));
 
   // Map the linear distance field to the analytical Gaussian integral.
   f16vec2 integral = IPVec2GaussianIntegral(
@@ -49,7 +50,8 @@ float16_t RRectShadow(f16vec2 sample_position, f16vec2 half_size) {
   // the kernel center to incorporate 99.7% of the color contribution.
   float16_t half_sampling_range = frag_info.blur_sigma * 3.0hf;
 
-  float16_t begin_y = max(-half_sampling_range, sample_position.y - half_size.y);
+  float16_t begin_y =
+      max(-half_sampling_range, sample_position.y - half_size.y);
   float16_t end_y = min(half_sampling_range, sample_position.y + half_size.y);
   float16_t interval = (end_y - begin_y) / kSampleCount;
 

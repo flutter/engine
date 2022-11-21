@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
 #include <impeller/color.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 // A color filter that transforms colors through a 4x5 color matrix.
 //
@@ -35,7 +35,8 @@ uniform FragInfo {
   f16vec4 color_v;
   float16_t texture_sampler_y_coord_scale;
   float16_t input_alpha;
-} frag_info;
+}
+frag_info;
 =======
   vec4 color_v;
   float texture_sampler_y_coord_scale;
@@ -51,13 +52,14 @@ out f16vec4 frag_color;
 
 void main() {
   f16vec4 input_color = IPSample(input_texture, v_position,
-                              frag_info.texture_sampler_y_coord_scale) *
-                     frag_info.input_alpha;
+                                 frag_info.texture_sampler_y_coord_scale) *
+                        frag_info.input_alpha;
 
   // unpremultiply first, as filter inputs are premultiplied.
   f16vec4 color = IPUnpremultiply(input_color);
 
-  color = clamp(f16mat4(frag_info.color_m) * color + frag_info.color_v, 0.0hf, 1.0hf);
+  color = clamp(f16mat4(frag_info.color_m) * color + frag_info.color_v, 0.0hf,
+                1.0hf);
 
 <<<<<<< HEAD
 =======

@@ -5,8 +5,8 @@
 #ifndef COLOR_GLSL_
 #define COLOR_GLSL_
 
-#include <impeller/types.glsl>
 #include <impeller/branching.glsl>
+#include <impeller/types.glsl>
 
 /// Convert a premultiplied color (a color which has its color components
 /// multiplied with its alpha value) to an unpremultiplied color.

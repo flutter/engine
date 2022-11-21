@@ -50,7 +50,7 @@ float16_t IPFloatTile(float16_t t, float16_t tile_mode) {
     t = clamp(t, 0.0hf, 1.0hf);
   } else if (tile_mode == kTileModeRepeat) {
     t = fract(t);
-  } else if (tile_mode == kTileModeMirror) {
+  } else if (tile_mode == kTileModeMirror)  {
     float16_t t1 = t - 1.0hf;
     float16_t t2 = t1 - 2.0hf * floor(t1 * 0.5hf) - 1.0hf;
     t = abs(t2);
@@ -71,10 +71,10 @@ f16vec2 IPVec2Tile(f16vec2 coords, float16_t x_tile_mode, float16_t y_tile_mode)
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
 f16vec4 IPSampleWithTileMode(sampler2D tex,
-                             f16vec2 coords,
-                             float16_t y_coord_scale,
-                             float16_t x_tile_mode,
-                             float16_t y_tile_mode) {
+                          f16vec2 coords,
+                          float16_t y_coord_scale,
+                          float16_t x_tile_mode,
+                          float16_t y_tile_mode) {
   if (x_tile_mode == kTileModeDecal && (coords.x < 0.hf || coords.x >= 1.hf) ||
       y_tile_mode == kTileModeDecal && (coords.y < 0.hf || coords.y >= 1.hf)) {
     return f16vec4(0.0hf);
@@ -89,9 +89,9 @@ f16vec4 IPSampleWithTileMode(sampler2D tex,
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
 f16vec4 IPSampleWithTileMode(sampler2D tex,
-                             f16vec2 coords,
-                             float16_t y_coord_scale,
-                             float16_t tile_mode) {
+                          f16vec2 coords,
+                          float16_t y_coord_scale,
+                          float16_t tile_mode) {
   return IPSampleWithTileMode(tex, coords, y_coord_scale, tile_mode, tile_mode);
 }
 

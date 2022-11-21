@@ -6,7 +6,7 @@
 #define TYPES_GLSL_
 
 #ifdef IMPELLER_TARGET_METAL
-#extension GL_AMD_gpu_shader_half_float: enable
+#extension GL_AMD_gpu_shader_half_float : enable
 
 #define BoolF float16_t
 #define BoolV2 f16vec2
@@ -28,7 +28,6 @@ precision mediump float;
 #define BoolV3 vec3
 #define BoolV4 vec4
 
-#endif // IMPELLER_TARGET_METAL
-
+#endif  // IMPELLER_TARGET_METAL
 
 #endif

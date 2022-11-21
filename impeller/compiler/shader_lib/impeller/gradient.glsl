@@ -5,8 +5,8 @@
 #ifndef GRADIENT_GLSL_
 #define GRADIENT_GLSL_
 
-#include <impeller/types.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 /// Compute the indexes and mix coefficient used to mix colors for an
 /// arbitrarily sized color gradient.
