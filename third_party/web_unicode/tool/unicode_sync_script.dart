@@ -14,10 +14,9 @@ const int _kChar_a = 97;
 
 final ArgParser argParser = ArgParser()
   ..addFlag(
-    'dry',
-    abbr: 'd',
-    help: 'Dry mode does not write anything to disk. '
-        'The output is printed to the console.',
+    'check',
+    help: 'Check mode does not write anything to disk. '
+        'It just checks if the generated files are still in sync or not.',
   );
 
 /// A map of properties that could safely be normalized into other properties.
@@ -68,28 +67,16 @@ class UnicodeRange {
   }
 }
 
-final String unicodeRoot = path.dirname(path.dirname(Platform.script.toFilePath()));
+final String webUnicodeRoot = path.dirname(path.dirname(Platform.script.toFilePath()));
 
-final String propertiesDir = path.join(unicodeRoot, 'properties');
+final String propertiesDir = path.join(webUnicodeRoot, 'properties');
 final String wordProperties = path.join(propertiesDir, 'WordBreakProperty.txt');
 final String lineProperties = path.join(propertiesDir, 'LineBreak.txt');
 
-final String codegenDir = path.join(unicodeRoot, 'lib', 'codegen');
+final String codegenDir = path.join(webUnicodeRoot, 'lib', 'codegen');
 final String wordBreakCodegen = path.join(codegenDir, 'word_break_properties.dart');
 final String lineBreakCodegen = path.join(codegenDir, 'line_break_properties.dart');
 
-/// Usage (from the root of third_party/unicode).
-///
-/// To generate code for line and word break properties:
-/// ```
-/// dart tool/unicode_sync_script.dart
-///
-/// To do a dry run, add the `-d` flag:
-///
-/// ```
-/// dart tool/unicode_sync_script.dart -d
-/// ```
-///
 /// This script parses the unicode word/line break properties(1) and generates Dart
 /// code(2) that can perform lookups in the unicode ranges to find what property
 /// a letter has.
@@ -100,17 +87,17 @@ final String lineBreakCodegen = path.join(codegenDir, 'line_break_properties.dar
 ///     The line break properties file can be downloaded from:
 ///     https://www.unicode.org/Public/13.0.0/ucd/LineBreak.txt
 ///
-///     Both files need to be located at third_party/unicode/properties.
+///     Both files need to be located at third_party/web_unicode/properties.
 ///
 /// (2) The codegen'd Dart files are located at:
-///     third_party/unicode/lib/codegen/word_break_properties.dart
-///     third_party/unicode/lib/codegen/line_break_properties.dart
+///     third_party/web_unicode/lib/codegen/word_break_properties.dart
+///     third_party/web_unicode/lib/codegen/line_break_properties.dart
 Future<void> main(List<String> arguments) async {
   final ArgResults result = argParser.parse(arguments);
-  final bool dry = result['dry'] as bool;
+  final bool isCheck = result['check'] as bool;
   final List<PropertiesSyncer> syncers = <PropertiesSyncer>[
-    if (dry) WordBreakPropertiesSyncer.dry() else WordBreakPropertiesSyncer(),
-    if (dry) LineBreakPropertiesSyncer.dry() else LineBreakPropertiesSyncer(),
+    WordBreakPropertiesSyncer(isCheck: isCheck),
+    LineBreakPropertiesSyncer(isCheck: isCheck),
   ];
 
   for (final PropertiesSyncer syncer in syncers) {
@@ -124,14 +111,11 @@ Future<void> main(List<String> arguments) async {
 /// Subclasses implement the [template] method which receives as argument the
 /// list of data parsed by [processLines].
 abstract class PropertiesSyncer {
-  PropertiesSyncer(this._src, this._dest) : _dryRun = false;
-  PropertiesSyncer.dry(this._src)
-      : _dest = null,
-        _dryRun = true;
+  PropertiesSyncer(this._src, this._dest, {required this.isCheck});
 
   final String _src;
-  final String? _dest;
-  final bool _dryRun;
+  final String _dest;
+  final bool isCheck;
 
   String get prefix;
   String get enumDocLink;
@@ -147,13 +131,17 @@ abstract class PropertiesSyncer {
 
     final String output = template(data);
 
-    if (_dryRun) {
-      print('=' * 80);
-      print(path.relative(_src, from: unicodeRoot));
-      print('=' * 80);
-      print(output);
+    if (isCheck) {
+      // Read from destination and compare to the generated output.
+      final String existing = await File(_dest).readAsString();
+      if (existing != output) {
+        final String relativeDest = path.relative(_dest, from: webUnicodeRoot);
+        print('ERROR: $relativeDest is out of sync.');
+        print('Please run "dart tool/unicode_sync_script.dart" to update it.');
+        exit(1);
+      }
     } else {
-      final IOSink sink = File(_dest!).openWrite();
+      final IOSink sink = File(_dest).openWrite();
       sink.write(output);
     }
   }
@@ -222,8 +210,8 @@ const ${prefix}CharProperty default${prefix}CharProperty = ${prefix}CharProperty
 
 /// Syncs Unicode's word break properties.
 class WordBreakPropertiesSyncer extends PropertiesSyncer {
-  WordBreakPropertiesSyncer() : super(wordProperties, wordBreakCodegen);
-  WordBreakPropertiesSyncer.dry() : super.dry(wordProperties);
+  WordBreakPropertiesSyncer({required bool isCheck})
+      : super(wordProperties, wordBreakCodegen, isCheck: isCheck);
 
   @override
   final String prefix = 'Word';
@@ -238,8 +226,8 @@ class WordBreakPropertiesSyncer extends PropertiesSyncer {
 
 /// Syncs Unicode's line break properties.
 class LineBreakPropertiesSyncer extends PropertiesSyncer {
-  LineBreakPropertiesSyncer() : super(lineProperties, lineBreakCodegen);
-  LineBreakPropertiesSyncer.dry() : super.dry(lineProperties);
+  LineBreakPropertiesSyncer({required bool isCheck})
+      : super(lineProperties, lineBreakCodegen, isCheck: isCheck);
 
   @override
   final String prefix = 'Line';

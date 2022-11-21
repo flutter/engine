@@ -1,4 +1,6 @@
-name: unicode
+name: web_unicode
+
+publish_to: none
 
 environment:
   sdk: ">=2.12.0-0 <3.0.0"
