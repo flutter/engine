@@ -6,6 +6,7 @@ clang-analyzer-*,\
 clang-diagnostic-*,\
 google-*,\
 modernize-use-default-member-init,\
+objc-*,\
 readability-identifier-naming,\
 -google-build-using-namespace,\
 -google-default-arguments,\
