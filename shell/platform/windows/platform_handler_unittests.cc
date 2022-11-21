@@ -6,10 +6,7 @@
 
 #include <memory>
 
-#include <flutter/shell/platform/windows/testing/engine_modifier.h>
-#include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
-#include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
