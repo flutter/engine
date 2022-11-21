@@ -6,7 +6,8 @@
 
 uniform FrameInfo {
   mat4 mvp;
-} frame_info;
+}
+frame_info;
 
 in vec2 vertices;
 in f16vec2 texture_coords;

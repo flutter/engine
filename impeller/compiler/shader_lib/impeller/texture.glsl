@@ -80,7 +80,8 @@ f16vec4 IPSampleWithTileMode(sampler2D tex,
     return f16vec4(0.0hf);
   }
 
-  return IPSample(tex, IPVec2Tile(coords, x_tile_mode, y_tile_mode), y_coord_scale);
+  return IPSample(tex, IPVec2Tile(coords, x_tile_mode, y_tile_mode),
+                  y_coord_scale);
 }
 
 /// Sample a texture, emulating a specific tile mode.
@@ -110,7 +111,8 @@ f16vec4 IPSampleLinearWithTileMode(sampler2D tex,
     return f16vec4(0.0hf);
   }
 
-  return IPSampleLinear(tex, IPVec2Tile(coords, x_tile_mode, y_tile_mode), y_coord_scale, half_texel);
+  return IPSampleLinear(tex, IPVec2Tile(coords, x_tile_mode, y_tile_mode),
+                        y_coord_scale, half_texel);
 }
 
 /// Sample a texture, emulating a specific tile mode.

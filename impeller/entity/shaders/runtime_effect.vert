@@ -5,7 +5,8 @@
 #include <impeller/types.glsl>
 uniform VertInfo {
   mat4 mvp;
-} vert_info;
+}
+vert_info;
 
 in vec2 position;
 out vec2 v_position;
