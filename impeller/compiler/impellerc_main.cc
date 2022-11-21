@@ -70,8 +70,10 @@ bool Main(const fml::CommandLine& command_line) {
   options.include_dirs = switches.include_directories;
   options.defines = switches.defines;
   options.entry_point_name = EntryPointFunctionNameFromSourceName(
-      switches.source_file_name, options.type, options.source_language);
+      switches.source_file_name, options.type, options.source_language,
+      switches.entry_point);
   options.json_format = switches.json_format;
+  options.gles_language_version = switches.gles_language_version;
 
   Reflector::Options reflector_options;
   reflector_options.target_platform = switches.target_platform;
