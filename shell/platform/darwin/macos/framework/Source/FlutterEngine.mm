@@ -12,9 +12,9 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -246,7 +246,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
+  _renderer = [[FlutterRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -400,7 +400,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)setViewController:(FlutterViewController*)controller {
   if (_viewController != controller) {
     _viewController = controller;
-    [_renderer setFlutterView:controller.flutterView];
 
     if (_semanticsEnabled && _bridge) {
       _bridge->UpdateDefaultViewController(_viewController);
@@ -422,14 +421,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
   _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
-      _viewProvider, _platformViewController, metalRenderer.device);
+      _viewProvider, _platformViewController, _renderer.device);
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+    // TODO(dkwingsmt): The compositor only supports single-view for now. As
+    // more classes are gradually converted to multi-view, it should get the
+    // view ID from somewhere.
+    uint64_t viewId = kFlutterDefaultViewId;
     if (has_flutter_content) {
-      return [weakSelf.renderer present] == YES;
+      return [weakSelf.renderer present:viewId] == YES;
     } else {
-      [weakSelf.renderer presentWithoutContent];
+      [weakSelf.renderer presentWithoutContent:viewId];
       return true;
     }
   });
