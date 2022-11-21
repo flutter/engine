@@ -4335,7 +4335,6 @@ class FragmentShader extends Shader {
   /// results will be undefined.
   ///
   /// Use of this method may result in poor performance with the Impeller backend.
-  @Deprecated('Use setImageSampler instead.')
   void setSampler(int index, ImageShader sampler) {
     assert(!debugDisposed, 'Tried to access uniforms on a disposed Shader: $this');
     _setSampler(index, sampler);
