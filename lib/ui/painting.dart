@@ -4333,8 +4333,6 @@ class FragmentShader extends Shader {
   ///
   /// All the sampler uniforms that a shader expects must be provided or the
   /// results will be undefined.
-  ///
-  /// Use of this method may result in poor performance with the Impeller backend.
   void setSampler(int index, ImageShader sampler) {
     assert(!debugDisposed, 'Tried to access uniforms on a disposed Shader: $this');
     _setSampler(index, sampler);
