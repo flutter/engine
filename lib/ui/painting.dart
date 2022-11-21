@@ -4316,7 +4316,7 @@ class FragmentShader extends Shader {
 
   /// Sets the sampler uniform at [index] to [image].
   ///
-  /// The index provided to setSampler is the index of the sampler uniform defined
+  /// The index provided to setImageSampler is the index of the sampler uniform defined
   /// in the fragment program, excluding all non-sampler uniforms.
   ///
   /// All the sampler uniforms that a shader expects must be provided or the
