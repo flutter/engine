@@ -2,25 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <impeller/types.glsl>
+
 uniform FrameInfo {
   mat4 mvp;
 
-  vec2 sigma_uv;
+  f16vec2 sigma_uv;
 
-  float src_factor;
-  float inner_blur_factor;
-  float outer_blur_factor;
+  float16_t src_factor;
+  float16_t inner_blur_factor;
+  float16_t outer_blur_factor;
 }
 frame_info;
 
 in vec2 vertices;
-in vec2 texture_coords;
+in f16vec2 texture_coords;
 
-out vec2 v_texture_coords;
-out vec2 v_sigma_uv;
-out float v_src_factor;
-out float v_inner_blur_factor;
-out float v_outer_blur_factor;
+out f16vec2 v_texture_coords;
+out f16vec2 v_sigma_uv;
+out float16_t v_src_factor;
+out float16_t v_inner_blur_factor;
+out float16_t v_outer_blur_factor;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(vertices, 0.0, 1.0);

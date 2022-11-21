@@ -5,6 +5,7 @@
 #ifndef GRADIENT_GLSL_
 #define GRADIENT_GLSL_
 
+#include <impeller/types.glsl>
 #include <impeller/texture.glsl>
 
 /// Compute the indexes and mix coefficient used to mix colors for an
@@ -12,13 +13,13 @@
 ///
 /// The returned values are the lower index, upper index, and mix
 /// coefficient.
-vec3 IPComputeFixedGradientValues(float t, float colors_length) {
-  float rough_index = (colors_length - 1) * t;
-  float lower_index = floor(rough_index);
-  float upper_index = ceil(rough_index);
-  float scale = rough_index - lower_index;
+f16vec3 IPComputeFixedGradientValues(float16_t t, float16_t colors_length) {
+  float16_t rough_index = (colors_length - 1.0hf) * t;
+  float16_t lower_index = floor(rough_index);
+  float16_t upper_index = ceil(rough_index);
+  float16_t scale = rough_index - lower_index;
 
-  return vec3(lower_index, upper_index, scale);
+  return f16vec3(lower_index, upper_index, scale);
 }
 
 #endif

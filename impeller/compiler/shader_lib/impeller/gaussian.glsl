@@ -5,50 +5,51 @@
 #ifndef GAUSSIAN_GLSL_
 #define GAUSSIAN_GLSL_
 
+#include <impeller/types.glsl>
 #include <impeller/constants.glsl>
 
 /// Gaussian distribution function.
-float IPGaussian(float x, float sigma) {
-  float variance = sigma * sigma;
-  return exp(-0.5 * x * x / variance) / (kSqrtTwoPi * sigma);
+float16_t IPGaussian(float16_t x, float16_t sigma) {
+  float16_t variance = sigma * sigma;
+  return exp(-0.5hf * x * x / variance) / (float16_t(kSqrtTwoPi) * sigma);
 }
 
 /// Abramowitz and Stegun erf approximation.
-float IPErf(float x) {
-  float a = abs(x);
+float16_t IPErf(float16_t x) {
+  float16_t a = abs(x);
   // 0.278393*x + 0.230389*x^2 + 0.078108*x^4 + 1
-  float b = (0.278393 + (0.230389 + 0.078108 * a * a) * a) * a + 1.0;
-  return sign(x) * (1 - 1 / (b * b * b * b));
+  float16_t b = (0.278393hf + (0.230389hf + 0.078108hf * a * a) * a) * a + 1.0hf;
+  return sign(x) * (1.0hf - 1.0hf / (b * b * b * b));
 }
 
 /// Vec2 variation for the Abramowitz and Stegun erf approximation.
-vec2 IPVec2Erf(vec2 x) {
-  vec2 a = abs(x);
+f16vec2 IPVec2Erf(f16vec2 x) {
+  f16vec2 a = abs(x);
   // 0.278393*x + 0.230389*x^2 + 0.078108*x^4 + 1
-  vec2 b = (0.278393 + (0.230389 + 0.078108 * a * a) * a) * a + 1.0;
-  return sign(x) * (1 - 1 / (b * b * b * b));
+  f16vec2 b = (0.278393hf + (0.230389hf + 0.078108hf * a * a) * a) * a + 1.0hf;
+  return sign(x) * (1.0hf - 1.0hf / (b * b * b * b));
 }
 
 /// Indefinite integral of the Gaussian function (with constant range 0->1).
-float IPGaussianIntegral(float x, float sigma) {
+float16_t IPGaussianIntegral(float16_t x, float16_t sigma) {
   // ( 1 + erf( x * (sqrt(2) / (2 * sigma) ) ) / 2
   // Because this sigmoid is always > 1, we remap it (n * 1.07 - 0.07)
   // so that it always fades to zero before it reaches the blur radius.
-  return 0.535 * IPErf(x * (kHalfSqrtTwo / sigma)) + 0.465;
+  return 0.535hf * IPErf(x * (float16_t(kHalfSqrtTwo) / sigma)) + 0.465hf;
 }
 
 /// Vec2 variation for the indefinite integral of the Gaussian function (with
 /// constant range 0->1).
-vec2 IPVec2GaussianIntegral(vec2 x, float sigma) {
+f16vec2 IPVec2GaussianIntegral(f16vec2 x, float16_t sigma) {
   // ( 1 + erf( x * (sqrt(2) / (2 * sigma) ) ) / 2
   // Because this sigmoid is always > 1, we remap it (n * 1.07 - 0.07)
   // so that it always fades to zero before it reaches the blur radius.
-  return 0.535 * IPVec2Erf(x * (kHalfSqrtTwo / sigma)) + 0.465;
+  return 0.535hf * IPVec2Erf(x * (float16_t(kHalfSqrtTwo) / sigma)) + 0.465hf;
 }
 
 /// Simple logistic sigmoid with a domain of [-1, 1] and range of [0, 1].
-float IPSigmoid(float x) {
-  return 1.03731472073 / (1 + exp(-4 * x)) - 0.0186573603638;
+float16_t IPSigmoid(float16_t x) {
+  return 1.03731472073hf / (1.0hf + exp(-4.0hf * x)) - 0.0186573603638hf;
 }
 
 #endif

@@ -2,21 +2,22 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <impeller/types.glsl>
 #include <impeller/texture.glsl>
 
 uniform sampler2D texture_sampler;
 
 uniform FragInfo {
-  float texture_sampler_y_coord_scale;
-  float x_tile_mode;
-  float y_tile_mode;
-  float alpha;
+  float16_t texture_sampler_y_coord_scale;
+  float16_t x_tile_mode;
+  float16_t y_tile_mode;
+  float16_t alpha;
 }
 frag_info;
 
-in vec2 v_texture_coords;
+in f16vec2 v_texture_coords;
 
-out vec4 frag_color;
+out f16vec4 frag_color;
 
 void main() {
   frag_color =

@@ -8,6 +8,7 @@ impeller_shaders("entity_shaders") {
   name = "entity"
 
   shaders = [
+    "shaders/test.frag",
     "shaders/atlas_fill.frag",
     "shaders/atlas_fill.vert",
     "shaders/blending/advanced_blend.vert",

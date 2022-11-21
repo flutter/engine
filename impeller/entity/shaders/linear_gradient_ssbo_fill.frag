@@ -2,40 +2,41 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <impeller/types.glsl>
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
 
 readonly buffer ColorData {
-  vec4 colors[];
+  f16vec4 colors[];
 } color_data;
 
 uniform GradientInfo {
-  vec2 start_point;
-  vec2 end_point;
-  float alpha;
-  float tile_mode;
-  float colors_length;
+  f16vec2 start_point;
+  f16vec2 end_point;
+  float16_t alpha;
+  float16_t tile_mode;
+  float16_t colors_length;
 } gradient_info;
 
-in vec2 v_position;
+in f16vec2 v_position;
 
-out vec4 frag_color;
+out f16vec4 frag_color;
 
 void main() {
-  float len = length(gradient_info.end_point - gradient_info.start_point);
-  float dot = dot(
+  float16_t len = length(gradient_info.end_point - gradient_info.start_point);
+  float16_t dot = dot(
     v_position - gradient_info.start_point,
     gradient_info.end_point - gradient_info.start_point
   );
-  float t = dot / (len * len);
+  float16_t t = dot / (len * len);
 
-  if ((t < 0.0 || t > 1.0) && gradient_info.tile_mode == kTileModeDecal) {
-    frag_color = vec4(0);
+  if ((t < 0.0hf || t > 1.0hf) && gradient_info.tile_mode == kTileModeDecal) {
+    frag_color = f16vec4(0.0hf);
     return;
   }
   t = IPFloatTile(t, gradient_info.tile_mode);
-  vec3 values = IPComputeFixedGradientValues(t, gradient_info.colors_length);
+  f16vec3 values = IPComputeFixedGradientValues(t, gradient_info.colors_length);
 
   frag_color = mix(color_data.colors[int(values.x)], color_data.colors[int(values.y)], values.z);
-  frag_color = vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
+  frag_color = f16vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
 }
