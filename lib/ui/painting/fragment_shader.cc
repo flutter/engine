@@ -5,10 +5,10 @@
 #include <memory>
 #include <utility>
 
-#include "display_list/display_list_color_source.h"
-#include "display_list/display_list_tile_mode.h"
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/ui_dart_state.h"
