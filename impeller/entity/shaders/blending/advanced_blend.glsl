@@ -28,7 +28,7 @@ void main() {
       IPSampleWithTileMode(texture_sampler_dst,           // sampler
                            v_dst_texture_coords,          // texture coordinates
                            blend_info.dst_y_coord_scale,  // y coordinate scale
-                           float16_t(kTileModeDecal)                 // tile mode
+                           kTileModeDecal                 // tile mode
       ) * blend_info.dst_input_alpha;
 
   f16vec4 dst = IPUnpremultiply(dst_sample);
@@ -38,7 +38,7 @@ void main() {
                        texture_sampler_src,           // sampler
                        v_src_texture_coords,          // texture coordinates
                        blend_info.src_y_coord_scale,  // y coordinate scale
-                       float16_t(kTileModeDecal)                 // tile mode
+                       kTileModeDecal                 // tile mode
                        ));
 
   f16vec4 blended = f16vec4(Blend(dst.rgb, src.rgb), 1.0hf) * dst.a;

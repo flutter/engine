@@ -34,10 +34,10 @@ f16vec4 IPSampleLinear(sampler2D texture_sampler, f16vec2 coords, float16_t y_co
 
 // These values must correspond to the order of the items in the
 // 'Entity::TileMode' enum class.
-const float kTileModeClamp = 0;
-const float kTileModeRepeat = 1;
-const float kTileModeMirror = 2;
-const float kTileModeDecal = 3;
+const float16_t kTileModeClamp = 0.0hf;
+const float16_t kTileModeRepeat = 1.0hf;
+const float16_t kTileModeMirror = 2.0hf;
+const float16_t kTileModeDecal = 3.0hf;
 
 /// Remap a float16_t using a tiling mode.
 ///
@@ -46,11 +46,11 @@ const float kTileModeDecal = 3;
 /// `t`.
 /// When `t` is between [0 to 1), the original unchanged `t` is always returned.
 float16_t IPFloatTile(float16_t t, float16_t tile_mode) {
-  if (tile_mode == float16_t(kTileModeClamp)) {
+  if (tile_mode == kTileModeClamp) {
     t = clamp(t, 0.0hf, 1.0hf);
-  } else if (tile_mode == float16_t(kTileModeRepeat)) {
+  } else if (tile_mode == kTileModeRepeat) {
     t = fract(t);
-  } else if (tile_mode == float16_t(kTileModeMirror))  {
+  } else if (tile_mode == kTileModeMirror)  {
     float16_t t1 = t - 1.0hf;
     float16_t t2 = t1 - 2.0hf * floor(t1 * 0.5hf) - 1.0hf;
     t = abs(t2);
@@ -105,8 +105,8 @@ f16vec4 IPSampleLinearWithTileMode(sampler2D tex,
                                 f16vec2 half_texel,
                                 float16_t x_tile_mode,
                                 float16_t y_tile_mode) {
-  if (x_tile_mode == float16_t(kTileModeDecal) && (coords.x < 0.0hf || coords.x >= 1.0hf) ||
-      y_tile_mode == float16_t(kTileModeDecal) && (coords.y < 0.0hf || coords.y >= 1.0hf)) {
+  if (x_tile_mode == kTileModeDecal && (coords.x < 0.0hf || coords.x >= 1.0hf) ||
+      y_tile_mode == kTileModeDecal && (coords.y < 0.0hf || coords.y >= 1.0hf)) {
     return f16vec4(0.0hf);
   }
 

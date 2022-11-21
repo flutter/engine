@@ -26,10 +26,10 @@ f16vec3 IPClipColor(f16vec3 color) {
   // `lum - mn` and `mx - lum` will always be >= 0 in the following conditions,
   // so adding a tiny value is enough to make these divisions safe.
   if (mn < 0.0hf) {
-    color = lum + (((color - lum) * lum) / (lum - mn + float16_t(kEhCloseEnough)));
+    color = lum + (((color - lum) * lum) / (lum - mn + kEhCloseEnough));
   }
   if (mx > 1.0hf) {
-    color = lum + (((color - lum) * (1.0hf - lum)) / (mx - lum + float16_t(kEhCloseEnough)));
+    color = lum + (((color - lum) * (1.0hf - lum)) / (mx - lum + kEhCloseEnough));
   }
   return color;
 }
@@ -47,7 +47,7 @@ float16_t IPSaturation(f16vec3 color) {
 f16vec3 IPSetSaturation(f16vec3 color, float16_t saturation) {
   float16_t mn = min(min(color.r, color.g), color.b);
   float16_t mx = max(max(color.r, color.g), color.b);
-  return (mn < mx) ? ((color - mn) * saturation) / (mx - mn) : f16vec3(0);
+  return (mn < mx) ? ((color - mn) * saturation) / (mx - mn) : f16vec3(0.0hf);
 }
 
 //------------------------------------------------------------------------------
@@ -90,24 +90,24 @@ f16vec3 IPBlendColorDodge(f16vec3 dst, f16vec3 src) {
 
   f16vec3 color = min(f16vec3(1.0hf), dst / (1.0hf - src));
 
-  if (dst.r < float16_t(kEhCloseEnough)) {
-    color.r = float16_t(0.);
+  if (dst.r < kEhCloseEnough) {
+    color.r = 0.0hf;
   }
-  if (dst.g < float16_t(kEhCloseEnough)) {
-    color.g = float16_t(0.);
+  if (dst.g < kEhCloseEnough) {
+    color.g = 0.0hf;
   }
-  if (dst.b < float16_t(kEhCloseEnough)) {
-    color.b = float16_t(0.);
+  if (dst.b < kEhCloseEnough) {
+    color.b = 0.0hf;
   }
 
-  if (1. - src.r < float16_t(kEhCloseEnough)) {
-    color.r = float16_t(1.);
+  if (1.0hf - src.r < kEhCloseEnough) {
+    color.r = 1.0hf;
   }
-  if (1. - src.g < float16_t(kEhCloseEnough)) {
-    color.g = float16_t(1.);
+  if (1. - src.g < kEhCloseEnough) {
+    color.g = 1.0hf;
   }
-  if (1. - src.b < float16_t(kEhCloseEnough)) {
-    color.b = float16_t(1.);
+  if (1. - src.b < kEhCloseEnough) {
+    color.b = 1.0hf;
   }
 
   return color;
@@ -118,24 +118,24 @@ f16vec3 IPBlendColorBurn(f16vec3 dst, f16vec3 src) {
 
   f16vec3 color = 1.0hf - min(f16vec3(1.0hf), (1.0hf - dst) / src);
 
-  if (1.0hf - dst.r < float16_t(kEhCloseEnough)) {
+  if (1.0hf - dst.r < kEhCloseEnough) {
     color.r = 1.0hf;
   }
-  if (1.0hf - dst.g < float16_t(kEhCloseEnough)) {
-    color.g = float16_t(1.);
+  if (1.0hf - dst.g < kEhCloseEnough) {
+    color.g = 1.0hf;
   }
-  if (1.0hf - dst.b < float16_t(kEhCloseEnough)) {
-    color.b = float16_t(.1);
+  if (1.0hf - dst.b < kEhCloseEnough) {
+    color.b = 0.1hf;
   }
 
-  if (src.r < float16_t(kEhCloseEnough)) {
-    color.r = float16_t(0.);
+  if (src.r < kEhCloseEnough) {
+    color.r = 0.0hf;
   }
-  if (src.g < float16_t(kEhCloseEnough)) {
-    color.g = float16_t(0.);
+  if (src.g < kEhCloseEnough) {
+    color.g = 0.0hf;
   }
-  if (src.b < float16_t(kEhCloseEnough)) {
-    color.b = float16_t(0.);
+  if (src.b < kEhCloseEnough) {
+    color.b = 0.0hf;
   }
 
   return color;

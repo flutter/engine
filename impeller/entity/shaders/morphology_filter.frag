@@ -36,9 +36,9 @@ void main() {
             texture_sampler,                          // sampler
             texture_coords,                           // texture coordinates
             frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
-            float16_t(kTileModeDecal)                            // tile mode
+            kTileModeDecal                            // tile mode
         );
-    if (frag_info.morph_type == float16_t(kMorphTypeDilate)) {
+    if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);
     } else {
       result = min(color, result);

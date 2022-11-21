@@ -11,7 +11,7 @@
 /// Gaussian distribution function.
 float16_t IPGaussian(float16_t x, float16_t sigma) {
   float16_t variance = sigma * sigma;
-  return exp(-0.5hf * x * x / variance) / (float16_t(kSqrtTwoPi) * sigma);
+  return exp(-0.5hf * x * x / variance) / (kSqrtTwoPi * sigma);
 }
 
 /// Abramowitz and Stegun erf approximation.
@@ -35,7 +35,7 @@ float16_t IPGaussianIntegral(float16_t x, float16_t sigma) {
   // ( 1 + erf( x * (sqrt(2) / (2 * sigma) ) ) / 2
   // Because this sigmoid is always > 1, we remap it (n * 1.07 - 0.07)
   // so that it always fades to zero before it reaches the blur radius.
-  return 0.535hf * IPErf(x * (float16_t(kHalfSqrtTwo) / sigma)) + 0.465hf;
+  return 0.535hf * IPErf(x * (kHalfSqrtTwo / sigma)) + 0.465hf;
 }
 
 /// Vec2 variation for the indefinite integral of the Gaussian function (with
@@ -44,7 +44,7 @@ f16vec2 IPVec2GaussianIntegral(f16vec2 x, float16_t sigma) {
   // ( 1 + erf( x * (sqrt(2) / (2 * sigma) ) ) / 2
   // Because this sigmoid is always > 1, we remap it (n * 1.07 - 0.07)
   // so that it always fades to zero before it reaches the blur radius.
-  return 0.535hf * IPVec2Erf(x * (float16_t(kHalfSqrtTwo) / sigma)) + 0.465hf;
+  return 0.535hf * IPVec2Erf(x * (kHalfSqrtTwo / sigma)) + 0.465hf;
 }
 
 /// Simple logistic sigmoid with a domain of [-1, 1] and range of [0, 1].

@@ -13,9 +13,9 @@
 /// Returns 1.0 if x == y, otherwise 0.0.
 BoolV3 IPVec3IsEqual(f16vec3 x, float16_t y) {
   f16vec3 diff = abs(x - y);
-  return f16vec3(diff.r < float16_t(kEhCloseEnough),  //
-              diff.g < float16_t(kEhCloseEnough),  //
-              diff.b < float16_t(kEhCloseEnough));
+  return f16vec3(diff.r < kEhCloseEnough,  //
+              diff.g < kEhCloseEnough,  //
+              diff.b < kEhCloseEnough);
 }
 
 /// Perform a branchless greater than check.
