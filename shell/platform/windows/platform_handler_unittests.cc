@@ -187,29 +187,6 @@ TEST(PlatformHandler, GetClipboardDataReportsGetDataFailure) {
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to get clipboard data\",1]");
 }
 
-TEST(PlatformHandler, ClipboardHasStringsReturnsFalse) {
-  TestBinaryMessenger messenger;
-  FlutterWindowsView view(
-      std::make_unique<NiceMock<MockWindowBindingHandler>>());
-
-  PlatformHandler platform_handler(&messenger, &view, []() {
-    auto clipboard = std::make_unique<MockScopedClipboard>();
-
-    EXPECT_CALL(*clipboard.get(), Open)
-        .Times(1)
-        .WillOnce(Return(kErrorSuccess));
-    EXPECT_CALL(*clipboard.get(), HasString).Times(1).WillOnce(Return(false));
-
-    return clipboard;
-  });
-
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
-      sizeof(kClipboardHasStringsMessage));
-
-  EXPECT_EQ(result, "[{\"value\":false}]");
-}
-
 TEST(PlatformHandler, ClipboardHasStrings) {
   TestBinaryMessenger messenger;
   FlutterWindowsView view(
@@ -231,6 +208,29 @@ TEST(PlatformHandler, ClipboardHasStrings) {
       sizeof(kClipboardHasStringsMessage));
 
   EXPECT_EQ(result, "[{\"value\":true}]");
+}
+
+TEST(PlatformHandler, ClipboardHasStringsReturnsFalse) {
+  TestBinaryMessenger messenger;
+  FlutterWindowsView view(
+      std::make_unique<NiceMock<MockWindowBindingHandler>>());
+
+  PlatformHandler platform_handler(&messenger, &view, []() {
+    auto clipboard = std::make_unique<MockScopedClipboard>();
+
+    EXPECT_CALL(*clipboard.get(), Open)
+        .Times(1)
+        .WillOnce(Return(kErrorSuccess));
+    EXPECT_CALL(*clipboard.get(), HasString).Times(1).WillOnce(Return(false));
+
+    return clipboard;
+  });
+
+  std::string result = SimulatePlatformMessage(
+      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
+      sizeof(kClipboardHasStringsMessage));
+
+  EXPECT_EQ(result, "[{\"value\":false}]");
 }
 
 TEST(PlatformHandler, ClipboardHasStringsRejectsUnknownContentType) {
