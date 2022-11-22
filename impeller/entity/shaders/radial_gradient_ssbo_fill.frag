@@ -7,7 +7,6 @@
 #include <impeller/types.glsl>
 
 readonly buffer ColorData {
-<<<<<<< HEAD
   f16vec4 colors[];
 }
 color_data;
@@ -20,20 +19,6 @@ uniform GradientInfo {
   float16_t colors_length;
 }
 gradient_info;
-=======
-  vec4 colors[];
-}
-color_data;
-
-uniform GradientInfo {
-  vec2 center;
-  float radius;
-  float tile_mode;
-  float alpha;
-  float colors_length;
-}
-gradient_info;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 
 in f16vec2 v_position;
 
@@ -50,15 +35,8 @@ void main() {
   t = IPFloatTile(t, gradient_info.tile_mode);
   f16vec3 values = IPComputeFixedGradientValues(t, gradient_info.colors_length);
 
-<<<<<<< HEAD
   frag_color = mix(color_data.colors[int(values.x)],
                    color_data.colors[int(values.y)], values.z);
   frag_color = f16vec4(frag_color.xyz * frag_color.a, frag_color.a) *
                gradient_info.alpha;
-=======
-  frag_color = mix(color_data.colors[int(values.x)],
-                   color_data.colors[int(values.y)], values.z);
-  frag_color =
-      vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 }

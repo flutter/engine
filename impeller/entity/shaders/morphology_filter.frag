@@ -8,13 +8,8 @@
 
 // These values must correspond to the order of the items in the
 // 'FilterContents::MorphType' enum class.
-<<<<<<< HEAD
 const float16_t kMorphTypeDilate = 0.0hf;
 const float16_t kMorphTypeErode = 1.0hf;
-=======
-const float kMorphTypeDilate = 0;
-const float kMorphTypeErode = 1;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 
 uniform sampler2D texture_sampler;
 
@@ -31,7 +26,6 @@ in f16vec2 v_texture_coords;
 out f16vec4 frag_color;
 
 void main() {
-<<<<<<< HEAD
   f16vec4 result =
       frag_info.morph_type == kMorphTypeDilate ? f16vec4(0) : f16vec4(1);
   f16vec2 uv_offset = frag_info.direction / frag_info.texture_size;
@@ -44,19 +38,6 @@ void main() {
         frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
         kTileModeDecal                            // tile mode
     );
-=======
-  vec4 result = frag_info.morph_type == kMorphTypeDilate ? vec4(0) : vec4(1);
-  vec2 uv_offset = frag_info.direction / frag_info.texture_size;
-  for (float i = -frag_info.radius; i <= frag_info.radius; i++) {
-    vec2 texture_coords = v_texture_coords + uv_offset * i;
-    vec4 color;
-    color = IPSampleWithTileMode(
-        texture_sampler,                          // sampler
-        texture_coords,                           // texture coordinates
-        frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
-        kTileModeDecal                            // tile mode
-    );
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
     if (frag_info.morph_type == kMorphTypeDilate) {
       result = max(color, result);
     } else {

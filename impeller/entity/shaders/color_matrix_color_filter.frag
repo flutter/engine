@@ -31,19 +31,11 @@
 
 uniform FragInfo {
   mat4 color_m;
-<<<<<<< HEAD
   f16vec4 color_v;
   float16_t texture_sampler_y_coord_scale;
   float16_t input_alpha;
 }
 frag_info;
-=======
-  vec4 color_v;
-  float texture_sampler_y_coord_scale;
-  float input_alpha;
-}
-frag_info;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 
 uniform sampler2D input_texture;
 
@@ -61,11 +53,6 @@ void main() {
   color = clamp(f16mat4(frag_info.color_m) * color + frag_info.color_v, 0.0hf,
                 1.0hf);
 
-<<<<<<< HEAD
-=======
-  color = clamp(frag_info.color_m * color + frag_info.color_v, 0.0, 1.0);
-
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
   // premultiply the outputs
   frag_color = f16vec4(color.rgb * color.a, color.a);
 }

@@ -7,15 +7,9 @@
 
 uniform VertInfo {
   mat4 mvp;
-<<<<<<< HEAD
   f16vec4 color;
 }
 vert_info;
-=======
-  vec4 color;
-}
-vert_info;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 
 in f16vec2 position;
 

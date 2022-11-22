@@ -2,39 +2,26 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/transform.glsl>
 #include <impeller/types.glsl>
+
+#include <impeller/transform.glsl>
 
 uniform FrameInfo {
   mat4 mvp;
 }
 frame_info;
 
-<<<<<<< HEAD
-in f16vec2 unit_vertex;
-in f16vec2 glyph_position;
-in f16vec2 glyph_size;
-in f16vec2 atlas_position;
-in f16vec2 atlas_glyph_size;
-in float16_t color_glyph;
+in f16vec2 unit_position;
+in f16vec2 destination_position;
+in f16vec2 destination_size;
+in f16vec2 source_position;
+in f16vec2 source_glyph_size;
+in float16_t has_color;
 
-out f16vec2 v_unit_vertex;
-out f16vec2 v_atlas_position;
-out f16vec2 v_atlas_glyph_size;
-out float16_t v_color_glyph;
-=======
-in vec2 unit_position;
-in vec2 destination_position;
-in vec2 destination_size;
-in vec2 source_position;
-in vec2 source_glyph_size;
-in float has_color;
-
-out vec2 v_unit_position;
-out vec2 v_source_position;
-out vec2 v_source_glyph_size;
-out float v_has_color;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
+out f16vec2 v_unit_position;
+out f16vec2 v_source_position;
+out f16vec2 v_source_glyph_size;
+out float16_t v_has_color;
 
 void main() {
   gl_Position = IPPositionForGlyphPosition(

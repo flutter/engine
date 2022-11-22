@@ -13,17 +13,10 @@
 uniform sampler2D input_texture;
 
 uniform FragInfo {
-<<<<<<< HEAD
   float16_t texture_sampler_y_coord_scale;
   float16_t input_alpha;
 }
 frag_info;
-=======
-  float texture_sampler_y_coord_scale;
-  float input_alpha;
-}
-frag_info;
->>>>>>> ddf6a20b86578f147ee7da023f3f08ecb4256d07
 
 in vec2 v_position;
 out f16vec4 frag_color;
