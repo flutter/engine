@@ -3286,7 +3286,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
-FILE: ../../../flutter/third_party/unicode/tool/unicode_sync_script.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
+FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.h
 FILE: ../../../flutter/vulkan/procs/vulkan_interface.cc
@@ -3708,10 +3709,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: unicode
-ORIGIN: ../../../flutter/third_party/unicode/LICENSE
+ORIGIN: ../../../flutter/third_party/web_unicode/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../flutter/third_party/unicode/lib/codegen/line_break_properties.dart
-FILE: ../../../flutter/third_party/unicode/lib/codegen/word_break_properties.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/codegen/line_break_properties.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/codegen/word_break_properties.dart
 ----------------------------------------------------------------------------------------------------
 UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
 

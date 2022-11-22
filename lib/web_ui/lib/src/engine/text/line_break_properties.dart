@@ -2,11 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:unicode/codegen/line_break_properties.dart';
+import 'package:web_unicode/web_unicode.dart';
 
 import 'unicode_range.dart';
 
-export 'package:unicode/codegen/line_break_properties.dart' show LineCharProperty;
+export 'package:web_unicode/web_unicode.dart' show LineCharProperty;
 
 UnicodePropertyLookup<LineCharProperty> get lineLookup => ensureLineLookupInitialized();
 
