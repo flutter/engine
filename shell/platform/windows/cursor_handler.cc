@@ -31,11 +31,12 @@ static constexpr char kCustomCursorWidthKey[] = "width";
 // An int value for the height of the custom cursor.
 static constexpr char kCustomCursorHeightKey[] = "height";
 
-// This method allows setting a custom cursor with a unique int64_t key of the
-// custom cursor.
+// This method also has an argument `kCustomCursorNameKey` for the name
+// of the cursor to activate.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
 
-// This method allows deleting a custom cursor with a string key.
+// This method also has an argument `kCustomCursorNameKey` for the name
+// of the cursor to delete.
 static constexpr char kDeleteCustomCursorMethod[] =
     "deleteCustomCursor/windows";
 
@@ -132,7 +133,7 @@ void CursorHandler::HandleMethodCall(
                     "Argument must contains a valid rawBGRA bitmap");
       return;
     }
-    // push the cursor into the cache vector of this handler.
+    // Push the cursor into the cache map.
     custom_cursors_.emplace(name, std::move(cursor));
     result->Success(flutter::EncodableValue(std::move(name)));
   } else if (method.compare(kSetCustomCursorMethod) == 0) {
@@ -166,8 +167,8 @@ void CursorHandler::HandleMethodCall(
     }
     auto name = std::get<std::string>(name_iter->second);
     auto it = custom_cursors_.find(name);
-    // if the cursor identified by key cannot be found, it's ok for deleting
-    // operations
+    // If the specified cursor name is not found, the deletion is a noop and
+    // returns success.
     if (it != custom_cursors_.end()) {
       DeleteObject(it->second);
       custom_cursors_.erase(it);

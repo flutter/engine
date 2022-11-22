@@ -12,14 +12,14 @@
 namespace flutter {
 namespace testing {
 TEST(CursorHandlerTest, CreateDummyCursor) {
-  // create a 4x4 rawBGRA dummy cursor buffer.
+  // Create a 4x4 rawBGRA dummy cursor buffer.
   std::vector<uint8_t> buffer;
   for (int i = 0; i < 4 * 4 * 4; i++) {
     buffer.push_back(0);
   }
-  // create the cursor from buffer provided above.
+  // Create the cursor from buffer provided above.
   auto cursor = GetCursorFromBuffer(buffer, 0.0, 0.0, 4, 4);
-  // expect cursor is not null.
+  // Expect cursor is not null.
   EXPECT_NE(cursor, nullptr);
 }
 
