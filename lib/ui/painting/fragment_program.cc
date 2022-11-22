@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <iostream>
 #include <memory>
+#include <sstream>
 
 #include "display_list/display_list_runtime_effect.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
@@ -51,13 +51,7 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
         impeller::RuntimeUniformType::kSampledImage) {
       sampled_image_count++;
     } else {
-      size_t size = uniform_description.dimensions.rows *
-                    uniform_description.dimensions.cols *
-                    uniform_description.bit_width / 8u;
-      if (uniform_description.array_elements.value_or(0) > 0) {
-        size *= uniform_description.array_elements.value();
-      }
-      other_uniforms_bytes += size;
+      other_uniforms_bytes += uniform_description.GetSize();
     }
   }
 
@@ -65,7 +59,7 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     runtime_effect_ = DlRuntimeEffect::MakeImpeller(
         std::make_unique<impeller::RuntimeStage>(std::move(runtime_stage)));
   } else {
-    auto code_mapping = runtime_stage.GetCodeMapping();
+    auto code_mapping = runtime_stage.GetSkSLMapping();
     auto code_size = code_mapping->GetSize();
     const char* sksl =
         reinterpret_cast<const char*>(code_mapping->GetMapping());
@@ -83,7 +77,6 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   if (Dart_IsError(ths)) {
     Dart_PropagateError(ths);
   }
-
   Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
                                      Dart_NewInteger(sampled_image_count));
   if (Dart_IsError(result)) {
@@ -103,10 +96,10 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
 }
 
 std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
-    const sk_sp<SkData>& float_uniforms,
+    std::shared_ptr<std::vector<uint8_t>> float_uniforms,
     const std::vector<std::shared_ptr<DlColorSource>>& children) {
   return DlColorSource::MakeRuntimeEffect(runtime_effect_, children,
-                                          float_uniforms);
+                                          std::move(float_uniforms));
 }
 
 void FragmentProgram::Create(Dart_Handle wrapper) {

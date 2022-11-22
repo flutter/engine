@@ -10,6 +10,16 @@ import 'package:path/path.dart' as path;
 // Path to root of the flutter/engine repository containing this script.
 final String _engineRoot = path.dirname(path.dirname(path.dirname(path.dirname(path.fromUri(io.Platform.script)))));
 
+
+/// Adds warnings as errors for only specific runs.  This is helpful if migrating one platform at a time.
+String? _platformSpecificWarningsAsErrors(ArgResults options) {
+  if (options['target-variant'] == 'host_debug' && io.Platform.isMacOS) {
+    return options['mac-host-warnings-as-errors'] as String?;
+  }
+  return null;
+}
+
+
 /// A class for organizing the options to the Engine linter, and the files
 /// that it operates on.
 class Options {
@@ -23,6 +33,9 @@ class Options {
     this.lintHead = false,
     this.fix = false,
     this.errorMessage,
+    this.warningsAsErrors,
+    this.shardId,
+    this.shardCommandsPaths = const <io.File>[],
     StringSink? errSink,
   }) : checks = checksArg.isNotEmpty ? '--checks=$checksArg' : null,
        _errSink = errSink ?? io.stderr;
@@ -53,6 +66,8 @@ class Options {
     ArgResults options, {
     required io.File buildCommandsPath,
     StringSink? errSink,
+    required List<io.File> shardCommandsPaths,
+    int? shardId,
   }) {
     return Options(
       help: options['help'] as bool,
@@ -64,6 +79,9 @@ class Options {
       lintHead: options['lint-head'] as bool,
       fix: options['fix'] as bool,
       errSink: errSink,
+      warningsAsErrors: _platformSpecificWarningsAsErrors(options),
+      shardCommandsPaths: shardCommandsPaths,
+      shardId: shardId,
     );
   }
 
@@ -75,14 +93,24 @@ class Options {
     final ArgResults argResults = _argParser.parse(arguments);
 
     String? buildCommandsPath = argResults['compile-commands'] as String?;
+
+    String variantToBuildCommandsFilePath(String variant) =>
+      path.join(
+        argResults['src-dir'] as String,
+        'out',
+        variant,
+        'compile_commands.json',
+      );
     // path/to/engine/src/out/variant/compile_commands.json
-    buildCommandsPath ??= path.join(
-      argResults['src-dir'] as String,
-      'out',
-      argResults['target-variant'] as String,
-      'compile_commands.json',
-    );
+    buildCommandsPath ??= variantToBuildCommandsFilePath(argResults['target-variant'] as String);
     final io.File buildCommands = io.File(buildCommandsPath);
+    final List<io.File> shardCommands =
+        (argResults['shard-variants'] as String? ?? '')
+            .split(',')
+            .where((String element) => element.isNotEmpty)
+            .map((String variant) =>
+                io.File(variantToBuildCommandsFilePath(variant)))
+            .toList();
     final String? message = _checkArguments(argResults, buildCommands);
     if (message != null) {
       return Options._error(message, errSink: errSink);
@@ -90,10 +118,17 @@ class Options {
     if (argResults['help'] as bool) {
       return Options._help(errSink: errSink);
     }
+    final String? shardIdString = argResults['shard-id'] as String?;
+    final int? shardId = shardIdString == null ? null : int.parse(shardIdString);
+    if (shardId != null && (shardId > shardCommands.length || shardId < 0)) {
+      return Options._error('Invalid shard-id value: $shardId.', errSink: errSink);
+    }
     return Options._fromArgResults(
       argResults,
       buildCommandsPath: buildCommands,
       errSink: errSink,
+      shardCommandsPaths: shardCommands,
+      shardId: shardId,
     );
   }
 
@@ -121,6 +156,17 @@ class Options {
       help: 'Print verbose output.',
     )
     ..addOption(
+      'shard-id',
+      help: 'When used with the shard-commands option this identifies which shard will execute.',
+      valueHelp: 'A number less than 1 + the number of shard-commands arguments.',
+    )
+    ..addOption(
+      'shard-variants',
+      help: 'Comma separated list of other targets, this invocation '
+            'will only execute a subset of the intersection and the difference of the '
+            'compile commands. Use with `shard-id`.'
+    )
+    ..addOption(
       'compile-commands',
       help: 'Use the given path as the source of compile_commands.json. This '
             'file is created by running "tools/gn". Cannot be used with --target-variant '
@@ -134,6 +180,9 @@ class Options {
       valueHelp: 'host_debug|android_debug_unopt|ios_debug|ios_debug_sim_unopt',
       defaultsTo: 'host_debug',
     )
+    ..addOption('mac-host-warnings-as-errors',
+        help:
+            'checks that will be treated as errors when running debug_host on mac.')
     ..addOption(
       'src-dir',
       help: 'Path to the engine src directory. Cannot be used with --compile-commands.',
@@ -156,14 +205,22 @@ class Options {
   /// The location of the compile_commands.json file.
   final io.File buildCommandsPath;
 
+  /// The location of shard compile_commands.json files.
+  final List<io.File> shardCommandsPaths;
+
+  /// The identifier of the shard.
+  final int? shardId;
+
   /// The root of the flutter/engine repository.
   final io.Directory repoPath = io.Directory(_engineRoot);
 
-  /// Arguments to plumb through to clang-tidy formatted as a command line
-  /// argument.
+  /// Argument sent as `warnings-as-errors` to clang-tidy.
+  final String? warningsAsErrors;
+
+  /// Checks argument as supplied to the command-line.
   final String checksArg;
 
-  /// Check arguments to plumb through to clang-tidy.
+  /// Check argument to be supplied to the clang-tidy subprocess.
   final String? checks;
 
   /// Whether all files should be linted.
@@ -214,6 +271,10 @@ class Options {
 
     if (!buildCommandsPath.existsSync()) {
       return "ERROR: Build commands path ${buildCommandsPath.absolute.path} doesn't exist.";
+    }
+
+    if (argResults.wasParsed('shard-variants') && !argResults.wasParsed('shard-id')) {
+      return 'ERROR: a `shard-id` must be specified with `shard-variants`.';
     }
 
     return null;

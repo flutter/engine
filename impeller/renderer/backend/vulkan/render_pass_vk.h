@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <vector>
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
@@ -12,8 +11,6 @@
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
-#include "vulkan/vulkan_enums.hpp"
-#include "vulkan/vulkan_structs.hpp"
 
 namespace impeller {
 
@@ -21,7 +18,7 @@ class RenderPassVK final : public RenderPass {
  public:
   RenderPassVK(std::weak_ptr<const Context> context,
                vk::Device device,
-               RenderTarget target,
+               const RenderTarget& target,
                vk::UniqueCommandBuffer command_buffer,
                vk::UniqueRenderPass render_pass,
                SurfaceProducerVK* surface_producer);
@@ -76,6 +73,8 @@ class RenderPassVK final : public RenderPass {
                              vk::Image image,
                              vk::ImageLayout layout_old,
                              vk::ImageLayout layout_new) const;
+
+  bool CopyBufferToImage(uint32_t frame_num, const TextureVK& texture_vk) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RenderPassVK);
 };

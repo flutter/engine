@@ -2,11 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <iostream>
+#include <memory>
 #include <utility>
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -52,33 +54,48 @@ Dart_Handle ReusableFragmentShader::Create(Dart_Handle wrapper,
                                    float_count);
 }
 
-void ReusableFragmentShader::SetSampler(Dart_Handle index_handle,
-                                        Dart_Handle sampler_handle) {
+bool ReusableFragmentShader::ValidateSamplers() {
+  for (auto i = 0u; i < samplers_.size(); i += 1) {
+    if (samplers_[i] == nullptr) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void ReusableFragmentShader::SetImageSampler(Dart_Handle index_handle,
+                                             Dart_Handle image_handle) {
   uint64_t index = tonic::DartConverter<uint64_t>::FromDart(index_handle);
-  ImageShader* sampler =
-      tonic::DartConverter<ImageShader*>::FromDart(sampler_handle);
+  CanvasImage* image =
+      tonic::DartConverter<CanvasImage*>::FromDart(image_handle);
   if (index >= samplers_.size()) {
     Dart_ThrowException(tonic::ToDart("Sampler index out of bounds"));
   }
 
-  // ImageShaders can hold a preferred value for sampling options and
-  // developers are encouraged to use that value or the value will be supplied
-  // by "the environment where it is used". The environment here does not
-  // contain a value to be used if the developer did not specify a preference
-  // when they constructed the ImageShader, so we will use kNearest which is
-  // the default filterQuality in a Paint object.
-  DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
+  // TODO(115794): Once the DlImageSampling enum is replaced, expose the
+  //               sampling options as a new default parameter for users.
+  samplers_[index] = std::make_shared<DlImageColorSource>(
+      image->image(), DlTileMode::kClamp, DlTileMode::kClamp,
+      DlImageSampling::kNearestNeighbor, nullptr);
+
   auto* uniform_floats =
       reinterpret_cast<float*>(uniform_data_->writable_data());
-  samplers_[index] = sampler->shader(sampling);
-  uniform_floats[float_count_ + 2 * index] = sampler->width();
-  uniform_floats[float_count_ + 2 * index + 1] = sampler->height();
+  uniform_floats[float_count_ + 2 * index] = image->width();
+  uniform_floats[float_count_ + 2 * index + 1] = image->height();
 }
 
 std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
     DlImageSampling sampling) {
   FML_CHECK(program_);
-  return program_->MakeDlColorSource(uniform_data_, samplers_);
+
+  // The lifetime of this object is longer than a frame, and the uniforms can be
+  // continually changed on the UI thread. So we take a copy of the uniforms
+  // before handing it to the DisplayList for consumption on the render thread.
+  auto uniform_data = std::make_shared<std::vector<uint8_t>>();
+  uniform_data->resize(uniform_data_->size());
+  memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
+
+  return program_->MakeDlColorSource(std::move(uniform_data), samplers_);
 }
 
 void ReusableFragmentShader::Dispose() {

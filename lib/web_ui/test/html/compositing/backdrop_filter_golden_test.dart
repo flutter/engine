@@ -16,8 +16,8 @@ void main() {
 Future<void> testMain() async {
   setUpAll(() async {
     await webOnlyInitializePlatform();
-    renderer.fontCollection.debugRegisterTestFonts();
-    await renderer.fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   setUp(() async {
@@ -139,6 +139,34 @@ Future<void> testMain() async {
 
     await matchGoldenFile('backdrop_filter_no_child_rendering.png',
         region: region);
+  });
+  test('colorFilter as imageFilter', () async {
+    const Rect region = Rect.fromLTWH(0, 0, 190, 130);
+
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    final Picture backgroundPicture = _drawBackground(region);
+    builder.addPicture(Offset.zero, backgroundPicture);
+
+    builder.pushClipRect(
+      const Rect.fromLTRB(10, 10, 180, 120),
+    );
+    final Picture circles1 = _drawTestPictureWithCircles(region, 30, 30);
+
+    // current background color is light green, apply a light yellow colorFilter
+    const ColorFilter colorFilter = ColorFilter.mode(
+      Color(0xFFFFFFB1),
+      BlendMode.modulate
+    );
+    builder.pushBackdropFilter(colorFilter);
+    builder.addPicture(Offset.zero, circles1);
+    builder.pop();
+
+    domDocument.body!.append(builder
+        .build()
+        .webOnlyRootElement!);
+
+   await matchGoldenFile('backdrop_filter_colorFilter_as_imageFilter.png',
+       region: region);
   });
 }
 

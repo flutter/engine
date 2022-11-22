@@ -12,14 +12,21 @@ import '../html/paragraph/helper.dart';
 import 'line_breaker_test_helper.dart';
 import 'line_breaker_test_raw_data.dart';
 
-final String placeholderChar = String.fromCharCode(0xFFFC);
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
-  group('$LineBreakFragmenter', () {
+  groupForEachFragmenter(({required bool isV8}) {
+    List<Line> split(String text) {
+      final LineBreakFragmenter fragmenter =
+          isV8 ? V8LineBreakFragmenter(text) : FWLineBreakFragmenter(text);
+      return <Line>[
+        for (final LineBreakFragment fragment in fragmenter.fragment())
+          Line.fromLineBreakFragment(text, fragment)
+      ];
+    }
+
     test('empty string', () {
       expect(split(''), <Line>[
         Line('', endOfText),
@@ -237,7 +244,7 @@ void testMain() {
 
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
-      expect(splitParagraph(paragraph), <Line>[
+      expect(split(paragraph.plainText), <Line>[
         Line(placeholderChar, opportunity),
         Line('Lorem', opportunity),
         Line(placeholderChar, opportunity),
@@ -260,7 +267,7 @@ void testMain() {
 
       final String placeholderChar = String.fromCharCode(0xFFFC);
 
-      expect(splitParagraph(paragraph), <Line>[
+      expect(split(paragraph.plainText), <Line>[
         Line(placeholderChar, endOfText),
       ]);
     });
@@ -279,7 +286,7 @@ void testMain() {
         },
       );
 
-      expect(splitParagraph(paragraph), <Line>[
+      expect(split(paragraph.plainText), <Line>[
           Line('$placeholderChar  ', opportunity, sp: 2),
           Line('Lorem  ', opportunity, sp: 2),
           Line('$placeholderChar  \n', mandatory, nl: 1, sp: 3),
@@ -318,13 +325,15 @@ void testMain() {
     });
 
     test('comprehensive test', () {
-      final List<TestCase> testCollection =
-          parseRawTestData(rawLineBreakTestData);
+      final List<TestCase> testCollection = parseRawTestData(rawLineBreakTestData, isV8: isV8);
       for (int t = 0; t < testCollection.length; t++) {
         final TestCase testCase = testCollection[t];
 
         final String text = testCase.toText();
-        final List<LineBreakFragment> fragments = LineBreakFragmenter(text).fragment();
+        final LineBreakFragmenter fragmenter = isV8
+            ? V8LineBreakFragmenter(text)
+            : FWLineBreakFragmenter(text);
+        final List<LineBreakFragment> fragments = fragmenter.fragment();
 
         // `f` is the index in the `fragments` list.
         int f = 0;
@@ -403,6 +412,23 @@ void testMain() {
   });
 }
 
+typedef CreateLineBreakFragmenter = LineBreakFragmenter Function(String text);
+typedef GroupBody = void Function({required bool isV8});
+
+void groupForEachFragmenter(GroupBody callback) {
+  group(
+    '$FWLineBreakFragmenter',
+    () => callback(isV8: false),
+  );
+
+  if (domWindow.Intl.v8BreakIterator != null) {
+    group(
+      '$V8LineBreakFragmenter',
+      () => callback(isV8: true),
+    );
+  }
+}
+
 /// Holds information about how a line was split from a string.
 class Line {
   Line(this.text, this.breakType, {this.nl = 0, this.sp = 0});
@@ -448,18 +474,4 @@ class Line {
   String toString() {
     return '"$escapedText" ($breakType, nl: $nl, sp: $sp)';
   }
-}
-
-List<Line> split(String text) {
-  return <Line>[
-    for (final LineBreakFragment fragment in LineBreakFragmenter(text).fragment())
-      Line.fromLineBreakFragment(text, fragment)
-  ];
-}
-
-List<Line> splitParagraph(CanvasParagraph paragraph) {
-  return <Line>[
-    for (final LineBreakFragment fragment in LineBreakFragmenter(paragraph.plainText).fragment())
-      Line.fromLineBreakFragment(paragraph.toPlainText(), fragment)
-  ];
 }

@@ -12,8 +12,6 @@ import 'package:ui/ui.dart' hide window;
 import '../screenshot.dart';
 import 'helper.dart';
 
-typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -29,7 +27,7 @@ Future<void> testMain() async {
     const double width = 126.0;
     const double padding = 20.0;
     final SurfacePaintData borderPaint = SurfacePaintData()
-      ..color = black
+      ..color = black.value
       ..style = PaintingStyle.stroke;
 
     paragraph = rich(

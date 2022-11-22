@@ -100,14 +100,22 @@ void MutatorsStack::PushOpacity(const int& alpha) {
 };
 
 void MutatorsStack::PushBackdropFilter(
-    const std::shared_ptr<const DlImageFilter>& filter) {
-  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(filter);
+    const std::shared_ptr<const DlImageFilter>& filter,
+    const SkRect& filter_rect) {
+  std::shared_ptr<Mutator> element =
+      std::make_shared<Mutator>(filter, filter_rect);
   vector_.push_back(element);
 };
 
 void MutatorsStack::Pop() {
   vector_.pop_back();
 };
+
+void MutatorsStack::PopTo(size_t stack_count) {
+  while (vector_.size() > stack_count) {
+    Pop();
+  }
+}
 
 const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
 MutatorsStack::Top() const {

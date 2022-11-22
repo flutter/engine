@@ -49,7 +49,7 @@ UIDartState::Context::Context(
       advisory_script_uri(std::move(advisory_script_uri)),
       advisory_script_entrypoint(std::move(advisory_script_entrypoint)),
       volatile_path_tracker(std::move(volatile_path_tracker)),
-      concurrent_task_runner(concurrent_task_runner),
+      concurrent_task_runner(std::move(concurrent_task_runner)),
       enable_impeller(enable_impeller) {}
 
 UIDartState::UIDartState(
@@ -97,6 +97,7 @@ void UIDartState::DidSetIsolate() {
 
 void UIDartState::ThrowIfUIOperationsProhibited() {
   if (!UIDartState::Current()->IsRootIsolate()) {
+    Dart_EnterScope();
     Dart_ThrowException(
         tonic::ToDart("UI actions are only available on root isolate."));
   }
@@ -214,7 +215,7 @@ void UIDartState::LogMessage(const std::string& tag,
     // Fall back to previous behavior if unspecified.
 #if defined(FML_OS_ANDROID)
     __android_log_print(ANDROID_LOG_INFO, tag.c_str(), "%.*s",
-                        (int)message.size(), message.c_str());
+                        static_cast<int>(message.size()), message.c_str());
 #elif defined(FML_OS_IOS)
     std::stringstream stream;
     if (!tag.empty()) {
@@ -222,7 +223,8 @@ void UIDartState::LogMessage(const std::string& tag,
     }
     stream << message;
     std::string log = stream.str();
-    syslog(1 /* LOG_ALERT */, "%.*s", (int)log.size(), log.c_str());
+    syslog(1 /* LOG_ALERT */, "%.*s", static_cast<int>(log.size()),
+           log.c_str());
 #else
     if (!tag.empty()) {
       std::cout << tag << ": ";

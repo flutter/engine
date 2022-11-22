@@ -3,8 +3,20 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
+#include <stdint.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h"
+
+/**
+ * The view ID for APIs that don't support multi-view.
+ *
+ * Some single-view APIs will eventually be replaced by their multi-view
+ * variant. During the deprecation period, the single-view APIs will coexist with
+ * and work with the multi-view APIs as if the other views don't exist.  For
+ * backward compatibility, single-view APIs will always operate the view with
+ * this ID. Also, the first view assigned to the engine will also have this ID.
+ */
+constexpr uint64_t kFlutterDefaultViewId = 0;
 
 /**
  * Listener for view resizing.
@@ -30,15 +42,6 @@
                            reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
     NS_DESIGNATED_INITIALIZER;
 
-- (nullable instancetype)initWithFrame:(NSRect)frame
-                           mainContext:(nonnull NSOpenGLContext*)mainContext
-                       reshapeListener:(nonnull id<FlutterViewReshapeListener>)reshapeListener
-    NS_DESIGNATED_INITIALIZER;
-
-- (nullable instancetype)initWithMainContext:(nonnull NSOpenGLContext*)mainContext
-                             reshapeListener:
-                                 (nonnull id<FlutterViewReshapeListener>)reshapeListener;
-
 - (nullable instancetype)initWithFrame:(NSRect)frameRect
                            pixelFormat:(nullable NSOpenGLPixelFormat*)format NS_UNAVAILABLE;
 - (nonnull instancetype)initWithFrame:(NSRect)frameRect NS_UNAVAILABLE;
@@ -46,7 +49,7 @@
 - (nonnull instancetype)init NS_UNAVAILABLE;
 
 /**
- * Flushes the OpenGL context and flips the surfaces. Expected to be called on raster thread.
+ * Flushes the graphics context and flips the surfaces. Expected to be called on raster thread.
  */
 - (void)present;
 
@@ -67,5 +70,14 @@
  * synchronization.
  */
 - (void)shutdown;
+
+/**
+ * By default, the `FlutterSurfaceManager` creates two layers to manage Flutter
+ * content, the content layer and containing layer. To set the native background
+ * color, onto which the Flutter content is drawn, call this method with the
+ * NSColor which you would like to override the default, black background color
+ * with.
+ */
+- (void)setBackgroundColor:(nonnull NSColor*)color;
 
 @end

@@ -613,6 +613,7 @@ LIBRARY: accessibility
 LIBRARY: engine
 LIBRARY: tonic
 LIBRARY: txt
+LIBRARY: web_unicode
 ORIGIN: ../../../flutter/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/.clang-tidy
@@ -699,6 +700,9 @@ FILE: ../../../flutter/display_list/display_list_image_skia.h
 FILE: ../../../flutter/display_list/display_list_mask_filter.cc
 FILE: ../../../flutter/display_list/display_list_mask_filter.h
 FILE: ../../../flutter/display_list/display_list_mask_filter_unittests.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.cc
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker.h
+FILE: ../../../flutter/display_list/display_list_matrix_clip_tracker_unittests.cc
 FILE: ../../../flutter/display_list/display_list_ops.cc
 FILE: ../../../flutter/display_list/display_list_ops.h
 FILE: ../../../flutter/display_list/display_list_paint.cc
@@ -777,6 +781,9 @@ FILE: ../../../flutter/flow/layers/layer.cc
 FILE: ../../../flutter/flow/layers/layer.h
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.cc
 FILE: ../../../flutter/flow/layers/layer_raster_cache_item.h
+FILE: ../../../flutter/flow/layers/layer_state_stack.cc
+FILE: ../../../flutter/flow/layers/layer_state_stack.h
+FILE: ../../../flutter/flow/layers/layer_state_stack_unittests.cc
 FILE: ../../../flutter/flow/layers/layer_tree.cc
 FILE: ../../../flutter/flow/layers/layer_tree.h
 FILE: ../../../flutter/flow/layers/layer_tree_unittests.cc
@@ -828,6 +835,10 @@ FILE: ../../../flutter/flow/surface_frame.cc
 FILE: ../../../flutter/flow/surface_frame.h
 FILE: ../../../flutter/flow/surface_frame_unittests.cc
 FILE: ../../../flutter/flow/texture_unittests.cc
+FILE: ../../../flutter/flutter_vma/flutter_skia_vma.cc
+FILE: ../../../flutter/flutter_vma/flutter_skia_vma.h
+FILE: ../../../flutter/flutter_vma/flutter_vma.cc
+FILE: ../../../flutter/flutter_vma/flutter_vma.h
 FILE: ../../../flutter/fml/ascii_trie.cc
 FILE: ../../../flutter/fml/ascii_trie.h
 FILE: ../../../flutter/fml/ascii_trie_unittests.cc
@@ -846,6 +857,8 @@ FILE: ../../../flutter/fml/command_line_unittest.cc
 FILE: ../../../flutter/fml/compiler_specific.h
 FILE: ../../../flutter/fml/concurrent_message_loop.cc
 FILE: ../../../flutter/fml/concurrent_message_loop.h
+FILE: ../../../flutter/fml/container.h
+FILE: ../../../flutter/fml/container_unittests.cc
 FILE: ../../../flutter/fml/dart/dart_converter.cc
 FILE: ../../../flutter/fml/dart/dart_converter.h
 FILE: ../../../flutter/fml/delayed_task.cc
@@ -1103,10 +1116,13 @@ FILE: ../../../flutter/impeller/compiler/reflector.cc
 FILE: ../../../flutter/impeller/compiler/reflector.h
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.cc
 FILE: ../../../flutter/impeller/compiler/runtime_stage_data.h
+FILE: ../../../flutter/impeller/compiler/shader_lib/flutter/runtime_effect.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/blending.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/branching.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
@@ -1116,6 +1132,7 @@ FILE: ../../../flutter/impeller/compiler/spirv_sksl.cc
 FILE: ../../../flutter/impeller/compiler/spirv_sksl.h
 FILE: ../../../flutter/impeller/compiler/switches.cc
 FILE: ../../../flutter/impeller/compiler/switches.h
+FILE: ../../../flutter/impeller/compiler/switches_unittests.cc
 FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
@@ -1127,10 +1144,10 @@ FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.h
 FILE: ../../../flutter/impeller/display_list/display_list_playground.cc
 FILE: ../../../flutter/impeller/display_list/display_list_playground.h
 FILE: ../../../flutter/impeller/display_list/display_list_unittests.cc
+FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.cc
+FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.h
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.h
-FILE: ../../../flutter/impeller/display_list/vertices_converter.cc
-FILE: ../../../flutter/impeller/display_list/vertices_converter.h
 FILE: ../../../flutter/impeller/docs/assets/launch-app.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image1.png
 FILE: ../../../flutter/impeller/docs/assets/read_frame_captures/image10.png
@@ -1206,6 +1223,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_conten
 FILE: ../../../flutter/impeller/entity/contents/filters/morphology_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
 FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
@@ -1214,10 +1233,10 @@ FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/radial_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/rrect_shadow_contents.h
+FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/runtime_effect_contents.h
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/solid_color_contents.h
-FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.cc
-FILE: ../../../flutter/impeller/entity/contents/solid_stroke_contents.h
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/sweep_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/text_contents.cc
@@ -1274,6 +1293,7 @@ FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.vert
 FILE: ../../../flutter/impeller/entity/shaders/gradient_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/linear_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
@@ -1282,18 +1302,23 @@ FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/rrect_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/runtime_effect.vert
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/solid_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/srgb_to_linear_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/sweep_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/tiled_texture_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/vertices.frag
+FILE: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.frag
+FILE: ../../../flutter/impeller/entity/shaders/yuv_to_rgb_filter.vert
 FILE: ../../../flutter/impeller/geometry/color.cc
 FILE: ../../../flutter/impeller/geometry/color.h
 FILE: ../../../flutter/impeller/geometry/constants.cc
@@ -1330,8 +1355,6 @@ FILE: ../../../flutter/impeller/geometry/type_traits.cc
 FILE: ../../../flutter/impeller/geometry/type_traits.h
 FILE: ../../../flutter/impeller/geometry/vector.cc
 FILE: ../../../flutter/impeller/geometry/vector.h
-FILE: ../../../flutter/impeller/geometry/vertices.cc
-FILE: ../../../flutter/impeller/geometry/vertices.h
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h
 FILE: ../../../flutter/impeller/image/compressed_image.cc
@@ -1403,6 +1426,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/device_buffer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/formats_mtl.mm
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.h
+FILE: ../../../flutter/impeller/renderer/backend/metal/gpu_tracer_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_library_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/metal/pipeline_mtl.h
@@ -1468,6 +1493,7 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vk.h
+FILE: ../../../flutter/impeller/renderer/backend_features.h
 FILE: ../../../flutter/impeller/renderer/blit_command.cc
 FILE: ../../../flutter/impeller/renderer/blit_command.h
 FILE: ../../../flutter/impeller/renderer/blit_pass.cc
@@ -1499,6 +1525,8 @@ FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
+FILE: ../../../flutter/impeller/renderer/gpu_tracer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer.cc
 FILE: ../../../flutter/impeller/renderer/host_buffer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer_unittests.cc
@@ -1508,6 +1536,7 @@ FILE: ../../../flutter/impeller/renderer/pipeline_builder.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_builder.h
 FILE: ../../../flutter/impeller/renderer/pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_descriptor.h
+FILE: ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_library.cc
 FILE: ../../../flutter/impeller/renderer/pipeline_library.h
 FILE: ../../../flutter/impeller/renderer/platform.cc
@@ -1555,7 +1584,23 @@ FILE: ../../../flutter/impeller/runtime_stage/runtime_stage.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_playground.h
 FILE: ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
+FILE: ../../../flutter/impeller/runtime_stage/runtime_types.cc
 FILE: ../../../flutter/impeller/runtime_stage/runtime_types.h
+FILE: ../../../flutter/impeller/scene/camera.cc
+FILE: ../../../flutter/impeller/scene/camera.h
+FILE: ../../../flutter/impeller/scene/geometry.cc
+FILE: ../../../flutter/impeller/scene/geometry.h
+FILE: ../../../flutter/impeller/scene/material.cc
+FILE: ../../../flutter/impeller/scene/material.h
+FILE: ../../../flutter/impeller/scene/scene.cc
+FILE: ../../../flutter/impeller/scene/scene.h
+FILE: ../../../flutter/impeller/scene/scene_encoder.cc
+FILE: ../../../flutter/impeller/scene/scene_encoder.h
+FILE: ../../../flutter/impeller/scene/scene_entity.cc
+FILE: ../../../flutter/impeller/scene/scene_entity.h
+FILE: ../../../flutter/impeller/scene/scene_unittests.cc
+FILE: ../../../flutter/impeller/scene/static_mesh_entity.cc
+FILE: ../../../flutter/impeller/scene/static_mesh_entity.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -1762,6 +1807,7 @@ FILE: ../../../flutter/lib/ui/window/pointer_data_packet.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.cc
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter.h
 FILE: ../../../flutter/lib/ui/window/pointer_data_packet_converter_unittests.cc
+FILE: ../../../flutter/lib/ui/window/pointer_data_packet_unittests.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.cc
 FILE: ../../../flutter/lib/ui/window/viewport_metrics.h
 FILE: ../../../flutter/lib/ui/window/window.cc
@@ -1954,7 +2000,6 @@ FILE: ../../../flutter/lib/web_ui/lib/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/window.dart
-FILE: ../../../flutter/lib/web_ui/tool/unicode_sync_script.dart
 FILE: ../../../flutter/runtime/dart_isolate.cc
 FILE: ../../../flutter/runtime/dart_isolate.h
 FILE: ../../../flutter/runtime/dart_isolate_group_data.cc
@@ -2102,6 +2147,8 @@ FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_delegate.h
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.cc
+FILE: ../../../flutter/shell/gpu/gpu_surface_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/AndroidManifest.xml
 FILE: ../../../flutter/shell/platform/android/android_choreographer.cc
 FILE: ../../../flutter/shell/platform/android/android_choreographer.h
@@ -2130,6 +2177,8 @@ FILE: ../../../flutter/shell/platform/android/android_surface_gl_skia.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_gl_skia.h
 FILE: ../../../flutter/shell/platform/android/android_surface_software.cc
 FILE: ../../../flutter/shell/platform/android/android_surface_software.h
+FILE: ../../../flutter/shell/platform/android/android_surface_vulkan_impeller.cc
+FILE: ../../../flutter/shell/platform/android/android_surface_vulkan_impeller.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.cc
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider.h
 FILE: ../../../flutter/shell/platform/android/apk_asset_provider_unittests.cc
@@ -2263,6 +2312,7 @@ FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/editing/TextInpu
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/localization/LocalizationPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/mouse/MouseCursorPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java
+FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformOverlayView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java
 FILE: ../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java
@@ -2407,8 +2457,10 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
-FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.h
-FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetal.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h
+FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.mm
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Headers/Flutter.h
@@ -2557,64 +2609,44 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPlug
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterPluginRegistrarMacOS.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Info.plist
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegate.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacDelegateTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStoreData.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponderTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositorTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderExternalTextureTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponderUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponderTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureGL.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTextureMetal.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProviderUnittests.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositor.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterGLCompositorUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerUnittests.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardViewDelegate.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMacOSExternalTexture.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPluginTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositorUnittests.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRendererTest.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.mm
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRendererTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMacTest.mm
@@ -2622,14 +2654,15 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatf
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewControllerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterRendererTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizableBackingStoreProvider.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManagerTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputPluginTest.mm
@@ -2645,10 +2678,12 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewC
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProviderTest.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h
-FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/module.modulemap
@@ -3050,9 +3085,13 @@ FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_texture_regi
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_value.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/fl_view.h
 FILE: ../../../flutter/shell/platform/linux/public/flutter_linux/flutter_linux.h
-FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_windows.cc
-FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h
-FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_delegate_windows_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_alert.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_alert.h
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_windows.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_windows.h
+FILE: ../../../flutter/shell/platform/windows/accessibility_bridge_windows_unittests.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_root_node.cc
+FILE: ../../../flutter/shell/platform/windows/accessibility_root_node.h
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.cc
 FILE: ../../../flutter/shell/platform/windows/angle_surface_manager.h
 FILE: ../../../flutter/shell/platform/windows/client_wrapper/dart_project_unittests.cc
@@ -3082,6 +3121,7 @@ FILE: ../../../flutter/shell/platform/windows/external_texture_d3d.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_d3d.h
 FILE: ../../../flutter/shell/platform/windows/external_texture_pixelbuffer.cc
 FILE: ../../../flutter/shell/platform/windows/external_texture_pixelbuffer.h
+FILE: ../../../flutter/shell/platform/windows/flutter_desktop_messenger.h
 FILE: ../../../flutter/shell/platform/windows/flutter_key_map.g.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_windows.cc
 FILE: ../../../flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h
@@ -3244,6 +3284,14 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
+FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
+FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc
+FILE: ../../../flutter/vulkan/procs/vulkan_handle.h
+FILE: ../../../flutter/vulkan/procs/vulkan_interface.cc
+FILE: ../../../flutter/vulkan/procs/vulkan_interface.h
+FILE: ../../../flutter/vulkan/procs/vulkan_proc_table.cc
+FILE: ../../../flutter/vulkan/procs/vulkan_proc_table.h
 FILE: ../../../flutter/vulkan/vulkan_application.cc
 FILE: ../../../flutter/vulkan/vulkan_application.h
 FILE: ../../../flutter/vulkan/vulkan_backbuffer.cc
@@ -3254,20 +3302,16 @@ FILE: ../../../flutter/vulkan/vulkan_debug_report.cc
 FILE: ../../../flutter/vulkan/vulkan_debug_report.h
 FILE: ../../../flutter/vulkan/vulkan_device.cc
 FILE: ../../../flutter/vulkan/vulkan_device.h
-FILE: ../../../flutter/vulkan/vulkan_handle.cc
-FILE: ../../../flutter/vulkan/vulkan_handle.h
 FILE: ../../../flutter/vulkan/vulkan_image.cc
 FILE: ../../../flutter/vulkan/vulkan_image.h
-FILE: ../../../flutter/vulkan/vulkan_interface.cc
-FILE: ../../../flutter/vulkan/vulkan_interface.h
 FILE: ../../../flutter/vulkan/vulkan_native_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface.h
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.cc
 FILE: ../../../flutter/vulkan/vulkan_native_surface_android.h
-FILE: ../../../flutter/vulkan/vulkan_proc_table.cc
-FILE: ../../../flutter/vulkan/vulkan_proc_table.h
 FILE: ../../../flutter/vulkan/vulkan_provider.cc
 FILE: ../../../flutter/vulkan/vulkan_provider.h
+FILE: ../../../flutter/vulkan/vulkan_skia_proc_table.cc
+FILE: ../../../flutter/vulkan/vulkan_skia_proc_table.h
 FILE: ../../../flutter/vulkan/vulkan_surface.cc
 FILE: ../../../flutter/vulkan/vulkan_surface.h
 FILE: ../../../flutter/vulkan/vulkan_swapchain.cc
@@ -3660,4 +3704,59 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
-Total license count: 16
+
+====================================================================================================
+LIBRARY: web_unicode
+ORIGIN: ../../../flutter/third_party/web_unicode/LICENSE
+TYPE: LicenseType.unknown
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode/codegen/line_break_properties.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode/codegen/word_break_properties.dart
+----------------------------------------------------------------------------------------------------
+UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
+
+See Terms of Use <https://www.unicode.org/copyright.html>
+for definitions of Unicode Inc.’s Data Files and Software.
+
+NOTICE TO USER: Carefully read the following legal agreement.
+BY DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING UNICODE INC.'S
+DATA FILES ("DATA FILES"), AND/OR SOFTWARE ("SOFTWARE"),
+YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE
+TERMS AND CONDITIONS OF THIS AGREEMENT.
+IF YOU DO NOT AGREE, DO NOT DOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE
+THE DATA FILES OR SOFTWARE.
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright © 1991-2022 Unicode, Inc. All rights reserved.
+Distributed under the Terms of Use in https://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of the Unicode data files and any associated documentation
+(the "Data Files") or Unicode software and any associated documentation
+(the "Software") to deal in the Data Files or Software
+without restriction, including without limitation the rights to use,
+copy, modify, merge, publish, distribute, and/or sell copies of
+the Data Files or Software, and to permit persons to whom the Data Files
+or Software are furnished to do so, provided that either
+(a) this copyright and permission notice appear with all copies
+of the Data Files or Software, or
+(b) this copyright and permission notice appear in associated
+Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT OF THIRD PARTY RIGHTS.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS
+NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL
+DAMAGES, OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE,
+DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
+TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
+PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder
+shall not be used in advertising or otherwise to promote the sale,
+use or other dealings in these Data Files or Software without prior
+written authorization of the copyright holder.
+====================================================================================================
+Total license count: 17

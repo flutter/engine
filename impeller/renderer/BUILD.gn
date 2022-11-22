@@ -37,6 +37,8 @@ impeller_component("renderer") {
     "device_buffer_descriptor.h",
     "formats.cc",
     "formats.h",
+    "gpu_tracer.cc",
+    "gpu_tracer.h",
     "host_buffer.cc",
     "host_buffer.h",
     "pipeline.cc",
@@ -104,6 +106,7 @@ impeller_component("renderer_unittests") {
   sources = [
     "device_buffer_unittests.cc",
     "host_buffer_unittests.cc",
+    "pipeline_descriptor_unittests.cc",
     "renderer_unittests.cc",
   ]
 

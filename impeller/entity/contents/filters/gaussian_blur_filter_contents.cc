@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include <cmath>
+#include <utility>
 #include <valarray>
 
 #include "impeller/base/strings.h"
@@ -77,7 +78,7 @@ void DirectionalGaussianBlurFilterContents::SetTileMode(
 
 void DirectionalGaussianBlurFilterContents::SetSourceOverride(
     FilterInput::Ref source_override) {
-  source_override_ = source_override;
+  source_override_ = std::move(source_override);
 }
 
 std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
@@ -227,8 +228,11 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
 
   Vector2 scale;
   auto scale_curve = [](Scalar radius) {
-    const Scalar d = 4.0;
-    return std::min(1.0, d / (std::max(1.0f, radius) + d - 1.0));
+    constexpr Scalar decay = 4.0;   // Larger is more gradual.
+    constexpr Scalar limit = 0.95;  // The maximum percentage of the scaledown.
+    const Scalar curve =
+        std::min(1.0, decay / (std::max(1.0f, radius) + decay - 1.0));
+    return (curve - 1) * limit + 1;
   };
   {
     scale.x = scale_curve(transformed_blur_radius_length);

@@ -6,6 +6,10 @@
 #define FLUTTER_SHELL_PLATFORM_FUCHSIA_FLUTTER_TESTS_INTEGRATION_UTILS_PORTABLE_UI_TEST_H_
 
 #include <fuchsia/sysmem/cpp/fidl.h>
+#include <fuchsia/ui/app/cpp/fidl.h>
+#include <fuchsia/ui/input/cpp/fidl.h>
+#include <fuchsia/ui/policy/cpp/fidl.h>
+#include <fuchsia/ui/scenic/cpp/fidl.h>
 #include <fuchsia/ui/test/input/cpp/fidl.h>
 #include <fuchsia/ui/test/scene/cpp/fidl.h>
 #include <lib/async-loop/testing/cpp/real_loop.h>
@@ -23,16 +27,30 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // we must encode the names manually here.
   static constexpr auto kVulkanLoaderServiceName =
       "fuchsia.vulkan.loader.Loader";
-  static constexpr auto kProfileProviderServiceName =
-      "fuchsia.sheduler.ProfileProvider";
+  static constexpr auto kPosixSocketProviderName =
+      "fuchsia.posix.socket.Provider";
+  static constexpr auto kPointerInjectorRegistryName =
+      "fuchsia.ui.pointerinjector.Registry";
+
+  // The naming and references used by Realm Builder
   static constexpr auto kTestUIStack = "ui";
   static constexpr auto kTestUIStackRef =
       component_testing::ChildRef{kTestUIStack};
+  static constexpr auto kFlutterJitRunner = "flutter_jit_runner";
+  static constexpr auto kFlutterJitRunnerRef =
+      component_testing::ChildRef{kFlutterJitRunner};
+  static constexpr auto kFlutterJitRunnerUrl =
+      "fuchsia-pkg://fuchsia.com/oot_flutter_jit_runner#meta/"
+      "flutter_jit_runner.cm";
+  static constexpr auto kFlutterRunnerEnvironment = "flutter_runner_env";
 
   void SetUp();
 
   // Attaches a client view to the scene, and waits for it to render.
   void LaunchClient();
+  // Attaches a view with an embedded child view to the scene, and waits for it
+  // to render.
+  void LaunchClientWithEmbeddedView();
 
   // Returns true when the specified view is fully connected to the scene AND
   // has presented at least one frame of content.
@@ -42,12 +60,38 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // spanning [-1000, 1000] on both axes.
   void RegisterTouchScreen();
 
+  // Registers a fake mouse device, for which mouse movement is measured on a
+  // scale of [-1000, 1000] on both axes and scroll is measured from [-100, 100]
+  // on both axes.
+  void RegisterMouse();
+
   // Simulates a tap at location (x, y).
   void InjectTap(int32_t x, int32_t y);
+
+  // Helper method to simulate combinations of button presses/releases and/or
+  // mouse movements.
+  void SimulateMouseEvent(
+      std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+      int movement_x,
+      int movement_y);
+
+  // Helper method to simulate a mouse scroll event.
+  //
+  // Set `use_physical_units` to true to specify scroll in physical pixels and
+  // false to specify scroll in detents.
+  void SimulateMouseScroll(
+      std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+      int scroll_x,
+      int scroll_y,
+      bool use_physical_units = false);
 
  protected:
   component_testing::RealmBuilder* realm_builder() { return &realm_builder_; }
   component_testing::RealmRoot* realm_root() { return realm_.get(); }
+
+  fuchsia::ui::scenic::ScenicPtr scenic_;
+  uint32_t display_width_ = 0;
+  uint32_t display_height_ = 0;
 
   int touch_injection_request_count() const {
     return touch_injection_request_count_;
@@ -59,7 +103,8 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // Configures the test-specific component topology.
   virtual void ExtendRealm() = 0;
 
-  // Returns the test-ui-stack component url to use in this test.
+  // Returns the test-specific test-ui-stack component url to use.
+  // Usually overriden to return a value from gtest GetParam()
   virtual std::string GetTestUIStackUrl() = 0;
 
   // Helper method to watch watch for view geometry updates.
@@ -71,6 +116,7 @@ class PortableUITest : public ::loop_fixture::RealLoop {
 
   fuchsia::ui::test::input::RegistryPtr input_registry_;
   fuchsia::ui::test::input::TouchScreenPtr fake_touchscreen_;
+  fuchsia::ui::test::input::MousePtr fake_mouse_;
   fuchsia::ui::test::scene::ControllerPtr scene_provider_;
   fuchsia::ui::observation::geometry::ViewTreeWatcherPtr view_tree_watcher_;
 

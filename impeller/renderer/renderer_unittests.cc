@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/fml/time/time_point.h"
 #include "flutter/testing/testing.h"
 #include "impeller/base/strings.h"
 #include "impeller/fixtures/array.frag.h"
@@ -27,6 +26,7 @@
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/command.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/device_buffer_descriptor.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
 #include "impeller/renderer/pipeline_library.h"
@@ -55,7 +55,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -92,7 +92,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -101,8 +101,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -121,7 +119,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(pipeline);
 
   struct Cube {
@@ -165,18 +163,11 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   ASSERT_TRUE(sampler);
 
   Vector3 euler_angles;
-  bool first_frame = true;
   SinglePassCallback callback = [&](RenderPass& pass) {
-    if (first_frame) {
-      first_frame = false;
-      ImGui::SetNextWindowSize({400, 80});
-      ImGui::SetNextWindowPos({20, 20});
-    }
-
     static Degrees fov_y(60);
     static Scalar distance = 10;
 
-    ImGui::Begin("Controls");
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Field of view", &fov_y.degrees, 0, 180);
     ImGui::SliderFloat("Camera distance", &distance, 0, 30);
     ImGui::End();
@@ -188,7 +179,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
     cmd.BindVertices(vertex_buffer);
 
     VS::UniformBuffer uniforms;
-    Scalar time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    Scalar time = GetSecondsElapsed();
     euler_angles = Vector3(0.19 * time, 0.7 * time, 0.43 * time);
 
     uniforms.mvp =
@@ -199,8 +190,6 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
         Matrix::MakeRotationZ(Radians(euler_angles.z));
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -219,7 +208,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -251,7 +240,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     cmd.BindVertices(vertex_buffer);
 
     FS::FrameInfo frame_info;
-    frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    frame_info.current_time = GetSecondsElapsed();
     frame_info.cursor_position = GetCursorPosition();
     frame_info.window_size.x = GetWindowSize().width;
     frame_info.window_size.y = GetWindowSize().height;
@@ -260,8 +249,6 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
 
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
@@ -292,7 +279,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -366,7 +353,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
   cmd.BindVertices(vertex_buffer);
 
   FS::FrameInfo frame_info;
-  frame_info.current_time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+  frame_info.current_time = GetSecondsElapsed();
   frame_info.cursor_position = GetCursorPosition();
   frame_info.window_size.x = GetWindowSize().width;
   frame_info.window_size.y = GetWindowSize().height;
@@ -375,8 +362,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
                     r2t_pass->GetTransientsBuffer().EmplaceUniform(frame_info));
   FS::BindContents1(cmd, boston, sampler);
   FS::BindContents2(cmd, bridge, sampler);
-
-  cmd.primitive_type = PrimitiveType::kTriangle;
 
   VS::UniformBuffer uniforms;
   uniforms.mvp = Matrix::MakeOrthographic(ISize{1024, 768}) *
@@ -397,18 +382,25 @@ TEST_P(RendererTest, CanRenderInstanced) {
 
   VertexBufferBuilder<VS::PerVertexData> builder;
 
-  ASSERT_EQ(
-      Tessellator::Result::kSuccess,
-      Tessellator{}.Tessellate(FillType::kPositive,
-                               PathBuilder{}
-                                   .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
-                                   .TakePath()
-                                   .CreatePolyline(),
-                               [&builder](Point vtx) {
-                                 VS::PerVertexData data;
-                                 data.vtx = vtx;
-                                 builder.AppendVertex(data);
-                               }));
+  ASSERT_EQ(Tessellator::Result::kSuccess,
+            Tessellator{}.Tessellate(
+                FillType::kPositive,
+                PathBuilder{}
+                    .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
+                    .TakePath()
+                    .CreatePolyline(),
+                [&builder](const float* vertices, size_t vertices_size,
+                           const uint16_t* indices, size_t indices_size) {
+                  for (auto i = 0u; i < vertices_size; i += 2) {
+                    VS::PerVertexData data;
+                    data.vtx = {vertices[i], vertices[i + 1]};
+                    builder.AppendVertex(data);
+                  }
+                  for (auto i = 0u; i < indices_size; i++) {
+                    builder.AppendIndex(indices[i]);
+                  }
+                  return true;
+                }));
 
   ASSERT_NE(GetContext(), nullptr);
   auto pipeline =
@@ -417,7 +409,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
           ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
                             *GetContext())
                             ->SetSampleCount(SampleCount::kCount4))
-          .get();
+          .Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   Command cmd;
@@ -457,7 +449,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   TextureDescriptor texture_desc;
@@ -557,6 +549,137 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   OpenPlaygroundHere(callback);
 }
 
+TEST_P(RendererTest, CanBlitTextureToBuffer) {
+  auto context = GetContext();
+  ASSERT_TRUE(context);
+
+  using VS = MipmapsVertexShader;
+  using FS = MipmapsFragmentShader;
+  auto desc = PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(*context);
+  ASSERT_TRUE(desc.has_value());
+  desc->SetSampleCount(SampleCount::kCount4);
+  auto mipmaps_pipeline =
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
+  ASSERT_TRUE(mipmaps_pipeline);
+
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  auto boston = CreateTextureForFixture("boston.jpg");
+  ASSERT_TRUE(bridge && boston);
+  auto sampler = context->GetSamplerLibrary()->GetSampler({});
+  ASSERT_TRUE(sampler);
+
+  TextureDescriptor texture_desc;
+  texture_desc.storage_mode = StorageMode::kHostVisible;
+  texture_desc.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_desc.size = bridge->GetTextureDescriptor().size;
+  texture_desc.mip_count = 1u;
+  texture_desc.usage =
+      static_cast<TextureUsageMask>(TextureUsage::kRenderTarget) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderWrite) |
+      static_cast<TextureUsageMask>(TextureUsage::kShaderRead);
+  DeviceBufferDescriptor device_buffer_desc;
+  device_buffer_desc.storage_mode = StorageMode::kHostVisible;
+  device_buffer_desc.size =
+      bridge->GetTextureDescriptor().GetByteSizeOfBaseMipLevel();
+  auto device_buffer =
+      context->GetResourceAllocator()->CreateBuffer(device_buffer_desc);
+
+  // Vertex buffer.
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.SetLabel("Box");
+  auto size = Point(boston->GetSize());
+  vertex_builder.AddVertices({
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, 0}, {1.0, 0.0}},       // 2
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, 0}, {0.0, 0.0}},            // 1
+      {{size.x, size.y}, {1.0, 1.0}},  // 3
+      {{0, size.y}, {0.0, 1.0}},       // 4
+  });
+  auto vertex_buffer =
+      vertex_builder.CreateVertexBuffer(*context->GetResourceAllocator());
+  ASSERT_TRUE(vertex_buffer);
+
+  Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    {
+      auto buffer = context->CreateCommandBuffer();
+      if (!buffer) {
+        return false;
+      }
+      buffer->SetLabel("Playground Command Buffer");
+      auto pass = buffer->CreateBlitPass();
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Blit Pass");
+
+      if (render_target.GetColorAttachments().empty()) {
+        return false;
+      }
+
+      // Blit `bridge` to the top left corner of the texture.
+      pass->AddCopy(bridge, device_buffer);
+
+      pass->EncodeCommands(context->GetResourceAllocator());
+
+      if (!buffer->SubmitCommands()) {
+        return false;
+      }
+    }
+
+    {
+      auto buffer = context->CreateCommandBuffer();
+      if (!buffer) {
+        return false;
+      }
+      buffer->SetLabel("Playground Command Buffer");
+
+      auto pass = buffer->CreateRenderPass(render_target);
+      if (!pass) {
+        return false;
+      }
+      pass->SetLabel("Playground Render Pass");
+      {
+        Command cmd;
+        cmd.label = "Image";
+        cmd.pipeline = mipmaps_pipeline;
+
+        cmd.BindVertices(vertex_buffer);
+
+        VS::VertInfo vert_info;
+        vert_info.mvp = Matrix::MakeOrthographic(pass->GetRenderTargetSize()) *
+                        Matrix::MakeScale(GetContentScale());
+        VS::BindVertInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(vert_info));
+
+        FS::FragInfo frag_info;
+        frag_info.lod = 0;
+        FS::BindFragInfo(cmd,
+                         pass->GetTransientsBuffer().EmplaceUniform(frag_info));
+
+        auto sampler = context->GetSamplerLibrary()->GetSampler({});
+        auto buffer_view = device_buffer->AsBufferView();
+        auto texture =
+            context->GetResourceAllocator()->CreateTexture(texture_desc);
+        if (!texture->SetContents(buffer_view.contents,
+                                  buffer_view.range.length)) {
+          VALIDATION_LOG << "Could not upload texture to device memory";
+          return false;
+        }
+        FS::BindTex(cmd, texture, sampler);
+
+        pass->AddCommand(std::move(cmd));
+      }
+      pass->EncodeCommands();
+      if (!buffer->SubmitCommands()) {
+        return false;
+      }
+    }
+    return true;
+  };
+  OpenPlaygroundHere(callback);
+}
+
 TEST_P(RendererTest, CanGenerateMipmaps) {
   auto context = GetContext();
   ASSERT_TRUE(context);
@@ -567,7 +690,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto boston = CreateTextureForFixture("boston.jpg", true);
@@ -591,10 +714,6 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
 
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
-    if (first_frame) {
-      ImGui::SetNextWindowPos({10, 10});
-    }
-
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
     const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
                                      MipFilter::kLinear};
@@ -688,7 +807,7 @@ TEST_P(RendererTest, TheImpeller) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   auto blue_noise = CreateTextureForFixture("blue_noise.png");
@@ -726,7 +845,7 @@ TEST_P(RendererTest, TheImpeller) {
 
     FS::FragInfo fs_uniform;
     fs_uniform.texture_size = Point(size);
-    fs_uniform.time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    fs_uniform.time = GetSecondsElapsed();
     FS::BindFragInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(fs_uniform));
     FS::BindBlueNoise(cmd, blue_noise, noise_sampler);
@@ -748,7 +867,7 @@ TEST_P(RendererTest, ArrayUniforms) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
@@ -772,7 +891,7 @@ TEST_P(RendererTest, ArrayUniforms) {
     VS::BindVertInfo(cmd,
                      pass.GetTransientsBuffer().EmplaceUniform(vs_uniform));
 
-    auto time = fml::TimePoint::Now().ToEpochDelta().ToSecondsF();
+    auto time = GetSecondsElapsed();
     auto y_pos = [&time](float x) {
       return 400 + 10 * std::cos(time * 5 + x / 6);
     };
@@ -804,7 +923,7 @@ TEST_P(RendererTest, InactiveUniforms) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {

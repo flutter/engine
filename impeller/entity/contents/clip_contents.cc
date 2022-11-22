@@ -86,17 +86,17 @@ bool ClipContents::Render(const ContentContext& renderer,
     {
       cmd.label = "Difference Clip (Increment)";
 
-      cmd.primitive_type = PrimitiveType::kTriangleStrip;
       auto points = Rect(Size(pass.GetRenderTargetSize())).GetPoints();
       auto vertices =
           VertexBufferBuilder<VS::PerVertexData>{}
               .AddVertices({{points[0]}, {points[1]}, {points[2]}, {points[3]}})
               .CreateVertexBuffer(pass.GetTransientsBuffer());
-      cmd.BindVertices(std::move(vertices));
+      cmd.BindVertices(vertices);
 
       info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize());
       VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
+      options.primitive_type = PrimitiveType::kTriangleStrip;
       cmd.pipeline = renderer.GetClipPipeline(options);
       pass.AddCommand(cmd);
     }
@@ -104,7 +104,6 @@ bool ClipContents::Render(const ContentContext& renderer,
     {
       cmd.label = "Difference Clip (Punch)";
 
-      cmd.primitive_type = PrimitiveType::kTriangle;
       cmd.stencil_reference = entity.GetStencilDepth() + 1;
       options.stencil_compare = CompareFunction::kEqual;
       options.stencil_operation = StencilOperation::kDecrementClamp;
@@ -115,17 +114,14 @@ bool ClipContents::Render(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
 
+  auto geometry_result = geometry_->GetPositionBuffer(renderer, entity, pass);
+  options.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetClipPipeline(options);
 
-  auto& host_buffer = pass.GetTransientsBuffer();
   auto allocator = renderer.GetContext()->GetResourceAllocator();
-  auto geometry_result = geometry_->GetPositionBuffer(
-      allocator, host_buffer, renderer.GetTessellator(),
-      pass.GetRenderTargetSize());
   cmd.BindVertices(geometry_result.vertex_buffer);
-  cmd.primitive_type = geometry_result.type;
-  info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-             entity.GetTransformation();
+
+  info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(info));
 
   pass.AddCommand(std::move(cmd));

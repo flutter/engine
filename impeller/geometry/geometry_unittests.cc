@@ -17,6 +17,7 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
+#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -420,6 +421,52 @@ TEST(GeometryTest, MatrixIsAligned) {
     auto m = Matrix::MakeRotationZ(Degrees{123});
     bool result = m.IsAligned();
     ASSERT_FALSE(result);
+  }
+}
+
+TEST(GeometryTest, MatrixLookAt) {
+  {
+    auto m = Matrix::MakeLookAt(Vector3(0, 0, -1), Vector3(0, 0, 1),
+                                Vector3(0, 1, 0));
+    auto expected = Matrix{
+        1, 0, 0, 0,  //
+        0, 1, 0, 0,  //
+        0, 0, 1, 0,  //
+        0, 0, 1, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expected);
+  }
+
+  // Sideways tilt.
+  {
+    auto m = Matrix::MakeLookAt(Vector3(0, 0, -1), Vector3(0, 0, 1),
+                                Vector3(1, 1, 0).Normalize());
+
+    // clang-format off
+    auto expected = Matrix{
+        k1OverSqrt2, k1OverSqrt2, 0, 0,
+       -k1OverSqrt2, k1OverSqrt2, 0, 0,
+        0,           0,           1, 0,
+        0,           0,           1, 1,
+    };
+    // clang-format on
+    ASSERT_MATRIX_NEAR(m, expected);
+  }
+
+  // Half way between +x and -y, yaw 90
+  {
+    auto m =
+        Matrix::MakeLookAt(Vector3(), Vector3(10, -10, 0), Vector3(0, 0, -1));
+
+    // clang-format off
+    auto expected = Matrix{
+       -k1OverSqrt2,  0,  k1OverSqrt2, 0,
+       -k1OverSqrt2,  0, -k1OverSqrt2, 0,
+        0,           -1,  0,           0,
+        0,            0,  0,           1,
+    };
+    // clang-format on
+    ASSERT_MATRIX_NEAR(m, expected);
   }
 }
 
@@ -1426,8 +1473,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  SmoothingApproximation approximation;
-  auto polyline = component.CreatePolyline(approximation);
+  auto polyline = component.CreatePolyline();
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1600,48 +1646,95 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
   ASSERT_EQ(polyline.points[6], Point(0, 100));
 }
 
-TEST(GeometryTest, VerticesConstructorAndGetters) {
-  std::vector<Point> points = {Point(1, 2), Point(2, 3), Point(3, 4)};
-  std::vector<uint16_t> indices = {0, 1, 2};
-  std::vector<Color> colors = {Color::White(), Color::White(), Color::White()};
-
-  Vertices vertices = Vertices(points, indices, colors, VertexMode::kTriangle,
-                               Rect(0, 0, 4, 4));
-
-  ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
-  ASSERT_EQ(vertices.GetPositions(), points);
-  ASSERT_EQ(vertices.GetIndices(), indices);
-  ASSERT_EQ(vertices.GetColors(), colors);
-  ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);
-}
-
 TEST(GeometryTest, MatrixPrinting) {
-  std::stringstream stream;
-
-  Matrix m;
-
-  stream << m;
-
-  ASSERT_EQ(stream.str(), R"((
+  {
+    std::stringstream stream;
+    Matrix m;
+    stream << m;
+    ASSERT_EQ(stream.str(), R"((
        1.000000,       0.000000,       0.000000,       0.000000,
        0.000000,       1.000000,       0.000000,       0.000000,
        0.000000,       0.000000,       1.000000,       0.000000,
        0.000000,       0.000000,       0.000000,       1.000000,
 ))");
+  }
 
-  stream.str("");
-  stream.clear();
+  {
+    std::stringstream stream;
+    Matrix m = Matrix::MakeTranslation(Vector3(10, 20, 30));
+    stream << m;
 
-  m = Matrix::MakeTranslation(Vector3(10, 20, 30));
-
-  stream << m;
-
-  ASSERT_EQ(stream.str(), R"((
+    ASSERT_EQ(stream.str(), R"((
        1.000000,       0.000000,       0.000000,      10.000000,
        0.000000,       1.000000,       0.000000,      20.000000,
        0.000000,       0.000000,       1.000000,      30.000000,
        0.000000,       0.000000,       0.000000,       1.000000,
 ))");
+  }
+}
+
+TEST(GeometryTest, PointPrinting) {
+  {
+    std::stringstream stream;
+    Point m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Point m(13, 37);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(13, 37)");
+  }
+}
+
+TEST(GeometryTest, Vector3Printing) {
+  {
+    std::stringstream stream;
+    Vector3 m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Vector3 m(1, 2, 3);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3)");
+  }
+}
+
+TEST(GeometryTest, Vector4Printing) {
+  {
+    std::stringstream stream;
+    Vector4 m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0, 1)");
+  }
+
+  {
+    std::stringstream stream;
+    Vector4 m(1, 2, 3, 4);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
+  }
+}
+
+TEST(GeometryTest, ColorPrinting) {
+  {
+    std::stringstream stream;
+    Color m;
+    stream << m;
+    ASSERT_EQ(stream.str(), "(0, 0, 0, 0)");
+  }
+
+  {
+    std::stringstream stream;
+    Color m(1, 2, 3, 4);
+    stream << m;
+    ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
+  }
 }
 
 TEST(GeometryTest, Gradient) {
@@ -1710,6 +1803,75 @@ TEST(GeometryTest, Gradient) {
     auto gradient = CreateGradientBuffer(colors, stops);
 
     ASSERT_EQ(gradient.texture_size, 1024u);
+    ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
+  }
+}
+
+TEST(GeometryTest, GradientSSBO) {
+  {
+    // Simple 2 color gradient produces std::nullopt, as original
+    // color vector should be used.
+    std::vector<Color> colors = {Color::Red(), Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient, std::nullopt);
+  }
+
+  {
+    // Gradient with duplicate stops does not create an empty texture.
+    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
+                                 Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+    ASSERT_EQ(gradient.value().size(), 5u);
+  }
+
+  {
+    // Simple N color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
+                                 Color::White()};
+    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient, std::nullopt);
+  }
+
+  {
+    // Gradient with color stops will lerp and scale buffer.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
+    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    std::vector<Color> lerped_colors = {
+        Color::Red(),
+        Color::Blue(),
+        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
+        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
+        Color::Green(),
+    };
+
+    ASSERT_COLORS_NEAR(gradient.value(), lerped_colors);
+    ASSERT_EQ(gradient.value().size(), 5u);
+  }
+
+  {
+    // Gradient size is capped at 1024.
+    std::vector<Color> colors = {};
+    std::vector<Scalar> stops = {};
+    for (auto i = 0u; i < 1025; i++) {
+      colors.push_back(Color::Blue());
+      stops.push_back(i / 1025.0);
+    }
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient.value().size(), 1024u);
   }
 }
 

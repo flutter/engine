@@ -20,6 +20,7 @@
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
+#include "flutter/shell/platform/windows/flutter_desktop_messenger.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
@@ -124,7 +125,7 @@ class FlutterWindowsEngine {
   // Sets switches member to the given switches.
   void SetSwitches(const std::vector<std::string>& switches);
 
-  FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
+  FlutterDesktopMessengerRef messenger() { return messenger_->ToRef(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
     return message_dispatcher_.get();
@@ -244,6 +245,15 @@ class FlutterWindowsEngine {
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
+ protected:
+  // Creates an accessibility bridge with the provided parameters.
+  //
+  // By default this method calls AccessibilityBridge's constructor. Exposing
+  // this method allows unit tests to override in order to capture information.
+  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+      FlutterWindowsEngine* engine,
+      FlutterWindowsView* view);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -253,6 +263,9 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
+                                  const FlutterDesktopMessage* message);
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -271,7 +284,7 @@ class FlutterWindowsEngine {
   std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger_;
+  fml::RefPtr<flutter::FlutterDesktopMessenger> messenger_;
 
   // A wrapper around messenger_ for interacting with client_wrapper-level APIs.
   std::unique_ptr<BinaryMessengerImpl> messenger_wrapper_;

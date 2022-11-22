@@ -5,6 +5,7 @@
 #define FML_USED_ON_EMBEDDER
 
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "embedder.h"
@@ -1580,7 +1581,7 @@ static void expectSoftwareRenderingOutputMatches(
 
   builder.SetSoftwareRendererConfig();
   builder.SetCompositor();
-  builder.SetDartEntrypoint(entrypoint);
+  builder.SetDartEntrypoint(std::move(entrypoint));
   builder.SetRenderTargetType(
       EmbedderTestBackingStoreProducer::RenderTargetType::kSoftwareBuffer2,
       pixfmt);
@@ -1595,7 +1596,9 @@ static void expectSoftwareRenderingOutputMatches(
         ASSERT_EQ(layers[0]->backing_store->type,
                   kFlutterBackingStoreTypeSoftware2);
         matches = SurfacePixelDataMatchesBytes(
-            (SkSurface*)layers[0]->backing_store->software2.user_data, bytes);
+            static_cast<SkSurface*>(
+                layers[0]->backing_store->software2.user_data),
+            bytes);
         latch.Signal();
       });
 
@@ -1622,47 +1625,59 @@ static void expectSoftwareRenderingOutputMatches(
     T pixelvalue) {
   uint8_t* bytes = reinterpret_cast<uint8_t*>(&pixelvalue);
   return expectSoftwareRenderingOutputMatches(
-      test, entrypoint, pixfmt, std::vector<uint8_t>(bytes, bytes + sizeof(T)));
+      test, std::move(entrypoint), pixfmt,
+      std::vector<uint8_t>(bytes, bytes + sizeof(T)));
 }
 
-#define SW_PIXFMT_TEST_F(dart_entrypoint, pixfmt, matcher)                \
-  TEST_F(EmbedderTest,                                                    \
-         SoftwareRenderingPixelFormats_##dart_entrypoint##_##pixfmt) {    \
+#define SW_PIXFMT_TEST_F(test_name, dart_entrypoint, pixfmt, matcher)     \
+  TEST_F(EmbedderTest, SoftwareRenderingPixelFormats##test_name) {        \
     expectSoftwareRenderingOutputMatches(*this, #dart_entrypoint, pixfmt, \
                                          matcher);                        \
   }
 
 // Don't test the pixel formats that contain padding (so an X) and the kNative32
 // pixel format here, so we don't add any flakiness.
-SW_PIXFMT_TEST_F(draw_solid_red, kRGB565, (uint16_t)0xF800);
-SW_PIXFMT_TEST_F(draw_solid_red, kRGBA4444, (uint16_t)0xF00F);
-SW_PIXFMT_TEST_F(draw_solid_red,
+SW_PIXFMT_TEST_F(RedRGBA565xF800, draw_solid_red, kRGB565, (uint16_t)0xF800);
+SW_PIXFMT_TEST_F(RedRGBA4444xF00F, draw_solid_red, kRGBA4444, (uint16_t)0xF00F);
+SW_PIXFMT_TEST_F(RedRGBA8888xFFx00x00xFF,
+                 draw_solid_red,
                  kRGBA8888,
                  (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_red,
+SW_PIXFMT_TEST_F(RedBGRA8888x00x00xFFxFF,
+                 draw_solid_red,
                  kBGRA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_red, kGray8, (uint8_t)0x36);
+SW_PIXFMT_TEST_F(RedGray8x36, draw_solid_red, kGray8, (uint8_t)0x36);
 
-SW_PIXFMT_TEST_F(draw_solid_green, kRGB565, (uint16_t)0x07E0);
-SW_PIXFMT_TEST_F(draw_solid_green, kRGBA4444, (uint16_t)0x0F0F);
-SW_PIXFMT_TEST_F(draw_solid_green,
+SW_PIXFMT_TEST_F(GreenRGB565x07E0, draw_solid_green, kRGB565, (uint16_t)0x07E0);
+SW_PIXFMT_TEST_F(GreenRGBA4444x0F0F,
+                 draw_solid_green,
+                 kRGBA4444,
+                 (uint16_t)0x0F0F);
+SW_PIXFMT_TEST_F(GreenRGBA8888x00xFFx00xFF,
+                 draw_solid_green,
                  kRGBA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_green,
+SW_PIXFMT_TEST_F(GreenBGRA8888x00xFFx00xFF,
+                 draw_solid_green,
                  kBGRA8888,
                  (std::vector<uint8_t>{0x00, 0xFF, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_green, kGray8, (uint8_t)0xB6);
+SW_PIXFMT_TEST_F(GreenGray8xB6, draw_solid_green, kGray8, (uint8_t)0xB6);
 
-SW_PIXFMT_TEST_F(draw_solid_blue, kRGB565, (uint16_t)0x001F);
-SW_PIXFMT_TEST_F(draw_solid_blue, kRGBA4444, (uint16_t)0x00FF);
-SW_PIXFMT_TEST_F(draw_solid_blue,
+SW_PIXFMT_TEST_F(BlueRGB565x001F, draw_solid_blue, kRGB565, (uint16_t)0x001F);
+SW_PIXFMT_TEST_F(BlueRGBA4444x00FF,
+                 draw_solid_blue,
+                 kRGBA4444,
+                 (uint16_t)0x00FF);
+SW_PIXFMT_TEST_F(BlueRGBA8888x00x00xFFxFF,
+                 draw_solid_blue,
                  kRGBA8888,
                  (std::vector<uint8_t>{0x00, 0x00, 0xFF, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_blue,
+SW_PIXFMT_TEST_F(BlueBGRA8888xFFx00x00xFF,
+                 draw_solid_blue,
                  kBGRA8888,
                  (std::vector<uint8_t>{0xFF, 0x00, 0x00, 0xFF}));
-SW_PIXFMT_TEST_F(draw_solid_blue, kGray8, (uint8_t)0x12);
+SW_PIXFMT_TEST_F(BlueGray8x12, draw_solid_blue, kGray8, (uint8_t)0x12);
 
 //------------------------------------------------------------------------------
 // Key Data

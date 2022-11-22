@@ -17,7 +17,7 @@ declare_args() {
   impeller_enable_opengles = is_mac || is_linux || is_win || is_android
 
   # Whether the Vulkan backend is enabled.
-  impeller_enable_vulkan = false
+  impeller_enable_vulkan = is_linux || is_android
 
   # Whether to use a prebuilt impellerc.
   # If this is the empty string, impellerc will be built.
@@ -236,6 +236,10 @@ template("impellerc") {
   if (defined(invoker.iplr) && invoker.iplr) {
     iplr = invoker.iplr
   }
+  json = false
+  if (defined(invoker.json) && invoker.json) {
+    json = invoker.json
+  }
 
   # Not needed on every path.
   not_needed([
@@ -247,6 +251,7 @@ template("impellerc") {
   # Optional: invoker.defines specifies a list of valueless macro definitions.
   # Optional: invoker.intermediates_subdir specifies the subdirectory in which
   #           to put intermediates.
+  # Optional: invoker.json Causes output format to be JSON instead of flatbuffer.
 
   _impellerc(target_name) {
     sources = invoker.shaders
@@ -274,6 +279,15 @@ template("impellerc") {
       "--depfile=$depfile_intermediate_path",
       "$shader_target_flag",
     ]
+
+    if (defined(invoker.gles_language_version)) {
+      gles_language_version = invoker.gles_language_version
+      args += [ "--gles-language-version=$gles_language_version" ]
+    }
+
+    if (json) {
+      args += [ "--json" ]
+    }
 
     if (sksl) {
       sl_intermediate =
@@ -450,9 +464,12 @@ template("impeller_shaders_gles") {
   impellerc(impellerc_gles) {
     shaders = invoker.shaders
     sl_file_extension = "gles"
+    if (defined(invoker.gles_language_version)) {
+      gles_language_version = invoker.gles_language_version
+    }
 
     # Metal reflectors generate a superset of information.
-    if (impeller_enable_metal) {
+    if (impeller_enable_metal || impeller_enable_vulkan) {
       intermediates_subdir = "gles"
     }
     if (is_mac) {
@@ -489,7 +506,7 @@ template("impeller_shaders_gles") {
   group(target_name) {
     public_deps = [ ":$embed_gles_lib" ]
 
-    if (!impeller_enable_metal) {
+    if (!impeller_enable_metal && !impeller_enable_vulkan) {
       public_deps += [ ":$reflect_gles" ]
     }
   }
@@ -562,6 +579,9 @@ template("impeller_shaders") {
     gles_shaders = "gles_$target_name"
     impeller_shaders_gles(gles_shaders) {
       name = invoker.name
+      if (defined(invoker.gles_language_version)) {
+        gles_language_version = invoker.gles_language_version
+      }
       if (defined(invoker.gles_exclusions)) {
         shaders = invoker.shaders - invoker.gles_exclusions
       } else {

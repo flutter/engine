@@ -1206,6 +1206,19 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
       caseSensitive: false,
     )
   ),
+
+  // Unicode terms of use
+  MultipleVersionedLicenseReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    licenseIndices: const <int>[3],
+    checkLocalFirst: false,
+    pattern: RegExp(
+      kIndent +
+      r'\n// For terms of use, see (https://www.unicode.org/copyright.html)\n',
+      caseSensitive: false,
+    )
+  ),
 ];
 
 
@@ -1649,7 +1662,7 @@ final List<RegExp> csLicenses = <RegExp>[
     r'^(?:\1\2)?GNU General Public License for more details.\n'
     r'^(?:\1\2)?\n*'
     r'^(?:\1\2)?You should have received a copy of the GNU General Public License\n'
-    r'^(?:\1\2)?along with this program.  If not, see <http://www.gnu.org/licenses/>.  \*/\n'
+    r'^(?:\1\2)?along with this program.  If not, see <https?://www.gnu.org/licenses/>.  \*/\n'
     r'^(?:\1\2)?\n*' +
     kIndent +
     r'As a special exception, you may create a larger work that contains\n'

@@ -26,6 +26,48 @@
             "tests": []
         },
         {
+          "archives": [],
+          "drone_dimensions": [
+              "device_type=none",
+              "os=Linux"
+          ],
+          "gclient_custom_vars": {
+              "download_android_deps": false
+          },
+          "gn": [
+              "--runtime-mode",
+              "debug",
+              "--unoptimized",
+              "--prebuilt-dart-sdk",
+              "--enable-impeller-vulkan",
+              "--target-dir",
+              "host_debug_impeller_vulkan"
+          ],
+          "name": "host_debug_impeller_vulkan",
+          "ninja": {
+              "config": "host_debug_impeller_vulkan",
+              "targets": [
+                  "flutter",
+                  "flutter/sky/packages"
+              ]
+          },
+          "tests": [
+            {
+                "language": "python",
+                "name": "Host Tests for host_debug_impeller_vulkan",
+                "parameters": [
+                    "--variant",
+                    "host_debug_impeller_vulkan",
+                    "--type",
+                    "impeller-vulkan",
+                    "--engine-capture-core-dump"
+                ],
+                "script": "flutter/testing/run_tests.py",
+                "type": "local"
+            }
+        ]
+      },
+      {
             "archives": [
                 {
                     "name": "host_debug",
@@ -64,7 +106,7 @@
                     "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/build/archives:flutter_web_sdk",
+                    "flutter/web_sdk",
                     "flutter/tools/font-subset",
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
@@ -151,8 +193,7 @@
                 "targets": [
                     "flutter:unittests",
                     "flutter/build/archives:flutter_patched_sdk",
-                    "flutter/shell/platform/linux:flutter_gtk",
-                    "flutter/build/archives:flutter_web_sdk"
+                    "flutter/shell/platform/linux:flutter_gtk"
                 ]
             },
             "tests": [

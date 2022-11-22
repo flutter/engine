@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_context.h"
 
+#include <utility>
+
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/paths.h"
 #include "flutter/runtime/dart_vm.h"
@@ -94,7 +96,8 @@ void EmbedderTestContext::SetRootSurfaceTransformation(SkMatrix matrix) {
   root_surface_transformation_ = matrix;
 }
 
-void EmbedderTestContext::AddIsolateCreateCallback(fml::closure closure) {
+void EmbedderTestContext::AddIsolateCreateCallback(
+    const fml::closure& closure) {
   if (closure) {
     isolate_create_callbacks_.push_back(closure);
   }
@@ -116,6 +119,11 @@ void EmbedderTestContext::FireIsolateCreateCallbacks() {
 void EmbedderTestContext::AddNativeCallback(const char* name,
                                             Dart_NativeFunction function) {
   native_resolver_->AddNativeCallback({name}, function);
+}
+
+void EmbedderTestContext::SetSemanticsUpdateCallback(
+    SemanticsUpdateCallback update_semantics_callback) {
+  update_semantics_callback_ = std::move(update_semantics_callback);
 }
 
 void EmbedderTestContext::SetSemanticsNodeCallback(
@@ -146,22 +154,44 @@ void EmbedderTestContext::SetLogMessageCallback(
   log_message_callback_ = callback;
 }
 
+FlutterUpdateSemanticsCallback
+EmbedderTestContext::GetUpdateSemanticsCallbackHook() {
+  if (update_semantics_callback_ == nullptr) {
+    return nullptr;
+  }
+
+  return [](const FlutterSemanticsUpdate* update, void* user_data) {
+    auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
+    if (context->update_semantics_callback_) {
+      context->update_semantics_callback_(update);
+    }
+  };
+}
+
 FlutterUpdateSemanticsNodeCallback
 EmbedderTestContext::GetUpdateSemanticsNodeCallbackHook() {
+  if (update_semantics_node_callback_ == nullptr) {
+    return nullptr;
+  }
+
   return [](const FlutterSemanticsNode* semantics_node, void* user_data) {
     auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
-    if (auto callback = context->update_semantics_node_callback_) {
-      callback(semantics_node);
+    if (context->update_semantics_node_callback_) {
+      context->update_semantics_node_callback_(semantics_node);
     }
   };
 }
 
 FlutterUpdateSemanticsCustomActionCallback
 EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
+  if (update_semantics_custom_action_callback_ == nullptr) {
+    return nullptr;
+  }
+
   return [](const FlutterSemanticsCustomAction* action, void* user_data) {
     auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
-    if (auto callback = context->update_semantics_custom_action_callback_) {
-      callback(action);
+    if (context->update_semantics_custom_action_callback_) {
+      context->update_semantics_custom_action_callback_(action);
     }
   };
 }
@@ -169,8 +199,8 @@ EmbedderTestContext::GetUpdateSemanticsCustomActionCallbackHook() {
 FlutterLogMessageCallback EmbedderTestContext::GetLogMessageCallbackHook() {
   return [](const char* tag, const char* message, void* user_data) {
     auto context = reinterpret_cast<EmbedderTestContext*>(user_data);
-    if (auto callback = context->log_message_callback_) {
-      callback(tag, message);
+    if (context->log_message_callback_) {
+      context->log_message_callback_(tag, message);
     }
   };
 }
@@ -226,7 +256,7 @@ void EmbedderTestContext::FireRootSurfacePresentCallbackIfPresent(
 
 void EmbedderTestContext::SetVsyncCallback(
     std::function<void(intptr_t)> callback) {
-  vsync_callback_ = callback;
+  vsync_callback_ = std::move(callback);
 }
 
 void EmbedderTestContext::RunVsyncCallback(intptr_t baton) {
