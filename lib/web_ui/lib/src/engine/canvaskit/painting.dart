@@ -479,7 +479,7 @@ class CkFragmentShader implements ui.FragmentShader {
 
   @override
   void setImageSampler(int index, ui.Image image) {
-    ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
+    final ui.ImageShader sampler = ui.ImageShader(image, ui.TileMode.clamp,
         ui.TileMode.clamp, toMatrix64(Matrix4.identity().storage));
     samplers[index] = (sampler as CkShader).skiaObject;
     setFloat(lastFloatIndex + 2 * index, (sampler as CkImageShader).imageWidth.toDouble());
