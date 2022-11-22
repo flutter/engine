@@ -613,7 +613,7 @@ LIBRARY: accessibility
 LIBRARY: engine
 LIBRARY: tonic
 LIBRARY: txt
-LIBRARY: unicode
+LIBRARY: web_unicode
 ORIGIN: ../../../flutter/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/.clang-tidy
@@ -3708,11 +3708,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 
 ====================================================================================================
-LIBRARY: unicode
+LIBRARY: web_unicode
 ORIGIN: ../../../flutter/third_party/web_unicode/LICENSE
 TYPE: LicenseType.unknown
-FILE: ../../../flutter/third_party/web_unicode/lib/codegen/line_break_properties.dart
-FILE: ../../../flutter/third_party/web_unicode/lib/codegen/word_break_properties.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode/codegen/line_break_properties.dart
+FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode/codegen/word_break_properties.dart
 ----------------------------------------------------------------------------------------------------
 UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
 
