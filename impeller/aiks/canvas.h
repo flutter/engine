@@ -22,7 +22,6 @@
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
-#include "impeller/display_list/vertices_geometry.h"
 
 namespace impeller {
 

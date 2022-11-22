@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "impeller/display_list/vertices_geometry.h"
+#include "impeller/display_list/display_list_vertices_geometry.h"
 
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -58,19 +58,19 @@ static std::vector<uint16_t> fromFanIndices(
 /////// Vertices Geometry ///////
 
 // static
-std::unique_ptr<VerticesGeometry> VerticesGeometry::MakeVertices(
+std::unique_ptr<VerticesGeometry> DLVerticesGeometry::MakeVertices(
     const flutter::DlVertices* vertices) {
-  return std::make_unique<VerticesGeometry>(vertices);
+  return std::make_unique<DLVerticesGeometry>(vertices);
 }
 
-VerticesGeometry::VerticesGeometry(const flutter::DlVertices* vertices)
+DLVerticesGeometry::DLVerticesGeometry(const flutter::DlVertices* vertices)
     : vertices_(vertices) {
   NormalizeIndices();
 }
 
-VerticesGeometry::~VerticesGeometry() = default;
+DLVerticesGeometry::~DLVerticesGeometry() = default;
 
-void VerticesGeometry::NormalizeIndices() {
+void DLVerticesGeometry::NormalizeIndices() {
   // Convert triangle fan if present.
   if (vertices_->mode() == flutter::DlVertexMode::kTriangleFan) {
     normalized_indices_ = fromFanIndices(vertices_);
@@ -79,13 +79,11 @@ void VerticesGeometry::NormalizeIndices() {
 
   auto index_count = vertices_->index_count();
   auto vertex_count = vertices_->vertex_count();
-  auto* dl_indices = vertices_->indices();
-  auto* dl_vertices = vertices_->vertices();
   if (index_count != 0 || vertex_count == 0) {
     return;
   }
   normalized_indices_.reserve(vertex_count);
-  for (size_t i = 0; i < vertex_count; i++) {
+  for (auto i = 0; i < vertex_count; i++) {
     normalized_indices_.push_back(i);
   }
 }
@@ -102,7 +100,7 @@ static PrimitiveType GetPrimitiveType(const flutter::DlVertices* vertices) {
   }
 }
 
-GeometryResult VerticesGeometry::GetPositionBuffer(
+GeometryResult DLVerticesGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
@@ -153,7 +151,7 @@ GeometryResult VerticesGeometry::GetPositionBuffer(
   };
 }
 
-GeometryResult VerticesGeometry::GetPositionColorBuffer(
+GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass,
@@ -173,7 +171,7 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
 
   std::vector<VS::PerVertexData> vertex_data(vertex_count);
   {
-    for (size_t i = 0; i < vertex_count; i++) {
+    for (auto i = 0; i < vertex_count; i++) {
       auto dl_color = dl_colors[i];
       auto pre_color = Color(dl_color.getRedF(), dl_color.getGreenF(),
                              dl_color.getBlueF(), dl_color.getAlphaF());
@@ -224,7 +222,7 @@ GeometryResult VerticesGeometry::GetPositionColorBuffer(
   };
 }
 
-GeometryResult VerticesGeometry::GetPositionUVBuffer(
+GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
@@ -233,7 +231,7 @@ GeometryResult VerticesGeometry::GetPositionUVBuffer(
   return {};
 }
 
-GeometryVertexType VerticesGeometry::GetVertexType() const {
+GeometryVertexType DLVerticesGeometry::GetVertexType() const {
   auto* dl_colors = vertices_->colors();
   if (dl_colors != nullptr) {
     return GeometryVertexType::kColor;
@@ -241,7 +239,7 @@ GeometryVertexType VerticesGeometry::GetVertexType() const {
   return GeometryVertexType::kPosition;
 }
 
-std::optional<Rect> VerticesGeometry::GetCoverage(
+std::optional<Rect> DLVerticesGeometry::GetCoverage(
     const Matrix& transform) const {
   return ToRect(vertices_->bounds());
 }

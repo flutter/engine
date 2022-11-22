@@ -20,8 +20,8 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
-#include "impeller/display_list/vertices_geometry.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -1103,7 +1103,8 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                          flutter::DlBlendMode dl_mode) {
-  canvas_.DrawVertices(VerticesGeometry::MakeVertices(vertices), ToBlendMode(dl_mode), paint_);
+  canvas_.DrawVertices(DLVerticesGeometry::MakeVertices(vertices),
+                       ToBlendMode(dl_mode), paint_);
 }
 
 // |flutter::Dispatcher|

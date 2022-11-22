@@ -17,24 +17,26 @@
 namespace impeller {
 
 /// @brief A geometry that is created from a vertices object.
-class VerticesGeometry : public Geometry {
+class DLVerticesGeometry : public VerticesGeometry {
  public:
-  explicit VerticesGeometry(const flutter::DlVertices* vertices);
+  explicit DLVerticesGeometry(const flutter::DlVertices* vertices);
 
-  ~VerticesGeometry();
+  ~DLVerticesGeometry();
 
   static std::unique_ptr<VerticesGeometry> MakeVertices(
       const flutter::DlVertices* vertices);
 
+  // |VerticesGeometry|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
                                         RenderPass& pass,
                                         Color paint_color,
-                                        BlendMode blend_mode);
+                                        BlendMode blend_mode) override;
 
+  // |VerticesGeometry|
   GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
                                      const Entity& entity,
-                                     RenderPass& pass);
+                                     RenderPass& pass) override;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -53,7 +55,7 @@ class VerticesGeometry : public Geometry {
   const flutter::DlVertices* vertices_;
   std::vector<uint16_t> normalized_indices_;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(VerticesGeometry);
+  FML_DISALLOW_COPY_AND_ASSIGN(DLVerticesGeometry);
 };
 
 }  // namespace impeller
