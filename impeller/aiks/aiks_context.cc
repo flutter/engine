@@ -5,7 +5,6 @@
 #include "impeller/aiks/aiks_context.h"
 
 #include "impeller/aiks/picture.h"
-#include "impeller/renderer/context.h"
 
 namespace impeller {
 
