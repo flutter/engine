@@ -39,7 +39,7 @@ std::shared_ptr<Texture> InlinePassContext::GetTexture() {
   return render_target_.GetRenderTargetTexture();
 }
 
-bool InlinePassContext::EndPass(bool wait_until_completed) {
+bool InlinePassContext::EndPass(CommandBuffer::SyncMode sync_mode) {
   if (!IsActive()) {
     return true;
   }
@@ -47,9 +47,7 @@ bool InlinePassContext::EndPass(bool wait_until_completed) {
   if (!pass_->EncodeCommands()) {
     return false;
   }
-  auto sync_mode = wait_until_completed
-                       ? CommandBuffer::SyncMode::kWaitUntilCompleted
-                       : CommandBuffer::SyncMode::kDontCare;
+
   if (!command_buffer_->SubmitCommands(sync_mode)) {
     return false;
   }

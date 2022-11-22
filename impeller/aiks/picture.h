@@ -21,16 +21,17 @@ struct Picture {
 
   std::optional<Snapshot> Snapshot(AiksContext& context);
 
-  std::shared_ptr<Image> ToImage(AiksContext& context,
-                                 ISize size,
-                                 bool wait_until_completed = false);
+  std::shared_ptr<Image> ToImage(
+      AiksContext& context,
+      ISize size,
+      CommandBuffer::SyncMode sync_mode = CommandBuffer::SyncMode::kDontCare);
 
  private:
   std::shared_ptr<Texture> RenderToTexture(
       AiksContext& context,
       ISize size,
       std::optional<const Matrix> translate = std::nullopt,
-      bool wait_until_completed = false);
+      CommandBuffer::SyncMode sync_mode = CommandBuffer::SyncMode::kDontCare);
 };
 
 }  // namespace impeller

@@ -8,6 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
 
@@ -28,9 +29,10 @@ class AiksContext {
 
   const ContentContext& GetContentContext() const;
 
-  bool Render(const Picture& picture,
-              RenderTarget& render_target,
-              bool wait_until_completed = false);
+  bool Render(
+      const Picture& picture,
+      RenderTarget& render_target,
+      CommandBuffer::SyncMode sync_mode = CommandBuffer::SyncMode::kDontCare);
 
  private:
   std::shared_ptr<Context> context_;

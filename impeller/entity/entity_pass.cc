@@ -185,7 +185,7 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target,
-                        bool wait_until_completed) const {
+                        CommandBuffer::SyncMode sync_mode) const {
   if (reads_from_pass_texture_ > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
@@ -215,10 +215,6 @@ bool EntityPass::Render(ContentContext& renderer,
     if (!render_pass->EncodeCommands()) {
       return false;
     }
-
-    auto sync_mode = wait_until_completed
-                         ? CommandBuffer::SyncMode::kWaitUntilCompleted
-                         : CommandBuffer::SyncMode::kDontCare;
     if (!command_buffer->SubmitCommands(sync_mode)) {
       return false;
     }
@@ -227,7 +223,7 @@ bool EntityPass::Render(ContentContext& renderer,
   }
 
   return OnRender(renderer, render_target.GetRenderTargetSize(), render_target,
-                  Point(), Point(), 0, 0, nullptr, wait_until_completed);
+                  Point(), Point(), 0, 0, nullptr, sync_mode);
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
@@ -391,7 +387,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
                           uint32_t pass_depth,
                           size_t stencil_depth_floor,
                           std::shared_ptr<Contents> backdrop_filter_contents,
-                          bool wait_until_completed) const {
+                          CommandBuffer::SyncMode sync_mode) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
@@ -553,10 +549,10 @@ bool EntityPass::OnRender(ContentContext& renderer,
     }
   }
 
-  if (wait_until_completed) {
+  if (sync_mode != CommandBuffer::SyncMode::kDontCare) {
     FML_DCHECK(reads_from_pass_texture_ == 0);
     FML_DCHECK(pass_context.IsActive());
-    pass_context.EndPass(wait_until_completed);
+    pass_context.EndPass(sync_mode);
   }
 
   return true;

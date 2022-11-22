@@ -15,6 +15,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
+#include "impeller/renderer/context.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
@@ -49,9 +50,10 @@ class EntityPass {
 
   EntityPass* GetSuperpass() const;
 
-  bool Render(ContentContext& renderer,
-              const RenderTarget& render_target,
-              bool wait_until_completed = false) const;
+  bool Render(
+      ContentContext& renderer,
+      const RenderTarget& render_target,
+      CommandBuffer::SyncMode = CommandBuffer::SyncMode::kDontCare) const;
 
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
@@ -102,15 +104,16 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(ContentContext& renderer,
-                ISize root_pass_size,
-                const RenderTarget& render_target,
-                Point position,
-                Point parent_position,
-                uint32_t pass_depth,
-                size_t stencil_depth_floor = 0,
-                std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
-                bool wait_until_completed = false) const;
+  bool OnRender(
+      ContentContext& renderer,
+      ISize root_pass_size,
+      const RenderTarget& render_target,
+      Point position,
+      Point parent_position,
+      uint32_t pass_depth,
+      size_t stencil_depth_floor = 0,
+      std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
+      CommandBuffer::SyncMode = CommandBuffer::SyncMode::kDontCare) const;
 
   std::vector<Element> elements_;
 

@@ -5,6 +5,7 @@
 #include "impeller/aiks/aiks_context.h"
 
 #include "impeller/aiks/picture.h"
+#include "impeller/renderer/context.h"
 
 namespace impeller {
 
@@ -38,14 +39,13 @@ const ContentContext& AiksContext::GetContentContext() const {
 
 bool AiksContext::Render(const Picture& picture,
                          RenderTarget& render_target,
-                         bool wait_until_completed) {
+                         CommandBuffer::SyncMode sync_mode) {
   if (!IsValid()) {
     return false;
   }
 
   if (picture.pass) {
-    return picture.pass->Render(*content_context_, render_target,
-                                wait_until_completed);
+    return picture.pass->Render(*content_context_, render_target, sync_mode);
   }
 
   return true;

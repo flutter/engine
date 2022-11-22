@@ -8,10 +8,11 @@
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/trace_event.h"
-#include "flutter/impeller/display_list/display_list_dispatcher.h"
-#include "flutter/impeller/display_list/display_list_image_impeller.h"
-#include "flutter/impeller/geometry/size.h"
 #include "flutter/shell/common/snapshot_controller.h"
+#include "impeller/display_list/display_list_dispatcher.h"
+#include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/geometry/size.h"
+#include "impeller/renderer/command_buffer.h"
 
 namespace flutter {
 
@@ -61,8 +62,9 @@ sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
       render_target_size.height *= scale_factor;
     }
 
-    std::shared_ptr<impeller::Image> image = picture.ToImage(
-        *context, render_target_size, /**wait_until_completed=*/true);
+    std::shared_ptr<impeller::Image> image =
+        picture.ToImage(*context, render_target_size,
+                        impeller::CommandBuffer::SyncMode::kWaitUntilCompleted);
     if (image) {
       return impeller::DlImageImpeller::Make(image->GetTexture());
     }

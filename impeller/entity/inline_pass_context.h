@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
@@ -25,7 +26,8 @@ class InlinePassContext {
   bool IsValid() const;
   bool IsActive() const;
   std::shared_ptr<Texture> GetTexture();
-  bool EndPass(bool wait_until_completed = false);
+  bool EndPass(
+      CommandBuffer::SyncMode sync_mode = CommandBuffer::SyncMode::kDontCare);
   const RenderTarget& GetRenderTarget() const;
   uint32_t GetPassCount() const;
 
