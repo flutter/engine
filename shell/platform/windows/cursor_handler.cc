@@ -34,8 +34,6 @@ static constexpr char kCustomCursorHeightKey[] = "height";
 // This method allows setting a custom cursor with a unique int64_t key of the
 // custom cursor.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
-// A string value for the key of the custom cursor.
-static constexpr char kCustomCursorKey[] = "key";
 
 // This method allows deleting a custom cursor with a string key.
 static constexpr char kDeleteCustomCursorMethod[] =
@@ -140,7 +138,7 @@ void CursorHandler::HandleMethodCall(
   } else if (method.compare(kSetCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto key_iter =
-        arguments.find(EncodableValue(std::string(kCustomCursorKey)));
+        arguments.find(EncodableValue(std::string(kCustomCursorNameKey)));
     if (key_iter == arguments.end()) {
       result->Error("Argument error",
                     "Missing argument key while trying to set a custom cursor");
@@ -159,7 +157,7 @@ void CursorHandler::HandleMethodCall(
   } else if (method.compare(kDeleteCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto key_iter =
-        arguments.find(EncodableValue(std::string(kCustomCursorKey)));
+        arguments.find(EncodableValue(std::string(kCustomCursorNameKey)));
     if (key_iter == arguments.end()) {
       result->Error(
           "Argument error",
