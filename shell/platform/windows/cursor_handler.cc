@@ -14,9 +14,11 @@ static constexpr char kActivateSystemCursorMethod[] = "activateSystemCursor";
 static constexpr char kKindKey[] = "kind";
 
 // This method allows creating a custom cursor with rawBGRA buffer, returns a
-// unique int64_t key to identify the cursor.
+// string to identify the cursor.
 static constexpr char kCreateCustomCursorMethod[] =
     "createCustomCursor/windows";
+// A string, the custom cursor's name.
+static constexpr char kCustomCursorNameKey[] = "name";
 // A list of bytes, the custom cursor's rawBGRA buffer.
 static constexpr char kCustomCursorBufferKey[] = "buffer";
 // A double, the x coordinate of the custom cursor's hotspot, starting from
@@ -32,10 +34,10 @@ static constexpr char kCustomCursorHeightKey[] = "height";
 // This method allows setting a custom cursor with a unique int64_t key of the
 // custom cursor.
 static constexpr char kSetCustomCursorMethod[] = "setCustomCursor/windows";
-// An int64_t value for the key of the custom cursor.
+// A string value for the key of the custom cursor.
 static constexpr char kCustomCursorKey[] = "key";
 
-// This method allows deleting a custom cursor with a unique int64_t key.
+// This method allows deleting a custom cursor with a string key.
 static constexpr char kDeleteCustomCursorMethod[] =
     "deleteCustomCursor/windows";
 
@@ -72,6 +74,15 @@ void CursorHandler::HandleMethodCall(
     result->Success();
   } else if (method.compare(kCreateCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
+    auto name_iter =
+        arguments.find(EncodableValue(std::string(kCustomCursorNameKey)));
+    if (name_iter == arguments.end()) {
+      result->Error(
+          "Argument error",
+          "Missing argument name while trying to customize system cursor");
+      return;
+    }
+    auto name = std::get<std::string>(name_iter->second);
     auto buffer_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorBufferKey)));
     if (buffer_iter == arguments.end()) {
@@ -124,9 +135,8 @@ void CursorHandler::HandleMethodCall(
       return;
     }
     // push the cursor into the cache vector of this handler.
-    custom_cursors_.emplace_back(std::move(cursor));
-    int64_t key = custom_cursors_.size() - 1;
-    result->Success(flutter::EncodableValue(key));
+    custom_cursors_.emplace(name, std::move(cursor));
+    result->Success(flutter::EncodableValue(std::move(name)));
   } else if (method.compare(kSetCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
     auto key_iter =
@@ -136,9 +146,11 @@ void CursorHandler::HandleMethodCall(
                     "Missing argument key while trying to set a custom cursor");
       return;
     }
-    auto key = std::get<int64_t>(key_iter->second);
-    if (key < 0 || key >= custom_cursors_.size()) {
-      result->Error("Argument error", "The argument key must be valid");
+    auto key = std::get<std::string>(key_iter->second);
+    if (custom_cursors_.find(key) == custom_cursors_.end()) {
+      result->Error(
+          "Argument error",
+          "The custom cursor identified by the argument key cannot be found");
       return;
     }
     HCURSOR cursor = custom_cursors_[key];
@@ -154,12 +166,14 @@ void CursorHandler::HandleMethodCall(
           "Missing argument key while trying to delete a custom cursor");
       return;
     }
-    auto key = std::get<int64_t>(key_iter->second);
-    if (key < 0 || key >= custom_cursors_.size()) {
-      result->Error("Argument error", "The argument key must be valid");
-      return;
+    auto key = std::get<std::string>(key_iter->second);
+    auto it = custom_cursors_.find(key);
+    // if the cursor identified by key cannot be found, it's ok for deleting
+    // operations
+    if (it != custom_cursors_.end()) {
+      DeleteObject(it->second);
+      custom_cursors_.erase(it);
     }
-    custom_cursors_.erase(custom_cursors_.begin() + key);
     result->Success();
   } else {
     result->NotImplemented();
