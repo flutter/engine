@@ -33,7 +33,7 @@ class CursorHandler {
   // The delegate for cursor updates.
   WindowBindingHandler* delegate_;
 
-  // The cache map for custom cursors. 
+  // The cache map for custom cursors.
   std::unordered_map<std::string, HCURSOR> custom_cursors_;
 };
 
