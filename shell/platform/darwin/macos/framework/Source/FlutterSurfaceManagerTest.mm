@@ -9,13 +9,13 @@
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
 
-@interface TestMetalView : NSView
+@interface TestView : NSView
 
 - (nonnull instancetype)init;
 
 @end
 
-@implementation TestMetalView
+@implementation TestView
 
 - (instancetype)init {
   self = [super initWithFrame:NSZeroRect];
@@ -32,7 +32,7 @@ namespace flutter::testing {
 static FlutterSurfaceManager* CreateSurfaceManager() {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
   id<MTLCommandQueue> commandQueue = [device newCommandQueue];
-  TestMetalView* metalView = [[TestMetalView alloc] init];
+  TestView* metalView = [[TestView alloc] init];
   CALayer* layer = reinterpret_cast<CALayer*>(metalView.layer);
   return [[FlutterSurfaceManager alloc] initWithDevice:device
                                           commandQueue:commandQueue
@@ -43,8 +43,7 @@ TEST(FlutterSurfaceManager, EnsureSizeUpdatesSize) {
   FlutterSurfaceManager* surfaceManager = CreateSurfaceManager();
   CGSize size = CGSizeMake(100, 50);
   [surfaceManager ensureSurfaceSize:size];
-  id<MTLTexture> texture =
-      (reinterpret_cast<FlutterMetalRenderBackingStore*>([surfaceManager renderBuffer])).texture;
+  id<MTLTexture> texture = [surfaceManager renderBuffer].texture;
   CGSize textureSize = CGSizeMake(texture.width, texture.height);
   ASSERT_TRUE(CGSizeEqualToSize(size, textureSize));
 }
@@ -55,8 +54,7 @@ TEST(FlutterSurfaceManager, EnsureSizeUpdatesSizeForBackBuffer) {
   [surfaceManager ensureSurfaceSize:size];
   [surfaceManager renderBuffer];  // make sure we have back buffer
   [surfaceManager swapBuffers];
-  id<MTLTexture> texture =
-      (reinterpret_cast<FlutterMetalRenderBackingStore*>([surfaceManager renderBuffer])).texture;
+  id<MTLTexture> texture = [surfaceManager renderBuffer].texture;
   CGSize textureSize = CGSizeMake(texture.width, texture.height);
   ASSERT_TRUE(CGSizeEqualToSize(size, textureSize));
 }
