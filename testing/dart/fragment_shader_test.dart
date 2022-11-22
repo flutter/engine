@@ -484,11 +484,3 @@ Image _createBlueGreenImageSync() {
     picture.dispose();
   }
 }
-
-
-final Float64List _identityMatrix = Float64List.fromList(<double>[
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-]);
