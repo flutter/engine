@@ -45,7 +45,9 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
   if (source_options.target_platform == TargetPlatform::kOpenGLES) {
-    sl_options.version = 100;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 100;
     sl_options.es = true;
     if (IsExternalImageOESFromSourceName(source_options.file_name)) {
       gl_compiler->require_extension("GL_OES_EGL_image_external");
@@ -58,7 +60,9 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
           });
     }
   } else {
-    sl_options.version = 120;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 120;
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
