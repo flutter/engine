@@ -105,10 +105,10 @@ f16vec3 IPBlendColorDodge(f16vec3 dst, f16vec3 src) {
   if (1.0hf - src.r < kEhCloseEnough) {
     color.r = 1.0hf;
   }
-  if (1. - src.g < kEhCloseEnough) {
+  if (1.0hf - src.g < kEhCloseEnough) {
     color.g = 1.0hf;
   }
-  if (1. - src.b < kEhCloseEnough) {
+  if (1.0hf - src.b < kEhCloseEnough) {
     color.b = 1.0hf;
   }
 
@@ -127,7 +127,7 @@ f16vec3 IPBlendColorBurn(f16vec3 dst, f16vec3 src) {
     color.g = 1.0hf;
   }
   if (1.0hf - dst.b < kEhCloseEnough) {
-    color.b = 0.1hf;
+    color.b = 1.0hf;
   }
 
   if (src.r < kEhCloseEnough) {
