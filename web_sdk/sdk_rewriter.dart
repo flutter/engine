@@ -34,7 +34,7 @@ export 'dart:_engine'
   ),
 ];
 
-List<Replacer> generateApiFilePatterns(String libraryName, String extraImports) {
+List<Replacer> generateApiFilePatterns(String libraryName, List<String> extraImports) {
   return <Replacer>[
     AllReplacer(RegExp('library\\s+$libraryName;'), '''
 @JS()
@@ -49,9 +49,7 @@ import 'dart:_js_annotations';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-$extraImports
-part 'unicode/codegen/line_break_properties.dart';
-part 'unicode/codegen/word_break_properties.dart';
+${extraImports.join('\n')}
 '''
     ),
     // Replace exports of engine files with "part" directives.
@@ -86,6 +84,18 @@ final List<Replacer> stripMetaPatterns = <Replacer>[
   AllReplacer('@visibleForTesting', ''),
 ];
 
+const Set<String> rootLibraryNames = <String>{
+  'engine',
+  'skwasm_stub',
+  'skwasm_impl',
+};
+
+final Map<Pattern, String> extraImportsMap = <Pattern, String>{
+  RegExp('skwasm_(stub|impl)'): "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
+  'engine': "import 'dart:_engine';",
+  'web_unicode': "import 'dart:_web_unicode';",
+};
+
 // Rewrites the "package"-style web ui library into a dart:ui implementation.
 // So far this only requires a replace of the library declarations.
 void main(List<String> arguments) {
@@ -97,13 +107,9 @@ void main(List<String> arguments) {
   List<Replacer> replacementPatterns;
   String? libraryName;
 
-  final Map<String, String> thirdPartyMapping;
   if (results['ui'] as bool) {
-    thirdPartyMapping = <String, String>{};
     replacementPatterns = uiPatterns;
   } else {
-    thirdPartyMapping = getThirdPartyMapping(directory.path);
-
     libraryName = results['library-name'] as String;
     if (libraryName == null) {
       throw Exception('library-name must be specified if not rewriting ui');
@@ -111,18 +117,12 @@ void main(List<String> arguments) {
     preprocessor = (String source) => preprocessPartFile(source, libraryName!);
     replacementPatterns = generatePartsPatterns(libraryName);
   }
-
   for (final String inputFilePath in results['source-file'] as Iterable<String>) {
     String pathSuffix = inputFilePath.substring(inputDirectoryPath.length);
     if (libraryName != null) {
       pathSuffix = path.join(libraryName, pathSuffix);
     }
     final String outputFilePath = path.join(directory.path, pathSuffix);
-    processFile(inputFilePath, outputFilePath, preprocessor, replacementPatterns);
-  }
-  for (final MapEntry<String, String> entry in thirdPartyMapping.entries) {
-    final String inputFilePath = entry.key;
-    final String outputFilePath = entry.value;
     processFile(inputFilePath, outputFilePath, preprocessor, replacementPatterns);
   }
 
@@ -134,12 +134,8 @@ void main(List<String> arguments) {
     final String inputFilePath = results['api-file'] as String;
     final String outputFilePath = path.join(
         directory.path, path.basename(inputFilePath));
-    String extraImports = '';
-    if (libraryName == 'engine') {
-      extraImports = "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';\n";
-    } else if (libraryName == 'skwasm_stub' || libraryName == 'skwasm_impl') {
-      extraImports = "import 'dart:_engine';\n";
-    }
+
+    final List<String> extraImports = getExtraImportsForLibrary(libraryName);
     replacementPatterns = generateApiFilePatterns(libraryName, extraImports);
 
     processFile(
@@ -156,25 +152,20 @@ void main(List<String> arguments) {
   }
 }
 
-Map<String, String> getThirdPartyMapping(String outputDirectoryPath) {
-  // Copy over third_party/unicode/lib/codegen
+List<String> getExtraImportsForLibrary(String libraryName) {
+  // Only our root libraries should have extra imports.
+  if (!rootLibraryNames.contains(libraryName)) {
+    return <String>[];
+  }
 
-  final String inputThirdPartyPath = getThirdPartyPath();
-
-  final Directory inputUnicodeCodegenDir = Directory(path.join(inputThirdPartyPath, 'unicode', 'lib', 'codegen'));
-  final Directory outputUnicodeCodegenDir = Directory(path.join(outputDirectoryPath, 'unicode', 'codegen'));
-
-  final Iterable<File> inputUnicodeCodegenFiles = inputUnicodeCodegenDir.listSync(recursive: true).whereType<File>();
-  return <String, String>{
-    for (final File inputCodegenFile in inputUnicodeCodegenFiles)
-      inputCodegenFile.path : path.join(outputUnicodeCodegenDir.path, path.basename(inputCodegenFile.path)),
-  };
-}
-
-String getThirdPartyPath() {
-  final String scriptPath = Platform.script.toFilePath();
-  final String engineSrcPath = path.dirname(path.dirname(scriptPath));
-  return path.join(engineSrcPath, 'third_party');
+  final List<String> extraImports = <String>[];
+  for (final MapEntry<Pattern, String> entry in extraImportsMap.entries) {
+    // A library shouldn't import itself.
+    if (entry.key.matchAsPrefix(libraryName) == null) {
+      extraImports.add(entry.value);
+    }
+  }
+  return extraImports;
 }
 
 void processFile(String inputFilePath, String outputFilePath, String Function(String source)? preprocessor, List<Replacer> replacementPatterns) {
