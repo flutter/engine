@@ -99,7 +99,7 @@ void CursorHandler::HandleMethodCall(
           "Missing argument width while trying to customize system cursor");
       return;
     }
-    auto width = std::get<int>(arguments.at(width_iter->second));
+    auto width = std::get<int>(width_iter->second);
     auto height_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorHeightKey)));
     if (height_iter == arguments.end()) {
