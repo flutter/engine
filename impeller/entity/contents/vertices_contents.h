@@ -15,8 +15,8 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
-#include "impeller/geometry/vertices.h"
 #include "impeller/renderer/sampler_descriptor.h"
+#include "impeller/display_list/vertices_geometry.h"
 
 namespace impeller {
 
