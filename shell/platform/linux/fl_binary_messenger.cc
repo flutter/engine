@@ -229,8 +229,7 @@ static void set_message_handler_on_channel(
 static gboolean has_message_handler_on_channel(FlBinaryMessenger* messenger,
                                                const gchar* channel) {
   FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(messenger);
-  return g_hash_table_contains(self->platform_message_handlers,
-                               g_strdup(channel));
+  return g_hash_table_contains(self->platform_message_handlers, channel);
 }
 
 gboolean do_unref(gpointer value) {
