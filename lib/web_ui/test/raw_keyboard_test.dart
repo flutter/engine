@@ -340,7 +340,7 @@ void testMain() {
       };
 
       useTextEditingElement((DomElement element) {
-        final DomKeyboardEvent event = dispatchKeyboardEvent('keydown',
+        dispatchKeyboardEvent('keydown',
             key: 'Tab', code: 'Tab', target: element, isComposing: true);
 
         expect(count, 0); // no message sent to framework
