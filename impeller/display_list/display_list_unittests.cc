@@ -1108,7 +1108,7 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
   std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
 
   auto vertices = flutter::DlVertices::Make(
-      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      flutter::DlVertexMode::kTriangles, 6, positions.data(),
       /*texture_coorindates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
 
   flutter::DisplayListBuilder builder;
