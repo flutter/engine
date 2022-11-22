@@ -75,13 +75,13 @@ def parse_readme(deps):
   The commit hash in this README will always be in the same format
   """
   file_path = os.path.join(CHECKOUT_ROOT, CHROMIUM_README_FILE)
-  file = open(file_path)
-  # read the content of the file opened
-  content = file.readlines()
-  commit_line = content[CHROMIUM_README_COMMIT_LINE]
-  commit = re.search(r'(?<=\[).*(?=\])', commit_line)
-  deps.append(CHROMIUM + '@' + commit.group())
-  return deps
+  with open(file_path) as file:
+    # read the content of the file opened
+    content = file.readlines()
+    commit_line = content[CHROMIUM_README_COMMIT_LINE]
+    commit = re.search(r'(?<=\[).*(?=\])', commit_line)
+    deps.append(CHROMIUM + '@' + commit.group())
+    return deps
 
 
 def write_manifest(deps, manifest_file):
