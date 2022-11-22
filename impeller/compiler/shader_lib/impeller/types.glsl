@@ -15,6 +15,8 @@
 
 #else
 
+#extension GL_AMD_gpu_shader_half_float : enable
+
 precision mediump sampler2D;
 precision mediump float;
 
