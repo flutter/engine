@@ -45,16 +45,16 @@ static constexpr int kArbitraryErrorCode = 1;
 
 // Test implementation of PlatformHandler to allow testing the PlatformHandler
 // logic.
-class TestPlatformHandler : public PlatformHandler {
+class MockPlatformHandler : public PlatformHandler {
  public:
-  explicit TestPlatformHandler(
+  explicit MockPlatformHandler(
       BinaryMessenger* messenger,
       FlutterWindowsView* view,
       std::optional<std::function<std::unique_ptr<ScopedClipboardInterface>()>>
           scoped_clipboard_provider = std::nullopt)
       : PlatformHandler(messenger, view, scoped_clipboard_provider) {}
 
-  virtual ~TestPlatformHandler() = default;
+  virtual ~MockPlatformHandler() = default;
 
   MOCK_METHOD2(GetPlainText,
                void(std::unique_ptr<MethodResult<rapidjson::Document>>,
@@ -366,7 +366,7 @@ TEST(PlatformHandler, PlaySystemSound) {
   TestBinaryMessenger messenger;
   FlutterWindowsView view(
       std::make_unique<NiceMock<MockWindowBindingHandler>>());
-  TestPlatformHandler platform_handler(&messenger, &view);
+  MockPlatformHandler platform_handler(&messenger, &view);
 
   EXPECT_CALL(platform_handler, SystemSoundPlay("SystemSoundType.alert", _))
       .WillOnce([](const std::string& sound,
