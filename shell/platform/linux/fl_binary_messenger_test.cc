@@ -460,3 +460,21 @@ TEST(FlBinaryMessengerTest, RespondOnBackgroundThread) {
   // Blocks here until response_cb is called.
   g_main_loop_run(loop);
 }
+
+TEST(FlBinaryMessengerTest, DeletingEngineClearsHandlers) {
+  FlEngine* engine = make_mock_engine();
+  g_autoptr(FlBinaryMessenger) messenger = fl_binary_messenger_new(engine);
+
+  // Listen for messages from the engine.
+  fl_binary_messenger_set_message_handler_on_channel(
+      messenger, "test/messages", message_cb, nullptr, nullptr);
+
+  ASSERT_TRUE(fl_binary_messenger_has_message_handler_on_channel(
+      messenger, "test/messages"));
+
+  g_object_unref(engine);
+  engine = nullptr;
+
+  ASSERT_FALSE(fl_binary_messenger_has_message_handler_on_channel(
+      messenger, "test/messages"));
+}

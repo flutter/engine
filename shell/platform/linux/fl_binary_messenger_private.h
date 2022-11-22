@@ -22,6 +22,10 @@ G_BEGIN_DECLS
  */
 FlBinaryMessenger* fl_binary_messenger_new(FlEngine* engine);
 
+gboolean fl_binary_messenger_has_message_handler_on_channel(
+    FlBinaryMessenger* messenger,
+    const gchar* channel);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_BINARY_MESSENGER_PRIVATE_H_
