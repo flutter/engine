@@ -79,11 +79,11 @@ class MockScopedClipboard : public ScopedClipboardInterface {
 };
 
 std::string SimulatePlatformMessage(TestBinaryMessenger* messenger,
-                                    const uint8_t* message,
-                                    size_t message_size) {
+                                    std::string message) {
   std::string result;
   EXPECT_TRUE(messenger->SimulateEngineMessage(
-      kChannelName, message, message_size,
+      kChannelName, reinterpret_cast<const uint8_t*>(message.c_str()),
+      message.size(),
       [result = &result](const uint8_t* reply, size_t reply_size) {
         std::string response(reinterpret_cast<const char*>(reply), reply_size);
 
@@ -114,9 +114,8 @@ TEST(PlatformHandler, GetClipboardData) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardGetDataMessage),
-      sizeof(kClipboardGetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardGetDataMessage);
 
   EXPECT_EQ(result, "[{\"text\":\"Hello world\"}]");
 }
@@ -129,9 +128,7 @@ TEST(PlatformHandler, GetClipboardDataRejectsUnknownContentType) {
 
   // Requesting an unknown content type is an error.
   std::string result = SimulatePlatformMessage(
-      &messenger,
-      reinterpret_cast<const uint8_t*>(kClipboardGetDataFakeContentTypeMessage),
-      sizeof(kClipboardGetDataFakeContentTypeMessage));
+      &messenger, kClipboardGetDataFakeContentTypeMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unknown clipboard format\",null]");
 }
@@ -151,9 +148,8 @@ TEST(PlatformHandler, GetClipboardDataReportsOpenFailure) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardGetDataMessage),
-      sizeof(kClipboardGetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardGetDataMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to open clipboard\",1]");
 }
@@ -177,9 +173,8 @@ TEST(PlatformHandler, GetClipboardDataReportsGetDataFailure) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardGetDataMessage),
-      sizeof(kClipboardGetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardGetDataMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to get clipboard data\",1]");
 }
@@ -200,9 +195,8 @@ TEST(PlatformHandler, ClipboardHasStrings) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
-      sizeof(kClipboardHasStringsMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardHasStringsMessage);
 
   EXPECT_EQ(result, "[{\"value\":true}]");
 }
@@ -223,9 +217,8 @@ TEST(PlatformHandler, ClipboardHasStringsReturnsFalse) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
-      sizeof(kClipboardHasStringsMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardHasStringsMessage);
 
   EXPECT_EQ(result, "[{\"value\":false}]");
 }
@@ -237,10 +230,7 @@ TEST(PlatformHandler, ClipboardHasStringsRejectsUnknownContentType) {
   PlatformHandler platform_handler(&messenger, &view);
 
   std::string result = SimulatePlatformMessage(
-      &messenger,
-      reinterpret_cast<const uint8_t*>(
-          kClipboardHasStringsFakeContentTypeMessage),
-      sizeof(kClipboardHasStringsFakeContentTypeMessage));
+      &messenger, kClipboardHasStringsFakeContentTypeMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unknown clipboard format\",null]");
 }
@@ -261,9 +251,8 @@ TEST(PlatformHandler, ClipboardHasStringsIgnoresPermissionErrors) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
-      sizeof(kClipboardHasStringsMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardHasStringsMessage);
 
   EXPECT_EQ(result, "[{\"value\":false}]");
 }
@@ -283,9 +272,8 @@ TEST(PlatformHandler, ClipboardHasStringsReportsErrors) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardHasStringsMessage),
-      sizeof(kClipboardHasStringsMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardHasStringsMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to open clipboard\",1]");
 }
@@ -311,9 +299,8 @@ TEST(PlatformHandler, ClipboardSetData) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardSetDataMessage),
-      sizeof(kClipboardSetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardSetDataMessage);
 
   EXPECT_EQ(result, "[null]");
 }
@@ -324,10 +311,8 @@ TEST(PlatformHandler, ClipboardSetDataUnknownType) {
       std::make_unique<NiceMock<MockWindowBindingHandler>>());
   PlatformHandler platform_handler(&messenger, &view);
 
-  std::string result = SimulatePlatformMessage(
-      &messenger,
-      reinterpret_cast<const uint8_t*>(kClipboardSetDataUnknownTypeMessage),
-      sizeof(kClipboardSetDataUnknownTypeMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardSetDataUnknownTypeMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unknown clipboard format\",null]");
 }
@@ -347,9 +332,8 @@ TEST(PlatformHandler, ClipboardSetDataReportsOpenFailure) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardSetDataMessage),
-      sizeof(kClipboardSetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardSetDataMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to open clipboard\",1]");
 }
@@ -372,9 +356,8 @@ TEST(PlatformHandler, ClipboardSetDataReportsSetDataFailure) {
     return clipboard;
   });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger, reinterpret_cast<const uint8_t*>(kClipboardSetDataMessage),
-      sizeof(kClipboardSetDataMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kClipboardSetDataMessage);
 
   EXPECT_EQ(result, "[\"Clipboard error\",\"Unable to set clipboard data\",1]");
 }
@@ -391,10 +374,8 @@ TEST(PlatformHandler, PlaySystemSound) {
         result->Success();
       });
 
-  std::string result = SimulatePlatformMessage(
-      &messenger,
-      reinterpret_cast<const uint8_t*>(kSystemSoundTypeAlertMessage),
-      sizeof(kSystemSoundTypeAlertMessage));
+  std::string result =
+      SimulatePlatformMessage(&messenger, kSystemSoundTypeAlertMessage);
 
   EXPECT_EQ(result, "[null]");
 }
