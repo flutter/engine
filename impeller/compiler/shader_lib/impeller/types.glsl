@@ -5,12 +5,9 @@
 #ifndef TYPES_GLSL_
 #define TYPES_GLSL_
 
-#ifdef IMPELLER_TARGET_METAL
 #extension GL_AMD_gpu_shader_half_float : enable
 
-#else
-
-#extension GL_AMD_gpu_shader_half_float : enable
+#ifndef IMPELLER_TARGET_METAL
 
 precision mediump sampler2D;
 precision mediump float;
