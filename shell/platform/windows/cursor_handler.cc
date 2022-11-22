@@ -137,35 +137,35 @@ void CursorHandler::HandleMethodCall(
     result->Success(flutter::EncodableValue(std::move(name)));
   } else if (method.compare(kSetCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
-    auto key_iter =
+    auto name_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorNameKey)));
-    if (key_iter == arguments.end()) {
+    if (name_iter == arguments.end()) {
       result->Error("Argument error",
                     "Missing argument key while trying to set a custom cursor");
       return;
     }
-    auto key = std::get<std::string>(key_iter->second);
-    if (custom_cursors_.find(key) == custom_cursors_.end()) {
+    auto name = std::get<std::string>(name_iter->second);
+    if (custom_cursors_.find(name) == custom_cursors_.end()) {
       result->Error(
           "Argument error",
           "The custom cursor identified by the argument key cannot be found");
       return;
     }
-    HCURSOR cursor = custom_cursors_[key];
+    HCURSOR cursor = custom_cursors_[name];
     delegate_->SetFlutterCursor(cursor);
     result->Success();
   } else if (method.compare(kDeleteCustomCursorMethod) == 0) {
     const auto& arguments = std::get<EncodableMap>(*method_call.arguments());
-    auto key_iter =
+    auto name_iter =
         arguments.find(EncodableValue(std::string(kCustomCursorNameKey)));
-    if (key_iter == arguments.end()) {
+    if (name_iter == arguments.end()) {
       result->Error(
           "Argument error",
           "Missing argument key while trying to delete a custom cursor");
       return;
     }
-    auto key = std::get<std::string>(key_iter->second);
-    auto it = custom_cursors_.find(key);
+    auto name = std::get<std::string>(name_iter->second);
+    auto it = custom_cursors_.find(name);
     // if the cursor identified by key cannot be found, it's ok for deleting
     // operations
     if (it != custom_cursors_.end()) {
