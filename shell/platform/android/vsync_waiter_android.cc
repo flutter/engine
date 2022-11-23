@@ -62,7 +62,7 @@ void VsyncWaiterAndroid::OnVsyncFromNDK(int64_t frame_nanos, void* data) {
                                       1000000000.0 / g_refresh_rate_);
 
   const std::string frame_start_time_str =
-      std::to_string(start_time.ToEpochDelta().ToMicroseconds());
+      std::to_string(frame_time.ToEpochDelta().ToMicroseconds());
   const std::string frame_target_time_str =
       std::to_string(target_time.ToEpochDelta().ToMicroseconds());
   TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
