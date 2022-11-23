@@ -49,4 +49,24 @@ vec3 IPVec3Choose(vec3 a, vec3 b, vec3 value) {
   return IPVec3ChooseCutoff(a, b, value, 0.5);
 }
 
+/// Perform a branchless greater than check for each f16vec3 component.
+///
+/// Returns 1.0 if x > y, otherwise 0.0.
+f16vec3 IPf16Vec3IsGreaterThan(f16vec3 x, f16vec3 y) {
+  return max(sign(x - y), 0.0hf);
+}
+
+/// For each f16vec3 component, if value > cutoff, return b, otherwise return a.
+f16vec3 IPf16Vec3ChooseCutoff(f16vec3 a,
+                              f16vec3 b,
+                              f16vec3 value,
+                              float16_t cutoff) {
+  return mix(a, b, IPf16Vec3IsGreaterThan(value, f16vec3(cutoff)));
+}
+
+/// For each f16vec3 component, if value > 0.5, return b, otherwise return a.
+f16vec3 IPf16Vec3Choose(f16vec3 a, f16vec3 b, f16vec3 value) {
+  return IPf16Vec3ChooseCutoff(a, b, value, 0.5hf);
+}
+
 #endif
