@@ -175,67 +175,67 @@ def get_common_ancestor_commit(dep, deps_list):
   # dep[1] contains the mirror's pinned SHA
   # upstream is the origin repo
   dep_name = dep[0].split('/')[-1].split('.')[0]
-  if UPSTREAM_PREFIX + dep_name in deps_list:
-    try:
-      # get the upstream URL from the mapping in DEPS file
-      upstream = deps_list.get(UPSTREAM_PREFIX + dep_name)
-      temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
-      # clone dependency from mirror
-      subprocess.check_output([
-          'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
-      ])
-
-      # create branch that will track the upstream dep
-      print(
-          'attempting to add upstream remote from: {upstream}'.format(
-              upstream=upstream
-          )
-      )
-      subprocess.check_output([
-          'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add',
-          'upstream', upstream
-      ])
-      subprocess.check_output([
-          'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
-          'upstream'
-      ])
-      # get name of the default branch for upstream (e.g. main/master/etc.)
-      default_branch = subprocess.check_output(
-          'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
-          "| sed -n \'/HEAD branch/s/.*: //p\'",
-          shell=True
-      ).decode().strip()
-      print(
-          'default_branch found: {default_branch}'.format(
-              default_branch=default_branch
-          )
-      )
-      # make upstream branch track the upstream dep
-      subprocess.check_output([
-          'git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b',
-          'upstream', '--track', 'upstream/' + default_branch
-      ])
-      # get the most recent commit from default branch of upstream
-      commit = subprocess.check_output(
-          'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
-          "--format=\'%(objectname:short)\' refs/heads/upstream",
-          shell=True
-      )
-      commit = commit.decode().strip()
-
-      # perform merge-base on most recent default branch commit and pinned mirror commit
-      ancestor_commit = subprocess.check_output(
-          'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'
-          .format(temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]),
-          shell=True
-      )
-      ancestor_commit = ancestor_commit.decode().strip()
-      print('Ancestor commit: ' + ancestor_commit)
-      return ancestor_commit
-    except subprocess.CalledProcessError as error:
-      print("Subprocess error '{0}' occured.".format(error.output))
-  else:
+  if UPSTREAM_PREFIX + dep_name not in deps_list:
     print('did not find dep: ' + dep_name)
+    return {}
+  try:
+    # get the upstream URL from the mapping in DEPS file
+    upstream = deps_list.get(UPSTREAM_PREFIX + dep_name)
+    temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
+    # clone dependency from mirror
+    subprocess.check_output([
+        'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
+    ])
+
+    # create branch that will track the upstream dep
+    print(
+        'attempting to add upstream remote from: {upstream}'.format(
+            upstream=upstream
+        )
+    )
+    subprocess.check_output([
+        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add',
+        'upstream', upstream
+    ])
+    subprocess.check_output([
+        'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
+        'upstream'
+    ])
+    # get name of the default branch for upstream (e.g. main/master/etc.)
+    default_branch = subprocess.check_output(
+        'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
+        "| sed -n \'/HEAD branch/s/.*: //p\'",
+        shell=True
+    ).decode().strip()
+    print(
+        'default_branch found: {default_branch}'.format(
+            default_branch=default_branch
+        )
+    )
+    # make upstream branch track the upstream dep
+    subprocess.check_output([
+        'git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b',
+        'upstream', '--track', 'upstream/' + default_branch
+    ])
+    # get the most recent commit from default branch of upstream
+    commit = subprocess.check_output(
+        'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
+        "--format=\'%(objectname:short)\' refs/heads/upstream",
+        shell=True
+    )
+    commit = commit.decode().strip()
+
+    # perform merge-base on most recent default branch commit and pinned mirror commit
+    ancestor_commit = subprocess.check_output(
+        'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'
+        .format(temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]),
+        shell=True
+    )
+    ancestor_commit = ancestor_commit.decode().strip()
+    print('Ancestor commit: ' + ancestor_commit)
+    return ancestor_commit
+  except subprocess.CalledProcessError as error:
+    print("Subprocess error '{0}' occured.".format(error.output))
   return {}
 
 
