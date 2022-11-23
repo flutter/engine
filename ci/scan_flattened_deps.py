@@ -194,8 +194,8 @@ def get_common_ancestor_commit(dep, deps_list):
         )
     )
     subprocess.check_output([
-        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add',
-        'upstream', upstream
+        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add', 'upstream',
+        upstream
     ])
     subprocess.check_output([
         'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
@@ -227,8 +227,9 @@ def get_common_ancestor_commit(dep, deps_list):
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
-        'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'
-        .format(temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]),
+        'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
+            temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
+        ),
         shell=True
     )
     ancestor_commit = ancestor_commit.decode().strip()
