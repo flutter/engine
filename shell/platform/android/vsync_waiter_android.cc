@@ -85,7 +85,7 @@ void VsyncWaiterAndroid::OnVsyncFromJava(JNIEnv* env,
       frame_time + fml::TimeDelta::FromNanoseconds(refreshPeriodNanos);
 
   const std::string frame_start_time_str =
-      std::to_string(start_time.ToEpochDelta().ToMicroseconds());
+      std::to_string(frame_time.ToEpochDelta().ToMicroseconds());
   const std::string frame_target_time_str =
       std::to_string(target_time.ToEpochDelta().ToMicroseconds());
   TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
