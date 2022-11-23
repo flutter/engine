@@ -4,18 +4,15 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
-#import <OpenGL/gl.h>
 #import <QuartzCore/QuartzCore.h>
 
 @interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterResizeSynchronizer* _resizeSynchronizer;
-  id<FlutterResizableBackingStoreProvider> _resizableBackingStoreProvider;
+  FlutterResizableBackingStoreProvider* _resizableBackingStoreProvider;
 }
 
 @end
@@ -28,33 +25,13 @@
   self = [super initWithFrame:NSZeroRect];
   if (self) {
     [self setWantsLayer:YES];
+    [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _reshapeListener = reshapeListener;
     _resizableBackingStoreProvider =
-        [[FlutterMetalResizableBackingStoreProvider alloc] initWithDevice:device
-                                                             commandQueue:commandQueue
-                                                                    layer:self.layer];
-    _resizeSynchronizer =
-        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
-  }
-  return self;
-}
-
-- (instancetype)initWithMainContext:(NSOpenGLContext*)mainContext
-                    reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  return [self initWithFrame:NSZeroRect mainContext:mainContext reshapeListener:reshapeListener];
-}
-
-- (instancetype)initWithFrame:(NSRect)frame
-                  mainContext:(NSOpenGLContext*)mainContext
-              reshapeListener:(id<FlutterViewReshapeListener>)reshapeListener {
-  self = [super initWithFrame:frame];
-  if (self) {
-    [self setWantsLayer:YES];
-    _reshapeListener = reshapeListener;
-    _resizableBackingStoreProvider =
-        [[FlutterOpenGLResizableBackingStoreProvider alloc] initWithMainContext:mainContext
-                                                                          layer:self.layer];
+        [[FlutterResizableBackingStoreProvider alloc] initWithDevice:device
+                                                        commandQueue:commandQueue
+                                                               layer:self.layer];
     _resizeSynchronizer =
         [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
@@ -82,6 +59,10 @@
                             notify:^{
                               [_reshapeListener viewDidReshape:self];
                             }];
+}
+
+- (void)setBackgroundColor:(NSColor*)color {
+  self.layer.backgroundColor = color.CGColor;
 }
 
 #pragma mark - NSView overrides

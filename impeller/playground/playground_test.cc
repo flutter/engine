@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/fml/time/time_point.h"
+
 #include "impeller/playground/playground_test.h"
 
 namespace impeller {
@@ -21,7 +23,10 @@ void PlaygroundTest::SetUp() {
     return;
   }
 
-  SetupWindow(GetParam());
+  SetupContext(GetParam());
+  SetupWindow();
+
+  start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }
 
 void PlaygroundTest::TearDown() {
@@ -57,6 +62,10 @@ static std::string FormatWindowTitle(const std::string& test_name) {
 // |Playground|
 std::string PlaygroundTest::GetWindowTitle() const {
   return FormatWindowTitle(flutter::testing::GetCurrentTestName());
+}
+
+Scalar PlaygroundTest::GetSecondsElapsed() const {
+  return (fml::TimePoint::Now().ToEpochDelta() - start_time_).ToSecondsF();
 }
 
 }  // namespace impeller

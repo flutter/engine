@@ -12,10 +12,11 @@
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/position_no_color.vert.h"
+#include "impeller/entity/runtime_effect.vert.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/shader_function.h"
 #include "impeller/renderer/shader_types.h"
 
@@ -29,6 +30,11 @@ void RuntimeEffectContents::SetRuntimeStage(
 void RuntimeEffectContents::SetUniformData(
     std::shared_ptr<std::vector<uint8_t>> uniform_data) {
   uniform_data_ = std::move(uniform_data);
+}
+
+void RuntimeEffectContents::SetTextureInputs(
+    std::vector<TextureInput> texture_inputs) {
+  texture_inputs_ = std::move(texture_inputs);
 }
 
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
@@ -45,6 +51,14 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
+
+  if (function && runtime_stage_->IsDirty()) {
+    context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
+    library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
+                                ShaderStage::kFragment);
+
+    function = nullptr;
+  }
 
   if (!function) {
     std::promise<bool> promise;
@@ -73,6 +87,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           << runtime_stage_->GetEntrypoint() << ")";
       return false;
     }
+
+    runtime_stage_->SetClean();
   }
 
   //--------------------------------------------------------------------------
@@ -86,7 +102,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
-  using VS = PositionNoColorVertexShader;
+  using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
   desc.AddStageEntrypoint(
@@ -98,7 +114,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     VALIDATION_LOG << "Failed to set stage inputs for runtime effect pipeline.";
   }
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(0u, {.format = PixelFormat::kDefaultColor});
+  desc.SetColorAttachmentDescriptor(
+      0u, {.format = PixelFormat::kDefaultColor, .blending_enabled = true});
   desc.SetStencilAttachmentDescriptors({});
   desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
 
@@ -107,9 +124,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
+  options.primitive_type = geometry_result.type;
   options.ApplyToPipelineDescriptor(desc);
 
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).get();
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
   if (!pipeline) {
     VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
     return false;
@@ -120,15 +138,13 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   cmd.pipeline = pipeline;
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
-  cmd.primitive_type = geometry_result.type;
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.
   ///
 
   VS::VertInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  frame_info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
@@ -136,23 +152,60 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   ///
 
   size_t buffer_index = 0;
+  size_t sampler_index = 0;
   for (auto uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
     ShaderMetadata metadata;
 
-    size_t alignment =
-        std::max(uniform.bit_width / 8, DefaultUniformAlignment());
-    auto buffer_view = pass.GetTransientsBuffer().Emplace(
-        uniform_data_->data() + uniform.location * sizeof(float),
-        uniform.GetSize(), alignment);
+    switch (uniform.type) {
+      case kSampledImage: {
+        FML_DCHECK(sampler_index < texture_inputs_.size());
+        auto& input = texture_inputs_[sampler_index];
 
-    ShaderUniformSlot slot;
-    slot.name = uniform.name.c_str();
-    slot.ext_res_0 = buffer_index;
-    cmd.BindResource(ShaderStage::kFragment, slot, metadata, buffer_view);
+        auto sampler =
+            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
 
-    buffer_index++;
+        SampledImageSlot image_slot;
+        image_slot.name = uniform.name.c_str();
+        image_slot.texture_index = sampler_index;
+        image_slot.sampler_index = sampler_index;
+        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
+                         input.texture, sampler);
+
+        sampler_index++;
+        break;
+      }
+      case kFloat: {
+        size_t alignment =
+            std::max(uniform.bit_width / 8, DefaultUniformAlignment());
+        auto buffer_view = pass.GetTransientsBuffer().Emplace(
+            uniform_data_->data() + uniform.location * sizeof(float),
+            uniform.GetSize(), alignment);
+
+        ShaderUniformSlot uniform_slot;
+        uniform_slot.name = uniform.name.c_str();
+        uniform_slot.ext_res_0 = buffer_index;
+        cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
+                         buffer_view);
+        buffer_index++;
+        break;
+      }
+      case kBoolean:
+      case kSignedByte:
+      case kUnsignedByte:
+      case kSignedShort:
+      case kUnsignedShort:
+      case kSignedInt:
+      case kUnsignedInt:
+      case kSignedInt64:
+      case kUnsignedInt64:
+      case kHalfFloat:
+      case kDouble:
+        VALIDATION_LOG << "Unsupported uniform type for " << uniform.name
+                       << ".";
+        return true;
+    }
   }
 
   pass.AddCommand(std::move(cmd));

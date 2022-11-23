@@ -28,35 +28,73 @@
 // is replaced with the alpha channel of the |FlutterClippingMaskView|.
 @interface FlutterClippingMaskView : UIView
 
+- (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale;
+
 // Adds a clip rect operation to the queue.
 //
 // The `clipSkRect` is transformed with the `matrix` before adding to the queue.
-- (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix;
+- (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix;
 
 // Adds a clip rrect operation to the queue.
 //
 // The `clipSkRRect` is transformed with the `matrix` before adding to the queue.
-- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix;
+- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const SkMatrix&)matrix;
 
 // Adds a clip path operation to the queue.
 //
 // The `path` is transformed with the `matrix` before adding to the queue.
-- (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix;
+- (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix;
 
 @end
 
-// The parent view handles clipping to its subviews.
+// An object represents a blur filter.
+//
+// This object produces a `backdropFilterView`.
+// To blur a View, add `backdropFilterView` as a subView of the View.
+@interface PlatformViewFilter : NSObject
+
+// Determines the rect of the blur effect in the coordinate system of `backdropFilterView`'s
+// parentView.
+@property(assign, nonatomic, readonly) CGRect frame;
+
+// Determines the blur intensity.
+//
+// It is set as the value of `inputRadius` of the `gaussianFilter` that is internally used.
+@property(assign, nonatomic, readonly) CGFloat blurRadius;
+
+// This is the view to use to blur the PlatformView.
+//
+// It is a modified version of UIKit's `UIVisualEffectView`.
+// The inputRadius can be customized and it doesn't add any color saturation to the blurred view.
+@property(nonatomic, retain, readonly) UIVisualEffectView* backdropFilterView;
+
+// For testing only.
++ (void)resetPreparation;
+
+- (instancetype)init NS_UNAVAILABLE;
+
+// Initialize the filter object.
+//
+// The `frame` determines the rect of the blur effect in the coordinate system of
+// `backdropFilterView`'s parentView. The `blurRadius` determines the blur intensity. It is set as
+// the value of `inputRadius` of the `gaussianFilter` that is internally used. The
+// `UIVisualEffectView` is the view that is used to add the blur effects. It is modified to become
+// `backdropFilterView`, which better supports the need of Flutter.
+//
+// Note: if the implementation of UIVisualEffectView changes in a way that affects the
+// implementation in `PlatformViewFilter`, this method will return nil.
+- (instancetype)initWithFrame:(CGRect)frame
+                   blurRadius:(CGFloat)blurRadius
+             visualEffectView:(UIVisualEffectView*)visualEffectView NS_DESIGNATED_INITIALIZER;
+
+@end
+
+// The parent view handles clipping to its subViews.
 @interface ChildClippingView : UIView
 
-// Applies blur backdrop filters to the ChildClippingView with blur radius values from
-// blurRadii. Returns NO if Apple's API has changed and blurred backdrop filters cannot
-// be applied, otherwise returns YES.
-- (BOOL)applyBlurBackdropFilters:(NSArray*)blurRadii;
-
-// The UIView used to extract the gaussianBlur filter. This must be a UIVisualEffectView
-// initalized with UIBlurEffect to extract the correct filter. Made a public property
-// for custom unit tests.
-@property(nonatomic, retain) UIView* blurEffectView;
+// Applies blur backdrop filters to the ChildClippingView with blur values from
+// filters.
+- (void)applyBlurBackdropFilters:(NSArray<PlatformViewFilter*>*)filters;
 
 @end
 
@@ -69,12 +107,15 @@ CATransform3D GetCATransform3DFromSkMatrix(const SkMatrix& matrix);
 // The position of the `layer` should be unchanged after resetting the anchor.
 void ResetAnchor(CALayer* layer);
 
+CGRect GetCGRectFromSkRect(const SkRect& clipSkRect);
+BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2);
+
 class IOSContextGL;
 class IOSSurface;
 
 struct FlutterPlatformViewLayer {
-  FlutterPlatformViewLayer(fml::scoped_nsobject<UIView> overlay_view,
-                           fml::scoped_nsobject<UIView> overlay_view_wrapper,
+  FlutterPlatformViewLayer(const fml::scoped_nsobject<UIView>& overlay_view,
+                           const fml::scoped_nsobject<UIView>& overlay_view_wrapper,
                            std::unique_ptr<IOSSurface> ios_surface,
                            std::unique_ptr<Surface> surface);
 
@@ -103,8 +144,9 @@ class FlutterPlatformViewLayerPool {
 
   // Gets a layer from the pool if available, or allocates a new one.
   // Finally, it marks the layer as used. That is, it increments `available_layer_index_`.
-  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     std::shared_ptr<IOSContext> ios_context);
+  std::shared_ptr<FlutterPlatformViewLayer> GetLayer(
+      GrDirectContext* gr_context,
+      const std::shared_ptr<IOSContext>& ios_context);
 
   // Gets the layers in the pool that aren't currently used.
   // This method doesn't mark the layers as unused.
@@ -168,10 +210,11 @@ class FlutterPlatformViewsController {
   // returns nil.
   UIView* GetPlatformViewByID(int view_id);
 
-  PostPrerollResult PostPrerollAction(fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+  PostPrerollResult PostPrerollAction(
+      const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
   void EndFrame(bool should_resubmit_frame,
-                fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger);
+                const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
   std::vector<SkCanvas*> GetCurrentCanvases();
 
@@ -187,7 +230,7 @@ class FlutterPlatformViewsController {
   void Reset();
 
   bool SubmitFrame(GrDirectContext* gr_context,
-                   std::shared_ptr<IOSContext> ios_context,
+                   const std::shared_ptr<IOSContext>& ios_context,
                    std::unique_ptr<SurfaceFrame> frame);
 
   void OnMethodCall(FlutterMethodCall* call, FlutterResult& result);
@@ -197,7 +240,8 @@ class FlutterPlatformViewsController {
   long FindFirstResponderPlatformViewId();
 
   // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
-  void PushFilterToVisitedPlatformViews(std::shared_ptr<const DlImageFilter> filter);
+  void PushFilterToVisitedPlatformViews(const std::shared_ptr<const DlImageFilter>& filter,
+                                        const SkRect& filter_rect);
 
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
@@ -238,13 +282,19 @@ class FlutterPlatformViewsController {
   // T_1 is applied to C_2, T_3 and T_4 are applied to C_5, and T_6 is applied to PLATFORM_VIEW.
   //
   // After each clip operation, we update the head to the super view of the current head.
-  void ApplyMutators(const MutatorsStack& mutators_stack, UIView* embedded_view);
+  //
+  // The `bounding_rect` is the final bounding rect of the PlatformView
+  // (EmbeddedViewParams::finalBoundingRect). If a clip mutator's rect contains the final bounding
+  // rect of the PlatformView, the clip mutator is not applied for performance optimization.
+  void ApplyMutators(const MutatorsStack& mutators_stack,
+                     UIView* embedded_view,
+                     const SkRect& bounding_rect);
   void CompositeWithParams(int view_id, const EmbeddedViewParams& params);
 
   // Allocates a new FlutterPlatformViewLayer if needed, draws the pixels within the rect from
   // the picture on the layer's canvas.
   std::shared_ptr<FlutterPlatformViewLayer> GetLayer(GrDirectContext* gr_context,
-                                                     std::shared_ptr<IOSContext> ios_context,
+                                                     const std::shared_ptr<IOSContext>& ios_context,
                                                      EmbedderViewSlice* slice,
                                                      SkRect rect,
                                                      int64_t view_id,

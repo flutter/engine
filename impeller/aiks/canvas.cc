@@ -18,7 +18,6 @@
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -159,35 +158,42 @@ void Canvas::DrawPaint(const Paint& paint) {
 
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Scalar corner_radius,
-                                     Paint& paint) {
-  if (!paint.mask_blur_descriptor.has_value() ||
-      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal ||
+                                     const Paint& paint) {
+  if (paint.color_source == nullptr ||
+      paint.color_source_type != Paint::ColorSourceType::kColor ||
       paint.style != Paint::Style::kFill) {
     return false;
   }
+
+  if (!paint.mask_blur_descriptor.has_value() ||
+      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
+    return false;
+  }
+
+  Paint new_paint = paint;
 
   // For symmetrically mask blurred solid RRects, absorb the mask blur and use
   // a faster SDF approximation.
 
   auto contents = std::make_shared<RRectShadowContents>();
-  contents->SetColor(paint.color);
-  contents->SetSigma(paint.mask_blur_descriptor->sigma);
+  contents->SetColor(new_paint.color);
+  contents->SetSigma(new_paint.mask_blur_descriptor->sigma);
   contents->SetRRect(rect, corner_radius);
 
-  paint.mask_blur_descriptor = std::nullopt;
+  new_paint.mask_blur_descriptor = std::nullopt;
 
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(paint.blend_mode);
-  entity.SetContents(paint.WithFilters(std::move(contents)));
+  entity.SetBlendMode(new_paint.blend_mode);
+  entity.SetContents(new_paint.WithFilters(std::move(contents)));
 
   GetCurrentPass().AddEntity(entity);
 
   return true;
 }
 
-void Canvas::DrawRect(Rect rect, Paint paint) {
+void Canvas::DrawRect(Rect rect, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, 0, paint)) {
     return;
   }
@@ -202,7 +208,7 @@ void Canvas::DrawRect(Rect rect, Paint paint) {
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
+void Canvas::DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint) {
   if (AttemptDrawBlurredRRect(rect, corner_radius, paint)) {
     return;
   }
@@ -210,6 +216,11 @@ void Canvas::DrawRRect(Rect rect, Scalar corner_radius, Paint paint) {
 }
 
 void Canvas::DrawCircle(Point center, Scalar radius, const Paint& paint) {
+  Size half_size(radius, radius);
+  if (AttemptDrawBlurredRRect(Rect(center - half_size, half_size * 2), radius,
+                              paint)) {
+    return;
+  }
   DrawPath(PathBuilder{}.AddCircle(center, radius).TakePath(), paint);
 }
 
@@ -361,11 +372,9 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(const Vertices& vertices,
+void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
                           Paint paint) {
-  auto geometry = Geometry::MakeVertices(vertices);
-
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
@@ -374,7 +383,7 @@ void Canvas::DrawVertices(const Vertices& vertices,
   if (paint.color_source.has_value()) {
     auto& source = paint.color_source.value();
     auto contents = source();
-    contents->SetGeometry(std::move(geometry));
+    contents->SetGeometry(std::move(vertices));
     contents->SetAlpha(paint.color.alpha);
     entity.SetContents(paint.WithFilters(std::move(contents), true));
   } else {
@@ -382,7 +391,7 @@ void Canvas::DrawVertices(const Vertices& vertices,
         std::make_shared<VerticesContents>();
     contents->SetColor(paint.color);
     contents->SetBlendMode(blend_mode);
-    contents->SetGeometry(std::move(geometry));
+    contents->SetGeometry(std::move(vertices));
     entity.SetContents(paint.WithFilters(std::move(contents), true));
   }
 

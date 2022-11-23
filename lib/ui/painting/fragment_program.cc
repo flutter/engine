@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <iostream>
 #include <memory>
 #include <sstream>
 
@@ -60,7 +59,7 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
     runtime_effect_ = DlRuntimeEffect::MakeImpeller(
         std::make_unique<impeller::RuntimeStage>(std::move(runtime_stage)));
   } else {
-    auto code_mapping = runtime_stage.GetCodeMapping();
+    auto code_mapping = runtime_stage.GetSkSLMapping();
     auto code_size = code_mapping->GetSize();
     const char* sksl =
         reinterpret_cast<const char*>(code_mapping->GetMapping());
@@ -78,7 +77,6 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   if (Dart_IsError(ths)) {
     Dart_PropagateError(ths);
   }
-
   Dart_Handle result = Dart_SetField(ths, tonic::ToDart("_samplerCount"),
                                      Dart_NewInteger(sampled_image_count));
   if (Dart_IsError(result)) {

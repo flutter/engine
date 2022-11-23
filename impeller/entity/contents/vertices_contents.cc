@@ -47,15 +47,16 @@ bool VerticesContents::Render(const ContentContext& renderer,
   cmd.label = "Vertices";
   cmd.stencil_reference = entity.GetStencilDepth();
 
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+
   switch (vertex_type) {
     case GeometryVertexType::kColor: {
       using VS = GeometryColorPipeline::VertexShader;
 
       auto geometry_result = geometry_->GetPositionColorBuffer(
           renderer, entity, pass, color_, blend_mode_);
-      cmd.pipeline = renderer.GetGeometryColorPipeline(
-          OptionsFromPassAndEntity(pass, entity));
-      cmd.primitive_type = geometry_result.type;
+      opts.primitive_type = geometry_result.type;
+      cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
       cmd.BindVertices(geometry_result.vertex_buffer);
 
       VS::VertInfo vert_info;
@@ -70,14 +71,12 @@ bool VerticesContents::Render(const ContentContext& renderer,
 
       auto geometry_result =
           geometry_->GetPositionBuffer(renderer, entity, pass);
-      cmd.pipeline = renderer.GetGeometryPositionPipeline(
-          OptionsFromPassAndEntity(pass, entity));
-      cmd.primitive_type = geometry_result.type;
+      opts.primitive_type = geometry_result.type;
+      cmd.pipeline = renderer.GetGeometryPositionPipeline(opts);
       cmd.BindVertices(geometry_result.vertex_buffer);
 
       VS::VertInfo vert_info;
-      vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                      entity.GetTransformation();
+      vert_info.mvp = geometry_result.transform;
       vert_info.color = color_.Premultiply();
       VS::BindVertInfo(cmd,
                        pass.GetTransientsBuffer().EmplaceUniform(vert_info));

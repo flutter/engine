@@ -207,9 +207,20 @@ TEST_P(RuntimeStageTest, CanRegisterStage) {
         reg.set_value(result);
       }));
   ASSERT_TRUE(future.get());
-  auto function =
-      library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
-  ASSERT_NE(function, nullptr);
+  {
+    auto function =
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+    ASSERT_NE(function, nullptr);
+  }
+
+  // Check if unregistering works.
+
+  library->UnregisterFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+  {
+    auto function =
+        library->GetFunction(stage.GetEntrypoint(), ShaderStage::kFragment);
+    ASSERT_EQ(function, nullptr);
+  }
 }
 
 TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
@@ -237,7 +248,7 @@ TEST_P(RuntimeStageTest, CanCreatePipelineFromRuntimeStage) {
   desc.SetColorAttachmentDescriptor(0u, color0);
   desc.SetStencilAttachmentDescriptors(stencil0);
   desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
-  auto pipeline = GetContext()->GetPipelineLibrary()->GetPipeline(desc).get();
+  auto pipeline = GetContext()->GetPipelineLibrary()->GetPipeline(desc).Get();
   ASSERT_NE(pipeline, nullptr);
 }
 

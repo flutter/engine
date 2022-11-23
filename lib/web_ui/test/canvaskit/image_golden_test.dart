@@ -229,7 +229,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final Future<ui.Codec> futureCodec =
           skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg',
               null);
-      mock.sendEvent('load', DomProgressEvent());
+      mock.sendEvent('load', DomProgressEvent('test progress event'));
       final ui.Codec codec = await futureCodec;
       expect(codec.frameCount, 1);
       final ui.Image image = (await codec.getNextFrame()).image;
@@ -277,7 +277,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'url-does-not-matter', null);
-        mock.sendEvent('error', DomProgressEvent());
+        mock.sendEvent('error', DomProgressEvent('test error'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -317,7 +317,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'http://image-server.com/picture.jpg', null);
-        mock.sendEvent('load', DomProgressEvent());
+        mock.sendEvent('load', DomProgressEvent('test progress event'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -635,6 +635,51 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       codec.dispose();
     });
 
+    test('decoded image can be read back from picture', () async {
+      final DomResponse imageResponse = await httpFetch('/test_images/mandrill_128.png');
+      final Uint8List imageData = (await imageResponse.arrayBuffer() as ByteBuffer).asUint8List();
+      final ui.Codec codec = await skiaInstantiateImageCodec(imageData);
+      final ui.FrameInfo frame = await codec.getNextFrame();
+      final CkImage image = frame.image as CkImage;
+
+      final CkImage snapshot;
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        sb.pushOffset(10, 10);
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(5, 5, 20, 20),
+          CkPaint(),
+        );
+        canvas.drawImage(image, ui.Offset.zero, CkPaint());
+        canvas.drawRect(
+          const ui.Rect.fromLTRB(90, 90, 105, 105),
+          CkPaint(),
+        );
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+        sb.pop();
+        snapshot = await sb.build().toImage(150, 150) as CkImage;
+      }
+
+      {
+        final LayerSceneBuilder sb = LayerSceneBuilder();
+        final CkPictureRecorder recorder = CkPictureRecorder();
+        final CkCanvas canvas = recorder.beginRecording(ui.Rect.largest);
+        canvas.drawImage(snapshot, ui.Offset.zero, CkPaint());
+        sb.addPicture(ui.Offset.zero, recorder.endRecording());
+
+        CanvasKitRenderer.instance.rasterizer.draw(sb.build().layerTree);
+        await matchGoldenFile(
+          'canvaskit_read_back_decoded_image_$mode.png',
+          region: const ui.Rect.fromLTRB(0, 0, 150, 150),
+        );
+      }
+
+      image.dispose();
+      codec.dispose();
+    });
+
     test('can detect JPEG from just magic number', () async {
       expect(
         detectContentType(
@@ -727,7 +772,7 @@ void _testCkBrowserImageDecoder() {
     final ImageDecoder? decoder1 = image.debugCachedWebDecoder;
     expect(decoder1, isNotNull);
     expect(image.frameCount, 3);
-    expect(image.repetitionCount, double.infinity);
+    expect(image.repetitionCount, -1);
 
     // A frame can be decoded right away.
     final ui.FrameInfo frame1 = await image.getNextFrame();
