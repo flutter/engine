@@ -77,13 +77,27 @@ void testMain() {
     final DomElement textField = appHostNode
         .querySelector('input[data-semantics-role="text-field"]')!;
 
-    textField.dispatchEvent(createDomPointerEvent('pointerdown'));
-    textField.dispatchEvent(createDomPointerEvent('pointerup'));
+    textField.dispatchEvent(createDomPointerEvent(
+        'pointerdown',
+        <Object?, Object?>{
+          'clientX': 25,
+          'clientY': 48,
+        },
+      ));
+    textField.dispatchEvent(createDomPointerEvent(
+        'pointerup',
+        <Object?, Object?>{
+          'clientX': 26,
+          'clientY': 48,
+        },
+      ));
 
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
 
     semantics().semanticsEnabled = false;
+    debugBrowserEngineOverride = null;
+    debugOperatingSystemOverride = null;
   });
 
   // TODO(yjbanov): this test will need to be adjusted for Safari when we add

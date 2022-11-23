@@ -304,8 +304,8 @@ class TextField extends RoleManager {
 
       if (lastPointerDownOffsetX != null) {
         assert(lastPointerDownOffsetY != null);
-        final num offsetX = pointerEvent.clientX - lastPointerDownOffsetX!;
-        final num offsetY = pointerEvent.clientY - lastPointerDownOffsetY!;
+        final num deltaX = pointerEvent.clientX - lastPointerDownOffsetX!;
+        final num deltaY = pointerEvent.clientY - lastPointerDownOffsetY!;
 
         // This should match the similar constant defined in:
         //
@@ -314,7 +314,7 @@ class TextField extends RoleManager {
         // The value is pre-squared so we have to do less math at runtime.
         const double kTouchSlop = 18.0 * 18.0; // Logical pixels squared
 
-        if (offsetX * offsetX + offsetY * offsetY < kTouchSlop) {
+        if (deltaX * deltaX + deltaY * deltaY < kTouchSlop) {
           // Recognize it as a tap that requires a keyboard.
           EnginePlatformDispatcher.instance.invokeOnSemanticsAction(
               semanticsObject.id, ui.SemanticsAction.tap, null);
@@ -324,9 +324,10 @@ class TextField extends RoleManager {
           // located at the top right of the keyboard.
           // 2. The user tries to focus on the input field again, either by
           // VoiceOver or manually, but the keyboard does not show up.
+          //
           // In this scenario, the Flutter framework does not send a semantic update,
           // so we need to call focus after detecting a tap to make sure that the
-          // the virtual keyboard will show.
+          // virtual keyboard will show.
           if (semanticsObject.hasFocus) {
             editableElement.focus();
           }
