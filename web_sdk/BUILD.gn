@@ -355,7 +355,7 @@ _compile_platform("flutter_dart2js_kernel_sdk_full_sound") {
   kernel_target = "dart2js"
   summary_only = false
   output_dill = "$root_out_dir/flutter_web_sdk/kernel/dart2js_platform.dill"
-  null_environment = false
+  null_environment = true
 }
 
 group("flutter_legacy_platform_dills") {
