@@ -4,10 +4,12 @@
 
 #include <impeller/gradient.glsl>
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 readonly buffer ColorData {
   vec4 colors[];
-} color_data;
+}
+color_data;
 
 uniform GradientInfo {
   vec2 start_point;
@@ -15,7 +17,8 @@ uniform GradientInfo {
   float alpha;
   float tile_mode;
   float colors_length;
-} gradient_info;
+}
+gradient_info;
 
 in vec2 v_position;
 
@@ -23,10 +26,8 @@ out vec4 frag_color;
 
 void main() {
   float len = length(gradient_info.end_point - gradient_info.start_point);
-  float dot = dot(
-    v_position - gradient_info.start_point,
-    gradient_info.end_point - gradient_info.start_point
-  );
+  float dot = dot(v_position - gradient_info.start_point,
+                  gradient_info.end_point - gradient_info.start_point);
   float t = dot / (len * len);
 
   if ((t < 0.0 || t > 1.0) && gradient_info.tile_mode == kTileModeDecal) {
@@ -36,6 +37,8 @@ void main() {
   t = IPFloatTile(t, gradient_info.tile_mode);
   vec3 values = IPComputeFixedGradientValues(t, gradient_info.colors_length);
 
-  frag_color = mix(color_data.colors[int(values.x)], color_data.colors[int(values.y)], values.z);
-  frag_color = vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
+  frag_color = mix(color_data.colors[int(values.x)],
+                   color_data.colors[int(values.y)], values.z);
+  frag_color =
+      vec4(frag_color.xyz * frag_color.a, frag_color.a) * gradient_info.alpha;
 }
