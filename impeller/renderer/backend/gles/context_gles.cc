@@ -137,4 +137,14 @@ bool ContextGLES::SupportsOffscreenMSAA() const {
   return false;
 }
 
+// |Context|
+const BackendFeatures& ContextGLES::GetBackendFeatures() const {
+  return kLegacyBackendFeatures;
+}
+
+// |Context|
+PixelFormat ContextGLES::GetColorAttachmentPixelFormat() const {
+  return PixelFormat::kR8G8B8A8UNormInt;
+}
+
 }  // namespace impeller

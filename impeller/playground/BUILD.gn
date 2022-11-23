@@ -40,6 +40,7 @@ impeller_component("playground") {
 
   public_deps = [
     "../entity:entity_shaders",
+    "../entity:modern_entity_shaders",
     "../fixtures:shader_fixtures",
     "../renderer",
     "imgui:imgui_impeller_backend",
@@ -62,6 +63,8 @@ impeller_component("playground_test") {
   testonly = true
 
   sources = [
+    "compute_playground_test.cc",
+    "compute_playground_test.h",
     "playground_test.cc",
     "playground_test.h",
   ]

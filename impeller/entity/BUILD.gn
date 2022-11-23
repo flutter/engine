@@ -45,12 +45,12 @@ impeller_shaders("entity_shaders") {
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
     "shaders/position_color.vert",
-    "shaders/position_no_color.vert",
     "shaders/position_uv.vert",
     "shaders/position.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
+    "shaders/runtime_effect.vert",
     "shaders/solid_fill.frag",
     "shaders/solid_fill.vert",
     "shaders/srgb_to_linear_filter.frag",
@@ -61,6 +61,22 @@ impeller_shaders("entity_shaders") {
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill.vert",
     "shaders/vertices.frag",
+    "shaders/yuv_to_rgb_filter.frag",
+    "shaders/yuv_to_rgb_filter.vert",
+  ]
+}
+
+impeller_shaders("modern_entity_shaders") {
+  name = "modern"
+
+  if (impeller_enable_opengles) {
+    gles_language_version = "460"
+  }
+
+  shaders = [
+    "shaders/linear_gradient_ssbo_fill.frag",
+    "shaders/radial_gradient_ssbo_fill.frag",
+    "shaders/sweep_gradient_ssbo_fill.frag",
   ]
 }
 
@@ -106,6 +122,8 @@ impeller_component("entity") {
     "contents/filters/morphology_filter_contents.h",
     "contents/filters/srgb_to_linear_filter_contents.cc",
     "contents/filters/srgb_to_linear_filter_contents.h",
+    "contents/filters/yuv_to_rgb_filter_contents.cc",
+    "contents/filters/yuv_to_rgb_filter_contents.h",
     "contents/gradient_generator.cc",
     "contents/gradient_generator.h",
     "contents/linear_gradient_contents.cc",
@@ -142,6 +160,7 @@ impeller_component("entity") {
 
   public_deps = [
     ":entity_shaders",
+    ":modern_entity_shaders",
     "../archivist",
     "../image",
     "../renderer",

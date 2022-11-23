@@ -75,34 +75,36 @@ void FlatlandPlatformView::OnGetLayout(
   view_logical_size_ = {static_cast<float>(info.logical_size().width),
                         static_cast<float>(info.logical_size().height)};
 
-  float pixel_ratio = 1.0f;
   if (info.has_device_pixel_ratio()) {
     // Flatland returns a Vec2 for DPR but both values should be identical.
     FML_DCHECK(info.device_pixel_ratio().x == info.device_pixel_ratio().y);
     view_pixel_ratio_ = info.device_pixel_ratio().x;
-    pixel_ratio = *view_pixel_ratio_;
   }
 
+  float pixel_ratio = view_pixel_ratio_ ? *view_pixel_ratio_ : 1.0f;
+
   SetViewportMetrics({
-      pixel_ratio,                    // device_pixel_ratio
-      view_logical_size_.value()[0],  // physical_width
-      view_logical_size_.value()[1],  // physical_height
-      0.0f,                           // physical_padding_top
-      0.0f,                           // physical_padding_right
-      0.0f,                           // physical_padding_bottom
-      0.0f,                           // physical_padding_left
-      0.0f,                           // physical_view_inset_top
-      0.0f,                           // physical_view_inset_right
-      0.0f,                           // physical_view_inset_bottom
-      0.0f,                           // physical_view_inset_left
-      0.0f,                           // p_physical_system_gesture_inset_top
-      0.0f,                           // p_physical_system_gesture_inset_right
-      0.0f,                           // p_physical_system_gesture_inset_bottom
-      0.0f,                           // p_physical_system_gesture_inset_left,
-      -1.0,                           // p_physical_touch_slop,
-      {},                             // p_physical_display_features_bounds
-      {},                             // p_physical_display_features_type
-      {},                             // p_physical_display_features_state
+      pixel_ratio,  // device_pixel_ratio
+      std::round(view_logical_size_.value()[0] *
+                 pixel_ratio),  // physical_width
+      std::round(view_logical_size_.value()[1] *
+                 pixel_ratio),  // physical_height
+      0.0f,                     // physical_padding_top
+      0.0f,                     // physical_padding_right
+      0.0f,                     // physical_padding_bottom
+      0.0f,                     // physical_padding_left
+      0.0f,                     // physical_view_inset_top
+      0.0f,                     // physical_view_inset_right
+      0.0f,                     // physical_view_inset_bottom
+      0.0f,                     // physical_view_inset_left
+      0.0f,                     // p_physical_system_gesture_inset_top
+      0.0f,                     // p_physical_system_gesture_inset_right
+      0.0f,                     // p_physical_system_gesture_inset_bottom
+      0.0f,                     // p_physical_system_gesture_inset_left,
+      -1.0,                     // p_physical_touch_slop,
+      {},                       // p_physical_display_features_bounds
+      {},                       // p_physical_display_features_type
+      {},                       // p_physical_display_features_state
   });
 
   parent_viewport_watcher_->GetLayout(

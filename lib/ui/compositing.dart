@@ -106,9 +106,10 @@ abstract class _EngineLayerWrapper implements EngineLayer {
   bool _debugWasUsedAsOldLayer = false;
 
   bool _debugCheckNotUsedAsOldLayer() {
+    // The hashCode formatting should match shortHash in the framework
     assert(
         !_debugWasUsedAsOldLayer,
-        'Layer $runtimeType was previously used as oldLayer.\n'
+        'Layer $runtimeType#${hashCode.toUnsigned(20).toRadixString(16).padLeft(5, '0')} was previously used as oldLayer.\n'
         'Once a layer is used as oldLayer, it may not be used again. Instead, '
         'after calling one of the SceneBuilder.push* methods and passing an oldLayer '
         'to it, use the layer returned by the method as oldLayer in subsequent '
@@ -519,6 +520,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// See [pop] for details about the operation stack.
   ImageFilterEngineLayer pushImageFilter(
     ImageFilter filter, {
+    Offset offset = Offset.zero,
     ImageFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
@@ -526,14 +528,14 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     final _ImageFilter nativeFilter = filter._toNativeImageFilter();
     assert(nativeFilter != null);
     final EngineLayer engineLayer = EngineLayer._();
-    _pushImageFilter(engineLayer, nativeFilter, oldLayer?._nativeLayer);
+    _pushImageFilter(engineLayer, nativeFilter, offset.dx, offset.dy, oldLayer?._nativeLayer);
     final ImageFilterEngineLayer layer = ImageFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Handle)>('SceneBuilder::pushImageFilter')
-  external void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter, EngineLayer? oldLayer);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Double, Double, Handle)>('SceneBuilder::pushImageFilter')
+  external void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter, double dx, double dy, EngineLayer? oldLayer);
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///

@@ -1,8 +1,9 @@
 # touch-input
 
 `touch-input-test` exercises touch through a child view (in this case, the `touch-input-view` Dart component) and asserting
-the precise location of the touch event. We do this by attaching the child view, injecting touch, and validating that the view
-reports the touch event back with the correct coordinates.
+the precise location of the touch event. We validate a touch event as valid through two ways:
+- By attaching the child view, injecting touch, and validating that the view reports the touch event back with the correct coordinates.
+- By embedding a child view into a parent view, injecting touch into both views, and validating that each view reports its touch event back with the correct coordinates.
 
 ```shell
 Injecting the tap event
@@ -42,7 +43,7 @@ Reference the Flutter integration test [documentation](https://github.com/flutte
 
 Build Fuchsia with `workstation_eng.qemu-x64`
 ```shell
-fx set workstation_eng.qemu-x64 --with-base=//src/session/bin/session_manager && fx build
+fx set workstation_eng.qemu-x64 && fx build
 ```
 
 Build flutter/engine

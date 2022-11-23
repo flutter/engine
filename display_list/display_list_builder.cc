@@ -706,7 +706,22 @@ SkRect DisplayListBuilder::getLocalClipBounds() {
     current_layer_->clip_bounds.roundOut(&dev_bounds);
     return inverse.asM33().mapRect(dev_bounds);
   }
-  return kMaxCullRect_;
+  return kMaxCullRect;
+}
+
+bool DisplayListBuilder::quickReject(const SkRect& bounds) const {
+  if (bounds.isEmpty()) {
+    return true;
+  }
+  SkMatrix matrix = getTransform();
+  // We don't need the inverse, but this method tells us if the matrix
+  // is singular in which case we can reject all rendering.
+  if (!matrix.invert(nullptr)) {
+    return true;
+  }
+  SkRect dev_bounds;
+  matrix.mapRect(bounds).roundOut(&dev_bounds);
+  return !current_layer_->clip_bounds.intersects(dev_bounds);
 }
 
 void DisplayListBuilder::drawPaint() {
@@ -1070,6 +1085,13 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar y) {
   Push<DrawTextBlobOp>(0, 1, blob, x, y);
   CheckLayerOpacityCompatibility();
+}
+void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob>& blob,
+                                      SkScalar x,
+                                      SkScalar y,
+                                      const DlPaint& paint) {
+  setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawTextBlobFlags);
+  drawTextBlob(blob, x, y);
 }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const DlColor color,

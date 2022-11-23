@@ -14,11 +14,11 @@
 #include "impeller/aiks/paint.h"
 #include "impeller/aiks/picture.h"
 #include "impeller/entity/entity_pass.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/geometry/vertices.h"
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
@@ -70,9 +70,9 @@ class Canvas {
 
   void DrawPaint(const Paint& paint);
 
-  void DrawRect(Rect rect, Paint paint);
+  void DrawRect(Rect rect, const Paint& paint);
 
-  void DrawRRect(Rect rect, Scalar corner_radius, Paint paint);
+  void DrawRRect(Rect rect, Scalar corner_radius, const Paint& paint);
 
   void DrawCircle(Point center, Scalar radius, const Paint& paint);
 
@@ -97,7 +97,7 @@ class Canvas {
                      Point position,
                      const Paint& paint);
 
-  void DrawVertices(const Vertices& vertices,
+  void DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                     BlendMode blend_mode,
                     Paint paint);
 
@@ -134,7 +134,7 @@ class Canvas {
 
   bool AttemptDrawBlurredRRect(const Rect& rect,
                                Scalar corner_radius,
-                               Paint& paint);
+                               const Paint& paint);
 
   FML_DISALLOW_COPY_AND_ASSIGN(Canvas);
 };
