@@ -108,10 +108,12 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   CFTimeInterval duration = link.targetTimestamp - link.timestamp;
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(duration);
 
-  TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
-               std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds()).c_str(),
-               "frame_target_time",
-               std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds()).c_str());
+  std::string frame_start_time_str =
+      std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds());
+  const std::string& frame_target_time_str =
+      std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds());
+  TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time", frame_start_time_str.c_str(),
+               "frame_target_time", frame_target_time_str.c_str());
 
   std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
       std::make_unique<flutter::FrameTimingsRecorder>();

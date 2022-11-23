@@ -41,12 +41,13 @@ void VsyncWaiterFallback::AwaitVSync() {
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
   auto frame_target_time = frame_start_time + kSingleFrameInterval;
 
-  TRACE_EVENT2(
-      "flutter", "VsyncAlike", "frame_start_time",
-      std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds()).c_str(),
-      "frame_target_time",
-      std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds())
-          .c_str());
+  std::string frame_start_time_str =
+      std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds());
+  const std::string& frame_target_time_str =
+      std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds());
+  TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
+               frame_start_time_str.c_str(), "frame_target_time",
+               frame_target_time_str.c_str());
 
   std::weak_ptr<VsyncWaiterFallback> weak_this =
       std::static_pointer_cast<VsyncWaiterFallback>(shared_from_this());
