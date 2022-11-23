@@ -41,9 +41,9 @@ void VsyncWaiterFallback::AwaitVSync() {
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
   auto frame_target_time = frame_start_time + kSingleFrameInterval;
 
-  std::string frame_start_time_str =
+  const std::string frame_start_time_str =
       std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds());
-  const std::string& frame_target_time_str =
+  const std::string frame_target_time_str =
       std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds());
   TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
                frame_start_time_str.c_str(), "frame_target_time",
