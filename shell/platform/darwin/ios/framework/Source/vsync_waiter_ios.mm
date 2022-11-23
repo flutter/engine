@@ -102,13 +102,16 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
-  TRACE_EVENT0("flutter", "VSYNC");
-
   CFTimeInterval delay = CACurrentMediaTime() - link.timestamp;
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);
 
   CFTimeInterval duration = link.targetTimestamp - link.timestamp;
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(duration);
+
+  TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
+               std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds()).c_str(),
+               "frame_target_time",
+               std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds()).c_str());
 
   std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
       std::make_unique<flutter::FrameTimingsRecorder>();
