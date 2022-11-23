@@ -277,6 +277,9 @@ template("_compile_platform") {
     } else {
       args += [ "--no-summary-only" ]
     }
+    if (defined(invoker.null_environment) && invoker.null_environment) {
+      args += [ "--null-environment" ]
+    }
     args += [
       "--target",
       "${invoker.kernel_target}",
@@ -338,8 +341,27 @@ _compile_platform("flutter_dartdevc_kernel_sdk_outline_sound") {
       "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk_sound.dill"
 }
 
+_compile_platform("flutter_dart2js_kernel_sdk_full_unsound") {
+  sound_null_safety = false
+  kernel_target = "dart2js"
+  summary_only = false
+  output_dill =
+      "$root_out_dir/flutter_web_sdk/kernel/dart2js_platform_unsound.dill"
+  null_environment = true
+}
+
+_compile_platform("flutter_dart2js_kernel_sdk_full_sound") {
+  sound_null_safety = true
+  kernel_target = "dart2js"
+  summary_only = false
+  output_dill = "$root_out_dir/flutter_web_sdk/kernel/dart2js_platform.dill"
+  null_environment = false
+}
+
 group("flutter_legacy_platform_dills") {
   public_deps = [
+    ":flutter_dart2js_kernel_sdk_full_sound",
+    ":flutter_dart2js_kernel_sdk_full_unsound",
     ":flutter_dartdevc_kernel_sdk_outline",
     ":flutter_dartdevc_kernel_sdk_outline_sound",
   ]
@@ -598,6 +620,8 @@ if (!is_fuchsia) {
     # flutter_legacy_platform_dills
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline")
     sources += get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
+    sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_unsound")
+    sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_sound")
 
     # flutter_web_platforms
     sources += get_target_outputs(":flutter_auto_platform_ddc_sound")
