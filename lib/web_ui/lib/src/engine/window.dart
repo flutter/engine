@@ -55,6 +55,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     registerHotRestartListener(() {
       _browserHistory?.dispose();
       renderer.clearFragmentProgramCache();
+      _dimensionsProvider.onHotRestart();
     });
   }
 
@@ -212,6 +213,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     _dimensionsProvider = dimensionsProvider;
   }
 
+  double get devicePixelRatio => _dimensionsProvider.getDevicePixelRatio();
+
+  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
+
   @override
   ui.Size get physicalSize {
     if (_physicalSize == null) {
@@ -237,7 +242,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }());
 
     if (!override) {
-      _physicalSize = _dimensionsProvider.getPhysicalSize();
+      _physicalSize = _dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -247,7 +252,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    _viewInsets = _dimensionsProvider.getKeyboardInsets(
+    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
       _physicalSize!.height,
       isEditingOnMobile,
     );
@@ -271,7 +276,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
-      final ui.Size current = _dimensionsProvider.getPhysicalSize();
+      final ui.Size current = _dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
       if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
