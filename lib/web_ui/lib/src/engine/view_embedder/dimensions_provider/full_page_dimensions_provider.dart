@@ -2,6 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
+import 'package:js/js.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
@@ -15,9 +18,36 @@ import 'dimensions_provider.dart';
 /// *expensive*, and should be cached as needed. Every call to every method on
 /// this class WILL perform actual DOM measurements.
 class FullPageDimensionsProvider extends DimensionsProvider {
+  FullPageDimensionsProvider() {
+    // Subscribe to the DOM, and convert it to a ui.Size stream...
+    _domResizeSubscription = DomSubscription(
+      domWindow.visualViewport!,
+      'resize',
+      allowInterop(_onVisualViewportResize),
+    );
+  }
+
+  late DomSubscription _domResizeSubscription;
+  final StreamController<ui.Size?> _onResizeStreamController =
+    StreamController<ui.Size?>.broadcast();
+
+  void _onVisualViewportResize (DomEvent event) {
+    // This could return [computePhysicalSize]. Is it too costly to compute?
+    _onResizeStreamController.add(null);
+  }
 
   @override
-  ui.Size getPhysicalSize() {
+  void onHotRestart() {
+    _domResizeSubscription.cancel();
+    // ignore:unawaited_futures
+    _onResizeStreamController.close();
+  }
+
+  @override
+  Stream<ui.Size?> get onResize => _onResizeStreamController.stream;
+
+  @override
+  ui.Size computePhysicalSize() {
     late double windowInnerWidth;
     late double windowInnerHeight;
     final DomVisualViewport? viewport = domWindow.visualViewport;
@@ -52,7 +82,7 @@ class FullPageDimensionsProvider extends DimensionsProvider {
   }
 
   @override
-  WindowPadding getKeyboardInsets(double physicalHeight, bool isEditingOnMobile) {
+  WindowPadding computeKeyboardInsets(double physicalHeight, bool isEditingOnMobile) {
     final double devicePixelRatio = getDevicePixelRatio();
     final DomVisualViewport? viewport = domWindow.visualViewport;
     late double windowInnerHeight;

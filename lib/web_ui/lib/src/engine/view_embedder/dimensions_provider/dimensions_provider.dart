@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
+
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
@@ -9,10 +11,6 @@ import '../../dom.dart';
 import '../../platform_dispatcher.dart';
 import 'custom_element_dimensions_provider.dart';
 import 'full_page_dimensions_provider.dart';
-
-// import 'custom_element_application_dom.dart';
-// import 'full_page_application_dom.dart';
-// import 'hot_restart_cache_handler.dart';
 
 /// This class provides the dimensions of the "viewport" in which the app is rendered.
 ///
@@ -42,8 +40,14 @@ abstract class DimensionsProvider {
   }
 
   /// Returns the [ui.Size] of the "viewport".
-  ui.Size getPhysicalSize();
+  ui.Size computePhysicalSize();
 
   /// Returns the [WindowPadding] of the keyboard insets (if present).
-  WindowPadding getKeyboardInsets(double physicalHeight, bool isEditingOnMobile);
+  WindowPadding computeKeyboardInsets(double physicalHeight, bool isEditingOnMobile);
+
+  /// Returns a Stream with the changes to [ui.Size] (when cheap to get).
+  Stream<ui.Size?> get onResize;
+
+  /// Clears all the resources grabbed by the DimensionsProvider instance.
+  void onHotRestart();
 }
