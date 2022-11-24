@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart' show buildMode, registerHotRestartListener, renderer;
+import '../engine.dart' show buildMode, registerHotRestartListener, renderer, window;
 import 'browser_detection.dart';
 import 'configuration.dart';
 import 'dom.dart';
@@ -18,7 +18,6 @@ import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'view_embedder/application_dom/application_dom.dart';
-import 'window.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
@@ -43,8 +42,7 @@ class FlutterViewEmbedder {
   /// The hostElement is abstracted by an [ApplicationDom] instance, which has
   /// different behavior depending on the `hostElement` value:
   ///
-  /// - A `null` `hostElement` will preserve Flutter web's original behavior, where
-  ///   it takes over the whole screen.
+  /// - A `null` `hostElement` will allow Flutter to take over the whole screen.
   /// - A non-`null` `hostElement` will render flutter inside that element.
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate ApplicationDom using its factory...
@@ -133,21 +131,17 @@ class FlutterViewEmbedder {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
-    _applicationDom.setHostAttribute(
-      'flt-renderer',
-      '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
+    // Initializes the applicationDom so it can host a flutter GlassPane.
+    _applicationDom.initializeHost(
+      defaultFont: defaultCssFont,
+      embedderMetadata: <String, String> {
+        'flt-renderer': '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
+        'flt-build-mode': buildMode,
+        // TODO(mdebbar): Disable spellcheck until changes in the framework and
+        // engine are complete.
+        'spellcheck': 'false',
+      },
     );
-    _applicationDom.setHostAttribute('flt-build-mode', buildMode);
-    _applicationDom.setHostAttribute('flt-application-dom', _applicationDom.type);
-    // TODO(mdebbar): Disable spellcheck until changes in the framework and
-    // engine are complete.
-    _applicationDom.setHostAttribute('spellcheck', 'false');
-
-    // Set the global styles needed by flutter.
-    _applicationDom.setHostStyles(font: defaultCssFont);
-
-    // Set meta-viewport
-    _applicationDom.applyViewportMeta();
 
     // Create and inject the [_glassPaneElement].
     final DomElement glassPaneElement = domDocument.createElement(glassPaneTagName);
@@ -209,7 +203,7 @@ class FlutterViewEmbedder {
     KeyboardBinding.initInstance();
     PointerBinding.initInstance(glassPaneElement, KeyboardBinding.instance!.converter);
 
-    _applicationDom.setMetricsChangeHandler(_metricsDidChange);
+    window.onResize.listen(_metricsDidChange);
     _applicationDom.setLanguageChangeHandler(_languageDidChange);
 
     EnginePlatformDispatcher.instance.updateLocales();
@@ -230,7 +224,7 @@ class FlutterViewEmbedder {
   /// level.
   void updateSemanticsScreenProperties() {
     _semanticsHostElement!.style.setProperty('transform',
-        'scale(${1 / domWindow.devicePixelRatio})');
+        'scale(${1 / window.devicePixelRatio})');
   }
 
   /// Called immediately after browser window metrics change.
@@ -242,7 +236,7 @@ class FlutterViewEmbedder {
   ///
   /// Note: always check for rotations for a mobile device. Update the physical
   /// size if the change is caused by a rotation.
-  void _metricsDidChange(DomEvent? event) {
+  void _metricsDidChange(ui.Size? newSize) {
     updateSemanticsScreenProperties();
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets(true);
