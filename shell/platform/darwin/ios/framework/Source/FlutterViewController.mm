@@ -1510,13 +1510,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
-      
+
     double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
     double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
-      
+
     double expectedFrames = frameRate * animationSettlingDuration;
     double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
-      
+
     int frameApproximation = roundf(MIN(percentComplete, 1) * expectedFrames);
     double animationFramePercentage = [[[flutterViewController keyboardAnimationStops]
         objectAtIndex:frameApproximation] doubleValue];
