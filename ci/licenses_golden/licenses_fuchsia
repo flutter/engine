@@ -1,4 +1,4 @@
-Signature: 8d396d08dcca5de9d06d7433a3808bba
+Signature: 223106bc52292e383a6353e3bea27e48
 
 UNUSED LICENSES:
 
@@ -46,7 +46,6 @@ ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/de
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/assert.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/compiler.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/listnode.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/pixelformat.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/processargs.h
@@ -64,7 +63,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/syscalls/type
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/types.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/assert.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/compiler.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/listnode.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/pixelformat.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/processargs.h
@@ -247,7 +245,6 @@ FILE: ../../../fuchsia/sdk/linux/pkg/async/include/lib/async/wait.h
 FILE: ../../../fuchsia/sdk/linux/pkg/async/ops.c
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/limits.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/namespace.h
-FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/private.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fdio/include/lib/fdio/unsafe.h
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/decoding_and_validating.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/fidl_base/encoding.cc
@@ -1094,6 +1091,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.fastpair/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
@@ -1807,6 +1805,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/memory.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/source_location.h
 FILE: ../../../fuchsia/sdk/linux/pkg/stdcompat/include/lib/stdcompat/version.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/msi.h
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/result.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/include/lib/zx/stream.h
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/msi.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/zx/stream.cc
@@ -2018,6 +2017,7 @@ FILE: ../../../fuchsia/sdk/linux/pkg/sys_component_cpp_testing/scoped_child.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/fuchsia_syslog.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/include/lib/syslog/structured_backend/cpp/fuchsia_syslog.h
 FILE: ../../../fuchsia/sdk/linux/pkg/syslog_structured_backend/include/lib/syslog/structured_backend/fuchsia_syslog.h
+FILE: ../../../fuchsia/sdk/linux/pkg/zx/status_string.cc
 ----------------------------------------------------------------------------------------------------
 Copyright 2021 The Fuchsia Authors. All rights reserved.
 
@@ -2050,7 +2050,9 @@ LIBRARY: fuchsia_sdk
 ORIGIN: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/boot/driver-config.h + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/boot/driver-config.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/boot/driver-config.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/zircon/errors.h
 FILE: ../../../fuchsia/sdk/linux/dart/fidl/lib/src/optional_nullable.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/realm_builder.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/error.dart
@@ -2060,10 +2062,12 @@ FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/local_compo
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_component_test/lib/src/realm_builder.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_view/lib/src/view_creation_token_pair.dart
 FILE: ../../../fuchsia/sdk/linux/dart/fuchsia_view/lib/tokens.dart
+FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/performance_publish.dart
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/trace_processing/metrics/power_metrics.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/overview.fidl
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.fastpair/provider.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/overview.fidl
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.le/overview.fidl
@@ -2666,6 +2670,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.fastpair/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json
@@ -3500,6 +3505,7 @@ FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.auth/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.a2dp/meta.json
+FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.fastpair/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.gatt2/meta.json
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.bluetooth.hfp/meta.json

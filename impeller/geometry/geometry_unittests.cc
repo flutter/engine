@@ -424,6 +424,52 @@ TEST(GeometryTest, MatrixIsAligned) {
   }
 }
 
+TEST(GeometryTest, MatrixLookAt) {
+  {
+    auto m = Matrix::MakeLookAt(Vector3(0, 0, -1), Vector3(0, 0, 1),
+                                Vector3(0, 1, 0));
+    auto expected = Matrix{
+        1, 0, 0, 0,  //
+        0, 1, 0, 0,  //
+        0, 0, 1, 0,  //
+        0, 0, 1, 1,  //
+    };
+    ASSERT_MATRIX_NEAR(m, expected);
+  }
+
+  // Sideways tilt.
+  {
+    auto m = Matrix::MakeLookAt(Vector3(0, 0, -1), Vector3(0, 0, 1),
+                                Vector3(1, 1, 0).Normalize());
+
+    // clang-format off
+    auto expected = Matrix{
+        k1OverSqrt2, k1OverSqrt2, 0, 0,
+       -k1OverSqrt2, k1OverSqrt2, 0, 0,
+        0,           0,           1, 0,
+        0,           0,           1, 1,
+    };
+    // clang-format on
+    ASSERT_MATRIX_NEAR(m, expected);
+  }
+
+  // Half way between +x and -y, yaw 90
+  {
+    auto m =
+        Matrix::MakeLookAt(Vector3(), Vector3(10, -10, 0), Vector3(0, 0, -1));
+
+    // clang-format off
+    auto expected = Matrix{
+       -k1OverSqrt2,  0,  k1OverSqrt2, 0,
+       -k1OverSqrt2,  0, -k1OverSqrt2, 0,
+        0,           -1,  0,           0,
+        0,            0,  0,           1,
+    };
+    // clang-format on
+    ASSERT_MATRIX_NEAR(m, expected);
+  }
+}
+
 TEST(GeometryTest, QuaternionLerp) {
   auto q1 = Quaternion{{0.0, 0.0, 1.0}, 0.0};
   auto q2 = Quaternion{{0.0, 0.0, 1.0}, kPiOver4};
@@ -1600,21 +1646,6 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
   ASSERT_EQ(polyline.points[6], Point(0, 100));
 }
 
-TEST(GeometryTest, VerticesConstructorAndGetters) {
-  std::vector<Point> points = {Point(1, 2), Point(2, 3), Point(3, 4)};
-  std::vector<uint16_t> indices = {0, 1, 2};
-  std::vector<Color> colors = {Color::White(), Color::White(), Color::White()};
-
-  Vertices vertices = Vertices(points, indices, colors, VertexMode::kTriangle,
-                               Rect(0, 0, 4, 4));
-
-  ASSERT_EQ(vertices.GetBoundingBox().value(), Rect(0, 0, 4, 4));
-  ASSERT_EQ(vertices.GetPositions(), points);
-  ASSERT_EQ(vertices.GetIndices(), indices);
-  ASSERT_EQ(vertices.GetColors(), colors);
-  ASSERT_EQ(vertices.GetMode(), VertexMode::kTriangle);
-}
-
 TEST(GeometryTest, MatrixPrinting) {
   {
     std::stringstream stream;
@@ -1772,6 +1803,75 @@ TEST(GeometryTest, Gradient) {
     auto gradient = CreateGradientBuffer(colors, stops);
 
     ASSERT_EQ(gradient.texture_size, 1024u);
+    ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
+  }
+}
+
+TEST(GeometryTest, GradientSSBO) {
+  {
+    // Simple 2 color gradient produces std::nullopt, as original
+    // color vector should be used.
+    std::vector<Color> colors = {Color::Red(), Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient, std::nullopt);
+  }
+
+  {
+    // Gradient with duplicate stops does not create an empty texture.
+    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
+                                 Color::Blue()};
+    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+    ASSERT_EQ(gradient.value().size(), 5u);
+  }
+
+  {
+    // Simple N color gradient produces color buffer containing exactly those
+    // values.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
+                                 Color::White()};
+    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient, std::nullopt);
+  }
+
+  {
+    // Gradient with color stops will lerp and scale buffer.
+    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
+    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    std::vector<Color> lerped_colors = {
+        Color::Red(),
+        Color::Blue(),
+        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
+        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
+        Color::Green(),
+    };
+
+    ASSERT_COLORS_NEAR(gradient.value(), lerped_colors);
+    ASSERT_EQ(gradient.value().size(), 5u);
+  }
+
+  {
+    // Gradient size is capped at 1024.
+    std::vector<Color> colors = {};
+    std::vector<Scalar> stops = {};
+    for (auto i = 0u; i < 1025; i++) {
+      colors.push_back(Color::Blue());
+      stops.push_back(i / 1025.0);
+    }
+
+    auto gradient = CreateGradientColors(colors, stops);
+
+    ASSERT_EQ(gradient.value().size(), 1024u);
   }
 }
 

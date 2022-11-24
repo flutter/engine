@@ -106,7 +106,7 @@ class _RepositorySourceFile extends _RepositoryLicensedFile {
       }
     }
     _licenses!.sort();
-    for (final License license in licenses) {
+    for (final License license in _licenses!) {
       license.markUsed(io.fullName, libraryName);
     }
     assert(_licenses != null && _licenses!.isNotEmpty);
@@ -126,7 +126,7 @@ class _RepositoryBinaryFile extends _RepositoryLicensedFile {
       if (_licenses == null || _licenses!.isEmpty) {
         throw 'no license file found in scope for ${io.fullName}';
       }
-      for (final License license in licenses!) {
+      for (final License license in _licenses!) {
         license.markUsed(io.fullName, libraryName);
       }
     }
@@ -1021,9 +1021,10 @@ class _RepositoryDirectory extends _RepositoryEntry implements LicenseSource {
     return !entry.fullName.endsWith('third_party/gn') &&
            !entry.fullName.endsWith('third_party/gradle') &&
            !entry.fullName.endsWith('third_party/imgui') &&
-           !entry.fullName.endsWith('third_party/tinygltf') &&
-           !entry.fullName.endsWith('third_party/json/docs') &&
            !entry.fullName.endsWith('third_party/json/LICENSES') &&
+           !entry.fullName.endsWith('third_party/json/docs') &&
+           !entry.fullName.endsWith('third_party/ninja') &&
+           !entry.fullName.endsWith('third_party/tinygltf') &&
             entry.name != '.ccls-cache' &&
             entry.name != '.cipd' &&
             entry.name != '.git' &&
@@ -2333,7 +2334,8 @@ class _RepositoryDartThirdPartyDirectory extends _RepositoryGenericThirdPartyDir
 
   @override
   bool shouldRecurse(fs.IoNode entry) {
-    return entry.name != 'devtools' // not linked in
+    return entry.name != 'binaryen' // not linked in
+        && entry.name != 'devtools' // test materials
         && entry.name != 'drt_resources' // test materials
         && entry.name != 'firefox_jsshell' // testing tool for dart2js
         && entry.name != 'd8' // testing tool for dart2js

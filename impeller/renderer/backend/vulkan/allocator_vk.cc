@@ -12,6 +12,7 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -114,7 +115,8 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   image_create_info.tiling = vk::ImageTiling::eOptimal;
   image_create_info.initialLayout = vk::ImageLayout::eUndefined;
   image_create_info.usage = vk::ImageUsageFlagBits::eSampled |
-                            vk::ImageUsageFlagBits::eColorAttachment;
+                            vk::ImageUsageFlagBits::eColorAttachment |
+                            vk::ImageUsageFlagBits::eTransferDst;
 
   VmaAllocationCreateInfo alloc_create_info = {};
   alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
@@ -138,13 +140,22 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
   }
 
   vk::ImageViewCreateInfo view_create_info = {};
-  view_create_info.image = img;
+  view_create_info.image = vk::Image{img};
   view_create_info.viewType = vk::ImageViewType::e2D;
   view_create_info.format = image_create_info.format;
   view_create_info.subresourceRange.aspectMask =
       vk::ImageAspectFlagBits::eColor;
   view_create_info.subresourceRange.levelCount = image_create_info.mipLevels;
   view_create_info.subresourceRange.layerCount = image_create_info.arrayLayers;
+
+  // Vulkan does not have an image format that is equivalent to
+  // `MTLPixelFormatA8Unorm`, so we use `R8Unorm` instead. Given that the
+  // shaders expect that alpha channel to be set in the cases, we swizzle.
+  // See: https://github.com/flutter/flutter/issues/115461 for more details.
+  if (desc.format == PixelFormat::kA8UNormInt) {
+    view_create_info.components.a = vk::ComponentSwizzle::eR;
+    view_create_info.components.r = vk::ComponentSwizzle::eA;
+  }
 
   auto img_view_res = device_.createImageView(view_create_info);
   if (img_view_res.result != vk::Result::eSuccess) {
@@ -153,15 +164,23 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     return nullptr;
   }
 
+  auto image_view = static_cast<vk::ImageView::NativeType>(img_view_res.value);
+  auto staging_buffer =
+      CreateHostVisibleDeviceAllocation(desc.GetByteSizeOfBaseMipLevel());
+
   auto texture_info = std::make_unique<TextureInfoVK>(TextureInfoVK{
       .backing_type = TextureBackingTypeVK::kAllocatedTexture,
       .allocated_texture =
           {
-              .allocator = &allocator_,
-              .allocation = allocation,
-              .allocation_info = allocation_info,
+              .staging_buffer = staging_buffer,
+              .backing_allocation =
+                  {
+                      .allocator = &allocator_,
+                      .allocation = allocation,
+                      .allocation_info = allocation_info,
+                  },
               .image = img,
-              .image_view = img_view_res.value,
+              .image_view = image_view,
           },
   });
   return std::make_shared<TextureVK>(desc, &context_, std::move(texture_info));
@@ -172,6 +191,14 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
     const DeviceBufferDescriptor& desc) {
   // TODO (kaushikiska): consider optimizing  the usage flags based on
   // StorageMode.
+  auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
+      CreateHostVisibleDeviceAllocation(desc.size));
+  return std::make_shared<DeviceBufferVK>(desc, context_,
+                                          std::move(device_allocation));
+}
+
+DeviceBufferAllocationVK AllocatorVK::CreateHostVisibleDeviceAllocation(
+    size_t size) {
   auto buffer_create_info = static_cast<vk::BufferCreateInfo::NativeType>(
       vk::BufferCreateInfo()
           .setUsage(vk::BufferUsageFlagBits::eVertexBuffer |
@@ -179,7 +206,7 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
                     vk::BufferUsageFlagBits::eUniformBuffer |
                     vk::BufferUsageFlagBits::eTransferSrc |
                     vk::BufferUsageFlagBits::eTransferDst)
-          .setSize(desc.size)
+          .setSize(size)
           .setSharingMode(vk::SharingMode::eExclusive));
 
   VmaAllocationCreateInfo allocCreateInfo = {};
@@ -195,15 +222,27 @@ std::shared_ptr<DeviceBuffer> AllocatorVK::OnCreateBuffer(
                       &buffer, &buffer_allocation, &buffer_allocation_info)};
 
   if (result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Unable to allocate a device buffer";
-    return nullptr;
+    VALIDATION_LOG << "Unable to allocate a device buffer: "
+                   << vk::to_string(result);
+    return {};
   }
 
-  auto device_allocation = std::make_unique<DeviceBufferAllocationVK>(
-      allocator_, buffer, buffer_allocation, buffer_allocation_info);
+  VkMemoryPropertyFlags memory_props;
+  vmaGetAllocationMemoryProperties(allocator_, buffer_allocation,
+                                   &memory_props);
+  if (!(memory_props & VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT)) {
+    VALIDATION_LOG << "Unable to create host visible device buffer.";
+  }
 
-  return std::make_shared<DeviceBufferVK>(desc, context_,
-                                          std::move(device_allocation));
+  return DeviceBufferAllocationVK{
+      .buffer = vk::Buffer{buffer},
+      .backing_allocation =
+          {
+              .allocator = &allocator_,
+              .allocation = buffer_allocation,
+              .allocation_info = buffer_allocation_info,
+          },
+  };
 }
 
 // |Allocator|
@@ -213,4 +252,5 @@ ISize AllocatorVK::GetMaxTextureSizeSupported() const {
   // https://registry.khronos.org/vulkan/specs/1.2-extensions/html/vkspec.html#limits-minmax
   return {4096, 4096};
 }
+
 }  // namespace impeller

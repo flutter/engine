@@ -254,6 +254,25 @@ IFACEMETHODIMP AccessibilityRootNode::put_accName(VARIANT var_id,
   return E_NOTIMPL;
 }
 
+//
+// IServiceProvider implementation.
+//
+
+IFACEMETHODIMP AccessibilityRootNode::QueryService(REFGUID guidService,
+                                                   REFIID riid,
+                                                   void** object) {
+  if (!object) {
+    return E_INVALIDARG;
+  }
+
+  if (guidService == IID_IAccessible) {
+    return QueryInterface(riid, object);
+  }
+
+  *object = nullptr;
+  return E_FAIL;
+}
+
 void AccessibilityRootNode::SetWindow(IAccessible* window) {
   window_accessible_ = window;
 }

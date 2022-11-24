@@ -32,13 +32,29 @@
 }
 @end
 
+// Determines if the final `clipBounds` from a clipRect/clipRRect/clipPath mutator contains the
+// `platformview_boundingrect`.
+//
+// `clip_bounds` is the bounding rect of the rect/rrect/path in the clipRect/clipRRect/clipPath
+// mutator. This rect is in its own coordinate space. The rect needs to be transformed by
+// `transform_matrix` to be in the coordinate space where the PlatformView is displayed.
+//
+// `platformview_boundingrect` is the final bounding rect of the PlatformView in the coordinate
+// space where the PlatformView is displayed.
+static bool ClipBoundsContainsPlatformViewBoundingRect(const SkRect& clip_bounds,
+                                                       const SkRect& platformview_boundingrect,
+                                                       const SkMatrix& transform_matrix) {
+  SkRect transforme_clip_bounds = transform_matrix.mapRect(clip_bounds);
+  return transforme_clip_bounds.contains(platformview_boundingrect);
+}
+
 namespace flutter {
 // Becomes NO if Apple's API changes and blurred backdrop filters cannot be applied.
 BOOL canApplyBlurBackdrop = YES;
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer(
     GrDirectContext* gr_context,
-    std::shared_ptr<IOSContext> ios_context) {
+    const std::shared_ptr<IOSContext>& ios_context) {
   if (available_layer_index_ >= layers_.size()) {
     std::shared_ptr<FlutterPlatformViewLayer> layer;
     fml::scoped_nsobject<FlutterOverlayView> overlay_view;
@@ -285,7 +301,7 @@ bool FlutterPlatformViewsController::HasPlatformViewThisOrNextFrame() {
 const int FlutterPlatformViewsController::kDefaultMergedLeaseDuration;
 
 PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   // TODO(cyanglaz): https://github.com/flutter/flutter/issues/56474
   // Rename `has_platform_view` to `view_mutated` when the above issue is resolved.
   if (!HasPlatformViewThisOrNextFrame()) {
@@ -314,17 +330,18 @@ PostPrerollResult FlutterPlatformViewsController::PostPrerollAction(
 
 void FlutterPlatformViewsController::EndFrame(
     bool should_resubmit_frame,
-    fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) {
+    const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger) {
   if (should_resubmit_frame) {
     raster_thread_merger->MergeWithLease(kDefaultMergedLeaseDuration);
   }
 }
 
 void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
-    std::shared_ptr<const DlImageFilter> filter) {
+    const std::shared_ptr<const DlImageFilter>& filter,
+    const SkRect& filter_rect) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
-    params.PushImageFilter(filter);
+    params.PushImageFilter(filter, filter_rect);
     current_composition_params_[id] = params;
   }
 }
@@ -403,7 +420,8 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
 }
 
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
-                                                   UIView* embedded_view) {
+                                                   UIView* embedded_view,
+                                                   const SkRect& bounding_rect) {
   if (flutter_view_ == nullptr) {
     return;
   }
@@ -411,50 +429,86 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
-  // The UIKit frame is set based on the logical resolution instead of physical.
-  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
-  // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
-  // 500 points in UIKit. And until this point, we did all the calculation based on the flow
-  // resolution. So we need to scale down to match UIKit's logical resolution.
   CGFloat screenScale = [UIScreen mainScreen].scale;
-  CATransform3D finalTransform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
 
   UIView* flutter_view = flutter_view_.get();
   FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
       initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
                                CGRectGetWidth(flutter_view.bounds),
-                               CGRectGetHeight(flutter_view.bounds))] autorelease];
+                               CGRectGetHeight(flutter_view.bounds))
+        screenScale:screenScale] autorelease];
 
-  NSMutableArray* blurRadii = [[[NSMutableArray alloc] init] autorelease];
+  SkMatrix transformMatrix;
+  NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
 
+  clipView.maskView = nil;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
       case kTransform: {
-        CATransform3D transform = GetCATransform3DFromSkMatrix((*iter)->GetMatrix());
-        finalTransform = CATransform3DConcat(transform, finalTransform);
+        transformMatrix.preConcat((*iter)->GetMatrix());
         break;
       }
-      case kClipRect:
-        [maskView clipRect:(*iter)->GetRect() matrix:finalTransform];
+      case kClipRect: {
+        if (ClipBoundsContainsPlatformViewBoundingRect((*iter)->GetRect(), bounding_rect,
+                                                       transformMatrix)) {
+          break;
+        }
+        [maskView clipRect:(*iter)->GetRect() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
-      case kClipRRect:
-        [maskView clipRRect:(*iter)->GetRRect() matrix:finalTransform];
+      }
+      case kClipRRect: {
+        if (ClipBoundsContainsPlatformViewBoundingRect((*iter)->GetRRect().getBounds(),
+                                                       bounding_rect, transformMatrix)) {
+          break;
+        }
+        [maskView clipRRect:(*iter)->GetRRect() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
-      case kClipPath:
-        [maskView clipPath:(*iter)->GetPath() matrix:finalTransform];
+      }
+      case kClipPath: {
+        if (ClipBoundsContainsPlatformViewBoundingRect((*iter)->GetPath().getBounds(),
+                                                       bounding_rect, transformMatrix)) {
+          break;
+        }
+        [maskView clipPath:(*iter)->GetPath() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
+      }
       case kOpacity:
         embedded_view.alpha = (*iter)->GetAlphaFloat() * embedded_view.alpha;
         break;
       case kBackdropFilter: {
-        // We only support DlBlurImageFilter for BackdropFilter.
-        if ((*iter)->GetFilter().asBlur() && canApplyBlurBackdrop) {
-          // sigma_x is arbitrarily chosen as the radius value because Quartz sets
-          // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
-          // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
-          // to blur the PlatformView.
-          [blurRadii addObject:@((*iter)->GetFilter().asBlur()->sigma_x())];
+        // Only support DlBlurImageFilter for BackdropFilter.
+        if (!canApplyBlurBackdrop || !(*iter)->GetFilterMutation().GetFilter().asBlur()) {
+          break;
+        }
+        CGRect filterRect =
+            flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+        // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
+        // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
+        // filtered.
+        if (CGRectIsNull(CGRectIntersection(filterRect, clipView.frame))) {
+          break;
+        }
+        CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
+        CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
+        // sigma_x is arbitrarily chosen as the radius value because Quartz sets
+        // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
+        // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
+        // to blur the PlatformView.
+        CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
+        UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+            initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+        PlatformViewFilter* filter =
+            [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
+                                            blurRadius:blurRadius
+                                      visualEffectView:visualEffectView] autorelease];
+        if (!filter) {
+          canApplyBlurBackdrop = NO;
+        } else {
+          [blurFilters addObject:filter];
         }
         break;
       }
@@ -463,19 +517,26 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   }
 
   if (canApplyBlurBackdrop) {
-    canApplyBlurBackdrop = [clipView applyBlurBackdropFilters:blurRadii];
+    [clipView applyBlurBackdropFilters:blurFilters];
   }
+
+  // The UIKit frame is set based on the logical resolution (points) instead of physical.
+  // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
+  // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
+  // 500 points in UIKit for devices that has screenScale of 2. We need to scale the transformMatrix
+  // down to the logical resoltion before applying it to the layer of PlatformView.
+  transformMatrix.postScale(1 / screenScale, 1 / screenScale);
 
   // Reverse the offset of the clipView.
   // The clipView's frame includes the final translate of the final transform matrix.
-  // So we need to revese this translate so the platform view can layout at the correct offset.
+  // Thus, this translate needs to be reversed so the platform view can layout at the correct
+  // offset.
   //
-  // Note that we don't apply this transform matrix the clippings because clippings happen on the
-  // mask view, whose origin is always (0,0) to the flutter_view.
-  CATransform3D reverseTranslate =
-      CATransform3DMakeTranslation(-clipView.frame.origin.x, -clipView.frame.origin.y, 0);
-  embedded_view.layer.transform = CATransform3DConcat(finalTransform, reverseTranslate);
-  clipView.maskView = maskView;
+  // Note that the transforms are not applied to the clipping paths because clipping paths happen on
+  // the mask view, whose origin is always (0,0) to the flutter_view.
+  transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
+
+  embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
@@ -514,7 +575,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   CGFloat screenScale = [UIScreen mainScreen].scale;
   clippingView.frame = CGRectMake(rect.x() / screenScale, rect.y() / screenScale,
                                   rect.width() / screenScale, rect.height() / screenScale);
-  ApplyMutators(mutatorStack, touchInterceptor);
+  ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
 EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
@@ -560,8 +621,10 @@ SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
 }
 
 bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
-                                                 std::shared_ptr<IOSContext> ios_context,
+                                                 const std::shared_ptr<IOSContext>& ios_context,
                                                  std::unique_ptr<SurfaceFrame> frame) {
+  TRACE_EVENT0("flutter", "FlutterPlatformViewsController::SubmitFrame");
+
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   if (flutter_view_ == nullptr) {
@@ -576,8 +639,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
   // Resolve all pending GPU operations before allocating a new surface.
   background_canvas->flush();
 
-  // Clipping the background canvas before drawing the picture recorders requires to
-  // save and restore the clip context.
+  // Clipping the background canvas before drawing the picture recorders requires
+  // saving and restoring the clip context.
   SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
@@ -704,7 +767,7 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
 
 std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLayer(
     GrDirectContext* gr_context,
-    std::shared_ptr<IOSContext> ios_context,
+    const std::shared_ptr<IOSContext>& ios_context,
     EmbedderViewSlice* slice,
     SkRect rect,
     int64_t view_id,

@@ -16,7 +16,8 @@ TextureVK::TextureVK(TextureDescriptor desc,
 TextureVK::~TextureVK() {
   if (!IsWrapped() && IsValid()) {
     const auto& texture = texture_info_->allocated_texture;
-    vmaDestroyImage(*texture.allocator, texture.image, texture.allocation);
+    vmaDestroyImage(*texture.backing_allocation.allocator, texture.image,
+                    texture.backing_allocation.allocation);
   }
 }
 
@@ -45,7 +46,7 @@ bool TextureVK::OnSetContents(const uint8_t* contents,
   }
 
   // currently we are only supporting 2d textures, no cube textures etc.
-  auto mapping = texture_info_->allocated_texture.allocation_info.pMappedData;
+  auto mapping = texture_info_->allocated_texture.staging_buffer.GetMapping();
 
   if (mapping) {
     memcpy(mapping, contents, length);
@@ -90,7 +91,7 @@ vk::ImageView TextureVK::GetImageView() const {
     case TextureBackingTypeVK::kUnknownType:
       return nullptr;
     case TextureBackingTypeVK::kAllocatedTexture:
-      return texture_info_->allocated_texture.image_view;
+      return vk::ImageView{texture_info_->allocated_texture.image_view};
     case TextureBackingTypeVK::kWrappedTexture:
       return texture_info_->wrapped_texture.swapchain_image->GetImageView();
   }
@@ -101,9 +102,22 @@ vk::Image TextureVK::GetImage() const {
     case TextureBackingTypeVK::kUnknownType:
       FML_CHECK(false) << "Unknown texture backing type";
     case TextureBackingTypeVK::kAllocatedTexture:
-      return texture_info_->allocated_texture.image;
+      return vk::Image{texture_info_->allocated_texture.image};
     case TextureBackingTypeVK::kWrappedTexture:
       return texture_info_->wrapped_texture.swapchain_image->GetImage();
+  }
+}
+
+vk::Buffer TextureVK::GetStagingBuffer() const {
+  switch (texture_info_->backing_type) {
+    case TextureBackingTypeVK::kUnknownType:
+      FML_CHECK(false) << "Unknown texture backing type";
+      return nullptr;
+    case TextureBackingTypeVK::kAllocatedTexture:
+      return texture_info_->allocated_texture.staging_buffer.GetBufferHandle();
+    case TextureBackingTypeVK::kWrappedTexture:
+      FML_CHECK(false) << "Wrapped textures do not have staging buffers";
+      return nullptr;
   }
 }
 

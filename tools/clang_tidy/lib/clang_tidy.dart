@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show jsonDecode;
+import 'dart:convert' show LineSplitter, jsonDecode;
 import 'dart:io' as io show File, stderr, stdout;
 
 import 'package:meta/meta.dart';
@@ -27,6 +27,17 @@ class _ComputeJobsResult {
 
   final List<WorkerJob> jobs;
   final bool sawMalformed;
+}
+
+enum _SetStatus {
+  Intersection,
+  Difference,
+}
+
+class _SetStatusCommand {
+  _SetStatusCommand(this.setStatus, this.command);
+  final _SetStatus setStatus;
+  final Command command;
 }
 
 /// A class that runs clang-tidy on all or only the changed files in a git
@@ -92,14 +103,14 @@ class ClangTidy {
 
     _outSink.writeln(_linterOutputHeader);
 
-    final List<io.File> changedFiles = await computeChangedFiles();
+    final List<io.File> filesOfInterest = await computeFilesOfInterest();
 
     if (options.verbose) {
       _outSink.writeln('Checking lint in repo at ${options.repoPath.path}.');
       if (options.checksArg.isNotEmpty) {
         _outSink.writeln('Checking for specific checks: ${options.checks}.');
       }
-      final int changedFilesCount = changedFiles.length;
+      final int changedFilesCount = filesOfInterest.length;
       if (options.lintAll) {
         _outSink.writeln('Checking all $changedFilesCount files the repo dir.');
       } else {
@@ -109,12 +120,19 @@ class ClangTidy {
       }
     }
 
-    final List<dynamic> buildCommandsData = jsonDecode(
+    final List<Object?> buildCommandsData = jsonDecode(
       options.buildCommandsPath.readAsStringSync(),
-    ) as List<dynamic>;
-    final List<Command> changedFileBuildCommands = await getLintCommandsForChangedFiles(
+    ) as List<Object?>;
+    final List<List<Object?>> shardBuildCommandsData = options
+        .shardCommandsPaths
+        .map((io.File file) =>
+            jsonDecode(file.readAsStringSync()) as List<Object?>)
+        .toList();
+    final List<Command> changedFileBuildCommands = await getLintCommandsForFiles(
       buildCommandsData,
-      changedFiles,
+      filesOfInterest,
+      shardBuildCommandsData,
+      options.shardId,
     );
 
     if (changedFileBuildCommands.isEmpty) {
@@ -153,7 +171,7 @@ class ClangTidy {
   /// The files with local modifications or all the files if `lintAll` was
   /// specified.
   @visibleForTesting
-  Future<List<io.File>> computeChangedFiles() async {
+  Future<List<io.File>> computeFilesOfInterest() async {
     if (options.lintAll) {
       return options.repoPath
         .listSync(recursive: true)
@@ -171,23 +189,99 @@ class ClangTidy {
     return repo.changedFiles;
   }
 
-  /// Given a build commands json file, and the files with local changes,
-  /// compute the lint commands to run.
-  @visibleForTesting
-  Future<List<Command>> getLintCommandsForChangedFiles(
-    List<dynamic> buildCommandsData,
-    List<io.File> changedFiles,
-  ) async {
-    final List<Command> buildCommands = <Command>[];
-    for (final dynamic data in buildCommandsData) {
-      final Command command = Command.fromMap(data as Map<String, dynamic>);
-      final LintAction lintAction = await command.lintAction;
-      // Short-circuit the expensive containsAny call for the many third_party files.
-      if (lintAction != LintAction.skipThirdParty && command.containsAny(changedFiles)) {
-        buildCommands.add(command);
+  /// Returns f(n) = value(n * [shardCount] + [id]).
+  Iterable<T> _takeShard<T>(Iterable<T> values, int id, int shardCount) sync* {
+    int count = 0;
+    for (final T val in values) {
+      if (count % shardCount == id) {
+        yield val;
+      }
+      count++;
+    }
+  }
+
+  /// This returns a `_SetStatusCommand` for each [Command] in [items].
+  /// `Intersection` if the Command shows up in [items] and its filePath in all
+  /// [filePathSets], otherwise `Difference`.
+  Iterable<_SetStatusCommand> _calcIntersection(
+      Iterable<Command> items, Iterable<Set<String>> filePathSets) sync* {
+    bool allSetsContain(Command command) {
+      for (final Set<String> filePathSet in filePathSets) {
+        if (!filePathSet.contains(command.filePath)) {
+          return false;
+        }
+      }
+      return true;
+    }
+    for (final Command command in items) {
+      if (allSetsContain(command)) {
+        yield _SetStatusCommand(_SetStatus.Intersection, command);
+      } else {
+        yield _SetStatusCommand(_SetStatus.Difference, command);
       }
     }
-    return buildCommands;
+  }
+
+  /// Given a build commands json file's contents in [buildCommandsData], and
+  /// the [files] with local changes, compute the lint commands to run.  If
+  /// build commands are supplied in [sharedBuildCommandsData] the intersection
+  /// of those build commands will be calculated and distributed across
+  /// instances via the [shardId].
+  @visibleForTesting
+  Future<List<Command>> getLintCommandsForFiles(
+    List<Object?> buildCommandsData,
+    List<io.File> files,
+    List<List<Object?>> sharedBuildCommandsData,
+    int? shardId,
+  ) {
+    final List<Command> totalCommands = <Command>[];
+    if (sharedBuildCommandsData.isNotEmpty) {
+      final List<Command> buildCommands = <Command>[
+        for (Object? data in buildCommandsData)
+          Command.fromMap((data as Map<String, Object?>?)!)
+      ];
+      final List<Set<String>> shardFilePaths = <Set<String>>[
+        for (List<Object?> list in sharedBuildCommandsData)
+          <String>{
+            for (Object? data in list)
+              Command.fromMap((data as Map<String, Object?>?)!).filePath
+          }
+      ];
+      final Iterable<_SetStatusCommand> intersectionResults =
+          _calcIntersection(buildCommands, shardFilePaths);
+      for (final _SetStatusCommand result in intersectionResults) {
+        if (result.setStatus == _SetStatus.Difference) {
+          totalCommands.add(result.command);
+        }
+      }
+      final List<Command> intersection = <Command>[
+        for (_SetStatusCommand result in intersectionResults)
+          if (result.setStatus == _SetStatus.Intersection) result.command
+      ];
+      // Make sure to sort results so the sharding scheme is guaranteed to work
+      // since we are not sure if there is a defined order in the json file.
+      intersection
+          .sort((Command x, Command y) => x.filePath.compareTo(y.filePath));
+      totalCommands.addAll(
+          _takeShard(intersection, shardId!, 1 + sharedBuildCommandsData.length));
+    } else {
+      totalCommands.addAll(<Command>[
+        for (Object? data in buildCommandsData)
+          Command.fromMap((data as Map<String, Object?>?)!)
+      ]);
+    }
+    return () async {
+      final List<Command> result = <Command>[];
+      for (final Command command in totalCommands) {
+        final LintAction lintAction = await command.lintAction;
+        // Short-circuit the expensive containsAny call for the many third_party files.
+        if (lintAction != LintAction.skipThirdParty &&
+            command.containsAny(files)) {
+          result.add(command);
+        }
+      }
+      return result;
+    }();
   }
 
   Future<_ComputeJobsResult> _computeJobs(
@@ -228,6 +322,27 @@ class ClangTidy {
     return _ComputeJobsResult(jobs, sawMalformed);
   }
 
+  static Iterable<String> _trimGenerator(String output) sync* {
+    const LineSplitter splitter = LineSplitter();
+    final List<String> lines = splitter.convert(output);
+    bool isPrintingError = false;
+    for (final String line in lines) {
+      if (line.contains(': error:') || line.contains(': warning:')) {
+        isPrintingError = true;
+        yield line;
+      } else if (line == ':') {
+          isPrintingError = false;
+      } else if (isPrintingError) {
+        yield line;
+      }
+    }
+  }
+
+  /// Visible for testing.
+  /// Function for trimming raw clang-tidy output.
+  @visibleForTesting
+  static String trimOutput(String output) => _trimGenerator(output).join('\n');
+
   Future<int> _runJobs(List<WorkerJob> jobs) async {
     int result = 0;
     final ProcessPool pool = ProcessPool();
@@ -236,10 +351,13 @@ class ClangTidy {
         continue;
       }
       _errSink.writeln('❌ Failures for ${job.name}:');
-      _errSink.writeln(job.result.stdout);
-      final Exception? exception = job.exception;
-      if (exception != null) {
-        _errSink.writeln(exception);
+      if (!job.printOutput) {
+        final Exception? exception = job.exception;
+        if (exception != null) {
+          _errSink.writeln(trimOutput(exception.toString()));
+        } else {
+          _errSink.writeln(trimOutput(job.result.stdout));
+        }
       }
       result = 1;
     }

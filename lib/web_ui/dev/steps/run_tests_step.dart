@@ -38,11 +38,13 @@ class RunTestsStep implements PipelineStep {
     required this.requireSkiaGold,
     this.testFiles,
     required this.overridePathToCanvasKit,
+    required this.isWasm
   });
 
   final String browserName;
   final List<FilePath>? testFiles;
   final bool isDebug;
+  final bool isWasm;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
 
@@ -62,13 +64,15 @@ class RunTestsStep implements PipelineStep {
   Future<void> run() async {
     await _prepareTestResultsDirectory();
 
-    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(browserName);
+    final BrowserEnvironment browserEnvironment = getBrowserEnvironment(browserName, enableWasmGC: isWasm);
     await browserEnvironment.prepare();
 
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
     final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
+
+    bool testsPassed = true;
 
     if (sortedTests.htmlTests.isNotEmpty) {
       await _runTestBatch(
@@ -77,10 +81,12 @@ class RunTestsStep implements PipelineStep {
         browserEnvironment: browserEnvironment,
         expectFailure: false,
         isDebug: isDebug,
+        isWasm: isWasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
     if (sortedTests.canvasKitTests.isNotEmpty) {
@@ -90,28 +96,35 @@ class RunTestsStep implements PipelineStep {
         browserEnvironment: browserEnvironment,
         expectFailure: false,
         isDebug: isDebug,
+        isWasm: isWasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
-    if (sortedTests.skwasmTests.isNotEmpty) {
+    // TODO(jacksongardner): enable this test suite on safari
+    // For some reason, Safari is flaky when running the Skwasm test suite
+    // See https://github.com/flutter/flutter/issues/115312
+    if (browserName != kSafari && sortedTests.skwasmTests.isNotEmpty) {
       await _runTestBatch(
         testFiles: sortedTests.skwasmTests,
         renderer: Renderer.skwasm,
         browserEnvironment: browserEnvironment,
         expectFailure: false,
         isDebug: isDebug,
+        isWasm: isWasm,
         doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
       );
+      testsPassed &= io.exitCode == 0;
     }
 
     await browserEnvironment.cleanup();
 
-    if (io.exitCode != 0) {
+    if (!testsPassed) {
       throw ToolExit('Some tests failed');
     }
   }
@@ -176,6 +189,7 @@ Future<void> _runTestBatch({
   required List<FilePath> testFiles,
   required Renderer renderer,
   required bool isDebug,
+  required bool isWasm,
   required BrowserEnvironment browserEnvironment,
   required bool doUpdateScreenshotGoldens,
   required bool expectFailure,
@@ -225,6 +239,7 @@ Future<void> _runTestBatch({
       doUpdateScreenshotGoldens: !expectFailure && doUpdateScreenshotGoldens,
       skiaClient: skiaClient,
       overridePathToCanvasKit: overridePathToCanvasKit,
+      isWasm: isWasm,
     );
   });
 
