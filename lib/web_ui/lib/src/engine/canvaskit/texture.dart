@@ -65,9 +65,11 @@ class CkTextureRegistry implements TextureRegistry {
 
   final Map<int, CkTexture> _textures = <int, CkTexture>{};
 
+  int _nextTextureId = 0;
+
   @override
   int registerTexture(Object source) {
-    final int id = _textures.length;
+    final int id = _nextTextureId++;
     _textures[id] = CkTexture(source);
     return id;
   }
