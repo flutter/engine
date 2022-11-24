@@ -145,9 +145,9 @@ final PlatformViewRegistry platformViewRegistry = PlatformViewRegistry();
 /// A registry for textures.
 class TextureRegistry {
   /// Registers a texture.
-  /// 
+  ///
   /// Valid [texture] can be any object that that webGL's texImage2D supports.
-  /// For example, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, 
+  /// For example, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement,
   /// ImageData, ImageBitmap and VideoFrame.
   ///
   /// The returned id can be used to refer to the texture in Texture widgets.
