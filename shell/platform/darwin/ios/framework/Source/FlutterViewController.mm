@@ -458,7 +458,7 @@ typedef struct MouseState {
   double frameDuration = 1 / maxFramesPerSecond;
 
   // Calculating a full seconds worth of animation stops for increased stop fidelity
-  for (double time = 1; time < maxFramesPerSecond; time++) {
+  for (int time = 1; time < maxFramesPerSecond; time++) {
     double frameTime = time / maxFramesPerSecond;
     NSNumber* keyboardAnimationStop =
         [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:frameTime]];
