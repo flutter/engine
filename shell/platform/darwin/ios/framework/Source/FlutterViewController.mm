@@ -34,72 +34,6 @@
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
-// Calculated based on spring interpolation from https://github.com/CosynPa/RevealSpringAnimation
-// (supports max 120fps)
-static NSArray* const kKeyboardStops = @[
-  @0.0104644605808437,
-  @0.0378945710726348,
-  @0.0772929434500889,
-  @0.124734869398615,
-  @0.177165077399258,
-  @0.232230492534301,
-  @0.288142884918677,
-  @0.343566301349425,
-  @0.397525020517165,
-  @0.449328480839688,
-  @0.498510223492776,
-  @0.544778389928067,
-  @0.587975728583874,
-  @0.628047412666313,
-  @0.665015260793732,
-  @0.698957194203488,
-  @0.729990965893388,
-  @0.758261365048704,
-  @0.783930239883246,
-  @0.807168798214102,
-  @0.828151741567624,
-  @0.847052868629256,
-  @0.864041850126972,
-  @0.879281932061502,
-  @0.89292836947895,
-  @0.905127430324033,
-  @0.91601583965413,
-  @0.925720559754988,
-  @0.934358822413164,
-  @0.942038346548186,
-  @0.94885768823959,
-  @0.954906681442232,
-  @0.960266936818686,
-  @0.965012373505042,
-  @0.969209764577412,
-  @0.972919281759302,
-  @0.97619502871874,
-  @0.979085555325651,
-  @0.981634347620896,
-  @0.983880290109166,
-  @0.985858098428022,
-  @0.987598721546455,
-  @0.989129713475411,
-  @0.99047557508464,
-  @0.991658067059749,
-  @0.992696495336988,
-  @0.993607970550618,
-  @0.994407643142672,
-  @0.995108915836915,
-  @0.995723635183195,
-  @0.996262263847681,
-  @0.996734035268435,
-  @0.997147092222164,
-  @0.997508610762945,
-  @0.997824910901819,
-  @0.99810155530117,
-  @0.998343437162298,
-  @0.998554858390709,
-  @0.998739599032797,
-  @0.998900978890739,
-  @1
-];
-
 static NSString* const kFlutterRestorationStateAppData = @"FlutterRestorationStateAppData";
 
 NSNotificationName const FlutterSemanticsUpdateNotification = @"FlutterSemanticsUpdate";
@@ -177,6 +111,59 @@ typedef struct MouseState {
 @implementation KeyboardAnimationView : UIView
 @end
 
+@interface KeyboardSpringCurve : NSObject
+@property(nonatomic) double initialVelocity;
+@property(nonatomic) double settlingDuration;
+@property(nonatomic) double response;
+@property(nonatomic) double dampingRatio;
+@property(nonatomic) double omega;
+@end
+
+@implementation KeyboardSpringCurve
+- (id)initWithStiffness:(double)stiffness
+           dampingRatio:(double)dampingRatio
+                   mass:(double)mass
+        initialVelocity:(double)initialVelocity
+       settlingDuration:(double)settlingDuration {
+  self = [super init];
+  if (self) {
+    _dampingRatio = dampingRatio;
+    _initialVelocity = initialVelocity;
+    _settlingDuration = settlingDuration;
+    _response = MAX(1e-5, 2 * M_PI / sqrt(stiffness / mass));
+    _omega = 2 * M_PI / _response;
+  }
+  return self;
+}
+
+- (double)curveFunc:(double)t {
+  double v0 = self.initialVelocity;
+  double zeta = self.dampingRatio;
+
+  double y;
+  if (abs(zeta - 1.0) < 1e-8) {
+    double c1 = -1.0;
+    double c2 = v0 - self.omega;
+    y = (c1 + c2 * t) * exp(-self.omega * t);
+  } else if (zeta > 1) {
+    double s1 = self.omega * (-zeta + sqrt(zeta * zeta - 1));
+    double s2 = self.omega * (-zeta - sqrt(zeta * zeta - 1));
+    double c1 = (-s2 - v0) / (s2 - s1);
+    double c2 = (s1 + v0) / (s2 - s1);
+    y = c1 * exp(s1 * t) + c2 * exp(s2 * t);
+  } else {
+    double a = -self.omega * zeta;
+    double b = self.omega * sqrt(1 - zeta * zeta);
+    double c2 = (v0 + a) / b;
+    double theta = atan(c2);
+    // Alternatively y = (-cos(b * t) + c2 * sin(b * t)) * exp(a * t)
+    y = sqrt(1 + c2 * c2) * exp(a * t) * cos(b * t + theta + M_PI);
+  }
+
+  return y + 1;
+}
+@end
+
 @implementation FlutterViewController {
   std::unique_ptr<fml::WeakPtrFactory<FlutterViewController>> _weakFactory;
   fml::scoped_nsobject<FlutterEngine> _engine;
@@ -199,6 +186,8 @@ typedef struct MouseState {
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<KeyboardAnimationView> _keyboardAnimationView;
+  fml::scoped_nsobject<KeyboardSpringCurve> _keyboardSpringCurve;
+  fml::scoped_nsobject<NSMutableArray> _keyboardAnimationStops;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -340,6 +329,7 @@ typedef struct MouseState {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
+  [self setupKeyboardAnimationCurve];
 }
 
 - (FlutterEngine*)engine {
@@ -453,6 +443,31 @@ typedef struct MouseState {
              selector:@selector(onShowHomeIndicatorNotification:)
                  name:FlutterViewControllerShowHomeIndicator
                object:nil];
+}
+
+- (void)setupKeyboardAnimationCurve {
+  _keyboardAnimationStops.reset([[NSMutableArray alloc] init]);
+
+  // Keyboard animation spring curve for iOS 16 and below
+  _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc] initWithStiffness:1000
+                                                               dampingRatio:1
+                                                                       mass:3
+                                                            initialVelocity:0
+                                                           settlingDuration:0.5]);
+  double settlingDuration = [[self keyboardSpringCurve] settlingDuration];
+  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+
+  for (double time = 1 / displayRefreshRate; time < settlingDuration * 2;
+       time += 1 / displayRefreshRate) {
+    NSNumber* keyboardAnimationStop =
+        [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:time]];
+    if (time <= settlingDuration + 1 / displayRefreshRate) {
+      [[self keyboardAnimationStops] addObject:keyboardAnimationStop];
+    } else {
+      [[self keyboardAnimationStops] addObject:[NSNumber numberWithDouble:1]];
+      break;
+    }
+  }
 }
 
 - (void)setInitialRoute:(NSString*)route {
@@ -663,6 +678,14 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIView*)keyboardAnimationView {
   return _keyboardAnimationView.get();
+}
+
+- (KeyboardSpringCurve*)keyboardSpringCurve {
+  return _keyboardSpringCurve.get();
+}
+
+- (NSMutableArray*)keyboardAnimationStops {
+  return _keyboardAnimationStops.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1487,15 +1510,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
     fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
-
-    // Double keyboard animation duration for manual animation synchronization.
-    double keyboardAnimationTimeMillis = keyboardView.duration * 2 * 1000;
-    double expectedFrames = frameRate * keyboardView.duration * 2;
-
+      
+    double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
+    double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
+      
+    double expectedFrames = frameRate * animationSettlingDuration;
     double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
+      
     int frameApproximation = roundf(MIN(percentComplete, 1) * expectedFrames);
-    double animationFramePercentage =
-        [[kKeyboardStops objectAtIndex:frameApproximation] doubleValue];
+    double animationFramePercentage = [[[flutterViewController keyboardAnimationStops]
+        objectAtIndex:frameApproximation] doubleValue];
 
     CGFloat newY =
         keyboardView.from + animationFramePercentage * (keyboardView.to - keyboardView.from);
