@@ -105,7 +105,6 @@ typedef struct MouseState {
 @property(nonatomic) NSTimeInterval duration;
 @property(nonatomic) CGFloat from;
 @property(nonatomic) CGFloat to;
-@property(nonatomic) double lastComplete;
 @end
 
 @implementation KeyboardAnimationView : UIView
@@ -114,7 +113,6 @@ typedef struct MouseState {
 @interface KeyboardSpringCurve : NSObject
 @property(nonatomic) double initialVelocity;
 @property(nonatomic) double settlingDuration;
-@property(nonatomic) double response;
 @property(nonatomic) double dampingRatio;
 @property(nonatomic) double omega;
 @end
@@ -130,8 +128,9 @@ typedef struct MouseState {
     _dampingRatio = dampingRatio;
     _initialVelocity = initialVelocity;
     _settlingDuration = settlingDuration;
-    _response = MAX(1e-5, 2 * M_PI / sqrt(stiffness / mass));
-    _omega = 2 * M_PI / _response;
+
+    double response = MAX(1e-5, 2 * M_PI / sqrt(stiffness / mass));
+    _omega = 2 * M_PI / response;
   }
   return self;
 }
@@ -455,18 +454,23 @@ typedef struct MouseState {
                                                             initialVelocity:0
                                                            settlingDuration:0.5]);
   double settlingDuration = [[self keyboardSpringCurve] settlingDuration];
-  double displayRefreshRate = [DisplayLinkManager displayRefreshRate];
+  double maxFramesPerSecond = [DisplayLinkManager displayRefreshRate];
+  double frameDuration = 1 / maxFramesPerSecond;
 
-  for (double time = 1 / displayRefreshRate; time < settlingDuration * 2;
-       time += 1 / displayRefreshRate) {
+  // Calculating a full seconds worth of animation stops for increased stop fidelity
+  for (double time = 1; time < maxFramesPerSecond; time++) {
+    double frameTime = time / maxFramesPerSecond;
     NSNumber* keyboardAnimationStop =
-        [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:time]];
-    if (time <= settlingDuration + 1 / displayRefreshRate) {
-      [[self keyboardAnimationStops] addObject:keyboardAnimationStop];
-    } else {
+        [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:frameTime]];
+
+    // Only store animation stops up to the settlingDuration plus one (since time starts at 1)
+    if (frameTime > settlingDuration + frameDuration) {
+      // Ensure the animation finishes with 100%
       [[self keyboardAnimationStops] addObject:[NSNumber numberWithDouble:1]];
       break;
     }
+
+    [[self keyboardAnimationStops] addObject:keyboardAnimationStop];
   }
 }
 
@@ -1456,7 +1460,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // Set animation begin value.
   [self keyboardAnimationView].frame =
-      CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 1, 1);
+      CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
@@ -1509,15 +1513,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         (KeyboardAnimationView*)[flutterViewController keyboardAnimationView];
 
     fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
-    double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
+    double maxFrameRate = [DisplayLinkManager displayRefreshRate];
+    double frameRate = round(
+        1 /
+        (recorder.get()->GetVsyncTargetTime() - recorder.get()->GetVsyncStartTime()).ToSecondsF());
 
     double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
     double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
 
-    double expectedFrames = frameRate * animationSettlingDuration;
+    double expectedFrames = frameRate * animationSettlingDuration * (maxFrameRate / frameRate);
     double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
 
-    int frameApproximation = roundf(MIN(percentComplete, 1) * expectedFrames);
+    int frameApproximation = MIN(roundf(MIN(percentComplete, 1) * expectedFrames),
+                                 [[flutterViewController keyboardAnimationStops] count]);
     double animationFramePercentage = [[[flutterViewController keyboardAnimationStops]
         objectAtIndex:frameApproximation] doubleValue];
 
