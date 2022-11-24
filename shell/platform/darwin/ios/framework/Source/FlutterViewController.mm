@@ -593,6 +593,13 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   return _keyboardAnimationView.get();
 }
 
+- (UIScreen*)getMainScreen {
+  if (@available(iOS 13.0, *)) {
+    return self.view.window.windowScene.screen;
+  }
+  return UIScreen.mainScreen;
+}
+
 - (BOOL)loadDefaultSplashScreenView {
   NSString* launchscreenName =
       [[[NSBundle mainBundle] infoDictionary] objectForKey:@"UILaunchStoryboardName"];
@@ -1277,125 +1284,46 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Keyboard events
 
+typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
+  FlutterKeyboardModeHidden = 0,
+  FlutterKeyboardModeDocked = 1,
+  FlutterKeyboardModeFloating = 2,
+};
+
 - (void)keyboardWillShowNotification:(NSNotification*)notification {
   // Immediately prior to a docked keyboard being shown or when a keyboard goes from
-  // undocked/floating to docked, this notification is triggered
-
-  NSDictionary* info = [notification userInfo];
-  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
-  bool isEmpty = CGRectIsEmpty(keyboardFrame);
-
-  // If keyboard is empty, bypass check if it's from another app
-  if (isEmpty == false) {
-    // Ignore keyboard notifications related to other apps.
-    id isLocal = info[UIKeyboardIsLocalUserInfoKey];
-    if (isLocal && ![isLocal boolValue]) {
-      return;
-    }
-
-    // Ignore keyboard notifications if engine’s viewController is not current viewController.
-    if ([_engine.get() viewController] != self) {
-      return;
-    }
-  }
-
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-
-  // In Slide Over view, the keyboard's dimensions/position does not include the space
-  // below the app, even though the keyboard may be at the bottom of the screen.
-  // To handle, shift the Y origin by the amount of space below the app.
-  CGFloat screenHeight = CGRectGetHeight(screenRect);
-  CGFloat screenWidth = CGRectGetWidth(screenRect);
-  CGFloat appHeight = CGRectGetHeight(self.view.window.frame);
-  CGFloat appWidth = CGRectGetWidth(self.view.window.frame);
-  if (self.view.safeAreaInsets.bottom > 0 && appWidth < screenWidth) {
-    // In Slide Over view, the app is vertically centered with space above and below,
-    // which is why we divide by 2 to get the space below.
-    keyboardFrame.origin.y += (screenHeight - appHeight) / 2;
-  }
-
-  // If keyboard is within the screen and it's not empty, calculate and set the inset.
-  // If keyboard is not within the screen (it's usually below), set inset to 0.
-  // If keyboard frame is empty (usually because it was dragged and dropped), set inset to 0.
-  CGFloat calculatedInset = 0;
-  if (CGRectIntersectsRect(keyboardFrame, screenRect) && !isEmpty) {
-    calculatedInset = [self calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
-  }
-
-  // avoid double triggering startKeyBoardAnimation
-  if (self.targetViewInsetBottom == calculatedInset) {
-    return;
-  }
-
-  self.targetViewInsetBottom = calculatedInset;
-  NSTimeInterval duration =
-      [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
-  [self startKeyBoardAnimation:duration];
+  // undocked/floating to docked, this notification is triggered.
+  [self handleKeyboardNotification:notification notificationName:UIKeyboardWillShowNotification];
 }
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
   // Immediately prior to a change in keyboard frame, this notification is triggered.
   // There are some cases where UIKeyboardWillShowNotification & UIKeyboardWillHideNotification
   // do not act as expected and this is used to catch those cases.
+  [self handleKeyboardNotification:notification
+                  notificationName:UIKeyboardWillChangeFrameNotification];
+}
 
-  NSDictionary* info = [notification userInfo];
+- (void)keyboardWillBeHidden:(NSNotification*)notification {
+  // When keyboard is hidden or undocked, this notification will be triggered.
+  [self handleKeyboardNotification:notification notificationName:UIKeyboardWillHideNotification];
+}
 
-  // Ignore keyboard notifications related to other apps.
-  id isLocal = info[UIKeyboardIsLocalUserInfoKey];
-  if (isLocal && ![isLocal boolValue]) {
+- (void)handleKeyboardNotification:(NSNotification*)notification
+                  notificationName:(NSNotificationName)notificationName {
+  BOOL ignoreNotification = [self shouldIgnoreKeyboardNotification:notification
+                                                  notificationName:notificationName];
+  if (ignoreNotification) {
     return;
   }
 
-  // Ignore keyboard notifications if engine’s viewController is not current viewController.
-  if ([_engine.get() viewController] != self) {
-    return;
-  }
-
+  NSDictionary* info = notification.userInfo;
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+  FlutterKeyboardMode keyboardMode = [self calculateKeyboardAttachMode:keyboardFrame
+                                                      notificationName:notificationName];
+  CGFloat calculatedInset = [self calculateKeyboardInset:keyboardFrame keyboardMode:keyboardMode];
 
-  // Ignore notification when keyboard has zero width/height
-  // This happens when keyboard is dragged.
-  if (CGRectIsEmpty(keyboardFrame)) {
-    return;
-  }
-
-  CGRect screenRect = [[UIScreen mainScreen] bounds];
-  CGFloat screenHeight = CGRectGetHeight(screenRect);
-  CGRect keyboardBeginFrame = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue];
-  CGFloat keyboardBeginWidth = CGRectGetWidth(keyboardBeginFrame);
-
-  // Ignore notification when keyboard is in process of being rotated.
-  // When the keyboard's width at the beginning of the animation equals the screen's
-  // current height, we can assume the keyboard was rotated.
-  if (screenHeight == keyboardBeginWidth) {
-    return;
-  }
-
-  // In Slide Over view, the keyboard's dimensions/position does not include the space
-  // below the app, even though the keyboard may be at the bottom of the screen.
-  // To handle, shift the Y origin by the amount of space below the app.
-  CGFloat screenWidth = CGRectGetWidth(screenRect);
-  CGFloat appHeight = CGRectGetHeight(self.view.window.frame);
-  CGFloat appWidth = CGRectGetWidth(self.view.window.frame);
-  if (self.view.safeAreaInsets.bottom > 0 && appWidth < screenWidth) {
-    // In Slide Over view, the app is vertically centered with space above and below,
-    // which is why we divide by 2 to get the space below.
-    keyboardFrame.origin.y += (screenHeight - appHeight) / 2;
-  }
-
-  // If the keyboard is partially or fully showing at the bottom of the screen,
-  // calculate and set the inset.
-  // When the keyboard goes from docked to the floating small keyboard, it sometimes
-  // does not send a UIKeyboardWillHideNotification notification as expected.
-  // To handle, if the keyboard is above the bottom of the screen, set the inset to 0.
-  // If keyboard is not within the screen (it's usually below), set inset to 0.
-  CGFloat calculatedInset = 0;
-  CGFloat keyboardBottom = CGRectGetMaxY(keyboardFrame);
-  if (keyboardBottom >= screenHeight && CGRectIntersectsRect(keyboardFrame, screenRect)) {
-    calculatedInset = [self calculateKeyboardInset:screenRect keyboardFrame:keyboardFrame];
-  }
-
-  // avoid double triggering startKeyBoardAnimation
+  // Avoid double triggering startKeyBoardAnimation.
   if (self.targetViewInsetBottom == calculatedInset) {
     return;
   }
@@ -1406,35 +1334,170 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self startKeyBoardAnimation:duration];
 }
 
-- (CGFloat)calculateKeyboardInset:(CGRect)screenRect keyboardFrame:(CGRect)keyboardFrame {
-  // Sometimes when rotating orientation, the keyboard height will be higher than it really is.
-  // So calculate how much of the keyboard is showing using position.
-  CGFloat screenHeight = CGRectGetHeight(screenRect);
-  CGFloat keyboardTop = CGRectGetMinY(keyboardFrame);
-  CGFloat portionOfKeyboardShowing = screenHeight - keyboardTop;
+- (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification
+                        notificationName:(NSNotificationName)notificationName {
+  BOOL isKeyboardNotificationForThisView = [self isKeyboardNotificationForThisView:notification];
+  BOOL isKeyboardRotated = [self isKeyboardRotated:notification];
 
-  // The keyboard is treated as an inset since we want to effectively reduce the window size by
-  // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
-  // bottom padding.
-  CGFloat scale = [UIScreen mainScreen].scale;
-  CGFloat calculatedInset = portionOfKeyboardShowing * scale;
+  // Don't ignore UIKeyboardWillHideNotification notifications.
+  if (notificationName == UIKeyboardWillHideNotification) {
+    // Skip hide notification when rotation in progress unless triggered by another app.
+    if (isKeyboardRotated && isKeyboardNotificationForThisView) {
+      return YES;
+    }
+    return NO;
+  }
 
-  return calculatedInset;
+  // Ignore notification when keyboard's dimensions and position are all zeroes,
+  // for UIKeyboardWillChangeFrameNotification. This happens when keyboard is dragged.
+  NSDictionary* info = notification.userInfo;
+  CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+  if (notificationName == UIKeyboardWillChangeFrameNotification &&
+      CGRectEqualToRect(keyboardFrame, CGRectZero)) {
+    return YES;
+  }
+
+  // Don't ignore other times a keyboard's height or width is 0.
+  if (CGRectIsEmpty(keyboardFrame)) {
+    return NO;
+  }
+
+  // Ignore keyboard notifications related to other apps.
+  if (!isKeyboardNotificationForThisView) {
+    return YES;
+  }
+
+  // Ignore notification when keyboard is in process of being rotated.
+  if (isKeyboardRotated) {
+    return YES;
+  }
+
+  return NO;
 }
 
-- (void)keyboardWillBeHidden:(NSNotification*)notification {
-  // When keyboard is hidden or undocked, this notification will be triggered
-  if (self.targetViewInsetBottom != 0) {
-    // Ensure the keyboard will be dismissed. Just like keyboardWillShowNotification
-    // and keyboardWillChangeFrame, keyboardWillBeHidden is also in an animation
-    // block in iOS sdk, so we don't need to set the animation curve.
-    // Related issue: https://github.com/flutter/flutter/issues/99951
-    NSDictionary* info = [notification userInfo];
-    self.targetViewInsetBottom = 0;
-    NSTimeInterval duration =
-        [[info objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue];
-    [self startKeyBoardAnimation:duration];
+- (BOOL)isKeyboardNotificationForThisView:(NSNotification*)notification {
+  NSDictionary* info = notification.userInfo;
+  // Keyboard notifications related to other apps.
+  id isLocal = info[UIKeyboardIsLocalUserInfoKey];
+  if (isLocal && ![isLocal boolValue]) {
+    return NO;
   }
+  // Engine’s viewController is not current viewController.
+  if ([_engine.get() viewController] != self) {
+    return NO;
+  }
+  return YES;
+}
+
+- (BOOL)isKeyboardRotated:(NSNotification*)notification {
+  // When the keyboard's width at the beginning of the animation equals the screen's
+  // current height, we can assume the keyboard was rotated.
+  NSDictionary* info = notification.userInfo;
+  CGRect screenRect = [self getMainScreen].bounds;
+  CGFloat screenHeight = CGRectGetHeight(screenRect);
+  CGRect keyboardEndFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
+  CGRect keyboardBeginFrame = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue];
+  CGFloat keyboardBeginWidth = CGRectGetWidth(keyboardBeginFrame);
+  if (CGRectEqualToRect(keyboardEndFrame, CGRectZero)) {
+    return NO;
+  }
+  if (screenHeight == keyboardBeginWidth) {
+    return YES;
+  }
+  return NO;
+}
+
+- (FlutterKeyboardMode)calculateKeyboardAttachMode:(CGRect)keyboardFrame
+                                  notificationName:(NSNotificationName)notificationName {
+  // There are multiple types of keyboard: docked, undocked, split, split docked,
+  // floating, predictive-only, minimized. This function will categorize
+  // the keyboard as one of the following modes: docked, floating, or hidden.
+  // Docked mode includes docked, split docked, predictive-only (when opening via click),
+  // and minimized (when opened via click).
+  // Floating includes undocked, split, floating, predictive-only (when dragged and dropped),
+  // and minimized (when dragged and dropped).
+  if (notificationName == UIKeyboardWillHideNotification) {
+    return FlutterKeyboardModeHidden;
+  }
+
+  // If keyboard's dimensions and position are all zeroes,
+  // that means it's been dragged and therefore floating.
+  if (CGRectEqualToRect(keyboardFrame, CGRectZero)) {
+    return FlutterKeyboardModeFloating;
+  }
+  // If keyboard's width or height are 0, it's hidden.
+  if (CGRectIsEmpty(keyboardFrame)) {
+    return FlutterKeyboardModeHidden;
+  }
+
+  CGRect screenRect = [self getMainScreen].bounds;
+  CGFloat keyboardWidth = CGRectGetWidth(keyboardFrame);
+  CGFloat screenWidth = CGRectGetWidth(screenRect);
+
+  // If keyboard is not full width, it's floating.
+  if (keyboardWidth != screenWidth) {
+    return FlutterKeyboardModeFloating;
+  }
+
+  CGFloat screenHeight = CGRectGetHeight(screenRect);
+  CGRect adjustedKeyboardFrame = keyboardFrame;
+  adjustedKeyboardFrame.origin.y += [self calculateMultitaskingAdjustment:screenRect
+                                                            keyboardFrame:keyboardFrame];
+  CGFloat adjustedKeyboardBottom = CGRectGetMaxY(adjustedKeyboardFrame);
+
+  // If the keyboard is above the bottom of the screen, it's floating.
+  if (adjustedKeyboardBottom < screenHeight) {
+    return FlutterKeyboardModeFloating;
+  }
+  // If the keyboard is partially or fully showing at the bottom of the screen, it's docked.
+  if (CGRectIntersectsRect(adjustedKeyboardFrame, screenRect)) {
+    return FlutterKeyboardModeDocked;
+  }
+  return FlutterKeyboardModeHidden;
+}
+
+- (CGFloat)calculateMultitaskingAdjustment:(CGRect)screenRect keyboardFrame:(CGRect)keyboardFrame {
+  // In Slide Over mode, the keyboard's frame does not include the space
+  // below the app, even though the keyboard may be at the bottom of the screen.
+  // To handle, shift the Y origin by the amount of space below the app.
+  if (self.view.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPad &&
+      self.view.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact &&
+      self.view.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular) {
+    CGFloat screenHeight = CGRectGetHeight(screenRect);
+    CGFloat keyboardBottom = CGRectGetMaxY(keyboardFrame);
+
+    // Stage Manager mode will also meet the above parameters, but it does not handle
+    // the keyboard positioning the same way, so skip if keyboard is at bottom of page.
+    if (screenHeight == keyboardBottom) {
+      return 0;
+    }
+    CGRect viewFrameInScreen = [self.view convertRect:self.view.frame
+                                    toCoordinateSpace:[self getMainScreen].coordinateSpace];
+    CGFloat viewBottom = CGRectGetMaxY(viewFrameInScreen);
+    CGFloat offset = screenHeight - viewBottom;
+    if (offset > 0) {
+      return offset;
+    }
+  }
+  return 0;
+}
+
+- (CGFloat)calculateKeyboardInset:(CGRect)keyboardFrame keyboardMode:(NSInteger)keyboardMode {
+  // Only docked keyboards will have an inset.
+  if (keyboardMode == FlutterKeyboardModeDocked) {
+    // Calculate how much of the keyboard intersects with the view.
+    CGRect viewFrameInScreen = [self.view convertRect:self.view.frame
+                                    toCoordinateSpace:[self getMainScreen].coordinateSpace];
+    CGRect intersection = CGRectIntersection(keyboardFrame, viewFrameInScreen);
+    CGFloat portionOfKeyboardInView = CGRectGetHeight(intersection);
+
+    // The keyboard is treated as an inset since we want to effectively reduce the window size by
+    // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
+    // bottom padding.
+    CGFloat scale = [self getMainScreen].scale;
+    return portionOfKeyboardInView * scale;
+  }
+  return 0;
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
