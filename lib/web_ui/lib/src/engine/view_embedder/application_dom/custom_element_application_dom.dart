@@ -9,57 +9,25 @@ import 'application_dom.dart';
 
 class CustomElementApplicationDom extends ApplicationDom {
 
-  CustomElementApplicationDom(this._hostElement) {
+  CustomElementApplicationDom(this._hostElement)
+      : assert(_hostElement.children.isEmpty, '_hostElement must be empty.') {
     // Clear children...
     while(_hostElement.firstChild != null) {
       _hostElement.removeChild(_hostElement.lastChild!);
     }
-
-    // Hook up a resize observer on the hostElement (if supported!).
-    //
-    // Should all this code live in the DimensionsProvider classes?
-    _resizeObserver = createDomResizeObserver(
-      (List<DomResizeObserverEntry> entries, DomResizeObserver _) {
-        entries.forEach(_streamController.add);
-      }
-    );
-
-    assert(() {
-      if (_resizeObserver == null) {
-        domWindow.console.warn('ResizeObserver API not supported. Flutter will not resize with its hostElement.');
-      }
-      return true;
-    }());
-
-    _resizeObserver?.observe(_hostElement);
   }
 
   final DomElement _hostElement;
-  late DomResizeObserver? _resizeObserver;
-
-  final StreamController<DomResizeObserverEntry> _streamController =
-    StreamController<DomResizeObserverEntry>.broadcast();
 
   @override
-  final String type = 'custom-element';
+  void initializeHost({required String defaultFont, Map<String, String>? embedderMetadata}) {
+    // ignore:avoid_function_literals_in_foreach_calls
+    embedderMetadata?.entries.forEach((MapEntry<String, String> entry) {
+      _setHostAttribute(entry.key, entry.value);
+    });
+    _setHostAttribute('flt-glasspane-host', 'custom-element');
 
-  @override
-  void applyViewportMeta() {
-    // NOOP
-  }
-
-  @override
-  void setHostStyles({
-    required String font,
-  }) {
-    _hostElement
-      ..style.position = 'relative'
-      ..style.overflow = 'hidden';
-  }
-
-  @override
-  void setHostAttribute(String name, String value) {
-    _hostElement.setAttribute(name, value);
+    _setHostStyles(font: defaultFont);
   }
 
   @override
@@ -82,23 +50,20 @@ class CustomElementApplicationDom extends ApplicationDom {
   }
 
   @override
-  void setMetricsChangeHandler(void Function(DomEvent? event) handler) {
-    _streamController.stream.listen((DomResizeObserverEntry _) {
-      handler(null);
-    });
-  }
-
-  @override
   void setLanguageChangeHandler(void Function(DomEvent event) handler) {
     // How do we detect the language changes? Is this global? Should we look
     // at the lang= attribute of the hostElement?
   }
 
-  /// This should "clean" up anything handled by the [ApplicationDom] instance.
-  @override
-  void onHotRestart() {
-    _resizeObserver?.disconnect();
-    _streamController.close();
-    super.onHotRestart();
+  void _setHostAttribute(String name, String value) {
+    _hostElement.setAttribute(name, value);
+  }
+
+  void _setHostStyles({
+    required String font,
+  }) {
+    _hostElement
+      ..style.position = 'relative'
+      ..style.overflow = 'hidden';
   }
 }

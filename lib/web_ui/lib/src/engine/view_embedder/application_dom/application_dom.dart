@@ -23,7 +23,6 @@ import 'full_page_application_dom.dart';
 ///   element, provided by the web app programmer through the engine
 ///   initialization.
 abstract class ApplicationDom {
-  @mustCallSuper
   ApplicationDom() {
     // Prepare some global stuff...
     assert(() {
@@ -43,32 +42,16 @@ abstract class ApplicationDom {
   /// Keeps a list of elements to be cleaned up at hot-restart.
   HotRestartCacheHandler? _hotRestartCache;
 
-  /// Returns the 'type' (a String for debugging) of the ApplicationDom instance.
-  String get type;
-
-  /// Sets-up the viewport Meta-Tag for the app.
-  void applyViewportMeta();
-
-  /// Sets the global styles for the hostElement of this Flutter web app.
-  ///
-  /// [font] is the CSS shorthand property to set all the different font properties.
-  void setHostStyles({
-    required String font,
+  void initializeHost({
+    required String defaultFont,
+    Map<String, String>? embedderMetadata,
   });
-
-  /// Sets an attribute in the hostElement.
-  ///
-  /// Like "flt-renderer" or "flt-build-mode".
-  void setHostAttribute(String name, String value);
 
   /// Attaches the glassPane element into the hostElement.
   void attachGlassPane(DomElement glassPaneElement);
 
   /// Attaches the resourceHost element into the hostElement.
   void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo });
-
-  /// Register a listener for window resize events
-  void setMetricsChangeHandler(void Function(DomEvent? event) handler);
 
   /// Register a listener for locale change events.
   void setLanguageChangeHandler(void Function(DomEvent event) handler);

@@ -11,15 +11,58 @@ import 'application_dom.dart';
 
 class FullPageApplicationDom extends ApplicationDom {
   @override
-  final String type = 'full-page';
+  void initializeHost({
+    required String defaultFont,
+    Map<String, String>? embedderMetadata,
+  }) {
+    // ignore:avoid_function_literals_in_foreach_calls
+    embedderMetadata?.entries.forEach((MapEntry<String, String> entry) {
+      _setHostAttribute(entry.key, entry.value);
+    });
+    _setHostAttribute('flt-glasspane-host', 'full-page');
 
-  @override
-  void setHostAttribute(String name, String value) {
-    domDocument.body!.setAttribute(name, value);
+    _applyViewportMeta();
+    _setHostStyles(font: defaultFont);
   }
 
   @override
-  void setHostStyles({
+  void attachGlassPane(DomElement glassPaneElement) {
+    /// Tweaks style so the glassPane works well with the hostElement.
+    glassPaneElement.style
+      ..color = 'red' // #115216
+      ..position = 'absolute'
+      ..top = '0'
+      ..right = '0'
+      ..bottom = '0'
+      ..left = '0';
+
+    domDocument.body!.append(glassPaneElement);
+
+    registerElementForCleanup(glassPaneElement);
+  }
+
+  @override
+  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo }) {
+    domDocument.body!.insertBefore(resourceHost, nextTo);
+
+    registerElementForCleanup(resourceHost);
+  }
+
+  @override
+  void setLanguageChangeHandler(void Function(DomEvent event) handler) {
+    final DomSubscription subscription = DomSubscription(domWindow,
+          'languagechange', allowInterop(handler));
+
+    registerSubscriptionForCleanup(subscription);
+  }
+
+  @override
+  void _setHostAttribute(String name, String value) {
+    domDocument.body!.setAttribute(name, value);
+  }
+
+  // Sets the global styles for a flutter app.
+  void _setHostStyles({
     required String font,
   }) {
     final DomHTMLBodyElement bodyElement = domDocument.body!;
@@ -42,15 +85,11 @@ class FullPageApplicationDom extends ApplicationDom {
     // handling. If this is not done, the browser doesn't report 'pointermove'
     // events properly.
     setElementStyle(bodyElement, 'touch-action', 'none');
-
-    // These are intentionally outrageous font parameters to make sure that the
-    // apps fully specify their text styles.
     setElementStyle(bodyElement, 'font', font);
-    setElementStyle(bodyElement, 'color', 'red'); // Controversial
   }
 
-  @override
-  void applyViewportMeta() {
+  // Sets a meta viewport meta appropriate for Flutter Web in full screen.
+  void _applyViewportMeta() {
     for (final DomElement viewportMeta
         in domDocument.head!.querySelectorAll('meta[name="viewport"]')) {
       if (assertionsEnabled) {
@@ -79,50 +118,5 @@ class FullPageApplicationDom extends ApplicationDom {
     domDocument.head!.append(viewportMeta);
 
     registerElementForCleanup(viewportMeta);
-  }
-
-  @override
-  void attachGlassPane(DomElement glassPaneElement) {
-    /// Tweaks style so the glassPane works well with the hostElement.
-    glassPaneElement.style
-      ..position = 'absolute'
-      ..top = '0'
-      ..right = '0'
-      ..bottom = '0'
-      ..left = '0';
-
-    domDocument.body!.append(glassPaneElement);
-
-    registerElementForCleanup(glassPaneElement);
-  }
-
-  @override
-  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo }) {
-    domDocument.body!.insertBefore(resourceHost, nextTo);
-
-    registerElementForCleanup(resourceHost);
-  }
-
-  @override
-  void setMetricsChangeHandler(void Function(DomEvent? event) handler) {
-    late DomSubscription subscription;
-
-    if (domWindow.visualViewport != null) {
-      subscription = DomSubscription(domWindow.visualViewport!, 'resize',
-          allowInterop(handler));
-    } else {
-      subscription = DomSubscription(domWindow, 'resize',
-          allowInterop(handler));
-    }
-
-    registerSubscriptionForCleanup(subscription);
-  }
-
-  @override
-  void setLanguageChangeHandler(void Function(DomEvent event) handler) {
-    final DomSubscription subscription = DomSubscription(domWindow,
-          'languagechange', allowInterop(handler));
-
-    registerSubscriptionForCleanup(subscription);
   }
 }
