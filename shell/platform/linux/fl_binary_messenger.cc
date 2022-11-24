@@ -226,13 +226,7 @@ static void set_message_handler_on_channel(
   }
 }
 
-static gboolean has_message_handler_on_channel(FlBinaryMessenger* messenger,
-                                               const gchar* channel) {
-  FlBinaryMessengerImpl* self = FL_BINARY_MESSENGER_IMPL(messenger);
-  return g_hash_table_contains(self->platform_message_handlers, channel);
-}
-
-gboolean do_unref(gpointer value) {
+static gboolean do_unref(gpointer value) {
   g_object_unref(value);
   return G_SOURCE_REMOVE;
 }
@@ -328,7 +322,6 @@ static void fl_binary_messenger_impl_class_init(
 static void fl_binary_messenger_impl_iface_init(
     FlBinaryMessengerInterface* iface) {
   iface->set_message_handler_on_channel = set_message_handler_on_channel;
-  iface->has_message_handler_on_channel = has_message_handler_on_channel;
   iface->send_response = send_response;
   iface->send_on_channel = send_on_channel;
   iface->send_on_channel_finish = send_on_channel_finish;
@@ -368,16 +361,6 @@ G_MODULE_EXPORT void fl_binary_messenger_set_message_handler_on_channel(
 
   FL_BINARY_MESSENGER_GET_IFACE(self)->set_message_handler_on_channel(
       self, channel, handler, user_data, destroy_notify);
-}
-
-G_MODULE_EXPORT gboolean
-fl_binary_messenger_has_message_handler_on_channel(FlBinaryMessenger* self,
-                                                   const gchar* channel) {
-  g_return_val_if_fail(FL_IS_BINARY_MESSENGER(self), FALSE);
-  g_return_val_if_fail(channel != nullptr, FALSE);
-
-  return FL_BINARY_MESSENGER_GET_IFACE(self)->has_message_handler_on_channel(
-      self, channel);
 }
 
 // Note: This function can be called from any thread.

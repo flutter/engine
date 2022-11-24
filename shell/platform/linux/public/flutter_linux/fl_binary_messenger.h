@@ -73,9 +73,6 @@ struct _FlBinaryMessengerInterface {
       gpointer user_data,
       GDestroyNotify destroy_notify);
 
-  gboolean (*has_message_handler_on_channel)(FlBinaryMessenger* messenger,
-                                             const gchar* channel);
-
   gboolean (*send_response)(FlBinaryMessenger* messenger,
                             FlBinaryMessengerResponseHandle* response_handle,
                             GBytes* response,
