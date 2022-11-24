@@ -13,6 +13,7 @@ import 'painting.dart';
 import 'path.dart';
 import 'picture.dart';
 import 'raster_cache.dart';
+import 'texture.dart';
 import 'util.dart';
 
 /// A layer to be composed into a scene.
@@ -87,6 +88,7 @@ class PaintContext {
     this.leafNodesCanvas,
     this.rasterCache,
     this.viewEmbedder,
+    this.textureRegistry,
   );
 
   /// A multi-canvas that applies clips, transforms, and opacity
@@ -102,6 +104,8 @@ class PaintContext {
 
   /// A compositor for embedded HTML views.
   final HtmlViewEmbedder? viewEmbedder;
+
+  final CkTextureRegistry? textureRegistry;
 }
 
 /// A layer that contains child layers.
@@ -615,5 +619,31 @@ class PlatformViewLayer extends Layer {
     if (canvas != null) {
       paintContext.leafNodesCanvas = canvas;
     }
+  }
+}
+
+/// A layer which renders a texture backed by [textureId].
+class TextureLayer extends Layer {
+  TextureLayer(this.textureId, this.offset, this.width, this.height,
+      this.freeze, this.filterQuality);
+
+  final int textureId;
+  final ui.Offset offset;
+  final double width;
+  final double height;
+  final bool freeze;
+  final ui.FilterQuality filterQuality;
+
+  @override
+  void preroll(PrerollContext prerollContext, Matrix4 matrix) {
+    paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
+  }
+
+  @override
+  void paint(PaintContext paintContext) {
+    final CkTexture? texture =
+        paintContext.textureRegistry?.getTexture(textureId);
+
+    texture?.paint(paintContext, offset, width, height, freeze, filterQuality);
   }
 }

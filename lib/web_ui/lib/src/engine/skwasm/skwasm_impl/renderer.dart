@@ -12,6 +12,7 @@ import '../../embedder.dart';
 import '../../fonts.dart';
 import '../../html_image_codec.dart';
 import '../../renderer.dart';
+import '../../texture.dart';
 
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
@@ -137,6 +138,9 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FontCollection get fontCollection => throw UnimplementedError('Not yet implemented');
+
+  @override
+  TextureRegistry? get textureRegistry => throw UnimplementedError('Not yet implemented');
 
   @override
   FutureOr<void> initialize() {

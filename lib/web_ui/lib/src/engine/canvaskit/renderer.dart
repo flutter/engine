@@ -26,6 +26,7 @@ import 'picture_recorder.dart';
 import 'rasterizer.dart';
 import 'shader.dart';
 import 'text.dart';
+import 'texture.dart';
 import 'vertices.dart';
 
 class CanvasKitRenderer implements Renderer {
@@ -39,6 +40,9 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   SkiaFontCollection get fontCollection => _fontCollection;
+
+  @override
+  final CkTextureRegistry textureRegistry = CkTextureRegistry.instance;
 
   /// The scene host, where the root canvas and overlay canvases are added to.
   DomElement? _sceneHost;

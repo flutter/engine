@@ -11,6 +11,7 @@ import 'embedded_views.dart';
 import 'layer_tree.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
+import 'texture.dart';
 
 /// A class that can rasterize [LayerTree]s into a given [Surface].
 class Rasterizer {
@@ -33,8 +34,11 @@ class Rasterizer {
           SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
       HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
       final CkCanvas canvas = frame.skiaCanvas;
-      final Frame compositorFrame =
-          context.acquireFrame(canvas, HtmlViewEmbedder.instance);
+      final Frame compositorFrame = context.acquireFrame(
+        canvas,
+        HtmlViewEmbedder.instance,
+        CkTextureRegistry.instance,
+      );
 
       compositorFrame.raster(layerTree, ignoreRasterCache: true);
       SurfaceFactory.instance.baseSurface.addToScene();

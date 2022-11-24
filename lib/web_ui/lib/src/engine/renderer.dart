@@ -16,6 +16,7 @@ import 'fonts.dart';
 import 'html/renderer.dart';
 import 'html_image_codec.dart';
 import 'skwasm/skwasm_stub/renderer.dart' if (dart.library.ffi) 'skwasm/skwasm_impl/renderer.dart';
+import 'texture.dart';
 
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
@@ -48,6 +49,8 @@ abstract class Renderer {
 
   String get rendererTag;
   FontCollection get fontCollection;
+
+  TextureRegistry? get textureRegistry;
 
   FutureOr<void> initialize();
   void reset(FlutterViewEmbedder embedder);

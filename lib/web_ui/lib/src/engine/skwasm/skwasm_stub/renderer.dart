@@ -12,6 +12,7 @@ import '../../embedder.dart';
 import '../../fonts.dart';
 import '../../html_image_codec.dart';
 import '../../renderer.dart';
+import '../../texture.dart';
 
 class SkwasmRenderer implements Renderer {
   @override
@@ -136,6 +137,9 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FontCollection get fontCollection => throw UnimplementedError('Skwasm not implemented on this platform.');
+
+  @override
+  TextureRegistry? get textureRegistry => throw UnimplementedError('Skwasm not implemented on this platform.');
 
   @override
   FutureOr<void> initialize() {

@@ -134,7 +134,7 @@ extension CanvasKitExtension on CanvasKit {
   );
   external SkImage? MakeLazyImageFromTextureSource(
     Object src,
-    SkPartialImageInfo info,
+    SkPartialImageInfo? info,
   );
 
   /// Retrieve the RuntimeEffect namespace for null checking.

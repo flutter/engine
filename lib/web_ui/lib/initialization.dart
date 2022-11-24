@@ -141,3 +141,32 @@ class PlatformViewRegistry {
 
 /// The platform view registry for this app.
 final PlatformViewRegistry platformViewRegistry = PlatformViewRegistry();
+
+/// A registry for textures.
+class TextureRegistry {
+  /// Registers a texture.
+  /// 
+  /// Valid [texture] can be any object that that webGL's texImage2D supports.
+  /// For example, HTMLImageElement, HTMLCanvasElement, HTMLVideoElement, 
+  /// ImageData, ImageBitmap and VideoFrame.
+  ///
+  /// The returned id can be used to refer to the texture in Texture widgets.
+  int registerTexture(Object texture) {
+    return engine.renderer.textureRegistry?.registerTexture(texture) ?? -1;
+  }
+
+  /// Unregisters the texture with the given id.
+  void unregisterTexture(int id) {
+    engine.renderer.textureRegistry?.unregisterTexture(id);
+  }
+
+  /// Notifies Flutter that the content of the previously registered texture
+  /// has been updated.
+  void textureFrameAvailable(int id) {
+    engine.renderer.textureRegistry?.textureFrameAvailable(id);
+    engine.EnginePlatformDispatcher.instance.scheduleFrame();
+  }
+}
+
+/// The texture registry for this app.
+final TextureRegistry textureRegistry = TextureRegistry();

@@ -72,7 +72,9 @@ class LayerSceneBuilder implements ui.SceneBuilder {
     bool freeze = false,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    // TODO(hterkelsen): implement addTexture, b/128315641
+    currentLayer.add(
+      TextureLayer(textureId, offset, width, height, freeze, filterQuality),
+    );
   }
 
   @override

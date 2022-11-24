@@ -13,6 +13,7 @@ import 'layer.dart';
 import 'n_way_canvas.dart';
 import 'picture_recorder.dart';
 import 'raster_cache.dart';
+import 'texture.dart';
 
 /// A tree of [Layer]s that, together with a [Size] compose a frame.
 class LayerTree {
@@ -58,6 +59,7 @@ class LayerTree {
       frame.canvas,
       ignoreRasterCache ? null : frame.rasterCache,
       frame.viewEmbedder,
+      frame.textureRegistry,
     );
     if (rootLayer.needsPainting) {
       rootLayer.paint(context);
@@ -75,8 +77,13 @@ class LayerTree {
 
     final CkNWayCanvas internalNodesCanvas = CkNWayCanvas();
     internalNodesCanvas.addCanvas(canvas);
-    final PaintContext paintContext =
-        PaintContext(internalNodesCanvas, canvas, null, null);
+    final PaintContext paintContext = PaintContext(
+      internalNodesCanvas,
+      canvas,
+      null,
+      null,
+      CkTextureRegistry.instance,
+    );
     if (rootLayer.needsPainting) {
       rootLayer.paint(paintContext);
     }
@@ -86,7 +93,7 @@ class LayerTree {
 
 /// A single frame to be rendered.
 class Frame {
-  Frame(this.canvas, this.rasterCache, this.viewEmbedder);
+  Frame(this.canvas, this.rasterCache, this.viewEmbedder, this.textureRegistry);
 
   /// The canvas to render this frame to.
   final CkCanvas canvas;
@@ -96,6 +103,8 @@ class Frame {
 
   /// The platform view embedder.
   final HtmlViewEmbedder? viewEmbedder;
+
+  final CkTextureRegistry? textureRegistry;
 
   /// Rasterize the given layer tree into this frame.
   bool raster(LayerTree layerTree, {bool ignoreRasterCache = false}) {
@@ -115,7 +124,11 @@ class CompositorContext {
   RasterCache? rasterCache;
 
   /// Acquire a frame using this compositor's settings.
-  Frame acquireFrame(CkCanvas canvas, HtmlViewEmbedder? viewEmbedder) {
-    return Frame(canvas, rasterCache, viewEmbedder);
+  Frame acquireFrame(
+    CkCanvas canvas,
+    HtmlViewEmbedder? viewEmbedder,
+    CkTextureRegistry? textureRegistry,
+  ) {
+    return Frame(canvas, rasterCache, viewEmbedder, textureRegistry);
   }
 }

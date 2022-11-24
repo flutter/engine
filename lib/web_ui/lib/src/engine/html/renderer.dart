@@ -24,6 +24,9 @@ class HtmlRenderer implements Renderer {
   HtmlFontCollection get fontCollection => _fontCollection;
 
   @override
+  TextureRegistry? get textureRegistry => null;
+
+  @override
   void initialize() {
     scheduleMicrotask(() {
       // Access [lineLookup] to force the lazy unpacking of line break data
