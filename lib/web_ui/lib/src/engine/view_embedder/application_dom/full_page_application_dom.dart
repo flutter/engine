@@ -8,7 +8,6 @@ import '../../dom.dart';
 import '../../util.dart' show assertionsEnabled, setElementStyle;
 import 'application_dom.dart';
 
-
 class FullPageApplicationDom extends ApplicationDom {
   @override
   void initializeHost({
@@ -42,7 +41,7 @@ class FullPageApplicationDom extends ApplicationDom {
   }
 
   @override
-  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo }) {
+  void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo}) {
     domDocument.body!.insertBefore(resourceHost, nextTo);
 
     registerElementForCleanup(resourceHost);
@@ -50,13 +49,12 @@ class FullPageApplicationDom extends ApplicationDom {
 
   @override
   void setLanguageChangeHandler(void Function(DomEvent event) handler) {
-    final DomSubscription subscription = DomSubscription(domWindow,
-          'languagechange', allowInterop(handler));
+    final DomSubscription subscription =
+        DomSubscription(domWindow, 'languagechange', allowInterop(handler));
 
     registerSubscriptionForCleanup(subscription);
   }
 
-  @override
   void _setHostAttribute(String name, String value) {
     domDocument.body!.setAttribute(name, value);
   }

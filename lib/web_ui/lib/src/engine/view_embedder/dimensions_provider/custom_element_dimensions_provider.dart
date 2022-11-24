@@ -16,23 +16,22 @@ import 'dimensions_provider.dart';
 /// *expensive*, and should be cached as needed. Every call to every method on
 /// this class WILL perform actual DOM measurements.
 class CustomElementDimensionsProvider extends DimensionsProvider {
-
   CustomElementDimensionsProvider(this._hostElement) {
     // Hook up a resize observer on the hostElement (if supported!).
-    _hostElementResizeObserver = createDomResizeObserver(
-      (List<DomResizeObserverEntry> entries, DomResizeObserver _) {
-        entries
-          .map((DomResizeObserverEntry entry) => ui.Size(entry.contentRect.width, entry.contentRect.height))
-          .forEach((ui.Size size) {
-            _lastObservedSize = size;
-            _onResizeStreamController.add(size);
-          });
-      }
-    );
+    _hostElementResizeObserver = createDomResizeObserver((
+      List<DomResizeObserverEntry> entries,
+      DomResizeObserver _,
+    ) {
+      entries
+          .map((DomResizeObserverEntry entry) =>
+              ui.Size(entry.contentRect.width, entry.contentRect.height))
+          .forEach(_broadcastSize);
+    });
 
     assert(() {
       if (_hostElementResizeObserver == null) {
-        domWindow.console.warn('ResizeObserver API not supported. Flutter will not resize with its hostElement.');
+        domWindow.console.warn('ResizeObserver API not supported. '
+            'Flutter will not resize with its hostElement.');
       }
       return true;
     }());
@@ -41,12 +40,16 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
   }
 
   final DomElement _hostElement;
-  ui.Size? _lastObservedSize;
 
   // Handle resize events
   late DomResizeObserver? _hostElementResizeObserver;
   final StreamController<ui.Size> _onResizeStreamController =
-    StreamController<ui.Size>.broadcast();
+      StreamController<ui.Size>.broadcast();
+
+  // Broadcasts the last seen `Size`.
+  void _broadcastSize(ui.Size size) {
+    _onResizeStreamController.add(size);
+  }
 
   @override
   void onHotRestart() {
@@ -63,13 +66,16 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
     final double devicePixelRatio = getDevicePixelRatio();
 
     return ui.Size(
-      (_lastObservedSize?.width ?? _hostElement.clientWidth) * devicePixelRatio,
-      (_lastObservedSize?.height ?? _hostElement.clientHeight) * devicePixelRatio,
+      _hostElement.clientWidth * devicePixelRatio,
+      _hostElement.clientHeight * devicePixelRatio,
     );
   }
 
   @override
-  WindowPadding computeKeyboardInsets(double physicalHeight, bool isEditingOnMobile) {
+  WindowPadding computeKeyboardInsets(
+    double physicalHeight,
+    bool isEditingOnMobile,
+  ) {
     return const WindowPadding(
       top: 0,
       right: 0,

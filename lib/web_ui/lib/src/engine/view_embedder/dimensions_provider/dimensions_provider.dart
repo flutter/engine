@@ -43,7 +43,10 @@ abstract class DimensionsProvider {
   ui.Size computePhysicalSize();
 
   /// Returns the [WindowPadding] of the keyboard insets (if present).
-  WindowPadding computeKeyboardInsets(double physicalHeight, bool isEditingOnMobile);
+  WindowPadding computeKeyboardInsets(
+    double physicalHeight,
+    bool isEditingOnMobile,
+  );
 
   /// Returns a Stream with the changes to [ui.Size] (when cheap to get).
   Stream<ui.Size?> get onResize;

@@ -51,7 +51,7 @@ abstract class ApplicationDom {
   void attachGlassPane(DomElement glassPaneElement);
 
   /// Attaches the resourceHost element into the hostElement.
-  void attachResourcesHost(DomElement resourceHost, { DomElement? nextTo });
+  void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo});
 
   /// Register a listener for locale change events.
   void setLanguageChangeHandler(void Function(DomEvent event) handler);

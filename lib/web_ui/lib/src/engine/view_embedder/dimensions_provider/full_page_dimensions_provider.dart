@@ -29,9 +29,9 @@ class FullPageDimensionsProvider extends DimensionsProvider {
 
   late DomSubscription _domResizeSubscription;
   final StreamController<ui.Size?> _onResizeStreamController =
-    StreamController<ui.Size?>.broadcast();
+      StreamController<ui.Size?>.broadcast();
 
-  void _onVisualViewportResize (DomEvent event) {
+  void _onVisualViewportResize(DomEvent event) {
     // This could return [computePhysicalSize]. Is it too costly to compute?
     _onResizeStreamController.add(null);
   }
@@ -82,7 +82,10 @@ class FullPageDimensionsProvider extends DimensionsProvider {
   }
 
   @override
-  WindowPadding computeKeyboardInsets(double physicalHeight, bool isEditingOnMobile) {
+  WindowPadding computeKeyboardInsets(
+    double physicalHeight,
+    bool isEditingOnMobile,
+  ) {
     final double devicePixelRatio = getDevicePixelRatio();
     final DomVisualViewport? viewport = domWindow.visualViewport;
     late double windowInnerHeight;
