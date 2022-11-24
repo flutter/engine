@@ -7,6 +7,8 @@
 
 #include "flutter/lib/ui/painting/fragment_shader.h"
 
+#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/ui_dart_state.h"
@@ -61,27 +63,25 @@ bool ReusableFragmentShader::ValidateSamplers() {
   return true;
 }
 
-void ReusableFragmentShader::SetSampler(Dart_Handle index_handle,
-                                        Dart_Handle sampler_handle) {
+void ReusableFragmentShader::SetImageSampler(Dart_Handle index_handle,
+                                             Dart_Handle image_handle) {
   uint64_t index = tonic::DartConverter<uint64_t>::FromDart(index_handle);
-  ImageShader* sampler =
-      tonic::DartConverter<ImageShader*>::FromDart(sampler_handle);
+  CanvasImage* image =
+      tonic::DartConverter<CanvasImage*>::FromDart(image_handle);
   if (index >= samplers_.size()) {
     Dart_ThrowException(tonic::ToDart("Sampler index out of bounds"));
   }
 
-  // ImageShaders can hold a preferred value for sampling options and
-  // developers are encouraged to use that value or the value will be supplied
-  // by "the environment where it is used". The environment here does not
-  // contain a value to be used if the developer did not specify a preference
-  // when they constructed the ImageShader, so we will use kNearest which is
-  // the default filterQuality in a Paint object.
-  DlImageSampling sampling = DlImageSampling::kNearestNeighbor;
+  // TODO(115794): Once the DlImageSampling enum is replaced, expose the
+  //               sampling options as a new default parameter for users.
+  samplers_[index] = std::make_shared<DlImageColorSource>(
+      image->image(), DlTileMode::kClamp, DlTileMode::kClamp,
+      DlImageSampling::kNearestNeighbor, nullptr);
+
   auto* uniform_floats =
       reinterpret_cast<float*>(uniform_data_->writable_data());
-  samplers_[index] = sampler->shader(sampling);
-  uniform_floats[float_count_ + 2 * index] = sampler->width();
-  uniform_floats[float_count_ + 2 * index + 1] = sampler->height();
+  uniform_floats[float_count_ + 2 * index] = image->width();
+  uniform_floats[float_count_ + 2 * index + 1] = image->height();
 }
 
 std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(

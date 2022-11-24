@@ -11,7 +11,6 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/size.h"
 #include "impeller/geometry/vector.h"
-#include "impeller/geometry/vertices.h"
 
 inline bool NumberNear(double a, double b) {
   static const double epsilon = 1e-3;
@@ -131,6 +130,23 @@ inline ::testing::AssertionResult ColorBufferNear(
   return ::testing::AssertionSuccess();
 }
 
+inline ::testing::AssertionResult ColorsNear(std::vector<impeller::Color> a,
+                                             std::vector<impeller::Color> b) {
+  if (a.size() != b.size()) {
+    return ::testing::AssertionFailure() << "Colors length does not match";
+  }
+  for (auto i = 0u; i < b.size(); i++) {
+    auto equal =
+        NumberNear(a[i].red, b[i].red) && NumberNear(a[i].green, b[i].green) &&
+        NumberNear(a[i].blue, b[i].blue) && NumberNear(a[i].alpha, b[i].alpha);
+
+    if (!equal) {
+      ::testing::AssertionFailure() << "Colors are not equal.";
+    }
+  }
+  return ::testing::AssertionSuccess();
+}
+
 #define ASSERT_MATRIX_NEAR(a, b) ASSERT_PRED2(&::MatrixNear, a, b)
 #define ASSERT_QUATERNION_NEAR(a, b) ASSERT_PRED2(&::QuaternionNear, a, b)
 #define ASSERT_RECT_NEAR(a, b) ASSERT_PRED2(&::RectNear, a, b)
@@ -141,3 +157,4 @@ inline ::testing::AssertionResult ColorBufferNear(
 #define ASSERT_SIZE_NEAR(a, b) ASSERT_PRED2(&::SizeNear, a, b)
 #define ASSERT_ARRAY_4_NEAR(a, b) ASSERT_PRED2(&::Array4Near, a, b)
 #define ASSERT_COLOR_BUFFER_NEAR(a, b) ASSERT_PRED2(&::ColorBufferNear, a, b)
+#define ASSERT_COLORS_NEAR(a, b) ASSERT_PRED2(&::ColorsNear, a, b)

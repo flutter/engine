@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include <impeller/transform.glsl>
+#include <impeller/types.glsl>
 
 uniform VertInfo {
   mat4 mvp;
   vec4 color;
-} vert_info;
+}
+vert_info;
 
 in vec2 position;
 

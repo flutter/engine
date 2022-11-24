@@ -7,6 +7,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -20,10 +21,12 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/backend_features.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -50,6 +53,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
 }  // namespace
 
 namespace impeller {
+
+namespace vk {
+
+bool HasValidationLayers() {
+  auto capabilities = std::make_unique<CapabilitiesVK>();
+  return capabilities->HasLayer(kKhronosValidationLayerName);
+}
+
+}  // namespace vk
 
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -316,11 +328,9 @@ ContextVK::ContextVK(
   /// Enable any and all validation as well as debug toggles.
   ///
   auto has_debug_utils = false;
-  constexpr const char* kKhronosValidationLayerName =
-      "VK_LAYER_KHRONOS_validation";
-  if (capabilities->HasLayer(kKhronosValidationLayerName)) {
-    enabled_layers.push_back(kKhronosValidationLayerName);
-    if (capabilities->HasLayerExtension(kKhronosValidationLayerName,
+  if (vk::HasValidationLayers()) {
+    enabled_layers.push_back(vk::kKhronosValidationLayerName);
+    if (capabilities->HasLayerExtension(vk::kKhronosValidationLayerName,
                                         VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
       enabled_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
       has_debug_utils = true;
@@ -483,7 +493,7 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
   graphics_command_pool_ =
       CommandPoolVK::Create(*device_, graphics_queue->index);
-  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
+
   is_valid_ = true;
 }
 
@@ -516,8 +526,7 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   return CommandBufferVK::Create(weak_from_this(), *device_,
-                                 graphics_command_pool_->Get(),
-                                 surface_producer_.get());
+                                 graphics_command_pool_->Get());
 }
 
 vk::Instance ContextVK::GetInstance() const {
@@ -580,12 +589,20 @@ bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
 }
 
-std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
-  return descriptor_pool_;
+std::unique_ptr<DescriptorPoolVK> ContextVK::CreateDescriptorPool() const {
+  return std::make_unique<DescriptorPoolVK>(*device_);
 }
 
 PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
   return ToPixelFormat(surface_format_);
+}
+
+const BackendFeatures& ContextVK::GetBackendFeatures() const {
+  return kModernBackendFeatures;
+}
+
+vk::Queue ContextVK::GetGraphicsQueue() const {
+  return graphics_queue_;
 }
 
 }  // namespace impeller
