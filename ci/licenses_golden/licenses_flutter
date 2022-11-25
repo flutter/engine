@@ -4392,6 +4392,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/texture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
@@ -4514,6 +4515,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_action.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/texture.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/ulps.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart
