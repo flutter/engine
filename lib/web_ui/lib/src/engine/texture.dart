@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+/// A collection of textures available to the engine.
 abstract class TextureRegistry {
   /// Registers a texture.
   int registerTexture(Object source);
