@@ -28,7 +28,7 @@ static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
   uint64_t viewId = kFlutterDefaultViewId;
-  return [engine.renderer present:viewId];
+  return [engine.renderer present:viewId texture:texture];
 }
 
 static bool OnAcquireExternalTexture(FlutterEngine* engine,
@@ -95,30 +95,34 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     // FlutterMetalTexture has texture `null`, therefore is discarded.
     return FlutterMetalTexture{};
   }
-  FlutterRenderBackingStore* backingStore = [view backingStoreForSize:size];
-  id<MTLTexture> texture = backingStore.texture;
-  FlutterMetalTexture embedderTexture;
-  embedderTexture.struct_size = sizeof(FlutterMetalTexture);
-  embedderTexture.texture = (__bridge void*)texture;
-  embedderTexture.texture_id = reinterpret_cast<int64_t>(texture);
-  return embedderTexture;
+  FlutterSurface* surface = [view.surfaceManager surfaceForSize:size];
+  FlutterMetalTexture texture = surface.asFlutterMetalTexture;
+  // This is here because the non-compositor path completely ignores
+  // destruction and user data callback. It is ugly, but the surface manager
+  // will keep the surface retained until present.
+  if (texture.destruction_callback != nullptr) {
+    texture.destruction_callback(texture.user_data);
+  }
+  texture.destruction_callback = nullptr;
+  texture.user_data = nullptr;
+  return texture;
 }
 
-- (BOOL)present:(uint64_t)viewId {
+- (BOOL)present:(uint64_t)viewId texture:(const FlutterMetalTexture*)texture {
   FlutterView* view = [_viewProvider getView:viewId];
   if (view == nil) {
     return NO;
   }
-  [view present];
-  return YES;
-}
-
-- (void)presentWithoutContent:(uint64_t)viewId {
-  FlutterView* view = [_viewProvider getView:viewId];
-  if (view == nil) {
-    return;
+  FlutterSurface* surface = [view.surfaceManager lookupSurface:texture];
+  if (surface == nil) {
+    return NO;
   }
-  [view presentWithoutContent];
+  FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
+  info.offset = CGPointMake(0, 0);
+  info.zIndex = 0;
+  info.surface = surface;
+  [view.surfaceManager present:@[ info ] notify:nil];
+  return YES;
 }
 
 #pragma mark - FlutterTextureRegistrar methods.

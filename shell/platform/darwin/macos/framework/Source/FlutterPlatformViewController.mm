@@ -53,6 +53,8 @@
   }
 
   NSView* platform_view = [factory createWithViewIdentifier:viewId arguments:nil];
+  // Force view to be layer-backed.
+  [platform_view setWantsLayer:YES];
   _platformViews[viewId] = platform_view;
   result(nil);
 }
