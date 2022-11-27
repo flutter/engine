@@ -467,9 +467,9 @@ typedef struct MouseState {
       [[self keyboardAnimationStops] addObject:[NSNumber numberWithDouble:1]];
       break;
     }
-    
+
     NSNumber* keyboardAnimationStop =
-          [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:frameTime]];
+        [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:frameTime]];
     [[self keyboardAnimationStops] addObject:keyboardAnimationStop];
   }
 }
@@ -1515,7 +1515,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
     double maxFrameRate = [DisplayLinkManager displayRefreshRate];
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
-      
+
     NSLog(@"%f", frameRate);
 
     double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
