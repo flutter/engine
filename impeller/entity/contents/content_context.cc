@@ -207,8 +207,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
-  morphology_filter_pipelines_[{}] =
-      CreateDefaultPipeline<MorphologyFilterPipeline>(*context_);
+  dilate_filter_pipelines_[{}] =
+      CreateDefaultPipeline<DilateFilterPipeline>(*context_);
+  erode_filter_pipelines_[{}] =
+      CreateDefaultPipeline<ErodeFilterPipeline>(*context_);
   color_matrix_color_filter_pipelines_[{}] =
       CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
   linear_to_srgb_filter_pipelines_[{}] =

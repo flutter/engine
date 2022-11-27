@@ -35,7 +35,9 @@
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
+#include "impeller/entity/dilate_filter.frag.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/erode_filter.frag.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/glyph_atlas.frag.h"
@@ -46,7 +48,6 @@
 #include "impeller/entity/linear_gradient_fill.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.frag.h"
 #include "impeller/entity/linear_to_srgb_filter.vert.h"
-#include "impeller/entity/morphology_filter.frag.h"
 #include "impeller/entity/morphology_filter.vert.h"
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
@@ -148,9 +149,10 @@ using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
-using MorphologyFilterPipeline =
-    RenderPipelineT<MorphologyFilterVertexShader,
-                    MorphologyFilterFragmentShader>;
+using DilateFilterPipeline =
+    RenderPipelineT<MorphologyFilterVertexShader, DilateFilterFragmentShader>;
+using ErodeFilterPipeline =
+    RenderPipelineT<MorphologyFilterVertexShader, ErodeFilterFragmentShader>;
 using ColorMatrixColorFilterPipeline =
     RenderPipelineT<ColorMatrixColorFilterVertexShader,
                     ColorMatrixColorFilterFragmentShader>;
@@ -286,9 +288,14 @@ class ContentContext {
     return GetPipeline(border_mask_blur_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetMorphologyFilterPipeline(
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetDilateFilterPipeline(
       ContentContextOptions opts) const {
-    return GetPipeline(morphology_filter_pipelines_, opts);
+    return GetPipeline(dilate_filter_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetErodeFilterPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(erode_filter_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
@@ -461,7 +468,8 @@ class ContentContext {
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
-  mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
+  mutable Variants<DilateFilterPipeline> dilate_filter_pipelines_;
+  mutable Variants<ErodeFilterPipeline> erode_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
       color_matrix_color_filter_pipelines_;
   mutable Variants<LinearToSrgbFilterPipeline> linear_to_srgb_filter_pipelines_;

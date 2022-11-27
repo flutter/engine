@@ -40,8 +40,8 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  using VS = MorphologyFilterPipeline::VertexShader;
-  using FS = MorphologyFilterPipeline::FragmentShader;
+  using VS = DilateFilterPipeline::VertexShader;
+  using FS = DilateFilterPipeline::FragmentShader;
 
   //----------------------------------------------------------------------------
   /// Handle inputs.
@@ -88,6 +88,8 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
     auto transform = entity.GetTransformation() * effect_transform;
     auto transformed_radius =
         transform.TransformDirection(direction_ * radius_.radius);
@@ -102,21 +104,25 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
             transformed_texture_vertices[2]);
 
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
-    frag_info.radius = std::round(transformed_radius.GetLength());
-    frag_info.direction = input_snapshot->transform.Invert()
-                              .TransformDirection(transformed_radius)
-                              .Normalize();
-    frag_info.texture_size =
+    frag_info.uv_offset =
+        input_snapshot->transform.Invert()
+            .TransformDirection(transformed_radius)
+            .Normalize() /
         Point(transformed_texture_width, transformed_texture_height);
-    frag_info.morph_type = static_cast<Scalar>(morph_type_);
+    frag_info.radius = std::round(transformed_radius.GetLength());
 
     Command cmd;
     cmd.label = "Morphology Filter";
     auto options = OptionsFromPass(pass);
     options.blend_mode = BlendMode::kSource;
-    cmd.pipeline = renderer.GetMorphologyFilterPipeline(options);
+    switch (morph_type_) {
+      case FilterContents::MorphType::kDilate:
+        cmd.pipeline = renderer.GetDilateFilterPipeline(options);
+        break;
+      case FilterContents::MorphType::kErode:
+        cmd.pipeline = renderer.GetErodeFilterPipeline(options);
+        break;
+    }
     cmd.BindVertices(vtx_buffer);
 
     FS::BindTextureSampler(
