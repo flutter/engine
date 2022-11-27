@@ -19,6 +19,13 @@ vec4 IPSample(sampler2D texture_sampler, vec2 coords, float y_coord_scale) {
   return texture(texture_sampler, coords);
 }
 
+vec2 IPRemapCoords(vec2 coords, float y_coord_scale) {
+  if (y_coord_scale < 0.0) {
+    coords.y = 1.0 - coords.y;
+  }
+  return coords;
+}
+
 /// Sample from a texture.
 ///
 /// If `y_coord_scale` < 0.0, the Y coordinate is flipped. This is useful
