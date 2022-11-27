@@ -1516,8 +1516,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     double maxFrameRate = [DisplayLinkManager displayRefreshRate];
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
 
-    NSLog(@"%f", frameRate);
-
     double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
     double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
 
