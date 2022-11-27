@@ -28,6 +28,15 @@ web_locale_keymap_sources =
                 ],
                 "list lines")
 
+web_engine_libraries = [
+  ":skwasm_impl_library",
+  ":skwasm_stub_library",
+  ":web_engine_library",
+  ":web_ui_library",
+  ":web_ui_library_sources",
+  ":web_unicode_library",
+]
+
 group("web_sdk") {
   deps = [
     ":flutter_ddc_modules",
@@ -144,6 +153,13 @@ sdk_rewriter("skwasm_impl_library") {
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_skwasm_impl/"
 }
 
+sdk_rewriter("web_unicode_library") {
+  library_name = "web_unicode"
+  api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
+  input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
+}
+
 copy("web_ui_library") {
   sources = [ "//flutter/web_sdk/libraries.json" ]
 
@@ -163,14 +179,7 @@ template("_dartdevc") {
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {
       not_needed(invoker, [ "packages" ])
-      deps = [
-        ":skwasm_impl_library",
-        ":skwasm_stub_library",
-        ":web_engine_library",
-        ":web_locale_keymap_library",
-        ":web_ui_library",
-        ":web_ui_library_sources",
-      ]
+      deps = web_engine_libraries
       script = "//build/gn_run_binary.py"
 
       inputs = invoker.inputs
@@ -194,18 +203,12 @@ template("_dartdevc") {
     prebuilt_dart_action(target_name) {
       forward_variables_from(invoker, "*")
 
-      deps = [
-        ":skwasm_impl_library",
-        ":skwasm_stub_library",
-        ":web_engine_library",
-        ":web_locale_keymap_library",
-        ":web_ui_library",
-        ":web_ui_library_sources",
-        "//third_party/dart:create_sdk",
-        "//third_party/dart/pkg:pkg_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
-      ]
+      deps = web_engine_libraries + [
+               "//third_party/dart:create_sdk",
+               "//third_party/dart/pkg:pkg_files_stamp",
+               "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
+               "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+             ]
 
       script = "//third_party/dart/pkg/dev_compiler/bin/dartdevc.dart"
 
@@ -226,14 +229,7 @@ template("_dartdevc") {
 template("_kernel_worker") {
   if (flutter_prebuilt_dart_sdk) {
     action(target_name) {
-      deps = [
-        ":skwasm_impl_library",
-        ":skwasm_stub_library",
-        ":web_engine_library",
-        ":web_locale_keymap_library",
-        ":web_ui_library",
-        ":web_ui_library_sources",
-      ]
+      deps = web_engine_libraries
       script = "//build/gn_run_binary.py"
 
       inputs = invoker.inputs
@@ -258,18 +254,12 @@ template("_kernel_worker") {
     prebuilt_dart_action(target_name) {
       forward_variables_from(invoker, "*")
 
-      deps = [
-        ":skwasm_impl_library",
-        ":skwasm_stub_library",
-        ":web_engine_library",
-        ":web_locale_keymap_library",
-        ":web_ui_library",
-        ":web_ui_library_sources",
-        "//third_party/dart:create_sdk",
-        "//third_party/dart/pkg:pkg_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
-        "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
-      ]
+      deps = web_engine_libraries + [
+               "//third_party/dart:create_sdk",
+               "//third_party/dart/pkg:pkg_files_stamp",
+               "//third_party/dart/utils/dartdevc:dartdevc_files_stamp",
+               "//third_party/dart/utils/dartdevc:dartdevc_sdk_patch_stamp",
+             ]
 
       script = "//third_party/dart/utils/bazel/kernel_worker.dart"
 
@@ -327,6 +317,8 @@ template("_compile_platform") {
       "dart:_engine",
       "--source",
       "dart:_skwasm_stub",
+      "--source",
+      "dart:_web_unicode",
       "--source",
       "dart:web_locale_keymap",
     ]
@@ -501,6 +493,7 @@ template("_compile_ddc_modules") {
       "dart:ui",
       "dart:_engine",
       "dart:_skwasm_stub",
+      "dart:_web_unicode",
       "dart:web_locale_keymap",
       "--no-summarize",
       "--packages",
@@ -604,16 +597,10 @@ if (!is_fuchsia) {
       output = "flutter-web-sdk-${full_platform_name}.zip"
     }
     deps = [
-      ":flutter_ddc_modules",
-      ":flutter_legacy_platform_dills",
-      ":flutter_web_platforms",
-      ":skwasm_impl_library",
-      ":skwasm_stub_library",
-      ":web_engine_library",
-      ":web_locale_keymap_library",
-      ":web_ui_library",
-      ":web_ui_library_sources",
-    ]
+             ":flutter_ddc_modules",
+             ":flutter_legacy_platform_dills",
+             ":flutter_web_platforms",
+           ] + web_engine_libraries
 
     if (build_canvaskit) {
       deps += [ "//third_party/skia/modules/canvaskit" ]
@@ -649,12 +636,10 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_canvaskit_platform_dart2js_sound")
     sources += get_target_outputs(":flutter_canvaskit_platform_dart2js_unsound")
 
-    sources += get_target_outputs(":web_locale_keymap_library")
-    sources += get_target_outputs(":web_ui_library")
-    sources += get_target_outputs(":web_ui_library_sources")
-    sources += get_target_outputs(":skwasm_stub_library")
-    sources += get_target_outputs(":skwasm_impl_library")
-    sources += get_target_outputs(":web_engine_library")
+    foreach(web_engine_library, web_engine_libraries) {
+      sources += get_target_outputs(web_engine_library)
+    }
+
     tmp_files = []
     foreach(source, sources) {
       tmp_files += [
