@@ -111,7 +111,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::UniqueSurfaceKHR surface_;
   vk::Format surface_format_;
   std::unique_ptr<SwapchainVK> swapchain_;
-  std::unique_ptr<CommandPoolVK> graphics_command_pool_;
+  std::shared_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
   bool is_valid_ = false;

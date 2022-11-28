@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -16,7 +17,7 @@ class FencedCommandBufferVK {
  public:
   FencedCommandBufferVK(vk::Device device,
                         vk::Queue queue,
-                        vk::CommandPool command_pool);
+                        std::shared_ptr<CommandPoolVK> command_pool);
 
   ~FencedCommandBufferVK();
 
@@ -32,7 +33,7 @@ class FencedCommandBufferVK {
  private:
   vk::Device device_;
   vk::Queue queue_;
-  vk::CommandPool command_pool_;
+  std::shared_ptr<CommandPoolVK> command_pool_;
   std::unique_ptr<DeletionQueueVK> deletion_queue_;
   vk::CommandBuffer command_buffer_;
   std::vector<vk::CommandBuffer> children_;

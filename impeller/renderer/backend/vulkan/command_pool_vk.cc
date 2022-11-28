@@ -6,7 +6,7 @@
 
 namespace impeller {
 
-std::unique_ptr<CommandPoolVK> CommandPoolVK::Create(vk::Device device,
+std::shared_ptr<CommandPoolVK> CommandPoolVK::Create(vk::Device device,
                                                      uint32_t queue_index) {
   vk::CommandPoolCreateInfo create_info;
   create_info.setQueueFamilyIndex(queue_index);
@@ -18,15 +18,36 @@ std::unique_ptr<CommandPoolVK> CommandPoolVK::Create(vk::Device device,
     return nullptr;
   }
 
-  return std::make_unique<CommandPoolVK>(std::move(res.value));
+  return std::make_shared<CommandPoolVK>(device, std::move(res.value));
 }
 
-vk::CommandPool CommandPoolVK::Get() const {
-  return *command_pool_;
+vk::CommandBuffer CommandPoolVK::CreateCommandBuffer() {
+  std::scoped_lock<std::mutex> lock(pool_mutex_);
+
+  vk::CommandBufferAllocateInfo allocate_info;
+  allocate_info.setLevel(vk::CommandBufferLevel::ePrimary);
+  allocate_info.setCommandBufferCount(1);
+  allocate_info.setCommandPool(command_pool_.get());
+
+  auto res = device_.allocateCommandBuffers(allocate_info);
+  if (res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to allocate command buffer: "
+                   << vk::to_string(res.result);
+    return nullptr;
+  }
+
+  return res.value[0];
 }
 
-CommandPoolVK::CommandPoolVK(vk::UniqueCommandPool command_pool)
-    : command_pool_(std::move(command_pool)) {}
+void CommandPoolVK::FreeCommandBuffers(
+    const std::vector<vk::CommandBuffer>& buffers) {
+  std::scoped_lock<std::mutex> lock(pool_mutex_);
+  device_.freeCommandBuffers(command_pool_.get(), buffers);
+}
+
+CommandPoolVK::CommandPoolVK(vk::Device device,
+                             vk::UniqueCommandPool command_pool)
+    : device_(device), command_pool_(std::move(command_pool)) {}
 
 CommandPoolVK::~CommandPoolVK() = default;
 

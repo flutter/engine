@@ -21,13 +21,13 @@ namespace impeller {
 std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
     const std::weak_ptr<const Context>& context_arg,
     vk::Device device,
-    vk::CommandPool command_pool) {
+    std::shared_ptr<CommandPoolVK> command_pool) {
   if (auto context = context_arg.lock()) {
     auto queue =
         reinterpret_cast<const ContextVK*>(context.get())->GetGraphicsQueue();
     auto fenced_command_buffer =
         std::make_shared<FencedCommandBufferVK>(device, queue, command_pool);
-    return std::make_shared<CommandBufferVK>(context, device, command_pool,
+    return std::make_shared<CommandBufferVK>(context, device,
                                              fenced_command_buffer);
   } else {
     return nullptr;
@@ -37,11 +37,9 @@ std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
 CommandBufferVK::CommandBufferVK(
     std::weak_ptr<const Context> context,
     vk::Device device,
-    vk::CommandPool command_pool,
     std::shared_ptr<FencedCommandBufferVK> command_buffer)
     : CommandBuffer(std::move(context)),
       device_(device),
-      command_pool_(command_pool),
       fenced_command_buffer_(std::move(command_buffer)) {
   is_valid_ = true;
 }

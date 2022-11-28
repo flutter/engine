@@ -17,11 +17,10 @@ class CommandBufferVK final : public CommandBuffer {
   static std::shared_ptr<CommandBufferVK> Create(
       const std::weak_ptr<const Context>& context,
       vk::Device device,
-      vk::CommandPool command_pool);
+      std::shared_ptr<CommandPoolVK> command_pool);
 
   CommandBufferVK(std::weak_ptr<const Context> context,
                   vk::Device device,
-                  vk::CommandPool command_pool,
                   std::shared_ptr<FencedCommandBufferVK> command_buffer);
 
   // |CommandBuffer|
@@ -31,7 +30,6 @@ class CommandBufferVK final : public CommandBuffer {
   friend class ContextVK;
 
   vk::Device device_;
-  vk::CommandPool command_pool_;
   vk::UniqueRenderPass render_pass_;
   std::shared_ptr<FencedCommandBufferVK> fenced_command_buffer_;
   bool is_valid_ = false;

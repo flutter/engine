@@ -526,7 +526,7 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
   return CommandBufferVK::Create(weak_from_this(), *device_,
-                                 graphics_command_pool_->Get());
+                                 graphics_command_pool_);
 }
 
 vk::Instance ContextVK::GetInstance() const {

@@ -11,31 +11,15 @@
 
 namespace impeller {
 
-static vk::CommandBuffer CreateCommandBuffer(vk::Device device,
-                                             vk::CommandPool pool) {
-  vk::CommandBufferAllocateInfo allocate_info;
-  allocate_info.setLevel(vk::CommandBufferLevel::ePrimary);
-  allocate_info.setCommandBufferCount(1);
-  allocate_info.setCommandPool(pool);
-
-  auto res = device.allocateCommandBuffers(allocate_info);
-  if (res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Failed to allocate command buffer: "
-                   << vk::to_string(res.result);
-    return nullptr;
-  }
-
-  return res.value[0];
-}
-
-FencedCommandBufferVK::FencedCommandBufferVK(vk::Device device,
-                                             vk::Queue queue,
-                                             vk::CommandPool command_pool)
+FencedCommandBufferVK::FencedCommandBufferVK(
+    vk::Device device,
+    vk::Queue queue,
+    std::shared_ptr<CommandPoolVK> command_pool)
     : device_(device),
       queue_(queue),
-      command_pool_(command_pool),
+      command_pool_(std::move(command_pool)),
       deletion_queue_(std::make_unique<DeletionQueueVK>()) {
-  command_buffer_ = CreateCommandBuffer(device_, command_pool_);
+  command_buffer_ = command_pool_->CreateCommandBuffer();
 }
 
 vk::CommandBuffer FencedCommandBufferVK::Get() const {
@@ -43,17 +27,16 @@ vk::CommandBuffer FencedCommandBufferVK::Get() const {
 }
 
 vk::CommandBuffer FencedCommandBufferVK::GetSingleUseChild() {
-  auto child = CreateCommandBuffer(device_, command_pool_);
+  auto child = command_pool_->CreateCommandBuffer();
   children_.push_back(child);
   return child;
 }
 
 FencedCommandBufferVK::~FencedCommandBufferVK() {
   if (!submitted_) {
-    VALIDATION_LOG
-        << "FencedCommandBufferVK is being destroyed without being submitted.";
+    children_.push_back(command_buffer_);
   }
-  device_.freeCommandBuffers(command_pool_, children_);
+  command_pool_->FreeCommandBuffers(children_);
 }
 
 bool FencedCommandBufferVK::Submit() {
