@@ -7,12 +7,10 @@
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 
-#include "flutter/shell/platform/windows/flutter_windows_engine.h"
-#include "flutter/shell/platform/windows/flutter_windows_view.h"
-
 namespace flutter {
 
 class FlutterWindowsEngine;
+class FlutterWindowsView;
 class FlutterPlatformNodeDelegateWindows;
 
 // The Win32 implementation of AccessibilityBridge.

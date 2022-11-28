@@ -76,7 +76,7 @@ class FlutterWindowsEngineSpy : public FlutterWindowsEngine {
       : FlutterWindowsEngine(project) {}
 
  protected:
-  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
       FlutterWindowsEngine* engine,
       FlutterWindowsView* view) override {
     return std::make_shared<AccessibilityBridgeWindowsSpy>(engine, view);
