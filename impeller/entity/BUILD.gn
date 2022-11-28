@@ -50,6 +50,7 @@ impeller_shaders("entity_shaders") {
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
+    "shaders/rrect_blur_no_sigma.frag",
     "shaders/runtime_effect.vert",
     "shaders/solid_fill.frag",
     "shaders/solid_fill.vert",

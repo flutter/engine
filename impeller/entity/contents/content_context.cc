@@ -169,6 +169,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
   rrect_blur_pipelines_[{}] =
       CreateDefaultPipeline<RRectBlurPipeline>(*context_);
+  rrect_blur_no_sigma_pipelines_[{}] =
+      CreateDefaultPipeline<RRectBlurNoSigmaPipeline>(*context_);
   texture_blend_pipelines_[{}] =
       CreateDefaultPipeline<BlendPipeline>(*context_);
   blend_color_pipelines_[{}] =

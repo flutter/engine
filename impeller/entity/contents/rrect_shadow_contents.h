@@ -14,9 +14,7 @@
 
 namespace impeller {
 
-class Path;
-class HostBuffer;
-struct VertexBuffer;
+struct Command;
 
 class RRectShadowContents final : public Contents {
  public:
@@ -39,6 +37,16 @@ class RRectShadowContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
+  bool RenderWithSigma(const ContentContext& renderer,
+                       const Entity& entity,
+                       RenderPass& pass,
+                       Command cmd) const;
+
+  bool RenderNoSigma(const ContentContext& renderer,
+                     const Entity& entity,
+                     RenderPass& pass,
+                     Command cmd) const;
+
   std::optional<Rect> rect_;
   Scalar corner_radius_;
   Sigma sigma_;

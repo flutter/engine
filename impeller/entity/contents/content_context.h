@@ -51,6 +51,7 @@
 #include "impeller/entity/radial_gradient_fill.frag.h"
 #include "impeller/entity/rrect_blur.frag.h"
 #include "impeller/entity/rrect_blur.vert.h"
+#include "impeller/entity/rrect_blur_no_sigma.frag.h"
 #include "impeller/entity/solid_fill.frag.h"
 #include "impeller/entity/solid_fill.vert.h"
 #include "impeller/entity/srgb_to_linear_filter.frag.h"
@@ -98,6 +99,8 @@ using SweepGradientSSBOFillPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
+using RRectBlurNoSigmaPipeline =
+    RenderPipelineT<RrectBlurVertexShader, RrectBlurNoSigmaFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using BlendColorPipeline = RenderPipelineT<AdvancedBlendVertexShader,
                                            AdvancedBlendColorFragmentShader>;
@@ -249,6 +252,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(rrect_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurNoSigmaPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(rrect_blur_no_sigma_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetSweepGradientFillPipeline(
@@ -456,6 +464,7 @@ class ContentContext {
   mutable Variants<SweepGradientSSBOFillPipeline>
       sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
+  mutable Variants<RRectBlurNoSigmaPipeline> rrect_blur_no_sigma_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
