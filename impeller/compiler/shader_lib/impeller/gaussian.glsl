@@ -9,7 +9,7 @@
 
 /// Gaussian distribution function.
 float IPGaussian(float x, float sigma) {
-  float variance = pow(sigma, 2.0;
+  float variance = pow(sigma, 2.0);
   return exp(-0.5 * pow(x, 2.0) / variance) / (kSqrtTwoPi * sigma);
 }
 
@@ -26,7 +26,7 @@ vec2 IPVec2Erf(vec2 x) {
   vec2 a = abs(x);
   // 0.278393*x + 0.230389*x^2 + 0.078108*x^4 + 1
   vec2 b = (0.278393 + (0.230389 + 0.078108 * a * a) * a) * a + 1.0;
-  return sign(x) * (1 - 1 / (b * b * b * b));
+  return sign(x) * (1 - 1 / b * b * b * b);
 }
 
 /// Indefinite integral of the Gaussian function (with constant range 0->1).
