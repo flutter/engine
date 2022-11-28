@@ -357,7 +357,7 @@ _compile_platform("flutter_dart2js_kernel_sdk_full_sound") {
 copy("flutter_dartdevc_kernel_sdk_outline_unsound_legacy") {
   sources = get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_unsound")
 
-  outputs = [ "$root_out_dir/flutter_web_sdk/flutter_ddc_sdk.dill" ]
+  outputs = [ "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk.dill" ]
 
   deps = [ ":flutter_dartdevc_kernel_sdk_outline_unsound" ]
 }
@@ -365,7 +365,7 @@ copy("flutter_dartdevc_kernel_sdk_outline_unsound_legacy") {
 copy("flutter_dartdevc_kernel_sdk_outline_sound_legacy") {
   sources = get_target_outputs(":flutter_dartdevc_kernel_sdk_outline_sound")
 
-  outputs = [ "$root_out_dir/flutter_web_sdk/flutter_ddc_sdk_sound.dill" ]
+  outputs = [ "$root_out_dir/flutter_web_sdk/kernel/flutter_ddc_sdk_sound.dill" ]
 
   deps = [ ":flutter_dartdevc_kernel_sdk_outline_sound" ]
 }
@@ -521,6 +521,10 @@ group("flutter_ddc_modules") {
     ":flutter_dartdevc_canvaskit_kernel_sdk_sound",
     ":flutter_dartdevc_kernel_sdk",
     ":flutter_dartdevc_kernel_sdk_sound",
+
+    # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
+    ":flutter_dartdevc_kernel_sdk_outline_unsound_legacy",
+    ":flutter_dartdevc_kernel_sdk_outline_sound_legacy",
   ]
 }
 
