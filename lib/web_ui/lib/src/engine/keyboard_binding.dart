@@ -116,7 +116,7 @@ class KeyboardBinding {
   }
 
   /// The singleton instance of this object.
-  static KeyboardBinding get instance => _instance!;
+  static KeyboardBinding? get instance => _instance;
   static KeyboardBinding? _instance;
 
   static void initInstance() {
