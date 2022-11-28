@@ -153,6 +153,9 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   // |WindowBindingHandler|
   AccessibilityRootNode* GetAccessibilityRootNode() override;
 
+  // |Window|
+  ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
+
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine
   // windowing and input state.

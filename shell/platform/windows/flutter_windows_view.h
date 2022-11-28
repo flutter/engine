@@ -196,6 +196,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |TextInputPluginDelegate|
   void OnResetImeComposing() override;
 
+  // |WindowBindingHandlerDelegate|
+  virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
+
  protected:
   // Called to create keyboard key handler.
   //

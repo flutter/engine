@@ -215,6 +215,9 @@ class Window : public KeyboardManager::WindowDelegate {
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
+  // Called to obtain a pointer to the fragment root delegate.
+  virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() = 0;
+
  protected:
   // Win32's DefWindowProc.
   //
