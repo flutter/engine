@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:convert' show utf8;
-
 // The following segment is not only used in the generating script, but also
 // copied to the generated package.
 /*@@@ SHARED SEGMENT START @@@*/
@@ -122,6 +120,12 @@ class _StringStream {
   _StringStream(this._data) : _offset = 0;
 
   final String _data;
+  final Map<int, String> _goalToEventCode = Map<int, String>.fromEntries(
+    kLayoutGoals
+      .entries
+      .map((MapEntry<String, String> beforeEntry) =>
+          MapEntry<int, String>(beforeEntry.value.codeUnitAt(0), beforeEntry.key))
+  );
 
   int get offest => _offset;
   int _offset;
@@ -148,14 +152,10 @@ class _StringStream {
     }
   }
 
-  String readString() {
-    final int length = readIntAsVerbatim();
-    if (length == 0) {
-      return '';
-    }
-    final String result = _data.substring(_offset, _offset + length);
-    _offset += length;
-    return result;
+  String readEventCode() {
+    final int charCode = _data.codeUnitAt(_offset);
+    _offset += 1;
+    return _goalToEventCode[charCode]!;
   }
 }
 
@@ -174,7 +174,7 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
   final int eventCodeNum = stream.readIntAsVerbatim();
   return Map<String, Map<String, int>>.fromEntries((() sync* {
     for (int eventCodeIndex = 0; eventCodeIndex < eventCodeNum; eventCodeIndex += 1) {
-      yield MapEntry<String, Map<String, int>>(stream.readString(), _unmarshallCodeMap(stream));
+      yield MapEntry<String, Map<String, int>>(stream.readEventCode(), _unmarshallCodeMap(stream));
     }
   })());
 }
@@ -222,15 +222,11 @@ void _marshallIntAsVerbatim(StringBuffer builder, int value) {
   builder.writeCharCode(result);
 }
 
-// Encode a string, length first, then contents.
-//
-// The length of string is the amount of characters, not its byte length.
-void _marshallString(StringBuffer builder, String value) {
-  _marshallIntAsVerbatim(builder, value.length);
-  for (final int char in utf8.encode(value)) {
-    assert(_isPrintableEascii(char), '0x${char.toRadixString(16)}}');
-  }
-  builder.write(value);
+void _marshallEventCode(StringBuffer builder, String value) {
+  // Instead of recording the entire eventCode, since the eventCode is mapped
+  // 1-to-1 to a character in kLayoutGoals, we record the goal instead.
+  final String char = kLayoutGoals[value]!;
+  builder.write(char);
 }
 
 void _marshallEventKey(StringBuffer builder, String value) {
@@ -257,7 +253,7 @@ List<String> marshallMappingData(Map<String, Map<String, int>> mappingData) {
   _marshallIntAsVerbatim(builder, mappingData.length);
   _sortedForEach(mappingData, (String eventCode, Map<String, int> codeMap) {
     builder.write('\n');
-    _marshallString(builder, eventCode);
+    _marshallEventCode(builder, eventCode);
     _marshallIntAsVerbatim(builder, codeMap.length);
     _sortedForEach(codeMap, (String eventKey, int logicalKey) {
       _marshallEventKey(builder, eventKey);

@@ -129,6 +129,12 @@ class _StringStream {
   _StringStream(this._data) : _offset = 0;
 
   final String _data;
+  final Map<int, String> _goalToEventCode = Map<int, String>.fromEntries(
+    kLayoutGoals
+      .entries
+      .map((MapEntry<String, String> beforeEntry) =>
+          MapEntry<int, String>(beforeEntry.value.codeUnitAt(0), beforeEntry.key))
+  );
 
   int get offest => _offset;
   int _offset;
@@ -155,14 +161,10 @@ class _StringStream {
     }
   }
 
-  String readString() {
-    final int length = readIntAsVerbatim();
-    if (length == 0) {
-      return '';
-    }
-    final String result = _data.substring(_offset, _offset + length);
-    _offset += length;
-    return result;
+  String readEventCode() {
+    final int charCode = _data.codeUnitAt(_offset);
+    _offset += 1;
+    return _goalToEventCode[charCode]!;
   }
 }
 
@@ -181,7 +183,7 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
   final int eventCodeNum = stream.readIntAsVerbatim();
   return Map<String, Map<String, int>>.fromEntries((() sync* {
     for (int eventCodeIndex = 0; eventCodeIndex < eventCodeNum; eventCodeIndex += 1) {
-      yield MapEntry<String, Map<String, int>>(stream.readString(), _unmarshallCodeMap(stream));
+      yield MapEntry<String, Map<String, int>>(stream.readEventCode(), _unmarshallCodeMap(stream));
     }
   })());
 }
@@ -196,29 +198,29 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
 Map<String, Map<String, int>> getMappingDataWin() {
   return unmarshallMappingData(
     r'F'
-    r'9Backquote1§0'
-    r'6Digit04)0=0@0}0'
-    r"6Digit17!1&1'1+1>1|1~1"
-    '6Digit25"2\'2/2@2~2'
-    r'6Digit36"3#3*3+3-3^3'
-    r"6Digit47!4$4'4+4;4{4~4"
-    r'6Digit53%5(5[5'
-    r'6Digit66&6-6/6:6^6|6'
-    r'6Digit77&7/7=7?7`7{7|7'
-    r'6Digit86!8(8*8[8\8_8'
-    r'6Digit95(9)9]9^9{9'
-    r'4KeyB1{b'
-    r'4KeyC1&c'
-    r'4KeyF1[f'
-    r'4KeyG1]g'
-    r'4KeyM2<m?m'
-    r'4KeyN1}n'
-    r'4KeyQ3/q@q\q'
-    r'4KeyV1@v'
-    r'4KeyW3"w?w|w'
-    r'4KeyX2#x)x'
-    r'4KeyZ2(z>y'
-  ); // 308 characters
+    r'`1§0'
+    r'04)0=0@0}0'
+    r"17!1&1'1+1>1|1~1"
+    '25"2\'2/2@2~2'
+    r'36"3#3*3+3-3^3'
+    r"47!4$4'4+4;4{4~4"
+    r'53%5(5[5'
+    r'66&6-6/6:6^6|6'
+    r'77&7/7=7?7`7{7|7'
+    r'86!8(8*8[8\8_8'
+    r'95(9)9]9^9{9'
+    r'b1{b'
+    r'c1&c'
+    r'f1[f'
+    r'g1]g'
+    r'm2<m?m'
+    r'n1}n'
+    r'q3/q@q\q'
+    r'v1@v'
+    r'w3"w?w|w'
+    r'x2#x)x'
+    r'z2(z>y'
+  ); // 195 characters
 }
 
 /// Data for [LocaleKeymap] on Linux.
@@ -231,25 +233,25 @@ Map<String, Map<String, int>> getMappingDataWin() {
 Map<String, Map<String, int>> getMappingDataLinux() {
   return unmarshallMappingData(
     r'B'
-    r'6Digit04)0=0@0}0'
-    r'6Digit13!1&1|1'
-    r'6Digit23"2@2~2'
-    r'6Digit32"3#3'
-    r"6Digit45$4'4;4{4~4"
-    r'6Digit53%5(5[5'
-    r'6Digit65&6-6:6^6|6'
-    r'6Digit75&7/7?7`7{7'
-    r'6Digit85(8*8[8\8_8'
-    r'6Digit94(9)9]9^9'
-    r'4KeyA2@qΩq'
-    r'4KeyK1&k'
-    r'4KeyQ3@qÆaæa'
-    r'4KeyW2<z«z'
-    r'4KeyX1>x'
-    r'4KeyY2¥ÿ←ÿ'
-    r'4KeyZ5<z»yŁwłw›y'
-    r'9Semicolon2µmºm'
-  ); // 248 characters
+    r'04)0=0@0}0'
+    r'13!1&1|1'
+    r'23"2@2~2'
+    r'32"3#3'
+    r"45$4'4;4{4~4"
+    r'53%5(5[5'
+    r'65&6-6:6^6|6'
+    r'75&7/7?7`7{7'
+    r'85(8*8[8\8_8'
+    r'94(9)9]9^9'
+    r'a2@qΩq'
+    r'k1&k'
+    r'q3@qÆaæa'
+    r'w2<z«z'
+    r'x1>x'
+    r'y2¥ÿ←ÿ'
+    r'z5<z»yŁwłw›y'
+    r';2µmºm'
+  ); // 151 characters
 }
 
 /// Data for [LocaleKeymap] on Darwin.
@@ -262,44 +264,44 @@ Map<String, Map<String, int>> getMappingDataLinux() {
 Map<String, Map<String, int>> getMappingDataDarwin() {
   return unmarshallMappingData(
     r'W'
-    r'5Comma2„w∑w'
-    r'6Digit04)0=0`0}0'
-    r'6Digit13!1&1|1'
-    r'6Digit22"2@2'
-    r'6Digit32"3#3'
-    r"6Digit43$4%4'4"
-    r'6Digit56%5(5:5[5{5~5'
-    r'6Digit65 6&6,6]6^6'
-    r'6Digit75&7.7/7\7|7'
-    r'6Digit86!8(8*8;8[8{8'
-    r"6Digit97 9'9(9)9]9{9}9"
-    r'4KeyA2Ωq‡q'
-    r'4KeyB2˛x≈x'
-    r'4KeyC3 cÔj∆j'
-    r'4KeyD2þe´e'
-    r'4KeyF2þu¨u'
-    r'4KeyG2þÿˆi'
-    r'4KeyH3 hÎÿ∂d'
-    r'4KeyI3 iÇcçc'
-    r'4KeyJ2Óh˙h'
-    r'4KeyK2ˇÿ†t'
-    r'4KeyL5 l@lþÿ|l˜n'
-    r'4KeyM1~m'
-    r'4KeyN3 nıÿ∫b'
-    r'4KeyO2®r‰r'
-    r'4KeyP2¬lÒl'
-    r'4KeyQ2Æaæa'
-    r'4KeyR3 rπp∏p'
-    r'4KeyS3 sØoøo'
-    r'4KeyT2¥yÁy'
-    r'4KeyU3 u©g˝g'
-    r'4KeyV2˚kk'
-    r'4KeyW2ÂzÅz'
-    r'4KeyX2Œqœq'
-    r'4KeyY5 yÏfƒfˇzΩz'
-    r'4KeyZ5 z¥y‡y‹ÿ›w'
-    r'6Period2√v◊v'
-    r'9Semicolon4µmÍsÓmßs'
-    r'5Slash2¸zΩz'
-  ); // 500 characters
+    r',2„w∑w'
+    r'04)0=0`0}0'
+    r'13!1&1|1'
+    r'22"2@2'
+    r'32"3#3'
+    r"43$4%4'4"
+    r'56%5(5:5[5{5~5'
+    r'65 6&6,6]6^6'
+    r'75&7.7/7\7|7'
+    r'86!8(8*8;8[8{8'
+    r"97 9'9(9)9]9{9}9"
+    r'a2Ωq‡q'
+    r'b2˛x≈x'
+    r'c3 cÔj∆j'
+    r'd2þe´e'
+    r'f2þu¨u'
+    r'g2þÿˆi'
+    r'h3 hÎÿ∂d'
+    r'i3 iÇcçc'
+    r'j2Óh˙h'
+    r'k2ˇÿ†t'
+    r'l5 l@lþÿ|l˜n'
+    r'm1~m'
+    r'n3 nıÿ∫b'
+    r'o2®r‰r'
+    r'p2¬lÒl'
+    r'q2Æaæa'
+    r'r3 rπp∏p'
+    r's3 sØoøo'
+    r't2¥yÁy'
+    r'u3 u©g˝g'
+    r'v2˚kk'
+    r'w2ÂzÅz'
+    r'x2Œqœq'
+    r'y5 yÏfƒfˇzΩz'
+    r'z5 z¥y‡y‹ÿ›w'
+    r'.2√v◊v'
+    r';4µmÍsÓmßs'
+    r'/2¸zΩz'
+  ); // 315 characters
 }

@@ -13,8 +13,7 @@ import 'package:path/path.dart' as path;
 
 const String kEnvGithubToken = 'GITHUB_TOKEN';
 
-String _renderTemplate(
-  String template, Map<String, String> dictionary) {
+String _renderTemplate(String template, Map<String, String> dictionary) {
   String result = template;
   dictionary.forEach((String key, String value) {
     final String localResult = result.replaceAll('@@@$key@@@', value);
@@ -26,10 +25,7 @@ String _renderTemplate(
   return result;
 }
 
-void _writeFileTo(
-    String outputDir,
-    String outputFileName,
-    String body) {
+void _writeFileTo(String outputDir, String outputFileName, String body) {
   final String outputPath = path.join(outputDir, outputFileName);
   Directory(outputDir).createSync(recursive: true);
   File(outputPath).writeAsStringSync(body);
@@ -93,6 +89,9 @@ void _mapForEachEqual<T>(Map<String, T> a, Map<String, T> b, _ValueCompare<T> bo
   }
 }
 
+// Ensure that two maps are deeply equal.
+//
+// Differences will be thrown as assertion.
 bool _verifyMap(Map<String, Map<String, int>> a, Map<String, Map<String, int>> b) {
   _mapForEachEqual(a, b, (Map<String, int>? aMap, Map<String, int>? bMap, String path) {
     _mapForEachEqual(aMap!, bMap!, (int? aValue, int? bValue, String path) {
