@@ -186,9 +186,9 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
   })());
 }
 
-/// Data for [LayoutMapping] on Windows.
+/// Data for [LocaleKeymap] on Windows.
 ///
-/// Do not use this value, but [LayoutMapping.win] instead.
+/// Do not use this value, but [LocaleKeymap.win] instead.
 ///
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
@@ -206,9 +206,9 @@ Map<String, Map<String, int>> getMappingDataWin() {
     r'>YWWYYZZwWyYzZ9Semicolon2MMmM'); // 541 characters
 }
 
-/// Data for [LayoutMapping] on Linux.
+/// Data for [LocaleKeymap] on Linux.
 ///
-/// Do not use this value, but [LayoutMapping.linux] instead.
+/// Do not use this value, but [LocaleKeymap.linux] instead.
 ///
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
@@ -225,9 +225,9 @@ Map<String, Map<String, int>> getMappingDataLinux() {
     r'KeyZ;<ZWWYYZZwWyYzZ»YŁWłW›Y9Semicolon4MMmMµMºM'); // 494 characters
 }
 
-/// Data for [LayoutMapping] on Darwin.
+/// Data for [LocaleKeymap] on Darwin.
 ///
-/// Do not use this value, but [LayoutMapping.darwin] instead.
+/// Do not use this value, but [LocaleKeymap.darwin] instead.
 ///
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
