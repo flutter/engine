@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_ACCESSIBILITY_BRIDGE_WINDOWS_H_
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
 
 namespace flutter {
 
@@ -22,7 +23,8 @@ class FlutterPlatformNodeDelegateWindows;
 ///
 /// AccessibilityBridgeWindows must be created as a shared_ptr, since some
 /// methods acquires its weak_ptr.
-class AccessibilityBridgeWindows : public AccessibilityBridge {
+class AccessibilityBridgeWindows : public AccessibilityBridge,
+                                   public ui::AXFragmentRootDelegateWin {
  public:
   AccessibilityBridgeWindows(FlutterWindowsEngine* engine,
                              FlutterWindowsView* view);
@@ -47,6 +49,15 @@ class AccessibilityBridgeWindows : public AccessibilityBridge {
   // This is a virtual method for the convenience of unit tests.
   virtual void SetFocus(
       std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate);
+
+  // |AXFragmentRootDelegateWin|
+  gfx::NativeViewAccessible GetChildOfAXFragmentRoot() override;
+
+  // |AXFragmentRootDelegateWin|
+  gfx::NativeViewAccessible GetParentOfAXFragmentRoot() override;
+
+  // |AXFragmentRootDelegateWin|
+  bool IsAXFragmentRootAControlElement() override;
 
  protected:
   // |AccessibilityBridge|

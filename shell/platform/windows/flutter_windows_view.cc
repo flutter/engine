@@ -676,8 +676,7 @@ void FlutterWindowsView::NotifyWinEventWrapper(DWORD event,
 }
 
 ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
-  // TODO(schectman): implement
-  return nullptr;
+  return engine_->accessibility_bridge().lock().get();
 }
 
 }  // namespace flutter

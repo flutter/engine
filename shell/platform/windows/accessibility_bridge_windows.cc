@@ -173,4 +173,16 @@ void AccessibilityBridgeWindows::SetFocus(
   node_delegate->SetFocus();
 }
 
+gfx::NativeViewAccessible AccessibilityBridgeWindows::GetChildOfAXFragmentRoot() {
+  return view_->GetNativeViewAccessible();
+}
+
+gfx::NativeViewAccessible AccessibilityBridgeWindows::GetParentOfAXFragmentRoot() {
+  return nullptr;
+}
+
+bool AccessibilityBridgeWindows::IsAXFragmentRootAControlElement() {
+  return true;
+}
+
 }  // namespace flutter

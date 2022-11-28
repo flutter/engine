@@ -204,14 +204,10 @@ LRESULT Window::OnGetObject(UINT const message,
   // TODO(schectman): UIA is currently disabled by default.
   // https://github.com/flutter/flutter/issues/114547
   if (is_uia_request && root_view) {
-#ifndef FLUTTER_ENGINE_USE_UIA
+#ifdef FLUTTER_ENGINE_USE_UIA
     if (!ax_fragment_root_) {
-      if (!ax_fragment_delegate_) {
-        ax_fragment_delegate_ =
-            std::make_unique<WindowAXFragmentRootDelegate>(*this);
-      }
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
-          window_handle_, ax_fragment_delegate_.get());
+          window_handle_, GetAxFragmentRootDelegate());
     }
 
     // Retrieve UIA object for the root view.
@@ -679,22 +675,5 @@ void Window::CreateAccessibilityRootNode() {
   }
   accessibility_root_ = AccessibilityRootNode::Create();
 }
-
-gfx::NativeViewAccessible
-WindowAXFragmentRootDelegate::GetChildOfAXFragmentRoot() {
-  return window_.GetNativeViewAccessible();
-}
-
-gfx::NativeViewAccessible
-WindowAXFragmentRootDelegate::GetParentOfAXFragmentRoot() {
-  return nullptr;
-}
-
-bool WindowAXFragmentRootDelegate::IsAXFragmentRootAControlElement() {
-  return true;
-}
-
-WindowAXFragmentRootDelegate::WindowAXFragmentRootDelegate(Window& window)
-    : window_(window) {}
 
 }  // namespace flutter
