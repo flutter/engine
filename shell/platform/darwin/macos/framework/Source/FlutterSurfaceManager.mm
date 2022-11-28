@@ -30,7 +30,7 @@ static const double kIdleDelay = 1.0;
   @synchronized(self) {
     for (FlutterSurface* surface in _surfaces) {
       if (CGSizeEqualToSize(surface.size, size)) {
-        // By default ARC doesn't retain enumartion iteration variables.
+        // By default ARC doesn't retain enumeration iteration variables.
         FlutterSurface* res = surface;
         [_surfaces removeObject:surface];
         return res;
