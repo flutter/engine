@@ -17,13 +17,13 @@ int? _characterToLogicalKey(String? key) {
 /// Maps locale-sensitive keys from KeyboardEvent properties to a logical key.
 class LocaleKeymap {
   /// Create a [LocaleKeymap] for Windows.
-  LocaleKeymap.win() : _mapping = kMappingDataWin;
+  LocaleKeymap.win() : _mapping = getMappingDataWin();
 
   /// Create a [LocaleKeymap] for Linux.
-  LocaleKeymap.linux() : _mapping = kMappingDataLinux;
+  LocaleKeymap.linux() : _mapping = getMappingDataLinux();
 
   /// Create a [LocaleKeymap] for Darwin.
-  LocaleKeymap.darwin() : _mapping = kMappingDataDarwin;
+  LocaleKeymap.darwin() : _mapping = getMappingDataDarwin();
 
   /// Return a logical key mapped from KeyboardEvent properties.
   ///

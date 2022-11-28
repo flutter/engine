@@ -14,7 +14,6 @@
 //  - Templates: data/*.tmpl
 //
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
-
 @@@COMMON@@@
 
 /// Data for [LayoutMapping] on Windows.
@@ -24,7 +23,9 @@
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataWin = @@@WIN_MAPPING@@@;
+Map<String, Map<String, int>> getMappingDataWin() {
+@@@WIN_MAPPING@@@
+}
 
 /// Data for [LayoutMapping] on Linux.
 ///
@@ -33,7 +34,9 @@ final Map<String, Map<String, int>> kMappingDataWin = @@@WIN_MAPPING@@@;
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataLinux = @@@LINUX_MAPPING@@@;
+Map<String, Map<String, int>> getMappingDataLinux() {
+@@@LINUX_MAPPING@@@
+}
 
 /// Data for [LayoutMapping] on Darwin.
 ///
@@ -42,4 +45,6 @@ final Map<String, Map<String, int>> kMappingDataLinux = @@@LINUX_MAPPING@@@;
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataDarwin = @@@DARWIN_MAPPING@@@;
+Map<String, Map<String, int>> getMappingDataDarwin() {
+@@@DARWIN_MAPPING@@@
+}

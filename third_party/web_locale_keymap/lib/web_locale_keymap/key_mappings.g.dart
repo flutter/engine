@@ -15,10 +15,18 @@
 //
 // See flutter/engine:flutter/tools/gen_web_keyboard_layouts/README.md for more information.
 
+/// Used in the final mapping indicating the logical key should be derived from
+/// KeyboardEvent.keyCode.
+///
+/// This value is chosen because it's a printable character within EASCII that
+/// will never be mapped to (checked in the marshalling algorithm).
+const int kUseKeyCode = 0xFF;
 
-/// A special value in the final mapping that indicates the logical key should
-/// be derived from KeyboardEvent.keyCode.
-const int kUseKeyCode = 1;
+/// Used in the final mapping indicating the event key is 'Dead', the dead key.
+final String _kUseDead = String.fromCharCode(0xFE);
+
+/// The KeyboardEvent.key for a dead key.
+const String _kEventKeyDead = 'Dead';
 
 /// A map of all goals from the scan codes to their mapped value in US layout.
 const Map<String, String> kLayoutGoals = <String, String>{
@@ -111,6 +119,73 @@ int? heuristicMapper(String code, String key) {
   return null;
 }
 
+// Maps an integer to a printable EASCII character by adding it to this value.
+//
+// We could've chosen 0x20, the first printable character, for a slightly bigger
+// range, but it's prettier this way and sufficient.
+final int _kMarshallIntBase = '0'.codeUnitAt(0);
+
+class _StringStream {
+  _StringStream(this._data) : _offset = 0;
+
+  final String _data;
+
+  int get offest => _offset;
+  int _offset;
+
+  int readIntAsVerbatim() {
+    final int result = _data.codeUnitAt(_offset);
+    _offset += 1;
+    assert(result >= _kMarshallIntBase);
+    return result - _kMarshallIntBase;
+  }
+
+  int readIntAsChar() {
+    final int result = _data.codeUnitAt(_offset);
+    _offset += 1;
+    return result;
+  }
+
+  String readEventKey() {
+    final String char = String.fromCharCode(readIntAsChar());
+    if (char == _kUseDead) {
+      return _kEventKeyDead;
+    } else {
+      return char;
+    }
+  }
+
+  String readString() {
+    final int length = readIntAsVerbatim();
+    if (length == 0) {
+      return '';
+    }
+    final String result = _data.substring(_offset, _offset + length);
+    _offset += length;
+    return result;
+  }
+}
+
+Map<String, int> _unmarshallCodeMap(_StringStream stream) {
+  final int entryNum = stream.readIntAsVerbatim();
+  return Map<String, int>.fromEntries((() sync* {
+    for (int entryIndex = 0; entryIndex < entryNum; entryIndex += 1) {
+      yield MapEntry<String, int>(stream.readEventKey(), stream.readIntAsChar());
+    }
+  })());
+}
+
+/// Decode a key mapping data out of the string.
+Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
+  final _StringStream stream = _StringStream(compressed);
+  final int eventCodeNum = stream.readIntAsVerbatim();
+  return Map<String, Map<String, int>>.fromEntries((() sync* {
+    for (int eventCodeIndex = 0; eventCodeIndex < eventCodeNum; eventCodeIndex += 1) {
+      yield MapEntry<String, Map<String, int>>(stream.readString(), _unmarshallCodeMap(stream));
+    }
+  })());
+}
+
 /// Data for [LayoutMapping] on Windows.
 ///
 /// Do not use this value, but [LayoutMapping.win] instead.
@@ -118,225 +193,18 @@ int? heuristicMapper(String code, String key) {
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataWin = <String, Map<String, int>>{
-  'Backquote': <String, int>{
-    '§': 0x30,
-  },
-  'Digit0': <String, int>{
-    ')': 0x30,
-    '=': 0x30,
-    '@': 0x30,
-    '}': 0x30,
-  },
-  'Digit1': <String, int>{
-    '!': 0x31,
-    '&': 0x31,
-    "'": 0x31,
-    '+': 0x31,
-    '>': 0x31,
-    '|': 0x31,
-    '~': 0x31,
-  },
-  'Digit2': <String, int>{
-    '"': 0x32,
-    "'": 0x32,
-    '/': 0x32,
-    '@': 0x32,
-    '~': 0x32,
-  },
-  'Digit3': <String, int>{
-    '"': 0x33,
-    '#': 0x33,
-    '*': 0x33,
-    '+': 0x33,
-    '-': 0x33,
-    '^': 0x33,
-  },
-  'Digit4': <String, int>{
-    '!': 0x34,
-    r'$': 0x34,
-    "'": 0x34,
-    '+': 0x34,
-    ';': 0x34,
-    '{': 0x34,
-    '~': 0x34,
-  },
-  'Digit5': <String, int>{
-    '%': 0x35,
-    '(': 0x35,
-    '[': 0x35,
-  },
-  'Digit6': <String, int>{
-    '&': 0x36,
-    '-': 0x36,
-    '/': 0x36,
-    ':': 0x36,
-    '^': 0x36,
-    '|': 0x36,
-  },
-  'Digit7': <String, int>{
-    '&': 0x37,
-    '/': 0x37,
-    '=': 0x37,
-    '?': 0x37,
-    '`': 0x37,
-    '{': 0x37,
-    '|': 0x37,
-  },
-  'Digit8': <String, int>{
-    '!': 0x38,
-    '(': 0x38,
-    '*': 0x38,
-    '[': 0x38,
-    r'\': 0x38,
-    '_': 0x38,
-  },
-  'Digit9': <String, int>{
-    '(': 0x39,
-    ')': 0x39,
-    ']': 0x39,
-    '^': 0x39,
-    '{': 0x39,
-  },
-  'KeyA': <String, int>{
-    'A': 0x41,
-    'Q': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-  },
-  'KeyB': <String, int>{
-    'B': 0x42,
-    'b': 0x42,
-    '{': 0x42,
-  },
-  'KeyC': <String, int>{
-    '&': 0x43,
-    'C': 0x43,
-    'c': 0x43,
-  },
-  'KeyD': <String, int>{
-    'D': 0x44,
-    'd': 0x44,
-  },
-  'KeyE': <String, int>{
-    'E': 0x45,
-    'e': 0x45,
-  },
-  'KeyF': <String, int>{
-    'F': 0x46,
-    '[': 0x46,
-    'f': 0x46,
-  },
-  'KeyG': <String, int>{
-    'G': 0x47,
-    ']': 0x47,
-    'g': 0x47,
-  },
-  'KeyH': <String, int>{
-    'H': 0x48,
-    'h': 0x48,
-  },
-  'KeyI': <String, int>{
-    'I': 0x49,
-    'i': 0x49,
-  },
-  'KeyJ': <String, int>{
-    'J': 0x4a,
-    'j': 0x4a,
-  },
-  'KeyK': <String, int>{
-    'K': 0x4b,
-    'k': 0x4b,
-  },
-  'KeyL': <String, int>{
-    'L': 0x4c,
-    'l': 0x4c,
-  },
-  'KeyM': <String, int>{
-    '<': 0x4d,
-    '?': 0x4d,
-    'M': 0x4d,
-    'm': 0x4d,
-  },
-  'KeyN': <String, int>{
-    'N': 0x4e,
-    'n': 0x4e,
-    '}': 0x4e,
-  },
-  'KeyO': <String, int>{
-    'O': 0x4f,
-    'o': 0x4f,
-  },
-  'KeyP': <String, int>{
-    'P': 0x50,
-    'p': 0x50,
-  },
-  'KeyQ': <String, int>{
-    '/': 0x51,
-    '@': 0x51,
-    'A': 0x41,
-    'Q': 0x51,
-    r'\': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-  },
-  'KeyR': <String, int>{
-    'R': 0x52,
-    'r': 0x52,
-  },
-  'KeyS': <String, int>{
-    'S': 0x53,
-    's': 0x53,
-  },
-  'KeyT': <String, int>{
-    'T': 0x54,
-    't': 0x54,
-  },
-  'KeyU': <String, int>{
-    'U': 0x55,
-    'u': 0x55,
-  },
-  'KeyV': <String, int>{
-    '@': 0x56,
-    'V': 0x56,
-    'v': 0x56,
-  },
-  'KeyW': <String, int>{
-    '"': 0x57,
-    '?': 0x57,
-    'W': 0x57,
-    'Z': 0x5a,
-    'w': 0x57,
-    'z': 0x5a,
-    '|': 0x57,
-  },
-  'KeyX': <String, int>{
-    '#': 0x58,
-    ')': 0x58,
-    'X': 0x58,
-    'x': 0x58,
-  },
-  'KeyY': <String, int>{
-    'Y': 0x59,
-    'Z': 0x5a,
-    'y': 0x59,
-    'z': 0x5a,
-  },
-  'KeyZ': <String, int>{
-    '(': 0x5a,
-    '>': 0x59,
-    'W': 0x57,
-    'Y': 0x59,
-    'Z': 0x5a,
-    'w': 0x57,
-    'y': 0x59,
-    'z': 0x5a,
-  },
-  'Semicolon': <String, int>{
-    'M': 0x4d,
-    'm': 0x4d,
-  },
-};
+Map<String, Map<String, int>> getMappingDataWin() {
+  return unmarshallMappingData(
+    'V9Backquote1§06Digit04)0=0@0}06Digit17!1&1\'1+1>1|1~16Digit25"2\'2'
+    '/2@2~26Digit36"3#3*3+3-3^36Digit47!4\$4\'4+4;4{4~46Digit53%5(5[56D'
+    r'igit66&6-6/6:6^6|66Digit77&7/7=7?7`7{7|76Digit86!8(8*8[8\8_86Dig'
+    r'it95(9)9]9^9{94KeyA4AAQQaAqQ4KeyB3BBbB{B4KeyC3&CCCcC4KeyD2DDdD4K'
+    r'eyE2EEeE4KeyF3FF[FfF4KeyG3GG]GgG4KeyH2HHhH4KeyI2IIiI4KeyJ2JJjJ4K'
+    r'eyK2KKkK4KeyL2LLlL4KeyM4<M?MMMmM4KeyN3NNnN}N4KeyO2OOoO4KeyP2PPpP'
+    r'4KeyQ7/Q@QAAQQ\QaAqQ4KeyR2RRrR4KeyS2SSsS4KeyT2TTtT4KeyU2UUuU4Key'
+    r'V3@VVVvV4KeyW7"W?WWWZZwWzZ|W4KeyX4#X)XXXxX4KeyY4YYZZyYzZ4KeyZ8(Z'
+    r'>YWWYYZZwWyYzZ9Semicolon2MMmM'); // 541 characters
+}
 
 /// Data for [LayoutMapping] on Linux.
 ///
@@ -345,205 +213,17 @@ final Map<String, Map<String, int>> kMappingDataWin = <String, Map<String, int>>
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataLinux = <String, Map<String, int>>{
-  'Digit0': <String, int>{
-    ')': 0x30,
-    '=': 0x30,
-    '@': 0x30,
-    '}': 0x30,
-  },
-  'Digit1': <String, int>{
-    '!': 0x31,
-    '&': 0x31,
-    '|': 0x31,
-  },
-  'Digit2': <String, int>{
-    '"': 0x32,
-    '@': 0x32,
-    '~': 0x32,
-  },
-  'Digit3': <String, int>{
-    '"': 0x33,
-    '#': 0x33,
-  },
-  'Digit4': <String, int>{
-    r'$': 0x34,
-    "'": 0x34,
-    ';': 0x34,
-    '{': 0x34,
-    '~': 0x34,
-  },
-  'Digit5': <String, int>{
-    '%': 0x35,
-    '(': 0x35,
-    '[': 0x35,
-  },
-  'Digit6': <String, int>{
-    '&': 0x36,
-    '-': 0x36,
-    ':': 0x36,
-    '^': 0x36,
-    '|': 0x36,
-  },
-  'Digit7': <String, int>{
-    '&': 0x37,
-    '/': 0x37,
-    '?': 0x37,
-    '`': 0x37,
-    '{': 0x37,
-  },
-  'Digit8': <String, int>{
-    '(': 0x38,
-    '*': 0x38,
-    '[': 0x38,
-    r'\': 0x38,
-    '_': 0x38,
-  },
-  'Digit9': <String, int>{
-    '(': 0x39,
-    ')': 0x39,
-    ']': 0x39,
-    '^': 0x39,
-  },
-  'KeyA': <String, int>{
-    '@': 0x51,
-    'A': 0x41,
-    'Q': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-    'Ω': 0x51,
-  },
-  'KeyB': <String, int>{
-    'B': 0x42,
-    'b': 0x42,
-  },
-  'KeyC': <String, int>{
-    'C': 0x43,
-    'c': 0x43,
-  },
-  'KeyD': <String, int>{
-    'D': 0x44,
-    'd': 0x44,
-  },
-  'KeyE': <String, int>{
-    'E': 0x45,
-    'e': 0x45,
-  },
-  'KeyF': <String, int>{
-    'F': 0x46,
-    'f': 0x46,
-  },
-  'KeyG': <String, int>{
-    'G': 0x47,
-    'g': 0x47,
-  },
-  'KeyH': <String, int>{
-    'H': 0x48,
-    'h': 0x48,
-  },
-  'KeyI': <String, int>{
-    'I': 0x49,
-    'i': 0x49,
-  },
-  'KeyJ': <String, int>{
-    'J': 0x4a,
-    'j': 0x4a,
-  },
-  'KeyK': <String, int>{
-    '&': 0x4b,
-    'K': 0x4b,
-    'k': 0x4b,
-  },
-  'KeyL': <String, int>{
-    'L': 0x4c,
-    'l': 0x4c,
-  },
-  'KeyM': <String, int>{
-    'M': 0x4d,
-    'm': 0x4d,
-  },
-  'KeyN': <String, int>{
-    'N': 0x4e,
-    'n': 0x4e,
-  },
-  'KeyO': <String, int>{
-    'O': 0x4f,
-    'o': 0x4f,
-  },
-  'KeyP': <String, int>{
-    'P': 0x50,
-    'p': 0x50,
-  },
-  'KeyQ': <String, int>{
-    '@': 0x51,
-    'A': 0x41,
-    'Q': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-    'Æ': 0x41,
-    'æ': 0x41,
-  },
-  'KeyR': <String, int>{
-    'R': 0x52,
-    'r': 0x52,
-  },
-  'KeyS': <String, int>{
-    'S': 0x53,
-    's': 0x53,
-  },
-  'KeyT': <String, int>{
-    'T': 0x54,
-    't': 0x54,
-  },
-  'KeyU': <String, int>{
-    'U': 0x55,
-    'u': 0x55,
-  },
-  'KeyV': <String, int>{
-    'V': 0x56,
-    'v': 0x56,
-  },
-  'KeyW': <String, int>{
-    '<': 0x5a,
-    'W': 0x57,
-    'Z': 0x5a,
-    'w': 0x57,
-    'z': 0x5a,
-    '«': 0x5a,
-  },
-  'KeyX': <String, int>{
-    '>': 0x58,
-    'X': 0x58,
-    'x': 0x58,
-  },
-  'KeyY': <String, int>{
-    'Y': 0x59,
-    'Z': 0x5a,
-    'y': 0x59,
-    'z': 0x5a,
-    '¥': 0x1,
-    '←': 0x1,
-  },
-  'KeyZ': <String, int>{
-    '<': 0x5a,
-    'W': 0x57,
-    'Y': 0x59,
-    'Z': 0x5a,
-    'w': 0x57,
-    'y': 0x59,
-    'z': 0x5a,
-    '»': 0x59,
-    'Ł': 0x57,
-    'ł': 0x57,
-    '›': 0x59,
-  },
-  'Semicolon': <String, int>{
-    'M': 0x4d,
-    'm': 0x4d,
-    'µ': 0x4d,
-    'º': 0x4d,
-  },
-};
+Map<String, Map<String, int>> getMappingDataLinux() {
+  return unmarshallMappingData(
+    r'U6Digit04)0=0@0}06Digit13!1&1|16Digit23"2@2~26Digit32"3#36Digit4'
+    r"5$4'4;4{4~46Digit53%5(5[56Digit65&6-6:6^6|66Digit75&7/7?7`7{76Di"
+    r'git85(8*8[8\8_86Digit94(9)9]9^94KeyA6@QAAQQaAqQΩQ4KeyB2BBbB4KeyC'
+    r'2CCcC4KeyD2DDdD4KeyE2EEeE4KeyF2FFfF4KeyG2GGgG4KeyH2HHhH4KeyI2IIi'
+    r'I4KeyJ2JJjJ4KeyK3&KKKkK4KeyL2LLlL4KeyM2MMmM4KeyN2NNnN4KeyO2OOoO4'
+    r'KeyP2PPpP4KeyQ7@QAAQQaAqQÆAæA4KeyR2RRrR4KeyS2SSsS4KeyT2TTtT4KeyU'
+    r'2UUuU4KeyV2VVvV4KeyW6<ZWWZZwWzZ«Z4KeyX3>XXXxX4KeyY6YYZZyYzZ¥ÿ←ÿ4'
+    r'KeyZ;<ZWWYYZZwWyYzZ»YŁWłW›Y9Semicolon4MMmMµMºM'); // 494 characters
+}
 
 /// Data for [LayoutMapping] on Darwin.
 ///
@@ -552,317 +232,18 @@ final Map<String, Map<String, int>> kMappingDataLinux = <String, Map<String, int
 /// The keys are `KeyboardEvent.code` and then `KeyboardEvent.key`. The values
 /// are logical keys or [kUseKeyCode]. Entries that can be derived using
 /// heuristics have been omitted.
-final Map<String, Map<String, int>> kMappingDataDarwin = <String, Map<String, int>>{
-  'Comma': <String, int>{
-    'W': 0x57,
-    'w': 0x57,
-    '„': 0x57,
-    '∑': 0x57,
-  },
-  'Digit0': <String, int>{
-    ')': 0x30,
-    '=': 0x30,
-    '`': 0x30,
-    '}': 0x30,
-  },
-  'Digit1': <String, int>{
-    '!': 0x31,
-    '&': 0x31,
-    '|': 0x31,
-  },
-  'Digit2': <String, int>{
-    '"': 0x32,
-    '@': 0x32,
-  },
-  'Digit3': <String, int>{
-    '"': 0x33,
-    '#': 0x33,
-  },
-  'Digit4': <String, int>{
-    r'$': 0x34,
-    '%': 0x34,
-    "'": 0x34,
-  },
-  'Digit5': <String, int>{
-    '%': 0x35,
-    '(': 0x35,
-    ':': 0x35,
-    '[': 0x35,
-    '{': 0x35,
-    '~': 0x35,
-  },
-  'Digit6': <String, int>{
-    ' ': 0x36,
-    '&': 0x36,
-    ',': 0x36,
-    ']': 0x36,
-    '^': 0x36,
-  },
-  'Digit7': <String, int>{
-    '&': 0x37,
-    '.': 0x37,
-    '/': 0x37,
-    r'\': 0x37,
-    '|': 0x37,
-  },
-  'Digit8': <String, int>{
-    '!': 0x38,
-    '(': 0x38,
-    '*': 0x38,
-    ';': 0x38,
-    '[': 0x38,
-    '{': 0x38,
-  },
-  'Digit9': <String, int>{
-    ' ': 0x39,
-    "'": 0x39,
-    '(': 0x39,
-    ')': 0x39,
-    ']': 0x39,
-    '{': 0x39,
-    '}': 0x39,
-  },
-  'KeyA': <String, int>{
-    'A': 0x41,
-    'Q': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-    'Ω': 0x51,
-    '‡': 0x51,
-  },
-  'KeyB': <String, int>{
-    'B': 0x42,
-    'X': 0x58,
-    'b': 0x42,
-    'x': 0x58,
-    '˛': 0x58,
-    '≈': 0x58,
-  },
-  'KeyC': <String, int>{
-    ' ': 0x43,
-    'C': 0x43,
-    'J': 0x4a,
-    'c': 0x43,
-    'j': 0x4a,
-    'Ô': 0x4a,
-    '∆': 0x4a,
-  },
-  'KeyD': <String, int>{
-    'D': 0x44,
-    'Dead': 0x45,
-    'E': 0x45,
-    'd': 0x44,
-    'e': 0x45,
-    '´': 0x45,
-  },
-  'KeyE': <String, int>{
-    'E': 0x45,
-    'e': 0x45,
-  },
-  'KeyF': <String, int>{
-    'Dead': 0x55,
-    'F': 0x46,
-    'U': 0x55,
-    'f': 0x46,
-    'u': 0x55,
-    '¨': 0x55,
-  },
-  'KeyG': <String, int>{
-    'Dead': 0x1,
-    'G': 0x47,
-    'I': 0x49,
-    'g': 0x47,
-    'i': 0x49,
-    'ˆ': 0x49,
-  },
-  'KeyH': <String, int>{
-    ' ': 0x48,
-    'D': 0x44,
-    'H': 0x48,
-    'd': 0x44,
-    'h': 0x48,
-    'Î': 0x1,
-    '∂': 0x44,
-  },
-  'KeyI': <String, int>{
-    ' ': 0x49,
-    'C': 0x43,
-    'I': 0x49,
-    'c': 0x43,
-    'i': 0x49,
-    'Ç': 0x43,
-    'ç': 0x43,
-  },
-  'KeyJ': <String, int>{
-    'H': 0x48,
-    'J': 0x4a,
-    'h': 0x48,
-    'j': 0x4a,
-    'Ó': 0x48,
-    '˙': 0x48,
-  },
-  'KeyK': <String, int>{
-    'K': 0x4b,
-    'T': 0x54,
-    'k': 0x4b,
-    't': 0x54,
-    'ˇ': 0x1,
-    '†': 0x54,
-  },
-  'KeyL': <String, int>{
-    ' ': 0x4c,
-    '@': 0x4c,
-    'Dead': 0x1,
-    'L': 0x4c,
-    'N': 0x4e,
-    'l': 0x4c,
-    'n': 0x4e,
-    '|': 0x4c,
-    '˜': 0x4e,
-  },
-  'KeyM': <String, int>{
-    'M': 0x4d,
-    'm': 0x4d,
-    '~': 0x4d,
-  },
-  'KeyN': <String, int>{
-    ' ': 0x4e,
-    'B': 0x42,
-    'N': 0x4e,
-    'b': 0x42,
-    'n': 0x4e,
-    'ı': 0x1,
-    '∫': 0x42,
-  },
-  'KeyO': <String, int>{
-    'O': 0x4f,
-    'R': 0x52,
-    'o': 0x4f,
-    'r': 0x52,
-    '®': 0x52,
-    '‰': 0x52,
-  },
-  'KeyP': <String, int>{
-    'L': 0x4c,
-    'P': 0x50,
-    'l': 0x4c,
-    'p': 0x50,
-    '¬': 0x4c,
-    'Ò': 0x4c,
-  },
-  'KeyQ': <String, int>{
-    'A': 0x41,
-    'Q': 0x51,
-    'a': 0x41,
-    'q': 0x51,
-    'Æ': 0x41,
-    'æ': 0x41,
-  },
-  'KeyR': <String, int>{
-    ' ': 0x52,
-    'P': 0x50,
-    'R': 0x52,
-    'p': 0x50,
-    'r': 0x52,
-    'π': 0x50,
-    '∏': 0x50,
-  },
-  'KeyS': <String, int>{
-    ' ': 0x53,
-    'O': 0x4f,
-    'S': 0x53,
-    'o': 0x4f,
-    's': 0x53,
-    'Ø': 0x4f,
-    'ø': 0x4f,
-  },
-  'KeyT': <String, int>{
-    'T': 0x54,
-    'Y': 0x59,
-    't': 0x54,
-    'y': 0x59,
-    '¥': 0x59,
-    'Á': 0x59,
-  },
-  'KeyU': <String, int>{
-    ' ': 0x55,
-    'G': 0x47,
-    'U': 0x55,
-    'g': 0x47,
-    'u': 0x55,
-    '©': 0x47,
-    '˝': 0x47,
-  },
-  'KeyV': <String, int>{
-    'K': 0x4b,
-    'V': 0x56,
-    'k': 0x4b,
-    'v': 0x56,
-    '˚': 0x4b,
-    '': 0x4b,
-  },
-  'KeyW': <String, int>{
-    'W': 0x57,
-    'Z': 0x5a,
-    'w': 0x57,
-    'z': 0x5a,
-    'Â': 0x5a,
-    'Å': 0x5a,
-  },
-  'KeyX': <String, int>{
-    'Q': 0x51,
-    'X': 0x58,
-    'q': 0x51,
-    'x': 0x58,
-    'Œ': 0x51,
-    'œ': 0x51,
-  },
-  'KeyY': <String, int>{
-    ' ': 0x59,
-    'F': 0x46,
-    'Y': 0x59,
-    'Z': 0x5a,
-    'f': 0x46,
-    'y': 0x59,
-    'z': 0x5a,
-    'Ï': 0x46,
-    'ƒ': 0x46,
-    'ˇ': 0x5a,
-    'Ω': 0x5a,
-  },
-  'KeyZ': <String, int>{
-    ' ': 0x5a,
-    'W': 0x57,
-    'Y': 0x59,
-    'Z': 0x5a,
-    'w': 0x57,
-    'y': 0x59,
-    'z': 0x5a,
-    '¥': 0x59,
-    '‡': 0x59,
-    '‹': 0x1,
-    '›': 0x57,
-  },
-  'Period': <String, int>{
-    'V': 0x56,
-    'v': 0x56,
-    '√': 0x56,
-    '◊': 0x56,
-  },
-  'Semicolon': <String, int>{
-    'M': 0x4d,
-    'S': 0x53,
-    'm': 0x4d,
-    's': 0x53,
-    'µ': 0x4d,
-    'Í': 0x53,
-    'Ó': 0x4d,
-    'ß': 0x53,
-  },
-  'Slash': <String, int>{
-    'Z': 0x5a,
-    'z': 0x5a,
-    '¸': 0x5a,
-    'Ω': 0x5a,
-  },
-};
+Map<String, Map<String, int>> getMappingDataDarwin() {
+  return unmarshallMappingData(
+    r'X5Comma4WWwW„W∑W6Digit04)0=0`0}06Digit13!1&1|16Digit22"2@26Digit'
+    '32"3#36Digit43\$4%4\'46Digit56%5(5:5[5{5~56Digit65 6&6,6]6^66Digit'
+    r"75&7.7/7\7|76Digit86!8(8*8;8[8{86Digit97 9'9(9)9]9{9}94KeyA6AAQQ"
+    r'aAqQΩQ‡Q4KeyB6BBXXbBxX˛X≈X4KeyC7 CCCJJcCjJÔJ∆J4KeyD6DDþEEEdDeE´E'
+    r'4KeyE2EEeE4KeyF6þUFFUUfFuU¨U4KeyG6þÿGGIIgGiIˆI4KeyH7 HDDHHdDhHÎÿ'
+    r'∂D4KeyI7 ICCIIcCiIÇCçC4KeyJ6HHJJhHjJÓH˙H4KeyK6KKTTkKtTˇÿ†T4KeyL9'
+    r' L@LþÿLLNNlLnN|L˜N4KeyM3MMmM~M4KeyN7 NBBNNbBnNıÿ∫B4KeyO6OORRoOrR'
+    r'®R‰R4KeyP6LLPPlLpP¬LÒL4KeyQ6AAQQaAqQÆAæA4KeyR7 RPPRRpPrRπP∏P4Key'
+    r'S7 SOOSSoOsSØOøO4KeyT6TTYYtTyY¥YÁY4KeyU7 UGGUUgGuU©G˝G4KeyV6KKVV'
+    r'kKvV˚KK4KeyW6WWZZwWzZÂZÅZ4KeyX6QQXXqQxXŒQœQ4KeyY; YFFYYZZfFyYzZ'
+    r'ÏFƒFˇZΩZ4KeyZ; ZWWYYZZwWyYzZ¥Y‡Y‹ÿ›W6Period4VVvV√V◊V9Semicolon8M'
+    r'MSSmMsSµMÍSÓMßS5Slash4ZZzZ¸ZΩZ'); // 734 characters
+}

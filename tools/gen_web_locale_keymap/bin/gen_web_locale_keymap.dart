@@ -6,6 +6,7 @@ import 'dart:io';
 
 import 'package:args/args.dart';
 import 'package:gen_web_keyboard_layouts/benchmark_planner.dart';
+import 'package:gen_web_keyboard_layouts/common.dart';
 import 'package:gen_web_keyboard_layouts/github.dart';
 import 'package:gen_web_keyboard_layouts/layout_types.dart';
 import 'package:path/path.dart' as path;
@@ -64,32 +65,64 @@ void _sortedForEach<V>(Map<String, V> map, _ForEachAction<V> action) {
     });
 }
 
-String _escapeEventKey(String original) {
-  switch (original) {
-    case "'":
-      return '"\'"';
-    case r'\':
-      return r"r'\'";
-    case r'$':
-      return r"r'$'";
-    default:
-      return "'$original'";
+String _escapeStringToDart(String origin) {
+  // If there is no `'`, we can use the raw string surrounded by `'`.
+  if (!origin.contains("'")) {
+    return "r'$origin'";
+  } else {
+    // If there is no `"`, we can use the raw string surrounded by `"`.
+    if (!origin.contains('"')) {
+      return 'r"$origin"';
+    } else {
+      // If there are both kinds of quotes, we have to use non-raw string
+      // and escape necessary characters.
+      final String beforeQuote = origin
+        .replaceAll(r'\', r'\\')
+        .replaceAll(r'$', r'\$')
+        .replaceAll("'", r"\'");
+      return "'$beforeQuote'";
+    }
   }
 }
 
+typedef _ValueCompare<T> = void Function(T?, T?, String path);
+void _mapForEachEqual<T>(Map<String, T> a, Map<String, T> b, _ValueCompare<T> body, String path) {
+  assert(a.length == b.length, '$path.length: ${a.length} vs ${b.length}');
+  for (final String key in a.keys) {
+    body(a[key], b[key], key);
+  }
+}
+
+bool _verifyMap(Map<String, Map<String, int>> a, Map<String, Map<String, int>> b) {
+  _mapForEachEqual(a, b, (Map<String, int>? aMap, Map<String, int>? bMap, String path) {
+    _mapForEachEqual(aMap!, bMap!, (int? aValue, int? bValue, String path) {
+      assert(aValue == bValue && aValue != null, '$path: $aValue vs $bValue');
+    }, path);
+  }, '');
+  return true;
+}
+
+String _prettyPrintBody(String body, int width) {
+  int min(int a, int b)  {
+    return a < b ? a : b;
+  }
+  final List<String> result = <String>[];
+  int start = 0;
+  while (start < body.length) {
+    final String row = body.substring(start, min(body.length, start + width));
+    result.add('    ${_escapeStringToDart(row)}');
+    start += width;
+  }
+  return result.join('\n');
+}
+
 String _buildMapString(Iterable<Layout> layouts) {
-  final List<String> codeStrings = <String>[];
-  _sortedForEach(combineLayouts(layouts), (String eventCode, Map<String, int> eventKeyToLogicalKeys) {
-    final List<String> codeStringBodies = <String>[];
-    _sortedForEach(eventKeyToLogicalKeys, (String eventKey, int result) {
-      codeStringBodies.add('    ${_escapeEventKey(eventKey)}: 0x${result.toRadixString(16)},');
-    });
-    codeStrings.add('''
-  '$eventCode': <String, int>{
-${codeStringBodies.join('\n').trimRight()}
-  },''');
-  });
-  return '<String, Map<String, int>>{\n${codeStrings.join('\n')}\n}';
+  final Map<String, Map<String, int>> originalMap = combineLayouts(layouts);
+  final String compressed = marshallMappingData(originalMap);
+  final Map<String, Map<String, int>> uncompressed = unmarshallMappingData(compressed);
+  assert(_verifyMap(originalMap, uncompressed));
+  return '  return unmarshallMappingData(\n${_prettyPrintBody(compressed, 64)});'
+      ' // ${compressed.length} characters';
 }
 
 String _buildTestCasesString(List<Layout> layouts) {
@@ -99,7 +132,7 @@ String _buildTestCasesString(List<Layout> layouts) {
     _sortedForEach(planLayout(layout.entries), (String eventCode, int logicalKey) {
       final LayoutEntry entry = layout.entries[eventCode]!;
       layoutEntries.add("    verifyEntry(mapping, '$eventCode', <String>["
-          '${entry.printables.map(_escapeEventKey).join(', ')}'
+          '${entry.printables.map(_escapeStringToDart).join(', ')}'
           "], '${String.fromCharCode(logicalKey)}');");
     });
     layoutsString.add('''

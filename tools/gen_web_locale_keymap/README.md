@@ -4,7 +4,7 @@ This script generates mapping data for `web_locale_keymap`.
 
 ## Usage
 
-1. `cd` to this folder, run `dart pub get`.
+1. `cd` to this folder, and run `dart pub get`.
 2. [Create a Github access token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token), then store it to environment variable `$GITHUB_TOKEN`. This token is only for quota controlling and does not need any scopes.
 ```
 # ~/.zshrc
@@ -54,9 +54,13 @@ can use other information: `keyCode`. Now, keyCode is a deprecated property, but
 we really don't see it being removed any time foreseeable. Also, although
 keyCode is infamous for being platform-dependent, for letter keys it is always
 equal to the letter character. Therefore such conflicting cases are all mapped
-to a special value, 0x01, indicating "use keyCode".
+to a special value, `kUseKeyCode`, indicating "use keyCode".
 
 Moreover, to reduce the size of the map, we noticed there are certain patterns
 that can be easily represented by some if statements. These patterns are
 extracted as the so-called "heuristic mapper". This reduces the map from over
 1600 entries to ~450 entries.
+
+To further reduce the package size overhead, the map is encoded into a string
+that is decoded at run time. This reduces the package size over by 33% at the
+cost of code complexity.

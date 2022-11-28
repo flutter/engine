@@ -11,7 +11,6 @@ final ArgParser argParser = ArgParser()
   ..addOption('output-dir')
   ..addOption('input-dir')
   ..addFlag('ui')
-  ..addFlag('keyboard-layouts')
   ..addOption('library-name')
   ..addOption('api-file')
   ..addMultiOption('source-file')
@@ -34,19 +33,6 @@ export 'dart:_engine'
 ''',
   ),
 ];
-
-// final List<Replacer> keyboardLayoutsPatterns = <Replacer>[
-//   AllReplacer(RegExp(r'library\s+web_locale_keymap;'), 'library dart.web_locale_keymap;'),
-//   AllReplacer(RegExp(r'part\s+of\s+web_locale_keymap;'), 'part of dart.web_locale_keymap;'),
-//   AllReplacer(RegExp(
-//     r'''
-// export\s*'src/engine.dart'
-// '''),
-//     r'''
-// export 'dart:_engine'
-// ''',
-//   ),
-// ];
 
 List<Replacer> generateApiFilePatterns(String libraryName, List<String> extraImports) {
   return <Replacer>[
