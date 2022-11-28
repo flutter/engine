@@ -200,10 +200,10 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
     if (lineMatch == null) {
       return;
     }
-    // KeyboardKey.key, such as "KeyZ".
-    final String eventKey = lineMatch.group(1)!;
+    // KeyboardKey.code, such as "KeyZ".
+    final String eventCode = lineMatch.group(1)!;
     // Only record goals.
-    if (!_kGoalToIndex.containsKey(eventKey)) {
+    if (!_kGoalToIndex.containsKey(eventCode)) {
       return;
     }
 
@@ -218,7 +218,7 @@ Layout _parseLayoutFromGithubFile(_GitHubFile file) {
     assert(listMatch != null, 'Unable to match $definition');
     final int deadMask = int.parse(listMatch!.group(5)!, radix: 10);
 
-    entries[eventKey] = LayoutEntry(
+    entries[eventCode] = LayoutEntry(
       <String>[
         _parsePrintable(listMatch.group(1)!, deadMask & 0x1),
         _parsePrintable(listMatch.group(2)!, deadMask & 0x2),

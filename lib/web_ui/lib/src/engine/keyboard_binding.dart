@@ -246,7 +246,9 @@ class KeyboardConverter {
         return locale_keymap.LocaleKeymap.darwin();
       case OperatingSystem.windows:
         return locale_keymap.LocaleKeymap.win();
-      default:
+      case OperatingSystem.android:
+      case OperatingSystem.linux:
+      case OperatingSystem.unknown:
         return locale_keymap.LocaleKeymap.linux();
     }
   }
@@ -311,11 +313,13 @@ class KeyboardConverter {
   // Whether `event.key` is a key name, such as "Shift", or otherwise a
   // character, such as "S" or "ж".
   //
-  // A key name always starts with a capitalized character, and has more than
-  // 1 letter.
+  // A key name always has more than 1 letter. Technically there might be cases
+  // where a non-key-name `event.key` has more than 1 character, but we have yet
+  // to find one. Moreover, all keys that `LocaleMapping` handles are
+  // single-character, which is the most important aspect that this function
+  // cares about.
   static bool _eventKeyIsKeyname(String key) {
-    assert(key.isNotEmpty);
-    return isUpperLetter(key.codeUnitAt(0)) && key.length > 1;
+    return key.length > 1;
   }
 
   static int _deadKeyToLogicalKey(int physicalKey, FlutterHtmlKeyboardEvent event) {
@@ -387,10 +391,6 @@ class KeyboardConverter {
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
     final ValueGetter<int> logicalKey = _cached<int>(() {
-      // Dead keys.
-      if (eventKey == _kLogicalDead) {
-        return _deadKeyToLogicalKey(physicalKey, event);
-      }
       // Mapped logical keys, such as ArrowLeft, Escape, AudioVolumeDown.
       final int? mappedLogicalKey = kWebToLogicalKey[eventKey];
       if (mappedLogicalKey != null) {
@@ -408,6 +408,10 @@ class KeyboardConverter {
         if (localeLogicalKeys != null) {
           return localeLogicalKeys;
         }
+      }
+      // Dead keys that are not handled by the locale mapping.
+      if (eventKey == _kLogicalDead) {
+        return _deadKeyToLogicalKey(physicalKey, event);
       }
       // Minted logical keys.
       return eventKey.hashCode + _kWebKeyIdPlane;
