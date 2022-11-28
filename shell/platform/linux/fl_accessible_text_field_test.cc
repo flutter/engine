@@ -521,4 +521,122 @@ TEST(FlAccessibleTextFieldTest, CopyCutPasteText) {
   EXPECT_EQ(act, kFlutterSemanticsActionPaste);
 }
 
+TEST(FlAccessibleTextFieldTest, TextBoundary) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  g_autoptr(FlAccessibleNode) node = fl_accessible_text_field_new(engine, 1);
+
+  fl_accessible_node_set_value(node,
+                               "Lorem ipsum.\nDolor sit amet. Praesent commodo?"
+                               "\n\nPraesent et felis dui.");
+
+  // |Lorem
+  gint start_offset = -1, end_offset = -1;
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 0,
+                                             ATK_TEXT_GRANULARITY_CHAR,
+                                             &start_offset, &end_offset),
+               "L");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 1);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 0,
+                                             ATK_TEXT_GRANULARITY_WORD,
+                                             &start_offset, &end_offset),
+               "Lorem");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 5);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 0,
+                                             ATK_TEXT_GRANULARITY_SENTENCE,
+                                             &start_offset, &end_offset),
+               "Lorem ipsum.");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 12);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 0,
+                                             ATK_TEXT_GRANULARITY_LINE,
+                                             &start_offset, &end_offset),
+               "Lorem ipsum.");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 12);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 0,
+                                             ATK_TEXT_GRANULARITY_PARAGRAPH,
+                                             &start_offset, &end_offset),
+               "Lorem ipsum.\nDolor sit amet. Praesent commodo?");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 46);
+
+  // Pra|esent
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 32,
+                                             ATK_TEXT_GRANULARITY_CHAR,
+                                             &start_offset, &end_offset),
+               "e");
+  EXPECT_EQ(start_offset, 32);
+  EXPECT_EQ(end_offset, 33);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 32,
+                                             ATK_TEXT_GRANULARITY_WORD,
+                                             &start_offset, &end_offset),
+               "Praesent");
+  EXPECT_EQ(start_offset, 29);
+  EXPECT_EQ(end_offset, 37);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 32,
+                                             ATK_TEXT_GRANULARITY_SENTENCE,
+                                             &start_offset, &end_offset),
+               "Praesent commodo?");
+  EXPECT_EQ(start_offset, 29);
+  EXPECT_EQ(end_offset, 46);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 32,
+                                             ATK_TEXT_GRANULARITY_LINE,
+                                             &start_offset, &end_offset),
+               "Dolor sit amet. Praesent commodo?");
+  EXPECT_EQ(start_offset, 13);
+  EXPECT_EQ(end_offset, 46);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 32,
+                                             ATK_TEXT_GRANULARITY_PARAGRAPH,
+                                             &start_offset, &end_offset),
+               "Lorem ipsum.\nDolor sit amet. Praesent commodo?");
+  EXPECT_EQ(start_offset, 0);
+  EXPECT_EQ(end_offset, 46);
+
+  // feli|s
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 64,
+                                             ATK_TEXT_GRANULARITY_CHAR,
+                                             &start_offset, &end_offset),
+               "s");
+  EXPECT_EQ(start_offset, 64);
+  EXPECT_EQ(end_offset, 65);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 64,
+                                             ATK_TEXT_GRANULARITY_WORD,
+                                             &start_offset, &end_offset),
+               "felis");
+  EXPECT_EQ(start_offset, 60);
+  EXPECT_EQ(end_offset, 65);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 64,
+                                             ATK_TEXT_GRANULARITY_SENTENCE,
+                                             &start_offset, &end_offset),
+               "Praesent et felis dui.");
+  EXPECT_EQ(start_offset, 48);
+  EXPECT_EQ(end_offset, 70);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 64,
+                                             ATK_TEXT_GRANULARITY_LINE,
+                                             &start_offset, &end_offset),
+               "Praesent et felis dui.");
+  EXPECT_EQ(start_offset, 48);
+  EXPECT_EQ(end_offset, 70);
+
+  EXPECT_STREQ(atk_text_get_string_at_offset(ATK_TEXT(node), 64,
+                                             ATK_TEXT_GRANULARITY_PARAGRAPH,
+                                             &start_offset, &end_offset),
+               "\nPraesent et felis dui.");
+  EXPECT_EQ(start_offset, 47);
+  EXPECT_EQ(end_offset, 70);
+}
+
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)
