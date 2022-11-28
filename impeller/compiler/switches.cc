@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <cctype>
 #include <filesystem>
-#include <iostream>
 #include <map>
 
 #include "flutter/fml/file.h"
