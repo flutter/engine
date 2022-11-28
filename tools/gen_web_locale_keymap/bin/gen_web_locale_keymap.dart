@@ -102,27 +102,14 @@ bool _verifyMap(Map<String, Map<String, int>> a, Map<String, Map<String, int>> b
   return true;
 }
 
-String _prettyPrintBody(String body, int width) {
-  int min(int a, int b)  {
-    return a < b ? a : b;
-  }
-  final List<String> result = <String>[];
-  int start = 0;
-  while (start < body.length) {
-    final String row = body.substring(start, min(body.length, start + width));
-    result.add('    ${_escapeStringToDart(row)}');
-    start += width;
-  }
-  return result.join('\n');
-}
-
 String _buildMapString(Iterable<Layout> layouts) {
   final Map<String, Map<String, int>> originalMap = combineLayouts(layouts);
-  final String compressed = marshallMappingData(originalMap);
-  final Map<String, Map<String, int>> uncompressed = unmarshallMappingData(compressed);
+  final List<String> compressed = marshallMappingData(originalMap);
+  final Map<String, Map<String, int>> uncompressed = unmarshallMappingData(compressed.join());
   assert(_verifyMap(originalMap, uncompressed));
-  return '  return unmarshallMappingData(\n${_prettyPrintBody(compressed, 64)});'
-      ' // ${compressed.length} characters';
+  return '  return unmarshallMappingData(\n'
+         '${compressed.map((String line) => '    ${_escapeStringToDart(line)}\n').join()}'
+         '  ); // ${compressed.join().length} characters';
 }
 
 String _buildTestCasesString(List<Layout> layouts) {

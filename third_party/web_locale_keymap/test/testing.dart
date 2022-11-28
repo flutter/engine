@@ -35,7 +35,7 @@ void verifyEntry(LocaleKeymap mapping, String eventCode, List<String> eventKeys,
   int? eventKeyCode;
   {
     if (_isLetter(eventKeys[0]) && _isLetter(eventKeys[1])) {
-      eventKeyCode = eventKeys[0].toUpperCase().codeUnitAt(0);
+      eventKeyCode = eventKeys[0].toLowerCase().codeUnitAt(0);
     }
   }
 

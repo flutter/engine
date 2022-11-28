@@ -15,14 +15,14 @@
       "_engine": {
         "uri": "lib/_engine/engine.dart"
       },
-      "web_locale_keymap": {
-        "uri": "lib/web_locale_keymap/web_locale_keymap.dart"
-      },
       "_skwasm_stub": {
         "uri": "lib/_skwasm_stub/skwasm_stub.dart"
       },
       "_web_unicode": {
         "uri": "lib/_web_unicode/web_unicode.dart"
+      },
+      "_web_locale_keymap": {
+        "uri": "lib/_web_locale_keymap/web_locale_keymap.dart"
       }
     }
   },
@@ -46,8 +46,8 @@
       "_web_unicode": {
         "uri": "lib/_web_unicode/web_unicode.dart"
       },
-      "web_locale_keymap": {
-        "uri": "lib/web_locale_keymap/web_locale_keymap.dart"
+      "_web_locale_keymap": {
+        "uri": "lib/_web_locale_keymap/web_locale_keymap.dart"
       }
     }
   },
@@ -71,8 +71,8 @@
       "_web_unicode": {
         "uri": "lib/_web_unicode/web_unicode.dart"
       },
-      "web_locale_keymap": {
-        "uri": "lib/web_locale_keymap/web_locale_keymap.dart"
+      "_web_locale_keymap": {
+        "uri": "lib/_web_locale_keymap/web_locale_keymap.dart"
       }
     }
   }

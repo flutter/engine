@@ -35,7 +35,6 @@ import 'dart:_js_annotations';
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-import 'dart:web_locale_keymap' as locale_keymap;
 import 'dart:extra';
 
 
@@ -131,14 +130,17 @@ void printSomething() {
     expect(getExtraImportsForLibrary('engine'), <String>[
       "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
       "import 'dart:_web_unicode';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
     ]);
     expect(getExtraImportsForLibrary('skwasm_stub'), <String>[
       "import 'dart:_engine';",
       "import 'dart:_web_unicode';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
     ]);
     expect(getExtraImportsForLibrary('skwasm_impl'), <String>[
       "import 'dart:_engine';",
       "import 'dart:_web_unicode';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
     ]);
 
     // Other libraries (should not have extra imports).

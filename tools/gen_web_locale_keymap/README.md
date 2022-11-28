@@ -62,5 +62,5 @@ extracted as the so-called "heuristic mapper". This reduces the map from over
 1600 entries to ~450 entries.
 
 To further reduce the package size overhead, the map is encoded into a string
-that is decoded at run time. This reduces the package size over by 33% at the
+that is decoded at run time. This reduces the package size over by 27% at the
 cost of code complexity.

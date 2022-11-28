@@ -23,32 +23,32 @@ const String _kEventKeyDead = 'Dead';
 
 /// A map of all goals from the scan codes to their mapped value in US layout.
 const Map<String, String> kLayoutGoals = <String, String>{
-  'KeyA': 'A',
-  'KeyB': 'B',
-  'KeyC': 'C',
-  'KeyD': 'D',
-  'KeyE': 'E',
-  'KeyF': 'F',
-  'KeyG': 'G',
-  'KeyH': 'H',
-  'KeyI': 'I',
-  'KeyJ': 'J',
-  'KeyK': 'K',
-  'KeyL': 'L',
-  'KeyM': 'M',
-  'KeyN': 'N',
-  'KeyO': 'O',
-  'KeyP': 'P',
-  'KeyQ': 'Q',
-  'KeyR': 'R',
-  'KeyS': 'S',
-  'KeyT': 'T',
-  'KeyU': 'U',
-  'KeyV': 'V',
-  'KeyW': 'W',
-  'KeyX': 'X',
-  'KeyY': 'Y',
-  'KeyZ': 'Z',
+  'KeyA': 'a',
+  'KeyB': 'b',
+  'KeyC': 'c',
+  'KeyD': 'd',
+  'KeyE': 'e',
+  'KeyF': 'f',
+  'KeyG': 'g',
+  'KeyH': 'h',
+  'KeyI': 'i',
+  'KeyJ': 'j',
+  'KeyK': 'k',
+  'KeyL': 'l',
+  'KeyM': 'm',
+  'KeyN': 'n',
+  'KeyO': 'o',
+  'KeyP': 'p',
+  'KeyQ': 'q',
+  'KeyR': 'r',
+  'KeyS': 's',
+  'KeyT': 't',
+  'KeyU': 'u',
+  'KeyV': 'v',
+  'KeyW': 'w',
+  'KeyX': 'x',
+  'KeyY': 'y',
+  'KeyZ': 'z',
   'Digit1': '1',
   'Digit2': '2',
   'Digit3': '3',
@@ -243,16 +243,20 @@ void _marshallEventKey(StringBuffer builder, String value) {
   }
 }
 
-/// Encode a key mapping data into a string.
+/// Encode a key mapping data into a list of strings.
+///
+/// The list of strings should be used concatenated, but is returned this way
+/// for aesthetic purposes (one entry per line).
 ///
 /// The algorithm aims at encoding the map directly into a printable string
 /// (instead of a binary stream converted by base64). Some characters in the
 /// string can be multi-byte, which means the decoder should parse the string
 /// using substr instead of as a binary stream.
-String marshallMappingData(Map<String, Map<String, int>> mappingData) {
+List<String> marshallMappingData(Map<String, Map<String, int>> mappingData) {
   final StringBuffer builder = StringBuffer();
   _marshallIntAsVerbatim(builder, mappingData.length);
   _sortedForEach(mappingData, (String eventCode, Map<String, int> codeMap) {
+    builder.write('\n');
     _marshallString(builder, eventCode);
     _marshallIntAsVerbatim(builder, codeMap.length);
     _sortedForEach(codeMap, (String eventKey, int logicalKey) {
@@ -260,5 +264,5 @@ String marshallMappingData(Map<String, Map<String, int>> mappingData) {
       _marshallIntAsChar(builder, logicalKey);
     });
   });
-  return builder.toString();
+  return builder.toString().split('\n');
 }

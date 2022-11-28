@@ -126,7 +126,7 @@ sdk_rewriter("web_locale_keymap_library") {
   api_file =
       "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
   input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
-  output_dir = "$root_out_dir/flutter_web_sdk/lib/web_locale_keymap/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_locale_keymap/"
 }
 
 sdk_rewriter("web_engine_library") {
@@ -321,7 +321,7 @@ template("_compile_platform") {
       "--source",
       "dart:_web_unicode",
       "--source",
-      "dart:web_locale_keymap",
+      "dart:_web_locale_keymap",
     ]
     if (flutter_prebuilt_dart_sdk) {
       args += [
@@ -495,7 +495,7 @@ template("_compile_ddc_modules") {
       "dart:_engine",
       "dart:_skwasm_stub",
       "dart:_web_unicode",
-      "dart:web_locale_keymap",
+      "dart:_web_locale_keymap",
       "--no-summarize",
       "--packages",
       "file:///" + rebase_path(dart_sdk_package_config),

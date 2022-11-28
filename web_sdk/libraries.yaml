@@ -30,8 +30,8 @@ dartdevc:
     _web_unicode:
       uri: "lib/_web_unicode/web_unicode.dart"
 
-    web_locale_keymap:
-      uri: "lib/web_locale_keymap/web_locale_keymap.dart"
+    _web_locale_keymap:
+      uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
 
 dart2js:
   include:
@@ -50,8 +50,8 @@ dart2js:
     _web_unicode:
       uri: "lib/_web_unicode/web_unicode.dart"
 
-    web_locale_keymap:
-      uri: "lib/web_locale_keymap/web_locale_keymap.dart"
+    _web_locale_keymap:
+      uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
 
 wasm:
   include:
@@ -69,3 +69,6 @@ wasm:
 
     _web_unicode:
       uri: "lib/_web_unicode/web_unicode.dart"
+
+    _web_locale_keymap:
+      uri: "lib/_web_locale_keymap/web_locale_keymap.dart"
