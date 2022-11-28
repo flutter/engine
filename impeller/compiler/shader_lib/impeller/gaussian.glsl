@@ -9,12 +9,7 @@
 
 /// Gaussian distribution function.
 float IPGaussian(float x, float sigma) {
-  float variance = sigma * sigma;
-  return exp(-0.5 * x * x / variance) / (kSqrtTwoPi * sigma);
-}
-
-/// Gaussian distribution function.
-float IPGaussian(float x, float sigma, float variance) {
+  float variance = pow(sigma, 2.0;
   return exp(-0.5 * pow(x, 2.0) / variance) / (kSqrtTwoPi * sigma);
 }
 
@@ -23,7 +18,7 @@ float IPErf(float x) {
   float a = abs(x);
   // 0.278393*x + 0.230389*x^2 + 0.078108*x^4 + 1
   float b = (0.278393 + (0.230389 + 0.078108 * a * a) * a) * a + 1.0;
-  return sign(x) * (1 - 1 / b * b * b * b);
+  return sign(x) * (1 - 1 / pow(b, 4.0));
 }
 
 /// Vec2 variation for the Abramowitz and Stegun erf approximation.
