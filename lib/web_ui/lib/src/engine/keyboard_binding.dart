@@ -55,14 +55,10 @@ final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = <int, _ModifierGe
   _kLogicalMetaRight: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
-// ASCII for a, z, A, and Z
-const int _kCharLowerA = 0x61;
-const int _kCharLowerZ = 0x7a;
 const int _kCharUpperA = 0x41;
 const int _kCharUpperZ = 0x5a;
-bool isAlphabet(int charCode) {
-  return (charCode >= _kCharLowerA && charCode <= _kCharLowerZ)
-      || (charCode >= _kCharUpperA && charCode <= _kCharUpperZ);
+bool isUpperLetter(int charCode) {
+  return charCode >= _kCharUpperA && charCode <= _kCharUpperZ;
 }
 
 const String _kPhysicalCapsLock = 'CapsLock';
@@ -318,7 +314,7 @@ class KeyboardConverter {
   // 1 letter.
   static bool _eventKeyIsKeyname(String key) {
     assert(key.isNotEmpty);
-    return isAlphabet(key.codeUnitAt(0)) && key.length > 1;
+    return isUpperLetter(key.codeUnitAt(0)) && key.length > 1;
   }
 
   static int _deadKeyToLogicalKey(int physicalKey, FlutterHtmlKeyboardEvent event) {
