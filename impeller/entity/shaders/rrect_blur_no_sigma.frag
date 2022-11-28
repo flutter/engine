@@ -26,5 +26,5 @@ void main() {
   vec2 half_size = frag_info.rect_size * 0.5;
   vec2 sample_position = v_position - half_size;
 
-  frag_color *= frag_info.color * -RRectDistance(sample_position, half_size);
+  frag_color = frag_info.color * -RRectDistance(sample_position, half_size);
 }
