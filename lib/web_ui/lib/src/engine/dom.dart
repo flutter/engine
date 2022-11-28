@@ -193,9 +193,11 @@ DomEvent createDomEvent(String type, String name) {
   return event;
 }
 
-@JS()
+@JS('ProgressEvent')
 @staticInterop
-class DomProgressEvent extends DomEvent {}
+class DomProgressEvent extends DomEvent {
+  external factory DomProgressEvent(String type);
+}
 
 extension DomProgressEventExtension on DomProgressEvent {
   external double? get loaded;
@@ -1533,13 +1535,11 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedCanvasKitUrl =
-        _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
-    assert(trustedCanvasKitUrl.url != '',
-        'URL: $url rejected by TrustedTypePolicy');
+    assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedCanvasKitUrl;
+    return trustedUrl;
   }
   return url;
 }
