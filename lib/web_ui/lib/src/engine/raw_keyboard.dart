@@ -88,11 +88,11 @@ class RawKeyboard {
     return _onMacOs;
   }
 
-  // During IME composition, Tab fires twice (once for composition and once
-  // for regular tabbing behavior), which causes issues. Intercepting the
-  // tab keydown event during composition prevents these issues from occurring.
-  // https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event#ignoring_keydown_during_ime_composition
   bool _shouldIgnore(FlutterHtmlKeyboardEvent event) {
+    // During IME composition, Tab fires twice (once for composition and once
+    // for regular tabbing behavior), which causes issues. Intercepting the
+    // tab keydown event during composition prevents these issues from occurring.
+    // https://developer.mozilla.org/en-US/docs/Web/API/Element/keydown_event#ignoring_keydown_during_ime_composition
     return event.type == 'keydown' && event.key == 'Tab' && event.isComposing;
   }
 
