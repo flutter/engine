@@ -35,6 +35,7 @@ web_engine_libraries = [
   ":web_ui_library",
   ":web_ui_library_sources",
   ":web_unicode_library",
+  ":web_locale_keymap_library",
 ]
 
 group("web_sdk") {
