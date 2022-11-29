@@ -469,9 +469,7 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
   if (mask & kTSBackgroundMask) {
     Paint background(background_objects, background_data);
     if (background.isNotNull()) {
-      SkPaint sk_paint;
-      style.has_background = true;
-      style.background = *background.paint(sk_paint);
+      background.paint(style.background);
       DlPaint dl_paint;
       background.toDlPaint(dl_paint);
       style.background_dl = dl_paint;
@@ -481,9 +479,7 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
   if (mask & kTSForegroundMask) {
     Paint foreground(foreground_objects, foreground_data);
     if (foreground.isNotNull()) {
-      SkPaint sk_paint;
-      style.has_foreground = true;
-      style.foreground = *foreground.paint(sk_paint);
+      foreground.paint(style.foreground);
       DlPaint dl_paint;
       foreground.toDlPaint(dl_paint);
       style.foreground_dl = dl_paint;

@@ -73,7 +73,7 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   if (isNull()) {
     return nullptr;
   }
-  FML_DCHECK(paint == SkPaint());
+  paint.reset();
 
   tonic::DartByteData byte_data(paint_data_);
   FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
