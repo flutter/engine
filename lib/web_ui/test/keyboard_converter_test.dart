@@ -18,6 +18,7 @@ const int kLocationNumpad = 3;
 
 final int kPhysicalKeyA = kWebToPhysicalKey['KeyA']!;
 final int kPhysicalKeyE = kWebToPhysicalKey['KeyE']!;
+final int kPhysicalKeyL = kWebToPhysicalKey['KeyL']!;
 final int kPhysicalKeyU = kWebToPhysicalKey['KeyU']!;
 final int kPhysicalDigit1 = kWebToPhysicalKey['Digit1']!;
 final int kPhysicalNumpad1 = kWebToPhysicalKey['Numpad1']!;
@@ -31,6 +32,7 @@ final int kPhysicalScrollLock = kWebToPhysicalKey['ScrollLock']!;
 const int kPhysicalEmptyCode = 0x1700000000;
 
 const int kLogicalKeyA = 0x00000000061;
+const int kLogicalKeyL = 0x0000000006C;
 const int kLogicalKeyU = 0x00000000075;
 const int kLogicalDigit1 = 0x00000000031;
 final int kLogicalNumpad1 = kWebLogicalLocationMap['1']![kLocationNumpad]!;
@@ -126,6 +128,25 @@ void testMain() {
       character: null,
     );
     expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
+  });
+
+  test('Special cases', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      // Only handle down events
+      return key.type == ui.KeyEventType.down;
+    }, OperatingSystem.windows);
+
+    // en-in.win, with AltGr
+    converter.handleEvent(keyDownEvent('KeyL', 'l̥', kCtrl | kAlt)..timeStamp = 1);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 1),
+      type: ui.KeyEventType.down,
+      physical: kPhysicalKeyL,
+      logical: kLogicalKeyL,
+      character: 'l̥',
+    );
   });
 
   test('Release modifier during a repeated sequence', () {
