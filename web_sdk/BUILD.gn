@@ -378,6 +378,7 @@ group("flutter_platform_dills") {
     ":flutter_dartdevc_kernel_sdk_outline_unsound",
 
     # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
+    # https://github.com/flutter/flutter/issues/113303
     ":flutter_dartdevc_kernel_sdk_outline_sound",
     ":flutter_dartdevc_kernel_sdk_outline_unsound",
   ]
@@ -523,6 +524,7 @@ group("flutter_ddc_modules") {
     ":flutter_dartdevc_kernel_sdk_sound",
 
     # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
+    # https://github.com/flutter/flutter/issues/113303
     ":flutter_dartdevc_kernel_sdk_outline_sound_legacy",
     ":flutter_dartdevc_kernel_sdk_outline_unsound_legacy",
   ]
@@ -566,6 +568,7 @@ if (!is_fuchsia) {
     sources += get_target_outputs(":flutter_dart2js_kernel_sdk_full_sound")
 
     # TODO(jacksongardner): remove these once they are no longer used by the flutter tool
+    # https://github.com/flutter/flutter/issues/113303
     sources += get_target_outputs(
             ":flutter_dartdevc_kernel_sdk_outline_unsound_legacy")
     sources +=
