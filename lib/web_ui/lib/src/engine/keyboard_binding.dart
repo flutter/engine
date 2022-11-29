@@ -55,12 +55,6 @@ final Map<int, _ModifierGetter> _kLogicalKeyToModifierGetter = <int, _ModifierGe
   _kLogicalMetaRight: (FlutterHtmlKeyboardEvent event) => event.metaKey,
 };
 
-const int _kCharUpperA = 0x41;
-const int _kCharUpperZ = 0x5a;
-bool isUpperLetter(int charCode) {
-  return charCode >= _kCharUpperA && charCode <= _kCharUpperZ;
-}
-
 const String _kPhysicalCapsLock = 'CapsLock';
 
 const String _kLogicalDead = 'Dead';
@@ -313,13 +307,11 @@ class KeyboardConverter {
   // Whether `event.key` is a key name, such as "Shift", or otherwise a
   // character, such as "S" or "ж".
   //
-  // A key name always has more than 1 letter. Technically there might be cases
-  // where a non-key-name `event.key` has more than 1 character, but we have yet
-  // to find one. Moreover, all keys that `LocaleMapping` handles are
-  // single-character, which is the most important aspect that this function
-  // cares about.
-  static bool _eventKeyIsKeyname(String key) {
-    return key.length > 1;
+  // A key name always has more than 1 code unit, and they are all alnums.
+  // Character keys, however, can also have more than 1 code unit: en-in
+  // maps KeyL to L̥/l̥. To resolve this, we check the second code unit.
+  static bool _eventKeyIsKeyName(String key) {
+    return key.length > 1 && key.codeUnitAt(0) < 0x7F && key.codeUnitAt(1) < 0x7F;
   }
 
   static int _deadKeyToLogicalKey(int physicalKey, FlutterHtmlKeyboardEvent event) {
@@ -389,7 +381,7 @@ class KeyboardConverter {
     final String eventKey = event.key!;
 
     final int physicalKey = _getPhysicalCode(event.code!);
-    final bool logicalKeyIsCharacter = !_eventKeyIsKeyname(eventKey);
+    final bool logicalKeyIsCharacter = !_eventKeyIsKeyName(eventKey);
     final ValueGetter<int> logicalKey = _cached<int>(() {
       // Mapped logical keys, such as ArrowLeft, Escape, AudioVolumeDown.
       final int? mappedLogicalKey = kWebToLogicalKey[eventKey];

@@ -12,7 +12,7 @@ import 'layout_types.dart';
 final Map<String, String> _kMandatoryGoalsByChar = Map<String, String>.fromEntries(
   kLayoutGoals
     .entries
-    .where((MapEntry<String, String> entry) => isAlnum(entry.value))
+    .where((MapEntry<String, String> entry) => isLetter(entry.value.codeUnitAt(0)))
     .map((MapEntry<String, String?> entry) => MapEntry<String, String>(entry.value!, entry.key))
 );
 

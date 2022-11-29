@@ -21,16 +21,6 @@ import 'testing.dart';
 
 void testWin(LocaleKeymap mapping) {
   group('cz', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'é', r'0', r'˝', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'+', r'1', r'~', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'ě', r'2', r'ˇ', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'š', r'3', r'^', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'č', r'4', r'˘', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'ř', r'5', r'°', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'ž', r'6', r'˛', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'ý', r'7', r'`', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'á', r'8', r'˙', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'í', r'9', r'´', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'{', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'&', r''], 'c');
@@ -60,16 +50,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('de', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'²', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'§', r'³', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -99,16 +79,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('de-swiss', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'+', r'¦', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'*', r'#', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'ç', r'°', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'§', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'¬', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'|', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'¢', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -138,16 +108,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('dk', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'¤', r'$', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -177,16 +137,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('en', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -216,16 +166,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('en-belgian', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'à', r'0', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'&', r'1', r'|', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'é', r'2', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'"', r'3', r'#', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r"'", r'4', r'{', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'(', r'5', r'[', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'§', r'6', r'^', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'è', r'7', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'!', r'8', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'ç', r'9', r'{', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'q', r'Q', r'', r''], 'q');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -255,16 +195,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('en-in', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'₹', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'', r'ˆ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r'˘'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'ā', r'Ā'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -294,16 +224,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('en-intl', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'’', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'¹'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'²', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'³', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¤', r'£'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'¼', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'½', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'¾', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'‘', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'á', r'Á'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'©', r'¢'], 'c');
@@ -333,16 +253,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('en-uk', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'£', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'€', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'á', r'Á'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -372,16 +282,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('es', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'|', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'·', r'#', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'~', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'¬', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -411,16 +311,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('es-latin', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -450,16 +340,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('fr', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'à', r'0', r'@', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'&', r'1', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'é', r'2', r'~', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'"', r'3', r'#', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r"'", r'4', r'{', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'(', r'5', r'[', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'-', r'6', r'|', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'è', r'7', r'`', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'_', r'8', r'\', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'ç', r'9', r'^', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'q', r'Q', r'', r''], 'q');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -489,16 +369,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('hu', () {
-    verifyEntry(mapping, 'Backquote', <String>[r'0', r'§', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r"'", r'~', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'ˇ', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'+', r'^', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'!', r'˘', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'°', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'/', r'˛', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'=', r'`', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'˙', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'´', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'ä', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'{', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'&', r''], 'c');
@@ -528,16 +398,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('it', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'£', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -567,16 +427,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('no', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'¤', r'$', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -606,16 +456,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('pl', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'ą', r'Ą'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ć', r'Ć'], 'c');
@@ -645,16 +485,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('pt', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'§', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -684,16 +514,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('pt-br', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¹', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'²', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'³', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'£', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'¢', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'¨', r'¬', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'₢', r''], 'c');
@@ -723,16 +543,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('ru', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'№', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r';', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r':', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'?', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'₽', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'ф', r'Ф', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'и', r'И', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'с', r'С', r'', r''], 'c');
@@ -762,16 +572,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('sv', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'¤', r'$', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'€', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -801,16 +601,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('thai', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'จ', r'๗', r'', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'ๅ', r'+', r'', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'/', r'๑', r'', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'-', r'๒', r'', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'ภ', r'๓', r'', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'ถ', r'๔', r'', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'ุ', r'ู', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'ึ', r'฿', r'', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'ค', r'๕', r'', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'ต', r'๖', r'', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'ฟ', r'ฤ', r'', r''], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'ิ', r'ฺ', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'แ', r'ฉ', r'', r''], 'c');
@@ -840,16 +630,6 @@ void testWin(LocaleKeymap mapping) {
   });
 
   group('tr', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r''], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'>', r''], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r"'", r'£', r''], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'^', r'#', r''], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'+', r'$', r''], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'½', r''], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'', r''], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r''], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r''], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'æ', r'Æ'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'', r''], 'c');
@@ -881,16 +661,6 @@ void testWin(LocaleKeymap mapping) {
 
 void testLinux(LocaleKeymap mapping) {
   group('de', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r'°'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¹', r'¡'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'²', r'⅛'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'§', r'³', r'£'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¼', r'¤'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'½', r'⅜'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'¬', r'⅝'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r'⅞'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r'™'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r'±'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'æ', r'Æ'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'“', r'‘'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'¢', r'©'], 'c');
@@ -920,16 +690,6 @@ void testLinux(LocaleKeymap mapping) {
   });
 
   group('en', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'0', r')'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'1', r'!'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'2', r'@'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'3', r'#'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'4', r'$'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'5', r'%'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'6', r'^'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'7', r'&'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'8', r'*'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'9', r'('], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'a', r'A'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'b', r'B'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'c', r'C'], 'c');
@@ -959,16 +719,6 @@ void testLinux(LocaleKeymap mapping) {
   });
 
   group('es', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'}', r'°'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'|', r'¡'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r'⅛'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'·', r'#', r'£'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'~', r'$'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'½', r'⅜'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'¬', r'⅝'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'{', r'⅞'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r'™'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r'±'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'æ', r'Æ'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'”', r'’'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'¢', r'©'], 'c');
@@ -998,16 +748,6 @@ void testLinux(LocaleKeymap mapping) {
   });
 
   group('fr', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'à', r'0', r'@', r'°'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'&', r'1', r'¹', r'¡'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'é', r'2', r'~', r'⅛'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'"', r'3', r'#', r'£'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r"'", r'4', r'{', r'$'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'(', r'5', r'[', r'⅜'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'-', r'6', r'|', r'⅝'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'è', r'7', r'`', r'⅞'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'_', r'8', r'\', r'™'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'ç', r'9', r'^', r'±'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'q', r'Q', r'@', r'Ω'], 'q');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'”', r'’'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'¢', r'©'], 'c');
@@ -1037,16 +777,6 @@ void testLinux(LocaleKeymap mapping) {
   });
 
   group('ru', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'0', r')'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'1', r'!'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'2', r'"'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'№', r'3', r'№'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r';', r'4', r';'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'5', r'%'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r':', r'6', r':'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'?', r'7', r'?'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'₽', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'9', r'('], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'ф', r'Ф', r'ф', r'Ф'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'и', r'И', r'и', r'И'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'с', r'С', r'с', r'С'], 'c');
@@ -1078,16 +808,6 @@ void testLinux(LocaleKeymap mapping) {
 
 void testDarwin(LocaleKeymap mapping) {
   group('de', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'≠', r'¯'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'¬'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'“', r'”'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'§', r'¶', r'#'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'£'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'[', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r']', r'Dead'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'|', r'\'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'{', r'˜'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'}', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'‹'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1118,16 +838,6 @@ void testDarwin(LocaleKeymap mapping) {
 
   group('dvorak', () {
     verifyEntry(mapping, 'Comma', <String>[r'w', r'W', r'∑', r'„'], 'w');
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'x', r'X', r'≈', r'˛'], 'x');
     verifyEntry(mapping, 'KeyC', <String>[r'j', r'J', r'∆', r'Ô'], 'j');
@@ -1156,16 +866,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('en', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1195,16 +895,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('en-ext', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'§', r'†'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'Dead', r'̂'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'Dead', r'̄'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'Dead', r'̆'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'Dead', r'̧'], 'c');
@@ -1234,16 +924,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('en-intl', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'Dead', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1273,16 +953,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('en-uk', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'€', r'™'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'£', r'#', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1312,16 +982,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('es', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'≠', r'≈'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'|', r'ı'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r'˝'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'·', r'#', r'•'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'£'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'‰'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'¬', r' '], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'÷', r'⁄'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'“', r'‘'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'”', r'’'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'ß', r''], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'©', r' '], 'c');
@@ -1351,16 +1011,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('fr', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'à', r'0', r'ø', r'Ø'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'&', r'1', r'', r'Dead'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'é', r'2', r'ë', r'„'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'"', r'3', r'“', r'”'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r"'", r'4', r'‘', r'’'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'(', r'5', r'{', r'['], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'§', r'6', r'¶', r'å'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'è', r'7', r'«', r'»'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'!', r'8', r'¡', r'Û'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'ç', r'9', r'Ç', r'Á'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'q', r'Q', r'‡', r'Ω'], 'q');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'ß', r'∫'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'©', r'¢'], 'c');
@@ -1390,16 +1040,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('it', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'≠', r'≈'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'«', r'»'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'“', r'”'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'£', r'‘', r'’'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¥', r'¢'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'~', r'‰'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'‹', r'›'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'÷', r'⁄'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'Dead', r''], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r'Dead', r' '], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'Í'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'©', r'Á'], 'c');
@@ -1429,16 +1069,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('jp', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1468,16 +1098,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('jp-roman', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'§', r'†'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'Dead', r'̂'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'Dead', r'̄'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'Dead', r'̆'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'Dead', r'̧'], 'c');
@@ -1507,16 +1127,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('ko', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'0', r')'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'1', r'!'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'2', r'@'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'3', r'#'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'4', r'$'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'5', r'%'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'6', r'^'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'7', r'&'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'8', r'*'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'9', r'('], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'ㅁ', r'ㅁ', r'a', r'A'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'ㅠ', r'ㅠ', r'b', r'B'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'ㅊ', r'ㅊ', r'c', r'C'], 'c');
@@ -1546,16 +1156,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('pl', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'ľ', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'Ń', r'ŕ'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'Ř'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'€', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'ß', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'į', r'ř'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'^', r'§', r'Ŗ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'ŗ'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'Ľ', r'Š'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'ą', r'Ą'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'ļ', r'ű'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ć', r'Ć'], 'c');
@@ -1585,16 +1185,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('pt', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'$', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'Dead', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1624,16 +1214,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('ru', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r')', r'}', r'`'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'!', r'|'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r'"'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'№', r'#', r'£'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'%', r'$', r'€'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r':', r'%', r'∞'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r',', r'^', r'¬'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'.', r'&', r'¶'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r';', r'*', r'√'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'(', r'{', r"'"], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'ф', r'Ф', r'ƒ', r'ƒ'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'и', r'И', r'и', r'И'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'с', r'С', r'≠', r'≠'], 'c');
@@ -1663,16 +1243,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('sv', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'=', r'≈', r'≠'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'!', r'©', r'¡'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'"', r'@', r'”'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'¥'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'€', r'$', r'¢'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'‰'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'&', r'§', r'¶'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'/', r'|', r'\'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'(', r'[', r'{'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r')', r']', r'}'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'', r'◊'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'›', r'»'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');
@@ -1702,16 +1272,6 @@ void testDarwin(LocaleKeymap mapping) {
   });
 
   group('zh-hans', () {
-    verifyEntry(mapping, 'Digit0', <String>[r'0', r'）', r'º', r'‚'], '0');
-    verifyEntry(mapping, 'Digit1', <String>[r'1', r'！', r'¡', r'⁄'], '1');
-    verifyEntry(mapping, 'Digit2', <String>[r'2', r'@', r'™', r'€'], '2');
-    verifyEntry(mapping, 'Digit3', <String>[r'3', r'#', r'£', r'‹'], '3');
-    verifyEntry(mapping, 'Digit4', <String>[r'4', r'¥', r'¢', r'›'], '4');
-    verifyEntry(mapping, 'Digit5', <String>[r'5', r'%', r'∞', r'ﬁ'], '5');
-    verifyEntry(mapping, 'Digit6', <String>[r'6', r'', r'§', r'ﬂ'], '6');
-    verifyEntry(mapping, 'Digit7', <String>[r'7', r'&', r'¶', r'‡'], '7');
-    verifyEntry(mapping, 'Digit8', <String>[r'8', r'*', r'•', r'°'], '8');
-    verifyEntry(mapping, 'Digit9', <String>[r'9', r'（', r'ª', r'·'], '9');
     verifyEntry(mapping, 'KeyA', <String>[r'a', r'A', r'å', r'Å'], 'a');
     verifyEntry(mapping, 'KeyB', <String>[r'b', r'B', r'∫', r'ı'], 'b');
     verifyEntry(mapping, 'KeyC', <String>[r'c', r'C', r'ç', r'Ç'], 'c');

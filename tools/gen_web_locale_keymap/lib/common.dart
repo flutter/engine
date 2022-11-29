@@ -74,26 +74,16 @@ final int _kLowerA = 'a'.codeUnitAt(0);
 final int _kUpperA = 'A'.codeUnitAt(0);
 final int _kLowerZ = 'z'.codeUnitAt(0);
 final int _kUpperZ = 'Z'.codeUnitAt(0);
-final int _k0 = '0'.codeUnitAt(0);
-final int _k9 = '9'.codeUnitAt(0);
 
-bool _isAscii(String key) {
-  if (key.length != 1) {
-    return false;
-  }
+bool _isAscii(int charCode) {
   // 0x20 is the first printable character in ASCII.
-  return key.codeUnitAt(0) >= 0x20 && key.codeUnitAt(0) <= 0x7F;
+  return charCode >= 0x20 && charCode <= 0x7F;
 }
 
 /// Returns whether the `char` is a single character of a letter or a digit.
-bool isAlnum(String char) {
-  if (char.length != 1) {
-    return false;
-  }
-  final int charCode = char.codeUnitAt(0);
+bool isLetter(int charCode) {
   return (charCode >= _kLowerA && charCode <= _kLowerZ)
-      || (charCode >= _kUpperA && charCode <= _kUpperZ)
-      || (charCode >= _k0 && charCode <= _k9);
+      || (charCode >= _kUpperA && charCode <= _kUpperZ);
 }
 
 /// A set of rules that can derive a large number of logical keys simply from
@@ -101,11 +91,19 @@ bool isAlnum(String char) {
 ///
 /// This greatly reduces the entries needed in the final mapping.
 int? heuristicMapper(String code, String key) {
-  if (isAlnum(key)) {
-    return key.toLowerCase().codeUnitAt(0);
+  // Digit code: return the digit by event code.
+  if (code.startsWith('Digit')) {
+    assert(code.length == 6);
+    return code.codeUnitAt(5); // The character immediately after 'Digit'
   }
-  if (!_isAscii(key)) {
-    return kLayoutGoals[code]!.codeUnitAt(0);
+  final int charCode = key.codeUnitAt(0);
+  // Non-ascii: return the goal (i.e. US mapping by event code).
+  if (key.length > 1 || !_isAscii(charCode)) {
+    return kLayoutGoals[code]?.codeUnitAt(0);
+  }
+  // Letter key: return the event key letter.
+  if (isLetter(charCode)) {
+    return key.toLowerCase().codeUnitAt(0);
   }
   return null;
 }
@@ -233,7 +231,7 @@ void _marshallEventKey(StringBuffer builder, String value) {
   if (value == _kEventKeyDead) {
     builder.write(_kUseDead);
   } else {
-    assert(value.length == 1);
+    assert(value.length == 1, value);
     assert(value != _kUseDead);
     builder.write(value);
   }

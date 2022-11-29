@@ -83,26 +83,16 @@ final int _kLowerA = 'a'.codeUnitAt(0);
 final int _kUpperA = 'A'.codeUnitAt(0);
 final int _kLowerZ = 'z'.codeUnitAt(0);
 final int _kUpperZ = 'Z'.codeUnitAt(0);
-final int _k0 = '0'.codeUnitAt(0);
-final int _k9 = '9'.codeUnitAt(0);
 
-bool _isAscii(String key) {
-  if (key.length != 1) {
-    return false;
-  }
+bool _isAscii(int charCode) {
   // 0x20 is the first printable character in ASCII.
-  return key.codeUnitAt(0) >= 0x20 && key.codeUnitAt(0) <= 0x7F;
+  return charCode >= 0x20 && charCode <= 0x7F;
 }
 
 /// Returns whether the `char` is a single character of a letter or a digit.
-bool isAlnum(String char) {
-  if (char.length != 1) {
-    return false;
-  }
-  final int charCode = char.codeUnitAt(0);
+bool isLetter(int charCode) {
   return (charCode >= _kLowerA && charCode <= _kLowerZ)
-      || (charCode >= _kUpperA && charCode <= _kUpperZ)
-      || (charCode >= _k0 && charCode <= _k9);
+      || (charCode >= _kUpperA && charCode <= _kUpperZ);
 }
 
 /// A set of rules that can derive a large number of logical keys simply from
@@ -110,11 +100,18 @@ bool isAlnum(String char) {
 ///
 /// This greatly reduces the entries needed in the final mapping.
 int? heuristicMapper(String code, String key) {
-  if (isAlnum(key)) {
-    return key.toLowerCase().codeUnitAt(0);
+  // Digit code: return the digit.
+  if (code.startsWith('Digit')) {
+    assert(code.length == 6);
+    return code.codeUnitAt(5); // The character immediately after 'Digit'
   }
-  if (!_isAscii(key)) {
-    return kLayoutGoals[code]!.codeUnitAt(0);
+  final int charCode = key.codeUnitAt(0);
+  if (key.length > 1 || !_isAscii(charCode)) {
+    return kLayoutGoals[code]?.codeUnitAt(0);
+  }
+  // Letter key: return the letter.
+  if (isLetter(charCode)) {
+    return key.toLowerCase().codeUnitAt(0);
   }
   return null;
 }
@@ -197,18 +194,7 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
 /// heuristics have been omitted.
 Map<String, Map<String, int>> getMappingDataWin() {
   return unmarshallMappingData(
-    r'F'
-    r'`1§0'
-    r'04)0=0@0}0'
-    r"17!1&1'1+1>1|1~1"
-    '25"2\'2/2@2~2'
-    r'36"3#3*3+3-3^3'
-    r"47!4$4'4+4;4{4~4"
-    r'53%5(5[5'
-    r'66&6-6/6:6^6|6'
-    r'77&7/7=7?7`7{7|7'
-    r'86!8(8*8[8\8_8'
-    r'95(9)9]9^9{9'
+    r';'
     r'b1{b'
     r'c1&c'
     r'f1[f'
@@ -220,7 +206,7 @@ Map<String, Map<String, int>> getMappingDataWin() {
     r'w3"w?w|w'
     r'x2#x)x'
     r'z2(z>y'
-  ); // 195 characters
+  ); // 59 characters
 }
 
 /// Data for [LocaleKeymap] on Linux.
@@ -232,17 +218,7 @@ Map<String, Map<String, int>> getMappingDataWin() {
 /// heuristics have been omitted.
 Map<String, Map<String, int>> getMappingDataLinux() {
   return unmarshallMappingData(
-    r'B'
-    r'04)0=0@0}0'
-    r'13!1&1|1'
-    r'23"2@2~2'
-    r'32"3#3'
-    r"45$4'4;4{4~4"
-    r'53%5(5[5'
-    r'65&6-6:6^6|6'
-    r'75&7/7?7`7{7'
-    r'85(8*8[8\8_8'
-    r'94(9)9]9^9'
+    r'8'
     r'a2@qΩq'
     r'k1&k'
     r'q3@qÆaæa'
@@ -251,7 +227,7 @@ Map<String, Map<String, int>> getMappingDataLinux() {
     r'y2¥ÿ←ÿ'
     r'z5<z»yŁwłw›y'
     r';2µmºm'
-  ); // 151 characters
+  ); // 53 characters
 }
 
 /// Data for [LocaleKeymap] on Darwin.
@@ -263,18 +239,8 @@ Map<String, Map<String, int>> getMappingDataLinux() {
 /// heuristics have been omitted.
 Map<String, Map<String, int>> getMappingDataDarwin() {
   return unmarshallMappingData(
-    r'W'
+    r'M'
     r',2„w∑w'
-    r'04)0=0`0}0'
-    r'13!1&1|1'
-    r'22"2@2'
-    r'32"3#3'
-    r"43$4%4'4"
-    r'56%5(5:5[5{5~5'
-    r'65 6&6,6]6^6'
-    r'75&7.7/7\7|7'
-    r'86!8(8*8;8[8{8'
-    r"97 9'9(9)9]9{9}9"
     r'a2Ωq‡q'
     r'b2˛x≈x'
     r'c3 cÔj∆j'
@@ -303,5 +269,5 @@ Map<String, Map<String, int>> getMappingDataDarwin() {
     r'.2√v◊v'
     r';4µmÍsÓmßs'
     r'/2¸zΩz'
-  ); // 315 characters
+  ); // 209 characters
 }
