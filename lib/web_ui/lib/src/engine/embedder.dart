@@ -17,7 +17,7 @@ import 'pointer_binding.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
-import 'view_embedder/application_dom/application_dom.dart';
+import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
@@ -33,33 +33,36 @@ import 'view_embedder/application_dom/application_dom.dart';
 /// - [sceneHostElement], the anchor that provides a stable location in the DOM
 ///   tree for the [sceneElement].
 /// - [semanticsHostElement], hosts the ARIA-annotated semantics tree.
+///
+/// This class is currently a singleton, but it'll possibly need to morph to have
+/// multiple instances in a multi-view scenario. (One ViewEmbedder per FlutterView).
 class FlutterViewEmbedder {
   /// Creates a FlutterViewEmbedder.
   ///
   /// The incoming [hostElement] parameter specifies the root element in the DOM
   /// into which Flutter will be rendered.
   ///
-  /// The hostElement is abstracted by an [ApplicationDom] instance, which has
+  /// The hostElement is abstracted by an [EmbeddingStrategy] instance, which has
   /// different behavior depending on the `hostElement` value:
   ///
   /// - A `null` `hostElement` will allow Flutter to take over the whole screen.
   /// - A non-`null` `hostElement` will render flutter inside that element.
   FlutterViewEmbedder({DomElement? hostElement}) {
-    // Create an appropriate ApplicationDom using its factory...
-    _applicationDom = ApplicationDom.create(hostElement: hostElement);
+    // Create an appropriate EmbeddingStrategy using its factory...
+    _embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement);
 
     reset();
 
     assert(() {
-      // Cleanup the applicationDom before hot-restart.
-      registerHotRestartListener(_applicationDom.onHotRestart);
+      // _embeddingStrategy needs to clean-up stuff in the page on hot restart.
+      registerHotRestartListener(_embeddingStrategy.onHotRestart);
       return true;
     }());
   }
 
-  /// The applicationDom abstracts all the things that "modify the DOM" in this
-  /// class, especially at the root level of the web-app.
-  late ApplicationDom _applicationDom;
+  /// The [_embeddingStrategy] abstracts all the DOM manipulations required to
+  /// embed a Flutter app in the user-supplied `hostElement`.
+  late EmbeddingStrategy _embeddingStrategy;
 
   // The tag name for the root view of the flutter app (glass-pane)
   static const String glassPaneTagName = 'flt-glass-pane';
@@ -131,8 +134,8 @@ class FlutterViewEmbedder {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
-    // Initializes the applicationDom so it can host a flutter GlassPane.
-    _applicationDom.initializeHost(
+    // Initializes the embeddingStrategy so it can host a single-view Flutter app.
+    _embeddingStrategy.initialize(
       defaultFont: defaultCssFont,
       embedderMetadata: <String, String> {
         'flt-renderer': '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
@@ -147,12 +150,12 @@ class FlutterViewEmbedder {
     final DomElement glassPaneElement = domDocument.createElement(glassPaneTagName);
     _glassPaneElement = glassPaneElement;
 
-    // This must be appended to the applicationDom now, so the engine can create
-    // a host node (ShadowDOM or a fallback) next.
+    // This must be attached to the DOM now, so the engine can create a host
+    // node (ShadowDOM or a fallback) next.
     //
-    // The applicationDom will take care of cleaning up the glassPane on hot
+    // The embeddingStrategy will take care of cleaning up the glassPane on hot
     // restart.
-    _applicationDom.attachGlassPane(glassPaneElement);
+    _embeddingStrategy.attachGlassPane(glassPaneElement);
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
@@ -204,12 +207,14 @@ class FlutterViewEmbedder {
     PointerBinding.initInstance(glassPaneElement, KeyboardBinding.instance!.converter);
 
     window.onResize.listen(_metricsDidChange);
-    _applicationDom.setLanguageChangeHandler(_languageDidChange);
+    _embeddingStrategy.setLanguageChangeHandler(_languageDidChange);
 
     EnginePlatformDispatcher.instance.updateLocales();
   }
 
   // Creates a [HostNode] into a `root` [DomElement].
+  //
+  // TODO(dit): remove HostNode, https://github.com/flutter/flutter/issues/116204
   HostNode _createHostNode(DomElement root) {
     if (getJsProperty<Object?>(root, 'attachShadow') != null) {
       return ShadowDomHostNode(root);
@@ -340,7 +345,7 @@ class FlutterViewEmbedder {
         ..style.visibility = 'hidden';
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
-        _applicationDom.attachResourcesHost(resourcesHost, nextTo: glassPaneElement);
+        _embeddingStrategy.attachResourcesHost(resourcesHost, nextTo: glassPaneElement);
       } else {
         glassPaneShadow!.node.insertBefore(resourcesHost, glassPaneShadow!.node.firstChild);
       }

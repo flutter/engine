@@ -15,8 +15,8 @@ import 'full_page_dimensions_provider.dart';
 /// This class provides the dimensions of the "viewport" in which the app is rendered.
 ///
 ///
-/// Similarly to the `ApplicationDom`, this class is specialized to handle different
-/// sources of information:
+/// Similarly to the `EmbeddingStrategy`, this class is specialized to handle
+/// different sources of information:
 ///
 /// * [FullPageDimensionsProvider] - The default behavior, uses the VisualViewport
 ///   API to measure, and react to, the dimensions of the full browser window.

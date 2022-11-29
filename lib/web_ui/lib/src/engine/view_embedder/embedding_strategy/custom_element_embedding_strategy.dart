@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import '../../dom.dart';
-import 'application_dom.dart';
+import 'embedding_strategy.dart';
 
-class CustomElementApplicationDom extends ApplicationDom {
-  CustomElementApplicationDom(this._hostElement) {
+class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
+  CustomElementEmbeddingStrategy(this._hostElement) {
     // Clear children...
     while (_hostElement.firstChild != null) {
       _hostElement.removeChild(_hostElement.lastChild!);
@@ -16,7 +16,7 @@ class CustomElementApplicationDom extends ApplicationDom {
   final DomElement _hostElement;
 
   @override
-  void initializeHost({
+  void initialize({
     required String defaultFont,
     Map<String, String>? embedderMetadata,
   }) {

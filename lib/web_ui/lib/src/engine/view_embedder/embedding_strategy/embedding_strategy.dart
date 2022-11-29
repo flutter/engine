@@ -7,8 +7,8 @@ import 'package:meta/meta.dart';
 import '../../dom.dart';
 
 import '../hot_restart_cache_handler.dart';
-import 'custom_element_application_dom.dart';
-import 'full_page_application_dom.dart';
+import 'custom_element_embedding_strategy.dart';
+import 'full_page_embedding_strategy.dart';
 
 /// Provides the API that the FlutterViewEmbedder uses to interact with the DOM.
 ///
@@ -17,13 +17,13 @@ import 'full_page_application_dom.dart';
 ///
 /// This class is specialized to handle different types of DOM embeddings:
 ///
-/// * [FullPageApplicationDom] - The default behavior, where flutter takes
+/// * [FullPageEmbeddingStrategy] - The default behavior, where flutter takes
 ///   control of the whole web page. This is how Flutter Web used to operate.
-/// * [CustomElementApplicationDom] - Flutter is rendered inside a custom host
+/// * [CustomElementEmbeddingStrategy] - Flutter is rendered inside a custom host
 ///   element, provided by the web app programmer through the engine
 ///   initialization.
-abstract class ApplicationDom {
-  ApplicationDom() {
+abstract class EmbeddingStrategy {
+  EmbeddingStrategy() {
     // Prepare some global stuff...
     assert(() {
       _hotRestartCache = HotRestartCacheHandler();
@@ -31,18 +31,18 @@ abstract class ApplicationDom {
     }());
   }
 
-  factory ApplicationDom.create({DomElement? hostElement}) {
+  factory EmbeddingStrategy.create({DomElement? hostElement}) {
     if (hostElement != null) {
-      return CustomElementApplicationDom(hostElement);
+      return CustomElementEmbeddingStrategy(hostElement);
     } else {
-      return FullPageApplicationDom();
+      return FullPageEmbeddingStrategy();
     }
   }
 
   /// Keeps a list of elements to be cleaned up at hot-restart.
   HotRestartCacheHandler? _hotRestartCache;
 
-  void initializeHost({
+  void initialize({
     required String defaultFont,
     Map<String, String>? embedderMetadata,
   });
@@ -58,7 +58,7 @@ abstract class ApplicationDom {
 
   /// A callback that runs when hot restart is triggered.
   ///
-  /// This should "clean" up anything handled by the [ApplicationDom] instance.
+  /// This should "clean" up anything handled by the [EmbeddingStrategy] instance.
   @mustCallSuper
   void onHotRestart() {
     _hotRestartCache?.clearAllSubscriptions();

@@ -6,11 +6,11 @@ import 'package:js/js.dart';
 
 import '../../dom.dart';
 import '../../util.dart' show assertionsEnabled, setElementStyle;
-import 'application_dom.dart';
+import 'embedding_strategy.dart';
 
-class FullPageApplicationDom extends ApplicationDom {
+class FullPageEmbeddingStrategy extends EmbeddingStrategy {
   @override
-  void initializeHost({
+  void initialize({
     required String defaultFont,
     Map<String, String>? embedderMetadata,
   }) {
