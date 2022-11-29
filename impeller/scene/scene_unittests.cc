@@ -25,7 +25,7 @@ namespace testing {
 using SceneTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(SceneTest);
 
-TEST_P(SceneTest, UnlitScene) {
+TEST_P(SceneTest, CuboidUnlit) {
   auto allocator = GetContext()->GetResourceAllocator();
   auto scene = Scene(GetContext());
 
