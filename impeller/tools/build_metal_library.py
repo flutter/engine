@@ -54,9 +54,7 @@ def main():
   ]
 
   # Select the SDK.
-  command += [
-    '-sdk'
-  ]
+  command += ['-sdk']
   if args.platform == 'mac':
     command += [
         'macosx',
