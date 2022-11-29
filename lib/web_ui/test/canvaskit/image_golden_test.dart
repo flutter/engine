@@ -229,7 +229,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final Future<ui.Codec> futureCodec =
           skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg',
               null);
-      mock.sendEvent('load', DomProgressEvent());
+      mock.sendEvent('load', DomProgressEvent('test progress event'));
       final ui.Codec codec = await futureCodec;
       expect(codec.frameCount, 1);
       final ui.Image image = (await codec.getNextFrame()).image;
@@ -277,7 +277,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'url-does-not-matter', null);
-        mock.sendEvent('error', DomProgressEvent());
+        mock.sendEvent('error', DomProgressEvent('test error'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -317,7 +317,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'http://image-server.com/picture.jpg', null);
-        mock.sendEvent('load', DomProgressEvent());
+        mock.sendEvent('load', DomProgressEvent('test progress event'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -772,7 +772,7 @@ void _testCkBrowserImageDecoder() {
     final ImageDecoder? decoder1 = image.debugCachedWebDecoder;
     expect(decoder1, isNotNull);
     expect(image.frameCount, 3);
-    expect(image.repetitionCount, double.infinity);
+    expect(image.repetitionCount, -1);
 
     // A frame can be decoded right away.
     final ui.FrameInfo frame1 = await image.getNextFrame();
