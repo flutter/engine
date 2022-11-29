@@ -20,14 +20,6 @@ web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
                              ],
                              "list lines")
 
-web_locale_keymap_sources =
-    exec_script("//third_party/dart/tools/list_dart_files.py",
-                [
-                  "absolute",
-                  rebase_path("//flutter/third_party/web_locale_keymap/lib"),
-                ],
-                "list lines")
-
 web_engine_libraries = [
   ":skwasm_impl_library",
   ":skwasm_stub_library",
@@ -279,8 +271,7 @@ template("_compile_platform") {
   assert(defined(invoker.output_dill),
          "output_dill must be defined for $target_name")
   _kernel_worker(target_name) {
-    inputs =
-        [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources
 
     outputs = [ invoker.output_dill ]
 
@@ -452,8 +443,7 @@ template("_compile_ddc_modules") {
          "auto_detect must be defined for $target_name")
 
   _dartdevc(target_name) {
-    inputs =
-        [ "sdk_rewriter.dart" ] + web_ui_sources + web_locale_keymap_sources
+    inputs = [ "sdk_rewriter.dart" ] + web_ui_sources
 
     packages = dart_sdk_package_config
 

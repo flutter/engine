@@ -123,10 +123,6 @@ class KeyboardBinding {
     }
   }
 
-  static void debugClearInstance() {
-    _instance = null;
-  }
-
   /// The platform as used in the initialization.
   ///
   /// By default it is derived from [operatingSystem].
@@ -227,10 +223,10 @@ class KeyboardConverter {
       _mapping = _mappingFromPlatform(platform);
 
   final DispatchKeyData performDispatchKeyData;
-  // Whether the current platform is macOS, which affects how certain key events
-  // are comprehended.
+  /// Whether the current platform is macOS, which affects how certain key events
+  /// are comprehended.
   final bool onMacOs;
-  // Maps logical keys from key event properties.
+  /// Maps logical keys from key event properties.
   final locale_keymap.LocaleKeymap _mapping;
 
   static locale_keymap.LocaleKeymap _mappingFromPlatform(OperatingSystem platform) {
@@ -382,6 +378,9 @@ class KeyboardConverter {
 
     final int physicalKey = _getPhysicalCode(event.code!);
     final bool logicalKeyIsCharacter = !_eventKeyIsKeyName(eventKey);
+    // The function body might or might not be evaluated. If the event is a key
+    // up event, the resulting event will simply use the currently pressed
+    // logical key.
     final ValueGetter<int> logicalKey = _cached<int>(() {
       // Mapped logical keys, such as ArrowLeft, Escape, AudioVolumeDown.
       final int? mappedLogicalKey = kWebToLogicalKey[eventKey];

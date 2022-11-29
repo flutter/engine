@@ -145,5 +145,6 @@ void printSomething() {
 
     // Other libraries (should not have extra imports).
     expect(getExtraImportsForLibrary('web_unicode'), isEmpty);
+    expect(getExtraImportsForLibrary('web_locale_keymap'), isEmpty);
   });
 }
