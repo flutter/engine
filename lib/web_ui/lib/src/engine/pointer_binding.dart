@@ -369,11 +369,11 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       return false;
     }
     if (((event.deltaX % 120 == 0) && (event.deltaY % 120 == 0)) ||
-        (((event.wheelDeltaX ?? 1) % 240 == 0) && ((event.wheelDeltaY ?? 1) % 240) == 0)) {
+        (((event.wheelDeltaX ?? 1) % 120 == 0) && ((event.wheelDeltaY ?? 1) % 120) == 0)) {
       // While not in any formal web standard, `blink` and `webkit` browsers use
       // a delta of 120 to represent one mouse wheel turn. If both dimensions of
       // the delta are divisible by 120, this event is probably from a mouse.
-      // Checking if wheelDeltaX and wheelDeltaY are both divisible by 240
+      // Checking if wheelDeltaX and wheelDeltaY are both divisible by 120
       // catches any macOS accelerated mouse wheel deltas which by random chance
       // are not caught by _isAcceleratedMouseWheelDelta.
       final num deltaXChange = (event.deltaX - (lastEvent?.deltaX ?? 0)).abs();
