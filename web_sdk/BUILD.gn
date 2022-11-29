@@ -113,14 +113,6 @@ sdk_rewriter("web_ui_library_sources") {
   exclude_patterns = [ rebase_path("//flutter/lib/web_ui/lib/src/*") ]
 }
 
-sdk_rewriter("web_locale_keymap_library") {
-  library_name = "web_locale_keymap"
-  api_file =
-      "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
-  input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
-  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_locale_keymap/"
-}
-
 sdk_rewriter("web_engine_library") {
   library_name = "engine"
   api_file = "//flutter/lib/web_ui/lib/src/engine.dart"
@@ -151,6 +143,14 @@ sdk_rewriter("web_unicode_library") {
   api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
   input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
+}
+
+sdk_rewriter("web_locale_keymap_library") {
+  library_name = "web_locale_keymap"
+  api_file =
+      "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap.dart"
+  input_dir = "//flutter/third_party/web_locale_keymap/lib/web_locale_keymap/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_locale_keymap/"
 }
 
 copy("web_ui_library") {
