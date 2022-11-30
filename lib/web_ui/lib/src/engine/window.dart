@@ -213,6 +213,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     _dimensionsProvider = dimensionsProvider;
   }
 
+  @override
   double get devicePixelRatio => _dimensionsProvider.getDevicePixelRatio();
 
   Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
