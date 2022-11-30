@@ -7,6 +7,13 @@
 namespace txt {
 
 #if FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE
+#define HAVE_CJK_MEASURE_TIME
+#endif
+
+// TODO(nano)
+#undef HAVE_CJK_MEASURE_TIME
+
+#ifdef HAVE_CJK_MEASURE_TIME
 #include <chrono>
 struct measure_time_t {
   using clock_t = std::chrono::high_resolution_clock;
@@ -83,11 +90,13 @@ constexpr int bin_index_of(int size, F&& compare, bool find_closest = false) {
   return find_closest ? std::max(0, l - 1) : -1;
 }
 
-bool is_hard_break(uint16_t codepoint);
-
-bool is_fullwidth(uint16_t codepoint);
-
-bool is_cjk_ideographic_bmp(uint16_t codepoint);
+// Unicode set: [:General_Category=Space_Separator:], see
+// https://util.unicode.org/UnicodeJsps/list-unicodeset.jsp?a=%3AGeneral_Category%3DSpace_Separator%3A&g=&i=
+// for details.
+bool is_space_separator(uint16_t code_unit);
+bool is_hard_break(uint16_t code_unit);
+bool is_fullwidth(uint16_t code_unit);
+bool is_cjk_ideographic_bmp(uint16_t code_unit);
 
 uint32_t next_u16_unicode(const uint16_t* chars, size_t len, size_t& iter);
 

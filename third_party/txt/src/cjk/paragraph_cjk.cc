@@ -4,138 +4,12 @@
 #include <src/core/SkStrikeCache.h>
 #include <txt/font_skia.h>
 #include "glyph_itemize.h"
-#include "minikin/FontLanguageListCache.h"
+#include "minikin_font_util.h"
 #include "otf_cmap.h"
 
 namespace txt {
 
 namespace {
-
-constexpr int kObjReplacementChar = 0xFFFC;
-
-int get_weight(const FontWeight weight) {
-  switch (weight) {
-    case FontWeight::w100:
-      return 1;
-    case FontWeight::w200:
-      return 2;
-    case FontWeight::w300:
-      return 3;
-    case FontWeight::w400:  // Normal.
-      return 4;
-    case FontWeight::w500:
-      return 5;
-    case FontWeight::w600:
-      return 6;
-    case FontWeight::w700:  // Bold.
-      return 7;
-    case FontWeight::w800:
-      return 8;
-    case FontWeight::w900:
-      return 9;
-    default:
-      return -1;
-  }
-}
-
-bool is_italic(const TextStyle& style) {
-  switch (style.font_style) {
-    case FontStyle::italic:
-      return true;
-    case FontStyle::normal:
-    default:
-      return false;
-  }
-}
-
-minikin::FontStyle get_minikin_font_style(const TextStyle& style) {
-  uint32_t language_list_id =
-      style.locale.empty()
-          ? minikin::FontLanguageListCache::kEmptyListId
-          : minikin::FontStyle::registerLanguageList(style.locale);
-  return minikin::FontStyle(language_list_id, 0, get_weight(style.font_weight),
-                            is_italic(style));
-}
-
-void get_minikin_font_paint(const TextStyle& style,
-                            minikin::FontStyle* font,
-                            minikin::MinikinPaint* paint) {
-  *font = get_minikin_font_style(style);
-  paint->size = style.font_size;
-  // Divide by font size so letter spacing is pixels, not proportional to font
-  // size.
-  paint->letterSpacing = style.letter_spacing / style.font_size;
-  paint->wordSpacing = style.word_spacing;
-  paint->scaleX = 1.0f;
-  // Prevent spacing rounding in Minikin. This causes jitter when switching
-  // between same text content with different runs composing it, however, it
-  // also produces more accurate layouts.
-  paint->paintFlags |= minikin::LinearTextFlag;
-  paint->fontFeatureSettings = style.font_features.GetFeatureSettings();
-}
-
-std::shared_ptr<minikin::FontCollection> get_minikin_font_collection_for_style(
-    std::shared_ptr<FontCollection> font_collection,
-    const TextStyle& style) {
-  std::string locale;
-  if (!style.locale.empty()) {
-    uint32_t language_list_id =
-        minikin::FontStyle::registerLanguageList(style.locale);
-    const minikin::FontLanguages& langs =
-        minikin::FontLanguageListCache::getById(language_list_id);
-    if (langs.size()) {
-      locale = langs[0].getString();
-    }
-  }
-
-  return font_collection->GetMinikinFontCollectionForFamilies(
-      style.font_families, locale);
-}
-
-sk_sp<SkTypeface> get_default_skia_typeface(
-    std::shared_ptr<FontCollection> font_collection,
-    const TextStyle& style) {
-  auto collection =
-      get_minikin_font_collection_for_style(font_collection, style);
-  if (!collection) {
-    return nullptr;
-  }
-  auto faked_font = collection->baseFontFaked(get_minikin_font_style(style));
-  return static_cast<FontSkia*>(faked_font.font)->GetSkTypeface();
-}
-
-template <typename T>
-using sp = std::shared_ptr<T>;
-
-struct font_style_hash_t {
-  size_t operator()(const minikin::FontStyle& style) const {
-    return style.hash();
-  }
-};
-
-constexpr uint32_t kCJKAnchor = 0x4E2D;
-
-sp<minikin::FontFamily> get_minikin_font_family(
-    std::shared_ptr<minikin::FontCollection> minikin_font_collection,
-    const minikin::FontStyle& minikin_style) {
-  static std::unordered_map<minikin::FontStyle, sp<minikin::FontFamily>,
-                            font_style_hash_t>
-      cjk_family_map;
-
-  sp<minikin::FontFamily> font_family;
-  const auto& family_it = cjk_family_map.find(minikin_style);
-  if (family_it != cjk_family_map.end()) {
-    font_family = family_it->second;
-  } else {
-    const uint32_t lang_list_id = minikin_style.getLanguageListId();
-    const int variant = minikin_style.getVariant();
-    const auto& family = minikin_font_collection->getFamilyForChar(
-        kCJKAnchor, 0, lang_list_id, variant);
-    cjk_family_map.emplace(minikin_style, family);
-    font_family = family;
-  }
-  return font_family;
-}
 
 #if 0
 sk_sp<SkTextBlob> make_canonicalized_blob(const SkFont& sk_font,
@@ -173,10 +47,13 @@ sk_sp<SkTextBlob> make_canonicalized_blob(const SkFont& sk_font,
 
 }  // namespace
 
-constexpr int kItemizeSkFont = 1001;
-constexpr int kItemizeHb = 1002;
-constexpr int kItemizeHbFont = 1003;
-constexpr int kItemizeCmap = 1004;
+constexpr int kShapeSkFontSpace = 1001;
+constexpr int kShapeHbComplex = 1002;
+constexpr int kShapeHbFont = 1003;
+constexpr int kShapeCmap = 1004;
+constexpr int kShapeMinikinComplex = 1005;
+
+constexpr int kObjReplacementChar = 0xFFFC;
 
 ParagraphCJK::ParagraphCJK(
     std::vector<uint16_t>&& text,
@@ -190,33 +67,45 @@ ParagraphCJK::ParagraphCJK(
       paragraph_style_(style),
       font_collection_(std::move(font_collection)),
       inline_placeholders_(std::move(inline_placeholders)),
-      obj_replacement_char_indexes_(std::move(obj_replacement_char_indexes)) {}
+      obj_replacement_char_indexes_(std::move(obj_replacement_char_indexes)) {
+  line_breaker_.setLocale();
+}
 
 ParagraphCJK::~ParagraphCJK() = default;
+
+bool ParagraphCJK::IsSpaceStandalone() const {
+  // TODO(nano): lift it into ParagraphStyle
+  return text_[0] == ' ';
+}
 
 inline bool is_cjk_ideographic(uint16_t codepoint) {
   return is_cjk_ideographic_bmp(codepoint) || is_fullwidth(codepoint);
 }
 
-void ParagraphCJK::ComputeStyledRuns() {
+void ParagraphCJK::ComputeScriptRuns() {
+  const bool is_space_standalone = IsSpaceStandalone();
+
   const size_t style_len = styled_runs_.size();
   for (size_t style_idx = 0; style_idx < style_len; ++style_idx) {
     const auto& run = styled_runs_.GetRun(style_idx);
     for (size_t i = run.start; i < run.end;) {
       size_t k = i + 1;
-      if (is_cjk_ideographic(text_[i])) {
+      if (is_hard_break(text_[i])) {
+        script_runs_.push_back({run.style, i, k, ScriptRunType::kHardbreak});
+      } else if (is_space_standalone && is_space_separator(text_[i])) {
+        while (k < run.end && is_space_separator(text_[k])) {
+          ++k;
+        }
+        script_runs_.push_back({run.style, i, k, ScriptRunType::kSpace});
+      } else if (is_cjk_ideographic(text_[i])) {
         while (k < run.end && is_cjk_ideographic(text_[k])) {
           ++k;
         }
         script_runs_.push_back({run.style, i, k, ScriptRunType::kCJKIdeograph});
-      } else if (is_hard_break(text_[i])) {
-        while (k < run.end && !is_cjk_ideographic(text_[k])) {
-          ++k;
-        }
-        script_runs_.push_back({run.style, i, k, ScriptRunType::kHardbreak});
       } else {
-        while (k < run.end && !is_cjk_ideographic(text_[k]) &&
-               !is_hard_break(text_[k])) {
+        while (k < run.end && !is_hard_break(text_[k]) &&
+               (!is_space_standalone || !is_space_separator(text_[k])) &&
+               !is_cjk_ideographic(text_[k])) {
           ++k;
         }
         script_runs_.push_back({run.style, i, k, ScriptRunType::kComplex});
@@ -224,10 +113,13 @@ void ParagraphCJK::ComputeStyledRuns() {
       i = k;
     }
   }
+  script_runs_.push_back(
+      {TextStyle(), text_.size(), text_.size(), ScriptRunType::kHardbreak});
 }
 
-SkScalar ParagraphCJK::ItemizeScriptRun(const txt::ScriptRun& run,
-                                        SkFont& sk_font) {
+void ParagraphCJK::ShapeScriptRun(const txt::ScriptRun& run,
+                                  minikin::Layout& layout,
+                                  SkFont& sk_font) {
   const txt::TextStyle& style = run.style;
   minikin::FontStyle minikin_style;
   minikin::MinikinPaint minikin_paint;
@@ -235,46 +127,112 @@ SkScalar ParagraphCJK::ItemizeScriptRun(const txt::ScriptRun& run,
   auto minikin_font_collection =
       get_minikin_font_collection_for_style(font_collection_, style);
 
-  auto font_family =
-      get_minikin_font_family(minikin_font_collection, minikin_style);
-  auto font = font_family->getClosestMatch(minikin_style);
-  auto minikin_font = static_cast<txt::FontSkia*>(font.font);
-  auto sk_typeface = minikin_font->GetSkTypeface();
-
-  sk_font.setTypeface(sk_typeface);
-  sk_font.setSize(style.font_size);
-  sk_font.setEmbolden(font.fakery.isFakeBold());
-  sk_font.setSkewX(font.fakery.isFakeItalic() ? -SK_Scalar1 / 4 : 0);
-
-  int method = kItemizeCmap;
-  ////////////////////////////////////
-  method = paragraph_style_.max_lines;
-  ////////////////////////////////////
-  auto save_glyph_run = [runs = &glyph_runs_](std::unique_ptr<GlyphRun>&& run) {
-    double width = run->get_width(0, run->len());
-    runs->push_back(std::move(run));
-    return width;
-  };
-  auto action = make_action(text_, run, minikin_font, sk_font);
-  auto get_glyph_run = action | save_glyph_run;
-  switch (method) {
-    case kItemizeSkFont:
-      return get_glyph_run(get_glyph_run_skfont);
-    case kItemizeHb:
-      return get_glyph_run(get_glyph_run_hb);
-    case kItemizeHbFont:
-      return get_glyph_run(get_glyph_run_hb_font);
-    case kItemizeCmap:
-      return get_glyph_run(get_glyph_run_cmap);
+  int method = kShapeCmap;
+  switch (run.type) {
+    case ScriptRunType::kCJKIdeograph:
+      method = kShapeCmap;
+      break;
+    case ScriptRunType::kComplex:
+      method = kShapeMinikinComplex;
+      break;
+    case ScriptRunType::kSpace:
+      method = kShapeSkFontSpace;
+      break;
+    case ScriptRunType::kHardbreak:
+      break;
   }
 
-  return 0;
+  std::shared_ptr<minikin::FontFamily> font_family;
+  if (run.type == ScriptRunType::kCJKIdeograph) {
+    font_family = get_cjk_font_family(minikin_font_collection, minikin_style);
+  } else if (run.type == ScriptRunType::kSpace) {
+    font_family = get_space_font_family(minikin_font_collection, minikin_style);
+  }
+  FontSkia* minikin_font = nullptr;
+  if (font_family != nullptr) {
+    auto font = font_family->getClosestMatch(minikin_style);
+    minikin_font = static_cast<txt::FontSkia*>(font.font);
+    auto sk_typeface = minikin_font->GetSkTypeface();
+
+    sk_font.setTypeface(sk_typeface);
+    sk_font.setSize(style.font_size);
+    sk_font.setEmbolden(font.fakery.isFakeBold());
+    sk_font.setSkewX(font.fakery.isFakeItalic() ? -SK_Scalar1 / 4 : 0);
+  }
+
+  const bool is_space_standalone = IsSpaceStandalone();
+#define get_glyph_run(name)                                                    \
+  get_glyph_run_##name(text_, run, minikin_font, minikin_style, minikin_paint, \
+                       minikin_font_collection, layout, sk_font, glyph_runs_,  \
+                       is_space_standalone)
+
+  switch (method) {
+    case kShapeSkFontSpace:
+      get_glyph_run(skfont_space);
+      break;
+    case kShapeHbComplex:
+      get_glyph_run(hb_complex);
+      break;
+    case kShapeHbFont:
+      get_glyph_run(hb_font);
+      break;
+    case kShapeCmap:
+      get_glyph_run(cmap);
+      break;
+    case kShapeMinikinComplex:
+      get_glyph_run(minikin_complex);
+      break;
+  }
+#undef get_glyph_run
+}
+
+double ParagraphCJK::LookBackwardSpaces0(int run_idx,
+                                         int position,
+                                         double) const {
+  // If `position` is not 0, it shows us we break at the middle of the word,
+  // there's nothing to do.
+  if (position != 0) {
+    return 0.;
+  }
+  double space_width = 0;
+  int i = run_idx - 1;
+  while (i > 0 && glyph_runs_[i]->is_space()) {
+    space_width += glyph_runs_[i]->get_rest_width(0);
+    --i;
+  }
+  return space_width;
+}
+
+double ParagraphCJK::LookBackwardSpaces1(int run_idx,
+                                         int,
+                                         double consumed_width) const {
+  if (consumed_width > 0) {
+    return 0.;
+  }
+  double space_width = 0;
+  int i = run_idx - 1;
+  while (i >= 0 && is_space_separator(text_[glyph_runs_[i]->end - 1])) {
+    const auto& run = *(glyph_runs_[i]);
+    const ssize_t s_start = run.start;
+    ssize_t k = run.end - 2;
+    while (k >= s_start && is_space_separator(text_[k])) {
+      --k;
+    }
+    space_width += run.get_rest_width(k - s_start + 1);
+    if (k >= s_start) {
+      // Current run contains non-space character, break the loop
+      break;
+    }
+    --i;
+  }
+  return space_width;
 }
 
 void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
   if (width_ == max_intrinsic_width_) {
     return;
   }
+  const bool is_space_standalone = IsSpaceStandalone();
   // Consider the string "Hello World":
   //
   // The maximum intrinsic width would be the width of the string without line
@@ -285,27 +243,18 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
   // might still not overflow. For example, maybe the rendering would put a
   // line-break half-way through the words, as in "Hel⁞lo⁞Wor⁞ld".
   //
-  // For CJK ideographic writing system, the minimum intrinsic width would be
-  // the width of a single glyph.
+  // For CJK unified ideographic writing system, the minimum intrinsic width
+  // would be the width of a single glyph.
   max_intrinsic_width_ = 0;
   min_intrinsic_width_ = 0;
 
   line_metrics_.clear();
   final_line_count_ = 0;
+  paint_records_.clear();
 
-  const size_t glyph_run_len = glyph_runs_.size();
   size_t line_limit = paragraph_style_.max_lines;
 
-  size_t hard_break_idx = 0;
-  size_t hard_break_position = hard_break_positions_.empty()
-                                   ? std::numeric_limits<size_t>::max()
-                                   : hard_break_positions_[hard_break_idx];
-  size_t run_break_position = 0;
-  size_t run_idx = 0;
-
   double cumulative_width = 0;
-  double intrinsic_width = 0;
-
   double max_ascent = GetStrutAscent();
   double max_descent = GetStrutDescent();
   double max_unscaled_ascent = 0;
@@ -326,7 +275,8 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
                         ,
                         &blob_builder
 #endif
-  ](const GlyphRun& run, size_t text_start, size_t text_end) {
+  ](const GlyphRun& run, size_t text_start, size_t text_end,
+                       bool is_ghost = false) {
     const size_t line_num = line_metrics_.size() - 1;
     auto& line_metric = line_metrics_.back();
     // Store the font metrics and TextStyle in the LineMetrics for this line
@@ -348,26 +298,24 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
       const auto& pgr = static_cast<const PlaceholderGlyphRun&>(run);
       pgr.left = cumulative_width;
       pgr.line_num = line_num;
+      // TODO(nano): placeholder also has background
       return;
     }
 
-    double x_start = 0;
-    double width = 0;
 #ifndef CJK_DRAW_DIRECT
     sk_sp<SkTextBlob> blob;
     {
       CJK_MEASURE_TIME("create_text_blob");
       blob = run.build_sk_text_run(blob_builder, text_start - run.start,
-                                   text_end - text_start, x_start, width);
+                                   text_end - text_start);
     }
-#else
-    run.get_x_range(text_start - run.start, text_end - text_start, x_start,
-                    width);
 #endif
+    double x_start = run.get_x_start(text_start - run.start);
+    double x_end = run.get_x_end(text_end - run.start - 1);
     paint_records_.emplace_back(
         &run, text_start - run.start, text_end - text_start,
-        SkPoint::Make(cumulative_width - x_start, 0), line_num, x_start,
-        x_start + width, /* TODO(nano) is ghost run? */ false
+        SkPoint::Make(cumulative_width - x_start, 0), line_num, x_start, x_end,
+        /* TODO(nano) is ghost run? */ false
 #ifndef CJK_DRAW_DIRECT
         ,
         blob
@@ -380,12 +328,11 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
   // Finish the current text line when meet a break or reach the end of the
   // text.
   auto finish_text_line = [&max_ascent, &max_descent, &max_unscaled_ascent,
-                           &line_limit, &add_glyph_run, &sk_font, &tmp_metrics,
+                           &line_limit, &sk_font, &tmp_metrics,
                            &paragraph_text_style, &paint_record_idx, &y_offset,
                            &prev_max_descent,
-                           this](bool is_hard_break, size_t text_start,
-                                 size_t break_position, double line_width,
-                                 const GlyphRun& run) {
+                           this](bool is_hard_break, size_t break_position,
+                                 double line_width) {
     const size_t line_num = line_metrics_.size() - 1;
     const bool is_last_line = break_position >= text_.size();
     if (is_last_line) {
@@ -402,6 +349,7 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
 
     auto& line_metrics = line_metrics_.back();
 
+    // TODO(nano): handle whitespace followed
     size_t line_end_excluding_whitespace = break_position;
     while (line_end_excluding_whitespace > line_metrics.start_index &&
            minikin::isLineEndSpace(text_[line_end_excluding_whitespace - 1])) {
@@ -426,8 +374,6 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
       UpdateLineMetrics(tmp_metrics, paragraph_text_style, max_ascent,
                         max_descent, max_unscaled_ascent, nullptr, line_num,
                         line_limit);
-    } else {
-      add_glyph_run(run, text_start, break_position);
     }
 
     line_metrics.ascent = max_ascent;
@@ -458,6 +404,7 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
     // Shift the paint records of this line
     y_offset += round(max_ascent + prev_max_descent);
     prev_max_descent = max_descent;
+    // TODO(nano): shift placeholder
     for (size_t i = paint_record_idx; i < paint_records_.size(); ++i) {
       PaintRecord& record = paint_records_[i];
       record.SetOffset(
@@ -478,64 +425,130 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
     max_unscaled_ascent = 0;
   };
 
-  auto add_hard_break_in_run = [&run_break_position, &hard_break_position,
-                                &hard_break_idx, &run_idx, &intrinsic_width,
-                                &cumulative_width, &finish_text_line,
-                                this](const GlyphRun& run,
-                                      size_t prev_break_position) {
-    const size_t next_break_position = hard_break_position - run.start;
-    double rest_width = run.get_width(prev_break_position, next_break_position);
-    intrinsic_width += rest_width;
+  // Look backward to check if the preceding runs is space, the advance of these
+  // spaces should be ignored for line-width calculation.
+  auto p_look_back_spaces = is_space_standalone
+                                ? &ParagraphCJK::LookBackwardSpaces0
+                                : &ParagraphCJK::LookBackwardSpaces1;
+#define look_back_spaces(run_idx, position, consumed_width) \
+  (this->*p_look_back_spaces)(run_idx, position, consumed_width)
 
-    finish_text_line(true, prev_break_position + run.start, hard_break_position,
-                     cumulative_width + rest_width, run);
+  const size_t glyph_run_len = glyph_runs_.size();
+  size_t run_break_position = 0;
+  size_t run_idx = 0;
+  double intrinsic_width = 0;
 
-    ++hard_break_idx;
-    hard_break_position = hard_break_idx >= hard_break_positions_.size()
-                              ? std::numeric_limits<size_t>::max()
-                              : hard_break_positions_[hard_break_idx];
-    max_intrinsic_width_ = std::max(max_intrinsic_width_, intrinsic_width);
+#define handle_line_end_break(check_hard_break)                             \
+  bool is_hard_break = false;                                               \
+  if (check_hard_break && run_idx < glyph_run_len &&                        \
+      glyph_runs_[run_idx]->is_hard_break) {                                \
+    is_hard_break = true;                                                   \
+    ++text_idx;                                                             \
+    ++run_idx;                                                              \
+  }                                                                         \
+  finish_text_line(is_hard_break, text_idx, cumulative_width);              \
+  if (is_hard_break) {                                                      \
+    max_intrinsic_width_ = std::max(max_intrinsic_width_, intrinsic_width); \
+    intrinsic_width = 0;                                                    \
+  }
 
-    // Exclude the hard-break
-    run_break_position = next_break_position + 1;
-    cumulative_width = 0;
-    intrinsic_width = 0;
-
-    // That means the end of the current run is a hard-break, switch to next
-    // glyph run.
-    if (run_break_position + run.start >= run.end) {
+  auto look_forward_spaces0 = [&glyph_run_len, &intrinsic_width, &add_glyph_run,
+                               &run_break_position, &finish_text_line, &run_idx,
+                               &cumulative_width, this](size_t break_position) {
+    ++run_idx;
+    bool check_hard_break = true;
+    size_t text_idx = break_position;
+    while (run_idx < glyph_run_len &&
+           is_space_separator(text_[glyph_runs_[run_idx]->start])) {
+      const auto& run = *(glyph_runs_[run_idx]);
+      text_idx = run.start + 1;
+      while (text_idx < run.end && is_space_separator(text_[text_idx])) {
+        ++text_idx;
+      }
+      add_glyph_run(run, run.start, text_idx);
+      intrinsic_width += run.get_x_end(text_idx - run.start - 1);
+      if (text_idx < run.end) {
+        // Current run contains non-space character, break the loop
+        run_break_position = text_idx - run.start;
+        check_hard_break = false;
+        break;
+      }
       ++run_idx;
-      run_break_position = 0;
     }
+    handle_line_end_break(check_hard_break);
   };
+  auto look_forward_spaces1 = [&glyph_run_len, &intrinsic_width, &add_glyph_run,
+                               &finish_text_line, &run_idx, &cumulative_width,
+                               this](size_t break_position) {
+    ++run_idx;
+    size_t text_idx = break_position;
+    while (run_idx < glyph_run_len && glyph_runs_[run_idx]->is_space()) {
+      const auto& run = *(glyph_runs_[run_idx]);
+      text_idx = run.end;
+      add_glyph_run(run, run.start, run.end);
+      intrinsic_width += run.get_rest_width(0);
+      ++run_idx;
+    }
+    handle_line_end_break(true);
+  };
+#undef handle_line_end_break
 
   while (run_idx < glyph_run_len && final_line_count_ < line_limit) {
     const auto& run = *(glyph_runs_[run_idx]);
-    min_intrinsic_width_ =
-        std::max<double>(min_intrinsic_width_, run.max_word_width());
+    if (run.is_hard_break) {
+      cumulative_width -= look_back_spaces(run_idx, 0, 0);
+      finish_text_line(true, run.end, cumulative_width);
+      max_intrinsic_width_ = std::max(max_intrinsic_width_, intrinsic_width);
+      // Switch to next glyph run
+      ++run_idx;
+      run_break_position = 0;
+      intrinsic_width = 0;
+      cumulative_width = 0;
+      continue;
+    }
 
-    const size_t prev_break_position = run_break_position;
-    const size_t text_start = prev_break_position + run.start;
-    const double rest_width = run.get_width(run_break_position, run.len());
+    min_intrinsic_width_ = std::max(min_intrinsic_width_, run.max_word_width());
+    const size_t text_start = run_break_position + run.start;
+    const double rest_width = run.get_rest_width(run_break_position);
 
     if (cumulative_width + rest_width >= width_) {
+      if (run.is_space()) {
+        --run_idx;
+        look_forward_spaces1(0);
+        continue;
+      }
+
       double width = width_ - cumulative_width;
+      // Calculate the appropriate position to break this run.
       // The `run_break_position` will be changed to the next break position,
       // and width will be changed to the actually consumed width (<= width).
-      run.get_break(run_break_position, width);
+      run.get_break(run_break_position, width, text_, line_breaker_,
+                    cumulative_width == 0);
 
-      // Check if we meet the hard break in current run
-      if (run_break_position + run.start >= hard_break_position) {
-        add_hard_break_in_run(run, prev_break_position);
-      } else {
-        // Soft-break
-        finish_text_line(false, text_start, run_break_position + run.start,
-                         cumulative_width + width, run);
-        intrinsic_width += width;
-        cumulative_width = 0;
+      // Soft-break
+      const size_t break_position = run_break_position + run.start;
+      if (break_position > text_start) {
+        add_glyph_run(run, text_start, break_position);
       }
-    } else if (run.end > hard_break_position || run.end >= text_.size()) {
-      add_hard_break_in_run(run, prev_break_position);
+      intrinsic_width += width;
+      cumulative_width += width;
+      cumulative_width -= look_back_spaces(run_idx, run_break_position, width);
+
+      if (break_position >= run.end) {
+        run_break_position = 0;
+        // Current break position happens to be the end of the run, switch to
+        // next glyph run and consume the succeeding spaces. The spaces at the
+        // end of the line does not participate in the line width calculation,
+        // that is significant when the paragraph alignment is 'right' or 'end'.
+        if (is_space_standalone) {
+          look_forward_spaces1(break_position);
+        } else {
+          look_forward_spaces0(break_position);
+        }
+      } else {
+        finish_text_line(false, break_position, cumulative_width);
+      }
+      cumulative_width = 0;
     } else {
       // Current line includes the rest of the glyph run, add it to the line and
       // update the line metrics
@@ -573,7 +586,6 @@ void ParagraphCJK::ComputeTextLines(SkFont& sk_font) {
 #endif
 }
 
-// We assume the text is all CJK unified ideographic
 void ParagraphCJK::Layout(double width) {
   double rounded_width = floor(width);
   if ((!needs_layout_ && rounded_width == width_) || rounded_width == 0) {
@@ -596,10 +608,11 @@ void ParagraphCJK::Layout(double width) {
   if (is_first_layout_) {
     is_first_layout_ = false;
     ComputeStrut(&strut_, sk_font);
-    ComputeStyledRuns();
+    ComputeScriptRuns();
   }
 
   if (glyph_runs_.empty()) {
+    minikin::Layout layout;
     size_t inline_placeholder_index = 0;
     for (size_t i = 0; i < script_runs_.size(); ++i) {
       const auto& run = script_runs_[i];
@@ -613,16 +626,17 @@ void ParagraphCJK::Layout(double width) {
             sk_font, run.style, run.start, run.end,
             inline_placeholders_[inline_placeholder_index]));
         ++inline_placeholder_index;
+      } else if (run.type == ScriptRunType::kHardbreak) {
+        glyph_runs_.push_back(std::make_unique<GlyphRun>(
+            sk_font, run.style, run.start, run.end, true));
       } else {
-        ItemizeScriptRun(run, sk_font);
+        ShapeScriptRun(run, layout, sk_font);
       }
     }
 #if 0
-    FML_LOG(ERROR) << "glyph ids:";
+    FML_LOG(ERROR) << "glyph runs: ";
     for (const auto& run : glyph_runs_) {
-      for (size_t i = 0; i < run->glyph_count(); i++) {
-        FML_DLOG(ERROR) << run->get_glyph_id(i);
-      }
+      FML_DLOG(ERROR) << "[" << run->start << ", " << run->end << "]";
     }
 #endif
   }

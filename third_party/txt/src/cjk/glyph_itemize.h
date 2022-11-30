@@ -6,33 +6,30 @@
 #include <vector>
 
 #include "glyph_run.h"
+#include "minikin/FontCollection.h"
+#include "minikin/Layout.h"
 #include "minikin/MinikinFont.h"
+#include "script_run.h"
 #include "txt/styled_runs.h"
 
 namespace txt {
 
-enum class ScriptRunType {
-  kCJKIdeograph,
-  kHardbreak,
-  kComplex,
-};
+#define SHAPE_METHOD(name)                                             \
+  void get_glyph_run_##name(                                           \
+      const std::vector<uint16_t>& text, const ScriptRun& run,         \
+      const minikin::MinikinFont* minikin_font,                        \
+      const minikin::FontStyle& minikin_style,                         \
+      const minikin::MinikinPaint& minikin_paint,                      \
+      const std::shared_ptr<minikin::FontCollection>& font_collection, \
+      minikin::Layout& layout, SkFont& sk_font,                        \
+      std::vector<std::unique_ptr<GlyphRun>>& glyph_runs,              \
+      bool is_space_standalone)
 
-struct ScriptRun {
-  const TextStyle& style;
-  size_t start;
-  size_t end;
-  ScriptRunType type;
-};
-
-#define ITEMIZE_METHOD(name)                                   \
-  std::unique_ptr<GlyphRun> get_glyph_run_##name(              \
-      const std::vector<uint16_t>& text, const ScriptRun& run, \
-      const minikin::MinikinFont* minikin_font, SkFont& sk_font)
-
-ITEMIZE_METHOD(skfont);
-ITEMIZE_METHOD(hb);
-ITEMIZE_METHOD(hb_font);
-ITEMIZE_METHOD(cmap);
+SHAPE_METHOD(skfont_space);
+SHAPE_METHOD(hb_font);
+SHAPE_METHOD(cmap);
+SHAPE_METHOD(hb_complex);
+SHAPE_METHOD(minikin_complex);
 
 }  // namespace txt
 

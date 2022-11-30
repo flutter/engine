@@ -151,6 +151,9 @@ source_set("txt") {
     "src/cjk/glyph_run_paint_record.h",
     "src/cjk/glyph_itemize.cc",
     "src/cjk/glyph_itemize.h",
+    "src/cjk/script_run.h",
+    "src/cjk/minikin_font_util.cc",
+    "src/cjk/minikin_font_util.h",
   ]
 
   public_configs = [ ":txt_config" ]

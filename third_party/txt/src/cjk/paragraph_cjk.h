@@ -4,6 +4,7 @@
 #include "glyph_itemize.h"
 #include "glyph_run.h"
 #include "glyph_run_paint_record.h"
+#include "minikin/Layout.h"
 #include "txt/font_collection.h"
 #include "txt/paint_record.h"
 #include "txt/paragraph.h"
@@ -58,8 +59,17 @@ class ParagraphCJK : public Paragraph {
     bool force_strut = false;
   };
 
-  void ComputeStyledRuns();
-  SkScalar ItemizeScriptRun(const ScriptRun& run, SkFont& sk_font);
+  bool IsSpaceStandalone() const;
+  void ComputeScriptRuns();
+  void ShapeScriptRun(const ScriptRun& run,
+                      minikin::Layout& layout,
+                      SkFont& sk_font);
+  double LookBackwardSpaces0(int run_idx,
+                             int position,
+                             double consumed_width) const;
+  double LookBackwardSpaces1(int run_idx,
+                             int position,
+                             double consumed_width) const;
   void ComputeTextLines(SkFont& sk_font);
   void UpdateLineMetrics(const SkFontMetrics& metrics,
                          const TextStyle& style,
@@ -97,9 +107,9 @@ class ParagraphCJK : public Paragraph {
   std::unordered_set<size_t> obj_replacement_char_indexes_;
   std::vector<size_t> placeholder_run_indexes_;
 
-  std::vector<size_t> hard_break_positions_;
   std::vector<ScriptRun> script_runs_;
 
+  minikin::WordBreaker line_breaker_;
   std::vector<LineMetrics> line_metrics_;
   size_t final_line_count_ = 0;
 

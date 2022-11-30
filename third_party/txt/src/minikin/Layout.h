@@ -108,11 +108,15 @@ class Layout {
   // buffer must match the length of the string (count arg to doLayout).
   void getAdvances(float* advances);
 
+  void getAdvances(size_t from, size_t cnt, float* advances);
+
   // The i parameter is an offset within the buf relative to start, it is <
   // count, where start and count are the parameters to doLayout
   float getCharAdvance(size_t i) const { return mAdvances[i]; }
 
   void getBounds(MinikinRect* rect) const;
+
+  float getMaxWordWidth() const;
 
   // Purge all caches, useful in low memory conditions
   static void purgeCaches();
@@ -171,6 +175,8 @@ class Layout {
   std::vector<FakedFont> mFaces;
   float mAdvance;
   MinikinRect mBounds;
+
+  float mMaxWordAdvance;
 };
 
 }  // namespace minikin

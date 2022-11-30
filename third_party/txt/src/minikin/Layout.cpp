@@ -642,6 +642,7 @@ float Layout::doLayoutRunCached(
   // TRACE_EVENT0("minikin", "Layout::doLayoutRunCached");
   const uint32_t originalHyphen = ctx->paint.hyphenEdit.getHyphen();
   float advance = 0;
+  float maxWordAdvance = 0;
   if (!isRtl) {
     // left to right
     size_t wordstart = start == bufSize
@@ -660,10 +661,13 @@ float Layout::doLayoutRunCached(
       }
       ctx->paint.hyphenEdit = hyphen;
       size_t wordcount = std::min(start + count, wordend) - iter;
-      advance += doLayoutWord(buf + wordstart, iter - wordstart, wordcount,
+      // word advance
+      float wa = doLayoutWord(buf + wordstart, iter - wordstart, wordcount,
                               wordend - wordstart, isRtl, ctx, iter - dstStart,
                               collection, layout,
                               advances ? advances + (iter - start) : advances);
+      maxWordAdvance = std::max(maxWordAdvance, wa);
+      advance += wa;
       wordstart = wordend;
     }
   } else {
@@ -685,12 +689,17 @@ float Layout::doLayoutRunCached(
       }
       ctx->paint.hyphenEdit = hyphen;
       size_t bufStart = std::max(start, wordstart);
-      advance += doLayoutWord(
+      float wa = doLayoutWord(
           buf + wordstart, bufStart - wordstart, iter - bufStart,
           wordend - wordstart, isRtl, ctx, bufStart - dstStart, collection,
           layout, advances ? advances + (bufStart - start) : advances);
+      maxWordAdvance = std::max(maxWordAdvance, wa);
+      advance += wa;
       wordend = wordstart;
     }
+  }
+  if (layout) {
+    layout->mMaxWordAdvance = maxWordAdvance;
   }
   return advance;
 }
@@ -1196,8 +1205,16 @@ void Layout::getAdvances(float* advances) {
   memcpy(advances, &mAdvances[0], mAdvances.size() * sizeof(float));
 }
 
+void Layout::getAdvances(size_t from, size_t cnt, float* advances) {
+  memcpy(advances, &mAdvances[from], cnt * sizeof(float));
+}
+
 void Layout::getBounds(MinikinRect* bounds) const {
   bounds->set(mBounds);
+}
+
+float Layout::getMaxWordWidth() const {
+  return mMaxWordAdvance;
 }
 
 void Layout::purgeCaches() {

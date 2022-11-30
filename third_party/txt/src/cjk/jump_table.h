@@ -46,7 +46,7 @@ class jump_table_t {
   jump_table_t& operator=(const jump_table_t&) = default;
   jump_table_t& operator=(jump_table_t&&) noexcept = default;
 
-  // Find the index of the target given by [key], return -1 if not found.
+  // Find the index of the target given by [key], returns -1 if not found.
   int find_index(key_t key) const {
     int32_t jump_offset = key >> kJumpBits;
     if (jump_offset >= (int32_t)pages_.size()) {

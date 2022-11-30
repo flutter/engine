@@ -254,7 +254,7 @@ void GlyphRunPaintRecord::paint_decorations(SkCanvas* canvas,
           (metrics.fFlags &
            SkFontMetrics::FontMetricsFlags::kStrikeoutPositionIsValid_Flag)
               ? metrics.fStrikeoutPosition
-              // Backup value if the strikeoutposition metric is not
+              // Backup value if the strikeout position metric is not
               // available:
               : metrics.fXHeight / -2.0;
       if (style().decoration_style != TextDecorationStyle::kWavy) {
