@@ -34,7 +34,9 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
     glassPaneElement
       ..style.width = '100%'
       ..style.height = '100%'
-      ..style.display = 'block';
+      ..style.display = 'block'
+      ..style.overflow = 'hidden'
+      ..style.position = 'relative';
 
     _hostElement.appendChild(glassPaneElement);
 
@@ -55,8 +57,6 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
   void _setHostStyles({
     required String font,
   }) {
-    _hostElement
-      ..style.position = 'relative'
-      ..style.overflow = 'hidden';
+    _hostElement.style.font = font;
   }
 }
