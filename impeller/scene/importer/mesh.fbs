@@ -21,8 +21,6 @@ struct Color {
   b: float;
 }
 
-// Matches the vertex layout of the example shader, allowing for direct copying
-// into the host buffer.
 struct Vertex {
   position: Vec3;
   normal: Vec3;
