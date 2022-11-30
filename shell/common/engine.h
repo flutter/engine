@@ -552,7 +552,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                       corresponding sweep can be performed within the
   ///                       deadline.
   ///
-  void NotifyIdle(fml::TimePoint deadline);
+  void NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the attached flutter view has been
+  ///             destroyed.
+  ///             This enables the engine to notify the Dart VM so it can do
+  ///             some cleanp activities.
+  void NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
