@@ -37,7 +37,7 @@ impeller_component("importer_lib") {
     "../../geometry",
     "//flutter/fml",
 
-    # All third_party deps must be reflected below in the impellerc_license
+    # All third_party deps must be reflected below in the scene_importer_license
     # target.
     # TODO(bdero): Fix tinygltf compilation warnings.
     #"//third_party/tinygltf",
@@ -47,7 +47,7 @@ impeller_component("importer_lib") {
 generated_file("scene_importer_license") {
   source_path = rebase_path(".", "//flutter")
   git_url = "https://github.com/flutter/engine/tree/$engine_version"
-  outputs = [ "$target_gen_dir/LICENSE.impellerc.md" ]
+  outputs = [ "$target_gen_dir/LICENSE.scene_importer.md" ]
   contents = [
     "# scene_importer",
     "",
@@ -64,7 +64,7 @@ generated_file("scene_importer_license") {
 
     # These licenses are ignored by the main license checker, since they are not
     # shipped to end-application binaries and only shipped as part of developer
-    # tooling in impellerc. Add them here.
+    # tooling in scene_importer. Add them here.
     "## Additional open source licenses",
     "",
     "### tinygltf",

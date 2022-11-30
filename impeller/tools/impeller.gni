@@ -619,7 +619,7 @@ template("impeller_shaders") {
   }
 }
 
-# Dispatches to the build or prebuilt impellerc depending on the value of
+# Dispatches to the build or prebuilt scene_importer depending on the value of
 # the impeller_use_prebuilt_scene_importer argument. Forwards all variables to
 # compiled_action_foreach or action_foreach as appropriate.
 template("_scene_importer") {
