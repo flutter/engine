@@ -295,7 +295,7 @@ typedef CanvasPath Path;
   V(Vertices, dispose, 1)
 
 #ifdef IMPELLER_ENABLE_3D
-#define FFI_METHOD_LIST_3D(V) V(SceneBuilder, addModelLayer, 6)
+#define FFI_METHOD_LIST_3D(V) V(SceneBuilder::addModelLayer, 7)
 #endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
@@ -325,7 +325,7 @@ void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
 #ifdef IMPELLER_ENABLE_3D
-  FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
+  FFI_METHOD_LIST_3D(FFI_FUNCTION_INSERT)
 #endif  // IMPELLER_ENABLE_3D
 }
 

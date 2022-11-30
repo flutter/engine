@@ -11,5 +11,8 @@ void addModelLayer(
   double height = 0.0,
 }) {
   assert(offset != null, 'Offset argument was null');
-  builder._addModelLayer(offset.dx, offset.dy, width, height, viewId);
+  _addModelLayer(builder, offset.dx, offset.dy, width, height, viewId);
 }
+
+@FfiNative<Void Function(Handle, Double, Double, Double, Double, Int64)>('SceneBuilder::addModelLayer')
+external void _addModelLayer(Object object, double dx, double dy, double width, double height, int viewId);

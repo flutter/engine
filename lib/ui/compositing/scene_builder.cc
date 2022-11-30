@@ -263,7 +263,9 @@ void SceneBuilder::addTexture(double dx,
 }
 
 #ifdef IMPELLER_ENABLE_3D
-void SceneBuilder::addModelLayer(double dx,
+// static
+void SceneBuilder::addModelLayer(Dart_Handle wrapper,
+                                 double dx,
                                  double dy,
                                  double width,
                                  double height,
