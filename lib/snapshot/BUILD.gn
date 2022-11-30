@@ -316,9 +316,11 @@ compile_platform("strong_platform") {
   single_root_scheme = "org-dartlang-sdk"
   single_root_base = rebase_path("../../../")
   if (impeller_enable_3d) {
-    libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries_experimental.json"
+    libraries_specification_uri =
+        "org-dartlang-sdk:///flutter/lib/snapshot/libraries_experimental.json"
   } else {
-    libraries_specification_uri = "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
+    libraries_specification_uri =
+        "org-dartlang-sdk:///flutter/lib/snapshot/libraries.json"
   }
 
   outputs = [

@@ -28,7 +28,6 @@ if (!impeller_enable_3d) {
   ]
 
   dart_ui_path = "//flutter/lib/ui/ui.dart"
-
 } else {
   dart_ui_files = [
     "//flutter/lib/ui/annotations.dart",
@@ -53,5 +52,5 @@ if (!impeller_enable_3d) {
     "//flutter/lib/ui/experiments/compositing_3d.dart",
   ]
 
-  dart_ui_path =  "//flutter/lib/ui/experiments/ui.dart"
+  dart_ui_path = "//flutter/lib/ui/experiments/ui.dart"
 }
