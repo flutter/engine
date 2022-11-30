@@ -304,8 +304,8 @@ abstract class _BaseAdapter {
         if (domInstanceOfString(event, 'PointerEvent')) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
           print('${pointerEvent.type}    '
-              '${pointerEvent.clientX.toStringAsFixed(1)},'
-              '${pointerEvent.clientY.toStringAsFixed(1)}');
+              '${pointerEvent.offsetX.toStringAsFixed(1)},'
+              '${pointerEvent.offsetY.toStringAsFixed(1)}');
         } else {
           print(event.type);
         }
@@ -449,8 +449,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       kind: kind,
       signalKind: ui.PointerSignalKind.scroll,
       device: _mouseDeviceId,
-      physicalX: event.clientX * ui.window.devicePixelRatio,
-      physicalY: event.clientY * ui.window.devicePixelRatio,
+      physicalX: event.offsetX * ui.window.devicePixelRatio,
+      physicalY: event.offsetY * ui.window.devicePixelRatio,
       buttons: event.buttons!.toInt(),
       pressure: 1.0,
       pressureMax: 1.0,
@@ -816,8 +816,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: kind,
       signalKind: ui.PointerSignalKind.none,
       device: _getPointerId(event),
-      physicalX: event.clientX * ui.window.devicePixelRatio,
-      physicalY: event.clientY * ui.window.devicePixelRatio,
+      physicalX: event.offsetX * ui.window.devicePixelRatio,
+      physicalY: event.offsetY * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure:  pressure == null ? 0.0 : pressure.toDouble(),
       pressureMax: 1.0,
@@ -1134,8 +1134,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: ui.PointerDeviceKind.mouse,
       signalKind: ui.PointerSignalKind.none,
       device: _mouseDeviceId,
-      physicalX: event.clientX * ui.window.devicePixelRatio,
-      physicalY: event.clientY * ui.window.devicePixelRatio,
+      physicalX: event.offsetX * ui.window.devicePixelRatio,
+      physicalY: event.offsetY * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure: 1.0,
       pressureMax: 1.0,
