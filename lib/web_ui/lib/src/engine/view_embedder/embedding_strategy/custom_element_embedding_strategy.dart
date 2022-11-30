@@ -48,12 +48,6 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
     registerElementForCleanup(resourceHost);
   }
 
-  @override
-  void setLanguageChangeHandler(void Function(DomEvent event) handler) {
-    // How do we detect the language changes? Is this global? Should we look
-    // at the lang= attribute of the hostElement?
-  }
-
   void _setHostAttribute(String name, String value) {
     _hostElement.setAttribute(name, value);
   }

@@ -5,7 +5,7 @@
 import '../dom.dart';
 import '../safe_browser_api.dart';
 
-/// Handles elements and subscriptions that need to be cleared on hot-restart.
+/// Handles elements that need to be cleared after a hot-restart.
 class HotRestartCacheHandler {
   HotRestartCacheHandler([this.storeName = '__flutter_state']) {
     if (_elements.isNotEmpty) {
@@ -35,22 +35,8 @@ class HotRestartCacheHandler {
     return _jsElements!;
   }
 
-  /// The subscriptions that need to be cleaned up on hot-restart.
-  final List<DomSubscription> _subscriptions = <DomSubscription>[];
-
-  void registerSubscription(DomSubscription subscription) {
-    _subscriptions.add(subscription);
-  }
-
   void registerElement(DomElement element) {
     _elements.add(element);
-  }
-
-  void clearAllSubscriptions() {
-    for (final DomSubscription subscription in _subscriptions) {
-      subscription.cancel();
-    }
-    _subscriptions.clear();
   }
 
   void clearAllElements() {

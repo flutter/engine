@@ -47,14 +47,6 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     registerElementForCleanup(resourceHost);
   }
 
-  @override
-  void setLanguageChangeHandler(void Function(DomEvent event) handler) {
-    final DomSubscription subscription =
-        DomSubscription(domWindow, 'languagechange', allowInterop(handler));
-
-    registerSubscriptionForCleanup(subscription);
-  }
-
   void _setHostAttribute(String name, String value) {
     domDocument.body!.setAttribute(name, value);
   }
@@ -86,7 +78,7 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     setElementStyle(bodyElement, 'font', font);
   }
 
-  // Sets a meta viewport meta appropriate for Flutter Web in full screen.
+  // Sets a meta viewport tag appropriate for Flutter Web in full screen.
   void _applyViewportMeta() {
     for (final DomElement viewportMeta
         in domDocument.head!.querySelectorAll('meta[name="viewport"]')) {

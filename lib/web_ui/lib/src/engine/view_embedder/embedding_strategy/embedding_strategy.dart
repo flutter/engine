@@ -53,21 +53,12 @@ abstract class EmbeddingStrategy {
   /// Attaches the resourceHost element into the hostElement.
   void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo});
 
-  /// Register a listener for locale change events.
-  void setLanguageChangeHandler(void Function(DomEvent event) handler);
-
   /// A callback that runs when hot restart is triggered.
   ///
   /// This should "clean" up anything handled by the [EmbeddingStrategy] instance.
   @mustCallSuper
   void onHotRestart() {
-    _hotRestartCache?.clearAllSubscriptions();
-  }
-
-  /// Registers a [DomSubscription] to be cleaned up [onHotRestart].
-  @mustCallSuper
-  void registerSubscriptionForCleanup(DomSubscription subscription) {
-    _hotRestartCache?.registerSubscription(subscription);
+    // Elements on the [_hotRestartCache] are cleaned up *after* hot-restart.
   }
 
   /// Registers a [DomElement] to be cleaned up after hot restart.
