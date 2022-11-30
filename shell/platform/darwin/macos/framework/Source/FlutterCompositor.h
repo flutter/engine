@@ -9,11 +9,10 @@
 #include <list>
 
 #include "flutter/fml/macros.h"
-#include "flutter/shell/platform/embedder/embedder.h"
-
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 namespace flutter {
 
