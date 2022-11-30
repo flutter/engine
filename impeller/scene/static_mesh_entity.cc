@@ -5,6 +5,7 @@
 #include "impeller/scene/static_mesh_entity.h"
 #include <memory>
 #include "impeller/scene/material.h"
+#include "impeller/scene/scene_encoder.h"
 
 namespace impeller {
 namespace scene {
@@ -23,6 +24,13 @@ void StaticMeshEntity::SetMaterial(std::shared_ptr<Material> material) {
 // |SceneEntity|
 bool StaticMeshEntity::OnRender(SceneEncoder& encoder,
                                 const Camera& camera) const {
+  SceneCommand command = {
+      .label = "Static Mesh",
+      .transform = GetGlobalTransform(),
+      .geometry = geometry_.get(),
+      .material = material_.get(),
+  };
+  encoder.Add(command);
   return true;
 }
 
