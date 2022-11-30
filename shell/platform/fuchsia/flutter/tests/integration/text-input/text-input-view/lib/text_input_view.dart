@@ -37,7 +37,6 @@ int main() {
 
 class TestApp {
   static const _yellow = Color.fromARGB(255, 255, 255, 0);
-  // static const _pink = Color.fromARGB(255, 255, 0, 255);
   Color _backgroundColor = _yellow;
 
   final _responseListener = test_text.KeyboardInputListenerProxy();
