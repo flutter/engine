@@ -5,8 +5,8 @@
 import("//build/compiled_action.gni")
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
-import("//flutter/lib/ui/dart_ui.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/lib/ui/dart_ui.gni")
 import("//third_party/dart/utils/compile_platform.gni")
 
 # Generates the Dart/Flutter core platform files and tools.
