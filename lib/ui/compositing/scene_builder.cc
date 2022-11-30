@@ -262,6 +262,17 @@ void SceneBuilder::addTexture(double dx,
   AddLayer(std::move(layer));
 }
 
+#ifdef IMPELLER_ENABLE_3D
+void SceneBuilder::addModelLayer(double dx,
+                                 double dy,
+                                 double width,
+                                 double height,
+                                 int64_t viewId) {
+  // NO-OP.
+}
+
+#endif  // IMPELLER_ENABLE_3D
+
 void SceneBuilder::addPlatformView(double dx,
                                    double dy,
                                    double width,

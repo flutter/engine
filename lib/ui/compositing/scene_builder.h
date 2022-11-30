@@ -118,6 +118,15 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                   bool freeze,
                   int filterQuality);
 
+#ifdef IMPELLER_ENABLE_3D
+  void addModelLayer(double dx,
+                     double dy,
+                     double width,
+                     double height,
+                     int64_t viewId);
+
+#endif  // IMPELLER_ENABLE_3D
+
   void addPlatformView(double dx,
                        double dy,
                        double width,
