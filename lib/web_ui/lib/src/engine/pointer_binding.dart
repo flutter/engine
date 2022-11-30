@@ -910,6 +910,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
@@ -920,6 +921,7 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: true,
             timeStamp: timeStamp,
+            boundingClientRect: clientRect,
           );
         }
       }
@@ -930,6 +932,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -939,6 +942,7 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: true,
             timeStamp: timeStamp,
+            boundingClientRect: clientRect,
           );
         }
       }
@@ -951,6 +955,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -961,6 +966,7 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: false,
             timeStamp: timeStamp,
+            boundingClientRect: clientRect,
           );
         }
       }
@@ -970,6 +976,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
+      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -980,6 +987,7 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: false,
             timeStamp: timeStamp,
+            boundingClientRect: clientRect,
           );
         }
       }
@@ -993,6 +1001,7 @@ class _TouchAdapter extends _BaseAdapter {
     required DomTouch touch,
     required bool pressed,
     required Duration timeStamp,
+    required DomRect boundingClientRect,
   }) {
     _pointerDataConverter.convert(
       data,
@@ -1000,8 +1009,9 @@ class _TouchAdapter extends _BaseAdapter {
       timeStamp: timeStamp,
       signalKind: ui.PointerSignalKind.none,
       device: touch.identifier!.toInt(),
-      physicalX: touch.clientX * ui.window.devicePixelRatio,
-      physicalY: touch.clientY * ui.window.devicePixelRatio,
+      // Account for zoom/scroll in the TouchEvent
+      physicalX: (touch.clientX - boundingClientRect.x) * ui.window.devicePixelRatio,
+      physicalY: (touch.clientY - boundingClientRect.y) * ui.window.devicePixelRatio,
       buttons: pressed ? _kPrimaryMouseButton : 0,
       pressure: 1.0,
       pressureMax: 1.0,
