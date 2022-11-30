@@ -789,6 +789,9 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Int64, Bool, Int32)>('SceneBuilder::addTexture', isLeaf: true)
   external void _addTexture(double dx, double dy, double width, double height, int textureId, bool freeze, int filterQuality);
 
+  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Int64)>('SceneBuilder::addModelLayer', isLeaf: true)
+  external void _addModelLayer(double dx, double dy, double width, double height, int viewId);
+
   /// Adds a platform view (e.g an iOS UIView) to the scene.
   ///
   /// On iOS this layer splits the current output surface into two surfaces, one for the scene nodes

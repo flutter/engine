@@ -24,6 +24,7 @@ import 'dart:typed_data';
 
 part '../annotations.dart';
 part '../channel_buffers.dart';
+part '../compositing.dart';
 part 'compositing_3d.dart';
 part '../geometry.dart';
 part '../hash_codes.dart';
