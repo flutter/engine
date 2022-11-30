@@ -11,6 +11,7 @@
 #include "flutter/fml/mapping.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -85,11 +86,15 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
-  std::shared_ptr<DescriptorPoolVK> GetDescriptorPool() const;
+  std::unique_ptr<DescriptorPoolVK> CreateDescriptorPool() const;
 
 #ifdef FML_OS_ANDROID
   vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
 #endif  // FML_OS_ANDROID
+
+  vk::Queue GetGraphicsQueue() const;
+
+  std::unique_ptr<CommandPoolVK> CreateGraphicsCommandPool() const;
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -101,6 +106,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  uint32_t graphics_queue_idx_;
   vk::Queue graphics_queue_;
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
@@ -108,10 +114,8 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::UniqueSurfaceKHR surface_;
   vk::Format surface_format_;
   std::unique_ptr<SwapchainVK> swapchain_;
-  std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
-  std::shared_ptr<DescriptorPoolVK> descriptor_pool_;
   bool is_valid_ = false;
 
   ContextVK(

@@ -932,6 +932,7 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool get metaKey;
   external bool? get repeat;
   external bool get shiftKey;
+  external bool get isComposing;
   external bool getModifierState(String keyArg);
 }
 
@@ -1534,13 +1535,11 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedCanvasKitUrl =
-        _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
-    assert(trustedCanvasKitUrl.url != '',
-        'URL: $url rejected by TrustedTypePolicy');
+    assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedCanvasKitUrl;
+    return trustedUrl;
   }
   return url;
 }
