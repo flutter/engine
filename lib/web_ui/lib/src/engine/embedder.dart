@@ -207,9 +207,6 @@ class FlutterViewEmbedder {
     PointerBinding.initInstance(glassPaneElement, KeyboardBinding.instance!.converter);
 
     window.onResize.listen(_metricsDidChange);
-    _embeddingStrategy.setLanguageChangeHandler(_languageDidChange);
-
-    EnginePlatformDispatcher.instance.updateLocales();
   }
 
   // Creates a [HostNode] into a `root` [DomElement].
@@ -252,12 +249,6 @@ class FlutterViewEmbedder {
       window.computeOnScreenKeyboardInsets(false);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();
     }
-  }
-
-  /// Called immediately after browser window language change.
-  void _languageDidChange(DomEvent event) {
-    EnginePlatformDispatcher.instance.updateLocales();
-    ui.window.onLocaleChanged?.call();
   }
 
   static const String orientationLockTypeAny = 'any';
