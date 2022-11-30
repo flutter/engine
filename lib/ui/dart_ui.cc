@@ -295,7 +295,7 @@ typedef CanvasPath Path;
   V(Vertices, dispose, 1)
 
 #ifdef IMPELLER_ENABLE_3D
-#define FFI_METHOD_LIST_3D(V)V(SceneBuilder, addModelLayer, 6)
+#define FFI_METHOD_LIST_3D(V) V(SceneBuilder, addModelLayer, 6)
 #endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
