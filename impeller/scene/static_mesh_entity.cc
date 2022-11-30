@@ -3,7 +3,9 @@
 // found in the LICENSE file.
 
 #include "impeller/scene/static_mesh_entity.h"
+
 #include <memory>
+
 #include "impeller/scene/material.h"
 #include "impeller/scene/scene_encoder.h"
 

@@ -5,6 +5,7 @@
 #include "impeller/scene/geometry.h"
 
 #include <memory>
+
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/vector.h"
 #include "impeller/renderer/formats.h"
