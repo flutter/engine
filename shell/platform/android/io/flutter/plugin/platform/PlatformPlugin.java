@@ -73,6 +73,12 @@ public class PlatformPlugin {
         }
 
         @Override
+        public boolean hapticFeedbackIsEnabled() {
+          return PlatformPlugin.this.hapticFeedbackIsEnabled();
+        }
+
+
+        @Override
         public void setPreferredOrientations(int androidOrientation) {
           setSystemChromePreferredOrientations(androidOrientation);
         }
@@ -188,6 +194,10 @@ public class PlatformPlugin {
         }
         break;
     }
+  }
+
+  /* package */ boolean hapticFeedbackIsEnabled() {
+    return true;
   }
 
   private void setSystemChromePreferredOrientations(int androidOrientation) {

@@ -21,6 +21,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowInsetsController;
@@ -64,6 +65,43 @@ public class PlatformPluginTest {
 
     // SELECTION_CLICK haptic response is only available on "LOLLIPOP" (21) and later.
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
+  }
+
+  @Config(sdk = 16)
+  @SuppressWarnings("deprecation")
+  @Test
+  public void itReturnsHapticFeedbackIsEnabled() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // Fetch existing value on device
+    final int preExistingValue = Settings.System.getInt(ctx.getContentResolver(),
+        Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+
+    try {
+      // Set haptic haptic feedback enabled if less than api 33
+      Settings.System.putInt(
+        ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+
+        assertTrue(platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
+
+
+      // Set haptic haptic feedback disabled
+      Settings.System.putInt(
+        ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+
+        assertFalse(platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
+
+    } finally {
+    // Revert device to value prior to test run.
+    Settings.System.putInt(
+      ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, preExistingValue);
+    }
   }
 
   @Config(sdk = 29)

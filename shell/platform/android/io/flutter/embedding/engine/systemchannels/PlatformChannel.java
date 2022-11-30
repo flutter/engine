@@ -67,6 +67,12 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+              case "HapticFeedback.isEnabled":
+                boolean isEnabled = platformMessageHandler.hapticFeedbackIsEnabled();
+                JSONObject value = new JSONObject();
+                value.put("value", isEnabled);
+                result.success(value);
+                break;
               case "SystemChrome.setPreferredOrientations":
                 try {
                   int androidOrientation = decodeOrientations((JSONArray) arguments);
@@ -436,6 +442,11 @@ public class PlatformChannel {
 
     /** The Flutter application would like to play the given haptic {@code feedbackType}. */
     void vibrateHapticFeedback(@NonNull HapticFeedbackType feedbackType);
+
+    /**
+     * The Flutter application would like to know if haptic feedback user setting is enabled.
+     */
+    boolean hapticFeedbackIsEnabled();
 
     /** The Flutter application would like to display in the given {@code androidOrientation}. */
     // TODO(mattcarroll): add @ScreenOrientation annotation
