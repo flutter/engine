@@ -147,13 +147,16 @@ class PointerBinding {
     _pointerDataConverter.clearPointerState();
   }
 
+  // TODO(dit): remove old API fallbacks, https://github.com/flutter/flutter/issues/116141
   _BaseAdapter _createAdapter() {
     if (_detector.hasPointerEvents) {
       return _PointerAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
+    // Fallback for Safari Mobile < 13. To be removed.
     if (_detector.hasTouchEvents) {
       return _TouchAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
+    // Fallback for Safari Desktop < 13. To be removed.
     if (_detector.hasMouseEvents) {
       return _MouseAdapter(_onPointerData, glassPaneElement, _pointerDataConverter, _keyboardConverter);
     }
@@ -734,7 +737,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addPointerEventListener(domWindow, 'pointermove', (DomPointerEvent event) {
+    _addPointerEventListener(glassPaneElement, 'pointermove', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1080,7 +1083,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addMouseEventListener(domWindow, 'mousemove', (DomMouseEvent event) {
+    _addMouseEventListener(glassPaneElement, 'mousemove', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? up = _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
       if (up != null) {
