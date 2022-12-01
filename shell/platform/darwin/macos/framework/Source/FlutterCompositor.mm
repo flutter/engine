@@ -44,7 +44,7 @@ bool FlutterCompositor::Present(uint64_t view_id,
 
   NSMutableArray* surfaces = [NSMutableArray array];
   for (size_t i = 0; i < layers_count; i++) {
-    FlutterLayer* layer = (FlutterLayer*)layers[i];
+    FlutterLayer* layer = static_cast<FlutterLayer*>(layers[i]);
     if (layer->type == kFlutterLayerContentTypeBackingStore) {
       FlutterSurface* surface =
           [view.surfaceManager lookupSurface:&layer->backing_store->metal.texture];
