@@ -19,9 +19,14 @@ import 'dimensions_provider.dart';
 /// this class WILL perform actual DOM measurements.
 class FullPageDimensionsProvider extends DimensionsProvider {
   FullPageDimensionsProvider() {
-    // Subscribe to the DOM, and convert it to a ui.Size stream...
+    // Determine what 'resize' event we'll be listening to.
+    // This is needed for older browsers (Firefox < 91, Safari < 13)
+    final DomEventTarget resizeEventTarget =
+        domWindow.visualViewport ?? domWindow;
+
+    // Subscribe to the 'resize' event, and convert it to a ui.Size stream...
     _domResizeSubscription = DomSubscription(
-      domWindow.visualViewport!,
+      resizeEventTarget,
       'resize',
       allowInterop(_onVisualViewportResize),
     );
