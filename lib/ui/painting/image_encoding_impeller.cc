@@ -26,15 +26,11 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
 
 sk_sp<SkImage> ConvertBufferToSkImage(
     const std::shared_ptr<impeller::DeviceBuffer>& buffer,
-    impeller::PixelFormat format,
+    SkColorType color_type,
     SkISize dimensions) {
   auto buffer_view = buffer->AsBufferView();
 
-  auto color_type = ToSkColorType(format);
-  if (!color_type.has_value()) {
-    FML_LOG(ERROR) << "Failed to get color type from pixel format.";
-  }
-  SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type.value(),
+  SkImageInfo image_info = SkImageInfo::Make(dimensions, color_type,
                                              SkAlphaType::kPremul_SkAlphaType);
 
   SkBitmap bitmap;
@@ -44,7 +40,7 @@ sk_sp<SkImage> ConvertBufferToSkImage(
     buffer->reset();
     delete buffer;
   };
-  auto bytes_per_pixel = impeller::BytesPerPixelForPixelFormat(format);
+  auto bytes_per_pixel = image_info.bytesPerPixel();
   bitmap.installPixels(image_info, buffer_view.contents,
                        dimensions.width() * bytes_per_pixel, func,
                        new std::shared_ptr<impeller::DeviceBuffer>(buffer));
@@ -73,10 +69,16 @@ void ConvertDlImageImpellerToSkImage(
   }
 
   auto dimensions = dl_image->dimensions();
-  auto format = texture->GetTextureDescriptor().format;
+  auto color_type = ToSkColorType(texture->GetTextureDescriptor().format);
 
   if (dimensions.isEmpty()) {
     FML_LOG(ERROR) << "Image dimensions were empty.";
+    encode_task(nullptr);
+    return;
+  }
+
+  if (!color_type.has_value()) {
+    FML_LOG(ERROR) << "Failed to get color type from pixel format.";
     encode_task(nullptr);
     return;
   }
@@ -93,18 +95,18 @@ void ConvertDlImageImpellerToSkImage(
   pass->SetLabel("BlitTextureToBuffer Blit Pass");
   pass->AddCopy(texture, buffer);
   pass->EncodeCommands(impeller_context->GetResourceAllocator());
-  auto completion = [buffer, format, dimensions,
+  auto completion = [buffer, color_type = color_type.value(), dimensions,
                      encode_task = std::move(encode_task)](
                         impeller::CommandBuffer::Status status) {
     if (status != impeller::CommandBuffer::Status::kCompleted) {
       encode_task(nullptr);
       return;
     }
-    auto sk_image = ConvertBufferToSkImage(buffer, format, dimensions);
+    auto sk_image = ConvertBufferToSkImage(buffer, color_type, dimensions);
     encode_task(sk_image);
   };
 
-  if (!command_buffer->SubmitCommands()) {
+  if (!command_buffer->SubmitCommands(completion)) {
     FML_LOG(ERROR) << "Failed to submit commands.";
   }
 }
