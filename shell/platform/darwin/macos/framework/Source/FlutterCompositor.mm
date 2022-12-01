@@ -44,7 +44,7 @@ bool FlutterCompositor::Present(uint64_t view_id,
 
   NSMutableArray* surfaces = [NSMutableArray array];
   for (size_t i = 0; i < layers_count; i++) {
-    FlutterLayer* layer = static_cast<FlutterLayer*>(layers[i]);
+    const FlutterLayer* layer = layers[i];
     if (layer->type == kFlutterLayerContentTypeBackingStore) {
       FlutterSurface* surface =
           [view.surfaceManager lookupSurface:&layer->backing_store->metal.texture];
@@ -61,13 +61,13 @@ bool FlutterCompositor::Present(uint64_t view_id,
   [view.surfaceManager present:surfaces
                         notify:^{
                           for (size_t i = 0; i < layers_count; i++) {
-                            FlutterLayer* layer = static_cast<FlutterLayer*>(layers[i]);
+                            const FlutterLayer* layer = layers[i];
                             switch (layer->type) {
-                            case kFlutterLayerContentTypeBackingStore:
-                              break;
-                            case kFlutterLayerContentTypePlatformView:
-                              PresentPlatformView(view, layer, i);
-                              break;
+                              case kFlutterLayerContentTypeBackingStore:
+                                break;
+                              case kFlutterLayerContentTypePlatformView:
+                                PresentPlatformView(view, layer, i);
+                                break;
                             }
                           }
                           [platform_view_controller_ disposePlatformViews];
