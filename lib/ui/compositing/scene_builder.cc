@@ -270,7 +270,10 @@ void SceneBuilder::addModelLayer(Dart_Handle wrapper,
                                  double width,
                                  double height,
                                  int64_t viewId) {
-  // NO-OP.
+  auto* scene_builder = tonic::DartConverter<SceneBuilder*>::FromDart(wrapper);
+  SkMatrix sk_matrix = SkMatrix::Translate(dx, dy);
+  auto layer = std::make_shared<flutter::TransformLayer>(sk_matrix);
+  scene_builder->AddLayer(std::move(layer));
 }
 
 #endif  // IMPELLER_ENABLE_3D
