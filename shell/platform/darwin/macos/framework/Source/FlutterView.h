@@ -54,7 +54,7 @@ constexpr uint64_t kFlutterDefaultViewId = 0;
  * Returns SurfaceManager for this view. SurfaceManager is responsible for
  * providing and presenting render surfaces.
  */
-- (nonnull FlutterSurfaceManager*)surfaceManager;
+@property(readonly, nonatomic, nonnull) FlutterSurfaceManager* surfaceManager;
 
 /**
  * Must be called when shutting down. Unblocks raster thread and prevents any further
