@@ -85,7 +85,7 @@
 - (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size;
 
 /**
- * Removes all cached surface replacing them with new ones.
+ * Removes all cached surfaces replacing them with new ones.
  */
 - (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces;
 
