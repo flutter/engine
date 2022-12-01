@@ -87,7 +87,7 @@
 /**
  * Removes all cached surface replacing them with new ones.
  */
-- (void)replaceWith:(nonnull NSArray<FlutterSurface*>*)surfaces;
+- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces;
 
 /**
  * Returns number of surfaces currently in cache. Used for tests.

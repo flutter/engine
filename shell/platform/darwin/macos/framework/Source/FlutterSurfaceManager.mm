@@ -40,7 +40,7 @@ static const double kIdleDelay = 1.0;
   }
 }
 
-- (void)replaceWith:(nonnull NSArray<FlutterSurface*>*)surfaces {
+- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces {
   @synchronized(self) {
     [_surfaces removeAllObjects];
     [_surfaces addObjectsFromArray:surfaces];
@@ -159,7 +159,7 @@ static const double kIdleDelay = 1.0;
   [_borrowedSurfaces removeAllObjects];
 
   // Release all unused back buffer surfaces and replace them with front surfaces.
-  [_backBufferCache replaceWith:_frontSurfaces];
+  [_backBufferCache replaceSurfaces:_frontSurfaces];
 
   // Front surfaces will be replaced by currently presented surfaces.
   [_frontSurfaces removeAllObjects];
