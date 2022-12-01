@@ -61,7 +61,7 @@ bool FlutterCompositor::Present(uint64_t view_id,
   [view.surfaceManager present:surfaces
                         notify:^{
                           for (size_t i = 0; i < layers_count; i++) {
-                            FlutterLayer* layer = (FlutterLayer*)layers[i];
+                            FlutterLayer* layer = static_cast<FlutterLayer*>(layers[i]);
                             if (layer->type == kFlutterLayerContentTypePlatformView) {
                               PresentPlatformView(view, layer, i);
                             }
