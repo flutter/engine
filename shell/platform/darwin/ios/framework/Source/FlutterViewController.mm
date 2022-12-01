@@ -65,6 +65,10 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
+@property(nonatomic) fml::TimePoint keyboardAnimationStartTime;
+@property(nonatomic) NSTimeInterval keyboardAnimationDuration;
+@property(nonatomic) CGFloat keyboardAnimationFrom;
+@property(nonatomic) CGFloat keyboardAnimationTo;
 
 /// VSyncClient for touch events delivery frame rate correction.
 ///
@@ -98,16 +102,6 @@ typedef struct MouseState {
  */
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
-@end
-
-@interface KeyboardAnimationView : UIView
-@property(nonatomic) fml::TimePoint startTime;
-@property(nonatomic) NSTimeInterval duration;
-@property(nonatomic) CGFloat from;
-@property(nonatomic) CGFloat to;
-@end
-
-@implementation KeyboardAnimationView : UIView
 @end
 
 @interface KeyboardSpringCurve : NSObject
@@ -184,7 +178,7 @@ typedef struct MouseState {
   // UIScrollView with height zero and a content offset so we can get those events. See also:
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
-  fml::scoped_nsobject<KeyboardAnimationView> _keyboardAnimationView;
+  fml::scoped_nsobject<UIView> _keyboardAnimationView;
   fml::scoped_nsobject<KeyboardSpringCurve> _keyboardSpringCurve;
   fml::scoped_nsobject<NSMutableArray> _keyboardAnimationStops;
   MouseState _mouseState;
@@ -453,7 +447,7 @@ typedef struct MouseState {
                                                                        mass:3
                                                             initialVelocity:0
                                                            settlingDuration:0.5]);
-  double settlingDuration = [[self keyboardSpringCurve] settlingDuration];
+  double settlingDuration = [self keyboardSpringCurve].settlingDuration;
   double maxFramesPerSecond = [DisplayLinkManager displayRefreshRate];
   double frameDuration = 1 / maxFramesPerSecond;
 
@@ -1446,7 +1440,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // When call this method first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation.
   if ([self keyboardAnimationView] == nil) {
-    KeyboardAnimationView* keyboardAnimationView = [[KeyboardAnimationView alloc] init];
+    UIView* keyboardAnimationView = [[UIView alloc] init];
     [keyboardAnimationView setHidden:YES];
     _keyboardAnimationView.reset(keyboardAnimationView);
   }
@@ -1470,12 +1464,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [UIView animateWithDuration:duration
       animations:^{
         // Set DisplayLink tracking values
-        KeyboardAnimationView* keyboardView = (KeyboardAnimationView*)[self keyboardAnimationView];
-
-        keyboardView.startTime = fml::TimePoint().Now();
-        keyboardView.duration = duration;
-        keyboardView.from = _viewportMetrics.physical_view_inset_bottom;
-        keyboardView.to = self.targetViewInsetBottom;
+        self.keyboardAnimationStartTime = fml::TimePoint().Now();
+        self.keyboardAnimationDuration = duration;
+        self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
+        self.keyboardAnimationTo = self.targetViewInsetBottom;
 
         // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
@@ -1509,10 +1501,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
-    KeyboardAnimationView* keyboardView =
-        (KeyboardAnimationView*)[flutterViewController keyboardAnimationView];
-
-    fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() - keyboardView.startTime;
+    fml::TimeDelta timeElapsed =
+        recorder.get()->GetVsyncTargetTime() - [flutterViewController keyboardAnimationStartTime];
     double maxFrameRate = [DisplayLinkManager displayRefreshRate];
     double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
 
@@ -1527,8 +1517,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     double animationFramePercentage = [[[flutterViewController keyboardAnimationStops]
         objectAtIndex:frameApproximation] doubleValue];
 
-    CGFloat newY =
-        keyboardView.from + animationFramePercentage * (keyboardView.to - keyboardView.from);
+    CGFloat newY = [flutterViewController keyboardAnimationFrom] +
+                   animationFramePercentage * ([flutterViewController keyboardAnimationTo] -
+                                               [flutterViewController keyboardAnimationFrom]);
 
     flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = newY;
     [flutterViewController updateViewportMetrics];
