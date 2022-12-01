@@ -118,7 +118,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return NO;
   }
   FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
-  info.offset = CGPointMake(0, 0);
+  info.offset = CGPointZero;
   info.zIndex = 0;
   info.surface = surface;
   [view.surfaceManager present:@[ info ] notify:nil];
