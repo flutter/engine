@@ -62,8 +62,12 @@ bool FlutterCompositor::Present(uint64_t view_id,
                         notify:^{
                           for (size_t i = 0; i < layers_count; i++) {
                             FlutterLayer* layer = static_cast<FlutterLayer*>(layers[i]);
-                            if (layer->type == kFlutterLayerContentTypePlatformView) {
+                            switch (layer->type) {
+                            case kFlutterLayerContentTypeBackingStore:
+                              break;
+                            case kFlutterLayerContentTypePlatformView:
                               PresentPlatformView(view, layer, i);
+                              break;
                             }
                           }
                           [platform_view_controller_ disposePlatformViews];
