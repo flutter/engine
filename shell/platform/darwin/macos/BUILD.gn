@@ -90,8 +90,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterSurface.mm",
     "framework/Source/FlutterSurfaceManager.h",
     "framework/Source/FlutterSurfaceManager.mm",
-    "framework/Source/FlutterSurfaceManager_Internal.h",
-    "framework/Source/FlutterSurface_Internal.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
     "framework/Source/FlutterTextInputSemanticsObject.h",

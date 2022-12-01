@@ -73,3 +73,37 @@
          notify:(nullable dispatch_block_t)notify;
 
 @end
+
+/**
+ * Responsible for caching back buffers to prevent unnecessary IOSurface allocations.
+ */
+@interface FlutterBackBufferCache : NSObject
+
+/**
+ * Removes surface with given size from cache (if available) and returns it.
+ */
+- (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size;
+
+/**
+ * Removes all cached surface replacing them with new ones.
+ */
+- (void)replaceWith:(nonnull NSArray<FlutterSurface*>*)surfaces;
+
+/**
+ * Returns number of surfaces currently in cache. Used for tests.
+ */
+- (NSUInteger)count;
+
+@end
+
+/**
+ * Interface to internal properties used for testing.
+ */
+@interface FlutterSurfaceManager (Private)
+
+@property(readonly, nonatomic, nonnull) FlutterBackBufferCache* backBufferCache;
+@property(readonly, nonatomic, nonnull) NSArray<FlutterSurface*>* borrowedSurfaces;
+@property(readonly, nonatomic, nonnull) NSArray<FlutterSurface*>* frontSurfaces;
+@property(readonly, nonatomic, nonnull) NSArray<CALayer*>* layers;
+
+@end

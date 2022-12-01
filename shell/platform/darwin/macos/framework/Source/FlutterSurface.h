@@ -15,3 +15,16 @@
 - (FlutterMetalTexture)asFlutterMetalTexture;
 
 @end
+
+/**
+ * Internal FlutterSurface interface used by FlutterSurfaceManager.
+ */
+@interface FlutterSurface (Private)
+
+- (instancetype)initWithSize:(CGSize)size device:(id<MTLDevice>)device;
+
+@property(readonly, nonatomic) IOSurfaceRef ioSurface;
+@property(readonly, nonatomic) CGSize size;
+@property(readonly, nonatomic) int64_t textureId;
+
+@end

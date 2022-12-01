@@ -6,8 +6,8 @@
 #import <Metal/Metal.h>
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
