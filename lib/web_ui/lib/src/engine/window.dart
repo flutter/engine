@@ -12,8 +12,7 @@ import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart' show registerHotRestartListener, renderer;
-import '../engine/view_embedder/dimensions_provider/dimensions_provider.dart';
+import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'dom.dart';
 import 'navigation/history.dart';
 import 'navigation/js_url_strategy.dart';

@@ -22,7 +22,6 @@ import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'dom.dart';
-import 'view_embedder/dimensions_provider/dimensions_provider.dart';
 
 /// The mode the app is running in.
 /// Keep these in sync with the same constants on the framework-side under foundation/constants.dart.
@@ -145,9 +144,6 @@ Future<void> initializeEngineServices({
 
   // Store `jsConfiguration` so user settings are available to the engine.
   configuration.setUserConfiguration(jsConfiguration);
-  window.configureDimensionsProvider(DimensionsProvider.create(
-    hostElement: configuration.hostElement,
-  ));
 
   // Setup the hook that allows users to customize URL strategy before running
   // the app.

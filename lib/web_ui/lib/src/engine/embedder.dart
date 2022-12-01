@@ -17,6 +17,7 @@ import 'pointer_binding.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
+import 'view_embedder/dimensions_provider/dimensions_provider.dart';
 import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
@@ -50,6 +51,12 @@ class FlutterViewEmbedder {
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate EmbeddingStrategy using its factory...
     _embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement);
+
+    // Configure the EngineWindow that this embedder uses, so it knows how to
+    // measure itself.
+    window.configureDimensionsProvider(DimensionsProvider.create(
+      hostElement: hostElement,
+    ));
 
     reset();
 

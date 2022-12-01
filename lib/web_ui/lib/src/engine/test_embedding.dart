@@ -14,9 +14,6 @@ import '../engine.dart';
 Future<void>? _platformInitializedFuture;
 
 Future<void> initializeTestFlutterViewEmbedder({double devicePixelRatio = 3.0}) {
-  // Inject a mock DimensionsProvider for resize tests?
-  window.configureDimensionsProvider(DimensionsProvider.create());
-
   // Force-initialize FlutterViewEmbedder so it doesn't overwrite test pixel ratio.
   ensureFlutterViewEmbedderInitialized();
 
