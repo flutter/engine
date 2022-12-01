@@ -75,7 +75,7 @@
 @end
 
 /**
- * Responsible for caching back buffers to prevent unnecessary IOSurface allocations.
+ * Cache of back buffers to prevent unnecessary IOSurface allocations.
  */
 @interface FlutterBackBufferCache : NSObject
 
