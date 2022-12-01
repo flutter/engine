@@ -490,8 +490,9 @@ TEST(FlutterEngine, Compositor) {
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
-  // There are three layers total - the root layer and two sublayers.
-  EXPECT_EQ(rootLayer.sublayers.count, 3u);
+  // There are two layers with Flutter contents and one view
+  EXPECT_EQ(rootLayer.sublayers.count, 2u);
+  EXPECT_EQ(viewController.flutterView.subviews.count, 1u);
 
   // TODO(gw280): add support for screenshot tests in this test harness
 

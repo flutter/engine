@@ -92,7 +92,6 @@ void FlutterCompositor::PresentPlatformView(FlutterView* default_base_view,
                                    layer->size.width / scale, layer->size.height / scale);
   if (platform_view.superview == nil) {
     [default_base_view addSubview:platform_view];
-    [default_base_view.layer addSublayer:platform_view.layer];
   }
   platform_view.layer.zPosition = layer_position;
 }
