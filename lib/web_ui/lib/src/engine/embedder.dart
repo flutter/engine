@@ -651,6 +651,8 @@ void applyGlobalCssRulesToSheet(
     ''', sheet.cssRules.length.toInt());
   }
 
+  // Removes password reveal icon for text inputs in Edge browsers.
+  // See: https://github.com/flutter/flutter/issues/83695
   if (isEdge) {
     sheet.insertRule('''
       input::-ms-reveal {
