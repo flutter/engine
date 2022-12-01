@@ -18,6 +18,7 @@
 
 /**
  * Internal FlutterSurface interface used by FlutterSurfaceManager.
+ * Wraps an IOSurface framebuffer and metadata related to the surface.
  */
 @interface FlutterSurface (Private)
 
