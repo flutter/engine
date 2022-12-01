@@ -35,11 +35,7 @@
 
 @implementation TestPlatformViewFactory
 - (nonnull NSView*)createWithViewIdentifier:(int64_t)viewId arguments:(nullable id)args {
-  if (viewId == 42) {
-    return [[NSView alloc] init];
-  } else {
-    return nil;
-  }
+  return viewId == 42 ? [[NSView alloc] init] : nil;
 }
 
 @end
