@@ -388,6 +388,8 @@ void testMain() {
     expect(event.buttons, equals(1));
     expect(event.client.x, equals(100));
     expect(event.client.y, equals(101));
+    expect(event.offset.x, equals(100));
+    expect(event.offset.y, equals(101));
 
     event = expectCorrectType(
         context.mouseDown(clientX: 110, clientY: 111, button: 2, buttons: 2));
@@ -2472,7 +2474,7 @@ void testMain() {
       packets.clear();
 
       // Move outside the glasspane.
-      domWindow.dispatchEvent(context.primaryMove(
+      glassPane.dispatchEvent(context.primaryMove(
         clientX: 900.0,
         clientY: 1900.0,
       ));
@@ -3351,6 +3353,7 @@ class _MouseEventContext extends _BasicEventContext
     final List<dynamic> eventArgs = <dynamic>[
       type,
       <String, dynamic>{
+        'bubbles': true,
         'buttons': buttons,
         'button': button,
         'clientX': clientX,
