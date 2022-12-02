@@ -1297,10 +1297,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   // When keyboard is hidden or undocked, this notification will be triggered.
- [self handleKeyboardNotification:notification];
+  [self handleKeyboardNotification:notification];
 }
 
 - (void)handleKeyboardNotification:(NSNotification*)notification {
+  // See https:://flutter.dev/go/ios-keyboard-calculating-inset for more details
+  // on why notifications are used and how things are calculated.
   if ([self shouldIgnoreKeyboardNotification:notification]) {
     return;
   }
@@ -1321,7 +1323,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification {
-  BOOL isKeyboardNotificationForThisView = [self isKeyboardNotificationForThisView:notification];
   // Don't ignore UIKeyboardWillHideNotification notifications.
   if (notification.name == UIKeyboardWillHideNotification) {
     return NO;
@@ -1336,31 +1337,38 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return YES;
   }
 
-  // Don't ignore other times a keyboard's height or width is 0.
+  // When keyboard's height/width is set to 0 by other app,
+  // do not ignore so that the inset will be set to 0.
   if (CGRectIsEmpty(keyboardFrame)) {
     return NO;
   }
 
   // Ignore keyboard notifications related to other apps.
-  if (!isKeyboardNotificationForThisView) {
+  if ([self isKeyboardNotificationForDifferentView:notification]) {
+    return YES;
+  }
+
+  // Ignore notification if the app is not active (meaning it's running in the
+  // background, interrupted, or the app is transitioning to or from the background).
+  if (UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
     return YES;
   }
 
   return NO;
 }
 
-- (BOOL)isKeyboardNotificationForThisView:(NSNotification*)notification {
+- (BOOL)isKeyboardNotificationForDifferentView:(NSNotification*)notification {
   NSDictionary* info = notification.userInfo;
   // Keyboard notifications related to other apps.
   id isLocal = info[UIKeyboardIsLocalUserInfoKey];
   if (isLocal && ![isLocal boolValue]) {
-    return NO;
+    return YES;
   }
   // Engine’s viewController is not current viewController.
   if ([_engine.get() viewController] != self) {
-    return NO;
+    return YES;
   }
-  return YES;
+  return NO;
 }
 
 - (FlutterKeyboardMode)calculateKeyboardAttachMode:(NSNotification*)notification {
@@ -1388,27 +1396,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return FlutterKeyboardModeHidden;
   }
 
-  CGRect screenRect = [self getMainScreen].bounds;
-  CGFloat keyboardWidth = CGRectGetWidth(keyboardFrame);
-  CGFloat screenWidth = CGRectGetWidth(screenRect);
-
-  // If keyboard is not full width, it's floating.
-  if (keyboardWidth != screenWidth) {
-    return FlutterKeyboardModeFloating;
-  }
-
-  CGFloat screenHeight = CGRectGetHeight(screenRect);
+  CGRect screenRect = [self mainScreen].bounds;
   CGRect adjustedKeyboardFrame = keyboardFrame;
   adjustedKeyboardFrame.origin.y += [self calculateMultitaskingAdjustment:screenRect
                                                             keyboardFrame:keyboardFrame];
-  CGFloat adjustedKeyboardBottom = CGRectGetMaxY(adjustedKeyboardFrame);
 
-  // If the keyboard is above the bottom of the screen, it's floating.
-  if (adjustedKeyboardBottom < screenHeight) {
-    return FlutterKeyboardModeFloating;
-  }
-  // If the keyboard is partially or fully showing at the bottom of the screen, it's docked.
-  if (CGRectIntersectsRect(adjustedKeyboardFrame, screenRect)) {
+  // If the keyboard is partially or fully showing within the screen, it's either docked or
+  // floating. Sometimes with custom keyboard extensions, the keyboard's position may be off by a
+  // small decimal amount. Round to compare.
+  CGRect intersection = CGRectIntersection(adjustedKeyboardFrame, screenRect);
+  CGFloat intersectionHeight = CGRectGetHeight(intersection);
+  CGFloat intersectionWidth = CGRectGetWidth(intersection);
+  if (round(intersectionHeight) > 0 && intersectionWidth > 0) {
+    // If the keyboard is above the bottom of the screen, it's floating.
+    CGFloat screenHeight = CGRectGetHeight(screenRect);
+    CGFloat adjustedKeyboardBottom = CGRectGetMaxY(adjustedKeyboardFrame);
+    if (round(adjustedKeyboardBottom) < screenHeight) {
+      return FlutterKeyboardModeFloating;
+    }
     return FlutterKeyboardModeDocked;
   }
   return FlutterKeyboardModeHidden;
