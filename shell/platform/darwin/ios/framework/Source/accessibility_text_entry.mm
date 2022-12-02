@@ -4,6 +4,7 @@
 
 #import <UIKit/UIKit.h>
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputClient.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_bridge.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/accessibility_text_entry.h"
 
@@ -203,7 +204,8 @@ static const UIAccessibilityTraits kUIAccessibilityTraitUndocumentedEmptyLine = 
 - (void)setSemanticsNode:(const flutter::SemanticsNode*)node {
   [super setSemanticsNode:node];
   _inactive_text_input.text = @(node->value.data());
-  FlutterTextInputView* textInput = (FlutterTextInputView*)[self bridge]->textInputView();
+  UIView<FlutterTextInputClient>* textInput =
+      (UIView<FlutterTextInputClient>*)[self bridge]->textInputView();
   if ([self node].HasFlag(flutter::SemanticsFlags::kIsFocused)) {
     textInput.backingTextInputAccessibilityObject = self;
     // The text input view must have a non-trivial size for the accessibility

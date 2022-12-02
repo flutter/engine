@@ -875,14 +875,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - Text input delegate
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingState"
                               arguments:@[ @(client), state ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state
                      withTag:(NSString*)tag {
@@ -890,14 +890,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), @{tag : state} ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
          updateEditingClient:(int)client
                    withDelta:(NSDictionary*)delta {
   [_textInputChannel.get() invokeMethod:@"TextInputClient.updateEditingStateWithDeltas"
                               arguments:@[ @(client), delta ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
         updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)position {
@@ -917,7 +917,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), stateString, position ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
                performAction:(FlutterTextInputAction)action
                   withClient:(int)client {
   NSString* actionString;
@@ -964,7 +964,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client), actionString ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
     showAutocorrectionPromptRectForStart:(NSUInteger)start
                                      end:(NSUInteger)end
                               withClient:(int)client {
@@ -974,7 +974,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 #pragma mark - FlutterViewEngineDelegate
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
+                 showToolbar:(int)client {
   [_scribbleChannel.get() invokeMethod:@"Scribble.showToolbar" arguments:@[ @(client) ]];
 }
 
@@ -997,27 +998,29 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
             result:callback];
 }
 
-- (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputViewScribbleInteractionBegan:
+    (UIView<FlutterTextInputClient>*)textInputView {
   [_scribbleChannel.get() invokeMethod:@"Scribble.scribbleInteractionBegan" arguments:nil];
 }
 
-- (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputViewScribbleInteractionFinished:
+    (UIView<FlutterTextInputClient>*)textInputView {
   [_scribbleChannel.get() invokeMethod:@"Scribble.scribbleInteractionFinished" arguments:nil];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client {
   [_scribbleChannel.get() invokeMethod:@"Scribble.insertTextPlaceholder"
                              arguments:@[ @(client), @(size.width), @(size.height) ]];
 }
 
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
        removeTextPlaceholder:(int)client {
   [_scribbleChannel.get() invokeMethod:@"Scribble.removeTextPlaceholder" arguments:@[ @(client) ]];
 }
 
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputViewDidResignFirstResponder:(UIView<FlutterTextInputClient>*)textInputView {
   // Platform view's first responder detection logic:
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view

@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputClient.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
 #import <OCMock/OCMock.h>
@@ -18,15 +19,20 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterTextInputView ()
-@property(nonatomic, copy) NSString* autofillId;
-- (void)setEditableTransform:(NSArray*)matrix;
-- (void)setTextInputClient:(int)client;
+@property(nonatomic, readonly) NSMutableString* text;
+@property(nonatomic, strong) FlutterTextRange* markedTextRange;
+@property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
+
+- (void)setEditableSize:(CGSize)size transform:(NSArray*)matrix;
+- (void)setClientID:(int)client;
 - (void)setTextInputState:(NSDictionary*)state;
 - (void)setMarkedRect:(CGRect)markedRect;
 - (void)updateEditingState;
 - (BOOL)isVisibleToAutofill;
 - (id<FlutterTextInputDelegate>)textInputDelegate;
-- (void)configureWithDictionary:(NSDictionary*)configuration;
+
+- (void)resetScribbleInteractionStatusIfEnding;
+
 @end
 
 @interface FlutterTextInputViewSpy : FlutterTextInputView
@@ -52,21 +58,20 @@ FLUTTER_ASSERT_ARC
 
 @end
 
-@interface FlutterSecureTextInputView : FlutterTextInputView
+@interface FlutterSecureTextInputView ()
 @property(nonatomic, strong) UITextField* textField;
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, assign) FlutterTextInputView* activeView;
+@property(nonatomic, assign) FlutterTextInputView* activeClient;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 
-- (void)cleanUpViewHierarchy:(BOOL)includeActiveView
+- (void)cleanUpViewHierarchy:(BOOL)includeactiveClient
                    clearText:(BOOL)clearText
                 delayRemoval:(BOOL)delayRemoval;
 - (NSArray<UIView*>*)textInputViews;
 - (UIView*)hostView;
-- (fml::WeakPtr<FlutterTextInputPlugin>)getWeakPtr;
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView;
 - (void)startLiveTextInput;
 @end
@@ -202,7 +207,7 @@ FLUTTER_ASSERT_ARC
     [flutterTextInputPlugin handleMethodCall:setClientCall
                                       result:^(id _Nullable result){
                                       }];
-    currentView = flutterTextInputPlugin.activeView;
+    currentView = flutterTextInputPlugin.activeClient;
   }
 
   NSAssert(!weakFlutterEngine, @"flutter engine must be nil");
@@ -241,7 +246,7 @@ FLUTTER_ASSERT_ARC
 
   // Despite not given an id in configuration, inputView has
   // an autofill id.
-  XCTAssert(inputView.autofillId.length > 0);
+  XCTAssert(inputView.autofillID.length > 0);
 }
 
 - (void)testKeyboardType {
@@ -264,12 +269,12 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
 
   // Verify the view's inputViewController is not nil;
-  XCTAssertNotNil(textInputPlugin.activeView.inputViewController);
+  XCTAssertNotNil(textInputPlugin.activeClient.inputViewController);
 
   [config setValue:@{@"name" : @"TextInputType.url"} forKey:@"inputType"];
   [self setClientId:124 configuration:config];
-  XCTAssertNotNil(textInputPlugin.activeView);
-  XCTAssertNil(textInputPlugin.activeView.inputViewController);
+  XCTAssertNotNil(textInputPlugin.activeClient);
+  XCTAssertNil(textInputPlugin.activeClient.inputViewController);
 }
 
 - (void)testAutocorrectionPromptRectAppears {
@@ -299,11 +304,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(updateCount, 1);
 
   // Disable the interactive selection.
-  NSDictionary* config = self.mutableTemplateCopy;
-  [config setValue:@(NO) forKey:@"enableInteractiveSelection"];
-  [config setValue:@(NO) forKey:@"obscureText"];
-  [config setValue:@(NO) forKey:@"enableDeltaModel"];
-  [inputView configureWithDictionary:config];
+  inputView.enableInteractiveSelection = NO;
 
   textRange = [FlutterTextRange rangeWithNSRange:NSMakeRange(2, 3)];
   [inputView setSelectedTextRange:textRange];
@@ -539,30 +540,30 @@ FLUTTER_ASSERT_ARC
 }
 
 - (void)testInputViewCrash {
-  FlutterTextInputView* activeView = nil;
+  FlutterTextInputView* activeClient = nil;
   @autoreleasepool {
     FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
     FlutterTextInputPlugin* inputPlugin = [[FlutterTextInputPlugin alloc]
         initWithDelegate:(id<FlutterTextInputDelegate>)flutterEngine];
-    activeView = inputPlugin.activeView;
+    activeClient = inputPlugin.activeClient;
   }
-  [activeView updateEditingState];
+  [activeClient updateEditingState];
 }
 
 - (void)testDoNotReuseInputViews {
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
-  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  FlutterTextInputView* currentView = textInputPlugin.activeClient;
   [self setClientId:456 configuration:config];
 
   XCTAssertNotNil(currentView);
-  XCTAssertNotNil(textInputPlugin.activeView);
-  XCTAssertNotEqual(currentView, textInputPlugin.activeView);
+  XCTAssertNotNil(textInputPlugin.activeClient);
+  XCTAssertNotEqual(currentView, textInputPlugin.activeClient);
 }
 
-- (void)ensureOnlyActiveViewCanBecomeFirstResponder {
+- (void)ensureOnlyactiveClientCanBecomeFirstResponder {
   for (FlutterTextInputView* inputView in self.installedInputViews) {
-    XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeView);
+    XCTAssertEqual(inputView.canBecomeFirstResponder, inputView == textInputPlugin.activeClient);
   }
 }
 
@@ -575,7 +576,7 @@ FLUTTER_ASSERT_ARC
 
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
-  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  FlutterTextInputView* currentView = textInputPlugin.activeClient;
   [self setTextInputShow];
 
   [currentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
@@ -605,7 +606,7 @@ FLUTTER_ASSERT_ARC
   NSDictionary* config = self.mutableTemplateCopy;
   [self setClientId:123 configuration:config];
   [self setTextInputShow];
-  FlutterTextInputView* currentView = textInputPlugin.activeView;
+  FlutterTextInputView* currentView = textInputPlugin.activeClient;
 
   [currentView pressesBegan:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
                   withEvent:OCMClassMock([UIPressesEvent class])];
@@ -618,9 +619,9 @@ FLUTTER_ASSERT_ARC
   // Switch focus to a different view.
   [self setClientId:321 configuration:config];
   [self setTextInputShow];
-  NSAssert(textInputPlugin.activeView, @"active view must not be nil");
-  NSAssert(textInputPlugin.activeView != currentView, @"active view must change");
-  currentView = textInputPlugin.activeView;
+  NSAssert(textInputPlugin.activeClient, @"active view must not be nil");
+  NSAssert(textInputPlugin.activeClient != currentView, @"active view must change");
+  currentView = textInputPlugin.activeClient;
   [currentView pressesEnded:[NSSet setWithObjects:OCMClassMock([UIPress class]), nil]
                   withEvent:OCMClassMock([UIPressesEvent class])];
 
@@ -747,7 +748,7 @@ FLUTTER_ASSERT_ARC
   [inputView.text setString:@"Some initial text"];
   XCTAssertEqual(updateCount, 0);
 
-  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
   XCTAssertEqual(updateCount, 1);
@@ -781,7 +782,7 @@ FLUTTER_ASSERT_ARC
   [inputView.text setString:@"Some initial text"];
   XCTAssertEqual(updateCount, 0);
 
-  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
   XCTAssertEqual(updateCount, 1);
@@ -815,7 +816,7 @@ FLUTTER_ASSERT_ARC
   [inputView.text setString:@"Some initial text"];
   XCTAssertEqual(updateCount, 0);
 
-  UITextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
+  FlutterTextRange* range = [FlutterTextRange rangeWithNSRange:NSMakeRange(13, 4)];
   inputView.markedTextRange = range;
   inputView.selectedTextRange = nil;
   XCTAssertEqual(updateCount, 1);
@@ -1010,7 +1011,8 @@ FLUTTER_ASSERT_ARC
     FlutterTextInputView* inputView = inputFields[0];
 
     FlutterTextInputView* mockInputView = OCMPartialMock(inputView);
-    OCMStub([mockInputView isScribbleAvailable]).andReturn(YES);
+    id inputPluginClassMock = OCMClassMock([FlutterTextInputPlugin class]);
+    OCMStub([inputPluginClassMock isScribbleAvailable]).andReturn(YES);
 
     [mockInputView insertText:@"aaaa"];
     [mockInputView selectAll:nil];
@@ -1183,7 +1185,7 @@ FLUTTER_ASSERT_ARC
     FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
     [UIApplication.sharedApplication.keyWindow addSubview:inputView];
 
-    [inputView setTextInputClient:123];
+    [inputView setClientID:123];
     [inputView reloadInputViews];
     [inputView becomeFirstResponder];
     NSAssert(inputView.isFirstResponder, @"inputView is not first responder");
@@ -1219,7 +1221,7 @@ FLUTTER_ASSERT_ARC
 - (void)testUpdateFirstRectForRange {
   [self setClientId:123 configuration:self.mutableTemplateCopy];
 
-  FlutterTextInputView* inputView = textInputPlugin.activeView;
+  FlutterTextInputView* inputView = textInputPlugin.activeClient;
   textInputPlugin.viewController.view.frame = CGRectMake(0, 0, 0, 0);
 
   [inputView
@@ -1241,7 +1243,7 @@ FLUTTER_ASSERT_ARC
   // Invalid since we don't have the transform or the rect.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 
-  [inputView setEditableTransform:yOffsetMatrix];
+  [inputView setEditableSize:CGSizeZero transform:yOffsetMatrix];
   // Invalid since we don't have the rect.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 
@@ -1255,13 +1257,13 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
 
   // Use an invalid matrix:
-  [inputView setEditableTransform:zeroMatrix];
+  [inputView setEditableSize:CGSizeZero transform:zeroMatrix];
   // Invalid matrix is invalid.
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 
   // Revert the invalid matrix change.
-  [inputView setEditableTransform:yOffsetMatrix];
+  [inputView setEditableSize:CGSizeZero transform:yOffsetMatrix];
   [inputView setMarkedRect:testRect];
   XCTAssertTrue(CGRectEqualToRect(finalRect, [inputView firstRectForRange:range]));
 
@@ -1272,7 +1274,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertTrue(CGRectEqualToRect(kInvalidFirstRect, [inputView firstRectForRange:range]));
 
   // Use a 3d affine transform that does 3d-scaling, z-index rotating and 3d translation.
-  [inputView setEditableTransform:affineMatrix];
+  [inputView setEditableSize:CGSizeZero transform:affineMatrix];
   [inputView setMarkedRect:testRect];
   XCTAssertTrue(
       CGRectEqualToRect(CGRectMake(-306, 3, 300, 300), [inputView firstRectForRange:range]));
@@ -1540,7 +1542,7 @@ FLUTTER_ASSERT_ARC
                              }];
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count,
-                 [textInputPlugin.activeView isVisibleToAutofill] ? 1ul : 0ul);
+                 [textInputPlugin.activeClient isVisibleToAutofill] ? 1ul : 0ul);
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
   // The active view should still be installed so it doesn't get
   // deallocated.
@@ -1601,7 +1603,7 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 2ul);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // The configuration changes.
   NSMutableDictionary* field3 = self.mutablePasswordTemplateCopy;
@@ -1624,7 +1626,7 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 3ul);
   XCTAssertEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Old autofill input fields are still installed and reused.
   for (NSString* key in oldContext.allKeys) {
@@ -1636,7 +1638,7 @@ FLUTTER_ASSERT_ARC
 
   oldContext = textInputPlugin.autofillContext;
   [self setClientId:124 configuration:config];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 1ul);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 3ul);
@@ -1650,7 +1652,7 @@ FLUTTER_ASSERT_ARC
   }
   // The active view should change.
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Switch to a similar password field, the previous field should be reused.
   oldContext = textInputPlugin.autofillContext;
@@ -1668,7 +1670,7 @@ FLUTTER_ASSERT_ARC
     XCTAssertEqual(oldContext[key], textInputPlugin.autofillContext[key]);
   }
   XCTAssertNotEqual(textInputPlugin.textInputView, textInputPlugin.autofillContext[@"field1"]);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 }
 
 - (void)testCommitAutofillContext {
@@ -1702,10 +1704,10 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2ul);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2ul);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Install the password field again.
   [self setClientId:123 configuration:config];
@@ -1717,10 +1719,10 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.installedInputViews.count, 3ul);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 2ul);
   XCTAssertNotEqual(textInputPlugin.textInputView, nil);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Now switch to an input field that does not autofill.
   [self setClientId:125 configuration:self.mutableTemplateCopy];
@@ -1732,10 +1734,10 @@ FLUTTER_ASSERT_ARC
   [textInputPlugin cleanUpViewHierarchy:NO clearText:YES delayRemoval:NO];
   XCTAssertEqual(self.installedInputViews.count, 1ul);
   XCTAssertEqual(textInputPlugin.autofillContext.count, 0ul);
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   [self commitAutofillContextAndVerify];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 }
 
 - (void)testAutofillInputViews {
@@ -1759,7 +1761,7 @@ FLUTTER_ASSERT_ARC
   [config setValue:@[ field1, field2 ] forKey:@"fields"];
 
   [self setClientId:123 configuration:config];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Find all the FlutterTextInputViews we created.
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
@@ -1769,13 +1771,13 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.viewsVisibleToAutofill.count, 2ul);
 
   // Find the inactive autofillable input field.
-  FlutterTextInputView* inactiveView = inputFields[1];
-  [inactiveView replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]
-                    withText:@"Autofilled!"];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  FlutterTextInputView* inactiveClient = inputFields[1];
+  [inactiveClient replaceRange:[FlutterTextRange rangeWithNSRange:NSMakeRange(0, 0)]
+                      withText:@"Autofilled!"];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   // Verify behavior.
-  OCMVerify([engine flutterTextInputView:inactiveView
+  OCMVerify([engine flutterTextInputView:inactiveClient
                      updateEditingClient:0
                                withState:[OCMArg isNotNil]
                                  withTag:@"field2"]);
@@ -1814,7 +1816,7 @@ FLUTTER_ASSERT_ARC
                   forKey:@"autofill"];
   [regularField addEntriesFromDictionary:editingValue];
   [self setClientId:123 configuration:regularField];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
   XCTAssertEqual(self.installedInputViews.count, 1ul);
 
   FlutterTextInputView* oldInputView = self.installedInputViews[0];
@@ -1825,7 +1827,7 @@ FLUTTER_ASSERT_ARC
   // Replace the original password field with new one. This should remove
   // the old password field, but not immediately.
   [self setClientId:124 configuration:self.mutablePasswordTemplateCopy];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   XCTAssertEqual(self.installedInputViews.count, 2ul);
 
@@ -1841,13 +1843,13 @@ FLUTTER_ASSERT_ARC
 - (void)testGarbageInputViewsAreNotRemovedImmediately {
   // Add a password field that should autofill.
   [self setClientId:123 configuration:self.mutablePasswordTemplateCopy];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   XCTAssertEqual(self.installedInputViews.count, 1ul);
   // Add an input field that doesn't autofill. This should remove the password
   // field, but not immediately.
   [self setClientId:124 configuration:self.mutableTemplateCopy];
-  [self ensureOnlyActiveViewCanBecomeFirstResponder];
+  [self ensureOnlyactiveClientCanBecomeFirstResponder];
 
   XCTAssertEqual(self.installedInputViews.count, 2ul);
 
@@ -1872,7 +1874,7 @@ FLUTTER_ASSERT_ARC
   [regularField addEntriesFromDictionary:editingValue];
   [self setClientId:123 configuration:regularField];
   XCTAssertEqual(self.installedInputViews.count, 1ul);
-  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
+  XCTAssertEqual([textInputPlugin.activeClient.selectionRects count], 0u);
 
   NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
   NSArray* selectionRects = [NSArray arrayWithObjects:selectionRect, nil];
@@ -1883,7 +1885,7 @@ FLUTTER_ASSERT_ARC
                              result:^(id _Nullable result){
                              }];
 
-  XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 1u);
+  XCTAssertEqual([textInputPlugin.activeClient.selectionRects count], 1u);
 }
 
 - (void)testDecommissionedViewAreNotReusedByAutofill {
@@ -1900,21 +1902,21 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:configuration];
 
   [self setTextInputHide];
-  UIView* previousActiveView = textInputPlugin.activeView;
+  UIView* previousactiveClient = textInputPlugin.activeClient;
 
   [self setClientId:124 configuration:configuration];
 
   // Make sure the autofillable view is reused.
-  XCTAssertEqual(previousActiveView, textInputPlugin.activeView);
-  XCTAssertNotNil(previousActiveView);
+  XCTAssertEqual(previousactiveClient, textInputPlugin.activeClient);
+  XCTAssertNotNil(previousactiveClient);
   // Does not crash.
 }
 
-- (void)testInitialActiveViewCantAccessTextInputDelegate {
+- (void)testInitialactiveClientCantAccessTextInputDelegate {
   // Before the framework sends the first text input configuration,
-  // the dummy "activeView" we use should never have access to
+  // the dummy "activeClient" we use should never have access to
   // its textInputDelegate.
-  XCTAssertNil(textInputPlugin.activeView.textInputDelegate);
+  XCTAssertNil(textInputPlugin.activeClient.textInputDelegate);
 }
 
 #pragma mark - Accessibility - Tests
@@ -1995,7 +1997,7 @@ FLUTTER_ASSERT_ARC
   FlutterTextInputPlugin* myInputPlugin = [[FlutterTextInputPlugin alloc] initWithDelegate:engine];
   myInputPlugin.viewController = flutterViewController;
 
-  __weak UIView* activeView;
+  __weak UIView* activeClient;
   @autoreleasepool {
     FlutterMethodCall* setClientCall = [FlutterMethodCall
         methodCallWithMethodName:@"TextInput.setClient"
@@ -2005,16 +2007,16 @@ FLUTTER_ASSERT_ARC
     [myInputPlugin handleMethodCall:setClientCall
                              result:^(id _Nullable result){
                              }];
-    activeView = myInputPlugin.textInputView;
+    activeClient = myInputPlugin.textInputView;
     FlutterMethodCall* hideCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.hide"
                                                                     arguments:@[]];
     [myInputPlugin handleMethodCall:hideCall
                              result:^(id _Nullable result){
                              }];
-    XCTAssertNotNil(activeView);
+    XCTAssertNotNil(activeClient);
   }
   // This assert proves the myInputPlugin.textInputView is not deallocated.
-  XCTAssertNotNil(activeView);
+  XCTAssertNotNil(activeClient);
 }
 
 - (void)testFlutterTextInputPluginHostViewNilCrash {
@@ -2043,15 +2045,15 @@ FLUTTER_ASSERT_ARC
   [myInputPlugin handleMethodCall:setClientCall
                            result:^(id _Nullable result){
                            }];
-  UIView* activeView = myInputPlugin.textInputView;
-  XCTAssertNotNil(activeView.superview, @"activeView must be added to the view hierarchy.");
+  UIView* activeClient = myInputPlugin.textInputView;
+  XCTAssertNotNil(activeClient.superview, @"activeClient must be added to the view hierarchy.");
   FlutterMethodCall* setPlatformViewClientCall = [FlutterMethodCall
       methodCallWithMethodName:@"TextInput.setPlatformViewClient"
                      arguments:@{@"platformViewId" : [NSNumber numberWithLong:456]}];
   [myInputPlugin handleMethodCall:setPlatformViewClientCall
                            result:^(id _Nullable result){
                            }];
-  XCTAssertNil(activeView.superview, @"activeView must be removed from view hierarchy.");
+  XCTAssertNil(activeClient.superview, @"activeClient must be removed from view hierarchy.");
 }
 
 @end

@@ -7,7 +7,6 @@
 
 #import <UIKit/UIKit.h>
 
-#import "flutter/fml/memory/weak_ptr.h"
 #import "flutter/shell/platform/common/text_editing_delta.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
@@ -15,25 +14,15 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
-typedef NS_ENUM(NSInteger, FlutterScribbleFocusStatus) {
-  FlutterScribbleFocusStatusUnfocused,
-  FlutterScribbleFocusStatusFocusing,
-  FlutterScribbleFocusStatusFocused,
-};
-
-typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
-  FlutterScribbleInteractionStatusNone,
-  FlutterScribbleInteractionStatusStarted,
-  FlutterScribbleInteractionStatusEnding,
-};
-
 @interface FlutterTextInputPlugin
     : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
 
 @property(nonatomic, assign) UIViewController* viewController;
+@property(nonatomic, readonly) UIView* hostView;
 @property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
 @property(nonatomic, strong)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
+@property(nonatomic, readonly, weak) id<FlutterTextInputDelegate> textInputDelegate;
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;
@@ -51,31 +40,13 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
  */
 - (UIView<UITextInput>*)textInputView;
 
++ (BOOL)isScribbleAvailable;
 /**
  * These are used by the UIIndirectScribbleInteractionDelegate methods to handle focusing on the
  * correct element.
  */
 - (void)setupIndirectScribbleInteraction:(id<FlutterViewResponder>)viewResponder;
 - (void)resetViewResponder;
-
-@end
-
-/** An indexed position in the buffer of a Flutter text editing widget. */
-@interface FlutterTextPosition : UITextPosition
-
-@property(nonatomic, readonly) NSUInteger index;
-
-+ (instancetype)positionWithIndex:(NSUInteger)index;
-- (instancetype)initWithIndex:(NSUInteger)index;
-
-@end
-
-/** A range of text in the buffer of a Flutter text editing widget. */
-@interface FlutterTextRange : UITextRange <NSCopying>
-
-@property(nonatomic, readonly) NSRange range;
-
-+ (instancetype)rangeWithNSRange:(NSRange)range;
 
 @end
 
@@ -114,47 +85,4 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 API_AVAILABLE(ios(13.0)) @interface FlutterTextPlaceholder : UITextPlaceholder
 @end
 
-#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
-FLUTTER_DARWIN_EXPORT
-#endif
-@interface FlutterTextInputView : UIView <UITextInput, UIScribbleInteractionDelegate>
-
-// UITextInput
-@property(nonatomic, readonly) NSMutableString* text;
-@property(nonatomic, readonly) NSMutableString* markedText;
-@property(readwrite, copy) UITextRange* selectedTextRange;
-@property(nonatomic, strong) UITextRange* markedTextRange;
-@property(nonatomic, copy) NSDictionary* markedTextStyle;
-@property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
-
-// UITextInputTraits
-@property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
-@property(nonatomic) UITextAutocorrectionType autocorrectionType;
-@property(nonatomic) UITextSpellCheckingType spellCheckingType;
-@property(nonatomic) BOOL enablesReturnKeyAutomatically;
-@property(nonatomic) UIKeyboardAppearance keyboardAppearance;
-@property(nonatomic) UIKeyboardType keyboardType;
-@property(nonatomic) UIReturnKeyType returnKeyType;
-@property(nonatomic, getter=isSecureTextEntry) BOOL secureTextEntry;
-@property(nonatomic, getter=isEnableDeltaModel) BOOL enableDeltaModel;
-@property(nonatomic) UITextSmartQuotesType smartQuotesType API_AVAILABLE(ios(11.0));
-@property(nonatomic) UITextSmartDashesType smartDashesType API_AVAILABLE(ios(11.0));
-@property(nonatomic, copy) UITextContentType textContentType API_AVAILABLE(ios(10.0));
-
-@property(nonatomic, assign) UIAccessibilityElement* backingTextInputAccessibilityObject;
-
-// Scribble Support
-@property(nonatomic, assign) id<FlutterViewResponder> viewResponder;
-@property(nonatomic) FlutterScribbleFocusStatus scribbleFocusStatus;
-@property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
-- (void)resetScribbleInteractionStatusIfEnding;
-- (BOOL)isScribbleAvailable;
-
-- (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
-- (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
-- (instancetype)initWithFrame:(CGRect)frame NS_UNAVAILABLE;
-- (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin NS_DESIGNATED_INITIALIZER;
-
-@end
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTERTEXTINPUTPLUGIN_H_

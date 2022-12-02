@@ -8,7 +8,7 @@
 #import <Foundation/Foundation.h>
 
 @class FlutterTextInputPlugin;
-@class FlutterTextInputView;
+@protocol FlutterTextInputClient;
 
 typedef NS_ENUM(NSInteger, FlutterTextInputAction) {
   FlutterTextInputActionUnspecified,
@@ -31,35 +31,39 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
 };
 
 @protocol FlutterTextInputDelegate <NSObject>
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
          updateEditingClient:(int)client
                    withState:(NSDictionary*)state
                      withTag:(NSString*)tag;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
          updateEditingClient:(int)client
                    withDelta:(NSDictionary*)state;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
                performAction:(FlutterTextInputAction)action
                   withClient:(int)client;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputView
         updateFloatingCursor:(FlutterFloatingCursorDragState)state
                   withClient:(int)client
                 withPosition:(NSDictionary*)point;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
     showAutocorrectionPromptRectForStart:(NSUInteger)start
                                      end:(NSUInteger)end
                               withClient:(int)client;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client;
-- (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView;
-- (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
+                 showToolbar:(int)client;
+- (void)flutterTextInputViewScribbleInteractionBegan:(UIView<FlutterTextInputClient>*)textInputView;
+- (void)flutterTextInputViewScribbleInteractionFinished:
+    (UIView<FlutterTextInputClient>*)textInputView;
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client;
-- (void)flutterTextInputView:(FlutterTextInputView*)textInputView removeTextPlaceholder:(int)client;
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView;
+- (void)flutterTextInputView:(UIView<FlutterTextInputClient>*)textInputClient
+       removeTextPlaceholder:(int)client;
+- (void)flutterTextInputViewDidResignFirstResponder:
+    (UIView<FlutterTextInputClient>*)textInputClient;
 
 @end
 
