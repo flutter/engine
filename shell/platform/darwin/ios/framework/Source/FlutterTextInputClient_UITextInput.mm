@@ -116,7 +116,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @end
 
 @implementation FlutterTextInputView {
-  int _textInputClient;
+  int _clientID;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
   UIInputViewController* _inputViewController;
@@ -155,7 +155,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   self = [super initWithFrame:CGRectZero];
   if (self) {
     _textInputPlugin = textInputPlugin;
-    _textInputClient = 0;
+    _clientID = 0;
     _selectionAffinity = kTextAffinityUpstream;
 
     // UITextInput
@@ -233,10 +233,10 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (int)clientID {
-  return _textInputClient;
+  return _clientID;
 }
 - (void)setClientID:(int)client {
-  _textInputClient = client;
+  _clientID = client;
   _hasPlaceholder = NO;
 }
 
@@ -394,7 +394,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // become the first responder. This prevents iOS
   // from changing focus by itself (the framework
   // focus will be out of sync if that happens).
-  return _textInputClient != 0;
+  return _clientID != 0;
 }
 
 - (BOOL)resignFirstResponder {
@@ -494,7 +494,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
              @"Expected a FlutterTextRange for range (got %@).", [selectedTextRange class]);
     FlutterTextRange* flutterTextRange = (FlutterTextRange*)selectedTextRange;
     if (flutterTextRange.range.length > 0) {
-      [self.textInputDelegate flutterTextInputView:self showToolbar:_textInputClient];
+      [self.textInputDelegate flutterTextInputView:self showToolbar:_clientID];
     }
   }
 
@@ -572,7 +572,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   if (self.returnKeyType == UIReturnKeyDefault && [text isEqualToString:@"\n"]) {
     [self.textInputDelegate flutterTextInputView:self
                                    performAction:FlutterTextInputActionNewline
-                                      withClient:_textInputClient];
+                                      withClient:_clientID];
     return YES;
   }
 
@@ -615,7 +615,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
     [self.textInputDelegate flutterTextInputView:self
                                    performAction:action
-                                      withClient:_textInputClient];
+                                      withClient:_clientID];
     return NO;
   }
 
@@ -935,7 +935,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     [self.textInputDelegate flutterTextInputView:self
             showAutocorrectionPromptRectForStart:start
                                              end:end
-                                      withClient:_textInputClient];
+                                      withClient:_clientID];
   }
 
   NSUInteger first = start;
@@ -1076,33 +1076,34 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   return [FlutterTextRange rangeWithNSRange:fml::RangeForCharacterAtIndex(self.text, currentIndex)];
 }
 
+// For "beginFloatingCursorAtPoint" and "updateFloatingCursorAtPoint", "point" is roughly:
+//
+// CGPoint(
+//   width >= 0 ? point.x.clamp(boundingBox.left, boundingBox.right) : point.x,
+//   height >= 0 ? point.y.clamp(boundingBox.top, boundingBox.bottom) : point.y,
+// )
+//   where
+//     point = keyboardPanGestureRecognizer.translationInView(textInputView)
+//           + caretRectForPosition
+//     boundingBox = self.convertRect(bounds, fromView:textInputView)
+//     bounds = self._selectionClipRect ?? self.bounds
+//
+// It's tricky to provide accurate "bounds" and "caretRectForPosition" so it's preferred to
+// bypass the clamping and implement the same clamping logic in the framework where we have easy
+// access to the bounding box of the input field and the caret location.
+//
+// The current implementation returns kSpacePanBounds for "bounds" when
+// "_isFloatingCursorActive" is true. kSpacePanBounds centers "caretRectForPosition" so the
+// floating cursor has enough clearance in all directions to move around.
+//
+// It seems impossible to use a negative "width" or "height", as the "convertRect"
+// call always turns a CGRect's negative dimensions into non-negative values, e.g.,
+// (1, 2, -3, -4) would become (-2, -2, 3, 4).
 - (void)beginFloatingCursorAtPoint:(CGPoint)point {
-  // For "beginFloatingCursorAtPoint" and "updateFloatingCursorAtPoint", "point" is roughly:
-  //
-  // CGPoint(
-  //   width >= 0 ? point.x.clamp(boundingBox.left, boundingBox.right) : point.x,
-  //   height >= 0 ? point.y.clamp(boundingBox.top, boundingBox.bottom) : point.y,
-  // )
-  //   where
-  //     point = keyboardPanGestureRecognizer.translationInView(textInputView) +
-  //     caretRectForPosition boundingBox = self.convertRect(bounds, fromView:textInputView)
-  //     bounds = self._selectionClipRect ?? self.bounds
-  //
-  // It's tricky to provide accurate "bounds" and "caretRectForPosition" so it's preferred to
-  // bypass the clamping and implement the same clamping logic in the framework where we have easy
-  // access to the bounding box of the input field and the caret location.
-  //
-  // The current implementation returns kSpacePanBounds for "bounds" when
-  // "_isFloatingCursorActive" is true. kSpacePanBounds centers "caretRectForPosition" so the
-  // floating cursor has enough clearance in all directions to move around.
-  //
-  // It seems impossible to use a negative "width" or "height", as the "convertRect"
-  // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
-  // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   _isFloatingCursorActive = true;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
-                                    withClient:_textInputClient
+                                    withClient:_clientID
                                   withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
@@ -1110,7 +1111,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _isFloatingCursorActive = true;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
-                                    withClient:_textInputClient
+                                    withClient:_clientID
                                   withPosition:@{@"X" : @(point.x), @"Y" : @(point.y)}];
 }
 
@@ -1118,7 +1119,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   _isFloatingCursorActive = false;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
-                                    withClient:_textInputClient
+                                    withClient:_clientID
                                   withPosition:@{@"X" : @(0), @"Y" : @(0)}];
 }
 
@@ -1145,14 +1146,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     @"text" : [NSString stringWithString:self.text],
   };
 
-  if (_textInputClient == 0 && _autofillID != nil) {
+  if (_clientID == 0 && _autofillID != nil) {
     [self.textInputDelegate flutterTextInputView:self
-                             updateEditingClient:_textInputClient
+                             updateEditingClient:_clientID
                                        withState:state
                                          withTag:_autofillID];
   } else {
     [self.textInputDelegate flutterTextInputView:self
-                             updateEditingClient:_textInputClient
+                             updateEditingClient:_clientID
                                        withState:state];
   }
 }
@@ -1187,7 +1188,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   };
 
   [self.textInputDelegate flutterTextInputView:self
-                           updateEditingClient:_textInputClient
+                           updateEditingClient:_clientID
                                      withDelta:deltas];
 }
 
@@ -1238,14 +1239,14 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (UITextPlaceholder*)insertTextPlaceholderWithSize:(CGSize)size API_AVAILABLE(ios(13.0)) {
   [self.textInputDelegate flutterTextInputView:self
                  insertTextPlaceholderWithSize:size
-                                    withClient:_textInputClient];
+                                    withClient:_clientID];
   _hasPlaceholder = YES;
   return [[FlutterTextPlaceholder alloc] init];
 }
 
 - (void)removeTextPlaceholder:(UITextPlaceholder*)textPlaceholder API_AVAILABLE(ios(13.0)) {
   _hasPlaceholder = NO;
-  [self.textInputDelegate flutterTextInputView:self removeTextPlaceholder:_textInputClient];
+  [self.textInputDelegate flutterTextInputView:self removeTextPlaceholder:_clientID];
 }
 
 - (void)deleteBackward {

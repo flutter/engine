@@ -58,7 +58,6 @@ source_set("flutter_framework_source_arc") {
   sources = [
     "framework/Source/FlutterTextInputClient.h",
     "framework/Source/FlutterTextInputClient_UITextInput.mm",
-    "framework/Source/FlutterTextInputClient_UITextView.mm",
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
