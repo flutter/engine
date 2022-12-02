@@ -94,12 +94,12 @@ class AccessibilityAnnouncements {
       final Assertiveness assertiveness = Assertiveness.values[assertivenessIndex];
       final DomHTMLElement liveRegion = ariaLiveElementFor(assertiveness);
 
-      // Create an additional child so that if the text of the announcement is
-      // the same as before, it is announced again.
-      final DomHTMLDivElement textContainer = createDomHTMLDivElement();
-      textContainer.text = message;
-      liveRegion.clearChildren();
-      liveRegion.appendChild(textContainer);
+      // If the last announced message is the same as the new message, some
+      // screen readers, such as Narrator, will not read the same message
+      // again. In this case, add an artifical "!" at the end of the message
+      // string to force the text of the message to look different.
+      final String suffix = liveRegion.innerText == message ? '!' : '';
+      liveRegion.text = '$message$suffix';
     }
   }
 

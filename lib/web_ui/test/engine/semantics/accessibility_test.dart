@@ -80,5 +80,18 @@ void testMain() {
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'polite message');
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
     });
+
+    test('The same message announced twice is altered to convince the screen reader to read it again.', () {
+      resetAccessibilityAnnouncements();
+      const Map<dynamic, dynamic> testInput = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'Hello'}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput));
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
+
+      const Map<dynamic, dynamic> testInput2 = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'Hello'}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput2));
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello!');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
+    });
   });
 }
