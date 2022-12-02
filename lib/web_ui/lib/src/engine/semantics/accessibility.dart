@@ -96,9 +96,9 @@ class AccessibilityAnnouncements {
 
       // If the last announced message is the same as the new message, some
       // screen readers, such as Narrator, will not read the same message
-      // again. In this case, add an artifical "!" at the end of the message
+      // again. In this case, add an artifical "." at the end of the message
       // string to force the text of the message to look different.
-      final String suffix = liveRegion.innerText == message ? '!' : '';
+      final String suffix = liveRegion.innerText == message ? '.' : '';
       liveRegion.text = '$message$suffix';
     }
   }

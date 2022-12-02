@@ -88,9 +88,16 @@ void testMain() {
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello');
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
 
+      // The DOM value gains a "." to make the message look updated.
       const Map<dynamic, dynamic> testInput2 = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'Hello'}};
       accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput2));
-      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello!');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello.');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
+
+      // Now the "." is removed because the message without it will also look updated.
+      const Map<dynamic, dynamic> testInput3 = <dynamic, dynamic>{'data': <dynamic, dynamic>{'message': 'Hello'}};
+      accessibilityAnnouncements.handleMessage(codec, codec.encodeMessage(testInput3));
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello');
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
     });
   });
