@@ -2535,6 +2535,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSemanti
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPluginTest.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputClient.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputClient_UITextInput.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.mm

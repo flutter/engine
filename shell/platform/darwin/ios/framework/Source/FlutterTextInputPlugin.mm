@@ -49,7 +49,7 @@ static NSString* const kAssociatedAutofillFields = @"fields";
 
 // TextInputConfiguration.autofill and sub-field names
 static NSString* const kAutofillProperties = @"autofill";
-static NSString* const kautofillID = @"uniqueIdentifier";
+static NSString* const kAutofillID = @"uniqueIdentifier";
 static NSString* const kAutofillEditingValue = @"editingValue";
 static NSString* const kAutofillHints = @"hints";
 
@@ -284,7 +284,7 @@ static UITextContentType ToUITextContentType(NSArray<NSString*>* hints) {
 static NSString* AutofillIDFromDictionary(NSDictionary* dictionary) {
   NSDictionary* autofill = dictionary[kAutofillProperties];
   if (autofill) {
-    return autofill[kautofillID];
+    return autofill[kAutofillID];
   }
 
   // When autofill is nil, the field may still need an autofill id
@@ -581,8 +581,8 @@ static FlutterAutofillType AutofillTypeOf(NSDictionary* configuration) {
 
 @end
 
-void configureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
-                                        NSDictionary* configuration) {
+static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
+                                               NSDictionary* configuration) {
   NSDictionary* inputType = configuration[kKeyboardType];
   NSString* keyboardAppearance = configuration[kKeyboardAppearance];
   NSDictionary* autofill = configuration[kAutofillProperties];
@@ -935,7 +935,7 @@ void configureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
     [_autofillContext removeObjectForKey:autofillID];
   }
   UIView<FlutterTextInputClient>* newView = [[RegularInputClient alloc] initWithOwner:self];
-  configureInputClientWithDictionary(newView, configuration);
+  ConfigureInputClientWithDictionary(newView, configuration);
   [self addToInputParentViewIfNeeded:newView];
 
   for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
@@ -1004,7 +1004,7 @@ void configureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
     [self addToInputParentViewIfNeeded:inputView];
   }
 
-  configureInputClientWithDictionary(inputView, field);
+  ConfigureInputClientWithDictionary(inputView, field);
   return inputView;
 }
 
