@@ -8,10 +8,10 @@
 
 @implementation KeyboardSpringCurve
 - (instancetype)initWithStiffness:(double)stiffness
-                damping:(double)damping
-                   mass:(double)mass
-        initialVelocity:(double)initialVelocity
-       settlingDuration:(double)settlingDuration {
+                          damping:(double)damping
+                             mass:(double)mass
+                  initialVelocity:(double)initialVelocity
+                 settlingDuration:(double)settlingDuration {
   self = [super init];
   if (self) {
     _dampingRatio = 1;
