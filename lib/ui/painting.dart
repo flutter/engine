@@ -4459,8 +4459,12 @@ class Vertices extends NativeFieldWrapperClass1 {
     if (colors != null && colors.length * 2 != positions.length) {
       throw ArgumentError('"positions" and "colors" lengths must match.');
     }
-    if (indices != null && indices.any((int i) => i < 0 || i >= positions.length)) {
-      throw ArgumentError('"indices" values must be valid indices in the positions list.');
+    if (indices != null) {
+      for (int i = 0; i < indices.length; i++) {
+        if (indices[i] >= positions.length) {
+          throw ArgumentError('"indices" values must be valid indices in the positions list.');
+        }
+      }
     }
 
     if (!_init(this, mode.index, positions, textureCoordinates, colors, indices)) {
