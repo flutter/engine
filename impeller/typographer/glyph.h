@@ -30,7 +30,7 @@ struct Glyph {
 
   //------------------------------------------------------------------------------
   /// @brief  Visibility coverage of the glyph in text run space (relative to
-  ///         the beasline, no scaling applied).
+  ///         the baseline, no scaling applied).
   ///
   Rect bounds;
 
