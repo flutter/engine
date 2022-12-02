@@ -19,7 +19,6 @@ import 'canvaskit_api.dart';
 import 'image.dart';
 import 'skia_object_cache.dart';
 
-
 /// The CanvasKit implementation of [ui.Codec].
 ///
 /// Wraps `SkAnimatedImage`.

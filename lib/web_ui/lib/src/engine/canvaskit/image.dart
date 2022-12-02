@@ -105,8 +105,7 @@ bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int 
   return targetWidthFits && targetHeightFits;
 }
 
-
-/// Creates a scaled [CkImage] from an [SkImage] by drawing the [SkImage] to a canvas,
+/// Creates a scaled [CkImage] from an [SkImage] by drawing the [SkImage] to a canvas.
 ///
 /// This function will only be called if either a targetWidth or targetHeight is not null
 ///
@@ -117,7 +116,6 @@ bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int 
 /// If either targetWidth or targetHeight is less than or equal to zero, it
 /// will be treated as if it is null.
 CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
-
     if (targetWidth != null && targetWidth <= 0) {
       targetWidth = null;
     }
