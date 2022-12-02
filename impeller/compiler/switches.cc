@@ -69,6 +69,7 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional,multiple] --include=<include_directory>" << std::endl;
   stream << "[optional,multiple] --define=<define>" << std::endl;
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
+  stream << "[optional] --gles-language-verision=<number>" << std::endl;
   stream << "[optional] --json" << std::endl;
 }
 
@@ -124,6 +125,9 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
       depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
       json_format(command_line.HasOption("json")),
+      gles_language_version(
+          stoi(command_line.GetOptionValueWithDefault("gles-language-version",
+                                                      "0"))),
       entry_point(
           command_line.GetOptionValueWithDefault("entry-point", "main")) {
   if (!working_directory || !working_directory->is_valid()) {
@@ -152,9 +156,14 @@ Switches::Switches(const fml::CommandLine& command_line)
     // Note that the `include_dir_path` is already utf8 encoded, and so we
     // mustn't attempt to double-convert it to utf8 lest multi-byte characters
     // will become mangled.
-    auto cwd = Utf8FromPath(std::filesystem::current_path());
-    auto include_dir_absolute = std::filesystem::absolute(
-        std::filesystem::path(cwd) / include_dir_path);
+    std::filesystem::path include_dir_absolute;
+    if (std::filesystem::path(include_dir_path).is_absolute()) {
+      include_dir_absolute = std::filesystem::path(include_dir_path);
+    } else {
+      auto cwd = Utf8FromPath(std::filesystem::current_path());
+      include_dir_absolute = std::filesystem::absolute(
+          std::filesystem::path(cwd) / include_dir_path);
+    }
 
     auto dir = std::make_shared<fml::UniqueFD>(fml::OpenDirectoryReadOnly(
         *working_directory, include_dir_absolute.string().c_str()));

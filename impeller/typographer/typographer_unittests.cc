@@ -108,9 +108,7 @@ TEST_P(TypographerTest, GlyphAtlasWithOddUniqueGlyphSize) {
   ASSERT_NE(atlas, nullptr);
   ASSERT_NE(atlas->GetTexture(), nullptr);
 
-  // The 3 unique glyphs should not evenly fit into a square texture, so we
-  // should have a rectangular one.
-  ASSERT_EQ(atlas->GetTexture()->GetSize().width * 2,
+  ASSERT_EQ(atlas->GetTexture()->GetSize().width,
             atlas->GetTexture()->GetSize().height);
 }
 
@@ -135,34 +133,6 @@ TEST_P(TypographerTest, GlyphAtlasIsRecycledIfUnchanged) {
                                 TextFrameFromTextBlob(blob));
   ASSERT_EQ(atlas, next_atlas);
   ASSERT_EQ(atlas_context->GetGlyphAtlas(), atlas);
-}
-
-TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
-  auto context = TextRenderContext::Create(GetContext());
-  auto atlas_context = std::make_shared<GlyphAtlasContext>();
-  ASSERT_TRUE(context && context->IsValid());
-  SkFont sk_font;
-  auto blob = SkTextBlob::MakeFromString("spooky skellingtons", sk_font);
-  ASSERT_TRUE(blob);
-  auto atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob));
-  ASSERT_NE(atlas, nullptr);
-  ASSERT_NE(atlas->GetTexture(), nullptr);
-  ASSERT_EQ(atlas, atlas_context->GetGlyphAtlas());
-
-  auto* first_texture = atlas->GetTexture().get();
-
-  // now create a new glyph atlas with a nearly identical blob.
-
-  auto blob2 = SkTextBlob::MakeFromString("spooky skellington2", sk_font);
-  auto next_atlas =
-      context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
-                                TextFrameFromTextBlob(blob2));
-  ASSERT_NE(atlas, next_atlas);
-  auto* second_texture = next_atlas->GetTexture().get();
-
-  ASSERT_EQ(second_texture, first_texture);
 }
 
 TEST_P(TypographerTest, GlyphAtlasWithLotsOfdUniqueGlyphSize) {

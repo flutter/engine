@@ -153,6 +153,20 @@ We test with Firefox on LUCI in the Linux Web Engine builder. The process for
 rolling Firefox is even easier than Chromium. Simply update `browser_lock.yaml`
 with the latest version of Firefox, and run `browser_roller.dart`.
 
+#### .ci.yaml
+
+After rolling Chrome and/or Firefox, also update the CI dependencies in
+`.ci.yaml` to make use of the new versions. The lines look like
+
+```yaml
+      dependencies: >-
+        [
+          {"dependency": "chrome_and_driver", "version": "version:107.0"},
+          {"dependency": "firefox", "version": "version:83.0"},
+          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
+        ]
+```
+
 ##### **browser_roller.dart**
 
 The script has the following command-line options:
@@ -234,39 +248,6 @@ Instead, we update this file manually once in a while.
 `canvaskit_lock.yaml` locks the version of CanvasKit for tests and production
 use.
 
-## Troubleshooting
-
-### Can't load Kernel binary: Invalid kernel binary format version.
-
-Sometimes `.dart_tool` cache invalidation fails, and you'll end up with a
-cached version of `felt` that is not compatible with the Dart SDK that you're
-using.
-
-In that case, any invocation to `felt` will fail with:
-
-```
-Can't load Kernel binary: Invalid kernel binary format version.
-```
-
-The solution is to delete the cached `felt.snapshot` files under `lib/web_ui`:
-
-```
-rm .dart_tool/felt.snapshot*
-```
-
-## Hacking on the `felt` tool itself
-
-If you are making changes in the `felt` tool itself, you need to be aware of
-Dart snapshots. We create a Dart snapshot of the `felt` tool to make the startup
-faster.
-
-To run `felt` from sources, disable the snapshot using the `FELT_USE_SNAPSHOT`
-environment variable:
-
-```
-FELT_USE_SNAPSHOT=false felt <command>
-```
-
 ## Building CanvasKit
 
 To build CanvasKit locally, you must first set up your gclient config to
@@ -325,3 +306,7 @@ Once you know the version for the Emscripten SDK, change the line in
 [4]: https://chrome-infra-packages.appspot.com/p/flutter_internal
 [5]: https://cs.opensource.google/flutter/recipes/+/master:recipes/engine/web_engine.py
 [6]: https://chromium.googlesource.com/chromium/src.git/+/main/docs/cipd_and_3pp.md#What-is-CIPD
+
+## Unicode properties
+
+We pull the unicode properties we need from `third_party/web_unicode`. See `third_party/web_unicode/README.md` for more details on how we generate Dart code from unicode properties.
