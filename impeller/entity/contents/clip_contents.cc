@@ -42,9 +42,10 @@ Contents::StencilCoverage ClipContents::GetStencilCoverage(
   }
   switch (clip_op_) {
     case Entity::ClipOperation::kDifference:
+      // This can be optimized further by considering cases when the bounds of
+      // the current stencil will shrink.
       return {.type = StencilCoverage::Type::kAppend,
-              .coverage = current_stencil_coverage->Cutout(
-                  geometry_->GetCoverage(entity.GetTransformation()).value())};
+              .coverage = current_stencil_coverage};
     case Entity::ClipOperation::kIntersect:
       return {
           .type = StencilCoverage::Type::kAppend,
