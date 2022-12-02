@@ -107,6 +107,8 @@ source_set("flutter_framework_source") {
     "framework/Source/platform_message_response_darwin.mm",
     "framework/Source/profiler_metrics_ios.h",
     "framework/Source/profiler_metrics_ios.mm",
+    "framework/Source/spring_curve_ios.h",
+    "framework/Source/spring_curve_ios.mm",
     "framework/Source/vsync_waiter_ios.h",
     "framework/Source/vsync_waiter_ios.mm",
     "ios_context.h",
