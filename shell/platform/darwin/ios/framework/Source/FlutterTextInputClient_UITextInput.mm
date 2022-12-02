@@ -613,9 +613,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
         break;
     }
 
-    [self.textInputDelegate flutterTextInputView:self
-                                   performAction:action
-                                      withClient:_clientID];
+    [self.textInputDelegate flutterTextInputView:self performAction:action withClient:_clientID];
     return NO;
   }
 
@@ -1187,9 +1185,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     @"deltas" : @[ deltaToFramework ],
   };
 
-  [self.textInputDelegate flutterTextInputView:self
-                           updateEditingClient:_clientID
-                                     withDelta:deltas];
+  [self.textInputDelegate flutterTextInputView:self updateEditingClient:_clientID withDelta:deltas];
 }
 
 - (BOOL)hasText {

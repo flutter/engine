@@ -47,19 +47,31 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 
 @end
 
+/** An object that represents a framework text editing widget and interacts with the iOS text input
+ * system on behalf of that widget.
+ * A FlutterTextInputClient can receive editing state updates from the setTextInputState: method,
+ * and it should typically relay editing state changes made by the iOS text input system to the
+ * framework, via the textInputPlugin.textInputDelegate method. */
 @protocol FlutterTextInputClient <NSObject, UITextInput>
-
+/** The framework issued id of this client. */
 @property(nonatomic, assign) int clientID;
 @property(nonatomic, assign) BOOL accessibilityEnabled;
 @property(nonatomic, assign) FlutterScribbleFocusStatus scribbleFocusStatus;
 @property(nonatomic, weak) UIAccessibilityElement* backingTextInputAccessibilityObject;
 
 - (instancetype)initWithOwner:(FlutterTextInputPlugin*)textInputPlugin;
-
+/** Updates the rect that describes the bounding box of the framework blinking cursor, in the
+ * framework widget's coordinates.
+ * See the setEditableSize:transform: method. */
 - (void)setMarkedRect:(CGRect)rect;
 - (void)setViewResponder:(id<FlutterViewResponder>)viewResponder;
+/** Updates the visible glyph boxes in the framework, in the framework widget's coordinates.
+ * See the setEditableSize:transform: method. */
 - (void)setSelectionRects:(NSArray*)rects;
+/** Called by the framework to update the editing state  (text, selection, composing region). */
 - (void)setTextInputState:(NSDictionary*)state;
+/** Updates the transform and the size of the framework text editing widget's text editing region.
+ * The information describes the paint transform and paint bounds of the framework widget. */
 - (void)setEditableSize:(CGSize)size transform:(NSArray*)matrix;
 - (void)setEnableDeltaModel:(BOOL)enableDeltaModel;
 - (void)setEnableSoftwareKeyboard:(BOOL)enabled;
@@ -68,8 +80,9 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 
 @protocol FlutterTextAutofillClient <NSObject>
 
+/** A framework issued id used to uniquely identify an autofill client. The ID is guaranteed to be
+ * unique at any given time. */
 @property(nonatomic, copy) NSString* autofillID;
-
 - (void)setIsVisibleToAutofill:(BOOL)visibility;
 @end
 
