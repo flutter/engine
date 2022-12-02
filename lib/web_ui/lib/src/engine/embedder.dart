@@ -541,7 +541,6 @@ void applyGlobalCssRulesToSheet(
 }) {
   final bool isWebKit = browserEngine == BrowserEngine.webkit;
   final bool isFirefox = browserEngine == BrowserEngine.firefox;
-  final bool isEdge = domWindow.navigator.userAgent.contains('Edg/');
   // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
   // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
 
@@ -647,16 +646,6 @@ void applyGlobalCssRulesToSheet(
       .transparentTextEditing:-webkit-autofill:focus,
       .transparentTextEditing:-webkit-autofill:active {
         -webkit-transition-delay: 99999s;
-      }
-    ''', sheet.cssRules.length.toInt());
-  }
-
-  // Removes password reveal icon for text inputs in Edge browsers.
-  // See: https://github.com/flutter/flutter/issues/83695
-  if (isEdge) {
-    sheet.insertRule('''
-      input::-ms-reveal {
-        display: none;
       }
     ''', sheet.cssRules.length.toInt());
   }
