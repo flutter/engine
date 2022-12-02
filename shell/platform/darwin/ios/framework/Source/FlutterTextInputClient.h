@@ -60,13 +60,10 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 - (void)setViewResponder:(id<FlutterViewResponder>)viewResponder;
 - (void)setSelectionRects:(NSArray*)rects;
 - (void)setTextInputState:(NSDictionary*)state;
-- (void)setEditableSize:(CGSize)size transform:(NSArray*)dictionary;
+- (void)setEditableSize:(CGSize)size transform:(NSArray*)matrix;
 - (void)setEnableDeltaModel:(BOOL)enableDeltaModel;
 - (void)setEnableSoftwareKeyboard:(BOOL)enabled;
 - (void)setEnableInteractiveSelection:(BOOL)enabled;
-
-// TO BE REMOVED;
-- (void)replaceRangeLocal:(NSRange)range withText:(NSString*)text;
 @end
 
 @protocol FlutterTextAutofillClient <NSObject>
@@ -79,13 +76,8 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 #if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG
 FLUTTER_DARWIN_EXPORT
 #endif
-@interface FlutterTextInputView : UIView <UITextInput,
-                                          FlutterTextInputClient,
-                                          FlutterTextAutofillClient,
-                                          UIScribbleInteractionDelegate>
-
-// Other Configurations
-//@property(nonatomic, readonly) NSMutableString* text;
+@interface FlutterTextInputView
+    : UIView <FlutterTextInputClient, FlutterTextAutofillClient, UIScribbleInteractionDelegate>
 
 - (instancetype)init NS_UNAVAILABLE;
 + (instancetype)new NS_UNAVAILABLE;

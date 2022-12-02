@@ -17,9 +17,9 @@
 @interface FlutterTextInputPlugin
     : NSObject <FlutterKeySecondaryResponder, UIIndirectScribbleInteractionDelegate>
 
-@property(nonatomic, assign) UIViewController* viewController;
+@property(nonatomic, weak) UIViewController* viewController;
 @property(nonatomic, readonly) UIView* hostView;
-@property(nonatomic, assign) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
+@property(nonatomic, weak) id<FlutterIndirectScribbleDelegate> indirectScribbleDelegate;
 @property(nonatomic, strong)
     NSMutableDictionary<UIScribbleElementIdentifier, NSValue*>* scribbleElements;
 @property(nonatomic, readonly, weak) id<FlutterTextInputDelegate> textInputDelegate;

@@ -63,7 +63,7 @@ FLUTTER_ASSERT_ARC
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, assign) FlutterTextInputView* activeClient;
+@property(nonatomic, strong) FlutterTextInputView* activeClient;
 @property(nonatomic, readonly)
     NSMutableDictionary<NSString*, FlutterTextInputView*>* autofillContext;
 

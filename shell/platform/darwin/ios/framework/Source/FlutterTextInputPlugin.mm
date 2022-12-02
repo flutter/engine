@@ -453,7 +453,7 @@ static FlutterAutofillType AutofillTypeOf(NSDictionary* configuration) {
 
 @interface FlutterTokenizer ()
 
-@property(nonatomic, assign) UIView<FlutterTextInputClient>* textInputView;
+@property(nonatomic, weak) UIView<FlutterTextInputClient>* textInputView;
 
 @end
 
@@ -668,7 +668,7 @@ void configureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
 @end
 
 @interface FlutterTimerProxy : NSObject
-@property(nonatomic, assign) FlutterTextInputPlugin* target;
+@property(nonatomic, weak) FlutterTextInputPlugin* target;
 @end
 
 @implementation FlutterTimerProxy
@@ -1044,9 +1044,10 @@ void configureInputClientWithDictionary(UIView<FlutterTextInputClient>* client,
           (UIView<FlutterTextInputClient, FlutterTextAutofillClient>*)view;
       if (_autofillContext[inputView.autofillID] != view) {
         if (clearText) {
-          const NSUInteger length = [inputView offsetFromPosition:inputView.beginningOfDocument
-                                                       toPosition:inputView.endOfDocument];
-          [inputView replaceRangeLocal:NSMakeRange(0, length) withText:@""];
+          inputView.selectedTextRange =
+              [inputView textRangeFromPosition:inputView.beginningOfDocument
+                                    toPosition:inputView.endOfDocument];
+          [inputView deleteBackward];
         }
         if (delayRemoval) {
           [inputView performSelector:@selector(removeFromSuperview) withObject:nil afterDelay:0.1];

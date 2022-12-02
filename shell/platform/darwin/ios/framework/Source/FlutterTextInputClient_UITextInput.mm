@@ -5,8 +5,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputClient.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
-#import <Foundation/Foundation.h>
-#import <UIKit/UIKit.h>
 #include "flutter/fml/platform/darwin/string_range_sanitization.h"
 #include "unicode/uchar.h"
 
@@ -97,11 +95,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 // UITextInput
 @property(nonatomic, readonly) NSMutableString* markedText;
 @property(nonatomic, strong) FlutterTextRange* markedTextRange;
-//@property(nonatomic, copy) NSDictionary* markedTextStyle;
-//@property(nonatomic, assign) id<UITextInputDelegate> inputDelegate;
-
-// UITextInputTraits
-//@property(nonatomic) UITextAutocapitalizationType autocapitalizationType;
 
 // Other Configurations
 @property(nonatomic, readonly) NSMutableString* text;
@@ -110,7 +103,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 // Scribble Support
 @property(nonatomic, weak) id<FlutterViewResponder> viewResponder;
 @property(nonatomic, strong) NSArray<FlutterTextSelectionRect*>* selectionRects;
-- (void)resetScribbleInteractionStatusIfEnding;
 
 @property(nonatomic, weak) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, readonly) CATransform3D editableTransform;
@@ -121,7 +113,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 // etc)
 @property(nonatomic, copy) NSString* temporarilyDeletedComposedCharacter;
 
-- (void)setEditableSize:(CGSize)size transform:(NSArray*)dictionary;
 @end
 
 @implementation FlutterTextInputView {
