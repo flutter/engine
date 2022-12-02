@@ -108,18 +108,19 @@ typedef struct MouseState {
 @property(nonatomic) double initialVelocity;
 @property(nonatomic) double settlingDuration;
 @property(nonatomic) double dampingRatio;
+@property(nonatomic) double damping;
 @property(nonatomic) double omega;
 @end
 
 @implementation KeyboardSpringCurve
 - (id)initWithStiffness:(double)stiffness
-           dampingRatio:(double)dampingRatio
+                damping:(double)damping
                    mass:(double)mass
         initialVelocity:(double)initialVelocity
        settlingDuration:(double)settlingDuration {
   self = [super init];
   if (self) {
-    _dampingRatio = dampingRatio;
+    _dampingRatio = 1;
     _initialVelocity = initialVelocity;
     _settlingDuration = settlingDuration;
 
@@ -180,7 +181,6 @@ typedef struct MouseState {
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
   fml::scoped_nsobject<KeyboardSpringCurve> _keyboardSpringCurve;
-  fml::scoped_nsobject<NSMutableArray> _keyboardAnimationStops;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -322,7 +322,6 @@ typedef struct MouseState {
   _statusBarStyle = UIStatusBarStyleDefault;
 
   [self setupNotificationCenterObservers];
-  [self setupKeyboardAnimationCurve];
 }
 
 - (FlutterEngine*)engine {
@@ -436,36 +435,6 @@ typedef struct MouseState {
              selector:@selector(onShowHomeIndicatorNotification:)
                  name:FlutterViewControllerShowHomeIndicator
                object:nil];
-}
-
-- (void)setupKeyboardAnimationCurve {
-  _keyboardAnimationStops.reset([[NSMutableArray alloc] init]);
-
-  // Keyboard animation spring curve for iOS 16 and below
-  _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc] initWithStiffness:1000
-                                                               dampingRatio:1
-                                                                       mass:3
-                                                            initialVelocity:0
-                                                           settlingDuration:0.5]);
-  double settlingDuration = [self keyboardSpringCurve].settlingDuration;
-  double maxFramesPerSecond = [DisplayLinkManager displayRefreshRate];
-  double frameDuration = 1 / maxFramesPerSecond;
-
-  // Calculating animation stops for twice the settlingDuration for increased fidelity
-  for (int time = 1; time < roundf(maxFramesPerSecond * settlingDuration * 2); time++) {
-    double frameTime = time / maxFramesPerSecond;
-
-    // Only store animation stops up to the settlingDuration plus one (since time starts at 1)
-    if (frameTime > settlingDuration + frameDuration) {
-      // Ensure the animation finishes with 100%
-      [[self keyboardAnimationStops] addObject:[NSNumber numberWithDouble:1]];
-      break;
-    }
-
-    NSNumber* keyboardAnimationStop =
-        [NSNumber numberWithDouble:[[self keyboardSpringCurve] curveFunc:frameTime]];
-    [[self keyboardAnimationStops] addObject:keyboardAnimationStop];
-  }
 }
 
 - (void)setInitialRoute:(NSString*)route {
@@ -680,10 +649,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (KeyboardSpringCurve*)keyboardSpringCurve {
   return _keyboardSpringCurve.get();
-}
-
-- (NSMutableArray*)keyboardAnimationStops {
-  return _keyboardAnimationStops.get();
 }
 
 - (BOOL)loadDefaultSplashScreenView {
@@ -1463,14 +1428,32 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   [UIView animateWithDuration:duration
       animations:^{
-        // Set DisplayLink tracking values
-        self.keyboardAnimationStartTime = fml::TimePoint().Now();
-        self.keyboardAnimationDuration = duration;
-        self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
-        self.keyboardAnimationTo = self.targetViewInsetBottom;
-
         // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+
+        // Set keyboard spring animation details (if animation is CASpringAnimation).
+        CAAnimation* keyboardAnimation =
+            [[self keyboardAnimationView].layer animationForKey:@"position"];
+        if ([keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
+          CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
+          _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc]
+              initWithStiffness:keyboardSpringAnimation.stiffness
+                        damping:keyboardSpringAnimation.damping
+                           mass:keyboardSpringAnimation.mass
+                initialVelocity:keyboardSpringAnimation.initialVelocity
+               settlingDuration:0.5]);
+
+          // Set DisplayLink tracking values
+          self.keyboardAnimationStartTime = fml::TimePoint().Now();
+          self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
+          self.keyboardAnimationTo = self.targetViewInsetBottom;
+
+          // Double duration to match actual timing of spring animation
+          self.keyboardAnimationDuration = duration * 2;
+        } else {
+          // Reset to use fallback keyboard animation tracking.
+          _keyboardSpringCurve.reset();
+        }
       }
       completion:^(BOOL finished) {
         if (_keyboardAnimationVSyncClient == currentVsyncClient) {
@@ -1501,25 +1484,36 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
-    fml::TimeDelta timeElapsed =
-        recorder.get()->GetVsyncTargetTime() - [flutterViewController keyboardAnimationStartTime];
-    double maxFrameRate = [DisplayLinkManager displayRefreshRate];
-    double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
+    CGFloat newY;
+    if ([flutterViewController keyboardSpringCurve] == nil) {
+      newY = [flutterViewController keyboardAnimationView].layer.presentationLayer.frame.origin.y;
+    } else {
+      fml::TimeDelta timeElapsed =
+          recorder.get()->GetVsyncTargetTime() - [flutterViewController keyboardAnimationStartTime];
+      double maxFrameRate = [DisplayLinkManager displayRefreshRate];
+      double frameRate = [[flutterViewController keyboardAnimationVSyncClient] getRefreshRate];
 
-    double animationSettlingDuration = [flutterViewController keyboardSpringCurve].settlingDuration;
-    double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
+      double animationSettlingDuration = [flutterViewController keyboardAnimationDuration];
+      double keyboardAnimationTimeMillis = animationSettlingDuration * 1000;
 
-    double expectedFrames = frameRate * animationSettlingDuration * (maxFrameRate / frameRate);
-    double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
+      double expectedFrames = frameRate * animationSettlingDuration * (maxFrameRate / frameRate);
+      double percentComplete = timeElapsed.ToMillisecondsF() / keyboardAnimationTimeMillis;
 
-    int frameApproximation = MIN(roundf(MIN(percentComplete, 1) * expectedFrames),
-                                 [flutterViewController keyboardAnimationStops].count - 1);
-    double animationFramePercentage = [[[flutterViewController keyboardAnimationStops]
-        objectAtIndex:frameApproximation] doubleValue];
+      int frameApproximation = roundf(MIN(percentComplete, 1) * expectedFrames);
+      double frameTime = frameApproximation / maxFrameRate;
 
-    CGFloat newY = [flutterViewController keyboardAnimationFrom] +
-                   animationFramePercentage * ([flutterViewController keyboardAnimationTo] -
-                                               [flutterViewController keyboardAnimationFrom]);
+      double keyboardAnimationStop;
+      // Ensure the animation finishes with 100%
+      if (frameApproximation == expectedFrames) {
+        keyboardAnimationStop = 1;
+      } else {
+        keyboardAnimationStop = [[flutterViewController keyboardSpringCurve] curveFunc:frameTime];
+      }
+
+      newY = [flutterViewController keyboardAnimationFrom] +
+             keyboardAnimationStop * ([flutterViewController keyboardAnimationTo] -
+                                      [flutterViewController keyboardAnimationFrom]);
+    }
 
     flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = newY;
     [flutterViewController updateViewportMetrics];
