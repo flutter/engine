@@ -49,7 +49,6 @@ void testMain() {
     test('Does not attach the Edge-specific style tag on non-Edge browsers',
         () {
       final DomElement? edgeStyleElement = hostNode.querySelector('#ms-reveal');
-      
       expect(edgeStyleElement, isNull);
     }, skip: isEdge);
 
