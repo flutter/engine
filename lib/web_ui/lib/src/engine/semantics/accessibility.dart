@@ -29,6 +29,10 @@ AccessibilityAnnouncements get accessibilityAnnouncements {
 }
 AccessibilityAnnouncements? _accessibilityAnnouncements;
 
+/// Initializes the [accessibilityAnnouncements] singleton.
+///
+/// It is an error to attempt to initialize the singleton more than once. Call
+/// [AccessibilityAnnouncements.dispose] prior to calling this function again.
 void initializeAccessibilityAnnouncements() {
   assert(
     _accessibilityAnnouncements == null,
@@ -42,9 +46,9 @@ void initializeAccessibilityAnnouncements() {
   });
 }
 
-/// Attaches accessibility announcements coming from the 'flutter/accessibility'
-/// channel as temporary elements to the DOM.
+/// Makes accessibility announcements using `aria-live` DOM elements.
 class AccessibilityAnnouncements {
+  /// Creates a new instance with its own DOM elements used for announcements.
   factory AccessibilityAnnouncements() {
     final DomHTMLElement politeElement = _createElement(Assertiveness.polite);
     final DomHTMLElement assertiveElement = _createElement(Assertiveness.assertive);
@@ -63,6 +67,7 @@ class AccessibilityAnnouncements {
   /// accouncements assertively.
   final DomHTMLElement _assertiveElement;
 
+  /// Looks up the element used to announce messages of the given [assertiveness].
   DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
     assert(!_isDisposed);
     switch (assertiveness) {
@@ -73,6 +78,9 @@ class AccessibilityAnnouncements {
 
   bool _isDisposed = false;
 
+  /// Disposes of the resources used by this object.
+  ///
+  /// This object's methods must not be called after calling this method.
   void dispose() {
     assert(!_isDisposed);
     _isDisposed = true;
@@ -81,26 +89,38 @@ class AccessibilityAnnouncements {
     _accessibilityAnnouncements = null;
   }
 
-  /// Decodes the message coming from the 'flutter/accessibility' channel.
+  /// Makes an accessibity announcement from a message sent by the framework
+  /// over the 'flutter/accessibility' channel.
+  ///
+  /// The encoded message is passed as [data], and will be decoded using [codec].
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
     assert(!_isDisposed);
-    final Map<dynamic, dynamic> inputMap =
-        codec.decodeMessage(data) as Map<dynamic, dynamic>;
+    final Map<dynamic, dynamic> inputMap = codec.decodeMessage(data) as Map<dynamic, dynamic>;
     final Map<dynamic, dynamic> dataMap = inputMap.readDynamicJson('data');
     final String? message = dataMap.tryString('message');
     if (message != null && message.isNotEmpty) {
-      /// The default value for politeness is `polite`.
+      /// The default value for assertiveness is `polite`.
       final int assertivenessIndex = dataMap.tryInt('assertiveness') ?? 0;
       final Assertiveness assertiveness = Assertiveness.values[assertivenessIndex];
-      final DomHTMLElement liveRegion = ariaLiveElementFor(assertiveness);
-
-      // If the last announced message is the same as the new message, some
-      // screen readers, such as Narrator, will not read the same message
-      // again. In this case, add an artifical "." at the end of the message
-      // string to force the text of the message to look different.
-      final String suffix = liveRegion.innerText == message ? '.' : '';
-      liveRegion.text = '$message$suffix';
+      announce(message, assertiveness);
     }
+  }
+
+  /// Makes an accessibility announcement using an `aria-live` element.
+  ///
+  /// [message] is the text of the announcement.
+  ///
+  /// [assertiveness] controls how interruptive the announcement is.
+  void announce(String message, Assertiveness assertiveness) {
+    assert(!_isDisposed);
+    final DomHTMLElement ariaLiveElement = ariaLiveElementFor(assertiveness);
+
+    // If the last announced message is the same as the new message, some
+    // screen readers, such as Narrator, will not read the same message
+    // again. In this case, add an artifical "." at the end of the message
+    // string to force the text of the message to look different.
+    final String suffix = ariaLiveElement.innerText == message ? '.' : '';
+    ariaLiveElement.text = '$message$suffix';
   }
 
   static DomHTMLLabelElement _createElement(Assertiveness assertiveness) {

@@ -100,5 +100,19 @@ void testMain() {
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'Hello');
       expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
     });
+
+    test('announce() polite', () {
+      resetAccessibilityAnnouncements();
+      accessibilityAnnouncements.announce('polite message', Assertiveness.polite);
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'polite message');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, '');
+    });
+
+    test('announce() assertive', () {
+      resetAccessibilityAnnouncements();
+      accessibilityAnnouncements.announce('assertive message', Assertiveness.assertive);
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, '');
+      expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.assertive).text, 'assertive message');
+    });
   });
 }
