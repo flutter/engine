@@ -152,9 +152,6 @@ class CkBrowserImageDecoder implements ui.Codec {
 
         // Flutter always uses premultiplied alpha when decoding.
         premultiplyAlpha: 'premultiply',
-        desiredWidth: null,
-        desiredHeight: null,
-
         // "default" gives the browser the liberty to convert to display-appropriate
         // color space, typically SRGB, which is what we want.
         colorSpaceConversion: 'default',

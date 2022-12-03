@@ -23,7 +23,7 @@ import 'skia_object_cache.dart';
 /// Instantiates a [ui.Codec] backed by an `SkAnimatedImage` from Skia.
 FutureOr<ui.Codec> skiaInstantiateImageCodec(Uint8List list,
     [int? targetWidth, int? targetHeight]) {
-      // if we have either a target width or target height, use canvaskit to decode
+  // If we have either a target width or target height, use canvaskit to decode.
   if (browserSupportsImageDecoder && (targetWidth == null && targetHeight == null)) {
     return CkBrowserImageDecoder.create(
       data: list,
@@ -83,8 +83,8 @@ void skiaDecodeImageFromPixels(
   });
 }
 
-// invalid upscale happens when allowUpscaling is false AND either the given
-// targetWidth is larger than the originalWidth OR the targetHeight is larger than originalHeight
+// An invalid upscale happens when allowUpscaling is false AND either the given
+// targetWidth is larger than the originalWidth OR the targetHeight is larger than originalHeight.
 bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int originalWidth, int originalHeight) {
   if (allowUpscaling) {
     return true;
@@ -116,13 +116,13 @@ bool validUpscale(bool allowUpscaling, int? targetWidth, int? targetHeight, int 
 /// If either targetWidth or targetHeight is less than or equal to zero, it
 /// will be treated as if it is null.
 CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
+    assert(targetWidth != null || targetHeight != null);
     if (targetWidth != null && targetWidth <= 0) {
       targetWidth = null;
     }
     if (targetHeight != null && targetHeight <= 0) {
       targetHeight = null;
     }
-
     if (targetWidth == null && targetHeight != null) {
       targetWidth = (targetHeight * (image.width() / image.height())).round();
       targetHeight = targetHeight;
@@ -140,7 +140,7 @@ CkImage scaleImage(SkImage image, int? targetWidth, int? targetHeight) {
     canvas.drawImageRect(
       CkImage(image),
       ui.Rect.fromLTWH(0, 0, image.width(), image.height()),
-      ui.Rect.fromLTWH(0, 0, targetWidth! as double, targetHeight! as double),
+      ui.Rect.fromLTWH(0, 0, targetWidth!.toDouble(), targetHeight!.toDouble()),
       CkPaint()
     );
 
