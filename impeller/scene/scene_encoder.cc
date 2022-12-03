@@ -22,7 +22,7 @@ void SceneEncoder::Add(const SceneCommand& command) {
 }
 
 static void EncodeCommand(const SceneContext& scene_context,
-                          const Camera& camera,
+                          const Matrix& view_transform,
                           RenderPass& render_pass,
                           const SceneCommand& scene_command) {
   auto& host_buffer = render_pass.GetTransientsBuffer();
@@ -40,8 +40,7 @@ static void EncodeCommand(const SceneContext& scene_context,
   scene_command.material->BindToCommand(scene_context, host_buffer, cmd);
 
   GeometryVertexShader::VertInfo info;
-  info.mvp = camera.GetTransform(render_pass.GetRenderTargetSize()) *
-             scene_command.transform;
+  info.mvp = view_transform * scene_command.transform;
   GeometryVertexShader::BindVertInfo(cmd, host_buffer.EmplaceUniform(info));
 
   render_pass.AddCommand(std::move(cmd));
@@ -64,7 +63,9 @@ std::shared_ptr<CommandBuffer> SceneEncoder::BuildSceneCommandBuffer(
   }
 
   for (auto& command : commands_) {
-    EncodeCommand(scene_context, camera, *render_pass, command);
+    Matrix view_transform =
+        camera.GetTransform(render_pass->GetRenderTargetSize());
+    EncodeCommand(scene_context, view_transform, *render_pass, command);
   }
 
   if (!render_pass->EncodeCommands()) {

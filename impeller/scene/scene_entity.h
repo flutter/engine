@@ -37,7 +37,7 @@ class SceneEntity {
   bool Render(SceneEncoder& encoder) const;
 
  protected:
-  Matrix local_transform_ = Matrix();
+  Matrix local_transform_;
 
  private:
   virtual bool OnRender(SceneEncoder& encoder) const;
