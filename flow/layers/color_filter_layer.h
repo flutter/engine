@@ -13,7 +13,8 @@ namespace flutter {
 
 class ColorFilterLayer : public CacheableContainerLayer {
  public:
-  explicit ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter);
+  explicit ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter,
+                            const SkPoint& offset = SkPoint::Make(0, 0));
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
@@ -23,6 +24,7 @@ class ColorFilterLayer : public CacheableContainerLayer {
 
  private:
   std::shared_ptr<const DlColorFilter> filter_;
+  SkPoint offset_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterLayer);
 };

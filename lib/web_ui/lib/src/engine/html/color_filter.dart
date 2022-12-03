@@ -10,15 +10,17 @@ import '../dom.dart';
 import '../embedder.dart';
 import '../svg.dart';
 import '../util.dart';
+import '../vector_math.dart';
 import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
+import 'surface_stats.dart';
 
 /// A surface that applies an [ColorFilter] to its children.
 class PersistedColorFilter extends PersistedContainerSurface
     implements ui.ColorFilterEngineLayer {
-  PersistedColorFilter(PersistedColorFilter? super.oldLayer, this.filter);
+  PersistedColorFilter(PersistedColorFilter? super.oldLayer, this.filter, this.offset);
 
   @override
   DomElement? get childContainer => _childContainer;
@@ -30,8 +32,31 @@ class PersistedColorFilter extends PersistedContainerSurface
 
   /// Color filter to apply to this surface.
   final ui.ColorFilter filter;
+  final ui.Offset offset;
   DomElement? _filterElement;
   bool containerVisible = true;
+
+  @override
+  void recomputeTransformAndClip() {
+    transform = parent!.transform;
+
+    final double dx = offset.dx;
+    final double dy = offset.dy;
+
+    if (dx != 0.0 || dy != 0.0) {
+      transform = transform!.clone();
+      transform!.translate(dx, dy);
+    }
+    projectedClip = null;
+  }
+
+  /// Cached inverse of transform on this node. Unlike transform, this
+  /// Matrix only contains local transform (not chain multiplied since root).
+  Matrix4? _localTransformInverse;
+
+  @override
+  Matrix4 get localTransformInverse => _localTransformInverse ??=
+      Matrix4.translationValues(-offset.dx, -offset.dy, 0);
 
   @override
   void adoptElements(PersistedColorFilter oldSurface) {
@@ -63,9 +88,14 @@ class PersistedColorFilter extends PersistedContainerSurface
   DomElement createElement() {
     final DomElement element = defaultCreateElement('flt-color-filter');
     final DomElement container = createDomElement('flt-filter-interior');
-    container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
+
+    setElementStyle(container, 'position', 'absolute');
+    setElementStyle(container, 'transform-origin', '0 0 0');
+    setElementStyle(element, 'position', 'absolute');
+    setElementStyle(element, 'transform-origin', '0 0 0');
+
     return element;
   }
 
@@ -87,6 +117,9 @@ class PersistedColorFilter extends PersistedContainerSurface
     } else {
       childContainer?.style.visibility = 'visible';
     }
+    rootElement!.style
+      ..left = '${offset.dx}px'
+      ..top = '${offset.dy}px';
   }
 
   void _applyBlendModeFilter(ModeHtmlColorFilter colorFilter) {
@@ -108,7 +141,7 @@ class PersistedColorFilter extends PersistedContainerSurface
   void update(PersistedColorFilter oldSurface) {
     super.update(oldSurface);
 
-    if (oldSurface.filter != filter) {
+    if (oldSurface.filter != filter || oldSurface.offset != offset) {
       apply();
     }
   }

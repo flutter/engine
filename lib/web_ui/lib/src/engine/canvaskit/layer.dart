@@ -566,8 +566,9 @@ class PhysicalShapeEngineLayer extends ContainerLayer
 /// A layer which contains a [ui.ColorFilter].
 class ColorFilterEngineLayer extends ContainerLayer
     implements ui.ColorFilterEngineLayer {
-  ColorFilterEngineLayer(this.filter);
+  ColorFilterEngineLayer(this.filter, this._offset);
 
+  final ui.Offset _offset;
   final ui.ColorFilter filter;
 
   @override
@@ -576,9 +577,11 @@ class ColorFilterEngineLayer extends ContainerLayer
 
     final CkPaint paint = CkPaint();
     paint.colorFilter = filter;
-
+    paintContext.internalNodesCanvas.save();
+    paintContext.internalNodesCanvas.translate(_offset.dx, _offset.dy);
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
     paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
     paintContext.internalNodesCanvas.restore();
   }
 }

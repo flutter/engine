@@ -145,17 +145,18 @@ class LayerSceneBuilder implements ui.SceneBuilder {
   @override
   ColorFilterEngineLayer pushColorFilter(
     ui.ColorFilter filter, {
+    ui.Offset offset = ui.Offset.zero,
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
-    return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter));
+    return pushLayer<ColorFilterEngineLayer>(ColorFilterEngineLayer(filter, offset));
   }
 
   @override
   ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
-    ui.ImageFilterEngineLayer? oldLayer,
     ui.Offset offset = ui.Offset.zero,
+    ui.ImageFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
     return pushLayer<ImageFilterEngineLayer>(ImageFilterEngineLayer(filter, offset));

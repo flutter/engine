@@ -71,6 +71,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                    const fml::RefPtr<EngineLayer>& oldLayer);
   void pushColorFilter(Dart_Handle layer_handle,
                        const ColorFilter* color_filter,
+                       double dx,
+                       double dy,
                        const fml::RefPtr<EngineLayer>& oldLayer);
   void pushImageFilter(Dart_Handle layer_handle,
                        const ImageFilter* image_filter,

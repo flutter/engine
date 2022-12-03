@@ -492,6 +492,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// See [pop] for details about the operation stack.
   ColorFilterEngineLayer pushColorFilter(
     ColorFilter filter, {
+    Offset offset = Offset.zero,
     ColorFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
@@ -499,14 +500,14 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     final _ColorFilter nativeFilter = filter._toNativeColorFilter()!;
     assert(nativeFilter != null);
     final EngineLayer engineLayer = EngineLayer._();
-    _pushColorFilter(engineLayer, nativeFilter, oldLayer?._nativeLayer);
+    _pushColorFilter(engineLayer, nativeFilter, offset.dx, offset.dy, oldLayer?._nativeLayer);
     final ColorFilterEngineLayer layer = ColorFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Handle)>('SceneBuilder::pushColorFilter')
-  external void _pushColorFilter(EngineLayer layer, _ColorFilter filter, EngineLayer? oldLayer);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Double, Double, Handle)>('SceneBuilder::pushColorFilter')
+  external void _pushColorFilter(EngineLayer layer, _ColorFilter filter, double dx, double dy, EngineLayer? oldLayer);
 
   /// Pushes an image filter operation onto the operation stack.
   ///

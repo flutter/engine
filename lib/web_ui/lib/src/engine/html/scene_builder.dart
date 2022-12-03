@@ -203,11 +203,12 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   ui.ColorFilterEngineLayer pushColorFilter(
     ui.ColorFilter filter, {
+    ui.Offset offset = ui.Offset.zero,
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
     return _pushSurface<PersistedColorFilter>(
-        PersistedColorFilter(oldLayer as PersistedColorFilter?, filter));
+        PersistedColorFilter(oldLayer as PersistedColorFilter?, filter, offset));
   }
 
   /// Pushes an image filter operation onto the operation stack.

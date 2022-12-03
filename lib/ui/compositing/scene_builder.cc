@@ -138,9 +138,11 @@ void SceneBuilder::pushOpacity(Dart_Handle layer_handle,
 
 void SceneBuilder::pushColorFilter(Dart_Handle layer_handle,
                                    const ColorFilter* color_filter,
+                                   double dx,
+                                   double dy,
                                    const fml::RefPtr<EngineLayer>& oldLayer) {
-  auto layer =
-      std::make_shared<flutter::ColorFilterLayer>(color_filter->filter());
+  auto layer = std::make_shared<flutter::ColorFilterLayer>(
+      color_filter->filter(), SkPoint::Make(dx, dy));
   PushLayer(layer);
   EngineLayer::MakeRetained(layer_handle, layer);
 

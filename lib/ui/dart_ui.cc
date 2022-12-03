@@ -275,8 +275,8 @@ typedef CanvasPath Path;
   V(SceneBuilder, pushClipPath, 5)                     \
   V(SceneBuilder, pushClipRRect, 5)                    \
   V(SceneBuilder, pushClipRect, 8)                     \
-  V(SceneBuilder, pushColorFilter, 4)                  \
-  V(SceneBuilder, pushImageFilter, 4)                  \
+  V(SceneBuilder, pushColorFilter, 6)                  \
+  V(SceneBuilder, pushImageFilter, 6)                  \
   V(SceneBuilder, pushOffset, 5)                       \
   V(SceneBuilder, pushOpacity, 6)                      \
   V(SceneBuilder, pushPhysicalShape, 8)                \
