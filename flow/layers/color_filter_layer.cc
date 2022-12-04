@@ -11,7 +11,8 @@
 
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter, const SkPoint& offset)
+ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter,
+                                   const SkPoint& offset)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
           true),
