@@ -264,6 +264,7 @@ abstract class _BaseAdapter {
   final PointerDataConverter _pointerDataConverter;
   final KeyboardConverter _keyboardConverter;
   DomWheelEvent? _lastWheelEvent;
+  bool? _lastWheelEventWasTrackpad;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -349,7 +350,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     return (wheelDelta - (-3 * delta)).abs() > 1;
   }
 
-  bool _isTrackpadEvent(DomWheelEvent event, DomWheelEvent? lastEvent) {
+  bool _isTrackpadEvent(DomWheelEvent event, DomWheelEvent? lastEvent, bool? lastEventWasTrackpad) {
     // This function relies on deprecated and non-standard implementation
     // details. Useful reference material can be found below.
     //
@@ -389,7 +390,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
           // it was preceded within 50 milliseconds by a trackpad event. This
           // handles unlucky 120-delta trackpad events during rapid movement.
           final num diffMs = event.timeStamp! - lastEvent!.timeStamp!;
-          if (diffMs < 50 && _isTrackpadEvent(lastEvent, null)) {
+          if (diffMs < 50 && (lastEventWasTrackpad ?? false)) {
             return true;
           }
         }
@@ -407,7 +408,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if (_isTrackpadEvent(event, _lastWheelEvent)) {
+    if (_isTrackpadEvent(event, _lastWheelEvent, _lastWheelEventWasTrackpad)) {
       kind = ui.PointerDeviceKind.trackpad;
     }
 
@@ -454,6 +455,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       scrollDeltaY: deltaY,
     );
     _lastWheelEvent = event;
+    _lastWheelEventWasTrackpad = kind == ui.PointerDeviceKind.trackpad;
     return data;
   }
 
