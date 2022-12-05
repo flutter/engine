@@ -47,7 +47,8 @@ bool FlutterCompositor::Present(uint64_t view_id,
     const FlutterLayer* layer = layers[i];
     if (layer->type == kFlutterLayerContentTypeBackingStore) {
       FlutterSurface* surface =
-          [view.surfaceManager lookupSurface:&layer->backing_store->metal.texture];
+          [FlutterSurface fromFlutterMetalTexture:&layer->backing_store->metal.texture];
+
       if (surface) {
         FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
         info.surface = surface;

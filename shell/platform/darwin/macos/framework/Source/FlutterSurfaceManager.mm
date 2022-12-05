@@ -86,11 +86,6 @@ static const double kIdleDelay = 1.0;
   // present and replaced by current frong surfaces.
   FlutterBackBufferCache* _backBufferCache;
 
-  // Surfaces that currently obtained through surfaceForSize waiting to be
-  // presented. This is used to keep the surface alive because the non compositor
-  // codepath doesn't properly retain the surface.
-  NSMutableArray<FlutterSurface*>* _borrowedSurfaces;
-
   // Surfaces currently used to back visible layers.
   NSMutableArray<FlutterSurface*>* _frontSurfaces;
 
@@ -112,7 +107,6 @@ static const double kIdleDelay = 1.0;
     _delegate = delegate;
 
     _backBufferCache = [[FlutterBackBufferCache alloc] init];
-    _borrowedSurfaces = [NSMutableArray array];
     _frontSurfaces = [NSMutableArray array];
     _layers = [NSMutableArray array];
   }
@@ -123,10 +117,6 @@ static const double kIdleDelay = 1.0;
   return _backBufferCache;
 }
 
-- (NSArray*)borrowedSurfaces {
-  return _borrowedSurfaces;
-}
-
 - (NSArray*)frontSurfaces {
   return _frontSurfaces;
 }
@@ -135,28 +125,16 @@ static const double kIdleDelay = 1.0;
   return _layers;
 }
 
-- (FlutterSurface*)lookupSurface:(nonnull const FlutterMetalTexture*)texture {
-  for (FlutterSurface* surface in _borrowedSurfaces) {
-    if (surface.textureId == texture->texture_id) {
-      return surface;
-    }
-  }
-  return nil;
-}
-
 - (FlutterSurface*)surfaceForSize:(CGSize)size {
   FlutterSurface* res = [_backBufferCache removeSurfaceForSize:size];
   if (res == nil) {
     res = [[FlutterSurface alloc] initWithSize:size device:_device];
   }
-  [_borrowedSurfaces addObject:res];
   return res;
 }
 
 - (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces {
   assert([NSThread isMainThread]);
-
-  [_borrowedSurfaces removeAllObjects];
 
   // Release all unused back buffer surfaces and replace them with front surfaces.
   [_backBufferCache replaceSurfaces:_frontSurfaces];

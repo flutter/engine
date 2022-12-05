@@ -46,11 +46,9 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
 
   id surfaceMock = OCMClassMock([FlutterSurface class]);
 
-  FlutterMetalTexture texture = {};
-
-  OCMStub([surfaceManagerMock lookupSurface:&texture])
-      .ignoringNonObjectArgs()
-      .andReturn(surfaceMock);
+  FlutterMetalTexture texture = {
+      .user_data = (__bridge void*)surfaceMock,
+  };
 
   [[surfaceManagerMock expect] present:[OCMArg checkWithBlock:^(id obj) {
                                  NSArray* array = (NSArray*)obj;

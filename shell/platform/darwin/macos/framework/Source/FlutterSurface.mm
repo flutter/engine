@@ -53,6 +53,10 @@ static void ReleaseSurface(void* surface) {
   return res;
 }
 
++ (FlutterSurface*)fromFlutterMetalTexture:(const FlutterMetalTexture*)texture {
+  return (__bridge FlutterSurface*)texture->user_data;
+}
+
 - (void)dealloc {
   CFRelease(_ioSurface);
 }

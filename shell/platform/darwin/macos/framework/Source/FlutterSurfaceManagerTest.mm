@@ -6,8 +6,8 @@
 #import <Metal/Metal.h>
 #import <OCMock/OCMock.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
 #include "flutter/testing/testing.h"
 #include "gtest/gtest.h"
@@ -82,17 +82,12 @@ TEST(FlutterSurfaceManager, TestLookup) {
   auto texture = surface.asFlutterMetalTexture;
   texture.destruction_callback(texture.user_data);
 
-  FlutterMetalTexture dummyTexture{.texture_id = 1, .texture = nullptr};
-  auto surface1 = [surfaceManager lookupSurface:&dummyTexture];
+  FlutterMetalTexture dummyTexture{.texture_id = 1, .texture = nullptr, .user_data = nullptr};
+  auto surface1 = [FlutterSurface fromFlutterMetalTexture:&dummyTexture];
   EXPECT_EQ(surface1, nil);
 
-  auto surface2 = [surfaceManager lookupSurface:&texture];
+  auto surface2 = [FlutterSurface fromFlutterMetalTexture:&texture];
   EXPECT_EQ(surface2, surface);
-
-  [surfaceManager present:@[ CreatePresentInfo(surface) ] notify:nil];
-
-  auto surface3 = [surfaceManager lookupSurface:&texture];
-  EXPECT_EQ(surface3, nil);
 }
 
 TEST(FlutterSurfaceManager, BackBufferCacheDoesNotLeak) {
@@ -130,7 +125,6 @@ TEST(FlutterSurfaceManager, SurfaceCycle) {
   TestView* testView = [[TestView alloc] init];
   FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
 
-  EXPECT_EQ(surfaceManager.borrowedSurfaces.count, 0ul);
   EXPECT_EQ(surfaceManager.frontSurfaces.count, 0ul);
 
   // Get first surface and present it.
@@ -139,13 +133,11 @@ TEST(FlutterSurfaceManager, SurfaceCycle) {
   EXPECT_TRUE(CGSizeEqualToSize(surface1.size, CGSizeMake(100, 100)));
 
   EXPECT_EQ(surfaceManager.backBufferCache.count, 0ul);
-  EXPECT_EQ(surfaceManager.borrowedSurfaces.count, 1ul);
   EXPECT_EQ(surfaceManager.frontSurfaces.count, 0ul);
 
   [surfaceManager present:@[ CreatePresentInfo(surface1) ] notify:nil];
 
   EXPECT_EQ(surfaceManager.backBufferCache.count, 0ul);
-  EXPECT_EQ(surfaceManager.borrowedSurfaces.count, 0ul);
   EXPECT_EQ(surfaceManager.frontSurfaces.count, 1ul);
   EXPECT_EQ(testView.layer.sublayers.count, 1ul);
 
@@ -155,13 +147,11 @@ TEST(FlutterSurfaceManager, SurfaceCycle) {
   EXPECT_TRUE(CGSizeEqualToSize(surface2.size, CGSizeMake(100, 100)));
 
   EXPECT_EQ(surfaceManager.backBufferCache.count, 0ul);
-  EXPECT_EQ(surfaceManager.borrowedSurfaces.count, 1ul);
 
   [surfaceManager present:@[ CreatePresentInfo(surface2) ] notify:nil];
 
   // Check that current front surface returns to cache.
   EXPECT_EQ(surfaceManager.backBufferCache.count, 1ul);
-  EXPECT_EQ(surfaceManager.borrowedSurfaces.count, 0ul);
   EXPECT_EQ(surfaceManager.frontSurfaces.count, 1ul);
   EXPECT_EQ(testView.layer.sublayers.count, 1ull);
 

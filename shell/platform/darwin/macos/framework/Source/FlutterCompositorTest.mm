@@ -66,13 +66,9 @@ id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
       .struct_size = sizeof(FlutterMetalTexture),
       .texture_id = 1,
       .texture = (__bridge void*)textureMock,
-      .user_data = nullptr,
+      .user_data = (__bridge void*)surfaceMock,
       .destruction_callback = nullptr,
   };
-
-  OCMStub([surfaceManagerMock lookupSurface:&texture])
-      .ignoringNonObjectArgs()
-      .andReturn(surfaceMock);
 
   OCMStub([surfaceManagerMock present:[OCMArg any] notify:[OCMArg any]])
       .andDo(^(NSInvocation* invocation) {

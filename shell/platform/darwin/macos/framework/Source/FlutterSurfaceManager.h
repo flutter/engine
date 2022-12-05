@@ -54,12 +54,6 @@
 - (nonnull FlutterSurface*)surfaceForSize:(CGSize)size;
 
 /**
- * Looks up surface for given metal texture. Can only be called for surfaces
- * obtained through `surfaceForSize:` until `present:` is called.
- */
-- (nullable FlutterSurface*)lookupSurface:(nonnull const FlutterMetalTexture*)texture;
-
-/**
  * Sets the provided surfaces as contents of FlutterView. Will create, update and
  * remove sublayers as needed.
  *
@@ -102,7 +96,6 @@
 @interface FlutterSurfaceManager (Private)
 
 @property(readonly, nonatomic, nonnull) FlutterBackBufferCache* backBufferCache;
-@property(readonly, nonatomic, nonnull) NSArray<FlutterSurface*>* borrowedSurfaces;
 @property(readonly, nonatomic, nonnull) NSArray<FlutterSurface*>* frontSurfaces;
 @property(readonly, nonatomic, nonnull) NSArray<CALayer*>* layers;
 

@@ -14,6 +14,8 @@
 
 - (FlutterMetalTexture)asFlutterMetalTexture;
 
++ (nullable FlutterSurface*)fromFlutterMetalTexture:(nonnull const FlutterMetalTexture*)texture;
+
 @end
 
 /**
@@ -22,9 +24,9 @@
  */
 @interface FlutterSurface (Private)
 
-- (instancetype)initWithSize:(CGSize)size device:(id<MTLDevice>)device;
+- (nonnull instancetype)initWithSize:(CGSize)size device:(nonnull id<MTLDevice>)device;
 
-@property(readonly, nonatomic) IOSurfaceRef ioSurface;
+@property(readonly, nonatomic, nonnull) IOSurfaceRef ioSurface;
 @property(readonly, nonatomic) CGSize size;
 @property(readonly, nonatomic) int64_t textureId;
 

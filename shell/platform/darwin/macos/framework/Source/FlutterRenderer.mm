@@ -97,14 +97,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   }
   FlutterSurface* surface = [view.surfaceManager surfaceForSize:size];
   FlutterMetalTexture texture = surface.asFlutterMetalTexture;
-  // This is here because the non-compositor path completely ignores
-  // destruction and callback. It is ugly, but the surface manager
-  // will keep the borrowed surface retained until present: is called.
-  if (texture.destruction_callback != nullptr) {
-    texture.destruction_callback(texture.user_data);
-  }
-  texture.destruction_callback = nullptr;
-  texture.user_data = nullptr;
   return texture;
 }
 
@@ -113,7 +105,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
   if (view == nil) {
     return NO;
   }
-  FlutterSurface* surface = [view.surfaceManager lookupSurface:texture];
+  FlutterSurface* surface = [FlutterSurface fromFlutterMetalTexture:texture];
   if (surface == nil) {
     return NO;
   }
