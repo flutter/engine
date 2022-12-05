@@ -6,6 +6,7 @@
 
 #include <cstring>
 #include <limits>
+#include <type_traits>
 
 #include "impeller/scene/importer/conversions.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
@@ -48,13 +49,20 @@ void VerticesBuilder::WriteFBVertices(std::vector<fb::Vertex>& vertices) const {
   }
 }
 
-template <typename SourceType, size_t Divisor>
-void WriteComponentsAsScalars(void* destination,
-                  const void* source,
-                  size_t component_count) {
+/// @brief  Reads a contiguous sequence of numeric components from `source` and
+///         writes them to `destination` buffer as 32bit floats. Signed
+///         SourceTypes convert to a range of -1 to 1, and unsigned SourceTypes
+///         convert to a range of 0 to 1.
+template <typename SourceType>
+static void WriteComponentsAsScalars(void* destination,
+                                     const void* source,
+                                     size_t component_count) {
+  constexpr size_t divisor = std::is_integral_v<SourceType>
+                                 ? std::numeric_limits<SourceType>::max()
+                                 : 1;
   for (size_t i = 0; i < component_count; i++) {
     const SourceType* s = reinterpret_cast<const SourceType*>(source) + i;
-    Scalar v = static_cast<Scalar>(*s) / static_cast<Scalar>(Divisor);
+    Scalar v = static_cast<Scalar>(*s) / static_cast<Scalar>(divisor);
     Scalar* dest = reinterpret_cast<Scalar*>(destination) + i;
     *dest = v;
   }
@@ -66,18 +74,19 @@ static std::map<
         void(void* destination, const void* source, size_t component_count)>>
     kAttributeWriters = {
         {VerticesBuilder::ComponentType::kSignedByte,
-         WriteComponentsAsScalars<int8_t, std::numeric_limits<int8_t>::max()>},
+         WriteComponentsAsScalars<int8_t>},
         {VerticesBuilder::ComponentType::kUnsignedByte,
-         WriteComponentsAsScalars<uint8_t, std::numeric_limits<uint8_t>::max()>},
+         WriteComponentsAsScalars<uint8_t>},
         {VerticesBuilder::ComponentType::kSignedShort,
-         WriteComponentsAsScalars<int16_t, std::numeric_limits<int16_t>::max()>},
+         WriteComponentsAsScalars<int16_t>},
         {VerticesBuilder::ComponentType::kUnsignedShort,
-         WriteComponentsAsScalars<uint16_t, std::numeric_limits<uint16_t>::max()>},
+         WriteComponentsAsScalars<uint16_t>},
         {VerticesBuilder::ComponentType::kSignedInt,
-         WriteComponentsAsScalars<int32_t, std::numeric_limits<int32_t>::max()>},
+         WriteComponentsAsScalars<int32_t>},
         {VerticesBuilder::ComponentType::kUnsignedInt,
-         WriteComponentsAsScalars<uint32_t, std::numeric_limits<uint32_t>::max()>},
-        {VerticesBuilder::ComponentType::kFloat, WriteComponentsAsScalars<float, 1>},
+         WriteComponentsAsScalars<uint32_t>},
+        {VerticesBuilder::ComponentType::kFloat,
+         WriteComponentsAsScalars<float>},
 };
 
 void VerticesBuilder::SetAttributeFromBuffer(Attribute attribute,
