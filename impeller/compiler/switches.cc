@@ -196,8 +196,8 @@ bool Switches::AreValid(std::ostream& explain) const {
   }
 
   if (!working_directory || !working_directory->is_valid()) {
-    explain << "Could not open the working directory: "
-            << Utf8FromPath(std::filesystem::current_path()).c_str()
+    explain << "Could not open the working directory: \""
+            << Utf8FromPath(std::filesystem::current_path()).c_str() << "\""
             << std::endl;
     valid = false;
   }
