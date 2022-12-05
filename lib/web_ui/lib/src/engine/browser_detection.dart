@@ -224,7 +224,7 @@ bool get isSafari => browserEngine == BrowserEngine.webkit;
 bool get isFirefox => browserEngine == BrowserEngine.firefox;
 
 /// Whether the current browser is Edge.
-bool isEdge = domWindow.navigator.userAgent.contains('Edg/');
+bool get isEdge => domWindow.navigator.userAgent.contains('Edg/');
 
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;
