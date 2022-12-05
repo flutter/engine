@@ -113,7 +113,7 @@ class ShadowDomHostNode implements HostNode {
     );
 
     // Removes password reveal icon for text inputs in Edge browsers.
-    // Style tag w/styles needs to be injected into DOM because non-Edge
+    // Style tag needs to be injected into DOM because non-Edge
     // browsers will crash trying to parse -ms-reveal CSS selectors if added via
     // sheet.insertRule().
     // See: https://github.com/flutter/flutter/issues/83695
