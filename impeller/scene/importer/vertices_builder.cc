@@ -1,4 +1,3 @@
-
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
@@ -50,7 +49,7 @@ void VerticesBuilder::WriteFBVertices(std::vector<fb::Vertex>& vertices) const {
 }
 
 template <typename SourceType, size_t Divisor>
-void WriteScalars(void* destination,
+void WriteComponentsAsScalars(void* destination,
                   const void* source,
                   size_t component_count) {
   for (size_t i = 0; i < component_count; i++) {
@@ -67,18 +66,18 @@ static std::map<
         void(void* destination, const void* source, size_t component_count)>>
     kAttributeWriters = {
         {VerticesBuilder::ComponentType::kSignedByte,
-         WriteScalars<int8_t, std::numeric_limits<int8_t>::max()>},
+         WriteComponentsAsScalars<int8_t, std::numeric_limits<int8_t>::max()>},
         {VerticesBuilder::ComponentType::kUnsignedByte,
-         WriteScalars<uint8_t, std::numeric_limits<uint8_t>::max()>},
+         WriteComponentsAsScalars<uint8_t, std::numeric_limits<uint8_t>::max()>},
         {VerticesBuilder::ComponentType::kSignedShort,
-         WriteScalars<int16_t, std::numeric_limits<int16_t>::max()>},
+         WriteComponentsAsScalars<int16_t, std::numeric_limits<int16_t>::max()>},
         {VerticesBuilder::ComponentType::kUnsignedShort,
-         WriteScalars<uint16_t, std::numeric_limits<uint16_t>::max()>},
+         WriteComponentsAsScalars<uint16_t, std::numeric_limits<uint16_t>::max()>},
         {VerticesBuilder::ComponentType::kSignedInt,
-         WriteScalars<int32_t, std::numeric_limits<int32_t>::max()>},
+         WriteComponentsAsScalars<int32_t, std::numeric_limits<int32_t>::max()>},
         {VerticesBuilder::ComponentType::kUnsignedInt,
-         WriteScalars<uint32_t, std::numeric_limits<uint32_t>::max()>},
-        {VerticesBuilder::ComponentType::kFloat, WriteScalars<float, 1>},
+         WriteComponentsAsScalars<uint32_t, std::numeric_limits<uint32_t>::max()>},
+        {VerticesBuilder::ComponentType::kFloat, WriteComponentsAsScalars<float, 1>},
 };
 
 void VerticesBuilder::SetAttributeFromBuffer(Attribute attribute,

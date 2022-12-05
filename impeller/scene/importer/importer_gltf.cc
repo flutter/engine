@@ -102,7 +102,7 @@ static bool ProcessStaticMesh(const tinygltf::Model& gltf,
   ///
 
   if (!WithinRange(primitive.indices, gltf.accessors.size())) {
-    std::cout << "Mesh primitive has no index buffer. Skipping." << std::endl;
+    std::cerr << "Mesh primitive has no index buffer. Skipping." << std::endl;
     return false;
   }
 
