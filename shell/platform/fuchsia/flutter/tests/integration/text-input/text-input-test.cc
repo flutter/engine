@@ -81,11 +81,6 @@ class KeyboardInputListenerServer
   explicit KeyboardInputListenerServer(async_dispatcher_t* dispatcher)
       : dispatcher_(dispatcher) {}
 
-  // KeyboardInputListenerServer(const KeyboardInputListenerServer&) = delete;
-  // KeyboardInputListenerServer& operator=(const KeyboardInputListenerServer&)
-  // =
-  //     delete;
-
   // |fuchsia::ui::test::input::KeyboardInputListener|
   void ReportTextInput(
       fuchsia::ui::test::input::KeyboardInputListenerReportTextInputRequest
@@ -180,7 +175,7 @@ class TextInputTest : public PortableUITest,
   void ExtendRealm() override {
     FML_LOG(INFO) << "Extending realm";
     // Key part of service setup: have this test component vend the
-    // |TouchInputListener| service in the constructed realm.
+    // |KeyboardInputListener| service in the constructed realm.
     keyboard_input_listener_server_ =
         std::make_unique<KeyboardInputListenerServer>(dispatcher());
 
