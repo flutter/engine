@@ -55,7 +55,7 @@ void WriteScalars(void* destination,
                   size_t component_count) {
   for (size_t i = 0; i < component_count; i++) {
     const SourceType* s = reinterpret_cast<const SourceType*>(source) + i;
-    Scalar v = static_cast<Scalar>(*s) / Divisor;
+    Scalar v = static_cast<Scalar>(*s) / static_cast<Scalar>(Divisor);
     Scalar* dest = reinterpret_cast<Scalar*>(destination) + i;
     *dest = v;
   }
