@@ -57,9 +57,9 @@ template <typename SourceType>
 static void WriteComponentsAsScalars(void* destination,
                                      const void* source,
                                      size_t component_count) {
-  constexpr size_t divisor = std::is_integral_v<SourceType>
-                                 ? std::numeric_limits<SourceType>::max()
-                                 : 1;
+  constexpr SourceType divisor = std::is_integral_v<SourceType>
+                                     ? std::numeric_limits<SourceType>::max()
+                                     : 1;
   for (size_t i = 0; i < component_count; i++) {
     const SourceType* s = reinterpret_cast<const SourceType*>(source) + i;
     Scalar v = static_cast<Scalar>(*s) / static_cast<Scalar>(divisor);
