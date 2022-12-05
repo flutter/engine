@@ -1744,7 +1744,7 @@ void _testImage() {
 }
 
 void _testLiveRegion() {
-  test('renders a live region if there is a label', () async {
+  test('announces the label after an update', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -1759,14 +1759,11 @@ void _testLiveRegion() {
     );
     semantics().updateSemantics(builder.build());
 
-    expectSemanticsTree('''
-<sem aria-label="This is a snackbar" aria-live="polite" style="$rootSemanticStyle"></sem>
-''');
-
+    expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'This is a snackbar');
     semantics().semanticsEnabled = false;
   });
 
-  test('does not render a live region if there is no label', () async {
+  test('does not announce anything if there is no label', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
@@ -1780,9 +1777,7 @@ void _testLiveRegion() {
     );
     semantics().updateSemantics(builder.build());
 
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle"></sem>
-''');
+    expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, '');
 
     semantics().semanticsEnabled = false;
   });

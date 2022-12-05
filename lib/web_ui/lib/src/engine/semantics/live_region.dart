@@ -17,24 +17,24 @@ class LiveRegion extends RoleManager {
   LiveRegion(SemanticsObject semanticsObject)
       : super(Role.labelAndValue, semanticsObject);
 
-  String? lastAnnouncement;
+  String? _lastAnnouncement;
 
   @override
   void update() {
     // Avoid announcing the same message over and over.
-    if (lastAnnouncement != semanticsObject.label)
+    if (_lastAnnouncement != semanticsObject.label)
     {
-      lastAnnouncement = semanticsObject.label;
-      if (lastAnnouncement != null) {
+      _lastAnnouncement = semanticsObject.label;
+      if (_lastAnnouncement != null) {
         accessibilityAnnouncements.announce(
-          lastAnnouncement! , Assertiveness.polite
+          _lastAnnouncement! , Assertiveness.polite
         );
       }
     }
   }
 
   void _cleanupDom() {
-    lastAnnouncement = null;
+    _lastAnnouncement = null;
   }
 
   @override
