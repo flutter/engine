@@ -50,9 +50,9 @@ void VerticesBuilder::WriteFBVertices(std::vector<fb::Vertex>& vertices) const {
 }
 
 /// @brief  Reads a contiguous sequence of numeric components from `source` and
-///         writes them to `destination` buffer as 32bit floats. Signed
-///         SourceTypes convert to a range of -1 to 1, and unsigned SourceTypes
-///         convert to a range of 0 to 1.
+///         writes them to `destination` as 32bit floats. Signed SourceTypes
+///         convert to a range of -1 to 1, and unsigned SourceTypes convert to a
+///         range of 0 to 1.
 template <typename SourceType>
 static void WriteComponentsAsScalars(void* destination,
                                      const void* source,
