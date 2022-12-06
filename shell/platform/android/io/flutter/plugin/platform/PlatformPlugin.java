@@ -78,7 +78,6 @@ public class PlatformPlugin {
           return PlatformPlugin.this.hapticFeedbackIsEnabled();
         }
 
-
         @Override
         public void setPreferredOrientations(int androidOrientation) {
           setSystemChromePreferredOrientations(androidOrientation);
