@@ -25,6 +25,8 @@ namespace scene {
 /// Geometry
 ///
 
+Geometry::~Geometry() = default;
+
 std::shared_ptr<CuboidGeometry> Geometry::MakeCuboid(Vector3 size) {
   auto result = std::make_shared<CuboidGeometry>();
   result->SetSize(size);
@@ -91,6 +93,10 @@ std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFBMesh(
 /// CuboidGeometry
 ///
 
+CuboidGeometry::CuboidGeometry() = default;
+
+CuboidGeometry::~CuboidGeometry() = default;
+
 void CuboidGeometry::SetSize(Vector3 size) {
   size_ = size;
 }
@@ -119,6 +125,10 @@ VertexBuffer CuboidGeometry::GetVertexBuffer(Allocator& allocator) const {
 //------------------------------------------------------------------------------
 /// VertexBufferGeometry
 ///
+
+VertexBufferGeometry::VertexBufferGeometry() = default;
+
+VertexBufferGeometry::~VertexBufferGeometry() = default;
 
 void VertexBufferGeometry::SetVertexBuffer(VertexBuffer vertex_buffer) {
   vertex_buffer_ = std::move(vertex_buffer);
