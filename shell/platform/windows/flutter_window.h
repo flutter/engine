@@ -14,7 +14,6 @@
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/window.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
-#include "flutter/shell/platform/windows/windowsx_shim.h"
 
 namespace flutter {
 

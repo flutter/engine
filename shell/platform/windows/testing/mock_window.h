@@ -7,7 +7,6 @@
 
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/window.h"
-#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

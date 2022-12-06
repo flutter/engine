@@ -8,8 +8,6 @@
 #include <stdint.h>
 #include <windows.h>
 
-#include "flutter/shell/platform/windows/windowsx_shim.h"
-
 namespace flutter {
 namespace testing {
 

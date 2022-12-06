@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "flutter/shell/platform/windows/text_input_manager.h"
-#include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "gmock/gmock.h"
 
 namespace flutter {

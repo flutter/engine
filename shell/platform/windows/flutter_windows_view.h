@@ -26,7 +26,6 @@
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 #include "flutter/shell/platform/windows/window_state.h"
-#include "flutter/shell/platform/windows/windowsx_shim.h"
 
 namespace flutter {
 
