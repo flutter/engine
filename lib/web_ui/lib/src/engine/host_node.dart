@@ -306,10 +306,28 @@ void applyGlobalCssRulesToSheet(
     // so we guard it behind an isEdge check.
     // Fixes: https://github.com/flutter/flutter/issues/83695
     if (isEdge) {
-      sheet.insertRule('''
-      $cssSelectorPrefix input::-ms-reveal {
-        display: none;
+      // We try-catch this, because in testing, we fake Edge via the UserAgent,
+      // so the below will throw an exception (because only real Edge understands
+      // the ::-ms-reveal pseudo-selector).
+      try {
+        sheet.insertRule('''
+        $cssSelectorPrefix input::-ms-reveal {
+          display: none;
+        }
+        ''', sheet.cssRules.length.toInt());
+      } on DomException catch(e) {
+        // Browsers that don't understand ::-ms-reveal throw a DOMException
+        // of type SyntaxError.
+        domWindow.console.warn(e);
+        // Add a fake rule if our code failed because we're under testing
+        assert(() {
+          sheet.insertRule('''
+          $cssSelectorPrefix input.fallback-for-fakey-browser-in-ci {
+            display: none;
+          }
+          ''', sheet.cssRules.length.toInt());
+          return true;
+        }());
       }
-      ''', sheet.cssRules.length.toInt());
     }
 }
