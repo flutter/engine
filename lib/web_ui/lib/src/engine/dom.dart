@@ -193,9 +193,11 @@ DomEvent createDomEvent(String type, String name) {
   return event;
 }
 
-@JS()
+@JS('ProgressEvent')
 @staticInterop
-class DomProgressEvent extends DomEvent {}
+class DomProgressEvent extends DomEvent {
+  external factory DomProgressEvent(String type);
+}
 
 extension DomProgressEventExtension on DomProgressEvent {
   external double? get loaded;
@@ -210,6 +212,7 @@ extension DomNodeExtension on DomNode {
   external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
+  external set innerText(String text);
   external DomNode? get lastChild;
   external DomNode appendChild(DomNode node);
   DomElement? get parent => js_util.getProperty(this, 'parentElement');
@@ -930,6 +933,7 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool get metaKey;
   external bool? get repeat;
   external bool get shiftKey;
+  external bool get isComposing;
   external bool getModifierState(String keyArg);
 }
 
@@ -1532,13 +1536,11 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedCanvasKitUrl =
-        _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
-    assert(trustedCanvasKitUrl.url != '',
-        'URL: $url rejected by TrustedTypePolicy');
+    assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedCanvasKitUrl;
+    return trustedUrl;
   }
   return url;
 }

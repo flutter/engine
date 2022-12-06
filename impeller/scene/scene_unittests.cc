@@ -25,32 +25,33 @@ namespace testing {
 using SceneTest = PlaygroundTest;
 INSTANTIATE_PLAYGROUND_SUITE(SceneTest);
 
-TEST_P(SceneTest, UnlitScene) {
-  auto allocator = GetContext()->GetResourceAllocator();
-  auto scene = Scene(GetContext());
-
-  {
-    auto mesh = SceneEntity::MakeStaticMesh();
-
-    auto material = Material::MakeUnlit();
-    material->SetColor(Color::Red());
-    mesh->SetMaterial(std::move(material));
-
-    Vector3 size(1, 2, 3);
-    mesh->SetGeometry(Geometry::MakeCuboid(size));
-
-    mesh->SetLocalTransform(Matrix::MakeTranslation(size / 2));
-
-    scene.Add(mesh);
-  }
-
+TEST_P(SceneTest, CuboidUnlit) {
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    auto allocator = GetContext()->GetResourceAllocator();
+    auto scene = Scene(GetContext());
+
+    {
+      auto mesh = SceneEntity::MakeStaticMesh();
+
+      auto material = Material::MakeUnlit();
+      material->SetColor(Color::Red());
+      mesh->SetMaterial(std::move(material));
+
+      Vector3 size(1, 1, 0);
+      mesh->SetGeometry(Geometry::MakeCuboid(size));
+
+      mesh->SetLocalTransform(Matrix::MakeTranslation(-size / 2));
+
+      scene.Add(mesh);
+    }
+
+    // Face towards the +Z direction (+X right, +Y up).
     auto camera = Camera::MakePerspective(
-                      /* fov */ kPiOver4,
-                      /* position */ {50, -30, 50})
+                      /* fov */ Radians(kPiOver4),
+                      /* position */ {2, 2, -5})
                       .LookAt(
                           /* target */ Vector3(),
-                          /* up */ {0, -1, 0});
+                          /* up */ {0, 1, 0});
 
     scene.Render(render_target, camera);
     return true;
