@@ -240,7 +240,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     auto vector = Vector3(3, 3, -3);
 
     Vector3 result = matrix * vector;
-    auto expected = Vector3(1, 1, 0.673401);
+    auto expected = Vector3(-1, -1, 1.3468);
     ASSERT_VECTOR3_NEAR(result, expected);
   }
 
@@ -250,7 +250,7 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     auto point = Point(3, 3);
 
     Point result = matrix * point;
-    auto expected = Point(1, 1);
+    auto expected = Point(-1, -1);
     ASSERT_POINT_NEAR(result, expected);
   }
 
@@ -262,6 +262,26 @@ TEST(GeometryTest, MatrixVectorMultiplication) {
     Point result = matrix * point;
     auto expected = Point(0, 0);
     ASSERT_POINT_NEAR(result, expected);
+  }
+}
+
+TEST(GeometryTest, MatrixMakeRotationFromQuaternion) {
+  {
+    auto matrix = Matrix::MakeRotation(Quaternion({1, 0, 0}, kPiOver2));
+    auto expected = Matrix::MakeRotationX(Radians(kPiOver2));
+    ASSERT_MATRIX_NEAR(matrix, expected);
+  }
+
+  {
+    auto matrix = Matrix::MakeRotation(Quaternion({0, 1, 0}, kPiOver2));
+    auto expected = Matrix::MakeRotationY(Radians(kPiOver2));
+    ASSERT_MATRIX_NEAR(matrix, expected);
+  }
+
+  {
+    auto matrix = Matrix::MakeRotation(Quaternion({0, 0, 1}, kPiOver2));
+    auto expected = Matrix::MakeRotationZ(Radians(kPiOver2));
+    ASSERT_MATRIX_NEAR(matrix, expected);
   }
 }
 
@@ -343,10 +363,10 @@ TEST(GeometryTest, MatrixMakePerspective) {
   {
     auto m = Matrix::MakePerspective(Degrees(60), Size(100, 200), 1, 10);
     auto expect = Matrix{
-        3.4641, 0,       0,        0,   //
-        0,      1.73205, 0,        0,   //
-        0,      0,       -1.11111, -1,  //
-        0,      0,       -1.11111, 0,   //
+        3.4641, 0,       0,        0,  //
+        0,      1.73205, 0,        0,  //
+        0,      0,       1.11111,  1,  //
+        0,      0,       -1.11111, 0,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -354,10 +374,10 @@ TEST(GeometryTest, MatrixMakePerspective) {
   {
     auto m = Matrix::MakePerspective(Radians(1), 2, 10, 20);
     auto expect = Matrix{
-        0.915244, 0,       0,   0,   //
-        0,        1.83049, 0,   0,   //
-        0,        0,       -2,  -1,  //
-        0,        0,       -20, 0,   //
+        0.915244, 0,       0,   0,  //
+        0,        1.83049, 0,   0,  //
+        0,        0,       2,   1,  //
+        0,        0,       -20, 0,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
   }
@@ -1366,6 +1386,65 @@ TEST(GeometryTest, RectIntersectsWithRect) {
     Rect a(0, 0, 100, 100);
     Rect b(100, 100, 100, 100);
     ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+}
+
+TEST(GeometryTest, RectCutout) {
+  // No cutout.
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(0, 0, 50, 50);
+    auto u = a.Cutout(b);
+    ASSERT_TRUE(u.has_value());
+    ASSERT_RECT_NEAR(u.value(), a);
+  }
+
+  // Full cutout.
+  {
+    Rect a(0, 0, 100, 100);
+    Rect b(-10, -10, 120, 120);
+    auto u = a.Cutout(b);
+    ASSERT_FALSE(u.has_value());
+  }
+
+  // Cutout from top.
+  {
+    auto a = Rect::MakeLTRB(0, 0, 100, 100);
+    auto b = Rect::MakeLTRB(-10, -10, 110, 90);
+    auto u = a.Cutout(b);
+    auto expected = Rect::MakeLTRB(0, 90, 100, 100);
+    ASSERT_TRUE(u.has_value());
+    ASSERT_RECT_NEAR(u.value(), expected);
+  }
+
+  // Cutout from bottom.
+  {
+    auto a = Rect::MakeLTRB(0, 0, 100, 100);
+    auto b = Rect::MakeLTRB(-10, 10, 110, 110);
+    auto u = a.Cutout(b);
+    auto expected = Rect::MakeLTRB(0, 0, 100, 10);
+    ASSERT_TRUE(u.has_value());
+    ASSERT_RECT_NEAR(u.value(), expected);
+  }
+
+  // Cutout from left.
+  {
+    auto a = Rect::MakeLTRB(0, 0, 100, 100);
+    auto b = Rect::MakeLTRB(-10, -10, 90, 110);
+    auto u = a.Cutout(b);
+    auto expected = Rect::MakeLTRB(90, 0, 100, 100);
+    ASSERT_TRUE(u.has_value());
+    ASSERT_RECT_NEAR(u.value(), expected);
+  }
+
+  // Cutout from right.
+  {
+    auto a = Rect::MakeLTRB(0, 0, 100, 100);
+    auto b = Rect::MakeLTRB(10, -10, 110, 110);
+    auto u = a.Cutout(b);
+    auto expected = Rect::MakeLTRB(0, 0, 10, 100);
+    ASSERT_TRUE(u.has_value());
+    ASSERT_RECT_NEAR(u.value(), expected);
   }
 }
 
