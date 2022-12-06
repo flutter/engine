@@ -80,7 +80,7 @@ TEST(CursorHandlerTest, CreateCustomCursor) {
   MockWindowBindingHandler window;
   CursorHandler cursor_handler(&messenger, &window);
 
-  // Create a 4x4 rawBGRA test cursor buffer.
+  // Create a 4x4 raw BGRA test cursor buffer.
   std::vector<uint8_t> buffer(4 * 4 * 4, 0);
 
   bool success = false;
