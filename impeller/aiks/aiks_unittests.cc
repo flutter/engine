@@ -12,6 +12,7 @@
 #include "impeller/aiks/aiks_playground.h"
 #include "impeller/aiks/canvas.h"
 #include "impeller/aiks/image.h"
+#include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/geometry_unittests.h"
@@ -1117,10 +1118,48 @@ TEST_P(AiksTest, CanRenderTextInSaveLayer) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
+  Canvas canvas;
+  canvas.Translate({200, 150});
+
+  // Construct the text blob.
+  auto mapping = OpenFixtureAsSkData("wtf.otf");
+  ASSERT_NE(mapping, nullptr);
+
+  Scalar font_size = 80;
+  SkFont sk_font(SkTypeface::MakeFromData(mapping), font_size);
+
+  Paint text_paint;
+  text_paint.color = Color::White().WithAlpha(0.8);
+
+  struct {
+    Point position;
+    const char* text;
+  } text[] = {{Point(0, 0), "0F0F0F0"},
+              {Point(1, 2), "789"},
+              {Point(1, 3), "456"},
+              {Point(1, 4), "123"},
+              {Point(0, 6), "0F0F0F0"}};
+  for (auto& t : text) {
+    canvas.Save();
+    canvas.Translate(t.position * Point(font_size * 2, font_size * 1.1));
+    {
+      auto blob = SkTextBlob::MakeFromString(t.text, sk_font);
+      ASSERT_NE(blob, nullptr);
+      auto frame = TextFrameFromTextBlob(blob);
+      canvas.DrawTextFrame(frame, Point(), text_paint);
+    }
+    canvas.Restore();
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 TEST_P(AiksTest, CanDrawPaint) {
   Paint paint;
   paint.color = Color::MediumTurquoise();
   Canvas canvas;
+  canvas.Scale(Vector2(0.2, 0.2));
   canvas.DrawPaint(paint);
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }

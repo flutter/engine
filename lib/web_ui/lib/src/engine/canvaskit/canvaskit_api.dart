@@ -96,10 +96,10 @@ extension CanvasKitExtension on CanvasKit {
   );
 
   // Text decoration enum is embedded in the CanvasKit object itself.
-  external int get NoDecoration;
-  external int get UnderlineDecoration;
-  external int get OverlineDecoration;
-  external int get LineThroughDecoration;
+  external double get NoDecoration;
+  external double get UnderlineDecoration;
+  external double get OverlineDecoration;
+  external double get LineThroughDecoration;
   // End of text decoration enum.
 
   external SkTextDecorationStyleEnum get DecorationStyle;
@@ -109,7 +109,7 @@ extension CanvasKitExtension on CanvasKit {
   external SkFontMgrNamespace get FontMgr;
   external TypefaceFontProviderNamespace get TypefaceFontProvider;
   external SkTypefaceFactory get Typeface;
-  external int GetWebGLContext(
+  external double GetWebGLContext(
       DomCanvasElement canvas, SkWebGLContextOptions options);
   external SkGrContext MakeGrContext(int glContext);
   external SkSurface? MakeOnScreenGLSurface(
@@ -195,8 +195,8 @@ class SkSurface {}
 extension SkSurfaceExtension on SkSurface {
   external SkCanvas getCanvas();
   external void flush();
-  external int width();
-  external int height();
+  external double width();
+  external double height();
   external void dispose();
   external SkImage makeImageSnapshot();
 }
@@ -226,7 +226,7 @@ extension SkFontSlantEnumExtension on SkFontSlantEnum {
 class SkFontSlant {}
 
 extension SkFontSlantExtension on SkFontSlant {
-  external int get value;
+  external double get value;
 }
 
 final List<SkFontSlant> _skFontSlants = <SkFontSlant>[
@@ -260,7 +260,7 @@ extension SkFontWeightEnumExtension on SkFontWeightEnum {
 class SkFontWeight {}
 
 extension SkFontWeightExtension on SkFontWeight {
-  external int get value;
+  external double get value;
 }
 
 final List<SkFontWeight> _skFontWeights = <SkFontWeight>[
@@ -293,7 +293,7 @@ extension SkAffinityEnumExtension on SkAffinityEnum {
 class SkAffinity {}
 
 extension SkAffinityExtension on SkAffinity {
-  external int get value;
+  external double get value;
 }
 
 final List<SkAffinity> _skAffinitys = <SkAffinity>[
@@ -319,7 +319,7 @@ extension SkTextDirectionEnumExtension on SkTextDirectionEnum {
 class SkTextDirection {}
 
 extension SkTextDirectionExtension on SkTextDirection {
-  external int get value;
+  external double get value;
 }
 
 // Flutter enumerates text directions as RTL, LTR, while CanvasKit
@@ -351,7 +351,7 @@ extension SkTextAlignEnumExtension on SkTextAlignEnum {
 class SkTextAlign {}
 
 extension SkTextAlignExtension on SkTextAlign {
-  external int get value;
+  external double get value;
 }
 
 final List<SkTextAlign> _skTextAligns = <SkTextAlign>[
@@ -383,7 +383,7 @@ extension SkTextHeightBehaviorEnumExtension on SkTextHeightBehaviorEnum {
 class SkTextHeightBehavior {}
 
 extension SkTextHeightBehaviorExtension on SkTextHeightBehavior {
-  external int get value;
+  external double get value;
 }
 
 final List<SkTextHeightBehavior> _skTextHeightBehaviors =
@@ -418,7 +418,7 @@ extension SkRectHeightStyleEnumExtension on SkRectHeightStyleEnum {
 class SkRectHeightStyle {}
 
 extension SkRectHeightStyleExtension on SkRectHeightStyle {
-  external int get value;
+  external double get value;
 }
 
 final List<SkRectHeightStyle> _skRectHeightStyles = <SkRectHeightStyle>[
@@ -448,7 +448,7 @@ extension SkRectWidthStyleEnumExtension on SkRectWidthStyleEnum {
 class SkRectWidthStyle {}
 
 extension SkRectWidthStyleExtension on SkRectWidthStyle {
-  external int get value;
+  external double get value;
 }
 
 final List<SkRectWidthStyle> _skRectWidthStyles = <SkRectWidthStyle>[
@@ -476,7 +476,7 @@ extension SkVertexModeEnumExtension on SkVertexModeEnum {
 class SkVertexMode {}
 
 extension SkVertexModeExtension on SkVertexMode {
-  external int get value;
+  external double get value;
 }
 
 final List<SkVertexMode> _skVertexModes = <SkVertexMode>[
@@ -504,7 +504,7 @@ extension SkPointModeEnumExtension on SkPointModeEnum {
 class SkPointMode {}
 
 extension SkPointModeExtension on SkPointMode {
-  external int get value;
+  external double get value;
 }
 
 final List<SkPointMode> _skPointModes = <SkPointMode>[
@@ -531,7 +531,7 @@ extension SkClipOpEnumExtension on SkClipOpEnum {
 class SkClipOp {}
 
 extension SkClipOpExtension on SkClipOp {
-  external int get value;
+  external double get value;
 }
 
 final List<SkClipOp> _skClipOps = <SkClipOp>[
@@ -557,7 +557,7 @@ extension SkFillTypeEnumExtension on SkFillTypeEnum {
 class SkFillType {}
 
 extension SkFillTypeExtension on SkFillType {
-  external int get value;
+  external double get value;
 }
 
 final List<SkFillType> _skFillTypes = <SkFillType>[
@@ -586,7 +586,7 @@ extension SkPathOpEnumExtension on SkPathOpEnum {
 class SkPathOp {}
 
 extension SkPathOpExtension on SkPathOp {
-  external int get value;
+  external double get value;
 }
 
 final List<SkPathOp> _skPathOps = <SkPathOp>[
@@ -617,7 +617,7 @@ extension SkBlurStyleEnumExtension on SkBlurStyleEnum {
 class SkBlurStyle {}
 
 extension SkBlurStyleExtension on SkBlurStyle {
-  external int get value;
+  external double get value;
 }
 
 final List<SkBlurStyle> _skBlurStyles = <SkBlurStyle>[
@@ -646,7 +646,7 @@ extension SkStrokeCapEnumExtension on SkStrokeCapEnum {
 class SkStrokeCap {}
 
 extension SkStrokeCapExtension on SkStrokeCap {
-  external int get value;
+  external double get value;
 }
 
 final List<SkStrokeCap> _skStrokeCaps = <SkStrokeCap>[
@@ -673,7 +673,7 @@ extension SkPaintStyleEnumExtension on SkPaintStyleEnum {
 class SkPaintStyle {}
 
 extension SkPaintStyleExtension on SkPaintStyle {
-  external int get value;
+  external double get value;
 }
 
 final List<SkPaintStyle> _skPaintStyles = <SkPaintStyle>[
@@ -726,7 +726,7 @@ extension SkBlendModeEnumExtension on SkBlendModeEnum {
 class SkBlendMode {}
 
 extension SkBlendModeExtension on SkBlendMode {
-  external int get value;
+  external double get value;
 }
 
 final List<SkBlendMode> _skBlendModes = <SkBlendMode>[
@@ -780,7 +780,7 @@ extension SkStrokeJoinEnumExtension on SkStrokeJoinEnum {
 class SkStrokeJoin {}
 
 extension SkStrokeJoinExtension on SkStrokeJoin {
-  external int get value;
+  external double get value;
 }
 
 final List<SkStrokeJoin> _skStrokeJoins = <SkStrokeJoin>[
@@ -809,7 +809,7 @@ extension SkTileModeEnumExtension on SkTileModeEnum {
 class SkTileMode {}
 
 extension SkTileModeExtension on SkTileMode {
-  external int get value;
+  external double get value;
 }
 
 final List<SkTileMode> _skTileModes = <SkTileMode>[
@@ -837,7 +837,7 @@ extension SkFilterModeEnumExtension on SkFilterModeEnum {
 class SkFilterMode {}
 
 extension SkFilterModeExtension on SkFilterMode {
-  external int get value;
+  external double get value;
 }
 
 SkFilterMode toSkFilterMode(ui.FilterQuality filterQuality) {
@@ -861,7 +861,7 @@ extension SkMipmapModeEnumExtension on SkMipmapModeEnum {
 class SkMipmapMode {}
 
 extension SkMipmapModeExtension on SkMipmapMode {
-  external int get value;
+  external double get value;
 }
 
 SkMipmapMode toSkMipmapMode(ui.FilterQuality filterQuality) {
@@ -885,7 +885,7 @@ extension SkAlphaTypeEnumExtension on SkAlphaTypeEnum {
 class SkAlphaType {}
 
 extension SkAlphaTypeExtension on SkAlphaType {
-  external int get value;
+  external double get value;
 }
 
 @JS()
@@ -911,7 +911,7 @@ extension SkColorTypeEnumExtension on SkColorTypeEnum {
 class SkColorType {}
 
 extension SkColorTypeExtension on SkColorType {
-  external int get value;
+  external double get value;
 }
 
 @JS()
@@ -920,19 +920,19 @@ extension SkColorTypeExtension on SkColorType {
 class SkAnimatedImage {}
 
 extension SkAnimatedImageExtension on SkAnimatedImage {
-  external int getFrameCount();
+  external double getFrameCount();
 
-  external int getRepetitionCount();
+  external double getRepetitionCount();
 
   /// Returns duration in milliseconds.
-  external int currentFrameDuration();
+  external double currentFrameDuration();
 
   /// Advances to the next frame and returns its duration in milliseconds.
-  external int decodeNextFrame();
+  external double decodeNextFrame();
 
   external SkImage makeImageAtCurrentFrame();
-  external int width();
-  external int height();
+  external double width();
+  external double height();
 
   /// Deletes the C++ object.
   ///
@@ -948,8 +948,8 @@ class SkImage {}
 
 extension SkImageExtension on SkImage {
   external void delete();
-  external int width();
-  external int height();
+  external double width();
+  external double height();
   external SkShader makeShaderCubic(
     SkTileMode tileModeX,
     SkTileMode tileModeY,
@@ -1786,8 +1786,8 @@ extension SkCanvasExtension on SkCanvas {
     SkBlendMode blendMode,
     SkPaint paint,
   );
-  external int save();
-  external int getSaveCount();
+  external double save();
+  external double getSaveCount();
   external void saveLayer(
     SkPaint? paint,
     Float32List? bounds,
@@ -1865,7 +1865,9 @@ class SkParagraphStyle {}
 @JS()
 @anonymous
 @staticInterop
-class SkParagraphStyleProperties {}
+class SkParagraphStyleProperties {
+  external factory SkParagraphStyleProperties();
+}
 
 extension SkParagraphStylePropertiesExtension on SkParagraphStyleProperties {
   external set textAlign(SkTextAlign? value);
@@ -1900,7 +1902,7 @@ extension SkTextDecorationStyleEnumExtension on SkTextDecorationStyleEnum {
 class SkTextDecorationStyle {}
 
 extension SkTextDecorationStyleExtension on SkTextDecorationStyle {
-  external int get value;
+  external double get value;
 }
 
 final List<SkTextDecorationStyle> _skTextDecorationStyles =
@@ -1930,7 +1932,7 @@ extension SkTextBaselineEnumExtension on SkTextBaselineEnum {
 class SkTextBaseline {}
 
 extension SkTextBaselineExtension on SkTextBaseline {
-  external int get value;
+  external double get value;
 }
 
 final List<SkTextBaseline> _skTextBaselines = <SkTextBaseline>[
@@ -1960,7 +1962,7 @@ extension SkPlaceholderAlignmentEnumExtension on SkPlaceholderAlignmentEnum {
 class SkPlaceholderAlignment {}
 
 extension SkPlaceholderAlignmentExtension on SkPlaceholderAlignment {
-  external int get value;
+  external double get value;
 }
 
 final List<SkPlaceholderAlignment> _skPlaceholderAlignments =
@@ -1981,7 +1983,9 @@ SkPlaceholderAlignment toSkPlaceholderAlignment(
 @JS()
 @anonymous
 @staticInterop
-class SkTextStyleProperties {}
+class SkTextStyleProperties {
+  external factory SkTextStyleProperties();
+}
 
 extension SkTextStylePropertiesExtension on SkTextStyleProperties {
   external set backgroundColor(Float32List? value);
@@ -2008,7 +2012,9 @@ extension SkTextStylePropertiesExtension on SkTextStyleProperties {
 @JS()
 @anonymous
 @staticInterop
-class SkStrutStyleProperties {}
+class SkStrutStyleProperties {
+  external factory SkStrutStyleProperties();
+}
 
 extension SkStrutStylePropertiesExtension on SkStrutStyleProperties {
   external set fontFamilies(List<String>? value);
@@ -2024,7 +2030,9 @@ extension SkStrutStylePropertiesExtension on SkStrutStyleProperties {
 @JS()
 @anonymous
 @staticInterop
-class SkFontStyle {}
+class SkFontStyle {
+  external factory SkFontStyle();
+}
 
 extension SkFontStyleExtension on SkFontStyle {
   external set weight(SkFontWeight? value);
@@ -2034,7 +2042,9 @@ extension SkFontStyleExtension on SkFontStyle {
 @JS()
 @anonymous
 @staticInterop
-class SkTextShadow {}
+class SkTextShadow {
+  external factory SkTextShadow();
+}
 
 extension SkTextShadowExtension on SkTextShadow {
   external set color(Float32List? value);
@@ -2045,7 +2055,9 @@ extension SkTextShadowExtension on SkTextShadow {
 @JS()
 @anonymous
 @staticInterop
-class SkFontFeature {}
+class SkFontFeature {
+  external factory SkFontFeature();
+}
 
 extension SkFontFeatureExtension on SkFontFeature {
   external set name(String? value);
@@ -2055,7 +2067,9 @@ extension SkFontFeatureExtension on SkFontFeature {
 @JS()
 @anonymous
 @staticInterop
-class SkFontVariation {}
+class SkFontVariation {
+  external factory SkFontVariation();
+}
 
 extension SkFontVariationExtension on SkFontVariation {
   external set axis(String? value);
@@ -2106,10 +2120,10 @@ extension TypefaceFontProviderExtension on TypefaceFontProvider {
 class SkLineMetrics {}
 
 extension SkLineMetricsExtension on SkLineMetrics {
-  external int get startIndex;
-  external int get endIndex;
-  external int get endExcludingWhitespaces;
-  external int get endIncludingNewline;
+  external double get startIndex;
+  external double get endIndex;
+  external double get endExcludingWhitespaces;
+  external double get endIncludingNewline;
   external bool get isHardBreak;
   external double get ascent;
   external double get descent;
@@ -2117,7 +2131,7 @@ extension SkLineMetricsExtension on SkLineMetrics {
   external double get width;
   external double get left;
   external double get baseline;
-  external int get lineNumber;
+  external double get lineNumber;
 }
 
 @JS()
@@ -2157,7 +2171,7 @@ class SkTextPosition {}
 
 extension SkTextPositionExtnsion on SkTextPosition {
   external SkAffinity get affinity;
-  external int get pos;
+  external double get pos;
 }
 
 @JS()
@@ -2165,8 +2179,8 @@ extension SkTextPositionExtnsion on SkTextPosition {
 class SkTextRange {}
 
 extension SkTextRangeExtension on SkTextRange {
-  external int get start;
-  external int get end;
+  external double get start;
+  external double get end;
 }
 
 @JS()
@@ -2461,7 +2475,7 @@ void debugResetBrowserSupportsFinalizationRegistry() {
 class SkData {}
 
 extension SkDataExtension on SkData {
-  external int size();
+  external double size();
   external bool isEmpty();
   external Uint8List bytes();
   external void delete();
@@ -2484,11 +2498,11 @@ extension SkImageInfoExtension on SkImageInfo {
   external SkAlphaType get alphaType;
   external ColorSpace get colorSpace;
   external SkColorType get colorType;
-  external int get height;
+  external double get height;
   external bool get isEmpty;
   external bool get isOpaque;
   external Float32List get bounds;
-  external int get width;
+  external double get width;
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
@@ -2512,8 +2526,8 @@ extension SkPartialImageInfoExtension on SkPartialImageInfo {
   external SkAlphaType get alphaType;
   external ColorSpace get colorSpace;
   external SkColorType get colorType;
-  external int get height;
-  external int get width;
+  external double get height;
+  external double get width;
 }
 
 /// Helper interop methods for [patchCanvasKitModule].

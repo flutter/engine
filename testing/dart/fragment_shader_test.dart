@@ -46,19 +46,35 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader fragmentShader = program.fragmentShader();
 
     try {
-      fragmentShader.setSampler(1, imageShader);
+      fragmentShader.setImageSampler(1, blueGreenImage);
       fail('Unreachable');
     } catch (e) {
       expect(e, contains('Sampler index out of bounds'));
     } finally {
       fragmentShader.dispose();
-      imageShader.dispose();
       blueGreenImage.dispose();
+    }
+  });
+
+  test('FragmentShader with sampler asserts if sampler is missing when assigned to paint', () async {
+    if (!assertsEnabled) {
+      return;
+    }
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final FragmentShader fragmentShader = program.fragmentShader();
+
+    try {
+      Paint().shader = fragmentShader;
+      fail('Expected to throw');
+    } catch (err) {
+      expect(err.toString(), contains('Invalid FragmentShader blue_green_sampler.frag.iplr'));
+    } finally {
+      fragmentShader.dispose();
     }
   });
 
@@ -67,11 +83,9 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
       final Paint paint = Paint()..shader = shader;  // ignore: unused_local_variable
@@ -81,7 +95,6 @@ void main() async {
     } catch (e) {
       expect(e.toString(), contains('Attempted to set a disposed shader'));
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -109,19 +122,17 @@ void main() async {
     }
   });
 
-  test('Disposed FragmentShader setSampler', () async {
+  test('Disposed FragmentShader setImageSampler', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
-      shader.setSampler(0, imageShader);
+      shader.setImageSampler(0, blueGreenImage);
       if (assertsEnabled) {
         fail('Unreachable');
       }
@@ -136,7 +147,6 @@ void main() async {
         contains('the native peer has been collected'),
       );
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -190,13 +200,10 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -205,13 +212,10 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = _createBlueGreenImageSync();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -480,11 +484,3 @@ Image _createBlueGreenImageSync() {
     picture.dispose();
   }
 }
-
-
-final Float64List _identityMatrix = Float64List.fromList(<double>[
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-]);

@@ -16,8 +16,8 @@
 
 namespace flutter {
 
-VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)) {
+VsyncWaiterIOS::VsyncWaiterIOS(const flutter::TaskRunners& task_runners)
+    : VsyncWaiter(task_runners) {
   auto callback = [this](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     const fml::TimePoint start_time = recorder->GetVsyncStartTime();
     const fml::TimePoint target_time = recorder->GetVsyncTargetTime();
@@ -102,7 +102,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
-  TRACE_EVENT0("flutter", "VsyncCallback");
+  TRACE_EVENT0("flutter", "VSYNC");
 
   CFTimeInterval delay = CACurrentMediaTime() - link.timestamp;
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);

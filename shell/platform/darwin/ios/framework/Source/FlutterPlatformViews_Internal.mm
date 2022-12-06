@@ -13,12 +13,12 @@ static int kMaxPointsInVerb = 4;
 namespace flutter {
 
 FlutterPlatformViewLayer::FlutterPlatformViewLayer(
-    fml::scoped_nsobject<UIView> overlay_view,
-    fml::scoped_nsobject<UIView> overlay_view_wrapper,
+    const fml::scoped_nsobject<UIView>& overlay_view,
+    const fml::scoped_nsobject<UIView>& overlay_view_wrapper,
     std::unique_ptr<IOSSurface> ios_surface,
     std::unique_ptr<Surface> surface)
-    : overlay_view(std::move(overlay_view)),
-      overlay_view_wrapper(std::move(overlay_view_wrapper)),
+    : overlay_view(overlay_view),
+      overlay_view_wrapper(overlay_view_wrapper),
       ios_surface(std::move(ios_surface)),
       surface(std::move(surface)){};
 
@@ -67,6 +67,18 @@ BOOL BlurRadiusEqualToBlurRadius(CGFloat radius1, CGFloat radius2) {
 
 }  // namespace flutter
 
+@interface PlatformViewFilter ()
+
+// `YES` if the backdropFilterView has been configured at least once.
+@property(nonatomic) BOOL backdropFilterViewConfigured;
+@property(nonatomic, retain) UIVisualEffectView* backdropFilterView;
+
+// Updates the `visualEffectView` with the current filter parameters.
+// Also sets `self.backdropFilterView` to the updated visualEffectView.
+- (void)updateVisualEffectView:(UIVisualEffectView*)visualEffectView;
+
+@end
+
 @implementation PlatformViewFilter
 
 static NSObject* _gaussianBlurFilter = nil;
@@ -89,17 +101,8 @@ static BOOL _preparedOnce = NO;
       [self release];
       return nil;
     }
-    NSObject* gaussianBlurFilter = [[_gaussianBlurFilter copy] autorelease];
-    FML_DCHECK(gaussianBlurFilter);
-    UIView* backdropView = visualEffectView.subviews[_indexOfBackdropView];
-    [gaussianBlurFilter setValue:@(_blurRadius) forKey:@"inputRadius"];
-    backdropView.layer.filters = @[ gaussianBlurFilter ];
-
-    UIView* visualEffectSubview = visualEffectView.subviews[_indexOfVisualEffectSubview];
-    visualEffectSubview.layer.backgroundColor = UIColor.clearColor.CGColor;
-
     _backdropFilterView = [visualEffectView retain];
-    _backdropFilterView.frame = _frame;
+    _backdropFilterViewConfigured = NO;
   }
   return self;
 }
@@ -145,11 +148,37 @@ static BOOL _preparedOnce = NO;
   [super dealloc];
 }
 
+- (UIVisualEffectView*)backdropFilterView {
+  FML_DCHECK(_backdropFilterView);
+  if (!self.backdropFilterViewConfigured) {
+    [self updateVisualEffectView:_backdropFilterView];
+    self.backdropFilterViewConfigured = YES;
+  }
+  return _backdropFilterView;
+}
+
+- (void)updateVisualEffectView:(UIVisualEffectView*)visualEffectView {
+  NSObject* gaussianBlurFilter = [[_gaussianBlurFilter copy] autorelease];
+  FML_DCHECK(gaussianBlurFilter);
+  UIView* backdropView = visualEffectView.subviews[_indexOfBackdropView];
+  [gaussianBlurFilter setValue:@(_blurRadius) forKey:@"inputRadius"];
+  backdropView.layer.filters = @[ gaussianBlurFilter ];
+
+  UIView* visualEffectSubview = visualEffectView.subviews[_indexOfVisualEffectSubview];
+  visualEffectSubview.layer.backgroundColor = UIColor.clearColor.CGColor;
+  visualEffectView.frame = _frame;
+
+  if (_backdropFilterView != visualEffectView) {
+    _backdropFilterView = [visualEffectView retain];
+  }
+}
+
 @end
 
 @interface ChildClippingView ()
 
-@property(retain, nonatomic) NSMutableArray<PlatformViewFilter*>* filters;
+@property(retain, nonatomic) NSArray<PlatformViewFilter*>* filters;
+@property(retain, nonatomic) NSMutableArray<UIVisualEffectView*>* backdropFilterSubviews;
 
 @end
 
@@ -167,31 +196,27 @@ static BOOL _preparedOnce = NO;
   return NO;
 }
 
-- (void)applyBlurBackdropFilters:(NSMutableArray<PlatformViewFilter*>*)filters {
-  BOOL needUpdateFilterViews = NO;
-  if (self.filters.count != filters.count) {
-    needUpdateFilterViews = YES;
-  } else {
-    for (NSUInteger i = 0; i < filters.count; i++) {
-      if (!CGRectEqualToRect(self.filters[i].frame, filters[i].frame) ||
-          !flutter::BlurRadiusEqualToBlurRadius(self.filters[i].blurRadius,
-                                                filters[i].blurRadius)) {
-        needUpdateFilterViews = YES;
-      }
+- (void)applyBlurBackdropFilters:(NSArray<PlatformViewFilter*>*)filters {
+  FML_DCHECK(self.filters.count == self.backdropFilterSubviews.count);
+  if (self.filters.count == 0 && filters.count == 0) {
+    return;
+  }
+  self.filters = filters;
+  NSUInteger index = 0;
+  for (index = 0; index < self.filters.count; index++) {
+    UIVisualEffectView* backdropFilterView;
+    PlatformViewFilter* filter = self.filters[index];
+    if (self.backdropFilterSubviews.count <= index) {
+      backdropFilterView = filter.backdropFilterView;
+      [self addSubview:backdropFilterView];
+      [self.backdropFilterSubviews addObject:backdropFilterView];
+    } else {
+      [filter updateVisualEffectView:self.backdropFilterSubviews[index]];
     }
   }
-  if (needUpdateFilterViews) {
-    // Clear the old filter views.
-    for (PlatformViewFilter* filter in self.filters) {
-      [[filter backdropFilterView] removeFromSuperview];
-    }
-    // Update to the new filters.
-    self.filters = [filters retain];
-    // Add new filter views.
-    for (PlatformViewFilter* filter in self.filters) {
-      UIView* backdropFilterView = [filter backdropFilterView];
-      [self addSubview:backdropFilterView];
-    }
+  for (NSUInteger i = self.backdropFilterSubviews.count; i > index; i--) {
+    [self.backdropFilterSubviews[i - 1] removeFromSuperview];
+    [self.backdropFilterSubviews removeLastObject];
   }
 }
 
@@ -199,19 +224,32 @@ static BOOL _preparedOnce = NO;
   [_filters release];
   _filters = nil;
 
+  [_backdropFilterSubviews release];
+  _backdropFilterSubviews = nil;
+
   [super dealloc];
 }
 
-- (NSMutableArray*)filters {
-  if (!_filters) {
-    _filters = [[[NSMutableArray alloc] init] retain];
+- (NSMutableArray*)backdropFilterSubviews {
+  if (!_backdropFilterSubviews) {
+    _backdropFilterSubviews = [[[NSMutableArray alloc] init] retain];
   }
-  return _filters;
+  return _backdropFilterSubviews;
 }
 
 @end
 
 @interface FlutterClippingMaskView ()
+
+// A `CATransform3D` matrix represnts a scale transform that revese UIScreen.scale.
+//
+// The transform matrix passed in clipRect/clipRRect/clipPath methods are in device coordinate
+// space. The transfrom matrix concats `reverseScreenScale` to create a transform matrix in the iOS
+// logical coordinates (points).
+//
+// See https://developer.apple.com/documentation/uikit/uiscreen/1617836-scale?language=objc for
+// information about screen scale.
+@property(nonatomic) CATransform3D reverseScreenScale;
 
 - (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix;
 
@@ -222,8 +260,13 @@ static BOOL _preparedOnce = NO;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
+  return [self initWithFrame:frame screenScale:[UIScreen mainScreen].scale];
+}
+
+- (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale {
   if (self = [super initWithFrame:frame]) {
     self.backgroundColor = UIColor.clearColor;
+    _reverseScreenScale = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
   }
   return self;
 }
@@ -252,13 +295,16 @@ static BOOL _preparedOnce = NO;
   CGContextRestoreGState(context);
 }
 
-- (void)clipRect:(const SkRect&)clipSkRect matrix:(const CATransform3D&)matrix {
+- (void)clipRect:(const SkRect&)clipSkRect matrix:(const SkMatrix&)matrix {
   CGRect clipRect = flutter::GetCGRectFromSkRect(clipSkRect);
   CGPathRef path = CGPathCreateWithRect(clipRect, nil);
-  paths_.push_back([self getTransformedPath:path matrix:matrix]);
+  // The `matrix` is based on the physical pixels, convert it to UIKit points.
+  CATransform3D matrixInPoints =
+      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
+  paths_.push_back([self getTransformedPath:path matrix:matrixInPoints]);
 }
 
-- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const CATransform3D&)matrix {
+- (void)clipRRect:(const SkRRect&)clipSkRRect matrix:(const SkMatrix&)matrix {
   CGPathRef pathRef = nullptr;
   switch (clipSkRRect.getType()) {
     case SkRRect::kEmpty_Type: {
@@ -318,13 +364,16 @@ static BOOL _preparedOnce = NO;
       break;
     }
   }
+  // The `matrix` is based on the physical pixels, convert it to UIKit points.
+  CATransform3D matrixInPoints =
+      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
   // TODO(cyanglaz): iOS does not seem to support hard edge on CAShapeLayer. It clearly stated that
   // the CAShaperLayer will be drawn antialiased. Need to figure out a way to do the hard edge
   // clipping on iOS.
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
 }
 
-- (void)clipPath:(const SkPath&)path matrix:(const CATransform3D&)matrix {
+- (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix {
   if (!path.isValid()) {
     return;
   }
@@ -383,7 +432,10 @@ static BOOL _preparedOnce = NO;
     }
     verb = iter.next(pts);
   }
-  paths_.push_back([self getTransformedPath:pathRef matrix:matrix]);
+  // The `matrix` is based on the physical pixels, convert it to UIKit points.
+  CATransform3D matrixInPoints =
+      CATransform3DConcat(flutter::GetCATransform3DFromSkMatrix(matrix), _reverseScreenScale);
+  paths_.push_back([self getTransformedPath:pathRef matrix:matrixInPoints]);
 }
 
 - (fml::CFRef<CGPathRef>)getTransformedPath:(CGPathRef)path matrix:(CATransform3D)matrix {

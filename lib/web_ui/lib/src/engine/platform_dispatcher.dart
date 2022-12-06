@@ -185,9 +185,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// Returns device pixel ratio returned by browser.
   static double get browserDevicePixelRatio {
-    final double? ratio = domWindow.devicePixelRatio as double?;
-    // Guard against WebOS returning 0 and other browsers returning null.
-    return (ratio == null || ratio == 0.0) ? 1.0 : ratio;
+    final double ratio = domWindow.devicePixelRatio;
+    // Guard against WebOS returning 0.
+    return (ratio == 0.0) ? 1.0 : ratio;
   }
 
   /// A callback invoked when any window begins a frame.
@@ -690,7 +690,22 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _onAccessibilityFeaturesChanged, _onAccessibilityFeaturesChangedZone);
   }
 
+  /// Change the retained semantics data about this window.
+  ///
+  /// If [semanticsEnabled] is true, the user has requested that this function
+  /// be called whenever the semantic content of this window changes.
+  ///
+  /// In either case, this function disposes the given update, which means the
+  /// semantics update cannot be used further.
   @override
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(ui.SemanticsUpdate update) {
     EngineSemanticsOwner.instance.updateSemantics(update);
   }

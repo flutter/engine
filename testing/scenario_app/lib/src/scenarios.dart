@@ -6,6 +6,7 @@ import 'dart:ui';
 
 import 'animated_color_square.dart';
 import 'bogus_font_text.dart';
+import 'get_bitmap_scenario.dart';
 import 'initial_route_reply.dart';
 import 'locale_initialization.dart';
 import 'platform_view.dart';
@@ -30,8 +31,11 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'platform_view_multiple_without_overlays': () => MultiPlatformViewWithoutOverlaysScenario(PlatformDispatcher.instance, firstId: _viewId++, secondId: _viewId++),
   'platform_view_max_overlays': () => PlatformViewMaxOverlaysScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_cliprect': () => PlatformViewClipRectScenario(PlatformDispatcher.instance, id: _viewId++),
+  'platform_view_cliprect_with_transform': () => PlatformViewClipRectWithTransformScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_cliprrect': () => PlatformViewClipRRectScenario(PlatformDispatcher.instance, id: _viewId++),
+  'platform_view_cliprrect_with_transform': () => PlatformViewClipRRectWithTransformScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_clippath': () => PlatformViewClipPathScenario(PlatformDispatcher.instance, id: _viewId++),
+  'platform_view_clippath_with_transform': () => PlatformViewClipPathWithTransformScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_transform': () => PlatformViewTransformScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_opacity': () => PlatformViewOpacityScenario(PlatformDispatcher.instance, id: _viewId++),
   'platform_view_with_other_backdrop_filter': () => PlatformViewWithOtherBackDropFilter(PlatformDispatcher.instance, id: _viewId++),
@@ -52,6 +56,7 @@ Map<String, ScenarioFactory> _scenarios = <String, ScenarioFactory>{
   'spawn_engine_works' : () => BogusFontText(PlatformDispatcher.instance),
   'pointer_events': () => TouchesScenario(PlatformDispatcher.instance),
   'display_texture': () => DisplayTexture(PlatformDispatcher.instance),
+  'get_bitmap': () => GetBitmapScenario(PlatformDispatcher.instance),
 };
 
 Map<String, dynamic> _currentScenarioParams = <String, dynamic>{};

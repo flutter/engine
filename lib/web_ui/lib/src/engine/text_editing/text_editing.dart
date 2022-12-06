@@ -724,15 +724,15 @@ class EditingState {
       final DomHTMLInputElement element = domElement! as DomHTMLInputElement;
       return EditingState(
           text: element.value,
-          baseOffset: element.selectionStart,
-          extentOffset: element.selectionEnd);
+          baseOffset: element.selectionStart?.toInt(),
+          extentOffset: element.selectionEnd?.toInt());
     } else if (domInstanceOfString(domElement, 'HTMLTextAreaElement')) {
       final DomHTMLTextAreaElement element = domElement! as
           DomHTMLTextAreaElement;
       return EditingState(
           text: element.value,
-          baseOffset: element.selectionStart,
-          extentOffset: element.selectionEnd);
+          baseOffset: element.selectionStart?.toInt(),
+          extentOffset: element.selectionEnd?.toInt());
     } else {
       throw UnsupportedError('Initialized with unsupported input type');
     }
@@ -1376,6 +1376,10 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       final DomKeyboardEvent event = e as DomKeyboardEvent;
       if (event.keyCode == _kReturnKeyCode) {
         onAction!(inputConfiguration.inputAction);
+        // Prevent the browser from inserting a new line when it's not a multiline input.
+        if (inputConfiguration.inputType is! MultilineInputType) {
+          event.preventDefault();
+        }
       }
     }
   }

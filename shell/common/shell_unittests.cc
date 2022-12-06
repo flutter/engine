@@ -2434,13 +2434,13 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
 
+        LayerStateStack state_stack;
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
-        MutatorsStack mutators_stack;
         PaintContext paint_context = {
             // clang-format off
-            .internal_nodes_canvas         = nullptr,
-            .leaf_nodes_canvas             = nullptr,
+            .state_stack                   = state_stack,
+            .canvas                        = nullptr,
             .gr_context                    = nullptr,
             .dst_color_space               = nullptr,
             .view_embedder                 = nullptr,
@@ -2448,9 +2448,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
-            .inherited_opacity             = SK_Scalar1,
             // clang-format on
         };
 
@@ -2459,14 +2457,12 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .raster_cache                  = &raster_cache,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
-            .mutators_stack                = mutators_stack,
+            .state_stack                   = state_stack,
             .dst_color_space               = nullptr,
-            .cull_rect                     = kGiantRect,
             .surface_needs_readback        = false,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .has_texture_layer             = false,
@@ -2483,11 +2479,13 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             display_list.get(), SkPoint(), true, false);
         for (int i = 0; i < 4; i += 1) {
           SkMatrix matrix = SkMatrix::I();
+          state_stack.set_preroll_delegate(matrix);
           display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
           display_list_raster_cache_item.PrerollFinalize(&preroll_context,
                                                          matrix);
           picture_cache_generated =
               display_list_raster_cache_item.need_caching();
+          state_stack.set_delegate(&dummy_canvas);
           display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
           display_list_raster_cache_item.Draw(paint_context, &dummy_canvas,
                                               &paint);
@@ -2496,9 +2494,11 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
         // 2.2. Rasterize the picture layer.
         LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
+        state_stack.set_preroll_delegate(SkMatrix::I());
         layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
         layer_raster_cache_item.PrerollFinalize(&preroll_context,
                                                 SkMatrix::I());
+        state_stack.set_delegate(&dummy_canvas);
         layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
         layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         rasterized.set_value(true);
@@ -3889,6 +3889,128 @@ TEST_F(ShellTest, PluginUtilitiesCallbackHandleErrorHandling) {
 
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
+}
+
+TEST_F(ShellTest, NotifyIdleRejectsPastAndNearFuture) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::UI |
+                             ThreadHost::IO | ThreadHost::RASTER);
+  auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  fml::AutoResetWaitableEvent latch;
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetUITaskRunner(), [&latch, &shell]() {
+        auto runtime_controller = const_cast<RuntimeController*>(
+            shell->GetEngine()->GetRuntimeController());
+
+        auto now = fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros());
+
+        EXPECT_FALSE(runtime_controller->NotifyIdle(
+            now - fml::TimeDelta::FromMilliseconds(10)));
+        EXPECT_FALSE(runtime_controller->NotifyIdle(now));
+        EXPECT_FALSE(runtime_controller->NotifyIdle(
+            now + fml::TimeDelta::FromNanoseconds(100)));
+
+        EXPECT_TRUE(runtime_controller->NotifyIdle(
+            now + fml::TimeDelta::FromMilliseconds(100)));
+        latch.Signal();
+      });
+
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, NotifyIdleNotCalledInLatencyMode) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::UI |
+                             ThreadHost::IO | ThreadHost::RASTER);
+  auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  // we start off in balanced mode, where we expect idle notifications to
+  // succeed. After the first `NotifyNativeBool` we expect to be in latency
+  // mode, where we expect idle notifications to fail.
+  fml::CountDownLatch latch(2);
+  AddNativeCallback(
+      "NotifyNativeBool", CREATE_NATIVE_ENTRY([&](auto args) {
+        Dart_Handle exception = nullptr;
+        bool is_in_latency_mode =
+            tonic::DartConverter<bool>::FromArguments(args, 0, exception);
+        auto runtime_controller = const_cast<RuntimeController*>(
+            shell->GetEngine()->GetRuntimeController());
+        bool success =
+            runtime_controller->NotifyIdle(fml::TimeDelta::FromMicroseconds(
+                Dart_TimelineGetMicros() + 100000));
+        EXPECT_EQ(success, !is_in_latency_mode);
+        latch.CountDown();
+      }));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("performanceModeImpactsNotifyIdle");
+  RunEngine(shell.get(), std::move(configuration));
+
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, NotifyDestroyed) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::UI |
+                             ThreadHost::IO | ThreadHost::RASTER);
+  auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  fml::CountDownLatch latch(1);
+  AddNativeCallback("NotifyDestroyed", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto runtime_controller = const_cast<RuntimeController*>(
+                          shell->GetEngine()->GetRuntimeController());
+                      bool success = runtime_controller->NotifyDestroyed();
+                      EXPECT_TRUE(success);
+                      latch.CountDown();
+                    }));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("callNotifyDestroyed");
+  RunEngine(shell.get(), std::move(configuration));
+
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
 }  // namespace testing

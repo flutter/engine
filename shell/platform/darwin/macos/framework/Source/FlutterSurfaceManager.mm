@@ -5,13 +5,10 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
 
 #import <Metal/Metal.h>
-#import <OpenGL/gl.h>
 
 #include <algorithm>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterFrameBufferProvider.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/MacOSGLContextSwitch.h"
 
 enum {
   kFlutterSurfaceManagerFrontBuffer = 0,
@@ -22,7 +19,21 @@ enum {
 // BackBuffer will be released after kIdleDelay if there is no activity.
 static const double kIdleDelay = 1.0;
 
-@implementation FlutterIOSurfaceManager {
+@interface FlutterSurfaceManager ()
+
+/**
+ * Cancels any previously-scheduled onIdle requests.
+ */
+- (void)cancelIdle;
+
+/**
+ * Creates a backing textures for the specified surface with the specified size.
+ */
+- (id<MTLTexture>)createTextureForSurface:(FlutterIOSurfaceHolder*)surface size:(CGSize)size;
+
+@end
+
+@implementation FlutterSurfaceManager {
   CALayer* _containingLayer;  // provided (parent layer)
   CALayer* _contentLayer;
   CATransform3D _contentTransform;
@@ -30,18 +41,27 @@ static const double kIdleDelay = 1.0;
   CGSize _surfaceSize;
   FlutterIOSurfaceHolder* _ioSurfaces[kFlutterSurfaceManagerBufferCount];
   BOOL _frameInProgress;
+
+  id<MTLDevice> _device;
+  id<MTLCommandQueue> _commandQueue;
+  id<MTLTexture> _textures[kFlutterSurfaceManagerBufferCount];
 }
 
-- (instancetype)initWithLayer:(CALayer*)containingLayer contentTransform:(CATransform3D)transform {
+- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
+                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
+                                  layer:(nonnull CALayer*)containingLayer {
   self = [super init];
   if (self) {
     _containingLayer = containingLayer;
-    _contentTransform = transform;
+    _contentTransform = CATransform3DIdentity;
     _contentLayer = [[CALayer alloc] init];
     [_containingLayer addSublayer:_contentLayer];
 
     _ioSurfaces[0] = [[FlutterIOSurfaceHolder alloc] init];
     _ioSurfaces[1] = [[FlutterIOSurfaceHolder alloc] init];
+
+    _device = device;
+    _commandQueue = commandQueue;
   }
   return self;
 }
@@ -54,7 +74,7 @@ static const double kIdleDelay = 1.0;
   for (int i = 0; i < kFlutterSurfaceManagerBufferCount; ++i) {
     if (_ioSurfaces[i] != nil) {
       [_ioSurfaces[i] recreateIOSurfaceWithSize:size];
-      [_delegate onUpdateSurface:_ioSurfaces[i] bufferIndex:i size:size];
+      _textures[i] = [self createTextureForSurface:_ioSurfaces[i] size:size];
     }
   }
 }
@@ -74,7 +94,8 @@ static const double kIdleDelay = 1.0;
 
   std::swap(_ioSurfaces[kFlutterSurfaceManagerBackBuffer],
             _ioSurfaces[kFlutterSurfaceManagerFrontBuffer]);
-  [_delegate onSwapBuffers];
+  std::swap(_textures[kFlutterSurfaceManagerBackBuffer],
+            _textures[kFlutterSurfaceManagerFrontBuffer]);
 
   // performSelector:withObject:afterDelay needs to be performed on RunLoop thread
   [self performSelectorOnMainThread:@selector(reschedule) withObject:nil waitUntilDone:NO];
@@ -95,7 +116,7 @@ static const double kIdleDelay = 1.0;
       // Release the back buffer and notify delegate. The buffer will be restored
       // on demand in ensureBackBuffer
       _ioSurfaces[kFlutterSurfaceManagerBackBuffer] = nil;
-      [self.delegate onSurfaceReleased:kFlutterSurfaceManagerBackBuffer];
+      _textures[kFlutterSurfaceManagerBackBuffer] = nil;
     }
   }
 }
@@ -107,9 +128,9 @@ static const double kIdleDelay = 1.0;
       // Restore previously released backbuffer
       _ioSurfaces[kFlutterSurfaceManagerBackBuffer] = [[FlutterIOSurfaceHolder alloc] init];
       [_ioSurfaces[kFlutterSurfaceManagerBackBuffer] recreateIOSurfaceWithSize:_surfaceSize];
-      [_delegate onUpdateSurface:_ioSurfaces[kFlutterSurfaceManagerBackBuffer]
-                     bufferIndex:kFlutterSurfaceManagerBackBuffer
-                            size:_surfaceSize];
+      _textures[kFlutterSurfaceManagerBackBuffer] =
+          [self createTextureForSurface:_ioSurfaces[kFlutterSurfaceManagerBackBuffer]
+                                   size:_surfaceSize];
     }
   };
   [self performSelectorOnMainThread:@selector(cancelIdle) withObject:nil waitUntilDone:NO];
@@ -120,94 +141,12 @@ static const double kIdleDelay = 1.0;
 }
 
 - (nonnull FlutterRenderBackingStore*)renderBuffer {
-  @throw([NSException exceptionWithName:@"Sub-classes FlutterIOSurfaceManager of"
-                                         " must override renderBuffer."
-                                 reason:nil
-                               userInfo:nil]);
-}
-
-@end
-
-@implementation FlutterGLSurfaceManager {
-  NSOpenGLContext* _openGLContext;
-
-  FlutterFrameBufferProvider* _frameBuffers[kFlutterSurfaceManagerBufferCount];
-}
-
-- (instancetype)initWithLayer:(CALayer*)containingLayer
-                openGLContext:(NSOpenGLContext*)openGLContext {
-  self = [super initWithLayer:containingLayer contentTransform:CATransform3DMakeScale(1, -1, 1)];
-
-  if (self) {
-    super.delegate = self;
-    _openGLContext = openGLContext;
-  }
-  return self;
-}
-
-- (FlutterRenderBackingStore*)renderBuffer {
-  [self ensureBackBuffer];
-  uint32_t fboID = [_frameBuffers[kFlutterSurfaceManagerBackBuffer] glFrameBufferId];
-  return [[FlutterOpenGLRenderBackingStore alloc] initWithFrameBufferID:fboID];
-}
-
-- (void)onSwapBuffers {
-  std::swap(_frameBuffers[kFlutterSurfaceManagerBackBuffer],
-            _frameBuffers[kFlutterSurfaceManagerFrontBuffer]);
-}
-
-- (void)onUpdateSurface:(FlutterIOSurfaceHolder*)surface
-            bufferIndex:(size_t)index
-                   size:(CGSize)size {
-  if (_frameBuffers[index] == nil) {
-    _frameBuffers[index] =
-        [[FlutterFrameBufferProvider alloc] initWithOpenGLContext:_openGLContext];
-  }
-  MacOSGLContextSwitch context_switch(_openGLContext);
-  GLuint fbo = [_frameBuffers[index] glFrameBufferId];
-  GLuint texture = [_frameBuffers[index] glTextureId];
-  [surface bindSurfaceToTexture:texture fbo:fbo size:size];
-}
-
-- (void)onSurfaceReleased:(size_t)index {
-  _frameBuffers[index] = nil;
-}
-
-@end
-
-@implementation FlutterMetalSurfaceManager {
-  id<MTLDevice> _device;
-  id<MTLCommandQueue> _commandQueue;
-
-  id<MTLTexture> _textures[kFlutterSurfaceManagerBufferCount];
-}
-
-- (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
-                           commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                                  layer:(nonnull CALayer*)containingLayer {
-  self = [super initWithLayer:containingLayer contentTransform:CATransform3DIdentity];
-  if (self) {
-    super.delegate = self;
-    _device = device;
-    _commandQueue = commandQueue;
-  }
-  return self;
-}
-
-- (FlutterRenderBackingStore*)renderBuffer {
   [self ensureBackBuffer];
   id<MTLTexture> texture = _textures[kFlutterSurfaceManagerBackBuffer];
-  return [[FlutterMetalRenderBackingStore alloc] initWithTexture:texture];
+  return [[FlutterRenderBackingStore alloc] initWithTexture:texture];
 }
 
-- (void)onSwapBuffers {
-  std::swap(_textures[kFlutterSurfaceManagerBackBuffer],
-            _textures[kFlutterSurfaceManagerFrontBuffer]);
-}
-
-- (void)onUpdateSurface:(FlutterIOSurfaceHolder*)surface
-            bufferIndex:(size_t)index
-                   size:(CGSize)size {
+- (id<MTLTexture>)createTextureForSurface:(FlutterIOSurfaceHolder*)surface size:(CGSize)size {
   MTLTextureDescriptor* textureDescriptor =
       [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatBGRA8Unorm
                                                          width:size.width
@@ -216,13 +155,7 @@ static const double kIdleDelay = 1.0;
   textureDescriptor.usage =
       MTLTextureUsageShaderRead | MTLTextureUsageRenderTarget | MTLTextureUsageShaderWrite;
   // plane = 0 for BGRA.
-  _textures[index] = [_device newTextureWithDescriptor:textureDescriptor
-                                             iosurface:[surface ioSurface]
-                                                 plane:0];
-}
-
-- (void)onSurfaceReleased:(size_t)index {
-  _textures[index] = nil;
+  return [_device newTextureWithDescriptor:textureDescriptor iosurface:[surface ioSurface] plane:0];
 }
 
 @end

@@ -32,6 +32,9 @@ struct Switches {
   std::string depfile_path;
   std::vector<std::string> defines;
   bool json_format;
+  SourceLanguage source_language = SourceLanguage::kUnknown;
+  uint32_t gles_language_version;
+  std::string entry_point;
 
   Switches();
 

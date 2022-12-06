@@ -6,9 +6,11 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
@@ -60,14 +62,16 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
-        nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
   }
 
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
-  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
-  pipelines_[descriptor] = future;
+  auto pipeline_future =
+      PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+  pipelines_[descriptor] = pipeline_future;
 
   auto weak_this = weak_from_this();
 
@@ -85,7 +89,7 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
         weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
-  return future;
+  return pipeline_future;
 }
 
 // |PipelineLibrary|
@@ -93,11 +97,9 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
     ComputePipelineDescriptor descriptor) {
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
-  auto future =
-      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
   // TODO(dnfield): implement compute for GLES.
   promise->set_value(nullptr);
-  return future;
+  return {descriptor, promise->get_future()};
 }
 
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
@@ -129,6 +131,17 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   }
 
   return desc;
+}
+
+// |PipelineLibrary|
+void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
 }
 
 //----------------------------------------------------------------------------
@@ -250,7 +263,7 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
-    shader_stages.push_back(std::move(info));
+    shader_stages.push_back(info);
   }
   pipeline_info.setStages(shader_stages);
 
@@ -281,11 +294,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   //----------------------------------------------------------------------------
   /// Primitive Input Assembly State
-  /// TODO(106379): Move primitive topology to the the pipeline instead of it
-  ///               being on the draw call. This is hard-coded right now.
-  ///
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+  const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
+  input_assembly.setTopology(topology);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------
@@ -362,6 +373,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   vk::UniqueDescriptorSetLayout descriptor_set_layout =
       std::move(descriptor_set_create_res.value);
+  ContextVK::SetDebugName(device_, descriptor_set_layout.get(),
+                          "descriptor_set_layout_" + desc.GetLabel());
 
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
   pipeline_layout_info.setSetLayouts(descriptor_set_layout.get());
@@ -392,6 +405,11 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
                    << ": " << vk::to_string(pipeline.result);
     return nullptr;
   }
+
+  ContextVK::SetDebugName(device_, *pipeline_layout.value,
+                          "pipeline_layout_" + desc.GetLabel());
+  ContextVK::SetDebugName(device_, *pipeline.value,
+                          "pipeline_" + desc.GetLabel());
 
   return std::make_unique<PipelineCreateInfoVK>(
       std::move(pipeline.value), std::move(render_pass.value()),

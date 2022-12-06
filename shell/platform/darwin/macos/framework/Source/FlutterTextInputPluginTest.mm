@@ -12,9 +12,13 @@
 #import <OCMock/OCMock.h>
 #import "flutter/testing/testing.h"
 
+@interface FlutterTextField (Testing)
+- (void)setPlatformNode:(flutter::FlutterTextPlatformNode*)node;
+@end
+
 @interface FlutterTextFieldMock : FlutterTextField
 
-@property(nonatomic) NSString* lastUpdatedString;
+@property(nonatomic, nullable, copy) NSString* lastUpdatedString;
 @property(nonatomic) NSRange lastUpdatedSelection;
 
 @end
@@ -1427,44 +1431,54 @@ TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
   engine.semanticsEnabled = YES;
 
   auto bridge = engine.accessibilityBridge.lock();
-  FlutterPlatformNodeDelegateMac delegate(engine, viewController);
+  FlutterPlatformNodeDelegateMac delegate(bridge, viewController);
   ui::AXTree tree;
   ui::AXNode ax_node(&tree, nullptr, 0, 0);
   ui::AXNodeData node_data;
   node_data.SetValue("initial text");
   ax_node.SetData(node_data);
   delegate.Init(engine.accessibilityBridge, &ax_node);
-  FlutterTextPlatformNode text_platform_node(&delegate, viewController);
+  {
+    FlutterTextPlatformNode text_platform_node(&delegate, viewController);
 
-  FlutterTextFieldMock* mockTextField =
-      [[FlutterTextFieldMock alloc] initWithPlatformNode:&text_platform_node
-                                             fieldEditor:viewController.textInputPlugin];
-  [viewController.view addSubview:mockTextField];
-  [mockTextField startEditing];
+    FlutterTextFieldMock* mockTextField =
+        [[FlutterTextFieldMock alloc] initWithPlatformNode:&text_platform_node
+                                               fieldEditor:viewController.textInputPlugin];
+    [viewController.view addSubview:mockTextField];
+    [mockTextField startEditing];
 
-  NSDictionary* arguments = @{
-    @"inputAction" : @"action",
-    @"inputType" : @{@"name" : @"inputName"},
-  };
-  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
-                                                                    arguments:@[ @(1), arguments ]];
-  FlutterResult result = ^(id result) {
-  };
-  [viewController.textInputPlugin handleMethodCall:methodCall result:result];
+    NSDictionary* arguments = @{
+      @"inputAction" : @"action",
+      @"inputType" : @{@"name" : @"inputName"},
+    };
+    FlutterMethodCall* methodCall =
+        [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                          arguments:@[ @(1), arguments ]];
+    FlutterResult result = ^(id result) {
+    };
+    [viewController.textInputPlugin handleMethodCall:methodCall result:result];
 
-  arguments = @{
-    @"text" : @"new text",
-    @"selectionBase" : @(1),
-    @"selectionExtent" : @(2),
-    @"composingBase" : @(-1),
-    @"composingExtent" : @(-1),
-  };
+    arguments = @{
+      @"text" : @"new text",
+      @"selectionBase" : @(1),
+      @"selectionExtent" : @(2),
+      @"composingBase" : @(-1),
+      @"composingExtent" : @(-1),
+    };
 
-  methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
-                                                 arguments:arguments];
-  [viewController.textInputPlugin handleMethodCall:methodCall result:result];
-  EXPECT_EQ([mockTextField.lastUpdatedString isEqualToString:@"new text"], YES);
-  EXPECT_EQ(NSEqualRanges(mockTextField.lastUpdatedSelection, NSMakeRange(1, 1)), YES);
+    methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
+                                                   arguments:arguments];
+    [viewController.textInputPlugin handleMethodCall:methodCall result:result];
+    EXPECT_EQ([mockTextField.lastUpdatedString isEqualToString:@"new text"], YES);
+    EXPECT_EQ(NSEqualRanges(mockTextField.lastUpdatedSelection, NSMakeRange(1, 1)), YES);
+
+    // This blocks the FlutterTextFieldMock, which is held onto by the main event
+    // loop, from crashing.
+    [mockTextField setPlatformNode:nil];
+  }
+
+  // This verifies that clearing the platform node works.
+  [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
 }
 
 TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
@@ -1486,7 +1500,7 @@ TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
   engine.semanticsEnabled = YES;
 
   auto bridge = engine.accessibilityBridge.lock();
-  FlutterPlatformNodeDelegateMac delegate(engine, viewController);
+  FlutterPlatformNodeDelegateMac delegate(bridge, viewController);
   ui::AXTree tree;
   ui::AXNode ax_node(&tree, nullptr, 0, 0);
   ui::AXNodeData node_data;

@@ -55,7 +55,7 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -101,8 +101,6 @@ TEST_P(RendererTest, CanCreateBoxPrimitive) {
                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -121,7 +119,7 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
   desc->SetCullMode(CullMode::kBackFace);
   desc->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(pipeline);
 
   struct Cube {
@@ -192,8 +190,6 @@ TEST_P(RendererTest, CanRenderPerspectiveCube) {
         Matrix::MakeRotationZ(Radians(euler_angles.z));
     VS::BindUniformBuffer(cmd,
                           pass.GetTransientsBuffer().EmplaceUniform(uniforms));
-
-    cmd.primitive_type = PrimitiveType::kTriangle;
     if (!pass.AddCommand(std::move(cmd))) {
       return false;
     }
@@ -212,7 +208,7 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(box_pipeline);
 
   // Vertex buffer.
@@ -254,8 +250,6 @@ TEST_P(RendererTest, CanRenderMultiplePrimitives) {
     FS::BindContents1(cmd, boston, sampler);
     FS::BindContents2(cmd, bridge, sampler);
 
-    cmd.primitive_type = PrimitiveType::kTriangle;
-
     for (size_t i = 0; i < 1; i++) {
       for (size_t j = 0; j < 1; j++) {
         VS::UniformBuffer uniforms;
@@ -285,7 +279,7 @@ TEST_P(RendererTest, CanRenderToTexture) {
       BoxPipelineBuilder::MakeDefaultPipelineDescriptor(*context);
   ASSERT_TRUE(pipeline_desc.has_value());
   auto box_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_desc).Get();
   ASSERT_TRUE(box_pipeline);
 
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
@@ -369,8 +363,6 @@ TEST_P(RendererTest, CanRenderToTexture) {
   FS::BindContents1(cmd, boston, sampler);
   FS::BindContents2(cmd, bridge, sampler);
 
-  cmd.primitive_type = PrimitiveType::kTriangle;
-
   VS::UniformBuffer uniforms;
   uniforms.mvp = Matrix::MakeOrthographic(ISize{1024, 768}) *
                  Matrix::MakeTranslation({50.0f, 50.0f, 0.0f});
@@ -417,7 +409,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
           ->GetPipeline(PipelineBuilder<VS, FS>::MakeDefaultPipelineDescriptor(
                             *GetContext())
                             ->SetSampleCount(SampleCount::kCount4))
-          .get();
+          .Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   Command cmd;
@@ -457,7 +449,7 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   TextureDescriptor texture_desc;
@@ -567,7 +559,7 @@ TEST_P(RendererTest, CanBlitTextureToBuffer) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto bridge = CreateTextureForFixture("bay_bridge.jpg");
@@ -698,7 +690,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   ASSERT_TRUE(desc.has_value());
   desc->SetSampleCount(SampleCount::kCount4);
   auto mipmaps_pipeline =
-      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+      context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
   ASSERT_TRUE(mipmaps_pipeline);
 
   auto boston = CreateTextureForFixture("boston.jpg", true);
@@ -815,7 +807,7 @@ TEST_P(RendererTest, TheImpeller) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   auto blue_noise = CreateTextureForFixture("blue_noise.png");
@@ -875,7 +867,7 @@ TEST_P(RendererTest, ArrayUniforms) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {
@@ -931,7 +923,7 @@ TEST_P(RendererTest, InactiveUniforms) {
   ASSERT_TRUE(pipeline_descriptor.has_value());
   pipeline_descriptor->SetSampleCount(SampleCount::kCount4);
   auto pipeline =
-      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).get();
+      context->GetPipelineLibrary()->GetPipeline(pipeline_descriptor).Get();
   ASSERT_TRUE(pipeline && pipeline->IsValid());
 
   SinglePassCallback callback = [&](RenderPass& pass) {

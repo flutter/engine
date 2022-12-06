@@ -19,10 +19,8 @@ chrome:
   Win: 1047731
   version: '107.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
 
-## Firefox does not use CIPD. To update the version, simply update it in this
-## file.
 firefox:
-  version: '83.0'
+  version: '106.0'
 
 edge:
   launcher_version: '1.2.0.0'

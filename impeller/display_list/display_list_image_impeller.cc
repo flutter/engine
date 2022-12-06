@@ -4,17 +4,40 @@
 
 #include "impeller/display_list/display_list_image_impeller.h"
 
+#include "impeller/aiks/aiks_context.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
+
 namespace impeller {
 
-sk_sp<DlImageImpeller> DlImageImpeller::Make(std::shared_ptr<Texture> texture) {
+sk_sp<DlImageImpeller> DlImageImpeller::Make(std::shared_ptr<Texture> texture,
+                                             OwningContext owning_context) {
   if (!texture) {
     return nullptr;
   }
-  return sk_sp<DlImageImpeller>(new DlImageImpeller(std::move(texture)));
+  return sk_sp<DlImageImpeller>(
+      new DlImageImpeller(std::move(texture), owning_context));
 }
 
-DlImageImpeller::DlImageImpeller(std::shared_ptr<Texture> texture)
-    : texture_(std::move(texture)) {}
+sk_sp<DlImageImpeller> DlImageImpeller::MakeFromYUVTextures(
+    AiksContext* aiks_context,
+    std::shared_ptr<Texture> y_texture,
+    std::shared_ptr<Texture> uv_texture,
+    YUVColorSpace yuv_color_space) {
+  if (!aiks_context || !y_texture || !uv_texture) {
+    return nullptr;
+  }
+  auto yuv_to_rgb_filter_contents = FilterContents::MakeYUVToRGBFilter(
+      std::move(y_texture), std::move(uv_texture), yuv_color_space);
+  impeller::Entity entity;
+  entity.SetBlendMode(impeller::BlendMode::kSource);
+  auto snapshot = yuv_to_rgb_filter_contents->RenderToSnapshot(
+      aiks_context->GetContentContext(), entity);
+  return impeller::DlImageImpeller::Make(snapshot->texture);
+}
+
+DlImageImpeller::DlImageImpeller(std::shared_ptr<Texture> texture,
+                                 OwningContext owning_context)
+    : texture_(std::move(texture)), owning_context_(owning_context) {}
 
 // |DlImage|
 DlImageImpeller::~DlImageImpeller() = default;

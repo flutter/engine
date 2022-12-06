@@ -156,6 +156,19 @@ targets:
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
       clobber: "true"
+      emulator_arch: "x64"
+    timeout: 60
+
+  - name: Linux Fuchsia arm64 FEMU
+    recipe: engine/femu_test
+    bringup: true
+    properties:
+      add_recipes_cq: "true"
+      build_fuchsia: "true"
+      fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
+      emulator_arch: "arm64"
     timeout: 60
 
   - name: Linux Framework Smoke Tests
@@ -168,6 +181,8 @@ targets:
   - name: Linux Host Engine
     recipe: engine/engine
     properties:
+      gclient_variables: >-
+        {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
     timeout: 60
@@ -240,7 +255,6 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_arm_host_engine
-      environment: Production
 
   - name: Linux linux_host_engine
     recipe: engine_v2/engine_v2
@@ -248,7 +262,6 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_host_engine
-      environment: Production
 
   - name: Linux linux_android_aot_engine
     recipe: engine_v2/engine_v2
@@ -256,7 +269,6 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_android_aot_engine
-      environment: Production
 
   - name: Linux linux_android_debug_engine
     recipe: engine_v2/engine_v2
@@ -264,15 +276,19 @@ targets:
     properties:
       release_build: "true"
       config_name: linux_android_debug_engine
-      environment: Production
 
   - name: Linux Web Engine
     recipe: engine/web_engine
     properties:
       add_recipes_cq: "true"
+      cores: "32"
       gcs_goldens_bucket: flutter_logs
+      gclient_variables: >-
+        {"download_emsdk": true}
       dependencies: >-
         [
+          {"dependency": "chrome_and_driver", "version": "version:107.0"},
+          {"dependency": "firefox", "version": "version:106.0"},
           {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
         ]
     timeout: 60
@@ -323,6 +339,8 @@ targets:
   - name: Mac Host Engine
     recipe: engine/engine
     properties:
+      gclient_variables: >-
+        {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
       jazzy_version: "0.14.1"
@@ -330,18 +348,20 @@ targets:
 
   - name: Mac mac_android_aot_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_android_aot_engine
-      environment: Staging
+      $flutter/osx_sdk : >-
+        { "sdk_version": "14a5294e" }
 
   - name: Mac mac_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: mac_host_engine
-      environment: Production
+      $flutter/osx_sdk : >-
+        { "sdk_version": "14a5294e" }
 
   - name: Mac Unopt
     recipe: engine/engine_unopt
@@ -413,6 +433,8 @@ targets:
     properties:
       add_recipes_cq: "true"
       gcs_goldens_bucket: flutter_logs
+      gclient_variables: >-
+        {"download_emsdk": true}
       dependencies: >-
         [
           {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
@@ -431,8 +453,10 @@ targets:
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:
+      release_build: "true"
       config_name: mac_ios_engine
-      environment: Production
+      $flutter/osx_sdk : >-
+        { "sdk_version": "14a5294e" }
       dependencies: >-
         [
           {"dependency": "jazzy", "version": "0.14.1"}
@@ -443,15 +467,16 @@ targets:
     timeout: 60
     properties:
       config_name: mac_ios_engine_profile
-      environment: Production
+      $flutter/osx_sdk : >-
+        { "sdk_version": "14a5294e" }
 
   - name:  Mac mac_ios_engine_release
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
       config_name: mac_ios_engine_release
-      environment: Staging
+      $flutter/osx_sdk : >-
+        { "sdk_version": "14a5294e" }
 
   - name: Windows Android AOT Engine
     recipe: engine/engine
@@ -465,24 +490,24 @@ targets:
     recipe: engine/engine
     timeout: 60
     properties:
+      gclient_variables: >-
+        {"download_emsdk": true}
       add_recipes_cq: "true"
       build_host: "true"
 
   - name: Windows windows_android_aot_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: windows_android_aot_engine
-      environment: Staging
 
   - name: Windows windows_host_engine
     recipe: engine_v2/engine_v2
-    bringup: true
     timeout: 60
     properties:
+      release_build: "true"
       config_name: windows_host_engine
-      environment: Staging
 
   - name: Windows Unopt
     recipe: engine/engine_unopt
@@ -493,7 +518,13 @@ targets:
   - name: Windows Web Engine
     recipe: engine/web_engine
     properties:
+      gclient_variables: >-
+        {"download_emsdk": true}
       gcs_goldens_bucket: flutter_logs
+      dependencies: >-
+        [
+          {"dependency": "chrome_and_driver", "version": "version:107.0"}
+        ]
     timeout: 60
     runIf:
       - DEPS

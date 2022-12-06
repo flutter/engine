@@ -28,13 +28,11 @@ class DomWindow extends DomEventTarget {}
 
 extension DomWindowExtension on DomWindow {
   external DomConsole get console;
-  external num get devicePixelRatio;
+  external double get devicePixelRatio;
   external DomDocument get document;
   external DomHistory get history;
-  int? get innerHeight =>
-      js_util.getProperty<double?>(this, 'innerHeight')?.toInt();
-  int? get innerWidth =>
-      js_util.getProperty<double?>(this, 'innerWidth')?.toInt();
+  external double? get innerHeight;
+  external double? get innerWidth;
   external DomLocation get location;
   external DomNavigator get navigator;
   external DomVisualViewport? get visualViewport;
@@ -52,9 +50,7 @@ extension DomWindowExtension on DomWindow {
         if (pseudoElt != null) pseudoElt
       ]) as DomCSSStyleDeclaration;
   external DomScreen? get screen;
-  int requestAnimationFrame(DomRequestAnimationFrameCallback callback) =>
-      js_util.callMethod<double>(this, 'requestAnimationFrame',
-          <Object>[callback]).toInt();
+  external double requestAnimationFrame(DomRequestAnimationFrameCallback callback);
   void postMessage(Object message, String targetOrigin,
           [List<DomMessagePort>? messagePorts]) =>
       js_util.callMethod(this, 'postMessage', <Object?>[
@@ -66,6 +62,9 @@ extension DomWindowExtension on DomWindow {
   /// The Trusted Types API (when available).
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
   external DomTrustedTypePolicyFactory? get trustedTypes;
+
+  // ignore: non_constant_identifier_names
+  external DomIntl get Intl;
 }
 
 typedef DomRequestAnimationFrameCallback = void Function(num highResTime);
@@ -77,6 +76,7 @@ class DomConsole {}
 extension DomConsoleExtension on DomConsole {
   external void warn(Object? arg);
   external void error(Object? arg);
+  external void debug(Object? arg);
 }
 
 @JS('window')
@@ -88,8 +88,7 @@ class DomNavigator {}
 
 extension DomNavigatorExtension on DomNavigator {
   external DomClipboard? get clipboard;
-  int? get maxTouchPoints =>
-      js_util.getProperty<double?>(this, 'maxTouchPoints')?.toInt();
+  external double? get maxTouchPoints;
   external String get vendor;
   external String get language;
   external String? get platform;
@@ -175,7 +174,7 @@ class DomEvent {}
 
 extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
-  external num? get timeStamp;
+  external double? get timeStamp;
   external String get type;
   external void preventDefault();
   external void stopPropagation();
@@ -194,15 +193,15 @@ DomEvent createDomEvent(String type, String name) {
   return event;
 }
 
-@JS()
+@JS('ProgressEvent')
 @staticInterop
-class DomProgressEvent extends DomEvent {}
+class DomProgressEvent extends DomEvent {
+  external factory DomProgressEvent(String type);
+}
 
 extension DomProgressEventExtension on DomProgressEvent {
-  int? get loaded =>
-    js_util.getProperty<double?>(this, 'loaded')?.toInt();
-  int? get total =>
-    js_util.getProperty<double?>(this, 'total')?.toInt();
+  external double? get loaded;
+  external double? get total;
 }
 
 @JS()
@@ -253,10 +252,8 @@ DomElement createDomElement(String tag) => domDocument.createElement(tag);
 extension DomElementExtension on DomElement {
   Iterable<DomElement> get children => createDomListWrapper<DomElement>(
       js_util.getProperty<_DomList>(this, 'children'));
-  int get clientHeight =>
-      js_util.getProperty<double>(this, 'clientHeight').toInt();
-  int get clientWidth =>
-      js_util.getProperty<double>(this, 'clientWidth').toInt();
+  external double get clientHeight;
+  external double get clientWidth;
   external String get id;
   external set id(String id);
   external set innerHtml(String? html);
@@ -276,18 +273,13 @@ extension DomElementExtension on DomElement {
   external void setAttribute(String name, Object value);
   void appendText(String text) => append(createDomText(text));
   external void removeAttribute(String name);
-  set tabIndex(int? value) =>
-      js_util.setProperty<double?>(this, 'tabIndex', value?.toDouble());
-  int? get tabIndex =>
-      js_util.getProperty<double?>(this, 'tabIndex')?.toInt();
+  external set tabIndex(double? value);
+  external double? get tabIndex;
   external void focus();
-  int get scrollTop => js_util.getProperty<double>(this, 'scrollTop').toInt();
-  set scrollTop(int value) =>
-      js_util.setProperty<double>(this, 'scrollTop', value.toDouble());
-  int get scrollLeft =>
-      js_util.getProperty<double>(this, 'scrollLeft').toInt();
-  set scrollLeft(int value) =>
-      js_util.setProperty<double>(this, 'scrollLeft', value.toDouble());
+  external double get scrollTop;
+  external set scrollTop(double value);
+  external double get scrollLeft;
+  external set scrollLeft(double value);
   external DomTokenList get classList;
   external set className(String value);
   external String get className;
@@ -467,8 +459,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
 class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
-  int get offsetWidth =>
-      js_util.getProperty<double>(this, 'offsetWidth').toInt();
+  external double get offsetWidth;
 }
 
 @JS()
@@ -506,14 +497,10 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
   external set alt(String? value);
   external String? get src;
   external set src(String? value);
-  int get naturalWidth =>
-      js_util.getProperty<double>(this, 'naturalWidth').toInt();
-  int get naturalHeight =>
-      js_util.getProperty<double>(this, 'naturalHeight').toInt();
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
+  external double get naturalWidth;
+  external double get naturalHeight;
+  external set width(double? value);
+  external set height(double? value);
   Future<dynamic> decode() =>
       js_util.promiseToFuture(js_util.callMethod(this, 'decode', <Object>[]));
 }
@@ -596,23 +583,19 @@ DomCanvasElement createDomCanvasElement({int? width, int? height}) {
   final DomCanvasElement canvas =
       domWindow.document.createElement('canvas') as DomCanvasElement;
   if (width != null) {
-    canvas.width = width;
+    canvas.width = width.toDouble();
   }
   if (height != null) {
-    canvas.height = height;
+    canvas.height = height.toDouble();
   }
   return canvas;
 }
 
 extension DomCanvasElementExtension on DomCanvasElement {
-  int? get width =>
-      js_util.getProperty<double?>(this, 'width')?.toInt();
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
-  int? get height =>
-      js_util.getProperty<double?>(this, 'height')?.toInt();
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
+  external double? get width;
+  external set width(double? value);
+  external double? get height;
+  external set height(double? value);
   external bool? get isConnected;
   String toDataURL([String type = 'image/png']) =>
       js_util.callMethod(this, 'toDataURL', <Object>[type]);
@@ -748,8 +731,7 @@ extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
   external dynamic get response;
   external String? get responseText;
   external String get responseType;
-  int? get status =>
-      js_util.getProperty<double?>(this, 'status')?.toInt();
+  external double? get status;
   external set responseType(String value);
   void open(String method, String url, [bool? async]) => js_util.callMethod(
       this, 'open', <Object>[method, url, if (async != null) async]);
@@ -767,7 +749,7 @@ Future<DomXMLHttpRequest> domHttpRequest(String url,
   }
 
   xhr.addEventListener('load', allowInterop((DomEvent e) {
-    final int status = xhr.status!;
+    final int status = xhr.status!.toInt();
     final bool accepted = status >= 200 && status < 300;
     final bool fileUri = status == 0;
     final bool notModified = status == 304;
@@ -803,7 +785,7 @@ DomText createDomText(String data) => domDocument.createTextNode(data);
 class DomTextMetrics {}
 
 extension DomTextMetricsExtension on DomTextMetrics {
-  external num? get width;
+  external double? get width;
 }
 
 @JS()
@@ -821,14 +803,14 @@ extension DomExceptionExtension on DomException {
 class DomRectReadOnly {}
 
 extension DomRectReadOnlyExtension on DomRectReadOnly {
-  external num get x;
-  external num get y;
-  external num get width;
-  external num get height;
-  external num get top;
-  external num get right;
-  external num get bottom;
-  external num get left;
+  external double get x;
+  external double get y;
+  external double get width;
+  external double get height;
+  external double get top;
+  external double get right;
+  external double get bottom;
+  external double get left;
 }
 
 DomRect createDomRectFromPoints(DomPoint a, DomPoint b) {
@@ -880,8 +862,8 @@ typedef DomFontFaceSetForEachCallback = void Function(
 class DomVisualViewport extends DomEventTarget {}
 
 extension DomVisualViewportExtension on DomVisualViewport {
-  external num? get height;
-  external num? get width;
+  external double? get height;
+  external double? get width;
 }
 
 @JS()
@@ -896,10 +878,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external void select();
   external set placeholder(String? value);
   external set name(String value);
-  external int? get selectionStart;
-  external int? get selectionEnd;
-  external set selectionStart(int? value);
-  external set selectionEnd(int? value);
+  external double? get selectionStart;
+  external double? get selectionEnd;
+  external set selectionStart(double? value);
+  external set selectionEnd(double? value);
   external String? get value;
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
@@ -945,13 +927,12 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external String? get code;
   external bool get ctrlKey;
   external String? get key;
-  int get keyCode =>
-      js_util.getProperty<double>(this, 'keyCode').toInt();
-  int get location =>
-      js_util.getProperty<double>(this, 'location').toInt();
+  external double get keyCode;
+  external double get location;
   external bool get metaKey;
   external bool? get repeat;
   external bool get shiftKey;
+  external bool get isComposing;
   external bool getModifierState(String keyArg);
 }
 
@@ -1103,16 +1084,14 @@ DomPath2D createDomPath2D([Object? path]) =>
 class DomMouseEvent extends DomUIEvent {}
 
 extension DomMouseEventExtension on DomMouseEvent {
-  external num get clientX;
-  external num get clientY;
-  external num get offsetX;
-  external num get offsetY;
+  external double get clientX;
+  external double get clientY;
+  external double get offsetX;
+  external double get offsetY;
   DomPoint get client => DomPoint(clientX, clientY);
   DomPoint get offset => DomPoint(offsetX, offsetY);
-  int get button =>
-      js_util.getProperty<double>(this, 'button').toInt();
-  int? get buttons =>
-      js_util.getProperty<double?>(this, 'buttons')?.toInt();
+  external double get button;
+  external double? get buttons;
   external bool getModifierState(String keyArg);
 }
 
@@ -1125,14 +1104,11 @@ DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) =>
 class DomPointerEvent extends DomMouseEvent {}
 
 extension DomPointerEventExtension on DomPointerEvent {
-  int? get pointerId =>
-      js_util.getProperty<double?>(this, 'pointerId')?.toInt();
+  external double? get pointerId;
   external String? get pointerType;
-  external num? get pressure;
-  int? get tiltX =>
-      js_util.getProperty<double?>(this, 'tiltX')?.toInt();
-  int? get tiltY =>
-      js_util.getProperty<double?>(this, 'tiltY')?.toInt();
+  external double? get pressure;
+  external double? get tiltX;
+  external double? get tiltY;
   List<DomPointerEvent> getCoalescedEvents() =>
       js_util.callMethod<List<Object?>>(
           this, 'getCoalescedEvents', <Object>[]).cast<DomPointerEvent>();
@@ -1148,10 +1124,9 @@ DomPointerEvent createDomPointerEvent(String type,
 class DomWheelEvent extends DomMouseEvent {}
 
 extension DomWheelEventExtension on DomWheelEvent {
-  external num get deltaX;
-  external num get deltaY;
-  int get deltaMode =>
-      js_util.getProperty<double>(this, 'deltaMode').toInt();
+  external double get deltaX;
+  external double get deltaY;
+  external double get deltaMode;
 }
 
 @JS()
@@ -1173,10 +1148,9 @@ extension DomTouchEventExtension on DomTouchEvent {
 class DomTouch {}
 
 extension DomTouchExtension on DomTouch {
-  int? get identifier =>
-      js_util.getProperty<double?>(this, 'identifier')?.toInt();
-  external num get clientX;
-  external num get clientY;
+  external double? get identifier;
+  external double get clientX;
+  external double get clientY;
   DomPoint get client => DomPoint(clientX, clientY);
 }
 
@@ -1216,14 +1190,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   external set placeholder(String? value);
   external set name(String? value);
   external set autocomplete(String value);
-  int? get selectionStart =>
-      js_util.getProperty<double?>(this, 'selectionStart')?.toInt();
-  int? get selectionEnd =>
-      js_util.getProperty<double?>(this, 'selectionEnd')?.toInt();
-  set selectionStart(int? value) =>
-      js_util.setProperty<double?>(this, 'selectionStart', value?.toDouble());
-  set selectionEnd(int? value) =>
-      js_util.setProperty<double?>(this, 'selectionEnd', value?.toDouble());
+  external double? get selectionStart;
+  external double? get selectionEnd;
+  external set selectionStart(double? value);
+  external set selectionEnd(double? value);
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
           <Object>[start.toDouble(), end.toDouble(),
@@ -1272,14 +1242,10 @@ DomHTMLLabelElement createDomHTMLLabelElement() =>
 class DomOffscreenCanvas extends DomEventTarget {}
 
 extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
-  int? get height =>
-      js_util.getProperty<double?>(this, 'height')?.toInt();
-  int? get width =>
-      js_util.getProperty<double?>(this, 'width')?.toInt();
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
+  external double? get height;
+  external double? get width;
+  external set height(double? value);
+  external set width(double? value);
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
       contextType,
@@ -1344,10 +1310,10 @@ class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
   external DomCSSRuleList get cssRules;
-  int insertRule(String rule, [int? index]) => js_util
+  double insertRule(String rule, [int? index]) => js_util
       .callMethod<double>(
           this, 'insertRule',
-          <Object>[rule, if (index != null) index.toDouble()]).toInt();
+          <Object>[rule, if (index != null) index.toDouble()]);
 }
 
 @JS()
@@ -1456,8 +1422,7 @@ extension DomMessageChannelExtension on DomMessageChannel {
 class DomCSSRuleList {}
 
 extension DomCSSRuleListExtension on DomCSSRuleList {
-  int get length =>
-      js_util.getProperty<double>(this, 'length').toInt();
+  external double get length;
 }
 
 /// A factory to create `TrustedTypePolicy` objects.
@@ -1570,13 +1535,11 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedCanvasKitUrl =
-        _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
-    assert(trustedCanvasKitUrl.url != '',
-        'URL: $url rejected by TrustedTypePolicy');
+    assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedCanvasKitUrl;
+    return trustedUrl;
   }
   return url;
 }
@@ -1616,8 +1579,7 @@ bool domInstanceOfString(Object? element, String objectType) =>
 class _DomList {}
 
 extension DomListExtension on _DomList {
-  int get length =>
-      js_util.getProperty<double>(this, 'length').toInt();
+  external double get length;
   DomNode item(int index) =>
       js_util.callMethod<DomNode>(this, 'item', <Object>[index.toDouble()]);
 }
@@ -1651,10 +1613,49 @@ class _DomListWrapper<T> extends Iterable<T> {
 
   /// Override the length to avoid iterating through the whole collection.
   @override
-  int get length => list.length;
+  int get length => list.length.toInt();
 }
 
 /// This is a work around for a `TypeError` which can be triggered by calling
 /// `toList` on the `Iterable`.
 Iterable<T> createDomListWrapper<T>(_DomList list) =>
     _DomListWrapper<T>._(list).cast<T>();
+
+@JS()
+@staticInterop
+class DomIntl {}
+
+extension DomIntlExtension on DomIntl {
+  /// This is a V8-only API for segmenting text.
+  ///
+  /// See: https://code.google.com/archive/p/v8-i18n/wikis/BreakIterator.wiki
+  external Object? get v8BreakIterator;
+}
+
+
+@JS()
+@staticInterop
+class DomV8BreakIterator {}
+
+extension DomV8BreakIteratorExtension on DomV8BreakIterator {
+  external void adoptText(String text);
+  external double first();
+  external double next();
+  external double current();
+  external String breakType();
+}
+
+DomV8BreakIterator createV8BreakIterator() {
+  final Object? v8BreakIterator = domWindow.Intl.v8BreakIterator;
+  if (v8BreakIterator == null) {
+    throw UnimplementedError('v8BreakIterator is not supported.');
+  }
+
+  return js_util.callConstructor<DomV8BreakIterator>(
+    v8BreakIterator,
+    <Object?>[
+      js_util.getProperty(domWindow, 'undefined'),
+      js_util.jsify(const <String, String>{'type': 'line'}),
+    ],
+  );
+}

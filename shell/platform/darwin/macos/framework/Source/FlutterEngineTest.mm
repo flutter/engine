@@ -23,8 +23,7 @@
 
 @interface FlutterEngine (Test)
 /**
- * The FlutterCompositor object currently in use by the FlutterEngine. This is
- * either a FlutterOpenGLCompositor or a FlutterMetalCompositor.
+ * The FlutterCompositor object currently in use by the FlutterEngine.
  *
  * May be nil if the compositor has not been initialized yet.
  */
@@ -40,11 +39,9 @@ TEST_F(FlutterEngineTest, CanLaunch) {
 }
 
 TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
-  // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
   std::string executable_name = [[engine executableName] UTF8String];
   ASSERT_FALSE(executable_name.empty());
-  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
 
   // Block until notified by the Dart test of the value of Platform.executable.
   fml::AutoResetWaitableEvent latch;
@@ -54,6 +51,10 @@ TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
                       EXPECT_EQ(executable_name, dart_string);
                       latch.Signal();
                     }));
+
+  // Launch the test entrypoint.
+  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
+
   latch.Wait();
 }
 
@@ -77,6 +78,11 @@ TEST_F(FlutterEngineTest, MessengerSend) {
 }
 
 TEST_F(FlutterEngineTest, CanLogToStdout) {
+  // Block until completion of print statement.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+
   // Replace stdout stream buffer with our own.
   std::stringstream buffer;
   std::streambuf* old_buffer = std::cout.rdbuf();
@@ -87,10 +93,6 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE([engine runWithEntrypoint:@"canLogToStdout"]);
   EXPECT_TRUE(engine.running);
 
-  // Block until completion of print statement.
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("SignalNativeTest",
-                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
   latch.Wait();
 
   // Restore old stdout stream buffer.
@@ -102,19 +104,7 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
 }
 
 TEST_F(FlutterEngineTest, BackgroundIsBlack) {
-  // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
-
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
-  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
@@ -128,12 +118,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
                       }
                       latch.Signal();
                     }));
-  latch.Wait();
-}
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   // Launch the test entrypoint.
-  FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
@@ -145,7 +131,12 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
-  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
+  latch.Wait();
+}
+
+TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+  FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
@@ -159,6 +150,21 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
                       }
                       latch.Signal();
                     }));
+
+  // Launch the test entrypoint.
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
   latch.Wait();
 }
 
@@ -166,14 +172,12 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
-  std::function<void(const FlutterSemanticsCustomAction*, void*)> update_action_callback;
+  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
-      Initialize, ([&update_action_callback, &update_node_callback, &original_init](
+      Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_node_callback = args->update_semantics_node_callback;
-        update_action_callback = args->update_semantics_custom_action_callback;
+        update_semantics_callback = args->update_semantics_callback;
         return original_init(version, config, args, user_data, engine_out);
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -211,7 +215,6 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
-  update_node_callback(&root, (void*)CFBridgingRetain(engine));
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -227,15 +230,13 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
-  update_node_callback(&child1, (void*)CFBridgingRetain(engine));
 
-  FlutterSemanticsNode node_batch_end;
-  node_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_node_callback(&node_batch_end, (void*)CFBridgingRetain(engine));
-
-  FlutterSemanticsCustomAction action_batch_end;
-  action_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_action_callback(&action_batch_end, (void*)CFBridgingRetain(engine));
+  FlutterSemanticsUpdate update;
+  update.nodes_count = 2;
+  FlutterSemanticsNode nodes[] = {root, child1};
+  update.nodes = nodes;
+  update.custom_actions_count = 0;
+  update_semantics_callback(&update, (__bridge void*)engine);
 
   // Verify the accessibility tree is attached to the flutter view.
   EXPECT_EQ([engine.viewController.flutterView.accessibilityChildren count], 1u);
@@ -268,14 +269,12 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
-  std::function<void(const FlutterSemanticsCustomAction*, void*)> update_action_callback;
+  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
-      Initialize, ([&update_action_callback, &update_node_callback, &original_init](
+      Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_node_callback = args->update_semantics_node_callback;
-        update_action_callback = args->update_semantics_custom_action_callback;
+        update_semantics_callback = args->update_semantics_callback;
         return original_init(version, config, args, user_data, engine_out);
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -306,7 +305,6 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
-  update_node_callback(&root, (void*)CFBridgingRetain(engine));
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -322,15 +320,13 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
-  update_node_callback(&child1, (void*)CFBridgingRetain(engine));
 
-  FlutterSemanticsNode node_batch_end;
-  node_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_node_callback(&node_batch_end, (void*)CFBridgingRetain(engine));
-
-  FlutterSemanticsCustomAction action_batch_end;
-  action_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_action_callback(&action_batch_end, (void*)CFBridgingRetain(engine));
+  FlutterSemanticsUpdate update;
+  update.nodes_count = 2;
+  FlutterSemanticsNode nodes[] = {root, child1};
+  update.nodes = nodes;
+  update.custom_actions_count = 0;
+  update_semantics_callback(&update, (__bridge void*)engine);
 
   // No crashes.
   EXPECT_EQ(engine.viewController, nil);
@@ -352,14 +348,12 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
   auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsNode*, void*)> update_node_callback;
-  std::function<void(const FlutterSemanticsCustomAction*, void*)> update_action_callback;
+  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
   engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
-      Initialize, ([&update_action_callback, &update_node_callback, &original_init](
+      Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_node_callback = args->update_semantics_node_callback;
-        update_action_callback = args->update_semantics_custom_action_callback;
+        update_semantics_callback = args->update_semantics_callback;
         return original_init(version, config, args, user_data, engine_out);
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -397,7 +391,6 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   int32_t children[] = {1};
   root.children_in_traversal_order = children;
   root.custom_accessibility_actions_count = 0;
-  update_node_callback(&root, (void*)CFBridgingRetain(engine));
 
   FlutterSemanticsNode child1;
   child1.id = 1;
@@ -413,15 +406,13 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   child1.tooltip = "";
   child1.child_count = 0;
   child1.custom_accessibility_actions_count = 0;
-  update_node_callback(&child1, (void*)CFBridgingRetain(engine));
 
-  FlutterSemanticsNode node_batch_end;
-  node_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_node_callback(&node_batch_end, (void*)CFBridgingRetain(engine));
-
-  FlutterSemanticsCustomAction action_batch_end;
-  action_batch_end.id = kFlutterSemanticsNodeIdBatchEnd;
-  update_action_callback(&action_batch_end, (void*)CFBridgingRetain(engine));
+  FlutterSemanticsUpdate update;
+  update.nodes_count = 2;
+  FlutterSemanticsNode nodes[] = {root, child1};
+  update.nodes = nodes;
+  update.custom_actions_count = 0;
+  update_semantics_callback(&update, (__bridge void*)engine);
 
   auto native_root = engine.accessibilityBridge.lock()->GetFlutterPlatformNodeDelegateFromID(0);
   EXPECT_FALSE(native_root.expired());
@@ -441,17 +432,17 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
 }
 
 TEST_F(FlutterEngineTest, NativeCallbacks) {
-  FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
-  EXPECT_TRUE(engine.running);
-
   fml::AutoResetWaitableEvent latch;
   bool latch_called = false;
-
   AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
                       latch_called = true;
                       latch.Signal();
                     }));
+
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
+  EXPECT_TRUE(engine.running);
+
   latch.Wait();
   ASSERT_TRUE(latch_called);
 }
@@ -621,6 +612,48 @@ TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
   [engineMock handleMethodCall:methodCall result:result];
   EXPECT_TRUE(called);
   EXPECT_TRUE(value);
+}
+
+TEST_F(FlutterEngineTest, ResponseAfterEngineDied) {
+  FlutterEngine* engine = GetFlutterEngine();
+  FlutterBasicMessageChannel* channel = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"foo"
+      binaryMessenger:engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
+  __block BOOL didCallCallback = NO;
+  [channel setMessageHandler:^(id message, FlutterReply callback) {
+    ShutDownEngine();
+    callback(nil);
+    didCallCallback = YES;
+  }];
+  EXPECT_TRUE([engine runWithEntrypoint:@"sendFooMessage"]);
+  engine = nil;
+
+  while (!didCallCallback) {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
+}
+
+TEST_F(FlutterEngineTest, ResponseFromBackgroundThread) {
+  FlutterEngine* engine = GetFlutterEngine();
+  FlutterBasicMessageChannel* channel = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"foo"
+      binaryMessenger:engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
+  __block BOOL didCallCallback = NO;
+  [channel setMessageHandler:^(id message, FlutterReply callback) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      callback(nil);
+      dispatch_async(dispatch_get_main_queue(), ^{
+        didCallCallback = YES;
+      });
+    });
+  }];
+  EXPECT_TRUE([engine runWithEntrypoint:@"sendFooMessage"]);
+
+  while (!didCallCallback) {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
 }
 
 }  // namespace flutter::testing
