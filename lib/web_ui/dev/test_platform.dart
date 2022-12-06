@@ -398,9 +398,9 @@ class BrowserPlatform extends PlatformPlugin {
   /// This is used for trivial use-cases, such as `favicon.ico`, host pages, etc.
   shelf.Response buildDirectoryHandler(shelf.Request request) {
     File fileInBuild = File(p.join(
-        env.environment.webUiBuildDir.path,
-        getBuildDirForRenderer(renderer),
-        request.url.path,
+      env.environment.webUiBuildDir.path,
+      getBuildDirForRenderer(renderer),
+      request.url.path,
     ));
 
     // If we can't find the file in the renderer-specific `build` subdirectory,
