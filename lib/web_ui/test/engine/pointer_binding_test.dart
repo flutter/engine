@@ -23,13 +23,15 @@ typedef _ContextTestBody<T> = void Function(T);
 void _testEach<T extends _BasicEventContext>(
   Iterable<T> contexts,
   String description,
-  _ContextTestBody<T> body,
+  _ContextTestBody<T> body, {
+    Object? skip,
+  }
 ) {
   for (final T context in contexts) {
     if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
-      });
+      }, skip: skip);
     }
   }
 }
@@ -867,6 +869,7 @@ void testMain() {
 
       semanticsPlaceholder.remove();
     },
+    skip: isFirefox, // https://bugzilla.mozilla.org/show_bug.cgi?id=1804190
   );
 
   // BUTTONED ADAPTERS
@@ -2486,7 +2489,7 @@ void testMain() {
       packets.clear();
 
       // Release outside the glasspane.
-      domWindow.dispatchEvent(context.primaryUp(
+      glassPane.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
         clientY: 2000.0,
       ));
@@ -3572,6 +3575,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointerup', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,

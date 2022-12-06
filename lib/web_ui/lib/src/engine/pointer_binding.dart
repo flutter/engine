@@ -764,6 +764,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, useCapture: false, checkModifiers: false);
 
+    // TODO(dit): This must happen in the glassPane, https://github.com/flutter/flutter/issues/116561
     _addPointerEventListener(domWindow, 'pointerup', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
@@ -776,6 +777,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         }
       }
     });
+
+    // TODO(dit): Synthesize a "cancel" event when 'pointerup' happens outside of the glassPane, https://github.com/flutter/flutter/issues/116561
 
     // A browser fires cancel event if it concludes the pointer will no longer
     // be able to generate events (example: device is deactivated)
@@ -1113,6 +1116,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       }
     }, useCapture: false);
 
+    // TODO(dit): This must happen in the glassPane, https://github.com/flutter/flutter/issues/116561
     _addMouseEventListener(domWindow, 'mouseup', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons?.toInt());
