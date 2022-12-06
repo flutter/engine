@@ -11,15 +11,17 @@
 namespace flutter {
 
 EmbedderRenderTarget::EmbedderRenderTarget(FlutterBackingStore backing_store,
-                                           sk_sp<SkSurface> render_surface,
+                                           AcquireSurfaceCallback acquire_surface,
+                                           SkISize size,
                                            fml::closure on_release)
     : backing_store_(backing_store),
-      render_surface_(std::move(render_surface)),
+      acquire_surface_(std::move(acquire_surface)),
+      size_(size),
       on_release_(std::move(on_release)) {
   // TODO(38468): The optimization to elide backing store updates between frames
   // has not been implemented yet.
   backing_store_.did_update = true;
-  FML_DCHECK(render_surface_);
+  FML_DCHECK(acquire_surface_);
 }
 
 EmbedderRenderTarget::~EmbedderRenderTarget() {
@@ -32,8 +34,8 @@ const FlutterBackingStore* EmbedderRenderTarget::GetBackingStore() const {
   return &backing_store_;
 }
 
-sk_sp<SkSurface> EmbedderRenderTarget::GetRenderSurface() const {
-  return render_surface_;
+sk_sp<SkSurface> EmbedderRenderTarget::AcquireRenderSurface() const {
+  return acquire_surface_(backing_store_, size_);
 }
 
 }  // namespace flutter

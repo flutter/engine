@@ -155,7 +155,8 @@ void EmbedderLayers::PushPlatformViewLayer(
     if (!mutations_array.empty()) {
       // If there are going to be any mutations, they must first take into
       // account the root surface transformation.
-      if (!root_surface_transformation_.isIdentity()) {
+      bool has_root_surface_transformation = !root_surface_transformation_.isIdentity();
+      if (has_root_surface_transformation) {
         mutations_array.push_back(
             mutations_referenced_
                 .emplace_back(ConvertMutation(root_surface_transformation_))
@@ -169,6 +170,7 @@ void EmbedderLayers::PushPlatformViewLayer(
 
       view.mutations_count = mutations_array.size();
       view.mutations = mutations_arrays_referenced_.back().get()->data();
+      view.device_pixel_ratio = device_pixel_ratio_;
     }
 
     platform_views_referenced_.emplace_back(

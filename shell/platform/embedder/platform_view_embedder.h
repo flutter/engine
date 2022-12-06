@@ -27,6 +27,10 @@
 #include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #endif
 
+#ifdef SHELL_ENABLE_D3D12
+#include "flutter/shell/platform/embedder/embedder_surface_d3d12.h"
+#endif
+
 namespace flutter {
 
 class PlatformViewEmbedder final : public PlatformView {
@@ -87,6 +91,16 @@ class PlatformViewEmbedder final : public PlatformView {
       PlatformView::Delegate& delegate,
       const flutter::TaskRunners& task_runners,
       std::unique_ptr<EmbedderSurfaceVulkan> embedder_surface,
+      PlatformDispatchTable platform_dispatch_table,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+#endif
+
+#ifdef SHELL_ENABLE_D3D12
+  // Creates a platform view that sets up a D3D12 rasterizer.
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      flutter::TaskRunners task_runners,
+      std::unique_ptr<EmbedderSurfaceD3D12> embedder_surface,
       PlatformDispatchTable platform_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 #endif

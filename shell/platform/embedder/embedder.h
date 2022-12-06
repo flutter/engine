@@ -77,6 +77,8 @@ typedef enum {
   /// macOS version >= 10.14
   kMetal,
   kVulkan,
+  // D3D12 is only supported on Windows 10 Version 1607 and beyond.
+  kD3D12,
 } FlutterRendererType;
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -777,6 +779,31 @@ typedef struct {
 
 } FlutterVulkanRendererConfig;
 
+typedef void* FlutterD3D12Resource;
+typedef void* FlutterDXGISwapChainDesc1;
+
+typedef FlutterD3D12Resource (*FlutterD3D12SwapchainAcquireBackBufferCallback)(void* /* user_data */, const FlutterFrameInfo* /* frame_info */);
+
+typedef bool (*FlutterD3D12SwapchainPresentCallback)(void* /* user_data */);
+
+typedef void* FlutterD3D12DXGIAdapter1;
+typedef void* FlutterD3D12Device;
+typedef void* FlutterD3D12CommandQueue;
+
+typedef struct {
+  size_t struct_size;
+
+  FlutterD3D12DXGIAdapter1 dxgi_adapter;
+  FlutterD3D12Device device;
+  FlutterD3D12CommandQueue command_queue;
+
+  // Returns the back buffer from the swapchain to render the new frame into.
+  FlutterD3D12SwapchainAcquireBackBufferCallback acquire_back_buffer_callback;
+
+  // Called to present the latest swapchain back buffer.
+  FlutterD3D12SwapchainPresentCallback present_callback;
+} FlutterD3D12RendererConfig;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSoftwareRendererConfig).
   size_t struct_size;
@@ -794,6 +821,7 @@ typedef struct {
     FlutterSoftwareRendererConfig software;
     FlutterMetalRendererConfig metal;
     FlutterVulkanRendererConfig vulkan;
+    FlutterD3D12RendererConfig d3d12;
   };
 } FlutterRendererConfig;
 
@@ -1308,6 +1336,22 @@ typedef struct {
   VoidCallback destruction_callback;
 } FlutterVulkanBackingStore;
 
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterD3D12BackingStore).
+  size_t struct_size;
+  /// The callback invoked by the engine to acquire the back buffer of this backing
+  /// store. The engine guarantees only one backing store will be acquired at a time
+  /// while drawing. Before
+  FlutterD3D12SwapchainAcquireBackBufferCallback acquire_callback;
+  /// A baton that is not interpreted by the engine in any way. It will be given
+  /// back to the embedder in the destruction callback below. Embedder resources
+  /// may be associated with this baton.
+  void* user_data;
+  /// The callback invoked by the engine when it is no longer rendering into this
+  /// backing store.
+  VoidCallback release_callback;
+} FlutterD3D12BackingStore;
+
 typedef enum {
   /// Indicates that the Flutter application requested that an opacity be
   /// applied to the platform view.
@@ -1357,6 +1401,7 @@ typedef struct {
   /// will be a transformation mutation to make sure subsequent mutations are in
   /// the correct coordinate space.
   const FlutterPlatformViewMutation** mutations;
+  double device_pixel_ratio;
 } FlutterPlatformView;
 
 typedef enum {
@@ -1372,6 +1417,8 @@ typedef enum {
   /// Specifies a allocation that the engine should render into using
   /// software rendering.
   kFlutterBackingStoreTypeSoftware2,
+  /// Specifies a D3D12 backing store. This is backed by an ID3D12Resource.
+  kFlutterBackingStoreTypeD3D12,
 } FlutterBackingStoreType;
 
 typedef struct {
@@ -1397,6 +1444,8 @@ typedef struct {
     FlutterMetalBackingStore metal;
     // The description of the Vulkan backing store.
     FlutterVulkanBackingStore vulkan;
+    /// The description of the D3D12 backing store.
+    FlutterD3D12BackingStore d3d12;
   };
 } FlutterBackingStore;
 
@@ -1413,6 +1462,10 @@ typedef enum {
   kFlutterLayerContentTypeBackingStore,
   /// Indicates that the contents of this layer are determined by the embedder.
   kFlutterLayerContentTypePlatformView,
+  /// Indicates that the contents of this layer are rendered by Flutter into the
+  /// existing root surface from FlutterRendererConfig.
+  // Only used if FlutterCompositor.use_root_surface is enabled.
+  // kFlutterLayerContentTypeRootSurface,
 } FlutterLayerContentType;
 
 typedef struct {
@@ -1473,6 +1526,10 @@ typedef struct {
   FlutterLayersPresentCallback present_layers_callback;
   /// Avoid caching backing stores provided by this compositor.
   bool avoid_backing_store_cache;
+  /// Utilize the root surface when possible, instead of creating a backing store.
+  /// When true, a new layer type is introduced for the placement of the root surface.
+  /// Platform views may be placed underneath the root surface.
+  bool use_root_surface;
 } FlutterCompositor;
 
 typedef struct {

@@ -87,6 +87,8 @@ void EmbedderExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
 // |ExternalViewEmbedder|
 SkCanvas* EmbedderExternalViewEmbedder::GetRootCanvas() {
+  // TODO: Allow the embedder to reuse the existing root canvas instead of creating a new one.
+  // DirectComposition can control layer ordering well enough to not require a root layer.
   auto found = pending_views_.find(EmbedderExternalView::ViewIdentifier{});
   if (found == pending_views_.end()) {
     FML_DLOG(WARNING)
@@ -146,6 +148,9 @@ static FlutterBackingStoreConfig MakeBackingStoreConfig(
 void EmbedderExternalViewEmbedder::SubmitFrame(
     GrDirectContext* context,
     std::unique_ptr<SurfaceFrame> frame) {
+  // TODO: Code block needed to collect unused render targets before presenting.
+  // This is due to how the Windows embedder compositor caches surfaces.
+  {
   auto [matched_render_targets, pending_keys] =
       render_target_cache_.GetExistingTargetsInCache(pending_views_);
 
@@ -278,6 +283,7 @@ void EmbedderExternalViewEmbedder::SubmitFrame(
       render_target_cache_.CacheRenderTarget(render_target.first,
                                              std::move(render_target.second));
     }
+  }
   }
 
   frame->Submit();

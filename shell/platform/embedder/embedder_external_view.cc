@@ -83,7 +83,7 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
     return false;
   }
 
-  auto surface = render_target.GetRenderSurface();
+  auto surface = render_target.AcquireRenderSurface();
   if (!surface) {
     return false;
   }
@@ -100,6 +100,11 @@ bool EmbedderExternalView::Render(const EmbedderRenderTarget& render_target) {
   canvas->clear(SK_ColorTRANSPARENT);
   canvas->drawPicture(picture);
   canvas->flush();
+
+  // TODO: Why doesn't Flutter just use the existing surface infrastructure here?? This is stupid.
+  GrFlushInfo info;
+  surface->flush(SkSurface::BackendSurfaceAccess::kPresent, info);
+  surface->flushAndSubmit();
 
   return true;
 }

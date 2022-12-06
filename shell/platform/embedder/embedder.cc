@@ -68,6 +68,10 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #endif
 
+#ifdef SHELL_ENABLE_D3D12
+#include "flutter/shell/platform/embedder/embedder_surface_d3d12.h"
+#endif
+
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
 const int32_t kFlutterSemanticsCustomActionIdBatchEnd = -1;
 
@@ -188,6 +192,24 @@ static bool IsVulkanRendererConfigValid(const FlutterRendererConfig* config) {
   return true;
 }
 
+static bool IsD3D12RendererConfigValid(const FlutterRendererConfig* config) {
+  if (config->type != kD3D12) {
+    return false;
+  }
+
+  const FlutterD3D12RendererConfig* d3d12_config = &config->d3d12;
+
+  if (!SAFE_EXISTS(d3d12_config, dxgi_adapter) ||
+      !SAFE_EXISTS(d3d12_config, device) ||
+      !SAFE_EXISTS(d3d12_config, command_queue) ||
+      !SAFE_EXISTS(d3d12_config, acquire_back_buffer_callback) ||
+      !SAFE_EXISTS(d3d12_config, present_callback)) {
+    return false;
+  }
+
+  return true;
+}
+
 static bool IsRendererValid(const FlutterRendererConfig* config) {
   if (config == nullptr) {
     return false;
@@ -202,6 +224,8 @@ static bool IsRendererValid(const FlutterRendererConfig* config) {
       return IsMetalRendererConfigValid(config);
     case kVulkan:
       return IsVulkanRendererConfigValid(config);
+    case kD3D12:
+      return IsD3D12RendererConfigValid(config);
     default:
       return false;
   }
@@ -605,6 +629,69 @@ InferVulkanPlatformViewCreationCallback(
 }
 
 static flutter::Shell::CreateCallback<flutter::PlatformView>
+InferD3D12PlatformViewCreationCallback(
+    const FlutterRendererConfig* config,
+    void* user_data,
+    flutter::PlatformViewEmbedder::PlatformDispatchTable
+        platform_dispatch_table,
+    std::unique_ptr<flutter::EmbedderExternalViewEmbedder>
+        external_view_embedder) {
+  if (config->type != kD3D12) {
+    return nullptr;
+  }
+
+#ifdef SHELL_ENABLE_D3D12
+  auto acquire_back_buffer_callback =
+      [ptr = config->d3d12.acquire_back_buffer_callback,
+       user_data](const SkISize& frame_size) -> FlutterD3D12Resource {
+    FlutterFrameInfo frame_info = {
+        .struct_size = sizeof(FlutterFrameInfo),
+        .size = {static_cast<uint32_t>(frame_size.width()),
+                 static_cast<uint32_t>(frame_size.height())},
+    };
+
+    return ptr(user_data, &frame_info);
+  };
+
+  auto present_callback =
+      [ptr = config->d3d12.present_callback, user_data]() -> bool {
+    return ptr(user_data);
+  };
+
+  flutter::EmbedderSurfaceD3D12::D3D12SwapchainDispatchTable dispatch_table = {
+      .acquire_back_buffer = acquire_back_buffer_callback,
+      .present_back_buffer = present_callback,
+  };
+
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> view_embedder =
+      std::move(external_view_embedder);
+
+  std::unique_ptr<flutter::EmbedderSurfaceD3D12> embedder_surface =
+      std::make_unique<flutter::EmbedderSurfaceD3D12>(
+          static_cast<IDXGIAdapter1*>(config->d3d12.dxgi_adapter),
+          static_cast<ID3D12Device*>(config->d3d12.device),
+          static_cast<ID3D12CommandQueue*>(config->d3d12.command_queue),
+          dispatch_table,
+          view_embedder);
+
+  return fml::MakeCopyable(
+      [embedder_surface = std::move(embedder_surface), platform_dispatch_table,
+       external_view_embedder =
+           std::move(view_embedder)](flutter::Shell& shell) mutable {
+        return std::make_unique<flutter::PlatformViewEmbedder>(
+            shell,                             // delegate
+            shell.GetTaskRunners(),            // task runners
+            std::move(embedder_surface),       // embedder surface
+            platform_dispatch_table,           // platform dispatch table
+            std::move(external_view_embedder)  // external view embedder
+        );
+      });
+#else
+  return nullptr;
+#endif
+}
+
+static flutter::Shell::CreateCallback<flutter::PlatformView>
 InferSoftwarePlatformViewCreationCallback(
     const FlutterRendererConfig* config,
     void* user_data,
@@ -668,6 +755,10 @@ InferPlatformViewCreationCallback(
           std::move(external_view_embedder));
     case kVulkan:
       return InferVulkanPlatformViewCreationCallback(
+          config, user_data, platform_dispatch_table,
+          std::move(external_view_embedder));
+    case kD3D12:
+      return InferD3D12PlatformViewCreationCallback(
           config, user_data, platform_dispatch_table,
           std::move(external_view_embedder));
     default:
@@ -948,6 +1039,82 @@ static sk_sp<SkSurface> MakeSkSurfaceFromBackingStore(
 #endif
 }
 
+static flutter::EmbedderRenderTarget::AcquireSurfaceCallback MakeSkSurfaceFromBackingStore(
+    GrDirectContext* context,
+    const FlutterD3D12BackingStore* d3d12) {
+#ifdef SHELL_ENABLE_D3D12
+  if (!d3d12->acquire_callback) {
+    FML_LOG(ERROR) << "Embedder supplied null D3D12 image.";
+    return nullptr;
+  }
+
+  return [context = context](const FlutterBackingStore& store, SkISize size) -> sk_sp<SkSurface> {
+    const FlutterD3D12BackingStore* d3d12 = &store.d3d12;
+
+    FlutterFrameInfo frame_info = {0};
+    frame_info.struct_size = sizeof(FlutterFrameInfo);
+    frame_info.size.width = size.width();
+    frame_info.size.height = size.height();
+
+    ID3D12Resource* image = static_cast<ID3D12Resource*>(d3d12->acquire_callback(d3d12->user_data, &frame_info));
+
+    D3D12_RESOURCE_DESC image_desc = image->GetDesc();
+
+    GrD3DTextureResourceInfo image_info(
+      nullptr,
+      nullptr,
+      D3D12_RESOURCE_STATE_PRESENT,
+      image_desc.Format,
+      1,
+      1,
+      0
+    );
+    image_info.fResource.reset(image);
+
+    // TODO: For MSAA, use GrBackendTexture instead.
+    // See https://github.com/google/skia/blob/1f193df9b393d50da39570dab77a0bb5d28ec8ef/tools/sk_app/win/D3D12WindowContext_win.cpp#L154
+
+    GrBackendRenderTarget backend_rt(size.width(),   //
+                                    size.height(),  //
+                                    image_info      //
+    );
+
+    SkSurfaceProps surface_properties(0, kUnknown_SkPixelGeometry);
+
+    auto surface = SkSurface::MakeFromBackendRenderTarget(
+        context,          // context
+        backend_rt,              // back-end texture
+        kTopLeft_GrSurfaceOrigin,     // surface origin
+        flutter::GPUSurfaceD3D12::ColorTypeFromFormat(image_desc.Format),  // color type
+        SkColorSpace::MakeSRGB(),     // color space
+        &surface_properties,           // surface properties
+        static_cast<SkSurface::TextureReleaseProc>(
+            d3d12->release_callback),  // release proc
+        d3d12->user_data                   // release context
+    );
+
+    if (!surface) {
+      FML_LOG(ERROR) << "Could not wrap embedder supplied Vulkan render texture.";
+      return nullptr;
+    }
+
+    return surface;
+  };
+#else
+  return nullptr;
+#endif
+}
+
+static flutter::EmbedderRenderTarget::AcquireSurfaceCallback AcquireSingletonSurface(sk_sp<SkSurface> surface) {
+  if (!surface) {
+    return nullptr;
+  }
+
+  return [surface = std::move(surface)](const FlutterBackingStore& backing_store, SkISize size) -> sk_sp<SkSurface> {
+    return surface;
+  };
+}
+
 static std::unique_ptr<flutter::EmbedderRenderTarget>
 CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
                            const FlutterBackingStoreConfig& config,
@@ -986,48 +1153,54 @@ CreateEmbedderRenderTarget(const FlutterCompositor* compositor,
   // No safe access checks on the renderer are necessary since we allocated
   // the struct.
 
-  sk_sp<SkSurface> render_surface;
+  flutter::EmbedderRenderTarget::AcquireSurfaceCallback acquire_surface;
 
   switch (backing_store.type) {
     case kFlutterBackingStoreTypeOpenGL:
       switch (backing_store.open_gl.type) {
         case kFlutterOpenGLTargetTypeTexture:
-          render_surface = MakeSkSurfaceFromBackingStore(
-              context, config, &backing_store.open_gl.texture);
+          acquire_surface = AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(
+              context, config, &backing_store.open_gl.texture));
           break;
         case kFlutterOpenGLTargetTypeFramebuffer:
-          render_surface = MakeSkSurfaceFromBackingStore(
-              context, config, &backing_store.open_gl.framebuffer);
+          acquire_surface = AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(
+              context, config, &backing_store.open_gl.framebuffer));
           break;
       }
       break;
     case kFlutterBackingStoreTypeSoftware:
-      render_surface = MakeSkSurfaceFromBackingStore(context, config,
-                                                     &backing_store.software);
+      acquire_surface = AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(context, config,
+                                                     &backing_store.software));
       break;
     case kFlutterBackingStoreTypeSoftware2:
-      render_surface = MakeSkSurfaceFromBackingStore(context, config,
-                                                     &backing_store.software2);
+      acquire_surface = AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(context, config,
+                                                     &backing_store.software2));
       break;
     case kFlutterBackingStoreTypeMetal:
-      render_surface =
-          MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal);
+      acquire_surface =
+          AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(context, config, &backing_store.metal));
       break;
 
     case kFlutterBackingStoreTypeVulkan:
-      render_surface =
-          MakeSkSurfaceFromBackingStore(context, config, &backing_store.vulkan);
+      acquire_surface =
+          AcquireSingletonSurface(MakeSkSurfaceFromBackingStore(context, config, &backing_store.vulkan));
+      break;
+
+    case kFlutterBackingStoreTypeD3D12:
+      acquire_surface =
+          MakeSkSurfaceFromBackingStore(context, &backing_store.d3d12);
       break;
   };
 
-  if (!render_surface) {
+  if (!acquire_surface) {
     FML_LOG(ERROR) << "Could not create a surface from an embedder provided "
                       "render target.";
     return nullptr;
   }
 
   return std::make_unique<flutter::EmbedderRenderTarget>(
-      backing_store, std::move(render_surface), collect_callback.Release());
+      backing_store, std::move(acquire_surface),
+      SkISize::Make(config.size.width, config.size.height), collect_callback.Release());
 }
 
 static std::pair<std::unique_ptr<flutter::EmbedderExternalViewEmbedder>,

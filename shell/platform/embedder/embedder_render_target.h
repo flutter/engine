@@ -21,6 +21,8 @@ namespace flutter {
 ///
 class EmbedderRenderTarget {
  public:
+  using AcquireSurfaceCallback = std::function<sk_sp<SkSurface>(const FlutterBackingStore&, SkISize)>;
+
   //----------------------------------------------------------------------------
   /// @brief      Creates a render target whose backing store is managed by the
   ///             embedder. The way this render target is exposed to the engine
@@ -29,13 +31,16 @@ class EmbedderRenderTarget {
   ///
   /// @param[in]  backing_store   The backing store describing this render
   ///                             target.
-  /// @param[in]  render_surface  The surface for this target.
+  /// @param[in]  acquire_surface The callback to invoke to temporarily acquire
+  ///                             the underlying surface to draw into.
+  /// @param[in]  size            The size of the surface that will be acquired.
   /// @param[in]  on_release      The callback to invoke (eventually forwarded
   ///                             to the embedder) when the backing store is no
   ///                             longer required by the engine.
   ///
   EmbedderRenderTarget(FlutterBackingStore backing_store,
-                       sk_sp<SkSurface> render_surface,
+                       AcquireSurfaceCallback acquire_surface,
+                       SkISize size,
                        fml::closure on_release);
 
   //----------------------------------------------------------------------------
@@ -46,12 +51,16 @@ class EmbedderRenderTarget {
   ~EmbedderRenderTarget();
 
   //----------------------------------------------------------------------------
-  /// @brief      A render surface the rasterizer can use to draw into the
-  ///             backing store of this render target.
+  /// @brief      Acquires a render surface from the embedder that the rasterizer
+  ///             can use to draw into the backing store of this render target.
+  ///
+  ///             Only a single surface can be acquired from the embedder at a
+  ///             time.
+  ///             Acquiring the surface may discard previous contents.
   ///
   /// @return     The render surface.
   ///
-  sk_sp<SkSurface> GetRenderSurface() const;
+  sk_sp<SkSurface> AcquireRenderSurface() const;
 
   //----------------------------------------------------------------------------
   /// @brief      The embedder backing store descriptor. This is the descriptor
@@ -65,10 +74,13 @@ class EmbedderRenderTarget {
   ///
   const FlutterBackingStore* GetBackingStore() const;
 
+  const SkISize &size() const { return size_; }
+
  private:
   FlutterBackingStore backing_store_;
-  sk_sp<SkSurface> render_surface_;
+  AcquireSurfaceCallback acquire_surface_;
   fml::closure on_release_;
+  SkISize size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderRenderTarget);
 };

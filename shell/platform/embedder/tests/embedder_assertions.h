@@ -116,6 +116,11 @@ inline bool operator==(const FlutterSoftwareBackingStore2& a,
          a.pixel_format == b.pixel_format;
 }
 
+inline bool operator==(const FlutterD3D12BackingStore& a,
+                       const FlutterD3D12BackingStore& b) {
+  return a.acquire_callback == b.acquire_callback && a.user_data == b.user_data && a.release_callback == b.release_callback;
+}
+
 inline bool operator==(const FlutterBackingStore& a,
                        const FlutterBackingStore& b) {
   if (!(a.struct_size == b.struct_size && a.user_data == b.user_data &&
@@ -134,6 +139,8 @@ inline bool operator==(const FlutterBackingStore& a,
       return a.vulkan == b.vulkan;
     case kFlutterBackingStoreTypeSoftware2:
       return a.software2 == b.software2;
+    case kFlutterBackingStoreTypeD3D12:
+      return a.d3d12 == b.d3d12;
   }
 
   return false;
@@ -256,6 +263,8 @@ inline std::string FlutterBackingStoreTypeToString(
       return "kFlutterBackingStoreTypeVulkan";
     case kFlutterBackingStoreTypeSoftware2:
       return "kFlutterBackingStoreTypeSoftware2";
+    case kFlutterBackingStoreTypeD3D12:
+      return "kFlutterBackingStoreTypeD3D12";
   }
   return "Unknown";
 }
@@ -409,6 +418,11 @@ inline std::ostream& operator<<(std::ostream& out,
 }
 
 inline std::ostream& operator<<(std::ostream& out,
+                                const FlutterD3D12BackingStore& item) {
+  return out << "(FlutterD3D12BackingStore)";
+}
+
+inline std::ostream& operator<<(std::ostream& out,
                                 const FlutterSoftwareBackingStore2& item) {
   return out << "(FlutterSoftwareBackingStore2) Allocation: " << item.allocation
              << " Row Bytes: " << item.row_bytes << " Height: " << item.height
@@ -444,6 +458,10 @@ inline std::ostream& operator<<(std::ostream& out,
 
     case kFlutterBackingStoreTypeSoftware2:
       out << backing_store.software2;
+      break;
+
+    case kFlutterBackingStoreTypeD3D12:
+      out << backing_store.d3d12;
       break;
   }
 
