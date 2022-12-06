@@ -63,7 +63,7 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
                                                                    inLanguage:(NSString*)language {
   // Transform Dart Locale format to iOS language format.
   NSArray<NSString*>* languageCodes = [language componentsSeparatedByString:@"-"];
-  NSString lastCode = [[languageCodes lastObject] uppercaseString];
+  NSString* lastCode = [[languageCodes lastObject] uppercaseString];
   language = [NSString stringWithFormat:@"%@_%@", [languageCodes firstObject], lastCode];
 
   if (![UITextChecker.availableLanguages containsObject:language]) {
