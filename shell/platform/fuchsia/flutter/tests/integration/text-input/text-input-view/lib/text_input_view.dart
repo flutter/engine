@@ -46,7 +46,7 @@ class TestApp {
     Incoming.fromSvcPath().connectToService(_responseListener);
     // Set up window callbacks
     window.onPlatformMessage = (String name, ByteData data, PlatformMessageResponseCallback callback) {
-      this.platformMessage(name, data);
+      this.decodeAndReportPlatformMessage(name, data);
     };
     window.onMetricsChanged = () {
       window.scheduleFrame();
@@ -80,7 +80,7 @@ class TestApp {
     window.render(sceneBuilder.build());
   }
 
-  void platformMessage(String name, ByteData data) async {
+  void decodeAndReportPlatformMessage(String name, ByteData data) async {
     final buffer = data.buffer;
     var list = buffer.asUint8List(data.offsetInBytes, data.lengthInBytes);
     var decoded = utf8.decode(list);
