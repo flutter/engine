@@ -27,7 +27,7 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
 
 // |ExternalViewEmbedder|
 void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   TRACE_EVENT0("flutter",
                "AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView");
@@ -52,7 +52,7 @@ void AndroidExternalViewEmbedder::PrerollCompositeEmbeddedView(
 
 // |ExternalViewEmbedder|
 EmbedderPaintContext AndroidExternalViewEmbedder::CompositeEmbeddedView(
-    int view_id) {
+    int64_t view_id) {
   if (slices_.count(view_id) == 1) {
     return {slices_.at(view_id)->canvas(), slices_.at(view_id)->builder()};
   }

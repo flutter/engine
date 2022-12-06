@@ -53,7 +53,7 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override {}
 
   // |ExternalViewEmbedder|
@@ -63,7 +63,7 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
 
   // |ExternalViewEmbedder|
-  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
+  EmbedderPaintContext CompositeEmbeddedView(int64_t view_id) override {
     return {&canvas_, nullptr};
   }
 
