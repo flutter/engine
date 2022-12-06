@@ -632,7 +632,7 @@ deps = {
   Var('github_git') + '/google/process_runner.git' + '@' + 'd632ea0bfd814d779fcc53a361ed33eaf3620a0b', # 4.0.1
 
   'src/third_party/pkg/quiver':
-  Var('github_git') + '/google/quiver-dart.git' + '@' + 'c855b10d18d1aa6cb568657b065d49226882c9e1', # 3.1.0
+  Var('github_git') + '/google/quiver-dart.git' + '@' + '66f473cca1332496e34a783ba4527b04388fd561', # 2.1.5
 
   'src/third_party/pkg/vector_math':
   Var('dart_git') + '/external/github.com/google/vector_math.dart.git' + '@' + '0a5fd95449083d404df9768bc1b321b88a7d2eef', # 2.1.0
