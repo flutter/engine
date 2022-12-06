@@ -14,6 +14,7 @@ declare_args() {
   embedder_enable_vulkan = shell_enable_vulkan
   embedder_enable_gl = shell_enable_gl
   embedder_enable_metal = shell_enable_metal
+  embedder_enable_d3d12 = shell_enable_d3d12
 }
 
 shell_gpu_configuration("embedder_gpu_configuration") {
@@ -21,6 +22,7 @@ shell_gpu_configuration("embedder_gpu_configuration") {
   enable_vulkan = embedder_enable_vulkan
   enable_gl = embedder_enable_gl
   enable_metal = embedder_enable_metal
+  enable_d3d12 = embedder_enable_d3d12
 }
 
 _framework_binary_subpath = "Versions/A/FlutterEmbedder"
@@ -139,6 +141,13 @@ template("embedder_source_set") {
       deps += [
         "//flutter/flutter_vma:flutter_skia_vma",
         "//flutter/vulkan/procs",
+      ]
+    }
+
+    if (embedder_enable_d3d12) {
+      sources += [
+        "embedder_surface_d3d12.cc",
+        "embedder_surface_d3d12.h",
       ]
     }
 

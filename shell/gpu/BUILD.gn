@@ -88,3 +88,13 @@ source_set("gpu_surface_metal") {
     public_deps += [ "//flutter/impeller" ]
   }
 }
+
+source_set("gpu_surface_d3d12") {
+  sources = [
+    "gpu_surface_d3d12.cc",
+    "gpu_surface_d3d12.h",
+    "gpu_surface_d3d12_delegate.cc",
+    "gpu_surface_d3d12_delegate.h",
+  ]
+  public_deps = gpu_common_deps
+}

@@ -176,6 +176,7 @@ if (enable_unittests) {
     enable_vulkan = test_enable_vulkan
     enable_gl = test_enable_gl
     enable_metal = test_enable_metal
+    enable_d3d12 = test_enable_d3d12
   }
 
   test_fixtures("shell_unittests_fixtures") {
