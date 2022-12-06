@@ -1743,11 +1743,37 @@ void _testImage() {
   });
 }
 
+class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
+  int announceInvoked = 0;
+
+  @override
+  void announce(String message, Assertiveness assertiveness) {
+    announceInvoked += 1;
+  }
+
+  @override
+  DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
+    return createDomHTMLDivElement();
+  }
+
+  @override
+  void dispose() {
+  }
+
+  @override
+  void handleMessage(StandardMessageCodec codec, ByteData? data) {
+  }
+}
+
 void _testLiveRegion() {
   test('announces the label after an update', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1758,8 +1784,8 @@ void _testLiveRegion() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
     semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
 
-    expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, 'This is a snackbar');
     semantics().semanticsEnabled = false;
   });
 
@@ -1767,6 +1793,10 @@ void _testLiveRegion() {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1776,8 +1806,40 @@ void _testLiveRegion() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
     semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 0);
 
-    expect(accessibilityAnnouncements.ariaLiveElementFor(Assertiveness.polite).text, '');
+    semantics().semanticsEnabled = false;
+  });
+
+  test('does not announce the same label over and over', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+
+    ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      label: 'This is a snackbar',
+      flags: 0 | ui.SemanticsFlag.isLiveRegion.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+
+    builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      label: 'This is a snackbar',
+      flags: 0 | ui.SemanticsFlag.isLiveRegion.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
 
     semantics().semanticsEnabled = false;
   });

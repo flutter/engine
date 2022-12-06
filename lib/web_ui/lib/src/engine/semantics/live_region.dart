@@ -22,10 +22,9 @@ class LiveRegion extends RoleManager {
   @override
   void update() {
     // Avoid announcing the same message over and over.
-    if (_lastAnnouncement != semanticsObject.label)
-    {
+    if (_lastAnnouncement != semanticsObject.label) {
       _lastAnnouncement = semanticsObject.label;
-      if (_lastAnnouncement != null) {
+      if (semanticsObject.hasLabel) {
         accessibilityAnnouncements.announce(
           _lastAnnouncement! , Assertiveness.polite
         );
@@ -33,12 +32,7 @@ class LiveRegion extends RoleManager {
     }
   }
 
-  void _cleanupDom() {
-    _lastAnnouncement = null;
-  }
-
   @override
   void dispose() {
-    _cleanupDom();
   }
 }
