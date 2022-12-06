@@ -193,7 +193,8 @@ abstract class FlutterView {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   ///  * [MediaQuery.of], a simpler mechanism for the same.
-  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
+  WindowPadding get systemGestureInsets =>
+      viewConfiguration.systemGestureInsets;
 
   /// The number of physical pixels on each side of the display rectangle into
   /// which the view can render, but which may be partially obscured by system
@@ -264,7 +265,8 @@ abstract class FlutterView {
   ///   painting.
   void render(Scene scene) => _render(scene);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::Render')
+  @FfiNative<Void Function(Pointer<Void>)>(
+      'PlatformConfigurationNativeApi::Render')
   external static void _render(Scene scene);
 
   /// Change the retained semantics data about this [FlutterView].
@@ -277,7 +279,8 @@ abstract class FlutterView {
   /// cannot be used further.
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
+  @FfiNative<Void Function(Pointer<Void>)>(
+      'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(SemanticsUpdate update);
 }
 
@@ -445,7 +448,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// This option is used by [EditableTextState] to define its
   /// [SpellCheckConfiguration] when spell check is enabled, but no spell check
   /// service is specified.
-  bool get nativeSpellCheckServiceDefined => platformDispatcher.nativeSpellCheckServiceDefined;
+  bool get nativeSpellCheckServiceDefined =>
+      platformDispatcher.nativeSpellCheckServiceDefined;
 
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
@@ -475,7 +479,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onTextScaleFactorChanged => platformDispatcher.onTextScaleFactorChanged;
+  VoidCallback? get onTextScaleFactorChanged =>
+      platformDispatcher.onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback) {
     platformDispatcher.onTextScaleFactorChanged = callback;
   }
@@ -488,6 +493,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// [Brightness.light].
   Brightness get platformBrightness => platformDispatcher.platformBrightness;
 
+  // TODO Reidbaker add haptic feedback value
+
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}
@@ -499,7 +506,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onPlatformBrightnessChanged => platformDispatcher.onPlatformBrightnessChanged;
+  VoidCallback? get onPlatformBrightnessChanged =>
+      platformDispatcher.onPlatformBrightnessChanged;
   set onPlatformBrightnessChanged(VoidCallback? callback) {
     platformDispatcher.onPlatformBrightnessChanged = callback;
   }
@@ -520,7 +528,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this callback is invoked.
-  VoidCallback? get onSystemFontFamilyChanged => platformDispatcher.onSystemFontFamilyChanged;
+  VoidCallback? get onSystemFontFamilyChanged =>
+      platformDispatcher.onSystemFontFamilyChanged;
   set onSystemFontFamilyChanged(VoidCallback? callback) {
     platformDispatcher.onSystemFontFamilyChanged = callback;
   }
@@ -614,7 +623,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   ///  * [GestureBinding], the Flutter framework class which manages pointer
   ///    events.
-  PointerDataPacketCallback? get onPointerDataPacket => platformDispatcher.onPointerDataPacket;
+  PointerDataPacketCallback? get onPointerDataPacket =>
+      platformDispatcher.onPointerDataPacket;
   set onPointerDataPacket(PointerDataPacketCallback? callback) {
     platformDispatcher.onPointerDataPacket = callback;
   }
@@ -691,7 +701,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback? get onSemanticsEnabledChanged => platformDispatcher.onSemanticsEnabledChanged;
+  VoidCallback? get onSemanticsEnabledChanged =>
+      platformDispatcher.onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback) {
     platformDispatcher.onSemanticsEnabledChanged = callback;
   }
@@ -715,13 +726,15 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  SemanticsActionCallback? get onSemanticsAction => platformDispatcher.onSemanticsAction;
+  SemanticsActionCallback? get onSemanticsAction =>
+      platformDispatcher.onSemanticsAction;
   set onSemanticsAction(SemanticsActionCallback? callback) {
     platformDispatcher.onSemanticsAction = callback;
   }
 
   /// Additional accessibility features that may be enabled by the platform.
-  AccessibilityFeatures get accessibilityFeatures => platformDispatcher.accessibilityFeatures;
+  AccessibilityFeatures get accessibilityFeatures =>
+      platformDispatcher.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
@@ -729,7 +742,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
-  VoidCallback? get onAccessibilityFeaturesChanged => platformDispatcher.onAccessibilityFeaturesChanged;
+  VoidCallback? get onAccessibilityFeaturesChanged =>
+      platformDispatcher.onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
@@ -745,9 +759,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   ///
   /// The framework invokes [callback] in the same zone in which this method
   /// was called.
-  void sendPlatformMessage(String name,
-      ByteData? data,
-      PlatformMessageResponseCallback? callback) {
+  void sendPlatformMessage(
+      String name, ByteData? data, PlatformMessageResponseCallback? callback) {
     platformDispatcher.sendPlatformMessage(name, data, callback);
   }
 
@@ -767,7 +780,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
   // TODO(ianh): deprecate once framework uses [ChannelBuffers.setListener].
-  PlatformMessageCallback? get onPlatformMessage => platformDispatcher.onPlatformMessage;
+  PlatformMessageCallback? get onPlatformMessage =>
+      platformDispatcher.onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback) {
     platformDispatcher.onPlatformMessage = callback;
   }
@@ -783,7 +797,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// This can be combined with flutter tools `--isolate-filter` flag to debug
   /// specific root isolates. For example: `flutter attach --isolate-filter=[name]`.
   /// Note that this does not rename any child isolates of the root.
-  void setIsolateDebugName(String name) => PlatformDispatcher.instance.setIsolateDebugName(name);
+  void setIsolateDebugName(String name) =>
+      PlatformDispatcher.instance.setIsolateDebugName(name);
 }
 
 /// Additional accessibility features that may be enabled by the platform.
@@ -873,8 +888,7 @@ class AccessibilityFeatures {
     if (other.runtimeType != runtimeType) {
       return false;
     }
-    return other is AccessibilityFeatures
-        && other._index == _index;
+    return other is AccessibilityFeatures && other._index == _index;
   }
 
   @override
@@ -925,7 +939,8 @@ enum Brightness {
 /// * [PlatformDispatcher.views], contains the current list of Flutter windows
 ///   belonging to the application, including top level application windows like
 ///   this one.
-final SingletonFlutterWindow window = SingletonFlutterWindow._(0, PlatformDispatcher.instance);
+final SingletonFlutterWindow window =
+    SingletonFlutterWindow._(0, PlatformDispatcher.instance);
 
 /// Additional data available on each flutter frame.
 class FrameData {
@@ -979,7 +994,8 @@ class GestureSettings {
   }) {
     return GestureSettings(
       physicalTouchSlop: physicalTouchSlop ?? this.physicalTouchSlop,
-      physicalDoubleTapSlop: physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
+      physicalDoubleTapSlop:
+          physicalDoubleTapSlop ?? this.physicalDoubleTapSlop,
     );
   }
 
@@ -989,13 +1005,14 @@ class GestureSettings {
       return false;
     }
     return other is GestureSettings &&
-      other.physicalTouchSlop == physicalTouchSlop &&
-      other.physicalDoubleTapSlop == physicalDoubleTapSlop;
+        other.physicalTouchSlop == physicalTouchSlop &&
+        other.physicalDoubleTapSlop == physicalDoubleTapSlop;
   }
 
   @override
   int get hashCode => Object.hash(physicalTouchSlop, physicalDoubleTapSlop);
 
   @override
-  String toString() => 'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
+  String toString() =>
+      'GestureSettings(physicalTouchSlop: $physicalTouchSlop, physicalDoubleTapSlop: $physicalDoubleTapSlop)';
 }
