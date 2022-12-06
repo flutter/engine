@@ -206,8 +206,8 @@ public class PlatformPlugin {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       Log.e("Flutter", "Pre R version code");
       return Settings.System.getInt(
-             activity.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
-             != 0;
+              activity.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1)
+            != 0;
     } else {
       // Haptic feedback was replaced by USAGE_TOUCH starting in api 30 and removed in api 33
       // See https://developer.android.com/reference/android/os/VibrationAttributes#USAGE_TOUCH
