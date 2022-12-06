@@ -107,26 +107,13 @@ class ShadowDomHostNode implements HostNode {
     });
 
     final DomHTMLStyleElement shadowRootStyleElement = createDomHTMLStyleElement();
+    shadowRootStyleElement.id = 'flt-internals-stylesheet';
     // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
     _shadow.appendChild(shadowRootStyleElement);
     applyGlobalCssRulesToSheet(
       shadowRootStyleElement.sheet! as DomCSSStyleSheet,
-      browserEngine: browserEngine,
       hasAutofillOverlay: browserHasAutofillOverlay(),
     );
-
-    // Removes password reveal icon for text inputs in Edge browsers.
-    // Style tag needs to be injected into DOM because non-Edge
-    // browsers will crash trying to parse -ms-reveal CSS selectors if added via
-    // sheet.insertRule().
-    // See: https://github.com/flutter/flutter/issues/83695
-    if (isEdge) {
-      final DomHTMLStyleElement edgeStyleElement = createDomHTMLStyleElement();
-
-      edgeStyleElement.id = 'ms-reveal';
-      edgeStyleElement.innerText = 'input::-ms-reveal {display: none;}';
-      _shadow.appendChild(edgeStyleElement);
-    }
   }
 
   late DomShadowRoot _shadow;
@@ -171,11 +158,11 @@ class ElementHostNode implements HostNode {
     // Append the stylesheet here, so this class is completely symmetric to the
     // ShadowDOM version.
     final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
+    styleElement.id = 'flt-internals-stylesheet';
     // The styleElement must be appended to the DOM, or its `sheet` will be null later.
     root.appendChild(styleElement);
     applyGlobalCssRulesToSheet(
       styleElement.sheet! as DomCSSStyleSheet,
-      browserEngine: browserEngine,
       hasAutofillOverlay: browserHasAutofillOverlay(),
       cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
     );
@@ -219,18 +206,15 @@ class ElementHostNode implements HostNode {
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
 void applyGlobalCssRulesToSheet(
   DomCSSStyleSheet sheet, {
-  required BrowserEngine browserEngine,
   required bool hasAutofillOverlay,
   String cssSelectorPrefix = '',
 }) {
-  final bool isWebKit = browserEngine == BrowserEngine.webkit;
-  final bool isFirefox = browserEngine == BrowserEngine.firefox;
   // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
   // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
 
   // By default on iOS, Safari would highlight the element that's being tapped
   // on using gray background. This CSS rule disables that.
-  if (isWebKit) {
+  if (isSafari) {
     sheet.insertRule('''
       $cssSelectorPrefix * {
       -webkit-tap-highlight-color: transparent;
@@ -267,7 +251,7 @@ void applyGlobalCssRulesToSheet(
     }
   ''', sheet.cssRules.length.toInt());
 
-  if (isWebKit) {
+  if (isSafari) {
     sheet.insertRule('''
       $cssSelectorPrefix flt-semantics input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
@@ -316,4 +300,16 @@ void applyGlobalCssRulesToSheet(
       }
     ''', sheet.cssRules.length.toInt());
   }
+
+    // Removes password reveal icon for text inputs in Edge browsers.
+    // Non-Edge browsers will crash trying to parse -ms-reveal CSS selector,
+    // so we guard it behind an isEdge check.
+    // Fixes: https://github.com/flutter/flutter/issues/83695
+    if (isEdge) {
+      sheet.insertRule('''
+      $cssSelectorPrefix input::-ms-reveal {
+        display: none;
+      }
+      ''', sheet.cssRules.length.toInt());
+    }
 }
