@@ -587,6 +587,11 @@ deps = {
    Var('fuchsia_git') + '/third_party/pyyaml.git' + '@' + '25e97546488eee166b1abb229a27856cecd8b7ac',
 
    # Upstream Khronos Vulkan Headers are part of vulkan-deps
+
+   # Skia D3D12Allocator dependency.
+  'src/third_party/d3d12allocator':
+   Var('skia_git') + '/external/github.com/GPUOpen-LibrariesAndSDKs/D3D12MemoryAllocator.git' + '@' + '169895d529dfce00390a20e69c2f516066fe7a3b',
+
    # Downstream Fuchsia Vulkan Headers (v1.2.198)
   'src/third_party/fuchsia-vulkan':
    Var('fuchsia_git') + '/third_party/Vulkan-Headers.git' + '@' + '32640ad82ef648768c706c9bf828b77123a09bc2',
