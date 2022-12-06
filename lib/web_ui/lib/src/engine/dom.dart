@@ -1313,6 +1313,10 @@ class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
   external DomCSSRuleList get cssRules;
+  Iterable<DomCSSRule> get rules =>
+      createDomListWrapper<DomCSSRule>(js_util
+          .getProperty<_DomList>(this, 'cssRules'));
+
   double insertRule(String rule, [int? index]) => js_util
       .callMethod<double>(
           this, 'insertRule',
@@ -1322,6 +1326,12 @@ extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
 @JS()
 @staticInterop
 class DomCSSRule {}
+
+@JS()
+@staticInterop
+extension DomCSSRuleExtension on DomCSSRule {
+  external String get cssText;
+}
 
 @JS()
 @staticInterop
