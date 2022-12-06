@@ -264,7 +264,7 @@ abstract class _BaseAdapter {
   final PointerDataConverter _pointerDataConverter;
   final KeyboardConverter _keyboardConverter;
   DomWheelEvent? _lastWheelEvent;
-  bool? _lastWheelEventWasTrackpad;
+  bool _lastWheelEventWasTrackpad = false;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -350,7 +350,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     return (wheelDelta - (-3 * delta)).abs() > 1;
   }
 
-  bool _isTrackpadEvent(DomWheelEvent event, DomWheelEvent? lastEvent, bool? lastEventWasTrackpad) {
+  bool _isTrackpadEvent(DomWheelEvent event) {
     // This function relies on deprecated and non-standard implementation
     // details. Useful reference material can be found below.
     //
@@ -377,20 +377,20 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       // Checking if wheelDeltaX and wheelDeltaY are both divisible by 120
       // catches any macOS accelerated mouse wheel deltas which by random chance
       // are not caught by _isAcceleratedMouseWheelDelta.
-      final num deltaXChange = (event.deltaX - (lastEvent?.deltaX ?? 0)).abs();
-      final num deltaYChange = (event.deltaY - (lastEvent?.deltaY ?? 0)).abs();
-      if ((lastEvent == null) ||
+      final num deltaXChange = (event.deltaX - (_lastWheelEvent?.deltaX ?? 0)).abs();
+      final num deltaYChange = (event.deltaY - (_lastWheelEvent?.deltaY ?? 0)).abs();
+      if ((_lastWheelEvent == null) ||
           (deltaXChange == 0 && deltaYChange == 0) ||
           !(deltaXChange < 20 && deltaYChange < 20)) {
         // A trackpad event might by chance have a delta of exactly 120, so
         // make sure this event does not have a similar delta to the previous
         // one before calling it a mouse event.
-        if (event.timeStamp != null && lastEvent?.timeStamp != null) {
+        if (event.timeStamp != null && _lastWheelEvent?.timeStamp != null) {
           // If the event has a large delta to the previous event, check if
           // it was preceded within 50 milliseconds by a trackpad event. This
           // handles unlucky 120-delta trackpad events during rapid movement.
-          final num diffMs = event.timeStamp! - lastEvent!.timeStamp!;
-          if (diffMs < 50 && (lastEventWasTrackpad ?? false)) {
+          final num diffMs = event.timeStamp! - _lastWheelEvent!.timeStamp!;
+          if (diffMs < 50 && _lastWheelEventWasTrackpad) {
             return true;
           }
         }
@@ -408,7 +408,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
-    if (_isTrackpadEvent(event, _lastWheelEvent, _lastWheelEventWasTrackpad)) {
+    if (_isTrackpadEvent(event)) {
       kind = ui.PointerDeviceKind.trackpad;
     }
 
