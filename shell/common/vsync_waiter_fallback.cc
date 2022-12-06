@@ -45,7 +45,7 @@ void VsyncWaiterFallback::AwaitVSync() {
       std::to_string(frame_start_time.ToEpochDelta().ToMicroseconds());
   const std::string frame_target_time_str =
       std::to_string(frame_target_time.ToEpochDelta().ToMicroseconds());
-  TRACE_EVENT2("flutter", "VsyncAlike", "frame_start_time",
+  TRACE_EVENT2("flutter", "PlatformVsync", "frame_start_time",
                start_time_str.c_str(), "frame_target_time",
                frame_target_time_str.c_str());
 
