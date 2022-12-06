@@ -376,6 +376,7 @@ void testMain() {
 
     // A regression test for the special case when CanvasKit would default to
     // a positive font size when Flutter specifies zero.
+    //
     // See: https://github.com/flutter/flutter/issues/98248
     test('text styles - zero font size', () async {
       // This only sets the inner text style, but not the paragraph style, so
