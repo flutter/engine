@@ -33,46 +33,48 @@ void testMain() {
     });
 
     test('Attaches a stylesheet to the shadow root', () {
-      final DomElement? style = hostNode.querySelector('#flt-internals-stylesheet');
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
 
       expect(style, isNotNull);
       expect(style!.tagName, equalsIgnoringCase('style'));
     });
 
     test('(Self-test) hasCssRule can extract rules', () {
-      final DomElement? style = hostNode.querySelector('#flt-internals-stylesheet');
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
 
       final bool hasRule = hasCssRule(style,
-        selector: '.flt-text-editing::placeholder',
-        declaration: 'opacity: 0');
+          selector: '.flt-text-editing::placeholder',
+          declaration: 'opacity: 0');
 
       final bool hasFakeRule = hasCssRule(style,
-        selector: 'input::selection',
-        declaration: 'color: #fabada;');
+          selector: 'input::selection', declaration: 'color: #fabada;');
 
       expect(hasRule, isTrue);
       expect(hasFakeRule, isFalse);
     });
 
     test('Attaches styling to remove password reveal icons on Edge', () {
-      final DomElement? style = hostNode.querySelector('#flt-internals-stylesheet');
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
 
       // Check that style.sheet! contains input::-ms-reveal rule
       final bool hidesRevealIcons = hasCssRule(style,
-        selector: 'input::-ms-reveal',
-        declaration: 'display: none');
+          selector: 'input::-ms-reveal', declaration: 'display: none');
 
-      expect(hidesRevealIcons, isTrue, reason: 'In Edge, stylesheet must contain "input::-ms-reveal" rule.');
+      expect(hidesRevealIcons, isTrue,
+          reason: 'In Edge, stylesheet must contain "input::-ms-reveal" rule.');
     }, skip: !isEdge);
 
     test('Does not attach the Edge-specific style tag on non-Edge browsers',
         () {
-      final DomElement? style = hostNode.querySelector('#flt-internals-stylesheet');
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
 
       // Check that style.sheet! contains input::-ms-reveal rule
       final bool hidesRevealIcons = hasCssRule(style,
-        selector: 'input::-ms-reveal',
-        declaration: 'display: none');
+          selector: 'input::-ms-reveal', declaration: 'display: none');
 
       expect(hidesRevealIcons, isFalse);
     }, skip: isEdge);
@@ -138,18 +140,21 @@ void _runDomTests(HostNode hostNode) {
   });
 }
 
-/// Asserts that a given [selector] { [rule]; } exists in a [sheet].
-bool hasCssRule(DomElement? styleSheet, {
+/// Finds out whether a given CSS Rule ([selector] { [declaration]; }) exists in a [styleSheet].
+bool hasCssRule(
+  DomElement? styleSheet, {
   required String selector,
   required String declaration,
 }) {
-  expect(styleSheet, isNotNull);
-  expect((styleSheet! as DomHTMLStyleElement).sheet, isNotNull);
+  assert(styleSheet != null);
+  assert((styleSheet! as DomHTMLStyleElement).sheet != null);
 
   // regexr.com/740ff
-  final RegExp ruleLike = RegExp('[^{]*(?:$selector)[^{]*{[^}]*(?:$declaration)[^}]*}');
+  final RegExp ruleLike =
+      RegExp('[^{]*(?:$selector)[^{]*{[^}]*(?:$declaration)[^}]*}');
 
-  final DomCSSStyleSheet sheet = (styleSheet as DomHTMLStyleElement).sheet! as DomCSSStyleSheet;
+  final DomCSSStyleSheet sheet =
+      (styleSheet! as DomHTMLStyleElement).sheet! as DomCSSStyleSheet;
 
   // Check that the cssText of any rule matches the ruleLike RegExp.
   return sheet.rules
