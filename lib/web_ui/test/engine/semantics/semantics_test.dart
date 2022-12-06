@@ -1753,15 +1753,20 @@ class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
 
   @override
   DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
-    return createDomHTMLDivElement();
+    throw UnsupportedError(
+        'ariaLiveElementFor is not supported in MockAccessibilityAnnouncements');
   }
 
   @override
   void dispose() {
+    throw UnsupportedError(
+        'dispose is not supported in MockAccessibilityAnnouncements!');
   }
 
   @override
   void handleMessage(StandardMessageCodec codec, ByteData? data) {
+    throw UnsupportedError(
+        'handleMessage is not supported in MockAccessibilityAnnouncements!');
   }
 }
 
@@ -1829,6 +1834,7 @@ void _testLiveRegion() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
     semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
 
     builder = ui.SemanticsUpdateBuilder();
     updateNode(
