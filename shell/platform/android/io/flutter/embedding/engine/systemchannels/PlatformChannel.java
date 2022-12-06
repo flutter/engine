@@ -445,6 +445,8 @@ public class PlatformChannel {
 
     /**
      * The Flutter application would like to know if haptic feedback user setting is enabled.
+     * {@code false} indicates the user has opted out of haptic feedback. If user preference
+     * is unknown or unknowable defaults to {@code true}.
      */
     boolean hapticFeedbackIsEnabled();
 

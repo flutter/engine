@@ -488,6 +488,8 @@ class SingletonFlutterWindow extends FlutterWindow {
   /// [Brightness.light].
   Brightness get platformBrightness => platformDispatcher.platformBrightness;
 
+  // TODO Reidbaker add haptic feedback value 
+
   /// A callback that is invoked whenever [platformBrightness] changes value.
   ///
   /// {@macro dart.ui.window.accessorForwardWarning}

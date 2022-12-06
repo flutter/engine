@@ -33,6 +33,7 @@ import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeStyle;
+import io.flutter.Log;
 import io.flutter.plugin.platform.PlatformPlugin.PlatformPluginDelegate;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -67,10 +68,10 @@ public class PlatformPluginTest {
     platformPlugin.vibrateHapticFeedback(PlatformChannel.HapticFeedbackType.SELECTION_CLICK);
   }
 
-  @Config(sdk = 16)
+  @Config(sdk = 26)
   @SuppressWarnings("deprecation")
   @Test
-  public void itReturnsHapticFeedbackIsEnabled() {
+  public void itReturnsHapticFeedbackIsEnabledPre30() {
     View fakeDecorView = mock(View.class);
     Window fakeWindow = mock(Window.class);
     when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
@@ -84,7 +85,6 @@ public class PlatformPluginTest {
         Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
 
     try {
-      // Set haptic haptic feedback enabled if less than api 33
       Settings.System.putInt(
         ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
 
@@ -95,7 +95,44 @@ public class PlatformPluginTest {
       Settings.System.putInt(
         ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
 
+        Log.e("Flutter", "hapticFeedbackIsEnabled: " + platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
         assertFalse(platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
+
+    } finally {
+    // Revert device to value prior to test run.
+    Settings.System.putInt(
+      ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, preExistingValue);
+    }
+  }
+
+  @Config(sdk = 30)
+  @SuppressWarnings("deprecation")
+  @Test
+  public void itReturnsHapticFeedbackIsEnabledApi30() {
+    View fakeDecorView = mock(View.class);
+    Window fakeWindow = mock(Window.class);
+    when(fakeWindow.getDecorView()).thenReturn(fakeDecorView);
+    Activity fakeActivity = mock(Activity.class);
+    when(fakeActivity.getWindow()).thenReturn(fakeWindow);
+    PlatformChannel fakePlatformChannel = mock(PlatformChannel.class);
+    PlatformPlugin platformPlugin = new PlatformPlugin(fakeActivity, fakePlatformChannel);
+
+    // Fetch existing value on device
+    final int preExistingValue = Settings.System.getInt(ctx.getContentResolver(),
+        Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+
+    try {
+      Settings.System.putInt(
+        ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+
+        assertTrue(platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
+
+
+      // Set haptic haptic feedback disabled
+      Settings.System.putInt(
+        ctx.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 0);
+        // Haptic feedback should be ignored on api 30 and above.
+        assertTrue(platformPlugin.mPlatformMessageHandler.hapticFeedbackIsEnabled());
 
     } finally {
     // Revert device to value prior to test run.
