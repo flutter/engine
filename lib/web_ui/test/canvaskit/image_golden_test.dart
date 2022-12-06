@@ -59,14 +59,28 @@ void testMain() {
 
 void _testForImageCodecs({required bool useBrowserImageDecoder}) {
   final String mode = useBrowserImageDecoder ? 'webcodecs' : 'wasm';
+  final List<String> warnings = <String>[];
+  late void Function(String) oldPrintWarning;
 
   group('($mode)', () {
     setUp(() {
       browserSupportsImageDecoder = useBrowserImageDecoder;
+      warnings.clear();
+    });
+
+    setUpAll(() {
+      oldPrintWarning = printWarning;
+      printWarning = (String warning) {
+        warnings.add(warning);
+      };
     });
 
     tearDown(() {
       debugResetBrowserSupportsImageDecoder();
+    });
+
+    tearDownAll(() {
+      printWarning = oldPrintWarning;
     });
 
     test('CkAnimatedImage can be explicitly disposed of', () {
@@ -277,6 +291,15 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           targetHeight: 3,
         );
         final ui.Image image = (await codec.getNextFrame()).image;
+
+        expect(
+        warnings,
+        containsAllInOrder(
+          <String>[
+            'targetWidth and targetHeight for multi-frame images not supported',
+          ],
+        ),
+      );
 
         // expect the re-size did not happen, kAnimatedGif is [1x1]
         expect(image.width, 1);
