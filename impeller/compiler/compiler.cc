@@ -41,21 +41,23 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   // to work with the generated bindings for compute shaders, nor for certain
   // shaders in the flutter/engine tree.
   if (source_options.remap_samplers) {
-    sl_options.enable_decoration_binding = true;
     std::vector<uint32_t> sampler_offsets;
+    std::vector<uint32_t> float_offsets;
     ir.for_each_typed_id<spirv_cross::SPIRVariable>(
         [&](uint32_t, const spirv_cross::SPIRVariable& var) {
           if (var.storage != spv::StorageClassUniformConstant) {
             return;
           }
           const auto spir_type = sl_compiler->get_type(var.basetype);
-          if (spir_type.basetype !=
-              spirv_cross::SPIRType::BaseType::SampledImage) {
-            return;
-          }
           auto location = sl_compiler->get_decoration(
               var.self, spv::Decoration::DecorationLocation);
-          sampler_offsets.push_back(location);
+          if (spir_type.basetype ==
+              spirv_cross::SPIRType::BaseType::SampledImage) {
+            sampler_offsets.push_back(location);
+          } else if (spir_type.basetype ==
+                     spirv_cross::SPIRType::BaseType::Float) {
+            float_offsets.push_back(location);
+          }
         });
     if (sampler_offsets.size() > 0) {
       auto start_offset =
@@ -66,9 +68,20 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
             .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
             .binding = offset,
             .count = 1u,
-            .msl_buffer = offset - start_offset,
             .msl_texture = offset - start_offset,
-            .msl_sampler = offset - start_offset,
+        });
+      }
+    }
+    if (float_offsets.size() > 0) {
+      auto start_offset =
+          *std::min_element(float_offsets.begin(), float_offsets.end());
+      for (auto offset : float_offsets) {
+        sl_compiler->add_msl_resource_binding({
+            .stage = spv::ExecutionModel::ExecutionModelFragment,
+            .basetype = spirv_cross::SPIRType::BaseType::Float,
+            .binding = offset,
+            .count = 1u,
+            .msl_buffer = offset - start_offset,
         });
       }
     }
