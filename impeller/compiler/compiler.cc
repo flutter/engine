@@ -37,10 +37,11 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_compiler->set_msl_options(sl_options);
 
   // Set metal resource mappings to be consistent with location based mapping
-  // used on other backends when creating fragment shaders. This relies on the
-  // fact that the order of uniforms in the IR mirrors the declared order in the
-  // shader source.
+  // used on other backends when creating fragment shaders. This doesn't seem
+  // to work with the generated bindings for compute shaders, nor for certain
+  // shaders in the flutter/engine tree.
   if (source_options.remap_samplers) {
+    sl_options.enable_decoration_binding = true;
     std::vector<uint32_t> sampler_offsets;
     ir.for_each_typed_id<spirv_cross::SPIRVariable>(
         [&](uint32_t, const spirv_cross::SPIRVariable& var) {
