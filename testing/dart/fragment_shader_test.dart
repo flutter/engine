@@ -335,6 +335,9 @@ void main() async {
   // This test can't rely on actual pixels rendered since it needs to run on a
   // metal shader on iOS. instead parse the source code.
   test('impellerc orders samplers in metal shader according to declaration and not usage', () async {
+    if (!Platform.isMacOS) {
+      return;
+    }
     final Directory directory = shaderDirectory('iplr-remap');
     final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_samplers.frag.iplr')));
 
@@ -345,6 +348,9 @@ void main() async {
   });
 
   test('impellerc orders floats in metal shader according to declaration and not usage', () async {
+    if (!Platform.isMacOS) {
+      return;
+    }
     final Directory directory = shaderDirectory('iplr-remap');
     final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_ordered_floats.frag.iplr')));
 
@@ -355,6 +361,9 @@ void main() async {
   });
 
   test('impellerc orders floats/matrix in metal shader according to declaration and not usage', () async {
+    if (!Platform.isMacOS) {
+      return;
+    }
     final Directory directory = shaderDirectory('iplr-remap');
     final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_matrix.frag.iplr')));
 
