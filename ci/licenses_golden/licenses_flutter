@@ -1648,13 +1648,18 @@ FILE: ../../../flutter/impeller/scene/camera.cc
 FILE: ../../../flutter/impeller/scene/camera.h
 FILE: ../../../flutter/impeller/scene/geometry.cc
 FILE: ../../../flutter/impeller/scene/geometry.h
+FILE: ../../../flutter/impeller/scene/importer/conversions.cc
+FILE: ../../../flutter/impeller/scene/importer/conversions.h
 FILE: ../../../flutter/impeller/scene/importer/importer.h
 FILE: ../../../flutter/impeller/scene/importer/importer_gltf.cc
-FILE: ../../../flutter/impeller/scene/importer/importer_main.cc
-FILE: ../../../flutter/impeller/scene/importer/mesh.fbs
+FILE: ../../../flutter/impeller/scene/importer/importer_unittests.cc
+FILE: ../../../flutter/impeller/scene/importer/scene.fbs
+FILE: ../../../flutter/impeller/scene/importer/scenec_main.cc
 FILE: ../../../flutter/impeller/scene/importer/switches.cc
 FILE: ../../../flutter/impeller/scene/importer/switches.h
 FILE: ../../../flutter/impeller/scene/importer/types.h
+FILE: ../../../flutter/impeller/scene/importer/vertices_builder.cc
+FILE: ../../../flutter/impeller/scene/importer/vertices_builder.h
 FILE: ../../../flutter/impeller/scene/material.cc
 FILE: ../../../flutter/impeller/scene/material.h
 FILE: ../../../flutter/impeller/scene/scene.cc
@@ -1714,6 +1719,7 @@ FILE: ../../../flutter/impeller/typographer/typographer_unittests.cc
 FILE: ../../../flutter/lib/io/dart_io.cc
 FILE: ../../../flutter/lib/io/dart_io.h
 FILE: ../../../flutter/lib/snapshot/libraries.json
+FILE: ../../../flutter/lib/snapshot/libraries_experimental.json
 FILE: ../../../flutter/lib/snapshot/snapshot.h
 FILE: ../../../flutter/lib/ui/annotations.dart
 FILE: ../../../flutter/lib/ui/channel_buffers.dart
@@ -1728,6 +1734,8 @@ FILE: ../../../flutter/lib/ui/dart_runtime_hooks.h
 FILE: ../../../flutter/lib/ui/dart_ui.cc
 FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/dart_wrapper.h
+FILE: ../../../flutter/lib/ui/experiments/compositing_3d.dart
+FILE: ../../../flutter/lib/ui/experiments/ui.dart
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
