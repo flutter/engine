@@ -71,7 +71,9 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
   stream << "[optional] --gles-language-verision=<number>" << std::endl;
   stream << "[optional] --json" << std::endl;
-  stream << "[optional] --remap-samplers (force metal sampler index to match declared order)" << std::endl;
+  stream << "[optional] --remap-samplers (force metal sampler index to match "
+            "declared order)"
+         << std::endl;
 }
 
 Switches::Switches() = default;
