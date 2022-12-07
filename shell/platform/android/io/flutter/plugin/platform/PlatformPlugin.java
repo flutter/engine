@@ -205,8 +205,9 @@ public class PlatformPlugin {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
       Log.v(TAG, "Pre R, checking HAPTIC_FEEDBACK_ENABLED");
       // Note: default to enabled if the value is not set.
-      int value = Settings.System.getInt(
-          activity.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
+      int value =
+          Settings.System.getInt(
+              activity.getContentResolver(), Settings.System.HAPTIC_FEEDBACK_ENABLED, 1);
       return value != 0;
     } else {
       // Haptic feedback was replaced by USAGE_TOUCH starting in api 30
@@ -214,6 +215,7 @@ public class PlatformPlugin {
       // https://developer.android.com/reference/android/os/VibrationAttributes#USAGE_TOUCH
       return true;
     }
+  }
 
   private void setSystemChromePreferredOrientations(int androidOrientation) {
     activity.setRequestedOrientation(androidOrientation);
