@@ -332,6 +332,18 @@ void main() async {
     shader.dispose();
   });
 
+  // This test can't rely on actual pixels rendered since it needs to run on a
+  // metal shader on iOS. instead parse the source code.
+  test('impellerc orders samplers in metal shader according to declaration and not usage', () async {
+    final Directory directory = shaderDirectory('iplr-remap');
+    final String data = File(path.join(directory.path, 'shader_with_samplers.frag.iplr')).readAsStringSync();
+
+    const String expected = 'texture2d<float> textureA [[texture(0)]],'
+      ' texture2d<float> textureB [[texture(1)]]';
+
+    expect(data, contains(expected));
+  });
+
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
   final Map<String, FragmentProgram> iplrSupportedGLSLOpShaders = await _loadShaderAssets(
     path.join('supported_glsl_op_shaders', 'iplr'),
