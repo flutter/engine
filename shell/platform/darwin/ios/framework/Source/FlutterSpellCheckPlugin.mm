@@ -64,6 +64,7 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
   // Transform Dart Locale format to iOS language format if necessary.
   if ([language containsString:@"-"]) {
     NSArray<NSString*>* languageCodes = [language componentsSeparatedByString:@"-"];
+    FML_DCHECK(languageCodes.count == 2);
     NSString* lastCode = [[languageCodes lastObject] uppercaseString];
     language = [NSString stringWithFormat:@"%@_%@", [languageCodes firstObject], lastCode];
   }
