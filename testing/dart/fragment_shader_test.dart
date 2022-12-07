@@ -336,7 +336,7 @@ void main() async {
   // metal shader on iOS. instead parse the source code.
   test('impellerc orders samplers in metal shader according to declaration and not usage', () async {
     final Directory directory = shaderDirectory('iplr-remap');
-    final String data = File(path.join(directory.path, 'shader_with_samplers.frag.iplr')).readAsStringSync();
+    final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_samplers.frag.iplr')));
 
     const String expected = 'texture2d<float> textureA [[texture(0)]],'
       ' texture2d<float> textureB [[texture(1)]]';
@@ -346,7 +346,7 @@ void main() async {
 
   test('impellerc orders floats in metal shader according to declaration and not usage', () async {
     final Directory directory = shaderDirectory('iplr-remap');
-    final String data = File(path.join(directory.path, 'shader_with_ordered_floats.frag.iplr')).readAsStringSync();
+    final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_ordered_floats.frag.iplr')));
 
     const String expected = 'constant float& floatA [[buffer(0)]], '
       'constant float& floatB [[buffer(1)]]';
@@ -356,7 +356,7 @@ void main() async {
 
   test('impellerc orders floats/matrix in metal shader according to declaration and not usage', () async {
     final Directory directory = shaderDirectory('iplr-remap');
-    final String data = File(path.join(directory.path, 'shader_with_matrix.frag.iplr')).readAsStringSync();
+    final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_matrix.frag.iplr')));
 
     const String expected = 'constant float4x4& matrix [[buffer(0)]], '
       'constant float& floatB [[buffer(1)]]';
@@ -515,4 +515,9 @@ Image _createBlueGreenImageSync() {
   } finally {
     picture.dispose();
   }
+}
+
+// Ignore invalid utf8 since file is not actually text.
+String readAsStringLossy(File file) {
+  return convert.utf8.decode(file.readAsBytesSync(), allowMalformed: true);
 }
