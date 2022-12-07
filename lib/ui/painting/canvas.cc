@@ -60,7 +60,7 @@ void Canvas::Create(Dart_Handle wrapper,
 }
 
 Canvas::Canvas(sk_sp<DisplayListBuilder> builder)
-    : display_list_builder_(builder) {}
+    : display_list_builder_(std::move(builder)) {}
 
 Canvas::~Canvas() {}
 
