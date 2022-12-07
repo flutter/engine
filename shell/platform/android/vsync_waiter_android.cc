@@ -61,13 +61,10 @@ void VsyncWaiterAndroid::OnVsyncFromNDK(int64_t frame_nanos, void* data) {
   auto target_time = frame_time + fml::TimeDelta::FromNanoseconds(
                                       1000000000.0 / g_refresh_rate_);
 
-  const std::string frame_start_time_str =
-      std::to_string(frame_time.ToEpochDelta().ToMicroseconds());
-  const std::string frame_target_time_str =
-      std::to_string(target_time.ToEpochDelta().ToMicroseconds());
-  TRACE_EVENT2("flutter", "PlatformVsync", "frame_start_time",
-               frame_start_time_str.c_str(), "frame_target_time",
-               frame_target_time_str.c_str());
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_time.ToEpochDelta().ToMicroseconds(),
+                   "frame_target_time",
+                   target_time.ToEpochDelta().ToMicroseconds());
 
   auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(data);
   ConsumePendingCallback(weak_this, frame_time, target_time);
@@ -84,13 +81,10 @@ void VsyncWaiterAndroid::OnVsyncFromJava(JNIEnv* env,
   auto target_time =
       frame_time + fml::TimeDelta::FromNanoseconds(refreshPeriodNanos);
 
-  const std::string frame_start_time_str =
-      std::to_string(frame_time.ToEpochDelta().ToMicroseconds());
-  const std::string frame_target_time_str =
-      std::to_string(target_time.ToEpochDelta().ToMicroseconds());
-  TRACE_EVENT2("flutter", "PlatformVsync", "frame_start_time",
-               frame_start_time_str.c_str(), "frame_target_time",
-               frame_target_time_str.c_str());
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_time.ToEpochDelta().ToMicroseconds(),
+                   "frame_target_time",
+                   target_time.ToEpochDelta().ToMicroseconds());
 
   auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
   ConsumePendingCallback(weak_this, frame_time, target_time);
