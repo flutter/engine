@@ -125,9 +125,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
 - (UIScreen*)mainScreen;
-- (void)keyboardWillShowNotification:(NSNotification*)notification;
-- (void)keyboardWillChangeFrame:(NSNotification*)notification;
-- (void)keyboardWillBeHidden:(NSNotification*)notification;
+- (void)handleKeyboardNotification:(NSNotification*)notification;
 - (CGFloat)calculateKeyboardInset:(CGRect)keyboardFrame keyboardMode:(int)keyboardMode;
 - (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification;
 - (FlutterKeyboardMode)calculateKeyboardAttachMode:(NSNotification*)notification;
@@ -197,9 +195,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  id mockApplication = [OCMockObject partialMockForObject:[UIApplication sharedApplication]];
-  UIApplicationState applicationState = UIApplicationStateActive;
-  [[[mockApplication stub] andReturnValue:OCMOCK_VALUE(applicationState)] applicationState];
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateActive);
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock mainScreen]).andReturn(UIScreen.mainScreen);
 
@@ -275,9 +273,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   // Valid keyboard, state is not active
   [mockApplication stopMocking];
-  mockApplication = [OCMockObject partialMockForObject:[UIApplication sharedApplication]];
-  applicationState = UIApplicationStateBackground;
-  [[[mockApplication stub] andReturnValue:OCMOCK_VALUE(applicationState)] applicationState];
+  mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateBackground);
   isLocal = YES;
   notification =
       [NSNotification notificationWithName:UIKeyboardWillChangeFrameNotification
@@ -289,8 +287,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                   }];
   shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
   XCTAssertTrue(shouldIgnore == YES);
-
-  [mockApplication stopMocking];
 }
 
 - (void)testCalculateKeyboardAttachMode {
@@ -443,7 +439,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMStub([mockTraitCollection horizontalSizeClass]).andReturn(UIUserInterfaceSizeClassCompact);
   OCMStub([mockTraitCollection verticalSizeClass]).andReturn(UIUserInterfaceSizeClassRegular);
   OCMStub([mockView traitCollection]).andReturn(mockTraitCollection);
-  viewControllerMock.view = mockView;
+  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
 
   CGFloat adjustment = [viewControllerMock calculateMultitaskingAdjustment:screenRect
                                                              keyboardFrame:keyboardFrame];
@@ -469,9 +465,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMStub([mockView frame]).andReturn(viewOrigFrame);
   OCMStub([mockView convertRect:viewOrigFrame toCoordinateSpace:[OCMArg any]])
       .andReturn(convertedViewFrame);
-  viewControllerMock.view = mockView;
+  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
 
-  CGFloat inset = [viewControllerMock calculateKeyboardInset:keyboardFrame keyboardMode:1];
+  CGFloat inset = [viewControllerMock calculateKeyboardInset:keyboardFrame
+                                                keyboardMode:FlutterKeyboardModeDocked];
   XCTAssertTrue(inset == 300 * UIScreen.mainScreen.scale);
 }
 
@@ -481,9 +478,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  id mockApplication = [OCMockObject partialMockForObject:[UIApplication sharedApplication]];
-  UIApplicationState applicationState = UIApplicationStateActive;
-  [[[mockApplication stub] andReturnValue:OCMOCK_VALUE(applicationState)] applicationState];
+  id mockApplication = OCMClassMock([UIApplication class]);
+  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
+  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateActive);
   // keyboard is empty
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
@@ -503,7 +500,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   id mockView = OCMClassMock([UIView class]);
   OCMStub([mockView frame]).andReturn(viewFrame);
   OCMStub([mockView convertRect:viewFrame toCoordinateSpace:[OCMArg any]]).andReturn(viewFrame);
-  viewControllerMock.view = mockView;
+  OCMStub([viewControllerMock viewIfLoaded]).andReturn(mockView);
   viewControllerMock.targetViewInsetBottom = 0;
   XCTestExpectation* expectation = [self expectationWithDescription:@"update viewport"];
   OCMStub([mockEngine updateViewportMetrics:flutter::ViewportMetrics()])
@@ -512,7 +509,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
         [expectation fulfill];
       });
 
-  [viewControllerMock keyboardWillShowNotification:notification];
+  [viewControllerMock handleKeyboardNotification:notification];
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 320 * UIScreen.mainScreen.scale);
   OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
@@ -539,7 +536,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                   }];
 
   viewControllerMock.targetViewInsetBottom = 10;
-  [viewControllerMock keyboardWillBeHidden:fakeNotification];
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 0);
 }
 

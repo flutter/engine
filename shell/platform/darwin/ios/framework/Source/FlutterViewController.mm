@@ -595,7 +595,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (UIScreen*)mainScreen {
   if (@available(iOS 13.0, *)) {
-    return self.view.window.windowScene.screen;
+    return self.viewIfLoaded.window.windowScene.screen;
   }
   return UIScreen.mainScreen;
 }
@@ -1423,9 +1423,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // In Slide Over mode, the keyboard's frame does not include the space
   // below the app, even though the keyboard may be at the bottom of the screen.
   // To handle, shift the Y origin by the amount of space below the app.
-  if (self.view.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPad &&
-      self.view.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact &&
-      self.view.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular) {
+  if (self.viewIfLoaded.traitCollection.userInterfaceIdiom == UIUserInterfaceIdiomPad &&
+      self.viewIfLoaded.traitCollection.horizontalSizeClass == UIUserInterfaceSizeClassCompact &&
+      self.viewIfLoaded.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassRegular) {
     CGFloat screenHeight = CGRectGetHeight(screenRect);
     CGFloat keyboardBottom = CGRectGetMaxY(keyboardFrame);
 
@@ -1434,8 +1434,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     if (screenHeight == keyboardBottom) {
       return 0;
     }
-    CGRect viewRectRelativeToScreen = [self.view convertRect:self.view.frame
-                                           toCoordinateSpace:[self mainScreen].coordinateSpace];
+    CGRect viewRectRelativeToScreen =
+        [self.viewIfLoaded convertRect:self.viewIfLoaded.frame
+                     toCoordinateSpace:[self mainScreen].coordinateSpace];
     CGFloat viewBottom = CGRectGetMaxY(viewRectRelativeToScreen);
     CGFloat offset = screenHeight - viewBottom;
     if (offset > 0) {
@@ -1449,8 +1450,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // Only docked keyboards will have an inset.
   if (keyboardMode == FlutterKeyboardModeDocked) {
     // Calculate how much of the keyboard intersects with the view.
-    CGRect viewRectRelativeToScreen = [self.view convertRect:self.view.frame
-                                           toCoordinateSpace:[self mainScreen].coordinateSpace];
+    CGRect viewRectRelativeToScreen =
+        [self.viewIfLoaded convertRect:self.viewIfLoaded.frame
+                     toCoordinateSpace:[self mainScreen].coordinateSpace];
     CGRect intersection = CGRectIntersection(keyboardFrame, viewRectRelativeToScreen);
     CGFloat portionOfKeyboardInView = CGRectGetHeight(intersection);
 
