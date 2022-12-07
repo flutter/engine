@@ -20,24 +20,6 @@
 namespace impeller {
 namespace compiler {
 
-static std::optional<spv::ExecutionModel> SourceTypeToExecutionModel(
-    const SourceType& type) {
-  switch (type) {
-    case SourceType::kUnknown:
-      return std::nullopt;
-    case SourceType::kVertexShader:
-      return spv::ExecutionModel::ExecutionModelVertex;
-    case SourceType::kFragmentShader:
-      return spv::ExecutionModel::ExecutionModelFragment;
-    case SourceType::kTessellationControlShader:
-      return spv::ExecutionModel::ExecutionModelTessellationControl;
-    case SourceType::kTessellationEvaluationShader:
-      return spv::ExecutionModel::ExecutionModelTessellationEvaluation;
-    case SourceType::kComputeShader:
-      return spv::ExecutionModel::ExecutionModelGLCompute;
-  }
-}
-
 const uint32_t kFragBindingBase = 128;
 const size_t kNumUniformKinds =
     static_cast<int>(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
@@ -52,40 +34,42 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   // Metal to AIR must be updated as well.
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
-  sl_options.enable_decoration_binding = true;
   sl_compiler->set_msl_options(sl_options);
 
   // Set metal resource mappings to be consistent with location based mapping
-  // used on other backends when creating shaders.
-  std::vector<uint32_t> sampler_offsets;
-  ir.for_each_typed_id<spirv_cross::SPIRVariable>(
-      [&](uint32_t, const spirv_cross::SPIRVariable& var) {
-        if (var.storage != spv::StorageClassUniformConstant) {
-          return;
-        }
-        const auto spir_type = sl_compiler->get_type(var.basetype);
-        if (spir_type.basetype !=
-            spirv_cross::SPIRType::BaseType::SampledImage) {
-          return;
-        }
-        auto location = sl_compiler->get_decoration(
-            var.self, spv::Decoration::DecorationLocation);
-        sampler_offsets.push_back(location);
-      });
-  auto stage = SourceTypeToExecutionModel(source_options.type);
-  if (stage.has_value() && sampler_offsets.size() > 0) {
-    auto start_offset =
-        *std::min_element(sampler_offsets.begin(), sampler_offsets.end());
-    for (auto offset : sampler_offsets) {
-      sl_compiler->add_msl_resource_binding({
-          .stage = stage.value(),
-          .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
-          .binding = offset,
-          .count = 1u,
-          .msl_buffer = offset - start_offset,
-          .msl_texture = offset - start_offset,
-          .msl_sampler = offset - start_offset,
-      });
+  // used on other backends when creating fragment shaders. This relies on the
+  // fact that the order of uniforms in the IR mirrors the declared order in the
+  // shader source.
+  if (source_options.remap_samplers) {
+    std::vector<uint32_t> sampler_offsets;
+    ir.for_each_typed_id<spirv_cross::SPIRVariable>(
+        [&](uint32_t, const spirv_cross::SPIRVariable& var) {
+          if (var.storage != spv::StorageClassUniformConstant) {
+            return;
+          }
+          const auto spir_type = sl_compiler->get_type(var.basetype);
+          if (spir_type.basetype !=
+              spirv_cross::SPIRType::BaseType::SampledImage) {
+            return;
+          }
+          auto location = sl_compiler->get_decoration(
+              var.self, spv::Decoration::DecorationLocation);
+          sampler_offsets.push_back(location);
+        });
+    if (sampler_offsets.size() > 0) {
+      auto start_offset =
+          *std::min_element(sampler_offsets.begin(), sampler_offsets.end());
+      for (auto offset : sampler_offsets) {
+        sl_compiler->add_msl_resource_binding({
+            .stage = spv::ExecutionModel::ExecutionModelFragment,
+            .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
+            .binding = offset,
+            .count = 1u,
+            .msl_buffer = offset - start_offset,
+            .msl_texture = offset - start_offset,
+            .msl_sampler = offset - start_offset,
+        });
+      }
     }
   }
 
