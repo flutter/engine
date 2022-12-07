@@ -101,17 +101,6 @@
                               arg2_name, arg2_val);                        \
   __FML__AUTO_TRACE_END(name)
 
-#define TRACE_EVENT2_INT(category_group, name, arg1_name, arg1_val, arg2_name, \
-                         arg2_val)                                             \
-  {                                                                            \
-    const std::string arg1_val_str = std::to_string(arg1_val);                 \
-    const std::string arg2_val_str = std::to_string(arg2_val);                 \
-    ::fml::tracing::TraceEvent2(category_group, name, arg1_name,               \
-                                arg1_val_str.c_str(), arg2_name,               \
-                                arg2_val_str.c_str());                         \
-  }                                                                            \
-  __FML__AUTO_TRACE_END(name)
-
 #define TRACE_EVENT_ASYNC_BEGIN0(category_group, name, id) \
   ::fml::tracing::TraceEventAsyncBegin0(category_group, name, id);
 
@@ -149,6 +138,17 @@
 
 #endif  // TRACE_EVENT_HIDE_MACROS
 #endif  // !defined(OS_FUCHSIA)
+
+#define TRACE_EVENT2_INT(category_group, name, arg1_name, arg1_val, arg2_name, \
+                         arg2_val)                                             \
+  const std::string __FML__TOKEN_CAT__2(__arg1_val_str, __LINE__) =            \
+      std::to_string(arg1_val);                                                \
+  const std::string __FML__TOKEN_CAT__2(__arg2_val_str, __LINE__) =            \
+      std::to_string(arg2_val);                                                \
+  TRACE_EVENT2(category_group, name, arg1_name,                                \
+               __FML__TOKEN_CAT__2(__arg1_val_str, __LINE__).c_str(),          \
+               arg2_name,                                                      \
+               __FML__TOKEN_CAT__2(__arg2_val_str, __LINE__).c_str());
 
 namespace fml {
 namespace tracing {
