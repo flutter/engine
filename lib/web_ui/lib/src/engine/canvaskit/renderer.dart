@@ -16,7 +16,9 @@ import '../profiler.dart';
 import '../renderer.dart';
 import 'canvaskit_api.dart';
 import 'canvaskit_canvas.dart';
+import 'downloader.dart';
 import 'fonts.dart';
+import 'icu4x/icu4x_bidi_api.dart';
 import 'image.dart';
 import 'image_filter.dart';
 import 'layer_scene_builder.dart';
@@ -57,14 +59,25 @@ class CanvasKitRenderer implements Renderer {
 
   @override
   Future<void> initialize() async {
+    await Future.wait(<Future<void>>[
+      if (useClientICU) _initializeICU4XBidi(),
+      _initializeCanvasKit(),
+    ]);
+
+    _instance = this;
+  }
+
+  Future<void> _initializeCanvasKit() async {
     if (windowFlutterCanvasKit != null) {
       canvasKit = windowFlutterCanvasKit!;
     } else {
       canvasKit = await downloadCanvasKit();
       windowFlutterCanvasKit = canvasKit;
     }
+  }
 
-    _instance = this;
+  Future<void> _initializeICU4XBidi() async {
+    icu4xBidi = await downloadICU4XBidi();
   }
 
   @override

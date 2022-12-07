@@ -1509,6 +1509,7 @@ extension DomTrustedScriptUrlExtension on DomTrustedScriptURL {
 // to accept as valid.
 const Set<String> _expectedFilesForTT = <String>{
   'canvaskit.js',
+  'icu4x_bidi.js',
 };
 
 // The definition of the `flutter-engine` TrustedType policy.

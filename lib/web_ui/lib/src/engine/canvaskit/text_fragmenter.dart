@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import '../text/line_breaker.dart';
+import 'icu4x/icu4x_bidi_api.dart';
 
 abstract class CkTextFragmenter {
   const CkTextFragmenter(this.text);
@@ -36,8 +37,8 @@ class CkBidiFragmenter extends CkTextFragmenter {
 
   @override
   Uint32List fragment() {
-    // TODO(mdebbar): Use ICU4X to get actual bidi regions.
-    return Uint32List.fromList(<int> [0, text.length, _defaultBidiLevel ?? 0]);
+    final List<int> bidiRegions = icu4xBidi.getBidiRegions(text, _defaultBidiLevel);
+    return Uint32List.fromList(bidiRegions);
   }
 }
 
