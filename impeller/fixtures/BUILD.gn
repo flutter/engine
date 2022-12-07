@@ -78,6 +78,7 @@ test_fixtures("file_fixtures") {
     "table_mountain_py.png",
     "table_mountain_pz.png",
     "test_texture.frag",
+    "flutter_logo_baked.png",
     "types.h",
     "wtf.otf",
   ]
