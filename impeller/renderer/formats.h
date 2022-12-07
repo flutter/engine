@@ -90,7 +90,6 @@ enum class PixelFormat {
 
   // Depth and stencil formats.
   kS8UInt,
-  kD24UNormS8UInt,
   kD32FloatS8UInt,
 
   // Defaults. If you don't know which ones to use, these are usually a safe
@@ -288,7 +287,6 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
     case PixelFormat::kB8G8R8A8UNormInt:
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
-    case PixelFormat::kD24UNormS8UInt:
       return 4u;
     case PixelFormat::kD32FloatS8UInt:
       return 5u;
