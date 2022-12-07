@@ -8,7 +8,6 @@ import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
 import '../../dom.dart';
-import '../../platform_dispatcher.dart';
 import 'custom_element_dimensions_provider.dart';
 import 'full_page_dimensions_provider.dart';
 
@@ -36,7 +35,8 @@ abstract class DimensionsProvider {
 
   /// Returns the DPI reported by the browser.
   double getDevicePixelRatio() {
-    return EnginePlatformDispatcher.browserDevicePixelRatio;
+    // This is overridable in tests.
+    return window.devicePixelRatio;
   }
 
   /// Returns the [ui.Size] of the "viewport".
