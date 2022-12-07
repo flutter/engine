@@ -228,8 +228,9 @@ DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 DEFINE_SET_CLEAR_DLATTR_OP(PathEffect, PathEffect, effect)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
 
-// 4 byte header + 80 bytes for the embedded DlImageColorSource
-// uses 84 total bytes (4 bytes unused)
+// 4 byte header + unused 4 byte padding +
+// 88 bytes for the embedded DlImageColorSource
+// packs into 96 total bytes (4 bytes unused)
 struct SetImageColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetImageColorSource;
 
@@ -247,8 +248,9 @@ struct SetImageColorSourceOp : DLOp {
   }
 };
 
-// 4 byte header + 48 bytes for DlRuntimeEffectColorSource
-// packs into 56 bytes (4 bytes unused)
+// 4 byte header + unused 4 byte padding +
+// 56 bytes for DlRuntimeEffectColorSource
+// packs into 64 total bytes (4 bytes unused)
 struct SetRuntimeEffectColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
 

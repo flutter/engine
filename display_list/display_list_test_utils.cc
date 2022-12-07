@@ -155,7 +155,7 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource5.get());
             }},
-           {0, 56, 0, 0,
+           {0, 64, 0, 0,
             [](DisplayListBuilder& b) {
               b.setColorSource(kTestSource6.get());
             }},
