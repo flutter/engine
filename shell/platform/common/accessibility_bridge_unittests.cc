@@ -151,7 +151,7 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
-  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
+  root.flags = static_cast<FlutterSemanticsFlag>(FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField | FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
 

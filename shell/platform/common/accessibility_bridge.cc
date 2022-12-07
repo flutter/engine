@@ -12,6 +12,9 @@
 #include "flutter/third_party/accessibility/ax/ax_tree_manager_map.h"
 #include "flutter/third_party/accessibility/base/logging.h"
 
+// TODO(schectman)
+#include "flutter/fml/logging.h"
+
 namespace flutter {  // namespace
 
 constexpr int kHasScrollingAction =
@@ -529,18 +532,23 @@ void AccessibilityBridge::SetTooltipFromFlutterUpdate(
 void AccessibilityBridge::SetTreeData(const SemanticsNode& node,
                                       ui::AXTreeUpdate& tree_update) {
   FlutterSemanticsFlag flags = node.flags;
+  // TODO(schectman) let's see if narrowing this down to only focused nodes is a good idea
   // Set selection if:
   // 1. this text field has a valid selection
   // 2. this text field doesn't have a valid selection but had selection stored
   //    in the tree.
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField) {
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField && flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused) {
+    // TODO(schectman)
+    FML_LOG(ERROR) << "Update text ID " << node.id;
     if (node.text_selection_base != -1) {
+      FML_LOG(ERROR) << "Set its selection anchor to " << node.id;
       tree_update.tree_data.sel_anchor_object_id = node.id;
       tree_update.tree_data.sel_anchor_offset = node.text_selection_base;
       tree_update.tree_data.sel_focus_object_id = node.id;
       tree_update.tree_data.sel_focus_offset = node.text_selection_extent;
       tree_update.has_tree_data = true;
     } else if (tree_update.tree_data.sel_anchor_object_id == node.id) {
+      FML_LOG(ERROR) << "Set stored selection anchor to " << node.id;
       tree_update.tree_data.sel_anchor_object_id = ui::AXNode::kInvalidAXID;
       tree_update.tree_data.sel_anchor_offset = -1;
       tree_update.tree_data.sel_focus_object_id = ui::AXNode::kInvalidAXID;

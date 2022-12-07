@@ -10,6 +10,9 @@
 #include "ax/platform/ax_platform_tree_manager.h"
 #include "base/win/variant_vector.h"
 
+// TODO(schectman)
+#include "flutter/fml/logging.h"
+
 #define UIA_VALIDATE_TEXTRANGEPROVIDER_CALL()                  \
   if (!GetOwner() || !GetOwner()->GetDelegate() || !start() || \
       !start()->GetAnchor() || !end() || !end()->GetAnchor())  \
@@ -238,24 +241,27 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
       // occur in a different node than where `start` is currently pointing, so
       // use kStopAtLastAnchorBoundary, which will stop at the tree boundary if
       // no previous line start is found.
+      // TODO(schectman)
+      FML_LOG(ERROR) << "Getting line w/ anchor == " << start()->anchor_id() << ": " << start()->text_offset();
       SetStart(start()->CreateBoundaryStartPosition(
-          AXBoundaryBehavior::StopIfAlreadyAtBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
+          AXBoundaryBehavior::StopAtLastAnchorBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
           ax::mojom::MoveDirection::kBackward,
           &AtStartOfLinePredicate,
           &AtEndOfLinePredicate));
       // From the start we just walked backwards to, walk forwards to the line
       // end position.
-      SetEnd(end()->CreateBoundaryEndPosition( // TODO(schectman) used to be start, maybe should stay that way
+      SetEnd(start()->CreateBoundaryEndPosition( // TODO(schectman) used to be start, maybe should stay that way
           AXBoundaryBehavior::StopAtLastAnchorBoundary,
           ax::mojom::MoveDirection::kForward,
           &AtStartOfLinePredicate,
           &AtEndOfLinePredicate));
+      FML_LOG(ERROR) << "Resulted in anchor == " << endpoints_.GetStart()->anchor_id();
       break;
     case TextUnit_Paragraph:
       SetStart(
           start()->CreatePreviousParagraphStartPosition(
-              AXBoundaryBehavior::StopIfAlreadyAtBoundary)); // TOOD(schectman) ibid re:boundary behavior
-      SetEnd(end()->CreateNextParagraphStartPosition( // TODO(schectman) ibid re:start vs end
+              AXBoundaryBehavior::StopAtLastAnchorBoundary)); // TOOD(schectman) ibid re:boundary behavior
+      SetEnd(start()->CreateNextParagraphStartPosition( // TODO(schectman) ibid re:start vs end
               AXBoundaryBehavior::StopAtLastAnchorBoundary));
       break;
     case TextUnit_Page: {
@@ -1253,15 +1259,18 @@ void AXPlatformNodeTextRangeProviderWin::NormalizeTextRange(
   // first snap them both to be unignored positions.
   NormalizeAsUnignoredTextRange(start, end);
 
+  // TODO(schectman) do we _really_ want this?
+  bool is_degenerate = *start == *end;
   AXPositionInstance normalized_start =
-      start->AsLeafTextPositionBeforeCharacter();
+      is_degenerate ? start->AsLeafTextPositionBeforeCharacter() // Clone()
+                    : start->AsLeafTextPositionBeforeCharacter();
 
   // For a degenerate range, the |end_| will always be the same as the
   // normalized start, so there's no need to compute the normalized end.
   // However, a degenerate range might go undetected if there's an ignored node
   // (or many) between the two endpoints. For this reason, we need to
   // compare the |end_| with both the |start_| and the |normalized_start|.
-  bool is_degenerate = *start == *end || *normalized_start == *end;
+  is_degenerate = is_degenerate || *normalized_start == *end;
   AXPositionInstance normalized_end =
       is_degenerate ? normalized_start->Clone()
                     : end->AsLeafTextPositionAfterCharacter();

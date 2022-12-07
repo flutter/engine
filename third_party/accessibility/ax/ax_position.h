@@ -26,6 +26,9 @@
 #include "base/logging.h"
 #include "base/string_utils.h"
 
+// TODO(schectman): testing
+#include "flutter/fml/logging.h"
+
 namespace ui {
 
 // Defines the type of position in the accessibility tree.
@@ -513,6 +516,7 @@ class AXPosition {
         BASE_UNREACHABLE();
         return false;
       case AXPositionKind::TEXT_POSITION:
+        FML_LOG(ERROR) << "Start line? @ position " << text_position->text_offset_ << " anchor " << text_position->anchor_id_;
         // We treat a position after some white space that is not connected to
         // any node after it via "next on line ID", to be equivalent to a
         // position before the next line, and therefore as being at start of
@@ -559,6 +563,7 @@ class AXPosition {
         BASE_UNREACHABLE();
         return false;
       case AXPositionKind::TEXT_POSITION:
+        FML_LOG(ERROR) << "End line? @ position " << text_position->text_offset_ << " anchor " << text_position->anchor_id_;
         // Text positions on objects with no text should not be considered at
         // end of line because the empty position may share a text offset with
         // a non-empty text position in which case the end of line iterators
@@ -642,6 +647,8 @@ class AXPosition {
         BASE_UNREACHABLE();
         return false;
       case AXPositionKind::TEXT_POSITION: {
+        // TODO(schectman) testing
+        FML_LOG(ERROR) << "Start paragraph? @ position " << text_position->text_offset_ << " anchor " << text_position->anchor_id_;
         // 1. The current leaf text position must be an unignored position at
         //    the start of an anchor.
         if (text_position->IsIgnored() || !text_position->AtStartOfAnchor())
@@ -721,6 +728,7 @@ class AXPosition {
         BASE_UNREACHABLE();
         return false;
       case AXPositionKind::TEXT_POSITION: {
+        FML_LOG(ERROR) << "End paragraph? @ position " << text_position->text_offset_ << " anchor " << text_position->anchor_id_;
         // 1. The current leaf text position must be an unignored position at
         //    the end of an anchor.
         if (text_position->IsIgnored() || !text_position->AtEndOfAnchor())
@@ -2071,6 +2079,7 @@ class AXPosition {
       BASE_DCHECK(text_position->text_offset_ >= 0);
       return text_position;
     }
+
     text_position = text_position->CreateNextLeafTextPosition();
     while (!text_position->IsNullPosition() &&
            (text_position->IsIgnored() || !text_position->MaxTextOffset())) {
