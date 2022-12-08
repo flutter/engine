@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import '../../dom.dart';
+import 'package:ui/src/engine/dom.dart';
+
 import 'embedding_strategy.dart';
 
 class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
@@ -24,7 +25,7 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
     embedderMetadata?.entries.forEach((MapEntry<String, String> entry) {
       _setHostAttribute(entry.key, entry.value);
     });
-    _setHostAttribute('flt-glasspane-host', 'custom-element');
+    _setHostAttribute('flt-embedding', 'custom-element');
 
     _setHostStyles(font: defaultFont);
   }
