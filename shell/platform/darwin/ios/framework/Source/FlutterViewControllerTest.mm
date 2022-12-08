@@ -128,6 +128,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)keyboardWillBeHidden:(NSNotification*)notification;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
+- (UIView*)keyboardAnimationView;
+- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation
+                                   duration:(double)duration;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;
@@ -183,6 +186,23 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   viewControllerMock.targetViewInsetBottom = 100;
   [viewControllerMock startKeyBoardAnimation:0.25];
   OCMVerify([viewControllerMock setupKeyboardAnimationVsyncClient]);
+}
+
+- (void)testStartKeyboardAnimationWillInvokeSetupKeyboardAnimationCurveIfNeeded {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+  viewControllerMock.targetViewInsetBottom = 100;
+  [viewControllerMock startKeyBoardAnimation:0.25];
+
+  CAAnimation* keyboardAnimation =
+      [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
+
+  OCMVerify([viewControllerMock setupKeyboardAnimationCurveIfNeeded:keyboardAnimation
+                                                           duration:0.25]);
 }
 
 - (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {

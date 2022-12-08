@@ -2574,6 +2574,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_messa
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.mm
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/module.modulemap
