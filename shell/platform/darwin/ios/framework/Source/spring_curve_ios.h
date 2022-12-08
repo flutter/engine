@@ -13,9 +13,9 @@
                           damping:(double)damping
                              mass:(double)mass
                   initialVelocity:(double)initialVelocity
-                 settlingDuration:(double)settlingDuration;
 
-- (double)curveFunc:(double)t;
+                                  - (double)curveFunc
+                                 :(double)t;
 
 @property(nonatomic) double initialVelocity;
 @property(nonatomic) double settlingDuration;

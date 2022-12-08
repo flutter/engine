@@ -201,8 +201,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CAAnimation* keyboardAnimation =
       [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
 
-  OCMVerify([viewControllerMock setupKeyboardAnimationCurveIfNeeded:keyboardAnimation
-                                                           duration:0.25]);
+  OCMVerify([viewControllerMock setupKeyboardAnimationCurveIfNeeded:keyboardAnimation]);
 }
 
 - (void)testkeyboardWillChangeFrameWillStartKeyboardAnimation {

@@ -10,13 +10,11 @@
 - (instancetype)initWithStiffness:(double)stiffness
                           damping:(double)damping
                              mass:(double)mass
-                  initialVelocity:(double)initialVelocity
-                 settlingDuration:(double)settlingDuration {
+                  initialVelocity:(double)initialVelocity {
   self = [super init];
   if (self) {
     _dampingRatio = MIN(1.0, damping / 2 / sqrt(stiffness * mass));
     _initialVelocity = initialVelocity;
-    _settlingDuration = settlingDuration;
 
     double response = MAX(1e-5, 2 * M_PI / sqrt(stiffness / mass));
     _omega = 2 * M_PI / response;

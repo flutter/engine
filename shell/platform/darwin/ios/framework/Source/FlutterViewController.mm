@@ -69,7 +69,6 @@ typedef struct MouseState {
 @property(nonatomic, assign) Boolean keyboardAnimationIsShowing;
 @property(nonatomic, assign) Boolean keyboardAnimationIsCompounding;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
-@property(nonatomic, assign) NSTimeInterval keyboardAnimationDuration;
 @property(nonatomic, assign) CGFloat keyboardAnimationFrom;
 @property(nonatomic, assign) CGFloat keyboardAnimationTo;
 
@@ -1411,8 +1410,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }];
 }
 
-- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation
-                                   duration:(double)duration {
+- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation {
   // Set keyboard spring animation details (if animation is CASpringAnimation).
   if ([keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
     CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
@@ -1427,9 +1425,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     self.keyboardAnimationStartTime = fml::TimePoint().Now();
     self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
     self.keyboardAnimationTo = self.targetViewInsetBottom;
-
-    // Double duration to match actual timing of spring animation.
-    self.keyboardAnimationDuration = duration * 2;
   } else {
     // Reset to use fallback keyboard animation tracking.
     _keyboardSpringCurve.reset();
@@ -1824,8 +1819,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 // The brightness mode of the platform, e.g., light or dark, expressed as a string that
-// is understood by the Flutter framework. See the settings system channel for more
-// information.
+// is understood by the Flutter framework. See the settings
+// sysetupKeyboardAnimationCurveIfNeededstem channel for more information.
 - (NSString*)brightnessMode {
   if (@available(iOS 13, *)) {
     UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;
