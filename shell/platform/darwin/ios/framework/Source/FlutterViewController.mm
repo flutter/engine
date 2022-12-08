@@ -66,6 +66,8 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
+@property(nonatomic, assign) Boolean keyboardAnimationIsShowing;
+@property(nonatomic, assign) Boolean keyboardAnimationIsCompounding;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) NSTimeInterval keyboardAnimationDuration;
 @property(nonatomic, assign) CGFloat keyboardAnimationFrom;
@@ -1296,6 +1298,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
+  CGRect beginKeyboardFrame = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue];
   CGRect keyboardFrame = [[info objectForKey:UIKeyboardFrameEndUserInfoKey] CGRectValue];
   CGRect screenRect = [[UIScreen mainScreen] bounds];
 
@@ -1315,6 +1318,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   } else {
     self.targetViewInsetBottom = 0;
   }
+
+  bool keyboardIsShowing = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
+
+  // Flag for simultaneous compounding animation calls.
+  self.keyboardAnimationIsCompounding = (self.keyboardAnimationIsShowing && keyboardIsShowing) ||
+                                        (!self.keyboardAnimationIsShowing && !keyboardIsShowing);
+
+  // Mark keyboard as showing or hiding
+  self.keyboardAnimationIsShowing = keyboardIsShowing;
+
   [self startKeyBoardAnimation:duration];
 }
 
@@ -1359,6 +1372,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   if ([self keyboardAnimationView].superview == nil) {
     [self.view addSubview:[self keyboardAnimationView]];
+  } else if (self.keyboardAnimationIsCompounding) {
+    // Update in-flight keyboard animation curve target position.
+    self.keyboardAnimationTo = self.targetViewInsetBottom;
+    return;
   }
 
   // Remove running animation when start another animation.
