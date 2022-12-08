@@ -163,6 +163,17 @@ public interface FlutterPlugin {
       return flutterAssets;
     }
 
+    /**
+     * Accessor for the {@link FlutterEngineGroup} used to create the
+     * {@link FlutterEngine} for the app.
+     *
+     * This is useful in the rare case that a plugin has to spawn its own engine
+     * (for example, running an engine the background). The result is nullable
+     * since old versions of Flutter and custom setups may not have used a
+     * {@link FlutterEngineGroup}. Failing to use this when it is available will
+     * result in suboptimal performance and odd behaviors related to Dart
+     * isolate groups.
+     */
     @Nullable
     public FlutterEngineGroup getEngineGroup() {
       return group;
