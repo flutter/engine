@@ -20,7 +20,6 @@
 @property(nonatomic) double initialVelocity;
 @property(nonatomic) double settlingDuration;
 @property(nonatomic) double dampingRatio;
-@property(nonatomic) double damping;
 @property(nonatomic) double omega;
 @end
 

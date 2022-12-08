@@ -14,7 +14,7 @@
                  settlingDuration:(double)settlingDuration {
   self = [super init];
   if (self) {
-    _dampingRatio = 1;
+    _dampingRatio = MIN(1.0, damping / 2 / sqrt(stiffness * mass));
     _initialVelocity = initialVelocity;
     _settlingDuration = settlingDuration;
 
