@@ -212,6 +212,7 @@ extension DomNodeExtension on DomNode {
   external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
+  external set innerText(String text);
   external DomNode? get lastChild;
   external DomNode appendChild(DomNode node);
   DomElement? get parent => js_util.getProperty(this, 'parentElement');
@@ -932,6 +933,7 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool get metaKey;
   external bool? get repeat;
   external bool get shiftKey;
+  external bool get isComposing;
   external bool getModifierState(String keyArg);
 }
 

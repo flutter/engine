@@ -13,6 +13,7 @@
 #include "impeller/playground/imgui/gles/imgui_shaders_gles.h"
 #include "impeller/renderer/backend/gles/context_gles.h"
 #include "impeller/renderer/backend/gles/surface_gles.h"
+#include "impeller/scene/shaders/gles/scene_shaders_gles.h"
 
 namespace impeller {
 
@@ -67,7 +68,7 @@ PlaygroundImplGLES::PlaygroundImplGLES()
   ::glfwWindowHint(GLFW_GREEN_BITS, 8);
   ::glfwWindowHint(GLFW_BLUE_BITS, 8);
   ::glfwWindowHint(GLFW_ALPHA_BITS, 8);
-  ::glfwWindowHint(GLFW_DEPTH_BITS, 0);    // no depth buffer
+  ::glfwWindowHint(GLFW_DEPTH_BITS, 32);   // 32 bit depth buffer
   ::glfwWindowHint(GLFW_STENCIL_BITS, 8);  // 8 bit stencil buffer
   ::glfwWindowHint(GLFW_SAMPLES, 4);       // 4xMSAA
 
@@ -94,6 +95,8 @@ ShaderLibraryMappingsForPlayground() {
           impeller_fixtures_shaders_gles_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_imgui_shaders_gles_data, impeller_imgui_shaders_gles_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_scene_shaders_gles_data, impeller_scene_shaders_gles_length),
   };
 }
 
