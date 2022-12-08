@@ -726,7 +726,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // becomes the first responder. Typically set to false
   // when the app shows its own in-flutter keyboard.
   bool _isSystemKeyboardEnabled;
-  bool _isFloatingCursorActive;
   CGPoint _floatingCursorOffset;
   bool _enableInteractiveSelection;
   UITextInteraction* _textInteraction API_AVAILABLE(ios(13.0));
@@ -751,7 +750,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     // Initialize with the zero matrix which is not
     // an affine transform.
     _editableTransform = CATransform3D();
-    _isFloatingCursorActive = false;
 
     // UITextInputTraits
     _autocapitalizationType = UITextAutocapitalizationTypeSentences;
@@ -1605,13 +1603,22 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     // There is no character before the caret, so this will be the bounds of the character after the
     // caret position.
     CGRect characterAfterCaret = rects[0].rect;
-    // Return a zero-width rectangle along the left edge of the character after the caret position.
-    return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
-                      characterAfterCaret.size.height);
+    // Return a zero-width rectangle 30% in from the left edge of the character after the caret
+    // position.
+    return CGRectMake(characterAfterCaret.origin.x + 0.3 * characterAfterCaret.size.width,
+                      characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
+  } else if (rects.count == 2 && _selectionAffinity == kTextAffinityDownstream) {
+    // It's better to use the character after the caret.
+    CGRect characterAfterCaret = rects[1].rect;
+    // Return a zero-width rectangle 30% in from the left edge of the character after the caret
+    // position.
+    return CGRectMake(characterAfterCaret.origin.x + 0.3 * characterAfterCaret.size.width,
+                      characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
   }
   CGRect characterBeforeCaret = rects[0].rect;
-  // Return a zero-width rectangle along the right edge of the character before the caret position.
-  return CGRectMake(characterBeforeCaret.origin.x + characterBeforeCaret.size.width,
+  // Return a zero-width rectangle 30% in from the right edge of the character before the caret
+  // position.
+  return CGRectMake(characterBeforeCaret.origin.x + 0.7 * characterBeforeCaret.size.width,
                     characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
 }
 
@@ -1728,7 +1735,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   // call always turns a CGRect's negative dimensions into non-negative values, e.g.,
   // (1, 2, -3, -4) would become (-2, -2, 3, 4).
   _floatingCursorOffset = point;
-  _isFloatingCursorActive = true;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateStart
                                     withClient:_textInputClient
@@ -1736,7 +1742,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)updateFloatingCursorAtPoint:(CGPoint)point {
-  _isFloatingCursorActive = true;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateUpdate
                                     withClient:_textInputClient
@@ -1747,7 +1752,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)endFloatingCursor {
-  _isFloatingCursorActive = false;
   [self.textInputDelegate flutterTextInputView:self
                           updateFloatingCursor:FlutterFloatingCursorDragStateEnd
                                     withClient:_textInputClient
