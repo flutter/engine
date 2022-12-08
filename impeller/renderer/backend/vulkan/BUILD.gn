@@ -66,4 +66,11 @@ impeller_component("vulkan") {
     "//third_party/vulkan-deps/vulkan-headers/src:vulkan_headers",
     "//third_party/vulkan_memory_allocator",
   ]
+
+  _validation_layer_srcs =
+      "//third_party/vulkan-deps/vulkan-validation-layers/src"
+  data_deps = [ "$_validation_layer_srcs:vulkan_validation_layers" ]
+  if (!is_android) {
+    data_deps += [ "$_validation_layer_srcs:vulkan_gen_json_files" ]
+  }
 }
