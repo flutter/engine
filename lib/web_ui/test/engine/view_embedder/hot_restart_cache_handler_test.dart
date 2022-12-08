@@ -22,7 +22,7 @@ void doTests() {
 
       expect(cache, isNotNull);
 
-      final List<DomElement?>? domCache = _getDomCache();
+      final List<DomElement?>? domCache = getDomCache();
 
       expect(domCache, isNotNull);
       expect(domCache, isEmpty);
@@ -35,7 +35,7 @@ void doTests() {
 
     setUp(() {
       cache = HotRestartCacheHandler();
-      domCache = _getDomCache();
+      domCache = getDomCache();
     });
 
     test('Registers an element in the DOM cache', () async {
@@ -78,5 +78,5 @@ void doTests() {
   });
 }
 
-List<DomElement?>? _getDomCache() => getProperty<List<DomElement?>?>(
+List<DomElement?>? getDomCache() => getProperty<List<DomElement?>?>(
     domWindow, HotRestartCacheHandler.defaultCacheName);

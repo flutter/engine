@@ -4,9 +4,9 @@
 
 import 'package:meta/meta.dart';
 
-import '../../dom.dart';
+import 'package:ui/src/engine/dom.dart';
+import 'package:ui/src/engine/view_embedder/hot_restart_cache_handler.dart';
 
-import '../hot_restart_cache_handler.dart';
 import 'custom_element_embedding_strategy.dart';
 import 'full_page_embedding_strategy.dart';
 
