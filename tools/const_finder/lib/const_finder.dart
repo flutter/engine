@@ -32,6 +32,31 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   bool inIgnoredClass = false;
 
+  /// Whether or not we are currently within the declaration of the target class.
+  ///
+  /// We use this to determine when to skip tracking non-constant
+  /// [ConstructorInvocation]s. This is because, in web builds, a static
+  /// method is always created called _#new#tearOff() which returns the result
+  /// of a non-constant invocation of the unnamed constructor.
+  ///
+  /// For the following Dart class "FooBar":
+  ///
+  /// class FooBar {
+  ///   const FooBar();
+  /// }
+  ///
+  /// The following kernel structure is generated:
+  ///
+  /// class FooBar extends core::Object /*hasConstConstructor*/  {
+  ///   const constructor •() → min::FooBar
+  ///     : super core::Object::•()
+  ///     ;
+  ///   static method _#new#tearOff() → min::FooBar
+  ///     return new min::FooBar::•(); /* this is a non-const constructor invocation */
+  ///   method noOp() → void {}
+  /// }
+  bool inTargetClass = false;
+
   /// The name of the name of the class of the annotation marking classes
   /// whose constant references should be ignored.
   final String? annotationClassName;
@@ -73,7 +98,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   @override
   void visitConstructorInvocation(ConstructorInvocation node) {
     final Class parentClass = node.target.parent! as Class;
-    if (_matches(parentClass)) {
+    if (_matches(parentClass) && !inTargetClass) {
       final Location location = node.location!;
       nonConstantLocations.add(<String, dynamic>{
         'file': location.file.toString(),
@@ -86,9 +111,11 @@ class _ConstVisitor extends RecursiveVisitor<void> {
 
   @override
   void visitClass(Class node) {
+    inTargetClass = _matches(node);
     // check if this is a class that we should ignore
     inIgnoredClass = _classShouldBeIgnored(node);
     super.visitClass(node);
+    inTargetClass = false;
     inIgnoredClass = false;
   }
 
