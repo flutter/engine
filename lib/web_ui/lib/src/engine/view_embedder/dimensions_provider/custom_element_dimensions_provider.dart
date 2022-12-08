@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
+import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui show Size;
 
-import '../../dom.dart';
 import 'dimensions_provider.dart';
 
 /// This class provides the real-time dimensions of a "hostElement".
