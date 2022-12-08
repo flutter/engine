@@ -440,6 +440,9 @@ void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
       ax::mojom::BoolAttribute::kEditableRoot,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
           (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0);
+
+  // TODO(schectman): figure out when we actually want this attribute set or not
+  node_data.AddBoolAttribute(ax::mojom::BoolAttribute::kIsLineBreakingObject, true);
 }
 
 void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(

@@ -244,7 +244,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
       // TODO(schectman)
       FML_LOG(ERROR) << "Getting line w/ anchor == " << start()->anchor_id() << ": " << start()->text_offset();
       SetStart(start()->CreateBoundaryStartPosition(
-          AXBoundaryBehavior::StopAtLastAnchorBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
+          AXBoundaryBehavior::StopIfAlreadyAtBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
           ax::mojom::MoveDirection::kBackward,
           &AtStartOfLinePredicate,
           &AtEndOfLinePredicate));
@@ -260,7 +260,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
     case TextUnit_Paragraph:
       SetStart(
           start()->CreatePreviousParagraphStartPosition(
-              AXBoundaryBehavior::StopAtLastAnchorBoundary)); // TOOD(schectman) ibid re:boundary behavior
+              AXBoundaryBehavior::StopIfAlreadyAtBoundary)); // TOOD(schectman) ibid re:boundary behavior
       SetEnd(start()->CreateNextParagraphStartPosition( // TODO(schectman) ibid re:start vs end
               AXBoundaryBehavior::StopAtLastAnchorBoundary));
       break;
@@ -1262,7 +1262,7 @@ void AXPlatformNodeTextRangeProviderWin::NormalizeTextRange(
   // TODO(schectman) do we _really_ want this?
   bool is_degenerate = *start == *end;
   AXPositionInstance normalized_start =
-      is_degenerate ? start->AsLeafTextPositionBeforeCharacter() // Clone()
+      is_degenerate ? start->Clone()
                     : start->AsLeafTextPositionBeforeCharacter();
 
   // For a degenerate range, the |end_| will always be the same as the
