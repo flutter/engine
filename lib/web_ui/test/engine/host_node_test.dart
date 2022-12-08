@@ -15,8 +15,7 @@ void testMain() {
   domDocument.body!.append(rootNode);
 
   group('ShadowDomHostNode', () {
-    final HostNode hostNode =
-        ShadowDomHostNode(rootNode, '14px font_family_for_testing');
+    final HostNode hostNode = ShadowDomHostNode(rootNode, '14px monospace');
 
     test('Initializes and attaches a shadow root', () {
       expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
@@ -63,9 +62,18 @@ void testMain() {
       final bool hasColorRed = hasCssRule(style,
           selector: 'flt-scene-host', declaration: 'color: red');
 
-      final bool hasFont = hasCssRule(style,
-          selector: 'flt-scene-host',
-          declaration: 'font: 14px font_family_for_testing');
+      bool hasFont = false;
+      if (isSafari) {
+        // Safari expands the shorthand rules, so we check for all we've set (separately).
+        hasFont = hasCssRule(style,
+                selector: 'flt-scene-host',
+                declaration: 'font-family: monospace') &&
+            hasCssRule(style,
+                selector: 'flt-scene-host', declaration: 'font-size: 14px');
+      } else {
+        hasFont = hasCssRule(style,
+            selector: 'flt-scene-host', declaration: 'font: 14px monospace');
+      }
 
       expect(hasColorRed, isTrue,
           reason: 'Should make foreground color red within scene host.');
