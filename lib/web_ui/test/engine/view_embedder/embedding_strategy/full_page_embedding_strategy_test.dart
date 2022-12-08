@@ -37,10 +37,10 @@ void doTests() {
       expect(userMeta, isNotNull);
 
       strategy.initialize(
-          defaultFont: '14px my_custom_font_for_testing',
-          embedderMetadata: <String, String>{
-            'key-for-testing': 'value-for-testing',
-          });
+        embedderMetadata: <String, String>{
+          'key-for-testing': 'value-for-testing',
+        },
+      );
 
       expect(target.getAttribute('key-for-testing'), 'value-for-testing',
           reason:
@@ -48,8 +48,6 @@ void doTests() {
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
               'Should identify itself as a specific key=value into the target element.');
-      expect(target.style.font, '14px my_custom_font_for_testing',
-          reason: 'Should set the correct font in the inline style.');
 
       // Locate the viewport metas again...
       userMeta = domDocument.querySelector('#my_viewport_meta_for_testing');
@@ -68,7 +66,7 @@ void doTests() {
   group('attachGlassPane', () {
     setUp(() {
       strategy = FullPageEmbeddingStrategy();
-      strategy.initialize(defaultFont: '14px my_custom_font_for_testing');
+      strategy.initialize();
     });
 
     test('Should attach glasspane into embedder target (body)', () async {
@@ -110,7 +108,7 @@ void doTests() {
     setUp(() {
       glassPane = createDomElement('some-tag-for-tests');
       strategy = FullPageEmbeddingStrategy();
-      strategy.initialize(defaultFont: '14px my_custom_font_for_testing');
+      strategy.initialize();
       strategy.attachGlassPane(glassPane);
     });
 

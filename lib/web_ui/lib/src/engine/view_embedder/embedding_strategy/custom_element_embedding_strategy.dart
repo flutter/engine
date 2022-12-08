@@ -18,7 +18,6 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
 
   @override
   void initialize({
-    required String defaultFont,
     Map<String, String>? embedderMetadata,
   }) {
     // ignore:avoid_function_literals_in_foreach_calls
@@ -26,8 +25,6 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
       _setHostAttribute(entry.key, entry.value);
     });
     _setHostAttribute('flt-embedding', 'custom-element');
-
-    _setHostStyles(font: defaultFont);
   }
 
   @override
@@ -53,11 +50,5 @@ class CustomElementEmbeddingStrategy extends EmbeddingStrategy {
 
   void _setHostAttribute(String name, String value) {
     _hostElement.setAttribute(name, value);
-  }
-
-  void _setHostStyles({
-    required String font,
-  }) {
-    _hostElement.style.font = font;
   }
 }

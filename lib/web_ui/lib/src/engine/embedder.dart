@@ -14,7 +14,6 @@ import 'host_node.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding.dart';
-import 'safe_browser_api.dart';
 import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'view_embedder/dimensions_provider/dimensions_provider.dart';
@@ -141,11 +140,15 @@ class FlutterViewEmbedder {
       '$defaultFontStyle $defaultFontWeight ${defaultFontSize}px $defaultFontFamily';
 
   void reset() {
+    // How was the current renderer selected?
+    const String rendererSelection = FlutterConfiguration.flutterWebAutoDetect
+        ? 'auto-selected'
+        : 'requested explicitly';
+
     // Initializes the embeddingStrategy so it can host a single-view Flutter app.
     _embeddingStrategy.initialize(
-      defaultFont: defaultCssFont,
-      embedderMetadata: <String, String> {
-        'flt-renderer': '${renderer.rendererTag} (${FlutterConfiguration.flutterWebAutoDetect ? 'auto-selected' : 'requested explicitly'})',
+      embedderMetadata: <String, String>{
+        'flt-renderer': '${renderer.rendererTag} ($rendererSelection)',
         'flt-build-mode': buildMode,
         // TODO(mdebbar): Disable spellcheck until changes in the framework and
         // engine are complete.
@@ -154,7 +157,8 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
-    final DomElement glassPaneElement = domDocument.createElement(glassPaneTagName);
+    final DomElement glassPaneElement =
+        domDocument.createElement(glassPaneTagName);
     _glassPaneElement = glassPaneElement;
 
     // This must be attached to the DOM now, so the engine can create a host
@@ -166,7 +170,12 @@ class FlutterViewEmbedder {
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
-    final HostNode glassPaneElementHostNode = _createHostNode(glassPaneElement);
+    //
+    // TODO(dit): clean HostNode, https://github.com/flutter/flutter/issues/116204
+    final HostNode glassPaneElementHostNode = HostNode.create(
+      glassPaneElement,
+      defaultCssFont,
+    );
     _glassPaneShadow = glassPaneElementHostNode;
 
     // Don't allow the scene to receive pointer events.
@@ -211,29 +220,20 @@ class FlutterViewEmbedder {
     }
 
     KeyboardBinding.initInstance();
-    PointerBinding.initInstance(glassPaneElement, KeyboardBinding.instance!.converter);
+    PointerBinding.initInstance(
+      glassPaneElement,
+      KeyboardBinding.instance!.converter,
+    );
 
     window.onResize.listen(_metricsDidChange);
-  }
-
-  // Creates a [HostNode] into a `root` [DomElement].
-  //
-  // TODO(dit): remove HostNode, https://github.com/flutter/flutter/issues/116204
-  HostNode _createHostNode(DomElement root) {
-    if (getJsProperty<Object?>(root, 'attachShadow') != null) {
-      return ShadowDomHostNode(root);
-    } else {
-      // attachShadow not available, fall back to ElementHostNode.
-      return ElementHostNode(root);
-    }
   }
 
   /// The framework specifies semantics in physical pixels, but CSS uses
   /// logical pixels. To compensate, an inverse scale is injected at the root
   /// level.
   void updateSemanticsScreenProperties() {
-    _semanticsHostElement!.style.setProperty('transform',
-        'scale(${1 / window.devicePixelRatio})');
+    _semanticsHostElement!.style
+        .setProperty('transform', 'scale(${1 / window.devicePixelRatio})');
   }
 
   /// Called immediately after browser window metrics change.
@@ -339,13 +339,16 @@ class FlutterViewEmbedder {
   void addResource(DomElement element) {
     final bool isWebKit = browserEngine == BrowserEngine.webkit;
     if (_resourcesHost == null) {
-      final DomElement resourcesHost = domDocument.createElement('flt-svg-filters')
+      final DomElement resourcesHost = domDocument
+          .createElement('flt-svg-filters')
         ..style.visibility = 'hidden';
       if (isWebKit) {
         // The resourcesHost *must* be a sibling of the glassPaneElement.
-        _embeddingStrategy.attachResourcesHost(resourcesHost, nextTo: glassPaneElement);
+        _embeddingStrategy.attachResourcesHost(resourcesHost,
+            nextTo: glassPaneElement);
       } else {
-        glassPaneShadow!.node.insertBefore(resourcesHost, glassPaneShadow!.node.firstChild);
+        glassPaneShadow!.node
+            .insertBefore(resourcesHost, glassPaneShadow!.node.firstChild);
       }
       _resourcesHost = resourcesHost;
     }
@@ -371,16 +374,17 @@ FlutterViewEmbedder get flutterViewEmbedder {
   assert(() {
     if (embedder == null) {
       throw StateError(
-        'FlutterViewEmbedder not initialized. Call `ensureFlutterViewEmbedderInitialized()` '
-        'prior to calling the `flutterViewEmbedder` getter.'
-      );
+          'FlutterViewEmbedder not initialized. Call `ensureFlutterViewEmbedderInitialized()` '
+          'prior to calling the `flutterViewEmbedder` getter.');
     }
     return true;
   }());
   return embedder!;
 }
+
 FlutterViewEmbedder? _flutterViewEmbedder;
 
 /// Initializes the [FlutterViewEmbedder], if it's not already initialized.
 FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() =>
-    _flutterViewEmbedder ??= FlutterViewEmbedder(hostElement: configuration.hostElement);
+    _flutterViewEmbedder ??=
+        FlutterViewEmbedder(hostElement: configuration.hostElement);

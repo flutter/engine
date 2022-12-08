@@ -43,7 +43,6 @@ abstract class EmbeddingStrategy {
   HotRestartCacheHandler? _hotRestartCache;
 
   void initialize({
-    required String defaultFont,
     Map<String, String>? embedderMetadata,
   });
 

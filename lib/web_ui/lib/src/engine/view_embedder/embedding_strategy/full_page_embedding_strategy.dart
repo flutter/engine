@@ -10,7 +10,6 @@ import 'embedding_strategy.dart';
 class FullPageEmbeddingStrategy extends EmbeddingStrategy {
   @override
   void initialize({
-    required String defaultFont,
     Map<String, String>? embedderMetadata,
   }) {
     // ignore:avoid_function_literals_in_foreach_calls
@@ -20,14 +19,13 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     _setHostAttribute('flt-embedding', 'full-page');
 
     _applyViewportMeta();
-    _setHostStyles(font: defaultFont);
+    _setHostStyles();
   }
 
   @override
   void attachGlassPane(DomElement glassPaneElement) {
     /// Tweaks style so the glassPane works well with the hostElement.
     glassPaneElement.style
-      ..color = 'red' // #115216
       ..position = 'absolute'
       ..top = '0'
       ..right = '0'
@@ -51,9 +49,7 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
   }
 
   // Sets the global styles for a flutter app.
-  void _setHostStyles({
-    required String font,
-  }) {
+  void _setHostStyles() {
     final DomHTMLBodyElement bodyElement = domDocument.body!;
 
     setElementStyle(bodyElement, 'position', 'fixed');
@@ -74,7 +70,6 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     // handling. If this is not done, the browser doesn't report 'pointermove'
     // events properly.
     setElementStyle(bodyElement, 'touch-action', 'none');
-    setElementStyle(bodyElement, 'font', font);
   }
 
   // Sets a meta viewport tag appropriate for Flutter Web in full screen.

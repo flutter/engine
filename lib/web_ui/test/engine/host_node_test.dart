@@ -15,7 +15,8 @@ void testMain() {
   domDocument.body!.append(rootNode);
 
   group('ShadowDomHostNode', () {
-    final HostNode hostNode = ShadowDomHostNode(rootNode);
+    final HostNode hostNode =
+        ShadowDomHostNode(rootNode, '14px font_family_for_testing');
 
     test('Initializes and attaches a shadow root', () {
       expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
@@ -55,6 +56,22 @@ void testMain() {
       expect(hasFakeRule, isFalse);
     });
 
+    test('Attaches outrageous text styles to flt-scene-host', () {
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
+
+      final bool hasColorRed = hasCssRule(style,
+          selector: 'flt-scene-host', declaration: 'color: red');
+
+      final bool hasFont = hasCssRule(style,
+          selector: 'flt-scene-host',
+          declaration: 'font: 14px font_family_for_testing');
+
+      expect(hasColorRed, isTrue,
+          reason: 'Should make foreground color red within scene host.');
+      expect(hasFont, isTrue, reason: 'Should pass default css font.');
+    });
+
     test('Attaches styling to remove password reveal icons on Edge', () {
       final DomElement? style =
           hostNode.querySelector('#flt-internals-stylesheet');
@@ -91,7 +108,7 @@ void testMain() {
   });
 
   group('ElementHostNode', () {
-    final HostNode hostNode = ElementHostNode(rootNode);
+    final HostNode hostNode = ElementHostNode(rootNode, '');
 
     test('Initializes and attaches a child element', () {
       expect(domInstanceOfString(hostNode.node, 'Element'), isTrue);

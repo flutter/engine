@@ -5,6 +5,7 @@
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'embedder.dart';
+import 'safe_browser_api.dart';
 import 'text_editing/text_editing.dart';
 
 /// The interface required to host a flutter app in the DOM, and its tests.
@@ -19,6 +20,19 @@ import 'text_editing/text_editing.dart';
 /// stylesheet is "namespaced" by the `flt-glass-pane` prefix, so it "only"
 /// affects things that Flutter web owns.
 abstract class HostNode {
+  /// Returns an appropriate HostNode for the given [root].
+  ///
+  /// If `attachShadow` is supported, this returns a [ShadowDomHostNode], else
+  /// this will fall-back to an [ElementHostNode].
+  factory HostNode.create(DomElement root, String defaultFont) {
+    if (getJsProperty<Object?>(root, 'attachShadow') != null) {
+      return ShadowDomHostNode(root, defaultFont);
+    } else {
+      // attachShadow not available, fall back to ElementHostNode.
+      return ElementHostNode(root, defaultFont);
+    }
+  }
+
   /// Retrieves the [DomElement] that currently has focus.
   ///
   /// See:
@@ -93,11 +107,12 @@ abstract class HostNode {
 class ShadowDomHostNode implements HostNode {
   /// Build a HostNode by attaching a [DomShadowRoot] to the `root` element.
   ///
-  /// This also calls [applyGlobalCssRulesToSheet], defined in dom_renderer.
-  ShadowDomHostNode(DomElement root) :
-    assert(
+  /// This also calls [applyGlobalCssRulesToSheet], with the [defaultFont]
+  /// to be used as the default font definition.
+  ShadowDomHostNode(DomElement root, String defaultFont)
+      : assert(
           root.isConnected ?? true,
-          'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.',
+          'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.'
         ) {
     _shadow = root.attachShadow(<String, dynamic>{
       'mode': 'open',
@@ -106,13 +121,15 @@ class ShadowDomHostNode implements HostNode {
       'delegatesFocus': false,
     });
 
-    final DomHTMLStyleElement shadowRootStyleElement = createDomHTMLStyleElement();
+    final DomHTMLStyleElement shadowRootStyleElement =
+        createDomHTMLStyleElement();
     shadowRootStyleElement.id = 'flt-internals-stylesheet';
     // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
     _shadow.appendChild(shadowRootStyleElement);
     applyGlobalCssRulesToSheet(
       shadowRootStyleElement.sheet! as DomCSSStyleSheet,
       hasAutofillOverlay: browserHasAutofillOverlay(),
+      defaultCssFont: defaultFont,
     );
   }
 
@@ -154,7 +171,7 @@ class ShadowDomHostNode implements HostNode {
 /// being constructed.
 class ElementHostNode implements HostNode {
   /// Build a HostNode by attaching a child [DomElement] to the `root` element.
-  ElementHostNode(DomElement root) {
+  ElementHostNode(DomElement root, String defaultFont) {
     // Append the stylesheet here, so this class is completely symmetric to the
     // ShadowDOM version.
     final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
@@ -165,6 +182,7 @@ class ElementHostNode implements HostNode {
       styleElement.sheet! as DomCSSStyleSheet,
       hasAutofillOverlay: browserHasAutofillOverlay(),
       cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
+      defaultCssFont: defaultFont,
     );
 
     _element = domDocument.createElement('flt-element-host-node');
@@ -208,9 +226,21 @@ void applyGlobalCssRulesToSheet(
   DomCSSStyleSheet sheet, {
   required bool hasAutofillOverlay,
   String cssSelectorPrefix = '',
+  required String defaultCssFont,
 }) {
   // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
   // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
+
+  // These are intentionally outrageous font parameters to make sure that the
+  // apps fully specify their text styles.
+  //
+  // Fixes #115216 by ensuring that our parameters only affect the flt-scene-host children.
+  sheet.insertRule('''
+    $cssSelectorPrefix flt-scene-host {
+      color: red;
+      font: $defaultCssFont;
+    }
+  ''', sheet.cssRules.length.toInt());
 
   // By default on iOS, Safari would highlight the element that's being tapped
   // on using gray background. This CSS rule disables that.
@@ -301,33 +331,33 @@ void applyGlobalCssRulesToSheet(
     ''', sheet.cssRules.length.toInt());
   }
 
-    // Removes password reveal icon for text inputs in Edge browsers.
-    // Non-Edge browsers will crash trying to parse -ms-reveal CSS selector,
-    // so we guard it behind an isEdge check.
-    // Fixes: https://github.com/flutter/flutter/issues/83695
-    if (isEdge) {
-      // We try-catch this, because in testing, we fake Edge via the UserAgent,
-      // so the below will throw an exception (because only real Edge understands
-      // the ::-ms-reveal pseudo-selector).
-      try {
-        sheet.insertRule('''
+  // Removes password reveal icon for text inputs in Edge browsers.
+  // Non-Edge browsers will crash trying to parse -ms-reveal CSS selector,
+  // so we guard it behind an isEdge check.
+  // Fixes: https://github.com/flutter/flutter/issues/83695
+  if (isEdge) {
+    // We try-catch this, because in testing, we fake Edge via the UserAgent,
+    // so the below will throw an exception (because only real Edge understands
+    // the ::-ms-reveal pseudo-selector).
+    try {
+      sheet.insertRule('''
         $cssSelectorPrefix input::-ms-reveal {
           display: none;
         }
         ''', sheet.cssRules.length.toInt());
-      } on DomException catch(e) {
-        // Browsers that don't understand ::-ms-reveal throw a DOMException
-        // of type SyntaxError.
-        domWindow.console.warn(e);
-        // Add a fake rule if our code failed because we're under testing
-        assert(() {
-          sheet.insertRule('''
+    } on DomException catch (e) {
+      // Browsers that don't understand ::-ms-reveal throw a DOMException
+      // of type SyntaxError.
+      domWindow.console.warn(e);
+      // Add a fake rule if our code failed because we're under testing
+      assert(() {
+        sheet.insertRule('''
           $cssSelectorPrefix input.fallback-for-fakey-browser-in-ci {
             display: none;
           }
           ''', sheet.cssRules.length.toInt());
-          return true;
-        }());
-      }
+        return true;
+      }());
     }
+  }
 }

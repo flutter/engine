@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:js/js.dart';
-import 'package:meta/meta.dart';
 import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/window.dart';
@@ -19,7 +18,6 @@ import 'dimensions_provider.dart';
 /// *expensive*, and should be cached as needed. Every call to every method on
 /// this class WILL perform actual DOM measurements.
 class FullPageDimensionsProvider extends DimensionsProvider {
-  @visibleForTesting
   FullPageDimensionsProvider() {
     // Determine what 'resize' event we'll be listening to.
     // This is needed for older browsers (Firefox < 91, Safari < 13)
