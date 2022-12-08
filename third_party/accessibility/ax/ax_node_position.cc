@@ -296,9 +296,9 @@ bool AXNodePosition::IsInLineBreakingObject() const {
   if (IsNullPosition())
     return false;
   BASE_DCHECK(GetAnchor());
-  return /*GetAnchor()->data().GetBoolAttribute(
+  return GetAnchor()->data().GetBoolAttribute(
              ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
-         !GetAnchor()->IsInListMarker();*/ true; // TODO(schectman) see if when everything breaks
+         !GetAnchor()->IsInListMarker(); // TODO(schectman) see if when everything breaks
   // Need to figure out who actually gets this attribute since we don't use it currently
 }
 

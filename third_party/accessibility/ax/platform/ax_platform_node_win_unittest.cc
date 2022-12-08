@@ -3513,7 +3513,7 @@ TEST_F(AXPlatformNodeWinTest, GetPatternProviderSupportedPatterns) {
             GetSupportedPatternsFromNodeId(root_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
-                        UIA_ExpandCollapsePatternId}),
+                        UIA_ExpandCollapsePatternId, UIA_TextPatternId, UIA_TextEditPatternId}),
             GetSupportedPatternsFromNodeId(text_field_with_combo_box_id));
 
   EXPECT_EQ(PatternSet({UIA_ScrollItemPatternId, UIA_ValuePatternId,
