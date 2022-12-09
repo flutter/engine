@@ -59,14 +59,28 @@ void testMain() {
 
 void _testForImageCodecs({required bool useBrowserImageDecoder}) {
   final String mode = useBrowserImageDecoder ? 'webcodecs' : 'wasm';
+  final List<String> warnings = <String>[];
+  late void Function(String) oldPrintWarning;
 
-  group('($mode})', () {
+  group('($mode)', () {
     setUp(() {
       browserSupportsImageDecoder = useBrowserImageDecoder;
+      warnings.clear();
+    });
+
+    setUpAll(() {
+      oldPrintWarning = printWarning;
+      printWarning = (String warning) {
+        warnings.add(warning);
+      };
     });
 
     tearDown(() {
       debugResetBrowserSupportsImageDecoder();
+    });
+
+    tearDownAll(() {
+      printWarning = oldPrintWarning;
     });
 
     test('CkAnimatedImage can be explicitly disposed of', () {
@@ -229,7 +243,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       final Future<ui.Codec> futureCodec =
           skiaInstantiateWebImageCodec('http://image-server.com/picture.jpg',
               null);
-      mock.sendEvent('load', DomProgressEvent());
+      mock.sendEvent('load', DomProgressEvent('test progress event'));
       final ui.Codec codec = await futureCodec;
       expect(codec.frameCount, 1);
       final ui.Image image = (await codec.getNextFrame()).image;
@@ -260,14 +274,40 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         );
 
         final ui.Image image = (await codec.getNextFrame()).image;
-        // TODO(yjbanov): https://github.com/flutter/flutter/issues/34075
-        // expect(image.width, targetWidth);
-        // expect(image.height, targetHeight);
+        expect(image.width, targetWidth);
+        expect(image.height, targetHeight);
         image.dispose();
         codec.dispose();
       }
 
       testCollector.collectNow();
+    });
+
+    test('instantiateImageCodec with multi-frame image does not support targetWidth/targetHeight',
+        () async {
+        final ui.Codec codec = await ui.instantiateImageCodec(
+          kAnimatedGif,
+          targetWidth: 2,
+          targetHeight: 3,
+        );
+        final ui.Image image = (await codec.getNextFrame()).image;
+
+        expect(
+        warnings,
+        containsAllInOrder(
+          <String>[
+            'targetWidth and targetHeight for multi-frame images not supported',
+          ],
+        ),
+      );
+
+        // expect the re-size did not happen, kAnimatedGif is [1x1]
+        expect(image.width, 1);
+        expect(image.height, 1);
+        image.dispose();
+        codec.dispose();
+
+        testCollector.collectNow();
     });
 
     test('skiaInstantiateWebImageCodec throws exception on request error',
@@ -277,7 +317,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'url-does-not-matter', null);
-        mock.sendEvent('error', DomProgressEvent());
+        mock.sendEvent('error', DomProgressEvent('test error'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -317,7 +357,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       try {
         final Future<ui.Codec> futureCodec = skiaInstantiateWebImageCodec(
             'http://image-server.com/picture.jpg', null);
-        mock.sendEvent('load', DomProgressEvent());
+        mock.sendEvent('load', DomProgressEvent('test progress event'));
         await futureCodec;
         fail('Expected to throw');
       } on ImageCodecException catch (exception) {
@@ -466,6 +506,64 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
       expect(image2, isNotNull);
       expect(image2.width, 40);
       expect(image2.height, 100);
+    });
+
+    test('decodeImageFromPixels respects target image size', () async {
+      Future<ui.Image> testDecodeFromPixels(int width, int height, int targetWidth, int targetHeight) async {
+        final Completer<ui.Image> completer = Completer<ui.Image>();
+        ui.decodeImageFromPixels(
+          Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
+          width,
+          height,
+          ui.PixelFormat.rgba8888,
+          (ui.Image image) {
+            completer.complete(image);
+          },
+          targetWidth: targetWidth,
+          targetHeight: targetHeight,
+        );
+        return completer.future;
+      }
+
+      const List<List<int>> targetSizes = <List<int>>[
+        <int>[1, 1],
+        <int>[1, 2],
+        <int>[2, 3],
+        <int>[3, 4],
+        <int>[4, 4],
+        <int>[10, 20],
+      ];
+
+      for (final List<int> targetSize in targetSizes) {
+        final int targetWidth = targetSize[0];
+        final int targetHeight = targetSize[1];
+
+        final ui.Image image = await testDecodeFromPixels(10, 20, targetWidth, targetHeight);
+
+        expect(image.width, targetWidth);
+        expect(image.height, targetHeight);
+        image.dispose();
+      }
+    });
+
+    test('decodeImageFromPixels upscale when allowUpscaling is false', () async {
+      Future<ui.Image> testDecodeFromPixels(int width, int height) async {
+        final Completer<ui.Image> completer = Completer<ui.Image>();
+        ui.decodeImageFromPixels(
+          Uint8List.fromList(List<int>.filled(width * height * 4, 0)),
+          width,
+          height,
+          ui.PixelFormat.rgba8888,
+          (ui.Image image) {
+            completer.complete(image);
+          },
+          targetWidth: 20,
+          targetHeight: 30,
+          allowUpscaling: false
+        );
+        return completer.future;
+      }
+      expect(() async => testDecodeFromPixels(10, 20), throwsAssertionError);
     });
 
     test('Decode test images', () async {
@@ -772,7 +870,7 @@ void _testCkBrowserImageDecoder() {
     final ImageDecoder? decoder1 = image.debugCachedWebDecoder;
     expect(decoder1, isNotNull);
     expect(image.frameCount, 3);
-    expect(image.repetitionCount, double.infinity);
+    expect(image.repetitionCount, -1);
 
     // A frame can be decoded right away.
     final ui.FrameInfo frame1 = await image.getNextFrame();

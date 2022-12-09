@@ -74,6 +74,7 @@ impeller_component("impeller_unittests") {
     "compiler:compiler_unittests",
     "geometry:geometry_unittests",
     "runtime_stage:runtime_stage_unittests",
+    "scene/importer:importer_unittests",
     "tessellator:tessellator_unittests",
   ]
 
@@ -86,6 +87,7 @@ impeller_component("impeller_unittests") {
       "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
+      "scene:scene_unittests",
       "typographer:typographer_unittests",
     ]
   }

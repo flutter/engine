@@ -9,12 +9,12 @@
 #include <iostream>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalCompositor.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -72,6 +72,13 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * Private interface declaration for FlutterEngine.
  */
 @interface FlutterEngine () <FlutterBinaryMessenger>
+
+/**
+ * A mutable array that holds one bool value that determines if responses to platform messages are
+ * clear to execute. This value should be read or written only inside of a synchronized block and
+ * will return `NO` after the FlutterEngine has been dealloc'd.
+ */
+@property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
 
 /**
  * Sends the list of user-preferred locales to the Flutter engine.
@@ -202,9 +209,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // Pointer to the Dart AOT snapshot and instruction data.
   _FlutterEngineAOTData* _aotData;
 
-  // _macOSCompositor is created when the engine is created and
-  // its destruction is handled by ARC when the engine is destroyed.
-  // This is either a FlutterGLCompositor or a FlutterMetalCompositor instance.
+  // _macOSCompositor is created when the engine is created and its destruction is handled by ARC
+  // when the engine is destroyed.
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
   FlutterViewEngineProvider* _viewProvider;
@@ -243,11 +249,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
   _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:self];
+  _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
+  [_isResponseValid addObject:@YES];
 
   _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&_embedderAPI);
 
-  _renderer = [[FlutterMetalRenderer alloc] initWithFlutterEngine:self];
+  _renderer = [[FlutterRenderer alloc] initWithFlutterEngine:self];
 
   NSNotificationCenter* notificationCenter = [NSNotificationCenter defaultCenter];
   [notificationCenter addObserver:self
@@ -263,6 +271,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)dealloc {
+  @synchronized(_isResponseValid) {
+    [_isResponseValid removeAllObjects];
+    [_isResponseValid addObject:@NO];
+  }
   [self shutDownEngine];
   if (_aotData) {
     _embedderAPI.CollectAOTData(_aotData);
@@ -401,7 +413,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)setViewController:(FlutterViewController*)controller {
   if (_viewController != controller) {
     _viewController = controller;
-    [_renderer setFlutterView:controller.flutterView];
 
     if (_semanticsEnabled && _bridge) {
       _bridge->UpdateDefaultViewController(_viewController);
@@ -423,14 +434,17 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   __weak FlutterEngine* weakSelf = self;
 
-  FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_renderer);
-  _macOSCompositor = std::make_unique<flutter::FlutterMetalCompositor>(
-      _viewProvider, _platformViewController, metalRenderer.device);
+  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
+      _viewProvider, _platformViewController, _renderer.device);
   _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+    // TODO(dkwingsmt): The compositor only supports single-view for now. As
+    // more classes are gradually converted to multi-view, it should get the
+    // view ID from somewhere.
+    uint64_t viewId = kFlutterDefaultViewId;
     if (has_flutter_content) {
-      return [weakSelf.renderer present] == YES;
+      return [weakSelf.renderer present:viewId] == YES;
     } else {
-      [weakSelf.renderer presentWithoutContent];
+      [weakSelf.renderer presentWithoutContent:viewId];
       return true;
     }
   });
@@ -638,17 +652,25 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
   NSString* channel = @(message->channel);
   __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
-
+  __block FlutterEngine* weakSelf = self;
+  NSMutableArray* isResponseValid = self.isResponseValid;
+  FlutterEngineSendPlatformMessageResponseFnPtr sendPlatformMessageResponse =
+      _embedderAPI.SendPlatformMessageResponse;
   FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
-    if (responseHandle) {
-      _embedderAPI.SendPlatformMessageResponse(self->_engine, responseHandle,
-                                               static_cast<const uint8_t*>(response.bytes),
-                                               response.length);
-      responseHandle = NULL;
-    } else {
-      NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
-             "on channel '%@'.",
-            channel);
+    @synchronized(isResponseValid) {
+      if (![isResponseValid[0] boolValue]) {
+        // Ignore, engine was killed.
+        return;
+      }
+      if (responseHandle) {
+        sendPlatformMessageResponse(weakSelf->_engine, responseHandle,
+                                    static_cast<const uint8_t*>(response.bytes), response.length);
+        responseHandle = NULL;
+      } else {
+        NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
+               "on channel '%@'.",
+              channel);
+      }
     }
   };
 
