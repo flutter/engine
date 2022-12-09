@@ -159,22 +159,20 @@ class _StringStream {
 
 Map<String, int> _unmarshallCodeMap(_StringStream stream) {
   final int entryNum = stream.readIntAsVerbatim();
-  return Map<String, int>.fromEntries((() sync* {
-    for (int entryIndex = 0; entryIndex < entryNum; entryIndex += 1) {
-      yield MapEntry<String, int>(stream.readEventKey(), stream.readIntAsChar());
-    }
-  })());
+  return Map<String, int>.fromEntries(
+    Iterable<int>.generate(entryNum).map((final int index) =>
+      MapEntry<String, int>(stream.readEventKey(), stream.readIntAsChar())
+  ));
 }
 
 /// Decode a key mapping data out of the string.
 Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
   final _StringStream stream = _StringStream(compressed);
   final int eventCodeNum = stream.readIntAsVerbatim();
-  return Map<String, Map<String, int>>.fromEntries((() sync* {
-    for (int eventCodeIndex = 0; eventCodeIndex < eventCodeNum; eventCodeIndex += 1) {
-      yield MapEntry<String, Map<String, int>>(stream.readEventCode(), _unmarshallCodeMap(stream));
-    }
-  })());
+  return Map<String, Map<String, int>>.fromEntries(
+    Iterable<int>.generate(eventCodeNum).map((final int index) =>
+      MapEntry<String, Map<String, int>>(stream.readEventCode(), _unmarshallCodeMap(stream))
+  ));
 }
 
 /*@@@ SHARED SEGMENT END @@@*/
