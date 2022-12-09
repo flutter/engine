@@ -354,8 +354,8 @@ void main() async {
     final Directory directory = shaderDirectory('iplr-remap');
     final String data = readAsStringLossy(File(path.join(directory.path, 'glow_shader.frag.iplr')));
 
-    const String expected = 'texture2d<float> textureA [[texture(0)]],'
-      ' texture2d<float> textureB [[texture(1)]]';
+    const String expected = 'texture2d<float> tInput [[texture(0)]], texture2d<float> tNoise [[texture(1)]], '
+      'sampler tInputSmplr [[sampler(0)]], sampler tNoiseSmplr [[sampler(1)]]';
 
     expect(data, contains(expected));
   });
