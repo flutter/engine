@@ -13,6 +13,7 @@ import 'font_fallbacks.dart';
 import 'painting.dart';
 import 'renderer.dart';
 import 'skia_object_cache.dart';
+import 'text_fragmenter.dart';
 import 'util.dart';
 
 @immutable
@@ -44,6 +45,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           ellipsis,
           locale,
         ),
+        _textDirection = textDirection,
         _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
         _fontSize = fontSize,
         _height = height,
@@ -52,6 +54,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         _fontStyle = fontStyle;
 
   final SkParagraphStyle skParagraphStyle;
+  final ui.TextDirection? _textDirection;
   final String? _fontFamily;
   final double? _fontSize;
   final double? _height;
@@ -976,6 +979,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Builds the CkParagraph with the builder and deletes the builder.
   SkParagraph _buildSkParagraph() {
+    if (useClientICU) {
+      final String text = _paragraphBuilder.getText();
+      _paragraphBuilder.setBidiRegionsUtf8(CkBidiFragmenter(text, _style._textDirection).fragment());
+      _paragraphBuilder.setWordsUtf16(CkWordFragmenter(text).fragment());
+      _paragraphBuilder.setGraphemeBreaksUtf16(CkGraphemeBreakFragmenter(text).fragment());
+      _paragraphBuilder.setLineBreaksUtf16(CkLineBreakFragmenter(text).fragment());
+    }
     final SkParagraph result = _paragraphBuilder.build();
     _paragraphBuilder.delete();
     return result;
