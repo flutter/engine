@@ -1393,10 +1393,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       animations:^{
         // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
+      
+        // Set DisplayLink tracking values.
+        self.keyboardAnimationStartTime = fml::TimePoint().Now();
+        self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
+        self.keyboardAnimationTo = self.targetViewInsetBottom;
 
+        // Setup keyboard animation interpolation.
         CAAnimation* keyboardAnimation =
             [[self keyboardAnimationView].layer animationForKey:@"position"];
-        [self setupKeyboardAnimationCurveIfNeeded:keyboardAnimation duration:duration];
+        [self setupKeyboardAnimationCurveIfNeeded:keyboardAnimation];
       }
       completion:^(BOOL finished) {
         if (_keyboardAnimationVSyncClient == currentVsyncClient) {
@@ -1418,13 +1424,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         initWithStiffness:keyboardSpringAnimation.stiffness
                   damping:keyboardSpringAnimation.damping
                      mass:keyboardSpringAnimation.mass
-          initialVelocity:keyboardSpringAnimation.initialVelocity
-         settlingDuration:0.5]);
-
-    // Set DisplayLink tracking values.
-    self.keyboardAnimationStartTime = fml::TimePoint().Now();
-    self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
-    self.keyboardAnimationTo = self.targetViewInsetBottom;
+          initialVelocity:keyboardSpringAnimation.initialVelocity]);
   } else {
     // Reset to use fallback keyboard animation tracking.
     _keyboardSpringCurve.reset();
@@ -1820,7 +1820,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 // The brightness mode of the platform, e.g., light or dark, expressed as a string that
 // is understood by the Flutter framework. See the settings
-// sysetupKeyboardAnimationCurveIfNeededstem channel for more information.
+// system channel for more information.
 - (NSString*)brightnessMode {
   if (@available(iOS 13, *)) {
     UIUserInterfaceStyle style = self.traitCollection.userInterfaceStyle;

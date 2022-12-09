@@ -14,12 +14,9 @@
                              mass:(double)mass
                   initialVelocity:(double)initialVelocity
 
-                                  - (double)curveFunc
-                                 :(double)t;
+- (double)curveFunc:(double)t;
 
 @property(nonatomic) double initialVelocity;
-@property(nonatomic) double settlingDuration;
-@property(nonatomic) double dampingRatio;
 @property(nonatomic) double omega;
 @end
 
