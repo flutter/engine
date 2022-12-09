@@ -47,7 +47,7 @@ class AppBootstrap {
         ) async {
           await autoStart();
           // Return the App that was just started
-          resolve(_prepareFlutterApp());
+          resolve.resolve(_prepareFlutterApp());
         }));
       }),
       // Calls [_initEngine], and returns a JS Promise that resolves to an
@@ -61,7 +61,7 @@ class AppBootstrap {
         ) async {
           await _initializeEngine(configuration);
           // Return an app runner object
-          resolve(_prepareAppRunner());
+          resolve.resolve(_prepareAppRunner());
         }));
       }),
     );
@@ -77,7 +77,7 @@ class AppBootstrap {
       ) async {
         await _runApp();
         // Return the App that was just started
-        resolve(_prepareFlutterApp());
+        resolve.resolve(_prepareFlutterApp());
       }));
     }));
   }
