@@ -19,7 +19,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../configuration.dart';
 import '../dom.dart';
-import '../initialization.dart';
 import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
