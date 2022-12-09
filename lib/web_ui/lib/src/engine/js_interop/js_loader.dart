@@ -11,11 +11,6 @@ import 'package:js/js_util.dart' as js_util;
 import '../configuration.dart';
 import 'js_promise.dart';
 
-/// Typedef for the function that notifies JS that the main entrypoint is up and running.
-/// As a parameter, a [FlutterEngineInitializer] instance is passed to JS, so the
-/// programmer can control the initialization sequence.
-typedef DidCreateEngineInitializerFn = void Function(FlutterEngineInitializer);
-
 @JS()
 @staticInterop
 class FlutterJS {}
@@ -35,7 +30,7 @@ class FlutterLoader {}
 
 extension FlutterLoaderExtension on FlutterLoader {
   external void didCreateEngineInitializer(FlutterEngineInitializer initializer);
-  bool get isAutostart => !js_util.hasProperty(this, 'didCreateEngineInitializer');
+  bool get isAutoStart => !js_util.hasProperty(this, 'didCreateEngineInitializer');
 }
 
 // FlutterEngineInitializer
