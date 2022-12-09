@@ -81,8 +81,8 @@ Future<void> webOnlyWarmupEngine({
 
   // Should the app "autoStart"?
   bool autoStart = true;
-  if (engine.flutter != null && engine.loader != null) {
-    autoStart = engine.loader!.isAutostart;
+  if (engine.flutter != null && engine.flutter!.loader != null) {
+    autoStart = engine.flutter!.loader!.isAutostart;
   }
   if (autoStart) {
     // The user does not want control of the app, bootstrap immediately.
@@ -91,7 +91,7 @@ Future<void> webOnlyWarmupEngine({
   } else {
     // Yield control of the bootstrap procedure to the user.
     engine.domWindow.console.debug('Flutter Web Bootstrap: Programmatic.');
-    engine.loader!.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
+    engine.flutter!.loader!.didCreateEngineInitializer(bootstrap.prepareEngineInitializer());
   }
 }
 
