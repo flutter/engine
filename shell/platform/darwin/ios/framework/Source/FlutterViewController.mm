@@ -1393,7 +1393,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       animations:^{
         // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
-      
+
         // Set DisplayLink tracking values.
         self.keyboardAnimationStartTime = fml::TimePoint().Now();
         self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
