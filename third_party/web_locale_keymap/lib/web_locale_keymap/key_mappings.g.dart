@@ -169,7 +169,7 @@ class _StringStream {
 Map<String, int> _unmarshallCodeMap(_StringStream stream) {
   final int entryNum = stream.readIntAsVerbatim();
   return Map<String, int>.fromEntries(
-    Iterable<int>.generate(entryNum).map((final int index) =>
+    Iterable<MapEntry<String, int>>.generate(entryNum, (final int index) =>
       MapEntry<String, int>(stream.readEventKey(), stream.readIntAsChar())
   ));
 }
@@ -179,7 +179,7 @@ Map<String, Map<String, int>> unmarshallMappingData(String compressed) {
   final _StringStream stream = _StringStream(compressed);
   final int eventCodeNum = stream.readIntAsVerbatim();
   return Map<String, Map<String, int>>.fromEntries(
-    Iterable<int>.generate(eventCodeNum).map((final int index) =>
+    Iterable<MapEntry<String, Map<String, int>>>.generate(eventCodeNum, (final int index) =>
       MapEntry<String, Map<String, int>>(stream.readEventCode(), _unmarshallCodeMap(stream))
   ));
 }
