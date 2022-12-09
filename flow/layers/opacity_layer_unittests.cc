@@ -693,7 +693,7 @@ TEST_F(OpacityLayerTest, FullyOpaqueWithFractionalValues) {
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
 
-TEST_F(OpacityLayerTest, DoesNotCullPlatformViewEvenWithTransparency) {
+TEST_F(OpacityLayerTest, FullyTransparentDoesNotCullPlatformView) {
   const SkPoint opacity_offset = SkPoint::Make(0.5f, 1.5f);
   const SkPoint view_offset = SkPoint::Make(0.0f, 0.0f);
   const SkSize view_size = SkSize::Make(8.0f, 8.0f);
