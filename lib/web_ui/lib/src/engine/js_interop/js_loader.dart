@@ -6,6 +6,7 @@
 library js_loader;
 
 import 'package:js/js.dart';
+import 'package:js/js_util.dart' as js_util;
 
 import '../configuration.dart';
 import 'js_promise.dart';
@@ -20,11 +21,17 @@ typedef DidCreateEngineInitializerFn = void Function(FlutterEngineInitializer);
 @JS('_flutter')
 external Object? get flutter;
 
-@JS('_flutter.loader')
-external Object? get loader;
+@JS()
+@staticInterop
+class FlutterLoader {}
 
-@JS('_flutter.loader.didCreateEngineInitializer')
-external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
+extension FlutterLoaderExtension on FlutterLoader {
+  external void didCreateEngineInitializer(FlutterEngineInitializer initializer);
+  bool get isAutostart => !js_util.hasProperty(this, 'didCreateEngineInitializer');
+}
+
+@JS('_flutter.loader')
+external FlutterLoader? get loader;
 
 // FlutterEngineInitializer
 
