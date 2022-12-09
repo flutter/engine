@@ -139,8 +139,9 @@ void _checkAnnotation(String dillPath, Compiler compiler) {
     annotationClassName: 'StaticIconProvider',
     annotationClassLibraryUri: 'package:const_finder_fixtures/static_icon_provider.dart',
   );
+  final Map<String, dynamic> instances = finder.findInstances();
   expectInstances(
-    finder.findInstances(),
+    instances,
     <String, dynamic>{
       'constantInstances': <Map<String, Object?>>[
         <String, Object?>{

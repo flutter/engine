@@ -57,6 +57,8 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   /// }
   bool inTargetClass = false;
 
+  bool inTargetTearOff = false;
+
   /// The name of the name of the class of the annotation marking classes
   /// whose constant references should be ignored.
   final String? annotationClassName;
@@ -84,6 +86,18 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   final Set<Constant> _cache = LinkedHashSet<Constant>.identity();
 
   @override
+  void visitProcedure(Procedure node) {
+    final bool isTearOff = node.isStatic &&
+        node.kind == ProcedureKind.Method &&
+        node.name.text == '_#new#tearOff';
+    if (inTargetClass && isTearOff) {
+      inTargetTearOff = true;
+    }
+    super.visitProcedure(node);
+    inTargetTearOff = false;
+  }
+
+  @override
   void defaultConstant(Constant node) {
     if (_cache.add(node)) {
       super.defaultConstant(node);
@@ -98,7 +112,7 @@ class _ConstVisitor extends RecursiveVisitor<void> {
   @override
   void visitConstructorInvocation(ConstructorInvocation node) {
     final Class parentClass = node.target.parent! as Class;
-    if (_matches(parentClass) && !inTargetClass) {
+    if (!inTargetTearOff && _matches(parentClass)) {
       final Location location = node.location!;
       nonConstantLocations.add(<String, dynamic>{
         'file': location.file.toString(),
