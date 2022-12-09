@@ -155,6 +155,8 @@ void _checkAnnotation(String dillPath, Compiler compiler) {
           'targetValue': null,
         },
       ],
+      // TODO(fujino): This should have non-constant locations from the use of
+      // a tear-off, see https://github.com/flutter/flutter/issues/116797
       'nonConstantLocations': <Object?>[],
     },
     compiler,
