@@ -2619,8 +2619,7 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   domDocument.head!.appendChild(canvasKitScript);
 }
 
-String get canvasKitBuildUrl =>
-  configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitBuildUrl => configuration.canvasKitBaseUrl;
 String get canvasKitJavaScriptBindingsUrl =>
     '${canvasKitBuildUrl}canvaskit.js';
 String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
