@@ -10,9 +10,6 @@
 
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 
-// TOD(schectman)
-#include "flutter/fml/logging.h"
-
 #define UIA_VALIDATE_TEXTPROVIDER_CALL() \
   if (!owner()->GetDelegate())           \
     return UIA_E_ELEMENTNOTAVAILABLE;
@@ -65,7 +62,6 @@ HRESULT AXPlatformNodeTextProviderWin::GetSelection(SAFEARRAY** selection) {
 
   AXPlatformNodeDelegate* delegate = owner()->GetDelegate();
   AXTree::Selection unignored_selection = delegate->GetUnignoredSelection();
-  FML_LOG(ERROR) << "Selection anchor " << unignored_selection.anchor_object_id << " focus " << unignored_selection.focus_object_id;
 
   AXPlatformNode* anchor_object =
       delegate->GetFromNodeID(unignored_selection.anchor_object_id);

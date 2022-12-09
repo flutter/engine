@@ -10,9 +10,6 @@
 #include "ax/platform/ax_platform_tree_manager.h"
 #include "base/win/variant_vector.h"
 
-// TODO(schectman)
-#include "flutter/fml/logging.h"
-
 #define UIA_VALIDATE_TEXTRANGEPROVIDER_CALL()                  \
   if (!GetOwner() || !GetOwner()->GetDelegate() || !start() || \
       !start()->GetAnchor() || !end() || !end()->GetAnchor())  \
@@ -242,7 +239,6 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
       // use kStopAtLastAnchorBoundary, which will stop at the tree boundary if
       // no previous line start is found.
       // TODO(schectman)
-      FML_LOG(ERROR) << "Getting line w/ anchor == " << start()->anchor_id() << ": " << start()->text_offset();
       SetStart(start()->CreateBoundaryStartPosition(
           AXBoundaryBehavior::StopIfAlreadyAtBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
           ax::mojom::MoveDirection::kBackward,
@@ -255,7 +251,6 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
           ax::mojom::MoveDirection::kForward,
           &AtStartOfLinePredicate,
           &AtEndOfLinePredicate));
-      FML_LOG(ERROR) << "Resulted in anchor == " << endpoints_.GetStart()->anchor_id();
       break;
     case TextUnit_Paragraph:
       SetStart(
