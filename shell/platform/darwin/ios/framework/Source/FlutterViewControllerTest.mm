@@ -113,6 +113,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @interface FlutterViewController (Tests)
 
 @property(nonatomic, assign) double targetViewInsetBottom;
+@property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
 
 - (void)createTouchRateCorrectionVSyncClientIfNeeded;
 - (void)surfaceUpdated:(BOOL)appeared;
@@ -195,9 +196,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  id mockApplication = OCMClassMock([UIApplication class]);
-  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateActive);
   FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
   OCMStub([viewControllerMock mainScreen]).andReturn(UIScreen.mainScreen);
 
@@ -271,22 +269,24 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
   XCTAssertTrue(shouldIgnore == NO);
 
-  // Valid keyboard, state is not active
-  [mockApplication stopMocking];
-  mockApplication = OCMClassMock([UIApplication class]);
-  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateBackground);
-  isLocal = YES;
-  notification =
-      [NSNotification notificationWithName:UIKeyboardWillChangeFrameNotification
-                                    object:nil
-                                  userInfo:@{
-                                    @"UIKeyboardFrameEndUserInfoKey" : @(validKeyboardEndFrame),
-                                    @"UIKeyboardAnimationDurationUserInfoKey" : @0.25,
-                                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
-                                  }];
-  shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
-  XCTAssertTrue(shouldIgnore == YES);
+  if (@available(iOS 13.0, *)) {
+    // noop
+  } else {
+    // Valid keyboard, keyboard is in background
+    OCMStub([viewControllerMock isKeyboardInOrTransitioningFromBackground]).andReturn(YES);
+
+    isLocal = YES;
+    notification =
+        [NSNotification notificationWithName:UIKeyboardWillChangeFrameNotification
+                                      object:nil
+                                    userInfo:@{
+                                      @"UIKeyboardFrameEndUserInfoKey" : @(validKeyboardEndFrame),
+                                      @"UIKeyboardAnimationDurationUserInfoKey" : @0.25,
+                                      @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                                    }];
+    shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
+    XCTAssertTrue(shouldIgnore == YES);
+  }
 }
 
 - (void)testCalculateKeyboardAttachMode {
@@ -478,9 +478,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  id mockApplication = OCMClassMock([UIApplication class]);
-  OCMStub([mockApplication sharedApplication]).andReturn(mockApplication);
-  OCMStub([mockApplication applicationState]).andReturn(UIApplicationStateActive);
   // keyboard is empty
   CGFloat screenWidth = UIScreen.mainScreen.bounds.size.width;
   CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
@@ -513,7 +510,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertTrue(viewControllerMock.targetViewInsetBottom == 320 * UIScreen.mainScreen.scale);
   OCMVerify([viewControllerMock startKeyBoardAnimation:0.25]);
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
-  [mockApplication stopMocking];
 }
 
 - (void)testEnsureBottomInsetIsZeroWhenKeyboardDismissed {

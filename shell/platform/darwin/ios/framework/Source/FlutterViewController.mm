@@ -65,6 +65,7 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
+@property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
 
 /// VSyncClient for touch events delivery frame rate correction.
 ///
@@ -885,6 +886,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationBecameActive:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationBecameActive");
+  self.isKeyboardInOrTransitioningFromBackground = NO;
   if (_viewportMetrics.physical_width) {
     [self surfaceUpdated:YES];
   }
@@ -903,6 +905,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
 - (void)applicationDidEnterBackground:(NSNotification*)notification {
   TRACE_EVENT0("flutter", "applicationDidEnterBackground");
+  self.isKeyboardInOrTransitioningFromBackground = YES;
   [self surfaceUpdated:NO];
   [self goToApplicationLifecycle:@"AppLifecycleState.paused"];
 }
@@ -1348,10 +1351,17 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return YES;
   }
 
-  // Ignore notification if the app is not active (meaning it's running in the
-  // background, interrupted, or the app is transitioning to or from the background).
-  if (UIApplication.sharedApplication.applicationState != UIApplicationStateActive) {
-    return YES;
+  if (@available(iOS 13.0, *)) {
+    // noop
+  } else {
+    // If OS version is less than 13, ignore notification if the app is in the background
+    // or is transitioning from the background. In older versions, when switching between
+    // apps with the keyboard open in the secondary app, notifications are sent when
+    // the app is in the background/transitioning from background as if they belong
+    // to the app and as if the keyboard is showing even though it is not.
+    if (self.isKeyboardInOrTransitioningFromBackground == YES) {
+      return YES;
+    }
   }
 
   return NO;
