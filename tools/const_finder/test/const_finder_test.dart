@@ -93,18 +93,18 @@ void _checkConsts(String dillPath, Compiler compiler) {
   if (compiler == Compiler.aot) {
     expectation['nonConstantLocations'] = <Object?>[];
   } else {
-    // Without true tree-shaking, there is a non-const reference in a
-    // never-invoked function that will be present in the dill.
     final String fixturesUrl = Platform.isWindows
       ? '/$fixtures'.replaceAll(Platform.pathSeparator, '/')
       : fixtures;
 
+    // Without true tree-shaking, there is a non-const reference in a
+    // never-invoked function that will be present in the dill.
     expectation['nonConstantLocations'] = <Object?>[
       <String, dynamic>{
-          'file': 'file://$fixturesUrl/pkg/package.dart',
-          'line': 14,
-          'column': 25,
-        },
+        'file': 'file://$fixturesUrl/pkg/package.dart',
+        'line': 14,
+        'column': 25,
+      },
     ];
   }
   expectInstances(
