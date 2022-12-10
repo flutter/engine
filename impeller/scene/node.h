@@ -18,7 +18,7 @@
 namespace impeller {
 namespace scene {
 
-class Node {
+class Node final {
  public:
   Node();
   ~Node();
