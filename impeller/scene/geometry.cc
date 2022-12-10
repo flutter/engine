@@ -41,14 +41,14 @@ std::shared_ptr<VertexBufferGeometry> Geometry::MakeVertexBuffer(
 }
 
 std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFBMesh(
-    const fb::StaticMesh& mesh,
+    const fb::Mesh& mesh,
     Allocator& allocator) {
   IndexType index_type;
   switch (mesh.indices()->type()) {
-    case fb::IndicesType::k16Bit:
+    case fb::IndexType::k16Bit:
       index_type = IndexType::k16bit;
       break;
-    case fb::IndicesType::k32Bit:
+    case fb::IndexType::k32Bit:
       index_type = IndexType::k32bit;
       break;
   }

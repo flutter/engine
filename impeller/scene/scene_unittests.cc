@@ -18,8 +18,8 @@
 #include "impeller/scene/geometry.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
 #include "impeller/scene/material.h"
+#include "impeller/scene/mesh.h"
 #include "impeller/scene/scene.h"
-#include "impeller/scene/static_mesh_entity.h"
 #include "third_party/flatbuffers/include/flatbuffers/verifier.h"
 
 // #include "third_party/tinygltf/tiny_gltf.h"
@@ -37,18 +37,17 @@ TEST_P(SceneTest, CuboidUnlit) {
     auto scene = Scene(GetContext());
 
     {
-      auto mesh = SceneEntity::MakeStaticMesh();
+      Mesh mesh;
 
       auto material = Material::MakeUnlit();
       material->SetColor(Color::Red());
-      mesh->SetMaterial(std::move(material));
 
       Vector3 size(1, 1, 0);
-      mesh->SetGeometry(Geometry::MakeCuboid(size));
+      mesh.AddPrimitive({Geometry::MakeCuboid(size), std::move(material)});
 
-      mesh->SetLocalTransform(Matrix::MakeTranslation(-size / 2));
-
-      scene.Add(mesh);
+      Node& root = scene.GetRoot();
+      root.SetLocalTransform(Matrix::MakeTranslation(-size / 2));
+      root.AddMesh(mesh);
     }
 
     // Face towards the +Z direction (+X right, +Y up).
@@ -93,11 +92,11 @@ TEST_P(SceneTest, GLTFScene) {
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     auto scene = Scene(GetContext());
 
-    auto mesh = SceneEntity::MakeStaticMesh();
-    mesh->SetMaterial(material);
-    mesh->SetGeometry(geometry);
-    mesh->SetLocalTransform(Matrix::MakeScale({3, 3, 3}));
-    scene.Add(mesh);
+    Mesh mesh;
+    mesh.AddPrimitive({geometry, material});
+
+    scene.GetRoot().SetLocalTransform(Matrix::MakeScale({3, 3, 3}));
+    scene.GetRoot().AddMesh(mesh);
 
     Quaternion rotation({0, 1, 0}, -GetSecondsElapsed() * 0.5);
     Vector3 start_position(-1, -1.5, -5);

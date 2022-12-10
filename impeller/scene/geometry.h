@@ -29,7 +29,7 @@ class Geometry {
       VertexBuffer vertex_buffer);
 
   static std::shared_ptr<VertexBufferGeometry> MakeFromFBMesh(
-      const fb::StaticMesh& mesh,
+      const fb::Mesh& mesh,
       Allocator& allocator);
 
   virtual VertexBuffer GetVertexBuffer(Allocator& allocator) const = 0;

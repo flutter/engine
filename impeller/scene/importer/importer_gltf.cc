@@ -33,9 +33,9 @@ static bool WithinRange(int index, size_t size) {
   return index >= 0 && static_cast<size_t>(index) < size;
 }
 
-static bool ProcessStaticMesh(const tinygltf::Model& gltf,
-                              const tinygltf::Primitive& primitive,
-                              fb::StaticMeshT& static_mesh) {
+static bool ProcessMesh(const tinygltf::Model& gltf,
+                        const tinygltf::Primitive& primitive,
+                        fb::MeshT& static_mesh) {
   //---------------------------------------------------------------------------
   /// Vertices.
   ///
@@ -112,10 +112,10 @@ static bool ProcessStaticMesh(const tinygltf::Model& gltf,
 
   switch (index_accessor.componentType) {
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT:
-      indices->type = fb::IndicesType::k16Bit;
+      indices->type = fb::IndexType::k16Bit;
       break;
     case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
-      indices->type = fb::IndicesType::k32Bit;
+      indices->type = fb::IndexType::k32Bit;
       break;
     default:
       std::cerr << "Mesh primitive has unsupported index type "
@@ -177,8 +177,8 @@ static void ProcessNode(const tinygltf::Model& gltf,
   if (WithinRange(in_node.mesh, gltf.meshes.size())) {
     auto& mesh = gltf.meshes[in_node.mesh];
     for (const auto& primitive : mesh.primitives) {
-      auto static_mesh = std::make_unique<fb::StaticMeshT>();
-      if (!ProcessStaticMesh(gltf, primitive, *static_mesh)) {
+      auto static_mesh = std::make_unique<fb::MeshT>();
+      if (!ProcessMesh(gltf, primitive, *static_mesh)) {
         continue;
       }
       out_node.meshes.push_back(std::move(static_mesh));
