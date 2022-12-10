@@ -29,8 +29,9 @@ class Node {
   void SetGlobalTransform(Matrix transform);
   Matrix GetGlobalTransform() const;
 
-  bool AddChild(Node child);
-  bool AddMesh(Mesh mesh);
+  void AddChild(Node child);
+
+  void SetMesh(const Mesh& mesh);
 
   bool Render(SceneEncoder& encoder, const Matrix& parent_transform) const;
 
@@ -40,7 +41,7 @@ class Node {
  private:
   Node* parent_ = nullptr;
   std::vector<Node> children_;
-  std::vector<Mesh> meshes_;
+  Mesh mesh_;
 };
 
 }  // namespace scene

@@ -41,22 +41,20 @@ Matrix Node::GetGlobalTransform() const {
   return local_transform_;
 }
 
-bool Node::AddChild(Node child) {
+void Node::AddChild(Node child) {
   children_.push_back(child);
   child.parent_ = this;
-  return true;
 }
 
-bool Node::AddMesh(Mesh mesh) {
-  meshes_.push_back(std::move(mesh));
-  return true;
+void Node::SetMesh(const Mesh& mesh) {
+  mesh_ = mesh;
 }
 
 bool Node::Render(SceneEncoder& encoder, const Matrix& parent_transform) const {
   Matrix transform = parent_transform * local_transform_;
-  for (auto& mesh : meshes_) {
-    mesh.Render(encoder, transform);
-  }
+
+  mesh_.Render(encoder, transform);
+
   for (auto& child : children_) {
     if (!child.Render(encoder, transform)) {
       return false;

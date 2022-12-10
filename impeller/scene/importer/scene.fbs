@@ -65,7 +65,7 @@ table Material {
   // TODO(bdero): PBR textures.
 }
 
-table Mesh {
+table MeshPrimitive {
   vertices: [Vertex];
   indices: Indices;
   material: Material;
@@ -74,7 +74,7 @@ table Mesh {
 table Node {
   children: [Node];
   transform: Matrix;
-  meshes: [Mesh];
+  mesh_primitives: [MeshPrimitive];
 }
 
 table Scene {

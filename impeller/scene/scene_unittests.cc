@@ -47,7 +47,7 @@ TEST_P(SceneTest, CuboidUnlit) {
 
       Node& root = scene.GetRoot();
       root.SetLocalTransform(Matrix::MakeTranslation(-size / 2));
-      root.AddMesh(mesh);
+      root.SetMesh(mesh);
     }
 
     // Face towards the +Z direction (+X right, +Y up).
@@ -78,10 +78,10 @@ TEST_P(SceneTest, GLTFScene) {
   const auto* fb_scene = fb::GetScene(mapping->GetMapping());
   const auto fb_nodes = fb_scene->children();
   ASSERT_EQ(fb_nodes->size(), 1u);
-  const auto fb_meshes = fb_nodes->begin()->meshes();
+  const auto fb_meshes = fb_nodes->begin()->mesh_primitives();
   ASSERT_EQ(fb_meshes->size(), 1u);
   const auto* fb_mesh = fb_meshes->Get(0);
-  auto geometry = Geometry::MakeFromFBMesh(*fb_mesh, *allocator);
+  auto geometry = Geometry::MakeFromFBMeshPrimitive(*fb_mesh, *allocator);
   ASSERT_NE(geometry, nullptr);
 
   std::shared_ptr<UnlitMaterial> material = Material::MakeUnlit();
@@ -96,7 +96,7 @@ TEST_P(SceneTest, GLTFScene) {
     mesh.AddPrimitive({geometry, material});
 
     scene.GetRoot().SetLocalTransform(Matrix::MakeScale({3, 3, 3}));
-    scene.GetRoot().AddMesh(mesh);
+    scene.GetRoot().SetMesh(mesh);
 
     Quaternion rotation({0, 1, 0}, -GetSecondsElapsed() * 0.5);
     Vector3 start_position(-1, -1.5, -5);

@@ -77,7 +77,7 @@ material->SetStencilConfig({
   impeller::CompareFunction::kAlways,           // compare
 });
 sphere_mesh.AddPrimitive({sphere_geometry, material});
-sphere_node.AddMesh(sphere_mesh);
+sphere_node.SetMesh(sphere_mesh);
 
 Node cube_node;
 cube_node.SetLocalTransform(Matrix::MakeTranslation({4, 0, 0}));
@@ -85,7 +85,7 @@ Mesh cube_mesh;
 auto cube_geometry = impeller::scene::Geometry::MakeCuboid(
     allocator, {4, 4, 4});
 cube_mesh.AddPrimitive({cube_geometry, material});
-cube_node.AddMesh(cube_mesh);
+cube_node.SetMesh(cube_mesh);
 
 sphere_node.AddChild(cube_node);
 scene.GetRoot().AddChild(sphere_node);

@@ -40,8 +40,8 @@ std::shared_ptr<VertexBufferGeometry> Geometry::MakeVertexBuffer(
   return result;
 }
 
-std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFBMesh(
-    const fb::Mesh& mesh,
+std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFBMeshPrimitive(
+    const fb::MeshPrimitive& mesh,
     Allocator& allocator) {
   IndexType index_type;
   switch (mesh.indices()->type()) {

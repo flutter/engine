@@ -33,9 +33,9 @@ static bool WithinRange(int index, size_t size) {
   return index >= 0 && static_cast<size_t>(index) < size;
 }
 
-static bool ProcessMesh(const tinygltf::Model& gltf,
-                        const tinygltf::Primitive& primitive,
-                        fb::MeshT& static_mesh) {
+static bool ProcessMeshPrimitive(const tinygltf::Model& gltf,
+                                 const tinygltf::Primitive& primitive,
+                                 fb::MeshPrimitiveT& mesh_primitive) {
   //---------------------------------------------------------------------------
   /// Vertices.
   ///
@@ -93,7 +93,7 @@ static bool ProcessMesh(const tinygltf::Model& gltf,
                                      accessor.count);            // count
     }
 
-    builder.WriteFBVertices(static_mesh.vertices);
+    builder.WriteFBVertices(mesh_primitive.vertices);
   }
 
   //---------------------------------------------------------------------------
@@ -128,7 +128,7 @@ static bool ProcessMesh(const tinygltf::Model& gltf,
       &gltf.buffers[index_view.buffer].data[index_view.byteOffset];
   std::memcpy(indices->data.data(), index_buffer, indices->data.size());
 
-  static_mesh.indices = std::move(indices);
+  mesh_primitive.indices = std::move(indices);
 
   return true;
 }
@@ -177,11 +177,11 @@ static void ProcessNode(const tinygltf::Model& gltf,
   if (WithinRange(in_node.mesh, gltf.meshes.size())) {
     auto& mesh = gltf.meshes[in_node.mesh];
     for (const auto& primitive : mesh.primitives) {
-      auto static_mesh = std::make_unique<fb::MeshT>();
-      if (!ProcessMesh(gltf, primitive, *static_mesh)) {
+      auto mesh_primitive = std::make_unique<fb::MeshPrimitiveT>();
+      if (!ProcessMeshPrimitive(gltf, primitive, *mesh_primitive)) {
         continue;
       }
-      out_node.meshes.push_back(std::move(static_mesh));
+      out_node.mesh_primitives.push_back(std::move(mesh_primitive));
     }
   }
 
