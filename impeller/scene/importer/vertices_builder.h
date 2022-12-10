@@ -49,9 +49,9 @@ class VerticesBuilder {
                          const ComponentProperties& component_props,
                          const AttributeProperties& attribute_props)>;
   struct AttributeProperties {
-    size_t offset_bytes;
-    size_t size_bytes;
-    size_t component_count;
+    size_t offset_bytes = 0;
+    size_t size_bytes = 0;
+    size_t component_count = 0;
     AttributeWriter write_proc;
   };
 
