@@ -104,7 +104,7 @@ bool Node::AddChild(Node node) {
   children_.push_back(std::move(node));
 
   Node& ref = children_.back();
-  for (Node& child : node.children_) {
+  for (Node& child : ref.children_) {
     child.parent_ = &ref;
   }
 
