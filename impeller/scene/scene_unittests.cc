@@ -66,6 +66,14 @@ TEST_P(SceneTest, CuboidUnlit) {
 }
 
 TEST_P(SceneTest, GLTFScene) {
+  if (GetParam() == PlaygroundBackend::kOpenGLES) {
+    // TODO(bdero): GLES falls over when the scene context is created outside of
+    //              the render callback:
+    //              "Library was collected before a pending pipeline creation
+    //              could finish."
+    GTEST_SKIP_("Pipeline creation fails for GLES in this test right now.");
+  }
+
   auto allocator = GetContext()->GetResourceAllocator();
 
   auto mapping =
