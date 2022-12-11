@@ -423,7 +423,9 @@ void DisplayListBuilder::setAttributesFromPaint(
 
 void DisplayListBuilder::checkForDeferredSave() {
   if (current_layer_->has_deferred_save_op_) {
+    size_t save_offset = used_;
     Push<SaveOp>(0, 1);
+    current_layer_->save_offset = save_offset;
     current_layer_->has_deferred_save_op_ = false;
   }
 }
@@ -436,8 +438,14 @@ void DisplayListBuilder::save() {
 
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
+    SaveOpBase* op;
     if (!current_layer_->has_deferred_save_op_) {
+      op = reinterpret_cast<SaveOpBase*>(storage_.get() +
+                                         current_layer_->save_offset);
+      op->restore_offset = used_;
       Push<RestoreOp>(0, 1);
+    } else {
+      op = nullptr;
     }
     // Grab the current layer info before we push the restore
     // on the stack.
@@ -445,6 +453,10 @@ void DisplayListBuilder::restore() {
     layer_stack_.pop_back();
     current_layer_ = &layer_stack_.back();
     if (layer_info.has_layer) {
+      // Layers are never deferred for now, we need to update the
+      // following code if we ever do saveLayer culling...
+      FML_DCHECK(!layer_info.has_deferred_save_op_);
+      FML_DCHECK(op != nullptr);
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
         // call to add the option indicating it can distribute an opacity
@@ -458,8 +470,6 @@ void DisplayListBuilder::restore() {
         // in the DisplayList are only allowed *during* the build phase.
         // Once built, the DisplayList records must remain read only to
         // ensure consistency of rendering and |Equals()| behavior.
-        SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
-            storage_.get() + layer_info.save_layer_offset);
         op->options = op->options.with_can_distribute_opacity();
       }
     } else {
@@ -486,11 +496,11 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
   size_t save_layer_offset = used_;
   if (backdrop) {
     bounds  //
-        ? Push<SaveLayerBackdropBoundsOp>(0, 1, *bounds, options, backdrop)
+        ? Push<SaveLayerBackdropBoundsOp>(0, 1, options, *bounds, backdrop)
         : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
   } else {
     bounds  //
-        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
+        ? Push<SaveLayerBoundsOp>(0, 1, options, *bounds)
         : Push<SaveLayerOp>(0, 1, options);
   }
   CheckLayerOpacityCompatibility(options.renders_with_attributes());

@@ -75,14 +75,34 @@ void DisplayList::ComputeRTree() {
 void DisplayList::Dispatch(Dispatcher& dispatcher,
                            uint8_t* ptr,
                            uint8_t* end) const {
+  DispatchContext context = {
+      .dispatcher = dispatcher,
+
+      .cur_offset = 0,
+      .next_render_offset = 0,
+
+      .next_restore_offset = std::numeric_limits<dl_offset>::max(),
+  };
+
+  uint8_t* op_base = storage_.get();
   while (ptr < end) {
+    context.cur_offset = ptr - op_base;
+    // The following line would be used to cull render ops by setting
+    // it to the next rendering op that matched in the RTree instead
+    // of setting it to cur_offset. For now it is using the cur_offset
+    // as the next_render_offset to test the op_needed tests in the
+    // DLOps, but if there is no RTree culling going on, it would be
+    // just as valid to leave the next_render_offset as 0 for the
+    // entire run (in fact, that scenario has also been tested and
+    // works just fine to avoid any culling).
+    context.next_render_offset = context.cur_offset;
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
     switch (op->type) {
-#define DL_OP_DISPATCH(name)                                \
-  case DisplayListOpType::k##name:                          \
-    static_cast<const name##Op*>(op)->dispatch(dispatcher); \
+#define DL_OP_DISPATCH(name)                             \
+  case DisplayListOpType::k##name:                       \
+    static_cast<const name##Op*>(op)->dispatch(context); \
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)

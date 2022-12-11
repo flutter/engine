@@ -384,9 +384,9 @@ class DisplayListBuilder final : public virtual Dispatcher,
   struct LayerInfo {
     LayerInfo(const SkM44& matrix,
               const SkRect& clip_bounds,
-              size_t save_layer_offset = 0,
+              size_t save_offset = 0,
               bool has_layer = false)
-        : save_layer_offset(save_layer_offset),
+        : save_offset(save_offset),
           has_layer(has_layer),
           cannot_inherit_opacity(false),
           has_compatible_op(false),
@@ -407,7 +407,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
     // the records inside the saveLayer that may impact how the saveLayer
     // is handled (e.g., |cannot_inherit_opacity| == false).
     // This offset is only valid if |has_layer| is true.
-    size_t save_layer_offset;
+    size_t save_offset;
 
     bool has_deferred_save_op_ = false;
 
