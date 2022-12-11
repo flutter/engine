@@ -48,7 +48,7 @@ Node Node::MakeFromFlatbuffer(const fb::Node& node, Allocator& allocator) {
     auto geometry = Geometry::MakeFromFlatbuffer(*primitives, allocator);
     mesh.AddPrimitive({geometry, Material::MakeUnlit()});
   }
-  result.SetMesh(mesh);
+  result.SetMesh(std::move(mesh));
 
   if (!node.children()) {
     return result;
@@ -63,6 +63,10 @@ Node Node::MakeFromFlatbuffer(const fb::Node& node, Allocator& allocator) {
 Node::Node() = default;
 
 Node::~Node() = default;
+
+Mesh::Mesh(Mesh&& mesh) = default;
+
+Mesh& Mesh::operator=(Mesh&& mesh) = default;
 
 Node::Node(Node&& node) = default;
 
@@ -111,8 +115,8 @@ std::vector<Node>& Node::GetChildren() {
   return children_;
 }
 
-void Node::SetMesh(const Mesh& mesh) {
-  mesh_ = mesh;
+void Node::SetMesh(Mesh mesh) {
+  mesh_ = std::move(mesh);
 }
 
 Mesh& Node::GetMesh() {

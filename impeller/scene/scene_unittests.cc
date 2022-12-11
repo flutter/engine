@@ -47,7 +47,7 @@ TEST_P(SceneTest, CuboidUnlit) {
 
       Node& root = scene.GetRoot();
       root.SetLocalTransform(Matrix::MakeTranslation(-size / 2));
-      root.SetMesh(mesh);
+      root.SetMesh(std::move(mesh));
     }
 
     // Face towards the +Z direction (+X right, +Y up).

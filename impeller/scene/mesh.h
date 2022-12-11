@@ -25,6 +25,9 @@ class Mesh final {
   Mesh();
   ~Mesh();
 
+  Mesh(Mesh&& mesh);
+  Mesh& operator=(Mesh&& mesh);
+
   void AddPrimitive(Primitive mesh_);
   std::vector<Primitive>& GetPrimitives();
 
@@ -32,6 +35,8 @@ class Mesh final {
 
  private:
   std::vector<Primitive> primitives_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(Mesh);
 };
 
 }  // namespace scene

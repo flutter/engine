@@ -40,7 +40,7 @@ class Node final {
   bool AddChild(Node child);
   std::vector<Node>& GetChildren();
 
-  void SetMesh(const Mesh& mesh);
+  void SetMesh(Mesh mesh);
   Mesh& GetMesh();
 
   bool Render(SceneEncoder& encoder, const Matrix& parent_transform) const;
