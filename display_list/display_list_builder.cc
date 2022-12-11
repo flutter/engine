@@ -438,14 +438,11 @@ void DisplayListBuilder::save() {
 
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
-    SaveOpBase* op;
+    SaveOpBase* op = reinterpret_cast<SaveOpBase*>(storage_.get() +
+                                                   current_layer_->save_offset);
     if (!current_layer_->has_deferred_save_op_) {
-      op = reinterpret_cast<SaveOpBase*>(storage_.get() +
-                                         current_layer_->save_offset);
       op->restore_offset = used_;
       Push<RestoreOp>(0, 1);
-    } else {
-      op = nullptr;
     }
     // Grab the current layer info before we push the restore
     // on the stack.
@@ -456,7 +453,6 @@ void DisplayListBuilder::restore() {
       // Layers are never deferred for now, we need to update the
       // following code if we ever do saveLayer culling...
       FML_DCHECK(!layer_info.has_deferred_save_op_);
-      FML_DCHECK(op != nullptr);
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
         // call to add the option indicating it can distribute an opacity
