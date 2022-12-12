@@ -707,7 +707,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @end
 
 @interface FlutterTextInputView ()
-@property(nonatomic, readonly) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, copy) NSString* autofillId;
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
@@ -2376,8 +2375,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 // Removes every installed input field, unless it's in the current autofill context.
 //
-// The active view will be removed from its superview too, if includeActiveView is
-// YES.
+// The active view will be removed from its superview too, if includeActiveView is YES.
 // When clearText is YES, the text on the input fields will be set to empty before
 // they are removed from the view hierarchy, to avoid triggering autofill save.
 // If delayRemoval is true, removeFromSuperview will be scheduled on the runloop and
