@@ -1327,6 +1327,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification {
   // Don't ignore UIKeyboardWillHideNotification notifications.
+  // Even if the notification is triggered in the background or by a different
+  // app/view controller, we want to always handle this notification to avoid
+  // inaccurate inset when in a mulitasking mode or when switching between apps.
   if (notification.name == UIKeyboardWillHideNotification) {
     return NO;
   }
@@ -1340,13 +1343,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return YES;
   }
 
-  // When keyboard's height/width is set to 0 by other app,
-  // do not ignore so that the inset will be set to 0.
+  // When keyboard's height or width is set to 0, don't ignore. This does not happen
+  // often but can happen sometimes when switching between multitasking modes.
   if (CGRectIsEmpty(keyboardFrame)) {
     return NO;
   }
 
-  // Ignore keyboard notifications related to other apps.
+  // Ignore keyboard notifications related to other apps or view controllers.
   if ([self isKeyboardNotificationForDifferentView:notification]) {
     return YES;
   }
@@ -1359,7 +1362,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // apps with the keyboard open in the secondary app, notifications are sent when
     // the app is in the background/transitioning from background as if they belong
     // to the app and as if the keyboard is showing even though it is not.
-    if (self.isKeyboardInOrTransitioningFromBackground == YES) {
+    if (self.isKeyboardInOrTransitioningFromBackground) {
       return YES;
     }
   }
@@ -1413,7 +1416,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   // If the keyboard is partially or fully showing within the screen, it's either docked or
   // floating. Sometimes with custom keyboard extensions, the keyboard's position may be off by a
-  // small decimal amount. Round to compare.
+  // small decimal amount (which is why CGRectIntersectRect can't be used). Round to compare.
   CGRect intersection = CGRectIntersection(adjustedKeyboardFrame, screenRect);
   CGFloat intersectionHeight = CGRectGetHeight(intersection);
   CGFloat intersectionWidth = CGRectGetWidth(intersection);
