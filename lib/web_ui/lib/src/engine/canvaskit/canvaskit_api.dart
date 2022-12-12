@@ -182,9 +182,9 @@ class ColorSpace {}
 @staticInterop
 class SkWebGLContextOptions {
   external factory SkWebGLContextOptions({
-    required int antialias,
+    required double antialias,
     // WebGL version: 1 or 2.
-    required int majorVersion,
+    required double majorVersion,
   });
 }
 
@@ -1368,7 +1368,8 @@ final SkFloat32List _sharedSkColor3 = mallocFloat32List(4);
 @JS('window.flutterCanvasKit.Path')
 @staticInterop
 class SkPath {
-  external factory SkPath([SkPath? other]);
+  external factory SkPath();
+  external factory SkPath.from(SkPath other);
 }
 
 extension SkPathExtension on SkPath {
