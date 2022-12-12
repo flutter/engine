@@ -2,8 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "base/memory/raw_ptr.h"
-#include "ui/accessibility/platform/ax_platform_node_win_unittest.h"
+#include "ax/platform/ax_platform_node_win_unittest.h"
 
 #include <UIAutomationClient.h>
 #include <UIAutomationCoreApi.h>
@@ -12,11 +11,11 @@
 
 #include "base/win/scoped_bstr.h"
 #include "base/win/scoped_safearray.h"
-#include "ui/accessibility/ax_action_data.h"
-#include "ui/accessibility/platform/ax_fragment_root_win.h"
-#include "ui/accessibility/platform/ax_platform_node_textprovider_win.h"
-#include "ui/accessibility/platform/ax_platform_node_textrangeprovider_win.h"
-#include "ui/accessibility/platform/test_ax_node_wrapper.h"
+#include "ax/ax_action_data.h"
+#include "ax/platform/ax_fragment_root_win.h"
+#include "ax/platform/ax_platform_node_textprovider_win.h"
+#include "ax/platform/ax_platform_node_textrangeprovider_win.h"
+#include "ax/platform/test_ax_node_wrapper.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -92,12 +91,12 @@ TEST_F(AXPlatformNodeTextProviderTest, CreateDegenerateRangeFromStart) {
   update.nodes = {root_data, link_data, text1_data, text2_data};
 
   Init(update);
-  AXNode* root_node = GetRoot();
+  AXNode* root_node = GetRootAsAXNode();
   AXNode* link_node = root_node->children()[0];
   AXNode* text2_node = link_node->children()[1];
   AXPlatformNodeWin* owner =
       static_cast<AXPlatformNodeWin*>(AXPlatformNodeFromNode(root_node));
-  DCHECK(owner);
+  BASE_DCHECK(owner);
 
   ComPtr<IRawElementProviderSimple> root_node_raw =
       QueryInterfaceFromNode<IRawElementProviderSimple>(root_node);
@@ -196,12 +195,12 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderRangeFromChild) {
 
   Init(update);
 
-  AXNode* root_node = GetRoot();
+  AXNode* root_node = GetRootAsAXNode();
   AXNode* text_node = root_node->children()[0];
   AXNode* empty_text_node = root_node->children()[1];
   AXPlatformNodeWin* owner =
       static_cast<AXPlatformNodeWin*>(AXPlatformNodeFromNode(root_node));
-  DCHECK(owner);
+  BASE_DCHECK(owner);
 
   ComPtr<IRawElementProviderSimple> root_node_raw =
       QueryInterfaceFromNode<IRawElementProviderSimple>(root_node);
@@ -323,11 +322,11 @@ TEST_F(AXPlatformNodeTextProviderTest,
 
   Init(update);
 
-  AXNode* root_node = GetRoot();
+  AXNode* root_node = GetRootAsAXNode();
   AXNode* dialog_node = root_node->children()[0];
   AXPlatformNodeWin* owner =
       static_cast<AXPlatformNodeWin*>(AXPlatformNodeFromNode(root_node));
-  DCHECK(owner);
+  BASE_DCHECK(owner);
 
   ComPtr<IRawElementProviderSimple> root_node_raw =
       QueryInterfaceFromNode<IRawElementProviderSimple>(root_node);
@@ -376,11 +375,11 @@ TEST_F(AXPlatformNodeTextProviderTest, NearestTextIndexToPoint) {
 
   Init(root_data, text_data);
 
-  AXNode* root_node = GetRoot();
+  AXNode* root_node = GetRootAsAXNode();
   AXNode* text_node = root_node->children()[0];
 
   struct NearestTextIndexTestData {
-    raw_ptr<AXNode> node;
+    AXNode* node;
     struct point_offset_expected_index_pair {
       int point_offset_x;
       int expected_index;
@@ -623,8 +622,8 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
   AXNodeData nonatomic_textfield_data;
   nonatomic_textfield_data.id = 4;
   nonatomic_textfield_data.role = ax::mojom::Role::kTextField;
-  nonatomic_textfield_data.AddBoolAttribute(
-      ax::mojom::BoolAttribute::kNonAtomicTextFieldRoot, true);
+  //nonatomic_textfield_data.AddBoolAttribute(
+  //    ax::mojom::BoolAttribute::kNonAtomicTextFieldRoot, true);
   nonatomic_textfield_data.child_ids = {5};
 
   AXNodeData text_child_data;
@@ -727,7 +726,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
   selected_tree_data.sel_anchor_offset = 1;
   selected_tree_data.sel_focus_offset = 1;
 
-  AXNode* text_edit_node = GetRoot()->children()[1];
+  AXNode* text_edit_node = GetRootAsAXNode()->children()[1];
 
   ComPtr<IRawElementProviderSimple> text_edit_com =
       QueryInterfaceFromNode<IRawElementProviderSimple>(text_edit_node);

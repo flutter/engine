@@ -104,6 +104,24 @@ ITextRangeProvider* AXPlatformNodeTextRangeProviderWin::CreateTextRangeProvider(
   return nullptr;
 }
 
+ITextRangeProvider*
+AXPlatformNodeTextRangeProviderWin::CreateTextRangeProviderForTesting(
+    AXPlatformNodeWin* owner,
+    AXPositionInstance start,
+    AXPositionInstance end) {
+  Microsoft::WRL::ComPtr<ITextRangeProvider> text_range_provider =
+      CreateTextRangeProvider(start->Clone(), end->Clone());
+  Microsoft::WRL::ComPtr<AXPlatformNodeTextRangeProviderWin>
+      text_range_provider_win;
+  if (SUCCEEDED(text_range_provider->QueryInterface(
+          IID_PPV_ARGS(&text_range_provider_win)))) {
+    text_range_provider_win->SetOwnerForTesting(owner);  // IN-TEST
+    return text_range_provider_win.Get();
+  }
+
+  return nullptr;
+}
+
 //
 // ITextRangeProvider methods.
 //
