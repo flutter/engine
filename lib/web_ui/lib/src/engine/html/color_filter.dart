@@ -88,13 +88,9 @@ class PersistedColorFilter extends PersistedContainerSurface
   DomElement createElement() {
     final DomElement element = defaultCreateElement('flt-color-filter');
     final DomElement container = createDomElement('flt-filter-interior');
+    container.style.position = 'absolute';
     _childContainer = container;
     element.append(_childContainer!);
-
-    setElementStyle(container, 'position', 'absolute');
-    setElementStyle(container, 'transform-origin', '0 0 0');
-    setElementStyle(element, 'position', 'absolute');
-    setElementStyle(element, 'transform-origin', '0 0 0');
 
     return element;
   }
