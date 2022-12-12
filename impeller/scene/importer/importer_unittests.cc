@@ -26,8 +26,8 @@ TEST(ImporterTest, CanParseGLTF) {
   Matrix node_transform = ToMatrix(*node.transform);
   ASSERT_MATRIX_NEAR(node_transform, Matrix());
 
-  ASSERT_EQ(node.meshes.size(), 1u);
-  auto& mesh = *node.meshes[0];
+  ASSERT_EQ(node.mesh_primitives.size(), 1u);
+  auto& mesh = *node.mesh_primitives[0];
   ASSERT_EQ(mesh.indices->count, 918u);
 
   uint16_t first_index =
@@ -38,7 +38,7 @@ TEST(ImporterTest, CanParseGLTF) {
   auto& vertex = mesh.vertices[0];
 
   Vector3 position = ToVector3(vertex.position());
-  ASSERT_VECTOR3_NEAR(position, Vector3(-0.0100185, -0.522907, 0.133178));
+  ASSERT_VECTOR3_NEAR(position, Vector3(-0.0100185, -0.522907, -0.133178));
 
   Vector3 normal = ToVector3(vertex.normal());
   ASSERT_VECTOR3_NEAR(normal, Vector3(0.556997, -0.810833, 0.179733));
