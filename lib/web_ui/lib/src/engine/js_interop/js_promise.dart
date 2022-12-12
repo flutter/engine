@@ -10,10 +10,10 @@ import 'package:js/js_util.dart' as js_util;
 
 @JS()
 @staticInterop
-class PromiseResolver<T extends Object> {}
+class PromiseResolver<T extends Object?> {}
 
-extension PromiseResolverExtension<T extends Object> on PromiseResolver<T> {
-  void resolve(T result) => js_util.callMethod(this, 'call', <Object>[this, result]);
+extension PromiseResolverExtension<T extends Object?> on PromiseResolver<T> {
+  void resolve(T result) => js_util.callMethod(this, 'call', <Object>[this, if (result != null) result]);
 }
 
 @JS()
@@ -27,13 +27,13 @@ extension PromiseRejecterExtension on PromiseRejecter {
 /// Type-safe JS Promises
 @JS('Promise')
 @staticInterop
-abstract class Promise<T extends Object> {
+abstract class Promise<T extends Object?> {
   /// A constructor for a JS promise
   external factory Promise(PromiseExecutor<T> executor);
 }
 
 /// The type of function that is used to create a Promise<T>
-typedef PromiseExecutor<T extends Object> = void Function(PromiseResolver<T> resolve, PromiseRejecter reject);
+typedef PromiseExecutor<T extends Object?> = void Function(PromiseResolver<T> resolve, PromiseRejecter reject);
 
 Promise<T> futureToPromise<T extends Object>(Future<T> future) {
   return Promise<T>(allowInterop((PromiseResolver<T> resolver, PromiseRejecter rejecter) {
