@@ -6,25 +6,32 @@
 library js_loader;
 
 import 'package:js/js.dart';
+import 'package:js/js_util.dart' as js_util;
 
 import '../configuration.dart';
 import 'js_promise.dart';
 
-/// Typedef for the function that notifies JS that the main entrypoint is up and running.
-/// As a parameter, a [FlutterEngineInitializer] instance is passed to JS, so the
-/// programmer can control the initialization sequence.
-typedef DidCreateEngineInitializerFn = void Function(FlutterEngineInitializer);
+@JS()
+@staticInterop
+class FlutterJS {}
+
+extension FlutterJSExtension on FlutterJS {
+  external FlutterLoader? get loader;
+}
 
 // Both `flutter`, `loader`(_flutter.loader), must be checked for null before
 // `didCreateEngineInitializer` can be safely accessed.
 @JS('_flutter')
-external Object? get flutter;
+external FlutterJS? get flutter;
 
-@JS('_flutter.loader')
-external Object? get loader;
+@JS()
+@staticInterop
+class FlutterLoader {}
 
-@JS('_flutter.loader.didCreateEngineInitializer')
-external DidCreateEngineInitializerFn? get didCreateEngineInitializer;
+extension FlutterLoaderExtension on FlutterLoader {
+  external void didCreateEngineInitializer(FlutterEngineInitializer initializer);
+  bool get isAutoStart => !js_util.hasProperty(this, 'didCreateEngineInitializer');
+}
 
 // FlutterEngineInitializer
 
@@ -47,7 +54,7 @@ abstract class FlutterEngineInitializer{
 /// [JsFlutterConfiguration] comes from `../configuration.dart`. It is the same
 /// object that can be used to configure flutter "inline", through the
 /// (to be deprecated) `window.flutterConfiguration` object.
-typedef InitializeEngineFn = Promise<FlutterAppRunner?> Function([JsFlutterConfiguration?]);
+typedef InitializeEngineFn = Promise<FlutterAppRunner> Function([JsFlutterConfiguration?]);
 
 /// Typedef for the `autoStart` function that can be called straight from an engine initializer instance.
 /// (Similar to [RunAppFn], but taking no specific "runApp" parameters).
