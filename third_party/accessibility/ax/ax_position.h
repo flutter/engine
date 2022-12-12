@@ -26,9 +26,6 @@
 #include "base/logging.h"
 #include "base/string_utils.h"
 
-// TODO(schectman)
-#include "flutter/fml/logging.h"
-
 namespace ui {
 
 // Defines the type of position in the accessibility tree.
@@ -337,8 +334,9 @@ class AXPosition {
     BASE_DCHECK(GetAnchor());
     // If this position is anchored to an ignored node, then consider this
     // position to be ignored.
-    if (GetAnchor()->IsIgnored())
+    if (GetAnchor()->IsIgnored()) {
       return true;
+    }
 
     switch (kind_) {
       case AXPositionKind::NULL_POSITION:
@@ -385,8 +383,9 @@ class AXPosition {
         // If the corresponding leaf position is ignored, the current text
         // offset will point to ignored text. Therefore, consider this position
         // to be ignored.
-        if (!IsLeaf())
+        if (!IsLeaf()) {
           return AsLeafTreePosition()->IsIgnored();
+        }
         return false;
     }
   }
@@ -430,8 +429,9 @@ class AXPosition {
                 (child_index_ >= 0 && child_index_ <= AnchorChildCount())) &&
                !IsInDescendantOfEmptyObject();
       case AXPositionKind::TEXT_POSITION:
-        if (!GetAnchor() || IsInDescendantOfEmptyObject())
+        if (!GetAnchor() || IsInDescendantOfEmptyObject()) {
           return false;
+        }
 
         // For performance reasons we skip any validation of the text offset
         // that involves retrieving the anchor's text, if the offset is set to
@@ -645,7 +645,6 @@ class AXPosition {
         BASE_UNREACHABLE();
         return false;
       case AXPositionKind::TEXT_POSITION: {
-        // TODO(schectman) testing
         // 1. The current leaf text position must be an unignored position at
         //    the start of an anchor.
         if (text_position->IsIgnored() || !text_position->AtStartOfAnchor())
@@ -1308,7 +1307,6 @@ class AXPosition {
     // present on leaf anchor nodes.
     AXPositionInstance text_position = AsTextPosition();
     int adjusted_offset = text_position->text_offset_;
-    FML_LOG(ERROR) << "Initial offset = " << adjusted_offset;
     do {
       AXPositionInstance child_position =
           text_position->CreateChildPositionAt(0);
@@ -1321,8 +1319,7 @@ class AXPosition {
            i < text_position->AnchorChildCount() && adjusted_offset > 0; ++i) {
         const int max_text_offset_in_parent =
             child_position->MaxTextOffsetInParent();
-        FML_LOG(ERROR) << child_position->ToString() << " has max offset " << max_text_offset_in_parent << " and embedded? " << child_position->IsEmbeddedObjectInParent();
-        if (adjusted_offset <= max_text_offset_in_parent) {
+        if (adjusted_offset < max_text_offset_in_parent) {
           break;
         }
         if (affinity_ == ax::mojom::TextAffinity::kUpstream &&
@@ -1334,18 +1331,12 @@ class AXPosition {
           break;
         }
         AXPositionInstance child = text_position->CreateChildPositionAt(i);
-        int id = child->GetAnchor()->id();
-        if (!child->GetAnchor()->IsIgnored()) {
-          child_position = std::move(child);
-        }
+        child_position = std::move(child);
         adjusted_offset -= max_text_offset_in_parent;
-        FML_LOG(ERROR) << id << " set offset to " << adjusted_offset << " decrease of " << max_text_offset_in_parent;
       }
 
       text_position = std::move(child_position);
-      FML_LOG(ERROR) << "Moved to new position " << text_position->ToString();
     } while (!text_position->IsLeaf());
-    FML_LOG(ERROR) << text_position->ToString() << " must be a leaf";
 
     BASE_DCHECK(text_position);
     BASE_DCHECK(text_position->IsLeafTextPosition());
@@ -1728,9 +1719,6 @@ class AXPosition {
             tree_id_, anchor_id_,
             IsEmptyObjectReplacedByCharacter() ? 0 : AnchorChildCount());
       case AXPositionKind::TEXT_POSITION:
-        FML_LOG(ERROR) << "Text for " << anchor_id_ << " = \"" << base::UTF16ToUTF8(GetText()) << '"';
-        FML_LOG(ERROR) << "So max offset should be " << GetText().length();
-        FML_LOG(ERROR) << "Max text offset for " << anchor_id_ << " = " << MaxTextOffset();
         return CreateTextPosition(tree_id_, anchor_id_, MaxTextOffset(),
                                   ax::mojom::TextAffinity::kDownstream);
     }

@@ -550,10 +550,8 @@ TEST_F(AXPlatformNodeTextProviderTest,
       owner->GetDelegate()
           ->CreateTextPositionAt(0)
           ->CreatePositionAtEndOfAnchor();
-  FML_LOG(ERROR) << "End of anchor: " << expected_end->ToString();
   expected_end = expected_end
           ->AsLeafTextPosition();
-  FML_LOG(ERROR) << "As leaf text: " << expected_end->ToString();
   EXPECT_EQ(*GetStart(text_range.Get()), *expected_start);
   EXPECT_EQ(*GetEnd(text_range.Get()), *expected_end);
 }

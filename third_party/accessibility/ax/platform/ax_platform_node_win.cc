@@ -41,9 +41,6 @@
 #include "base/win/display.h"
 #include "gfx/geometry/rect_conversions.h"
 
-// TODO(schectman)
-#include "flutter/fml/logging.h"
-
 // From ax.constants.mojom
 namespace ax {
 namespace mojom {
