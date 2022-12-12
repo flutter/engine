@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import <CoreFoundation/CoreFoundation.h>
+
 #import "flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h"
 
 FLUTTER_ASSERT_ARC
@@ -364,16 +366,22 @@ using namespace flutter;
   }
 }
 
-- (NSData*)readData:(NSUInteger)length {
+- (CFDataRef)readDataRef:(NSUInteger)length {
   _range.length = length;
   NSData* data = [_data subdataWithRange:_range];
   _range.location += _range.length;
-  return data;
+  // return (CFDataRef)CFAutorelease((__bridge CFDataRef)data);
+  return (CFDataRef)CFRetain((__bridge CFDataRef)data);
+}
+
+- (NSData*)readData:(NSUInteger)length {
+  return (NSData *)CFBridgingRelease([self readDataRef:length]);
 }
 
 - (NSString*)readUTF8 {
-  NSData* bytes = [self readData:[self readSize]];
-  return [[NSString alloc] initWithData:bytes encoding:NSUTF8StringEncoding];
+  CFDataRef bytes = (CFDataRef)[self readDataRef:[self readSize]];
+  NSData *data = (NSData*)CFBridgingRelease(bytes);
+  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
 - (void)readAlignment:(UInt8)alignment {
@@ -387,70 +395,79 @@ using namespace flutter;
   UInt32 elementCount = [self readSize];
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
-  NSData* data = [self readData:elementCount * elementSize];
+  NSData* data = (NSData*)CFBridgingRelease([self readDataRef:elementCount * elementSize]);
   return [FlutterStandardTypedData typedDataWithData:data type:type];
 }
 
 - (nullable id)readValue {
-  return [self readValueOfType:[self readByte]];
+  return (__bridge id)ReadValue(self);
+}
+
+static CFTypeRef ReadValue(FlutterStandardReader* codec) {
+  return ReadValueOfType(codec, [codec readByte]);
 }
 
 - (nullable id)readValueOfType:(UInt8)type {
+  return (__bridge id)ReadValueOfType(self, type);
+}
+
+static CFTypeRef ReadValueOfType(FlutterStandardReader* codec, UInt8 type) {
   FlutterStandardField field = (FlutterStandardField)type;
   switch (field) {
     case FlutterStandardFieldNil:
       return nil;
     case FlutterStandardFieldTrue:
-      return @YES;
+      return (__bridge CFBooleanRef) @YES;
     case FlutterStandardFieldFalse:
-      return @NO;
+      return (__bridge CFBooleanRef) @NO;
     case FlutterStandardFieldInt32: {
       SInt32 value;
-      [self readBytes:&value length:4];
-      return @(value);
+      [codec readBytes:&value length:4];
+      return (__bridge CFNumberRef) @(value);
     }
     case FlutterStandardFieldInt64: {
       SInt64 value;
-      [self readBytes:&value length:8];
-      return @(value);
+      [codec readBytes:&value length:8];
+      return (__bridge CFNumberRef) @(value);
     }
     case FlutterStandardFieldFloat64: {
       Float64 value;
-      [self readAlignment:8];
-      [self readBytes:&value length:8];
-      return [NSNumber numberWithDouble:value];
+      [codec readAlignment:8];
+      [codec readBytes:&value length:8];
+      return (__bridge CFNumberRef)[NSNumber numberWithDouble:value];
     }
     case FlutterStandardFieldIntHex:
     case FlutterStandardFieldString:
-      return [self readUTF8];
+      return (__bridge CFStringRef)[codec readUTF8];
     case FlutterStandardFieldUInt8Data:
     case FlutterStandardFieldInt32Data:
     case FlutterStandardFieldInt64Data:
     case FlutterStandardFieldFloat32Data:
     case FlutterStandardFieldFloat64Data:
-      return [self readTypedDataOfType:FlutterStandardDataTypeForField(field)];
+      return (__bridge CFTypeRef)[codec readTypedDataOfType:FlutterStandardDataTypeForField(field)];
     case FlutterStandardFieldList: {
-      UInt32 length = [self readSize];
-      NSMutableArray* array = [NSMutableArray arrayWithCapacity:length];
+      UInt32 length = [codec readSize];
+      CFMutableArrayRef array = CFArrayCreateMutable(kCFAllocatorDefault, length, &kCFTypeArrayCallBacks);
       for (UInt32 i = 0; i < length; i++) {
-        id value = [self readValue];
-        [array addObject:(value == nil ? [NSNull null] : value)];
+        CFTypeRef value = ReadValue(codec);
+        CFArrayAppendValue(array, (value == nil ? kCFNull : value));
       }
-      return array;
+      return CFAutorelease(array);
     }
     case FlutterStandardFieldMap: {
-      UInt32 size = [self readSize];
-      NSMutableDictionary* dict = [NSMutableDictionary dictionaryWithCapacity:size];
+      UInt32 size = [codec readSize];
+      CFMutableDictionaryRef dict =
+          CFDictionaryCreateMutable(kCFAllocatorDefault, size, &kCFTypeDictionaryKeyCallBacks,
+                                    &kCFTypeDictionaryValueCallBacks);
       for (UInt32 i = 0; i < size; i++) {
-        id key = [self readValue];
-        id val = [self readValue];
-        [dict setObject:(val == nil ? [NSNull null] : val)
-                 forKey:(key == nil ? [NSNull null] : key)];
+        CFTypeRef key = ReadValue(codec);
+        CFTypeRef val = ReadValue(codec);
+        CFDictionaryAddValue(dict, (key == nil ? kCFNull : key), (val == nil ? kCFNull : val));
       }
-      return dict;
+      return CFAutorelease(dict);
     }
     default:
-      NSAssert(NO, @"Corrupted standard message");
+      NSCAssert(NO, @"Corrupted standard message");
   }
 }
 @end
