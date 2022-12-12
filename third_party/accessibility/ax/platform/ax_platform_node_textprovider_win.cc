@@ -10,6 +10,9 @@
 
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 
+// TODO(schectman)
+#include "flutter/fml/logging.h"
+
 #define UIA_VALIDATE_TEXTPROVIDER_CALL() \
   if (!owner()->GetDelegate())           \
     return UIA_E_ELEMENTNOTAVAILABLE;

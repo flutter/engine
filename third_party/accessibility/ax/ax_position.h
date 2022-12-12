@@ -26,6 +26,9 @@
 #include "base/logging.h"
 #include "base/string_utils.h"
 
+// TODO(schectman)
+#include "flutter/fml/logging.h"
+
 namespace ui {
 
 // Defines the type of position in the accessibility tree.
@@ -1040,8 +1043,9 @@ class AXPosition {
       const AXNodeType* ancestor_anchor,
       ax::mojom::MoveDirection move_direction =
           ax::mojom::MoveDirection::kForward) const {
-    if (!ancestor_anchor)
+    if (!ancestor_anchor) {
       return CreateNullPosition();
+    }
 
     AXPositionInstance ancestor_position = Clone();
     while (!ancestor_position->IsNullPosition() &&
@@ -1304,6 +1308,7 @@ class AXPosition {
     // present on leaf anchor nodes.
     AXPositionInstance text_position = AsTextPosition();
     int adjusted_offset = text_position->text_offset_;
+    FML_LOG(ERROR) << "Initial offset = " << adjusted_offset;
     do {
       AXPositionInstance child_position =
           text_position->CreateChildPositionAt(0);
@@ -1316,7 +1321,8 @@ class AXPosition {
            i < text_position->AnchorChildCount() && adjusted_offset > 0; ++i) {
         const int max_text_offset_in_parent =
             child_position->MaxTextOffsetInParent();
-        if (adjusted_offset < max_text_offset_in_parent) {
+        FML_LOG(ERROR) << child_position->ToString() << " has max offset " << max_text_offset_in_parent << " and embedded? " << child_position->IsEmbeddedObjectInParent();
+        if (adjusted_offset <= max_text_offset_in_parent) {
           break;
         }
         if (affinity_ == ax::mojom::TextAffinity::kUpstream &&
@@ -1327,12 +1333,19 @@ class AXPosition {
           child_position->affinity_ = ax::mojom::TextAffinity::kUpstream;
           break;
         }
-        child_position = text_position->CreateChildPositionAt(i);
+        AXPositionInstance child = text_position->CreateChildPositionAt(i);
+        int id = child->GetAnchor()->id();
+        if (!child->GetAnchor()->IsIgnored()) {
+          child_position = std::move(child);
+        }
         adjusted_offset -= max_text_offset_in_parent;
+        FML_LOG(ERROR) << id << " set offset to " << adjusted_offset << " decrease of " << max_text_offset_in_parent;
       }
 
       text_position = std::move(child_position);
+      FML_LOG(ERROR) << "Moved to new position " << text_position->ToString();
     } while (!text_position->IsLeaf());
+    FML_LOG(ERROR) << text_position->ToString() << " must be a leaf";
 
     BASE_DCHECK(text_position);
     BASE_DCHECK(text_position->IsLeafTextPosition());
@@ -1715,6 +1728,9 @@ class AXPosition {
             tree_id_, anchor_id_,
             IsEmptyObjectReplacedByCharacter() ? 0 : AnchorChildCount());
       case AXPositionKind::TEXT_POSITION:
+        FML_LOG(ERROR) << "Text for " << anchor_id_ << " = \"" << base::UTF16ToUTF8(GetText()) << '"';
+        FML_LOG(ERROR) << "So max offset should be " << GetText().length();
+        FML_LOG(ERROR) << "Max text offset for " << anchor_id_ << " = " << MaxTextOffset();
         return CreateTextPosition(tree_id_, anchor_id_, MaxTextOffset(),
                                   ax::mojom::TextAffinity::kDownstream);
     }
@@ -1913,7 +1929,7 @@ class AXPosition {
         // the same as the one that would have been computed if the original
         // position were at the start of the inline text box for "Line two".
         const int max_text_offset = MaxTextOffset();
-        const int max_text_offset_in_parent =
+        int max_text_offset_in_parent =
             IsEmbeddedObjectInParent() ? 1 : max_text_offset;
         int parent_offset = AnchorTextOffsetInParent();
         ax::mojom::TextAffinity parent_affinity = affinity_;
@@ -1946,6 +1962,12 @@ class AXPosition {
           parent_affinity = ax::mojom::TextAffinity::kDownstream;
         }
 
+        AXPositionInstance dummy_position = CreateTextPosition(
+            tree_id, parent_id, 0, parent_affinity);
+        max_text_offset_in_parent = dummy_position->MaxTextOffset();
+        if (parent_offset > max_text_offset_in_parent) {
+          parent_offset = max_text_offset_in_parent;
+        }
         AXPositionInstance parent_position = CreateTextPosition(
             tree_id, parent_id, parent_offset, parent_affinity);
 

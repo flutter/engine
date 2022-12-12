@@ -215,8 +215,12 @@ std::u16string AXNodePosition::GetText() const {
         ax::mojom::StringAttribute::kName);
   }
 
-  for (int i = 0; i < AnchorChildCount(); ++i)
-    text += CreateChildPositionAt(i)->GetText();
+  for (int i = 0; i < AnchorChildCount(); ++i) {
+    auto child_position = CreateChildPositionAt(i);
+    if (!child_position->IsIgnored()) {
+      text += child_position->GetText();
+    }
+  }
 
   return text;
 }
@@ -273,8 +277,12 @@ int AXNodePosition::MaxTextOffset() const {
   }
 
   int text_length = 0;
-  for (int i = 0; i < AnchorChildCount(); ++i)
-    text_length += CreateChildPositionAt(i)->MaxTextOffset();
+  for (int i = 0; i < AnchorChildCount(); ++i) {
+    auto child_position = CreateChildPositionAt(i);
+    if (!child_position->IsIgnored()) {
+      text_length += child_position->MaxTextOffset();
+    }
+  }
 
   return text_length;
 }

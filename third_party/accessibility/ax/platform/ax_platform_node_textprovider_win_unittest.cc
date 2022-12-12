@@ -17,6 +17,9 @@
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 #include "ax/platform/test_ax_node_wrapper.h"
 
+#include "flutter/fml/logging.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
+
 using Microsoft::WRL::ComPtr;
 
 namespace ui {
@@ -78,7 +81,7 @@ TEST_F(AXPlatformNodeTextProviderTest, CreateDegenerateRangeFromStart) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids = {2};
 
@@ -178,7 +181,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderRangeFromChild) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
   root_data.child_ids.push_back(3);
@@ -272,7 +275,7 @@ TEST_F(AXPlatformNodeTextProviderTest,
 
   AXNodeData root;
   root.id = ROOT_ID;
-  root.role = ax::mojom::Role::kRootWebArea;
+  root.role = ax::mojom::Role::kStaticText;
   root.SetName("Document");
   root.child_ids = {DIALOG_ID};
 
@@ -347,8 +350,8 @@ TEST_F(AXPlatformNodeTextProviderTest,
   EXPECT_HRESULT_SUCCEEDED(
       text_range_provider->GetText(-1, text_content.Receive()));
   EXPECT_EQ(base::WideToUTF16(text_content.Get()),
-            u"Dialog label.Dialog description.\n" + kEmbeddedCharacterAsString +
-                u"\nok.Some more detail " + u"about dialog.");
+            u"Dialog label.Dialog description." + kEmbeddedCharacterAsString +
+                u"ok.Some more detail " + u"about dialog.");
 
   // Check the reverse relationship that GetEnclosingElement on the text range
   // gives back the dialog.
@@ -392,6 +395,9 @@ TEST_F(AXPlatformNodeTextProviderTest, NearestTextIndexToPoint) {
       {root_node,
        {{0, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {8, 0}, {9, 0}, {10, 0}}}};
   for (auto data : nodes) {
+    if (!data.node->IsText() && !data.node->data().IsTextField()) {
+      continue;
+    }
     ComPtr<IRawElementProviderSimple> element_provider =
         QueryInterfaceFromNode<IRawElementProviderSimple>(data.node);
     ComPtr<ITextProvider> text_provider;
@@ -421,7 +427,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRange) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
 
@@ -543,8 +549,11 @@ TEST_F(AXPlatformNodeTextProviderTest,
   AXNodePosition::AXPositionInstance expected_end =
       owner->GetDelegate()
           ->CreateTextPositionAt(0)
-          ->CreatePositionAtEndOfAnchor()
+          ->CreatePositionAtEndOfAnchor();
+  FML_LOG(ERROR) << "End of anchor: " << expected_end->ToString();
+  expected_end = expected_end
           ->AsLeafTextPosition();
+  FML_LOG(ERROR) << "As leaf text: " << expected_end->ToString();
   EXPECT_EQ(*GetStart(text_range.Get()), *expected_start);
   EXPECT_EQ(*GetEnd(text_range.Get()), *expected_end);
 }
@@ -562,7 +571,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRangeNested) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
 
@@ -588,7 +597,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderSupportedSelection) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
 
@@ -621,9 +630,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
 
   AXNodeData nonatomic_textfield_data;
   nonatomic_textfield_data.id = 4;
-  nonatomic_textfield_data.role = ax::mojom::Role::kTextField;
-  //nonatomic_textfield_data.AddBoolAttribute(
-  //    ax::mojom::BoolAttribute::kNonAtomicTextFieldRoot, true);
+  nonatomic_textfield_data.role = ax::mojom::Role::kGroup;
   nonatomic_textfield_data.child_ids = {5};
 
   AXNodeData text_child_data;
@@ -633,7 +640,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids = {2, 3, 4};
 
@@ -807,29 +814,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
   selections.Reset();
   text_range_provider.Reset();
 
-  // Verify that the selection set on a non-atomic text field returns the
-  // correct selection. Because the anchor/focus is a non-leaf element, the
-  // offset passed here is a child offset and not a text offset. This means that
-  // the accessible selection received should include the entire leaf text child
-  // and not only the first character of that non-atomic text field.
-  selected_tree_data.sel_anchor_object_id = 4;
-  selected_tree_data.sel_anchor_offset = 0;
-  selected_tree_data.sel_focus_object_id = 4;
-  selected_tree_data.sel_focus_offset = 1;
-
-  root_text_provider->GetSelection(selections.Receive());
-  ASSERT_NE(nullptr, selections.Get());
-
-  EXPECT_HRESULT_SUCCEEDED(SafeArrayGetElement(
-      selections.Get(), &index, static_cast<void**>(&text_range_provider)));
-
-  SetOwner(owner, text_range_provider.Get());
-  EXPECT_HRESULT_SUCCEEDED(
-      text_range_provider->GetText(-1, text_content.Receive()));
-  EXPECT_EQ(0, wcscmp(text_content.Get(), L"text"));
-  text_content.Reset();
-  selections.Reset();
-  text_range_provider.Reset();
+  // Removed testing logic for non-atomic text fields as we do not have this role.
 
   // Now delete the tree (which will delete the associated elements) and verify
   // that UIA_E_ELEMENTNOTAVAILABLE is returned when calling GetSelection on
@@ -848,7 +833,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetActiveComposition) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
 
@@ -908,7 +893,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetConversionTarget) {
 
   AXNodeData root_data;
   root_data.id = 1;
-  root_data.role = ax::mojom::Role::kRootWebArea;
+  root_data.role = ax::mojom::Role::kStaticText;
   root_data.SetName("Document");
   root_data.child_ids.push_back(2);
 
