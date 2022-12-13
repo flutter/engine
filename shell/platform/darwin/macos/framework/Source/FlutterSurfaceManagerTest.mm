@@ -71,7 +71,7 @@ TEST(FlutterSurfaceManager, MetalTextureSizeMatchesSurfaceSize) {
   texture.destruction_callback(texture.user_data);
 }
 
-TEST(FlutterSurfaceManager, TestLookup) {
+TEST(FlutterSurfaceManager, TestSurfaceLookupFromTexture) {
   TestView* testView = [[TestView alloc] init];
   FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
 
