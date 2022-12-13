@@ -18,7 +18,7 @@
 @end
 
 namespace {
-/// Single use event (can only be signalled once)
+/// Single use event (can only be signalled once).
 class Event {
  public:
   void Signal() {
