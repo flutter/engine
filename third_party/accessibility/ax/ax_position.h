@@ -1299,8 +1299,9 @@ class AXPosition {
   }
 
   AXPositionInstance AsLeafTextPosition() const {
-    if (IsNullPosition() || IsLeaf())
+    if (IsNullPosition() || IsLeaf()) {
       return AsTextPosition();
+    }
 
     // Adjust the text offset.
     // No need to check for "before text" positions here because they are only

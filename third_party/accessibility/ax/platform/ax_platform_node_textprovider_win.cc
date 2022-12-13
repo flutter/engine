@@ -10,9 +10,6 @@
 
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 
-// TODO(schectman)
-#include "flutter/fml/logging.h"
-
 #define UIA_VALIDATE_TEXTPROVIDER_CALL() \
   if (!owner()->GetDelegate())           \
     return UIA_E_ELEMENTNOTAVAILABLE;
@@ -153,7 +150,7 @@ HRESULT AXPlatformNodeTextProviderWin::GetVisibleRanges(
         current_line_start->text_offset(), current_line_end->text_offset(),
         AXCoordinateSystem::kFrame, AXClippingBehavior::kUnclipped);
 
-    if (frame_rect.Contains(current_rect)) { // TODO(schectman) I want to test this
+    if (frame_rect.Contains(current_rect)) {
       Microsoft::WRL::ComPtr<ITextRangeProvider> text_range_provider =
           AXPlatformNodeTextRangeProviderWin::CreateTextRangeProvider(
               current_line_start->Clone(), current_line_end->Clone());

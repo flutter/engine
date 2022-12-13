@@ -446,7 +446,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRange) {
 }
 
 TEST_F(AXPlatformNodeTextProviderTest,
-       ITextProviderDocumentRangeTrailingIgnored) {
+       DISABLED_ITextProviderDocumentRangeTrailingIgnored) {
   // ++1 root
   // ++++2 kGenericContainer
   // ++++++3 kStaticText "Hello"

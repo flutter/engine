@@ -256,15 +256,14 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
       // occur in a different node than where `start` is currently pointing, so
       // use kStopAtLastAnchorBoundary, which will stop at the tree boundary if
       // no previous line start is found.
-      // TODO(schectman)
       SetStart(start()->CreateBoundaryStartPosition(
-          AXBoundaryBehavior::StopIfAlreadyAtBoundary, // TODO(schectman) Used to be StopAtLastAnchorBoundary but went too far. Now skips forward when at the end of aline
+          AXBoundaryBehavior::StopIfAlreadyAtBoundary,
           ax::mojom::MoveDirection::kBackward,
           &AtStartOfLinePredicate,
           &AtEndOfLinePredicate));
       // From the start we just walked backwards to, walk forwards to the line
       // end position.
-      SetEnd(start()->CreateBoundaryEndPosition( // TODO(schectman) used to be start, maybe should stay that way
+      SetEnd(start()->CreateBoundaryEndPosition(
           AXBoundaryBehavior::StopAtLastAnchorBoundary,
           ax::mojom::MoveDirection::kForward,
           &AtStartOfLinePredicate,
@@ -273,8 +272,8 @@ HRESULT AXPlatformNodeTextRangeProviderWin::ExpandToEnclosingUnitImpl(
     case TextUnit_Paragraph:
       SetStart(
           start()->CreatePreviousParagraphStartPosition(
-              AXBoundaryBehavior::StopIfAlreadyAtBoundary)); // TOOD(schectman) ibid re:boundary behavior
-      SetEnd(start()->CreateNextParagraphStartPosition( // TODO(schectman) ibid re:start vs end
+              AXBoundaryBehavior::StopIfAlreadyAtBoundary));
+      SetEnd(start()->CreateNextParagraphStartPosition(
               AXBoundaryBehavior::StopAtLastAnchorBoundary));
       break;
     case TextUnit_Page: {
@@ -431,9 +430,21 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindAttributeRange(
   return S_OK;
 }
 
-static bool StringSearch(const std::u16string& search_string, const std::u16string& find_in, size_t* find_start, size_t* find_end, bool ignore_case, bool backwards) {
-  // TODO(schectman)
-  return false;
+static bool StringSearch(const std::u16string& search_string, const std::u16string& find_in, size_t* find_start, size_t* find_length, bool ignore_case, bool backwards) {
+  // TODO(schectman) Respect ignore_case
+  // https://github.com/flutter/flutter/issues/117013
+  size_t match_pos;
+  if (backwards) {
+    match_pos = find_in.rfind(search_string);
+  } else {
+    match_pos = find_in.find(search_string);
+  }
+  if (match_pos == std::u16string::npos) {
+    return false;
+  }
+  *find_start = match_pos;
+  *find_length = search_string.length();
+  return true;
 }
 
 HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
@@ -474,7 +485,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
   size_t find_start;
   size_t find_length;
   if (StringSearch(search_string, text_range, &find_start,
-                               &find_length, !ignore_case, !backwards) &&
+                               &find_length, ignore_case, backwards) &&
       find_length > appended_newlines_count) {
     // TODO(https://crbug.com/1023599): There is a known issue here related to
     // text searches of a |string| starting and ending with a "\n", e.g.
@@ -499,12 +510,12 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
     BASE_DCHECK(start_offset <= end_offset && end_offset <= max_end_offset);
 
     AXPositionInstance start =
-        ui::AXNodePosition::CreatePosition(
-            *anchor, start_offset, ax::mojom::TextAffinity::kDownstream)
+        ui::AXNodePosition::CreateTextPosition(
+            anchor->tree()->GetAXTreeID(), anchor->id(), start_offset, ax::mojom::TextAffinity::kDownstream)
             ->AsLeafTextPosition();
     AXPositionInstance end =
-        ui::AXNodePosition::CreatePosition(
-            *anchor, end_offset, ax::mojom::TextAffinity::kDownstream)
+        ui::AXNodePosition::CreateTextPosition(
+             anchor->tree()->GetAXTreeID(), anchor->id(), end_offset, ax::mojom::TextAffinity::kDownstream)
             ->AsLeafTextPosition();
 
     *result = CreateTextRangeProvider(start->Clone(), end->Clone());
@@ -1272,7 +1283,6 @@ void AXPlatformNodeTextRangeProviderWin::NormalizeTextRange(
   // first snap them both to be unignored positions.
   NormalizeAsUnignoredTextRange(start, end);
 
-  // TODO(schectman) do we _really_ want this?
   bool is_degenerate = *start == *end;
   AXPositionInstance normalized_start =
       is_degenerate ? start->Clone()

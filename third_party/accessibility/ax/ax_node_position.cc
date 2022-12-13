@@ -216,10 +216,7 @@ std::u16string AXNodePosition::GetText() const {
   }
 
   for (int i = 0; i < AnchorChildCount(); ++i) {
-    auto child_position = CreateChildPositionAt(i);
-    if (!child_position->IsIgnored()) {
-      text += child_position->GetText();
-    }
+    text += CreateChildPositionAt(i)->GetText();
   }
 
   return text;
@@ -278,10 +275,7 @@ int AXNodePosition::MaxTextOffset() const {
 
   int text_length = 0;
   for (int i = 0; i < AnchorChildCount(); ++i) {
-    auto child_position = CreateChildPositionAt(i);
-    if (!child_position->IsIgnored()) {
-      text_length += child_position->MaxTextOffset();
-    }
+    text_length += CreateChildPositionAt(i)->MaxTextOffset();
   }
 
   return text_length;
@@ -304,9 +298,9 @@ bool AXNodePosition::IsInLineBreakingObject() const {
   if (IsNullPosition())
     return false;
   BASE_DCHECK(GetAnchor());
-  return GetAnchor()->data().GetBoolAttribute(
+  return (GetAnchor()->data().GetBoolAttribute(
              ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
-         !GetAnchor()->IsInListMarker();
+         !GetAnchor()->IsInListMarker()) || GetAnchor()->data().role == ax::mojom::Role::kLineBreak;
 }
 
 ax::mojom::Role AXNodePosition::GetAnchorRole() const {

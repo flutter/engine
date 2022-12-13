@@ -5601,10 +5601,6 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       }
       break;
 
-      // TODO(schectman): add implementations for ITextProvider
-      // https://github.com/flutter/flutter/issues/114547 and
-      // https://github.com/flutter/flutter/issues/109804
-
     case UIA_TextEditPatternId:
     case UIA_TextPatternId:
       if (IsText() || IsTextField() || data.role == ax::mojom::Role::kRootWebArea) {
