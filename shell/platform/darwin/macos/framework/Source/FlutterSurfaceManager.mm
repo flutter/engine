@@ -8,6 +8,130 @@
 #import <Metal/Metal.h>
 #include <algorithm>
 
+@implementation FlutterSurfacePresentInfo
+@end
+
+@interface FlutterSurfaceManager () {
+  id<MTLDevice> _device;
+  id<MTLCommandQueue> _commandQueue;
+  CALayer* _containingLayer;
+  __weak id<FlutterSurfaceManagerDelegate> _delegate;
+
+  // Available (cached) back buffer surfaces. These will be cleared during
+  // present and replaced by current frong surfaces.
+  FlutterBackBufferCache* _backBufferCache;
+
+  // Surfaces currently used to back visible layers.
+  NSMutableArray<FlutterSurface*>* _frontSurfaces;
+
+  // Currently visible layers.
+  NSMutableArray<CALayer*>* _layers;
+}
+
+/**
+ * Updates underlying CALayers with the contents of the surfaces to present.
+ */
+- (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces;
+
+@end
+
+@implementation FlutterSurfaceManager
+
+- (instancetype)initWithDevice:(id<MTLDevice>)device
+                  commandQueue:(id<MTLCommandQueue>)commandQueue
+                         layer:(CALayer*)containingLayer
+                      delegate:(__weak id<FlutterSurfaceManagerDelegate>)delegate {
+  if (self = [super init]) {
+    _device = device;
+    _commandQueue = commandQueue;
+    _containingLayer = containingLayer;
+    _delegate = delegate;
+
+    _backBufferCache = [[FlutterBackBufferCache alloc] init];
+    _frontSurfaces = [NSMutableArray array];
+    _layers = [NSMutableArray array];
+  }
+  return self;
+}
+
+- (FlutterBackBufferCache*)backBufferCache {
+  return _backBufferCache;
+}
+
+- (NSArray*)frontSurfaces {
+  return _frontSurfaces;
+}
+
+- (NSArray*)layers {
+  return _layers;
+}
+
+- (FlutterSurface*)surfaceForSize:(CGSize)size {
+  FlutterSurface* surface = [_backBufferCache removeSurfaceForSize:size];
+  if (surface == nil) {
+    surface = [[FlutterSurface alloc] initWithSize:size device:_device];
+  }
+  return surface;
+}
+
+- (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces {
+  assert([NSThread isMainThread]);
+
+  // Release all unused back buffer surfaces and replace them with front surfaces.
+  [_backBufferCache replaceSurfaces:_frontSurfaces];
+
+  // Front surfaces will be replaced by currently presented surfaces.
+  [_frontSurfaces removeAllObjects];
+  for (FlutterSurfacePresentInfo* info in surfaces) {
+    [_frontSurfaces addObject:info.surface];
+  }
+
+  // Add or remove layers to match the count of surfaces to present.
+  while (_layers.count > _frontSurfaces.count) {
+    [_layers.lastObject removeFromSuperlayer];
+    [_layers removeLastObject];
+  }
+  while (_layers.count < _frontSurfaces.count) {
+    CALayer* layer = [CALayer layer];
+    [_containingLayer addSublayer:layer];
+    [_layers addObject:layer];
+  }
+
+  // Update contents of surfaces.
+  for (size_t i = 0; i < surfaces.count; ++i) {
+    FlutterSurfacePresentInfo* info = surfaces[i];
+    CALayer* layer = _layers[i];
+    CGFloat scale = _containingLayer.contentsScale;
+    layer.frame = CGRectMake(info.offset.x / scale, info.offset.y / scale,
+                             info.surface.size.width / scale, info.surface.size.height / scale);
+    layer.contents = (__bridge id)info.surface.ioSurface;
+    layer.zPosition = info.zIndex;
+  }
+}
+
+- (void)present:(NSArray<FlutterSurfacePresentInfo*>*)surfaces notify:(dispatch_block_t)notify {
+  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
+  [commandBuffer commit];
+  [commandBuffer waitUntilScheduled];
+
+  // Get the actual dimensions of the frame (relevant for thread synchronizer).
+  CGSize size = CGSizeZero;
+  for (FlutterSurfacePresentInfo* info in surfaces) {
+    size = CGSizeMake(std::max(size.width, info.offset.x + info.surface.size.width),
+                      std::max(size.height, info.offset.y + info.surface.size.height));
+  }
+
+  [_delegate onPresent:size
+             withBlock:^{
+               [self commit:surfaces];
+               if (notify != nil) {
+                 notify();
+               }
+             }];
+}
+
+@end
+
 // Cached back buffers will be released after kIdleDelay if there is no activity.
 static const double kIdleDelay = 1.0;
 
@@ -69,132 +193,6 @@ static const double kIdleDelay = 1.0;
 
 - (void)dealloc {
   [NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(onIdle) object:nil];
-}
-
-@end
-
-@implementation FlutterSurfacePresentInfo
-@end
-
-@interface FlutterSurfaceManager () {
-  id<MTLDevice> _device;
-  id<MTLCommandQueue> _commandQueue;
-  CALayer* _containingLayer;
-  __weak id<FlutterSurfaceManagerDelegate> _delegate;
-
-  // Available (cached) back buffer surfaces. These will be cleared during
-  // present and replaced by current frong surfaces.
-  FlutterBackBufferCache* _backBufferCache;
-
-  // Surfaces currently used to back visible layers.
-  NSMutableArray<FlutterSurface*>* _frontSurfaces;
-
-  // Currently visible layers.
-  NSMutableArray<CALayer*>* _layers;
-}
-
-/**
- * Updates underlying CALayers with the contents of the surfaces to present.
- */
-- (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces;
-
-@end
-
-@implementation FlutterSurfaceManager
-
-- (instancetype)initWithDevice:(id<MTLDevice>)device
-                  commandQueue:(id<MTLCommandQueue>)commandQueue
-                         layer:(CALayer*)containingLayer
-                      delegate:(__weak id<FlutterSurfaceManagerDelegate>)delegate {
-  if (self = [super init]) {
-    _device = device;
-    _commandQueue = commandQueue;
-    _containingLayer = containingLayer;
-    _delegate = delegate;
-
-    _backBufferCache = [[FlutterBackBufferCache alloc] init];
-    _frontSurfaces = [NSMutableArray array];
-    _layers = [NSMutableArray array];
-  }
-  return self;
-}
-
-- (FlutterBackBufferCache*)backBufferCache {
-  return _backBufferCache;
-}
-
-- (NSArray*)frontSurfaces {
-  return _frontSurfaces;
-}
-
-- (NSArray*)layers {
-  return _layers;
-}
-
-- (FlutterSurface*)surfaceForSize:(CGSize)size {
-  FlutterSurface* res = [_backBufferCache removeSurfaceForSize:size];
-  if (res == nil) {
-    res = [[FlutterSurface alloc] initWithSize:size device:_device];
-  }
-  return res;
-}
-
-- (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces {
-  assert([NSThread isMainThread]);
-
-  // Release all unused back buffer surfaces and replace them with front surfaces.
-  [_backBufferCache replaceSurfaces:_frontSurfaces];
-
-  // Front surfaces will be replaced by currently presented surfaces.
-  [_frontSurfaces removeAllObjects];
-  for (FlutterSurfacePresentInfo* info in surfaces) {
-    [_frontSurfaces addObject:info.surface];
-  }
-
-  // Remove excess layers.
-  while (_layers.count > _frontSurfaces.count) {
-    [_layers.lastObject removeFromSuperlayer];
-    [_layers removeLastObject];
-  }
-
-  // Add missing layers.
-  while (_layers.count < _frontSurfaces.count) {
-    CALayer* layer = [CALayer layer];
-    [_containingLayer addSublayer:layer];
-    [_layers addObject:layer];
-  }
-
-  // Update contents of surfaces.
-  for (size_t i = 0; i < surfaces.count; ++i) {
-    FlutterSurfacePresentInfo* info = surfaces[i];
-    CALayer* layer = _layers[i];
-    CGFloat scale = _containingLayer.contentsScale;
-    layer.frame = CGRectMake(info.offset.x / scale, info.offset.y / scale,
-                             info.surface.size.width / scale, info.surface.size.height / scale);
-    layer.contents = (__bridge id)info.surface.ioSurface;
-    layer.zPosition = info.zIndex;
-  }
-}
-
-- (void)present:(NSArray<FlutterSurfacePresentInfo*>*)surfaces notify:(dispatch_block_t)notify {
-  id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
-  [commandBuffer commit];
-  [commandBuffer waitUntilScheduled];
-
-  // Get the actual dimensions of the frame (relevant for thread synchronizer).
-  CGSize size = CGSizeZero;
-  for (FlutterSurfacePresentInfo* info in surfaces) {
-    size = CGSizeMake(std::max(size.width, info.offset.x + info.surface.size.width),
-                      std::max(size.height, info.offset.y + info.surface.size.height));
-  }
-
-  [_delegate onPresent:size
-             withBlock:^{
-               [self commit:surfaces];
-               if (notify != nil) {
-                 notify();
-               }
-             }];
 }
 
 @end
