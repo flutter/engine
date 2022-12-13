@@ -92,6 +92,12 @@ static const double kIdleDelay = 1.0;
   // Currently visible layers.
   NSMutableArray<CALayer*>* _layers;
 }
+
+/**
+ * Updates underlying CALayers with the contents of the surfaces to present.
+ */
+- (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces
+
 @end
 
 @implementation FlutterSurfaceManager
