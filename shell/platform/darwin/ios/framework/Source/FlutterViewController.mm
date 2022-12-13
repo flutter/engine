@@ -1317,7 +1317,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     self.targetViewInsetBottom = 0;
   }
 
-  bool keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
+  BOOL keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
 
   // Flag for simultaneous compounding animation calls.
   self.keyboardAnimationIsCompounding = self.keyboardAnimationIsShowing == keyboardWillShow;
