@@ -129,8 +129,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
 - (UIView*)keyboardAnimationView;
-- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation
-                                   duration:(double)duration;
+- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
 - (void)addInternalPlugins;

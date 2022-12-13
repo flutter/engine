@@ -69,8 +69,7 @@ typedef struct MouseState {
 @property(nonatomic, assign) Boolean keyboardAnimationIsShowing;
 @property(nonatomic, assign) Boolean keyboardAnimationIsCompounding;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
-@property(nonatomic, assign) CGFloat keyboardAnimationFrom;
-@property(nonatomic, assign) CGFloat keyboardAnimationTo;
+@property(nonatomic, assign) CGFloat originalViewInsetBottom;
 
 /// VSyncClient for touch events delivery frame rate correction.
 ///
@@ -1372,17 +1371,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if ([self keyboardAnimationView].superview == nil) {
     [self.view addSubview:[self keyboardAnimationView]];
   } else if (self.keyboardAnimationIsCompounding) {
-    // Update in-flight keyboard animation curve target position.
-    self.keyboardAnimationTo = self.targetViewInsetBottom;
+    // If keyboard animation is in the same direction as current animation, ignore it.
     return;
   }
 
   // Remove running animation when start another animation.
   [[self keyboardAnimationView].layer removeAllAnimations];
 
-  // Set animation begin value.
+  // Set animation begin value and DisplayLink tracking values.
   [self keyboardAnimationView].frame =
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
+  self.keyboardAnimationStartTime = fml::TimePoint().Now();
+  self.originalViewInsetBottom = _viewportMetrics.physical_view_inset_bottom;
 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
@@ -1393,11 +1393,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       animations:^{
         // Set end value.
         [self keyboardAnimationView].frame = CGRectMake(0, self.targetViewInsetBottom, 0, 0);
-
-        // Set DisplayLink tracking values.
-        self.keyboardAnimationStartTime = fml::TimePoint().Now();
-        self.keyboardAnimationFrom = _viewportMetrics.physical_view_inset_bottom;
-        self.keyboardAnimationTo = self.targetViewInsetBottom;
 
         // Setup keyboard animation interpolation.
         CAAnimation* keyboardAnimation =
@@ -1453,8 +1448,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       newY =
           flutterViewController.get().keyboardAnimationView.layer.presentationLayer.frame.origin.y;
     } else {
-      double start = flutterViewController.get().keyboardAnimationFrom;
-      double end = flutterViewController.get().keyboardAnimationTo;
+      double start = flutterViewController.get().originalViewInsetBottom;
+      double end = flutterViewController.get().targetViewInsetBottom;
       fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
                                    flutterViewController.get().keyboardAnimationStartTime;
       double keyboardAnimationStop =
