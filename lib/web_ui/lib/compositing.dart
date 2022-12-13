@@ -67,6 +67,7 @@ abstract class SceneBuilder {
   });
   ColorFilterEngineLayer pushColorFilter(
     ColorFilter filter, {
+    Offset offset = Offset.zero,
     ColorFilterEngineLayer? oldLayer,
   });
   ImageFilterEngineLayer pushImageFilter(
