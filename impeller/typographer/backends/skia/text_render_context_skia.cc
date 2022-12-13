@@ -22,6 +22,11 @@
 
 namespace impeller {
 
+// TODO(bdero): We might be able to remove this per-glyph padding if we fix
+//              the underlying causes of the overlap.
+//              https://github.com/flutter/flutter/issues/114563
+constexpr auto padding = 2;
+
 TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
     : TextRenderContext(std::move(context)) {}
 
@@ -60,21 +65,14 @@ static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
 
 static size_t PairsFitInAtlasOfSize(const FontGlyphPair::Vector& pairs,
                                     const ISize& atlas_size,
-                                    std::vector<Rect>& glyph_positions) {
+                                    std::vector<Rect>& glyph_positions,
+                                    std::shared_ptr<GrRectanizer> rect_packer) {
   if (atlas_size.IsEmpty()) {
     return false;
   }
 
-  auto rect_packer = std::unique_ptr<GrRectanizer>(
-      GrRectanizer::Factory(atlas_size.width, atlas_size.height));
-
   glyph_positions.clear();
   glyph_positions.reserve(pairs.size());
-
-  // TODO(bdero): We might be able to remove this per-glyph padding if we fix
-  //              the underlying causes of the overlap.
-  //              https://github.com/flutter/flutter/issues/114563
-  constexpr auto padding = 2;
 
   for (size_t i = 0; i < pairs.size(); i++) {
     const auto& pair = pairs[i];
@@ -98,9 +96,48 @@ static size_t PairsFitInAtlasOfSize(const FontGlyphPair::Vector& pairs,
   return 0;
 }
 
+static bool CanAppendToExistingAtlas(
+    std::shared_ptr<GlyphAtlas> atlas,
+    const FontGlyphPair::Vector& extra_pairs,
+    std::vector<Rect>& glyph_positions,
+    ISize atlas_size,
+    std::shared_ptr<GrRectanizer> rect_packer) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!rect_packer || atlas_size.IsEmpty()) {
+    return false;
+  }
+
+  // We assume that all existing glyphs will fit. After all, they fit before.
+  // The glyph_positions only contains the values for the additional glyphs
+  // from extra_pairs.
+  glyph_positions.clear();
+  glyph_positions.reserve(extra_pairs.size());
+  for (size_t i = 0; i < extra_pairs.size(); i++) {
+    const auto& pair = extra_pairs[i];
+
+    const auto glyph_size =
+        ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
+    SkIPoint16 location_in_atlas;
+    if (!rect_packer->addRect(glyph_size.width + padding,   //
+                              glyph_size.height + padding,  //
+                              &location_in_atlas            //
+                              )) {
+      return false;
+    }
+    glyph_positions.emplace_back(Rect::MakeXYWH(location_in_atlas.x(),  //
+                                                location_in_atlas.y(),  //
+                                                glyph_size.width,       //
+                                                glyph_size.height       //
+                                                ));
+  }
+
+  return true;
+}
+
 static ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Vector& pairs,
-    std::vector<Rect>& glyph_positions) {
+    std::vector<Rect>& glyph_positions,
+    std::shared_ptr<GlyphAtlasContext> atlas_context) {
   static constexpr auto kMinAtlasSize = 8u;
   static constexpr auto kMaxAtlasSize = 4096u;
 
@@ -109,9 +146,13 @@ static ISize OptimumAtlasSizeForFontGlyphPairs(
   ISize current_size(kMinAtlasSize, kMinAtlasSize);
   size_t total_pairs = pairs.size() + 1;
   do {
-    auto remaining_pairs =
-        PairsFitInAtlasOfSize(pairs, current_size, glyph_positions);
+    auto rect_packer = std::shared_ptr<GrRectanizer>(
+        GrRectanizer::Factory(current_size.width, current_size.height));
+
+    auto remaining_pairs = PairsFitInAtlasOfSize(pairs, current_size,
+                                                 glyph_positions, rect_packer);
     if (remaining_pairs == 0) {
+      atlas_context->UpdateRectPacker(rect_packer);
       return current_size;
     } else if (remaining_pairs < std::ceil(total_pairs / 2)) {
       current_size = ISize::MakeWH(
@@ -263,17 +304,37 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
   if (!bitmap->tryAllocPixels(image_info)) {
     return nullptr;
   }
+
+  return bitmap;
+}
+
+static bool PopulateAtlasBitmap(const GlyphAtlas& atlas,
+                                std::shared_ptr<SkBitmap> bitmap,
+                                const FontGlyphPair::Vector& include) {
   auto surface = SkSurface::MakeRasterDirect(bitmap->pixmap());
   if (!surface) {
-    return nullptr;
+    return false;
   }
   auto canvas = surface->getCanvas();
   if (!canvas) {
-    return nullptr;
+    return false;
   }
 
-  atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
-                               const Rect& location) -> bool {
+  atlas.IterateGlyphs([canvas, &include](const FontGlyphPair& font_glyph,
+                                         const Rect& location) -> bool {
+    if (include.size() > 0) {
+      bool found = false;
+      for (auto i = 0u; i < include.size(); i++) {
+        if (font_glyph.font.IsEqual(include[i].font) &&
+            font_glyph.glyph.index == include[i].glyph.index) {
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        return true;
+      }
+    }
     const auto& metrics = font_glyph.font.GetMetrics();
     const auto position = SkPoint::Make(location.origin.x / metrics.scale,
                                         location.origin.y / metrics.scale);
@@ -300,7 +361,7 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return true;
   });
 
-  return bitmap;
+  return true;
 }
 
 static std::shared_ptr<Texture> UploadGlyphTextureAtlas(
@@ -367,48 +428,81 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   // Step 2: Determine if the atlas type and font glyph pairs are compatible
   //         with the current atlas and reuse if possible.
   // ---------------------------------------------------------------------------
-  if (last_atlas->GetType() == type &&
-      last_atlas->HasSamePairs(font_glyph_pairs)) {
+  auto new_glyphs = last_atlas->HasSamePairs(font_glyph_pairs);
+  if (last_atlas->GetType() == type && new_glyphs.size() == 0) {
     return last_atlas;
   }
 
-  auto glyph_atlas = std::make_shared<GlyphAtlas>(type);
-  atlas_context->UpdateGlyphAtlas(glyph_atlas);
-
-  // ---------------------------------------------------------------------------
-  // Step 3: Get the optimum size of the texture atlas.
-  // ---------------------------------------------------------------------------
+  // The atlas is missing some glyphs. First see if they can be appended to the
+  // existing atlas instead of creating a new Atlas from scratch.
+  // TODO: we should almost always be able to reuse the texture if we're reusing
+  // the atlas.
   std::vector<Rect> glyph_positions;
-  const auto atlas_size =
-      OptimumAtlasSizeForFontGlyphPairs(font_glyph_pairs, glyph_positions);
-  if (atlas_size.IsEmpty()) {
-    return nullptr;
-  }
+  ISize atlas_size;
+  std::shared_ptr<SkBitmap> bitmap;
+  std::shared_ptr<GlyphAtlas> glyph_atlas;
 
-  // ---------------------------------------------------------------------------
-  // Step 4: Find location of font-glyph pairs in the atlas. We have this from
-  // the last step. So no need to do create another rect packer. But just do a
-  // sanity check of counts. This could also be just an assertion as only a
-  // construction issue would cause such a failure.
-  // ---------------------------------------------------------------------------
-  if (glyph_positions.size() != font_glyph_pairs.size()) {
-    return nullptr;
-  }
+  if (CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
+                               atlas_context->GetAtlasSize(),
+                               atlas_context->GetRectPacker())) {
+    // Can reuse old atlas.
+    atlas_size = atlas_context->GetAtlasSize();
 
-  // ---------------------------------------------------------------------------
-  // Step 5: Record the positions in the glyph atlas.
-  // ---------------------------------------------------------------------------
-  for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
-    glyph_atlas->AddTypefaceGlyphPosition(font_glyph_pairs[i],
-                                          glyph_positions[i]);
-  }
+    // ---------------------------------------------------------------------------
+    // Step 5: Record the positions in the glyph atlas.
+    // ---------------------------------------------------------------------------
+    for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
+      last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
+    }
 
-  // ---------------------------------------------------------------------------
-  // Step 6: Draw font-glyph pairs in the correct spot in the atlas.
-  // ---------------------------------------------------------------------------
-  auto bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
-  if (!bitmap) {
-    return nullptr;
+    // Only draw new glyphs in the bitmap.
+    bitmap = atlas_context->GetBitmap();
+    if (!PopulateAtlasBitmap(*last_atlas, bitmap, new_glyphs)) {
+      return nullptr;
+    }
+    glyph_atlas = last_atlas;
+  } else {
+    glyph_atlas = std::make_shared<GlyphAtlas>(type);
+
+    // ---------------------------------------------------------------------------
+    // Step 3: Get the optimum size of the texture atlas.
+    // ---------------------------------------------------------------------------
+    atlas_size = OptimumAtlasSizeForFontGlyphPairs(
+        font_glyph_pairs, glyph_positions, atlas_context);
+
+    atlas_context->UpdateGlyphAtlas(glyph_atlas, atlas_size);
+    if (atlas_size.IsEmpty()) {
+      return nullptr;
+    }
+    // ---------------------------------------------------------------------------
+    // Step 4: Find location of font-glyph pairs in the atlas. We have this from
+    // the last step. So no need to do create another rect packer. But just do a
+    // sanity check of counts. This could also be just an assertion as only a
+    // construction issue would cause such a failure.
+    // ---------------------------------------------------------------------------
+    if (glyph_positions.size() != font_glyph_pairs.size()) {
+      return nullptr;
+    }
+
+    // ---------------------------------------------------------------------------
+    // Step 5: Record the positions in the glyph atlas.
+    // ---------------------------------------------------------------------------
+    for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
+      glyph_atlas->AddTypefaceGlyphPosition(font_glyph_pairs[i],
+                                            glyph_positions[i]);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Step 6: Draw font-glyph pairs in the correct spot in the atlas.
+    // ---------------------------------------------------------------------------
+    bitmap = CreateAtlasBitmap(*glyph_atlas, atlas_size);
+    if (!bitmap) {
+      return nullptr;
+    }
+    atlas_context->UpdateBitmap(bitmap);
+    if (!PopulateAtlasBitmap(*glyph_atlas, bitmap, {})) {
+      return nullptr;
+    }
   }
 
   // ---------------------------------------------------------------------------
