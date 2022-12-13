@@ -21,8 +21,8 @@ static fml::jni::ScopedJavaGlobalRef<jclass>* g_vsync_waiter_class = nullptr;
 static jmethodID g_async_wait_for_vsync_method_ = nullptr;
 static std::atomic_uint g_refresh_rate_ = 60;
 
-VsyncWaiterAndroid::VsyncWaiterAndroid(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)),
+VsyncWaiterAndroid::VsyncWaiterAndroid(const flutter::TaskRunners& task_runners)
+    : VsyncWaiter(task_runners),
       use_ndk_choreographer_(
           AndroidChoreographer::ShouldUseNDKChoreographer()) {}
 
@@ -52,8 +52,6 @@ void VsyncWaiterAndroid::AwaitVSync() {
 
 // static
 void VsyncWaiterAndroid::OnVsyncFromNDK(int64_t frame_nanos, void* data) {
-  TRACE_EVENT0("flutter", "VSYNC");
-
   auto frame_time = fml::TimePoint::FromEpochDelta(
       fml::TimeDelta::FromNanoseconds(frame_nanos));
   auto now = fml::TimePoint::Now();
@@ -62,6 +60,12 @@ void VsyncWaiterAndroid::OnVsyncFromNDK(int64_t frame_nanos, void* data) {
   }
   auto target_time = frame_time + fml::TimeDelta::FromNanoseconds(
                                       1000000000.0 / g_refresh_rate_);
+
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_time.ToEpochDelta().ToMicroseconds(),
+                   "frame_target_time",
+                   target_time.ToEpochDelta().ToMicroseconds());
+
   auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(data);
   ConsumePendingCallback(weak_this, frame_time, target_time);
 }
@@ -72,12 +76,15 @@ void VsyncWaiterAndroid::OnVsyncFromJava(JNIEnv* env,
                                          jlong frameDelayNanos,
                                          jlong refreshPeriodNanos,
                                          jlong java_baton) {
-  TRACE_EVENT0("flutter", "VSYNC");
-
   auto frame_time =
       fml::TimePoint::Now() - fml::TimeDelta::FromNanoseconds(frameDelayNanos);
   auto target_time =
       frame_time + fml::TimeDelta::FromNanoseconds(refreshPeriodNanos);
+
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_time.ToEpochDelta().ToMicroseconds(),
+                   "frame_target_time",
+                   target_time.ToEpochDelta().ToMicroseconds());
 
   auto* weak_this = reinterpret_cast<std::weak_ptr<VsyncWaiter>*>(java_baton);
   ConsumePendingCallback(weak_this, frame_time, target_time);

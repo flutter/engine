@@ -62,14 +62,16 @@ class MockRasterCache : public RasterCache {
           RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame)
       : RasterCache(access_threshold,
                     picture_and_display_list_cache_limit_per_frame) {
-    state_stack_.set_delegate(&mutators_stack_);
+    preroll_state_stack_.set_preroll_delegate(SkMatrix::I());
+    paint_state_stack_.set_delegate(&mock_canvas_);
   }
 
   void AddMockLayer(int width, int height);
   void AddMockPicture(int width, int height);
 
  private:
-  LayerStateStack state_stack_;
+  LayerStateStack preroll_state_stack_;
+  LayerStateStack paint_state_stack_;
   MockCanvas mock_canvas_;
   SkColorSpace* color_space_ = mock_canvas_.imageInfo().colorSpace();
   MutatorsStack mutators_stack_;
@@ -81,7 +83,7 @@ class MockRasterCache : public RasterCache {
       .raster_cache                  = this,
       .gr_context                    = nullptr,
       .view_embedder                 = nullptr,
-      .state_stack                   = state_stack_,
+      .state_stack                   = preroll_state_stack_,
       .dst_color_space               = color_space_,
       .surface_needs_readback        = false,
       .raster_time                   = raster_time_,
@@ -96,7 +98,7 @@ class MockRasterCache : public RasterCache {
 
   PaintContext paint_context_ = {
       // clang-format off
-      .state_stack                   = state_stack_,
+      .state_stack                   = paint_state_stack_,
       .canvas                        = nullptr,
       .gr_context                    = nullptr,
       .dst_color_space               = color_space_,

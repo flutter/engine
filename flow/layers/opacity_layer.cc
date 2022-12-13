@@ -79,9 +79,15 @@ void OpacityLayer::Paint(PaintContext& context) const {
 
   mutator.applyOpacity(child_paint_bounds(), opacity());
 
-  if (!context.state_stack.painting_is_nop()) {
-    PaintChildren(context);
+  if (!children_can_accept_opacity()) {
+    SkPaint paint;
+    if (layer_raster_cache_item_->Draw(context,
+                                       context.state_stack.fill(paint))) {
+      return;
+    }
   }
+
+  PaintChildren(context);
 }
 
 }  // namespace flutter

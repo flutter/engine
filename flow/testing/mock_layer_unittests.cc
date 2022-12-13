@@ -44,8 +44,8 @@ TEST_F(MockLayerTest, SimpleParams) {
   const bool parent_has_platform_view = true;
   auto layer = std::make_shared<MockLayer>(path, paint);
 
-  preroll_context()->state_stack.set_initial_state(device_cull_rect,
-                                                   start_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_rect,
+                                                      start_matrix);
   auto mutator = preroll_context()->state_stack.save();
   mutator.transform(scale_matrix);
   preroll_context()->has_platform_view = parent_has_platform_view;

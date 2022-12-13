@@ -3,8 +3,11 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
+
 #include <Metal/Metal.h>
 
+#include "flutter/fml/build_config.h"
+#include "flutter/fml/container.h"
 #include "impeller/base/promise.h"
 #include "impeller/renderer/backend/metal/compute_pipeline_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -92,14 +95,16 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(
-        nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
   }
 
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
-  auto future = PipelineFuture<PipelineDescriptor>{promise->get_future()};
-  pipelines_[descriptor] = future;
+  auto pipeline_future =
+      PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+  pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
 
   auto completion_handler =
@@ -128,10 +133,20 @@ PipelineFuture<PipelineDescriptor> PipelineLibraryMTL::GetPipeline(
             ));
         promise->set_value(new_pipeline);
       };
-  [device_ newRenderPipelineStateWithDescriptor:GetMTLRenderPipelineDescriptor(
-                                                    descriptor)
+  auto mtl_descriptor = GetMTLRenderPipelineDescriptor(descriptor);
+#if FML_OS_IOS
+  [device_ newRenderPipelineStateWithDescriptor:mtl_descriptor
                               completionHandler:completion_handler];
-  return future;
+#else   // FML_OS_IOS
+  // TODO(116919): Investigate and revert speculative fix to make MTL pipeline
+  //               state creation use a worker.
+  NSError* error = nil;
+  auto render_pipeline_state =
+      [device_ newRenderPipelineStateWithDescriptor:mtl_descriptor
+                                              error:&error];
+  completion_handler(render_pipeline_state, error);
+#endif  // FML_OS_IOS
+  return pipeline_future;
 }
 
 PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
@@ -142,15 +157,17 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>(
-        nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>(
+            nullptr)};
   }
 
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
-  auto future =
-      PipelineFuture<ComputePipelineDescriptor>{promise->get_future()};
-  compute_pipelines_[descriptor] = future;
+  auto pipeline_future = PipelineFuture<ComputePipelineDescriptor>{
+      descriptor, promise->get_future()};
+  compute_pipelines_[descriptor] = pipeline_future;
   auto weak_this = weak_from_this();
 
   auto completion_handler =
@@ -184,7 +201,16 @@ PipelineFuture<ComputePipelineDescriptor> PipelineLibraryMTL::GetPipeline(
                                                 descriptor)
                                     options:MTLPipelineOptionNone
                           completionHandler:completion_handler];
-  return future;
+  return pipeline_future;
+}
+
+// |PipelineLibrary|
+void PipelineLibraryMTL::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
 }
 
 }  // namespace impeller

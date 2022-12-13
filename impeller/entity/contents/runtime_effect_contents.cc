@@ -12,7 +12,7 @@
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/position_no_color.vert.h"
+#include "impeller/entity/runtime_effect.vert.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
@@ -52,6 +52,14 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   std::shared_ptr<const ShaderFunction> function = library->GetFunction(
       runtime_stage_->GetEntrypoint(), ShaderStage::kFragment);
 
+  if (function && runtime_stage_->IsDirty()) {
+    context->GetPipelineLibrary()->RemovePipelinesWithEntryPoint(function);
+    library->UnregisterFunction(runtime_stage_->GetEntrypoint(),
+                                ShaderStage::kFragment);
+
+    function = nullptr;
+  }
+
   if (!function) {
     std::promise<bool> promise;
     auto future = promise.get_future();
@@ -79,6 +87,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
           << runtime_stage_->GetEntrypoint() << ")";
       return false;
     }
+
+    runtime_stage_->SetClean();
   }
 
   //--------------------------------------------------------------------------
@@ -92,7 +102,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
-  using VS = PositionNoColorVertexShader;
+  using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
   desc.AddStageEntrypoint(
@@ -104,7 +114,8 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     VALIDATION_LOG << "Failed to set stage inputs for runtime effect pipeline.";
   }
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
-  desc.SetColorAttachmentDescriptor(0u, {.format = PixelFormat::kDefaultColor});
+  desc.SetColorAttachmentDescriptor(
+      0u, {.format = PixelFormat::kDefaultColor, .blending_enabled = true});
   desc.SetStencilAttachmentDescriptors({});
   desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
 
@@ -113,9 +124,10 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     options.stencil_compare = CompareFunction::kEqual;
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
+  options.primitive_type = geometry_result.type;
   options.ApplyToPipelineDescriptor(desc);
 
-  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).get();
+  auto pipeline = context->GetPipelineLibrary()->GetPipeline(desc).Get();
   if (!pipeline) {
     VALIDATION_LOG << "Failed to get or create runtime effect pipeline.";
     return false;
@@ -126,15 +138,13 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   cmd.pipeline = pipeline;
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
-  cmd.primitive_type = geometry_result.type;
 
   //--------------------------------------------------------------------------
   /// Vertex stage uniforms.
   ///
 
   VS::VertInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  frame_info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   //--------------------------------------------------------------------------
@@ -178,6 +188,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         uniform_slot.ext_res_0 = buffer_index;
         cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
                          buffer_view);
+        buffer_index++;
         break;
       }
       case kBoolean:
@@ -195,8 +206,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
                        << ".";
         return true;
     }
-
-    buffer_index++;
   }
 
   pass.AddCommand(std::move(cmd));

@@ -106,9 +106,10 @@ abstract class _EngineLayerWrapper implements EngineLayer {
   bool _debugWasUsedAsOldLayer = false;
 
   bool _debugCheckNotUsedAsOldLayer() {
+    // The hashCode formatting should match shortHash in the framework
     assert(
         !_debugWasUsedAsOldLayer,
-        'Layer $runtimeType was previously used as oldLayer.\n'
+        'Layer $runtimeType#${hashCode.toUnsigned(20).toRadixString(16).padLeft(5, '0')} was previously used as oldLayer.\n'
         'Once a layer is used as oldLayer, it may not be used again. Instead, '
         'after calling one of the SceneBuilder.push* methods and passing an oldLayer '
         'to it, use the layer returned by the method as oldLayer in subsequent '
@@ -519,6 +520,7 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   /// See [pop] for details about the operation stack.
   ImageFilterEngineLayer pushImageFilter(
     ImageFilter filter, {
+    Offset offset = Offset.zero,
     ImageFilterEngineLayer? oldLayer,
   }) {
     assert(filter != null);
@@ -526,14 +528,14 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
     final _ImageFilter nativeFilter = filter._toNativeImageFilter();
     assert(nativeFilter != null);
     final EngineLayer engineLayer = EngineLayer._();
-    _pushImageFilter(engineLayer, nativeFilter, oldLayer?._nativeLayer);
+    _pushImageFilter(engineLayer, nativeFilter, offset.dx, offset.dy, oldLayer?._nativeLayer);
     final ImageFilterEngineLayer layer = ImageFilterEngineLayer._(engineLayer);
     assert(_debugPushLayer(layer));
     return layer;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Handle)>('SceneBuilder::pushImageFilter')
-  external void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter, EngineLayer? oldLayer);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Pointer<Void>, Double, Double, Handle)>('SceneBuilder::pushImageFilter')
+  external void _pushImageFilter(EngineLayer outEngineLayer, _ImageFilter filter, double dx, double dy, EngineLayer? oldLayer);
 
   /// Pushes a backdrop filter operation onto the operation stack.
   ///
@@ -746,7 +748,25 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
 
   /// Adds a [Picture] to the scene.
   ///
-  /// The picture is rasterized at the given offset.
+  /// The picture is rasterized at the given `offset`.
+  ///
+  /// The rendering _may_ be cached to reduce the cost of painting the picture
+  /// if it is reused in subsequent frames. Whether a picture is cached or not
+  /// depends on the backend implementation. When caching is considered, the
+  /// choice to cache or not cache is a heuristic based on how often the picture
+  /// is being painted and the cost of painting the picture. To disable this
+  /// caching, set `willChangeHint` to true. To force the caching to happen (in
+  /// backends that do caching), set `isComplexHint` to true. When both are set,
+  /// `willChangeHint` prevails.
+  ///
+  /// In general, setting these hints is not very useful. Backends that cache
+  /// pictures only do so for pictures that have been rendered three times
+  /// already; setting `willChangeHint` to true to avoid caching an animating
+  /// picture that changes every frame is therefore redundant, the picture
+  /// wouldn't have been cached anyway. Similarly, backends that cache pictures
+  /// are relatively aggressive about doing so, such that any image complicated
+  /// enough to warrant caching is probably already being cached even without
+  /// `isComplexHint` being set to true.
   void addPicture(
     Offset offset,
     Picture picture, {

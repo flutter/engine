@@ -53,6 +53,8 @@ source_set("ui") {
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_encoding_impl.h",
+    "painting/image_encoding_skia.cc",
+    "painting/image_encoding_skia.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_generator.cc",
@@ -167,6 +169,8 @@ source_set("ui") {
       "painting/display_list_deferred_image_gpu_impeller.h",
       "painting/image_decoder_impeller.cc",
       "painting/image_decoder_impeller.h",
+      "painting/image_encoding_impeller.cc",
+      "painting/image_encoding_impeller.h",
     ]
 
     deps += [ "//flutter/impeller" ]
@@ -184,6 +188,9 @@ source_set("ui") {
   if (is_win) {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
   }
 }
 
@@ -239,6 +246,7 @@ if (enable_unittests) {
       "window/platform_message_response_dart_port_unittests.cc",
       "window/platform_message_response_dart_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
+      "window/pointer_data_packet_unittests.cc",
     ]
 
     deps = [

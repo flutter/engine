@@ -55,12 +55,13 @@ case $test_name in
     test_packages=("flutter-embedder-test-0.far" "parent-view.far" "child-view.far")
     ;;
   text-input)
-    # TODO(https://fxbug.dev/107917): Finish implementing and remove this warning.
-    engine-warning "This test currently hangs because the Dart view hasn't been implemented yet. https://fxbug.dev/107917"
     test_packages=("text-input-test-0.far" "text-input-view.far")
     ;;
   touch-input)
-    test_packages=("touch-input-test-0.far" "touch-input-view.far")
+    test_packages=("touch-input-test-0.far" "touch-input-view.far" "embedding-flutter-view.far")
+    ;;
+  mouse-input)
+    test_packages=("mouse-input-test-0.far" "mouse-input-view.far")
     ;;
   *)
     engine-error "Unknown test name $test_name. You may need to add it to $0"

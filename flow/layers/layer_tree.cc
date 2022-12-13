@@ -46,9 +46,8 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
   frame.context().raster_cache().SetCheckboardCacheImages(
       checkerboard_raster_cache_images_);
   LayerStateStack state_stack;
-  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
-  MutatorsStack stack;
-  state_stack.set_delegate(&stack);
+  state_stack.set_preroll_delegate(cull_rect,
+                                   frame.root_surface_transformation());
   RasterCache* cache =
       ignore_raster_cache ? nullptr : &frame.context().raster_cache();
   raster_cache_items_.clear();
@@ -112,9 +111,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     return;
   }
 
-  SkRect cull_rect = SkRect::Make(frame.canvas()->getDeviceClipBounds());
   LayerStateStack state_stack;
-  state_stack.set_initial_state(cull_rect, frame.root_surface_transformation());
   if (checkerboard_offscreen_layers_) {
     state_stack.set_checkerboard_func(DrawCheckerboard);
   }
@@ -151,6 +148,7 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
+      .aiks_context                  = frame.aiks_context(),
       // clang-format on
   };
 
@@ -172,20 +170,17 @@ sk_sp<DisplayList> LayerTree::Flatten(
 
   DisplayListCanvasRecorder recorder(bounds);
 
-  LayerStateStack state_stack;
-  state_stack.set_checkerboard_func(nullptr);
-  // No root surface transformation. So assume identity.
-  state_stack.set_initial_state(kGiantRect, SkMatrix::I());
-
-  MutatorsStack unused_stack;
   const FixedRefreshRateStopwatch unused_stopwatch;
 
+  LayerStateStack preroll_state_stack;
+  // No root surface transformation. So assume identity.
+  preroll_state_stack.set_preroll_delegate(bounds);
   PrerollContext preroll_context{
       // clang-format off
       .raster_cache                  = nullptr,
       .gr_context                    = gr_context,
       .view_embedder                 = nullptr,
-      .state_stack                   = state_stack,
+      .state_stack                   = preroll_state_stack,
       .dst_color_space               = nullptr,
       .surface_needs_readback        = false,
       .raster_time                   = unused_stopwatch,
@@ -195,9 +190,11 @@ sk_sp<DisplayList> LayerTree::Flatten(
       // clang-format on
   };
 
+  LayerStateStack paint_state_stack;
+  paint_state_stack.set_delegate(recorder);
   PaintContext paint_context = {
       // clang-format off
-      .state_stack                   = state_stack,
+      .state_stack                   = paint_state_stack,
       .canvas                        = &recorder,
       .builder                       = recorder.builder().get(),
       .gr_context                    = gr_context,
@@ -216,15 +213,10 @@ sk_sp<DisplayList> LayerTree::Flatten(
   // Even if we don't have a root layer, we still need to create an empty
   // picture.
   if (root_layer_) {
-    state_stack.set_delegate(&unused_stack);
     root_layer_->Preroll(&preroll_context);
-    FML_DCHECK(state_stack.is_empty());
-    FML_DCHECK(state_stack.device_cull_rect() == kGiantRect);
-    FML_DCHECK(state_stack.transform_4x4() == SkM44());
 
     // The needs painting flag may be set after the preroll. So check it after.
     if (root_layer_->needs_painting(paint_context)) {
-      state_stack.set_delegate(recorder.builder());
       root_layer_->Paint(paint_context);
     }
   }

@@ -92,6 +92,10 @@ if (build_engine_artifacts && !is_android) {
           destination = "impellerc$exe"
         },
         {
+          source = "//flutter/impeller/compiler/shader_lib"
+          destination = "shader_lib"
+        },
+        {
           source = "$root_out_dir/${lib_prefix}path_ops$dll"
           destination = "${lib_prefix}path_ops$dll"
         },
@@ -293,6 +297,19 @@ if (is_mac) {
   group("flutter_embedder_framework") {
     deps = [
       "//flutter/shell/platform/embedder:flutter_embedder_framework_archive",
+    ]
+  }
+}
+
+if (host_os == "win") {
+  zip_bundle("archive_win_gen_snapshot") {
+    deps = [ "//flutter:gen_snapshot" ]
+    output = "$full_target_platform_name-$flutter_runtime_mode/windows-x64.zip"
+    files = [
+      {
+        source = "$root_out_dir/gen_snapshot/gen_snapshot.exe"
+        destination = "gen_snapshot.exe"
+      },
     ]
   }
 }

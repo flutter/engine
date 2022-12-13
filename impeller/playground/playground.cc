@@ -77,7 +77,7 @@ Playground::Playground()
 Playground::~Playground() = default;
 
 std::shared_ptr<Context> Playground::GetContext() const {
-  return renderer_ ? renderer_->GetContext() : nullptr;
+  return context_;
 }
 
 bool Playground::SupportsBackend(PlaygroundBackend backend) {
@@ -104,18 +104,24 @@ bool Playground::SupportsBackend(PlaygroundBackend backend) {
   FML_UNREACHABLE();
 }
 
-void Playground::SetupWindow(PlaygroundBackend backend) {
+void Playground::SetupContext(PlaygroundBackend backend) {
   FML_CHECK(SupportsBackend(backend));
 
   impl_ = PlaygroundImpl::Create(backend);
   if (!impl_) {
     return;
   }
-  auto context = impl_->GetContext();
-  if (!context) {
+
+  context_ = impl_->GetContext();
+}
+
+void Playground::SetupWindow() {
+  if (!context_) {
+    FML_LOG(WARNING)
+        << "Asked to setup a window with no context (call SetupContext first).";
     return;
   }
-  auto renderer = std::make_unique<Renderer>(std::move(context));
+  auto renderer = std::make_unique<Renderer>(context_);
   if (!renderer->IsValid()) {
     return;
   }
@@ -123,6 +129,7 @@ void Playground::SetupWindow(PlaygroundBackend backend) {
 }
 
 void Playground::TeardownWindow() {
+  context_.reset();
   renderer_.reset();
   impl_.reset();
 }
@@ -256,35 +263,8 @@ bool Playground::OpenPlaygroundHere(
         }
         render_target.SetColorAttachment(color0, 0);
 
-#ifndef IMPELLER_ENABLE_VULKAN
-        {
-          TextureDescriptor stencil0_tex;
-          stencil0_tex.storage_mode = StorageMode::kDeviceTransient;
-          stencil0_tex.type = TextureType::kTexture2D;
-          stencil0_tex.sample_count = SampleCount::kCount1;
-          stencil0_tex.format = PixelFormat::kDefaultStencil;
-          stencil0_tex.size = color0.texture->GetSize();
-          stencil0_tex.usage =
-              static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
-          auto stencil_texture =
-              renderer->GetContext()->GetResourceAllocator()->CreateTexture(
-                  stencil0_tex);
-
-          if (!stencil_texture) {
-            VALIDATION_LOG << "Could not create stencil texture.";
-            return false;
-          }
-          stencil_texture->SetLabel("ImguiStencil");
-
-          StencilAttachment stencil0;
-          stencil0.texture = stencil_texture;
-          stencil0.clear_stencil = 0;
-          stencil0.load_action = LoadAction::kClear;
-          stencil0.store_action = StoreAction::kDontCare;
-
-          render_target.SetStencilAttachment(stencil0);
-        }
-#endif
+        render_target.SetStencilAttachment(std::nullopt);
+        render_target.SetDepthAttachment(std::nullopt);
 
         auto pass = buffer->CreateRenderPass(render_target);
         if (!pass) {

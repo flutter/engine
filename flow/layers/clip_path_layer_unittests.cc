@@ -6,8 +6,10 @@
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/flow/layers/opacity_layer.h"
+#include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/raster_cache_item.h"
 #include "flutter/flow/testing/layer_test.h"
+#include "flutter/flow/testing/mock_embedder.h"
 #include "flutter/flow/testing/mock_layer.h"
 #include "flutter/fml/macros.h"
 #include "flutter/testing/mock_canvas.h"
@@ -67,8 +69,8 @@ TEST_F(ClipPathLayerTest, PaintingCulledLayerDies) {
   layer->Add(mock_layer);
 
   // Cull these children
-  preroll_context()->state_stack.set_initial_state(distant_bounds,
-                                                   initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(distant_bounds,
+                                                      initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -112,10 +114,10 @@ TEST_F(ClipPathLayerTest, ChildOutsideBounds) {
   ASSERT_TRUE(clip_layer_bounds.intersect(clip_bounds));
 
   // Set up both contexts to cull clipped child
-  preroll_context()->state_stack.set_initial_state(device_cull_bounds,
-                                                   initial_matrix);
-  paint_context().state_stack.set_initial_state(device_cull_bounds,
-                                                initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
+                                                      initial_matrix);
+  paint_context().canvas->clipRect(device_cull_bounds);
+  paint_context().canvas->concat(initial_matrix);
 
   layer->Preroll(preroll_context());
   // Untouched
@@ -149,7 +151,7 @@ TEST_F(ClipPathLayerTest, FullyContainedChild) {
   auto layer = std::make_shared<ClipPathLayer>(layer_path, Clip::hardEdge);
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -197,8 +199,8 @@ TEST_F(ClipPathLayerTest, PartiallyContainedChild) {
   ASSERT_TRUE(clip_layer_bounds.intersect(clip_bounds));
 
   // Cull child
-  preroll_context()->state_stack.set_initial_state(device_cull_bounds,
-                                                   initial_matrix);
+  preroll_context()->state_stack.set_preroll_delegate(device_cull_bounds,
+                                                      initial_matrix);
   layer->Preroll(preroll_context());
 
   // Untouched
@@ -506,7 +508,7 @@ TEST_F(ClipPathLayerTest, LayerCached) {
   cache_canvas.setMatrix(cache_ctm);
 
   use_mock_raster_cache();
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
 
   const auto* clip_cache_item = layer->raster_cache_item();
 
@@ -531,6 +533,31 @@ TEST_F(ClipPathLayerTest, LayerCached) {
   SkPaint paint;
   EXPECT_TRUE(raster_cache()->Draw(clip_cache_item->GetId().value(),
                                    cache_canvas, &paint));
+}
+
+TEST_F(ClipPathLayerTest, EmptyClipDoesNotCullPlatformView) {
+  const SkPoint view_offset = SkPoint::Make(0.0f, 0.0f);
+  const SkSize view_size = SkSize::Make(8.0f, 8.0f);
+  const int64_t view_id = 42;
+  auto platform_view =
+      std::make_shared<PlatformViewLayer>(view_offset, view_size, view_id);
+
+  auto layer_clip = SkPath().addRect(kEmptyRect);
+  auto clip =
+      std::make_shared<ClipPathLayer>(layer_clip, Clip::antiAliasWithSaveLayer);
+  clip->Add(platform_view);
+
+  auto embedder = MockViewEmbedder();
+  SkCanvas fake_overlay_canvas;
+  embedder.AddCanvas(&fake_overlay_canvas);
+  preroll_context()->view_embedder = &embedder;
+  paint_context().view_embedder = &embedder;
+
+  clip->Preroll(preroll_context());
+  EXPECT_EQ(embedder.prerolled_views(), std::vector<int64_t>({view_id}));
+
+  clip->Paint(paint_context());
+  EXPECT_EQ(embedder.painted_views(), std::vector<int64_t>({view_id}));
 }
 
 }  // namespace testing

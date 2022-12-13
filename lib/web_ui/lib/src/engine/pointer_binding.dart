@@ -263,6 +263,8 @@ abstract class _BaseAdapter {
   final _PointerDataCallback _callback;
   final PointerDataConverter _pointerDataConverter;
   final KeyboardConverter _keyboardConverter;
+  DomWheelEvent? _lastWheelEvent;
+  bool _lastWheelEventWasTrackpad = false;
 
   /// Each subclass is expected to override this method to attach its own event
   /// listeners and convert events into pointer events.
@@ -333,6 +335,71 @@ abstract class _BaseAdapter {
 mixin _WheelEventListenerMixin on _BaseAdapter {
   static double? _defaultScrollLineHeight;
 
+  bool _isAcceleratedMouseWheelDelta(num delta, num? wheelDelta) {
+    // On macOS, scrolling using a mouse wheel by default uses an acceleration
+    // curve, so delta values ramp up and are not at fixed multiples of 120.
+    // But in this case, the wheelDelta properties of the event still keep
+    // their original values.
+    // For all events without this acceleration curve applied, the wheelDelta
+    // values are by convention three times greater than the delta values and with
+    // the opposite sign.
+    if (wheelDelta == null) {
+      return false;
+    }
+    // Account for observed issues with integer truncation by allowing +-1px error.
+    return (wheelDelta - (-3 * delta)).abs() > 1;
+  }
+
+  bool _isTrackpadEvent(DomWheelEvent event) {
+    // This function relies on deprecated and non-standard implementation
+    // details. Useful reference material can be found below.
+    //
+    // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/event.cc
+    // https://source.chromium.org/chromium/chromium/src/+/main:ui/events/cocoa/events_mac.mm
+    // https://github.com/WebKit/WebKit/blob/main/Source/WebCore/platform/mac/PlatformEventFactoryMac.mm
+    // https://searchfox.org/mozilla-central/source/dom/events/WheelEvent.h
+    // https://learn.microsoft.com/en-us/windows/win32/inputdev/wm-mousewheel
+    if (browserEngine == BrowserEngine.firefox) {
+      // Firefox has restricted the wheelDelta properties, they do not provide
+      // enough information to accurately disambiguate trackpad events from mouse
+      // wheel events.
+      return false;
+    }
+    if (_isAcceleratedMouseWheelDelta(event.deltaX, event.wheelDeltaX) ||
+        _isAcceleratedMouseWheelDelta(event.deltaY, event.wheelDeltaY)) {
+      return false;
+    }
+    if (((event.deltaX % 120 == 0) && (event.deltaY % 120 == 0)) ||
+        (((event.wheelDeltaX ?? 1) % 120 == 0) && ((event.wheelDeltaY ?? 1) % 120) == 0)) {
+      // While not in any formal web standard, `blink` and `webkit` browsers use
+      // a delta of 120 to represent one mouse wheel turn. If both dimensions of
+      // the delta are divisible by 120, this event is probably from a mouse.
+      // Checking if wheelDeltaX and wheelDeltaY are both divisible by 120
+      // catches any macOS accelerated mouse wheel deltas which by random chance
+      // are not caught by _isAcceleratedMouseWheelDelta.
+      final num deltaXChange = (event.deltaX - (_lastWheelEvent?.deltaX ?? 0)).abs();
+      final num deltaYChange = (event.deltaY - (_lastWheelEvent?.deltaY ?? 0)).abs();
+      if ((_lastWheelEvent == null) ||
+          (deltaXChange == 0 && deltaYChange == 0) ||
+          !(deltaXChange < 20 && deltaYChange < 20)) {
+        // A trackpad event might by chance have a delta of exactly 120, so
+        // make sure this event does not have a similar delta to the previous
+        // one before calling it a mouse event.
+        if (event.timeStamp != null && _lastWheelEvent?.timeStamp != null) {
+          // If the event has a large delta to the previous event, check if
+          // it was preceded within 50 milliseconds by a trackpad event. This
+          // handles unlucky 120-delta trackpad events during rapid movement.
+          final num diffMs = event.timeStamp! - _lastWheelEvent!.timeStamp!;
+          if (diffMs < 50 && _lastWheelEventWasTrackpad) {
+            return true;
+          }
+        }
+        return false;
+      }
+    }
+    return true;
+  }
+
   List<ui.PointerData> _convertWheelEventToPointerData(
     DomWheelEvent event
   ) {
@@ -340,11 +407,16 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaLine = 0x01;
     const int domDeltaPage = 0x02;
 
+    ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
+    if (_isTrackpadEvent(event)) {
+      kind = ui.PointerDeviceKind.trackpad;
+    }
+
     // Flutter only supports pixel scroll delta. Convert deltaMode values
     // to pixels.
-    double deltaX = event.deltaX as double;
-    double deltaY = event.deltaY as double;
-    switch (event.deltaMode) {
+    double deltaX = event.deltaX;
+    double deltaY = event.deltaY;
+    switch (event.deltaMode.toInt()) {
       case domDeltaLine:
         _defaultScrollLineHeight ??= _computeDefaultScrollLineHeight();
         deltaX *= _defaultScrollLineHeight!;
@@ -371,17 +443,19 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       data,
       change: ui.PointerChange.hover,
       timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
-      kind: ui.PointerDeviceKind.mouse,
+      kind: kind,
       signalKind: ui.PointerSignalKind.scroll,
       device: _mouseDeviceId,
-      physicalX: event.clientX.toDouble() * ui.window.devicePixelRatio,
-      physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
-      buttons: event.buttons!,
+      physicalX: event.clientX * ui.window.devicePixelRatio,
+      physicalY: event.clientY * ui.window.devicePixelRatio,
+      buttons: event.buttons!.toInt(),
       pressure: 1.0,
       pressureMax: 1.0,
       scrollDeltaX: deltaX,
       scrollDeltaY: deltaY,
     );
+    _lastWheelEvent = event;
+    _lastWheelEventWasTrackpad = kind == ui.PointerDeviceKind.trackpad;
     return data;
   }
 
@@ -647,14 +721,14 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final _SanitizedDetails? up =
-          sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+          sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
       if (up != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: up);
       }
       final _SanitizedDetails down =
         sanitizer.sanitizeDownEvent(
-          button: event.button,
-          buttons: event.buttons!,
+          button: event.button.toInt(),
+          buttons: event.buttons!.toInt(),
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: down);
       _callback(pointerData);
@@ -666,11 +740,11 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final List<DomPointerEvent> expandedEvents = _expandEvents(event);
       for (final DomPointerEvent event in expandedEvents) {
-        final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+        final _SanitizedDetails? up = sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
         if (up != null) {
           _convertEventsToPointerData(data: pointerData, event: event, details: up);
         }
-        final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
+        final _SanitizedDetails move = sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
         _convertEventsToPointerData(data: pointerData, event: event, details: move);
       }
       _callback(pointerData);
@@ -680,7 +754,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details = sanitizer.sanitizeLeaveEvent(buttons: event.buttons!);
+      final _SanitizedDetails? details = sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
       if (details != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
         _callback(pointerData);
@@ -691,7 +765,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       final int device = _getPointerId(event);
       if (_hasSanitizer(device)) {
         final List<ui.PointerData> pointerData = <ui.PointerData>[];
-        final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons);
+        final _SanitizedDetails? details = _getSanitizer(device).sanitizeUpEvent(buttons: event.buttons?.toInt());
         _removePointerIfUnhoverable(event);
         if (details != null) {
           _convertEventsToPointerData(data: pointerData, event: event, details: details);
@@ -739,8 +813,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: kind,
       signalKind: ui.PointerSignalKind.none,
       device: _getPointerId(event),
-      physicalX: event.clientX.toDouble() * ui.window.devicePixelRatio,
-      physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
+      physicalX: event.clientX * ui.window.devicePixelRatio,
+      physicalY: event.clientY * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure:  pressure == null ? 0.0 : pressure.toDouble(),
       pressureMax: 1.0,
@@ -781,12 +855,13 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     // might come before any PointerEvents, and since wheel events don't contain
     // pointerId we always assign `device: _mouseDeviceId` to them.
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
-    return kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId : event.pointerId!;
+    return kind == ui.PointerDeviceKind.mouse ? _mouseDeviceId :
+        event.pointerId!.toInt();
   }
 
   /// Tilt angle is -90 to + 90. Take maximum deflection and convert to radians.
   double _computeHighestTilt(DomPointerEvent e) =>
-      (e.tiltX!.abs() > e.tiltY!.abs() ? e.tiltX : e.tiltY)!.toDouble() /
+      (e.tiltX!.abs() > e.tiltY!.abs() ? e.tiltX : e.tiltY)! /
       180.0 *
       math.pi;
 }
@@ -833,9 +908,9 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
-        final bool nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
-          _pressTouch(touch.identifier!);
+          _pressTouch(touch.identifier!.toInt());
           _convertEventToPointerData(
             data: pointerData,
             change: ui.PointerChange.down,
@@ -853,7 +928,7 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
-        final bool nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _convertEventToPointerData(
             data: pointerData,
@@ -874,9 +949,9 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
-        final bool nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
-          _unpressTouch(touch.identifier!);
+          _unpressTouch(touch.identifier!.toInt());
           _convertEventToPointerData(
             data: pointerData,
             change: ui.PointerChange.up,
@@ -893,9 +968,9 @@ class _TouchAdapter extends _BaseAdapter {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
-        final bool nowPressed = _isTouchPressed(touch.identifier!);
+        final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
-          _unpressTouch(touch.identifier!);
+          _unpressTouch(touch.identifier!.toInt());
           _convertEventToPointerData(
             data: pointerData,
             change: ui.PointerChange.cancel,
@@ -921,9 +996,9 @@ class _TouchAdapter extends _BaseAdapter {
       change: change,
       timeStamp: timeStamp,
       signalKind: ui.PointerSignalKind.none,
-      device: touch.identifier!,
-      physicalX: touch.clientX.toDouble() * ui.window.devicePixelRatio,
-      physicalY: touch.clientY.toDouble() * ui.window.devicePixelRatio,
+      device: touch.identifier!.toInt(),
+      physicalX: touch.clientX * ui.window.devicePixelRatio,
+      physicalY: touch.clientY * ui.window.devicePixelRatio,
       buttons: pressed ? _kPrimaryMouseButton : 0,
       pressure: 1.0,
       pressureMax: 1.0,
@@ -992,14 +1067,14 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     _addMouseEventListener(glassPaneElement, 'mousedown', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? up =
-          _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+          _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
       if (up != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: up);
       }
       final _SanitizedDetails sanitizedDetails =
         _sanitizer.sanitizeDownEvent(
-          button: event.button,
-          buttons: event.buttons!,
+          button: event.button.toInt(),
+          buttons: event.buttons!.toInt(),
         );
       _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
       _callback(pointerData);
@@ -1007,18 +1082,18 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addMouseEventListener(domWindow, 'mousemove', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? up = _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!);
+      final _SanitizedDetails? up = _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
       if (up != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: up);
       }
-      final _SanitizedDetails move = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!);
+      final _SanitizedDetails move = _sanitizer.sanitizeMoveEvent(buttons: event.buttons!.toInt());
       _convertEventsToPointerData(data: pointerData, event: event, details: move);
       _callback(pointerData);
     });
 
     _addMouseEventListener(glassPaneElement, 'mouseleave', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? details = _sanitizer.sanitizeLeaveEvent(buttons: event.buttons!);
+      final _SanitizedDetails? details = _sanitizer.sanitizeLeaveEvent(buttons: event.buttons!.toInt());
       if (details != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: details);
         _callback(pointerData);
@@ -1027,7 +1102,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
     _addMouseEventListener(domWindow, 'mouseup', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons);
+      final _SanitizedDetails? sanitizedDetails = _sanitizer.sanitizeUpEvent(buttons: event.buttons?.toInt());
       if (sanitizedDetails != null) {
         _convertEventsToPointerData(data: pointerData, event: event, details: sanitizedDetails);
         _callback(pointerData);
@@ -1056,8 +1131,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: ui.PointerDeviceKind.mouse,
       signalKind: ui.PointerSignalKind.none,
       device: _mouseDeviceId,
-      physicalX: event.clientX.toDouble() * ui.window.devicePixelRatio,
-      physicalY: event.clientY.toDouble() * ui.window.devicePixelRatio,
+      physicalX: event.clientX * ui.window.devicePixelRatio,
+      physicalY: event.clientY * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure: 1.0,
       pressureMax: 1.0,

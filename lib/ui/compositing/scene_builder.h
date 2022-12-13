@@ -34,6 +34,15 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
     res->AssociateWithDartWrapper(wrapper);
   }
 
+#ifdef IMPELLER_ENABLE_3D
+  static void addModelLayer(Dart_Handle wrapper,
+                            double dx,
+                            double dy,
+                            double width,
+                            double height,
+                            int64_t viewId);
+#endif  // IMPELLER_ENABLE_3D
+
   ~SceneBuilder() override;
 
   void pushTransformHandle(Dart_Handle layer_handle,
@@ -74,6 +83,8 @@ class SceneBuilder : public RefCountedDartWrappable<SceneBuilder> {
                        const fml::RefPtr<EngineLayer>& oldLayer);
   void pushImageFilter(Dart_Handle layer_handle,
                        const ImageFilter* image_filter,
+                       double dx,
+                       double dy,
                        const fml::RefPtr<EngineLayer>& oldLayer);
   void pushBackdropFilter(Dart_Handle layer_handle,
                           ImageFilter* filter,

@@ -772,7 +772,7 @@ SkRect DisplayListBuilder::getLocalClipBounds() {
     current_layer_->clip_bounds().roundOut(&dev_bounds);
     return inverse.asM33().mapRect(dev_bounds);
   }
-  return kMaxCullRect_;
+  return kMaxCullRect;
 }
 
 bool DisplayListBuilder::quickReject(const SkRect& bounds) const {
@@ -1221,7 +1221,25 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  AccumulateOpBounds(display_list->bounds(), kDrawDisplayListFlags);
+  const SkRect bounds = display_list->bounds();
+  switch (accumulator()->type()) {
+    case BoundsAccumulatorType::kRect:
+      AccumulateOpBounds(bounds, kDrawDisplayListFlags);
+      break;
+    case BoundsAccumulatorType::kRTree:
+      auto rtree = display_list->rtree();
+      if (rtree) {
+        std::list<SkRect> rects = rtree->searchNonOverlappingDrawnRects(bounds);
+        for (const SkRect& rect : rects) {
+          // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
+          // are not necessarily `kDrawDisplayListFlags`.
+          AccumulateOpBounds(rect, kDrawDisplayListFlags);
+        }
+      } else {
+        AccumulateOpBounds(bounds, kDrawDisplayListFlags);
+      }
+      break;
+  }
   Push<DrawDisplayListOp>(0, 1, display_list);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
@@ -1239,6 +1257,13 @@ void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
   AccumulateOpBounds(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags);
   Push<DrawTextBlobOp>(0, 1, blob, x, y);
   CheckLayerOpacityCompatibility();
+}
+void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob>& blob,
+                                      SkScalar x,
+                                      SkScalar y,
+                                      const DlPaint& paint) {
+  setAttributesFromDlPaint(paint, DisplayListOpFlags::kDrawTextBlobFlags);
+  drawTextBlob(blob, x, y);
 }
 void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const DlColor color,

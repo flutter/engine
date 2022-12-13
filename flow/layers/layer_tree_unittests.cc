@@ -28,6 +28,7 @@ class LayerTreeTest : public CanvasTest {
                                                        false,
                                                        true,
                                                        nullptr,
+                                                       nullptr,
                                                        nullptr)) {}
 
   LayerTree& layer_tree() { return layer_tree_; }
@@ -195,6 +196,7 @@ TEST_F(LayerTreeTest, NeedsSystemComposite) {
 
 TEST_F(LayerTreeTest, PrerollContextInitialization) {
   LayerStateStack state_stack;
+  state_stack.set_preroll_delegate(kGiantRect, SkMatrix::I());
   FixedRefreshRateStopwatch mock_raster_time;
   FixedRefreshRateStopwatch mock_ui_time;
   std::shared_ptr<TextureRegistry> mock_registry;

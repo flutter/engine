@@ -1056,7 +1056,7 @@ class PlatformDispatcher {
     }
   }
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
@@ -1092,7 +1092,7 @@ class PlatformDispatcher {
   /// performed.
   ///
   /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
+  /// perform based on the semantics supplied by updateSemantics.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1264,7 +1264,7 @@ class PlatformConfiguration {
   /// format.
   final bool alwaysUse24HourFormat;
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   final bool semanticsEnabled;
 

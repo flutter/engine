@@ -48,6 +48,9 @@ class PortableUITest : public ::loop_fixture::RealLoop {
 
   // Attaches a client view to the scene, and waits for it to render.
   void LaunchClient();
+  // Attaches a view with an embedded child view to the scene, and waits for it
+  // to render.
+  void LaunchClientWithEmbeddedView();
 
   // Returns true when the specified view is fully connected to the scene AND
   // has presented at least one frame of content.
@@ -57,12 +60,44 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // spanning [-1000, 1000] on both axes.
   void RegisterTouchScreen();
 
+  // Registers a fake mouse device, for which mouse movement is measured on a
+  // scale of [-1000, 1000] on both axes and scroll is measured from [-100, 100]
+  // on both axes.
+  void RegisterMouse();
+
+  // Register a fake keyboard
+  void RegisterKeyboard();
+
   // Simulates a tap at location (x, y).
   void InjectTap(int32_t x, int32_t y);
+
+  // Helper method to simulate combinations of button presses/releases and/or
+  // mouse movements.
+  void SimulateMouseEvent(
+      std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+      int movement_x,
+      int movement_y);
+
+  // Helper method to simulate a mouse scroll event.
+  //
+  // Set `use_physical_units` to true to specify scroll in physical pixels and
+  // false to specify scroll in detents.
+  void SimulateMouseScroll(
+      std::vector<fuchsia::ui::test::input::MouseButton> pressed_buttons,
+      int scroll_x,
+      int scroll_y,
+      bool use_physical_units = false);
+
+  // Helper method to simluate text input
+  void SimulateTextEntry(std::string text);
 
  protected:
   component_testing::RealmBuilder* realm_builder() { return &realm_builder_; }
   component_testing::RealmRoot* realm_root() { return realm_.get(); }
+
+  fuchsia::ui::scenic::ScenicPtr scenic_;
+  uint32_t display_width_ = 0;
+  uint32_t display_height_ = 0;
 
   int touch_injection_request_count() const {
     return touch_injection_request_count_;
@@ -87,6 +122,8 @@ class PortableUITest : public ::loop_fixture::RealLoop {
 
   fuchsia::ui::test::input::RegistryPtr input_registry_;
   fuchsia::ui::test::input::TouchScreenPtr fake_touchscreen_;
+  fuchsia::ui::test::input::MousePtr fake_mouse_;
+  fuchsia::ui::test::input::KeyboardPtr fake_keyboard_;
   fuchsia::ui::test::scene::ControllerPtr scene_provider_;
   fuchsia::ui::observation::geometry::ViewTreeWatcherPtr view_tree_watcher_;
 

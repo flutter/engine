@@ -20,9 +20,14 @@ class CkPathMetrics extends IterableBase<ui.PathMetric>
 
   /// The [CkPath.isEmpty] case is special-cased to avoid booting the WASM machinery just to find out there are no contours.
   @override
-  Iterator<ui.PathMetric> get iterator => _path.isEmpty
+  late final Iterator<ui.PathMetric> iterator = _path.isEmpty
       ? const CkPathMetricIteratorEmpty._()
       : CkContourMeasureIter(this);
+
+  /// A fresh [CkContourMeasureIter] which is only used for resurrecting a
+  /// [CkContourMeasure]. We can't use [iterator] here because [iterator] is
+  /// memoized.
+  CkContourMeasureIter _iteratorForResurrection() => CkContourMeasureIter(this);
 }
 
 class CkContourMeasureIter extends ManagedSkiaObject<SkContourMeasureIter>
@@ -42,7 +47,7 @@ class CkContourMeasureIter extends ManagedSkiaObject<SkContourMeasureIter>
     if (currentMetric == null) {
       throw RangeError(
           'PathMetricIterator is not pointing to a PathMetric. This can happen in two situations:\n'
-          '- The iteration has not started yet. If so, call "moveNext" to start iteration.'
+          '- The iteration has not started yet. If so, call "moveNext" to start iteration.\n'
           '- The iterator ran out of elements. If so, check that "moveNext" returns true prior to calling "current".');
     }
     return currentMetric;
@@ -140,8 +145,7 @@ class CkContourMeasure extends ManagedSkiaObject<SkContourMeasure>
 
   @override
   SkContourMeasure resurrect() {
-    final CkContourMeasureIter iterator =
-        _metrics.iterator as CkContourMeasureIter;
+    final CkContourMeasureIter iterator = _metrics._iteratorForResurrection();
     final SkContourMeasureIter skIterator = iterator.skiaObject;
 
     // When resurrecting we must advance the iterator to the last known

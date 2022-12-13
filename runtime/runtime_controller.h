@@ -358,7 +358,18 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  virtual bool NotifyIdle(fml::TimePoint deadline);
+  virtual bool NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Dart VM that the attached flutter view has been
+  ///             destroyed. This gives the Dart VM to perform some cleanup
+  ///             activities e.g: perform garbage collection to free up any
+  ///             unused memory.
+  ///
+  /// NotifyDestroyed is advisory. The VM may or may not perform any clean up
+  /// activities.
+  ///
+  virtual bool NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be

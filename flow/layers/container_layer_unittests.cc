@@ -100,7 +100,7 @@ TEST_F(ContainerLayerTest, Simple) {
   auto layer = std::make_shared<ContainerLayer>();
   layer->Add(mock_layer);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer->paint_bounds(), child_path.getBounds());
@@ -135,7 +135,7 @@ TEST_F(ContainerLayerTest, Multiple) {
 
   SkRect expected_total_bounds = child_path1.getBounds();
   expected_total_bounds.join(child_path2.getBounds());
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_TRUE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
@@ -173,7 +173,7 @@ TEST_F(ContainerLayerTest, MultipleWithEmpty) {
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
@@ -212,7 +212,7 @@ TEST_F(ContainerLayerTest, NeedsSystemComposite) {
 
   SkRect expected_total_bounds = child_path1.getBounds();
   expected_total_bounds.join(child_path2.getBounds());
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   EXPECT_FALSE(preroll_context()->has_platform_view);
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
@@ -529,7 +529,7 @@ TEST_F(ContainerLayerTest, CollectionCacheableLayer) {
   layer->Add(mock_cacheable_container_layer1);
   layer->Add(mock_layer1);
 
-  preroll_context()->state_stack.set_initial_transform(initial_transform);
+  preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
   // raster cache is null, so no entry
   ASSERT_EQ(preroll_context()->raster_cached_entries->size(),

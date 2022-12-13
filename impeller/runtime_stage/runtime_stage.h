@@ -34,13 +34,21 @@ class RuntimeStage {
 
   const std::shared_ptr<fml::Mapping>& GetCodeMapping() const;
 
+  const std::shared_ptr<fml::Mapping>& GetSkSLMapping() const;
+
+  bool IsDirty() const;
+
+  void SetClean();
+
  private:
   RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::shared_ptr<fml::Mapping> payload_;
   std::string entrypoint_;
   std::shared_ptr<fml::Mapping> code_mapping_;
+  std::shared_ptr<fml::Mapping> sksl_mapping_;
   std::vector<RuntimeUniformDescription> uniforms_;
   bool is_valid_ = false;
+  bool is_dirty_ = true;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeStage);
 };

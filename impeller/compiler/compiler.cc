@@ -35,6 +35,45 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
   sl_compiler->set_msl_options(sl_options);
+
+  // Set metal resource mappings to be consistent with location based mapping
+  // used on other backends when creating fragment shaders. This doesn't seem
+  // to work with the generated bindings for compute shaders, nor for certain
+  // shaders in the flutter/engine tree.
+  if (source_options.remap_samplers) {
+    std::vector<uint32_t> sampler_offsets;
+    ir.for_each_typed_id<spirv_cross::SPIRVariable>(
+        [&](uint32_t, const spirv_cross::SPIRVariable& var) {
+          if (var.storage != spv::StorageClassUniformConstant) {
+            return;
+          }
+          const auto spir_type = sl_compiler->get_type(var.basetype);
+          auto location = sl_compiler->get_decoration(
+              var.self, spv::Decoration::DecorationLocation);
+          if (spir_type.basetype ==
+              spirv_cross::SPIRType::BaseType::SampledImage) {
+            sampler_offsets.push_back(location);
+          }
+        });
+    if (sampler_offsets.size() > 0) {
+      auto start_offset =
+          *std::min_element(sampler_offsets.begin(), sampler_offsets.end());
+      for (auto offset : sampler_offsets) {
+        sl_compiler->add_msl_resource_binding({
+            .stage = spv::ExecutionModel::ExecutionModelFragment,
+            .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
+            .binding = offset,
+            .count = 1u,
+            // A sampled image is both an image and a sampler, so both
+            // offsets need to be set or depending on the partiular shader
+            // the bindings may be incorrect.
+            .msl_texture = offset - start_offset,
+            .msl_sampler = offset - start_offset,
+        });
+      }
+    }
+  }
+
   return CompilerBackend(sl_compiler);
 }
 
@@ -45,10 +84,14 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
   if (source_options.target_platform == TargetPlatform::kOpenGLES) {
-    sl_options.version = 100;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 100;
     sl_options.es = true;
   } else {
-    sl_options.version = 120;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 120;
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
@@ -102,7 +145,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     return {};
   }
   auto* backend = compiler.GetCompiler();
-  if (!EntryPointMustBeNamedMain(source_options.target_platform)) {
+  if (!EntryPointMustBeNamedMain(source_options.target_platform) &&
+      source_options.source_language == SourceLanguage::kGLSL) {
     backend->rename_entry_point("main", source_options.entry_point_name,
                                 ToExecutionModel(source_options.type));
   }
@@ -265,12 +309,24 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
   // here are irrelevant and get in the way of generating reflection code.
   spirv_options.SetGenerateDebugInfo();
 
-  // Expects GLSL 4.60 (Core Profile).
-  // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
-  spirv_options.SetSourceLanguage(
-      shaderc_source_language::shaderc_source_language_glsl);
-  spirv_options.SetForcedVersionProfile(460,
-                                        shaderc_profile::shaderc_profile_core);
+  switch (options_.source_language) {
+    case SourceLanguage::kGLSL:
+      // Expects GLSL 4.60 (Core Profile).
+      // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+      spirv_options.SetSourceLanguage(
+          shaderc_source_language::shaderc_source_language_glsl);
+      spirv_options.SetForcedVersionProfile(
+          460, shaderc_profile::shaderc_profile_core);
+      break;
+    case SourceLanguage::kHLSL:
+      spirv_options.SetSourceLanguage(
+          shaderc_source_language::shaderc_source_language_hlsl);
+      break;
+    case SourceLanguage::kUnknown:
+      COMPILER_ERROR << "Source language invalid.";
+      return;
+  }
+
   SetLimitations(spirv_options);
 
   switch (source_options.target_platform) {
@@ -304,6 +360,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_0);
+      spirv_options.AddMacroDefinition("IMPELLER_GRAPHICS_BACKEND");
       break;
     case TargetPlatform::kSkSL:
       // When any optimization level above 'zero' is enabled, the phi merges at
@@ -317,6 +374,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_0);
+      spirv_options.AddMacroDefinition("SKIA_GRAPHICS_BACKEND");
       break;
     case TargetPlatform::kUnknown:
       COMPILER_ERROR << "Target platform invalid.";
@@ -345,7 +403,9 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
 
   shaderc::Compiler spv_compiler;
   if (!spv_compiler.IsValid()) {
-    COMPILER_ERROR << "Could not initialize the GLSL to SPIRV compiler.";
+    COMPILER_ERROR << "Could not initialize the "
+                   << SourceLanguageToString(options_.source_language)
+                   << " to SPIRV compiler.";
     return;
   }
 
@@ -362,7 +422,8 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           ));
   if (spv_result_->GetCompilationStatus() !=
       shaderc_compilation_status::shaderc_compilation_status_success) {
-    COMPILER_ERROR << "GLSL to SPIRV failed; "
+    COMPILER_ERROR << SourceLanguageToString(options_.source_language)
+                   << " to SPIRV failed; "
                    << ShaderCErrorToString(spv_result_->GetCompilationStatus())
                    << ". " << spv_result_->GetNumErrors() << " error(s) and "
                    << spv_result_->GetNumWarnings() << " warning(s).";

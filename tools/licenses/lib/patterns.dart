@@ -57,6 +57,7 @@ final List<RegExp> copyrightStatementLeadingPatterns = <RegExp>[
   RegExp(r'^ *(?:Portions(?: are)? )?Copyright .+$', caseSensitive: false),
   RegExp(r'^.*All rights? reserved\.$', caseSensitive: false),
   RegExp(r'^ *\(C\) .+$', caseSensitive: false),
+  RegExp(r'^Copyright \(C\) .+$', caseSensitive: false),
   RegExp(r'^:copyright: .+$', caseSensitive: false),
   RegExp(r'[-_a-zA-Z0-9()]+ function provided freely by .+'),
   RegExp(r'^.+ optimized code \(C\) COPYRIGHT .+$', caseSensitive: false),
@@ -78,6 +79,7 @@ final List<RegExp> copyrightStatementPatterns = <RegExp>[
   RegExp(r'^\(Version [-0-9.:, ]+ Copyright .+\)$', caseSensitive: false),
   RegExp(r'^.*(?:All )?rights? reserved\.$', caseSensitive: false),
   RegExp(r'^ *\(C\) .+$', caseSensitive: false),
+  RegExp(r'^Copyright \(C\) .+$', caseSensitive: false),
   RegExp(r'^:copyright: .+$', caseSensitive: false),
   RegExp(r'^ *[0-9][0-9][0-9][0-9].+ [<(].+@.+[)>]$'),
   RegExp(r'^                   [^ ].* [<(].+@.+[)>]$'), // that's exactly the number of spaces to line up with the X if "Copyright (c) 2011 X" is on the previous line
@@ -150,7 +152,7 @@ final List<RegExp> copyrightStatementPatterns = <RegExp>[
   RegExp(r'^California, Lawrence Berkeley Laboratory\.$'),
 
   RegExp(r'^ *Condition of use and distribution are the same than zlib :$'),
-  RegExp(r'^The MIT License:$'),
+  RegExp(r'^(The )?MIT License:?$'),
 
   RegExp(r'^$'), // TODO(ianh): file an issue on what happens if you omit the close quote
 
@@ -548,6 +550,21 @@ final List<LicenseFileReferencePattern> csReferencesByFilename = <LicenseFileRef
       r'Use of this source code is governed by a BSD-style license that can be '
       r'Copyright .+\. All rights reserved\. '
       r'found in the (LICENSE) file\.'
+      .replaceAll(' ', _linebreak),
+      multiLine: true,
+      caseSensitive: false,
+    )
+  ),
+
+  // Seen in Microsoft files
+  LicenseFileReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    fileIndex: 3,
+    pattern: RegExp(
+      kIndent +
+      r'Licensed under the MIT License\. '
+      r'See (License\.txt) in the project root for license information\.'
       .replaceAll(' ', _linebreak),
       multiLine: true,
       caseSensitive: false,
@@ -1206,6 +1223,19 @@ final List<MultipleVersionedLicenseReferencePattern> csReferencesByUrl = <Multip
       caseSensitive: false,
     )
   ),
+
+  // Unicode terms of use
+  MultipleVersionedLicenseReferencePattern(
+    firstPrefixIndex: 1,
+    indentPrefixIndex: 2,
+    licenseIndices: const <int>[3],
+    checkLocalFirst: false,
+    pattern: RegExp(
+      kIndent +
+      r'\n// For terms of use, see (https://www.unicode.org/copyright.html)\n',
+      caseSensitive: false,
+    )
+  ),
 ];
 
 
@@ -1649,7 +1679,7 @@ final List<RegExp> csLicenses = <RegExp>[
     r'^(?:\1\2)?GNU General Public License for more details.\n'
     r'^(?:\1\2)?\n*'
     r'^(?:\1\2)?You should have received a copy of the GNU General Public License\n'
-    r'^(?:\1\2)?along with this program.  If not, see <http://www.gnu.org/licenses/>.  \*/\n'
+    r'^(?:\1\2)?along with this program.  If not, see <https?://www.gnu.org/licenses/>.  \*/\n'
     r'^(?:\1\2)?\n*' +
     kIndent +
     r'As a special exception, you may create a larger work that contains\n'

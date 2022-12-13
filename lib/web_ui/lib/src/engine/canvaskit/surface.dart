@@ -142,11 +142,6 @@ class Surface {
 
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
-    if (useH5vccCanvasKit) {
-      _surface ??= CkSurface(canvasKit.getH5vccSkSurface(), null);
-      return _surface!;
-    }
-
     if (size.isEmpty) {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
@@ -332,7 +327,7 @@ class Surface {
           antialias: _kUsingMSAA ? 1 : 0,
           majorVersion: webGLVersion,
         ),
-      );
+      ).toInt();
 
       _glContext = glContext;
 
@@ -434,8 +429,8 @@ class CkSurface {
 
   int? get context => _glContext;
 
-  int width() => surface.width();
-  int height() => surface.height();
+  int width() => surface.width().toInt();
+  int height() => surface.height().toInt();
 
   void dispose() {
     if (_isDisposed) {

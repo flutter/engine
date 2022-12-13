@@ -98,6 +98,21 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
 
+TEST_F(DisplayListLayerTest, CachingDoesNotChangeCullRect) {
+  const SkPoint layer_offset = SkPoint::Make(10, 10);
+  DisplayListBuilder builder;
+  builder.drawRect({10, 10, 20, 20});
+  auto display_list = builder.Build();
+  auto layer = std::make_shared<DisplayListLayer>(
+      layer_offset, SkiaGPUObject(display_list, unref_queue()), true, false);
+
+  SkRect original_cull_rect = preroll_context()->state_stack.device_cull_rect();
+  use_mock_raster_cache();
+  layer->Preroll(preroll_context());
+  ASSERT_EQ(preroll_context()->state_stack.device_cull_rect(),
+            original_cull_rect);
+}
+
 TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
   const SkPoint layer_offset = SkPoint::Make(1.5f, -0.5f);
   const SkRect picture_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
@@ -422,7 +437,8 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // First Preroll the DisplayListLayer a few times where it does not intersect
   // the cull rect. No caching progress should occur during this time, the
   // access_count should remain 0 because the DisplayList was never "visible".
-  preroll_context()->state_stack.set_initial_cull_rect(missed_cull_rect);
+  ASSERT_TRUE(preroll_context()->state_stack.is_empty());
+  preroll_context()->state_stack.set_preroll_delegate(missed_cull_rect);
   for (int i = 0; i < 10; i++) {
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
@@ -442,7 +458,8 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // the cull rect. No caching progress should occur during this time
   // since this is the first frame in which it was visible, but the
   // count should start incrementing.
-  preroll_context()->state_stack.set_initial_cull_rect(hit_cull_rect);
+  ASSERT_TRUE(preroll_context()->state_stack.is_empty());
+  preroll_context()->state_stack.set_preroll_delegate(hit_cull_rect);
   preroll_context()->raster_cached_entries->clear();
   layer->Preroll(preroll_context());
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kNone);
@@ -460,7 +477,8 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // it does not intersect and it should continue to count these operations
   // even though it is not visible. No actual caching should occur yet,
   // even though we will surpass its threshold.
-  preroll_context()->state_stack.set_initial_cull_rect(missed_cull_rect);
+  ASSERT_TRUE(preroll_context()->state_stack.is_empty());
+  preroll_context()->state_stack.set_preroll_delegate(missed_cull_rect);
   for (int i = 0; i < 10; i++) {
     preroll_context()->raster_cached_entries->clear();
     layer->Preroll(preroll_context());
@@ -480,7 +498,8 @@ TEST_F(DisplayListLayerTest, DisplayListAccessCountDependsOnVisibility) {
   // the cull rect. Since we should have exhausted our access count
   // threshold in the loop above, these operations should result in the
   // DisplayList being cached.
-  preroll_context()->state_stack.set_initial_cull_rect(hit_cull_rect);
+  ASSERT_TRUE(preroll_context()->state_stack.is_empty());
+  preroll_context()->state_stack.set_preroll_delegate(hit_cull_rect);
   preroll_context()->raster_cached_entries->clear();
   layer->Preroll(preroll_context());
   ASSERT_EQ(raster_cache_item->cache_state(), RasterCacheItem::kCurrent);

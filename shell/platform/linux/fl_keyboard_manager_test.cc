@@ -32,20 +32,28 @@
   call_records.clear()
 
 namespace {
+using ::flutter::testing::keycodes::kLogicalAltLeft;
 using ::flutter::testing::keycodes::kLogicalBracketLeft;
 using ::flutter::testing::keycodes::kLogicalComma;
+using ::flutter::testing::keycodes::kLogicalControlLeft;
 using ::flutter::testing::keycodes::kLogicalDigit1;
 using ::flutter::testing::keycodes::kLogicalKeyA;
 using ::flutter::testing::keycodes::kLogicalKeyB;
 using ::flutter::testing::keycodes::kLogicalKeyM;
 using ::flutter::testing::keycodes::kLogicalKeyQ;
+using ::flutter::testing::keycodes::kLogicalMetaLeft;
 using ::flutter::testing::keycodes::kLogicalMinus;
 using ::flutter::testing::keycodes::kLogicalParenthesisRight;
 using ::flutter::testing::keycodes::kLogicalSemicolon;
+using ::flutter::testing::keycodes::kLogicalShiftLeft;
 using ::flutter::testing::keycodes::kLogicalUnderscore;
 
+using ::flutter::testing::keycodes::kPhysicalAltLeft;
+using ::flutter::testing::keycodes::kPhysicalControlLeft;
 using ::flutter::testing::keycodes::kPhysicalKeyA;
 using ::flutter::testing::keycodes::kPhysicalKeyB;
+using ::flutter::testing::keycodes::kPhysicalMetaLeft;
+using ::flutter::testing::keycodes::kPhysicalShiftLeft;
 
 // Hardware key codes.
 typedef std::function<void(bool handled)> AsyncKeyCallback;
@@ -449,7 +457,7 @@ class KeyboardTester {
   void respondToEmbedderCallsWith(bool response) {
     fl_mock_view_set_embedder_handler(
         view_, [response, this](const FlutterKeyEvent* event,
-                                AsyncKeyCallback callback) {
+                                const AsyncKeyCallback& callback) {
           EXPECT_FALSE(during_redispatch_);
           callback(response);
         });
@@ -477,7 +485,7 @@ class KeyboardTester {
       std::vector<CallRecord>& storage) {
     fl_mock_view_set_embedder_handler(
         view_, [&storage, response, this](const FlutterKeyEvent* event,
-                                          AsyncKeyCallback callback) {
+                                          const AsyncKeyCallback& callback) {
           EXPECT_FALSE(during_redispatch_);
           auto new_event = std::make_unique<FlutterKeyEvent>(*event);
           char* new_event_character = cloneString(event->character);
@@ -493,7 +501,7 @@ class KeyboardTester {
 
   void respondToChannelCallsWith(bool response) {
     fl_mock_key_binary_messenger_set_callback_handler(
-        view_->messenger, [response, this](AsyncKeyCallback callback) {
+        view_->messenger, [response, this](const AsyncKeyCallback& callback) {
           EXPECT_FALSE(during_redispatch_);
           callback(response);
         });
@@ -878,6 +886,44 @@ TEST(FlKeyboardManagerTest, CorrectLogicalKeyForLayouts) {
 
   sendTap(kKeyCodeKeyLeftBracket, GDK_KEY_bracketleft, 0);
   VERIFY_DOWN(kLogicalBracketLeft, "[");
+}
+
+TEST(FlKeyboardManagerTest, SynthesizeModifiersIfNeeded) {
+  KeyboardTester tester;
+  std::vector<CallRecord> call_records;
+  tester.recordEmbedderCallsTo(call_records);
+
+  auto verifyModifierIsSynthesized = [&](GdkModifierType mask,
+                                         uint64_t physical, uint64_t logical) {
+    // Modifier is pressed.
+    guint state = mask;
+    fl_keyboard_manager_sync_modifier_if_needed(tester.manager(), state, 1000);
+    EXPECT_EQ(call_records.size(), 1u);
+    EXPECT_KEY_EVENT(call_records[0], kFlutterKeyEventTypeDown, physical,
+                     logical, NULL, true);
+    // Modifier is released.
+    state = state ^ mask;
+    fl_keyboard_manager_sync_modifier_if_needed(tester.manager(), state, 1001);
+    EXPECT_EQ(call_records.size(), 2u);
+    EXPECT_KEY_EVENT(call_records[1], kFlutterKeyEventTypeUp, physical, logical,
+                     NULL, true);
+    call_records.clear();
+  };
+
+  // No modifiers pressed.
+  guint state = 0;
+  fl_keyboard_manager_sync_modifier_if_needed(tester.manager(), state, 1000);
+  EXPECT_EQ(call_records.size(), 0u);
+  call_records.clear();
+
+  // Press and release each modifier once.
+  verifyModifierIsSynthesized(GDK_CONTROL_MASK, kPhysicalControlLeft,
+                              kLogicalControlLeft);
+  verifyModifierIsSynthesized(GDK_META_MASK, kPhysicalMetaLeft,
+                              kLogicalMetaLeft);
+  verifyModifierIsSynthesized(GDK_MOD1_MASK, kPhysicalAltLeft, kLogicalAltLeft);
+  verifyModifierIsSynthesized(GDK_SHIFT_MASK, kPhysicalShiftLeft,
+                              kLogicalShiftLeft);
 }
 
 // The following layout data is generated using DEBUG_PRINT_LAYOUT.

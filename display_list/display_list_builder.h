@@ -29,10 +29,13 @@ class DisplayListBuilder final : public virtual Dispatcher,
                                  public SkRefCnt,
                                  DisplayListOpFlags {
  public:
-  explicit DisplayListBuilder(bool need_produce_rtree)
-      : DisplayListBuilder(kMaxCullRect_, need_produce_rtree) {}
+  static constexpr SkRect kMaxCullRect =
+      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
-  explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect_,
+  explicit DisplayListBuilder(bool need_produce_rtree)
+      : DisplayListBuilder(kMaxCullRect, need_produce_rtree) {}
+
+  explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
                               bool need_produce_rtree = false);
 
   ~DisplayListBuilder();
@@ -344,6 +347,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;
+  void drawTextBlob(const sk_sp<SkTextBlob>& blob,
+                    SkScalar x,
+                    SkScalar y,
+                    const DlPaint& paint);
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
@@ -365,8 +372,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   int nested_op_count_ = 0;
 
   SkRect cull_rect_;
-  static constexpr SkRect kMaxCullRect_ =
-      SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);
@@ -579,7 +584,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   void onSetColorFilter(const DlColorFilter* filter);
   void onSetPathEffect(const DlPathEffect* effect);
   void onSetMaskFilter(const DlMaskFilter* filter);
-  void onSetMaskBlurFilter(SkBlurStyle style, SkScalar sigma);
 
   // The DisplayList had an unbounded call with no cull rect or clip
   // to contain it. Should only be called after the stream is fully

@@ -11,6 +11,7 @@
 #include "flutter/fml/mapping.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
@@ -19,8 +20,18 @@
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
+
+namespace vk {
+
+constexpr const char* kKhronosValidationLayerName =
+    "VK_LAYER_KHRONOS_validation";
+
+bool HasValidationLayers();
+
+}  // namespace vk
 
 class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
  public:
@@ -39,12 +50,23 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   template <typename T>
   bool SetDebugName(T handle, std::string_view label) const {
+    return SetDebugName(*device_, handle, label);
+  }
+
+  template <typename T>
+  static bool SetDebugName(vk::Device device,
+                           T handle,
+                           std::string_view label) {
+    if (!vk::HasValidationLayers()) {
+      // No-op if validation layers are not enabled.
+      return true;
+    }
+
     uint64_t handle_ptr =
         reinterpret_cast<uint64_t>(static_cast<typename T::NativeType>(handle));
 
     std::string label_str = std::string(label);
-
-    auto ret = device_->setDebugUtilsObjectNameEXT(
+    auto ret = device.setDebugUtilsObjectNameEXT(
         vk::DebugUtilsObjectNameInfoEXT()
             .setObjectType(T::objectType)
             .setObjectHandle(handle_ptr)
@@ -64,7 +86,15 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   std::unique_ptr<Surface> AcquireSurface(size_t current_frame);
 
-  std::shared_ptr<DescriptorPoolVK> GetDescriptorPool() const;
+  std::unique_ptr<DescriptorPoolVK> CreateDescriptorPool() const;
+
+#ifdef FML_OS_ANDROID
+  vk::UniqueSurfaceKHR CreateAndroidSurface(ANativeWindow* window) const;
+#endif  // FML_OS_ANDROID
+
+  vk::Queue GetGraphicsQueue() const;
+
+  std::unique_ptr<CommandPoolVK> CreateGraphicsCommandPool() const;
 
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
@@ -76,16 +106,16 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  uint32_t graphics_queue_idx_;
   vk::Queue graphics_queue_;
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
   vk::Queue present_queue_;
   vk::UniqueSurfaceKHR surface_;
+  vk::Format surface_format_;
   std::unique_ptr<SwapchainVK> swapchain_;
-  std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
-  std::shared_ptr<DescriptorPoolVK> descriptor_pool_;
   bool is_valid_ = false;
 
   ContextVK(
@@ -111,10 +141,16 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override;
 
   // |Context|
+  PixelFormat GetColorAttachmentPixelFormat() const override;
+
+  // |Context|
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
   bool SupportsOffscreenMSAA() const override;
+
+  // |Context|
+  const BackendFeatures& GetBackendFeatures() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

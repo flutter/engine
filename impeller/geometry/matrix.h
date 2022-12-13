@@ -122,6 +122,31 @@ struct Matrix {
     // clang-format on
   }
 
+  static Matrix MakeRotation(Quaternion q) {
+    // clang-format off
+    return Matrix(
+      1.0 - 2.0 * q.y * q.y - 2.0 * q.z * q.z,
+      2.0 * q.x * q.y + 2.0 * q.z * q.w,
+      2.0 * q.x * q.z - 2.0 * q.y * q.w,
+      0.0,
+
+      2.0 * q.x * q.y - 2.0 * q.z * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.z * q.z,
+      2.0 * q.y * q.z + 2.0 * q.x * q.w,
+      0.0,
+
+      2.0 * q.x * q.z + 2.0 * q.y * q.w,
+      2.0 * q.y * q.z - 2.0 * q.x * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.y * q.y,
+      0.0,
+
+      0.0,
+      0.0,
+      0.0,
+      1.0);
+    // clang-format on
+  }
+
   static Matrix MakeRotation(Scalar radians, const Vector4& r) {
     const Vector4 v = r.Normalize();
 
@@ -421,7 +446,7 @@ struct Matrix {
     return {
       1.0f / width, 0.0f,           0.0f,                                 0.0f,
       0.0f,         1.0f / height,  0.0f,                                 0.0f,
-      0.0f,         0.0f,           z_far / (z_near - z_far),            -1.0f,
+      0.0f,         0.0f,           z_far / (z_far - z_near),             1.0f,
       0.0f,         0.0f,          -(z_far * z_near) / (z_far - z_near),  0.0f,
     };
     // clang-format on
@@ -434,6 +459,23 @@ struct Matrix {
                                           Scalar z_far) {
     return MakePerspective(fov_y, static_cast<Scalar>(size.width) / size.height,
                            z_near, z_far);
+  }
+
+  static constexpr Matrix MakeLookAt(Vector3 position,
+                                     Vector3 target,
+                                     Vector3 up) {
+    Vector3 forward = (target - position).Normalize();
+    Vector3 right = up.Cross(forward);
+    up = forward.Cross(right);
+
+    // clang-format off
+    return {
+       right.x,              up.x,              forward.x,             0.0f,
+       right.y,              up.y,              forward.y,             0.0f,
+       right.z,              up.z,              forward.z,             0.0f,
+      -right.Dot(position), -up.Dot(position), -forward.Dot(position), 1.0f
+    };
+    // clang-format on
   }
 };
 

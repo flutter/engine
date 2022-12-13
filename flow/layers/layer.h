@@ -119,6 +119,7 @@ struct PaintContext {
   // only when leaf layer tracing is enabled.
   LayerSnapshotStore* layer_snapshot_store = nullptr;
   bool enable_leaf_layer_tracing = false;
+  impeller::AiksContext* aiks_context;
 };
 
 // Represents a single composited layer. Created on the UI thread but then

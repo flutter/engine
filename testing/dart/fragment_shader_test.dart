@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert' as convert;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -20,24 +21,60 @@ void main() async {
     return true;
   }());
 
+  test('impellerc produces reasonable JSON encoded IPLR files', () async {
+    final Directory directory = shaderDirectory('iplr-json');
+    final Object? rawData = convert.json.decode(
+      File(path.join(directory.path, 'ink_sparkle.frag.iplr')).readAsStringSync());
+
+    expect(rawData is Map<String, Object?>, true);
+
+    final Map<String, Object?> data = rawData! as Map<String, Object?>;
+    expect(data['sksl'] is String, true);
+    expect(data['uniforms'] is List<Object?>, true);
+
+    final Object? rawUniformData = (data['uniforms']! as List<Object?>)[0];
+
+    expect(rawUniformData is Map<String, Object?>, true);
+
+    final Map<String, Object?> uniformData = rawUniformData! as Map<String, Object?>;
+
+    expect(uniformData['location'] is int, true);
+  });
+
   test('FragmentShader setSampler throws with out-of-bounds index', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader fragmentShader = program.fragmentShader();
 
     try {
-      fragmentShader.setSampler(1, imageShader);
+      fragmentShader.setImageSampler(1, blueGreenImage);
       fail('Unreachable');
     } catch (e) {
       expect(e, contains('Sampler index out of bounds'));
     } finally {
       fragmentShader.dispose();
-      imageShader.dispose();
       blueGreenImage.dispose();
+    }
+  });
+
+  test('FragmentShader with sampler asserts if sampler is missing when assigned to paint', () async {
+    if (!assertsEnabled) {
+      return;
+    }
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final FragmentShader fragmentShader = program.fragmentShader();
+
+    try {
+      Paint().shader = fragmentShader;
+      fail('Expected to throw');
+    } catch (err) {
+      expect(err.toString(), contains('Invalid FragmentShader blue_green_sampler.frag.iplr'));
+    } finally {
+      fragmentShader.dispose();
     }
   });
 
@@ -46,11 +83,9 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
       final Paint paint = Paint()..shader = shader;  // ignore: unused_local_variable
@@ -60,7 +95,6 @@ void main() async {
     } catch (e) {
       expect(e.toString(), contains('Attempted to set a disposed shader'));
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -88,19 +122,17 @@ void main() async {
     }
   });
 
-  test('Disposed FragmentShader setSampler', () async {
+  test('Disposed FragmentShader setImageSampler', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
-      shader.setSampler(0, imageShader);
+      shader.setImageSampler(0, blueGreenImage);
       if (assertsEnabled) {
         fail('Unreachable');
       }
@@ -115,7 +147,6 @@ void main() async {
         contains('the native peer has been collected'),
       );
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -169,13 +200,10 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -184,13 +212,10 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = _createBlueGreenImageSync();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -305,6 +330,34 @@ void main() async {
     final FragmentShader shader = program.fragmentShader();
     await _expectShaderRendersGreen(shader);
     shader.dispose();
+  });
+
+  // This test can't rely on actual pixels rendered since it needs to run on a
+  // metal shader on iOS. instead parse the source code.
+  test('impellerc orders samplers in metal shader according to declaration and not usage', () async {
+    if (!Platform.isMacOS) {
+      return;
+    }
+    final Directory directory = shaderDirectory('iplr-remap');
+    final String data = readAsStringLossy(File(path.join(directory.path, 'shader_with_samplers.frag.iplr')));
+
+    const String expected = 'texture2d<float> textureA [[texture(0)]],'
+      ' texture2d<float> textureB [[texture(1)]]';
+
+    expect(data, contains(expected));
+  });
+
+  test('impellerc orders samplers in metal shader according to declaration and not usage in glow', () async {
+    if (!Platform.isMacOS) {
+      return;
+    }
+    final Directory directory = shaderDirectory('iplr-remap');
+    final String data = readAsStringLossy(File(path.join(directory.path, 'glow_shader.frag.iplr')));
+
+    const String expected = 'texture2d<float> tInput [[texture(0)]], texture2d<float> tNoise [[texture(1)]], '
+      'sampler tInputSmplr [[sampler(0)]], sampler tNoiseSmplr [[sampler(1)]]';
+
+    expect(data, contains(expected));
   });
 
   // Test all supported GLSL ops. See lib/spirv/lib/src/constants.dart
@@ -460,10 +513,7 @@ Image _createBlueGreenImageSync() {
   }
 }
 
-
-final Float64List _identityMatrix = Float64List.fromList(<double>[
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-]);
+// Ignore invalid utf8 since file is not actually text.
+String readAsStringLossy(File file) {
+  return convert.utf8.decode(file.readAsBytesSync(), allowMalformed: true);
+}

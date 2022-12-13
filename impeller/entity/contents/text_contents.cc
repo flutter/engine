@@ -80,6 +80,7 @@ static bool CommonRender(
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
+  sampler_desc.mip_filter = MipFilter::kNone;
 
   typename FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());
@@ -103,9 +104,9 @@ static bool CommonRender(
   // interpolated vertex information is also used in the fragment shader to
   // sample from the glyph atlas.
 
-  const std::vector<Point> unit_vertex_points = {
-      {0, 0}, {1, 0}, {0, 1}, {1, 1}};
-  const std::vector<uint32_t> indices = {0, 1, 2, 1, 2, 3};
+  const std::array<Point, 4> unit_points = {Point{0, 0}, Point{1, 0},
+                                            Point{0, 1}, Point{1, 1}};
+  const std::array<uint32_t, 6> indices = {0, 1, 2, 1, 2, 3};
 
   VertexBufferBuilder<typename VS::PerVertexData> vertex_builder;
 
@@ -127,11 +128,6 @@ static bool CommonRender(
 
   for (const auto& run : frame.GetRuns()) {
     auto font = run.GetFont();
-    auto glyph_size_ = ISize::Ceil(font.GetMetrics().GetBoundingBox().size);
-    auto glyph_size = Point{static_cast<Scalar>(glyph_size_.width),
-                            static_cast<Scalar>(glyph_size_.height)};
-    auto metrics_offset =
-        Point{font.GetMetrics().min_extent.x, font.GetMetrics().ascent};
 
     for (const auto& glyph_position : run.GetGlyphPositions()) {
       FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
@@ -141,22 +137,21 @@ static bool CommonRender(
         return false;
       }
 
-      auto atlas_position =
-          atlas_glyph_pos->origin + Point{1 / atlas_glyph_pos->size.width,
-                                          1 / atlas_glyph_pos->size.height};
+      auto atlas_position = atlas_glyph_pos->origin;
       auto atlas_glyph_size =
           Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
-      auto offset_glyph_position = glyph_position.position + metrics_offset;
+      auto offset_glyph_position =
+          glyph_position.position + glyph_position.glyph.bounds.origin;
 
-      for (const auto& point : unit_vertex_points) {
+      for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
-        vtx.unit_vertex = point;
-        vtx.glyph_position = offset_glyph_position;
-        vtx.glyph_size = glyph_size;
-        vtx.atlas_position = atlas_position;
-        vtx.atlas_glyph_size = atlas_glyph_size;
+        vtx.unit_position = point;
+        vtx.destination_position = offset_glyph_position + Point(0.5, 0.5);
+        vtx.destination_size = Point(glyph_position.glyph.bounds.size);
+        vtx.source_position = atlas_position + Point(0.5, 0.5);
+        vtx.source_glyph_size = atlas_glyph_size - Point(1.0, 1.0);
         if constexpr (std::is_same_v<TPipeline, GlyphAtlasPipeline>) {
-          vtx.color_glyph =
+          vtx.has_color =
               glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;
         }
         vertex_builder.AppendVertex(std::move(vtx));
@@ -189,9 +184,9 @@ bool TextContents::RenderSdf(const ContentContext& renderer,
   // Information shared by all glyph draw calls.
   Command cmd;
   cmd.label = "TextFrameSDF";
-  cmd.primitive_type = PrimitiveType::kTriangle;
-  cmd.pipeline =
-      renderer.GetGlyphAtlasSdfPipeline(OptionsFromPassAndEntity(pass, entity));
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = PrimitiveType::kTriangle;
+  cmd.pipeline = renderer.GetGlyphAtlasSdfPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
   return CommonRender<GlyphAtlasSdfPipeline>(renderer, entity, pass, color_,
@@ -224,9 +219,9 @@ bool TextContents::Render(const ContentContext& renderer,
   // Information shared by all glyph draw calls.
   Command cmd;
   cmd.label = "TextFrame";
-  cmd.primitive_type = PrimitiveType::kTriangle;
-  cmd.pipeline =
-      renderer.GetGlyphAtlasPipeline(OptionsFromPassAndEntity(pass, entity));
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = PrimitiveType::kTriangle;
+  cmd.pipeline = renderer.GetGlyphAtlasPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
   return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color_,

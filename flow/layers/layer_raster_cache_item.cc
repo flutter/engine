@@ -107,8 +107,6 @@ bool Rasterize(RasterCacheItem::CacheState cache_state,
   state_stack.set_delegate(canvas);
   state_stack.set_checkerboard_func(
       paint_context.state_stack.checkerboard_func());
-  auto mutator = state_stack.save();
-  mutator.transform(canvas->getTotalMatrix());
   PaintContext context = {
       // clang-format off
       .state_stack                   = state_stack,

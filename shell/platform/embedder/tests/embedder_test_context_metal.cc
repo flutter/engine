@@ -47,10 +47,22 @@ TestMetalContext* EmbedderTestContextMetal::GetTestMetalContext() {
   return metal_context_.get();
 }
 
+TestMetalSurface* EmbedderTestContextMetal::GetTestMetalSurface() {
+  return metal_surface_.get();
+}
+
+void EmbedderTestContextMetal::SetPresentCallback(
+    PresentCallback present_callback) {
+  present_callback_ = std::move(present_callback);
+}
+
 bool EmbedderTestContextMetal::Present(int64_t texture_id) {
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return metal_surface_->GetRasterSurfaceSnapshot(); });
   present_count_++;
+  if (present_callback_ != nullptr) {
+    return present_callback_(texture_id);
+  }
   return metal_context_->Present(texture_id);
 }
 
@@ -71,10 +83,18 @@ bool EmbedderTestContextMetal::PopulateExternalTexture(
   }
 }
 
+void EmbedderTestContextMetal::SetNextDrawableCallback(
+    NextDrawableCallback next_drawable_callback) {
+  next_drawable_callback_ = std::move(next_drawable_callback);
+}
+
 FlutterMetalTexture EmbedderTestContextMetal::GetNextDrawable(
     const FlutterFrameInfo* frame_info) {
-  auto texture_info = metal_surface_->GetTextureInfo();
+  if (next_drawable_callback_ != nullptr) {
+    return next_drawable_callback_(frame_info);
+  }
 
+  auto texture_info = metal_surface_->GetTextureInfo();
   FlutterMetalTexture texture;
   texture.struct_size = sizeof(FlutterMetalTexture);
   texture.texture_id = texture_info.texture_id;

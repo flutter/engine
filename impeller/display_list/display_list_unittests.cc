@@ -2,9 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <array>
+#include <cmath>
+#include <memory>
+#include <vector>
+
 #include "display_list/display_list_blend_mode.h"
 #include "display_list/display_list_color.h"
 #include "display_list/display_list_color_filter.h"
+#include "display_list/display_list_color_source.h"
 #include "display_list/display_list_image_filter.h"
 #include "display_list/display_list_paint.h"
 #include "display_list/display_list_tile_mode.h"
@@ -14,13 +20,15 @@
 #include "flutter/testing/testing.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_playground.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
-#include "include/core/SkRRect.h"
 #include "third_party/imgui/imgui.h"
+#include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkClipOp.h"
 #include "third_party/skia/include/core/SkColor.h"
 #include "third_party/skia/include/core/SkPathBuilder.h"
+#include "third_party/skia/include/core/SkRRect.h"
 
 namespace impeller {
 namespace testing {
@@ -653,26 +661,47 @@ TEST_P(DisplayListTest, CanDrawZeroLengthLine) {
 
 TEST_P(DisplayListTest, CanDrawShadow) {
   flutter::DisplayListBuilder builder;
-  std::array<SkPath, 3> paths = {
+
+  auto content_scale = GetContentScale() * 0.8;
+  builder.scale(content_scale.x, content_scale.y);
+
+  constexpr size_t star_spikes = 5;
+  constexpr SkScalar half_spike_rotation = kPi / star_spikes;
+  constexpr SkScalar radius = 40;
+  constexpr SkScalar spike_size = 10;
+  constexpr SkScalar outer_radius = radius + spike_size;
+  constexpr SkScalar inner_radius = radius - spike_size;
+  std::array<SkPoint, star_spikes * 2> star;
+  for (size_t i = 0; i < star_spikes; i++) {
+    const SkScalar rotation = half_spike_rotation * i * 2;
+    star[i * 2] = SkPoint::Make(50 + std::sin(rotation) * outer_radius,
+                                50 - std::cos(rotation) * outer_radius);
+    star[i * 2 + 1] = SkPoint::Make(
+        50 + std::sin(rotation + half_spike_rotation) * inner_radius,
+        50 - std::cos(rotation + half_spike_rotation) * inner_radius);
+  }
+
+  std::array<SkPath, 4> paths = {
       SkPath{}.addRect(SkRect::MakeXYWH(0, 0, 200, 100)),
       SkPath{}.addRRect(
-          SkRRect::MakeRectXY(SkRect::MakeXYWH(0, 0, 200, 100), 30, 30)),
+          SkRRect::MakeRectXY(SkRect::MakeXYWH(20, 0, 200, 100), 30, 30)),
       SkPath{}.addCircle(100, 50, 50),
+      SkPath{}.addPoly(star.data(), star.size(), true),
   };
   builder.setColor(flutter::DlColor::kWhite());
   builder.drawPaint();
   builder.setColor(flutter::DlColor::kCyan());
-  builder.translate(100, 100);
+  builder.translate(100, 50);
   for (size_t x = 0; x < paths.size(); x++) {
     builder.save();
-    for (size_t y = 0; y < 5; y++) {
-      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 5, false,
+    for (size_t y = 0; y < 6; y++) {
+      builder.drawShadow(paths[x], flutter::DlColor::kBlack(), 3 + y * 8, false,
                          1);
       builder.drawPath(paths[x]);
-      builder.translate(0, 200);
+      builder.translate(0, 150);
     }
     builder.restore();
-    builder.translate(300, 0);
+    builder.translate(250, 0);
   }
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -956,6 +985,176 @@ TEST_P(DisplayListTest, CanBlendDstOverAndDstCorrectly) {
     builder.restore();
   }
 
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, CanDrawCorrectlyWithColorFilterAndImageFilter) {
+  flutter::DisplayListBuilder builder;
+  const float green_color_matrix[20] = {
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 1,  //
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 1, 0,  //
+  };
+  const float blue_color_matrix[20] = {
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 0,  //
+      0, 0, 0, 0, 1,  //
+      0, 0, 0, 1, 0,  //
+  };
+  auto green_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(green_color_matrix);
+  auto blue_color_filter =
+      std::make_shared<flutter::DlMatrixColorFilter>(blue_color_matrix);
+  auto blue_image_filter =
+      std::make_shared<flutter::DlColorFilterImageFilter>(blue_color_filter);
+
+  flutter::DlPaint paint;
+  paint.setColor(flutter::DlColor::kRed());
+  paint.setColorFilter(green_color_filter);
+  paint.setImageFilter(blue_image_filter);
+  builder.drawRect(SkRect::MakeLTRB(100, 100, 500, 500), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
+  auto blur_filter = std::make_shared<flutter::DlBlurMaskFilter>(
+      SkBlurStyle::kNormal_SkBlurStyle, 10);
+
+  flutter::DisplayListBuilder builder;
+
+  std::array<flutter::DlColor, 2> colors = {flutter::DlColor::kBlue(),
+                                            flutter::DlColor::kGreen()};
+  std::array<float, 2> stops = {0, 1};
+  std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
+      std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
+      flutter::DlColorSource::MakeLinear(
+          SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
+          stops.data(), flutter::DlTileMode::kClamp)};
+
+  int offset = 100;
+  for (auto color_source : color_sources) {
+    flutter::DlPaint paint;
+    paint.setColorSource(color_source);
+    paint.setMaskFilter(blur_filter);
+
+    paint.setDrawStyle(flutter::DlDrawStyle::kFill);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(100, offset, 100, 50), 30, 30),
+        paint);
+    paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+    paint.setStrokeWidth(10);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(300, offset, 100, 50), 30, 30),
+        paint);
+
+    offset += 100;
+  }
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
+                                          flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kWhite()};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      /*texture_coorindates=*/nullptr, colors.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColor(flutter::DlColor::kRed().modulateOpacity(0.5));
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      /*texture_coorindates=*/nullptr, /*colors=*/nullptr);
+
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed()};
+  const float stops[2] = {0.0, 1.0};
+
+  auto linear = flutter::DlColorSource::MakeLinear(
+      {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
+      flutter::DlTileMode::kRepeat);
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColorSource(linear);
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
+  std::vector<SkPoint> positions = {
+      SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
+      SkPoint::Make(200, 500)};
+  std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 6, positions.data(),
+      /*texture_coorindates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColor(flutter::DlColor::kWhite());
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawShapes) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeJoin> joins = {
+      flutter::DlStrokeJoin::kBevel,
+      flutter::DlStrokeJoin::kRound,
+      flutter::DlStrokeJoin::kMiter,
+  };
+  flutter::DlPaint paint =                            //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kWhite())       //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+  flutter::DlPaint stroke_paint =                       //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kWhite())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(10);
+  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+
+  builder.translate(300, 50);
+  builder.scale(0.8, 0.8);
+  for (auto join : joins) {
+    paint.setStrokeJoin(join);
+    stroke_paint.setStrokeJoin(join);
+    builder.drawRect(SkRect::MakeXYWH(0, 0, 100, 100), paint);
+    builder.drawRect(SkRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 150, 100, 100), 30, 30),
+        stroke_paint);
+    builder.drawCircle({350, 50}, 50, paint);
+    builder.drawCircle({350, 200}, 50, stroke_paint);
+    builder.translate(0, 300);
+  }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 

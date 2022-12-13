@@ -118,8 +118,31 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathClip) {
                                                 SkClipOp::kIntersect}},
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawPathData{child1_path, child1_paint}},
+                // Child 2 is rendered when using Skia as a state delegate
+                // because the quickReject tests are conservative.
+                MockCanvas::DrawCall{
+                    1, MockCanvas::DrawPathData{child2_path, child2_paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
+  DisplayListBuilder expected_builder;
+  {  // layer::Paint()
+    expected_builder.drawPath(
+        layer_path, DlPaint().setColor(DlColor::kGreen()).setAntiAlias(true));
+    expected_builder.save();
+    {
+      expected_builder.clipPath(layer_path, SkClipOp::kIntersect, false);
+      {  // child1::Paint()
+        expected_builder.drawPath(
+            child1_path,
+            DlPaint().setColor(DlColor::kRed()).setAntiAlias(true));
+      }
+      // child2::Paint() is not called due to layer cullling
+      // This is the expected and intended behavior.
+    }
+    expected_builder.restore();
+  }
+  layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathNoClip) {

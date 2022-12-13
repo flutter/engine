@@ -164,7 +164,7 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToProduceRtree) {
+TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
       DisplayListBuilder buider1(/*need_produce_rtree=*/false);
@@ -1671,6 +1671,26 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
   test_rtree(rtree, {59, 59, 65, 65}, rects, {1});
 
   // Hitting both drawRect calls
+  test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, NestedDisplayListRTreesAreSparse) {
+  DisplayListBuilder nested_dl_builder(/**need_produce_rtree=*/true);
+  nested_dl_builder.drawRect({10, 10, 20, 20});
+  nested_dl_builder.drawRect({50, 50, 60, 60});
+  auto nested_display_list = nested_dl_builder.Build();
+
+  DisplayListBuilder builder(/**need_produce_rtree=*/true);
+  builder.drawDisplayList(nested_display_list);
+  auto display_list = builder.Build();
+
+  auto rtree = display_list->rtree();
+  std::vector<SkRect> rects = {
+      {10, 10, 20, 20},
+      {50, 50, 60, 60},
+  };
+
+  // Hitting both sub-dl drawRect calls
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 

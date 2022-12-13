@@ -58,7 +58,9 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
                std::unique_ptr<TextInputManager> text_input_manager)
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
-      text_input_manager_(std::move(text_input_manager)) {
+      text_input_manager_(std::move(text_input_manager)),
+      accessibility_root_(nullptr),
+      ax_fragment_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
   // kWmDpiChangedBeforeParent message.
@@ -106,20 +108,13 @@ void Window::InitializeChild(const char* title,
     OutputDebugString(message);
     LocalFree(message);
   }
-  DEVMODE dmi;
-  ZeroMemory(&dmi, sizeof(dmi));
-  dmi.dmSize = sizeof(dmi);
-  if (EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dmi)) {
-    directManipulationPollingRate_ = dmi.dmDisplayFrequency;
-  } else {
-    OutputDebugString(
-        L"Failed to get framerate, will use default of 60 Hz for gesture "
-        L"polling.");
-  }
   SetUserObjectInformationA(GetCurrentProcess(),
                             UOI_TIMERPROC_EXCEPTION_SUPPRESSION, FALSE, 1);
-  SetTimer(result, kDirectManipulationTimer,
-           1000 / directManipulationPollingRate_, nullptr);
+  // SetTimer is not precise, if a 16 ms interval is requested, it will instead
+  // often fire in an interval of 32 ms. Providing a value of 14 will ensure it
+  // runs every 16 ms, which will allow for 60 Hz trackpad gesture events, which
+  // is the maximal frequency supported by SetTimer.
+  SetTimer(result, kDirectManipulationTimer, 14, nullptr);
   direct_manipulation_owner_ = std::make_unique<DirectManipulationOwner>(this);
   direct_manipulation_owner_->Init(width, height);
 }
@@ -206,16 +201,39 @@ LRESULT Window::OnGetObject(UINT const message,
   }
 
   gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
+  // TODO(schectman): UIA is currently disabled by default.
+  // https://github.com/flutter/flutter/issues/114547
   if (is_uia_request && root_view) {
-    // TODO(cbracken): https://github.com/flutter/flutter/issues/94782
-    // Implement when we adopt UIA support.
+#ifdef FLUTTER_ENGINE_USE_UIA
+    if (!ax_fragment_root_) {
+      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
+          window_handle_, GetAxFragmentRootDelegate());
+    }
+
+    // Retrieve UIA object for the root view.
+    Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
+    if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
+            IID_PPV_ARGS(&root)))) {
+      // Return the UIA object via UiaReturnRawElementProvider(). See:
+      // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
+      reference_result = UiaReturnRawElementProvider(window_handle_, wparam,
+                                                     lparam, root.Get());
+    } else {
+      FML_LOG(ERROR) << "Failed to query AX fragment root.";
+    }
+#endif  // FLUTTER_ENGINE_USE_UIA
   } else if (is_msaa_request && root_view) {
+    // Create the accessibility root if it does not already exist.
+    if (!accessibility_root_) {
+      CreateAccessibilityRootNode();
+    }
     // Return the IAccessible for the root view.
-    Microsoft::WRL::ComPtr<IAccessible> root(root_view);
-    LRESULT lresult = LresultFromObject(IID_IAccessible, wparam, root.Get());
-    return lresult;
+    // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
+    accessibility_root_->SetWindow(root_view);
+    Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
+    reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
   }
-  return 0;
+  return reference_result;
 }
 
 void Window::OnImeSetContext(UINT const message,
@@ -480,8 +498,6 @@ Window::HandleMessage(UINT const message,
     case WM_TIMER:
       if (wparam == kDirectManipulationTimer) {
         direct_manipulation_owner_->Update();
-        SetTimer(window_handle_, kDirectManipulationTimer,
-                 1000 / directManipulationPollingRate_, nullptr);
         return 0;
       }
       break;
@@ -596,6 +612,11 @@ void Window::Destroy() {
     window_handle_ = nullptr;
   }
 
+  if (accessibility_root_) {
+    accessibility_root_->Release();
+    accessibility_root_ = nullptr;
+  }
+
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 
@@ -646,6 +667,13 @@ bool Window::GetHighContrastEnabled() {
                   << "support only for Windows 8 + ";
     return false;
   }
+}
+
+void Window::CreateAccessibilityRootNode() {
+  if (accessibility_root_) {
+    accessibility_root_->Release();
+  }
+  accessibility_root_ = AccessibilityRootNode::Create();
 }
 
 }  // namespace flutter

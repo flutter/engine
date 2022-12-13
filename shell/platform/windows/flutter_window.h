@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 
-#include <windowsx.h>
-
 #include <iostream>
 #include <string>
 #include <vector>
@@ -132,6 +130,9 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
   // |FlutterWindowBindingHandler|
+  void SetFlutterCursor(HCURSOR cursor) override;
+
+  // |FlutterWindowBindingHandler|
   void OnWindowResized() override;
 
   // |FlutterWindowBindingHandler|
@@ -147,6 +148,12 @@ class FlutterWindow : public Window, public WindowBindingHandler {
 
   // |WindowBindingHandler|
   void SendInitialAccessibilityFeatures() override;
+
+  // |WindowBindingHandler|
+  AccessibilityRootNode* GetAccessibilityRootNode() override;
+
+  // |Window|
+  ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
 
  private:
   // A pointer to a FlutterWindowsView that can be used to update engine

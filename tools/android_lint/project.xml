@@ -106,6 +106,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/DeferredComponentManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/deferredcomponents/PlayStoreDeferredComponentManager.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroup.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/FlutterEngineGroupCache.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewRegistry.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/VirtualDisplayController.java" />
@@ -113,6 +114,7 @@
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/SingleViewPresentation.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewFactory.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/AccessibilityEventsDelegate.java" />
+    <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformOverlayView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformView.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsAccessibilityDelegate.java" />
     <src file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewWrapper.java" />
