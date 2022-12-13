@@ -469,10 +469,12 @@ std::shared_ptr<GlyphAtlas> TextRenderContextSkia::CreateGlyphAtlas(
   if (CanAppendToExistingAtlas(last_atlas, new_glyphs, glyph_positions,
                                atlas_context->GetAtlasSize(),
                                atlas_context->GetRectPacker())) {
-    // The old bitmap will be reused and only the additional glyphs will be added.
+    // The old bitmap will be reused and only the additional glyphs will be
+    // added.
 
     // ---------------------------------------------------------------------------
-    // Step 4: Record the positions in the glyph atlas of the newly added glyphs.
+    // Step 4: Record the positions in the glyph atlas of the newly added
+    // glyphs.
     // ---------------------------------------------------------------------------
     for (size_t i = 0, count = glyph_positions.size(); i < count; i++) {
       last_atlas->AddTypefaceGlyphPosition(new_glyphs[i], glyph_positions[i]);
