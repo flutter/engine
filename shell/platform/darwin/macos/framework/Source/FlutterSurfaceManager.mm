@@ -109,17 +109,22 @@
   }
 }
 
+static CGSize GetRequiredFrameSize(NSArray<FlutterSurfacePresentInfo*>* surfaces) {
+  CGSize size = CGSizeZero;
+  for (FlutterSurfacePresentInfo* info in surfaces) {
+    size = CGSizeMake(std::max(size.width, info.offset.x + info.surface.size.width),
+                      std::max(size.height, info.offset.y + info.surface.size.height));
+  }
+  return size;
+}
+
 - (void)present:(NSArray<FlutterSurfacePresentInfo*>*)surfaces notify:(dispatch_block_t)notify {
   id<MTLCommandBuffer> commandBuffer = [_commandQueue commandBuffer];
   [commandBuffer commit];
   [commandBuffer waitUntilScheduled];
 
   // Get the actual dimensions of the frame (relevant for thread synchronizer).
-  CGSize size = CGSizeZero;
-  for (FlutterSurfacePresentInfo* info in surfaces) {
-    size = CGSizeMake(std::max(size.width, info.offset.x + info.surface.size.width),
-                      std::max(size.height, info.offset.y + info.surface.size.height));
-  }
+  CGSize size = GetRequiredFrameSize(surfaces);
 
   [_delegate onPresent:size
              withBlock:^{
