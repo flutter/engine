@@ -95,9 +95,7 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     // FlutterMetalTexture has texture `null`, therefore is discarded.
     return FlutterMetalTexture{};
   }
-  FlutterSurface* surface = [view.surfaceManager surfaceForSize:size];
-  FlutterMetalTexture texture = surface.asFlutterMetalTexture;
-  return texture;
+  return [view.surfaceManager surfaceForSize:size].asFlutterMetalTexture;
 }
 
 - (BOOL)present:(uint64_t)viewId texture:(const FlutterMetalTexture*)texture {
