@@ -121,7 +121,7 @@ TEST(FlutterSurfaceManager, BackBufferCacheDoesNotLeak) {
   EXPECT_EQ(surfaceManager.backBufferCache.count, 0ul);
 }
 
-TEST(FlutterSurfaceManager, SurfaceCycle) {
+TEST(FlutterSurfaceManager, SurfacesAreRecycled) {
   TestView* testView = [[TestView alloc] init];
   FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
 
