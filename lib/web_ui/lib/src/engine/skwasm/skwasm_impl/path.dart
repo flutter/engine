@@ -1,7 +1,7 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:ui/src/engine.dart' as engine;
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 import 'raw/raw_memory.dart';
 import 'raw/raw_path.dart';
@@ -204,7 +204,7 @@ class SkwasmPath implements ui.Path {
     assert(path is SkwasmPath);
     withStackScope((StackScope s) {
       final Pointer<Float> convertedMatrix =
-          s.convertMatrix4toSkMatrix(matrix4 ?? engine.Matrix4.identity().toFloat64());
+          s.convertMatrix4toSkMatrix(matrix4 ?? Matrix4.identity().toFloat64());
       convertedMatrix[2] += offset.dx;
       convertedMatrix[5] += offset.dy;
       pathAddPath(_handle, (path as SkwasmPath)._handle, convertedMatrix, extend);
@@ -222,7 +222,7 @@ class SkwasmPath implements ui.Path {
 
   @override
   ui.Path shift(ui.Offset offset) =>
-    transform(engine.Matrix4.translationValues(offset.dx, offset.dy, 0.0).toFloat64());
+    transform(Matrix4.translationValues(offset.dx, offset.dy, 0.0).toFloat64());
 
   @override
   ui.Path transform(Float64List matrix4) {

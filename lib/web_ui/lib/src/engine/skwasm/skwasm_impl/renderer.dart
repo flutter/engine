@@ -6,17 +6,13 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine/skwasm/skwasm_impl/src/canvas.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl/src/paint.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl/src/picture.dart';
-import 'package:ui/src/engine/skwasm/skwasm_impl/src/vertices.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../embedder.dart';
 import '../../fonts.dart';
 import '../../html_image_codec.dart';
 import '../../renderer.dart';
-import 'src/path.dart';
 
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
