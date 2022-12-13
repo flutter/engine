@@ -54,9 +54,6 @@
     return;
   }
 
-  [CATransaction begin];
-  [CATransaction setDisableActions:YES];
-
   [self drain];
 
   notify();
@@ -72,8 +69,6 @@
   }
 
   _beginResizeWaiting = NO;
-
-  [CATransaction commit];
 }
 
 - (void)performCommit:(CGSize)size notify:(nonnull dispatch_block_t)notify {
