@@ -66,8 +66,8 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
-@property(nonatomic, assign) Boolean keyboardAnimationIsShowing;
-@property(nonatomic, assign) Boolean keyboardAnimationIsCompounding;
+@property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
+@property(nonatomic, assign) BOOL keyboardAnimationIsCompounding;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) CGFloat originalViewInsetBottom;
 
@@ -1317,14 +1317,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     self.targetViewInsetBottom = 0;
   }
 
-  bool keyboardIsShowing = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
+  bool keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
 
   // Flag for simultaneous compounding animation calls.
-  self.keyboardAnimationIsCompounding = (self.keyboardAnimationIsShowing && keyboardIsShowing) ||
-                                        (!self.keyboardAnimationIsShowing && !keyboardIsShowing);
+  self.keyboardAnimationIsCompounding = self.keyboardAnimationIsShowing == keyboardWillShow;
 
-  // Mark keyboard as showing or hiding
-  self.keyboardAnimationIsShowing = keyboardIsShowing;
+  // Mark keyboard as showing or hiding.
+  self.keyboardAnimationIsShowing = keyboardWillShow;
 
   [self startKeyBoardAnimation:duration];
 }
