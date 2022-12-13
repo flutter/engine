@@ -143,12 +143,14 @@ class TestFileFixture {
 }
 
 void main() {
+  final String formatterPath =
+      '${repoDir.path}/ci/format.${io.Platform.isWindows ? 'bat' : 'sh'}';
+
   test('Can fix C++ formatting errors', () {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.clang);
     try {
       fixture.gitAdd();
-      io.Process.runSync('${repoDir.path}/ci/format.bat',
-          <String>['--check', 'clang', '--fix'],
+      io.Process.runSync(formatterPath, <String>['--check', 'clang', '--fix'],
           workingDirectory: repoDir.path);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
@@ -164,8 +166,7 @@ void main() {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.gn);
     try {
       fixture.gitAdd();
-      io.Process.runSync(
-          '${repoDir.path}/ci/format.bat', <String>['--check', 'gn', '--fix'],
+      io.Process.runSync(formatterPath, <String>['--check', 'gn', '--fix'],
           workingDirectory: repoDir.path);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
@@ -181,8 +182,7 @@ void main() {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.java);
     try {
       fixture.gitAdd();
-      io.Process.runSync(
-          '${repoDir.path}/ci/format.bat', <String>['--check', 'java', '--fix'],
+      io.Process.runSync(formatterPath, <String>['--check', 'java', '--fix'],
           workingDirectory: repoDir.path);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
@@ -198,8 +198,7 @@ void main() {
     final TestFileFixture fixture = TestFileFixture(target.FormatCheck.python);
     try {
       fixture.gitAdd();
-      io.Process.runSync('${repoDir.path}/ci/format.bat',
-          <String>['--check', 'python', '--fix'],
+      io.Process.runSync(formatterPath, <String>['--check', 'python', '--fix'],
           workingDirectory: repoDir.path);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
@@ -216,8 +215,8 @@ void main() {
         TestFileFixture(target.FormatCheck.whitespace);
     try {
       fixture.gitAdd();
-      io.Process.runSync('${repoDir.path}/ci/format.bat',
-          <String>['--check', 'whitespace', '--fix'],
+      io.Process.runSync(
+          formatterPath, <String>['--check', 'whitespace', '--fix'],
           workingDirectory: repoDir.path);
 
       final Iterable<FileContentPair> files = fixture.getFileContents();
