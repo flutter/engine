@@ -46,8 +46,8 @@
                                delegate:(nonnull id<FlutterSurfaceManagerDelegate>)delegate;
 
 /**
- * Returns back buffer surface for given size that Flutter can render content to.
- * Will return cached surface if one is available, or create new one otherwise.
+ * Returns a back buffer surface of the given size to which Flutter can render content.
+ * A cached surface will be returned if available; otherwise a new one will be created.
  *
  * Must be called on raster thread.
  */
