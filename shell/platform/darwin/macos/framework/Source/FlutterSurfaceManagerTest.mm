@@ -58,7 +58,7 @@ static FlutterSurfacePresentInfo* CreatePresentInfo(FlutterSurface* surface,
   return res;
 }
 
-TEST(FlutterSurfaceManager, MetalTexture) {
+TEST(FlutterSurfaceManager, MetalTextureSizeMatchesSurfaceSize) {
   TestView* testView = [[TestView alloc] init];
   FlutterSurfaceManager* surfaceManager = CreateSurfaceManager(testView);
 
