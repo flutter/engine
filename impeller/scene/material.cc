@@ -18,6 +18,8 @@ namespace scene {
 /// Material
 ///
 
+Material::~Material() = default;
+
 std::unique_ptr<UnlitMaterial> Material::MakeUnlit() {
   return std::make_unique<UnlitMaterial>();
 }
@@ -47,12 +49,18 @@ SceneContextOptions Material::GetContextOptions(const RenderPass& pass) const {
 /// UnlitMaterial
 ///
 
+UnlitMaterial::~UnlitMaterial() = default;
+
 void UnlitMaterial::SetColor(Color color) {
   color_ = color;
 }
 
 void UnlitMaterial::SetColorTexture(std::shared_ptr<Texture> color_texture) {
   color_texture_ = std::move(color_texture);
+}
+
+void UnlitMaterial::SetVertexColorWeight(Scalar weight) {
+  vertex_color_weight_ = weight;
 }
 
 // |Material|
@@ -69,6 +77,7 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
   // Uniform buffer.
   UnlitPipeline::FragmentShader::FragInfo info;
   info.color = color_;
+  info.vertex_color_weight = vertex_color_weight_;
   UnlitPipeline::FragmentShader::BindFragInfo(command,
                                               buffer.EmplaceUniform(info));
 
@@ -88,6 +97,8 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
 //------------------------------------------------------------------------------
 /// StandardMaterial
 ///
+
+StandardMaterial::~StandardMaterial() = default;
 
 void StandardMaterial::SetAlbedo(Color albedo) {
   albedo_ = albedo;

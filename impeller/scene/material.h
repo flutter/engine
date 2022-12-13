@@ -23,6 +23,8 @@ class StandardMaterial;
 
 class Material {
  public:
+  virtual ~Material();
+
   struct BlendConfig {
     BlendOperation color_op = BlendOperation::kAdd;
     BlendFactor source_color_factor = BlendFactor::kOne;
@@ -62,9 +64,13 @@ class Material {
 
 class UnlitMaterial final : public Material {
  public:
+  ~UnlitMaterial();
+
   void SetColor(Color color);
 
   void SetColorTexture(std::shared_ptr<Texture> color_texture);
+
+  void SetVertexColorWeight(Scalar weight);
 
   // |Material|
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -79,10 +85,13 @@ class UnlitMaterial final : public Material {
  private:
   Color color_ = Color::White();
   std::shared_ptr<Texture> color_texture_;
+  Scalar vertex_color_weight_ = 1;
 };
 
 class StandardMaterial final : public Material {
  public:
+  ~StandardMaterial();
+
   void SetAlbedo(Color albedo);
   void SetRoughness(Scalar roughness);
   void SetMetallic(Scalar metallic);

@@ -48,7 +48,7 @@ void Switches::PrintHelp(std::ostream& stream) {
   }
   stream << " ]" << std::endl;
   stream << "--input=<source_file>" << std::endl;
-  stream << "[optional] --input-kind={";
+  stream << "[optional] --input-type={";
   for (const auto& source_type : kKnownSourceTypes) {
     stream << source_type.first << ", ";
   }
@@ -71,6 +71,9 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
   stream << "[optional] --gles-language-verision=<number>" << std::endl;
   stream << "[optional] --json" << std::endl;
+  stream << "[optional] --remap-samplers (force metal sampler index to match "
+            "declared order)"
+         << std::endl;
 }
 
 Switches::Switches() = default;
@@ -125,15 +128,12 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
       depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
       json_format(command_line.HasOption("json")),
+      remap_samplers(command_line.HasOption("remap-samplers")),
       gles_language_version(
           stoi(command_line.GetOptionValueWithDefault("gles-language-version",
                                                       "0"))),
       entry_point(
           command_line.GetOptionValueWithDefault("entry-point", "main")) {
-  if (!working_directory || !working_directory->is_valid()) {
-    return;
-  }
-
   auto language =
       command_line.GetOptionValueWithDefault("source-language", "glsl");
   std::transform(language.begin(), language.end(), language.begin(),
@@ -142,6 +142,10 @@ Switches::Switches(const fml::CommandLine& command_line)
     source_language = SourceLanguage::kGLSL;
   } else if (language == "hlsl") {
     source_language = SourceLanguage::kHLSL;
+  }
+
+  if (!working_directory || !working_directory->is_valid()) {
+    return;
   }
 
   for (const auto& include_dir_path : command_line.GetOptionValues("include")) {
@@ -196,7 +200,9 @@ bool Switches::AreValid(std::ostream& explain) const {
   }
 
   if (!working_directory || !working_directory->is_valid()) {
-    explain << "Could not figure out working directory." << std::endl;
+    explain << "Could not open the working directory: \""
+            << Utf8FromPath(std::filesystem::current_path()).c_str() << "\""
+            << std::endl;
     valid = false;
   }
 

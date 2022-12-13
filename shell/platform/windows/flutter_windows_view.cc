@@ -63,8 +63,6 @@ void FlutterWindowsView::SetEngine(
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
-  platform_handler_ =
-      std::make_unique<PlatformHandler>(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
                                                     binding_handler_.get());
 
@@ -675,6 +673,10 @@ void FlutterWindowsView::NotifyWinEventWrapper(DWORD event,
     NotifyWinEvent(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
                    AccessibilityRootNode::kAlertChildId);
   }
+}
+
+ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
+  return engine_->accessibility_bridge().lock().get();
 }
 
 }  // namespace flutter

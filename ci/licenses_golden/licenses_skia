@@ -1,4 +1,4 @@
-Signature: 532824606ea0e9dba7ad4449564bab81
+Signature: 734f452db823000268dff4a6e6d2e13e
 
 UNUSED LICENSES:
 
@@ -534,6 +534,9 @@ FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/Dockerfile
 FILE: ../../../third_party/skia/docker/skia-with-swift-shader-base/build-with-swift-shader-and-run
 FILE: ../../../third_party/skia/example/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/bazel_test/BUILD.bazel
+FILE: ../../../third_party/skia/experimental/bazel_test/base/BUILD.bazel
+FILE: ../../../third_party/skia/experimental/bazel_test/client/BUILD.bazel
+FILE: ../../../third_party/skia/experimental/bazel_test/core/BUILD.bazel
 FILE: ../../../third_party/skia/experimental/docs/animationCommon.js
 FILE: ../../../third_party/skia/experimental/docs/backend.js
 FILE: ../../../third_party/skia/experimental/docs/canvasBackend.js
@@ -880,6 +883,7 @@ FILE: ../../../third_party/skia/infra/bots/task_drivers/push_bazel_apps_from_was
 FILE: ../../../third_party/skia/infra/bots/task_drivers/recreate_skps/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/run_gn_to_bp/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/task_drivers/run_wasm_gm_tests/BUILD.bazel
+FILE: ../../../third_party/skia/infra/bots/task_drivers/toolchain_layering_check/BUILD.bazel
 FILE: ../../../third_party/skia/infra/bots/tasks.json
 FILE: ../../../third_party/skia/infra/bots/tools/luci-go/linux64/isolate.sha1
 FILE: ../../../third_party/skia/infra/bots/tools/luci-go/mac64/isolate.sha1
@@ -1178,6 +1182,7 @@ FILE: ../../../third_party/skia/src/utils/win/BUILD.bazel
 FILE: ../../../third_party/skia/src/xml/BUILD.bazel
 FILE: ../../../third_party/skia/src/xps/BUILD.bazel
 FILE: ../../../third_party/skia/toolchain/BUILD.bazel
+FILE: ../../../third_party/skia/toolchain/clang_layering_check.bzl
 FILE: ../../../third_party/skia/toolchain/download_linux_amd64_toolchain.bzl
 FILE: ../../../third_party/skia/toolchain/download_mac_toolchain.bzl
 FILE: ../../../third_party/skia/toolchain/download_toolchains.bzl
@@ -2018,7 +2023,6 @@ FILE: ../../../third_party/skia/include/ports/SkTypeface_win.h
 FILE: ../../../third_party/skia/include/private/SkTArray.h
 FILE: ../../../third_party/skia/include/utils/SkNWayCanvas.h
 FILE: ../../../third_party/skia/include/utils/mac/SkCGUtils.h
-FILE: ../../../third_party/skia/samplecode/Sample.h
 FILE: ../../../third_party/skia/src/core/SkAAClip.cpp
 FILE: ../../../third_party/skia/src/core/SkAAClip.h
 FILE: ../../../third_party/skia/src/core/SkAdvancedTypefaceMetrics.h
@@ -3594,8 +3598,6 @@ FILE: ../../../third_party/skia/modules/svg/src/SkSVGShape.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGStop.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGTransformableNode.cpp
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGValue.cpp
-FILE: ../../../third_party/skia/samplecode/DecodeFile.h
-FILE: ../../../third_party/skia/samplecode/Sample.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.cpp
 FILE: ../../../third_party/skia/src/codec/SkRawCodec.h
 FILE: ../../../third_party/skia/src/core/SkATrace.cpp
@@ -5314,6 +5316,8 @@ FILE: ../../../third_party/skia/docs/examples/Dst_Out.cpp
 FILE: ../../../third_party/skia/docs/examples/Dst_Over.cpp
 FILE: ../../../third_party/skia/docs/examples/Exclusion.cpp
 FILE: ../../../third_party/skia/docs/examples/Fake_Bold.cpp
+FILE: ../../../third_party/skia/docs/examples/FillPathWithPaint.cpp
+FILE: ../../../third_party/skia/docs/examples/FillPathWithPaint_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Font_breakText.cpp
 FILE: ../../../third_party/skia/docs/examples/HSVToColor.cpp
 FILE: ../../../third_party/skia/docs/examples/HSVToColor_2.cpp
@@ -5573,8 +5577,6 @@ FILE: ../../../third_party/skia/docs/examples/Paint_getAlpha.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getColor.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getColor4f.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getColorFilter.cpp
-FILE: ../../../third_party/skia/docs/examples/Paint_getFillPath.cpp
-FILE: ../../../third_party/skia/docs/examples/Paint_getFillPath_2.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFlags.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFontMetrics.cpp
 FILE: ../../../third_party/skia/docs/examples/Paint_getFontSpacing.cpp
@@ -7528,6 +7530,7 @@ LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/drawlines_with_local_matrix.cpp
+FILE: ../../../third_party/skia/gm/mirrortile.cpp
 FILE: ../../../third_party/skia/gm/nearesthalfpixelimage.cpp
 FILE: ../../../third_party/skia/gm/palette.cpp
 FILE: ../../../third_party/skia/include/core/SkOpenTypeSVGDecoder.h
@@ -7597,6 +7600,7 @@ FILE: ../../../third_party/skia/gm/crbug_1313579.cpp
 FILE: ../../../third_party/skia/include/core/SkAlphaType.h
 FILE: ../../../third_party/skia/include/core/SkCapabilities.h
 FILE: ../../../third_party/skia/include/core/SkColorType.h
+FILE: ../../../third_party/skia/include/core/SkPathUtils.h
 FILE: ../../../third_party/skia/include/gpu/GpuTypes.h
 FILE: ../../../third_party/skia/include/gpu/graphite/CombinationBuilder.h
 FILE: ../../../third_party/skia/include/gpu/graphite/ContextOptions.h
@@ -7609,10 +7613,11 @@ FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/bazel_build.
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/canvaskit_gold.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/check_generated_files/check_generated_files.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/cpu_tests/cpu_tests.go
+FILE: ../../../third_party/skia/infra/bots/task_drivers/toolchain_layering_check/toolchain_layering_check.go
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp
-FILE: ../../../third_party/skia/src/core/SkBuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
+FILE: ../../../third_party/skia/src/core/SkPathUtils.cpp
 FILE: ../../../third_party/skia/src/core/SkRuntimeEffectDictionary.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.cpp
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
@@ -7632,6 +7637,7 @@ FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/StrokeTessellator.cpp
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/StrokeTessellator.h
 FILE: ../../../third_party/skia/src/gpu/ganesh/tessellate/VertexChunkPatchAllocator.h
 FILE: ../../../third_party/skia/src/gpu/graphite/AttachmentTypes.h
+FILE: ../../../third_party/skia/src/gpu/graphite/BuiltInCodeSnippetID.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ClientMappedBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/ClientMappedBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ClipStack.cpp
@@ -7699,6 +7705,10 @@ FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.h
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnAsyncWait.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnAsyncWait.h
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCaps.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.cpp
@@ -7748,6 +7758,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/render/VerticesRenderStep.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/render/VerticesRenderStep.h
 FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/text/AtlasManager.h
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanBuffer.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCaps.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCaps.h
 FILE: ../../../third_party/skia/src/gpu/graphite/vk/VulkanCommandBuffer.cpp
@@ -7778,6 +7790,9 @@ FILE: ../../../third_party/skia/src/sksl/analysis/SkSLProgramUsage.h
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLRasterPipelineCodeGenerator.cpp
 FILE: ../../../third_party/skia/src/sksl/codegen/SkSLRasterPipelineCodeGenerator.h
 FILE: ../../../third_party/skia/src/sksl/ir/SkSLProgram.cpp
+FILE: ../../../third_party/skia/src/sksl/tracing/SkRPDebugTrace.cpp
+FILE: ../../../third_party/skia/src/sksl/tracing/SkRPDebugTrace.h
+FILE: ../../../third_party/skia/src/sksl/tracing/SkSLDebugInfo.h
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLAddConstToVarModifiers.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLEliminateEmptyStatements.cpp
 FILE: ../../../third_party/skia/src/sksl/transform/SkSLFindAndDeclareBuiltinFunctions.cpp
@@ -7823,8 +7838,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/include/gpu/graphite/dawn/DawnTypes.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/experimental/bazel_test/base/base.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
+FILE: ../../../third_party/skia/experimental/bazel_test/base/base.h
+FILE: ../../../third_party/skia/experimental/bazel_test/base/base_priv.h
+FILE: ../../../third_party/skia/experimental/bazel_test/client/gizmo.cpp
+FILE: ../../../third_party/skia/experimental/bazel_test/client/gizmo.h
+FILE: ../../../third_party/skia/experimental/bazel_test/client/main.cpp
+FILE: ../../../third_party/skia/experimental/bazel_test/core/core.cpp
+FILE: ../../../third_party/skia/experimental/bazel_test/core/core.h
+FILE: ../../../third_party/skia/experimental/bazel_test/core/core_priv.h
 FILE: ../../../third_party/skia/include/gpu/MutableTextureState.h
 FILE: ../../../third_party/skia/include/gpu/graphite/dawn/DawnTypes.h
 FILE: ../../../third_party/skia/include/gpu/graphite/vk/VulkanGraphiteTypes.h
