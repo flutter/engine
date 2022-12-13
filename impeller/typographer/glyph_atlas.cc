@@ -37,12 +37,12 @@ void GlyphAtlasContext::UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
 }
 
 void GlyphAtlasContext::UpdateBitmap(std::shared_ptr<SkBitmap> bitmap) {
-  bitmap_ = bitmap;
+  bitmap_ = std::move(bitmap);
 }
 
 void GlyphAtlasContext::UpdateRectPacker(
     std::shared_ptr<skgpu::Rectanizer> rect_packer) {
-  rect_packer_ = rect_packer;
+  rect_packer_ = std::move(rect_packer);
 }
 
 GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
