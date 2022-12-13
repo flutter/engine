@@ -15,7 +15,6 @@ import 'bitmap_canvas.dart';
 import 'path_to_svg_clip.dart';
 import 'shaders/shader.dart';
 import 'surface.dart';
-import 'surface_stats.dart';
 
 /// A surface that applies an [ColorFilter] to its children.
 class PersistedColorFilter extends PersistedContainerSurface
