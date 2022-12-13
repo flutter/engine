@@ -1370,7 +1370,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if ([self keyboardAnimationView].superview == nil) {
     [self.view addSubview:[self keyboardAnimationView]];
   } else if (self.keyboardAnimationIsCompounding) {
-    // If keyboard animation is in the same direction as current animation, ignore it.
+    // If keyboardAnimationView has superview, means current animation is running,
+    // and if keyboard animation is in the same direction as current animation, ignore it.
     return;
   }
 
