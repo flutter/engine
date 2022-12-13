@@ -49,4 +49,17 @@ FLUTTER_ASSERT_ARC
   OCMVerify([textureRegistry unregisterTexture:0]);
 }
 
+- (void)testRetainCycle {
+  __weak FlutterEngine* weakEngine;
+  FlutterTextureRegistry* strongRelay;
+  @autoreleasepool {
+    id project = OCMClassMock([FlutterDartProject class]);
+    FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
+    FlutterTextureRegistry* relay = [engine textureRegistry];
+    weakEngine = engine;
+    strongRelay = relay;
+  }
+  XCTAssertNil(weakEngine);
+}
+
 @end
