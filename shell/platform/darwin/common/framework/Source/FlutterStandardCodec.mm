@@ -368,9 +368,8 @@ using namespace flutter;
 
 - (CFDataRef)readDataRef:(NSUInteger)length {
   _range.length = length;
-  NSData* data = [_data subdataWithRange:_range];
+  CFDataRef bytes = (__bridge CFDataRef)[_data subdataWithRange:_range];
   _range.location += _range.length;
-  CFDataRef bytes = (__bridge CFDataRef)data;
   return bytes;
 }
 
@@ -380,8 +379,7 @@ using namespace flutter;
 
 - (NSString*)readUTF8 {
   CFDataRef bytes = [self readDataRef:[self readSize]];
-  NSData* data = (__bridge NSData*)bytes;
-  return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+  return [[NSString alloc] initWithData:(__bridge NSData*)bytes encoding:NSUTF8StringEncoding];
 }
 
 - (void)readAlignment:(UInt8)alignment {
@@ -395,8 +393,7 @@ using namespace flutter;
   UInt32 elementCount = [self readSize];
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
-  NSData* data = (__bridge NSData*)[self readDataRef:elementCount * elementSize];
-  return [FlutterStandardTypedData typedDataWithData:data type:type];
+  return [FlutterStandardTypedData typedDataWithData:(__bridge NSData*)[self readDataRef:elementCount * elementSize] type:type];
 }
 
 - (nullable id)readValue {
