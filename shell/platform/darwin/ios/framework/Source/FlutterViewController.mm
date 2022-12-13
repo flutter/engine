@@ -594,8 +594,11 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   return _keyboardAnimationView.get();
 }
 
-- (UIScreen*)mainScreen {
+- (UIScreen*)mainScreenIfViewLoaded {
   if (@available(iOS 13.0, *)) {
+    if (self.viewIfLoaded == nil) {
+      FML_LOG(WARNING) << "Trying to access the view before it is loaded.";
+    }
     return self.viewIfLoaded.window.windowScene.screen;
   }
   return UIScreen.mainScreen;
@@ -1383,8 +1386,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (BOOL)isKeyboardNotificationForDifferentView:(NSNotification*)notification {
   NSDictionary* info = notification.userInfo;
   // Keyboard notifications related to other apps.
-  // If the UIKeyboardIsLocalUserInfoKey key doesn't exist (this should not happen), proceed as if
-  // it was local so that the notification is not ignored.
+  // If the UIKeyboardIsLocalUserInfoKey key doesn't exist (this should not happen after iOS 8),
+  // proceed as if it was local so that the notification is not ignored.
   id isLocal = info[UIKeyboardIsLocalUserInfoKey];
   if (isLocal && ![isLocal boolValue]) {
     return YES;
@@ -1421,7 +1424,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return FlutterKeyboardModeHidden;
   }
 
-  CGRect screenRect = [self mainScreen].bounds;
+  CGRect screenRect = [self mainScreenIfViewLoaded].bounds;
   CGRect adjustedKeyboardFrame = keyboardFrame;
   adjustedKeyboardFrame.origin.y += [self calculateMultitaskingAdjustment:screenRect
                                                             keyboardFrame:keyboardFrame];
@@ -1461,7 +1464,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     }
     CGRect viewRectRelativeToScreen =
         [self.viewIfLoaded convertRect:self.viewIfLoaded.frame
-                     toCoordinateSpace:[self mainScreen].coordinateSpace];
+                     toCoordinateSpace:[self mainScreenIfViewLoaded].coordinateSpace];
     CGFloat viewBottom = CGRectGetMaxY(viewRectRelativeToScreen);
     CGFloat offset = screenHeight - viewBottom;
     if (offset > 0) {
@@ -1477,14 +1480,14 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     // Calculate how much of the keyboard intersects with the view.
     CGRect viewRectRelativeToScreen =
         [self.viewIfLoaded convertRect:self.viewIfLoaded.frame
-                     toCoordinateSpace:[self mainScreen].coordinateSpace];
+                     toCoordinateSpace:[self mainScreenIfViewLoaded].coordinateSpace];
     CGRect intersection = CGRectIntersection(keyboardFrame, viewRectRelativeToScreen);
     CGFloat portionOfKeyboardInView = CGRectGetHeight(intersection);
 
     // The keyboard is treated as an inset since we want to effectively reduce the window size by
     // the keyboard height. The Dart side will compute a value accounting for the keyboard-consuming
     // bottom padding.
-    CGFloat scale = [self mainScreen].scale;
+    CGFloat scale = [self mainScreenIfViewLoaded].scale;
     return portionOfKeyboardInView * scale;
   }
   return 0;
