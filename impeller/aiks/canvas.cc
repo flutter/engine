@@ -358,13 +358,11 @@ void Canvas::SaveLayer(
 void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            Point position,
                            const Paint& paint) {
-  auto lazy_glyph_atlas = GetCurrentPass().GetLazyGlyphAtlas();
-
-  lazy_glyph_atlas->AddTextFrame(text_frame);
+  lazy_glyph_atlas_->AddTextFrame(text_frame);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
+  text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
   text_contents->SetColor(paint.color);
 
   Entity entity;
