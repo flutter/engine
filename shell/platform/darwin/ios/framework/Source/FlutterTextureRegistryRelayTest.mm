@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterMacros.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterTexture.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -51,13 +53,12 @@ FLUTTER_ASSERT_ARC
 
 - (void)testRetainCycle {
   __weak FlutterEngine* weakEngine;
-  FlutterTextureRegistry* strongRelay;
+  NSObject<FlutterTextureRegistry>* strongRelay;
   @autoreleasepool {
     id project = OCMClassMock([FlutterDartProject class]);
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
-    FlutterTextureRegistry* relay = [engine textureRegistry];
+    strongRelay = [engine textureRegistry];
     weakEngine = engine;
-    strongRelay = relay;
   }
   XCTAssertNil(weakEngine);
 }
