@@ -1,4 +1,5 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
+#import "fml/synchronization/waitable_event.h"
 
 #import <QuartzCore/QuartzCore.h>
 #include <mutex>
@@ -16,31 +17,6 @@
 }
 
 @end
-
-namespace {
-/// Single use event (can only be signalled once).
-class Event {
- public:
-  void Signal() {
-    assert(!signaled_);
-    std::scoped_lock locker(mutex_);
-    signaled_ = true;
-    cv_.notify_one();
-  }
-
-  void Wait() {
-    std::unique_lock<std::mutex> locker(mutex_);
-    while (!signaled_) {
-      cv_.wait(locker);
-    }
-  }
-
- private:
-  std::condition_variable cv_;
-  std::mutex mutex_;
-  bool signaled_ = false;
-};
-}  // namespace
 
 @implementation FlutterThreadSynchronizer
 
@@ -101,10 +77,10 @@ class Event {
 }
 
 - (void)performCommit:(CGSize)size notify:(nonnull dispatch_block_t)notify {
-  Event event;
+  fml::AutoResetWaitableEvent event;
   {
     std::unique_lock<std::mutex> lock(_mutex);
-    Event& e = event;
+    fml::AutoResetWaitableEvent& e = event;
     _scheduledBlocks.push_back(^{
       notify();
       _contentSize = size;
