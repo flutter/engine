@@ -1289,17 +1289,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)keyboardWillShowNotification:(NSNotification*)notification {
   // Immediately prior to a docked keyboard being shown or when a keyboard goes from
-  // undocked/floating to docked, this notification is triggered.
+  // undocked/floating to docked, this notification is triggered. This notification also happens
+  // when Minimized/Expanded Shortcuts bar is dropped after dragging (the keyboard's end frame will
+  // be CGRectZero).
   [self handleKeyboardNotification:notification];
 }
 
 - (void)keyboardWillChangeFrame:(NSNotification*)notification {
   // Immediately prior to a change in keyboard frame, this notification is triggered.
+  // Sometimes when the keyboard is being hidden or undocked, this notification's keyboard's end
+  // frame is not yet entirely out of screen, which is why we also use
+  // UIKeyboardWillHideNotification.
   [self handleKeyboardNotification:notification];
 }
 
 - (void)keyboardWillBeHidden:(NSNotification*)notification {
   // When keyboard is hidden or undocked, this notification will be triggered.
+  // This notification might not occur when the keyboard is changed from docked to floating, which
+  // is why we also use UIKeyboardWillChangeFrameNotification.
   [self handleKeyboardNotification:notification];
 }
 
@@ -1327,15 +1334,18 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification {
   // Don't ignore UIKeyboardWillHideNotification notifications.
-  // Even if the notification is triggered in the background or by a different
-  // app/view controller, we want to always handle this notification to avoid
-  // inaccurate inset when in a mulitasking mode or when switching between apps.
+  // Even if the notification is triggered in the background or by a different app/view controller,
+  // we want to always handle this notification to avoid inaccurate inset when in a mulitasking mode
+  // or when switching between apps.
   if (notification.name == UIKeyboardWillHideNotification) {
     return NO;
   }
 
-  // Ignore notification when keyboard's dimensions and position are all zeroes,
-  // for UIKeyboardWillChangeFrameNotification. This happens when keyboard is dragged.
+  // Ignore notification when keyboard's dimensions and position are all zeroes for
+  // UIKeyboardWillChangeFrameNotification. This happens when keyboard is dragged. Do not ignore if
+  // the notification is UIKeyboardWillShowNotification, as CGRectZero for that notfication only
+  // occurs when Minimized/Expanded Shortcuts Bar is dropped after dragging, which we later use to
+  // categorize it as floating.
   NSDictionary* info = notification.userInfo;
   CGRect keyboardFrame = [info[UIKeyboardFrameEndUserInfoKey] CGRectValue];
   if (notification.name == UIKeyboardWillChangeFrameNotification &&
@@ -1373,6 +1383,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 - (BOOL)isKeyboardNotificationForDifferentView:(NSNotification*)notification {
   NSDictionary* info = notification.userInfo;
   // Keyboard notifications related to other apps.
+  // If the UIKeyboardIsLocalUserInfoKey key doesn't exist (this should not happen), proceed as if
+  // it was local so that the notification is not ignored.
   id isLocal = info[UIKeyboardIsLocalUserInfoKey];
   if (isLocal && ![isLocal boolValue]) {
     return YES;
@@ -1399,8 +1411,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return FlutterKeyboardModeHidden;
   }
 
-  // If keyboard's dimensions and position are all zeroes,
-  // that means it's been dragged and therefore floating.
+  // If keyboard's dimensions and position are all zeroes, that means it's a Minimized/Expanded
+  // Shortcuts Bar that has been dropped after dragging, which we categorize as floating.
   if (CGRectEqualToRect(keyboardFrame, CGRectZero)) {
     return FlutterKeyboardModeFloating;
   }
