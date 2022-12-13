@@ -123,7 +123,7 @@ class GenerateFallbackFontDataCommand extends Command<bool>
           ends.add(parts[0]);
         } else {
           starts.add(parts[0]);
-          ends.add(parts[0]);
+          ends.add(parts[1]);
         }
       }
       sb.write('<int>[');
