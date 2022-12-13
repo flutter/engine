@@ -57,11 +57,10 @@
  * Sets the provided surfaces as contents of FlutterView. Will create, update and
  * remove sublayers as needed.
  *
- * Must be called on raster thread. This will schedule a commit on platform
- * thread and block raster thread until the commit is done.
- * `notify` block will be invoked on platform thread and can be used to perform
- * additional work, such as mutating platform views. It is guaranteed be called in
- * same CATransaction.
+ * Must be called on raster thread. This will schedule a commit on the platform thread and block the
+ * raster thread until the commit is done. The `notify` block will be invoked on the platform thread
+ * and can be used to perform additional work, such as mutating platform views. It is guaranteed be
+ * called in the same CATransaction.
  */
 - (void)present:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
          notify:(nullable dispatch_block_t)notify;
