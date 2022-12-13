@@ -11,6 +11,7 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/flow/instrumentation.h"
 #include "flutter/flow/layer_snapshot_store.h"
 #include "flutter/flow/raster_cache.h"
@@ -115,7 +116,8 @@ class CompositorContext {
                 bool surface_supports_readback,
                 fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
                 DisplayListBuilder* display_list_builder,
-                impeller::AiksContext* aiks_context);
+                impeller::AiksContext* aiks_context,
+                FrameTimingsRecorder* frame_timings_recorder);
 
     virtual ~ScopedFrame();
 
@@ -143,6 +145,10 @@ class CompositorContext {
                                 bool ignore_raster_cache,
                                 FrameDamage* frame_damage);
 
+    FrameTimingsRecorder* frame_timings_recorder() const {
+      return frame_timings_recorder_;
+    }
+
    private:
     CompositorContext& context_;
     GrDirectContext* gr_context_;
@@ -154,6 +160,7 @@ class CompositorContext {
     const bool instrumentation_enabled_;
     const bool surface_supports_readback_;
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger_;
+    FrameTimingsRecorder* frame_timings_recorder_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(ScopedFrame);
   };
@@ -173,7 +180,8 @@ class CompositorContext {
       bool surface_supports_readback,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
       DisplayListBuilder* display_list_builder,
-      impeller::AiksContext* aiks_context);
+      impeller::AiksContext* aiks_context,
+      FrameTimingsRecorder* frame_timings_recorder);
 
   void OnGrContextCreated();
 

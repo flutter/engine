@@ -8,6 +8,7 @@
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/flow/paint_utils.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -241,18 +242,41 @@ class LayerStateStack {
     void clipPath(const SkPath& path, bool is_aa);
 
    private:
-    MutatorContext(LayerStateStack* stack)
+    explicit MutatorContext(LayerStateStack* stack)
         : layer_state_stack_(stack),
-          stack_restore_count_(stack->stack_count()),
-          save_needed_(true) {}
+          stack_restore_count_(stack->stack_count()) {}
     friend class LayerStateStack;
 
     LayerStateStack* layer_state_stack_;
     const size_t stack_restore_count_;
-    bool save_needed_;
+    bool save_needed_ = true;
 
     FML_DISALLOW_COPY_ASSIGN_AND_MOVE(MutatorContext);
   };
+
+  /// A summary of the state entries in the stack.
+  ///
+  /// This is used to summarize the entries in the stack during `reapply_all`
+  /// to summarize the state.
+  class Summary {
+   public:
+    Summary();
+
+    ~Summary();
+
+    void add(RasterOpType type);
+
+    size_t count(RasterOpType type) const;
+
+    void clear();
+
+   private:
+    std::map<RasterOpType, size_t> counts_;
+
+    FML_DISALLOW_COPY_AND_ASSIGN(Summary);
+  };
+
+  Summary* summary() { return &summary_; }
 
   static constexpr int kCallerCanApplyOpacity = 0x1;
   static constexpr int kCallerCanApplyColorFilter = 0x2;
@@ -437,6 +461,7 @@ class LayerStateStack {
     virtual void reapply(LayerStateStack* stack) const { apply(stack); }
     virtual void restore(LayerStateStack* stack) const {}
     virtual void update_mutators(MutatorsStack* mutators_stack) const {}
+    virtual RasterOpType type() const = 0;
 
    protected:
     StateEntry() = default;
@@ -506,6 +531,7 @@ class LayerStateStack {
 
   std::shared_ptr<Delegate> delegate_;
   RenderingAttributes outstanding_;
+  Summary summary_;
   CheckerboardFunc checkerboard_func_ = nullptr;
 
   friend class SaveLayerEntry;

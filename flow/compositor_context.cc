@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <utility>
+#include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -84,11 +85,12 @@ std::unique_ptr<CompositorContext::ScopedFrame> CompositorContext::AcquireFrame(
     fml::RefPtr<fml::RasterThreadMerger>
         raster_thread_merger,  // NOLINT(performance-unnecessary-value-param)
     DisplayListBuilder* display_list_builder,
-    impeller::AiksContext* aiks_context) {
+    impeller::AiksContext* aiks_context,
+    FrameTimingsRecorder* frame_timings_recorder) {
   return std::make_unique<ScopedFrame>(
       *this, gr_context, canvas, view_embedder, root_surface_transformation,
       instrumentation_enabled, surface_supports_readback, raster_thread_merger,
-      display_list_builder, aiks_context);
+      display_list_builder, aiks_context, frame_timings_recorder);
 }
 
 CompositorContext::ScopedFrame::ScopedFrame(
@@ -101,7 +103,8 @@ CompositorContext::ScopedFrame::ScopedFrame(
     bool surface_supports_readback,
     fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger,
     DisplayListBuilder* display_list_builder,
-    impeller::AiksContext* aiks_context)
+    impeller::AiksContext* aiks_context,
+    FrameTimingsRecorder* frame_timings_recorder)
     : context_(context),
       gr_context_(gr_context),
       canvas_(canvas),
@@ -111,7 +114,8 @@ CompositorContext::ScopedFrame::ScopedFrame(
       root_surface_transformation_(root_surface_transformation),
       instrumentation_enabled_(instrumentation_enabled),
       surface_supports_readback_(surface_supports_readback),
-      raster_thread_merger_(std::move(raster_thread_merger)) {
+      raster_thread_merger_(std::move(raster_thread_merger)),
+      frame_timings_recorder_(frame_timings_recorder) {
   context_.BeginFrame(*this, instrumentation_enabled_);
 }
 

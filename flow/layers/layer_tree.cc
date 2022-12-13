@@ -123,6 +123,21 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
     state_stack.set_delegate(frame.canvas());
   }
 
+#if FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG || \
+    FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE
+  LayerStateStack::Summary* state_stack_summary = state_stack.summary();
+  auto* frame_timings_recorder = frame.frame_timings_recorder();
+  if (frame_timings_recorder) {
+    for (uint32_t op_type_idx = 0;
+         op_type_idx < static_cast<size_t>(RasterOpType::kEnumCount);
+         op_type_idx++) {
+      const auto raster_op_type = static_cast<RasterOpType>(op_type_idx);
+      const auto op_count = state_stack_summary->count(raster_op_type);
+      frame_timings_recorder->RecordRasterOpCount(raster_op_type, op_count);
+    }
+  }
+#endif
+
   // clear the previous snapshots.
   LayerSnapshotStore* snapshot_store = nullptr;
   if (enable_leaf_layer_tracing_) {

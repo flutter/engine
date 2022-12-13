@@ -166,6 +166,11 @@ FrameTiming FrameTimingsRecorder::GetRecordedTime() const {
   return timing_;
 }
 
+void FrameTimingsRecorder::RecordRasterOpCount(RasterOpType op_type,
+                                               size_t count) {
+  raster_op_count_[op_type] = count;
+}
+
 std::unique_ptr<FrameTimingsRecorder> FrameTimingsRecorder::CloneUntil(
     State state) {
   std::scoped_lock state_lock(state_mutex_);

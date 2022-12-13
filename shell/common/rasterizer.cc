@@ -11,10 +11,10 @@
 #include "flow/frame_timings.h"
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/offscreen_surface.h"
+#include "flutter/fml/make_copyable.h"
 #include "flutter/fml/time/time_delta.h"
 #include "flutter/fml/time/time_point.h"
 #include "flutter/shell/common/serialization_callbacks.h"
-#include "fml/make_copyable.h"
 #include "third_party/skia/include/core/SkImageEncoder.h"
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSerialProcs.h"
@@ -532,7 +532,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
           .supports_readback,                // surface supports pixel reads
       raster_thread_merger_,                 // thread merger
       frame->GetDisplayListBuilder().get(),  // display list builder
-      surface_->GetAiksContext()             // aiks context
+      surface_->GetAiksContext(),            // aiks context
+      &frame_timings_recorder                // frame timings recorder
   );
   if (compositor_frame) {
     compositor_context_->raster_cache().BeginFrame();
@@ -632,7 +633,8 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
       nullptr, recorder.getRecordingCanvas(), nullptr,
-      root_surface_transformation, false, true, nullptr, nullptr, nullptr);
+      root_surface_transformation, false, true, nullptr, nullptr, nullptr,
+      nullptr);
   frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
@@ -689,7 +691,8 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
       true,                         // render buffer readback supported
       nullptr,                      // thread merger
       nullptr,                      // display list builder
-      nullptr                       // aiks context
+      nullptr,                      // aiks context
+      nullptr                       // frame timings recorder
   );
   canvas->clear(SK_ColorTRANSPARENT);
   frame->Raster(*tree, true, nullptr);

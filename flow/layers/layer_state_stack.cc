@@ -5,6 +5,7 @@
 #include "flutter/flow/layers/layer_state_stack.h"
 
 #include "flutter/display_list/display_list_matrix_clip_tracker.h"
+#include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer.h"
 #include "flutter/flow/paint_utils.h"
 #include "flutter/flow/raster_cache_util.h"
@@ -270,6 +271,8 @@ class SaveEntry : public LayerStateStack::StateEntry {
     stack->delegate_->restore();
   }
 
+  RasterOpType type() const override { return RasterOpType::kSave; }
+
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(SaveEntry);
 };
 
@@ -293,6 +296,8 @@ class SaveLayerEntry : public LayerStateStack::StateEntry {
     stack->delegate_->restore();
     stack->outstanding_ = old_attributes_;
   }
+
+  RasterOpType type() const override { return RasterOpType::kSaveLayer; }
 
  protected:
   const SkRect bounds_;
@@ -324,6 +329,8 @@ class OpacityEntry : public LayerStateStack::StateEntry {
     mutators_stack->PushOpacity(DlColor::toAlpha(opacity_));
   }
 
+  RasterOpType type() const override { return RasterOpType::kOpacity; }
+
  private:
   const SkRect bounds_;
   const SkScalar opacity_;
@@ -352,6 +359,8 @@ class ImageFilterEntry : public LayerStateStack::StateEntry {
     stack->outstanding_.save_layer_bounds = old_bounds_;
     stack->outstanding_.image_filter = old_filter_;
   }
+
+  RasterOpType type() const override { return RasterOpType::kImageFilter; }
 
   // There is no ImageFilter mutator currently
   // void update_mutators(MutatorsStack* mutators_stack) const override;
@@ -384,6 +393,8 @@ class ColorFilterEntry : public LayerStateStack::StateEntry {
     stack->outstanding_.save_layer_bounds = old_bounds_;
     stack->outstanding_.color_filter = old_filter_;
   }
+
+  RasterOpType type() const override { return RasterOpType::kColorFilter; }
 
   // There is no ColorFilter mutator currently
   // void update_mutators(MutatorsStack* mutators_stack) const override;
@@ -423,6 +434,8 @@ class BackdropFilterEntry : public SaveLayerEntry {
     SaveLayerEntry::apply(stack);
   }
 
+  RasterOpType type() const override { return RasterOpType::kBackdropFilter; }
+
  private:
   const std::shared_ptr<const DlImageFilter> filter_;
 
@@ -439,6 +452,8 @@ class TranslateEntry : public LayerStateStack::StateEntry {
   void update_mutators(MutatorsStack* mutators_stack) const override {
     mutators_stack->PushTransform(SkMatrix::Translate(tx_, ty_));
   }
+
+  RasterOpType type() const override { return RasterOpType::kTranslate; }
 
  private:
   const SkScalar tx_;
@@ -458,6 +473,8 @@ class TransformMatrixEntry : public LayerStateStack::StateEntry {
     mutators_stack->PushTransform(matrix_);
   }
 
+  RasterOpType type() const override { return RasterOpType::kTransformMatrix; }
+
  private:
   const SkMatrix matrix_;
 
@@ -475,6 +492,8 @@ class TransformM44Entry : public LayerStateStack::StateEntry {
     mutators_stack->PushTransform(m44_.asM33());
   }
 
+  RasterOpType type() const override { return RasterOpType::kTransformM44; }
+
  private:
   const SkM44 m44_;
 
@@ -487,6 +506,10 @@ class IntegralTransformEntry : public LayerStateStack::StateEntry {
 
   void apply(LayerStateStack* stack) const override {
     stack->delegate_->integralTransform();
+  }
+
+  RasterOpType type() const override {
+    return RasterOpType::kIntegralTransform;
   }
 
  private:
@@ -504,6 +527,8 @@ class ClipRectEntry : public LayerStateStack::StateEntry {
   void update_mutators(MutatorsStack* mutators_stack) const override {
     mutators_stack->PushClipRect(clip_rect_);
   }
+
+  RasterOpType type() const override { return RasterOpType::kClipRect; }
 
  private:
   const SkRect clip_rect_;
@@ -524,6 +549,8 @@ class ClipRRectEntry : public LayerStateStack::StateEntry {
     mutators_stack->PushClipRRect(clip_rrect_);
   }
 
+  RasterOpType type() const override { return RasterOpType::kClipRRect; }
+
  private:
   const SkRRect clip_rrect_;
   const bool is_aa_;
@@ -543,6 +570,8 @@ class ClipPathEntry : public LayerStateStack::StateEntry {
   void update_mutators(MutatorsStack* mutators_stack) const override {
     mutators_stack->PushClipPath(clip_path_);
   }
+
+  RasterOpType type() const override { return RasterOpType::kClipPath; }
 
  private:
   const SkPath clip_path_;
@@ -751,7 +780,9 @@ void LayerStateStack::reapply_all() {
   // contents should match the current outstanding_ values;
   RenderingAttributes attributes = outstanding_;
   outstanding_ = {};
+  summary_.clear();
   for (auto& state : state_stack_) {
+    summary_.add(state->type());
     state->reapply(this);
   }
   FML_DCHECK(attributes == outstanding_);
@@ -914,6 +945,30 @@ void LayerStateStack::maybe_save_layer(
     // TBD: compose the 2 image filters together.
     save_layer(outstanding_.save_layer_bounds);
   }
+}
+
+LayerStateStack::Summary::Summary() = default;
+
+LayerStateStack::Summary::~Summary() = default;
+
+void LayerStateStack::Summary::add(RasterOpType type) {
+  if (counts_.find(type) == counts_.end()) {
+    counts_[type] = 1;
+  } else {
+    counts_[type]++;
+  }
+}
+
+size_t LayerStateStack::Summary::count(RasterOpType type) const {
+  auto it = counts_.find(type);
+  if (it == counts_.end()) {
+    return 0;
+  }
+  return it->second;
+}
+
+void LayerStateStack::Summary::clear() {
+  counts_.clear();
 }
 
 }  // namespace flutter

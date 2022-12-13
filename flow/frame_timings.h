@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_FRAME_TIMINGS_H_
 #define FLUTTER_FLOW_FRAME_TIMINGS_H_
 
+#include <map>
 #include <mutex>
 
 #include "flutter/common/settings.h"
@@ -18,6 +19,25 @@
                recorder->GetFrameNumberTraceArg())
 
 namespace flutter {
+
+enum class RasterOpType : uint32_t {
+  kSave,
+  kSaveLayer,
+  kBackdropFilter,
+  kOpacity,
+  kColorFilter,
+  kImageFilter,
+  kTranslate,
+  kTransformMatrix,
+  kTransformM44,
+  kIntegralTransform,
+  kClipRect,
+  kClipRRect,
+  kClipPath,
+
+  // `kEnumCount` has to be the last entry
+  kEnumCount,
+};
 
 /// Records timestamps for various phases of a frame rendering process.
 ///
@@ -113,6 +133,9 @@ class FrameTimingsRecorder {
   /// Returns the recorded time from when `RecordRasterEnd` is called.
   FrameTiming GetRecordedTime() const;
 
+  /// Records the raster op count.
+  void RecordRasterOpCount(RasterOpType op_type, size_t count);
+
  private:
   static std::atomic<uint64_t> frame_number_gen_;
 
@@ -134,6 +157,8 @@ class FrameTimingsRecorder {
   size_t layer_cache_bytes_;
   size_t picture_cache_count_;
   size_t picture_cache_bytes_;
+
+  std::map<RasterOpType, size_t> raster_op_count_;
 
   // Set when `RecordRasterEnd` is called. Cannot be reset once set.
   FrameTiming timing_;
