@@ -161,13 +161,7 @@ class FlutterEmbedderTest : public ::loop_fixture::RealLoop,
 
   void SetUpRealmBase();
 
-  // Registers a fake touch screen device with an injection coordinate space
-  // spanning [-1000, 1000] on both axes.
-  void RegisterTouchScreen();
-
   fuchsia::ui::scenic::ScenicPtr scenic_;
-  fuchsia::ui::test::input::RegistryPtr input_registry_;
-  fuchsia::ui::test::input::TouchScreenPtr fake_touchscreen_;
   fuchsia::ui::test::scene::ControllerPtr scene_provider_;
   fuchsia::ui::observation::geometry::ViewTreeWatcherPtr view_tree_watcher_;
 
@@ -334,9 +328,6 @@ void FlutterEmbedderTest::LaunchParentViewInRealm(
   }
   realm_ = std::make_unique<RealmRoot>(realm_builder_.Build());
 
-  // Register fake touch screen device.
-  RegisterTouchScreen();
-
   // Instruct Test UI Stack to present parent-view's View.
   std::optional<zx_koid_t> view_ref_koid;
   scene_provider_ = realm_->Connect<fuchsia::ui::test::scene::Controller>();
@@ -401,21 +392,6 @@ bool FlutterEmbedderTest::TakeScreenshotUntil(
         return color_found;
       },
       timeout);
-}
-
-void FlutterEmbedderTest::RegisterTouchScreen() {
-  FML_LOG(INFO) << "Registering fake touch screen";
-  input_registry_ = realm_->Connect<fuchsia::ui::test::input::Registry>();
-  input_registry_.set_error_handler(
-      [](auto) { FML_LOG(ERROR) << "Error from input helper"; });
-  bool touchscreen_registered = false;
-  fuchsia::ui::test::input::RegistryRegisterTouchScreenRequest request;
-  request.set_device(fake_touchscreen_.NewRequest());
-  input_registry_->RegisterTouchScreen(
-      std::move(request),
-      [&touchscreen_registered]() { touchscreen_registered = true; });
-  RunLoopUntil([&touchscreen_registered] { return touchscreen_registered; });
-  FML_LOG(INFO) << "Touchscreen registered";
 }
 
 TEST_F(FlutterEmbedderTest, Embedding) {
