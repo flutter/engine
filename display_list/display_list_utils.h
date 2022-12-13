@@ -249,6 +249,8 @@ class BoundsAccumulator {
   /// be trusted.
   typedef bool BoundsModifier(const SkRect& original, SkRect* dest);
 
+  virtual ~BoundsAccumulator() = default;
+
   virtual void accumulate(const SkRect& r) = 0;
 
   /// Save aside the rects/bounds currently being accumulated and start
@@ -285,6 +287,8 @@ class BoundsAccumulator {
 
   virtual SkRect bounds() const = 0;
 
+  virtual sk_sp<DlRTree> rtree() const = 0;
+
   virtual BoundsAccumulatorType type() const = 0;
 };
 
@@ -310,6 +314,8 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
   BoundsAccumulatorType type() const override {
     return BoundsAccumulatorType::kRect;
   }
+
+  sk_sp<DlRTree> rtree() const override { return nullptr; }
 
  private:
   class AccumulationRect {
@@ -348,7 +354,7 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
 
   SkRect bounds() const override;
 
-  sk_sp<DlRTree> rtree() const;
+  sk_sp<DlRTree> rtree() const override;
 
   BoundsAccumulatorType type() const override {
     return BoundsAccumulatorType::kRTree;

@@ -167,8 +167,8 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
 TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      DisplayListBuilder buider1(/*need_produce_rtree=*/false);
-      DisplayListBuilder buider2(/*need_produce_rtree=*/true);
+      DisplayListBuilder buider1(/*prepare_rtree=*/false);
+      DisplayListBuilder buider2(/*prepare_rtree=*/true);
       group.variants[i].invoker(buider1);
       group.variants[i].invoker(buider2);
       sk_sp<DisplayList> dl1 = buider1.Build();
@@ -1584,7 +1584,7 @@ static void test_rtree(const sk_sp<const DlRTree>& rtree,
 }
 
 TEST(DisplayList, RTreeOfSimpleScene) {
-  DisplayListBuilder builder(/*need_produce_rtree=*/true);
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.drawRect({50, 50, 60, 60});
   auto display_list = builder.Build();
@@ -1611,7 +1611,7 @@ TEST(DisplayList, RTreeOfSimpleScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveRestoreScene) {
-  DisplayListBuilder builder(/*need_produce_rtree=*/true);
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.save();
   builder.drawRect({50, 50, 60, 60});
@@ -1640,7 +1640,7 @@ TEST(DisplayList, RTreeOfSaveRestoreScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
-  DisplayListBuilder builder(/*need_produce_rtree=*/true);
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
   auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
@@ -1675,12 +1675,12 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
 }
 
 TEST(DisplayList, NestedDisplayListRTreesAreSparse) {
-  DisplayListBuilder nested_dl_builder(/**need_produce_rtree=*/true);
+  DisplayListBuilder nested_dl_builder(/**prepare_rtree=*/true);
   nested_dl_builder.drawRect({10, 10, 20, 20});
   nested_dl_builder.drawRect({50, 50, 60, 60});
   auto nested_display_list = nested_dl_builder.Build();
 
-  DisplayListBuilder builder(/**need_produce_rtree=*/true);
+  DisplayListBuilder builder(/**prepare_rtree=*/true);
   builder.drawDisplayList(nested_display_list);
   auto display_list = builder.Build();
 
@@ -2239,7 +2239,7 @@ TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
-  DisplayListBuilder builder(/*need_produce_rtree=*/true);
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
   auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();

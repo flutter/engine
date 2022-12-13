@@ -32,11 +32,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
   static constexpr SkRect kMaxCullRect =
       SkRect::MakeLTRB(-1E9F, -1E9F, 1E9F, 1E9F);
 
-  explicit DisplayListBuilder(bool need_produce_rtree)
-      : DisplayListBuilder(kMaxCullRect, need_produce_rtree) {}
+  explicit DisplayListBuilder(bool prepare_rtree)
+      : DisplayListBuilder(kMaxCullRect, prepare_rtree) {}
 
   explicit DisplayListBuilder(const SkRect& cull_rect = kMaxCullRect,
-                              bool need_produce_rtree = false);
+                              bool prepare_rtree = false);
 
   ~DisplayListBuilder();
 
@@ -503,14 +503,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
-  RectBoundsAccumulator rect_bounds_accumulator_;
-  RTreeBoundsAccumulator rtree_bounds_accumulator_;
-  BoundsAccumulator* accumulator() {
-    if (need_produce_rtree_) {
-      return &rtree_bounds_accumulator_;
-    }
-    return &rect_bounds_accumulator_;
-  }
+  std::unique_ptr<BoundsAccumulator> accumulator_;
+  BoundsAccumulator* accumulator() { return accumulator_.get(); }
 
   // This flag indicates whether or not the current rendering attributes
   // are compatible with rendering ops applying an inherited opacity.
@@ -587,7 +581,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   // The DisplayList had an unbounded call with no cull rect or clip
   // to contain it. Should only be called after the stream is fully
-  // dispatched.
+  // built.
   // Unbounded operations are calls like |drawColor| which are defined
   // to flood the entire surface, or calls that relied on a rendering
   // attribute which is unable to compute bounds (should be rare).
@@ -604,10 +598,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
     if (is_unbounded()) {
       FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
     }
-    if (need_produce_rtree_) {
-      return rtree_bounds_accumulator_.bounds();
-    }
-    return rect_bounds_accumulator_.bounds();
+
+    return accumulator_->bounds();
   }
 
   sk_sp<DlRTree> rtree() {
@@ -615,10 +607,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
     if (is_unbounded()) {
       FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
     }
-    if (!need_produce_rtree_) {
-      return nullptr;
-    }
-    return rtree_bounds_accumulator_.rtree();
+
+    return accumulator_->rtree();
   }
 
   bool paint_nops_on_transparency();
@@ -655,7 +645,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   DlPaint current_;
   // If |current_blender_| is set then ignore |current_.getBlendMode()|
   sk_sp<SkBlender> current_blender_;
-  const bool need_produce_rtree_;
 };
 
 }  // namespace flutter

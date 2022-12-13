@@ -46,7 +46,7 @@ static void Complete(DisplayListBuilder& builder,
   }
 }
 
-bool NeedProduceRTree(DisplayListBuilderBenchmarkType type) {
+bool NeedPrepareRTree(DisplayListBuilderBenchmarkType type) {
   return type == DisplayListBuilderBenchmarkType::kRtree ||
          type == DisplayListBuilderBenchmarkType::kBoundsAndRtree;
 }
@@ -55,9 +55,9 @@ bool NeedProduceRTree(DisplayListBuilderBenchmarkType type) {
 
 static void BM_DisplayListBuilderDefault(benchmark::State& state,
                                          DisplayListBuilderBenchmarkType type) {
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
   }
@@ -66,9 +66,9 @@ static void BM_DisplayListBuilderDefault(benchmark::State& state,
 static void BM_DisplayListBuilderWithScaleAndTranslate(
     benchmark::State& state,
     DisplayListBuilderBenchmarkType type) {
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     builder.scale(3.5, 3.5);
     builder.translate(10.3, 6.9);
     InvokeAllRenderingOps(builder);
@@ -79,9 +79,9 @@ static void BM_DisplayListBuilderWithScaleAndTranslate(
 static void BM_DisplayListBuilderWithPerspective(
     benchmark::State& state,
     DisplayListBuilderBenchmarkType type) {
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     builder.transformFullPerspective(0, 1, 0, 12, 1, 0, 0, 33, 3, 2, 5, 29, 0,
                                      0, 0, 12);
     InvokeAllRenderingOps(builder);
@@ -93,9 +93,9 @@ static void BM_DisplayListBuilderWithClipRect(
     benchmark::State& state,
     DisplayListBuilderBenchmarkType type) {
   SkRect clip_bounds = SkRect::MakeLTRB(6.5, 7.3, 90.2, 85.7);
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     builder.clipRect(clip_bounds, SkClipOp::kIntersect, true);
     InvokeAllRenderingOps(builder);
     Complete(builder, type);
@@ -105,9 +105,9 @@ static void BM_DisplayListBuilderWithClipRect(
 static void BM_DisplayListBuilderWithSaveLayer(
     benchmark::State& state,
     DisplayListBuilderBenchmarkType type) {
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
         auto& invocation = group.variants[i];
@@ -126,9 +126,9 @@ static void BM_DisplayListBuilderWithSaveLayerAndImageFilter(
   DlPaint layer_paint;
   layer_paint.setImageFilter(&testing::kTestBlurImageFilter1);
   SkRect layer_bounds = SkRect::MakeLTRB(6.5, 7.3, 35.2, 42.7);
-  bool need_produce_rtree = NeedProduceRTree(type);
+  bool prepare_rtree = NeedPrepareRTree(type);
   while (state.KeepRunning()) {
-    DisplayListBuilder builder(need_produce_rtree);
+    DisplayListBuilder builder(prepare_rtree);
     for (auto& group : allRenderingOps) {
       for (size_t i = 0; i < group.variants.size(); i++) {
         auto& invocation = group.variants[i];

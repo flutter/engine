@@ -27,8 +27,8 @@ PictureRecorder::PictureRecorder() {}
 PictureRecorder::~PictureRecorder() {}
 
 SkCanvas* PictureRecorder::BeginRecording(SkRect bounds) {
-  display_list_recorder_ = sk_make_sp<DisplayListCanvasRecorder>(
-      bounds, /**need_produce_rtree*/ true);
+  display_list_recorder_ =
+      sk_make_sp<DisplayListCanvasRecorder>(bounds, /*prepare_rtree=*/true);
   return display_list_recorder_.get();
 }
 

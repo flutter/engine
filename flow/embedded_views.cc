@@ -42,7 +42,7 @@ void SkPictureEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
   recorder_ = std::make_unique<DisplayListCanvasRecorder>(
       /*bounds=*/view_bounds,
-      /*need_produce_rtree=*/true);
+      /*prepare_rtree=*/true);
 }
 
 SkCanvas* DisplayListEmbedderViewSlice::canvas() {

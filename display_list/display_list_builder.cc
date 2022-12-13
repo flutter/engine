@@ -67,8 +67,14 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
-                                       bool need_produce_rtree)
-    : cull_rect_(cull_rect), need_produce_rtree_(need_produce_rtree) {
+                                       bool prepare_rtree)
+    : cull_rect_(cull_rect) {
+  if (prepare_rtree) {
+    accumulator_ = std::make_unique<RTreeBoundsAccumulator>();
+  } else {
+    accumulator_ = std::make_unique<RectBoundsAccumulator>();
+  }
+
   layer_stack_.emplace_back(SkM44(), SkMatrix::I(), cull_rect);
   current_layer_ = &layer_stack_.back();
 }
@@ -453,10 +459,10 @@ void DisplayListBuilder::restore() {
     bool is_unbounded = layer_info.is_unbounded();
 
     // Before we pop_back we will get the current layer bounds from the
-    // current accumulator and adjust ot as required based on the filter.
+    // current accumulator and adjust it as required based on the filter.
     std::shared_ptr<const DlImageFilter> filter = layer_info.filter();
-    const SkRect* clip = &current_layer_->clip_bounds();
     if (filter) {
+      const SkRect* clip = &current_layer_->clip_bounds();
       if (!accumulator()->restore(
               [filter = filter, matrix = getTransform()](const SkRect& input,
                                                          SkRect& output) {
@@ -630,9 +636,9 @@ void DisplayListBuilder::transform2DAffine(
                               mxx, mxy, mxt,
                               myx, myy, myt);
     current_layer_->matrix().preConcat(SkM44(mxx, mxy,  0,  mxt,
-                                           myx, myy,  0,  myt,
-                                            0,   0,   1,   0,
-                                            0,   0,   0,   1));
+                                             myx, myy,  0,  myt,
+                                             0,   0,   1,   0,
+                                             0,   0,   0,   1));
     current_layer_->update_matrix33();
   }
 }
@@ -659,9 +665,9 @@ void DisplayListBuilder::transformFullPerspective(
                                      mzx, mzy, mzz, mzt,
                                      mwx, mwy, mwz, mwt);
     current_layer_->matrix().preConcat(SkM44(mxx, mxy, mxz, mxt,
-                                           myx, myy, myz, myt,
-                                           mzx, mzy, mzz, mzt,
-                                           mwx, mwy, mwz, mwt));
+                                             myx, myy, myz, myt,
+                                             mzx, mzy, mzz, mzt,
+                                             mwx, mwy, mwz, mwt));
     current_layer_->update_matrix33();
   }
 }
