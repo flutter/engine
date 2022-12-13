@@ -370,17 +370,17 @@ using namespace flutter;
   _range.length = length;
   NSData* data = [_data subdataWithRange:_range];
   _range.location += _range.length;
-  // return (CFDataRef)CFAutorelease((__bridge CFDataRef)data);
-  return (CFDataRef)CFRetain((__bridge CFDataRef)data);
+  CFDataRef bytes = (__bridge CFDataRef)data;
+  return bytes;
 }
 
 - (NSData*)readData:(NSUInteger)length {
-  return (NSData*)CFBridgingRelease([self readDataRef:length]);
+  return (__bridge NSData*)[self readDataRef:length];
 }
 
 - (NSString*)readUTF8 {
-  CFDataRef bytes = (CFDataRef)[self readDataRef:[self readSize]];
-  NSData* data = (NSData*)CFBridgingRelease(bytes);
+  CFDataRef bytes = [self readDataRef:[self readSize]];
+  NSData* data = (__bridge NSData*)bytes;
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
@@ -395,7 +395,7 @@ using namespace flutter;
   UInt32 elementCount = [self readSize];
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
-  NSData* data = (NSData*)CFBridgingRelease([self readDataRef:elementCount * elementSize]);
+  NSData* data = (__bridge NSData*)[self readDataRef:elementCount * elementSize];
   return [FlutterStandardTypedData typedDataWithData:data type:type];
 }
 
