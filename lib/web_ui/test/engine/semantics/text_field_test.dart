@@ -186,7 +186,7 @@ void testMain() {
       expect(actionCount, 0);
     });
 
-    test('Does not overwrite editing state like text value and selection',
+    test('Does not overwrite text value and selection editing state',
         () async {
       semantics()
         ..debugOverrideTimestampFunction(() => _testTime)
