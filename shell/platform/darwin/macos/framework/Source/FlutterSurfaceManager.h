@@ -30,9 +30,10 @@
 @end
 
 /**
+ * FlutterSurfaceManager is responsible for providing and presenting Core Animation render
+ * surfaces and managing sublayers.
+ *
  * Owned by `FlutterView`.
- * Responsible for providing surfaces for Flutter to render into and subsequent
- * presentation of these surfaces. Manages core animation sublayers.
  */
 @interface FlutterSurfaceManager : NSObject
 
