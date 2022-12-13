@@ -375,12 +375,12 @@ using namespace flutter;
 }
 
 - (NSData*)readData:(NSUInteger)length {
-  return (NSData *)CFBridgingRelease([self readDataRef:length]);
+  return (NSData*)CFBridgingRelease([self readDataRef:length]);
 }
 
 - (NSString*)readUTF8 {
   CFDataRef bytes = (CFDataRef)[self readDataRef:[self readSize]];
-  NSData *data = (NSData*)CFBridgingRelease(bytes);
+  NSData* data = (NSData*)CFBridgingRelease(bytes);
   return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
 }
 
@@ -447,7 +447,8 @@ static CFTypeRef ReadValueOfType(FlutterStandardReader* codec, UInt8 type) {
       return (__bridge CFTypeRef)[codec readTypedDataOfType:FlutterStandardDataTypeForField(field)];
     case FlutterStandardFieldList: {
       UInt32 length = [codec readSize];
-      CFMutableArrayRef array = CFArrayCreateMutable(kCFAllocatorDefault, length, &kCFTypeArrayCallBacks);
+      CFMutableArrayRef array =
+          CFArrayCreateMutable(kCFAllocatorDefault, length, &kCFTypeArrayCallBacks);
       for (UInt32 i = 0; i < length; i++) {
         CFTypeRef value = ReadValue(codec);
         CFArrayAppendValue(array, (value == nil ? kCFNull : value));
