@@ -13,11 +13,11 @@ external void paintDestroy(PaintHandle paint);
 @FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setBlendMode', isLeaf: true)
 external void paintSetBlendMode(PaintHandle paint, int blendMode);
 
-@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setPaintStyle', isLeaf: true)
-external void paintSetPaintStyle(PaintHandle paint, int paintStyle);
+@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStyle', isLeaf: true)
+external void paintSetStyle(PaintHandle paint, int paintStyle);
 
-@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getPaintStyle', isLeaf: true)
-external int paintGetPaintStyle(PaintHandle paint);
+@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStyle', isLeaf: true)
+external int paintGetStyle(PaintHandle paint);
 
 @FfiNative<Void Function(PaintHandle, Float)>('skwasm.paint_setStrokeWidth', isLeaf: true)
 external void paintSetStrokeWidth(PaintHandle paint, double strokeWidth);

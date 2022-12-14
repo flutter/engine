@@ -10,7 +10,7 @@ SKWASM_EXPORT SkPictureRecorder* pictureRecorder_create() {
   return new SkPictureRecorder();
 }
 
-SKWASM_EXPORT void pictureRecorder_destroy(SkPictureRecorder* recorder) {
+SKWASM_EXPORT void pictureRecorder_dispose(SkPictureRecorder* recorder) {
   delete recorder;
 }
 

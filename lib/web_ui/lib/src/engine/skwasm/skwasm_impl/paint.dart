@@ -27,10 +27,10 @@ class SkwasmPaint implements ui.Paint {
   }
 
   @override
-  ui.PaintingStyle get style => ui.PaintingStyle.values[paintGetPaintStyle(_handle)];
+  ui.PaintingStyle get style => ui.PaintingStyle.values[paintGetStyle(_handle)];
 
   @override
-  set style(ui.PaintingStyle style) => paintSetPaintStyle(_handle, style.index);
+  set style(ui.PaintingStyle style) => paintSetStyle(_handle, style.index);
 
   @override
   double get strokeWidth => paintGetStrokeWidth(_handle);
