@@ -4,6 +4,8 @@
 
 @TestOn('chrome || safari || firefox')
 
+import 'dart:typed_data';
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -47,6 +49,11 @@ void testMain() {
       testTextEditing.debugTextEditingStrategyOverride = strategy;
       testTextEditing.configuration = singlelineConfig;
     });
+
+    /// Emulates sending of a message by the framework to the engine.
+    void sendFrameworkMessage(ByteData? message) {
+      testTextEditing.channel.handleTextInput(message, (ByteData? data) {});
+    }
 
   test('renders a text field', () async {
     semantics()
@@ -214,6 +221,58 @@ void testMain() {
       expect(editableElement.value, '');
       expect(editableElement.selectionStart, 0);
       expect(editableElement.selectionEnd, 0);
+
+      strategy.disable();
+      semantics().semanticsEnabled = false;
+    });
+
+    test(
+        'Updates editing state when receiving framework messages from the text input channel',
+        () async {
+      semantics()
+        ..debugOverrideTimestampFunction(() => _testTime)
+        ..semanticsEnabled = true;
+
+      expect(domDocument.activeElement, domDocument.body);
+      expect(appHostNode.activeElement, null);
+
+      strategy.enable(
+        singlelineConfig,
+        onChange: (_, __) {},
+        onAction: (_) {},
+      );
+
+      final SemanticsObject textFieldSemantics = createTextFieldSemantics(
+          value: 'hello',
+          textSelectionBase: 1,
+          textSelectionExtent: 3,
+          isFocused: true,
+          rect: const ui.Rect.fromLTWH(0, 0, 10, 15));
+
+      final TextField textField =
+          textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
+      final DomHTMLInputElement editableElement =
+          textField.editableElement as DomHTMLInputElement;
+
+      // No updates expected on semantic updates
+      expect(editableElement, strategy.domElement);
+      expect(editableElement.value, '');
+      expect(editableElement.selectionStart, 0);
+      expect(editableElement.selectionEnd, 0);
+
+      // Update from framework
+      const MethodCall setEditingState =
+          MethodCall('TextInput.setEditingState', <String, dynamic>{
+        'text': 'updated',
+        'selectionBase': 2,
+        'selectionExtent': 3,
+      });
+      sendFrameworkMessage(codec.encodeMethodCall(setEditingState));
+
+      // Editing state should now be updated
+      expect(editableElement.value, 'updated');
+      expect(editableElement.selectionStart, 2);
+      expect(editableElement.selectionEnd, 3);
 
       strategy.disable();
       semantics().semanticsEnabled = false;
