@@ -205,7 +205,7 @@ LRESULT Window::OnGetObject(UINT const message,
   // TODO(schectman): UIA is currently disabled by default.
   // https://github.com/flutter/flutter/issues/114547
   if (is_uia_request && root_view) {
-#ifndef FLUTTER_ENGINE_USE_UIA
+#ifdef FLUTTER_ENGINE_USE_UIA
     if (!ax_fragment_root_) {
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
           window_handle_, GetAxFragmentRootDelegate());
