@@ -129,7 +129,8 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   // |ui:AXPlatformNodeDelegateBase|
   gfx::NativeViewAccessible GetLowestPlatformAncestor() const override;
 
-  ui::AXNodePosition::AXPositionInstance CreateTextPositionAt(int offset) const override;
+  ui::AXNodePosition::AXPositionInstance CreateTextPositionAt(
+      int offset) const override;
 
   //------------------------------------------------------------------------------
   /// @brief      Called only once, immediately after construction. The
@@ -154,7 +155,9 @@ class FlutterPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
 
   virtual ui::AXPlatformNode* GetFromNodeID(int32_t id) override;
 
-  virtual ui::AXPlatformNode* GetFromTreeIDAndNodeID(const ui::AXTreeID& tree_id, int32_t node_id) override;
+  virtual ui::AXPlatformNode* GetFromTreeIDAndNodeID(
+      const ui::AXTreeID& tree_id,
+      int32_t node_id) override;
 
   virtual const ui::AXTree::Selection GetUnignoredSelection() const override;
 

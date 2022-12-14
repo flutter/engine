@@ -1951,8 +1951,8 @@ class AXPosition {
           parent_affinity = ax::mojom::TextAffinity::kDownstream;
         }
 
-        AXPositionInstance dummy_position = CreateTextPosition(
-            tree_id, parent_id, 0, parent_affinity);
+        AXPositionInstance dummy_position =
+            CreateTextPosition(tree_id, parent_id, 0, parent_affinity);
         max_text_offset_in_parent = dummy_position->MaxTextOffset();
         if (parent_offset > max_text_offset_in_parent) {
           parent_offset = max_text_offset_in_parent;

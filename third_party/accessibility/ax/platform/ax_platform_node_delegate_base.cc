@@ -87,7 +87,8 @@ gfx::NativeViewAccessible AXPlatformNodeDelegateBase::GetParent() {
   return nullptr;
 }
 
-gfx::NativeViewAccessible AXPlatformNodeDelegateBase::GetLowestPlatformAncestor() const {
+gfx::NativeViewAccessible
+AXPlatformNodeDelegateBase::GetLowestPlatformAncestor() const {
   AXPlatformNodeDelegateBase* current_delegate =
       const_cast<AXPlatformNodeDelegateBase*>(this);
   AXPlatformNodeDelegateBase* lowest_unignored_delegate = current_delegate;

@@ -7,6 +7,7 @@
 
 #include <atlbase.h>
 #include <atlcom.h>
+
 #include <UIAutomationCore.h>
 
 #include "ax/ax_node_position.h"
@@ -76,6 +77,6 @@ class AX_EXPORT __declspec(uuid("3e1c192b-4348-45ac-8eb6-4b58eeb3dcca"))
   Microsoft::WRL::ComPtr<ui::AXPlatformNodeWin> owner_;
 };
 
-}
+}  // namespace ui
 
 #endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_TEXTPROVIDER_WIN_H_

@@ -1250,16 +1250,18 @@ AXNode* AXNode::GetParentCrossingTreeBoundary() const {
   BASE_DCHECK(!tree_->GetTreeUpdateInProgressState());
   if (parent_)
     return parent_;
-  const AXTreeManager* manager = AXTreeManagerMap::GetInstance().GetManager(tree_->GetAXTreeID());
+  const AXTreeManager* manager =
+      AXTreeManagerMap::GetInstance().GetManager(tree_->GetAXTreeID());
   if (manager)
     return manager->GetParentNodeFromParentTreeAsAXNode();
   return nullptr;
 }
 
 AXTree::Selection AXNode::GetUnignoredSelection() const {
-  BASE_DCHECK(tree()) << "Cannot retrieve the current selection if the node is not "
-                    "attached to an accessibility tree.\n"
-                 << *this;
+  BASE_DCHECK(tree())
+      << "Cannot retrieve the current selection if the node is not "
+         "attached to an accessibility tree.\n"
+      << *this;
   AXTree::Selection selection = tree()->GetUnignoredSelection();
 
   // "selection.anchor_offset" and "selection.focus_ofset" might need to be
@@ -1272,8 +1274,7 @@ AXTree::Selection AXNode::GetUnignoredSelection() const {
     BASE_DCHECK(selection.anchor_offset >= 0);
     if (static_cast<size_t>(selection.anchor_offset) <
         anchor->children().size()) {
-      const AXNode* anchor_child =
-          anchor->children()[selection.anchor_offset];
+      const AXNode* anchor_child = anchor->children()[selection.anchor_offset];
       BASE_DCHECK(anchor_child);
       selection.anchor_offset =
           static_cast<int>(anchor_child->GetUnignoredIndexInParent());
@@ -1286,9 +1287,9 @@ AXTree::Selection AXNode::GetUnignoredSelection() const {
   const AXNode* focus = tree()->GetFromId(selection.focus_object_id);
   if (focus && !focus->IsLeaf()) {
     BASE_DCHECK(selection.focus_offset >= 0);
-    if (static_cast<size_t>(selection.focus_offset) < focus->children().size()) {
-      const AXNode* focus_child =
-          focus->children()[selection.focus_offset];
+    if (static_cast<size_t>(selection.focus_offset) <
+        focus->children().size()) {
+      const AXNode* focus_child = focus->children()[selection.focus_offset];
       BASE_DCHECK(focus_child);
       selection.focus_offset =
           static_cast<int>(focus_child->GetUnignoredIndexInParent());

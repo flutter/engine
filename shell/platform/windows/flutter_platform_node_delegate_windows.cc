@@ -107,7 +107,8 @@ FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
   return view_->GetPlatformWindow();
 }
 
-ui::AXPlatformNode* FlutterPlatformNodeDelegateWindows::GetPlatformNode() const {
+ui::AXPlatformNode* FlutterPlatformNodeDelegateWindows::GetPlatformNode()
+    const {
   return ax_platform_node_;
 }
 

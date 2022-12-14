@@ -193,7 +193,7 @@ class AX_EXPORT AXNode final {
   bool IsDescendantOf(const AXNode* ancestor) const;
 
   bool IsDescendantOfCrossingTreeBoundary(const AXNode* ancestor) const;
-AXNode* GetParentCrossingTreeBoundary() const;
+  AXNode* GetParentCrossingTreeBoundary() const;
 
   // Gets the text offsets where new lines start either from the node's data or
   // by computing them and caching the result.

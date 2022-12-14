@@ -299,8 +299,9 @@ bool AXNodePosition::IsInLineBreakingObject() const {
     return false;
   BASE_DCHECK(GetAnchor());
   return (GetAnchor()->data().GetBoolAttribute(
-             ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
-         !GetAnchor()->IsInListMarker()) || GetAnchor()->data().role == ax::mojom::Role::kLineBreak;
+              ax::mojom::BoolAttribute::kIsLineBreakingObject) &&
+          !GetAnchor()->IsInListMarker()) ||
+         GetAnchor()->data().role == ax::mojom::Role::kLineBreak;
 }
 
 ax::mojom::Role AXNodePosition::GetAnchorRole() const {

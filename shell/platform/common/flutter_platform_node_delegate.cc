@@ -117,17 +117,20 @@ FlutterPlatformNodeDelegate::GetOwnerBridge() const {
   return bridge_;
 }
 
-gfx::NativeViewAccessible FlutterPlatformNodeDelegate::GetLowestPlatformAncestor() const {
+gfx::NativeViewAccessible
+FlutterPlatformNodeDelegate::GetLowestPlatformAncestor() const {
   auto bridge_ptr = bridge_.lock();
   BASE_DCHECK(bridge_ptr);
   auto lowest_platform_acnestor = ax_node_->GetLowestPlatformAncestor();
   if (lowest_platform_acnestor) {
-    return bridge_ptr->GetNativeAccessibleFromId(ax_node_->GetLowestPlatformAncestor()->id());
+    return bridge_ptr->GetNativeAccessibleFromId(
+        ax_node_->GetLowestPlatformAncestor()->id());
   }
   return nullptr;
 }
 
-ui::AXNodePosition::AXPositionInstance FlutterPlatformNodeDelegate::CreateTextPositionAt(int offset) const {
+ui::AXNodePosition::AXPositionInstance
+FlutterPlatformNodeDelegate::CreateTextPositionAt(int offset) const {
   return ui::AXNodePosition::CreatePosition(*ax_node_, offset);
 }
 
@@ -135,19 +138,28 @@ ui::AXPlatformNode* FlutterPlatformNodeDelegate::GetPlatformNode() const {
   return nullptr;
 }
 
-ui::AXPlatformNode* FlutterPlatformNodeDelegate::GetFromNodeID(int32_t node_id) {
-  ui::AXTreeManager* tree_manager = ui::AXTreeManagerMap::GetInstance().GetManager(ax_node_->tree()->GetAXTreeID());
-  AccessibilityBridge* platform_manager = static_cast<AccessibilityBridge*>(tree_manager);
+ui::AXPlatformNode* FlutterPlatformNodeDelegate::GetFromNodeID(
+    int32_t node_id) {
+  ui::AXTreeManager* tree_manager =
+      ui::AXTreeManagerMap::GetInstance().GetManager(
+          ax_node_->tree()->GetAXTreeID());
+  AccessibilityBridge* platform_manager =
+      static_cast<AccessibilityBridge*>(tree_manager);
   return platform_manager->GetPlatformNodeFromTree(node_id);
 }
 
-ui::AXPlatformNode* FlutterPlatformNodeDelegate::GetFromTreeIDAndNodeID(const ui::AXTreeID& tree_id, int32_t node_id) {
-  ui::AXTreeManager* tree_manager = ui::AXTreeManagerMap::GetInstance().GetManager(tree_id);
-  AccessibilityBridge* platform_manager = static_cast<AccessibilityBridge*>(tree_manager);
+ui::AXPlatformNode* FlutterPlatformNodeDelegate::GetFromTreeIDAndNodeID(
+    const ui::AXTreeID& tree_id,
+    int32_t node_id) {
+  ui::AXTreeManager* tree_manager =
+      ui::AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  AccessibilityBridge* platform_manager =
+      static_cast<AccessibilityBridge*>(tree_manager);
   return platform_manager->GetPlatformNodeFromTree(node_id);
 }
 
-const ui::AXTree::Selection FlutterPlatformNodeDelegate::GetUnignoredSelection() const {
+const ui::AXTree::Selection FlutterPlatformNodeDelegate::GetUnignoredSelection()
+    const {
   return ax_node_->GetUnignoredSelection();
 }
 

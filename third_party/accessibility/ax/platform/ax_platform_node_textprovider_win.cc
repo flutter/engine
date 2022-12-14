@@ -21,9 +21,7 @@
 
 namespace ui {
 
-AXPlatformNodeTextProviderWin::AXPlatformNodeTextProviderWin() {
-
-}
+AXPlatformNodeTextProviderWin::AXPlatformNodeTextProviderWin() {}
 
 AXPlatformNodeTextProviderWin::~AXPlatformNodeTextProviderWin() {}
 
@@ -109,8 +107,8 @@ HRESULT AXPlatformNodeTextProviderWin::GetSelection(SAFEARRAY** selection) {
                                    text_range_provider.Get());
   BASE_DCHECK(SUCCEEDED(hr));
 
-  // Since BASE_DCHECK only happens in debug builds, return immediately to ensure
-  // that we're not leaking the SAFEARRAY on release builds
+  // Since BASE_DCHECK only happens in debug builds, return immediately to
+  // ensure that we're not leaking the SAFEARRAY on release builds
   if (FAILED(hr))
     return E_FAIL;
 
@@ -175,8 +173,8 @@ HRESULT AXPlatformNodeTextProviderWin::GetVisibleRanges(
                                      current_provider.Get());
     BASE_DCHECK(SUCCEEDED(hr));
 
-    // Since BASE_DCHECK only happens in debug builds, return immediately to ensure
-    // that we're not leaking the SAFEARRAY on release builds
+    // Since BASE_DCHECK only happens in debug builds, return immediately to
+    // ensure that we're not leaking the SAFEARRAY on release builds
     if (FAILED(hr))
       return E_FAIL;
 
@@ -275,7 +273,6 @@ HRESULT AXPlatformNodeTextProviderWin::GetConversionTarget(
 ITextRangeProvider* AXPlatformNodeTextProviderWin::GetRangeFromChild(
     ui::AXPlatformNodeWin* ancestor,
     ui::AXPlatformNodeWin* descendant) {
-
   BASE_DCHECK(ancestor);
   BASE_DCHECK(descendant);
   BASE_DCHECK(descendant->GetDelegate());
@@ -354,4 +351,4 @@ AXPlatformNodeTextProviderWin::GetTextRangeProviderFromActiveComposition(
   return S_OK;
 }
 
-}
+}  // namespace ui

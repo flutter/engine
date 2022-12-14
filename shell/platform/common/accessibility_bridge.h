@@ -112,7 +112,7 @@ class AccessibilityBridge
   // AXTreeManager methods.
 
   ui::AXNode* GetNodeFromTree(const ui::AXTreeID tree_id,
-                                  const ui::AXNode::AXID node_id) const override;
+                              const ui::AXNode::AXID node_id) const override;
 
   ui::AXNode* GetNodeFromTree(const ui::AXNode::AXID node_id) const override;
 
@@ -128,9 +128,11 @@ class AccessibilityBridge
 
   // AXPlatformTreeManger methods.
 
-  ui::AXPlatformNode* GetPlatformNodeFromTree(const ui::AXNode::AXID node_id) const override;
+  ui::AXPlatformNode* GetPlatformNodeFromTree(
+      const ui::AXNode::AXID node_id) const override;
 
-  ui::AXPlatformNode* GetPlatformNodeFromTree(const ui::AXNode& node) const override;
+  ui::AXPlatformNode* GetPlatformNodeFromTree(
+      const ui::AXNode& node) const override;
 
   ui::AXPlatformNodeDelegate* RootDelegate() const override;
 

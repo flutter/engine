@@ -9,13 +9,13 @@
 
 #include <vector>
 
-#include "base/win/scoped_bstr.h"
-#include "base/win/scoped_safearray.h"
 #include "ax/ax_action_data.h"
 #include "ax/platform/ax_fragment_root_win.h"
 #include "ax/platform/ax_platform_node_textprovider_win.h"
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 #include "ax/platform/test_ax_node_wrapper.h"
+#include "base/win/scoped_bstr.h"
+#include "base/win/scoped_safearray.h"
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
@@ -550,8 +550,7 @@ TEST_F(AXPlatformNodeTextProviderTest,
       owner->GetDelegate()
           ->CreateTextPositionAt(0)
           ->CreatePositionAtEndOfAnchor();
-  expected_end = expected_end
-          ->AsLeafTextPosition();
+  expected_end = expected_end->AsLeafTextPosition();
   EXPECT_EQ(*GetStart(text_range.Get()), *expected_start);
   EXPECT_EQ(*GetEnd(text_range.Get()), *expected_end);
 }
@@ -812,7 +811,8 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
   selections.Reset();
   text_range_provider.Reset();
 
-  // Removed testing logic for non-atomic text fields as we do not have this role.
+  // Removed testing logic for non-atomic text fields as we do not have this
+  // role.
 
   // Now delete the tree (which will delete the associated elements) and verify
   // that UIA_E_ELEMENTNOTAVAILABLE is returned when calling GetSelection on

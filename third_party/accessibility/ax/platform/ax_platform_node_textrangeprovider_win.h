@@ -7,12 +7,13 @@
 
 #include <atlbase.h>
 #include <atlcom.h>
+
 #include <UIAutomationCore.h>
 
 #include "ax/ax_node_position.h"
 #include "ax/ax_tree_observer.h"
-#include "ax/platform/ax_platform_node_win.h"
 #include "ax/platform/ax_platform_node_delegate.h"
+#include "ax/platform/ax_platform_node_win.h"
 
 namespace ui {
 
@@ -29,9 +30,14 @@ class AX_EXPORT __declspec(uuid("3071e40d-a10d-45ff-a59f-6e8e1138e2c1"))
   AXPlatformNodeTextRangeProviderWin();
   ~AXPlatformNodeTextRangeProviderWin();
 
-  static ITextRangeProvider* CreateTextRangeProvider(AXNodePosition::AXPositionInstance start, AXNodePosition::AXPositionInstance end);
+  static ITextRangeProvider* CreateTextRangeProvider(
+      AXNodePosition::AXPositionInstance start,
+      AXNodePosition::AXPositionInstance end);
 
-  static ITextRangeProvider* CreateTextRangeProviderForTesting(AXPlatformNodeWin* owner, AXNodePosition::AXPositionInstance start, AXNodePosition::AXPositionInstance end);
+  static ITextRangeProvider* CreateTextRangeProviderForTesting(
+      AXPlatformNodeWin* owner,
+      AXNodePosition::AXPositionInstance start,
+      AXNodePosition::AXPositionInstance end);
 
   //
   // ITextRangeProvider methods.
@@ -272,6 +278,6 @@ class AX_EXPORT __declspec(uuid("3071e40d-a10d-45ff-a59f-6e8e1138e2c1"))
   TextRangeEndpoints endpoints_;
 };
 
-}
+}  // namespace ui
 
 #endif  // UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_TEXTRANGEPROVIDER_WIN_H_
