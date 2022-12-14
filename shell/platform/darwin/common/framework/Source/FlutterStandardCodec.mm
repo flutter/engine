@@ -251,75 +251,84 @@ using namespace flutter;
   [self writeBytes:value.UTF8String length:length];
 }
 
-- (void)writeValue:(id)value {
-  if (value == nil || value == [NSNull null]) {
-    [self writeByte:FlutterStandardFieldNil];
-  } else if ([value isKindOfClass:[NSNumber class]]) {
-    CFNumberRef number = (__bridge CFNumberRef)value;
+static void WriteKeyValuePair(const void* key, const void* value, void* context) {
+  [(__bridge FlutterStandardWriter*)context writeValue:(__bridge id)key];
+  [(__bridge FlutterStandardWriter*)context writeValue:(__bridge id)value];
+}
+
+static void WriteArrayValue(const void* value, void* context) {
+  [(__bridge FlutterStandardWriter*)context writeValue:(__bridge id)value];
+}
+
+static void WriteValue(FlutterStandardWriter* writer, CFTypeRef value) {
+  if (value == nullptr || CFGetTypeID(value) == CFNullGetTypeID()) {
+    [writer writeByte:FlutterStandardFieldNil];
+  } else if (CFGetTypeID(value) == CFBooleanGetTypeID()) {
+    [writer writeByte:(CFBooleanGetValue((CFBooleanRef)value) ? FlutterStandardFieldTrue
+                                                              : FlutterStandardFieldFalse)];
+  } else if (CFGetTypeID(value) == CFNumberGetTypeID()) {
+    CFNumberRef number = (CFNumberRef)value;
     BOOL success = NO;
-    if (CFGetTypeID(number) == CFBooleanGetTypeID()) {
-      BOOL b = CFBooleanGetValue((CFBooleanRef)number);
-      [self writeByte:(b ? FlutterStandardFieldTrue : FlutterStandardFieldFalse)];
-      success = YES;
-    } else if (CFNumberIsFloatType(number)) {
+    if (CFNumberIsFloatType(number)) {
       Float64 f;
       success = CFNumberGetValue(number, kCFNumberFloat64Type, &f);
       if (success) {
-        [self writeByte:FlutterStandardFieldFloat64];
-        [self writeAlignment:8];
-        [self writeBytes:(UInt8*)&f length:8];
+        [writer writeByte:FlutterStandardFieldFloat64];
+        [writer writeAlignment:8];
+        [writer writeBytes:(UInt8*)&f length:8];
       }
     } else if (CFNumberGetByteSize(number) <= 4) {
       SInt32 n;
       success = CFNumberGetValue(number, kCFNumberSInt32Type, &n);
       if (success) {
-        [self writeByte:FlutterStandardFieldInt32];
-        [self writeBytes:(UInt8*)&n length:4];
+        [writer writeByte:FlutterStandardFieldInt32];
+        [writer writeBytes:(UInt8*)&n length:4];
       }
     } else if (CFNumberGetByteSize(number) <= 8) {
       SInt64 n;
       success = CFNumberGetValue(number, kCFNumberSInt64Type, &n);
       if (success) {
-        [self writeByte:FlutterStandardFieldInt64];
-        [self writeBytes:(UInt8*)&n length:8];
+        [writer writeByte:FlutterStandardFieldInt64];
+        [writer writeBytes:(UInt8*)&n length:8];
       }
     }
     if (!success) {
-      NSLog(@"Unsupported value: %@ of number type %ld", value, CFNumberGetType(number));
-      NSAssert(NO, @"Unsupported value for standard codec");
+      NSLog(@"Unsupported value: %@ of number type %ld", (__bridge id)value,
+            CFNumberGetType(number));
+      NSCAssert(NO, @"Unsupported value for standard codec");
     }
-  } else if ([value isKindOfClass:[NSString class]]) {
-    NSString* string = value;
-    [self writeByte:FlutterStandardFieldString];
-    [self writeUTF8:string];
-  } else if ([value isKindOfClass:[FlutterStandardTypedData class]]) {
-    FlutterStandardTypedData* typedData = value;
-    [self writeByte:FlutterStandardFieldForDataType(typedData.type)];
-    [self writeSize:typedData.elementCount];
-    [self writeAlignment:typedData.elementSize];
-    [self writeData:typedData.data];
-  } else if ([value isKindOfClass:[NSData class]]) {
-    [self writeValue:[FlutterStandardTypedData typedDataWithBytes:value]];
-  } else if ([value isKindOfClass:[NSArray class]]) {
-    NSArray* array = value;
-    [self writeByte:FlutterStandardFieldList];
-    [self writeSize:array.count];
-    for (id object in array) {
-      [self writeValue:object];
-    }
-  } else if ([value isKindOfClass:[NSDictionary class]]) {
-    NSDictionary* dict = value;
-    [self writeByte:FlutterStandardFieldMap];
-    [self writeSize:dict.count];
-    for (id key in dict) {
-      [self writeValue:key];
-      [self writeValue:[dict objectForKey:key]];
-    }
+  } else if (CFGetTypeID(value) == CFStringGetTypeID()) {
+    [writer writeByte:FlutterStandardFieldString];
+    [writer writeUTF8:(__bridge NSString*)value];
+  } else if ([(__bridge id)value isKindOfClass:[FlutterStandardTypedData class]]) {
+    FlutterStandardTypedData* typedData = (__bridge id)value;
+    [writer writeByte:FlutterStandardFieldForDataType(typedData.type)];
+    [writer writeSize:typedData.elementCount];
+    [writer writeAlignment:typedData.elementSize];
+    [writer writeData:typedData.data];
+  } else if (CFGetTypeID(value) == CFDataGetTypeID()) {
+    [writer writeValue:[FlutterStandardTypedData typedDataWithBytes:(__bridge NSData*)value]];
+  } else if (CFGetTypeID(value) == CFArrayGetTypeID()) {
+    CFArrayRef array = (CFArrayRef)value;
+    long count = CFArrayGetCount(array);
+    [writer writeByte:FlutterStandardFieldList];
+    [writer writeSize:count];
+    CFArrayApplyFunction(array, CFRangeMake(0, count), WriteArrayValue, (void*)writer);
+  } else if (CFGetTypeID(value) == CFDictionaryGetTypeID()) {
+    CFDictionaryRef dict = (CFDictionaryRef)value;
+    [writer writeByte:FlutterStandardFieldMap];
+    [writer writeSize:CFDictionaryGetCount(dict)];
+    CFDictionaryApplyFunction(dict, WriteKeyValuePair, (void*)writer);
   } else {
-    NSLog(@"Unsupported value: %@ of type %@", value, [value class]);
-    NSAssert(NO, @"Unsupported value for standard codec");
+    NSLog(@"Unsupported value: %@ of type %@", (__bridge id)value, [(__bridge id)value class]);
+    NSCAssert(NO, @"Unsupported value for standard codec");
   }
 }
+
+- (void)writeValue:(id)value {
+  WriteValue(self, (__bridge CFTypeRef)value);
+}
+
 @end
 
 @implementation FlutterStandardReader {
@@ -377,9 +386,16 @@ using namespace flutter;
   return (__bridge NSData*)[self readDataRef:length];
 }
 
+static CFTypeRef ReadUTF8(FlutterStandardReader* reader) {
+  CFDataRef bytes = [reader readDataRef:[reader readSize]];
+  CFStringRef string =
+      CFStringCreateWithBytes(kCFAllocatorDefault, CFDataGetBytePtr(bytes), CFDataGetLength(bytes),
+                              kCFStringEncodingUTF8, false);
+  return CFAutorelease(string);
+}
+
 - (NSString*)readUTF8 {
-  CFDataRef bytes = [self readDataRef:[self readSize]];
-  return [[NSString alloc] initWithData:(__bridge NSData*)bytes encoding:NSUTF8StringEncoding];
+  return (__bridge NSString*)ReadUTF8(self);
 }
 
 - (void)readAlignment:(UInt8)alignment {
@@ -393,7 +409,9 @@ using namespace flutter;
   UInt32 elementCount = [self readSize];
   UInt8 elementSize = elementSizeForFlutterStandardDataType(type);
   [self readAlignment:elementSize];
-  return [FlutterStandardTypedData typedDataWithData:(__bridge NSData*)[self readDataRef:elementCount * elementSize] type:type];
+  return [FlutterStandardTypedData
+      typedDataWithData:(__bridge NSData*)[self readDataRef:elementCount * elementSize]
+                   type:type];
 }
 
 - (nullable id)readValue {
@@ -435,7 +453,7 @@ static CFTypeRef ReadValueOfType(FlutterStandardReader* codec, UInt8 type) {
     }
     case FlutterStandardFieldIntHex:
     case FlutterStandardFieldString:
-      return (__bridge CFStringRef)[codec readUTF8];
+      return ReadUTF8(codec);
     case FlutterStandardFieldUInt8Data:
     case FlutterStandardFieldInt32Data:
     case FlutterStandardFieldInt64Data:
