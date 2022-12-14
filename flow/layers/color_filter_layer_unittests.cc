@@ -473,10 +473,13 @@ TEST_F(ColorFilterLayerTest, SimpleFilterWithOffset) {
 
   SkMatrix child_matrix = initial_transform;
   child_matrix.preTranslate(layer_offset.fX, layer_offset.fY);
+  const SkRect child_rounded_bounds =
+      SkRect::MakeLTRB(10.5f, 12.5f, 26.0f, 28.0f);
 
   preroll_context()->state_stack.set_preroll_delegate(initial_cull_rect,
                                                       initial_transform);
   layer->Preroll(preroll_context());
+  EXPECT_EQ(layer->paint_bounds(), child_rounded_bounds);
   EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(mock_layer->parent_matrix(), child_matrix);
