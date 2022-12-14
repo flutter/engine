@@ -31,6 +31,7 @@ void Canvas::Initialize() {
   base_pass_ = std::make_unique<EntityPass>();
   current_pass_ = base_pass_.get();
   xformation_stack_.emplace_back(CanvasStackEntry{});
+  lazy_glyph_atlas_ = std::make_shared<LazyGlyphAtlas>();
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -39,6 +40,7 @@ void Canvas::Reset() {
   base_pass_ = nullptr;
   current_pass_ = nullptr;
   xformation_stack_ = {};
+  lazy_glyph_atlas_ = nullptr;
 }
 
 void Canvas::Save() {
