@@ -10,13 +10,13 @@
 #include <memory>
 #include <utility>
 
+#include "ax/ax_tree.h"
+#include "ax/platform/ax_fragment_root_win.h"
+#include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 #include "base/win/atl.h"
 #include "base/win/scoped_bstr.h"
 #include "base/win/scoped_safearray.h"
 #include "base/win/scoped_variant.h"
-#include "ax/ax_tree.h"
-#include "ax/platform/ax_fragment_root_win.h"
-#include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -154,14 +154,16 @@ namespace ui {
     if (text_range_provider_found == nullptr) {                              \
       EXPECT_TRUE(false);                                                    \
     } else {                                                                 \
-    SetOwner(owner, text_range_provider_found.Get());                        \
-    base::win::ScopedBstr found_content;                                     \
-    EXPECT_HRESULT_SUCCEEDED(                                                \
-        text_range_provider_found->GetText(-1, found_content.Receive()));    \
-    if (ignore_case)                                                         \
-      EXPECT_EQ(0, _wcsicmp(found_content.Get(), find_string.Get()));        \
-    else                                                                     \
-      EXPECT_EQ(0, wcscmp(found_content.Get(), find_string.Get()));          \
+      SetOwner(owner, text_range_provider_found.Get());                      \
+      base::win::ScopedBstr found_content;                                   \
+      EXPECT_HRESULT_SUCCEEDED(                                              \
+          text_range_provider_found->GetText(-1, found_content.Receive()));  \
+      if (ignore_case)                                                       \
+        EXPECT_EQ(0, _wcsicmp(found_content.Get(),                    \
+                              find_string.Get()));                    \
+      else                                                                   \
+        EXPECT_EQ(0, wcscmp(found_content.Get(),                      \
+                            find_string.Get()));                      \
     }                                                                        \
   }
 
@@ -252,7 +254,8 @@ class AXPlatformNodeTextRangeProviderTest : public ui::AXPlatformNodeWinTest {
   void SetOwner(AXPlatformNodeWin* owner,
                 ITextRangeProvider* destination_range) {
     ComPtr<AXPlatformNodeTextRangeProviderWin> destination_provider_internal;
-    auto as = static_cast<AXPlatformNodeTextRangeProviderWin*>(destination_range);
+    auto as =
+        static_cast<AXPlatformNodeTextRangeProviderWin*>(destination_range);
     destination_range->QueryInterface(
         IID_PPV_ARGS(&destination_provider_internal));
     destination_provider_internal->SetOwnerForTesting(owner);
@@ -460,8 +463,9 @@ class AXPlatformNodeTextRangeProviderTest : public ui::AXPlatformNodeWinTest {
     text_field.AddStringAttribute(ax::mojom::StringAttribute::kInputType,
                                   "text");
     text_field.SetValue(ALL_TEXT);
-    text_field.AddIntListAttribute(ax::mojom::IntListAttribute::kCachedLineStarts,
-                                   std::vector<int32_t>{0, 7});
+    text_field.AddIntListAttribute(
+        ax::mojom::IntListAttribute::kCachedLineStarts,
+        std::vector<int32_t>{0, 7});
     text_field.child_ids.push_back(static_text1.id);
     text_field.child_ids.push_back(line_break.id);
     text_field.child_ids.push_back(static_text2.id);
@@ -1887,8 +1891,9 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 
   // Moving by 0 should have no effect.
   EXPECT_UIA_MOVE(text_range_provider, TextUnit_Character, /*count*/ 0,
-                  /*expected_text*/ L"First line of text\nStandalone line\n"
-                                    L"bold textParagraph 1Paragraph 2",
+                  /*expected_text*/
+                  L"First line of text\nStandalone line\n"
+                  L"bold textParagraph 1Paragraph 2",
                   /*expected_count*/ 0);
 
   // Move forward.
@@ -1964,7 +1969,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 // TODO(schectman) https://github.com/flutter/flutter/issues/117012
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMoveFormat) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderMoveFormat) {
   Init(BuildAXTreeForMoveByFormat());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -2187,7 +2193,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMoveW
 }
 
 // TODO(schectman) https://github.com/flutter/flutter/issues/117012
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMoveLine) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderMoveLine) {
   Init(BuildAXTreeForMove());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -2564,8 +2571,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-// TODO(schectman) We are probably not accounting for multibyte characters properly yet.
-// https://github.com/flutter/flutter/issues/117012
+// TODO(schectman) We are probably not accounting for multibyte characters
+// properly yet. https://github.com/flutter/flutter/issues/117012
 TEST_F(AXPlatformNodeTextRangeProviderTest,
        DISABLED_TestITextRangeProviderMoveEndpointByCharacterMultilingual) {
   // The English string has three characters, each 8 bits in length.
@@ -5103,18 +5110,19 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   // Test Leaf kStaticText search.
   GetTextRangeProviderFromTextNode(range, root_node->children()[0]);
   EXPECT_UIA_FIND_TEXT(range, L"some text", false, owner);
-  // Some expectations like the one below are currently skipped until we can implement ignoreCase in FindText.
-  //EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", false, owner);
+  // Some expectations like the one below are currently skipped until we can
+  // implement ignoreCase in FindText.
+  // EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", false, owner);
   GetTextRangeProviderFromTextNode(range, root_node->children()[1]);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
-  //EXPECT_UIA_FIND_TEXT(range, L"MoRe", true, owner);
+  // EXPECT_UIA_FIND_TEXT(range, L"MoRe", true, owner);
 
   // Test searching for leaf content from ancestor.
   GetTextRangeProviderFromTextNode(range, root_node);
   EXPECT_UIA_FIND_TEXT(range, L"some text", false, owner);
-  //EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
+  // EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more text", false, owner);
-  //EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
+  // EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
   // Test finding text that crosses a node boundary.
   EXPECT_UIA_FIND_TEXT(range, L"textmore", false, owner);
@@ -5199,7 +5207,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.tree_data = tree_data;
   update.has_tree_data = true;
   update.root_id = root_1.id;
-  update.nodes = {root_1, list_2, list_item_3, static_text_4,
+  update.nodes = {root_1,       list_2,      list_item_3,   static_text_4,
                   inline_box_5, list_item_6, static_text_7, inline_box_8};
 
   Init(update);
@@ -5210,8 +5218,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 
   base::win::ScopedBstr find_string(L"oobar");
   Microsoft::WRL::ComPtr<ITextRangeProvider> text_range_provider_found;
-  EXPECT_HRESULT_SUCCEEDED(text_range_provider->FindText(find_string.Get(),
-                           false, false, &text_range_provider_found));
+  EXPECT_HRESULT_SUCCEEDED(text_range_provider->FindText(
+      find_string.Get(), false, false, &text_range_provider_found));
   ASSERT_TRUE(text_range_provider_found.Get());
   Microsoft::WRL::ComPtr<AXPlatformNodeTextRangeProviderWin>
       text_range_provider_win;
@@ -5304,7 +5312,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
     V_VT(&is_hidden_attr_val) = VT_BOOL;
     ComPtr<ITextRangeProvider> matched_range_provider;
     ComPtr<ITextRangeProvider> document_range_provider;
-    GetTextRangeProviderFromTextNode(document_range_provider, GetRootAsAXNode());
+    GetTextRangeProviderFromTextNode(document_range_provider,
+                                     GetRootAsAXNode());
 
     // Search forward, look for IsHidden=true.
     // Expected: nullptr
@@ -5392,7 +5401,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
     V_VT(&is_hidden_attr_val) = VT_BOOL;
     ComPtr<ITextRangeProvider> matched_range_provider;
     ComPtr<ITextRangeProvider> document_range_provider;
-    GetTextRangeProviderFromTextNode(document_range_provider, GetRootAsAXNode());
+    GetTextRangeProviderFromTextNode(document_range_provider,
+                                     GetRootAsAXNode());
 
     // Search forward, look for IsHidden=true.
     // Expected: "text1"
@@ -5480,7 +5490,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
     V_VT(&is_hidden_attr_val) = VT_BOOL;
     ComPtr<ITextRangeProvider> matched_range_provider;
     ComPtr<ITextRangeProvider> document_range_provider;
-    GetTextRangeProviderFromTextNode(document_range_provider, GetRootAsAXNode());
+    GetTextRangeProviderFromTextNode(document_range_provider,
+                                     GetRootAsAXNode());
 
     // Search forward, look for IsHidden=true.
     // Expected: nullptr
@@ -5589,7 +5600,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
     V_VT(&is_hidden_attr_val) = VT_BOOL;
     ComPtr<ITextRangeProvider> matched_range_provider;
     ComPtr<ITextRangeProvider> document_range_provider;
-    GetTextRangeProviderFromTextNode(document_range_provider, GetRootAsAXNode());
+    GetTextRangeProviderFromTextNode(document_range_provider,
+                                     GetRootAsAXNode());
 
     // Search forward, look for IsHidden=true.
     // Expected: "text2text3"
@@ -5706,7 +5718,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
     V_VT(&is_hidden_attr_val) = VT_BOOL;
     ComPtr<ITextRangeProvider> matched_range_provider;
     ComPtr<ITextRangeProvider> document_range_provider;
-    GetTextRangeProviderFromTextNode(document_range_provider, GetRootAsAXNode());
+    GetTextRangeProviderFromTextNode(document_range_provider,
+                                     GetRootAsAXNode());
 
     // Search forward, look for IsHidden=true.
     // Expected: "text2text3text4"
@@ -5825,8 +5838,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   tree_update.nodes[1].AddState(ax::mojom::State::kIgnored);
   tree_update.nodes[1].AddState(ax::mojom::State::kEditable);
   tree_update.nodes[1].AddState(ax::mojom::State::kRichlyEditable);
-  //tree_update.nodes[1].AddBoolAttribute(
-  //    ax::mojom::BoolAttribute::kNonAtomicTextFieldRoot, true);
+  // tree_update.nodes[1].AddBoolAttribute(
+  //     ax::mojom::BoolAttribute::kNonAtomicTextFieldRoot, true);
   tree_update.nodes[1].role = ax::mojom::Role::kGenericContainer;
 
   tree_update.nodes[2].id = 3;
@@ -6191,7 +6204,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.nodes = {root_data, before_text, ignored_text1, ignored_text2,
                   after_text};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* before_text_node = tree->GetFromId(before_text.id);
   const AXNode* after_text_node = tree->GetFromId(after_text.id);
@@ -6310,7 +6324,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.nodes.push_back(static_text_6);
   update.nodes.push_back(inline_box_7);
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* line_break_3_node = tree->GetFromId(line_break_3.id);
   const AXNode* inline_box_7_node = tree->GetFromId(inline_box_7.id);
@@ -6530,7 +6545,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.has_tree_data = true;
   update.nodes = {root_1, text_3, text_5};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* text_3_node = tree->GetFromId(text_3.id);
   const AXNode* text_5_node = tree->GetFromId(text_5.id);
@@ -6691,7 +6707,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.has_tree_data = true;
   update.nodes = {root_1, text_2, gc_3, gc_4, text_5, gc_6, text_7};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* text_5_node = tree->GetFromId(text_5.id);
   const AXNode* text_7_node = tree->GetFromId(text_7.id);
@@ -6824,7 +6841,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.nodes = {root_1, text_2, gc_3, gc_4,    gc_5,  text_6,
                   gc_7,   text_8, gc_9, text_10, gc_11, text_12};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* text_6_node = tree->GetFromId(text_6.id);
   const AXNode* text_10_node = tree->GetFromId(text_10.id);
@@ -6953,7 +6971,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.nodes = {root_1, text_2, gc_3, gc_4,    gc_5,  text_6,
                   gc_7,   text_8, gc_9, text_10, gc_11, text_12};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* text_6_node = tree->GetFromId(text_6.id);
   const AXNode* text_8_node = tree->GetFromId(text_8.id);
@@ -7127,7 +7146,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.has_tree_data = true;
   update.nodes = {root_1, text_2, group_3, text_4, text_5};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* text_2_node = tree->GetFromId(text_2.id);
   const AXNode* text_4_node = tree->GetFromId(text_4.id);
@@ -7257,7 +7277,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, CaretAtEndOfTextFieldReadOnly) {
                   static_text_4, inline_text_5, static_text_6,
                   inline_text_7};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
   const AXNode* inline_text_5_node = tree->GetFromId(inline_text_5.id);
 
   // Making |owner| AXID:1 so that |TestAXNodeWrapper::BuildAllWrappers|
@@ -7396,7 +7417,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                   text_field_7, generic_container_8, text_field_9,
                   text_field_10};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* image_3_node = tree->GetFromId(image_3.id);
   const AXNode* image_6_node = tree->GetFromId(image_6.id);
@@ -7503,7 +7525,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   update.has_tree_data = true;
   update.nodes = {root_1, static_text_2, inline_text_3, generic_container_4};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
   const AXNode* inline_text_3_node = tree->GetFromId(inline_text_3.id);
 
   // Making |owner| AXID:1 so that |TestAXNodeWrapper::BuildAllWrappers|
