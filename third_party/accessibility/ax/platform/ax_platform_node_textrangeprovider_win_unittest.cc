@@ -159,11 +159,9 @@ namespace ui {
       EXPECT_HRESULT_SUCCEEDED(                                              \
           text_range_provider_found->GetText(-1, found_content.Receive()));  \
       if (ignore_case)                                                       \
-        EXPECT_EQ(0, _wcsicmp(found_content.Get(),                           \
-                              find_string.Get()));                           \
+        EXPECT_EQ(0, _wcsicmp(found_content.Get(), find_string.Get()));      \
       else                                                                   \
-        EXPECT_EQ(0, wcscmp(found_content.Get(),                             \
-                            find_string.Get()));                             \
+        EXPECT_EQ(0, wcscmp(found_content.Get(), find_string.Get()));        \
     }                                                                        \
   }
 
