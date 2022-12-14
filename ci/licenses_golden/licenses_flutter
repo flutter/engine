@@ -4872,6 +4872,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec.mm
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.c
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm
