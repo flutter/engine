@@ -223,7 +223,7 @@ LRESULT Window::OnGetObject(UINT const message,
       FML_LOG(ERROR) << "Failed to query AX fragment root.";
     }
 #endif  // FLUTTER_ENGINE_USE_UIA
-  } else if (is_msaa_request && root_view && FALSE) {
+  } else if (is_msaa_request && root_view) {
     // Create the accessibility root if it does not already exist.
     if (!accessibility_root_) {
       CreateAccessibilityRootNode();
