@@ -174,6 +174,7 @@ class DomEvent {}
 
 extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
+  external DomEventTarget? get currentTarget;
   external double? get timeStamp;
   external String get type;
   external void preventDefault();
@@ -1438,7 +1439,7 @@ extension DomCSSRuleListExtension on DomCSSRuleList {
   external double get length;
 }
 
-/// ResizeObserver constructor.
+/// ResizeObserver JS binding.
 ///
 /// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
 @JS()

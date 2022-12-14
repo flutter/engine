@@ -16,8 +16,11 @@ import 'pointer_converter.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
 
-/// Set this flag to true to see all the fired events in the console.
+/// Set this flag to true to log all the browser events.
 const bool _debugLogPointerEvents = false;
+
+/// Set this to true to log all the events sent to the Flutter framework.
+const bool _debugLogFlutterEvents = false;
 
 /// The signature of a callback that handles pointer events.
 typedef _PointerDataCallback = void Function(Iterable<ui.PointerData>);
@@ -165,6 +168,11 @@ class PointerBinding {
 
   void _onPointerData(Iterable<ui.PointerData> data) {
     final ui.PointerDataPacket packet = ui.PointerDataPacket(data: data.toList());
+    if (_debugLogFlutterEvents) {
+      for(final ui.PointerData datum in data) {
+        print('fw:${datum.change}    ${datum.physicalX},${datum.physicalY}');
+      }
+    }
     EnginePlatformDispatcher.instance.invokeOnPointerDataPacket(packet);
   }
 }
@@ -303,9 +311,10 @@ abstract class _BaseAdapter {
       if (_debugLogPointerEvents) {
         if (domInstanceOfString(event, 'PointerEvent')) {
           final DomPointerEvent pointerEvent = event as DomPointerEvent;
+          final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
           print('${pointerEvent.type}    '
-              '${pointerEvent.offsetX.toStringAsFixed(1)},'
-              '${pointerEvent.offsetY.toStringAsFixed(1)}');
+              '${offset.dx.toStringAsFixed(1)},'
+              '${offset.dy.toStringAsFixed(1)}');
         } else {
           print(event.type);
         }
@@ -332,6 +341,27 @@ abstract class _BaseAdapter {
     final int micro =
     ((milliseconds - ms) * Duration.microsecondsPerMillisecond).toInt();
     return Duration(milliseconds: ms, microseconds: micro);
+  }
+
+  /// Returns an [ui.Offset] of the position of [event], relative to the position of [actualTarget].
+  ///
+  /// The offset is *not* multiplied by DPR or anything else, it's the closest
+  /// to what the DOM would return if we had currentTarget readily available.
+  ///
+  // TODO(dit): Make this understand 3D transforms in the platform view case, https://github.com/flutter/flutter/issues/117091
+  static ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarget) {
+    if (event.target != actualTarget) {
+      // We're on top of a platform view.
+      final DomElement target = event.target! as DomElement;
+      // We can't use currentTarget because it gets lost when the PointerEvents
+      // are coalesced!
+      final DomRect targetRect = target.getBoundingClientRect();
+      final DomRect actualTargetRect = actualTarget.getBoundingClientRect();
+      final double offsetTop = targetRect.y - actualTargetRect.y;
+      final double offsetLeft = targetRect.x - actualTargetRect.x;
+      return ui.Offset(event.offsetX + offsetLeft, event.offsetY + offsetTop);
+    }
+    return ui.Offset(event.offsetX, event.offsetY);
   }
 }
 
@@ -442,6 +472,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     }
 
     final List<ui.PointerData> data = <ui.PointerData>[];
+    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: ui.PointerChange.hover,
@@ -449,8 +480,8 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       kind: kind,
       signalKind: ui.PointerSignalKind.scroll,
       device: _mouseDeviceId,
-      physicalX: event.offsetX * ui.window.devicePixelRatio,
-      physicalY: event.offsetY * ui.window.devicePixelRatio,
+      physicalX: offset.dx * ui.window.devicePixelRatio,
+      physicalY: offset.dy * ui.window.devicePixelRatio,
       buttons: event.buttons!.toInt(),
       pressure: 1.0,
       pressureMax: 1.0,
@@ -812,6 +843,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
     final num? pressure = event.pressure;
+    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -819,8 +851,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: kind,
       signalKind: ui.PointerSignalKind.none,
       device: _getPointerId(event),
-      physicalX: event.offsetX * ui.window.devicePixelRatio,
-      physicalY: event.offsetY * ui.window.devicePixelRatio,
+      physicalX: offset.dx * ui.window.devicePixelRatio,
+      physicalY: offset.dy * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure:  pressure == null ? 0.0 : pressure.toDouble(),
       pressureMax: 1.0,
@@ -840,6 +872,10 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
         return coalescedEvents;
       }
     }
+    // Important: coalesced events lack the `eventTarget` property (because they're
+    // being handled in a deferred way).
+    //
+    // See the "Note" here: https://developer.mozilla.org/en-US/docs/Web/API/Event/currentTarget
     return <DomPointerEvent>[event];
   }
 
@@ -913,7 +949,6 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
@@ -924,7 +959,6 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: true,
             timeStamp: timeStamp,
-            boundingClientRect: clientRect,
           );
         }
       }
@@ -935,7 +969,6 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -945,7 +978,6 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: true,
             timeStamp: timeStamp,
-            boundingClientRect: clientRect,
           );
         }
       }
@@ -958,7 +990,6 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -969,7 +1000,6 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: false,
             timeStamp: timeStamp,
-            boundingClientRect: clientRect,
           );
         }
       }
@@ -979,7 +1009,6 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      final DomRect clientRect = (event.target! as DomElement).getBoundingClientRect();
       for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
@@ -990,7 +1019,6 @@ class _TouchAdapter extends _BaseAdapter {
             touch: touch,
             pressed: false,
             timeStamp: timeStamp,
-            boundingClientRect: clientRect,
           );
         }
       }
@@ -1004,7 +1032,6 @@ class _TouchAdapter extends _BaseAdapter {
     required DomTouch touch,
     required bool pressed,
     required Duration timeStamp,
-    required DomRect boundingClientRect,
   }) {
     _pointerDataConverter.convert(
       data,
@@ -1013,8 +1040,8 @@ class _TouchAdapter extends _BaseAdapter {
       signalKind: ui.PointerSignalKind.none,
       device: touch.identifier!.toInt(),
       // Account for zoom/scroll in the TouchEvent
-      physicalX: (touch.clientX - boundingClientRect.x) * ui.window.devicePixelRatio,
-      physicalY: (touch.clientY - boundingClientRect.y) * ui.window.devicePixelRatio,
+      physicalX: touch.clientX * ui.window.devicePixelRatio,
+      physicalY: touch.clientY * ui.window.devicePixelRatio,
       buttons: pressed ? _kPrimaryMouseButton : 0,
       pressure: 1.0,
       pressureMax: 1.0,
@@ -1141,6 +1168,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     assert(data != null);
     assert(event != null);
     assert(details != null);
+    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -1148,8 +1176,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       kind: ui.PointerDeviceKind.mouse,
       signalKind: ui.PointerSignalKind.none,
       device: _mouseDeviceId,
-      physicalX: event.offsetX * ui.window.devicePixelRatio,
-      physicalY: event.offsetY * ui.window.devicePixelRatio,
+      physicalX: offset.dx * ui.window.devicePixelRatio,
+      physicalY: offset.dy * ui.window.devicePixelRatio,
       buttons: details.buttons,
       pressure: 1.0,
       pressureMax: 1.0,

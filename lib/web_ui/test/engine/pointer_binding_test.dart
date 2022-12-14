@@ -853,7 +853,7 @@ void testMain() {
       packets.clear();
 
       // Release the pointer on the semantics placeholder.
-      domWindow.dispatchEvent(context.primaryUp(
+      glassPane.dispatchEvent(context.primaryUp(
         clientX: 100.0,
         clientY: 200.0,
       ));
