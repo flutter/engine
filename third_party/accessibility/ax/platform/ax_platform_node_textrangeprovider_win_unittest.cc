@@ -159,11 +159,11 @@ namespace ui {
       EXPECT_HRESULT_SUCCEEDED(                                              \
           text_range_provider_found->GetText(-1, found_content.Receive()));  \
       if (ignore_case)                                                       \
-        EXPECT_EQ(0, _wcsicmp(found_content.Get(),                    \
-                              find_string.Get()));                    \
+        EXPECT_EQ(0, _wcsicmp(found_content.Get(),                           \
+                              find_string.Get()));                           \
       else                                                                   \
-        EXPECT_EQ(0, wcscmp(found_content.Get(),                      \
-                            find_string.Get()));                      \
+        EXPECT_EQ(0, wcscmp(found_content.Get(),                             \
+                            find_string.Get()));                             \
     }                                                                        \
   }
 
@@ -2101,7 +2101,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 // TODO(schectman) https://github.com/flutter/flutter/issues/117012
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMoveWord) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderMoveWord) {
   Init(BuildAXTreeForMove());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -6391,7 +6392,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestValidateStartAndEnd) {
   update.has_tree_data = true;
   update.nodes = {root_data, text_data, more_text_data};
 
-  Init(update);  const AXTree* tree = GetTree();
+  Init(update);
+  const AXTree* tree = GetTree();
 
   const AXNode* root_node = tree->GetFromId(root_data.id);
   const AXNode* more_text_node = tree->GetFromId(more_text_data.id);

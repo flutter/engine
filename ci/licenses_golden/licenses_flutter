@@ -5590,7 +5590,6 @@ FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
 FILE: ../../../flutter/shell/vmservice/empty.dart
 FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
-FILE: ../../../flutter/third_party/accessibility/ax/ax_tree_manager.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win_unittest.cc
