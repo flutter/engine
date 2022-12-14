@@ -89,7 +89,7 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
     assert(points != null);
     final SkFloat32List encodedPoints = toMallocedSkPoints(points);
     skiaObject.addPoly(encodedPoints.toTypedArray(), close);
-    freeList(encodedPoints);
+    free(encodedPoints);
   }
 
   @override

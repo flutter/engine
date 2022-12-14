@@ -546,7 +546,7 @@ void _mallocTests() {
     for (final SkFloat32List skList in lists) {
       // toTypedArray() still works.
       expect(() => skList.toTypedArray(), returnsNormally);
-      freeList(skList);
+      free(skList);
       // toTypedArray() throws after free.
       expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
     }
@@ -564,7 +564,7 @@ void _mallocTests() {
     for (final SkUint32List skList in lists) {
       // toTypedArray() still works.
       expect(() => skList.toTypedArray(), returnsNormally);
-      freeList(skList);
+      free(skList);
       // toTypedArray() throws after free.
       expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
     }
@@ -841,7 +841,7 @@ void _pathTests() {
       ui.Offset(10, 10),
     ]);
     path.addPoly(encodedPoints.toTypedArray(), true);
-    freeList(encodedPoints);
+    free(encodedPoints);
   });
 
   test('addRRect', () {
