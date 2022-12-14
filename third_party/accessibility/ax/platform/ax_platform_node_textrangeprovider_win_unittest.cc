@@ -209,8 +209,12 @@ namespace ui {
 
 #define DCHECK_EQ(a, b) BASE_DCHECK((a) == (b))
 
-static AXNodePosition::AXPositionInstance CreateTextPosition(const AXNode& anchor, int text_offset, ax::mojom::TextAffinity affinity) {
-  return AXNodePosition::CreateTextPosition(anchor.tree()->GetAXTreeID(), anchor.id(), text_offset, affinity);
+static AXNodePosition::AXPositionInstance CreateTextPosition(
+    const AXNode& anchor,
+    int text_offset,
+    ax::mojom::TextAffinity affinity) {
+  return AXNodePosition::CreateTextPosition(anchor.tree()->GetAXTreeID(),
+                                            anchor.id(), text_offset, affinity);
 }
 
 class AXPlatformNodeTextRangeProviderTest : public ui::AXPlatformNodeWinTest {

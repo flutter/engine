@@ -92,13 +92,6 @@ AXPlatformNodeDelegateBase::GetLowestPlatformAncestor() const {
   AXPlatformNodeDelegateBase* current_delegate =
       const_cast<AXPlatformNodeDelegateBase*>(this);
   AXPlatformNodeDelegateBase* lowest_unignored_delegate = current_delegate;
-  /*if (lowest_unignored_delegate->IsIgnored()) {
-    lowest_unignored_delegate = static_cast<AXPlatformNodeDelegateBase*>(
-        lowest_unignored_delegate->GetParentDelegate());
-  }
-  BASE_DCHECK(!lowest_unignored_delegate || !lowest_unignored_delegate->IsIgnored())
-      << "`AXPlatformNodeDelegateBase::GetParentDelegate()` should return "
-         "either an unignored object or nullptr.";*/
 
   // `highest_leaf_delegate` could be nullptr.
   AXPlatformNodeDelegateBase* highest_leaf_delegate = lowest_unignored_delegate;
