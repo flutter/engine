@@ -631,12 +631,9 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 
   // A discrete scroll event should use the PointerSignal system, and flip the
   // direction when shift is pressed.
-  CGEventRef cgEventDiscrete = CGEventCreateScrollWheelEvent(
-    CGEventCreateKeyboardEvent(NULL, 56, TRUE), // SHIFT
-    kCGScrollEventUnitPixel,
-    1,
-    0,
-  );
+  CGEventRef cgEventDiscrete =
+      CGEventCreateScrollWheelEvent(CGEventCreateKeyboardEvent(NULL, 56, TRUE),  // SHIFT
+                                    kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventDiscrete, kCGEventScrollWheel);
   CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventIsContinuous, 0);
   CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis2, 1);  // scroll_delta_x
