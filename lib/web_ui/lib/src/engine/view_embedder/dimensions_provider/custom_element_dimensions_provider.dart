@@ -10,12 +10,13 @@ import 'package:ui/ui.dart' as ui show Size;
 
 import 'dimensions_provider.dart';
 
-/// This class provides the real-time dimensions of a "hostElement".
+/// This class provides observable, real-time dimensions of a host element.
 ///
-/// Note: all the measurements returned from this class are potentially
-/// *expensive*, and should be cached as needed. Every call to every method on
-/// this class WILL perform actual DOM measurements.
+/// All the measurements returned from this class are potentially *expensive*,
+/// and should be cached as needed. Every call to every method on this class
+/// WILL perform actual DOM measurements.
 class CustomElementDimensionsProvider extends DimensionsProvider {
+  /// Creates a [CustomElementDimensionsProvider] from a [_hostElement].
   CustomElementDimensionsProvider(this._hostElement) {
     // Hook up a resize observer on the hostElement (if supported!).
     _hostElementResizeObserver = createDomResizeObserver((
@@ -39,6 +40,7 @@ class CustomElementDimensionsProvider extends DimensionsProvider {
     _hostElementResizeObserver?.observe(_hostElement);
   }
 
+  // The host element that will be used to retrieve (and observe) app size measurements.
   final DomElement _hostElement;
 
   // Handle resize events

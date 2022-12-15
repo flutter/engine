@@ -7,7 +7,13 @@ import 'package:meta/meta.dart';
 import '../dom.dart';
 import '../safe_browser_api.dart';
 
-/// Handles elements that need to be cleared after a hot-restart.
+/// Handles [DomElement]s that need to be removed after a hot-restart.
+///
+/// Elements are stored in an [_elements] list, backed by a global JS variable,
+/// named [defaultCacheName].
+///
+/// When the app hot-restarts (and a new instance of this class is created),
+/// everything in [_elements] is removed from the DOM.
 class HotRestartCacheHandler {
   HotRestartCacheHandler() {
     if (_elements.isNotEmpty) {
@@ -16,16 +22,13 @@ class HotRestartCacheHandler {
     }
   }
 
-  /// This is state persistent across hot restarts that indicates what
-  /// to clear.  Delay removal of old visible state to make the
-  /// transition appear smooth.
+  /// The name for the JS global variable backing this cache.
   @visibleForTesting
   static const String defaultCacheName = '__flutter_state';
 
   /// The js-interop layer backing [_elements].
   ///
-  /// They're stored in a js global with name [storeName], and removed from the
-  /// DOM when the app repaints...
+  /// Elements are stored in a JS global array named [defaultCacheName].
   late List<DomElement?>? _jsElements;
 
   /// The elements that need to be cleaned up after hot-restart.
@@ -39,6 +42,7 @@ class HotRestartCacheHandler {
     return _jsElements!;
   }
 
+  /// Removes every element from [_elements] and empties the list.
   void _clearAllElements() {
     for (final DomElement? element in _elements) {
       element?.remove();
@@ -46,6 +50,7 @@ class HotRestartCacheHandler {
     _elements.clear();
   }
 
+  /// Registers a [DomElement] to be removed after hot-restart.
   void registerElement(DomElement element) {
     _elements.add(element);
   }

@@ -10,21 +10,19 @@ import 'package:ui/src/engine/view_embedder/hot_restart_cache_handler.dart';
 import 'custom_element_embedding_strategy.dart';
 import 'full_page_embedding_strategy.dart';
 
-/// Provides the API that the FlutterViewEmbedder uses to interact with the DOM.
+/// Controls how a Flutter app is placed, sized and measured on the page.
 ///
-/// The base class handles "global" stuff that is shared across implementations,
-/// like handling hot-restart cleanup.
-///
-/// This class is specialized to handle different types of DOM embeddings:
+/// The base class handles general behavior (like hot-restart cleanup), and then
+/// each specialization enables different types of DOM embeddings:
 ///
 /// * [FullPageEmbeddingStrategy] - The default behavior, where flutter takes
-///   control of the whole web page. This is how Flutter Web used to operate.
+///   control of the whole page.
 /// * [CustomElementEmbeddingStrategy] - Flutter is rendered inside a custom host
 ///   element, provided by the web app programmer through the engine
 ///   initialization.
 abstract class EmbeddingStrategy {
   EmbeddingStrategy() {
-    // Prepare some global stuff...
+    // Initialize code to handle hot-restart (debug only).
     assert(() {
       _hotRestartCache = HotRestartCacheHandler();
       return true;
@@ -43,7 +41,7 @@ abstract class EmbeddingStrategy {
   HotRestartCacheHandler? _hotRestartCache;
 
   void initialize({
-    Map<String, String>? embedderMetadata,
+    Map<String, String>? hostElementAttributes,
   });
 
   /// Attaches the glassPane element into the hostElement.
@@ -51,14 +49,6 @@ abstract class EmbeddingStrategy {
 
   /// Attaches the resourceHost element into the hostElement.
   void attachResourcesHost(DomElement resourceHost, {DomElement? nextTo});
-
-  /// A callback that runs when hot restart is triggered.
-  ///
-  /// This should "clean" up anything handled by the [EmbeddingStrategy] instance.
-  @mustCallSuper
-  void onHotRestart() {
-    // Elements on the [_hotRestartCache] are cleaned up *after* hot-restart.
-  }
 
   /// Registers a [DomElement] to be cleaned up after hot restart.
   @mustCallSuper

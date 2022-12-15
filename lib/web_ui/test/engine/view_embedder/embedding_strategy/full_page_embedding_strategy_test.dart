@@ -37,14 +37,14 @@ void doTests() {
       expect(userMeta, isNotNull);
 
       strategy.initialize(
-        embedderMetadata: <String, String>{
+        hostElementAttributes: <String, String>{
           'key-for-testing': 'value-for-testing',
         },
       );
 
       expect(target.getAttribute('key-for-testing'), 'value-for-testing',
           reason:
-              'Should add embedderMetadata as key=value into target element.');
+              'Should add attributes as key=value into target element.');
       expect(target.getAttribute('flt-embedding'), 'full-page',
           reason:
               'Should identify itself as a specific key=value into the target element.');

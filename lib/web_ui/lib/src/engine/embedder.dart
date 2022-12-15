@@ -6,7 +6,7 @@ import 'dart:async';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart' show buildMode, registerHotRestartListener, renderer, window;
+import '../engine.dart' show buildMode, renderer, window;
 import 'browser_detection.dart';
 import 'configuration.dart';
 import 'dom.dart';
@@ -45,7 +45,7 @@ class FlutterViewEmbedder {
   /// The hostElement is abstracted by an [EmbeddingStrategy] instance, which has
   /// different behavior depending on the `hostElement` value:
   ///
-  /// - A `null` `hostElement` will allow Flutter to take over the whole screen.
+  /// - A `null` `hostElement` will cause Flutter to take over the whole page.
   /// - A non-`null` `hostElement` will render flutter inside that element.
   FlutterViewEmbedder({DomElement? hostElement}) {
     // Create an appropriate EmbeddingStrategy using its factory...
@@ -58,16 +58,9 @@ class FlutterViewEmbedder {
     ));
 
     reset();
-
-    assert(() {
-      // _embeddingStrategy needs to clean-up stuff in the page on hot restart.
-      registerHotRestartListener(_embeddingStrategy.onHotRestart);
-      return true;
-    }());
   }
 
-  /// The [_embeddingStrategy] abstracts all the DOM manipulations required to
-  /// embed a Flutter app in the user-supplied `hostElement`.
+  /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
   late EmbeddingStrategy _embeddingStrategy;
 
   // The tag name for the root view of the flutter app (glass-pane)
@@ -147,7 +140,7 @@ class FlutterViewEmbedder {
 
     // Initializes the embeddingStrategy so it can host a single-view Flutter app.
     _embeddingStrategy.initialize(
-      embedderMetadata: <String, String>{
+      hostElementAttributes: <String, String>{
         'flt-renderer': '${renderer.rendererTag} ($rendererSelection)',
         'flt-build-mode': buildMode,
         // TODO(mdebbar): Disable spellcheck until changes in the framework and
@@ -247,6 +240,7 @@ class FlutterViewEmbedder {
   /// size if the change is caused by a rotation.
   void _metricsDidChange(ui.Size? newSize) {
     updateSemanticsScreenProperties();
+    // TODO(dit): Do not computePhysicalSize twice, https://github.com/flutter/flutter/issues/117036
     if (isMobile && !window.isRotation() && textEditing.isEditing) {
       window.computeOnScreenKeyboardInsets(true);
       EnginePlatformDispatcher.instance.invokeOnMetricsChanged();

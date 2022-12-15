@@ -13,7 +13,6 @@ import 'full_page_dimensions_provider.dart';
 
 /// This class provides the dimensions of the "viewport" in which the app is rendered.
 ///
-///
 /// Similarly to the `EmbeddingStrategy`, this class is specialized to handle
 /// different sources of information:
 ///
@@ -21,6 +20,10 @@ import 'full_page_dimensions_provider.dart';
 ///   API to measure, and react to, the dimensions of the full browser window.
 /// * [CustomElementDimensionsProvider] - Uses a custom html Element as the source
 ///   of dimensions, and the ResizeObserver to notify the app of changes.
+///
+/// All the measurements returned from this class are potentially *expensive*,
+/// and should be cached as needed. Every call to every method on this class
+/// WILL perform actual DOM measurements.
 abstract class DimensionsProvider {
   DimensionsProvider();
 
@@ -40,6 +43,9 @@ abstract class DimensionsProvider {
   }
 
   /// Returns the [ui.Size] of the "viewport".
+  ///
+  /// This function is expensive. It triggers browser layout if there are
+  /// pending DOM writes.
   ui.Size computePhysicalSize();
 
   /// Returns the [WindowPadding] of the keyboard insets (if present).

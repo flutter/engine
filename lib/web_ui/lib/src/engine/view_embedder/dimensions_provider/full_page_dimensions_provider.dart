@@ -14,17 +14,22 @@ import 'dimensions_provider.dart';
 
 /// This class provides the real-time dimensions of a "full page" viewport.
 ///
-/// Note: all the measurements returned from this class are potentially
-/// *expensive*, and should be cached as needed. Every call to every method on
-/// this class WILL perform actual DOM measurements.
+/// All the measurements returned from this class are potentially *expensive*,
+/// and should be cached as needed. Every call to every method on this class
+/// WILL perform actual DOM measurements.
 class FullPageDimensionsProvider extends DimensionsProvider {
+  /// Constructs a global [FullPageDimensionsProvider].
+  ///
+  /// Doesn't need any parameters, because all the measurements come from the
+  /// globally available [DomVisualViewport].
   FullPageDimensionsProvider() {
     // Determine what 'resize' event we'll be listening to.
     // This is needed for older browsers (Firefox < 91, Safari < 13)
+    // TODO(dit): Clean this up, https://github.com/flutter/flutter/issues/117105
     final DomEventTarget resizeEventTarget =
         domWindow.visualViewport ?? domWindow;
 
-    // Subscribe to the 'resize' event, and convert it to a ui.Size stream...
+    // Subscribe to the 'resize' event, and convert it to a ui.Size stream.
     _domResizeSubscription = DomSubscription(
       resizeEventTarget,
       'resize',
@@ -37,7 +42,13 @@ class FullPageDimensionsProvider extends DimensionsProvider {
       StreamController<ui.Size?>.broadcast();
 
   void _onVisualViewportResize(DomEvent event) {
-    // This could return [computePhysicalSize]. Is it too costly to compute?
+    // `event` doesn't contain any size information (as opposed to the custom
+    // element resize observer). If it did, we could broadcast the physical
+    // dimensions here and never have to re-measure the app, until the next
+    // resize event triggers.
+    // Would it be too costly to broadcast the computed physical size from here,
+    // and then never re-measure the app?
+    // Related: https://github.com/flutter/flutter/issues/117036
     _onResizeStreamController.add(null);
   }
 

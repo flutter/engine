@@ -7,13 +7,17 @@ import 'package:ui/src/engine/util.dart' show assertionsEnabled, setElementStyle
 
 import 'embedding_strategy.dart';
 
+/// An [EmbeddingStrategy] that takes over the whole web page.
+///
+/// This strategy takes over the <body> element, modifies the viewport meta-tag,
+/// and ensures that the root Flutter view covers the whole screen.
 class FullPageEmbeddingStrategy extends EmbeddingStrategy {
   @override
   void initialize({
-    Map<String, String>? embedderMetadata,
+    Map<String, String>? hostElementAttributes,
   }) {
     // ignore:avoid_function_literals_in_foreach_calls
-    embedderMetadata?.entries.forEach((MapEntry<String, String> entry) {
+    hostElementAttributes?.entries.forEach((MapEntry<String, String> entry) {
       _setHostAttribute(entry.key, entry.value);
     });
     _setHostAttribute('flt-embedding', 'full-page');
@@ -61,8 +65,6 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     setElementStyle(bodyElement, 'padding', '0');
     setElementStyle(bodyElement, 'margin', '0');
 
-    // TODO(yjbanov): fix this when KVM I/O support is added. Currently scroll
-    //                using drag, and text selection interferes.
     setElementStyle(bodyElement, 'user-select', 'none');
     setElementStyle(bodyElement, '-webkit-user-select', 'none');
 
