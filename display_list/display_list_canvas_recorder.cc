@@ -22,8 +22,10 @@ namespace flutter {
 DisplayListCanvasRecorder::DisplayListCanvasRecorder(const SkRect& bounds)
     : SkCanvasVirtualEnforcer(bounds.right(), bounds.bottom()),
       builder_(sk_make_sp<DisplayListBuilder>(bounds)) {
-  SkCanvasVirtualEnforcer::onClipRect(bounds, SkClipOp::kIntersect,
-                                      ClipEdgeStyle::kHard_ClipEdgeStyle);
+  if (bounds.isSorted()) {
+    SkCanvasVirtualEnforcer::onClipRect(bounds, SkClipOp::kIntersect,
+                                        ClipEdgeStyle::kHard_ClipEdgeStyle);
+  }
 }
 
 sk_sp<DisplayList> DisplayListCanvasRecorder::Build() {
