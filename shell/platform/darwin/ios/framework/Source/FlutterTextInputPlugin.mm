@@ -2021,7 +2021,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @implementation FlutterTimerProxy
 
 + (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
-  FlutterTimerProxy* proxy = [self new];
+  FlutterTimerProxy* proxy = [[self alloc] init];
   if (proxy) {
     proxy.target = target;
   }
