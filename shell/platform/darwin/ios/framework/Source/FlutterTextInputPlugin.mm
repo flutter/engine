@@ -668,17 +668,20 @@ static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* c
 @end
 
 @interface FlutterTimerProxy : NSObject
-@property(nonatomic, weak) FlutterTextInputPlugin* target;
+@property(nonatomic, readonly, weak) FlutterTextInputPlugin* target;
 @end
 
 @implementation FlutterTimerProxy
 
-+ (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
-  FlutterTimerProxy* proxy = [[self alloc] init];
-  if (proxy) {
-    proxy.target = target;
+- (instancetype)initWithTarget:(FlutterTextInputPlugin*)target {
+  self = [[FlutterTimerProxy alloc] init];
+  if (self) {
+    _target = target;
   }
-  return proxy;
+  return self;
+}
++ (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
+  return [[FlutterTimerProxy alloc] initWithTarget:target];
 }
 
 - (void)enableActiveViewAccessibility {
@@ -695,7 +698,6 @@ static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* c
 @property(nonatomic, retain) UIView<FlutterTextInputClient>* activeClient;
 @property(nonatomic, retain) FlutterTextInputViewAccessibilityHider* inputHider;
 @property(nonatomic, readonly) id<FlutterViewResponder> viewResponder;
-@property(nonatomic, weak) id<FlutterTextInputDelegate> textInputDelegate;
 
 @end
 
@@ -707,7 +709,6 @@ static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* c
   self = [super init];
 
   if (self) {
-    // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
     _textInputDelegate = textInputDelegate;
     _autofillContext = [[NSMutableDictionary alloc] init];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
