@@ -629,6 +629,27 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   EXPECT_EQ(last_event.scroll_delta_x, -40 * viewController.flutterView.layer.contentsScale);
   EXPECT_EQ(last_event.scroll_delta_y, -80 * viewController.flutterView.layer.contentsScale);
 
+  // A discrete scroll event should use the PointerSignal system, and flip the
+  // direction when shift is pressed.
+  CGEventRef cgEventDiscrete = CGEventCreateScrollWheelEvent(
+    CGEventCreateKeyboardEvent(NULL, 56, TRUE), // SHIFT
+    kCGScrollEventUnitPixel,
+    1,
+    0,
+  );
+  CGEventSetType(cgEventDiscrete, kCGEventScrollWheel);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventIsContinuous, 0);
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis2, 1);  // scroll_delta_x
+  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis1, 2);  // scroll_delta_y
+
+  called = false;
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscrete]];
+  EXPECT_TRUE(called);
+  EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScroll);
+  // pixelsPerLine is 40.0, direction is reversed and axes have been flipped.
+  EXPECT_EQ(last_event.scroll_delta_x, -80 * viewController.flutterView.layer.contentsScale);
+  EXPECT_EQ(last_event.scroll_delta_y, -40 * viewController.flutterView.layer.contentsScale);
+
   // Test for scale events.
   // Start gesture.
   called = false;

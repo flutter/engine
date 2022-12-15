@@ -643,8 +643,23 @@ static void CommonInit(FlutterViewController* controller) {
       pixelsPerLine = 40.0;
     }
     double scaleFactor = self.flutterView.layer.contentsScale;
-    flutterEvent.scroll_delta_x = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
-    flutterEvent.scroll_delta_y = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
+    // When mouse input is received while shift is pressed (regardless of
+    // any other pressed keys), Mac automatically flips the axis. Other
+    // platforms do not do this, so we flip it back to normalize the input
+    // received by the framework. The keyboard+mouse-scroll mechanism is exposed
+    // in the ScrollBehavior of the framework so developers can customize the
+    // behavior.
+    // At time of change, Apple does not expose any other type of API or signal
+    // that they X/Y axes have been flipped.
+    if (event.modifierFlags & NSShiftKeyMask) {
+      flutterEvent.scroll_delta_x = -event.scrollingDeltaY;
+      flutterEvent.scroll_delta_y = -event.scrollingDeltaX;
+    } else {
+      flutterEvent.scroll_delta_x = -event.scrollingDeltaX;
+      flutterEvent.scroll_delta_y = -event.scrollingDeltaY;
+    }
+    flutterEvent.scroll_delta_x = flutterEvent.scroll_delta_x * pixelsPerLine * scaleFactor;
+    flutterEvent.scroll_delta_y = flutterEvent.scroll_delta_y * pixelsPerLine * scaleFactor;
   }
   [_engine sendPointerEvent:flutterEvent];
 
