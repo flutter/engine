@@ -551,8 +551,8 @@ SemanticsObject createTextFieldSemantics({
     hasTap: true,
     rect: rect,
     textDirection: ui.TextDirection.ltr,
-      textSelectionBase: textSelectionBase,
-      textSelectionExtent: textSelectionExtent
+    textSelectionBase: textSelectionBase,
+    textSelectionExtent: textSelectionExtent
   );
   tester.apply();
   return tester.getSemanticsObject(0);
