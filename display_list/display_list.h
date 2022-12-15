@@ -233,7 +233,8 @@ class DisplayList : public SkRefCnt {
                 SkScalar opacity = SK_Scalar1,
                 bool cull = true);
 
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1,
+  void RenderTo(SkCanvas* canvas,
+                SkScalar opacity = SK_Scalar1,
                 bool cull = true);
 
   // SkPicture always includes nested bytes, but nested ops are
@@ -308,7 +309,9 @@ class DisplayList : public SkRefCnt {
   void ComputeBounds();
   void ComputeRTree();
 
-  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end,
+  void Dispatch(Dispatcher& ctx,
+                uint8_t* ptr,
+                uint8_t* end,
                 Culler& culler) const;
 
   friend class DisplayListBuilder;

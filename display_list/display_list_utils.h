@@ -117,47 +117,69 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher,
   void save() override { count_op(); }
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override { count_op(); }
+                 const DlImageFilter* backdrop) override {
+    count_op();
+  }
   void restore() override { count_op(); }
   void drawColor(DlColor color, DlBlendMode mode) override { count_op(); }
   void drawPaint() override { count_op(); }
   void drawLine(const SkPoint& p0, const SkPoint& p1) override { count_op(); }
   void drawRect(const SkRect& rect) override { count_op(); }
   void drawOval(const SkRect& bounds) override { count_op(); }
-  void drawCircle(const SkPoint& center, SkScalar radius) override { count_op(); }
+  void drawCircle(const SkPoint& center, SkScalar radius) override {
+    count_op();
+  }
   void drawRRect(const SkRRect& rrect) override { count_op(); }
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override { count_op(); }
+  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {
+    count_op();
+  }
   void drawPath(const SkPath& path) override { count_op(); }
   void drawArc(const SkRect& oval_bounds,
                SkScalar start_degrees,
                SkScalar sweep_degrees,
-               bool use_center) override { count_op(); }
+               bool use_center) override {
+    count_op();
+  }
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
-                  const SkPoint points[]) override { count_op(); }
+                  const SkPoint points[]) override {
+    count_op();
+  }
   void drawSkVertices(const sk_sp<SkVertices> vertices,
-                      SkBlendMode mode) override { count_op(); }
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override { count_op(); }
+                      SkBlendMode mode) override {
+    count_op();
+  }
+  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {
+    count_op();
+  }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override { count_op(); }
+                 bool render_with_attributes) override {
+    count_op();
+  }
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
-                     SkCanvas::SrcRectConstraint constraint) override { count_op(); }
+                     SkCanvas::SrcRectConstraint constraint) override {
+    count_op();
+  }
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override { count_op(); }
+                     bool render_with_attributes) override {
+    count_op();
+  }
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override { count_op(); }
+                        bool render_with_attributes) override {
+    count_op();
+  }
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -166,19 +188,29 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher,
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override { count_op(); }
+                 bool render_with_attributes) override {
+    count_op();
+  }
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override { count_op(); }
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override { count_op(); }
+                   bool render_with_attributes) override {
+    count_op();
+  }
+  void drawDisplayList(const sk_sp<DisplayList> display_list) override {
+    count_op();
+  }
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
-                    SkScalar y) override { count_op(); }
+                    SkScalar y) override {
+    count_op();
+  }
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override { count_op(); }
+                  SkScalar dpr) override {
+    count_op();
+  }
 };
 
 // A utility class that will monitor the Dispatcher methods relating
@@ -620,9 +652,7 @@ class DisplayListBoundsCalculator final
  private:
   BoundsAccumulator& accumulator_;
   uint32_t op_index_;
-  void count_op() override {
-    op_index_++;
-  }
+  void count_op() override { op_index_++; }
 
   // A class that remembers the information kept for a single
   // |save| or |saveLayer|.

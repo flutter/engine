@@ -109,10 +109,6 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
       dl->RenderTo(&recorder, SK_Scalar1, false);
       sk_sp<DisplayList> sk_copy = recorder.Build();
       auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
-      if (static_cast<int>(sk_copy->op_count(false)) !=
-                group.variants[i].sk_op_count()) {
-        EXPECT_TRUE(DisplayListsEQ_Verbose(dl, sk_copy)) << desc;
-      }
       EXPECT_EQ(static_cast<int>(sk_copy->op_count(false)),
                 group.variants[i].sk_op_count())
           << desc;
@@ -2266,7 +2262,7 @@ TEST(DisplayList, RTreeRenderCulling) {
   main_builder.drawRect({20, 20, 30, 30});
   auto main = main_builder.Build();
 
-  { // No rects
+  {  // No rects
     SkRect cull_rect = {11, 11, 19, 19};
 
     DisplayListBuilder expected_builder;
@@ -2283,7 +2279,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
-  { // Rect 1
+  {  // Rect 1
     SkRect cull_rect = {9, 9, 19, 19};
 
     DisplayListBuilder expected_builder;
@@ -2301,7 +2297,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
-  { // Rect 2
+  {  // Rect 2
     SkRect cull_rect = {11, 9, 21, 19};
 
     DisplayListBuilder expected_builder;
@@ -2319,7 +2315,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
-  { // Rect 3
+  {  // Rect 3
     SkRect cull_rect = {9, 11, 19, 21};
 
     DisplayListBuilder expected_builder;
@@ -2337,7 +2333,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
-  { // Rect 4
+  {  // Rect 4
     SkRect cull_rect = {11, 11, 21, 21};
 
     DisplayListBuilder expected_builder;
@@ -2355,7 +2351,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
-  { // All 4 rects
+  {  // All 4 rects
     SkRect cull_rect = {9, 9, 21, 21};
 
     DisplayListBuilder culling_builder(cull_rect);
