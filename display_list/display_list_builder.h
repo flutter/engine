@@ -470,9 +470,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
     // SkPicture treats these same conditions as a Nop (they accumulate
     // the SkPicture cull rect, but if it was not specified then it is an
     // empty Rect and so has no effect on the bounds).
-    // If the Calculator object accumulates this flag into the root layer,
-    // then at least we can make the caller aware of that exceptional
-    // condition via the |DisplayListBoundsCalculator::isUnbounded| call.
     //
     // Flutter is unlikely to ever run into this as the Dart mechanisms
     // all supply a non-null cull rect for all Dart Picture objects,
