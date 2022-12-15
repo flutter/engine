@@ -371,8 +371,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   size_t nested_bytes_ = 0;
   int nested_op_count_ = 0;
 
-  SkRect cull_rect_;
-
   template <typename T, typename... Args>
   void* Push(size_t extra, int op_inc, Args&&... args);
 

@@ -23,7 +23,6 @@ DisplayList::DisplayList()
       nested_op_count_(0),
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
-      bounds_cull_({0, 0, 0, 0}),
       can_apply_group_opacity_(true) {}
 
 DisplayList::DisplayList(uint8_t* ptr,
@@ -32,7 +31,6 @@ DisplayList::DisplayList(uint8_t* ptr,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
                          const SkRect& bounds,
-                         const SkRect& cull_rect,
                          bool can_apply_group_opacity,
                          sk_sp<const DlRTree> rtree)
     : storage_(ptr),
@@ -41,7 +39,6 @@ DisplayList::DisplayList(uint8_t* ptr,
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
       bounds_(bounds),
-      bounds_cull_(cull_rect),
       can_apply_group_opacity_(can_apply_group_opacity),
       rtree_(std::move(rtree)) {
   static std::atomic<uint32_t> next_id{1};

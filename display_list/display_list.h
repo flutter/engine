@@ -269,7 +269,6 @@ class DisplayList : public SkRefCnt {
               size_t nested_byte_count,
               unsigned int nested_op_count,
               const SkRect& bounds,
-              const SkRect& cull_rect,
               bool can_apply_group_opacity,
               sk_sp<const DlRTree> rtree);
 
@@ -285,8 +284,6 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id_;
   SkRect bounds_;
-  // Only used for drawPaint() and drawColor()
-  SkRect bounds_cull_;
 
   bool can_apply_group_opacity_;
   sk_sp<const DlRTree> rtree_;

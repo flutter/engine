@@ -61,14 +61,13 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
-  return sk_sp<DisplayList>(
-      new DisplayList(storage_.release(), bytes, count, nested_bytes,
-                      nested_count, bounds(), cull_rect_, compatible, rtree()));
+  return sk_sp<DisplayList>(new DisplayList(storage_.release(), bytes, count,
+                                            nested_bytes, nested_count,
+                                            bounds(), compatible, rtree()));
 }
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
-                                       bool prepare_rtree)
-    : cull_rect_(cull_rect) {
+                                       bool prepare_rtree) {
   if (prepare_rtree) {
     accumulator_ = std::make_unique<RTreeBoundsAccumulator>();
   } else {
