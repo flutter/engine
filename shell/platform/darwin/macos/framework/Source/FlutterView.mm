@@ -4,15 +4,15 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterResizeSynchronizer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
 #import <QuartzCore/QuartzCore.h>
 
-@interface FlutterView () <FlutterSurfaceManagerDelegate> {
+@interface FlutterView () {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
-  FlutterThreadSynchronizer* _threadSynchronizer;
-  FlutterSurfaceManager* _surfaceManager;
+  FlutterResizeSynchronizer* _resizeSynchronizer;
+  FlutterResizableBackingStoreProvider* _resizableBackingStoreProvider;
 }
 
 @end
@@ -28,30 +28,34 @@
     [self setBackgroundColor:[NSColor blackColor]];
     [self setLayerContentsRedrawPolicy:NSViewLayerContentsRedrawDuringViewResize];
     _reshapeListener = reshapeListener;
-    _threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
-    _surfaceManager = [[FlutterSurfaceManager alloc] initWithDevice:device
-                                                       commandQueue:commandQueue
-                                                              layer:self.layer
-                                                           delegate:self];
+    _resizableBackingStoreProvider =
+        [[FlutterResizableBackingStoreProvider alloc] initWithDevice:device
+                                                        commandQueue:commandQueue
+                                                               layer:self.layer];
+    _resizeSynchronizer =
+        [[FlutterResizeSynchronizer alloc] initWithDelegate:_resizableBackingStoreProvider];
   }
   return self;
 }
 
-- (void)onPresent:(CGSize)frameSize withBlock:(dispatch_block_t)block {
-  [_threadSynchronizer performCommit:frameSize notify:block];
+- (FlutterRenderBackingStore*)backingStoreForSize:(CGSize)size {
+  if ([_resizeSynchronizer shouldEnsureSurfaceForSize:size]) {
+    [_resizableBackingStoreProvider onBackingStoreResized:size];
+  }
+  return [_resizableBackingStoreProvider backingStore];
 }
 
-- (FlutterSurfaceManager*)surfaceManager {
-  return _surfaceManager;
+- (void)present {
+  [_resizeSynchronizer requestCommit];
 }
 
-- (FlutterThreadSynchronizer*)threadSynchronizer {
-  return _threadSynchronizer;
+- (void)presentWithoutContent {
+  [_resizeSynchronizer noFlutterContent];
 }
 
 - (void)reshaped {
   CGSize scaledSize = [self convertSizeToBacking:self.bounds.size];
-  [_threadSynchronizer beginResize:scaledSize
+  [_resizeSynchronizer beginResize:scaledSize
                             notify:^{
                               [_reshapeListener viewDidReshape:self];
                             }];
@@ -107,7 +111,7 @@
 }
 
 - (void)shutdown {
-  [_threadSynchronizer shutdown];
+  [_resizeSynchronizer shutdown];
 }
 #pragma mark - NSAccessibility overrides
 

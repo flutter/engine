@@ -432,8 +432,22 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return nil;
   }
 
-  _macOSCompositor =
-      std::make_unique<flutter::FlutterCompositor>(_viewProvider, _platformViewController);
+  __weak FlutterEngine* weakSelf = self;
+
+  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
+      _viewProvider, _platformViewController, _renderer.device);
+  _macOSCompositor->SetPresentCallback([weakSelf](bool has_flutter_content) {
+    // TODO(dkwingsmt): The compositor only supports single-view for now. As
+    // more classes are gradually converted to multi-view, it should get the
+    // view ID from somewhere.
+    uint64_t viewId = kFlutterDefaultViewId;
+    if (has_flutter_content) {
+      return [weakSelf.renderer present:viewId] == YES;
+    } else {
+      [weakSelf.renderer presentWithoutContent:viewId];
+      return true;
+    }
+  });
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
@@ -449,7 +463,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   _compositor.collect_backing_store_callback = [](const FlutterBackingStore* backing_store,  //
                                                   void* user_data                            //
-                                               ) { return true; };
+                                               ) {
+    return reinterpret_cast<flutter::FlutterCompositor*>(user_data)->CollectBackingStore(
+        backing_store);
+  };
 
   _compositor.present_layers_callback = [](const FlutterLayer** layers,  //
                                            size_t layers_count,          //

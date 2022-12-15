@@ -37,39 +37,17 @@ void SetEngineDefaultView(FlutterEngine* engine, id flutterView) {
 TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
-
-  id viewMock = OCMClassMock([FlutterView class]);
-  SetEngineDefaultView(engine, viewMock);
-
-  id surfaceManagerMock = OCMClassMock([FlutterSurfaceManager class]);
-  OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
-
-  id surfaceMock = OCMClassMock([FlutterSurface class]);
-
-  FlutterMetalTexture texture = {
-      .user_data = (__bridge void*)surfaceMock,
-  };
-
-  [[surfaceManagerMock expect] present:[OCMArg checkWithBlock:^(id obj) {
-                                 NSArray* array = (NSArray*)obj;
-                                 return array.count == 1 ? YES : NO;
-                               }]
-                                notify:nil];
-
-  [renderer present:kFlutterDefaultViewId texture:&texture];
-  [surfaceManagerMock verify];
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
+  [(FlutterView*)[mockFlutterView expect] present];
+  [renderer present:kFlutterDefaultViewId];
 }
 
 TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
   FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
-
-  id viewMock = OCMClassMock([FlutterView class]);
-  SetEngineDefaultView(engine, viewMock);
-
-  id surfaceManagerMock = OCMClassMock([FlutterSurfaceManager class]);
-  OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
-
+  id mockFlutterView = OCMClassMock([FlutterView class]);
+  SetEngineDefaultView(engine, mockFlutterView);
   FlutterFrameInfo frameInfo;
   frameInfo.struct_size = sizeof(FlutterFrameInfo);
   FlutterUIntSize dimensions;
@@ -77,10 +55,8 @@ TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   dimensions.height = 200;
   frameInfo.size = dimensions;
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
-
-  [[surfaceManagerMock expect] surfaceForSize:size];
+  [[mockFlutterView expect] backingStoreForSize:size];
   [renderer createTextureForView:kFlutterDefaultViewId size:size];
-  [surfaceManagerMock verify];
 }
 
 }  // namespace flutter::testing

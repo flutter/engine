@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
 #import <OCMock/OCMock.h>
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
@@ -42,17 +41,13 @@
 namespace flutter::testing {
 namespace {
 
-typedef void (^PresentBlock)(NSArray<FlutterSurfacePresentInfo*>*);
-
-id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
+id<FlutterViewProvider> MockViewProvider() {
   FlutterView* viewMock = OCMClassMock([FlutterView class]);
-  FlutterSurfaceManager* surfaceManagerMock = OCMClassMock([FlutterSurfaceManager class]);
-  FlutterSurface* surfaceMock = OCMClassMock([FlutterSurface class]);
+  FlutterRenderBackingStore* backingStoreMock = OCMClassMock([FlutterRenderBackingStore class]);
   __block id<MTLTexture> textureMock = OCMProtocolMock(@protocol(MTLTexture));
+  OCMStub([backingStoreMock texture]).andReturn(textureMock);
 
-  OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
-
-  OCMStub([surfaceManagerMock surfaceForSize:CGSize{}])
+  OCMStub([viewMock backingStoreForSize:CGSize{}])
       .ignoringNonObjectArgs()
       .andDo(^(NSInvocation* invocation) {
         CGSize size;
@@ -60,35 +55,31 @@ id<FlutterViewProvider> MockViewProvider(PresentBlock onPresent = nil) {
         OCMStub([textureMock width]).andReturn(size.width);
         OCMStub([textureMock height]).andReturn(size.height);
       })
-      .andReturn(surfaceMock);
-
-  FlutterMetalTexture texture = {
-      .struct_size = sizeof(FlutterMetalTexture),
-      .texture_id = 1,
-      .texture = (__bridge void*)textureMock,
-      .user_data = (__bridge void*)surfaceMock,
-      .destruction_callback = nullptr,
-  };
-
-  OCMStub([surfaceManagerMock present:[OCMArg any] notify:[OCMArg any]])
-      .andDo(^(NSInvocation* invocation) {
-        NSArray<FlutterSurfacePresentInfo*>* info;
-        [invocation getArgument:&info atIndex:2];
-        if (onPresent != nil) {
-          onPresent(info);
-        }
-      });
-
-  OCMStub([surfaceMock asFlutterMetalTexture]).andReturn(texture);
+      .andReturn(backingStoreMock);
 
   return [[FlutterViewMockProvider alloc] initWithDefaultView:viewMock];
 }
 }  // namespace
 
+TEST(FlutterCompositorTest, TestPresent) {
+  std::unique_ptr<flutter::FlutterCompositor> macos_compositor =
+      std::make_unique<FlutterCompositor>(MockViewProvider(), /*platform_view_controller*/ nullptr,
+                                          /*mtl_device*/ nullptr);
+
+  bool flag = false;
+  macos_compositor->SetPresentCallback([f = &flag](bool has_flutter_content) {
+    *f = true;
+    return true;
+  });
+
+  ASSERT_TRUE(macos_compositor->Present(0, nil, 0));
+  ASSERT_TRUE(flag);
+}
+
 TEST(FlutterCompositorTest, TestCreate) {
   std::unique_ptr<flutter::FlutterCompositor> macos_compositor =
-      std::make_unique<FlutterCompositor>(MockViewProvider(),
-                                          /*platform_view_controller*/ nullptr);
+      std::make_unique<FlutterCompositor>(MockViewProvider(), /*platform_view_controller*/ nullptr,
+                                          /*mtl_device*/ nullptr);
 
   FlutterBackingStore backing_store;
   FlutterBackingStoreConfig config;
@@ -104,16 +95,10 @@ TEST(FlutterCompositorTest, TestCreate) {
   ASSERT_EQ(texture.height, 600ul);
 }
 
-TEST(FlutterCompositorTest, TestPresent) {
-  __block NSArray<FlutterSurfacePresentInfo*>* presentedSurfaces = nil;
-
-  auto onPresent = ^(NSArray<FlutterSurfacePresentInfo*>* info) {
-    presentedSurfaces = info;
-  };
-
+TEST(FlutterCompositorTest, TestCompositing) {
   std::unique_ptr<flutter::FlutterCompositor> macos_compositor =
-      std::make_unique<FlutterCompositor>(MockViewProvider(onPresent),
-                                          /*platform_view_controller*/ nullptr);
+      std::make_unique<FlutterCompositor>(MockViewProvider(), /*platform_view_controller*/ nullptr,
+                                          /*mtl_device*/ nullptr);
 
   FlutterBackingStore backing_store;
   FlutterBackingStoreConfig config;
@@ -122,18 +107,11 @@ TEST(FlutterCompositorTest, TestPresent) {
   config.size.height = 600;
   macos_compositor->CreateBackingStore(&config, &backing_store);
 
-  FlutterLayer layers[] = {{
-      .struct_size = sizeof(FlutterLayer),
-      .type = kFlutterLayerContentTypeBackingStore,
-      .backing_store = &backing_store,
-      .offset = {0, 0},
-      .size = {800, 600},
-  }};
-  const FlutterLayer* layers_ptr = layers;
-
-  macos_compositor->Present(kFlutterDefaultViewId, &layers_ptr, 1);
-
-  ASSERT_EQ(presentedSurfaces.count, 1ul);
+  ASSERT_EQ(backing_store.type, kFlutterBackingStoreTypeMetal);
+  ASSERT_NE(backing_store.metal.texture.texture, nil);
+  id<MTLTexture> texture = (__bridge id<MTLTexture>)backing_store.metal.texture.texture;
+  ASSERT_EQ(texture.width, 800u);
+  ASSERT_EQ(texture.height, 600u);
 }
 
 }  // namespace flutter::testing
