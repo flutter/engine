@@ -1,4 +1,4 @@
-Signature: c0a052c343282adbf0b3869c095ba4cd
+Signature: f074e8b2b1f483cc755523a5eb3fd53f
 
 UNUSED LICENSES:
 
@@ -7609,7 +7609,6 @@ FILE: ../../../third_party/skia/include/gpu/graphite/dawn/DawnBackendContext.h
 FILE: ../../../third_party/skia/include/gpu/vk/VulkanBackendContext.h
 FILE: ../../../third_party/skia/include/private/SkAlignedStorage.h
 FILE: ../../../third_party/skia/include/private/SkTypeTraits.h
-FILE: ../../../third_party/skia/include/private/SkUniquePaintParamsID.h
 FILE: ../../../third_party/skia/include/sksl/SkSLVersion.h
 FILE: ../../../third_party/skia/infra/bots/task_drivers/bazel_build/bazel_build.go
 FILE: ../../../third_party/skia/infra/bots/task_drivers/canvaskit_gold/canvaskit_gold.go
@@ -7620,7 +7619,6 @@ FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode.cpp
 FILE: ../../../third_party/skia/src/core/SkCapabilities.cpp
 FILE: ../../../third_party/skia/src/core/SkDebugUtils.h
 FILE: ../../../third_party/skia/src/core/SkPathUtils.cpp
-FILE: ../../../third_party/skia/src/core/SkRuntimeEffectDictionary.h
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.cpp
 FILE: ../../../third_party/skia/src/core/SkSLTypeShared.h
 FILE: ../../../third_party/skia/src/gpu/AtlasTypes.cpp
@@ -7693,6 +7691,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/Resource.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Resource.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ResourceCache.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/ResourceCache.h
+FILE: ../../../third_party/skia/src/gpu/graphite/RuntimeEffectDictionary.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/RuntimeEffectDictionary.h
 FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Sampler.h
 FILE: ../../../third_party/skia/src/gpu/graphite/ShaderCodeDictionary.cpp
@@ -7703,6 +7703,7 @@ FILE: ../../../third_party/skia/src/gpu/graphite/SynchronizeToCpuTask.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureProxyView.h
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/TextureUtils.h
+FILE: ../../../third_party/skia/src/gpu/graphite/UniquePaintParamsID.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/UploadTask.cpp
