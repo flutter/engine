@@ -3,6 +3,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 #include <mutex>
+#include <vector>
 
 @interface FlutterThreadSynchronizer () {
   std::mutex _mutex;
