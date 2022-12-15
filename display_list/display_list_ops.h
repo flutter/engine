@@ -15,22 +15,20 @@
 
 namespace flutter {
 
-typedef uint64_t dl_offset;
-
 struct DispatchContext {
   Dispatcher& dispatcher;
 
-  dl_offset cur_offset;
-  dl_offset next_render_offset;
+  uint32_t cur_index;
+  uint32_t next_render_index;
 
-  dl_offset next_restore_offset;
+  uint32_t next_restore_index;
 
   struct SaveInfo {
-    SaveInfo(dl_offset previous_restore_offset, bool save_was_needed)
-        : previous_restore_offset(previous_restore_offset),
+    SaveInfo(uint32_t previous_restore_index, bool save_was_needed)
+        : previous_restore_index(previous_restore_index),
           save_was_needed(save_was_needed) {}
 
-    dl_offset previous_restore_offset;
+    uint32_t previous_restore_index;
     bool save_was_needed;
   };
 
@@ -315,21 +313,21 @@ struct SetSharedImageFilterOp : DLOp {
 // The base object for all save() and saveLayer() ops
 // 4 byte header + 20 bytes payload packs neatly into 24 bytes
 struct SaveOpBase : DLOp {
-  SaveOpBase() : options(), restore_offset(0) {}
+  SaveOpBase() : options(), restore_index(0) {}
 
   SaveOpBase(const SaveLayerOptions options)
-      : options(options), restore_offset(0) {}
+      : options(options), restore_index(0) {}
 
   // options parameter is only used by saveLayer operations, but since
   // it packs neatly into the empty space created by laying out the 64-bit
   // offsets, it can be stored for free and defaulted to 0 for save operations.
   SaveLayerOptions options;
-  dl_offset restore_offset;
+  uint32_t restore_index;
 
   inline bool save_needed(DispatchContext& ctx) const {
-    bool needed = ctx.next_render_offset <= restore_offset;
-    ctx.save_infos.emplace_back(ctx.next_restore_offset, needed);
-    ctx.next_restore_offset = restore_offset;
+    bool needed = ctx.next_render_index <= restore_index;
+    ctx.save_infos.emplace_back(ctx.next_restore_index, needed);
+    ctx.next_restore_index = restore_index;
     return needed;
   }
 };
@@ -430,14 +428,14 @@ struct RestoreOp final : DLOp {
     if (info.save_was_needed) {
       ctx.dispatcher.restore();
     }
-    ctx.next_restore_offset = info.previous_restore_offset;
+    ctx.next_restore_index = info.previous_restore_index;
     ctx.save_infos.pop_back();
   }
 };
 
 struct TransformClipOpBase : DLOp {
   inline bool op_needed(const DispatchContext& context) const {
-    return context.next_render_offset <= context.next_restore_offset;
+    return context.next_render_index <= context.next_restore_index;
   }
 };
 // 4 byte header + 8 byte payload uses 12 bytes but is rounded up to 16 bytes
@@ -628,7 +626,7 @@ DEFINE_CLIP_PATH_OP(Difference)
 
 struct DrawOpBase : DLOp {
   inline bool op_needed(const DispatchContext& ctx) const {
-    return ctx.cur_offset >= ctx.next_render_offset;
+    return ctx.cur_index >= ctx.next_render_index;
   }
 };
 

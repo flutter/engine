@@ -26,7 +26,7 @@ static void CopyV(void* dst, const S* src, int n, Rest&&... rest) {
 }
 
 template <typename T, typename... Args>
-void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
+void* DisplayListBuilder::Push(size_t pod, int render_op_inc, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
   FML_DCHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
@@ -44,7 +44,8 @@ void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   new (op) T{std::forward<Args>(args)...};
   op->type = T::kType;
   op->size = size;
-  op_count_ += op_inc;
+  render_op_count_ += render_op_inc;
+  op_index_++;
   return op + 1;
 }
 
@@ -53,10 +54,10 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
     restore();
   }
   size_t bytes = used_;
-  int count = op_count_;
+  int count = render_op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
-  used_ = allocated_ = op_count_ = 0;
+  used_ = allocated_ = render_op_count_ = op_index_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
@@ -441,7 +442,7 @@ void DisplayListBuilder::restore() {
     SaveOpBase* op = reinterpret_cast<SaveOpBase*>(storage_.get() +
                                                    current_layer_->save_offset);
     if (!current_layer_->has_deferred_save_op_) {
-      op->restore_offset = used_;
+      op->restore_index = op_index_;
       Push<RestoreOp>(0, 1);
     }
     // Grab the current layer info before we push the restore

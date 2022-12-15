@@ -63,7 +63,7 @@ void DisplayList::ComputeBounds() {
 }
 
 void DisplayList::ComputeRTree() {
-  RTreeBoundsAccumulator accumulator;
+  RTreeBoundsAccumulator accumulator(&rtree_op_indices_);
   DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
   Dispatch(calculator);
   if (calculator.is_unbounded()) {
@@ -72,30 +72,95 @@ void DisplayList::ComputeRTree() {
   rtree_ = accumulator.rtree();
 }
 
+class Culler {
+ public:
+  virtual bool init(DispatchContext& context) = 0;
+  virtual void update(DispatchContext& context) = 0;
+};
+class NopCuller : public Culler {
+ public:
+  static NopCuller instance;
+
+  bool init(DispatchContext& context) override {
+    context.next_render_index = 0;
+    return true;
+  }
+  void update(DispatchContext& context) override {}
+};
+NopCuller NopCuller::instance = NopCuller();
+class VectorCuller : public Culler {
+ public:
+  VectorCuller(const std::vector<uint32_t>& op_indices,
+               const std::vector<int>& rect_indices)
+      : op_indices_(op_indices),
+        cur_(rect_indices.begin()),
+        end_(rect_indices.end()) {}
+
+  bool init(DispatchContext& context) override {
+    if (cur_ < end_) {
+      context.next_render_index = op_indices_[*cur_++];
+      return true;
+    } else {
+      context.next_render_index = std::numeric_limits<uint32_t>::max();
+      return false;
+    }
+  }
+  void update(DispatchContext& context) override {
+    if (++context.cur_index > context.next_render_index) {
+      while (cur_ < end_) {
+        context.next_render_index = op_indices_[*cur_++];
+        if (context.next_render_index >= context.cur_index) {
+          // It should be rare that we have duplicate indices
+          // but if we do, then having a while loop is a cheap
+          // insurance for those cases.
+          return;
+        }
+      }
+      context.next_render_index = std::numeric_limits<uint32_t>::max();
+    }
+  }
+
+ private:
+  const std::vector<uint32_t>& op_indices_;
+  std::vector<int>::const_iterator cur_;
+  std::vector<int>::const_iterator end_;
+};
+
+void DisplayList::Dispatch(Dispatcher& ctx) const {
+  uint8_t* ptr = storage_.get();
+  Dispatch(ctx, ptr, ptr + byte_count_, NopCuller::instance);
+}
+void DisplayList::Dispatch(Dispatcher& ctx, const SkRect& cull_rect) {
+  if (cull_rect.isEmpty()) {
+    return;
+  }
+  if (cull_rect.contains(bounds())) {
+    Dispatch(ctx);
+    return;
+  }
+  uint8_t* ptr = storage_.get();
+  std::vector<int> rect_indices;
+  rtree()->search(cull_rect, &rect_indices);
+  VectorCuller culler(rtree_op_indices_, rect_indices);
+  Dispatch(ctx, ptr, ptr + byte_count_, culler);
+}
+
 void DisplayList::Dispatch(Dispatcher& dispatcher,
                            uint8_t* ptr,
-                           uint8_t* end) const {
+                           uint8_t* end,
+                           Culler& culler) const {
   DispatchContext context = {
       .dispatcher = dispatcher,
 
-      .cur_offset = 0,
-      .next_render_offset = 0,
+      .cur_index = 0,
 
-      .next_restore_offset = std::numeric_limits<dl_offset>::max(),
+      .next_restore_index = std::numeric_limits<uint32_t>::max(),
   };
+  if (!culler.init(context)) {
+    return;
+  }
 
-  uint8_t* op_base = storage_.get();
   while (ptr < end) {
-    context.cur_offset = ptr - op_base;
-    // The following line would be used to cull render ops by setting
-    // it to the next rendering op that matched in the RTree instead
-    // of setting it to cur_offset. For now it is using the cur_offset
-    // as the next_render_offset to test the op_needed tests in the
-    // DLOps, but if there is no RTree culling going on, it would be
-    // just as valid to leave the next_render_offset as 0 for the
-    // entire run (in fact, that scenario has also been tested and
-    // works just fine to avoid any culling).
-    context.next_render_offset = context.cur_offset;
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
@@ -113,6 +178,7 @@ void DisplayList::Dispatch(Dispatcher& dispatcher,
         FML_DCHECK(false);
         return;
     }
+    culler.update(context);
   }
 }
 
@@ -207,16 +273,30 @@ static bool CompareOps(uint8_t* ptrA,
 }
 
 void DisplayList::RenderTo(DisplayListBuilder* builder,
-                           SkScalar opacity) const {
+                           SkScalar opacity, bool cull) {
   // TODO(100983): Opacity is not respected and attributes are not reset.
   if (!builder) {
     return;
   }
+  if (cull) {
+    SkRect clip_bounds = builder->getLocalClipBounds();
+    if (!clip_bounds.contains(bounds())) {
+      Dispatch(*builder, clip_bounds);
+      return;
+    }
+  }
   Dispatch(*builder);
 }
 
-void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
+void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity, bool cull) {
   DisplayListCanvasDispatcher dispatcher(canvas, opacity);
+  if (cull) {
+    SkRect clip_bounds = canvas->getLocalClipBounds();
+    if (!clip_bounds.contains(bounds())) {
+      Dispatch(dispatcher, clip_bounds);
+      return;
+    }
+  }
   Dispatch(dispatcher);
 }
 

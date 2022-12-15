@@ -42,28 +42,36 @@ void SkPaintDispatchHelper::restore_opacity() {
 
 void SkPaintDispatchHelper::setAntiAlias(bool aa) {
   paint_.setAntiAlias(aa);
+  count_op();
 }
 void SkPaintDispatchHelper::setDither(bool dither) {
   paint_.setDither(dither);
+  count_op();
 }
 void SkPaintDispatchHelper::setInvertColors(bool invert) {
   invert_colors_ = invert;
   paint_.setColorFilter(makeColorFilter());
+  count_op();
 }
 void SkPaintDispatchHelper::setStrokeCap(DlStrokeCap cap) {
   paint_.setStrokeCap(ToSk(cap));
+  count_op();
 }
 void SkPaintDispatchHelper::setStrokeJoin(DlStrokeJoin join) {
   paint_.setStrokeJoin(ToSk(join));
+  count_op();
 }
 void SkPaintDispatchHelper::setStyle(DlDrawStyle style) {
   paint_.setStyle(ToSk(style));
+  count_op();
 }
 void SkPaintDispatchHelper::setStrokeWidth(SkScalar width) {
   paint_.setStrokeWidth(width);
+  count_op();
 }
 void SkPaintDispatchHelper::setStrokeMiter(SkScalar limit) {
   paint_.setStrokeMiter(limit);
+  count_op();
 }
 void SkPaintDispatchHelper::setColor(DlColor color) {
   current_color_ = color;
@@ -71,28 +79,36 @@ void SkPaintDispatchHelper::setColor(DlColor color) {
   if (has_opacity()) {
     paint_.setAlphaf(paint_.getAlphaf() * opacity());
   }
+  count_op();
 }
 void SkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
+  count_op();
 }
 void SkPaintDispatchHelper::setBlender(sk_sp<SkBlender> blender) {
   paint_.setBlender(blender);
+  count_op();
 }
 void SkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
   paint_.setShader(source ? source->skia_object() : nullptr);
+  count_op();
 }
 void SkPaintDispatchHelper::setImageFilter(const DlImageFilter* filter) {
   paint_.setImageFilter(filter ? filter->skia_object() : nullptr);
+  count_op();
 }
 void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
   paint_.setColorFilter(makeColorFilter());
+  count_op();
 }
 void SkPaintDispatchHelper::setPathEffect(const DlPathEffect* effect) {
   paint_.setPathEffect(effect ? effect->skia_object() : nullptr);
+  count_op();
 }
 void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
   paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
+  count_op();
 }
 
 sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
@@ -110,20 +126,24 @@ sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
 void SkMatrixDispatchHelper::translate(SkScalar tx, SkScalar ty) {
   matrix_.preTranslate(tx, ty);
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 void SkMatrixDispatchHelper::scale(SkScalar sx, SkScalar sy) {
   matrix_.preScale(sx, sy);
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 void SkMatrixDispatchHelper::rotate(SkScalar degrees) {
   matrix33_.setRotate(degrees);
   matrix_.preConcat(matrix33_);
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 void SkMatrixDispatchHelper::skew(SkScalar sx, SkScalar sy) {
   matrix33_.setSkew(sx, sy);
   matrix_.preConcat(matrix33_);
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 
 // clang-format off
@@ -139,6 +159,7 @@ void SkMatrixDispatchHelper::transform2DAffine(
        0 ,  0 ,  0 ,  1 ,
   });
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 // full 4x4 transform in row major order
 void SkMatrixDispatchHelper::transformFullPerspective(
@@ -153,6 +174,7 @@ void SkMatrixDispatchHelper::transformFullPerspective(
       mwx, mwy, mwz, mwt,
   });
   matrix33_ = matrix_.asM33();
+  count_op();
 }
 
 // clang-format on
@@ -160,18 +182,25 @@ void SkMatrixDispatchHelper::transformFullPerspective(
 void SkMatrixDispatchHelper::transformReset() {
   matrix_ = {};
   matrix33_ = {};
+  count_op();
 }
 
 void SkMatrixDispatchHelper::save() {
   saved_.push_back(matrix_);
+  // The op should be counted in the parent to avoid duplicate accounting
+  // count_op();
 }
 void SkMatrixDispatchHelper::restore() {
   if (saved_.empty()) {
+    // The op should be counted in the parent to avoid duplicate accounting
+    // count_op();
     return;
   }
   matrix_ = saved_.back();
   matrix33_ = matrix_.asM33();
   saved_.pop_back();
+  // The op should be counted in the parent to avoid duplicate accounting
+  // count_op();
 }
 void SkMatrixDispatchHelper::reset() {
   matrix_.setIdentity();
@@ -188,6 +217,7 @@ void ClipBoundsDispatchHelper::clipRect(const SkRect& rect,
     case SkClipOp::kDifference:
       break;
   }
+  count_op();
 }
 void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
                                          SkClipOp clip_op,
@@ -199,6 +229,7 @@ void ClipBoundsDispatchHelper::clipRRect(const SkRRect& rrect,
     case SkClipOp::kDifference:
       break;
   }
+  count_op();
 }
 void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
                                         SkClipOp clip_op,
@@ -210,6 +241,7 @@ void ClipBoundsDispatchHelper::clipPath(const SkPath& path,
     case SkClipOp::kDifference:
       break;
   }
+  count_op();
 }
 void ClipBoundsDispatchHelper::intersect(const SkRect& rect, bool is_aa) {
   SkRect dev_clip_bounds = matrix().mapRect(rect);
@@ -237,9 +269,13 @@ void ClipBoundsDispatchHelper::save() {
   } else {
     saved_.push_back(bounds_);
   }
+  // The op should be counted in the parent to avoid duplicate accounting
+  // count_op();
 }
 void ClipBoundsDispatchHelper::restore() {
   if (saved_.empty()) {
+    // The op should be counted in the parent to avoid duplicate accounting
+    // count_op();
     return;
   }
   bounds_ = saved_.back();
@@ -249,6 +285,8 @@ void ClipBoundsDispatchHelper::restore() {
   if (!has_clip_) {
     bounds_.setEmpty();
   }
+  // The op should be counted in the parent to avoid duplicate accounting
+  // count_op();
 }
 void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
   if ((has_clip_ = cull_rect != nullptr) && !cull_rect->isEmpty()) {
@@ -258,7 +296,7 @@ void ClipBoundsDispatchHelper::reset(const SkRect* cull_rect) {
   }
 }
 
-void RectBoundsAccumulator::accumulate(const SkRect& r) {
+void RectBoundsAccumulator::accumulate(const SkRect& r, uint32_t index) {
   if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
     rect_.accumulate(r.fLeft, r.fTop);
     rect_.accumulate(r.fRight, r.fBottom);
@@ -294,7 +332,7 @@ void RectBoundsAccumulator::pop_and_accumulate(SkRect& layer_bounds,
   saved_rects_.pop_back();
 
   if (clip == nullptr || layer_bounds.intersect(*clip)) {
-    accumulate(layer_bounds);
+    accumulate(layer_bounds, 0);
   }
 }
 
@@ -325,9 +363,12 @@ SkRect RectBoundsAccumulator::AccumulationRect::bounds() const {
              : SkRect::MakeEmpty();
 }
 
-void RTreeBoundsAccumulator::accumulate(const SkRect& r) {
+void RTreeBoundsAccumulator::accumulate(const SkRect& r, uint32_t index) {
   if (r.fLeft < r.fRight && r.fTop < r.fBottom) {
     rects_.push_back(r);
+    if (rect_indices_) {
+      rect_indices_->push_back(index);
+    }
   }
 }
 bool RTreeBoundsAccumulator::is_empty() const {
@@ -380,26 +421,34 @@ sk_sp<DlRTree> RTreeBoundsAccumulator::rtree() const {
 DisplayListBoundsCalculator::DisplayListBoundsCalculator(
     BoundsAccumulator& accumulator,
     const SkRect* cull_rect)
-    : ClipBoundsDispatchHelper(cull_rect), accumulator_(accumulator) {
+    : ClipBoundsDispatchHelper(cull_rect),
+      accumulator_(accumulator),
+      op_index_(0) {
   layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
 }
 void DisplayListBoundsCalculator::setStrokeCap(DlStrokeCap cap) {
   cap_is_square_ = (cap == DlStrokeCap::kSquare);
+  count_op();
 }
 void DisplayListBoundsCalculator::setStrokeJoin(DlStrokeJoin join) {
   join_is_miter_ = (join == DlStrokeJoin::kMiter);
+  count_op();
 }
 void DisplayListBoundsCalculator::setStyle(DlDrawStyle style) {
   style_ = style;
+  count_op();
 }
 void DisplayListBoundsCalculator::setStrokeWidth(SkScalar width) {
   half_stroke_width_ = std::max(width * 0.5f, kMinStrokeWidth);
+  count_op();
 }
 void DisplayListBoundsCalculator::setStrokeMiter(SkScalar limit) {
   miter_limit_ = std::max(limit, 1.0f);
+  count_op();
 }
 void DisplayListBoundsCalculator::setBlendMode(DlBlendMode mode) {
   blend_mode_ = mode;
+  count_op();
 }
 void DisplayListBoundsCalculator::setBlender(sk_sp<SkBlender> blender) {
   SkPaint paint;
@@ -410,24 +459,30 @@ void DisplayListBoundsCalculator::setBlender(sk_sp<SkBlender> blender) {
   } else {
     blend_mode_ = std::nullopt;
   }
+  count_op();
 }
 void DisplayListBoundsCalculator::setImageFilter(const DlImageFilter* filter) {
   image_filter_ = filter ? filter->shared() : nullptr;
+  count_op();
 }
 void DisplayListBoundsCalculator::setColorFilter(const DlColorFilter* filter) {
   color_filter_ = filter ? filter->shared() : nullptr;
+  count_op();
 }
 void DisplayListBoundsCalculator::setPathEffect(const DlPathEffect* effect) {
   path_effect_ = effect ? effect->shared() : nullptr;
+  count_op();
 }
 void DisplayListBoundsCalculator::setMaskFilter(const DlMaskFilter* filter) {
   mask_filter_ = filter ? filter->shared() : nullptr;
+  count_op();
 }
 void DisplayListBoundsCalculator::save() {
   SkMatrixDispatchHelper::save();
   ClipBoundsDispatchHelper::save();
   layer_infos_.emplace_back(std::make_unique<LayerData>(nullptr));
   accumulator_.save();
+  count_op();
 }
 void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
                                             const SaveLayerOptions options,
@@ -456,6 +511,8 @@ void DisplayListBoundsCalculator::saveLayer(const SkRect* bounds,
   // we set them as if a clip operation were performed.
   if (bounds) {
     clipRect(*bounds, SkClipOp::kIntersect, false);
+  } else {
+    count_op();
   }
   if (backdrop) {
     // A backdrop will affect up to the entire surface, bounded by the clip
@@ -501,13 +558,16 @@ void DisplayListBoundsCalculator::restore() {
       AccumulateUnbounded();
     }
   }
+  count_op();
 }
 
 void DisplayListBoundsCalculator::drawPaint() {
   AccumulateUnbounded();
+  count_op();
 }
 void DisplayListBoundsCalculator::drawColor(DlColor color, DlBlendMode mode) {
   AccumulateUnbounded();
+  count_op();
 }
 void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
                                            const SkPoint& p1) {
@@ -516,25 +576,31 @@ void DisplayListBoundsCalculator::drawLine(const SkPoint& p0,
       (bounds.width() > 0.0f && bounds.height() > 0.0f) ? kDrawLineFlags
                                                         : kDrawHVLineFlags;
   AccumulateOpBounds(bounds, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawRect(const SkRect& rect) {
   AccumulateOpBounds(rect, kDrawRectFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawOval(const SkRect& bounds) {
   AccumulateOpBounds(bounds, kDrawOvalFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawCircle(const SkPoint& center,
                                              SkScalar radius) {
   AccumulateOpBounds(SkRect::MakeLTRB(center.fX - radius, center.fY - radius,
                                       center.fX + radius, center.fY + radius),
                      kDrawCircleFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawRRect(const SkRRect& rrect) {
   AccumulateOpBounds(rrect.getBounds(), kDrawRRectFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawDRRect(const SkRRect& outer,
                                              const SkRRect& inner) {
   AccumulateOpBounds(outer.getBounds(), kDrawDRRectFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawPath(const SkPath& path) {
   if (path.isInverseFillType()) {
@@ -542,6 +608,7 @@ void DisplayListBoundsCalculator::drawPath(const SkPath& path) {
   } else {
     AccumulateOpBounds(path.getBounds(), kDrawPathFlags);
   }
+  count_op();
 }
 void DisplayListBoundsCalculator::drawArc(const SkRect& bounds,
                                           SkScalar start,
@@ -554,6 +621,7 @@ void DisplayListBoundsCalculator::drawArc(const SkRect& bounds,
                      useCenter  //
                          ? kDrawArcWithCenterFlags
                          : kDrawArcNoCenterFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
                                              uint32_t count,
@@ -576,15 +644,18 @@ void DisplayListBoundsCalculator::drawPoints(SkCanvas::PointMode mode,
         break;
     }
   }
+  count_op();
 }
 void DisplayListBoundsCalculator::drawSkVertices(
     const sk_sp<SkVertices> vertices,
     SkBlendMode mode) {
   AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawVertices(const DlVertices* vertices,
                                                DlBlendMode mode) {
   AccumulateOpBounds(vertices->bounds(), kDrawVerticesFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                             const SkPoint point,
@@ -596,6 +667,7 @@ void DisplayListBoundsCalculator::drawImage(const sk_sp<DlImage> image,
                                         ? kDrawImageWithPaintFlags
                                         : kDrawImageFlags;
   AccumulateOpBounds(bounds, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawImageRect(
     const sk_sp<DlImage> image,
@@ -608,6 +680,7 @@ void DisplayListBoundsCalculator::drawImageRect(
                                         ? kDrawImageRectWithPaintFlags
                                         : kDrawImageRectFlags;
   AccumulateOpBounds(dst, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                                 const SkIRect& center,
@@ -618,6 +691,7 @@ void DisplayListBoundsCalculator::drawImageNine(const sk_sp<DlImage> image,
                                         ? kDrawImageNineWithPaintFlags
                                         : kDrawImageNineFlags;
   AccumulateOpBounds(dst, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawImageLattice(
     const sk_sp<DlImage> image,
@@ -629,6 +703,7 @@ void DisplayListBoundsCalculator::drawImageLattice(
                                         ? kDrawImageLatticeWithPaintFlags
                                         : kDrawImageLatticeFlags;
   AccumulateOpBounds(dst, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkRSXform xform[],
@@ -654,6 +729,7 @@ void DisplayListBoundsCalculator::drawAtlas(const sk_sp<DlImage> atlas,
                                           : kDrawAtlasFlags;
     AccumulateOpBounds(atlas_bounds.bounds(), flags);
   }
+  count_op();
 }
 void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
                                               const SkMatrix* pic_matrix,
@@ -669,6 +745,7 @@ void DisplayListBoundsCalculator::drawPicture(const sk_sp<SkPicture> picture,
                                         ? kDrawPictureWithPaintFlags
                                         : kDrawPictureFlags;
   AccumulateOpBounds(bounds, flags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
@@ -676,6 +753,7 @@ void DisplayListBoundsCalculator::drawDisplayList(
   switch (accumulator_.type()) {
     case BoundsAccumulatorType::kRect:
       AccumulateOpBounds(bounds, kDrawDisplayListFlags);
+      count_op();
       return;
     case BoundsAccumulatorType::kRTree:
       std::list<SkRect> rects =
@@ -685,6 +763,7 @@ void DisplayListBoundsCalculator::drawDisplayList(
         // are not necessarily `kDrawDisplayListFlags`.
         AccumulateOpBounds(rect, kDrawDisplayListFlags);
       }
+      count_op();
       return;
   }
 
@@ -694,6 +773,7 @@ void DisplayListBoundsCalculator::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,
                                                SkScalar y) {
   AccumulateOpBounds(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags);
+  count_op();
 }
 void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
                                              const DlColor color,
@@ -703,6 +783,7 @@ void DisplayListBoundsCalculator::drawShadow(const SkPath& path,
   SkRect shadow_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
       path, elevation, dpr, matrix());
   AccumulateOpBounds(shadow_bounds, kDrawShadowFlags);
+  count_op();
 }
 
 bool DisplayListBoundsCalculator::ComputeFilteredBounds(SkRect& bounds,
@@ -774,7 +855,7 @@ bool DisplayListBoundsCalculator::AdjustBoundsForPaint(
 
 void DisplayListBoundsCalculator::AccumulateUnbounded() {
   if (has_clip()) {
-    accumulator_.accumulate(clip_bounds());
+    accumulator_.accumulate(clip_bounds(), op_index_);
   } else {
     layer_infos_.back()->set_unbounded();
   }
@@ -791,7 +872,7 @@ void DisplayListBoundsCalculator::AccumulateOpBounds(
 void DisplayListBoundsCalculator::AccumulateBounds(SkRect& bounds) {
   matrix().mapRect(&bounds);
   if (!has_clip() || bounds.intersect(clip_bounds())) {
-    accumulator_.accumulate(bounds);
+    accumulator_.accumulate(bounds, op_index_);
   }
 }
 

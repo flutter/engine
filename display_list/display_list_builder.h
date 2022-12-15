@@ -360,7 +360,8 @@ class DisplayListBuilder final : public virtual Dispatcher,
   SkAutoTMalloc<uint8_t> storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
-  int op_count_ = 0;
+  int render_op_count_ = 0;
+  int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;

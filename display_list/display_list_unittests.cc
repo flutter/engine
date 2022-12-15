@@ -106,9 +106,13 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
       sk_sp<DisplayList> dl = group.variants[i].Build();
 
       DisplayListCanvasRecorder recorder(dl->bounds());
-      dl->RenderTo(&recorder);
+      dl->RenderTo(&recorder, SK_Scalar1, false);
       sk_sp<DisplayList> sk_copy = recorder.Build();
       auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
+      if (static_cast<int>(sk_copy->op_count(false)) !=
+                group.variants[i].sk_op_count()) {
+        EXPECT_TRUE(DisplayListsEQ_Verbose(dl, sk_copy)) << desc;
+      }
       EXPECT_EQ(static_cast<int>(sk_copy->op_count(false)),
                 group.variants[i].sk_op_count())
           << desc;
@@ -555,7 +559,7 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
     sk_sp<DisplayList> display_list = builder.Build();
     sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
     SkCanvas* canvas = surface->getCanvas();
-    display_list->RenderTo(canvas);
+    display_list->RenderTo(canvas, SK_Scalar1, false);
     SkM44 dl_matrix = canvas->getLocalToDevice();
     ASSERT_EQ(sk_matrix, dl_matrix);
   }
@@ -573,8 +577,11 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
     sk_sp<DisplayList> display_list = builder.Build();
     sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
     SkCanvas* canvas = surface->getCanvas();
-    display_list->RenderTo(canvas);
+    ASSERT_EQ(canvas->getLocalToDevice(), SkM44());
+    display_list->RenderTo(canvas, SK_Scalar1, false);
     SkM44 dl_matrix = canvas->getLocalToDevice();
+    // Make sure that the transform call didn't get culled
+    ASSERT_NE(dl_matrix, SkM44());
     ASSERT_NE(sk_matrix, dl_matrix);
   }
 }
@@ -2249,6 +2256,118 @@ TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
 
   // Hitting both drawRect calls
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeRenderCulling) {
+  DisplayListBuilder main_builder;
+  main_builder.drawRect({0, 0, 10, 10});
+  main_builder.drawRect({20, 0, 30, 10});
+  main_builder.drawRect({0, 20, 10, 30});
+  main_builder.drawRect({20, 20, 30, 30});
+  auto main = main_builder.Build();
+
+  { // No rects
+    SkRect cull_rect = {11, 11, 19, 19};
+
+    DisplayListBuilder expected_builder;
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  { // Rect 1
+    SkRect cull_rect = {9, 9, 19, 19};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({0, 0, 10, 10});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  { // Rect 2
+    SkRect cull_rect = {11, 9, 21, 19};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({20, 0, 30, 10});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  { // Rect 3
+    SkRect cull_rect = {9, 11, 19, 21};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({0, 20, 10, 30});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  { // Rect 4
+    SkRect cull_rect = {11, 11, 21, 21};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({20, 20, 30, 30});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  { // All 4 rects
+    SkRect cull_rect = {9, 9, 21, 21};
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), main));
+  }
 }
 
 }  // namespace testing

@@ -41,104 +41,123 @@
 
 namespace flutter {
 
+class DispatchOpCounter {
+ public:
+  virtual void count_op() {}
+};
+
 // A utility class that will ignore all Dispatcher methods relating
 // to the setting of attributes.
-class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
+class IgnoreAttributeDispatchHelper : public virtual Dispatcher,
+                                      virtual DispatchOpCounter {
  public:
-  void setAntiAlias(bool aa) override {}
-  void setDither(bool dither) override {}
-  void setInvertColors(bool invert) override {}
-  void setStrokeCap(DlStrokeCap cap) override {}
-  void setStrokeJoin(DlStrokeJoin join) override {}
-  void setStyle(DlDrawStyle style) override {}
-  void setStrokeWidth(float width) override {}
-  void setStrokeMiter(float limit) override {}
-  void setColor(DlColor color) override {}
-  void setBlendMode(DlBlendMode mode) override {}
-  void setBlender(sk_sp<SkBlender> blender) override {}
-  void setColorSource(const DlColorSource* source) override {}
-  void setImageFilter(const DlImageFilter* filter) override {}
-  void setColorFilter(const DlColorFilter* filter) override {}
-  void setPathEffect(const DlPathEffect* effect) override {}
-  void setMaskFilter(const DlMaskFilter* filter) override {}
+  void setAntiAlias(bool aa) override { count_op(); }
+  void setDither(bool dither) override { count_op(); }
+  void setInvertColors(bool invert) override { count_op(); }
+  void setStrokeCap(DlStrokeCap cap) override { count_op(); }
+  void setStrokeJoin(DlStrokeJoin join) override { count_op(); }
+  void setStyle(DlDrawStyle style) override { count_op(); }
+  void setStrokeWidth(float width) override { count_op(); }
+  void setStrokeMiter(float limit) override { count_op(); }
+  void setColor(DlColor color) override { count_op(); }
+  void setBlendMode(DlBlendMode mode) override { count_op(); }
+  void setBlender(sk_sp<SkBlender> blender) override { count_op(); }
+  void setColorSource(const DlColorSource* source) override { count_op(); }
+  void setImageFilter(const DlImageFilter* filter) override { count_op(); }
+  void setColorFilter(const DlColorFilter* filter) override { count_op(); }
+  void setPathEffect(const DlPathEffect* effect) override { count_op(); }
+  void setMaskFilter(const DlMaskFilter* filter) override { count_op(); }
 };
 
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
-class IgnoreClipDispatchHelper : public virtual Dispatcher {
-  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override {}
-  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override {}
-  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override {}
+class IgnoreClipDispatchHelper : public virtual Dispatcher,
+                                 virtual DispatchOpCounter {
+  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override {
+    count_op();
+  }
+  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override {
+    count_op();
+  }
+  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override {
+    count_op();
+  }
 };
 
 // A utility class that will ignore all Dispatcher methods relating
 // to modifying the transform.
-class IgnoreTransformDispatchHelper : public virtual Dispatcher {
+class IgnoreTransformDispatchHelper : public virtual Dispatcher,
+                                      virtual DispatchOpCounter {
  public:
-  void translate(SkScalar tx, SkScalar ty) override {}
-  void scale(SkScalar sx, SkScalar sy) override {}
-  void rotate(SkScalar degrees) override {}
-  void skew(SkScalar sx, SkScalar sy) override {}
+  void translate(SkScalar tx, SkScalar ty) override { count_op(); }
+  void scale(SkScalar sx, SkScalar sy) override { count_op(); }
+  void rotate(SkScalar degrees) override { count_op(); }
+  void skew(SkScalar sx, SkScalar sy) override { count_op(); }
   // clang-format off
   // 2x3 2D affine subset of a 4x4 transform in row major order
   void transform2DAffine(SkScalar mxx, SkScalar mxy, SkScalar mxt,
-                         SkScalar myx, SkScalar myy, SkScalar myt) override {}
+                         SkScalar myx, SkScalar myy, SkScalar myt) override {
+    count_op();
+  }
   // full 4x4 transform in row major order
   void transformFullPerspective(
       SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
       SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
       SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
-      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {}
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) override {
+    count_op();
+  }
   // clang-format on
-  void transformReset() override {}
+  void transformReset() override { count_op(); }
 };
 
-class IgnoreDrawDispatchHelper : public virtual Dispatcher {
+class IgnoreDrawDispatchHelper : public virtual Dispatcher,
+                                 virtual DispatchOpCounter {
  public:
-  void save() override {}
+  void save() override { count_op(); }
   void saveLayer(const SkRect* bounds,
                  const SaveLayerOptions options,
-                 const DlImageFilter* backdrop) override {}
-  void restore() override {}
-  void drawColor(DlColor color, DlBlendMode mode) override {}
-  void drawPaint() override {}
-  void drawLine(const SkPoint& p0, const SkPoint& p1) override {}
-  void drawRect(const SkRect& rect) override {}
-  void drawOval(const SkRect& bounds) override {}
-  void drawCircle(const SkPoint& center, SkScalar radius) override {}
-  void drawRRect(const SkRRect& rrect) override {}
-  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override {}
-  void drawPath(const SkPath& path) override {}
+                 const DlImageFilter* backdrop) override { count_op(); }
+  void restore() override { count_op(); }
+  void drawColor(DlColor color, DlBlendMode mode) override { count_op(); }
+  void drawPaint() override { count_op(); }
+  void drawLine(const SkPoint& p0, const SkPoint& p1) override { count_op(); }
+  void drawRect(const SkRect& rect) override { count_op(); }
+  void drawOval(const SkRect& bounds) override { count_op(); }
+  void drawCircle(const SkPoint& center, SkScalar radius) override { count_op(); }
+  void drawRRect(const SkRRect& rrect) override { count_op(); }
+  void drawDRRect(const SkRRect& outer, const SkRRect& inner) override { count_op(); }
+  void drawPath(const SkPath& path) override { count_op(); }
   void drawArc(const SkRect& oval_bounds,
                SkScalar start_degrees,
                SkScalar sweep_degrees,
-               bool use_center) override {}
+               bool use_center) override { count_op(); }
   void drawPoints(SkCanvas::PointMode mode,
                   uint32_t count,
-                  const SkPoint points[]) override {}
+                  const SkPoint points[]) override { count_op(); }
   void drawSkVertices(const sk_sp<SkVertices> vertices,
-                      SkBlendMode mode) override {}
-  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
+                      SkBlendMode mode) override { count_op(); }
+  void drawVertices(const DlVertices* vertices, DlBlendMode mode) override { count_op(); }
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
                  DlImageSampling sampling,
-                 bool render_with_attributes) override {}
+                 bool render_with_attributes) override { count_op(); }
   void drawImageRect(const sk_sp<DlImage> image,
                      const SkRect& src,
                      const SkRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
-                     SkCanvas::SrcRectConstraint constraint) override {}
+                     SkCanvas::SrcRectConstraint constraint) override { count_op(); }
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,
                      DlFilterMode filter,
-                     bool render_with_attributes) override {}
+                     bool render_with_attributes) override { count_op(); }
   void drawImageLattice(const sk_sp<DlImage> image,
                         const SkCanvas::Lattice& lattice,
                         const SkRect& dst,
                         DlFilterMode filter,
-                        bool render_with_attributes) override {}
+                        bool render_with_attributes) override { count_op(); }
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -147,25 +166,26 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                  DlBlendMode mode,
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
-                 bool render_with_attributes) override {}
+                 bool render_with_attributes) override { count_op(); }
   void drawPicture(const sk_sp<SkPicture> picture,
                    const SkMatrix* matrix,
-                   bool render_with_attributes) override {}
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override {}
+                   bool render_with_attributes) override { count_op(); }
+  void drawDisplayList(const sk_sp<DisplayList> display_list) override { count_op(); }
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
-                    SkScalar y) override {}
+                    SkScalar y) override { count_op(); }
   void drawShadow(const SkPath& path,
                   const DlColor color,
                   const SkScalar elevation,
                   bool transparent_occluder,
-                  SkScalar dpr) override {}
+                  SkScalar dpr) override { count_op(); }
 };
 
 // A utility class that will monitor the Dispatcher methods relating
 // to the rendering attributes and accumulate them into an SkPaint
 // which can be accessed at any time via paint().
-class SkPaintDispatchHelper : public virtual Dispatcher {
+class SkPaintDispatchHelper : public virtual Dispatcher,
+                              virtual DispatchOpCounter {
  public:
   SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
       : current_color_(SK_ColorBLACK), opacity_(opacity) {
@@ -257,7 +277,8 @@ class SkMatrixSource {
 // its save() and restore() methods so those methods will need to be
 // forwarded if overridden in more than one super class.
 class SkMatrixDispatchHelper : public virtual Dispatcher,
-                               public virtual SkMatrixSource {
+                               public virtual SkMatrixSource,
+                               virtual DispatchOpCounter {
  public:
   void translate(SkScalar tx, SkScalar ty) override;
   void scale(SkScalar sx, SkScalar sy) override;
@@ -307,7 +328,8 @@ class SkMatrixDispatchHelper : public virtual Dispatcher,
 // its save() and restore() methods so those methods will need to be
 // forwarded if overridden in more than one super class.
 class ClipBoundsDispatchHelper : public virtual Dispatcher,
-                                 private virtual SkMatrixSource {
+                                 private virtual SkMatrixSource,
+                                 virtual DispatchOpCounter {
  public:
   ClipBoundsDispatchHelper() : ClipBoundsDispatchHelper(nullptr) {}
 
@@ -362,7 +384,9 @@ class BoundsAccumulator {
   /// be trusted.
   typedef bool BoundsModifier(const SkRect& original, SkRect* dest);
 
-  virtual void accumulate(const SkRect& r) = 0;
+  /// Accumulates the indicated rectangle for the indicated op index
+  /// into the bounds or rtree.
+  virtual void accumulate(const SkRect& r, uint32_t index) = 0;
 
   virtual bool is_empty() const = 0;
   virtual bool is_not_empty() const = 0;
@@ -406,7 +430,7 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
  public:
   void accumulate(SkScalar x, SkScalar y) { rect_.accumulate(x, y); }
   void accumulate(const SkPoint& p) { rect_.accumulate(p.fX, p.fY); }
-  void accumulate(const SkRect& r) override;
+  void accumulate(const SkRect& r, uint32_t index) override;
 
   bool is_empty() const override { return rect_.is_empty(); }
   bool is_not_empty() const override { return rect_.is_not_empty(); }
@@ -452,7 +476,9 @@ class RectBoundsAccumulator final : public virtual BoundsAccumulator {
 
 class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
  public:
-  void accumulate(const SkRect& r) override;
+  RTreeBoundsAccumulator(std::vector<uint32_t>* rect_indices = nullptr)
+      : rect_indices_(rect_indices) {}
+  void accumulate(const SkRect& r, uint32_t index) override;
 
   bool is_empty() const override;
   bool is_not_empty() const override;
@@ -473,6 +499,7 @@ class RTreeBoundsAccumulator final : public virtual BoundsAccumulator {
  private:
   std::vector<SkRect> rects_;
   std::vector<size_t> saved_offsets_;
+  std::vector<uint32_t>* rect_indices_;
 };
 
 // This class implements all rendering methods and computes a liberal
@@ -482,6 +509,7 @@ class DisplayListBoundsCalculator final
       public virtual IgnoreAttributeDispatchHelper,
       public virtual SkMatrixDispatchHelper,
       public virtual ClipBoundsDispatchHelper,
+      virtual DispatchOpCounter,
       DisplayListOpFlags {
  public:
   // Construct a Calculator to determine the bounds of a list of
@@ -591,6 +619,10 @@ class DisplayListBoundsCalculator final
 
  private:
   BoundsAccumulator& accumulator_;
+  uint32_t op_index_;
+  void count_op() override {
+    op_index_++;
+  }
 
   // A class that remembers the information kept for a single
   // |save| or |saveLayer|.

@@ -215,6 +215,8 @@ class SaveLayerOptions {
   };
 };
 
+class Culler;
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -224,15 +226,15 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const {
-    uint8_t* ptr = storage_.get();
-    Dispatch(ctx, ptr, ptr + byte_count_);
-  }
+  void Dispatch(Dispatcher& ctx) const;
+  void Dispatch(Dispatcher& ctx, const SkRect& cull_rect);
 
   void RenderTo(DisplayListBuilder* builder,
-                SkScalar opacity = SK_Scalar1) const;
+                SkScalar opacity = SK_Scalar1,
+                bool cull = true);
 
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
+  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1,
+                bool cull = true);
 
   // SkPicture always includes nested bytes, but nested ops are
   // only included if requested. The defaults used here for these
@@ -296,6 +298,7 @@ class DisplayList : public SkRefCnt {
   uint32_t unique_id_;
   SkRect bounds_;
   sk_sp<const DlRTree> rtree_;
+  std::vector<uint32_t> rtree_op_indices_;
 
   // Only used for drawPaint() and drawColor()
   SkRect bounds_cull_;
@@ -304,7 +307,9 @@ class DisplayList : public SkRefCnt {
 
   void ComputeBounds();
   void ComputeRTree();
-  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
+
+  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end,
+                Culler& culler) const;
 
   friend class DisplayListBuilder;
 };
