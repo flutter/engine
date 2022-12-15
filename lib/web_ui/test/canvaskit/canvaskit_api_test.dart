@@ -347,6 +347,47 @@ void _shaderTests() {
         ),
         isNotNull);
   });
+
+  test('RuntimeEffect', () {
+    // TODO(hterkelsen): Remove this check when local CanvasKit is default.
+    if (isRuntimeEffectAvailable) {
+      const String kSkSlProgram = r'''
+half4 main(vec2 fragCoord) {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}
+  ''';
+
+      final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
+      expect(effect, isNotNull);
+
+      const String kInvalidSkSlProgram = '';
+
+      // Invalid SkSL returns null.
+      final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
+      expect(invalidEffect, isNull);
+
+      final SkShader? shader = effect!.makeShader(<double>[]);
+      expect(shader, isNotNull);
+
+      // mismatched uniforms returns null.
+      final SkShader? invalidShader = effect.makeShader(<double>[1]);
+
+      expect(invalidShader, isNull);
+
+      const String kSkSlProgramWithUniforms = r'''
+uniform vec4 u_color;
+
+half4 main(vec2 fragCoord) {
+  return u_color;
+}
+  ''';
+
+      final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
+        !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
+
+      expect(shaderWithUniform, isNotNull);
+    }
+  });
 }
 
 SkShader _makeTestShader() {
@@ -492,11 +533,40 @@ void _imageFilterTests() {
 }
 
 void _mallocTests() {
-  test('SkFloat32List', () {
+  test('$SkFloat32List', () {
+    final List<SkFloat32List> lists = <SkFloat32List>[];
+
     for (int size = 0; size < 1000; size++) {
       final SkFloat32List skList = mallocFloat32List(4);
       expect(skList, isNotNull);
-      expect(skList.toTypedArray().length, 4);
+      expect(skList.toTypedArray(), hasLength(4));
+      lists.add(skList);
+    }
+
+    for (final SkFloat32List skList in lists) {
+      // toTypedArray() still works.
+      expect(() => skList.toTypedArray(), returnsNormally);
+      free(skList);
+      // toTypedArray() throws after free.
+      expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
+    }
+  });
+  test('$SkUint32List', () {
+    final List<SkUint32List> lists = <SkUint32List>[];
+
+    for (int size = 0; size < 1000; size++) {
+      final SkUint32List skList = mallocUint32List(4);
+      expect(skList, isNotNull);
+      expect(skList.toTypedArray(), hasLength(4));
+      lists.add(skList);
+    }
+
+    for (final SkUint32List skList in lists) {
+      // toTypedArray() still works.
+      expect(() => skList.toTypedArray(), returnsNormally);
+      free(skList);
+      // toTypedArray() throws after free.
+      expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
     }
   });
 }
@@ -771,7 +841,7 @@ void _pathTests() {
       ui.Offset(10, 10),
     ]);
     path.addPoly(encodedPoints.toTypedArray(), true);
-    freeFloat32List(encodedPoints);
+    free(encodedPoints);
   });
 
   test('addRRect', () {
@@ -1707,46 +1777,4 @@ void _paragraphTests() {
       canvasKit.TextHeightBehavior.DisableAll,
     );
   });
-
-  test('RuntimeEffect', () {
-    // Is supported..
-    expect(isRuntimeEffectAvailable, isTrue);
-
-    const String kSkSlProgram = r'''
-half4 main(vec2 fragCoord) {
-  return vec4(1.0, 0.0, 0.0, 1.0);
-}
-''';
-
-    final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
-    expect(effect, isNotNull);
-
-    const String kInvalidSkSlProgram = '';
-
-    // Invalid SkSL returns null.
-    final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
-    expect(invalidEffect, isNull);
-
-    final SkShader? shader = effect!.makeShader(<double>[]);
-    expect(shader, isNotNull);
-
-    // mismatched uniforms returns null.
-    final SkShader? invalidShader = effect.makeShader(<double>[1]);
-
-    expect(invalidShader, isNull);
-
-    const String kSkSlProgramWithUniforms = r'''
-uniform vec4 u_color;
-
-half4 main(vec2 fragCoord) {
-  return u_color;
-}
-''';
-
-    final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
-      !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
-
-    expect(shaderWithUniform, isNotNull);
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/115327
-  }, skip: true);
 }

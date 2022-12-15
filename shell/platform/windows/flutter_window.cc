@@ -105,6 +105,11 @@ void FlutterWindow::UpdateFlutterCursor(const std::string& cursor_name) {
   current_cursor_ = GetCursorByName(cursor_name);
 }
 
+void FlutterWindow::SetFlutterCursor(HCURSOR cursor) {
+  current_cursor_ = cursor;
+  ::SetCursor(current_cursor_);
+}
+
 void FlutterWindow::OnWindowResized() {
   // Blocking the raster thread until DWM flushes alleviates glitches where
   // previous size surface is stretched over current size view.
@@ -151,8 +156,10 @@ void FlutterWindow::OnPaint() {
 void FlutterWindow::OnPointerMove(double x,
                                   double y,
                                   FlutterPointerDeviceKind device_kind,
-                                  int32_t device_id) {
-  binding_handler_delegate_->OnPointerMove(x, y, device_kind, device_id);
+                                  int32_t device_id,
+                                  int modifiers_state) {
+  binding_handler_delegate_->OnPointerMove(x, y, device_kind, device_id,
+                                           modifiers_state);
 }
 
 void FlutterWindow::OnPointerDown(double x,
@@ -296,6 +303,10 @@ AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
     CreateAccessibilityRootNode();
   }
   return accessibility_root_;
+}
+
+ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
+  return binding_handler_delegate_->GetAxFragmentRootDelegate();
 }
 
 }  // namespace flutter

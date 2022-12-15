@@ -212,6 +212,7 @@ extension DomNodeExtension on DomNode {
   external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
+  external set innerText(String text);
   external DomNode? get lastChild;
   external DomNode appendChild(DomNode node);
   DomElement? get parent => js_util.getProperty(this, 'parentElement');
@@ -1126,6 +1127,8 @@ class DomWheelEvent extends DomMouseEvent {}
 extension DomWheelEventExtension on DomWheelEvent {
   external double get deltaX;
   external double get deltaY;
+  external double? get wheelDeltaX;
+  external double? get wheelDeltaY;
   external double get deltaMode;
 }
 

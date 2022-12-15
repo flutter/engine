@@ -9,6 +9,7 @@
 
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
 #include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
@@ -31,7 +32,8 @@ class WindowBindingHandlerDelegate {
   virtual void OnPointerMove(double x,
                              double y,
                              FlutterPointerDeviceKind device_kind,
-                             int32_t device_id) = 0;
+                             int32_t device_id,
+                             int modifiers_state) = 0;
 
   // Notifies delegate that backing window mouse pointer button has been
   // pressed. Typically called by currently configured WindowBindingHandler.
@@ -135,6 +137,13 @@ class WindowBindingHandlerDelegate {
 
   // Update the status of the high contrast feature
   virtual void UpdateHighContrastEnabled(bool enabled) = 0;
+
+  // Obtain a pointer to the fragment root delegate.
+  // This is required by UIA in order to obtain the fragment root that
+  // contains a fragment obtained by, for example, a hit test. Unlike
+  // MSAA, UIA elements do not explicitly store or enumerate their
+  // children and parents, so a method such as this is required.
+  virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() = 0;
 };
 
 }  // namespace flutter

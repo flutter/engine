@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WIN32_WINDOW_H_
 
-#include <windowsx.h>
-
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/window.h"
 #include "gmock/gmock.h"
@@ -43,8 +41,8 @@ class MockWindow : public Window {
   MOCK_METHOD1(OnDpiScale, void(unsigned int));
   MOCK_METHOD2(OnResize, void(unsigned int, unsigned int));
   MOCK_METHOD0(OnPaint, void());
-  MOCK_METHOD4(OnPointerMove,
-               void(double, double, FlutterPointerDeviceKind, int32_t));
+  MOCK_METHOD5(OnPointerMove,
+               void(double, double, FlutterPointerDeviceKind, int32_t, int));
   MOCK_METHOD5(OnPointerDown,
                void(double, double, FlutterPointerDeviceKind, int32_t, UINT));
   MOCK_METHOD5(OnPointerUp,
@@ -66,6 +64,8 @@ class MockWindow : public Window {
   MOCK_METHOD3(OnImeComposition, void(UINT const, WPARAM const, LPARAM const));
 
   MOCK_METHOD0(OnThemeChange, void());
+
+  MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
 
   void CallOnImeComposition(UINT const message,
                             WPARAM const wparam,

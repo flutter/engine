@@ -674,7 +674,7 @@ static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* c
 @implementation FlutterTimerProxy
 
 + (instancetype)proxyWithTarget:(FlutterTextInputPlugin*)target {
-  FlutterTimerProxy* proxy = [self new];
+  FlutterTimerProxy* proxy = [[self alloc] init];
   if (proxy) {
     proxy.target = target;
   }
@@ -707,7 +707,8 @@ static void ConfigureInputClientWithDictionary(UIView<FlutterTextInputClient>* c
   self = [super init];
 
   if (self) {
-    self.textInputDelegate = textInputDelegate;
+    // `_textInputDelegate` is a weak reference because it should retain FlutterTextInputPlugin.
+    _textInputDelegate = textInputDelegate;
     _autofillContext = [[NSMutableDictionary alloc] init];
     _inputHider = [[FlutterTextInputViewAccessibilityHider alloc] init];
     _scribbleElements = [[NSMutableDictionary alloc] init];
