@@ -20,29 +20,6 @@ static uint8_t PeekByte(unsigned long location, CFDataRef data) {
   return result;
 }
 
-static bool IsStandardType(uint8_t type) {
-  switch (type) {
-    case FlutterStandardFieldNil:
-    case FlutterStandardFieldTrue:
-    case FlutterStandardFieldFalse:
-    case FlutterStandardFieldInt32:
-    case FlutterStandardFieldInt64:
-    case FlutterStandardFieldIntHex:
-    case FlutterStandardFieldFloat64:
-    case FlutterStandardFieldString:
-    case FlutterStandardFieldUInt8Data:
-    case FlutterStandardFieldInt32Data:
-    case FlutterStandardFieldInt64Data:
-    case FlutterStandardFieldFloat64Data:
-    case FlutterStandardFieldList:
-    case FlutterStandardFieldMap:
-    case FlutterStandardFieldFloat32Data:
-      return true;
-    default:
-      return false;
-  }
-}
-
 void FlutterStandardCodecHelperReadBytes(unsigned long* location,
                                          unsigned long length,
                                          void* destination,
@@ -104,7 +81,7 @@ static inline CFTypeRef FastReadValue(
     CFTypeRef (*ReadTypedDataOfType)(FlutterStandardField, CFTypeRef),
     CFTypeRef user_data) {
   uint8_t type = PeekByte(*location, data);
-  if (IsStandardType(type)) {
+  if (FlutterStandardFieldIsStandardType(type)) {
     *location += 1;
     return FlutterStandardCodecHelperReadValueOfType(
         location, data, type, ReadValue, ReadTypedDataOfType, user_data);

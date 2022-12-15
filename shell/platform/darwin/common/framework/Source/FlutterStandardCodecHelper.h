@@ -6,12 +6,14 @@
 #define SHELL_PLATFORM_DARWIN_COMMON_FRAMEWORK_SOURCE_FLUTTERSTANDARDCODECHELPER_H_
 
 #include <CoreFoundation/CoreFoundation.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+// Note: Update FlutterStandardFieldIsStandardType if this changes.
 typedef enum {
   FlutterStandardFieldNil,
   FlutterStandardFieldTrue,
@@ -29,6 +31,11 @@ typedef enum {
   FlutterStandardFieldMap,
   FlutterStandardFieldFloat32Data,
 } FlutterStandardField;
+
+static inline bool FlutterStandardFieldIsStandardType(uint8_t field) {
+  return field <= FlutterStandardFieldFloat32Data &&
+         field >= FlutterStandardFieldNil;
+}
 
 void FlutterStandardCodecHelperReadAlignment(unsigned long* location,
                                              uint8_t alignment);
