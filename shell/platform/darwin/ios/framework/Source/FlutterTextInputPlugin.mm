@@ -702,11 +702,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @end
 
 @interface FlutterTextInputPlugin ()
-@property(nonatomic, readonly) id<FlutterTextInputDelegate> textInputDelegate;
+@property(nonatomic, readonly, weak) id<FlutterTextInputDelegate> textInputDelegate;
 @property(nonatomic, readonly) UIView* hostView;
 @end
 
 @interface FlutterTextInputView ()
+@property(nonatomic, readonly, weak) FlutterTextInputPlugin* textInputPlugin;
 @property(nonatomic, copy) NSString* autofillId;
 @property(nonatomic, readonly) CATransform3D editableTransform;
 @property(nonatomic, assign) CGRect markedRect;
@@ -721,7 +722,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @end
 
 @implementation FlutterTextInputView {
-  __weak FlutterTextInputPlugin* _textInputPlugin;
   int _textInputClient;
   const char* _selectionAffinity;
   FlutterTextRange* _selectedTextRange;
@@ -2045,7 +2045,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 @implementation FlutterTextInputPlugin {
   NSTimer* _enableFlutterTextInputViewAccessibilityTimer;
-  __weak id<FlutterTextInputDelegate> _textInputDelegate;
 }
 
 - (instancetype)initWithDelegate:(id<FlutterTextInputDelegate>)textInputDelegate {
@@ -2075,10 +2074,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (UIView<UITextInput>*)textInputView {
   return _activeView;
-}
-
-- (id<FlutterTextInputDelegate>)textInputDelegate {
-  return _textInputDelegate;
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
