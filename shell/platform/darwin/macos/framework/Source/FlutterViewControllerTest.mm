@@ -631,16 +631,18 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 
   // A discrete scroll event should use the PointerSignal system, and flip the
   // direction when shift is pressed.
-  CGEventRef cgEventDiscrete =
-      CGEventCreateScrollWheelEvent(CGEventCreateKeyboardEvent(NULL, 56, TRUE),  // SHIFT
-                                    kCGScrollEventUnitPixel, 1, 0);
-  CGEventSetType(cgEventDiscrete, kCGEventScrollWheel);
-  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventIsContinuous, 0);
-  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis2, 1);  // scroll_delta_x
-  CGEventSetIntegerValueField(cgEventDiscrete, kCGScrollWheelEventDeltaAxis1, 2);  // scroll_delta_y
+  CGEventRef cgEventDiscreteShift =
+      CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
+  CGEventSetType(cgEventDiscreteShift, kCGEventScrollWheel);
+  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
+  CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventIsContinuous, 0);
+  CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis2,
+                              1);  // scroll_delta_x
+  CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis1,
+                              2);  // scroll_delta_y
 
   called = false;
-  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscrete]];
+  [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscreteShift]];
   EXPECT_TRUE(called);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScroll);
   // pixelsPerLine is 40.0, direction is reversed and axes have been flipped.
