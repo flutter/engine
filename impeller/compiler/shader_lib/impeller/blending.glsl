@@ -190,4 +190,55 @@ vec3 IPBlendLuminosity(vec3 dst, vec3 src) {
   return IPSetLuminosity(dst, IPLuminosity(src));
 }
 
+vec4 IPBlendSrcOver(vec4 dst, vec4 src) {
+  return src + dst * (1 - src.a);
+}
+
+vec4 IPBlendSrcIn(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_srcin
+  return src * dst.a;
+}
+
+vec4 IPBlendDstOver(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_dstout
+  return dst + src * (1 - dst.a);
+}
+
+vec4 IPBlendDstIn(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_dstin
+  return dst * src.a;
+}
+
+vec4 IPBlendDstOut(vec4 dst, vec4 src) {
+  return dst * (1 - src.a);
+}
+
+vec4 IPBlendSrcOut(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_srcout
+  return src * (1 - dst.a);
+}
+
+vec4 IPBlendSrcATop(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_srcatop
+  return src * dst.a + dst * (1 - src.a);
+}
+
+vec4 IPBlendDstATop(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_dstatop
+  return dst * src.a + src * (1 - dst.a);
+}
+
+vec4 IPBlendXor(vec4 dst, vec4 src) {
+  // https://www.w3.org/TR/compositing-1/#porterduffcompositingoperators_xor
+  return src * (1 - dst.a) + dst * (1 - src.a);
+}
+
+vec4 IPBlendPlus(vec4 dst, vec4 src) {
+  return min(src + dst, vec4(1));
+}
+
+vec4 IPBlendModulate(vec4 dst, vec4 src) {
+  return src * dst;
+}
+
 #endif

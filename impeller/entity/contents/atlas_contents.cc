@@ -107,12 +107,12 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
     for (size_t j = 0; j < 6; j++) {
       VS::PerVertexData data;
-      data.position = transformed_points[indices[j]];
-      data.texture_coords =
+      data.vertices = transformed_points[indices[j]];
+      data.src_texture_coords =
           (sample_rect.origin + Point(sample_rect.size.width * width[j],
                                       sample_rect.size.height * height[j])) /
           texture_size;
-      data.color = color.Premultiply();
+      data.dst_color = color;
       vertex_builder.AppendVertex(data);
     }
   }
@@ -123,26 +123,137 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frag_info.has_vertex_color = colors_.size() > 0 ? 1.0 : 0.0;
+  frag_info.src_y_coord_scale = texture_->GetYCoordScale();
   frag_info.alpha = alpha_;
 
   Command cmd;
   cmd.label = "DrawAtlas";
-  cmd.pipeline =
-      renderer.GetAtlasPipeline(OptionsFromPassAndEntity(pass, entity));
+  switch (blend_mode_) {
+    case BlendMode::kClear:
+      return true;
+    case BlendMode::kSource:
+      // Color only, just use vertices.
+    case BlendMode::kDestination:
+      // Image only, same as no color.
+    case BlendMode::kSourceOver:
+      cmd.pipeline = renderer.GetAtlasBlendSrcOverPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDestinationOver:
+      cmd.pipeline = renderer.GetAtlasBlendDstOverPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kSourceIn:
+      cmd.pipeline = renderer.GetAtlasBlendSrcInPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDestinationIn:
+      cmd.pipeline = renderer.GetAtlasBlendDstInPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kSourceOut:
+      cmd.pipeline = renderer.GetAtlasBlendSrcOutPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDestinationOut:
+      cmd.pipeline = renderer.GetAtlasBlendDstOutPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kSourceATop:
+      cmd.pipeline = renderer.GetAtlasBlendSrcATopPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDestinationATop:
+      cmd.pipeline = renderer.GetAtlasBlendDstATopPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kXor:
+      cmd.pipeline = renderer.GetAtlasBlendXorPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kPlus:
+      cmd.pipeline = renderer.GetAtlasBlendPlusPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kModulate:
+      cmd.pipeline = renderer.GetAtlasBlendModulatePipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    // Advanced
+    case BlendMode::kScreen:
+      cmd.pipeline = renderer.GetAtlasBlendScreenPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kOverlay:
+      cmd.pipeline = renderer.GetAtlasBlendOverlayPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDarken:
+      cmd.pipeline = renderer.GetAtlasBlendDarkenPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kLighten:
+      cmd.pipeline = renderer.GetAtlasBlendLightenPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kColorDodge:
+      cmd.pipeline = renderer.GetAtlasBlendColorDodgePipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kColorBurn:
+      cmd.pipeline = renderer.GetAtlasBlendColorBurnPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kHardLight:
+      cmd.pipeline = renderer.GetAtlasBlendHardLightPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kSoftLight:
+      cmd.pipeline = renderer.GetAtlasBlendSoftLightPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kDifference:
+      cmd.pipeline = renderer.GetAtlasBlendDifferencePipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kExclusion:
+      cmd.pipeline = renderer.GetAtlasBlendExclusionPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kMultiply:
+      cmd.pipeline = renderer.GetAtlasBlendMultiplyPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kHue:
+      cmd.pipeline = renderer.GetAtlasBlendHuePipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kSaturation:
+      cmd.pipeline = renderer.GetAtlasBlendSaturationPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kColor:
+      cmd.pipeline = renderer.GetAtlasBlendColorPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+    case BlendMode::kLuminosity:
+      cmd.pipeline = renderer.GetAtlasBlendLuminosityPipeline(
+          OptionsFromPassAndEntity(pass, entity));
+      break;
+  }
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  FS::BindTextureSampler(cmd, texture_,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
+  FS::BindTextureSamplerSrc(
+      cmd, texture_,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+          sampler_descriptor_));
   pass.AddCommand(std::move(cmd));
 
   return true;

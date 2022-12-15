@@ -227,6 +227,62 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
+  // Atlas/vertices advanced pipelines
+  atlas_blend_color_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendColorPipeline>(*context_);
+  atlas_blend_colorburn_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendColorBurnPipeline>(*context_);
+  atlas_blend_colordodge_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendColorDodgePipeline>(*context_);
+  atlas_blend_darken_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDarkenPipeline>(*context_);
+  atlas_blend_difference_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDifferencePipeline>(*context_);
+  atlas_blend_exclusion_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendExclusionPipeline>(*context_);
+  atlas_blend_hardlight_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendHardLightPipeline>(*context_);
+  atlas_blend_hue_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendHuePipeline>(*context_);
+  atlas_blend_lighten_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendLightenPipeline>(*context_);
+  atlas_blend_luminosity_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendLuminosityPipeline>(*context_);
+  atlas_blend_multiply_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendMultiplyPipeline>(*context_);
+  atlas_blend_overlay_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendOverlayPipeline>(*context_);
+  atlas_blend_saturation_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSaturationPipeline>(*context_);
+  atlas_blend_screen_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendScreenPipeline>(*context_);
+  atlas_blend_softlight_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSoftLightPipeline>(*context_);
+
+  // Atlas/vertices normal pipelines
+  atlas_blend_dst_a_top_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDstATopPipeline>(*context_);
+  atlas_blend_dst_in_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDstInPipeline>(*context_);
+  atlas_blend_dst_over_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDstOverPipeline>(*context_);
+  atlas_blend_dst_out_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendDstOutPipeline>(*context_);
+  atlas_blend_modulate_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendModulatePipeline>(*context_);
+  atlas_blend_plus_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendPlusPipeline>(*context_);
+  atlas_blend_src_a_top_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSrcATopPipeline>(*context_);
+  atlas_blend_src_in_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSrcInPipeline>(*context_);
+  atlas_blend_src_over_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSrcOverPipeline>(*context_);
+  atlas_blend_src_out_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendSrcOutPipeline>(*context_);
+  atlas_blend_xor_pipelines_[{}] =
+      CreateDefaultPipeline<AtlasBlendXorPipeline>(*context_);
+
   if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
     auto clip_pipeline_descriptor =
         solid_fill_pipelines_[{}]->GetDescriptor().value();

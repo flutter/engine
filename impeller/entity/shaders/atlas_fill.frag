@@ -5,26 +5,21 @@
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
-uniform sampler2D texture_sampler;
-
 uniform FragInfo {
-  float texture_sampler_y_coord_scale;
-  float has_vertex_color;
+  float src_y_coord_scale;
   float alpha;
 }
 frag_info;
 
-in vec2 v_texture_coords;
-in vec4 v_color;
+uniform sampler2D texture_sampler_src;
+
+in vec2 v_src_texture_coords;
+in vec4 v_dst_color;  // This color input is expected to be unpremultiplied.
 
 out vec4 frag_color;
 
 void main() {
-  vec4 sampled = IPSample(texture_sampler, v_texture_coords,
-                          frag_info.texture_sampler_y_coord_scale);
-  if (frag_info.has_vertex_color == 1.0) {
-    frag_color = sampled.aaaa * v_color * frag_info.alpha;
-  } else {
-    frag_color = sampled * frag_info.alpha;
-  }
+  vec4 sampled = IPSample(texture_sampler_src, v_src_texture_coords,
+                          frag_info.src_y_coord_scale);
+  frag_color = sampled * v_dst_color * frag_info.alpha;
 }

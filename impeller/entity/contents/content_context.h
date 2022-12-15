@@ -27,6 +27,35 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
+
+#include "impeller/entity/atlas_advanced_blend_color.frag.h"
+#include "impeller/entity/atlas_advanced_blend_colorburn.frag.h"
+#include "impeller/entity/atlas_advanced_blend_colordodge.frag.h"
+#include "impeller/entity/atlas_advanced_blend_darken.frag.h"
+#include "impeller/entity/atlas_advanced_blend_difference.frag.h"
+#include "impeller/entity/atlas_advanced_blend_exclusion.frag.h"
+#include "impeller/entity/atlas_advanced_blend_hardlight.frag.h"
+#include "impeller/entity/atlas_advanced_blend_hue.frag.h"
+#include "impeller/entity/atlas_advanced_blend_lighten.frag.h"
+#include "impeller/entity/atlas_advanced_blend_luminosity.frag.h"
+#include "impeller/entity/atlas_advanced_blend_multiply.frag.h"
+#include "impeller/entity/atlas_advanced_blend_overlay.frag.h"
+#include "impeller/entity/atlas_advanced_blend_saturation.frag.h"
+#include "impeller/entity/atlas_advanced_blend_screen.frag.h"
+#include "impeller/entity/atlas_advanced_blend_softlight.frag.h"
+#include "impeller/entity/atlas_blend.vert.h"
+#include "impeller/entity/atlas_blend_dst_a_top.frag.h"
+#include "impeller/entity/atlas_blend_dst_in.frag.h"
+#include "impeller/entity/atlas_blend_dst_out.frag.h"
+#include "impeller/entity/atlas_blend_dst_over.frag.h"
+#include "impeller/entity/atlas_blend_modulate.frag.h"
+#include "impeller/entity/atlas_blend_plus.frag.h"
+#include "impeller/entity/atlas_blend_src_a_top.frag.h"
+#include "impeller/entity/atlas_blend_src_in.frag.h"
+#include "impeller/entity/atlas_blend_src_out.frag.h"
+#include "impeller/entity/atlas_blend_src_over.frag.h"
+#include "impeller/entity/atlas_blend_xor.frag.h"
+
 #include "impeller/entity/atlas_fill.frag.h"
 #include "impeller/entity/atlas_fill.vert.h"
 #include "impeller/entity/blend.frag.h"
@@ -165,7 +194,7 @@ using GlyphAtlasPipeline =
 using GlyphAtlasSdfPipeline =
     RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
 using AtlasPipeline =
-    RenderPipelineT<AtlasFillVertexShader, AtlasFillFragmentShader>;
+    RenderPipelineT<AtlasBlendVertexShader, AtlasFillFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
@@ -177,6 +206,75 @@ using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
     RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
+
+// Atlas/vertices specific shaders
+using AtlasBlendColorPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendColorFragmentShader>;
+using AtlasBlendColorBurnPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendColorburnFragmentShader>;
+using AtlasBlendColorDodgePipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendColordodgeFragmentShader>;
+using AtlasBlendDarkenPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendDarkenFragmentShader>;
+using AtlasBlendDifferencePipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendDifferenceFragmentShader>;
+using AtlasBlendExclusionPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendExclusionFragmentShader>;
+using AtlasBlendHardLightPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendHardlightFragmentShader>;
+using AtlasBlendHuePipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendHueFragmentShader>;
+using AtlasBlendLightenPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendLightenFragmentShader>;
+using AtlasBlendLuminosityPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendLuminosityFragmentShader>;
+using AtlasBlendMultiplyPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendMultiplyFragmentShader>;
+using AtlasBlendOverlayPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendOverlayFragmentShader>;
+using AtlasBlendSaturationPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendSaturationFragmentShader>;
+using AtlasBlendScreenPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendScreenFragmentShader>;
+using AtlasBlendSoftLightPipeline =
+    RenderPipelineT<AtlasBlendVertexShader,
+                    AtlasAdvancedBlendSoftlightFragmentShader>;
+using AtlasBlendDstATopPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendDstATopFragmentShader>;
+using AtlasBlendDstInPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendDstInFragmentShader>;
+using AtlasBlendDstOutPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendDstOutFragmentShader>;
+using AtlasBlendDstOverPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendDstOverFragmentShader>;
+using AtlasBlendModulatePipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendModulateFragmentShader>;
+using AtlasBlendPlusPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendPlusFragmentShader>;
+using AtlasBlendSrcATopPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendSrcATopFragmentShader>;
+using AtlasBlendSrcInPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendSrcInFragmentShader>;
+using AtlasBlendSrcOutPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendSrcOutFragmentShader>;
+using AtlasBlendSrcOverPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendSrcOverFragmentShader>;
+using AtlasBlendXorPipeline =
+    RenderPipelineT<AtlasBlendVertexShader, AtlasBlendXorFragmentShader>;
 
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
@@ -418,6 +516,129 @@ class ContentContext {
     return GetPipeline(blend_softlight_pipelines_, opts);
   }
 
+  // Atlas/Vertices advanced blends.
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendColorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_color_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendColorBurnPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_colorburn_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendColorDodgePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_colordodge_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDarkenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_darken_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDifferencePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_difference_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendExclusionPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_exclusion_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendHardLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_hardlight_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendHuePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_hue_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendLightenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_lighten_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendLuminosityPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_luminosity_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendMultiplyPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_multiply_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendOverlayPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_overlay_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSaturationPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_saturation_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendScreenPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_screen_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSoftLightPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_softlight_pipelines_, opts);
+  }
+
+  // Atlas/Vertices Normal blend
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDstATopPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_dst_a_top_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDstInPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_dst_in_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDstOverPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_dst_over_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendDstOutPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_dst_out_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendModulatePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_modulate_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendPlusPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_plus_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSrcATopPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_src_a_top_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSrcInPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_src_in_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSrcOverPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_src_over_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendSrcOutPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_src_out_pipelines_, opts);
+  }
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasBlendXorPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(atlas_blend_xor_pipelines_, opts);
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
@@ -489,6 +710,42 @@ class ContentContext {
   mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
+  // Atlas/Vertices advanced blends.
+  mutable Variants<AtlasBlendColorPipeline> atlas_blend_color_pipelines_;
+  mutable Variants<AtlasBlendColorBurnPipeline>
+      atlas_blend_colorburn_pipelines_;
+  mutable Variants<AtlasBlendColorDodgePipeline>
+      atlas_blend_colordodge_pipelines_;
+  mutable Variants<AtlasBlendDarkenPipeline> atlas_blend_darken_pipelines_;
+  mutable Variants<AtlasBlendDifferencePipeline>
+      atlas_blend_difference_pipelines_;
+  mutable Variants<AtlasBlendExclusionPipeline>
+      atlas_blend_exclusion_pipelines_;
+  mutable Variants<AtlasBlendHardLightPipeline>
+      atlas_blend_hardlight_pipelines_;
+  mutable Variants<AtlasBlendHuePipeline> atlas_blend_hue_pipelines_;
+  mutable Variants<AtlasBlendLightenPipeline> atlas_blend_lighten_pipelines_;
+  mutable Variants<AtlasBlendLuminosityPipeline>
+      atlas_blend_luminosity_pipelines_;
+  mutable Variants<AtlasBlendMultiplyPipeline> atlas_blend_multiply_pipelines_;
+  mutable Variants<AtlasBlendOverlayPipeline> atlas_blend_overlay_pipelines_;
+  mutable Variants<AtlasBlendSaturationPipeline>
+      atlas_blend_saturation_pipelines_;
+  mutable Variants<AtlasBlendScreenPipeline> atlas_blend_screen_pipelines_;
+  mutable Variants<AtlasBlendSoftLightPipeline>
+      atlas_blend_softlight_pipelines_;
+  // Atlas/Vertices normal blends.
+  mutable Variants<AtlasBlendDstATopPipeline> atlas_blend_dst_a_top_pipelines_;
+  mutable Variants<AtlasBlendDstInPipeline> atlas_blend_dst_in_pipelines_;
+  mutable Variants<AtlasBlendDstOverPipeline> atlas_blend_dst_over_pipelines_;
+  mutable Variants<AtlasBlendDstOutPipeline> atlas_blend_dst_out_pipelines_;
+  mutable Variants<AtlasBlendModulatePipeline> atlas_blend_modulate_pipelines_;
+  mutable Variants<AtlasBlendPlusPipeline> atlas_blend_plus_pipelines_;
+  mutable Variants<AtlasBlendSrcATopPipeline> atlas_blend_src_a_top_pipelines_;
+  mutable Variants<AtlasBlendSrcInPipeline> atlas_blend_src_in_pipelines_;
+  mutable Variants<AtlasBlendSrcOverPipeline> atlas_blend_src_over_pipelines_;
+  mutable Variants<AtlasBlendSrcOutPipeline> atlas_blend_src_out_pipelines_;
+  mutable Variants<AtlasBlendXorPipeline> atlas_blend_xor_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
