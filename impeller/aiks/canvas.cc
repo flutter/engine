@@ -403,7 +403,7 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
+void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
                        SamplerDescriptor descriptor,
                        std::unique_ptr<AtlasGeometry> geometry,
                        BlendMode blend_mode,

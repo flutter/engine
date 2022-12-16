@@ -101,7 +101,7 @@ class Canvas {
                     BlendMode blend_mode,
                     Paint paint);
 
-  void DrawAtlas(std::shared_ptr<Image> atlas,
+  void DrawAtlas(const std::shared_ptr<Image>& atlas,
                  SamplerDescriptor descriptor,
                  std::unique_ptr<AtlasGeometry> geometry,
                  BlendMode blend_mode,
