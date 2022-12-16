@@ -652,14 +652,12 @@ static void CommonInit(FlutterViewController* controller) {
     // At time of change, Apple does not expose any other type of API or signal
     // that they X/Y axes have been flipped.
     if (event.modifierFlags & NSShiftKeyMask) {
-      flutterEvent.scroll_delta_x = -event.scrollingDeltaY;
-      flutterEvent.scroll_delta_y = -event.scrollingDeltaX;
+      flutterEvent.scroll_delta_x = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
+      flutterEvent.scroll_delta_y = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
     } else {
-      flutterEvent.scroll_delta_x = -event.scrollingDeltaX;
-      flutterEvent.scroll_delta_y = -event.scrollingDeltaY;
+      flutterEvent.scroll_delta_x = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
+      flutterEvent.scroll_delta_y = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
     }
-    flutterEvent.scroll_delta_x = flutterEvent.scroll_delta_x * pixelsPerLine * scaleFactor;
-    flutterEvent.scroll_delta_y = flutterEvent.scroll_delta_y * pixelsPerLine * scaleFactor;
   }
   [_engine sendPointerEvent:flutterEvent];
 
