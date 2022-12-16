@@ -48,6 +48,10 @@ typedef enum {
   FlutterStandardCodecObjcTypeUnknown,
 } FlutterStandardCodecObjcType;
 
+///////////////////////////////////////////////////////////////////////////////
+// Reader Helpers
+///////////////////////////////////////////////////////////////////////////////
+
 void FlutterStandardCodecHelperReadAlignment(unsigned long* location,
                                              uint8_t alignment);
 
@@ -73,7 +77,10 @@ CFTypeRef FlutterStandardCodecHelperReadValueOfType(
     CFTypeRef (*ReadTypedDataOfType)(FlutterStandardField, CFTypeRef),
     CFTypeRef user_data);
 
-//////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+// Writer Helpers
+///////////////////////////////////////////////////////////////////////////////
+
 void FlutterStandardCodecHelperWriteByte(CFMutableDataRef data, uint8_t value);
 
 void FlutterStandardCodecHelperWriteBytes(CFMutableDataRef data,
