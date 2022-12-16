@@ -11,6 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
@@ -25,15 +26,9 @@ class AtlasContents final : public Contents {
 
   std::shared_ptr<Texture> GetTexture() const;
 
-  void SetTransforms(std::vector<Matrix> transforms);
+  void SetGeometry(std::unique_ptr<AtlasGeometry> geometry);
 
   void SetBlendMode(BlendMode blend_mode);
-
-  void SetTextureCoordinates(std::vector<Rect> texture_coords);
-
-  void SetColors(std::vector<Color> colors);
-
-  void SetCullRect(std::optional<Rect> cull_rect);
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 
@@ -51,11 +46,8 @@ class AtlasContents final : public Contents {
 
  private:
   std::shared_ptr<Texture> texture_;
-  std::vector<Rect> texture_coords_;
-  std::vector<Color> colors_;
-  std::vector<Matrix> transforms_;
+  std::unique_ptr<AtlasGeometry> geometry_;
   BlendMode blend_mode_;
-  std::optional<Rect> cull_rect_;
   Scalar alpha_ = 1.0;
   SamplerDescriptor sampler_descriptor_ = {};
 

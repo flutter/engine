@@ -101,13 +101,10 @@ class Canvas {
                     BlendMode blend_mode,
                     Paint paint);
 
-  void DrawAtlas(const std::shared_ptr<Image>& atlas,
-                 std::vector<Matrix> transforms,
-                 std::vector<Rect> texture_coordinates,
-                 std::vector<Color> colors,
+  void DrawAtlas(std::shared_ptr<Image> atlas,
+                 SamplerDescriptor descriptor,
+                 std::unique_ptr<AtlasGeometry> geometry,
                  BlendMode blend_mode,
-                 SamplerDescriptor sampler,
-                 std::optional<Rect> cull_rect,
                  const Paint& paint);
 
   Picture EndRecordingAsPicture();

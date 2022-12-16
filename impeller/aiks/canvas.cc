@@ -403,31 +403,20 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
-                       std::vector<Matrix> transforms,
-                       std::vector<Rect> texture_coordinates,
-                       std::vector<Color> colors,
+void Canvas::DrawAtlas(std::shared_ptr<Image> atlas,
+                       SamplerDescriptor descriptor,
+                       std::unique_ptr<AtlasGeometry> geometry,
                        BlendMode blend_mode,
-                       SamplerDescriptor sampler,
-                       std::optional<Rect> cull_rect,
                        const Paint& paint) {
-  if (!atlas) {
-    return;
-  }
-  auto size = atlas->GetSize();
-
-  if (size.IsEmpty()) {
+  if (!atlas || blend_mode == BlendMode::kClear) {
     return;
   }
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
-  contents->SetColors(std::move(colors));
-  contents->SetTransforms(std::move(transforms));
-  contents->SetTextureCoordinates(std::move(texture_coordinates));
+  contents->SetGeometry(std::move(geometry));
   contents->SetTexture(atlas->GetTexture());
-  contents->SetSamplerDescriptor(std::move(sampler));
+  contents->SetSamplerDescriptor(std::move(descriptor));
   contents->SetBlendMode(blend_mode);
-  contents->SetCullRect(cull_rect);
   contents->SetAlpha(paint.color.alpha);
 
   Entity entity;

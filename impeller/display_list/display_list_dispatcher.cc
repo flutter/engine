@@ -19,6 +19,7 @@
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/display_list/display_list_atlas_geometry.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
@@ -265,34 +266,6 @@ static Color ToColor(const SkColor& color) {
       static_cast<Scalar>(SkColorGetB(color) / 255.0),  //
       static_cast<Scalar>(SkColorGetA(color) / 255.0)   //
   };
-}
-
-static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
-  auto result = std::vector<Color>();
-  if (colors == nullptr) {
-    return result;
-  }
-  for (int i = 0; i < count; i++) {
-    result.push_back(ToColor(colors[i]));
-  }
-  return result;
-}
-
-static std::vector<Matrix> ToRSXForms(const SkRSXform xform[], int count) {
-  auto result = std::vector<Matrix>();
-  for (int i = 0; i < count; i++) {
-    auto form = xform[i];
-    // clang-format off
-    auto matrix = Matrix{
-      form.fSCos, form.fSSin, 0, 0,
-     -form.fSSin, form.fSCos, 0, 0,
-      0,          0,          1, 0,
-      form.fTx,   form.fTy,   0, 1
-    };
-    // clang-format on
-    result.push_back(matrix);
-  }
-  return result;
 }
 
 // Convert display list colors + stops into impeller colors and stops, taking
@@ -757,14 +730,6 @@ static std::optional<Rect> ToRect(const SkRect* rect) {
   return Rect::MakeLTRB(rect->fLeft, rect->fTop, rect->fRight, rect->fBottom);
 }
 
-static std::vector<Rect> ToRects(const SkRect tex[], int count) {
-  auto result = std::vector<Rect>();
-  for (int i = 0; i < count; i++) {
-    result.push_back(ToRect(&tex[i]).value());
-  }
-  return result;
-}
-
 // |flutter::Dispatcher|
 void DisplayListDispatcher::saveLayer(const SkRect* bounds,
                                       const flutter::SaveLayerOptions options,
@@ -1188,10 +1153,11 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
-  canvas_.DrawAtlas(std::make_shared<Image>(atlas->impeller_texture()),
-                    ToRSXForms(xform, count), ToRects(tex, count),
-                    ToColors(colors, count), ToBlendMode(mode),
-                    ToSamplerDescriptor(sampling), ToRect(cull_rect), paint_);
+  canvas_.DrawAtlas(
+      std::make_shared<Image>(atlas->impeller_texture()),
+      ToSamplerDescriptor(sampling),
+      DLAtlasGeometry::MakeAtlas(xform, tex, colors, count, ToRect(cull_rect)),
+      ToBlendMode(mode), paint_);
 }
 
 // |flutter::Dispatcher|

@@ -84,6 +84,15 @@ class VerticesGeometry : public Geometry {
                                              RenderPass& pass) = 0;
 };
 
+/// @brief A geometry that is created from a draw atlas call.
+class AtlasGeometry : public Geometry {
+ public:
+  virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
+                                                const Entity& entity,
+                                                RenderPass& pass,
+                                                ISize texture_size) = 0;
+};
+
 /// @brief A geometry that is created from a filled path object.
 class FillPathGeometry : public Geometry {
  public:
