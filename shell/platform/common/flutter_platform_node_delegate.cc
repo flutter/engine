@@ -121,8 +121,8 @@ gfx::NativeViewAccessible
 FlutterPlatformNodeDelegate::GetLowestPlatformAncestor() const {
   auto bridge_ptr = bridge_.lock();
   BASE_DCHECK(bridge_ptr);
-  auto lowest_platform_acnestor = ax_node_->GetLowestPlatformAncestor();
-  if (lowest_platform_acnestor) {
+  auto lowest_platform_ancestor = ax_node_->GetLowestPlatformAncestor();
+  if (lowest_platform_ancestor) {
     return bridge_ptr->GetNativeAccessibleFromId(
         ax_node_->GetLowestPlatformAncestor()->id());
   }
