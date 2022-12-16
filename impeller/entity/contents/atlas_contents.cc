@@ -69,7 +69,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
     return true;
   }
   auto geometry_result =
-      geometry_->GetPositionColorBuffer(renderer, entity, pass, texture_size);
+      geometry_->GetPositionColorBuffer(renderer, entity, pass);
   auto& host_buffer = pass.GetTransientsBuffer();
 
   VS::VertInfo vert_info;

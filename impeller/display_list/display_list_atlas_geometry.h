@@ -26,7 +26,8 @@ class DLAtlasGeometry : public AtlasGeometry {
                   const SkRect* tex,
                   const flutter::DlColor* colors,
                   size_t count,
-                  std::optional<Rect> cull_rect);
+                  std::optional<Rect> cull_rect,
+                  ISize texture_size);
 
   ~DLAtlasGeometry();
 
@@ -35,13 +36,13 @@ class DLAtlasGeometry : public AtlasGeometry {
       const SkRect* tex,
       const flutter::DlColor* colors,
       size_t count,
-      std::optional<Rect> cull_rect);
+      std::optional<Rect> cull_rect,
+      ISize texture_size);
 
   // |AtlasGeometry|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
-                                        RenderPass& pass,
-                                        ISize texture_size) override;
+                                        RenderPass& pass) override;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -62,6 +63,7 @@ class DLAtlasGeometry : public AtlasGeometry {
   std::vector<std::array<Point, 4>> transformed_coords_;
   size_t count_;
   std::optional<Rect> cull_rect_;
+  ISize texture_size_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DLAtlasGeometry);
 };

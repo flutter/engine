@@ -1153,10 +1153,11 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       flutter::DlImageSampling sampling,
                                       const SkRect* cull_rect,
                                       bool render_with_attributes) {
+  auto image = std::make_shared<Image>(atlas->impeller_texture());
   canvas_.DrawAtlas(
-      std::make_shared<Image>(atlas->impeller_texture()),
-      ToSamplerDescriptor(sampling),
-      DLAtlasGeometry::MakeAtlas(xform, tex, colors, count, ToRect(cull_rect)),
+      image, ToSamplerDescriptor(sampling),
+      DLAtlasGeometry::MakeAtlas(xform, tex, colors, count, ToRect(cull_rect),
+                                 image->GetSize()),
       ToBlendMode(mode), paint_);
 }
 

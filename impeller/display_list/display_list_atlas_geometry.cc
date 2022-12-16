@@ -37,17 +37,23 @@ std::unique_ptr<AtlasGeometry> DLAtlasGeometry::MakeAtlas(
     const SkRect* tex,
     const flutter::DlColor* colors,
     size_t count,
-    std::optional<Rect> cull_rect) {
-  return std::make_unique<DLAtlasGeometry>(xform, tex, colors, count,
-                                           cull_rect);
+    std::optional<Rect> cull_rect,
+    ISize texture_size) {
+  return std::make_unique<DLAtlasGeometry>(xform, tex, colors, count, cull_rect,
+                                           texture_size);
 }
 
 DLAtlasGeometry::DLAtlasGeometry(const SkRSXform* xform,
                                  const SkRect* tex,
                                  const flutter::DlColor* colors,
                                  size_t count,
-                                 std::optional<Rect> cull_rect)
-    : colors_(colors), tex_(tex), count_(count), cull_rect_(cull_rect) {
+                                 std::optional<Rect> cull_rect,
+                                 ISize texture_size)
+    : colors_(colors),
+      tex_(tex),
+      count_(count),
+      cull_rect_(cull_rect),
+      texture_size_(texture_size) {
   TransformPoints(xform);
 }
 
@@ -82,8 +88,7 @@ GeometryResult DLAtlasGeometry::GetPositionBuffer(
 GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass,
-    ISize texture_size) {
+    RenderPass& pass) {
   using VS = AtlasFillVertexShader;
 
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
@@ -106,7 +111,7 @@ GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
       data.texture_coords =
           (sample_rect.origin + Point(sample_rect.size.width * width[j],
                                       sample_rect.size.height * height[j])) /
-          texture_size;
+          texture_size_;
       data.color = color.Premultiply();
       vertex_builder.AppendVertex(data);
     }
