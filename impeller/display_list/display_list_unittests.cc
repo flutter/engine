@@ -1158,5 +1158,99 @@ TEST_P(DisplayListTest, DrawShapes) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, DrawAtlasNoColor) {
+  // Draws the image as four squares stiched together.
+  auto texture = CreateTextureForFixture("bay_bridge.jpg");
+  auto image = DlImageImpeller::Make(texture);
+
+  auto size = texture->GetSize();
+  // Divide image into four quadrants.
+  Scalar half_width = size.width / 2;
+  Scalar half_height = size.height / 2;
+  std::vector<SkRect> texture_coordinates = {
+      SkRect::MakeLTRB(0, 0, half_width, half_height),
+      SkRect::MakeLTRB(half_width, 0, size.width, half_height),
+      SkRect::MakeLTRB(0, half_height, half_width, size.height),
+      SkRect::MakeLTRB(half_width, half_height, size.width, size.height)};
+  // Position quadrants adjacent to eachother.
+  std::vector<SkRSXform> transforms = {
+      SkRSXform::Make(1, 0, 0, 0), SkRSXform::Make(1, 0, half_width, 0),
+      SkRSXform::Make(1, 0, 0, half_height),
+      SkRSXform::Make(1, 0, half_width, half_height)};
+
+  flutter::DisplayListBuilder builder;
+  builder.drawAtlas(image, transforms.data(), texture_coordinates.data(), {}, 4,
+                    flutter::DlBlendMode::kSrc,
+                    flutter::DlImageSampling::kNearestNeighbor, nullptr,
+                    nullptr);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawAtlasWithColor) {
+  // Draws the image as four squares stiched together. Because blend modes
+  // aren't implented this ends up as four solid color blocks.
+  auto texture = CreateTextureForFixture("bay_bridge.jpg");
+  auto image = DlImageImpeller::Make(texture);
+
+  auto size = texture->GetSize();
+  // Divide image into four quadrants.
+  Scalar half_width = size.width / 2;
+  Scalar half_height = size.height / 2;
+  std::vector<SkRect> texture_coordinates = {
+      SkRect::MakeLTRB(0, 0, half_width, half_height),
+      SkRect::MakeLTRB(half_width, 0, size.width, half_height),
+      SkRect::MakeLTRB(0, half_height, half_width, size.height),
+      SkRect::MakeLTRB(half_width, half_height, size.width, size.height)};
+  // Position quadrants adjacent to eachother.
+  std::vector<SkRSXform> transforms = {
+      SkRSXform::Make(1, 0, 0, 0), SkRSXform::Make(1, 0, half_width, 0),
+      SkRSXform::Make(1, 0, 0, half_height),
+      SkRSXform::Make(1, 0, half_width, half_height)};
+
+  std::vector<flutter::DlColor> colors = {
+      flutter::DlColor::kRed(), flutter::DlColor::kGreen(),
+      flutter::DlColor::kBlue(), flutter::DlColor::kYellow()};
+
+  flutter::DisplayListBuilder builder;
+  builder.drawAtlas(image, transforms.data(), texture_coordinates.data(),
+                    colors.data(), 4, flutter::DlBlendMode::kSrc,
+                    flutter::DlImageSampling::kNearestNeighbor, nullptr,
+                    nullptr);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawAtlasWithOpacity) {
+  // Draws the image as four squares stiched together slightly
+  // opaque
+  auto texture = CreateTextureForFixture("bay_bridge.jpg");
+  auto image = DlImageImpeller::Make(texture);
+
+  auto size = texture->GetSize();
+  // Divide image into four quadrants.
+  Scalar half_width = size.width / 2;
+  Scalar half_height = size.height / 2;
+  std::vector<SkRect> texture_coordinates = {
+      SkRect::MakeLTRB(0, 0, half_width, half_height),
+      SkRect::MakeLTRB(half_width, 0, size.width, half_height),
+      SkRect::MakeLTRB(0, half_height, half_width, size.height),
+      SkRect::MakeLTRB(half_width, half_height, size.width, size.height)};
+  // Position quadrants adjacent to eachother.
+  std::vector<SkRSXform> transforms = {
+      SkRSXform::Make(1, 0, 0, 0), SkRSXform::Make(1, 0, half_width, 0),
+      SkRSXform::Make(1, 0, 0, half_height),
+      SkRSXform::Make(1, 0, half_width, half_height)};
+
+  flutter::DisplayListBuilder builder;
+  builder.setColor(flutter::DlColor(0x0F000000));
+  builder.drawAtlas(image, transforms.data(), texture_coordinates.data(), {}, 4,
+                    flutter::DlBlendMode::kSrc,
+                    flutter::DlImageSampling::kNearestNeighbor, nullptr,
+                    nullptr);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller
