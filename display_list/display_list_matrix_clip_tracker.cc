@@ -183,6 +183,19 @@ void DisplayListMatrixClipTracker::clipRRect(const SkRRect& rrect,
 void DisplayListMatrixClipTracker::clipPath(const SkPath& path,
                                             SkClipOp op,
                                             bool is_aa) {
+  // Map "kDifference of inverse path" to "kIntersect of the original path" and
+  // map "kIntersect of inverse path" to "kDifference of the original path"
+  if (path.isInverseFillType()) {
+    switch (op) {
+      case SkClipOp::kIntersect:
+        op = SkClipOp::kDifference;
+        break;
+      case SkClipOp::kDifference:
+        op = SkClipOp::kIntersect;
+        break;
+    }
+  }
+
   SkRect bounds;
   switch (op) {
     case SkClipOp::kIntersect:
@@ -323,7 +336,9 @@ SkRect Data3x3::local_cull_rect() const {
     // cull rect.
     return DisplayListBuilder::kMaxCullRect;
   }
-  return inverse.mapRect(cull_rect_);
+  SkRect expended_rect;
+  cull_rect_.roundOut(&expended_rect);
+  return inverse.mapRect(expended_rect);
 }
 
 }  // namespace flutter

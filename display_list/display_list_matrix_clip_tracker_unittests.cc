@@ -4,6 +4,7 @@
 
 #include "flutter/display_list/display_list_matrix_clip_tracker.h"
 #include "gtest/gtest.h"
+#include "third_party/skia/include/core/SkPath.h"
 
 namespace flutter {
 namespace testing {
@@ -223,6 +224,31 @@ TEST(DisplayListMatrixClipTracker, Rotate) {
   ASSERT_EQ(tracker2.local_cull_rect(), local_cull_rect);
   ASSERT_EQ(tracker2.matrix_3x3(), rotated_matrix);
   ASSERT_EQ(tracker2.matrix_4x4(), rotated_m44);
+}
+
+TEST(DisplayListMatrixClipTracker, ClipPathWithInvertFillType) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListMatrixClipTracker builder(cull_rect, SkMatrix::I());
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  builder.clipPath(clip, SkClipOp::kIntersect, false);
+
+  ASSERT_EQ(builder.local_cull_rect(), cull_rect);
+  ASSERT_EQ(builder.device_cull_rect(), cull_rect);
+}
+
+TEST(DisplayListMatrixClipTracker, DiffClipPathWithInvertFillType) {
+  SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
+  DisplayListMatrixClipTracker tracker(cull_rect, SkMatrix::I());
+
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  clip.setFillType(SkPathFillType::kInverseWinding);
+  SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  tracker.clipPath(clip, SkClipOp::kDifference, false);
+
+  ASSERT_EQ(tracker.local_cull_rect(), clip_expanded_bounds);
+  ASSERT_EQ(tracker.device_cull_rect(), clip_bounds);
 }
 
 }  // namespace testing
