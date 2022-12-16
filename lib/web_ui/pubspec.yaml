@@ -33,14 +33,14 @@ dev_dependencies:
   shelf_web_socket: any
   stack_trace: any
   stream_channel: 2.1.1
-  test: 1.22.0
+  test: 1.22.1
   test_api: any
   test_core: any
   typed_data: any
   uuid: 3.0.6
   watcher: 1.0.0
   web_socket_channel: any
-  webdriver: 3.0.0
+  webdriver: 3.0.1
   webkit_inspection_protocol: any
   yaml: 3.0.0
   web_test_utils:
