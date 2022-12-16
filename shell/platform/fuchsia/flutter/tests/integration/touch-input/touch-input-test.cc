@@ -465,8 +465,8 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedTap) {
     InjectTap(0, 0);
     RunLoopUntil([this] {
       return LastEventReceivedMatches(
-          /*expected_x=*/static_cast<float>(display_width() / 6.06f),
-          /*expected_y=*/static_cast<float>(display_height() / 6.06f),
+          /*expected_x=*/static_cast<float>(display_width() / 8.0f),
+          /*expected_y=*/static_cast<float>(display_height() / 8.0f),
           /*component_name=*/"touch-input-view");
     });
   }
@@ -530,12 +530,13 @@ TEST_P(FlutterEmbedTapTest, FlutterEmbedOverlayEnabled) {
 
   {
     // The embedded child view is just outside of the bottom-left corner of the
-    // overlay Expect the embedded child view to still receive taps
+    // overlay
+    // Expect the embedded child view to still receive taps
     InjectTap(-1, -1);
     RunLoopUntil([this] {
       return LastEventReceivedMatches(
-          /*expected_x=*/static_cast<float>(display_width() / 6.08f),
-          /*expected_y=*/static_cast<float>(display_height() / 6.08f),
+          /*expected_x=*/static_cast<float>(display_width() / 8.0f),
+          /*expected_y=*/static_cast<float>(display_height() / 8.0f),
           /*component_name=*/"touch-input-view");
     });
   }

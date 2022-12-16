@@ -98,7 +98,7 @@ class TestApp {
       ..pushClipRect(physicalBounds)
       ..addPicture(Offset.zero, picture);
 
-    final childPhysicalSize = window.physicalSize * 0.33;
+    final childPhysicalSize = window.physicalSize * 0.25;
     // Alignment.center
     final windowCenter = size.center(Offset.zero);
     final windowPhysicalCenter = window.physicalSize.center(Offset.zero);
@@ -115,7 +115,7 @@ class TestApp {
       ..pop();
 
     if (showOverlay) {
-      final containerSize = size * .66;
+      final containerSize = size * 0.5;
       // Alignment.center
       final containerOffset = windowCenter - containerSize.center(Offset.zero);
 
