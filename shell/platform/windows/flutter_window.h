@@ -153,6 +153,12 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   // |WindowBindingHandler|
   AccessibilityRootNode* GetAccessibilityRootNode() override;
 
+  // |WindowBindingHandler|
+  void Alert(const std::wstring& text) override;
+
+  // |WindowBindingHandler|
+  ui::AXPlatformNodeWin* GetAlert() override;
+
   // |Window|
   ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
 

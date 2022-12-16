@@ -11,6 +11,7 @@
 #include "flutter/third_party/accessibility/ax/ax_clipping_behavior.h"
 #include "flutter/third_party/accessibility/ax/ax_coordinate_system.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 
 namespace flutter {
 

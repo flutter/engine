@@ -12,13 +12,13 @@ namespace flutter {
 static constexpr LONG kWindowChildId = 1;
 static constexpr LONG kInvalidChildId = 3;
 
-AccessibilityRootNode::AccessibilityRootNode() : alert_accessible_(nullptr) {}
+AccessibilityRootNode::AccessibilityRootNode() /* : alert_accessible_(nullptr)*/ {}
 
 AccessibilityRootNode::~AccessibilityRootNode() {
-  if (alert_accessible_) {
+  /*if (alert_accessible_) {
     alert_accessible_->Release();
     alert_accessible_ = nullptr;
-  }
+  }*/
 }
 
 IAccessible* AccessibilityRootNode::GetTargetAndChildID(VARIANT* var_id) {
@@ -35,10 +35,10 @@ IAccessible* AccessibilityRootNode::GetTargetAndChildID(VARIANT* var_id) {
     child_id = CHILDID_SELF;
     return window_accessible_;
   }
-  if (child_id == kAlertChildId && alert_accessible_) {
+  /*if (child_id == kAlertChildId && alert_accessible_) {
     child_id = CHILDID_SELF;
     return alert_accessible_;
-  }
+  }*/
   // A negative child ID can be used to refer to an AX node directly by its ID.
   if (child_id < 0) {
     return window_accessible_;
@@ -100,8 +100,8 @@ IFACEMETHODIMP AccessibilityRootNode::get_accChild(VARIANT var_child,
     return E_FAIL;
   } else if (child_id == kWindowChildId) {
     *disp_child = window_accessible_;
-  } else if (child_id == kAlertChildId && alert_accessible_) {
-    *disp_child = alert_accessible_;
+  //} else if (child_id == kAlertChildId && alert_accessible_) {
+  //  *disp_child = alert_accessible_;
   } else if (child_id < 0) {
     // A negative child ID can be used to refer to an AX node directly by its
     // ID.
@@ -118,9 +118,9 @@ IFACEMETHODIMP AccessibilityRootNode::get_accChildCount(LONG* child_count) {
   if (window_accessible_) {
     children++;
   }
-  if (alert_accessible_) {
+  /*if (alert_accessible_) {
     children++;
-  }
+  }*/
   *child_count = children;
   return S_OK;
 }
@@ -277,7 +277,7 @@ void AccessibilityRootNode::SetWindow(IAccessible* window) {
   window_accessible_ = window;
 }
 
-AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
+/*AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
   if (!alert_accessible_) {
     CComObject<AccessibilityAlert>* instance = nullptr;
     HRESULT hr = CComObject<AccessibilityAlert>::CreateInstance(&instance);
@@ -289,7 +289,7 @@ AccessibilityAlert* AccessibilityRootNode::GetOrCreateAlert() {
     alert_accessible_ = instance;
   }
   return alert_accessible_;
-}
+}*/
 
 // static
 AccessibilityRootNode* AccessibilityRootNode::Create() {

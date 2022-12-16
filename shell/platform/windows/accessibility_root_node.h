@@ -117,9 +117,9 @@ class __declspec(uuid("fedb8280-ea4f-47a9-98fe-5d1a557fe4b3"))
 
   void SetWindow(IAccessible* window);
 
-  void SetAlert(AccessibilityAlert* alert);
+  //void SetAlert(AccessibilityAlert* alert);
 
-  AccessibilityAlert* GetOrCreateAlert();
+  //AccessibilityAlert* GetOrCreateAlert();
 
   static AccessibilityRootNode* Create();
 
@@ -129,7 +129,7 @@ class __declspec(uuid("fedb8280-ea4f-47a9-98fe-5d1a557fe4b3"))
 
   IAccessible* window_accessible_;
 
-  AccessibilityAlert* alert_accessible_;
+  //AccessibilityAlert* alert_accessible_;
 };
 
 }  // namespace flutter

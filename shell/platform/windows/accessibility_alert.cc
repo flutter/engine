@@ -10,6 +10,33 @@ namespace flutter {
 
 AccessibilityAlert::AccessibilityAlert() : text_(L""), parent_(nullptr) {}
 
+gfx::NativeViewAccessible AccessibilityAlert::GetParent() {
+  if (!parent_) {
+    return nullptr;
+  }
+  return parent_->GetNativeViewAccessible();
+}
+
+const ui::AXUniqueId& AccessibilityAlert::GetUniqueId() const {
+  return unique_id_;
+}
+
+gfx::AcceleratedWidget AccessibilityAlert::GetTargetForNativeAccessibilityEvent() {
+  if (!parent_) {
+    return nullptr;
+  }
+  return parent_->GetTargetForNativeAccessibilityEvent();
+}
+
+const ui::AXNodeData& AccessibilityAlert::GetData() const {
+  return data_;
+}
+
+void AccessibilityAlert::SetText(const std::wstring& text) {
+  data_.SetName(base::WideToUTF16(text));
+}
+
+/*
 // IAccessible methods.
 
 IFACEMETHODIMP AccessibilityAlert::accHitTest(LONG screen_physical_pixel_x,
@@ -183,5 +210,6 @@ void AccessibilityAlert::SetText(const std::wstring& text) {
 void AccessibilityAlert::SetParent(AccessibilityRootNode* parent) {
   parent_ = parent;
 }
+*/
 
 }  // namespace flutter

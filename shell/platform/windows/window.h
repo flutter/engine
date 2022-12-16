@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/shell/platform/common/alert_platform_node_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_root_node.h"
 #include "flutter/shell/platform/windows/direct_manipulation.h"
@@ -22,6 +23,7 @@
 #include "flutter/shell/platform/windows/windowsx_shim.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "flutter/third_party/accessibility/gfx/native_widget_types.h"
 
 namespace flutter {
@@ -214,6 +216,8 @@ class Window : public KeyboardManager::WindowDelegate {
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
+  void CreateAlertNode();
+
   // Called to obtain a pointer to the fragment root delegate.
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() = 0;
 
@@ -241,7 +245,12 @@ class Window : public KeyboardManager::WindowDelegate {
   virtual void OnThemeChange() = 0;
 
   // A parent node wrapping the window root, used for siblings.
+  // TODO(schectman): remove if this change works out
   AccessibilityRootNode* accessibility_root_;
+
+  std::unique_ptr<AlertPlatformNodeDelegate> alert_delegate_;
+
+  std::unique_ptr<ui::AXPlatformNodeWin> alert_node_;
 
  private:
   // Release OS resources associated with window.

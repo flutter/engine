@@ -13,6 +13,7 @@ namespace ui {
 
 class AXFragmentRootDelegateWin;
 class AXFragmentRootPlatformNodeWin;
+class AXPlatformNodeWin;
 
 // UI Automation on Windows requires the root of a multi-element provider to
 // implement IRawElementProviderFragmentRoot. Our internal accessibility trees
@@ -55,6 +56,11 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   // If a child node is available, return its delegate.
   AXPlatformNodeDelegate* GetChildNodeDelegate() const;
 
+  // AXPlatformNodeDelegate override.
+  gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
+
+  void SetAlertNode(AXPlatformNodeWin* alert_node);
+
  private:
   // AXPlatformNodeDelegate overrides.
   gfx::NativeViewAccessible GetParent() override;
@@ -65,9 +71,9 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   gfx::NativeViewAccessible HitTestSync(int x, int y) const override;
   gfx::NativeViewAccessible GetFocus() override;
   const ui::AXUniqueId& GetUniqueId() const override;
-  gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
   AXPlatformNode* GetFromTreeIDAndNodeID(const ui::AXTreeID& ax_tree_id,
                                          int32_t id) override;
+  gfx::Rect GetBoundsRect(const AXCoordinateSystem acs, const AXClippingBehavior acb, AXOffscreenResult* result) const override;
 
   // A fragment root does not correspond to any node in the platform neutral
   // accessibility tree. Rather, the fragment root's child is a child of the
@@ -82,6 +88,8 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   AXFragmentRootDelegateWin* const delegate_;
   Microsoft::WRL::ComPtr<ui::AXFragmentRootPlatformNodeWin> platform_node_;
   ui::AXUniqueId unique_id_;
+
+  AXPlatformNodeWin* alert_node_;
 };
 
 }  // namespace ui

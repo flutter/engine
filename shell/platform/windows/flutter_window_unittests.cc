@@ -164,7 +164,9 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
 
-  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
+  MOCK_METHOD2(NotifyWinEventWrapper, void(ui::AXPlatformNodeWin*, ax::mojom::Event));
+
+  
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
@@ -415,15 +417,15 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
-  AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
+  // AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
   TestFlutterWindowsView view(std::move(win32window));
-  EXPECT_CALL(view,
-              NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT,
-                                    AccessibilityRootNode::kAlertChildId))
-      .Times(1);
   std::wstring message = L"Test alert";
+  EXPECT_CALL(view,
+              NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
+      .Times(1);
   view.AnnounceAlert(message);
-  IAccessible* alert = root_node->GetOrCreateAlert();
+
+  IAccessible* alert = view.AlertNode(); //root_node->GetOrCreateAlert();
   VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);

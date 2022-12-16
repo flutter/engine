@@ -10,6 +10,7 @@
 #include <string>
 #include <variant>
 
+#include "flutter/shell/platform/common/alert_platform_node_delegate.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/windows/accessibility_root_node.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
@@ -99,6 +100,12 @@ class WindowBindingHandler {
 
   // Returns the wrapper parent accessibility node.
   virtual AccessibilityRootNode* GetAccessibilityRootNode() = 0;
+
+  // Set the alert text.
+  virtual void Alert(const std::wstring& text) = 0;
+
+  // Retrieve the alert node.
+  virtual ui::AXPlatformNodeWin* GetAlert() = 0;
 };
 
 }  // namespace flutter

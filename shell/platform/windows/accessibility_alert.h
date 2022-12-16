@@ -11,6 +11,9 @@
 
 #include <string>
 
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
+
 namespace flutter {
 
 class AccessibilityRootNode;
@@ -22,11 +25,12 @@ class AccessibilityRootNode;
 // of the window's root node.
 // This node is not interactable to the user.
 class __declspec(uuid("778c1bd8-383f-4d49-b6be-8937e12b6a32"))
-    AccessibilityAlert : public CComObjectRootEx<CComMultiThreadModel>,
-                         public IDispatchImpl<IAccessible>,
-                         public IServiceProvider {
+    AccessibilityAlert : public ui::AXPlatformNodeDelegateBase {
  public:
-  BEGIN_COM_MAP(AccessibilityAlert)
+  AccessibilityAlert();
+  ~AccessibilityAlert() = default;
+
+  /*BEGIN_COM_MAP(AccessibilityAlert)
   COM_INTERFACE_ENTRY(AccessibilityAlert)
   COM_INTERFACE_ENTRY(IAccessible)
   COM_INTERFACE_ENTRY(IDispatch)
@@ -104,18 +108,23 @@ class __declspec(uuid("778c1bd8-383f-4d49-b6be-8937e12b6a32"))
                               REFIID riid,
                               void** object) override;
 
-  AccessibilityAlert();
-  ~AccessibilityAlert() = default;
+  void SetParent(AccessibilityRootNode* parent);*/
 
   // Sets the text of this alert to the provided message.
   void SetText(const std::wstring& text);
 
-  void SetParent(AccessibilityRootNode* parent);
-
  private:
+  // AXPlatformNodeDelegate overrides.
+  gfx::NativeViewAccessible GetParent() override;
+  const ui::AXUniqueId& GetUniqueId() const override;
+  gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
+  const ui::AXNodeData& GetData() const override;
+
   std::wstring text_;
 
-  AccessibilityRootNode* parent_;
+  ui::AXFragmentRootWin* parent_;
+  ui::AXUniqueId unique_id_;
+  ui::AXNodeData data_;
 };
 
 }  // namespace flutter

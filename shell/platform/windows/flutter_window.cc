@@ -309,4 +309,13 @@ ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
   return binding_handler_delegate_->GetAxFragmentRootDelegate();
 }
 
+void FlutterWindow::Alert(const std::wstring& text) {
+  CreateAlertNode();
+  alert_delegate_->SetText(base::WideToUTF16(text));
+}
+
+ui::AXPlatformNodeWin* FlutterWindow::GetAlert() {
+  return alert_node_.get();
+}
+
 }  // namespace flutter
