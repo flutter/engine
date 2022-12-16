@@ -38,6 +38,112 @@ TEST(DisplayList, CallMethodAfterBuild) {
 }
 #endif  // NDEBUG
 
+TEST(DisplayList, RecorderInitialClipBounds) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkIRect clip_bounds = SkIRect::MakeWH(100, 100);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, RecorderInitialClipBoundsNaN) {
+  SkRect cull_rect = SkRect::MakeWH(SK_ScalarNaN, SK_ScalarNaN);
+  SkIRect clip_bounds = SkIRect::MakeEmpty();
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, RecorderClipBoundsAfterClipRect) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  canvas->clipRect(clip_rect);
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, RecorderClipBoundsAfterClipRRect) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2, 2);
+  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  canvas->clipRRect(clip_rrect);
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, RecorderClipBoundsAfterClipPath) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkPath clip_path = SkPath().addRect(10, 10, 15, 15).addRect(15, 15, 20, 20);
+  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  canvas->clipPath(clip_path);
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, RecorderInitialClipBoundsNonZero) {
+  SkRect cull_rect = SkRect::MakeLTRB(10, 10, 100, 100);
+  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 100, 100);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  SkCanvas* canvas = &recorder;
+  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderInitialClipBounds) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkRect clip_bounds = SkRect::MakeWH(100, 100);
+  DisplayListBuilder builder(cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderInitialClipBoundsNaN) {
+  SkRect cull_rect = SkRect::MakeWH(SK_ScalarNaN, SK_ScalarNaN);
+  SkRect clip_bounds = SkRect::MakeEmpty();
+  DisplayListBuilder builder(cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderClipBoundsAfterClipRect) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListBuilder builder(cull_rect);
+  builder.clipRect(clip_rect, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderClipBoundsAfterClipRRect) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
+  SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2, 2);
+  SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListBuilder builder(cull_rect);
+  builder.clipRRect(clip_rrect, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderClipBoundsAfterClipPath) {
+  SkRect cull_rect = SkRect::MakeWH(100, 100);
+  SkPath clip_path = SkPath().addRect(10, 10, 15, 15).addRect(15, 15, 20, 20);
+  SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  DisplayListBuilder builder(cull_rect);
+  builder.clipPath(clip_path, SkClipOp::kIntersect, false);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
+TEST(DisplayList, BuilderInitialClipBoundsNonZero) {
+  SkRect cull_rect = SkRect::MakeLTRB(10, 10, 100, 100);
+  SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 100, 100);
+  DisplayListCanvasRecorder recorder(cull_rect);
+  DisplayListBuilder builder(cull_rect);
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+}
+
 TEST(DisplayList, SingleOpSizes) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
@@ -160,6 +266,30 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
           ASSERT_FALSE(listB->Equals(*listA)) << desc;
         }
       }
+    }
+  }
+}
+
+TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
+  for (auto& group : allGroups) {
+    for (size_t i = 0; i < group.variants.size(); i++) {
+      DisplayListBuilder buider1(/*prepare_rtree=*/false);
+      DisplayListBuilder buider2(/*prepare_rtree=*/true);
+      group.variants[i].invoker(buider1);
+      group.variants[i].invoker(buider2);
+      sk_sp<DisplayList> dl1 = buider1.Build();
+      sk_sp<DisplayList> dl2 = buider2.Build();
+
+      auto desc = group.op_name + "(variant " + std::to_string(i + 1) + " )";
+      ASSERT_EQ(dl1->op_count(false), dl2->op_count(false)) << desc;
+      ASSERT_EQ(dl1->bytes(false), dl2->bytes(false)) << desc;
+      ASSERT_EQ(dl1->op_count(true), dl2->op_count(true)) << desc;
+      ASSERT_EQ(dl1->bytes(true), dl2->bytes(true)) << desc;
+      ASSERT_EQ(dl1->bounds(), dl2->bounds()) << desc;
+      ASSERT_TRUE(dl1->Equals(*dl2)) << desc;
+      ASSERT_TRUE(dl2->Equals(*dl1)) << desc;
+      ASSERT_EQ(dl1->rtree().get(), nullptr) << desc;
+      ASSERT_NE(dl2->rtree().get(), nullptr) << desc;
     }
   }
 }
@@ -1560,7 +1690,7 @@ static void test_rtree(const sk_sp<const DlRTree>& rtree,
 }
 
 TEST(DisplayList, RTreeOfSimpleScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.drawRect({50, 50, 60, 60});
   auto display_list = builder.Build();
@@ -1587,7 +1717,7 @@ TEST(DisplayList, RTreeOfSimpleScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveRestoreScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   builder.drawRect({10, 10, 20, 20});
   builder.save();
   builder.drawRect({50, 50, 60, 60});
@@ -1616,7 +1746,7 @@ TEST(DisplayList, RTreeOfSaveRestoreScene) {
 }
 
 TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
   auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
@@ -1651,12 +1781,12 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
 }
 
 TEST(DisplayList, NestedDisplayListRTreesAreSparse) {
-  DisplayListBuilder nested_dl_builder;
+  DisplayListBuilder nested_dl_builder(/**prepare_rtree=*/true);
   nested_dl_builder.drawRect({10, 10, 20, 20});
   nested_dl_builder.drawRect({50, 50, 60, 60});
   auto nested_display_list = nested_dl_builder.Build();
 
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/**prepare_rtree=*/true);
   builder.drawDisplayList(nested_display_list);
   auto display_list = builder.Build();
 
@@ -2215,7 +2345,7 @@ TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
 }
 
 TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
-  DisplayListBuilder builder;
+  DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
   auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
