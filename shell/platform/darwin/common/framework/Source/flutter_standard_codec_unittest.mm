@@ -17,14 +17,22 @@ FLUTTER_ASSERT_NOT_ARC
 @implementation Pair
 - (instancetype)initWithLeft:(NSObject*)left right:(NSObject*)right {
   self = [super init];
-  _left = left;
-  _right = right;
+  if (self) {
+    _left = [left retain];
+    _right = [right retain];
+  }
   return self;
+}
+
+- (void)dealloc {
+  [_left release];
+  [_right release];
+  [super dealloc];
 }
 @end
 
-const UInt8 DATE = 128;
-const UInt8 PAIR = 129;
+static const UInt8 kDATE = 128;
+static const UInt8 kPAIR = 129;
 
 @interface ExtendedWriter : FlutterStandardWriter
 - (void)writeValue:(id)value;
@@ -33,14 +41,14 @@ const UInt8 PAIR = 129;
 @implementation ExtendedWriter
 - (void)writeValue:(id)value {
   if ([value isKindOfClass:[NSDate class]]) {
-    [self writeByte:DATE];
+    [self writeByte:kDATE];
     NSDate* date = value;
     NSTimeInterval time = date.timeIntervalSince1970;
     SInt64 ms = (SInt64)(time * 1000.0);
     [self writeBytes:&ms length:8];
   } else if ([value isKindOfClass:[Pair class]]) {
     Pair* pair = value;
-    [self writeByte:PAIR];
+    [self writeByte:kPAIR];
     [self writeValue:pair.left];
     [self writeValue:pair.right];
   } else {
@@ -56,14 +64,14 @@ const UInt8 PAIR = 129;
 @implementation ExtendedReader
 - (id)readValueOfType:(UInt8)type {
   switch (type) {
-    case DATE: {
+    case kDATE: {
       SInt64 value;
       [self readBytes:&value length:8];
       NSTimeInterval time = [NSNumber numberWithLong:value].doubleValue / 1000.0;
       return [NSDate dateWithTimeIntervalSince1970:time];
     }
-    case PAIR: {
-      return [[Pair alloc] initWithLeft:[self readValue] right:[self readValue]];
+    case kPAIR: {
+      return [[[Pair alloc] initWithLeft:[self readValue] right:[self readValue]] autorelease];
     }
     default:
       return [super readValueOfType:type];
@@ -78,10 +86,10 @@ const UInt8 PAIR = 129;
 
 @implementation ExtendedReaderWriter
 - (FlutterStandardWriter*)writerWithData:(NSMutableData*)data {
-  return [[ExtendedWriter alloc] initWithData:data];
+  return [[[ExtendedWriter alloc] initWithData:data] autorelease];
 }
 - (FlutterStandardReader*)readerWithData:(NSData*)data {
-  return [[ExtendedReader alloc] initWithData:data];
+  return [[[ExtendedReader alloc] initWithData:data] autorelease];
 }
 @end
 
@@ -333,14 +341,12 @@ TEST(FlutterStandardCodec, HandlesErrorEnvelopes) {
 }
 
 TEST(FlutterStandardCodec, HandlesSubclasses) {
-  ExtendedReaderWriter* extendedReaderWriter = [[ExtendedReaderWriter alloc] init];
+  ExtendedReaderWriter* extendedReaderWriter = [[[ExtendedReaderWriter alloc] init] autorelease];
   FlutterStandardMessageCodec* codec =
       [FlutterStandardMessageCodec codecWithReaderWriter:extendedReaderWriter];
-  Pair* pair = [[Pair alloc] initWithLeft:@1 right:@2];
+  Pair* pair = [[[Pair alloc] initWithLeft:@1 right:@2] autorelease];
   NSData* encoded = [codec encode:pair];
   Pair* decoded = [codec decode:encoded];
   ASSERT_TRUE([pair.left isEqual:decoded.left]);
   ASSERT_TRUE([pair.right isEqual:decoded.right]);
-  [pair release];
-  [extendedReaderWriter release];
 }
