@@ -242,6 +242,9 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
       }
       SkRect rect;
       map_rect(clip, &rect);
+      if (is_aa) {
+        rect.roundOut(&rect);
+      }
       if (!cull_rect_.intersect(rect)) {
         cull_rect_.setEmpty();
       }
@@ -253,7 +256,15 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
       }
       SkRect rect;
       if (map_rect(clip, &rect)) {
-        // This technique only works if it is rect -> rect}
+        // This technique only works if it is rect -> rect
+        if (is_aa) {
+          SkIRect rounded;
+          rect.round(&rounded);
+          if (rounded.isEmpty()) {
+            break;
+          }
+          rect.set(rounded);
+        }
         if (rect.fLeft <= cull_rect_.fLeft &&
             rect.fRight >= cull_rect_.fRight) {
           // bounds spans entire width of cull_rect_
