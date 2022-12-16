@@ -109,31 +109,37 @@ class AccessibilityBridge
   const std::vector<ui::AXEventGenerator::TargetedEvent> GetPendingEvents()
       const;
 
-  // AXTreeManager methods.
-
+  // |AXTreeManager|
   ui::AXNode* GetNodeFromTree(const ui::AXTreeID tree_id,
                               const ui::AXNode::AXID node_id) const override;
 
+  // |AXTreeManager|
   ui::AXNode* GetNodeFromTree(const ui::AXNode::AXID node_id) const override;
 
+  // |AXTreeManager|
   ui::AXTreeID GetTreeID() const override;
 
+  // |AXTreeManager|
   ui::AXTreeID GetParentTreeID() const override;
 
+  // |AXTreeManager|
   ui::AXNode* GetRootAsAXNode() const override;
 
+  // |AXTreeManager|
   ui::AXNode* GetParentNodeFromParentTreeAsAXNode() const override;
 
+  // |AXTreeManager|
   ui::AXTree* GetTree() const override;
 
-  // AXPlatformTreeManger methods.
-
+  // |AXPlatformTreeManager|
   ui::AXPlatformNode* GetPlatformNodeFromTree(
       const ui::AXNode::AXID node_id) const override;
 
+  // |AXPlatformTreeManager|
   ui::AXPlatformNode* GetPlatformNodeFromTree(
       const ui::AXNode& node) const override;
 
+  // |AXPlatformTreeManager|
   ui::AXPlatformNodeDelegate* RootDelegate() const override;
 
  protected:
