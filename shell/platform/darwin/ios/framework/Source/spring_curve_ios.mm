@@ -6,6 +6,8 @@
 
 #include <Foundation/Foundation.h>
 
+// Spring calculation adapted from Pan Yusheng's research project.
+// See: https://github.com/CosynPa/RevealSpringAnimation.
 @implementation KeyboardSpringCurve
 - (instancetype)initWithStiffness:(double)stiffness
                           damping:(double)damping
