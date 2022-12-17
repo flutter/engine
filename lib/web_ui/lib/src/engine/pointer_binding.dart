@@ -768,7 +768,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addPointerEventListener(glassPaneElement, 'pointermove', (DomPointerEvent event) {
+    // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
+    _addPointerEventListener(domWindow, 'pointermove', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final _ButtonSanitizer sanitizer = _ensureSanitizer(device);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1123,7 +1124,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
       _callback(pointerData);
     });
 
-    _addMouseEventListener(glassPaneElement, 'mousemove', (DomMouseEvent event) {
+    // Why `domWindow` you ask? See this fiddle: https://jsfiddle.net/ditman/7towxaqp
+    _addMouseEventListener(domWindow, 'mousemove', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? up = _sanitizer.sanitizeMissingRightClickUp(buttons: event.buttons!.toInt());
       if (up != null) {
