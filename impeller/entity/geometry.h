@@ -90,6 +90,10 @@ class AtlasGeometry : public Geometry {
   virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) = 0;
+
+  virtual GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
+                                             const Entity& entity,
+                                             RenderPass& pass) = 0;
 };
 
 /// @brief A geometry that is created from a filled path object.

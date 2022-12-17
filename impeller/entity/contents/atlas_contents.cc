@@ -9,8 +9,11 @@
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
-#include "impeller/entity/atlas_fill.frag.h"
-#include "impeller/entity/atlas_fill.vert.h"
+#include "impeller/entity/position_color.vert.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/vertices.frag.h"
+
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
@@ -61,16 +64,36 @@ bool AtlasContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  using VS = AtlasFillVertexShader;
-  using FS = AtlasFillFragmentShader;
-
-  const auto texture_size = texture_->GetSize();
-  if (texture_size.IsEmpty()) {
-    return true;
-  }
-  auto geometry_result =
-      geometry_->GetPositionColorBuffer(renderer, entity, pass);
   auto& host_buffer = pass.GetTransientsBuffer();
+
+  if (geometry_->GetVertexType() == GeometryVertexType::kColor) {
+    using VSS = PositionColorVertexShader;
+
+    auto geometry_result =
+        geometry_->GetPositionColorBuffer(renderer, entity, pass);
+
+    VSS::VertInfo vert_info;
+    vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                    entity.GetTransformation();
+
+    auto options = OptionsFromPassAndEntity(pass, entity);
+    options.primitive_type = geometry_result.type;
+
+    Command cmd;
+    cmd.label = "DrawAtlas";
+    cmd.pipeline = renderer.GetGeometryColorPipeline(options);
+    cmd.stencil_reference = entity.GetStencilDepth();
+    cmd.BindVertices(geometry_result.vertex_buffer);
+    VSS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+    if (!pass.AddCommand(std::move(cmd))) {
+      return false;
+    }
+  }
+
+  using VS = TextureFillVertexShader;
+  using FS = TextureFillFragmentShader;
+
+  auto geometry_result = geometry_->GetPositionUVBuffer(renderer, entity, pass);
 
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -78,16 +101,15 @@ bool AtlasContents::Render(const ContentContext& renderer,
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frag_info.has_vertex_color =
-      geometry_->GetVertexType() == GeometryVertexType::kColor;
   frag_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   options.primitive_type = geometry_result.type;
+  options.blend_mode = blend_mode_;
 
   Command cmd;
   cmd.label = "DrawAtlas";
-  cmd.pipeline = renderer.GetAtlasPipeline(options);
+  cmd.pipeline = renderer.GetTexturePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));

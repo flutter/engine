@@ -4,8 +4,11 @@
 
 #include "impeller/display_list/display_list_atlas_geometry.h"
 
-#include "impeller/entity/atlas_fill.frag.h"
-#include "impeller/entity/atlas_fill.vert.h"
+#include "impeller/entity/position_color.vert.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
+#include "impeller/entity/vertices.frag.h"
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
@@ -89,7 +92,35 @@ GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  using VS = AtlasFillVertexShader;
+  using VS = PositionColorVertexShader;
+
+  constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
+
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.Reserve(count_ * 6);
+  for (size_t i = 0; i < count_; i++) {
+    auto points = transformed_coords_[i];
+    for (size_t j = 0; j < 6; j++) {
+      VS::PerVertexData data;
+      data.position = points[indices[j]];
+      data.color = ToColor(colors_[i]).Premultiply();
+      vertex_builder.AppendVertex(data);
+    }
+  }
+
+  return {
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer =
+          vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+      .prevent_overdraw = false,
+  };
+}
+
+GeometryResult DLAtlasGeometry::GetPositionUVBuffer(
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  using VS = TextureFillVertexShader;
 
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
   constexpr Scalar width[6] = {0, 1, 0, 1, 0, 1};
@@ -98,7 +129,6 @@ GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   vertex_builder.Reserve(count_ * 6);
   for (size_t i = 0; i < count_; i++) {
-    auto color = colors_ == nullptr ? Color::Black() : ToColor(colors_[i]);
     auto points = transformed_coords_[i];
     auto raw_sample_rect = tex_[i];
     auto sample_rect =
@@ -112,7 +142,6 @@ GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
           (sample_rect.origin + Point(sample_rect.size.width * width[j],
                                       sample_rect.size.height * height[j])) /
           texture_size_;
-      data.color = color.Premultiply();
       vertex_builder.AppendVertex(data);
     }
   }
@@ -127,7 +156,7 @@ GeometryResult DLAtlasGeometry::GetPositionColorBuffer(
 
 GeometryVertexType DLAtlasGeometry::GetVertexType() const {
   if (colors_ == nullptr) {
-    return GeometryVertexType::kPosition;
+    return GeometryVertexType::kUV;
   }
   return GeometryVertexType::kColor;
 }

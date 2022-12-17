@@ -44,6 +44,11 @@ class DLAtlasGeometry : public AtlasGeometry {
                                         const Entity& entity,
                                         RenderPass& pass) override;
 
+  // |AtlasGeometry|
+  GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
