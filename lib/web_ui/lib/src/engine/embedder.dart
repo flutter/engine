@@ -47,12 +47,11 @@ class FlutterViewEmbedder {
   ///
   /// - A `null` `hostElement` will cause Flutter to take over the whole page.
   /// - A non-`null` `hostElement` will render flutter inside that element.
-  FlutterViewEmbedder({DomElement? hostElement}) {
-    // Create an appropriate EmbeddingStrategy using its factory...
-    _embeddingStrategy = EmbeddingStrategy.create(hostElement: hostElement);
-
-    // Configure the EngineWindow that this embedder uses, so it knows how to
-    // measure itself.
+  FlutterViewEmbedder({DomElement? hostElement})
+      : _embeddingStrategy =
+            EmbeddingStrategy.create(hostElement: hostElement) {
+    // Configure the EngineWindow so it knows how to measure itself.
+    // TODO(dit): Refactor ownership according to new design, https://github.com/flutter/flutter/issues/117098
     window.configureDimensionsProvider(DimensionsProvider.create(
       hostElement: hostElement,
     ));
@@ -61,7 +60,7 @@ class FlutterViewEmbedder {
   }
 
   /// Abstracts all the DOM manipulations required to embed a Flutter app in an user-supplied `hostElement`.
-  late EmbeddingStrategy _embeddingStrategy;
+  final EmbeddingStrategy _embeddingStrategy;
 
   // The tag name for the root view of the flutter app (glass-pane)
   static const String glassPaneTagName = 'flt-glass-pane';
