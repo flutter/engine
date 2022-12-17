@@ -54,7 +54,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     registerHotRestartListener(() {
       _browserHistory?.dispose();
       renderer.clearFragmentProgramCache();
-      _dimensionsProvider.onHotRestart();
+      _dimensionsProvider.close();
     });
   }
 

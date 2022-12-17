@@ -96,7 +96,7 @@ void doTests() {
       });
 
       // Should close the stream
-      provider.onHotRestart();
+      provider.close();
 
       resizeEventTarget.dispatchEvent(createDomEvent('Event', 'resize'));
 

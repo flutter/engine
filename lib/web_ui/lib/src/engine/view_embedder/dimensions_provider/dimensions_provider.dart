@@ -57,6 +57,9 @@ abstract class DimensionsProvider {
   /// Returns a Stream with the changes to [ui.Size] (when cheap to get).
   Stream<ui.Size?> get onResize;
 
-  /// Clears all the resources grabbed by the DimensionsProvider instance.
-  void onHotRestart();
+  /// Clears any resources grabbed by the DimensionsProvider instance.
+  ///
+  /// All internal event handlers will be disconnected, and the [onResize] Stream
+  /// will be closed.
+  void close();
 }

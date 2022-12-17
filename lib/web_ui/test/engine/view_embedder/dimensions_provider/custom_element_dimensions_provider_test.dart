@@ -33,7 +33,7 @@ void doTests() {
     });
 
     tearDown(() {
-      provider.onHotRestart(); // cleanup
+      provider.close(); // cleanup
       sizeSource.remove();
     });
 
@@ -67,7 +67,7 @@ void doTests() {
     });
 
     tearDown(() {
-      provider.onHotRestart(); // cleanup
+      provider.close(); // cleanup
       sizeSource.remove();
     });
 
@@ -105,7 +105,7 @@ void doTests() {
     });
 
     tearDown(() {
-      provider.onHotRestart(); // cleanup
+      provider.close(); // cleanup
       sizeSource.remove();
     });
 
@@ -155,7 +155,7 @@ void doTests() {
       });
 
       // Should close the stream
-      provider.onHotRestart();
+      provider.close();
 
       sizeSource
         ..style.width = '100px'
