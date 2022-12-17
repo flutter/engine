@@ -190,7 +190,7 @@ bool hasCssRule(
       (styleSheet! as DomHTMLStyleElement).sheet! as DomCSSStyleSheet;
 
   // Check that the cssText of any rule matches the ruleLike RegExp.
-  return sheet.rules
+  return sheet.cssRules
       .map((DomCSSRule rule) => rule.cssText)
       .any((String rule) => ruleLike.hasMatch(rule));
 }

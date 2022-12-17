@@ -240,7 +240,7 @@ void applyGlobalCssRulesToSheet(
       color: red;
       font: $defaultCssFont;
     }
-  ''', sheet.cssRules.length.toInt());
+  ''', sheet.cssRules.length);
 
   // By default on iOS, Safari would highlight the element that's being tapped
   // on using gray background. This CSS rule disables that.
@@ -249,7 +249,7 @@ void applyGlobalCssRulesToSheet(
       $cssSelectorPrefix * {
       -webkit-tap-highlight-color: transparent;
     }
-    ''', sheet.cssRules.length.toInt());
+    ''', sheet.cssRules.length);
   }
 
   if (isFirefox) {
@@ -262,7 +262,7 @@ void applyGlobalCssRulesToSheet(
       $cssSelectorPrefix flt-span {
         line-height: 100%;
       }
-    ''', sheet.cssRules.length.toInt());
+    ''', sheet.cssRules.length);
   }
 
   // This undoes browser's default painting and layout attributes of range
@@ -279,14 +279,14 @@ void applyGlobalCssRulesToSheet(
       bottom: 0;
       left: 0;
     }
-  ''', sheet.cssRules.length.toInt());
+  ''', sheet.cssRules.length);
 
   if (isSafari) {
     sheet.insertRule('''
       $cssSelectorPrefix flt-semantics input[type=range]::-webkit-slider-thumb {
         -webkit-appearance: none;
       }
-    ''', sheet.cssRules.length.toInt());
+    ''', sheet.cssRules.length);
   }
 
   // The invisible semantic text field may have a visible cursor and selection
@@ -295,12 +295,12 @@ void applyGlobalCssRulesToSheet(
     $cssSelectorPrefix input::selection {
       background-color: transparent;
     }
-  ''', sheet.cssRules.length.toInt());
+  ''', sheet.cssRules.length);
   sheet.insertRule('''
     $cssSelectorPrefix textarea::selection {
       background-color: transparent;
     }
-  ''', sheet.cssRules.length.toInt());
+  ''', sheet.cssRules.length);
 
   sheet.insertRule('''
     $cssSelectorPrefix flt-semantics input,
@@ -308,14 +308,14 @@ void applyGlobalCssRulesToSheet(
     $cssSelectorPrefix flt-semantics [contentEditable="true"] {
       caret-color: transparent;
     }
-    ''', sheet.cssRules.length.toInt());
+    ''', sheet.cssRules.length);
 
   // Hide placeholder text
   sheet.insertRule('''
     $cssSelectorPrefix .flt-text-editing::placeholder {
       opacity: 0;
     }
-  ''', sheet.cssRules.length.toInt());
+  ''', sheet.cssRules.length);
 
   // This css prevents an autofill overlay brought by the browser during
   // text field autofill by delaying the transition effect.
@@ -328,7 +328,7 @@ void applyGlobalCssRulesToSheet(
       $cssSelectorPrefix .transparentTextEditing:-webkit-autofill:active {
         -webkit-transition-delay: 99999s;
       }
-    ''', sheet.cssRules.length.toInt());
+    ''', sheet.cssRules.length);
   }
 
   // Removes password reveal icon for text inputs in Edge browsers.
@@ -344,7 +344,7 @@ void applyGlobalCssRulesToSheet(
         $cssSelectorPrefix input::-ms-reveal {
           display: none;
         }
-        ''', sheet.cssRules.length.toInt());
+        ''', sheet.cssRules.length);
     } on DomException catch (e) {
       // Browsers that don't understand ::-ms-reveal throw a DOMException
       // of type SyntaxError.
@@ -355,7 +355,7 @@ void applyGlobalCssRulesToSheet(
           $cssSelectorPrefix input.fallback-for-fakey-browser-in-ci {
             display: none;
           }
-          ''', sheet.cssRules.length.toInt());
+          ''', sheet.cssRules.length);
         return true;
       }());
     }

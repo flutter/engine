@@ -1313,8 +1313,7 @@ class DomStyleSheet {}
 class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
-  external DomCSSRuleList get cssRules;
-  Iterable<DomCSSRule> get rules =>
+  Iterable<DomCSSRule> get cssRules =>
       createDomListWrapper<DomCSSRule>(js_util
           .getProperty<_DomList>(this, 'cssRules'));
 
@@ -1429,14 +1428,6 @@ class DomMessageChannel {}
 extension DomMessageChannelExtension on DomMessageChannel {
   external DomMessagePort get port1;
   external DomMessagePort get port2;
-}
-
-@JS()
-@staticInterop
-class DomCSSRuleList {}
-
-extension DomCSSRuleListExtension on DomCSSRuleList {
-  external double get length;
 }
 
 /// ResizeObserver JS binding.
