@@ -927,10 +927,10 @@ class TestHttpRequest implements DomXMLHttpRequest {
   factory TestHttpRequest(TestHttpRequestMock mock) {
     return TestHttpRequest._(
         responseType: mock.responseType,
-        timeout: mock.timeout,
+        timeout: mock.timeout.toDouble(),
         withCredentials: mock.withCredentials,
         response: mock.response,
-        status: mock.status,
+        status: mock.status.toDouble(),
         open: allowInterop((String method, String url, [bool? async]) =>
             mock.open(method, url, async)),
         send: allowInterop(() => mock.send()),
@@ -941,10 +941,10 @@ class TestHttpRequest implements DomXMLHttpRequest {
 
   external factory TestHttpRequest._({
     String responseType,
-    int timeout,
+    double timeout,
     bool withCredentials,
     dynamic response,
-    int status,
+    double status,
     void Function(String method, String url, [bool? async]) open,
     void Function() send,
     void Function(String eventType, DomEventListener listener) addEventListener

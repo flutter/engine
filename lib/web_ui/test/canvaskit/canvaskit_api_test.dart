@@ -1314,7 +1314,7 @@ void _canvasTests() {
         devicePixelRatio * kLightRadius,
         tonalColors.ambient,
         tonalColors.spot,
-        flags,
+        flags.toDouble(),
       );
     }
   });
@@ -1694,16 +1694,16 @@ void _paragraphTests() {
 
     // "Hello"
     for (int i = 0; i < 5; i++) {
-      expect(paragraph.getWordBoundary(i).start, 0);
-      expect(paragraph.getWordBoundary(i).end, 5);
+      expect(paragraph.getWordBoundary(i.toDouble()).start, 0);
+      expect(paragraph.getWordBoundary(i.toDouble()).end, 5);
     }
     // Placeholder
     expect(paragraph.getWordBoundary(5).start, 5);
     expect(paragraph.getWordBoundary(5).end, 6);
     // "World"
     for (int i = 6; i < 11; i++) {
-      expect(paragraph.getWordBoundary(i).start, 6);
-      expect(paragraph.getWordBoundary(i).end, 11);
+      expect(paragraph.getWordBoundary(i.toDouble()).start, 6);
+      expect(paragraph.getWordBoundary(i.toDouble()).end, 11);
     }
     // "!"
     expect(paragraph.getWordBoundary(11).start, 11);

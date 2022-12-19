@@ -15,9 +15,9 @@ chrome:
   # recipe_modules/web_util/api.py
   Linux: 1047731
   Mac: 1047732
-  Mac_Arm: 1047734
+  Mac_Arm: 1084001
   Win: 1047731
-  version: '107.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
+  version: '110.0' # CIPD tag for the above Build IDs. Normally "ChromeMajorVersion.UploadAttempt". ;)
 
 firefox:
   version: '106.0'

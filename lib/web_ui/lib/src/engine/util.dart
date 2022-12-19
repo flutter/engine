@@ -414,7 +414,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
 bool isNsErrorFailureException(Object e) {
-  return getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
+  return false; //getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
 /// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
@@ -627,19 +627,19 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 
   int readInt(String propertyName) {
-    return this[propertyName] as int;
+    return (this[propertyName] as num).toInt();
   }
 
   int? tryInt(String propertyName) {
-    return this[propertyName] as int?;
+    return (this[propertyName] as num?)?.toInt();
   }
 
   double readDouble(String propertyName) {
-    return this[propertyName] as double;
+    return (this[propertyName] as num).toDouble();
   }
 
   double? tryDouble(String propertyName) {
-    return this[propertyName] as double?;
+    return (this[propertyName] as num?)?.toDouble();
   }
 }
 

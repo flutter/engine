@@ -312,7 +312,7 @@ extension DecodeResultExtension on DecodeResult {
 @staticInterop
 class DecodeOptions {
   external factory DecodeOptions({
-    required int frameIndex,
+    required double frameIndex,
   });
 }
 

@@ -748,11 +748,11 @@ DomKeyboardEvent dispatchKeyboardEvent(
 }) {
   target ??= domWindow;
 
-  final Function jsKeyboardEvent =
-      js_util.getProperty<Function>(domWindow, 'KeyboardEvent');
-  final List<dynamic> eventArgs = <dynamic>[
+  final Object jsKeyboardEvent =
+      js_util.getProperty<Object>(domWindow, 'KeyboardEvent');
+  final List<Object> eventArgs = <Object>[
     type,
-    <String, dynamic>{
+    js_util.jsify(<String, dynamic>{
       'key': key,
       'code': code,
       'location': location,
@@ -765,11 +765,11 @@ DomKeyboardEvent dispatchKeyboardEvent(
       'keyCode': keyCode,
       'bubbles': true,
       'cancelable': true,
-    }
+    }) as Object,
   ];
   final DomKeyboardEvent event = js_util.callConstructor<DomKeyboardEvent>(
     jsKeyboardEvent,
-    js_util.jsify(eventArgs) as List<Object?>,
+    eventArgs,
   );
   target.dispatchEvent(event);
 

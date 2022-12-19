@@ -285,12 +285,12 @@ extension DomElementExtension on DomElement {
   external set className(String value);
   external String get className;
   external void blur();
-  List<DomNode> getElementsByTagName(String tag) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
-  List<DomNode> getElementsByClassName(String className) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
+  Iterable<DomNode> getElementsByTagName(String tag) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByTagName', <Object>[tag]));
+  Iterable<DomNode> getElementsByClassName(String className) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByClassName', <Object>[className]));
   external void click();
   external bool hasAttribute(String name);
   Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
@@ -1657,7 +1657,7 @@ DomV8BreakIterator createV8BreakIterator() {
   return js_util.callConstructor<DomV8BreakIterator>(
     v8BreakIterator,
     <Object?>[
-      js_util.getProperty(domWindow, 'undefined'),
+      'en',
       js_util.jsify(const <String, String>{'type': 'line'}),
     ],
   );

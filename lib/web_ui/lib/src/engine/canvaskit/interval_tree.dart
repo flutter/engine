@@ -101,14 +101,14 @@ class IntervalTreeNode<T> {
   IntervalTreeNode<T>? left;
   IntervalTreeNode<T>? right;
 
-  Iterable<T> enumerateAllElements() sync* {
-    if (left != null) {
-      yield* left!.enumerateAllElements();
-    }
-    yield value;
-    if (right != null) {
-      yield* right!.enumerateAllElements();
-    }
+  Iterable<T> enumerateAllElements() {
+    return <Iterable<T>>[
+      if (left != null)
+        left!.enumerateAllElements(),
+      <T>[value],
+      if (right != null)
+        right!.enumerateAllElements()
+    ].reduce((Iterable<T> result, Iterable<T> it) => result.followedBy(it));
   }
 
   /// Whether this node contains [x].

@@ -108,7 +108,7 @@ class Surface {
 
   void _syncCacheBytes() {
     if (_skiaCacheBytes != null) {
-      _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!);
+      _grContext?.setResourceCacheLimitBytes(_skiaCacheBytes!.toDouble());
     }
   }
 
@@ -332,7 +332,7 @@ class Surface {
       _glContext = glContext;
 
       if (_glContext != 0) {
-        _grContext = canvasKit.MakeGrContext(glContext);
+        _grContext = canvasKit.MakeGrContext(glContext.toDouble());
         if (_grContext == null) {
           throw CanvasKitError('Failed to initialize CanvasKit. '
               'CanvasKit.MakeGrContext returned null.');
@@ -360,8 +360,8 @@ class Surface {
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
-        size.width.ceil(),
-        size.height.ceil(),
+        size.width,
+        size.height,
         SkColorSpaceSRGB,
       );
 
