@@ -5,7 +5,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
 #import <Metal/Metal.h>
-#import <OCMock/OCMock.h>
 
 #import "flutter/testing/testing.h"
 
@@ -20,26 +19,12 @@
 
 @end
 
-TEST(FlutterView, BackingPropertiesChangeUpdatesLayerScale) {
+TEST(FlutterView, ShouldInheritContentsScaleReturnsYes) {
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
   id<MTLCommandQueue> queue = [device newCommandQueue];
   TestReshapeListener* listener = [[TestReshapeListener alloc] init];
   FlutterView* view = [[FlutterView alloc] initWithMTLDevice:device
                                                 commandQueue:queue
                                              reshapeListener:listener];
-
-  view.layer.contentsScale = 1.0;
-
-  FlutterView* mockView = OCMPartialMock(view);
-
-  NSWindow* mockWindow = OCMClassMock([NSWindow class]);
-  OCMStub([mockWindow backingScaleFactor]).andReturn(3.0);
-
-  OCMStub([mockView window]).andReturn(mockWindow);
-
-  EXPECT_EQ(view.layer.contentsScale, 1.0);
-
-  [mockView viewDidChangeBackingProperties];
-
-  EXPECT_EQ(view.layer.contentsScale, 3.0);
+  EXPECT_EQ([view layer:view.layer shouldInheritContentsScale:3.0 fromWindow:view.window], YES);
 }

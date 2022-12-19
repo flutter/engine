@@ -101,10 +101,15 @@
 }
 
 - (void)viewDidChangeBackingProperties {
-  self.layer.contentsScale = self.window.backingScaleFactor;
   [super viewDidChangeBackingProperties];
   // Force redraw
   [_reshapeListener viewDidReshape:self];
+}
+
+- (BOOL)layer:(CALayer*)layer
+    shouldInheritContentsScale:(CGFloat)newScale
+                    fromWindow:(NSWindow*)window {
+  return YES;
 }
 
 - (void)shutdown {
