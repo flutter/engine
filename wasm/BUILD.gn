@@ -6,11 +6,24 @@
 # //flutter/BUILD.gn pulls in Flutter SDK dependencies which will crash
 # when the target CPU is WASM.
 
+import("//build/toolchain/wasm.gni")
 import("//flutter/common/config.gni")
 
 # This is the default target when building when the target CPU is WASM.
 group("wasm") {
   if (flutter_build_web_sdk) {
     deps = [ "//flutter/web_sdk" ]
+  }
+}
+
+wasm_toolchain("canvaskit") {
+  extra_toolchain_args = {
+    skia_use_icu = true
+  }
+}
+
+wasm_toolchain("canvaskit_lite") {
+  extra_toolchain_args = {
+    skia_use_icu = false
   }
 }
