@@ -235,7 +235,10 @@ import java.util.List;
     DartExecutor.DartEntrypoint dartEntrypoint =
         new DartExecutor.DartEntrypoint(
             appBundlePathOverride, host.getDartEntrypointFunctionName());
-    return options.setDartEntrypoint(dartEntrypoint).setInitialRoute(host.getInitialRoute());
+    return options
+        .setDartEntrypoint(dartEntrypoint)
+        .setInitialRoute(host.getInitialRoute())
+        .setDartEntrypointArgs(host.getDartEntrypointArgs());
   }
 
   /**

@@ -247,10 +247,14 @@ public class FlutterActivityAndFragmentDelegateTest {
     FlutterEngineGroup flutterEngineGroup = mock(FlutterEngineGroup.class);
     FlutterEngineGroupCache.getInstance().put("my_flutter_engine_group", flutterEngineGroup);
 
+    List<String> entryPointArgs = new ArrayList<>();
+    entryPointArgs.add("entrypoint-arg");
+
     // Adjust fake host to request cached engine group.
     when(mockHost.getCachedEngineGroupId()).thenReturn("my_flutter_engine_group");
     when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(null);
     when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
+    when(mockHost.getDartEntrypointArgs()).thenReturn(entryPointArgs);
 
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -269,6 +273,9 @@ public class FlutterActivityAndFragmentDelegateTest {
     assertEquals(mockHost.getContext(), optionsCaptor.getValue().getContext());
     assertEquals(entrypoint, optionsCaptor.getValue().getDartEntrypoint());
     assertEquals(mockHost.getInitialRoute(), optionsCaptor.getValue().getInitialRoute());
+    assertNotNull(optionsCaptor.getValue().getDartEntrypointArgs());
+    assertEquals(1, optionsCaptor.getValue().getDartEntrypointArgs().size());
+    assertEquals("entrypoint-arg", optionsCaptor.getValue().getDartEntrypointArgs().get(0));
   }
 
   @Test(expected = IllegalStateException.class)
