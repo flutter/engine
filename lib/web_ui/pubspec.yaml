@@ -6,7 +6,7 @@ environment:
   sdk: ">=2.17.0-0 <3.0.0"
 
 dependencies:
-  js: 0.6.4
+  js: 0.6.6
   meta: ^1.7.0
   web_locale_keymap:
     path: ../../third_party/web_locale_keymap
@@ -15,19 +15,19 @@ dependencies:
     path: ../../third_party/web_unicode
 
 dev_dependencies:
-  analyzer: 5.2.0
-  archive: 3.1.2
+  analyzer: 5.3.1
+  archive: 3.3.5
   args: any
   async: any
-  html: 0.15.0
+  html: 0.15.1
   http: 0.13.5
   http_multi_server: any
-  image: 3.0.1
+  image: 3.2.2
   matcher: 0.12.14
   package_config: any
-  path: 1.8.0
+  path: 1.8.3
   pool: any
-  quiver: 3.0.0
+  quiver: 3.1.0
   shelf: any
   shelf_packages_handler: any
   shelf_static: any
@@ -38,12 +38,12 @@ dev_dependencies:
   test_api: any
   test_core: any
   typed_data: any
-  uuid: 3.0.6
-  watcher: 1.0.0
+  uuid: 3.0.7
+  watcher: 1.0.2
   web_socket_channel: any
   webdriver: 3.0.1
   webkit_inspection_protocol: any
-  yaml: 3.0.0
+  yaml: 3.1.1
   web_test_utils:
     path: ../../web_sdk/web_test_utils
   web_engine_tester:
