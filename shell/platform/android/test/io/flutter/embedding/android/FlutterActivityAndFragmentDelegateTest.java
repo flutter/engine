@@ -263,8 +263,12 @@ public class FlutterActivityAndFragmentDelegateTest {
     // event.
     // Note: "/fake/path" and "main" come from `setUp()`.
     DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint("/fake/path", "main");
-    verify(flutterEngineGroup, times(1))
-        .createAndRunEngine(mockHost.getContext(), entrypoint, mockHost.getInitialRoute());
+    ArgumentCaptor<FlutterEngineGroup.Options> optionsCaptor =
+        ArgumentCaptor.forClass(FlutterEngineGroup.Options.class);
+    verify(flutterEngineGroup, times(1)).createAndRunEngine(optionsCaptor.capture());
+    assertEquals(mockHost.getContext(), optionsCaptor.getValue().getContext());
+    assertEquals(entrypoint, optionsCaptor.getValue().getDartEntrypoint());
+    assertEquals(mockHost.getInitialRoute(), optionsCaptor.getValue().getInitialRoute());
   }
 
   @Test(expected = IllegalStateException.class)
