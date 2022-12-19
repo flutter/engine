@@ -634,10 +634,10 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   CGEventRef cgEventDiscreteShift =
       CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventDiscreteShift, kCGEventScrollWheel);
- // CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
+  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventIsContinuous, 0);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis2,
-                              1);  // scroll_delta_x
+                              0);  // scroll_delta_x
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis1,
                               2);  // scroll_delta_y
 
@@ -645,9 +645,9 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   [viewController scrollWheel:[NSEvent eventWithCGEvent:cgEventDiscreteShift]];
   EXPECT_TRUE(called);
   EXPECT_EQ(last_event.signal_kind, kFlutterPointerSignalKindScroll);
-  // pixelsPerLine is 40.0, direction is reversed and axes have been flipped.
-  EXPECT_EQ(last_event.scroll_delta_x, -80 * viewController.flutterView.layer.contentsScale);
-  EXPECT_EQ(last_event.scroll_delta_y, -40 * viewController.flutterView.layer.contentsScale);
+  // pixelsPerLine is 40.0, direction is reversed and axes have been flipped back.
+  EXPECT_FLOAT_EQ(last_event.scroll_delta_x, 0.0 * viewController.flutterView.layer.contentsScale);
+  EXPECT_FLOAT_EQ(last_event.scroll_delta_y, -80.0 * viewController.flutterView.layer.contentsScale);
 
   // Test for scale events.
   // Start gesture.
