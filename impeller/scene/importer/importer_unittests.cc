@@ -34,8 +34,10 @@ TEST(ImporterTest, CanParseGLTF) {
       *reinterpret_cast<uint16_t*>(mesh.indices->data.data());
   ASSERT_EQ(first_index, 45u);
 
-  ASSERT_EQ(mesh.vertices.size(), 260u);
-  auto& vertex = mesh.vertices[0];
+  ASSERT_EQ(mesh.vertices.type, fb::VertexBuffer::UnskinnedVertexBuffer);
+  auto& vertices = mesh.vertices.AsUnskinnedVertexBuffer()->vertices;
+  ASSERT_EQ(vertices.size(), 260u);
+  auto& vertex = vertices[0];
 
   Vector3 position = ToVector3(vertex.position());
   ASSERT_VECTOR3_NEAR(position, Vector3(-0.0100185, -0.522907, -0.133178));

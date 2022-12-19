@@ -115,7 +115,7 @@ table Indices {
 }
 
 table MeshPrimitive {
-  vertices: [Vertex];
+  vertices: VertexBuffer;
   indices: Indices;
   material: Material;
 }

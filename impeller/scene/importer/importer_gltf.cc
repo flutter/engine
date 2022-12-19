@@ -93,7 +93,7 @@ static bool ProcessMeshPrimitive(const tinygltf::Model& gltf,
                                      accessor.count);            // count
     }
 
-    builder.WriteFBVertices(mesh_primitive.vertices);
+    builder.WriteFBVertices(mesh_primitive);
   }
 
   //---------------------------------------------------------------------------
