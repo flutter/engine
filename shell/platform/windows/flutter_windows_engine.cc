@@ -16,12 +16,14 @@
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/third_party/accessibility/ax/ax_node.h"
 #include "flutter/shell/platform/windows/window_surface_angle.h"
+#include "flutter/shell/platform/windows/window_surface_d3d12.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
@@ -147,6 +149,9 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
+
+  // TODO: Use WindowSurface for software rendering
+  surface_ = WindowSurfaceD3D12::Create();
 
   if (!surface_) {
     surface_manager_ = AngleSurfaceManager::Create();
@@ -306,10 +311,25 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     renderer_config = GetSoftwareRendererConfig();
   }
 
+  FlutterCompositor compositor = {};
+  bool use_compositor = false;
+
+  if (surface_) {
+    compositor.struct_size = sizeof(FlutterCompositor);
+    use_compositor = surface_->InitCompositorConfig(compositor);
+    if (use_compositor) {
+      args.compositor = &compositor;
+    }
+  }
+
   auto result = embedder_api_.Run(FLUTTER_ENGINE_VERSION, &renderer_config,
                                   &args, this, &engine_);
 
   if (surface_) {
+    if (use_compositor) {
+      surface_->CleanUpCompositorConfig(compositor);
+    }
+
     surface_->CleanUpRendererConfig(renderer_config);
   }
 

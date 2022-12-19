@@ -20,6 +20,70 @@ extern "C" {
 
 typedef void (*VoidCallback)(void* /* user data */);
 
+extern FLUTTER_EXPORT void* TestingPlatformView;
+
+/*
+Platform View API scaffolding:
+
+Whether PFV are supported on the current platform. Requires Windows 8+ and currently DX12.
+ANGLE (DX10/11) support is possible too.
+bool FlutterDesktopPlatformViewsSupported();
+
+Optionally used to create visuals from, to ensure all visuals are committed in sync. Not reqiured.
+Do not call Commit on this device.
+IDCompositionDevice* FlutterDesktopPlatformViewsCompositionDevice();
+
+TODO: Do we want to make a full object for this so it can retain context?
+Synchronizes the given HWND with the current position of the platform view.
+If the updated location of the platform view is not a simple transform, the window becomes non
+interactive (by moving it to the bottom of the host window stack).
+// void FlutterDesktopPlatformViewsSyncHWND(HWND hwnd, FlutterDesktopPlatformViewUpdate*);
+
+int64_t FlutterDesktopRegisterPlatformView(FlutterDesktopPlatformView*);
+
+void FlutterDesktopUnregisterPlatformView(int64_t);
+
+struct {
+    // Current total transform of the platform view.
+    // Coordinate space is physical pixels.
+    FlutterTransform transform;
+    // Whether the above transform represents a simple translation.
+    // The platform view is not scaled or skewed.
+    bool is_simple_translate;
+    // Current requested dimensions of the platform view in physical pixels.
+    // Embedder should resize or clip contents to match this size.
+    // This is the size before the transformation matrix above takes effect.
+    FlutterSize size;
+} FlutterDesktopPlatformViewUpdate;
+
+// TODO: Use an invisible topmost window with NCHITTEST for platform view clipping.
+// It'll have to call into Flutter synchronously to hit test.
+
+struct {
+    // DComp visual that is presented.
+    IDCompositionVisual* visual;
+    // Window of the visual that is positioned over the view (but transparent).
+    // This is positioned so it receives mouse input from the application.
+    // May be null if no window.
+    // The size of this window will be updated to match the size presented by the
+    // application.
+    HWND window;
+    void* user_data;
+
+    // Called when a platform view is visible within a frame.
+    // Can be used to synchronize input or hidden windows that accept input.
+    void UpdateVisible(FlutterDesktopPlatformViewUpdate* update);
+
+    // Called when a platform view is no longer visible within a frame.
+    void UpdateHidden();
+
+    // TODO: Touch, mouse, and keyboard input.
+    // Not required for embedding an HWND as it'll take all input at the kernel level
+    // if the transform is simple.
+    // For complex transforms, input is not supported.
+} FlutterDesktopPlatformView;
+*/
+
 // Opaque reference to a Flutter window controller.
 typedef struct FlutterDesktopViewControllerState*
     FlutterDesktopViewControllerRef;

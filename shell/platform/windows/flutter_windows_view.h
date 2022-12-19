@@ -20,6 +20,7 @@
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
+#include "flutter/shell/platform/windows/platform_views.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
@@ -196,6 +197,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // |TextInputPluginDelegate|
   void OnResetImeComposing() override;
+
+  PlatformViewRegistrar* platform_view_registrar() const { return platform_view_registrar_.get(); }
 
   // |WindowBindingHandlerDelegate|
   virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
@@ -387,6 +390,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<WindowBindingHandler> binding_handler_;
+
+  // Registrar for managing platform views.
+  std::unique_ptr<PlatformViewRegistrar> platform_view_registrar_;
 
   // Resize events are synchronized using this mutex and the corresponding
   // condition variable.

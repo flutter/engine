@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
+#include "flutter/shell/platform/windows/public/flutter_windows_platform_view.h"
 
 #include <io.h>
 
@@ -28,6 +29,8 @@
 #include "flutter/shell/platform/windows/window_state.h"
 
 static_assert(FLUTTER_ENGINE_VERSION == 1, "");
+
+void* TestingPlatformView;
 
 // Returns the engine corresponding to the given opaque API handle.
 static flutter::FlutterWindowsEngine* EngineFromHandle(
@@ -357,4 +360,28 @@ bool FlutterDesktopTextureRegistrarMarkExternalTextureFrameAvailable(
     int64_t texture_id) {
   return TextureRegistrarFromHandle(texture_registrar)
       ->MarkTextureFrameAvailable(texture_id);
+}
+
+bool FlutterDesktopPlatformViewsSupported() {
+  // TODO: Do OS version check here.
+  return true;
+}
+
+IDCompositionDevice* FlutterDesktopPlatformViewsCompositionDevice(FlutterDesktopViewRef view_ref) {
+  // TODO: Refactor the compositor out of WindowSurfaceD3D12
+  auto surface = ViewFromHandle(view_ref)->GetEngine()->surface();
+  if (!surface) return nullptr;
+  return static_cast<IDCompositionDevice*>(surface->GetCompositionDevice());
+}
+
+int64_t FlutterDesktopRegisterPlatformView(FlutterDesktopViewRef view_ref, const FlutterDesktopPlatformView *view) {
+  auto registrar = ViewFromHandle(view_ref)->platform_view_registrar();
+  if (!registrar) return 0;
+  return registrar->Register(view);
+}
+
+void FlutterDesktopUnregisterPlatformView(FlutterDesktopViewRef view_ref, int64_t view_id) {
+  auto registrar = ViewFromHandle(view_ref)->platform_view_registrar();
+  if (!registrar) return;
+  registrar->Unregister(view_id);
 }

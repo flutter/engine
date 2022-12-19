@@ -3,12 +3,15 @@
 // found in the LICENSE file.
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
+#include <dcomp.h>
 
 #include <chrono>
+#include <memory>
 
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
+#include "flutter/shell/platform/windows/platform_views.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 
 namespace flutter {
@@ -618,6 +621,13 @@ void FlutterWindowsView::CreateRenderSurface() {
                                                 bounds.height);
     resize_target_width_ = bounds.width;
     resize_target_height_ = bounds.height;
+
+    void* device = engine_->surface()->GetCompositionDevice();
+
+    if (device) {
+      platform_view_registrar_ = std::make_unique<PlatformViewRegistrar>(static_cast<IDCompositionDevice*>(device));
+      engine_->surface()->SetPlatformViewRegistrar(platform_view_registrar_.get());
+    }
   }
 }
 

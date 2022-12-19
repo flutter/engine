@@ -10,6 +10,8 @@
 
 namespace flutter {
 
+class PlatformViewRegistrar;
+
 class WindowSurfaceHook {
 public:
   virtual ~WindowSurfaceHook() = default;
@@ -48,13 +50,33 @@ public:
   // Callback to dispose any memory allocated for the renderer config.
   virtual void CleanUpRendererConfig(FlutterRendererConfig& config) = 0;
 
+  // TODO: Move to a separate WindowCompositor class.
+  // Fills out the given compositor config.
+  // Return true if the config was filled out successfully.
+  virtual bool InitCompositorConfig(FlutterCompositor& config) { return false; }
+
+  // Callback to dispose any memory allocated for the compositor config.
+  virtual void CleanUpCompositorConfig(FlutterCompositor& config) {}
+
+  // Returns the IDCompositionDevice used to composite the surface.
+  virtual void* GetCompositionDevice() {
+    return nullptr;
+  }
+
   void SetWindowSurfaceHook(WindowSurfaceHook* hook) {
     hook_ = hook;
+  }
+
+  void SetPlatformViewRegistrar(PlatformViewRegistrar* platform_views) {
+    platform_views_ = platform_views;
   }
 
 protected:
 
   WindowSurfaceHook* GetWindowSurfaceHook() { return hook_; }
+
+  // TODO: This should move to the compositor, once it is separated from the surface.
+  PlatformViewRegistrar* platform_views_ = nullptr;
 
 private:
   WindowSurfaceHook* hook_ = nullptr;
