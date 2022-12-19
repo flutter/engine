@@ -1,4 +1,4 @@
-Signature: 74175550da07665c633e830f01b234e5
+Signature: b25e5966dc6467ab6b3a98147a8921e0
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8280,6 +8280,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/bug12866.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/crbug_1313579.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/base/SkAlign.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkAlphaType.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkCapabilities.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/core/SkColorType.h + ../../../third_party/skia/LICENSE
@@ -8486,6 +8487,7 @@ ORIGIN: ../../../third_party/skia/src/utils/SkTestCanvas.h + ../../../third_part
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/bug12866.cpp
 FILE: ../../../third_party/skia/gm/crbug_1313579.cpp
+FILE: ../../../third_party/skia/include/base/SkAlign.h
 FILE: ../../../third_party/skia/include/core/SkAlphaType.h
 FILE: ../../../third_party/skia/include/core/SkCapabilities.h
 FILE: ../../../third_party/skia/include/core/SkColorType.h
