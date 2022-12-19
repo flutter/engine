@@ -101,6 +101,7 @@
 }
 
 - (void)viewDidChangeBackingProperties {
+  self.layer.contentsScale = self.window.backingScaleFactor;
   [super viewDidChangeBackingProperties];
   // Force redraw
   [_reshapeListener viewDidReshape:self];
