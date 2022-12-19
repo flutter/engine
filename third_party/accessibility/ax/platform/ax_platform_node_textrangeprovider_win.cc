@@ -1035,7 +1035,8 @@ HRESULT AXPlatformNodeTextRangeProviderWin::GetChildren(SAFEARRAY** children) {
 
   SAFEARRAY* safe_array = SafeArrayCreateVector(VT_UNKNOWN, 0, 0);
 
-  // TODO(schectman): Implement GetUIADirectChildrenInRange for FlutterPlatformNodeDelegate
+  // TODO(schectman): Implement GetUIADirectChildrenInRange for
+  // FlutterPlatformNodeDelegate
 
   *children = safe_array;
   return S_OK;
