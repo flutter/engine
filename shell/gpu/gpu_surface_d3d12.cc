@@ -83,7 +83,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceD3D12::AcquireFrame(
   SurfaceFrame::FramebufferInfo framebuffer_info{.supports_readback = !(image_desc.Flags & D3D12_RESOURCE_FLAG_DENY_SHADER_RESOURCE)};
 
   return std::make_unique<SurfaceFrame>(
-      std::move(surface), std::move(framebuffer_info), std::move(callback));
+      std::move(surface), std::move(framebuffer_info), std::move(callback), frame_size);
 }
 
 SkMatrix GPUSurfaceD3D12::GetRootTransformation() const {
