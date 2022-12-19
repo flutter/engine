@@ -634,7 +634,7 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   CGEventRef cgEventDiscreteShift =
       CGEventCreateScrollWheelEvent(NULL, kCGScrollEventUnitPixel, 1, 0);
   CGEventSetType(cgEventDiscreteShift, kCGEventScrollWheel);
-  CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
+ // CGEventSetFlags(cgEventDiscreteShift, kCGEventFlagMaskShift);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventIsContinuous, 0);
   CGEventSetIntegerValueField(cgEventDiscreteShift, kCGScrollWheelEventDeltaAxis2,
                               1);  // scroll_delta_x
