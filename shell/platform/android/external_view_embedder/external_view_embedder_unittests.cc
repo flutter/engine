@@ -425,7 +425,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
                                0, 150, 150, 300, 300, 300, 300, stack1));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
-                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 150, 150));
 
     auto did_submit_frame = false;
     auto surface_frame = std::make_unique<SurfaceFrame>(
@@ -491,7 +491,7 @@ TEST(AndroidExternalViewEmbedder, SubmitFrame) {
                                0, 150, 150, 300, 300, 300, 300, stack1));
     // The JNI call to display the overlay surface.
     EXPECT_CALL(*jni_mock,
-                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 150, 150));
 
     auto did_submit_frame = false;
     auto surface_frame = std::make_unique<SurfaceFrame>(
@@ -776,7 +776,7 @@ TEST(AndroidExternalViewEmbedder, DestroyOverlayLayersOnSizeChange) {
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
                                                             300, 300, stack1));
     EXPECT_CALL(*jni_mock,
-                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 150, 150));
 
     SurfaceFrame::FramebufferInfo framebuffer_info;
     auto surface_frame = std::make_unique<SurfaceFrame>(
@@ -865,7 +865,7 @@ TEST(AndroidExternalViewEmbedder, DoesNotDestroyOverlayLayersOnSizeChange) {
     EXPECT_CALL(*jni_mock, FlutterViewOnDisplayPlatformView(0, 0, 0, 200, 200,
                                                             300, 300, stack1));
     EXPECT_CALL(*jni_mock,
-                FlutterViewDisplayOverlaySurface(0, 50, 50, 200, 200));
+                FlutterViewDisplayOverlaySurface(0, 50, 50, 150, 150));
 
     auto surface_frame = std::make_unique<SurfaceFrame>(
         SkSurface::MakeNull(1000, 1000), framebuffer_info,
