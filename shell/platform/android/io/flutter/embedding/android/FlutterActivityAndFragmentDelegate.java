@@ -116,9 +116,7 @@ import java.util.List;
   FlutterActivityAndFragmentDelegate(@NonNull Host host, @Nullable FlutterEngineGroup engineGroup) {
     this.host = host;
     this.isFirstFrameRendered = false;
-    if (engineGroup != null) {
-      this.engineGroup = engineGroup;
-    }
+    this.engineGroup = engineGroup;
   }
 
   /**
