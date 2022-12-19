@@ -68,8 +68,7 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
 
 DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
                                        bool prepare_rtree)
-    : tracker_(cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect,
-               SkMatrix::I()) {
+    : tracker_(cull_rect, SkMatrix::I()) {
   if (prepare_rtree) {
     accumulator_ = std::make_unique<RTreeBoundsAccumulator>();
   } else {
@@ -440,7 +439,7 @@ void DisplayListBuilder::checkForDeferredSave() {
 }
 
 void DisplayListBuilder::save() {
-  layer_stack_.emplace_back(current_layer_);
+  layer_stack_.emplace_back(LayerInfo());
   current_layer_ = &layer_stack_.back();
   current_layer_->has_deferred_save_op_ = true;
   tracker_.save();
@@ -546,10 +545,10 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
       // We will fill the clip of the outer layer when we restore
       AccumulateUnbounded();
     }
-    layer_stack_.emplace_back(current_layer_, save_layer_offset, true,
+    layer_stack_.emplace_back(save_layer_offset, true,
                               current_.getImageFilter());
   } else {
-    layer_stack_.emplace_back(current_layer_, save_layer_offset, true, nullptr);
+    layer_stack_.emplace_back(save_layer_offset, true, nullptr);
   }
   tracker_.save();
   accumulator()->save();
@@ -635,10 +634,8 @@ void DisplayListBuilder::transform2DAffine(
     Push<Transform2DAffineOp>(0, 1,
                               mxx, mxy, mxt,
                               myx, myy, myt);
-    tracker_.transform(SkM44(mxx, mxy,  0,  mxt,
-                             myx, myy,  0,  myt,
-                             0,   0,   1,   0,
-                             0,   0,   0,   1));
+    tracker_.transform2DAffine(mxx, mxy, mxt,
+                               myx, myy, myt);
   }
 }
 // full 4x4 transform in row major order
@@ -663,10 +660,10 @@ void DisplayListBuilder::transformFullPerspective(
                                      myx, myy, myz, myt,
                                      mzx, mzy, mzz, mzt,
                                      mwx, mwy, mwz, mwt);
-    tracker_.transform(SkM44(mxx, mxy, mxz, mxt,
-                             myx, myy, myz, myt,
-                             mzx, mzy, mzz, mzt,
-                             mwx, mwy, mwz, mwt));
+    tracker_.transformFullPerspective(mxx, mxy, mxz, mxt,
+                                      myx, myy, myz, myt,
+                                      mzx, mzy, mzz, mzt,
+                                      mwx, mwy, mwz, mwt);
   }
 }
 // clang-format on

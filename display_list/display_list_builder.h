@@ -397,12 +397,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
           filter_(filter),
           is_unbounded_(false) {}
 
-    explicit LayerInfo(const LayerInfo* current_layer,
-                       size_t save_layer_offset = 0,
-                       bool has_layer = false,
-                       std::shared_ptr<const DlImageFilter> filter = nullptr)
-        : LayerInfo(save_layer_offset, has_layer, filter) {}
-
     // The offset into the memory buffer where the saveLayer DLOp record
     // for this saveLayer() call is placed. This may be needed if the
     // eventual restore() call has discovered important information about
@@ -480,6 +474,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
+  DisplayListMatrixClipTracker tracker_;
   std::unique_ptr<BoundsAccumulator> accumulator_;
   BoundsAccumulator* accumulator() { return accumulator_.get(); }
 
@@ -622,7 +617,6 @@ class DisplayListBuilder final : public virtual Dispatcher,
   DlPaint current_;
   // If |current_blender_| is set then ignore |current_.getBlendMode()|
   sk_sp<SkBlender> current_blender_;
-  DisplayListMatrixClipTracker tracker_;
 };
 
 }  // namespace flutter

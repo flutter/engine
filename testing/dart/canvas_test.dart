@@ -731,7 +731,7 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
-    canvas.clipRect(clipBounds);
+    canvas.clipRect(clipBounds, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
@@ -773,16 +773,16 @@ void main() {
     const Rect clipBounds2 = Rect.fromLTRB(10.0, 10.0, 20.0, 20.0);
 
     canvas.save();
-    canvas.clipRect(clipBounds1);
+    canvas.clipRect(clipBounds1, doAntiAlias: false);
     canvas.translate(0, 10.0);
-    canvas.clipRect(clipBounds1);
+    canvas.clipRect(clipBounds1, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();
-    canvas.clipRect(clipBounds1);
+    canvas.clipRect(clipBounds1, doAntiAlias: false);
     canvas.translate(-10.0, -10.0);
-    canvas.clipRect(clipBounds2);
+    canvas.clipRect(clipBounds2, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds(), clipBounds1);
     canvas.restore();
   });
@@ -793,7 +793,7 @@ void main() {
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
-    canvas.clipRRect(clip);
+    canvas.clipRRect(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
@@ -802,7 +802,7 @@ void main() {
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.save();
-    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
     expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
     expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
@@ -837,16 +837,16 @@ void main() {
     final RRect clip2 = RRect.fromRectAndRadius(clipBounds2, const Radius.circular(3));
 
     canvas.save();
-    canvas.clipRRect(clip1);
+    canvas.clipRRect(clip1, doAntiAlias: false);
     canvas.translate(0, 10.0);
-    canvas.clipRRect(clip1);
+    canvas.clipRRect(clip1, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();
-    canvas.clipRRect(clip1);
+    canvas.clipRRect(clip1, doAntiAlias: false);
     canvas.translate(-10.0, -10.0);
-    canvas.clipRRect(clip2);
+    canvas.clipRRect(clip2, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds(), clipBounds1);
     canvas.restore();
   });
@@ -857,7 +857,7 @@ void main() {
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
-    canvas.clipPath(clip);
+    canvas.clipPath(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
@@ -866,7 +866,7 @@ void main() {
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.save();
-    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
     expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
     expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
@@ -901,16 +901,16 @@ void main() {
     final Path clip2 = Path()..addRect(clipBounds2)..addOval(clipBounds2);
 
     canvas.save();
-    canvas.clipPath(clip1);
+    canvas.clipPath(clip1, doAntiAlias: false);
     canvas.translate(0, 10.0);
-    canvas.clipPath(clip1);
+    canvas.clipPath(clip1, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds().isEmpty, isTrue);
     canvas.restore();
 
     canvas.save();
-    canvas.clipPath(clip1);
+    canvas.clipPath(clip1, doAntiAlias: false);
     canvas.translate(-10.0, -10.0);
-    canvas.clipPath(clip2);
+    canvas.clipPath(clip2, doAntiAlias: false);
     expect(canvas.getDestinationClipBounds(), clipBounds1);
     canvas.restore();
   });
@@ -920,7 +920,7 @@ void main() {
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
     const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
-    canvas.clipRect(clipBounds);
+    canvas.clipRect(clipBounds, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
@@ -928,7 +928,7 @@ void main() {
     expect(initialLocalBounds, closeToRect(clipExpandedBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
-    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference);
+    canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference, doAntiAlias: false);
     expect(canvas.getLocalClipBounds(), initialLocalBounds);
     expect(canvas.getDestinationClipBounds(), initialDestinationBounds);
   });

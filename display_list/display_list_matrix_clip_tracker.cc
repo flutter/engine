@@ -103,20 +103,63 @@ static bool is_3x3(const SkM44& m) {
 DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkRect& cull_rect,
     const SkMatrix& matrix) {
-  saved_.emplace_back(std::make_unique<Data3x3>(matrix, cull_rect));
+  // isEmpty protects us against NaN as we normalize any empty cull rects
+  SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
+  saved_.emplace_back(std::make_unique<Data3x3>(matrix, cull));
   current_ = saved_.back().get();
 }
 
 DisplayListMatrixClipTracker::DisplayListMatrixClipTracker(
     const SkRect& cull_rect,
     const SkM44& m44) {
+  // isEmpty protects us against NaN as we normalize any empty cull rects
+  SkRect cull = cull_rect.isEmpty() ? SkRect::MakeEmpty() : cull_rect;
   if (is_3x3(m44)) {
-    saved_.emplace_back(std::make_unique<Data3x3>(m44.asM33(), cull_rect));
+    saved_.emplace_back(std::make_unique<Data3x3>(m44.asM33(), cull));
   } else {
-    saved_.emplace_back(std::make_unique<Data4x4>(m44, cull_rect));
+    saved_.emplace_back(std::make_unique<Data4x4>(m44, cull));
   }
   current_ = saved_.back().get();
 }
+
+// clang-format off
+void DisplayListMatrixClipTracker::transform2DAffine(
+    SkScalar mxx, SkScalar mxy, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myt) {
+  if (!current_->is_4x4()) {
+    transform(SkMatrix::MakeAll(mxx, mxy, mxt,
+                                myx, myy, myt,
+                                0,   0,   1));
+  } else {
+    transform(SkM44(mxx, mxy, 0, mxt,
+                    myx, myy, 0, myt,
+                    0,   0,   1, 0,
+                    0,   0,   0, 1));
+  }
+}
+void DisplayListMatrixClipTracker::transformFullPerspective(
+    SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+    SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+    SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+    SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt) {
+  if (!current_->is_4x4()) {
+    if (                        mxz == 0 &&
+                                myz == 0 &&
+        mzx == 0 && mzy == 0 && mzz == 1 && mzt == 0 &&
+                                mwz == 0) {
+        transform(SkMatrix::MakeAll(mxx, mxy, mxt,
+                                    myx, myy, myt,
+                                    mwx, mwy, mwt));
+        return;
+    }
+  }
+
+  transform(SkM44(mxx, mxy, mxz, mxt,
+                  myx, myy, myz, myt,
+                  mzx, mzy, mzz, mzt,
+                  mwx, mwy, mwz, mwt));
+}
+// clang-format on
 
 void DisplayListMatrixClipTracker::save() {
   if (current_->is_4x4()) {

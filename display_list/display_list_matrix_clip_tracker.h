@@ -40,6 +40,16 @@ class DisplayListMatrixClipTracker {
   void rotate(SkScalar degrees) { current_->rotate(degrees); }
   void transform(const SkM44& m44);
   void transform(const SkMatrix& matrix) { current_->transform(matrix); }
+  // clang-format off
+  void transform2DAffine(
+      SkScalar mxx, SkScalar mxy, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myt);
+  void transformFullPerspective(
+      SkScalar mxx, SkScalar mxy, SkScalar mxz, SkScalar mxt,
+      SkScalar myx, SkScalar myy, SkScalar myz, SkScalar myt,
+      SkScalar mzx, SkScalar mzy, SkScalar mzz, SkScalar mzt,
+      SkScalar mwx, SkScalar mwy, SkScalar mwz, SkScalar mwt);
+  // clang-format on
   void setTransform(const SkMatrix& matrix) { current_->setTransform(matrix); }
   void setTransform(const SkM44& m44);
   void setIdentity() { current_->setIdentity(); }
