@@ -145,8 +145,8 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      for (const SkRect& rect : intersection_rects) {
-        joined_rect.join(rect);
+      for (SkRect rect : intersection_rects) {
+        rect.intersect(current_view_rect);
       }
     }
     if (!joined_rect.isEmpty()) {

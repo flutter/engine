@@ -674,7 +674,8 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
       // https://github.com/flutter/flutter/issues/52510
       if (allocation_size > kMaxLayerAllocations) {
         SkRect joined_rect;
-        for (const SkRect& rect : intersection_rects) {
+        for (SkRect rect : intersection_rects) {
+          rect.intersect(platform_view_rect);
           joined_rect.join(rect);
         }
         // Replace the rects in the intersection rects list for a single rect that is
