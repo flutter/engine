@@ -730,22 +730,21 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     canvas.clipRect(clipBounds, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
     final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15));
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipBounds));
     expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
     // Previous return values have not changed
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
     canvas.restore();
 
@@ -755,8 +754,8 @@ void main() {
 
     canvas.save();
     canvas.scale(2, 2);
-    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
-    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    const Rect scaledClipBounds = Rect.fromLTRB(5.1, 5.65, 10.2, 12.85);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledClipBounds));
     // Destination bounds are unaffected by transform
     expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
     canvas.restore();
@@ -791,23 +790,22 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     final RRect clip = RRect.fromRectAndRadius(clipBounds, const Radius.circular(3));
     canvas.clipRRect(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
     final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipBounds));
     expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
     // Previous return values have not changed
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
     canvas.restore();
 
@@ -817,8 +815,8 @@ void main() {
 
     canvas.save();
     canvas.scale(2, 2);
-    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
-    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    const Rect scaledClipBounds = Rect.fromLTRB(5.1, 5.65, 10.2, 12.85);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledClipBounds));
     // Destination bounds are unaffected by transform
     expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
     canvas.restore();
@@ -855,23 +853,22 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     final Path clip = Path()..addRect(clipBounds)..addOval(clipBounds);
     canvas.clipPath(clip, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
     final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.save();
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), doAntiAlias: false);
     // Both clip bounds have changed
-    expect(canvas.getLocalClipBounds(), notCloseToRect(clipExpandedBounds));
+    expect(canvas.getLocalClipBounds(), notCloseToRect(clipBounds));
     expect(canvas.getDestinationClipBounds(), notCloseToRect(clipBounds));
     // Previous return values have not changed
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
     canvas.restore();
 
@@ -881,8 +878,8 @@ void main() {
 
     canvas.save();
     canvas.scale(2, 2);
-    const Rect scaledExpandedBounds = Rect.fromLTRB(5, 5.5, 10.5, 13);
-    expect(canvas.getLocalClipBounds(), closeToRect(scaledExpandedBounds));
+    const Rect scaledClipBounds = Rect.fromLTRB(5.1, 5.65, 10.2, 12.85);
+    expect(canvas.getLocalClipBounds(), closeToRect(scaledClipBounds));
     // Destination bounds are unaffected by transform
     expect(canvas.getDestinationClipBounds(), closeToRect(clipBounds));
     canvas.restore();
@@ -919,13 +916,12 @@ void main() {
     final PictureRecorder recorder = PictureRecorder();
     final Canvas canvas = Canvas(recorder);
     const Rect clipBounds = Rect.fromLTRB(10.2, 11.3, 20.4, 25.7);
-    const Rect clipExpandedBounds = Rect.fromLTRB(10, 11, 21, 26);
     canvas.clipRect(clipBounds, doAntiAlias: false);
 
     // Save initial return values for testing restored values
     final Rect initialLocalBounds = canvas.getLocalClipBounds();
     final Rect initialDestinationBounds = canvas.getDestinationClipBounds();
-    expect(initialLocalBounds, closeToRect(clipExpandedBounds));
+    expect(initialLocalBounds, closeToRect(clipBounds));
     expect(initialDestinationBounds, closeToRect(clipBounds));
 
     canvas.clipRect(const Rect.fromLTRB(0, 0, 15, 15), clipOp: ClipOp.difference, doAntiAlias: false);

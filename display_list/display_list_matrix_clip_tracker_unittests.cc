@@ -342,10 +342,9 @@ TEST(DisplayListMatrixClipTracker, DiffClipPathWithInvertFillType) {
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   clip.setFillType(SkPathFillType::kInverseWinding);
   SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
-  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
   tracker.clipPath(clip, SkClipOp::kDifference, false);
 
-  ASSERT_EQ(tracker.local_cull_rect(), clip_expanded_bounds);
+  ASSERT_EQ(tracker.local_cull_rect(), clip_bounds);
   ASSERT_EQ(tracker.device_cull_rect(), clip_bounds);
 }
 

@@ -379,9 +379,7 @@ SkRect Data3x3::local_cull_rect() const {
     // cull rect.
     return DisplayListBuilder::kMaxCullRect;
   }
-  SkRect expended_rect;
-  cull_rect_.roundOut(&expended_rect);
-  return inverse.mapRect(expended_rect);
+  return inverse.mapRect(cull_rect_);
 }
 
 }  // namespace flutter
