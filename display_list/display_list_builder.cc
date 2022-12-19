@@ -764,9 +764,8 @@ bool DisplayListBuilder::quickReject(const SkRect& bounds) const {
   if (!matrix.invert(nullptr)) {
     return true;
   }
-  SkRect dev_bounds;
-  matrix.mapRect(bounds).roundOut(&dev_bounds);
-  return !tracker_.device_cull_rect().intersects(dev_bounds);
+
+  return tracker_.content_culled(bounds);
 }
 
 void DisplayListBuilder::drawPaint() {
