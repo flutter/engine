@@ -1331,8 +1331,7 @@ class AXPosition {
           child_position->affinity_ = ax::mojom::TextAffinity::kUpstream;
           break;
         }
-        AXPositionInstance child = text_position->CreateChildPositionAt(i);
-        child_position = std::move(child);
+        child_position = std::move(text_position->CreateChildPositionAt(i));
         adjusted_offset -= max_text_offset_in_parent;
       }
 
