@@ -124,9 +124,37 @@ table MeshPrimitive {
 /// Animations.
 ///
 
-table Animation {}
+table TranslationKeyframes {
+  values: [Vec3];
+}
 
-table Skin {}
+table RotationKeyframes {
+  values: [Vec4];
+}
+
+table ScaleKeyframes {
+  values: [Vec3];
+}
+
+union Keyframes { TranslationKeyframes, RotationKeyframes, ScaleKeyframes }
+
+table Channel {
+  node: int;  // Index into `Scene`->`nodes`.
+  timeline: [float];
+  keyframes: Keyframes;
+}
+
+table Animation {
+  name: string;
+  channels: [Channel];
+}
+
+table Skin {
+  joints: [int];  // Index into `Scene`->`nodes`.
+  inverse_bind_matrices: [Matrix];
+  /// The root joint of the skeleton.
+  skeleton: int;  // Index into `Scene`->`nodes`.
+}
 
 //-----------------------------------------------------------------------------
 /// Scene graph.
