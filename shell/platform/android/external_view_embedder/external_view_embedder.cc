@@ -147,6 +147,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // of all the rects.
       for (SkRect rect : intersection_rects) {
         rect.intersect(current_view_rect);
+        joined_rect.join(rect);
       }
     }
     if (!joined_rect.isEmpty()) {
