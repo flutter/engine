@@ -2417,6 +2417,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCh
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm + ../../../flutter/LICENSE
@@ -2636,6 +2638,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterVie
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProviderTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h + ../../../flutter/LICENSE
@@ -4872,6 +4875,8 @@ FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChan
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterChannelsTest.m
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterCodecs.mm
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec.mm
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.cc
+FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodecHelper.h
 FILE: ../../../flutter/shell/platform/darwin/common/framework/Source/FlutterStandardCodec_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.h
 FILE: ../../../flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalImpeller.mm
@@ -5096,6 +5101,7 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewE
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProviderTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap.g.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/KeyCodeMap_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/TestFlutterPlatformView.h
@@ -5567,7 +5573,6 @@ FILE: ../../../flutter/shell/profiling/sampling_profiler.h
 FILE: ../../../flutter/shell/version/version.cc
 FILE: ../../../flutter/shell/version/version.h
 FILE: ../../../flutter/shell/vmservice/empty.dart
-FILE: ../../../flutter/sky/tools/roll/patches/chromium/android_build.patch
 FILE: ../../../flutter/third_party/accessibility/base/color_utils.h
 FILE: ../../../flutter/third_party/accessibility/base/compiler_specific.h
 FILE: ../../../flutter/third_party/accessibility/base/container_utils.h

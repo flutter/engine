@@ -7,6 +7,7 @@
 #include <optional>
 #include <sstream>
 
+#include "fml/time/time_point.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
@@ -126,6 +127,8 @@ void Playground::SetupWindow() {
     return;
   }
   renderer_ = std::move(renderer);
+
+  start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }
 
 void Playground::TeardownWindow() {
@@ -145,7 +148,7 @@ static void PlaygroundKeyCallback(GLFWwindow* window,
                                   int scancode,
                                   int action,
                                   int mods) {
-  if ((key == GLFW_KEY_ESCAPE || key == GLFW_KEY_Q) && action == GLFW_RELEASE) {
+  if ((key == GLFW_KEY_ESCAPE) && action == GLFW_RELEASE) {
     if (mods & (GLFW_MOD_CONTROL | GLFW_MOD_SUPER | GLFW_MOD_SHIFT)) {
       gShouldOpenNewPlaygrounds = false;
     }
@@ -163,6 +166,10 @@ ISize Playground::GetWindowSize() const {
 
 Point Playground::GetContentScale() const {
   return impl_->GetContentScale();
+}
+
+Scalar Playground::GetSecondsElapsed() const {
+  return (fml::TimePoint::Now().ToEpochDelta() - start_time_).ToSecondsF();
 }
 
 void Playground::SetCursorPosition(Point pos) {
@@ -227,7 +234,7 @@ bool Playground::OpenPlaygroundHere(
   ::glfwShowWindow(window);
 
   while (true) {
-    ::glfwWaitEventsTimeout(1.0 / 30.0);
+    ::glfwPollEvents();
 
     if (::glfwWindowShouldClose(window)) {
       return true;

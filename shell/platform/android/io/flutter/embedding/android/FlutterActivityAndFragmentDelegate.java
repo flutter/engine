@@ -116,9 +116,7 @@ import java.util.List;
   FlutterActivityAndFragmentDelegate(@NonNull Host host, @Nullable FlutterEngineGroup engineGroup) {
     this.host = host;
     this.isFirstFrameRendered = false;
-    if (engineGroup != null) {
-      this.engineGroup = engineGroup;
-    }
+    this.engineGroup = engineGroup;
   }
 
   /**
@@ -228,6 +226,21 @@ import java.util.List;
     return activity;
   }
 
+  private FlutterEngineGroup.Options addEntrypointOptions(FlutterEngineGroup.Options options) {
+    String appBundlePathOverride = host.getAppBundlePath();
+    if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
+      appBundlePathOverride = FlutterInjector.instance().flutterLoader().findAppBundlePath();
+    }
+
+    DartExecutor.DartEntrypoint dartEntrypoint =
+        new DartExecutor.DartEntrypoint(
+            appBundlePathOverride, host.getDartEntrypointFunctionName());
+    return options
+        .setDartEntrypoint(dartEntrypoint)
+        .setInitialRoute(host.getInitialRoute())
+        .setDartEntrypointArgs(host.getDartEntrypointArgs());
+  }
+
   /**
    * Obtains a reference to a FlutterEngine to back this delegate and its {@code host}.
    *
@@ -285,17 +298,9 @@ import java.util.List;
                 + "'");
       }
 
-      String appBundlePathOverride = host.getAppBundlePath();
-      if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
-        appBundlePathOverride = FlutterInjector.instance().flutterLoader().findAppBundlePath();
-      }
-
-      DartExecutor.DartEntrypoint dartEntrypoint =
-          new DartExecutor.DartEntrypoint(
-              appBundlePathOverride, host.getDartEntrypointFunctionName());
       flutterEngine =
           flutterEngineGroup.createAndRunEngine(
-              host.getContext(), dartEntrypoint, host.getInitialRoute());
+              addEntrypointOptions(new FlutterEngineGroup.Options(host.getContext())));
       isFlutterEngineFromHost = false;
       return;
     }
@@ -313,9 +318,10 @@ import java.util.List;
             : engineGroup;
     flutterEngine =
         group.createAndRunEngine(
-            new FlutterEngineGroup.Options(host.getContext())
-                .setAutomaticallyRegisterPlugins(false)
-                .setWaitForRestorationData(host.shouldRestoreAndSaveState()));
+            addEntrypointOptions(
+                new FlutterEngineGroup.Options(host.getContext())
+                    .setAutomaticallyRegisterPlugins(false)
+                    .setWaitForRestorationData(host.shouldRestoreAndSaveState())));
     isFlutterEngineFromHost = false;
   }
 
