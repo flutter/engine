@@ -1240,7 +1240,7 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
   // This is the more practical result. The bounds are "almost" 0,0,100x100
   EXPECT_EQ(display_list->bounds().roundOut(), SkIRect::MakeWH(100, 100));
   EXPECT_EQ(display_list->op_count(), 19u);
-  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 304u);
+  EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 352u);
 }
 
 TEST(DisplayList, TranslateAffectsCurrentTransform) {
@@ -2494,6 +2494,118 @@ TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
 
   // Hitting both drawRect calls
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
+}
+
+TEST(DisplayList, RTreeRenderCulling) {
+  DisplayListBuilder main_builder(true);
+  main_builder.drawRect({0, 0, 10, 10});
+  main_builder.drawRect({20, 0, 30, 10});
+  main_builder.drawRect({0, 20, 10, 30});
+  main_builder.drawRect({20, 20, 30, 30});
+  auto main = main_builder.Build();
+
+  {  // No rects
+    SkRect cull_rect = {11, 11, 19, 19};
+
+    DisplayListBuilder expected_builder;
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  {  // Rect 1
+    SkRect cull_rect = {9, 9, 19, 19};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({0, 0, 10, 10});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  {  // Rect 2
+    SkRect cull_rect = {11, 9, 21, 19};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({20, 0, 30, 10});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  {  // Rect 3
+    SkRect cull_rect = {9, 11, 19, 21};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({0, 20, 10, 30});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  {  // Rect 4
+    SkRect cull_rect = {11, 11, 21, 21};
+
+    DisplayListBuilder expected_builder;
+    expected_builder.drawRect({20, 20, 30, 30});
+    auto expected = expected_builder.Build();
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
+  }
+
+  {  // All 4 rects
+    SkRect cull_rect = {9, 9, 21, 21};
+
+    DisplayListBuilder culling_builder(cull_rect);
+    main->RenderTo(&culling_builder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
+
+    DisplayListCanvasRecorder culling_recorder(cull_rect);
+    main->RenderTo(&culling_recorder);
+
+    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), main));
+  }
 }
 
 }  // namespace testing

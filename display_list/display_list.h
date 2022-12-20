@@ -235,6 +235,8 @@ class DisplayListStorage {
   std::unique_ptr<uint8_t, FreeDeleter> ptr_;
 };
 
+class Culler;
+
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -244,15 +246,12 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const {
-    uint8_t* ptr = storage_.get();
-    Dispatch(ctx, ptr, ptr + byte_count_);
-  }
+  void Dispatch(Dispatcher& ctx) const;
+  void Dispatch(Dispatcher& ctx, const SkRect& cull_rect);
 
-  void RenderTo(DisplayListBuilder* builder,
-                SkScalar opacity = SK_Scalar1) const;
+  void RenderTo(DisplayListBuilder* builder, SkScalar opacity = SK_Scalar1);
 
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
+  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1);
 
   // SkPicture always includes nested bytes, but nested ops are
   // only included if requested. The defaults used here for these
@@ -270,6 +269,7 @@ class DisplayList : public SkRefCnt {
 
   const SkRect& bounds() { return bounds_; }
 
+  bool has_rtree() { return rtree_ != nullptr; }
   sk_sp<const DlRTree> rtree() { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
@@ -305,7 +305,10 @@ class DisplayList : public SkRefCnt {
   bool can_apply_group_opacity_;
   sk_sp<const DlRTree> rtree_;
 
-  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
+  void Dispatch(Dispatcher& ctx,
+                uint8_t* ptr,
+                uint8_t* end,
+                Culler& culler) const;
 
   friend class DisplayListBuilder;
 };

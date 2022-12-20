@@ -8,27 +8,75 @@
 
 namespace flutter {
 
-DlRTree::DlRTree() : bbh_{SkRTreeFactory{}()}, all_ops_count_(0) {}
-
-void DlRTree::insert(const SkRect boundsArray[],
-                     const SkBBoxHierarchy::Metadata metadata[],
-                     int N) {
-  FML_DCHECK(0 == all_ops_count_);
-  bbh_->insert(boundsArray, metadata, N);
-  for (int i = 0; i < N; i++) {
-    if (metadata == nullptr || metadata[i].isDraw) {
-      draw_op_[i] = boundsArray[i];
+DlRTree::DlRTree(const SkRect rects[],
+                 int unfilteredN,
+                 const int ids[],
+                 bool p(int))
+    : leaf_count_(0) {
+  // Count the number of rectangles we actually want to track,
+  // which includes only non-empty rectangles whose optional
+  // ID is not filtered by the predicate.
+  for (int i = 0; i < unfilteredN; i++) {
+    if (!rects[i].isEmpty()) {
+      if (ids == nullptr || p(ids[i])) {
+        leaf_count_++;
+      }
     }
   }
-  all_ops_count_ = N;
-}
 
-void DlRTree::insert(const SkRect boundsArray[], int N) {
-  insert(boundsArray, nullptr, N);
-}
+  // Count the total number of nodes (leaf and internal) up front
+  // we we can resize the vector once.
+  int total = leaf_count_;
+  int n_nodes = leaf_count_;
+  while (n_nodes > 1) {
+    int n_groups = (n_nodes + kMaxChildren - 1) / kMaxChildren;
+    total += n_groups;
+    n_nodes = n_groups;
+  }
 
-void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
-  bbh_->search(query, results);
+  nodes_.resize(total);
+
+  // Now place only the tracked rectangles into the nodes array
+  // in the first leaf_count_ entries.
+  int node_index = 0;
+  int id = 0;
+  for (int i = 0; i < unfilteredN; i++) {
+    if (!rects[i].isEmpty()) {
+      if (ids == nullptr || p(id = ids[i])) {
+        Node& node = nodes_[node_index++];
+        node.bounds = rects[i];
+        node.id = id;
+      }
+    }
+  }
+  FML_DCHECK(node_index == leaf_count_);
+
+  int level_start = 0;
+  n_nodes = node_index;
+  while (n_nodes > 1) {
+    int n_groups = (n_nodes + kMaxChildren - 1) / kMaxChildren;
+    int node_count = kMaxChildren;
+    int remainder = n_groups * kMaxChildren - n_nodes;
+    if (node_count > kMaxChildren - remainder) {
+      // TODO(flar): use a distributed remainder computation to
+      // distribute the nodes more evenly
+      node_count = kMaxChildren - remainder;
+    }
+    for (int i = 0; i < n_groups; i++) {
+      Node& node = nodes_[node_index++];
+      node.bounds.setEmpty();
+      node.child.index = level_start;
+      node.child.count = node_count;
+      for (int j = 0; j < node_count; j++) {
+        node.bounds.join(nodes_[level_start++].bounds);
+      }
+      node_count = kMaxChildren;
+    }
+    // level_start should be where node_index started this round
+    FML_DCHECK(level_start + n_groups == node_index);
+    n_nodes = n_groups;
+  }
+  FML_DCHECK(node_index == total);
 }
 
 std::list<SkRect> DlRTree::searchNonOverlappingDrawnRects(
@@ -39,12 +87,7 @@ std::list<SkRect> DlRTree::searchNonOverlappingDrawnRects(
 
   std::list<SkRect> final_results;
   for (int index : intermediary_results) {
-    auto draw_op = draw_op_.find(index);
-    // Ignore records that don't draw anything.
-    if (draw_op == draw_op_.end()) {
-      continue;
-    }
-    auto current_record_rect = draw_op->second;
+    auto current_record_rect = bounds(index);
     auto replaced_existing_rect = false;
     // // If the current record rect intersects with any of the rects in the
     // // result list, then join them, and update the rect in final_results.
@@ -78,20 +121,22 @@ std::list<SkRect> DlRTree::searchNonOverlappingDrawnRects(
   return final_results;
 }
 
-size_t DlRTree::bytesUsed() const {
-  return bbh_->bytesUsed();
-}
-
-DlRTreeFactory::DlRTreeFactory() {
-  r_tree_ = sk_make_sp<DlRTree>();
-}
-
-sk_sp<DlRTree> DlRTreeFactory::getInstance() {
-  return r_tree_;
-}
-
-sk_sp<SkBBoxHierarchy> DlRTreeFactory::operator()() const {
-  return r_tree_;
+void DlRTree::search(const Node& parent,
+                     const SkRect& query,
+                     std::vector<int>* results) const {
+  // Caller protects against empty query
+  int start = parent.child.index;
+  int end = start + parent.child.count;
+  for (int i = start; i < end; i++) {
+    const Node& node = nodes_[i];
+    if (node.bounds.intersects(query)) {
+      if (i < leaf_count_) {
+        results->push_back(i);
+      } else {
+        search(node, query, results);
+      }
+    }
+  }
 }
 
 }  // namespace flutter
