@@ -78,8 +78,6 @@
 }
 
 - (void)commit:(NSArray<FlutterSurfacePresentInfo*>*)surfaces {
-  FML_DCHECK([NSThread isMainThread]);
-
   // Release all unused back buffer surfaces and replace them with front surfaces.
   [_backBufferCache replaceSurfaces:_frontSurfaces];
 

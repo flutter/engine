@@ -25,8 +25,6 @@
 @implementation FlutterThreadSynchronizer
 
 - (void)drain {
-  FML_DCHECK([NSThread isMainThread]);
-
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
   for (dispatch_block_t block : _scheduledBlocks) {
@@ -88,7 +86,7 @@
     if (_beginResizeWaiting) {
       _condBlockBeginResize.notify_all();
     } else {
-      dispatch_async(dispatch_get_main_queue(), ^{
+      dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INTERACTIVE, 0), ^{
         std::unique_lock<std::mutex> lock(_mutex);
         [self drain];
       });
