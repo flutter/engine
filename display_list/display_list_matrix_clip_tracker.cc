@@ -39,12 +39,13 @@ class Data4x4 : public DisplayListMatrixClipTracker::Data {
   void setTransform(const SkMatrix& matrix) override { m44_ = SkM44(matrix); }
   void setTransform(const SkM44& m44) override { m44_ = m44; }
   void setIdentity() override { m44_.setIdentity(); }
+  bool mapRect(const SkRect& rect, SkRect* mapped) const override {
+    return m44_.asM33().mapRect(mapped, rect);
+  }
+  bool canBeInverted() const override { return m44_.asM33().invert(nullptr); }
 
  protected:
   bool has_perspective() const override;
-  bool map_rect(const SkRect& rect, SkRect* mapped) const override {
-    return m44_.asM33().mapRect(mapped, rect);
-  }
 
  private:
   SkM44 m44_;
@@ -80,12 +81,15 @@ class Data3x3 : public DisplayListMatrixClipTracker::Data {
     FML_CHECK(false) << "SkM44 was set without upgrading Data";
   }
   void setIdentity() override { matrix_.setIdentity(); }
+  bool mapRect(const SkRect& rect, SkRect* mapped) const override {
+    return matrix_.mapRect(mapped, rect);
+  }
+  virtual bool canBeInverted() const override {
+    return matrix_.invert(nullptr);
+  }
 
  protected:
   bool has_perspective() const override { return matrix_.hasPerspective(); }
-  bool map_rect(const SkRect& rect, SkRect* mapped) const override {
-    return matrix_.mapRect(mapped, rect);
-  }
 
  private:
   SkMatrix matrix_;
@@ -258,11 +262,14 @@ bool DisplayListMatrixClipTracker::Data::content_culled(
   if (cull_rect_.isEmpty() || content_bounds.isEmpty()) {
     return true;
   }
+  if (!canBeInverted()) {
+    return true;
+  }
   if (has_perspective()) {
     return false;
   }
   SkRect mapped;
-  map_rect(content_bounds, &mapped);
+  mapRect(content_bounds, &mapped);
   return !mapped.intersects(cull_rect_);
 }
 
@@ -284,7 +291,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
         break;
       }
       SkRect rect;
-      map_rect(clip, &rect);
+      mapRect(clip, &rect);
       if (is_aa) {
         rect.roundOut(&rect);
       }
@@ -298,7 +305,7 @@ void DisplayListMatrixClipTracker::Data::clipBounds(const SkRect& clip,
         break;
       }
       SkRect rect;
-      if (map_rect(clip, &rect)) {
+      if (mapRect(clip, &rect)) {
         // This technique only works if it is rect -> rect
         if (is_aa) {
           SkIRect rounded;

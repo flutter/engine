@@ -75,7 +75,7 @@ DisplayListBuilder::DisplayListBuilder(const SkRect& cull_rect,
     accumulator_ = std::make_unique<RectBoundsAccumulator>();
   }
 
-  layer_stack_.emplace_back(LayerInfo());
+  layer_stack_.emplace_back();
   current_layer_ = &layer_stack_.back();
 }
 
@@ -439,7 +439,7 @@ void DisplayListBuilder::checkForDeferredSave() {
 }
 
 void DisplayListBuilder::save() {
-  layer_stack_.emplace_back(LayerInfo());
+  layer_stack_.emplace_back();
   current_layer_ = &layer_stack_.back();
   current_layer_->has_deferred_save_op_ = true;
   tracker_.save();
@@ -755,16 +755,6 @@ void DisplayListBuilder::clipPath(const SkPath& path,
 }
 
 bool DisplayListBuilder::quickReject(const SkRect& bounds) const {
-  if (bounds.isEmpty()) {
-    return true;
-  }
-  SkMatrix matrix = getTransform();
-  // We don't need the inverse, but this method tells us if the matrix
-  // is singular in which case we can reject all rendering.
-  if (!matrix.invert(nullptr)) {
-    return true;
-  }
-
   return tracker_.content_culled(bounds);
 }
 
@@ -1340,7 +1330,7 @@ void DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
   }
 }
 void DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
-  getTransform().mapRect(&bounds);
+  tracker_.mapRect(&bounds);
   if (bounds.intersect(tracker_.device_cull_rect())) {
     accumulator()->accumulate(bounds);
   }

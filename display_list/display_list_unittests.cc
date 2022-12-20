@@ -1396,6 +1396,45 @@ TEST(DisplayList, ClipRectAffectsClipBounds) {
   ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
 }
 
+TEST(DisplayList, ClipRectDoAAAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  builder.clipRect(clip_bounds, SkClipOp::kIntersect, true);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, true);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_expanded_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(5, 5.5, 10.5, 13);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_expanded_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
 TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
   DisplayListBuilder builder;
   SkRect clip_bounds_1 = SkRect::MakeLTRB(0, 0, 10, 10);
@@ -1447,6 +1486,46 @@ TEST(DisplayList, ClipRRectAffectsClipBounds) {
   ASSERT_EQ(builder.getLocalClipBounds(), scaled_clip_bounds);
   // Destination bounds are unaffected by transform
   ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipRRectDoAAAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
+  SkRRect clip = SkRRect::MakeRectXY(clip_bounds, 3, 2);
+  builder.clipRRect(clip, SkClipOp::kIntersect, true);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, true);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_expanded_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(5, 5.5, 10.5, 13);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_expanded_bounds);
   builder.restore();
 
   // save/restore returned the values to their original values
@@ -1508,6 +1587,45 @@ TEST(DisplayList, ClipPathAffectsClipBounds) {
   ASSERT_EQ(builder.getLocalClipBounds(), scaled_clip_bounds);
   // Destination bounds are unaffected by transform
   ASSERT_EQ(builder.getDestinationClipBounds(), clip_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+}
+
+TEST(DisplayList, ClipPathDoAAAffectsClipBounds) {
+  DisplayListBuilder builder;
+  SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
+  SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
+  builder.clipPath(clip, SkClipOp::kIntersect, true);
+
+  // Save initial return values for testing restored values
+  SkRect initial_local_bounds = builder.getLocalClipBounds();
+  SkRect initial_destination_bounds = builder.getDestinationClipBounds();
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+
+  builder.save();
+  builder.clipRect({0, 0, 15, 15}, SkClipOp::kIntersect, true);
+  // Both clip bounds have changed
+  ASSERT_NE(builder.getLocalClipBounds(), clip_expanded_bounds);
+  ASSERT_NE(builder.getDestinationClipBounds(), clip_expanded_bounds);
+  // Previous return values have not changed
+  ASSERT_EQ(initial_local_bounds, clip_expanded_bounds);
+  ASSERT_EQ(initial_destination_bounds, clip_expanded_bounds);
+  builder.restore();
+
+  // save/restore returned the values to their original values
+  ASSERT_EQ(builder.getLocalClipBounds(), initial_local_bounds);
+  ASSERT_EQ(builder.getDestinationClipBounds(), initial_destination_bounds);
+
+  builder.save();
+  builder.scale(2, 2);
+  SkRect scaled_expanded_bounds = SkRect::MakeLTRB(4, 4.5, 11.5, 14);
+  ASSERT_EQ(builder.getLocalClipBounds(), scaled_expanded_bounds);
+  // Destination bounds are unaffected by transform
+  ASSERT_EQ(builder.getDestinationClipBounds(), clip_expanded_bounds);
   builder.restore();
 
   // save/restore returned the values to their original values
