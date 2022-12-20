@@ -151,7 +151,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
       // Get the intersection rect between the current rect
       // and the platform view rect.
-      joined_rect.intersect(current_view_rect)
+      joined_rect.intersect(current_view_rect);
     }
     if (!joined_rect.isEmpty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
