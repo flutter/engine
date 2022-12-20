@@ -84,9 +84,7 @@ class Data3x3 : public DisplayListMatrixClipTracker::Data {
   bool mapRect(const SkRect& rect, SkRect* mapped) const override {
     return matrix_.mapRect(mapped, rect);
   }
-  virtual bool canBeInverted() const override {
-    return matrix_.invert(nullptr);
-  }
+  bool canBeInverted() const override { return matrix_.invert(nullptr); }
 
  protected:
   bool has_perspective() const override { return matrix_.hasPerspective(); }
