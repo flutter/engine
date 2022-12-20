@@ -70,10 +70,8 @@ class NopCuller : public Culler {
 NopCuller NopCuller::instance = NopCuller();
 class VectorCuller : public Culler {
  public:
-  VectorCuller(sk_sp<const DlRTree> rtree, const std::vector<int>& rect_indices)
-      : rtree_(std::move(rtree)),
-        cur_(rect_indices.begin()),
-        end_(rect_indices.end()) {}
+  VectorCuller(const DlRTree* rtree, const std::vector<int>& rect_indices)
+      : rtree_(rtree), cur_(rect_indices.begin()), end_(rect_indices.end()) {}
 
   bool init(DispatchContext& context) override {
     if (cur_ < end_) {
@@ -100,7 +98,7 @@ class VectorCuller : public Culler {
   }
 
  private:
-  const sk_sp<const DlRTree> rtree_;
+  const DlRTree* rtree_;
   std::vector<int>::const_iterator cur_;
   std::vector<int>::const_iterator end_;
 };
@@ -117,16 +115,17 @@ void DisplayList::Dispatch(Dispatcher& ctx, const SkRect& cull_rect) {
     Dispatch(ctx);
     return;
   }
-  FML_DCHECK(rtree() != nullptr);
-  if (rtree() == nullptr) {
+  const DlRTree* rtree = this->rtree().get();
+  FML_DCHECK(rtree != nullptr);
+  if (rtree == nullptr) {
     FML_LOG(ERROR) << "dispatched with culling rect on DL with no rtree";
     Dispatch(ctx);
     return;
   }
   uint8_t* ptr = storage_.get();
   std::vector<int> rect_indices;
-  rtree()->search(cull_rect, &rect_indices);
-  VectorCuller culler(rtree(), rect_indices);
+  rtree->search(cull_rect, &rect_indices);
+  VectorCuller culler(rtree, rect_indices);
   Dispatch(ctx, ptr, ptr + byte_count_, culler);
 }
 
