@@ -145,10 +145,13 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       //
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
-      for (SkRect rect : intersection_rects) {
-        rect.intersect(current_view_rect);
+      for (const SkRect& rect : intersection_rects) {
         joined_rect.join(rect);
       }
+
+      // Get the intersection rect between the current rect
+      // and the platform view rect.
+      joined_rect.intersect(current_view_rect)
     }
     if (!joined_rect.isEmpty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
