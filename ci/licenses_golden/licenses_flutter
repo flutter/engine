@@ -4081,7 +4081,7 @@ FILE: ../../../flutter/impeller/scene/scene_context.cc
 FILE: ../../../flutter/impeller/scene/scene_context.h
 FILE: ../../../flutter/impeller/scene/scene_encoder.cc
 FILE: ../../../flutter/impeller/scene/scene_encoder.h
-FILE: ../../../flutter/impeller/scene/shaders/geometry.vert
+FILE: ../../../flutter/impeller/scene/shaders/unskinned.vert
 FILE: ../../../flutter/impeller/scene/shaders/unlit.frag
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
