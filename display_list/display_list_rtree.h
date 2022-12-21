@@ -15,9 +15,14 @@
 namespace flutter {
 
 /// An R-Tree that stores a list of bounding rectangles with optional
-/// associated IDs and returns either a vector of result indices which
-/// can be used to get an ID or a bounds of the associated entry in the
-/// same order that the rectangles and IDs were provided to the constructor.
+/// associated IDs.
+///
+/// The R-Tree can be searched in one of two ways:
+/// - Query for a list of hits among the original rectangles
+///   @see |search|
+/// - Query for a set of non-overlapping rectangles that are joined
+///   from the original rectangles that intersect a query rect
+///   @see |searchAndConsolidateRects|
 class DlRTree : public SkRefCnt {
  private:
   static constexpr int kMaxChildren = 11;
@@ -108,7 +113,7 @@ class DlRTree : public SkRefCnt {
   /// joined into a single rect which also intersects with the query rect.
   /// In other words, the bounds of each rect in the result list are mutually
   /// exclusive.
-  std::list<SkRect> searchNonOverlappingDrawnRects(const SkRect& query) const;
+  std::list<SkRect> searchAndConsolidateRects(const SkRect& query) const;
 
  private:
   static constexpr SkRect empty_ = SkRect::MakeEmpty();

@@ -17,73 +17,119 @@ DlRTree::DlRTree(const SkRect rects[],
   // Count the number of rectangles we actually want to track,
   // which includes only non-empty rectangles whose optional
   // ID is not filtered by the predicate.
+  int leaf_count = 0;
   for (int i = 0; i < N; i++) {
     if (!rects[i].isEmpty()) {
       if (ids == nullptr || p(ids[i])) {
-        leaf_count_++;
+        leaf_count++;
       }
     }
   }
+  leaf_count_ = leaf_count;
 
   // Count the total number of nodes (leaf and internal) up front
-  // we we can resize the vector once.
-  int total = leaf_count_;
-  int n_nodes = leaf_count_;
-  while (n_nodes > 1) {
-    int n_groups = (n_nodes + kMaxChildren - 1) / kMaxChildren;
-    total += n_groups;
-    n_nodes = n_groups;
+  // so we can resize the vector just once.
+  int total_node_count = leaf_count;
+  int gen_count = leaf_count;
+  while (gen_count > 1) {
+    int family_count = (gen_count + kMaxChildren - 1) / kMaxChildren;
+    total_node_count += family_count;
+    gen_count = family_count;
   }
 
-  nodes_.resize(total);
+  nodes_.resize(total_node_count);
 
   // Now place only the tracked rectangles into the nodes array
   // in the first leaf_count_ entries.
-  int node_index = 0;
+  int leaf_index = 0;
   int id = invalid_id;
   for (int i = 0; i < N; i++) {
     if (!rects[i].isEmpty()) {
       if (ids == nullptr || p(id = ids[i])) {
-        Node& node = nodes_[node_index++];
+        Node& node = nodes_[leaf_index++];
         node.bounds = rects[i];
         node.id = id;
       }
     }
   }
-  FML_DCHECK(node_index == leaf_count_);
+  FML_DCHECK(leaf_index == leaf_count);
 
-  // Continually process the previous level of nodes, combining them
-  // into groups of at most |kMaxChildren| sub-nodes and joining
-  // their bounds into a parent node.
-  // Each level will end up reduced by a factor of up to kMaxChildren
+  // --- Implementation note ---
+  // Many R-Tree algorithms attempt to consolidate nearby rectangles
+  // into branches of the tree in order to maximize the benefit of
+  // bounds testing against whole sub-trees. The Skia code from which
+  // this was based, though, indicated that empirical tests against a
+  // browser client showed little gains in rendering performance while
+  // costing 17% performance in bulk loading the rects into the R-Tree:
+  // https://github.com/google/skia/blob/12b6bd042f7cdffb9012c90c3b4885601fc7be95/src/core/SkRTree.cpp#L96
+  //
+  // Given that this class will most often be used to track rendering
+  // operations that were drawn in an app that performs a type of
+  // "page layout" with rendering proceeding in a linear fashion from
+  // top to bottom (and left to right or right to left), the rectangles
+  // are likely nearly sorted when they are delivered to this constructor
+  // so leaving them in their original order should show similar results
+  // to what Skia found in their empirical browser tests.
+  // ---
+
+  // Continually process the previous level (generation) of nodes,
+  // combining them into a new generation of parent groups each grouping
+  // at most |kMaxChildren| children and joining their bounds into its
+  // parent bounds.
+  // Each generation will end up reduced by a factor of up to kMaxChildren
   // until there is just one node left, which is the root node of
   // the R-Tree.
-  int level_start = 0;
-  n_nodes = leaf_count_;
-  while (n_nodes > 1) {
-    int n_groups = (n_nodes + kMaxChildren - 1) / kMaxChildren;
-    int node_count = kMaxChildren;
-    int remainder = n_groups * kMaxChildren - n_nodes;
-    if (node_count > kMaxChildren - remainder) {
-      // TODO(flar): use a distributed remainder computation to
-      // distribute the nodes more evenly
-      node_count = kMaxChildren - remainder;
-    }
-    for (int i = 0; i < n_groups; i++) {
-      Node& node = nodes_[node_index++];
-      node.bounds.setEmpty();
-      node.child.index = level_start;
-      node.child.count = node_count;
-      for (int j = 0; j < node_count; j++) {
-        node.bounds.join(nodes_[level_start++].bounds);
+  int gen_start = 0;
+  gen_count = leaf_count;
+  while (gen_count > 1) {
+    const int gen_end = gen_start + gen_count;
+
+    const int family_count = (gen_count + kMaxChildren - 1) / kMaxChildren;
+    FML_DCHECK(gen_end + family_count <= total_node_count);
+
+    // D here is similar to the variable in a Bresenham line algorithm where
+    // we want to slowly move |family_count| steps along the minor axis as
+    // we move |gen_count| steps along the major axis.
+    //
+    // Each inner loop increments D by family_count.
+    // The inner loop executes a total of gen_count times.
+    // Every time D exceeds 0 we subtract gen_count and move to a new parent.
+    // All told we will increment D by family_count a total of gen_count times.
+    // All told we will decrement D by gen_count a total of family_count times.
+    // This leaves D back at its starting value.
+    //
+    // We could bias/balance where the extra children are placed by varying
+    // the initial count of D from 0 to (1 - family_count), but we aren't
+    // looking at this process aesthetically so we just use 0 as an initial
+    // value. Using 0 provides a "greedy" allocation of the extra children.
+    // Bresenham also uses double the size of the steps we use here also to
+    // have better rounding of when the minor axis steps occur, but again we
+    // don't care about the distribution of the extra children.
+    int D = 0;
+
+    int sibling_index = gen_start;
+    int parent_index = gen_end;
+    Node* parent = nullptr;
+    while (sibling_index < gen_end) {
+      if ((D += family_count) > 0) {
+        D -= gen_count;
+        FML_DCHECK(parent_index < gen_end + family_count);
+        parent = &nodes_[parent_index++];
+        parent->bounds.setEmpty();
+        parent->child.index = sibling_index;
+        parent->child.count = 0;
       }
-      node_count = kMaxChildren;
+      FML_DCHECK(parent != nullptr);
+      parent->bounds.join(nodes_[sibling_index++].bounds);
+      parent->child.count++;
     }
-    // level_start should be where node_index started this round
-    FML_DCHECK(level_start + n_groups == node_index);
-    n_nodes = n_groups;
+    FML_DCHECK(D == 0);
+    FML_DCHECK(sibling_index == gen_end);
+    FML_DCHECK(parent_index == gen_end + family_count);
+    gen_start = gen_end;
+    gen_count = family_count;
   }
-  FML_DCHECK(node_index == total);
+  FML_DCHECK(gen_start + gen_count == total_node_count);
 }
 
 void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
@@ -106,7 +152,7 @@ void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
   }
 }
 
-std::list<SkRect> DlRTree::searchNonOverlappingDrawnRects(
+std::list<SkRect> DlRTree::searchAndConsolidateRects(
     const SkRect& query) const {
   // Get the indexes for the operations that intersect with the query rect.
   std::vector<int> intermediary_results;

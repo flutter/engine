@@ -1210,7 +1210,7 @@ void DisplayListBuilder::drawDisplayList(
     case BoundsAccumulatorType::kRTree:
       auto rtree = display_list->rtree();
       if (rtree) {
-        std::list<SkRect> rects = rtree->searchNonOverlappingDrawnRects(bounds);
+        std::list<SkRect> rects = rtree->searchAndConsolidateRects(bounds);
         for (const SkRect& rect : rects) {
           // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
           // are not necessarily `kDrawDisplayListFlags`.
