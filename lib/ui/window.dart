@@ -6,7 +6,7 @@ part of dart.ui;
 /// A view into which a Flutter [Scene] is drawn.
 ///
 /// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of a [FlutterWindow] whenever [render] is called with a [Scene].
+/// inside of a [SingletonFlutterWindow] whenever [render] is called with a [Scene].
 ///
 /// ## Insets and Padding
 ///
@@ -54,15 +54,23 @@ part of dart.ui;
 ///
 /// See also:
 ///
-///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
+///  * [FlutterView], a special case of a [FlutterView] that is represented on
 ///    the platform as a separate window which can host other [FlutterView]s.
-abstract class FlutterView {
+class FlutterView {
+  FlutterView._(this._viewId, this.platformDispatcher);
+
+  /// The opaque ID for this view.
+  final Object _viewId;
+
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
-  PlatformDispatcher get platformDispatcher;
+  final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration get viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(_viewId));
+    return platformDispatcher._viewConfigurations[_viewId]!;
+  }
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
@@ -281,39 +289,7 @@ abstract class FlutterView {
   external static void _updateSemantics(SemanticsUpdate update);
 }
 
-/// A top-level platform window displaying a Flutter layer tree drawn from a
-/// [Scene].
-///
-/// The current list of all Flutter views for the application is available from
-/// `WidgetsBinding.instance.platformDispatcher.views`. Only views that are of type
-/// [FlutterWindow] are top level platform windows.
-///
-/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
-/// if `WidgetsBinding` is unavailable, but we strongly advise avoiding a static
-/// reference to it. See the documentation for [PlatformDispatcher.instance] for
-/// more details about why it should be avoided.
-///
-/// See also:
-///
-/// * [PlatformDispatcher], which manages the current list of [FlutterView] (and
-///   thus [FlutterWindow]) instances.
-class FlutterWindow extends FlutterView {
-  FlutterWindow._(this._windowId, this.platformDispatcher);
-
-  /// The opaque ID for this view.
-  final Object _windowId;
-
-  @override
-  final PlatformDispatcher platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(_windowId));
-    return platformDispatcher._viewConfigurations[_windowId]!;
-  }
-}
-
-/// A [FlutterWindow] that includes access to setting callbacks and retrieving
+/// A [FlutterView] that includes access to setting callbacks and retrieving
 /// properties that reside on the [PlatformDispatcher].
 ///
 /// It is the type of the global [window] singleton used by applications that
@@ -328,7 +304,7 @@ class FlutterWindow extends FlutterView {
 /// `WidgetsBinding.instance.platformDispatcher` over a static reference to
 /// [window], or [PlatformDispatcher.instance]. See the documentation for
 /// [PlatformDispatcher.instance] for more details about this recommendation.
-class SingletonFlutterWindow extends FlutterWindow {
+class SingletonFlutterWindow extends FlutterView {
   SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
       : super._();
 
