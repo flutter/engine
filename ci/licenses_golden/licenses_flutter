@@ -4413,6 +4413,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/message_handler.
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/platform_views/slots.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/plugins.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_binding/event_position_helper.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/pointer_converter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/profiler.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/raw_keyboard.dart

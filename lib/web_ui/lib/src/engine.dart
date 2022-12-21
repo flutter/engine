@@ -122,6 +122,7 @@ export 'engine/platform_views/message_handler.dart';
 export 'engine/platform_views/slots.dart';
 export 'engine/plugins.dart';
 export 'engine/pointer_binding.dart';
+export 'engine/pointer_binding/event_position_helper.dart';
 export 'engine/pointer_converter.dart';
 export 'engine/profiler.dart';
 export 'engine/raw_keyboard.dart';

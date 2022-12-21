@@ -12,6 +12,7 @@ import '../engine.dart' show registerHotRestartListener;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'platform_dispatcher.dart';
+import 'pointer_binding/event_position_helper.dart';
 import 'pointer_converter.dart';
 import 'safe_browser_api.dart';
 import 'semantics.dart';
@@ -342,27 +343,6 @@ abstract class _BaseAdapter {
     ((milliseconds - ms) * Duration.microsecondsPerMillisecond).toInt();
     return Duration(milliseconds: ms, microseconds: micro);
   }
-
-  /// Returns an [ui.Offset] of the position of [event], relative to the position of [actualTarget].
-  ///
-  /// The offset is *not* multiplied by DPR or anything else, it's the closest
-  /// to what the DOM would return if we had currentTarget readily available.
-  ///
-  // TODO(dit): Make this understand 3D transforms in the platform view case, https://github.com/flutter/flutter/issues/117091
-  static ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarget) {
-    if (event.target != actualTarget) {
-      // We're on top of a platform view.
-      final DomElement target = event.target! as DomElement;
-      // We can't use currentTarget because it gets lost when the PointerEvents
-      // are coalesced!
-      final DomRect targetRect = target.getBoundingClientRect();
-      final DomRect actualTargetRect = actualTarget.getBoundingClientRect();
-      final double offsetTop = targetRect.y - actualTargetRect.y;
-      final double offsetLeft = targetRect.x - actualTargetRect.x;
-      return ui.Offset(event.offsetX + offsetLeft, event.offsetY + offsetTop);
-    }
-    return ui.Offset(event.offsetX, event.offsetY);
-  }
 }
 
 mixin _WheelEventListenerMixin on _BaseAdapter {
@@ -472,7 +452,7 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     }
 
     final List<ui.PointerData> data = <ui.PointerData>[];
-    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: ui.PointerChange.hover,
@@ -844,7 +824,7 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
     final num? pressure = event.pressure;
-    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,
@@ -1170,7 +1150,7 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     assert(data != null);
     assert(event != null);
     assert(details != null);
-    final ui.Offset offset = _BaseAdapter.computeEventOffsetToTarget(event, glassPaneElement);
+    final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,
       change: details.change,

@@ -462,6 +462,9 @@ class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
   external double get offsetWidth;
+  external double get offsetLeft;
+  external double get offsetTop;
+  external DomHTMLElement? get offsetParent;
 }
 
 @JS()
@@ -1090,6 +1093,8 @@ extension DomMouseEventExtension on DomMouseEvent {
   external double get clientY;
   external double get offsetX;
   external double get offsetY;
+  external double get pageX;
+  external double get pageY;
   DomPoint get client => DomPoint(clientX, clientY);
   DomPoint get offset => DomPoint(offsetX, offsetY);
   external double get button;
