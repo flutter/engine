@@ -603,11 +603,11 @@ if (!is_fuchsia) {
     if (build_canvaskit) {
       tmp_files += [
         {
-          source = rebase_path("$root_out_dir/canvaskit.js")
+          source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
           destination = "canvaskit/canvaskit.js"
         },
         {
-          source = rebase_path("$root_out_dir/canvaskit.wasm")
+          source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
           destination = "canvaskit/canvaskit.wasm"
         },
       ]
