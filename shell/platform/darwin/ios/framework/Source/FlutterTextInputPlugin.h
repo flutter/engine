@@ -100,6 +100,10 @@ typedef NS_ENUM(NSInteger, FlutterScribbleInteractionStatus) {
 
 + (instancetype)selectionRectWithRect:(CGRect)rect position:(NSUInteger)position;
 
++ (instancetype)selectionRectWithRect:(CGRect)rect
+                             position:(NSUInteger)position
+                     writingDirection:(NSWritingDirection)writingDirection;
+
 - (instancetype)initWithRectAndInfo:(CGRect)rect
                            position:(NSUInteger)position
                    writingDirection:(NSWritingDirection)writingDirection

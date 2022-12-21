@@ -1365,7 +1365,7 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 200, 100, 100) position:2U],
   ]];
   CGPoint point = CGPointMake(150, 150);
-  XCTAssertEqual(1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
 
   // Then, if the point is above the bottom of the closest rects vertically, get the closest x
   // origin
@@ -1389,7 +1389,7 @@ FLUTTER_ASSERT_ARC
     [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 300, 100, 100) position:4U],
   ]];
   point = CGPointMake(125, 201);
-  XCTAssertEqual(3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  XCTAssertEqual(4U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
 
   // Also check a point at the right edge of the last selection rect
   [inputView setSelectionRects:@[
@@ -1400,6 +1400,40 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(125, 250);
   XCTAssertEqual(4U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+}
+
+- (void)testClosestPositionToPointRTL {
+  FlutterTextInputView* inputView = [[FlutterTextInputView alloc] initWithOwner:textInputPlugin];
+  [inputView setTextInputState:@{@"text" : @"COMPOSING"}];
+
+  [inputView setSelectionRects:@[
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 0, 100, 100)
+                                           position:0U
+                                   writingDirection:NSWritingDirectionRightToLeft],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 0, 100, 100)
+                                           position:1U
+                                   writingDirection:NSWritingDirectionRightToLeft],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 0, 100, 100)
+                                           position:2U
+                                   writingDirection:NSWritingDirectionRightToLeft],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 100, 100, 100)
+                                           position:3U
+                                   writingDirection:NSWritingDirectionRightToLeft],
+  ]];
+  XCTAssertEqual(
+      0U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(275, 50)]).index);
+  XCTAssertEqual(
+      1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(225, 50)]).index);
+  XCTAssertEqual(
+      1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(175, 50)]).index);
+  XCTAssertEqual(
+      2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(125, 50)]).index);
+  XCTAssertEqual(
+      2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(75, 50)]).index);
+  XCTAssertEqual(
+      3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(25, 50)]).index);
+  XCTAssertEqual(
+      3U, ((FlutterTextPosition*)[inputView closestPositionToPoint:CGPointMake(-25, 50)]).index);
 }
 
 - (void)testSelectionRectsForRange {
@@ -1990,7 +2024,7 @@ FLUTTER_ASSERT_ARC
   XCTAssertEqual(self.installedInputViews.count, 1ul);
   XCTAssertEqual([textInputPlugin.activeView.selectionRects count], 0u);
 
-  NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, nil];
+  NSArray<NSNumber*>* selectionRect = [NSArray arrayWithObjects:@0, @0, @100, @100, @0, @1, nil];
   NSArray* selectionRects = [NSArray arrayWithObjects:selectionRect, nil];
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"Scribble.setSelectionRects"
