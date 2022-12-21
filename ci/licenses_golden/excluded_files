@@ -2663,7 +2663,7 @@
 ../../../third_party/skia/src/shaders/BUILD.bazel
 ../../../third_party/skia/src/shaders/gradients/BUILD.bazel
 ../../../third_party/skia/src/sksl/BUILD.bazel
-../../../third_party/skia/src/sksl/README.md
+../../../third_party/skia/src/sksl/README
 ../../../third_party/skia/src/sksl/analysis/BUILD.bazel
 ../../../third_party/skia/src/sksl/codegen/BUILD.bazel
 ../../../third_party/skia/src/sksl/dsl/BUILD.bazel
