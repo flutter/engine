@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_RTREE_H_
 
 #include <list>
+#include <vector>
 
 #include "flutter/fml/logging.h"
 #include "third_party/skia/include/core/SkRect.h"
