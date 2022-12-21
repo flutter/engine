@@ -19,8 +19,8 @@ enum class MaterialType {
 };
 
 struct PipelineKey {
-  GeometryType geometry_type;
-  MaterialType material_type;
+  GeometryType geometry_type = GeometryType::kUnskinned;
+  MaterialType material_type = MaterialType::kUnlit;
 
   struct Hash {
     constexpr std::size_t operator()(const PipelineKey& o) const {

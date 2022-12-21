@@ -36,7 +36,7 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
   }
 
   pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
-      MakePipelineCollection<UnskinnedVertexShader, UnlitFragmentShader>(
+      MakePipelineVariants<UnskinnedVertexShader, UnlitFragmentShader>(
           *context_);
 
   {
