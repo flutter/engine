@@ -16,6 +16,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterFakeKeyEvents.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
 FLUTTER_ASSERT_ARC
@@ -134,6 +135,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
 - (UIView*)keyboardAnimationView;
+- (KeyboardSpringCurve*)keyboardSpringCurve;
 - (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
@@ -206,6 +208,43 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
       [[viewControllerMock keyboardAnimationView].layer animationForKey:@"position"];
 
   OCMVerify([viewControllerMock setupKeyboardAnimationCurveIfNeeded:keyboardAnimation]);
+}
+
+- (void)testSetupKeyboardAnimationCurveIfNeeded {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+
+  // Null check.
+  [viewControllerMock setupKeyboardAnimationCurveIfNeeded:nil];
+  KeyboardSpringCurve* keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
+  XCTAssertTrue(keyboardSpringCurve == nil);
+
+  // CAAnimation that is not CASpringAnimation.
+  CABasicAnimation* nonSpringAnimation = [CABasicAnimation animation];
+  nonSpringAnimation.duration = 1.0;
+  nonSpringAnimation.fromValue = [NSNumber numberWithFloat:0.0];
+  nonSpringAnimation.toValue = [NSNumber numberWithFloat:1.0];
+  nonSpringAnimation.keyPath = @"position";
+  [viewControllerMock setupKeyboardAnimationCurveIfNeeded:nonSpringAnimation];
+  keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
+
+  XCTAssertTrue(keyboardSpringCurve == nil);
+
+  // CASpringAnimation.
+  CASpringAnimation* springAnimation = [CASpringAnimation animation];
+  springAnimation.mass = 1.0;
+  springAnimation.stiffness = 100.0;
+  springAnimation.damping = 10.0;
+  springAnimation.keyPath = @"position";
+  springAnimation.fromValue = [NSValue valueWithCGPoint:CGPointMake(0, 0)];
+  springAnimation.toValue = [NSValue valueWithCGPoint:CGPointMake(100, 100)];
+  [viewControllerMock setupKeyboardAnimationCurveIfNeeded:springAnimation];
+  keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
+  XCTAssertTrue(keyboardSpringCurve != nil);
 }
 
 - (void)testShouldIgnoreKeyboardNotification {

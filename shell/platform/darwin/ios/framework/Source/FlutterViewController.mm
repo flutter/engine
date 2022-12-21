@@ -1572,18 +1572,19 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation {
-  // Set keyboard spring animation details (if animation is CASpringAnimation).
-  if ([keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
-    CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
-    _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc]
-        initWithStiffness:keyboardSpringAnimation.stiffness
-                  damping:keyboardSpringAnimation.damping
-                     mass:keyboardSpringAnimation.mass
-          initialVelocity:keyboardSpringAnimation.initialVelocity]);
-  } else {
-    // Reset to use fallback keyboard animation tracking.
+  // If keyboard animation is null or not a spring animation, fallback to DisplayLink tracking.
+  if (keyboardAnimation == nil || ![keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
     _keyboardSpringCurve.reset();
+    return;
   }
+
+  // Setup keyboard spring animation details for spring curve animation calculation.
+  CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
+  _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc]
+      initWithStiffness:keyboardSpringAnimation.stiffness
+                damping:keyboardSpringAnimation.damping
+                   mass:keyboardSpringAnimation.mass
+        initialVelocity:keyboardSpringAnimation.initialVelocity]);
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
