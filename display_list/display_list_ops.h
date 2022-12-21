@@ -1071,11 +1071,18 @@ struct DrawSkPictureMatrixOp final : DrawOpBase {
   static const auto kType = DisplayListOpType::kDrawSkPictureMatrix;
 
   DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
-                        const SkMatrix matrix,
+                        const SkMatrix& matrix,
                         bool render_with_attributes)
       : render_with_attributes(render_with_attributes),
         picture(std::move(picture)),
-        matrix(matrix) {}
+        matrix(matrix) {
+    // The copy constructor might copy in an unknown or a resolved
+    // type depending on whether the source Matrix had been used
+    // since its last mutating method. Calling getType here forces
+    // the matrix object into a known state so that it can be bulk
+    // compared without having to introduce a custom equals() method.
+    this->matrix.getType();
+  }
 
   const bool render_with_attributes;
   const sk_sp<SkPicture> picture;

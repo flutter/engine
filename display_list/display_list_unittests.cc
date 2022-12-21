@@ -273,12 +273,12 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
 TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      DisplayListBuilder buider1(/*prepare_rtree=*/false);
-      DisplayListBuilder buider2(/*prepare_rtree=*/true);
-      group.variants[i].invoker(buider1);
-      group.variants[i].invoker(buider2);
-      sk_sp<DisplayList> dl1 = buider1.Build();
-      sk_sp<DisplayList> dl2 = buider2.Build();
+      DisplayListBuilder builder1(/*prepare_rtree=*/false);
+      DisplayListBuilder builder2(/*prepare_rtree=*/true);
+      group.variants[i].invoker(builder1);
+      group.variants[i].invoker(builder2);
+      sk_sp<DisplayList> dl1 = builder1.Build();
+      sk_sp<DisplayList> dl2 = builder2.Build();
 
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + " )";
       ASSERT_EQ(dl1->op_count(false), dl2->op_count(false)) << desc;
@@ -286,8 +286,8 @@ TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
       ASSERT_EQ(dl1->op_count(true), dl2->op_count(true)) << desc;
       ASSERT_EQ(dl1->bytes(true), dl2->bytes(true)) << desc;
       ASSERT_EQ(dl1->bounds(), dl2->bounds()) << desc;
-      ASSERT_TRUE(dl1->Equals(*dl2)) << desc;
-      ASSERT_TRUE(dl2->Equals(*dl1)) << desc;
+      ASSERT_TRUE(DisplayListsEQ_Verbose(dl1, dl2)) << desc;
+      ASSERT_TRUE(DisplayListsEQ_Verbose(dl2, dl2)) << desc;
       ASSERT_EQ(dl1->rtree().get(), nullptr) << desc;
       ASSERT_NE(dl2->rtree().get(), nullptr) << desc;
     }
