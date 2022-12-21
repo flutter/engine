@@ -222,7 +222,7 @@ class PlatformDispatcher {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
     if (!_views.containsKey(id)) {
-      _views[id] = FlutterWindow._(id, this);
+      _views[id] = FlutterView._(id, this);
     }
     _viewConfigurations[id] = previousConfiguration.copyWith(
       window: _views[id],
