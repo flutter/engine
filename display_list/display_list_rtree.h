@@ -75,14 +75,16 @@ class DlRTree : public SkRefCnt {
   /// invalid_id if the index is not a valid leaf node index.
   int id(int result_index) const {
     return (result_index >= 0 && result_index < leaf_count_)
-        ? nodes_[result_index].id : invalid_id_;
+               ? nodes_[result_index].id
+               : invalid_id_;
   }
 
   /// Return the rectangle bounds for the indicated result of a query
   /// or an empty rect if the index is not a valid leaf node index.
   const SkRect& bounds(int result_index) const {
     return (result_index >= 0 && result_index < leaf_count_)
-        ? nodes_[result_index].bounds : empty_;
+               ? nodes_[result_index].bounds
+               : empty_;
   }
 
   /// Returns the bytes used by the object and all of its node data.
