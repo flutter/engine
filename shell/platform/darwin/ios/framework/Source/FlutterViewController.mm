@@ -67,7 +67,6 @@ typedef struct MouseState {
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
 @property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
-@property(nonatomic, assign) BOOL keyboardAnimationIsCompounding;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) CGFloat originalViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
@@ -1324,7 +1323,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)handleKeyboardNotification:(NSNotification*)notification {
-  // See https:://flutter.dev/go/ios-keyboard-calculating-inset for more details
+  // See https://flutter.dev/go/ios-keyboard-calculating-inset for more details
   // on why notifications are used and how things are calculated.
   if ([self shouldIgnoreKeyboardNotification:notification]) {
     return;
@@ -1344,15 +1343,21 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   self.targetViewInsetBottom = calculatedInset;
   NSTimeInterval duration = [info[UIKeyboardAnimationDurationUserInfoKey] doubleValue];
 
-  BOOL keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
-
   // Flag for simultaneous compounding animation calls.
-  self.keyboardAnimationIsCompounding = self.keyboardAnimationIsShowing == keyboardWillShow;
+  // This captures animation calls made while the keyboard animation is currently animating. If the
+  // new animation is in the same direction as the current animation, this flag lets the current
+  // animation continue with an updated targetViewInsetBottom instead of starting a new keyboard
+  // animation. This allows for smoother keyboard animation interpolation.
+  BOOL keyboardWillShow = beginKeyboardFrame.origin.y > keyboardFrame.origin.y;
+  BOOL keyboardAnimationIsCompounding =
+      self.keyboardAnimationIsShowing == keyboardWillShow && _keyboardAnimationVSyncClient != nil;
 
   // Mark keyboard as showing or hiding.
   self.keyboardAnimationIsShowing = keyboardWillShow;
 
-  [self startKeyBoardAnimation:duration];
+  if (!keyboardAnimationIsCompounding) {
+    [self startKeyBoardAnimation:duration];
+  }
 }
 
 - (BOOL)shouldIgnoreKeyboardNotification:(NSNotification*)notification {
@@ -1529,10 +1534,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   if ([self keyboardAnimationView].superview == nil) {
     [self.view addSubview:[self keyboardAnimationView]];
-  } else if (self.keyboardAnimationIsCompounding) {
-    // If keyboardAnimationView has superview, means current animation is running,
-    // and if keyboard animation is in the same direction as current animation, ignore it.
-    return;
   }
 
   // Remove running animation when start another animation.

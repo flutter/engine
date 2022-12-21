@@ -115,6 +115,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
+@property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
 
 - (void)createTouchRateCorrectionVSyncClientIfNeeded;
 - (void)surfaceUpdated:(BOOL)appeared;
@@ -223,7 +224,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   KeyboardSpringCurve* keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
   XCTAssertTrue(keyboardSpringCurve == nil);
 
-  // CAAnimation that is not CASpringAnimation.
+  // CAAnimation that is not a CASpringAnimation.
   CABasicAnimation* nonSpringAnimation = [CABasicAnimation animation];
   nonSpringAnimation.duration = 1.0;
   nonSpringAnimation.fromValue = [NSNumber numberWithFloat:0.0];
@@ -245,6 +246,92 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [viewControllerMock setupKeyboardAnimationCurveIfNeeded:springAnimation];
   keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
   XCTAssertTrue(keyboardSpringCurve != nil);
+}
+
+- (void)testKeyboardAnimationIsShowingAndCompounding {
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine runWithEntrypoint:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  FlutterViewController* viewControllerMock = OCMPartialMock(viewController);
+
+  BOOL isLocal = YES;
+  CGFloat screenHeight = UIScreen.mainScreen.bounds.size.height;
+
+  // Start show keyboard animation.
+  CGRect initialShowKeyboardBeginFrame = CGRectMake(0, screenHeight, 0, 0);
+  CGRect initialShowKeyboardEndFrame = CGRectMake(0, screenHeight - 250, 0, 0);
+  NSNotification* fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillHideNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(initialShowKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(initialShowKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+  viewControllerMock.targetViewInsetBottom = 100;
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation1 = [viewControllerMock keyboardAnimationIsShowing];
+  XCTAssertTrue(isShowingAnimation1 == YES);
+
+  // Start compounding show keyboard animation.
+  CGRect compoundingShowKeyboardBeginFrame = CGRectMake(0, screenHeight - 250, 0, 0);
+  CGRect compoundingShowKeyboardEndFrame = CGRectMake(0, screenHeight - 500, 0, 0);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillHideNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(compoundingShowKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(compoundingShowKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 200;
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation2 = [viewControllerMock keyboardAnimationIsShowing];
+  XCTAssertTrue(isShowingAnimation2 == YES);
+  XCTAssertTrue(isShowingAnimation1 == isShowingAnimation2);
+
+  // Start hide keyboard animation.
+  CGRect initialHideKeyboardBeginFrame = CGRectMake(0, screenHeight - 500, 0, 0);
+  CGRect initialHideKeyboardEndFrame = CGRectMake(0, screenHeight - 250, 0, 0);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillHideNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(initialHideKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(initialHideKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 100;
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation3 = [viewControllerMock keyboardAnimationIsShowing];
+  XCTAssertTrue(isShowingAnimation3 == NO);
+  XCTAssertTrue(isShowingAnimation2 != isShowingAnimation3);
+
+  // Start compounding hide keyboard animation.
+  CGRect compoundingHideKeyboardBeginFrame = CGRectMake(0, screenHeight - 250, 0, 0);
+  CGRect compoundingHideKeyboardEndFrame = CGRectMake(0, screenHeight, 0, 0);
+  fakeNotification = [NSNotification
+      notificationWithName:UIKeyboardWillHideNotification
+                    object:nil
+                  userInfo:@{
+                    @"UIKeyboardFrameBeginUserInfoKey" : @(compoundingHideKeyboardBeginFrame),
+                    @"UIKeyboardFrameEndUserInfoKey" : @(compoundingHideKeyboardEndFrame),
+                    @"UIKeyboardAnimationDurationUserInfoKey" : @(0.25),
+                    @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
+                  }];
+
+  viewControllerMock.targetViewInsetBottom = 0;
+  [viewControllerMock handleKeyboardNotification:fakeNotification];
+  BOOL isShowingAnimation4 = [viewControllerMock keyboardAnimationIsShowing];
+  XCTAssertTrue(isShowingAnimation4 == NO);
+  XCTAssertTrue(isShowingAnimation3 == isShowingAnimation4);
 }
 
 - (void)testShouldIgnoreKeyboardNotification {
@@ -272,6 +359,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                     @"UIKeyboardAnimationDurationUserInfoKey" : @0.25,
                                     @"UIKeyboardIsLocalUserInfoKey" : @(isLocal)
                                   }];
+
   BOOL shouldIgnore = [viewControllerMock shouldIgnoreKeyboardNotification:notification];
   XCTAssertTrue(shouldIgnore == NO);
 
