@@ -9,14 +9,15 @@
 namespace flutter {
 
 DlRTree::DlRTree(const SkRect rects[],
-                 int unfilteredN,
+                 int N,
                  const int ids[],
-                 bool p(int))
-    : leaf_count_(0) {
+                 bool p(int),
+                 int invalid_id)
+    : leaf_count_(0), invalid_id_(invalid_id) {
   // Count the number of rectangles we actually want to track,
   // which includes only non-empty rectangles whose optional
   // ID is not filtered by the predicate.
-  for (int i = 0; i < unfilteredN; i++) {
+  for (int i = 0; i < N; i++) {
     if (!rects[i].isEmpty()) {
       if (ids == nullptr || p(ids[i])) {
         leaf_count_++;
@@ -39,8 +40,8 @@ DlRTree::DlRTree(const SkRect rects[],
   // Now place only the tracked rectangles into the nodes array
   // in the first leaf_count_ entries.
   int node_index = 0;
-  int id = 0;
-  for (int i = 0; i < unfilteredN; i++) {
+  int id = invalid_id;
+  for (int i = 0; i < N; i++) {
     if (!rects[i].isEmpty()) {
       if (ids == nullptr || p(id = ids[i])) {
         Node& node = nodes_[node_index++];
@@ -51,8 +52,14 @@ DlRTree::DlRTree(const SkRect rects[],
   }
   FML_DCHECK(node_index == leaf_count_);
 
+  // Continually process the previous level of nodes, combining them
+  // into groups of at most |kMaxChildren| sub-nodes and joining
+  // their bounds into a parent node.
+  // Each level will end up reduced by a factor of up to kMaxChildren
+  // until there is just one node left, which is the root node of
+  // the R-Tree.
   int level_start = 0;
-  n_nodes = node_index;
+  n_nodes = leaf_count_;
   while (n_nodes > 1) {
     int n_groups = (n_nodes + kMaxChildren - 1) / kMaxChildren;
     int node_count = kMaxChildren;
@@ -77,6 +84,26 @@ DlRTree::DlRTree(const SkRect rects[],
     n_nodes = n_groups;
   }
   FML_DCHECK(node_index == total);
+}
+
+void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
+  if (query.isEmpty()) {
+    return;
+  }
+  if (nodes_.size() <= 0) {
+    FML_DCHECK(leaf_count_ == 0);
+    return;
+  }
+  const Node& root = nodes_.back();
+  if (root.bounds.intersects(query)) {
+    if (nodes_.size() == 1) {
+      FML_DCHECK(leaf_count_ == 1);
+      // The root node is the only node and it is a leaf node
+      results->push_back(0);
+    } else {
+      search(root, query, results);
+    }
+  }
 }
 
 std::list<SkRect> DlRTree::searchNonOverlappingDrawnRects(

@@ -428,7 +428,6 @@ struct RestoreOp final : DLOp {
     if (info.save_was_needed) {
       ctx.dispatcher.restore();
     }
-    FML_DCHECK(info.previous_restore_index > ctx.next_render_index);
     ctx.next_restore_index = info.previous_restore_index;
     ctx.save_infos.pop_back();
   }

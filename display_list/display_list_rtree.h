@@ -38,72 +38,85 @@ class DlRTree : public SkRefCnt {
   /// Construct an R-Tree from the list of rectangles respecting the
   /// order in which they appear in the list. An optional array of
   /// IDs can be provided to tag each rectangle with information needed
-  /// by the caller.
+  /// by the caller as well as an optional predicate that can filter
+  /// out rectangles with IDs that should not be stored in the R-Tree.
+  ///
+  /// If an array of IDs is not specified then all leaf nodes will be
+  /// represented by the |invalid_id| (which defaults to -1).
+  ///
+  /// Invallid rects that are empty or contain a NaN value will not be
+  /// stored in the R-Tree. And, if a |predicate| function is provided,
+  /// that function will be called to query if the rectangle associated
+  /// with the ID should be included.
+  ///
+  /// Duplicate rectangles and IDs are allowed and not processed in any
+  /// way except to eliminate invalid rectangles and IDs that are rejected
+  /// by the optional predicate function.
   DlRTree(
       const SkRect rects[],
-      int unfilteredN,
+      int N,
       const int ids[] = nullptr,
-      bool p(int) = [](int) { return true; });
+      bool predicate(int id) = [](int) { return true; },
+      int invalid_id = -1);
 
-  /// Search the rectangles and return a vector of result indices for
-  /// rectangles that intersect the query. Note that the indices are
-  /// internal indices of the stored data and not the index of the
-  /// rectangles or ids in the constructor. The indices will be stored
-  /// in the results vector according to the order in which the rectangles
-  /// were supplied in the constructor, even though the actual numeric
-  /// values may not match.
-  void search(const SkRect& query, std::vector<int>* results) const {
-    if (query.isEmpty()) {
-      return;
-    }
-    if (nodes_.size() <= 0) {
-      return;
-    }
-    const Node& root = nodes_.back();
-    if (root.bounds.intersects(query)) {
-      if (nodes_.size() == 1) {
-        // The root node is the only node and it is a leaf node
-        results->push_back(0);
-      } else {
-        search(root, query, results);
-      }
-    }
-  }
+  /// Search the rectangles and return a vector of leaf node indices for
+  /// rectangles that intersect the query.
+  ///
+  /// Note that the indices are internal indices of the stored data
+  /// and not the index of the rectangles or ids in the constructor.
+  /// The returned indices may not themselves be in numerical order,
+  /// but they will represent the rectangles and IDs in the order in
+  /// which they were passed into the constructor. The actual rectangle
+  /// and ID associated with each index can be retreived using the
+  /// |DlRTree::id| and |DlRTree::bouds| methods.
+  void search(const SkRect& query, std::vector<int>* results) const;
 
-  /// Return the ID for the indicated result of a query
+  /// Return the ID for the indicated result of a query or
+  /// invalid_id if the index is not a valid leaf node index.
   int id(int result_index) const {
-    FML_DCHECK(result_index < leaf_count_);
-    return nodes_[result_index].id;
+    return (result_index >= 0 && result_index < leaf_count_)
+        ? nodes_[result_index].id : invalid_id_;
   }
 
   /// Return the rectangle bounds for the indicated result of a query
+  /// or an empty rect if the index is not a valid leaf node index.
   const SkRect& bounds(int result_index) const {
-    FML_DCHECK(result_index < leaf_count_);
-    return nodes_[result_index].bounds;
+    return (result_index >= 0 && result_index < leaf_count_)
+        ? nodes_[result_index].bounds : empty_;
   }
 
-  size_t bytesUsed() const {
+  /// Returns the bytes used by the object and all of its node data.
+  size_t bytes_used() const {
     return sizeof(DlRTree) + sizeof(Node) * nodes_.size();
   }
 
-  // Finds the rects in the tree that represent drawing operations and intersect
-  // with the query rect.
-  //
-  // When two rects intersect with each other, they are joined into a single
-  // rect which also intersects with the query rect. In other words, the bounds
-  // of each rect in the result list are mutually exclusive.
+  /// Returns the number of leaf nodes corresponding to non-empty
+  /// rectangles that were passed in the constructor and not filtered
+  /// out by the predicate.
+  int leaf_count() const { return leaf_count_; }
+
+  /// Return the total number of nodes used in the R-Tree, both leaf
+  /// and internal consolidation nodes.
+  int node_count() const { return nodes_.size(); }
+
+  /// Finds the rects in the tree that intersect with the query rect.
+  ///
+  /// When two matching query results intersect with each other, they are
+  /// joined into a single rect which also intersects with the query rect.
+  /// In other words, the bounds of each rect in the result list are mutually
+  /// exclusive.
   std::list<SkRect> searchNonOverlappingDrawnRects(const SkRect& query) const;
 
-  // Insertion count (not overall node count, which may be greater).
-  // int getCount() const { return all_ops_count_; }
-
  private:
+  static constexpr SkRect empty_ = SkRect::MakeEmpty();
+
   void search(const Node& parent,
               const SkRect& query,
               std::vector<int>* results) const;
 
   std::vector<Node> nodes_;
   int leaf_count_;
+  int invalid_id_;
 };
 
 }  // namespace flutter
