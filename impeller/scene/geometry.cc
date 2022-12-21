@@ -15,8 +15,7 @@
 #include "impeller/renderer/vertex_buffer.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
-#include "impeller/scene/shaders/geometry.vert.h"
-#include "third_party/flatbuffers/include/flatbuffers/vector.h"
+#include "impeller/scene/shaders/unskinned.vert.h"
 
 namespace impeller {
 namespace scene {
@@ -53,7 +52,17 @@ std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFlatbuffer(
       break;
   }
 
-  const size_t vertices_bytes = mesh.vertices()->size() * sizeof(fb::Vertex);
+  if (mesh.vertices_type() == fb::VertexBuffer::SkinnedVertexBuffer) {
+    VALIDATION_LOG << "Skinned meshes not yet supported.";
+    return nullptr;
+  }
+  if (mesh.vertices_type() != fb::VertexBuffer::UnskinnedVertexBuffer) {
+    VALIDATION_LOG << "Invalid vertex buffer type.";
+    return nullptr;
+  }
+
+  const auto* vertices = mesh.vertices_as_UnskinnedVertexBuffer()->vertices();
+  const size_t vertices_bytes = vertices->size() * sizeof(fb::Vertex);
   const size_t indices_bytes = mesh.indices()->data()->size();
   if (vertices_bytes == 0 || indices_bytes == 0) {
     return nullptr;
@@ -67,7 +76,7 @@ std::shared_ptr<VertexBufferGeometry> Geometry::MakeFromFlatbuffer(
   buffer->SetLabel("Mesh vertices+indices");
 
   const uint8_t* vertices_start =
-      reinterpret_cast<const uint8_t*>(mesh.vertices()->Get(0));
+      reinterpret_cast<const uint8_t*>(vertices->Get(0));
   const uint8_t* indices_start =
       reinterpret_cast<const uint8_t*>(mesh.indices()->data()->Data());
 
@@ -101,8 +110,14 @@ void CuboidGeometry::SetSize(Vector3 size) {
   size_ = size;
 }
 
+// |Geometry|
+GeometryType CuboidGeometry::GetGeometryType() const {
+  return GeometryType::kUnskinned;
+}
+
+// |Geometry|
 VertexBuffer CuboidGeometry::GetVertexBuffer(Allocator& allocator) const {
-  VertexBufferBuilder<GeometryVertexShader::PerVertexData, uint16_t> builder;
+  VertexBufferBuilder<UnskinnedVertexShader::PerVertexData, uint16_t> builder;
   // Layout: position, normal, tangent, uv
   builder.AddVertices({
       // Front.
@@ -122,6 +137,19 @@ VertexBuffer CuboidGeometry::GetVertexBuffer(Allocator& allocator) const {
   return builder.CreateVertexBuffer(allocator);
 }
 
+// |Geometry|
+void CuboidGeometry::BindToCommand(const SceneContext& scene_context,
+                                   HostBuffer& buffer,
+                                   const Matrix& transform,
+                                   Command& command) const {
+  command.BindVertices(
+      GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
+
+  UnskinnedVertexShader::VertInfo info;
+  info.mvp = transform;
+  UnskinnedVertexShader::BindVertInfo(command, buffer.EmplaceUniform(info));
+}
+
 //------------------------------------------------------------------------------
 /// VertexBufferGeometry
 ///
@@ -134,8 +162,27 @@ void VertexBufferGeometry::SetVertexBuffer(VertexBuffer vertex_buffer) {
   vertex_buffer_ = std::move(vertex_buffer);
 }
 
+// |Geometry|
+GeometryType VertexBufferGeometry::GetGeometryType() const {
+  return GeometryType::kUnskinned;
+}
+
+// |Geometry|
 VertexBuffer VertexBufferGeometry::GetVertexBuffer(Allocator& allocator) const {
   return vertex_buffer_;
+}
+
+// |Geometry|
+void VertexBufferGeometry::BindToCommand(const SceneContext& scene_context,
+                                         HostBuffer& buffer,
+                                         const Matrix& transform,
+                                         Command& command) const {
+  command.BindVertices(
+      GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
+
+  UnskinnedVertexShader::VertInfo info;
+  info.mvp = transform;
+  UnskinnedVertexShader::BindVertInfo(command, buffer.EmplaceUniform(info));
 }
 
 }  // namespace scene
