@@ -4,6 +4,7 @@
 
 import 'dart:async';
 
+import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart' show buildMode, registerHotRestartListener, renderer;
@@ -19,6 +20,15 @@ import 'semantics.dart';
 import 'text_editing/text_editing.dart';
 import 'util.dart';
 import 'window.dart';
+
+/// This is state persistent across hot restarts that indicates what
+/// to clear.  Delay removal of old visible state to make the
+/// transition appear smooth.
+@JS('window.__flutterState')
+external List<DomElement?>? get hotRestartStore;
+
+@JS('window.__flutterState')
+external set hotRestartStore(List<DomElement?>? nodes);
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
@@ -97,10 +107,6 @@ class FlutterViewEmbedder {
   DomElement? get sceneElement => _sceneElement;
   DomElement? _sceneElement;
 
-  /// This is state persistent across hot restarts that indicates what
-  /// to clear.  Delay removal of old visible state to make the
-  /// transition appear smooth.
-  static const String _staleHotRestartStore = '__flutter_state';
   List<DomElement?>? _staleHotRestartState;
 
   /// Creates a container for DOM elements that need to be cleaned up between
@@ -109,11 +115,10 @@ class FlutterViewEmbedder {
   /// If a contains already exists, reuses the existing one.
   void _setupHotRestart() {
     // This persists across hot restarts to clear stale DOM.
-    _staleHotRestartState = getJsProperty<List<DomElement?>?>(domWindow, _staleHotRestartStore);
+    _staleHotRestartState = hotRestartStore;
     if (_staleHotRestartState == null) {
       _staleHotRestartState = <DomElement?>[];
-      setJsProperty(
-          domWindow, _staleHotRestartStore, _staleHotRestartState);
+      hotRestartStore = _staleHotRestartState;
     }
   }
 

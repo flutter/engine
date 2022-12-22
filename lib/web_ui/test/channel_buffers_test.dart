@@ -275,7 +275,7 @@ void testMain() {
       '-9',
     ]);
   }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
-  
+
   test('ChannelBuffers.clearListener', () async {
     final List<String> log = <String>[];
     final ui.ChannelBuffers buffers = ui.ChannelBuffers();
