@@ -15,6 +15,27 @@
 
 namespace flutter {
 
+// Structure holding the information necessary to dispatch and
+// potentially cull the DLOps during playback.
+//
+// Generally drawing ops will execute as long as |cur_index|
+// is at or after |next_render_index|, so setting the latter
+// to 0 will render all primitives and setting it to MAX_INT
+// will skip all remaining rendering primitives.
+//
+// Save and saveLayer ops will execute as long as the next
+// rendering index is before their closing restore index.
+// They will also store their own restore index into the
+// |next_restore_index| field for use by clip and transform ops.
+//
+// Clip and transform ops will only execute if the next
+// render index is before the next restore index. Otherwise
+// their modified state will not be used before it gets
+// restored.
+//
+// Attribute ops always execute as they are too numerous and
+// cheap to deal with a complicated "lifetime" tracking to
+// determine if they will be used.
 struct DispatchContext {
   Dispatcher& dispatcher;
 

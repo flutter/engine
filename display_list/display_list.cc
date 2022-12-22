@@ -67,6 +67,11 @@ class NopCuller : public Culler {
   static NopCuller instance;
 
   bool init(DispatchContext& context) override {
+    // Setting next_render_index to 0 means that
+    // all rendering ops will be at or after that
+    // index so they will execute and all restore
+    // indices will be after it as well so all
+    // clip and transform operations will execute.
     context.next_render_index = 0;
     return true;
   }
@@ -83,6 +88,16 @@ class VectorCuller : public Culler {
       context.next_render_index = rtree_->id(*cur_++);
       return true;
     } else {
+      // Setting next_render_index to MAX_INT means that
+      // all rendering ops will be "before" that index and
+      // they will skip themselves and all clip and transform
+      // ops will see that the next render index is not
+      // before the next restore index (even if both are MAX_INT)
+      // and so they will also not execute.
+      // None of this really matters because returning false
+      // here should cause the Dispatch operation to abort,
+      // but this value is conceptually correct if that short
+      // circuit optimization isn't used.
       context.next_render_index = std::numeric_limits<int>::max();
       return false;
     }
@@ -95,6 +110,12 @@ class VectorCuller : public Culler {
           // It should be rare that we have duplicate indices
           // but if we do, then having a while loop is a cheap
           // insurance for those cases.
+          // The main cause of duplicate indices is when a
+          // DrawDisplayListOp was added to this DisplayList and
+          // both are computing an R-Tree, in which case the
+          // builder method will forward all of the child
+          // DisplayList's rects to this R-Tree with the same
+          // op_index.
           return;
         }
       }
@@ -140,9 +161,8 @@ void DisplayList::Dispatch(Dispatcher& dispatcher,
                            Culler& culler) const {
   DispatchContext context = {
       .dispatcher = dispatcher,
-
       .cur_index = 0,
-
+      // next_render_index will be initialized by culler.init()
       .next_restore_index = std::numeric_limits<int>::max(),
   };
   if (!culler.init(context)) {
