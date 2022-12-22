@@ -1605,10 +1605,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
-    CGFloat newY;
     if ([flutterViewController keyboardSpringCurve] == nil) {
-      newY =
-          flutterViewController.get().keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+      if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
+        flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+            flutterViewController.get()
+                .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
+        [flutterViewController updateViewportMetrics];
+      }
     } else {
       double start = flutterViewController.get().originalViewInsetBottom;
       double end = flutterViewController.get().targetViewInsetBottom;
@@ -1616,11 +1619,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                    flutterViewController.get().keyboardAnimationStartTime;
       double keyboardAnimationStop =
           [[flutterViewController keyboardSpringCurve] curveFunc:timeElapsed.ToSecondsF()];
-      newY = start + (end - start) * keyboardAnimationStop;
+      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
+          start + (end - start) * keyboardAnimationStop;
+      [flutterViewController updateViewportMetrics];
     }
-
-    flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = newY;
-    [flutterViewController updateViewportMetrics];
   };
   flutter::Shell& shell = [_engine.get() shell];
   NSAssert(_keyboardAnimationVSyncClient == nil,
