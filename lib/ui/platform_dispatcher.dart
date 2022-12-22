@@ -1309,7 +1309,7 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  }) : assert(!(window != null && view != null)),
+  }) : assert(window == null || view == null),
     _view = view ?? window;
 
   /// Copy this configuration with some fields replaced.
