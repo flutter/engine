@@ -138,10 +138,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current list of windows,
   @override
-  Iterable<ui.FlutterView> get views => _views.values;
-  final Map<Object, ui.FlutterView> _views = <Object, ui.FlutterView>{};
-  ui.FlutterView? getViewById(Object id) => _views[id];
-  void addView(Object id, ui.FlutterView view) => _views[id] = view;
+  Iterable<ui.FlutterView> get views => viewData.values;
+  final Map<Object, ui.FlutterView> viewData = <Object, ui.FlutterView>{};
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
@@ -482,7 +480,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(a-wallen): As multi-window support expands, the pop call
             // will need to include the window ID. Right now only one window is
             // supported.
-            (_views[0]! as EngineFlutterWindow)
+            (viewData[0]! as EngineFlutterWindow)
                 .browserHistory
                 .exit()
                 .then((_) {
@@ -572,7 +570,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the window ID. Right now only one window is
         // supported.
-        (_views[0]! as EngineFlutterWindow)
+        (viewData[0]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
             .then((bool handled) {
           if (handled) {
@@ -1161,7 +1159,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String get defaultRouteName {
     return _defaultRouteName ??=
-        (_views[0]! as EngineFlutterWindow).browserHistory.currentPath;
+        (viewData[0]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
