@@ -43,11 +43,11 @@ set customUrlStrategy(UrlStrategy? strategy) {
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
-  EngineFlutterWindow(this._viewId, this.platformDispatcher) {
+  EngineFlutterWindow(this.viewId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.viewData[_viewId] = this;
-    engineDispatcher.windowConfigurations[_viewId] = const ui.ViewConfiguration();
+    engineDispatcher.viewData[viewId] = this;
+    engineDispatcher.windowConfigurations[viewId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
@@ -203,8 +203,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   ui.ViewConfiguration get viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
-    return engineDispatcher.windowConfigurations[_viewId] ??
+    assert(engineDispatcher.windowConfigurations.containsKey(viewId));
+    return engineDispatcher.windowConfigurations[viewId] ??
         const ui.ViewConfiguration();
   }
 
