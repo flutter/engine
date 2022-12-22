@@ -249,7 +249,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
+    return '$runtimeType[view: $view, geometry: $geometry]';
   }
 }
 

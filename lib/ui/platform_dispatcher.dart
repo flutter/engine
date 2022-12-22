@@ -1349,7 +1349,7 @@ class ViewConfiguration {
   final double devicePixelRatio;
 
   /// The geometry requested for the view on the screen or within its parent
-  /// window, in logical pixels.
+  /// view, in logical pixels.
   final Rect geometry;
 
   /// Whether or not the view is currently visible on the screen.
@@ -1437,7 +1437,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
+    return '$runtimeType[view: $view, geometry: $geometry]';
   }
 }
 
@@ -1676,7 +1676,7 @@ enum AppLifecycleState {
   /// On Android, this corresponds to an app or the Flutter host view running
   /// in the foreground inactive state.  Apps transition to this state when
   /// another activity is focused, such as a split-screen app, a phone call,
-  /// a picture-in-picture app, a system dialog, or another window.
+  /// a picture-in-picture app, a system dialog, or another view.
   ///
   /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
