@@ -178,7 +178,7 @@ void testMain() {
     final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
     final ui.ViewConfiguration viewConfiguration = ui.ViewConfiguration(view: window);
     // ignore: deprecated_member_use
-    expect(viewConfiguration.window, window);
+    expect(viewConfiguration.view, window);
     // ignore: deprecated_member_use
     expect(viewConfiguration.window, viewConfiguration.view);
   });
