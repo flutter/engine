@@ -38,6 +38,11 @@ TEST(DisplayListRTree, NullRectListZeroCount) {
 }
 
 TEST(DisplayListRTree, ManySizes) {
+  // A diagonal of non-overlapping 10x10 rectangles spaced 20
+  // pixels apart.
+  // Rect 1 goes from  0 to 10
+  // Rect 2 goes from 20 to 30
+  // etc. in both dimensions
   const int kMaxN = 250;
   SkRect rects[kMaxN + 1];
   int ids[kMaxN + 1];
@@ -84,6 +89,11 @@ TEST(DisplayListRTree, ManySizes) {
 }
 
 TEST(DisplayListRTree, HugeSize) {
+  // A diagonal of non-overlapping 10x10 rectangles spaced 20
+  // pixels apart.
+  // Rect 1 goes from  0 to 10
+  // Rect 2 goes from 20 to 30
+  // etc. in both dimensions
   const int N = 10000;
   SkRect rects[N];
   int ids[N];
@@ -112,6 +122,11 @@ TEST(DisplayListRTree, HugeSize) {
 }
 
 TEST(DisplayListRTree, Grid) {
+  // Non-overlapping 10 x 10 rectangles starting at 5, 5 with
+  // 10 pixels between them.
+  // Rect 1 goes from  5 to 15
+  // Rect 2 goes from 25 to 35
+  // etc. in both dimensions
   const int ROWS = 10;
   const int COLS = 10;
   const int N = ROWS * COLS;
@@ -217,20 +232,41 @@ TEST(DisplayListRTree, Grid) {
 }
 
 TEST(DisplayListRTree, OverlappingRects) {
+  // Rectangles are centered at coordinates 15, 35, and 55 and are 15 wide
+  // This gives them 10 pixels of overlap with the rectangles on either
+  // side of them and the 10 pixels around their center coordinate are
+  // exclusive to themselves.
+  // So, horizontally and vertically, they cover the following ranges:
+  // First  row/col:  0 to 30
+  // Second row/col: 20 to 50
+  // Third  row/col: 40 to 70
+  // Coords  0 to 20 are only the first row/col
+  // Coords 20 to 30 are both first and second row/col
+  // Coords 30 to 40 are only the second row/col
+  // Coords 40 to 50 are both second and third row/col
+  // Coords 50 to 70 are only the third row/col
+  //
+  // In either dimension:
+  // 0------------------20--------30--------40--------50------------------70
+  // |         rect1               |
+  //                     |  1 & 2  |
+  //                     |            rect2            |
+  //                                         |  2 & 3  |
+  //                                         |                rect3        |
   SkRect rects[9];
   for (int r = 0; r < 3; r++) {
-    int y = r * 20 + 10;
+    int y = 15 + 20 * r;
     for (int c = 0; c < 3; c++) {
-      int x = c * 20 + 10;
+      int x = 15 + 20 * c;
       rects[r * 3 + c].setLTRB(x - 15, y - 15, x + 15, y + 15);
     }
   }
   DlRTree tree(rects, 9);
   // Tiny rects only intersecting a single source rect
   for (int r = 0; r < 3; r++) {
-    int y = r * 20 + 10;
+    int y = 15 + 20 * r;
     for (int c = 0; c < 3; c++) {
-      int x = c * 20 + 10;
+      int x = 15 + 20 * c;
       auto query = SkRect::MakeLTRB(x - 1, y - 1, x + 1, y + 1);
       auto list = tree.searchAndConsolidateRects(query);
       EXPECT_EQ(list.size(), 1u);
@@ -239,8 +275,9 @@ TEST(DisplayListRTree, OverlappingRects) {
   }
   // Wide rects intersecting 3 source rects horizontally
   for (int r = 0; r < 3; r++) {
-    int y = r * 20 + 10;
-    int x = 30;
+    int c = 1;
+    int y = 15 + 20 * r;
+    int x = 15 + 20 * c;
     auto query = SkRect::MakeLTRB(x - 6, y - 1, x + 6, y + 1);
     auto list = tree.searchAndConsolidateRects(query);
     EXPECT_EQ(list.size(), 1u);
@@ -248,18 +285,19 @@ TEST(DisplayListRTree, OverlappingRects) {
   }
   // Tall rects intersecting 3 source rects vertically
   for (int c = 0; c < 3; c++) {
-    int x = c * 20 + 10;
-    int y = 30;
+    int r = 1;
+    int x = 15 + 20 * c;
+    int y = 15 + 20 * r;
     auto query = SkRect::MakeLTRB(x - 1, y - 6, x + 1, y + 6);
     auto list = tree.searchAndConsolidateRects(query);
     EXPECT_EQ(list.size(), 1u);
     EXPECT_EQ(list.front(), SkRect::MakeLTRB(x - 15, y - 35, x + 15, y + 35));
   }
   // Finally intersecting all 9 rects
-  auto query = SkRect::MakeLTRB(24, 24, 36, 36);
+  auto query = SkRect::MakeLTRB(35 - 6, 35 - 6, 35 + 6, 35 + 6);
   auto list = tree.searchAndConsolidateRects(query);
   EXPECT_EQ(list.size(), 1u);
-  EXPECT_EQ(list.front(), SkRect::MakeLTRB(-5, -5, 65, 65));
+  EXPECT_EQ(list.front(), SkRect::MakeLTRB(0, 0, 70, 70));
 }
 
 }  // namespace testing
