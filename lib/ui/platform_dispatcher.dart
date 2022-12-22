@@ -1291,6 +1291,10 @@ class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
   const ViewConfiguration({
     this.view,
+    @Deprecated('''
+      Renaming window to view as the class `FlutterWindow` has been deprecated.
+    ''')
+    this.window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -1305,6 +1309,7 @@ class ViewConfiguration {
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
     FlutterView? view,
+    FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
@@ -1317,6 +1322,7 @@ class ViewConfiguration {
   }) {
     return ViewConfiguration(
       view: view ?? this.view,
+      window: window ?? this.window,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1333,6 +1339,10 @@ class ViewConfiguration {
   /// relative to.
   ///
   /// If null, then this configuration represents a top level view itself.
+  @Deprecated('''
+    Renaming window to view as the class `FlutterWindow` has been deprecated.
+  ''')
+  final FlutterView? window;
   final FlutterView? view;
 
   /// The pixel density of the output surface.

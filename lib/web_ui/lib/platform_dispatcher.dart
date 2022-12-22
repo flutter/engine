@@ -191,6 +191,10 @@ class PlatformConfiguration {
 class ViewConfiguration {
   const ViewConfiguration({
     this.view,
+    @Deprecated('''
+      Renaming window to view as the class `FlutterWindow` has been deprecated.
+    ''')
+    this.window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -228,6 +232,10 @@ class ViewConfiguration {
     );
   }
 
+  @Deprecated('''
+    Renaming window to view as the class `FlutterWindow` has been deprecated.
+  ''')
+  final FlutterView? window;
   final FlutterView? view;
   final double devicePixelRatio;
   final Rect geometry;
