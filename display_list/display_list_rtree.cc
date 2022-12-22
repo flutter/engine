@@ -14,6 +14,12 @@ DlRTree::DlRTree(const SkRect rects[],
                  bool p(int),
                  int invalid_id)
     : leaf_count_(0), invalid_id_(invalid_id) {
+  if (N <= 0) {
+    FML_DCHECK(N >= 0);
+    return;
+  }
+  FML_DCHECK(rects != nullptr);
+
   // Count the number of rectangles we actually want to track,
   // which includes only non-empty rectangles whose optional
   // ID is not filtered by the predicate.
@@ -133,6 +139,7 @@ DlRTree::DlRTree(const SkRect rects[],
 }
 
 void DlRTree::search(const SkRect& query, std::vector<int>* results) const {
+  FML_DCHECK(results != nullptr);
   if (query.isEmpty()) {
     return;
   }
