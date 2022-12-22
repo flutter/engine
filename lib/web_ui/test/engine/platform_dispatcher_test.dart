@@ -186,7 +186,9 @@ void testMain() {
   test('Initialize a ViewConfiguration with a window', () {
     final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
     // ignore: deprecated_member_use
-    ui.ViewConfiguration(window: window);
+    final ui.ViewConfiguration configuration = ui.ViewConfiguration(window: window);
+    // ignore: deprecated_member_use
+    expect(window, configuration.window);
   });
 
   test("copyWith() on a ViewConfiguration asserts that both a window aren't provided", () {
