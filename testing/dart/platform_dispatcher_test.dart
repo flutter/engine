@@ -26,6 +26,12 @@ void main() {
     expect(viewConfiguration.window, viewConfiguration.view);
   });
 
+  test('Initialize a ViewConfiguration with a window', () {
+    final FlutterView view = PlatformDispatcher.instance.views.first;
+    // ignore: deprecated_member_use
+    ViewConfiguration(window: view);
+  });
+
   test("copyWith() on a ViewConfiguration asserts that both a window aren't provided", () {
     final FlutterView view = PlatformDispatcher.instance.views.first;
     expectAssertion(() {
