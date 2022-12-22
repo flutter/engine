@@ -35,10 +35,10 @@ DlRTree::DlRTree(const SkRect rects[],
 
   // Count the total number of nodes (leaf and internal) up front
   // so we can resize the vector just once.
-  int total_node_count = leaf_count;
-  int gen_count = leaf_count;
+  uint32_t total_node_count = leaf_count;
+  uint32_t gen_count = leaf_count;
   while (gen_count > 1) {
-    int family_count = (gen_count + kMaxChildren - 1) / kMaxChildren;
+    uint32_t family_count = (gen_count + kMaxChildren - 1u) / kMaxChildren;
     total_node_count += family_count;
     gen_count = family_count;
   }
@@ -85,12 +85,12 @@ DlRTree::DlRTree(const SkRect rects[],
   // Each generation will end up reduced by a factor of up to kMaxChildren
   // until there is just one node left, which is the root node of
   // the R-Tree.
-  int gen_start = 0;
+  uint32_t gen_start = 0;
   gen_count = leaf_count;
   while (gen_count > 1) {
-    const int gen_end = gen_start + gen_count;
+    uint32_t gen_end = gen_start + gen_count;
 
-    const int family_count = (gen_count + kMaxChildren - 1) / kMaxChildren;
+    uint32_t family_count = (gen_count + kMaxChildren - 1u) / kMaxChildren;
     FML_DCHECK(gen_end + family_count <= total_node_count);
 
     // D here is similar to the variable in a Bresenham line algorithm where
@@ -113,8 +113,8 @@ DlRTree::DlRTree(const SkRect rects[],
     // don't care about the distribution of the extra children.
     int D = 0;
 
-    int sibling_index = gen_start;
-    int parent_index = gen_end;
+    uint32_t sibling_index = gen_start;
+    uint32_t parent_index = gen_end;
     Node* parent = nullptr;
     while (sibling_index < gen_end) {
       if ((D += family_count) > 0) {
