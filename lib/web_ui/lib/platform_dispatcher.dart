@@ -190,11 +190,11 @@ class PlatformConfiguration {
 
 class ViewConfiguration {
   const ViewConfiguration({
-    this.view,
+    FlutterView? view,
     @Deprecated('''
-      Renaming window to view as the class `FlutterWindow` has been deprecated.
+      Use the `view` property instead.
     ''')
-    this.window,
+    FlutterView? window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -204,7 +204,8 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  });
+  }) : assert(!(window != null && view != null)),
+  _view = view ?? window;
 
   ViewConfiguration copyWith({
     FlutterView? view,
@@ -221,7 +222,6 @@ class ViewConfiguration {
   }) {
     return ViewConfiguration(
       view: view ?? this.view,
-      window: window ?? this.window,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -237,8 +237,9 @@ class ViewConfiguration {
   @Deprecated('''
     Renaming window to view as the class `FlutterWindow` has been deprecated.
   ''')
-  final FlutterView? window;
-  final FlutterView? view;
+  FlutterView? get window => _view;
+  FlutterView? get view => _view;
+  final FlutterView? _view;
   final double devicePixelRatio;
   final Rect geometry;
   final bool visible;
