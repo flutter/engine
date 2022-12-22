@@ -478,7 +478,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         switch (decoded.method) {
           case 'SystemNavigator.pop':
             // TODO(a-wallen): As multi-window support expands, the pop call
-            // will need to include the window ID. Right now only one window is
+            // will need to include the view ID. Right now only one view is
             // supported.
             (viewData[0]! as EngineFlutterWindow)
                 .browserHistory
@@ -568,7 +568,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/navigation':
         // TODO(a-wallen): As multi-window support expands, the navigation call
-        // will need to include the window ID. Right now only one window is
+        // will need to include the view ID. Right now only one view is
         // supported.
         (viewData[0]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
