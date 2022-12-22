@@ -1342,10 +1342,9 @@ class ViewConfiguration {
     );
   }
 
-  /// The top level view into which the view is placed and its geometry is
-  /// relative to.
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
   ///
-  /// If null, then this configuration represents a top level view itself.
+  /// If this property is null, this [ViewConfiguration] is a top level view.
   @Deprecated('''
     Use the `view` property instead.
     This change is related to adding multi-view support in Flutter.
@@ -1353,10 +1352,9 @@ class ViewConfiguration {
   ''')
   FlutterView? get window => _view;
 
-  /// The top level view into which the view is placed and its geometry is
-  /// relative to.
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
   ///
-  /// If null, then this configuration represents a top level view itself.
+  /// If this property is null, this [ViewConfiguration] is a top level view.
   FlutterView? get view => _view;
 
   final FlutterView?  _view;
