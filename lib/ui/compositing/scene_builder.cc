@@ -24,6 +24,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/lib/ui/painting/matrix.h"
 #include "flutter/lib/ui/painting/shader.h"
+#include "flutter/lib/ui/window/platform_configuration.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -312,12 +313,20 @@ void SceneBuilder::setCheckerboardOffscreenLayers(bool checkerboard) {
   checkerboard_offscreen_layers_ = checkerboard;
 }
 
-void SceneBuilder::build(Dart_Handle scene_handle) {
+void SceneBuilder::build(Dart_Handle scene_handle,
+                         double width,
+                         double height,
+                         double displayPixelRatio,
+                         double touchSlop) {
   FML_DCHECK(layer_stack_.size() >= 1);
 
-  Scene::create(
-      scene_handle, std::move(layer_stack_[0]), rasterizer_tracing_threshold_,
-      checkerboard_raster_cache_images_, checkerboard_offscreen_layers_);
+  auto viewport_metrics =
+      ViewportMetrics(width, height, displayPixelRatio, touchSlop);
+
+  Scene::create(scene_handle, std::move(layer_stack_[0]), viewport_metrics,
+                rasterizer_tracing_threshold_,
+                checkerboard_raster_cache_images_,
+                checkerboard_offscreen_layers_);
   layer_stack_.clear();
   ClearDartWrapper();  // may delete this object.
 }

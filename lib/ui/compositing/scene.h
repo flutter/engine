@@ -10,6 +10,7 @@
 
 #include "flutter/flow/layers/layer_tree.h"
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/window/window.h"
 #include "third_party/skia/include/core/SkPicture.h"
 
 namespace flutter {
@@ -22,6 +23,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
   ~Scene() override;
   static void create(Dart_Handle scene_handle,
                      std::shared_ptr<flutter::Layer> rootLayer,
+                     flutter::ViewportMetrics viewportMetrics,
                      uint32_t rasterizerTracingThreshold,
                      bool checkerboardRasterCacheImages,
                      bool checkerboardOffscreenLayers);
@@ -41,6 +43,7 @@ class Scene : public RefCountedDartWrappable<Scene> {
  private:
   Scene(std::shared_ptr<flutter::Layer> rootLayer,
         uint32_t rasterizerTracingThreshold,
+        flutter::ViewportMetrics viewportMetrics,
         bool checkerboardRasterCacheImages,
         bool checkerboardOffscreenLayers);
 

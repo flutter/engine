@@ -27,29 +27,25 @@ IMPLEMENT_WRAPPERTYPEINFO(ui, Scene);
 
 void Scene::create(Dart_Handle scene_handle,
                    std::shared_ptr<flutter::Layer> rootLayer,
+                   flutter::ViewportMetrics viewportMetrics,
                    uint32_t rasterizerTracingThreshold,
                    bool checkerboardRasterCacheImages,
                    bool checkerboardOffscreenLayers) {
   auto scene = fml::MakeRefCounted<Scene>(
-      std::move(rootLayer), rasterizerTracingThreshold,
+      std::move(rootLayer), rasterizerTracingThreshold, viewportMetrics,
       checkerboardRasterCacheImages, checkerboardOffscreenLayers);
   scene->AssociateWithDartWrapper(scene_handle);
 }
 
 Scene::Scene(std::shared_ptr<flutter::Layer> rootLayer,
              uint32_t rasterizerTracingThreshold,
+             flutter::ViewportMetrics viewportMetrics,
              bool checkerboardRasterCacheImages,
              bool checkerboardOffscreenLayers) {
-  // Currently only supports a single window.
-  auto viewport_metrics = UIDartState::Current()
-                              ->platform_configuration()
-                              ->get_window(0)
-                              ->viewport_metrics();
-
   layer_tree_ = std::make_shared<LayerTree>(
-      SkISize::Make(viewport_metrics.physical_width,
-                    viewport_metrics.physical_height),
-      static_cast<float>(viewport_metrics.device_pixel_ratio));
+      SkISize::Make(viewportMetrics.physical_width,
+                    viewportMetrics.physical_height),
+      static_cast<float>(viewportMetrics.device_pixel_ratio));
   layer_tree_->set_root_layer(std::move(rootLayer));
   layer_tree_->set_rasterizer_tracing_threshold(rasterizerTracingThreshold);
   layer_tree_->set_checkerboard_raster_cache_images(

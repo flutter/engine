@@ -878,12 +878,16 @@ class SceneBuilder extends NativeFieldWrapperClass1 {
   ///
   /// After calling this function, the scene builder object is invalid and
   /// cannot be used further.
-  Scene build() {
+  Scene build({
+    required Rect bounds,
+    double displayPixelRatio = 1.0,
+    double touchSlop = -1.0,
+  }) {
     final Scene scene = Scene._();
-    _build(scene);
+    _build(scene, bounds.width, bounds.height, displayPixelRatio, touchSlop);
     return scene;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneBuilder::build')
-  external void _build(Scene outScene);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Double, Double, Double, Double)>('SceneBuilder::build')
+  external void _build(Scene outScene, double width, double height, double displayPixelRatio, double touchSlop);
 }
