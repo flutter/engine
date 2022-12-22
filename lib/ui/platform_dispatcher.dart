@@ -225,7 +225,7 @@ class PlatformDispatcher {
       _views[id] = FlutterView._(id, this);
     }
     _viewConfigurations[id] = previousConfiguration.copyWith(
-      window: _views[id],
+      view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: WindowPadding._(
@@ -1290,7 +1290,7 @@ class PlatformConfiguration {
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
   const ViewConfiguration({
-    this.window,
+    this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -1304,7 +1304,7 @@ class ViewConfiguration {
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
-    FlutterView? window,
+    FlutterView? view,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
@@ -1316,7 +1316,7 @@ class ViewConfiguration {
     List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
-      window: window ?? this.window,
+      view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1333,7 +1333,7 @@ class ViewConfiguration {
   /// relative to.
   ///
   /// If null, then this configuration represents a top level view itself.
-  final FlutterView? window;
+  final FlutterView? view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
