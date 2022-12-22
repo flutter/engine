@@ -1316,6 +1316,11 @@ class ViewConfiguration {
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
     FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
     FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,

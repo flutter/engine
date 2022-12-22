@@ -52,7 +52,7 @@ part of dart.ui;
 /// that in the [padding], which is always safe to use for such
 /// calculations.
 class FlutterView {
-  FlutterView._(this._viewId, this.platformDispatcher);
+  FlutterView._(this.viewId, this.platformDispatcher);
 
   /// The opaque ID for this view.
   final Object viewId;
@@ -63,8 +63,8 @@ class FlutterView {
 
   /// The configuration of this view.
   ViewConfiguration get viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(_viewId));
-    return platformDispatcher._viewConfigurations[_viewId]!;
+    assert(platformDispatcher._viewConfigurations.containsKey(viewId));
+    return platformDispatcher._viewConfigurations[viewId]!;
   }
 
   /// The number of device pixels for each logical pixel for the screen this
