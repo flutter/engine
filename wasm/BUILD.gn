@@ -6,7 +6,6 @@
 # //flutter/BUILD.gn pulls in Flutter SDK dependencies which will crash
 # when the target CPU is WASM.
 
-import("//build/toolchain/wasm.gni")
 import("//flutter/common/config.gni")
 
 # This is the default target when building when the target CPU is WASM.
