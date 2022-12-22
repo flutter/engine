@@ -1291,11 +1291,11 @@ class PlatformConfiguration {
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
   const ViewConfiguration({
-    this.view,
+    FlutterView? view,
     @Deprecated('''
       Use the `view` property instead.
     ''')
-    this.window,
+    FlutterView? window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -1305,7 +1305,8 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  }) : assert(!(window != null && view != null));
+  }) : assert(!(window != null && view != null)),
+    _view = view ?? window;
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
@@ -1323,7 +1324,6 @@ class ViewConfiguration {
   }) {
     return ViewConfiguration(
       view: view ?? this.view,
-      window: window ?? this.window,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1343,8 +1343,10 @@ class ViewConfiguration {
   @Deprecated('''
       Use the `view` property instead.
   ''')
-  final FlutterView? window;
-  final FlutterView? view;
+  FlutterView? get window => _view;
+  FlutterView? get view => _view;
+
+  final FlutterView?  _view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
