@@ -138,8 +138,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current list of windows,
   @override
-  final Map<Object, ui.FlutterView> views = <Object, ui.FlutterView>{};
-
+  Iterable<ui.FlutterView> get views => _windows.values;
+  Map<Object, ui.FlutterView> get windows => _windows;
+  final Map<Object, ui.FlutterView> _windows = <Object, ui.FlutterView>{};
   /// A map of opaque platform window identifiers to window configurations.
   ///
   /// This should be considered a protected member, only to be used by
@@ -479,7 +480,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(gspencergoog): As multi-window support expands, the pop call
             // will need to include the window ID. Right now only one window is
             // supported.
-            (views[0]! as EngineFlutterWindow)
+            (windows[0]! as EngineFlutterWindow)
                 .browserHistory
                 .exit()
                 .then((_) {
@@ -569,7 +570,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(gspencergoog): As multi-window support expands, the navigation call
         // will need to include the window ID. Right now only one window is
         // supported.
-        (views[0]! as EngineFlutterWindow)
+        (windows[0]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
             .then((bool handled) {
           if (handled) {
@@ -1158,7 +1159,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String get defaultRouteName {
     return _defaultRouteName ??=
-        (views[0]! as EngineFlutterWindow).browserHistory.currentPath;
+        (windows[0]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.

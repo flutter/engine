@@ -31,7 +31,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
 
-  Map<Object, FlutterView> get views;
+  Iterable<FlutterView> get views;
 
   VoidCallback? get onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback);

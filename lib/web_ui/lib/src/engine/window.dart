@@ -43,11 +43,11 @@ set customUrlStrategy(UrlStrategy? strategy) {
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
-  EngineFlutterWindow(this._windowId, this.platformDispatcher) {
+  EngineFlutterWindow(this._viewId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.views[_windowId] = this;
-    engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
+    engineDispatcher.windows[_viewId] = this;
+    engineDispatcher.windowConfigurations[_viewId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
@@ -58,10 +58,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     });
   }
 
-  final Object _windowId;
-
+  final Object _viewId;
   @override
-  Object get viewId => _windowId;
+  Object get viewId => _viewId;
 
   @override
   final ui.PlatformDispatcher platformDispatcher;
@@ -205,8 +204,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   ui.ViewConfiguration get viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_windowId));
-    return engineDispatcher.windowConfigurations[_windowId] ??
+    assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
+    return engineDispatcher.windowConfigurations[_viewId] ??
         const ui.ViewConfiguration();
   }
 
