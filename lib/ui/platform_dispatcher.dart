@@ -1290,8 +1290,8 @@ class PlatformConfiguration {
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
   ///
-  /// When constructing a view configuration, supply either the `view` or the
-  /// `window` property, but not both since the `view` and `window` property
+  /// When constructing a view configuration, supply either the [view] or the
+  /// [window] property, but not both since the [view] and [window] property
   /// are backed by the same instance variable.
   const ViewConfiguration({
     FlutterView? view,
