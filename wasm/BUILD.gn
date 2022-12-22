@@ -15,15 +15,3 @@ group("wasm") {
     deps = [ "//flutter/web_sdk" ]
   }
 }
-
-wasm_toolchain("canvaskit") {
-  extra_toolchain_args = {
-    skia_use_icu = true
-  }
-}
-
-wasm_toolchain("canvaskit_lite") {
-  extra_toolchain_args = {
-    skia_use_icu = false
-  }
-}
