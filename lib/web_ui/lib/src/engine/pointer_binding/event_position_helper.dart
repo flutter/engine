@@ -18,8 +18,6 @@ import '../semantics.dart' show EngineSemanticsOwner;
 ///
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
-//
-// TODO(dit): Make this understand 3D transforms in the platform view case, https://github.com/flutter/flutter/issues/117091
 ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarget) {
   // On top of a platform view
   if (event.target != actualTarget) {
@@ -30,6 +28,7 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
     return _computeOffsetForTalkbackEvent(event, actualTarget);
   }
   // Return the offsetX/Y in the normal case.
+  // (This works with 3D translations of the parent element.)
   return ui.Offset(event.offsetX, event.offsetY);
 }
 
@@ -57,6 +56,7 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
 /// Offset between PlatformView and FlutterView (xP, yP) = (x2 - x1, y2 - y1)
 ///
 /// Event offset relative to FlutterView = (offsetX + xP, offsetY + yP)
+// TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
 ui.Offset _computeOffsetOnPlatformView(DomMouseEvent event, DomElement actualTarget) {
   final DomElement target = event.target! as DomElement;
   final DomRect targetRect = target.getBoundingClientRect();
@@ -95,7 +95,7 @@ ui.Offset _computeOffsetOnPlatformView(DomMouseEvent event, DomElement actualTar
 /// compute the clientX, clientY of the actualTarget. To do that, we iterate
 /// up the offsetParent elements of actualTarget adding their offset and scroll
 /// positions. Finally, we deduct that from clientX, clientY of the event.
-
+// TODO(dit): Make this understand 3D transforms, https://github.com/flutter/flutter/issues/117091
 ui.Offset _computeOffsetForTalkbackEvent(DomMouseEvent event, DomElement actualTarget) {
   assert(EngineSemanticsOwner.instance.semanticsEnabled);
   // Use clientX/clientY as the position of the event (this is relative to
