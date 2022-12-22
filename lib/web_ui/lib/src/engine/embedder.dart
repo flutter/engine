@@ -25,10 +25,10 @@ import 'window.dart';
 /// to clear.  Delay removal of old visible state to make the
 /// transition appear smooth.
 @JS('window.__flutterState')
-external List<DomElement?>? get hotRestartStore;
+external List<Object?>? get hotRestartStore;
 
 @JS('window.__flutterState')
-external set hotRestartStore(List<DomElement?>? nodes);
+external set hotRestartStore(List<Object?>? nodes);
 
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
@@ -107,7 +107,7 @@ class FlutterViewEmbedder {
   DomElement? get sceneElement => _sceneElement;
   DomElement? _sceneElement;
 
-  List<DomElement?>? _staleHotRestartState;
+  List<Object?>? _staleHotRestartState;
 
   /// Creates a container for DOM elements that need to be cleaned up between
   /// hot restarts.
@@ -139,8 +139,10 @@ class FlutterViewEmbedder {
 
   void _clearOnHotRestart() {
     if (_staleHotRestartState!.isNotEmpty) {
-      for (final DomElement? element in _staleHotRestartState!) {
-        element?.remove();
+      for (final Object? element in _staleHotRestartState!) {
+        if (element != null && element is DomElement) {
+          element.remove();
+        }
       }
       _staleHotRestartState!.clear();
     }
