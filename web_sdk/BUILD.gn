@@ -8,6 +8,7 @@ import("//third_party/dart/build/dart/dart_action.gni")
 
 declare_args() {
   build_canvaskit = false
+  build_canvaskit_lite = false
   archive_flutter_web_sdk = true
 }
 
@@ -559,8 +560,10 @@ if (!is_fuchsia) {
            ] + web_engine_libraries
 
     if (build_canvaskit) {
-      deps +=
-          [ "//third_party/skia/modules/canvaskit(//flutter/wasm:canvaskit)" ]
+      deps += [ "//flutter/third_party/canvaskit:canvaskit" ]
+    }
+    if (build_canvaskit_lite) {
+      deps += [ "//flutter/third_party/canvaskit:canvaskit_lite" ]
     }
 
     # flutter_ddc_modules
