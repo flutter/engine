@@ -1329,7 +1329,7 @@ class ViewConfiguration {
   }) {
     assert(view == null || window == null);
     return ViewConfiguration(
-      view: view ?? this.view,
+      view: view ?? window ?? _view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
