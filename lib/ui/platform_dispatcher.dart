@@ -1298,6 +1298,8 @@ class ViewConfiguration {
     FlutterView? view,
     @Deprecated('''
       Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
     ''')
     FlutterView? window,
     this.devicePixelRatio = 1.0,
@@ -1345,7 +1347,9 @@ class ViewConfiguration {
   ///
   /// If null, then this configuration represents a top level view itself.
   @Deprecated('''
-      Use the `view` property instead.
+    Use the `view` property instead.
+    This change is related to adding multi-view support in Flutter.
+    This feature was deprecated after 3.7.0-1.2.pre.
   ''')
   FlutterView? get window => _view;
 
