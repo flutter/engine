@@ -46,7 +46,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   EngineFlutterWindow(this._windowId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.windows[_windowId] = this;
+    engineDispatcher.views[_windowId] = this;
     engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
@@ -59,6 +59,9 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   final Object _windowId;
+
+  @override
+  Object get viewId => _windowId;
 
   @override
   final ui.PlatformDispatcher platformDispatcher;
@@ -340,10 +343,13 @@ class EngineSingletonFlutterWindow extends EngineFlutterWindow {
 }
 
 /// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-class EngineFlutterWindowView extends ui.FlutterWindow {
+class EngineFlutterWindowView extends ui.FlutterView {
   EngineFlutterWindowView._(this._viewId, this.platformDispatcher);
 
   final Object _viewId;
+
+  @override
+  Object get viewId => _viewId;
 
   @override
   final ui.PlatformDispatcher platformDispatcher;

@@ -31,7 +31,7 @@ abstract class PlatformDispatcher {
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
 
-  Iterable<FlutterView> get views;
+  Map<Object, FlutterView> get views;
 
   VoidCallback? get onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback);
@@ -190,7 +190,7 @@ class PlatformConfiguration {
 
 class ViewConfiguration {
   const ViewConfiguration({
-    this.window,
+    this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -203,7 +203,7 @@ class ViewConfiguration {
   });
 
   ViewConfiguration copyWith({
-    FlutterWindow? window,
+    FlutterView? view,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
@@ -215,7 +215,7 @@ class ViewConfiguration {
     List<DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
-      window: window ?? this.window,
+      view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -228,7 +228,7 @@ class ViewConfiguration {
     );
   }
 
-  final FlutterWindow? window;
+  final FlutterView? view;
   final double devicePixelRatio;
   final Rect geometry;
   final bool visible;
