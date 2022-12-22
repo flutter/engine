@@ -7,7 +7,7 @@ import 'dart:ui';
 import 'package:litetest/litetest.dart';
 
 void main() {
-  test('ViewConfiguration asserts that both window and view are not provided', () async {
+  test('A ViewConfiguration asserts that both window and view are not provided', () {
     expectAssertion(() {
       return ViewConfiguration(
       // ignore: deprecated_member_use
@@ -17,7 +17,7 @@ void main() {
     });
   });
 
-  test("A ViewConfiguration's view and window are backed with the same property", () async {
+  test("A ViewConfiguration's view and window are backed with the same property", () {
     final FlutterView view = PlatformDispatcher.instance.views.first;
     final ViewConfiguration viewConfiguration = ViewConfiguration(view: view);
     // ignore: deprecated_member_use
@@ -26,7 +26,7 @@ void main() {
     expect(viewConfiguration.window, viewConfiguration.view);
   });
 
-  test('Calling copyWith on a ViewConfiguration with both a window and view throws an error', () async {
+  test("copyWith() on a ViewConfiguration asserts that both a window aren't provided", () {
     final FlutterView view = PlatformDispatcher.instance.views.first;
     expectAssertion(() {
       // ignore: deprecated_member_use

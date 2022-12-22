@@ -163,7 +163,7 @@ void testMain() {
     });
   });
 
-  test('ViewConfiguration asserts that both window and view are not provided', () {
+  test('A ViewConfiguration asserts that both window and view are not provided', () {
     expect(() {
       // ignore: deprecated_member_use
       final EngineFlutterWindow window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
@@ -183,7 +183,7 @@ void testMain() {
     expect(viewConfiguration.window, viewConfiguration.view);
   });
 
-  test('Calling copyWith on a ViewConfiguration with both a window and view throws an error', () {
+  test("copyWith() on a ViewConfiguration asserts that both a window aren't provided", () {
     final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
     // ignore: deprecated_member_use
     expect(() {
