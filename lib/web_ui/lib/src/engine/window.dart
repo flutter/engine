@@ -342,28 +342,6 @@ class EngineSingletonFlutterWindow extends EngineFlutterWindow {
   double? _debugDevicePixelRatio;
 }
 
-/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-class EngineFlutterWindowView extends ui.FlutterView {
-  EngineFlutterWindowView._(this._viewId, this.platformDispatcher);
-
-  final Object _viewId;
-
-  @override
-  Object get viewId => _viewId;
-
-  @override
-  final ui.PlatformDispatcher platformDispatcher;
-
-  @override
-  ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher =
-        platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
-    return engineDispatcher.windowConfigurations[_viewId] ??
-        const ui.ViewConfiguration();
-  }
-}
-
 /// The window singleton.
 ///
 /// `dart:ui` window delegates to this value. However, this value has a wider
