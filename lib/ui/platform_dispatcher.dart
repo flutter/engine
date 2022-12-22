@@ -1344,6 +1344,11 @@ class ViewConfiguration {
       Use the `view` property instead.
   ''')
   FlutterView? get window => _view;
+
+  /// The top level view into which the view is placed and its geometry is
+  /// relative to.
+  ///
+  /// If null, then this configuration represents a top level view itself.
   FlutterView? get view => _view;
 
   final FlutterView?  _view;
