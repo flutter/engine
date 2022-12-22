@@ -38,18 +38,23 @@ DisplayList::DisplayList(DisplayListStorage&& storage,
       op_count_(op_count),
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
+      unique_id_(next_unique_id()),
       bounds_(bounds),
       can_apply_group_opacity_(can_apply_group_opacity),
-      rtree_(std::move(rtree)) {
-  static std::atomic<uint32_t> next_id{1};
-  do {
-    unique_id_ = next_id.fetch_add(+1, std::memory_order_relaxed);
-  } while (unique_id_ == 0);
-}
+      rtree_(std::move(rtree)) {}
 
 DisplayList::~DisplayList() {
   uint8_t* ptr = storage_.get();
   DisposeOps(ptr, ptr + byte_count_);
+}
+
+uint32_t DisplayList::next_unique_id() {
+  static std::atomic<uint32_t> next_id{1};
+  uint32_t id;
+  do {
+    id = next_id.fetch_add(+1, std::memory_order_relaxed);
+  } while (id == 0);
+  return id;
 }
 
 class Culler {
@@ -107,7 +112,7 @@ void DisplayList::Dispatch(Dispatcher& ctx) const {
   uint8_t* ptr = storage_.get();
   Dispatch(ctx, ptr, ptr + byte_count_, NopCuller::instance);
 }
-void DisplayList::Dispatch(Dispatcher& ctx, const SkRect& cull_rect) {
+void DisplayList::Dispatch(Dispatcher& ctx, const SkRect& cull_rect) const {
   if (cull_rect.isEmpty()) {
     return;
   }
@@ -255,7 +260,8 @@ static bool CompareOps(uint8_t* ptrA,
   return true;
 }
 
-void DisplayList::RenderTo(DisplayListBuilder* builder, SkScalar opacity) {
+void DisplayList::RenderTo(DisplayListBuilder* builder,
+                           SkScalar opacity) const {
   // TODO(100983): Opacity is not respected and attributes are not reset.
   if (!builder) {
     return;
@@ -267,7 +273,7 @@ void DisplayList::RenderTo(DisplayListBuilder* builder, SkScalar opacity) {
   }
 }
 
-void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) {
+void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
   DisplayListCanvasDispatcher dispatcher(canvas, opacity);
   if (has_rtree()) {
     Dispatch(dispatcher, canvas->getLocalClipBounds());

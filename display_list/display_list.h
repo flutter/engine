@@ -247,11 +247,12 @@ class DisplayList : public SkRefCnt {
   ~DisplayList();
 
   void Dispatch(Dispatcher& ctx) const;
-  void Dispatch(Dispatcher& ctx, const SkRect& cull_rect);
+  void Dispatch(Dispatcher& ctx, const SkRect& cull_rect) const;
 
-  void RenderTo(DisplayListBuilder* builder, SkScalar opacity = SK_Scalar1);
+  void RenderTo(DisplayListBuilder* builder,
+                SkScalar opacity = SK_Scalar1) const;
 
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1);
+  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
   // SkPicture always includes nested bytes, but nested ops are
   // only included if requested. The defaults used here for these
@@ -267,10 +268,10 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() { return bounds_; }
+  const SkRect& bounds() const { return bounds_; }
 
-  bool has_rtree() { return rtree_ != nullptr; }
-  sk_sp<const DlRTree> rtree() { return rtree_; }
+  bool has_rtree() const { return rtree_ != nullptr; }
+  sk_sp<const DlRTree> rtree() const { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
@@ -278,7 +279,7 @@ class DisplayList : public SkRefCnt {
     return Equals(other.get());
   }
 
-  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
+  bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
@@ -292,18 +293,20 @@ class DisplayList : public SkRefCnt {
               bool can_apply_group_opacity,
               sk_sp<const DlRTree> rtree);
 
-  DisplayListStorage storage_;
-  size_t byte_count_;
-  unsigned int op_count_;
+  static uint32_t next_unique_id();
 
-  size_t nested_byte_count_;
-  unsigned int nested_op_count_;
+  const DisplayListStorage storage_;
+  const size_t byte_count_;
+  const unsigned int op_count_;
 
-  uint32_t unique_id_;
-  SkRect bounds_;
+  const size_t nested_byte_count_;
+  const unsigned int nested_op_count_;
 
-  bool can_apply_group_opacity_;
-  sk_sp<const DlRTree> rtree_;
+  const uint32_t unique_id_;
+  const SkRect bounds_;
+
+  const bool can_apply_group_opacity_;
+  const sk_sp<const DlRTree> rtree_;
 
   void Dispatch(Dispatcher& ctx,
                 uint8_t* ptr,
