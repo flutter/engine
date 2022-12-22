@@ -615,6 +615,18 @@ if (!is_fuchsia) {
         },
       ]
     }
+    if (build_canvaskit_lite) {
+      tmp_files += [
+        {
+          source = rebase_path("$root_out_dir/canvaskit_lite/canvaskit.js")
+          destination = "canvaskit_lite/canvaskit.js"
+        },
+        {
+          source = rebase_path("$root_out_dir/canvaskit_lite/canvaskit.wasm")
+          destination = "canvaskit_lite/canvaskit.wasm"
+        },
+      ]
+    }
     files = tmp_files
   }
 }
