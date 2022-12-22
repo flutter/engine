@@ -226,6 +226,7 @@ class PlatformDispatcher {
     }
     _viewConfigurations[id] = previousConfiguration.copyWith(
       view: _views[id],
+      window: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: WindowPadding._(
@@ -1349,7 +1350,7 @@ class ViewConfiguration {
   final double devicePixelRatio;
 
   /// The geometry requested for the view on the screen or within its parent
-  /// view, in logical pixels.
+  /// window, in logical pixels.
   final Rect geometry;
 
   /// Whether or not the view is currently visible on the screen.

@@ -208,6 +208,7 @@ class ViewConfiguration {
 
   ViewConfiguration copyWith({
     FlutterView? view,
+    FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
@@ -220,6 +221,7 @@ class ViewConfiguration {
   }) {
     return ViewConfiguration(
       view: view ?? this.view,
+      window: window ?? this.window,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
