@@ -5,8 +5,8 @@ part of dart.ui;
 
 /// A view into which a Flutter [Scene] is drawn.
 ///
-/// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of a [SingletonFlutterWindow] whenever [render] is called with a [Scene].
+/// Each [FlutterView] has its own layer tree that is shown whenever [render]
+/// is called on it with a [Scene].
 ///
 /// ## Insets and Padding
 ///
@@ -51,11 +51,6 @@ part of dart.ui;
 /// the [viewPadding] anyway, so there is no need to account for
 /// that in the [padding], which is always safe to use for such
 /// calculations.
-///
-/// See also:
-///
-///  * [FlutterView], a special case of a [FlutterView] that is represented on
-///    the platform as a separate window which can host other [FlutterView]s.
 class FlutterView {
   FlutterView._(this._viewId, this.platformDispatcher);
 
