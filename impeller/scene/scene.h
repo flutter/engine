@@ -23,6 +23,8 @@ class Scene {
 
   explicit Scene(std::shared_ptr<SceneContext> scene_context);
 
+  ~Scene();
+
   Node& GetRoot();
 
   bool Render(const RenderTarget& render_target,

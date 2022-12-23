@@ -20,6 +20,12 @@ Scene::Scene(std::shared_ptr<SceneContext> scene_context)
   root_.is_root_ = true;
 };
 
+Scene::~Scene() {
+  for (auto& child : GetRoot().GetChildren()) {
+    child->parent_ = nullptr;
+  }
+}
+
 Node& Scene::GetRoot() {
   return root_;
 }

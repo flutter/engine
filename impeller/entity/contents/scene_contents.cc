@@ -32,9 +32,16 @@ bool SceneContents::Render(const ContentContext& renderer,
   if (!node_) {
     return true;
   }
+
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {
     return true;
+  }
+
+  // This happens for CoverGeometry (DrawPaint). In this situation,
+  // Draw the scene to the full layer.
+  if (coverage.value().IsMaximum()) {
+    coverage = Rect::MakeSize(pass.GetRenderTargetSize());
   }
 
   RenderTarget subpass_target = RenderTarget::CreateOffscreenMSAA(
@@ -49,17 +56,22 @@ bool SceneContents::Render(const ContentContext& renderer,
       LoadAction::kDontCare,             // stencil_load_action
       StoreAction::kDontCare             // stencil_store_action
   );
+  if (!subpass_target.IsValid()) {
+    return false;
+  }
 
   scene::Scene scene(renderer.GetSceneContext());
   scene.GetRoot().AddChild(node_);
 
-  scene.Render(pass.GetRenderTarget(), camera_transform_);
+  if (!scene.Render(subpass_target, camera_transform_)) {
+    return false;
+  }
 
   // Render the texture to the pass.
-  TiledTextureContents final;
-  final.SetGeometry(GetGeometry());
-  final.SetTexture(subpass_target.GetRenderTargetTexture());
-  return final.Render(renderer, entity, pass);
+  TiledTextureContents contents;
+  contents.SetGeometry(GetGeometry());
+  contents.SetTexture(subpass_target.GetRenderTargetTexture());
+  return contents.Render(renderer, entity, pass);
 }
 
 }  // namespace impeller
