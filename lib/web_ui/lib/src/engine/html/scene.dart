@@ -46,9 +46,7 @@ class PersistedScene extends PersistedContainerSurface {
   @override
   void recomputeTransformAndClip() {
     // The scene clip is the size of the entire window.
-    final ui.Size screen = window.physicalSize / window.devicePixelRatio;
-    // Question: why is the above a logical size, rather than a physical size
-    // like everywhere else in the metrics?
+    final ui.Size screen = window.physicalSize;
     localClipBounds = ui.Rect.fromLTRB(0, 0, screen.width, screen.height);
     projectedClip = null;
   }
