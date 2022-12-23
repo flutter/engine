@@ -39,6 +39,7 @@
 ../../../flutter/display_list/display_list_matrix_clip_tracker_unittests.cc
 ../../../flutter/display_list/display_list_paint_unittests.cc
 ../../../flutter/display_list/display_list_path_effect_unittests.cc
+../../../flutter/display_list/display_list_rtree_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/display_list_utils_unittests.cc
 ../../../flutter/display_list/display_list_vertices_unittests.cc
@@ -343,9 +344,6 @@
 ../../../flutter/sky/tools/dist_dart_pkg.py
 ../../../flutter/sky/tools/install_framework_headers.py
 ../../../flutter/sky/tools/objcopy.py
-../../../flutter/sky/tools/roll/patch.py
-../../../flutter/sky/tools/roll/roll.py
-../../../flutter/sky/tools/roll/utils.py
 ../../../flutter/testing
 ../../../flutter/third_party/accessibility/README.md
 ../../../flutter/third_party/accessibility/ax/ax_enum_util_unittest.cc
