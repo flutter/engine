@@ -27,7 +27,7 @@ static void CopyV(void* dst, const S* src, int n, Rest&&... rest) {
 }
 
 template <typename T, typename... Args>
-void* DisplayListBuilder::Push(size_t pod, int render_op_inc, Args&&... args) {
+void* DisplayListBuilder::Push(size_t pod, int op_inc, Args&&... args) {
   size_t size = SkAlignPtr(sizeof(T) + pod);
   FML_DCHECK(size < (1 << 24));
   if (used_ + size > allocated_) {
@@ -45,8 +45,7 @@ void* DisplayListBuilder::Push(size_t pod, int render_op_inc, Args&&... args) {
   new (op) T{std::forward<Args>(args)...};
   op->type = T::kType;
   op->size = size;
-  render_op_count_ += render_op_inc;
-  op_index_++;
+  op_count_ += op_inc;
   return op + 1;
 }
 
@@ -55,10 +54,10 @@ sk_sp<DisplayList> DisplayListBuilder::Build() {
     restore();
   }
   size_t bytes = used_;
-  int count = render_op_count_;
+  int count = op_count_;
   size_t nested_bytes = nested_bytes_;
   int nested_count = nested_op_count_;
-  used_ = allocated_ = render_op_count_ = op_index_ = 0;
+  used_ = allocated_ = op_count_ = 0;
   nested_bytes_ = nested_op_count_ = 0;
   storage_.realloc(bytes);
   bool compatible = layer_stack_.back().is_group_opacity_compatible();
@@ -434,9 +433,7 @@ void DisplayListBuilder::setAttributesFromPaint(
 
 void DisplayListBuilder::checkForDeferredSave() {
   if (current_layer_->has_deferred_save_op_) {
-    size_t save_offset_ = used_;
     Push<SaveOp>(0, 1);
-    current_layer_->save_offset_ = save_offset_;
     current_layer_->has_deferred_save_op_ = false;
   }
 }
@@ -451,10 +448,7 @@ void DisplayListBuilder::save() {
 
 void DisplayListBuilder::restore() {
   if (layer_stack_.size() > 1) {
-    SaveOpBase* op = reinterpret_cast<SaveOpBase*>(
-        storage_.get() + current_layer_->save_offset());
     if (!current_layer_->has_deferred_save_op_) {
-      op->restore_index = op_index_;
       Push<RestoreOp>(0, 1);
     }
     // Grab the current layer info before we push the restore
@@ -492,9 +486,6 @@ void DisplayListBuilder::restore() {
     }
 
     if (layer_info.has_layer()) {
-      // Layers are never deferred for now, we need to update the
-      // following code if we ever do saveLayer culling...
-      FML_DCHECK(!layer_info.has_deferred_save_op_);
       if (layer_info.is_group_opacity_compatible()) {
         // We are now going to go back and modify the matching saveLayer
         // call to add the option indicating it can distribute an opacity
@@ -508,6 +499,8 @@ void DisplayListBuilder::restore() {
         // in the DisplayList are only allowed *during* the build phase.
         // Once built, the DisplayList records must remain read only to
         // ensure consistency of rendering and |Equals()| behavior.
+        SaveLayerOp* op = reinterpret_cast<SaveLayerOp*>(
+            storage_.get() + layer_info.save_layer_offset());
         op->options = op->options.with_can_distribute_opacity();
       }
     } else {
@@ -534,11 +527,11 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
   size_t save_layer_offset = used_;
   if (backdrop) {
     bounds  //
-        ? Push<SaveLayerBackdropBoundsOp>(0, 1, options, *bounds, backdrop)
+        ? Push<SaveLayerBackdropBoundsOp>(0, 1, *bounds, options, backdrop)
         : Push<SaveLayerBackdropOp>(0, 1, options, backdrop);
   } else {
     bounds  //
-        ? Push<SaveLayerBoundsOp>(0, 1, options, *bounds)
+        ? Push<SaveLayerBoundsOp>(0, 1, *bounds, options)
         : Push<SaveLayerOp>(0, 1, options);
   }
   CheckLayerOpacityCompatibility(options.renders_with_attributes());
@@ -548,10 +541,6 @@ void DisplayListBuilder::saveLayer(const SkRect* bounds,
     // (eventual) corresponding restore is called, but rather than
     // remember this information in the LayerInfo until the restore
     // method is processed, we just mark the unbounded state up front.
-    // Another reason to accumulate the clip here rather than in
-    // restore is so that this savelayer will be tagged in the rtree
-    // with its full bounds and the right op_index so that it doesn't
-    // get culled during rendering.
     if (!paint_nops_on_transparency()) {
       // We will fill the clip of the outer layer when we restore
       AccumulateUnbounded();
@@ -1172,11 +1161,6 @@ void DisplayListBuilder::drawAtlas(const sk_sp<DlImage>& atlas,
 void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                      const SkMatrix* matrix,
                                      bool render_with_attributes) {
-  matrix  //
-      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix,
-                                    render_with_attributes)
-      : Push<DrawSkPictureOp>(0, 1, picture, render_with_attributes);
-
   // TODO(flar) cull rect really cannot be trusted in general, but it will
   // work for SkPictures generated from our own PictureRecorder or any
   // picture captured with an SkRTreeFactory or accurate bounds estimate.
@@ -1188,6 +1172,11 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
                                         ? kDrawPictureWithPaintFlags
                                         : kDrawPictureFlags;
   AccumulateOpBounds(bounds, flags);
+
+  matrix  //
+      ? Push<DrawSkPictureMatrixOp>(0, 1, picture, *matrix,
+                                    render_with_attributes)
+      : Push<DrawSkPictureOp>(0, 1, picture, render_with_attributes);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawPicture| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawPicture| call itself
@@ -1200,8 +1189,6 @@ void DisplayListBuilder::drawPicture(const sk_sp<SkPicture> picture,
 }
 void DisplayListBuilder::drawDisplayList(
     const sk_sp<DisplayList> display_list) {
-  Push<DrawDisplayListOp>(0, 1, display_list);
-
   const SkRect bounds = display_list->bounds();
   switch (accumulator()->type()) {
     case BoundsAccumulatorType::kRect:
@@ -1210,7 +1197,7 @@ void DisplayListBuilder::drawDisplayList(
     case BoundsAccumulatorType::kRTree:
       auto rtree = display_list->rtree();
       if (rtree) {
-        std::list<SkRect> rects = rtree->searchAndConsolidateRects(bounds);
+        std::list<SkRect> rects = rtree->searchNonOverlappingDrawnRects(bounds);
         for (const SkRect& rect : rects) {
           // TODO (https://github.com/flutter/flutter/issues/114919): Attributes
           // are not necessarily `kDrawDisplayListFlags`.
@@ -1221,6 +1208,7 @@ void DisplayListBuilder::drawDisplayList(
       }
       break;
   }
+  Push<DrawDisplayListOp>(0, 1, display_list);
   // The non-nested op count accumulated in the |Push| method will include
   // this call to |drawDisplayList| for non-nested op count metrics.
   // But, for nested op count metrics we want the |drawDisplayList| call itself
@@ -1234,8 +1222,8 @@ void DisplayListBuilder::drawDisplayList(
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                       SkScalar x,
                                       SkScalar y) {
-  Push<DrawTextBlobOp>(0, 1, blob, x, y);
   AccumulateOpBounds(blob->bounds().makeOffset(x, y), kDrawTextBlobFlags);
+  Push<DrawTextBlobOp>(0, 1, blob, x, y);
   CheckLayerOpacityCompatibility();
 }
 void DisplayListBuilder::drawTextBlob(const sk_sp<SkTextBlob>& blob,
@@ -1250,13 +1238,13 @@ void DisplayListBuilder::drawShadow(const SkPath& path,
                                     const SkScalar elevation,
                                     bool transparent_occluder,
                                     SkScalar dpr) {
-  transparent_occluder  //
-      ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
-      : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
-
   SkRect shadow_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
       path, elevation, dpr, getTransform());
   AccumulateOpBounds(shadow_bounds, kDrawShadowFlags);
+
+  transparent_occluder  //
+      ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
+      : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
   UpdateLayerOpacityCompatibility(false);
 }
 
@@ -1330,7 +1318,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
 }
 
 void DisplayListBuilder::AccumulateUnbounded() {
-  accumulator()->accumulate(tracker_.device_cull_rect(), op_index_ - 1);
+  accumulator()->accumulate(tracker_.device_cull_rect());
 }
 
 void DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
@@ -1344,7 +1332,7 @@ void DisplayListBuilder::AccumulateOpBounds(SkRect& bounds,
 void DisplayListBuilder::AccumulateBounds(SkRect& bounds) {
   tracker_.mapRect(&bounds);
   if (bounds.intersect(tracker_.device_cull_rect())) {
-    accumulator()->accumulate(bounds, op_index_ - 1);
+    accumulator()->accumulate(bounds);
   }
 }
 

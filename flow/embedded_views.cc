@@ -60,7 +60,7 @@ void DisplayListEmbedderViewSlice::end_recording() {
 
 std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
     const SkRect& query) const {
-  return display_list_->rtree()->searchAndConsolidateRects(query);
+  return display_list_->rtree()->searchNonOverlappingDrawnRects(query);
 }
 
 void DisplayListEmbedderViewSlice::render_into(SkCanvas* canvas) {

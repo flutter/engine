@@ -235,8 +235,6 @@ class DisplayListStorage {
   std::unique_ptr<uint8_t, FreeDeleter> ptr_;
 };
 
-class Culler;
-
 // The base class that contains a sequence of rendering operations
 // for dispatch to a Dispatcher. These objects must be instantiated
 // through an instance of DisplayListBuilder::build().
@@ -246,8 +244,10 @@ class DisplayList : public SkRefCnt {
 
   ~DisplayList();
 
-  void Dispatch(Dispatcher& ctx) const;
-  void Dispatch(Dispatcher& ctx, const SkRect& cull_rect) const;
+  void Dispatch(Dispatcher& ctx) const {
+    uint8_t* ptr = storage_.get();
+    Dispatch(ctx, ptr, ptr + byte_count_);
+  }
 
   void RenderTo(DisplayListBuilder* builder,
                 SkScalar opacity = SK_Scalar1) const;
@@ -268,10 +268,9 @@ class DisplayList : public SkRefCnt {
 
   uint32_t unique_id() const { return unique_id_; }
 
-  const SkRect& bounds() const { return bounds_; }
+  const SkRect& bounds() { return bounds_; }
 
-  bool has_rtree() const { return rtree_ != nullptr; }
-  sk_sp<const DlRTree> rtree() const { return rtree_; }
+  sk_sp<const DlRTree> rtree() { return rtree_; }
 
   bool Equals(const DisplayList* other) const;
   bool Equals(const DisplayList& other) const { return Equals(&other); }
@@ -279,7 +278,7 @@ class DisplayList : public SkRefCnt {
     return Equals(other.get());
   }
 
-  bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
+  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
@@ -293,25 +292,20 @@ class DisplayList : public SkRefCnt {
               bool can_apply_group_opacity,
               sk_sp<const DlRTree> rtree);
 
-  static uint32_t next_unique_id();
+  DisplayListStorage storage_;
+  size_t byte_count_;
+  unsigned int op_count_;
 
-  const DisplayListStorage storage_;
-  const size_t byte_count_;
-  const unsigned int op_count_;
+  size_t nested_byte_count_;
+  unsigned int nested_op_count_;
 
-  const size_t nested_byte_count_;
-  const unsigned int nested_op_count_;
+  uint32_t unique_id_;
+  SkRect bounds_;
 
-  const uint32_t unique_id_;
-  const SkRect bounds_;
+  bool can_apply_group_opacity_;
+  sk_sp<const DlRTree> rtree_;
 
-  const bool can_apply_group_opacity_;
-  const sk_sp<const DlRTree> rtree_;
-
-  void Dispatch(Dispatcher& ctx,
-                uint8_t* ptr,
-                uint8_t* end,
-                Culler& culler) const;
+  void Dispatch(Dispatcher& ctx, uint8_t* ptr, uint8_t* end) const;
 
   friend class DisplayListBuilder;
 };
