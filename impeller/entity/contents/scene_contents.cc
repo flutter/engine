@@ -50,7 +50,7 @@ bool SceneContents::Render(const ContentContext& renderer,
       "SceneContents",                   // label
       StorageMode::kDeviceTransient,     // color_storage_mode
       StorageMode::kDevicePrivate,       // color_resolve_storage_mode
-      LoadAction::kDontCare,             // color_load_action
+      LoadAction::kClear,                // color_load_action
       StoreAction::kMultisampleResolve,  // color_store_action
       StorageMode::kDeviceTransient,     // stencil_storage_mode
       LoadAction::kDontCare,             // stencil_load_action
