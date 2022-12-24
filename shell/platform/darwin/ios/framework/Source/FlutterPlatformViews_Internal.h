@@ -30,6 +30,8 @@
 
 - (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale;
 
+- (void)reset;
+
 // Adds a clip rect operation to the queue.
 //
 // The `clipSkRect` is transformed with the `matrix` before adding to the queue.
@@ -44,6 +46,20 @@
 //
 // The `path` is transformed with the `matrix` before adding to the queue.
 - (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix;
+
+@end
+
+// A pool that provides |FlutterClippingMaskView|s.
+//
+// Allocation and deallocation of |FlutterClippingMaskView| is minimized while using the pool.
+@interface FlutterClippingMaskViewPool : NSObject
+
+- (instancetype)initWithCapacity:(NSInteger)capacity;
+
+// Reuse a maskView from the pool, or allocate a new one.
+- (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
+
+- (void)recycleMaskViews;
 
 @end
 
@@ -268,6 +284,7 @@ class FlutterPlatformViewsController {
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
 
+  void ClipViewAddMaskView(UIView* clipView);
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
@@ -328,6 +345,7 @@ class FlutterPlatformViewsController {
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
   fml::scoped_nsobject<UIViewController> flutter_view_controller_;
+  fml::scoped_nsobject<FlutterClippingMaskViewPool> mask_view_pool_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
