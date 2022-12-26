@@ -54,7 +54,7 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const Entity& entity,
     RenderPass& pass) {
   auto tolerance =
-      kDefaultCurveTolerance / (entity.GetTransformation().GetMaxBasisLength());
+      kDefaultCurveTolerance / entity.GetTransformation().GetMaxBasisLength();
 
   VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
