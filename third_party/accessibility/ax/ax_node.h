@@ -120,6 +120,9 @@ class AX_EXPORT AXNode final {
   size_t GetUnignoredChildCount() const;
   AXNode* GetUnignoredChildAtIndex(size_t index) const;
   AXNode* GetUnignoredParent() const;
+  // Gets the unignored selection from the accessibility tree, meaning the
+  // selection whose endpoints are on unignored nodes. (An "ignored" node is a
+  // node that is not exposed to platform APIs: See `IsIgnored`.)
   OwnerTree::Selection GetUnignoredSelection() const;
   size_t GetUnignoredIndexInParent() const;
   size_t GetIndexInParent() const;
