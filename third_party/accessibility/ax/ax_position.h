@@ -1950,6 +1950,8 @@ class AXPosition {
           parent_affinity = ax::mojom::TextAffinity::kDownstream;
         }
 
+        // This dummy position serves to retrieve the max text offset of the
+        // anchor-node in which we want to create the parent position.
         AXPositionInstance dummy_position =
             CreateTextPosition(tree_id, parent_id, 0, parent_affinity);
         max_text_offset_in_parent = dummy_position->MaxTextOffset();
