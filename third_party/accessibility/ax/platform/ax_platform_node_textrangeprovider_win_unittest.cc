@@ -1255,7 +1255,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   EXPECT_UIA_TEXTRANGE_EQ(text_range_provider, L"not line #1");
 }
 
-// TOOD(schectman) https://github.com/flutter/flutter/issues/117012
+// TODO(schectman) https://github.com/flutter/flutter/issues/117012
 TEST_F(AXPlatformNodeTextRangeProviderTest,
        DISABLED_TestITextRangeProviderExpandToEnclosingParagraph) {
   Init(BuildAXTreeForMove());
@@ -1320,7 +1320,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   EXPECT_UIA_TEXTRANGE_EQ(text_range_provider, L"Paragraph 2");
 }
 
-// TOOD(schectman) https://github.com/flutter/flutter/issues/117012
+// TODO(schectman) https://github.com/flutter/flutter/issues/117012
 TEST_F(AXPlatformNodeTextRangeProviderTest,
        DISABLED_TestITextRangeProviderExpandToEnclosingFormat) {
   Init(BuildAXTreeForMoveByFormat());
@@ -1532,7 +1532,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-// TOOD(schectman) https://github.com/flutter/flutter/issues/117012
+// TODO(schectman) https://github.com/flutter/flutter/issues/117012
 TEST_F(AXPlatformNodeTextRangeProviderTest,
        DISABLED_TestITextRangeProviderExpandToEnclosingFormatWithEmptyObjects) {
   // This test updates the tree structure to test a specific edge case.
@@ -1663,7 +1663,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-// TOOD(schectman) Why should this be ignored?
+// TODO(schectman) Why should this be ignored?
 // https://github.com/flutter/flutter/issues/117012
 TEST_F(AXPlatformNodeTextRangeProviderTest,
        DISABLED_TestITextRangeProviderIgnoredForTextNavigation) {
