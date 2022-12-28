@@ -440,6 +440,10 @@ class AX_EXPORT AXNode final {
   // Finds and returns a pointer to ordered set containing node.
   AXNode* GetOrderedSet() const;
 
+  // If this node is exposed to the platform's accessibility layer, returns this
+  // node. Otherwise, returns the lowest ancestor that is exposed to the
+  // platform. (See `IsLeaf` and `IsIgnored` for information on what is
+  // exposed to platform APIs.)
   AXNode* GetLowestPlatformAncestor() const;
 
  private:
