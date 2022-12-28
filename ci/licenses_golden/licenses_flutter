@@ -6059,6 +6059,7 @@ ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.cc + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h + ../../../flutter/third_party/accessibility/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.cc
