@@ -6049,6 +6049,11 @@ ORIGIN: ../../../flutter/third_party/accessibility/ax/ax_offscreen_result.h + ..
 ORIGIN: ../../../flutter/third_party/accessibility/ax/ax_tree_manager.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.cc + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/ax_tree_manager_map.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.cc + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.cc + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_delegate_win.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.cc + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h + ../../../flutter/third_party/accessibility/LICENSE
@@ -6073,6 +6078,11 @@ FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_wi
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h
 FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 The Chromium Authors. All rights reserved.
