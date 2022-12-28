@@ -968,7 +968,8 @@ class MockAXPlatformNodeTextRangeProviderWin
   }
 };
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderClone) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderClone) {
   Init(BuildTextDocument({"some text"}));
 
   ComPtr<ITextRangeProvider> text_range_provider;
@@ -1829,7 +1830,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderGetText) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderGetText) {
   Init(BuildTextDocument({"some text", "more text"}));
 
   AXNode* root_node = GetRootAsAXNode();
@@ -2494,7 +2496,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                   /*expected_count*/ 0);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMove) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderMove) {
   Init(BuildAXTreeForMove());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -3084,7 +3087,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
       /*expected_count*/ -6);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderCompare) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderCompare) {
   Init(BuildTextDocument({"some text", "some text"}));
   AXNode* root_node = GetRootAsAXNode();
 
@@ -3125,7 +3129,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderCompa
   EXPECT_FALSE(result);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderSelection) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderSelection) {
   Init(BuildTextDocument({"some text"}));
 
   ComPtr<ITextRangeProvider> text_range_provider;
@@ -4796,8 +4801,9 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                                         UIA_UnderlineColorAttributeId);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest,
-       DISABLED_TestITextRangeProviderGetAttributeValueWithAncestorTextPosition) {
+TEST_F(
+    AXPlatformNodeTextRangeProviderTest,
+    DISABLED_TestITextRangeProviderGetAttributeValueWithAncestorTextPosition) {
   ui::AXTreeUpdate initial_state;
   ui::AXTreeID tree_id = ui::AXTreeID::CreateNewAXTreeID();
   initial_state.tree_data.tree_id = tree_id;
@@ -4859,7 +4865,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                               UIA_BackgroundColorAttributeId, expected_variant);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderSelect) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderSelect) {
   Init(BuildTextDocument({"some text", "more text2"}));
   AXNode* root_node = GetRootAsAXNode();
 
@@ -5095,7 +5102,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 // TODO(schectman) Find text cannot ignore case yet.
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderFindText) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_TestITextRangeProviderFindText) {
   Init(BuildTextDocument({"some text", "more text"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
@@ -7210,7 +7218,8 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_CaretAtEndOfTextFieldReadOnly) {
+TEST_F(AXPlatformNodeTextRangeProviderTest,
+       DISABLED_CaretAtEndOfTextFieldReadOnly) {
   // This test places a degenerate range at end of text field, and it should not
   // normalize to other positions, so we should expect the
   // 'UIA_IsReadOnlyAttributeId' attribute queried at this position to return
