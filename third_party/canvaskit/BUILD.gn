@@ -4,7 +4,10 @@
 
 import("//build/toolchain/wasm.gni")
 
+# This toolchain is only to be used by the canvaskit group below.
 wasm_toolchain("canvaskit") {
+  # Prevent accidental use of this toolchain.
+  assert(target_name == "canvaskit", "Only :canvaskit can use this toolchain.")
   extra_toolchain_args = {
     skia_use_icu = true
     skia_use_client_icu = false
@@ -12,10 +15,15 @@ wasm_toolchain("canvaskit") {
 }
 
 group("canvaskit") {
+  visibility = [ "//flutter/web_sdk:*" ]
   public_deps = [ "//third_party/skia/modules/canvaskit(:canvaskit)" ]
 }
 
+# This toolchain is only to be used by the canvaskit_lite group below.
 wasm_toolchain("canvaskit_lite") {
+  # Prevent accidental use of this toolchain.
+  assert(target_name == "canvaskit_lite",
+         "Only :canvaskit_lite can use this toolchain.")
   extra_toolchain_args = {
     skia_use_icu = false
     skia_use_client_icu = true
@@ -23,5 +31,6 @@ wasm_toolchain("canvaskit_lite") {
 }
 
 group("canvaskit_lite") {
+  visibility = [ "//flutter/web_sdk:*" ]
   public_deps = [ "//third_party/skia/modules/canvaskit(:canvaskit_lite)" ]
 }
