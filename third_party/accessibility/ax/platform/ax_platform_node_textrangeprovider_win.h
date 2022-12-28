@@ -1,25 +1,24 @@
-// Copyright 2019 The Chromium Authors
+// Copyright 2019 The Chromium Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
 #ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_TEXTRANGEPROVIDER_WIN_H_
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_TEXTRANGEPROVIDER_WIN_H_
 
-#include <wrl/client.h>
+#include <atlbase.h>
+#include <atlcom.h>
 
-#include <string>
-#include <tuple>
-#include <vector>
+#include <UIAutomationCore.h>
 
-#include "base/component_export.h"
-#include "ui/accessibility/ax_node_position.h"
-#include "ui/accessibility/ax_position.h"
-#include "ui/accessibility/ax_range.h"
-#include "ui/accessibility/platform/ax_platform_node_win.h"
+#include "ax/ax_node_position.h"
+#include "ax/ax_tree_observer.h"
+#include "ax/platform/ax_platform_node_delegate.h"
+#include "ax/platform/ax_platform_node_win.h"
 
 namespace ui {
-class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
-    "3071e40d-a10d-45ff-a59f-6e8e1138e2c1")) AXPlatformNodeTextRangeProviderWin
+
+class AX_EXPORT __declspec(uuid("3071e40d-a10d-45ff-a59f-6e8e1138e2c1"))
+    AXPlatformNodeTextRangeProviderWin
     : public CComObjectRootEx<CComMultiThreadModel>,
       public ITextRangeProvider {
  public:
@@ -31,13 +30,10 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
   AXPlatformNodeTextRangeProviderWin();
   ~AXPlatformNodeTextRangeProviderWin();
 
-  // Creates an instance of the class.
   static ITextRangeProvider* CreateTextRangeProvider(
       AXNodePosition::AXPositionInstance start,
       AXNodePosition::AXPositionInstance end);
 
-  // Creates an instance of the class for unit tests, where AXPlatformNodes
-  // cannot be queried automatically from endpoints.
   static ITextRangeProvider* CreateTextRangeProviderForTesting(
       AXPlatformNodeWin* owner,
       AXNodePosition::AXPositionInstance start,
@@ -106,7 +102,7 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
   static AXPositionInstance GetNextTextBoundaryPosition(
       const AXPositionInstance& position,
       ax::mojom::TextBoundary boundary_type,
-      AXMovementOptions options,
+      AXBoundaryBehavior options,
       ax::mojom::MoveDirection boundary_direction);
 
   // Prefer these *Impl methods when functionality is needed internally. We
@@ -126,7 +122,7 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
   AXPlatformNodeDelegate* GetDelegate(
       const AXPositionInstanceType* position) const;
   AXPlatformNodeDelegate* GetDelegate(const AXTreeID tree_id,
-                                      const AXNodeID node_id) const;
+                                      const AXNode::AXID node_id) const;
 
   template <typename AnchorIterator, typename ExpandMatchLambda>
   HRESULT FindAttributeRange(const TEXTATTRIBUTEID text_attribute_id,
@@ -153,10 +149,6 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
                                         const bool is_start_endpoint,
                                         const int count,
                                         int* units_moved);
-  AXPositionInstance MoveEndpointByFormat(const AXPositionInstance& endpoint,
-                                          const bool is_start_endpoint,
-                                          const int count,
-                                          int* units_moved);
   AXPositionInstance MoveEndpointByDocument(const AXPositionInstance& endpoint,
                                             const int count,
                                             int* units_moved);
@@ -262,16 +254,15 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
     void SetStart(AXPositionInstance new_start);
     void SetEnd(AXPositionInstance new_end);
 
-    void AddObserver(const AXTreeID tree_id);
-    void RemoveObserver(const AXTreeID tree_id);
+    void AddObserver(const AXPositionInstance& position);
+    void RemoveObserver(const AXPositionInstance& position);
     void OnSubtreeWillBeDeleted(AXTree* tree, AXNode* node) override;
-    void OnNodeDeleted(AXTree* tree, AXNodeID node_id) override;
-    void OnTreeManagerWillBeRemoved(AXTreeID previous_tree_id) override;
+    void OnNodeDeleted(AXTree* tree, AXNode::AXID node_id) override;
 
    private:
     struct DeletionOfInterest {
       AXTreeID tree_id;
-      AXNodeID node_id;
+      AXNode::AXID node_id;
     };
 
     void AdjustEndpointForSubtreeDeletion(AXTree* tree,
@@ -281,8 +272,8 @@ class COMPONENT_EXPORT(AX_PLATFORM) __declspec(uuid(
     AXPositionInstance start_;
     AXPositionInstance end_;
 
-    absl::optional<DeletionOfInterest> validation_necessary_for_start_;
-    absl::optional<DeletionOfInterest> validation_necessary_for_end_;
+    std::optional<DeletionOfInterest> validation_necessary_for_start_;
+    std::optional<DeletionOfInterest> validation_necessary_for_end_;
   };
   TextRangeEndpoints endpoints_;
 };
