@@ -65,12 +65,13 @@ class AXRangePhysicalPixelRectDelegate : public AXRangeRectDelegate {
       AXNode::AXID node_id,
       int start_offset,
       int end_offset,
+      ui::AXClippingBehavior clipping_behavior,
       AXOffscreenResult* offscreen_result) override {
     AXPlatformNodeDelegate* delegate = host_->GetDelegate(tree_id, node_id);
     BASE_DCHECK(delegate);
     return delegate->GetInnerTextRangeBoundsRect(
         start_offset, end_offset, ui::AXCoordinateSystem::kScreenPhysicalPixels,
-        AXClippingBehavior::kClipped, offscreen_result);
+        clipping_behavior, offscreen_result);
   }
 
   gfx::Rect GetBoundsRect(AXTreeID tree_id,
@@ -1517,14 +1518,14 @@ void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::SetStart(
   // IsNullPosition().
   if (did_tree_change && start_->kind() != AXPositionKind::NULL_POSITION &&
       start_->tree_id() != end_->tree_id()) {
-    RemoveObserver(start_);
+    RemoveObserver(start_->tree_id());
   }
 
   start_ = std::move(new_start);
 
   if (did_tree_change && !start_->IsNullPosition() &&
       start_->tree_id() != end_->tree_id()) {
-    AddObserver(start_);
+    AddObserver(start_->tree_id());
   }
 }
 
@@ -1536,33 +1537,29 @@ void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::SetEnd(
   // IsNullPosition().
   if (did_tree_change && end_->kind() != AXPositionKind::NULL_POSITION &&
       end_->tree_id() != start_->tree_id()) {
-    RemoveObserver(end_);
+    RemoveObserver(end_->tree_id());
   }
 
   end_ = std::move(new_end);
 
   if (did_tree_change && !end_->IsNullPosition() &&
       start_->tree_id() != end_->tree_id()) {
-    AddObserver(end_);
+    AddObserver(end_->tree_id());
   }
 }
 
 void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::AddObserver(
-    const AXPositionInstance& position) {
-  auto tree = AXTreeManagerMap::GetInstance()
-                  .GetManager(position->GetAnchor()->tree()->GetAXTreeID())
-                  ->GetTree();
-  if (tree)
-    tree->AddObserver(this);
+    const AXTreeID tree_id) {
+  AXTreeManager* ax_tree_manager = AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  BASE_DCHECK(ax_tree_manager);
+  ax_tree_manager->GetTree()->AddObserver(this);
 }
 
 void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::RemoveObserver(
-    const AXPositionInstance& position) {
-  auto tree = AXTreeManagerMap::GetInstance()
-                  .GetManager(position->GetAnchor()->tree()->GetAXTreeID())
-                  ->GetTree();
-  if (tree)
-    tree->RemoveObserver(this);
+    const AXTreeID tree_id) {
+  AXTreeManager* ax_tree_manager = AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  if (ax_tree_manager)
+    ax_tree_manager->GetTree()->RemoveObserver(this);
 }
 
 // Ensures that our endpoints are located on non-deleted nodes (step 1, case A
