@@ -968,7 +968,7 @@ class MockAXPlatformNodeTextRangeProviderWin
   }
 };
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderClone) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderClone) {
   Init(BuildTextDocument({"some text"}));
 
   ComPtr<ITextRangeProvider> text_range_provider;
@@ -998,7 +998,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderClone) {
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderCompareEndpoints) {
+       DISABLED_TestITextRangeProviderCompareEndpoints) {
   Init(BuildTextDocument({"some text", "more text"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
@@ -1081,7 +1081,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderExpandToEnclosingCharacter) {
+       DISABLED_TestITextRangeProviderExpandToEnclosingCharacter) {
   ui::AXTreeUpdate update = BuildTextDocument({"some text", "more text"});
   Init(update);
   AXNode* root_node = GetRootAsAXNode();
@@ -1158,7 +1158,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderExpandToEnclosingWord) {
+       DISABLED_TestITextRangeProviderExpandToEnclosingWord) {
   Init(BuildTextDocument({"some text", "definitely not text"},
                          /*build_word_boundaries_offsets*/ true));
 
@@ -1207,7 +1207,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderExpandToEnclosingLine) {
+       DISABLED_TestITextRangeProviderExpandToEnclosingLine) {
   Init(BuildTextDocument({"line #1", "maybe line #1?", "not line #1"}));
 
   ComPtr<ITextRangeProvider> text_range_provider;
@@ -1628,7 +1628,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderExpandToEnclosingDocument) {
+       DISABLED_TestITextRangeProviderExpandToEnclosingDocument) {
   Init(BuildTextDocument({"some text", "more text", "even more text"}));
 
   AXNode* root_node = GetRootAsAXNode();
@@ -1829,7 +1829,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderGetText) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderGetText) {
   Init(BuildTextDocument({"some text", "more text"}));
 
   AXNode* root_node = GetRootAsAXNode();
@@ -1880,7 +1880,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderGetText) {
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderMoveCharacter) {
+       DISABLED_TestITextRangeProviderMoveCharacter) {
   Init(BuildAXTreeForMove());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -2494,7 +2494,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                   /*expected_count*/ 0);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderMove) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderMove) {
   Init(BuildAXTreeForMove());
   AXNode* root_node = GetRootAsAXNode();
 
@@ -2505,7 +2505,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderMove) {
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderMoveEndpointByDocument) {
+       DISABLED_TestITextRangeProviderMoveEndpointByDocument) {
   Init(BuildTextDocument({"some text", "more text", "even more text"}));
   AXNode* text_node = GetRootAsAXNode()->children()[1];
 
@@ -3084,7 +3084,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
       /*expected_count*/ -6);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderCompare) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderCompare) {
   Init(BuildTextDocument({"some text", "some text"}));
   AXNode* root_node = GetRootAsAXNode();
 
@@ -3125,7 +3125,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderCompare) {
   EXPECT_FALSE(result);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderSelection) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderSelection) {
   Init(BuildTextDocument({"some text"}));
 
   ComPtr<ITextRangeProvider> text_range_provider;
@@ -3205,7 +3205,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderGetEnclosingElement) {
+       DISABLED_TestITextRangeProviderGetEnclosingElement) {
   // Set up ax tree with the following structure:
   //
   // root
@@ -3443,7 +3443,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderGetEnclosingElementRichButton) {
+       DISABLED_TestITextRangeProviderGetEnclosingElementRichButton) {
   // Set up ax tree with the following structure:
   //
   // root
@@ -3563,7 +3563,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderMoveEndpointByRange) {
+       DISABLED_TestITextRangeProviderMoveEndpointByRange) {
   Init(BuildTextDocument({"some text", "more text"}));
 
   AXNode* root_node = GetRootAsAXNode();
@@ -4718,7 +4718,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderGetAttributeValueNotSupported) {
+       DISABLED_TestITextRangeProviderGetAttributeValueNotSupported) {
   ui::AXNodeData root_data;
   root_data.id = 1;
   root_data.role = ax::mojom::Role::kRootWebArea;
@@ -4797,7 +4797,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderGetAttributeValueWithAncestorTextPosition) {
+       DISABLED_TestITextRangeProviderGetAttributeValueWithAncestorTextPosition) {
   ui::AXTreeUpdate initial_state;
   ui::AXTreeID tree_id = ui::AXTreeID::CreateNewAXTreeID();
   initial_state.tree_data.tree_id = tree_id;
@@ -4859,7 +4859,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
                               UIA_BackgroundColorAttributeId, expected_variant);
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderSelect) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderSelect) {
   Init(BuildTextDocument({"some text", "more text2"}));
   AXNode* root_node = GetRootAsAXNode();
 
@@ -5027,7 +5027,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderSelect) {
 
 // TODO(crbug.com/1124051): Remove this test once this crbug is fixed.
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderSelectListMarker) {
+       DISABLED_TestITextRangeProviderSelectListMarker) {
   ui::AXNodeData root_data;
   root_data.id = 1;
   root_data.role = ax::mojom::Role::kRootWebArea;
@@ -5095,7 +5095,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 // TODO(schectman) Find text cannot ignore case yet.
-TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestITextRangeProviderFindText) {
   Init(BuildTextDocument({"some text", "more text"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
@@ -5147,7 +5147,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       FindTextWithEmbeddedObjectCharacter) {
+       DISABLED_FindTextWithEmbeddedObjectCharacter) {
   // ++1 kRootWebArea
   // ++++2 kList
   // ++++++3 kListItem
@@ -5233,7 +5233,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderFindTextBackwards) {
+       DISABLED_TestITextRangeProviderFindTextBackwards) {
   Init(BuildTextDocument({"text", "some", "text"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
@@ -5274,7 +5274,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestITextRangeProviderFindAttribute) {
+       DISABLED_TestITextRangeProviderFindAttribute) {
   // document - visible
   //  [empty]
   //
@@ -5773,7 +5773,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, ElementNotAvailable) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_ElementNotAvailable) {
   AXNodeData root_ax_node_data;
   root_ax_node_data.id = 1;
   root_ax_node_data.role = ax::mojom::Role::kRootWebArea;
@@ -5945,7 +5945,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestNormalizeTextRangePastEndOfDocument) {
+       DISABLED_TestNormalizeTextRangePastEndOfDocument) {
   ui::AXTreeUpdate initial_state;
   ui::AXTreeID tree_id = ui::AXTreeID::CreateNewAXTreeID();
   initial_state.tree_data.tree_id = tree_id;
@@ -6010,7 +6010,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestNormalizeTextRangePastEndOfDocumentWithIgnoredNodes) {
+       DISABLED_TestNormalizeTextRangePastEndOfDocumentWithIgnoredNodes) {
   ui::AXTreeUpdate initial_state;
   ui::AXTreeID tree_id = ui::AXTreeID::CreateNewAXTreeID();
   initial_state.tree_data.tree_id = tree_id;
@@ -6079,7 +6079,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestNormalizeTextRangeInsideIgnoredNodes) {
+       DISABLED_TestNormalizeTextRangeInsideIgnoredNodes) {
   ui::AXTreeUpdate initial_state;
   ui::AXTreeID tree_id = ui::AXTreeID::CreateNewAXTreeID();
   initial_state.tree_data.tree_id = tree_id;
@@ -6164,7 +6164,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestNormalizeTextRangeSpanIgnoredNodes) {
+       DISABLED_TestNormalizeTextRangeSpanIgnoredNodes) {
   ui::AXNodeData root_data;
   root_data.id = 1;
   root_data.role = ax::mojom::Role::kRootWebArea;
@@ -6493,7 +6493,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_TestValidateStartAndEnd) {
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestReplaceStartAndEndEndpointNode) {
+       DISABLED_TestReplaceStartAndEndEndpointNode) {
   // This test updates the tree structure to ensure that the text range is still
   // valid after a text node gets replaced by another one. This case occurs
   // every time an AT's focus moves to a node whose style is affected by focus,
@@ -6651,7 +6651,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestDeleteSubtreeThatIncludesEndpoints) {
+       DISABLED_TestDeleteSubtreeThatIncludesEndpoints) {
   // This test updates the tree structure to ensure that the text range is still
   // valid after a subtree that includes the text range is deleted, resulting in
   // a change to the range.
@@ -7013,7 +7013,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestDeleteTreePositionPreviousSibling) {
+       DISABLED_TestDeleteTreePositionPreviousSibling) {
   // This test creates a degenerate range with endpoints pointing after the last
   // child of the 2 generic container. It then deletes a previous sibling and
   // ensures that we don't crash with an out of bounds index that causes null
@@ -7102,7 +7102,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest,
-       TestReplaceStartAndEndEndpointRepeatRemoval) {
+       DISABLED_TestReplaceStartAndEndEndpointRepeatRemoval) {
   // This test updates the tree structure to ensure that the text range is still
   // valid after text nodes get removed repeatedly.
   //
@@ -7210,7 +7210,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   }
 }
 
-TEST_F(AXPlatformNodeTextRangeProviderTest, CaretAtEndOfTextFieldReadOnly) {
+TEST_F(AXPlatformNodeTextRangeProviderTest, DISABLED_CaretAtEndOfTextFieldReadOnly) {
   // This test places a degenerate range at end of text field, and it should not
   // normalize to other positions, so we should expect the
   // 'UIA_IsReadOnlyAttributeId' attribute queried at this position to return

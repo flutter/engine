@@ -63,7 +63,7 @@ class AXPlatformNodeTextProviderTest : public AXPlatformNodeWinTest {
   }
 };
 
-TEST_F(AXPlatformNodeTextProviderTest, CreateDegenerateRangeFromStart) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_CreateDegenerateRangeFromStart) {
   AXNodeData text1_data;
   text1_data.id = 3;
   text1_data.role = ax::mojom::Role::kStaticText;
@@ -169,7 +169,7 @@ TEST_F(AXPlatformNodeTextProviderTest, CreateDegenerateRangeFromStart) {
   text_content.Release();
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderRangeFromChild) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderRangeFromChild) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -263,7 +263,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderRangeFromChild) {
 }
 
 TEST_F(AXPlatformNodeTextProviderTest,
-       ITextProviderRangeFromChildMultipleChildren) {
+       DISABLED_ITextProviderRangeFromChildMultipleChildren) {
   const int ROOT_ID = 1;
   const int DIALOG_ID = 2;
   const int DIALOG_LABEL_ID = 3;
@@ -361,7 +361,7 @@ TEST_F(AXPlatformNodeTextProviderTest,
   EXPECT_EQ(enclosing_element.Get(), dialog_node_raw.Get());
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, NearestTextIndexToPoint) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_NearestTextIndexToPoint) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kInlineTextBox;
@@ -419,7 +419,7 @@ TEST_F(AXPlatformNodeTextProviderTest, NearestTextIndexToPoint) {
   }
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRange) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderDocumentRange) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -555,7 +555,7 @@ TEST_F(AXPlatformNodeTextProviderTest,
   EXPECT_EQ(*GetEnd(text_range.Get()), *expected_end);
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRangeNested) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderDocumentRangeNested) {
   AXNodeData text_data;
   text_data.id = 3;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -586,7 +586,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderDocumentRangeNested) {
       text_provider->get_DocumentRange(&text_range_provider));
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderSupportedSelection) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderSupportedSelection) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -613,7 +613,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderSupportedSelection) {
   EXPECT_EQ(text_selection_mode, SupportedTextSelection_Single);
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderGetSelection) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -823,7 +823,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetSelection) {
             text_edit_provider->GetSelection(selections.Receive()));
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetActiveComposition) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderGetActiveComposition) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
@@ -883,7 +883,7 @@ TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetActiveComposition) {
   EXPECT_EQ(*GetEnd(actual_range.Get()), *expected_end);
 }
 
-TEST_F(AXPlatformNodeTextProviderTest, ITextProviderGetConversionTarget) {
+TEST_F(AXPlatformNodeTextProviderTest, DISABLED_ITextProviderGetConversionTarget) {
   AXNodeData text_data;
   text_data.id = 2;
   text_data.role = ax::mojom::Role::kStaticText;
