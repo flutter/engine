@@ -200,8 +200,11 @@ static void handle_geometry_changed(FlView* self) {
       self->engine, allocation.width * scale_factor,
       allocation.height * scale_factor, scale_factor);
 
-  fl_renderer_wait_for_frame(self->renderer, allocation.width * scale_factor,
-                             allocation.height * scale_factor);
+  if (allocation.width > 1 && allocation.height > 1 &&
+      gtk_widget_get_realized(GTK_WIDGET(self))) {
+    fl_renderer_wait_for_frame(self->renderer, allocation.width * scale_factor,
+                               allocation.height * scale_factor);
+  }
 }
 
 // Adds a widget to render in this view.
@@ -661,6 +664,8 @@ static void fl_view_realize(GtkWidget* widget) {
     g_warning("Failed to start Flutter engine: %s", error->message);
     return;
   }
+
+  handle_geometry_changed(self);
 }
 
 // Implements GtkWidget::get-preferred-width
