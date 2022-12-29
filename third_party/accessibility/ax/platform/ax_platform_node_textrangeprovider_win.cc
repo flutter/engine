@@ -438,7 +438,7 @@ static bool StringSearch(const std::u16string& search_string,
                          size_t* find_length,
                          bool ignore_case,
                          bool backwards) {
-  // TODO(schectman) Respect ignore_case
+  // TODO(schectman) Respect ignore_case/i18n.
   // https://github.com/flutter/flutter/issues/117013
   size_t match_pos;
   if (backwards) {
@@ -810,6 +810,8 @@ HRESULT AXPlatformNodeTextRangeProviderWin::MoveEndpointByUnitImpl(
       is_start_endpoint ? start()->Clone() : end()->Clone();
 
   AXPositionInstance new_position;
+  // TODO(schectman): TextUnit_Format implementation.
+  // https://github.com/flutter/flutter/issues/117792
   switch (unit) {
     case TextUnit_Character:
       new_position =
