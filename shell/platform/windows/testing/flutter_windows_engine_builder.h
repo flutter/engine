@@ -27,7 +27,8 @@ class FlutterWindowsEngineBuilder {
 
   // Prevent copying.
   FlutterWindowsEngineBuilder(FlutterWindowsEngineBuilder const&) = delete;
-  FlutterWindowsEngineBuilder& operator=(FlutterWindowsEngineBuilder const&) = delete;
+  FlutterWindowsEngineBuilder& operator=(FlutterWindowsEngineBuilder const&) =
+      delete;
 
  private:
   WindowsTestContext& context_;

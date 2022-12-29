@@ -10,10 +10,10 @@ namespace testing {
 FlutterWindowsEngineBuilder::FlutterWindowsEngineBuilder(
     WindowsTestContext& context)
     : context_(context) {
-        properties_.assets_path = context.GetAssetsPath().c_str();
-        properties_.icu_data_path = context.GetIcuDataPath().c_str();
-        properties_.aot_library_path = context.GetAotLibraryPath().c_str();
-    }
+  properties_.assets_path = context.GetAssetsPath().c_str();
+  properties_.icu_data_path = context.GetIcuDataPath().c_str();
+  properties_.aot_library_path = context.GetAotLibraryPath().c_str();
+}
 
 FlutterWindowsEngineBuilder::~FlutterWindowsEngineBuilder() = default;
 
