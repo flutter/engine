@@ -1550,14 +1550,16 @@ void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::SetEnd(
 
 void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::AddObserver(
     const AXTreeID tree_id) {
-  AXTreeManager* ax_tree_manager = AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  AXTreeManager* ax_tree_manager =
+      AXTreeManagerMap::GetInstance().GetManager(tree_id);
   BASE_DCHECK(ax_tree_manager);
   ax_tree_manager->GetTree()->AddObserver(this);
 }
 
 void AXPlatformNodeTextRangeProviderWin::TextRangeEndpoints::RemoveObserver(
     const AXTreeID tree_id) {
-  AXTreeManager* ax_tree_manager = AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  AXTreeManager* ax_tree_manager =
+      AXTreeManagerMap::GetInstance().GetManager(tree_id);
   if (ax_tree_manager)
     ax_tree_manager->GetTree()->RemoveObserver(this);
 }
