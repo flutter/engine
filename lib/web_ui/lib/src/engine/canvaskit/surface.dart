@@ -161,14 +161,31 @@ class Surface {
       return _surface!;
     }
 
-    // If the current canvas size is smaller than the requested size then create
-    // a new, larger, canvas. Then update the GR context so we can create a new
-    // SkSurface.
+
     final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
+
+    if (!_forceNewContext && previousCanvasSize != null
+      && (size.width > previousCanvasSize.width ||
+        size.height > previousCanvasSize.height)) {
+      htmlCanvas!.width = size.width;
+      htmlCanvas!.height = size.height;
+
+      _surface?.getCanvas().clear(const ui.Color(0x00000000));
+      _surface?.dispose();
+      _surface = null;
+      _addedToScene = false;
+
+      _currentCanvasPhysicalSize = size;
+      _pixelWidth = size.width.ceil();
+      _pixelHeight = size.height.ceil();
+      _updateLogicalHtmlCanvasSize();
+
+      return _surface = _createNewSurface(size);
+    }
+
     if (_forceNewContext ||
-        previousCanvasSize == null ||
-        size.width > previousCanvasSize.width ||
-        size.height > previousCanvasSize.height) {
+        previousCanvasSize == null) {
+
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
       final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
