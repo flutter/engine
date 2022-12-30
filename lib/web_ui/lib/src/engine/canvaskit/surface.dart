@@ -140,6 +140,22 @@ class Surface {
   ui.Size? _currentSurfaceSize;
   double _currentDevicePixelRatio = -1;
 
+  CkSurface createRenderTargetSurface(ui.Size size) {
+    if (_grContext == null) {
+      print('How did this even happen!');
+    }
+    final SkSurface? skSurface = canvasKit.MakeRenderTarget(
+      _grContext!,
+      size.width.ceil(),
+      size.height.ceil(),
+    );
+    if (skSurface == null) {
+      return _makeSoftwareCanvasSurface(
+          htmlCanvas!, 'Failed to initialize WebGL surface');
+    }
+    return CkSurface(skSurface, _glContext);
+  }
+
   /// Creates a <canvas> and SkSurface for the given [size].
   CkSurface createOrUpdateSurface(ui.Size size) {
     if (size.isEmpty) {

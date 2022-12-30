@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data';
-
 import 'package:ui/ui.dart' as ui;
 
 import '../profiler.dart';
@@ -102,26 +100,13 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   @override
   ui.Image toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
-    final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
-    final CkSurface ckSurface =
-      surface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkSurface ckSurface = SurfaceFactory.instance.baseSurface
+      .createRenderTargetSurface(ui.Size(width.toDouble(), height.toDouble()));
     final CkCanvas ckCanvas = ckSurface.getCanvas();
     ckCanvas.clear(const ui.Color(0x00000000));
     ckCanvas.drawPicture(this);
     final SkImage skImage = ckSurface.surface.makeImageSnapshot();
-    final SkImageInfo imageInfo = SkImageInfo(
-      alphaType: canvasKit.AlphaType.Premul,
-      colorType: canvasKit.ColorType.RGBA_8888,
-      colorSpace: SkColorSpaceSRGB,
-      width: width,
-      height: height,
-    );
-    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
-    final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
-    if (rasterImage == null) {
-      throw StateError('Unable to convert image pixels into SkImage.');
-    }
-    return CkImage(rasterImage);
+    return CkImage(skImage);
   }
 
   @override
