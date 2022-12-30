@@ -48,7 +48,7 @@ static std::shared_ptr<Texture> UnpackTextureFromFlatbuffer(
       bytes_per_component = 1;
       break;
     case fb::ComponentType::k16Bit:
-      bytes_per_component = 2;
+      // bytes_per_component = 2;
       FML_LOG(WARNING) << "16 bit textures not yet supported.";
       return nullptr;
   }
@@ -80,8 +80,8 @@ static std::shared_ptr<Texture> UnpackTextureFromFlatbuffer(
   auto image_mapping = std::make_shared<fml::NonOwnedMapping>(
       embedded->bytes()->Data(), embedded->bytes()->size());
   auto decompressed_image =
-      DecompressedImage(ISize(embedded->width(), embedded->height()),
-                        DecompressedImage::Format::kRGBA, image_mapping)
+      DecompressedImage(ISize(embedded->width(), embedded->height()), format,
+                        image_mapping)
           .ConvertToRGBA();
 
   auto texture_descriptor = TextureDescriptor{};
