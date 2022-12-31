@@ -193,7 +193,9 @@ void Node::UnpackFromFlatbuffer(
   }
 }
 
-Node::Node() : name_(SPrintF("__node%llu", kNextNodeID.fetch_add(1))){};
+Node::Node()
+    : name_(SPrintF("__node%llu",
+                    static_cast<uint64_t>(kNextNodeID.fetch_add(1)))){};
 
 Node::~Node() = default;
 
