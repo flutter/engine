@@ -4,6 +4,7 @@
 
 #include "impeller/scene/node.h"
 
+#include <inttypes.h>
 #include <atomic>
 #include <memory>
 
@@ -193,9 +194,7 @@ void Node::UnpackFromFlatbuffer(
   }
 }
 
-Node::Node()
-    : name_(SPrintF("__node%llu",
-                    static_cast<uint64_t>(kNextNodeID.fetch_add(1)))){};
+Node::Node() : name_(SPrintF("__node%" PRIu64, kNextNodeID.fetch_add(1))){};
 
 Node::~Node() = default;
 
