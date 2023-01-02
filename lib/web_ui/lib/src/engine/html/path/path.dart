@@ -1002,6 +1002,11 @@ class SurfacePath implements ui.Path {
     _addRRect(rrect, SPathDirection.kCW, 6);
   }
 
+  void addDRRect(ui.RRect outer, ui.RRect inner) {
+    _addRRect(outer, SPathDirection.kCW, 6);
+    _addRRect(inner, SPathDirection.kCCW, 6);
+  }
+
   void _addRRect(ui.RRect rrect, int direction, int startIndex) {
     assert(rrectIsValid(rrect));
     assert(direction != SPathDirection.kUnknown);

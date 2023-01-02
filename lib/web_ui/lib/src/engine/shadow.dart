@@ -86,16 +86,25 @@ ui.Rect computePenumbraBounds(ui.Rect shape, double elevation) {
 class SurfaceShadowData {
   const SurfaceShadowData({
     required this.blurWidth,
+    required this.blurX,
+    required this.blurY,
     required this.offset,
   });
 
-  /// The length in pixels of the shadow.
+  /// The length in pixels of the shadow to use when per-axis shadow blurs are
+  /// not supported.
   ///
   /// This is different from the `sigma` used by blur filters. This value
   /// contains the entire shadow, so, for example, to compute the shadow
   /// bounds it is sufficient to add this value to the width of the shape
   /// that casts it.
   final double blurWidth;
+
+  /// The length in pixels of the shadow along the X axis.
+  final double blurX;
+
+  /// The length in pixels of the shadow along the Y axis.
+  final double blurY;
 
   /// The offset of the shadow relative to the shape as computed by
   /// [computeShadowOffset].
@@ -122,10 +131,13 @@ SurfaceShadowData? computeShadow(ui.Rect shape, double elevation) {
   final double penumbraWidth = elevation * penumbraTangentX;
   final double penumbraHeight = elevation * penumbraTangentY;
   return SurfaceShadowData(
-    // There's no way to express different blur along different dimensions, so
-    // we use the narrower of the two to prevent the shadow blur from being longer
-    // than the shape itself, using min instead of average of penumbra values.
+    // In canvas 2D there's no way to express different blur along different
+    // dimensions, so we use the narrower of the two to prevent the shadow blur
+    // from being longer than the shape itself, using min instead of average of
+    // penumbra values.
     blurWidth: math.min(penumbraWidth, penumbraHeight),
+    blurX: penumbraWidth,
+    blurY: penumbraHeight,
     offset: computeShadowOffset(elevation),
   );
 }

@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import 'package:ui/src/engine/html/svg/svg_picture.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../../engine.dart' show kProfileApplyFrame, kProfilePrerollFrame;
@@ -397,8 +398,13 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     if (willChangeHint) {
       hints |= 2;
     }
-    _addSurface(PersistedPicture(
-        offset.dx, offset.dy, picture as EnginePicture, hints));
+    if (kUseSvgPicture) {
+      _addSurface(SvgPicture(
+          offset.dx, offset.dy, picture as EnginePicture, hints));
+    } else {
+      _addSurface(PersistedPicture(
+          offset.dx, offset.dy, picture as EnginePicture, hints));
+    }
   }
 
   /// Adds a backend texture to the scene.
@@ -526,7 +532,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   static void debugForgetFrameScene() {
     _lastFrameScene?.rootElement?.remove();
     _lastFrameScene = null;
-    resetSvgClipIds();
+    debugResetSvgClipIds();
     recycledCanvases.clear();
   }
 

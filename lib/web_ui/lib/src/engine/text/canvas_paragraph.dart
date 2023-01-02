@@ -2,12 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../dom.dart';
 import '../embedder.dart';
 import '../html/bitmap_canvas.dart';
 import '../profiler.dart';
+import '../svg.dart';
 import '../util.dart';
 import 'layout_fragmenter.dart';
 import 'layout_service.dart';
@@ -176,6 +178,66 @@ class CanvasParagraph implements ui.Paragraph {
         final DomElement spanElement = domDocument.createElement('flt-span');
         applyTextStyleToElement(element: spanElement, style: fragment.style);
         _positionSpanElement(spanElement, line, fragment);
+
+        spanElement.appendText(text);
+        rootElement.append(spanElement);
+      }
+    }
+
+    return rootElement;
+  }
+
+
+  SVGGElement? _cachedSvgElement;
+
+  /// Returns a SVG element that represents the entire paragraph and its
+  /// children.
+  ///
+  /// Generates a new SVG element on every invocation.
+  SVGGElement toSvgElement() {
+    assert(isLaidOut);
+    final SVGGElement? svgElement = _cachedSvgElement;
+    if (svgElement == null) {
+      return _cachedSvgElement ??= _createSvgElement();
+    }
+    return svgElement.cloneNode(true) as SVGGElement;
+  }
+
+  SVGGElement _createSvgElement() {
+    final SVGGElement rootElement = createSVGGElement();
+
+    // Prevent the browser from doing any line breaks in the paragraph. We want
+    // to have full control of the paragraph layout.
+    rootElement.style.whiteSpace = 'pre';
+
+    // Append all spans to the paragraph.
+    for (int i = 0; i < lines.length; i++) {
+      final ParagraphLine line = lines[i];
+      for (final LayoutFragment fragment in line.fragments) {
+        if (fragment.isPlaceholder) {
+          continue;
+        }
+
+        final String text = fragment.getText(this);
+        if (text.trim().isEmpty) {
+          continue;
+        }
+
+        final SVGTextElement spanElement = createSVGTextElement();
+        applyTextStyleToSvgElement(element: spanElement, style: fragment.style);
+
+        final ui.Rect boxRect = fragment.toPaintingTextBox().toRect();
+        spanElement.addX(boxRect.left);
+        // SVG places <text> elements such that the text baseline coincides with
+        // the Y coordinate. However, Flutter positions the top edge of the text
+        // line at the Y coordinate. For the SVG text to match what Flutter
+        // expects, the baseline is added to the Y coordinate.
+        spanElement.addY(boxRect.top + line.baseline);
+        spanElement.style
+          // This is needed for space-only spans that are used to justify the paragraph.
+          ..width = '${boxRect.width}px'
+          // Makes sure the baseline of each span is positioned as expected.
+          ..lineHeight = '${boxRect.height}px';
 
         spanElement.appendText(text);
         rootElement.append(spanElement);

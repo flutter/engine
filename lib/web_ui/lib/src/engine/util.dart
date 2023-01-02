@@ -84,6 +84,17 @@ void setElementTransform(DomElement element, Float32List matrix4) {
     ..transform = float64ListToCssTransform(matrix4);
 }
 
+/// Same as [setElementTransform] but specialized for translation along x and y.
+void setElementTranslation(DomElement element, ui.Offset offset) {
+  if (offset == ui.Offset.zero) {
+    element.style.removeProperty('transform');
+  } else {
+    element.style
+      ..transformOrigin = '0 0 0'
+      ..transform = 'translate(${offset.dx}px, ${offset.dy}px)';
+  }
+}
+
 /// Converts [matrix] to CSS transform value.
 ///
 /// To avoid blurry text on some screens this function uses a 2D CSS transform
@@ -168,6 +179,22 @@ TransformKind transformKindOf(List<double> matrix) {
   } else {
     return TransformKind.transform2d;
   }
+}
+
+/// Adds an [offset] transformation to a [transform] matrix and returns the
+/// combined result.
+///
+/// If the given offset is zero, returns [transform] matrix as is. Otherwise,
+/// returns a new [Matrix4] object representing the combined transformation.
+Matrix4 transformWithOffset(Matrix4 transform, ui.Offset offset) {
+  if (offset == ui.Offset.zero) {
+    return transform;
+  }
+
+  // Clone to avoid mutating transform.
+  final Matrix4 effectiveTransform = transform.clone();
+  effectiveTransform.translate(offset.dx, offset.dy);
+  return effectiveTransform;
 }
 
 /// Returns `true` is the [matrix] describes an identity transformation.

@@ -156,7 +156,7 @@ class DomCanvas extends EngineCanvas with SaveElementStackTracking {
 /// actually be applied when rendering the element.
 ///
 /// Returns a color for box-shadow based on blur filter at sigma.
-ui.Color blurColor(ui.Color color, double sigma) {
+ui.Color _blurColor(ui.Color color, double sigma) {
   final double strength = math.min(math.sqrt(sigma) / (math.pi * 2.0), 1.0);
   final int reducedAlpha = ((1.0 - strength) * color.alpha).round();
   return ui.Color((reducedAlpha & 0xff) << 24 | (color.value & 0x00ffffff));
@@ -265,7 +265,7 @@ DomHTMLElement buildDrawRectElement(
       // A bug in webkit leaves artifacts when this element is animated
       // with filter: blur, we use boxShadow instead.
       style.boxShadow = '0px 0px ${sigma * 2.0}px $cssColor';
-      cssColor = colorToCssString(blurColor(ui.Color(paint.color), sigma))!;
+      cssColor = colorToCssString(_blurColor(ui.Color(paint.color), sigma))!;
     } else {
       style.filter = 'blur(${sigma}px)';
     }

@@ -87,22 +87,6 @@ abstract class EngineCanvas {
   void endOfPaint();
 }
 
-/// Adds an [offset] transformation to a [transform] matrix and returns the
-/// combined result.
-///
-/// If the given offset is zero, returns [transform] matrix as is. Otherwise,
-/// returns a new [Matrix4] object representing the combined transformation.
-Matrix4 transformWithOffset(Matrix4 transform, ui.Offset offset) {
-  if (offset == ui.Offset.zero) {
-    return transform;
-  }
-
-  // Clone to avoid mutating transform.
-  final Matrix4 effectiveTransform = transform.clone();
-  effectiveTransform.translate(offset.dx, offset.dy);
-  return effectiveTransform;
-}
-
 class SaveStackEntry {
   SaveStackEntry({
     required this.transform,

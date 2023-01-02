@@ -249,6 +249,25 @@ class Matrix4 {
     _m4storage[15] = t4;
   }
 
+  void translate2D(double x, double y) {
+    final double t1 = _m4storage[0] * x +
+        _m4storage[4] * y +
+        _m4storage[12];
+    final double t2 = _m4storage[1] * x +
+        _m4storage[5] * y +
+        _m4storage[13];
+    final double t3 = _m4storage[2] * x +
+        _m4storage[6] * y +
+        _m4storage[14];
+    final double t4 = _m4storage[3] * x +
+        _m4storage[7] * y +
+        _m4storage[15];
+    _m4storage[12] = t1;
+    _m4storage[13] = t2;
+    _m4storage[14] = t3;
+    _m4storage[15] = t4;
+  }
+
   /// Scale this matrix by a [Vector3], [Vector4], or x,y,z
   void scale(double x, [double? y, double? z]) {
     final double sx = x;

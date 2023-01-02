@@ -321,6 +321,16 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set transformOrigin(String value) => setProperty('transform-origin', value);
   set opacity(String value) => setProperty('opacity', value);
   set color(String value) => setProperty('color', value);
+
+  // SVG only
+  set fill(String value) => setProperty('fill', value);
+  // SVG only
+  set stroke(String value) => setProperty('stroke', value);
+
+  // Skip this: not supported in Safari, use `stroke-width` element attribute instead
+  // set strokeWidth(String value) => setProperty('strokeWidth', value);
+
+  set vectorEffect(String value) => setProperty('vectorEffect', value);
   set top(String value) => setProperty('top', value);
   set left(String value) => setProperty('left', value);
   set right(String value) => setProperty('right', value);
@@ -381,6 +391,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   set alignContent(String value) => setProperty('align-content', value);
   set textAlign(String value) => setProperty('text-align', value);
   set font(String value) => setProperty('font', value);
+  set dominantBaseline(String value) => setProperty('dominant-baseline', value);
   String get width => getPropertyValue('width');
   String get height => getPropertyValue('height');
   String get position => getPropertyValue('position');
@@ -390,6 +401,16 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get transformOrigin => getPropertyValue('transform-origin');
   String get opacity => getPropertyValue('opacity');
   String get color => getPropertyValue('color');
+
+  // SVG only
+  String get fill => getPropertyValue('fill');
+  // SVG only
+  String get stroke => getPropertyValue('stroke');
+
+  // Skip this: not supported in Safari
+  // String get strokeWidth => getPropertyValue('strokeWidth');
+
+  String get vectorEffect => getPropertyValue('vectorEffect');
   String get top => getPropertyValue('top');
   String get left => getPropertyValue('left');
   String get right => getPropertyValue('right');
@@ -445,6 +466,7 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
   String get alignContent => getPropertyValue('align-content');
   String get textAlign => getPropertyValue('text-align');
   String get font => getPropertyValue('font');
+  String get dominantBaseline => getPropertyValue('dominant-baseline');
 
   external String getPropertyValue(String property);
   void setProperty(String propertyName, String value, [String? priority]) {
@@ -1739,4 +1761,216 @@ DomV8BreakIterator createV8BreakIterator() {
       js_util.jsify(const <String, String>{'type': 'line'}),
     ],
   );
+}
+
+@JS()
+@staticInterop
+class DOMPoint {}
+extension DOMPointExtension on DOMPoint {
+  external double get x;
+  external double get y;
+  external double get z;
+  external double get w;
+}
+
+@JS()
+@anonymous
+@staticInterop
+class DOMPointInit {
+  external factory DOMPointInit({
+    double x = 0,
+    double y = 0,
+    double z = 0,
+    double w = 1,
+  });
+}
+
+@JS()
+@staticInterop
+class DOMMatrixReadOnly {}
+extension DOMMatrixReadOnlyExtension on DOMMatrixReadOnly {
+    external static DOMMatrixReadOnly fromMatrix(DOMMatrixInit other);
+    external static DOMMatrixReadOnly fromFloat32Array(Float32List array32);
+    external static DOMMatrixReadOnly fromFloat64Array(Float64List array64);
+
+    external double get m11;
+    external double get m12;
+    external double get m13;
+    external double get m14;
+    external double get m21;
+    external double get m22;
+    external double get m23;
+    external double get m24;
+    external double get m31;
+    external double get m32;
+    external double get m33;
+    external double get m34;
+    external double get m41;
+    external double get m42;
+    external double get m43;
+    external double get m44;
+
+    external bool get is2D;
+    external bool get isIdentity;
+
+    // Immutable transform methods
+    external DOMMatrix translate([double tx = 0, double ty = 0, double tz = 0]);
+
+    external DOMMatrix scale(
+      double scaleX,
+      double scaleY, [
+      double scaleZ = 1,
+      double originX = 0,
+      double originY = 0,
+      double originZ = 0,
+    ]);
+
+    external DOMMatrix scaleNonUniform(
+      double scaleX,
+      double scaleY,
+    );
+
+    external DOMMatrix scale3d(
+      double scale, [
+      double originX = 0,
+      double originY = 0,
+      double originZ = 0,
+    ]);
+
+    external DOMMatrix rotate([
+      double rotX = 0,
+      double? rotY,
+      double? rotZ,
+    ]);
+
+    external DOMMatrix rotateFromVector([
+      double x = 0,
+      double y = 0,
+    ]);
+
+    external DOMMatrix rotateAxisAngle([
+      double x = 0,
+      double y = 0,
+      double z = 0,
+      double angle = 0,
+    ]);
+
+    external DOMMatrix skewX([double sx = 0]);
+    external DOMMatrix skewY([double sy = 0]);
+    external DOMMatrix multiply([DOMMatrixInit other]);
+    external DOMMatrix flipX();
+    external DOMMatrix flipY();
+    external DOMMatrix inverse();
+
+    external DOMPoint transformPoint([DOMPointInit point]);
+    external Float32List toFloat32Array();
+    external Float64List toFloat64Array();
+}
+
+@JS()
+@staticInterop
+class DOMMatrix extends DOMMatrixReadOnly {}
+extension DOMMatrixExtension on DOMMatrix {
+    external static DOMMatrix fromMatrix(DOMMatrixInit other);
+    external static DOMMatrix fromFloat32Array(Float32List array32);
+    external static DOMMatrix fromFloat64Array(Float64List array64);
+
+    external set m11(double value);
+    external set m12(double value);
+    external set m13(double value);
+    external set m14(double value);
+    external set m21(double value);
+    external set m22(double value);
+    external set m23(double value);
+    external set m24(double value);
+    external set m31(double value);
+    external set m32(double value);
+    external set m33(double value);
+    external set m34(double value);
+    external set m41(double value);
+    external set m42(double value);
+    external set m43(double value);
+    external set m44(double value);
+
+    // Mutable transform methods
+    external DOMMatrix multiplySelf(DOMMatrixInit other);
+    external DOMMatrix preMultiplySelf(DOMMatrixInit other);
+    external DOMMatrix translateSelf([
+      double tx = 0,
+      double ty = 0,
+      double tz = 0,
+    ]);
+    external DOMMatrix scaleSelf([
+      double scaleX = 1,
+      double scaleY = 1,
+      double scaleZ = 1,
+      double originX = 0,
+      double originY = 0,
+      double originZ = 0,
+    ]);
+    external DOMMatrix scale3dSelf([
+      double scale = 1,
+      double originX = 0,
+      double originY = 0,
+      double originZ = 0,
+    ]);
+    external DOMMatrix rotateSelf([
+      double rotX = 0,
+      double? rotY,
+      double? rotZ,
+    ]);
+    external DOMMatrix rotateFromVectorSelf([
+      double x = 0,
+      double y = 0,
+    ]);
+    external DOMMatrix rotateAxisAngleSelf([
+      double x = 0,
+      double y = 0,
+      double z = 0,
+      double angle = 0,
+    ]);
+    external DOMMatrix skewXSelf(double sx);
+    external DOMMatrix skewYSelf(double sy);
+    external DOMMatrix invertSelf();
+
+    external DOMMatrix setMatrixValue(String transformList);
+}
+
+@JS()
+@anonymous
+@staticInterop
+class DOMMatrix2DInit {
+  external factory DOMMatrix2DInit({
+    required double m11,
+    required double m12,
+    required double m21,
+    required double m22,
+    required double m41,
+    required double m42,
+  });
+}
+
+@JS()
+@anonymous
+@staticInterop
+class DOMMatrixInit {
+  external factory DOMMatrixInit({
+    required double m11,
+    required double m12,
+    required double m21,
+    required double m22,
+    required double m41,
+    required double m42,
+    double? m13 = 0,
+    double? m14 = 0,
+    double? m23 = 0,
+    double? m24 = 0,
+    double? m31 = 0,
+    double? m32 = 0,
+    double? m33 = 1,
+    double? m34 = 0,
+    double? m43 = 0,
+    double? m44 = 1,
+    required bool is2D,
+  });
 }

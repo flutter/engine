@@ -14,6 +14,7 @@ import '../engine_canvas.dart';
 import '../frame_reference.dart';
 import '../html_image_codec.dart';
 import '../platform_dispatcher.dart';
+import '../svg_filter.dart';
 import '../text/canvas_paragraph.dart';
 import '../util.dart';
 import '../vector_math.dart';
@@ -1197,140 +1198,6 @@ String? blendModeToCssMixBlendMode(ui.BlendMode? blendMode) {
     default:
       throw UnimplementedError(
           'Flutter Web does not support the blend mode: $blendMode');
-  }
-}
-
-// Source: https://www.w3.org/TR/SVG11/filters.html#InterfaceSVGFEBlendElement
-// These constant names deviate from Dart's camelCase convention on purpose to
-// make it easier to search for them in W3 specs and in Chromium sources.
-const int SVG_FEBLEND_MODE_UNKNOWN = 0;
-const int SVG_FEBLEND_MODE_NORMAL = 1;
-const int SVG_FEBLEND_MODE_MULTIPLY = 2;
-const int SVG_FEBLEND_MODE_SCREEN = 3;
-const int SVG_FEBLEND_MODE_DARKEN = 4;
-const int SVG_FEBLEND_MODE_LIGHTEN = 5;
-const int SVG_FEBLEND_MODE_OVERLAY = 6;
-const int SVG_FEBLEND_MODE_COLOR_DODGE = 7;
-const int SVG_FEBLEND_MODE_COLOR_BURN = 8;
-const int SVG_FEBLEND_MODE_HARD_LIGHT = 9;
-const int SVG_FEBLEND_MODE_SOFT_LIGHT = 10;
-const int SVG_FEBLEND_MODE_DIFFERENCE = 11;
-const int SVG_FEBLEND_MODE_EXCLUSION = 12;
-const int SVG_FEBLEND_MODE_HUE = 13;
-const int SVG_FEBLEND_MODE_SATURATION = 14;
-const int SVG_FEBLEND_MODE_COLOR = 15;
-const int SVG_FEBLEND_MODE_LUMINOSITY = 16;
-
-// Source: https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/platform/graphics/graphics_types.cc#L55
-const String kCompositeClear = 'clear';
-const String kCompositeCopy = 'copy';
-const String kCompositeSourceOver = 'source-over';
-const String kCompositeSourceIn = 'source-in';
-const String kCompositeSourceOut = 'source-out';
-const String kCompositeSourceAtop = 'source-atop';
-const String kCompositeDestinationOver = 'destination-over';
-const String kCompositeDestinationIn = 'destination-in';
-const String kCompositeDestinationOut = 'destination-out';
-const String kCompositeDestinationAtop = 'destination-atop';
-const String kCompositeXor = 'xor';
-const String kCompositeLighter = 'lighter';
-
-/// Compositing and blending operation in SVG.
-///
-/// Flutter's [BlendMode] flattens what SVG expresses as two orthogonal
-/// properties, a composite operator and blend mode. Instances of this class
-/// are returned from [blendModeToSvgEnum] by mapping Flutter's [BlendMode]
-/// enum onto the SVG equivalent.
-///
-/// See also:
-///
-///  * https://www.w3.org/TR/compositing-1
-///  * https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/platform/graphics/graphics_types.cc#L55
-///  * https://github.com/chromium/chromium/blob/e1e495b29e1178a451f65980a6c4ae017c34dc94/third_party/blink/renderer/modules/canvas/canvas2d/base_rendering_context_2d.cc#L725
-class SvgBlendMode {
-  const SvgBlendMode(this.compositeOperator, this.blendMode);
-
-  /// The name of the SVG composite operator.
-  ///
-  /// If this mode represents a blend mode, this is set to [kCompositeSourceOver].
-  final String compositeOperator;
-
-  /// The identifier of the SVG blend mode.
-  ///
-  /// This is mode represents a compositing operation, this is set to [SVG_FEBLEND_MODE_UNKNOWN].
-  final int blendMode;
-}
-
-/// Converts Flutter's [ui.BlendMode] to SVG's <compositing operation, blend mode> pair.
-SvgBlendMode? blendModeToSvgEnum(ui.BlendMode? blendMode) {
-  if (blendMode == null) {
-    return null;
-  }
-  switch (blendMode) {
-    case ui.BlendMode.clear:
-      return const SvgBlendMode(kCompositeClear, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.srcOver:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.srcIn:
-      return const SvgBlendMode(kCompositeSourceIn, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.srcOut:
-      return const SvgBlendMode(kCompositeSourceOut, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.srcATop:
-      return const SvgBlendMode(kCompositeSourceAtop, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.dstOver:
-      return const SvgBlendMode(kCompositeDestinationOver, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.dstIn:
-      return const SvgBlendMode(kCompositeDestinationIn, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.dstOut:
-      return const SvgBlendMode(kCompositeDestinationOut, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.dstATop:
-      return const SvgBlendMode(kCompositeDestinationAtop, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.plus:
-      return const SvgBlendMode(kCompositeLighter, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.src:
-      return const SvgBlendMode(kCompositeCopy, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.xor:
-      return const SvgBlendMode(kCompositeXor, SVG_FEBLEND_MODE_UNKNOWN);
-    case ui.BlendMode.multiply:
-    // Falling back to multiply, ignoring alpha channel.
-    // TODO(ferhat): only used for debug, find better fallback for web.
-    case ui.BlendMode.modulate:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_MULTIPLY);
-    case ui.BlendMode.screen:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SCREEN);
-    case ui.BlendMode.overlay:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_OVERLAY);
-    case ui.BlendMode.darken:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_DARKEN);
-    case ui.BlendMode.lighten:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LIGHTEN);
-    case ui.BlendMode.colorDodge:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_DODGE);
-    case ui.BlendMode.colorBurn:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR_BURN);
-    case ui.BlendMode.hardLight:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HARD_LIGHT);
-    case ui.BlendMode.softLight:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SOFT_LIGHT);
-    case ui.BlendMode.difference:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_DIFFERENCE);
-    case ui.BlendMode.exclusion:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_EXCLUSION);
-    case ui.BlendMode.hue:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_HUE);
-    case ui.BlendMode.saturation:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_SATURATION);
-    case ui.BlendMode.color:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_COLOR);
-    case ui.BlendMode.luminosity:
-      return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_LUMINOSITY);
-    default:
-      assert(
-        false,
-        'Flutter Web does not support the blend mode: $blendMode',
-      );
-
-    return const SvgBlendMode(kCompositeSourceOver, SVG_FEBLEND_MODE_NORMAL);
   }
 }
 

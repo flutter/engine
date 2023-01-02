@@ -187,8 +187,8 @@ DomElement pathToSvgElement(Path path, Paint paint, bool enableFill) {
   final SVGSVGElement root = createSVGSVGElement();
   root.style.transform = 'translate(200px, 0px)';
   root.setAttribute('viewBox', '0 0 ${bounds.right} ${bounds.bottom}');
-  root.width!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.right);
-  root.height!.baseVal!.newValueSpecifiedUnits(svgLengthTypeNumber, bounds.bottom);
+  root.setWidth(bounds.right);
+  root.setHeight(bounds.bottom);
 
   final SVGPathElement pathElement = createSVGPathElement();
   root.append(pathElement);

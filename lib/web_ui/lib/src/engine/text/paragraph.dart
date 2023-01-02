@@ -867,6 +867,105 @@ void applyTextStyleToElement({
   }
 }
 
+/// Same as [applyTextStyleToSvgElement] but applies text style to text rendered
+/// in SVG.
+///
+/// There are some differences how text styles work between HTML and SVG. For
+/// example, in HTML to specify font color you use `color`, but in SVG you use
+/// `fill`.
+void applyTextStyleToSvgElement({
+  required DomElement element,
+  required EngineTextStyle style,
+}) {
+  assert(element != null);
+  assert(style != null);
+  bool updateDecoration = false;
+  final DomCSSStyleDeclaration cssStyle = element.style;
+
+  final ui.Color? color = style.foreground?.color ?? style.color;
+  if (style.foreground?.style == ui.PaintingStyle.stroke) {
+    // When comparing the outputs of the Bitmap Canvas and the DOM
+    // implementation, we have found, that we need to set the background color
+    // of the text to transparent to achieve the same effect as in the Bitmap
+    // Canvas and the Skia Engine where only the text stroke is painted.
+    // If we don't set it here to transparent, the text will inherit the color
+    // of it's parent element.
+    cssStyle.fill = 'transparent';
+    // Use hairline (device pixel when strokeWidth is not specified).
+    final double? strokeWidth = style.foreground?.strokeWidth;
+    final double adaptedWidth = strokeWidth != null && strokeWidth > 0
+        ? strokeWidth
+        : 1.0 / ui.window.devicePixelRatio;
+    cssStyle.textStroke = '${adaptedWidth}px ${colorToCssString(color)}';
+  } else if (color != null) {
+    cssStyle.fill = colorToCssString(color)!;
+  }
+  final ui.Color? background = style.background?.color;
+  if (background != null) {
+    cssStyle.backgroundColor = colorToCssString(background)!;
+  }
+  final double? fontSize = style.fontSize;
+  if (fontSize != null) {
+    cssStyle.fontSize = '${fontSize.floor()}px';
+  }
+  if (style.fontWeight != null) {
+    cssStyle.fontWeight = fontWeightToCss(style.fontWeight)!;
+  }
+  if (style.fontStyle != null) {
+    cssStyle.fontStyle =
+        style.fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
+  }
+  // For test environment use effectiveFontFamily since we need to
+  // consistently use Ahem font.
+  if (ui.debugEmulateFlutterTesterEnvironment) {
+    cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)!;
+  } else {
+    cssStyle.fontFamily = canonicalizeFontFamily(style.fontFamily)!;
+  }
+  if (style.letterSpacing != null) {
+    cssStyle.letterSpacing = '${style.letterSpacing}px';
+  }
+  if (style.wordSpacing != null) {
+    cssStyle.wordSpacing = '${style.wordSpacing}px';
+  }
+  if (style.decoration != null) {
+    updateDecoration = true;
+  }
+  final List<ui.Shadow>? shadows = style.shadows;
+  if (shadows != null) {
+    cssStyle.textShadow = _shadowListToCss(shadows);
+  }
+
+  if (updateDecoration) {
+    if (style.decoration != null) {
+      final String? textDecoration =
+          _textDecorationToCssString(style.decoration, style.decorationStyle);
+      if (textDecoration != null) {
+        if (browserEngine == BrowserEngine.webkit) {
+          setElementStyle(element, '-webkit-text-decoration', textDecoration);
+        } else {
+          cssStyle.textDecoration = textDecoration;
+        }
+        final ui.Color? decorationColor = style.decorationColor;
+        if (decorationColor != null) {
+          cssStyle.textDecorationColor = colorToCssString(decorationColor)!;
+        }
+      }
+    }
+  }
+
+  final List<ui.FontFeature>? fontFeatures = style.fontFeatures;
+  if (fontFeatures != null && fontFeatures.isNotEmpty) {
+    cssStyle.fontFeatureSettings = _fontFeatureListToCss(fontFeatures);
+  }
+
+  final List<ui.FontVariation>? fontVariations = style.fontVariations;
+  if (fontVariations != null && fontVariations.isNotEmpty) {
+    cssStyle.setProperty(
+        'font-variation-settings', _fontVariationListToCss(fontVariations));
+  }
+}
+
 String _shadowListToCss(List<ui.Shadow> shadows) {
   if (shadows.isEmpty) {
     return '';

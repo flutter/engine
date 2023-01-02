@@ -340,13 +340,13 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// we size the inner container to cover full pathBounds instead of sizing
     /// to clipping rect bounds (which is the case for elevation == 0.0 where
     /// we shift outer/inner clip area instead to position clip-path).
-    final SVGSVGElement svgClipPath = elevation == 0.0
-        ? pathToSvgClipPath(path,
+    final SvgClip svgClip = elevation == 0.0
+        ? SvgClip.fromPath(path,
             offsetX: -pathBounds.left,
             offsetY: -pathBounds.top,
             scaleX: 1.0 / pathBounds.width,
             scaleY: 1.0 / pathBounds.height)
-        : pathToSvgClipPath(path,
+        : SvgClip.fromPath(path,
             scaleX: 1.0 / pathBounds.right,
             scaleY: 1.0 / pathBounds.bottom);
 
@@ -354,10 +354,10 @@ class PersistedPhysicalShape extends PersistedContainerSurface
     /// svg clip and render elements.
     _clipElement?.remove();
     _svgElement?.remove();
-    _clipElement = svgClipPath;
+    _clipElement = svgClip.wrapForHtml().host;
     rootElement!.append(_clipElement!);
     if (elevation == 0.0) {
-      setClipPath(rootElement!, createSvgClipUrl());
+      setClipPath(rootElement!, svgClip.url);
       final DomCSSStyleDeclaration rootElementStyle = rootElement!.style;
       rootElementStyle
         ..overflow = ''
@@ -372,7 +372,7 @@ class PersistedPhysicalShape extends PersistedContainerSurface
       return;
     }
 
-    setClipPath(childContainer!, createSvgClipUrl());
+    setClipPath(childContainer!, svgClip.url);
     final DomCSSStyleDeclaration rootElementStyle = rootElement!.style;
     rootElementStyle
       ..overflow = ''
@@ -509,9 +509,10 @@ class PersistedClipPath extends PersistedContainerSurface
 /// Creates an svg clipPath and applies it to [element].
 SVGSVGElement createSvgClipDef(DomElement element, ui.Path clipPath) {
   final ui.Rect pathBounds = clipPath.getBounds();
-  final SVGSVGElement svgClipPath = pathToSvgClipPath(clipPath,
+  final SvgClip clip = SvgClip.fromPath(clipPath,
       scaleX: 1.0 / pathBounds.right, scaleY: 1.0 / pathBounds.bottom);
-  setClipPath(element, createSvgClipUrl());
+  final SVGSVGElement svgClipPath = clip.wrapForHtml().host;
+  setClipPath(element, clip.url);
   // We need to set width and height for the clipElement to cover the
   // bounds of the path since browsers such as Safari and Edge
   // seem to incorrectly intersect the element bounding rect with

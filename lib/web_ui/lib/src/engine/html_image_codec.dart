@@ -42,7 +42,7 @@ class HtmlCodec implements ui.Codec {
     // Currently there is no way to watch decode progress, so
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
-      chunkCallback?.call(0, 100);
+    chunkCallback?.call(0, 100);
     if (_supportsDecode) {
       final DomHTMLImageElement imgElement = createDomHTMLImageElement();
       imgElement.src = src;

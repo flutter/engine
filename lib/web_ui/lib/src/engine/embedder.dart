@@ -171,8 +171,9 @@ class FlutterViewEmbedder {
     _glassPaneShadow = glassPaneElementHostNode;
 
     // Don't allow the scene to receive pointer events.
-    _sceneHostElement = domDocument.createElement('flt-scene-host')
-      ..style.pointerEvents = 'none';
+    _sceneHostElement = domDocument.createElement('flt-scene-host');
+      // DO_NOT_SUBMIT: revert this before submitting.
+      // ..style.pointerEvents = 'none';
 
     renderer.reset(this);
 
