@@ -80,7 +80,12 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   filter_->map_device_bounds(filter_in_bounds, SkMatrix::I(),
                              filter_out_bounds);
   child_bounds.set(filter_out_bounds);
-  child_bounds.offset(offset_);
+  if (context->raster_cache) {
+    child_bounds.offset(SkScalarRoundToScalar(offset_.x()),
+                        SkScalarRoundToScalar(offset_.y()));
+  } else {
+    child_bounds.offset(offset_);
+  }
 
   set_paint_bounds(child_bounds);
 
@@ -101,10 +106,6 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   auto mutator = context.state_stack.save();
 
   if (context.raster_cache) {
-    // Always apply the integral transform in the presence of a raster cache
-    // whether or not we will draw from the cache
-    mutator.integralTransform();
-
     // Try drawing the layer cache item from the cache before applying the
     // image filter if it was cached with the filter applied.
     if (!layer_raster_cache_item_->IsCacheChildren()) {
@@ -119,6 +120,9 @@ void ImageFilterLayer::Paint(PaintContext& context) const {
   // Only apply the offset if not being raster-cached to avoid the offset being
   // applied twice.
   mutator.translate(offset_);
+  if (context.raster_cache) {
+    mutator.integralTransform();
+  }
 
   if (context.raster_cache && layer_raster_cache_item_->IsCacheChildren()) {
     // If we render the children from cache then we need the special
