@@ -202,8 +202,8 @@ static void ProcessNode(const tinygltf::Model& gltf,
   if (in_node.translation.size() == 3) {
     transform = transform * Matrix::MakeTranslation(
                                 {static_cast<Scalar>(in_node.translation[0]),
-                                 static_cast<Scalar>(in_node.translation[0]),
-                                 static_cast<Scalar>(in_node.translation[0])});
+                                 static_cast<Scalar>(in_node.translation[1]),
+                                 static_cast<Scalar>(in_node.translation[2])});
   }
   if (in_node.rotation.size() == 4) {
     transform = transform * Matrix::MakeRotation(Quaternion(
