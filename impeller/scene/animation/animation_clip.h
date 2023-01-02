@@ -38,11 +38,11 @@ class AnimationClip final {
 
   void SetLoop(bool looping);
 
-  Scalar GetPlaybackSpeed() const;
+  Scalar GetPlaybackTimeScale() const;
 
   /// @brief  Sets the animation playback speed. Negative values make the clip
   ///         play in reverse.
-  void SetPlaybackSpeed(Scalar playback_speed);
+  void SetPlaybackTimeScale(Scalar playback_speed);
 
   Scalar GetWeight() const;
 
@@ -74,7 +74,7 @@ class AnimationClip final {
   std::vector<ChannelBinding> bindings_;
 
   Scalar playback_time_ = 0;
-  Scalar playback_speed_ = 1;  // Seconds multiplier, can be negative.
+  Scalar playback_time_scale_ = 1;  // Seconds multiplier, can be negative.
   Scalar weight_ = 1;
   bool playing_ = false;
   bool loop_ = false;

@@ -26,8 +26,8 @@ AnimationClip& AnimationPlayer::AddAnimation(
   // Record all of the unique default transforms that this AnimationClip
   // will mutate.
   for (const auto& binding : clip.bindings_) {
-    default_target_transforms_.insert(DefaultTransform{
-        .node = binding.node, .transform = binding.node->GetLocalTransform()});
+    default_target_transforms_.insert(
+        {binding.node, binding.node->GetLocalTransform()});
   }
 
   clips_.push_back(std::move(clip));
@@ -52,8 +52,8 @@ void AnimationPlayer::Update() {
 }
 
 void AnimationPlayer::Reset() {
-  for (auto& default_transform : default_target_transforms_) {
-    default_transform.node->SetLocalTransform(default_transform.transform);
+  for (auto& [node, transform] : default_target_transforms_) {
+    node->SetLocalTransform(transform);
   }
 }
 

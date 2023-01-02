@@ -54,12 +54,12 @@ void AnimationClip::SetLoop(bool looping) {
   loop_ = looping;
 }
 
-Scalar AnimationClip::GetPlaybackSpeed() const {
-  return playback_speed_;
+Scalar AnimationClip::GetPlaybackTimeScale() const {
+  return playback_time_scale_;
 }
 
-void AnimationClip::SetPlaybackSpeed(Scalar playback_speed) {
-  playback_speed_ = playback_speed;
+void AnimationClip::SetPlaybackTimeScale(Scalar playback_speed) {
+  playback_time_scale_ = playback_speed;
 }
 
 Scalar AnimationClip::GetWeight() const {
@@ -82,7 +82,7 @@ void AnimationClip::Advance(Scalar delta_time) {
   if (!playing_ || delta_time <= 0) {
     return;
   }
-  delta_time *= playback_speed_;
+  delta_time *= playback_time_scale_;
   playback_time_ += delta_time;
 
   /// Handle looping behavior.

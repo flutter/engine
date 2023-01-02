@@ -38,28 +38,7 @@ class AnimationPlayer final {
   void Reset();
 
  private:
-  struct DefaultTransform {
-    Node* node;
-    Matrix transform;
-
-    struct Hash {
-      std::size_t operator()(const DefaultTransform& o) const {
-        return fml::HashCombine(o.node);
-      }
-    };
-
-    struct Equal {
-      bool operator()(const DefaultTransform& lhs,
-                      const DefaultTransform& rhs) const {
-        return lhs.node == rhs.node;
-      }
-    };
-  };
-
-  std::unordered_set<DefaultTransform,
-                     DefaultTransform::Hash,
-                     DefaultTransform::Equal>
-      default_target_transforms_;
+  std::unordered_map<Node*, Matrix> default_target_transforms_;
 
   std::vector<AnimationClip> clips_;
 
