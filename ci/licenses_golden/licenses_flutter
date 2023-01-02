@@ -2533,6 +2533,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_mes
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/profiler_metrics_ios.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/ios_context.h + ../../../flutter/LICENSE
