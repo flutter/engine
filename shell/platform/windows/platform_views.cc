@@ -41,22 +41,26 @@ void PlatformViewWindows::UpdateVisible(
       std::pair<uint32_t, uint32_t> pos = {std::floor(update.transform.transX), std::floor(update.transform.transY)};
 
       UINT flags = SWP_NOACTIVATE | SWP_NOOWNERZORDER;
+      bool needs_update = false;
 
       if (size != last_window_size_) {
         last_window_size_ = size;
         FML_LOG(ERROR) << "New window size: " << size.first << ", " << size.second;
+        needs_update = true;
       } else {
         flags |= SWP_NOSIZE;
       }
 
       if (pos != last_window_pos_) {
         last_window_pos_ = pos;
+        needs_update = true;
       } else {
         flags |= SWP_NOMOVE;
       }
 
       // TODO: Don't compare HWND, instead compare platform view ID (64-bit) since they won't be reused.
-      if (flags != (SWP_NOACTIVATE | SWP_NOOWNERZORDER) || last_window_sibling_ != previous) {
+      // NOTE: This requires changing platform view IDs to monotonically increasing numbers.
+      if (needs_update || last_window_sibling_ != previous) {
         if (winPosInfo == 0) {
           winPosInfo = BeginDeferWindowPos(1);
         }
