@@ -194,7 +194,7 @@ void Node::UnpackFromFlatbuffer(
   }
 }
 
-Node::Node() : name_(SPrintF("__node%" PRIu64, kNextNodeID.fetch_add(1))){};
+Node::Node() : name_(SPrintF("__node%" PRIu64, kNextNodeID++)){};
 
 Node::~Node() = default;
 
