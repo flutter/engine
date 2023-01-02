@@ -122,7 +122,8 @@ class FlutterWindowsEngine {
 
   // Registers |callback| to be called when the plugin registrar is destroyed.
   void AddPluginRegistrarDestructionCallback(
-      FlutterDesktopOnPluginRegistrarDestroyed callback,
+      FlutterDesktopOnPluginRegistrarDestroyedWithUserData callback,
+      void* user_data,
       FlutterDesktopPluginRegistrarRef registrar);
 
   // Sets switches member to the given switches.
@@ -263,6 +264,8 @@ class FlutterWindowsEngine {
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
 
+  struct PluginRegistrarDestructionHandler;
+
   // Sends system locales to the engine.
   //
   // Should be called just after the engine is run, and after any relevant
@@ -322,8 +325,7 @@ class FlutterWindowsEngine {
 
   // Callbacks to be called when the engine (and thus the plugin registrar) is
   // being destroyed.
-  std::map<FlutterDesktopOnPluginRegistrarDestroyed,
-           FlutterDesktopPluginRegistrarRef>
+  std::vector<PluginRegistrarDestructionHandler>
       plugin_registrar_destruction_callbacks_;
 
   // The approximate time between vblank events.

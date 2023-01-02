@@ -261,7 +261,18 @@ FlutterDesktopMessengerRef FlutterDesktopPluginRegistrarGetMessenger(
 void FlutterDesktopPluginRegistrarSetDestructionHandler(
     FlutterDesktopPluginRegistrarRef registrar,
     FlutterDesktopOnPluginRegistrarDestroyed callback) {
-  registrar->engine->AddPluginRegistrarDestructionCallback(callback, registrar);
+  FlutterDesktopPluginRegistrarSetDestructionHandlerWithUserData(
+    registrar,
+    [](FlutterDesktopPluginRegistrarRef registrar, void* user_data) {
+      reinterpret_cast<FlutterDesktopOnPluginRegistrarDestroyed>(user_data)(registrar);
+    }, reinterpret_cast<void*>(callback));
+}
+
+void FlutterDesktopPluginRegistrarSetDestructionHandlerWithUserData(
+    FlutterDesktopPluginRegistrarRef registrar,
+    FlutterDesktopOnPluginRegistrarDestroyedWithUserData callback,
+    void* user_data) {
+  registrar->engine->AddPluginRegistrarDestructionCallback(callback, user_data, registrar);
 }
 
 bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,

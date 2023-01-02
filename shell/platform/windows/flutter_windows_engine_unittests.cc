@@ -481,17 +481,19 @@ TEST_F(FlutterWindowsEngineTest, AddPluginRegistrarDestructionCallback) {
   int result1 = 0;
   int result2 = 0;
   engine->AddPluginRegistrarDestructionCallback(
-      [](FlutterDesktopPluginRegistrarRef ref) {
+      [](FlutterDesktopPluginRegistrarRef ref, void* user_data) {
         auto result = reinterpret_cast<int*>(ref);
         *result = 1;
       },
-      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(&result1));
+      static_cast<void*>(&result1),
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1));
   engine->AddPluginRegistrarDestructionCallback(
-      [](FlutterDesktopPluginRegistrarRef ref) {
+      [](FlutterDesktopPluginRegistrarRef ref, void* user_data) {
         auto result = reinterpret_cast<int*>(ref);
         *result = 2;
       },
-      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(&result2));
+      static_cast<void*>(&result2),
+      reinterpret_cast<FlutterDesktopPluginRegistrarRef>(1));
 
   engine->Stop();
   EXPECT_EQ(result1, 1);

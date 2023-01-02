@@ -95,6 +95,12 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
+struct FlutterWindowsEngine::PluginRegistrarDestructionHandler {
+  FlutterDesktopPluginRegistrarRef registrar;
+  FlutterDesktopOnPluginRegistrarDestroyedWithUserData callback;
+  void* user_data;
+};
+
 FlutterWindowsEngine::FlutterWindowsEngine(
     const FlutterProjectBundle& project,
     std::unique_ptr<WindowsRegistry> registry)
@@ -361,9 +367,9 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
 
 bool FlutterWindowsEngine::Stop() {
   if (engine_) {
-    for (const auto& [callback, registrar] :
+    for (const auto& handler :
          plugin_registrar_destruction_callbacks_) {
-      callback(registrar);
+      handler.callback(handler.registrar, handler.user_data);
     }
     FlutterEngineResult result = embedder_api_.Shutdown(engine_);
     engine_ = nullptr;
@@ -410,9 +416,11 @@ FlutterDesktopPluginRegistrarRef FlutterWindowsEngine::GetRegistrar() {
 }
 
 void FlutterWindowsEngine::AddPluginRegistrarDestructionCallback(
-    FlutterDesktopOnPluginRegistrarDestroyed callback,
+    FlutterDesktopOnPluginRegistrarDestroyedWithUserData callback,
+    void* user_data,
     FlutterDesktopPluginRegistrarRef registrar) {
-  plugin_registrar_destruction_callbacks_[callback] = registrar;
+  PluginRegistrarDestructionHandler handler = {registrar, callback, user_data};
+  plugin_registrar_destruction_callbacks_.emplace_back(std::move(handler));
 }
 
 void FlutterWindowsEngine::SendWindowMetricsEvent(
