@@ -273,8 +273,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                   }];
   viewControllerMock.targetViewInsetBottom = 100;
   [viewControllerMock handleKeyboardNotification:fakeNotification];
-  BOOL isShowingAnimation1 = [viewControllerMock keyboardAnimationIsShowing];
-  XCTAssertTrue(isShowingAnimation1 == YES);
+  BOOL isShowingAnimation1 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertTrue(isShowingAnimation1);
 
   // Start compounding show keyboard animation.
   CGRect compoundingShowKeyboardBeginFrame = CGRectMake(0, screenHeight - 250, 0, 0);
@@ -291,8 +291,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   viewControllerMock.targetViewInsetBottom = 200;
   [viewControllerMock handleKeyboardNotification:fakeNotification];
-  BOOL isShowingAnimation2 = [viewControllerMock keyboardAnimationIsShowing];
-  XCTAssertTrue(isShowingAnimation2 == YES);
+  BOOL isShowingAnimation2 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertTrue(isShowingAnimation2);
   XCTAssertTrue(isShowingAnimation1 == isShowingAnimation2);
 
   // Start hide keyboard animation.
@@ -310,8 +310,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   viewControllerMock.targetViewInsetBottom = 100;
   [viewControllerMock handleKeyboardNotification:fakeNotification];
-  BOOL isShowingAnimation3 = [viewControllerMock keyboardAnimationIsShowing];
-  XCTAssertTrue(isShowingAnimation3 == NO);
+  BOOL isShowingAnimation3 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertFalse(isShowingAnimation3);
   XCTAssertTrue(isShowingAnimation2 != isShowingAnimation3);
 
   // Start compounding hide keyboard animation.
@@ -329,8 +329,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   viewControllerMock.targetViewInsetBottom = 0;
   [viewControllerMock handleKeyboardNotification:fakeNotification];
-  BOOL isShowingAnimation4 = [viewControllerMock keyboardAnimationIsShowing];
-  XCTAssertTrue(isShowingAnimation4 == NO);
+  BOOL isShowingAnimation4 = viewControllerMock.keyboardAnimationIsShowing;
+  XCTAssertFalse(isShowingAnimation4);
   XCTAssertTrue(isShowingAnimation3 == isShowingAnimation4);
 }
 
