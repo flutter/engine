@@ -1293,7 +1293,7 @@ class ViewConfiguration {
   const ViewConfiguration({
     this.view,
     @Deprecated('''
-      Renaming window to view as the class `FlutterWindow` has been deprecated.
+      Renaming window to view since `FlutterWindow` has been removed from dart::ui.
     ''')
     this.window,
     this.devicePixelRatio = 1.0,
@@ -1341,7 +1341,7 @@ class ViewConfiguration {
   ///
   /// If null, then this configuration represents a top level view itself.
   @Deprecated('''
-    Renaming window to view as the class `FlutterWindow` has been deprecated.
+    Renaming window to view since `FlutterWindow` has been removed from dart::ui.
   ''')
   final FlutterView? window;
   final FlutterView? view;
