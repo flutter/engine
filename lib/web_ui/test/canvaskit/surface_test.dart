@@ -37,8 +37,8 @@ void testMain() {
       expect(originalSurface.width(), 9);
       expect(originalSurface.height(), 19);
 
-      // Shrinking reuses the existing canvas and surface but translates it so
-      //// Skia renders into the visible area.
+      // Shrinking reuses the existing canvas but translates it so
+      // Skia renders into the visible area.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
       final DomCanvasElement shrunk = surface.htmlCanvas!;
@@ -46,10 +46,9 @@ void testMain() {
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
       expect(shrunk.style.transform, _isTranslate(0, -4));
-      expect(shrunkSurface, same(originalSurface));
-      // original size is retained.
-      expect(shrunkSurface.width(), 9);
-      expect(shrunkSurface.height(), 19);
+      expect(shrunkSurface, isNot(same(originalSurface)));
+      expect(shrunkSurface.width(), 5);
+      expect(shrunkSurface.height(), 15);
 
       // The first increase will allocate a new surface, but will overallocate
       // by 40% to accommodate future increases.
@@ -75,8 +74,8 @@ void testMain() {
       expect(secondIncrease, same(firstIncrease));
       expect(secondIncrease.style.transform, _isTranslate(0, -6));
       expect(secondIncreaseSurface, same(firstIncreaseSurface));
-      expect(secondIncreaseSurface.width(), 14);
-      expect(secondIncreaseSurface.height(), 28);
+      expect(secondIncreaseSurface.width(), 11);
+      expect(secondIncreaseSurface.height(), 22);
 
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
@@ -101,9 +100,9 @@ void testMain() {
       expect(shrunk2.style.width, '28px');
       expect(shrunk2.style.height, '56px');
       expect(shrunk2.style.transform, _isTranslate(0, -41));
-      expect(shrunkSurface2, same(hugeSurface));
-      expect(shrunkSurface2.width(), 20);
-      expect(shrunkSurface2.height(), 40);
+      expect(shrunkSurface2, isNot(same(hugeSurface)));
+      expect(shrunkSurface2.width(), 5);
+      expect(shrunkSurface2.height(), 15);
 
       // Doubling the DPR should halve the CSS width, height, and translation of the canvas.
       // This tests https://github.com/flutter/flutter/issues/77084
