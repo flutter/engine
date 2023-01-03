@@ -59,7 +59,6 @@ source_set("flutter_framework_source_arc") {
     "framework/Source/FlutterTextInputDelegate.h",
     "framework/Source/FlutterTextInputPlugin.h",
     "framework/Source/FlutterTextInputPlugin.mm",
-    "framework/Source/FlutterTextureRegistryRelay.mm",
   ]
 
   frameworks = [ "UIKit.framework" ]
