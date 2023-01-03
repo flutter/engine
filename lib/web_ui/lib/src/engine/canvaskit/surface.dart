@@ -146,53 +146,40 @@ class Surface {
       throw CanvasKitError('Cannot create surfaces of empty size.');
     }
 
-    // Check if the window is the same size as before, and if so, don't allocate
-    // a new canvas as the previous canvas is big enough to fit everything.
-    final ui.Size? previousSurfaceSize = _currentSurfaceSize;
-    if (!_forceNewContext &&
-        previousSurfaceSize != null &&
-        size.width == previousSurfaceSize.width &&
-        size.height == previousSurfaceSize.height) {
-      // The existing surface is still reusable.
-      if (window.devicePixelRatio != _currentDevicePixelRatio) {
-        _updateLogicalHtmlCanvasSize();
-        _translateCanvas();
+    if (!_forceNewContext) {
+      // Check if the window is the same size as before, and if so, don't allocate
+      // a new canvas as the previous canvas is big enough to fit everything.
+      final ui.Size? previousSurfaceSize = _currentSurfaceSize;
+      if (previousSurfaceSize != null &&
+          size.width == previousSurfaceSize.width &&
+          size.height == previousSurfaceSize.height) {
+        // The existing surface is still reusable.
+        if (window.devicePixelRatio != _currentDevicePixelRatio) {
+          _updateLogicalHtmlCanvasSize();
+          _translateCanvas();
+        }
+        return _surface!;
       }
-      return _surface!;
-    }
 
-
-    final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
-
-    if (!_forceNewContext && previousCanvasSize != null
-      && (size.width != previousCanvasSize.width ||
-        size.height != previousCanvasSize.height)) {
-      htmlCanvas!.width = size.width;
-      htmlCanvas!.height = size.height;
-
-      _surface?.getCanvas().clear(const ui.Color(0x00000000));
-      _surface?.dispose();
-      _surface = null;
-      _addedToScene = false;
-
-      _currentCanvasPhysicalSize = size;
-      _pixelWidth = size.width.ceil();
-      _pixelHeight = size.height.ceil();
-      _updateLogicalHtmlCanvasSize();
-
-      return _surface = _createNewSurface(size);
-    }
-
-    if (_forceNewContext ||
-        previousCanvasSize == null) {
-
+      final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
-      final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
+      if (previousCanvasSize != null && (size.width > previousCanvasSize.width || size.height > previousCanvasSize.height)) {
+        final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
+        _surface?.dispose();
+        _surface = null;
+        htmlCanvas!.width = newSize.width;
+        htmlCanvas!.height = newSize.height;
+        _currentCanvasPhysicalSize = newSize;
+        _pixelWidth = newSize.width.ceil();
+        _pixelHeight = newSize.height.ceil();
+        _updateLogicalHtmlCanvasSize();
+      }
+    }
 
-      // If we have a surface, send a dummy command to its canvas to make its context
-      // current or else disposing the context could fail below.
-      _surface?.getCanvas().clear(const ui.Color(0x00000000));
+    // Either a new context is being forced or we've never had one.
+    if (_forceNewContext ||
+        _currentCanvasPhysicalSize == null) {
       _surface?.dispose();
       _surface = null;
       _addedToScene = false;
@@ -200,8 +187,9 @@ class Surface {
       _grContext?.delete();
       _grContext = null;
 
-      _createNewCanvas(newSize);
-      _currentCanvasPhysicalSize = newSize;
+      _createNewCanvas(size);
+      _currentCanvasPhysicalSize = size;
+      _surface = _createNewSurface(size);
     } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
       _updateLogicalHtmlCanvasSize();
     }
