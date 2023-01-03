@@ -1330,7 +1330,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   NSDictionary* info = notification.userInfo;
-  CGRect beginKeyboardFrame = [[info objectForKey:UIKeyboardFrameBeginUserInfoKey] CGRectValue];
+  CGRect beginKeyboardFrame = [info[UIKeyboardFrameBeginUserInfoKey] CGRectValue];
   CGRect keyboardFrame = [info[UIKeyboardFrameEndUserInfoKey] CGRectValue];
   FlutterKeyboardMode keyboardMode = [self calculateKeyboardAttachMode:notification];
   CGFloat calculatedInset = [self calculateKeyboardInset:keyboardFrame keyboardMode:keyboardMode];
