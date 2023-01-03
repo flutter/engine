@@ -694,9 +694,6 @@ ui::AXTree* AccessibilityBridge::GetTree() const {
 ui::AXPlatformNode* AccessibilityBridge::GetPlatformNodeFromTree(
     const ui::AXNode::AXID node_id) const {
   auto platform_delegate_weak = GetFlutterPlatformNodeDelegateFromID(node_id);
-  if (platform_delegate_weak.expired()) {
-    return nullptr;
-  }
   auto platform_delegate = platform_delegate_weak.lock();
   if (!platform_delegate) {
     return nullptr;
