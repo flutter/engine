@@ -107,6 +107,19 @@ SVGGElement createSVGGElement() {
 
 @JS()
 @staticInterop
+class SVGImageElement extends SVGGraphicsElement {}
+extension SVGImageElementExtension on SVGImageElement {
+  external SVGAnimatedString get href;
+  external SVGAnimatedLength get width;
+  external SVGAnimatedLength get height;
+}
+
+SVGImageElement createSVGImageElement() {
+  return createSVGElement('image') as SVGImageElement;
+}
+
+@JS()
+@staticInterop
 class SVGGeometryElement extends SVGGraphicsElement {}
 
 

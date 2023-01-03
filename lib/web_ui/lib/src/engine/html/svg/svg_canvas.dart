@@ -39,26 +39,31 @@ class SvgCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void clipRect(ui.Rect rect, ui.ClipOp clipOp) {
-    _clip(SvgClip.fromRect(rect));
+    _clip(SvgClip.fromRect(rect), debugLabel: 'clipRect');
   }
 
   @override
   void clipRRect(ui.RRect rrect) {
     final SurfacePath path = SurfacePath();
     path.addRRect(rrect);
-    _clip(SvgClip.fromPath(path));
+    _clip(SvgClip.fromPath(path), debugLabel: 'clipRRect');
   }
 
   @override
   void clipPath(ui.Path path) {
-    _clip(SvgClip.fromPath(path));
+    _clip(SvgClip.fromPath(path), debugLabel: 'clipPath');
   }
 
-  void _clip(SvgClip clip) {
+  void _clip(SvgClip clip, { required String debugLabel }) {
     _defs.append(clip.clipPath);
+    clip.clipPath.setAttribute('flt-debug', debugLabel);
+    _applyCurrentTransform(clip.clipPath);
     final SVGGElement clipGroup = createSVGGElement();
     clipGroup.setAttribute('clip-path', clip.url);
     currentElement.append(clipGroup);
+
+    // Push the element to the stack to make it the currentElement. This way the
+    // clip will apply to any `draw` method until `restore` is called.
     pushElement(clipGroup);
   }
 
@@ -190,49 +195,63 @@ class SvgCanvas extends EngineCanvas with SaveElementStackTracking {
 
   @override
   void drawImage(ui.Image image, ui.Offset p, SurfacePaintData paint) {
+    final SVGImageElement imageElement = _drawUnpositionedImage(image, paint);
+    _applyCurrentTransformAndOffset(imageElement, p);
+    currentElement.append(imageElement);
+  }
+
+  SVGImageElement _drawUnpositionedImage(ui.Image image, SurfacePaintData paint) {
     image as HtmlImage;
-    final SVGForeignObjectElement foreignObject = createSVGForeignObjectElement();
-    foreignObject.setX(0);
-    foreignObject.setY(0);
-    foreignObject.setWidth(image.width.toDouble());
-    foreignObject.setHeight(image.height.toDouble());
+    final SVGImageElement imageElement = image.cloneSVGImageElement();
     _applyPaintToDrawing(
-      foreignObject,
+      imageElement,
       ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
       paint,
     );
-    _applyCurrentTransformAndOffset(foreignObject, p);
-
-    final DomHTMLImageElement imageElement = image.cloneImageElement();
-    imageElement.style.width = '${image.width}px';
-    imageElement.style.height = '${image.height}px';
-    imageElement.style.removeProperty('position'); // Safari gets confused by this
-
-    foreignObject.append(imageElement);
-    currentElement.append(foreignObject);
+    return imageElement;
   }
 
   @override
   void drawImageRect(
       ui.Image image, ui.Rect src, ui.Rect dst, SurfacePaintData paint) {
-    // TODO(yjbanov): implement cutting the src rect out of the image.
-    image as HtmlImage;
-    final SVGForeignObjectElement foreignObject = createSVGForeignObjectElement();
-    foreignObject.setX(0);
-    foreignObject.setY(0);
-    _applyCurrentTransform(foreignObject);
-    foreignObject.setWidth(image.width.toDouble());
-    foreignObject.setHeight(image.height.toDouble());
-    _applyPaintToDrawing(foreignObject, dst, paint);
-    _applyCurrentTransformAndOffset(foreignObject, dst.topLeft);
+    final bool needsDestinationRectangle =
+        src.left != 0 ||
+        src.top != 0 ||
+        src.width != image.width ||
+        src.height != image.height ||
+        dst.width != image.width ||
+        dst.height != image.height;
+    if (!needsDestinationRectangle) {
+      // There's no effect from the `src` or `dst` rectangles, so the image can
+      // be painted using the simpler and faster route.
+      drawImage(image, dst.topLeft, paint);
+    } else {
+      final SvgClip clip = SvgClip.fromRect(src);
+      _defs.append(clip.clipPath);
 
-    final DomHTMLImageElement imageElement = image.cloneImageElement();
-    imageElement.style.width = '${dst.width}px';
-    imageElement.style.height = '${dst.height}px';
-    imageElement.style.removeProperty('position'); // Safari gets confused by this
+      final SVGImageElement imageElement = _drawUnpositionedImage(image, paint);
+      imageElement.setAttribute('clip-path', clip.url);
+      imageElement.style
+        ..transformOrigin = '${dst.left}px ${dst.top}px 0'
+        ..transform = 'scale(calc(${dst.width / src.width}), calc(${dst.height / src.height})) '
+                      'translate(${dst.left - src.left}px, ${dst.top - src.top}px)';
 
-    foreignObject.append(imageElement);
-    currentElement.append(foreignObject);
+      if (currentTransform.isIdentity()) {
+        // There's no extra transform active in the save stack, so just add the
+        // element with its own transform.
+        currentElement.append(imageElement);
+      } else {
+        // There's a non-trivial transform in the save stack. However, it cannot
+        // be applied directly on the image element because the image element
+        // has a non-zero transform-origin, which would apply the save stack
+        // transform incorrectly. So instead, the image is wrapped in a <g>
+        // element and the save stack transform is applied to it instead.
+        final SVGGElement transformElement = createSVGGElement();
+        _applyCurrentTransform(transformElement);
+        transformElement.append(imageElement);
+        currentElement.append(transformElement);
+      }
+    }
   }
 
   @override

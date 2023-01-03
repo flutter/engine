@@ -10,6 +10,7 @@ import 'package:ui/ui.dart' as ui;
 import 'browser_detection.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
+import 'svg.dart';
 import 'util.dart';
 
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
@@ -210,6 +211,14 @@ class HtmlImage implements ui.Image {
       imgElement.style.position = 'absolute';
     }
     return imgElement.cloneNode(true) as DomHTMLImageElement;
+  }
+
+  SVGImageElement cloneSVGImageElement() {
+    final SVGImageElement result = createSVGImageElement();
+    result.href.baseVal = imgElement.src;
+    result.width.baseVal.newValueSpecifiedUnits(width);
+    result.height.baseVal.newValueSpecifiedUnits(height);
+    return result;
   }
 
   @override
