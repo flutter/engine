@@ -5,8 +5,8 @@ part of dart.ui;
 
 /// A view into which a Flutter [Scene] is drawn.
 ///
-/// Each [FlutterView] has its own layer tree that is shown whenever [render]
-/// is called on it with a [Scene].
+/// Each [FlutterView] has its own layer tree that is rendered 
+/// whenever [render] is called on it with a [Scene].
 ///
 /// ## Insets and Padding
 ///
