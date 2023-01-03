@@ -1305,7 +1305,7 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  });
+  }) : assert(!(window != null && view != null));
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
