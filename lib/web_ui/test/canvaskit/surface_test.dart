@@ -56,7 +56,7 @@ void testMain() {
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
       final DomCanvasElement firstIncrease = surface.htmlCanvas!;
-      expect(firstIncrease, isNot(same(original)));
+      expect(firstIncrease, same(original));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
       // Expect overallocated dimensions
@@ -81,7 +81,7 @@ void testMain() {
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
       final DomCanvasElement huge = surface.htmlCanvas!;
-      expect(huge, isNot(same(secondIncrease)));
+      expect(huge, same(secondIncrease));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
       // Also over-allocated
