@@ -196,9 +196,8 @@ class Surface {
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
     _translateCanvas();
-    // If the physical size of the canvas didn't change, do not create a new
-    // surface.
-    _surface ??= _createNewSurface(size);
+    _surface?.dispose();
+    _surface = _createNewSurface(size);
     return _surface!;
   }
 
