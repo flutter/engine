@@ -27,7 +27,8 @@ AccessibilityBridge::AccessibilityBridge()
   ui::AXTreeData data = tree_->data();
   data.tree_id = ui::AXTreeID::CreateNewAXTreeID();
   tree_->UpdateData(data);
-  ui::AXTreeManagerMap::GetInstance().AddTreeManager(tree_->GetAXTreeID(), this);
+  ui::AXTreeManagerMap::GetInstance().AddTreeManager(tree_->GetAXTreeID(),
+                                                     this);
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
@@ -656,7 +657,7 @@ gfx::RectF AccessibilityBridge::RelativeToGlobalBounds(const ui::AXNode* node,
                                                        bool& offscreen,
                                                        bool clip_bounds) {
   return tree_->RelativeToTreeBounds(node, gfx::RectF(), &offscreen,
-                                    clip_bounds);
+                                     clip_bounds);
 }
 
 ui::AXNode* AccessibilityBridge::GetNodeFromTree(

@@ -489,7 +489,8 @@ TEST(AccessibilityBridgeTest, AXTreeManagerTest) {
       std::make_shared<TestAccessibilityBridge>();
 
   ui::AXTreeID tree_id = bridge->GetTreeID();
-  ui::AXTreeManager* manager = ui::AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  ui::AXTreeManager* manager =
+      ui::AXTreeManagerMap::GetInstance().GetManager(tree_id);
   ASSERT_EQ(manager, static_cast<ui::AXTreeManager*>(bridge.get()));
 }
 
