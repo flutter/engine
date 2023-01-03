@@ -19,8 +19,7 @@ import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
 // removes the ability for disabling AA on Paint objects.
-const bool _kUsingMSAA =
-    bool.fromEnvironment('flutter.canvaskit.msaa');
+const bool _kUsingMSAA = bool.fromEnvironment('flutter.canvaskit.msaa');
 
 typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
@@ -164,7 +163,9 @@ class Surface {
       final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
       // Initialize a new, larger, canvas. If the size is growing, then make the
       // new canvas larger than required to avoid many canvas creations.
-      if (previousCanvasSize != null && (size.width > previousCanvasSize.width || size.height > previousCanvasSize.height)) {
+      if (previousCanvasSize != null &&
+          (size.width > previousCanvasSize.width ||
+              size.height > previousCanvasSize.height)) {
         final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
         _surface?.dispose();
         _surface = null;
@@ -178,8 +179,7 @@ class Surface {
     }
 
     // Either a new context is being forced or we've never had one.
-    if (_forceNewContext ||
-        _currentCanvasPhysicalSize == null) {
+    if (_forceNewContext || _currentCanvasPhysicalSize == null) {
       _surface?.dispose();
       _surface = null;
       _addedToScene = false;
@@ -189,7 +189,6 @@ class Surface {
 
       _createNewCanvas(size);
       _currentCanvasPhysicalSize = size;
-      _surface = _createNewSurface(size);
     } else if (window.devicePixelRatio != _currentDevicePixelRatio) {
       _updateLogicalHtmlCanvasSize();
     }
@@ -197,7 +196,10 @@ class Surface {
     _currentDevicePixelRatio = window.devicePixelRatio;
     _currentSurfaceSize = size;
     _translateCanvas();
-    return _surface = _createNewSurface(size);
+    // If the physical size of the canvas didn't change, do not create a new
+    // surface.
+    _surface ??= _createNewSurface(size);
+    return _surface!;
   }
 
   /// Sets the CSS size of the canvas so that canvas pixels are 1:1 with device
