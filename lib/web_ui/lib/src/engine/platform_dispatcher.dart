@@ -138,9 +138,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The current list of windows,
   @override
-  Iterable<ui.FlutterView> get views => _windows.values;
-  Map<Object, ui.FlutterView> get windows => _windows;
-  final Map<Object, ui.FlutterView> _windows = <Object, ui.FlutterView>{};
+  Iterable<ui.FlutterView> get views => _views.values;
+  final Map<Object, ui.FlutterView> _views = <Object, ui.FlutterView>{};
+  ui.FlutterView? getViewById(Object id) => _views[id];
+
   /// A map of opaque platform window identifiers to window configurations.
   ///
   /// This should be considered a protected member, only to be used by
