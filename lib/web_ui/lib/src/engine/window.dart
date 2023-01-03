@@ -59,6 +59,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   final Object _viewId;
+
   @override
   Object get viewId => _viewId;
 
