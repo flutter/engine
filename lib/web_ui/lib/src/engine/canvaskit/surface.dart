@@ -166,7 +166,7 @@ class Surface {
       if (previousCanvasSize != null &&
           (size.width > previousCanvasSize.width ||
               size.height > previousCanvasSize.height)) {
-        final ui.Size newSize = previousCanvasSize == null ? size : size * 1.4;
+        final ui.Size newSize = size * 1.4;
         _surface?.dispose();
         _surface = null;
         htmlCanvas!.width = newSize.width;
