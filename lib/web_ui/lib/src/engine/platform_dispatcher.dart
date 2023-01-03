@@ -481,7 +481,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(gspencergoog): As multi-window support expands, the pop call
             // will need to include the window ID. Right now only one window is
             // supported.
-            (windows[0]! as EngineFlutterWindow)
+            (_views[0]! as EngineFlutterWindow)
                 .browserHistory
                 .exit()
                 .then((_) {
@@ -571,7 +571,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(gspencergoog): As multi-window support expands, the navigation call
         // will need to include the window ID. Right now only one window is
         // supported.
-        (windows[0]! as EngineFlutterWindow)
+        (_views[0]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
             .then((bool handled) {
           if (handled) {
@@ -1160,7 +1160,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String get defaultRouteName {
     return _defaultRouteName ??=
-        (windows[0]! as EngineFlutterWindow).browserHistory.currentPath;
+        (_views[0]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
