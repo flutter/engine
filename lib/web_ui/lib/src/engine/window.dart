@@ -46,7 +46,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   EngineFlutterWindow(this._viewId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.windows[_viewId] = this;
+    engineDispatcher.addView(_viewId, this);
     engineDispatcher.windowConfigurations[_viewId] = const ui.ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);

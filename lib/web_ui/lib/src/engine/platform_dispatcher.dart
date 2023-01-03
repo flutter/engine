@@ -141,6 +141,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   Iterable<ui.FlutterView> get views => _views.values;
   final Map<Object, ui.FlutterView> _views = <Object, ui.FlutterView>{};
   ui.FlutterView? getViewById(Object id) => _views[id];
+  void addView(Object id, ui.FlutterView view) => _views[id] = view;
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
