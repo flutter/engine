@@ -46,7 +46,7 @@ void testMain() {
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
       expect(shrunk.style.transform, _isTranslate(0, -4));
-      expect(shrunkSurface, same(original));
+      expect(shrunkSurface, same(originalSurface));
       // original size is retained.
       expect(shrunkSurface.width(), 9);
       expect(shrunkSurface.height(), 19);
