@@ -4,10 +4,10 @@
 
 #include "impeller/scene/animation/animation_player.h"
 
-#include <chrono>
 #include <memory>
 
 #include "flutter/fml/time/time_point.h"
+#include "impeller/base/timing.h"
 #include "impeller/scene/node.h"
 
 namespace impeller {
@@ -37,9 +37,9 @@ AnimationClip& AnimationPlayer::AddAnimation(
 
 void AnimationPlayer::Update() {
   if (!previous_time_.has_value()) {
-    previous_time_ = std::chrono::high_resolution_clock::now();
+    previous_time_ = Clock::now();
   }
-  auto new_time = std::chrono::high_resolution_clock::now();
+  auto new_time = Clock::now();
   auto delta_time = new_time - previous_time_.value();
   previous_time_ = new_time;
 

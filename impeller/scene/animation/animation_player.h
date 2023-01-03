@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <chrono>
 #include <memory>
 #include <optional>
 #include <unordered_set>
@@ -13,6 +12,7 @@
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
+#include "impeller/base/timing.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/scene/animation/animation_clip.h"
 
@@ -43,8 +43,7 @@ class AnimationPlayer final {
 
   std::vector<AnimationClip> clips_;
 
-  std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>>
-      previous_time_;
+  std::optional<TimePoint> previous_time_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AnimationPlayer);
 };

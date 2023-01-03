@@ -51,15 +51,14 @@ PropertyResolver::~PropertyResolver() = default;
 
 TimelineResolver::~TimelineResolver() = default;
 
-std::chrono::duration<Scalar> TimelineResolver::GetEndTime() {
+SecondsF TimelineResolver::GetEndTime() {
   if (times_.empty()) {
-    return std::chrono::duration<Scalar>::zero();
+    return SecondsF::zero();
   }
-  return std::chrono::duration<Scalar>(times_.back());
+  return SecondsF(times_.back());
 }
 
-TimelineResolver::TimelineKey TimelineResolver::GetTimelineKey(
-    std::chrono::duration<Scalar> time) {
+TimelineResolver::TimelineKey TimelineResolver::GetTimelineKey(SecondsF time) {
   if (times_.size() <= 1 || time.count() <= times_.front()) {
     return {.index = 0, .lerp = 1};
   }
@@ -80,7 +79,7 @@ TranslationTimelineResolver::TranslationTimelineResolver() = default;
 TranslationTimelineResolver::~TranslationTimelineResolver() = default;
 
 void TranslationTimelineResolver::Apply(Node& target,
-                                        std::chrono::duration<Scalar> time,
+                                        SecondsF time,
                                         Scalar weight) {
   if (values_.empty()) {
     return;
@@ -99,7 +98,7 @@ RotationTimelineResolver::RotationTimelineResolver() = default;
 RotationTimelineResolver::~RotationTimelineResolver() = default;
 
 void RotationTimelineResolver::Apply(Node& target,
-                                     std::chrono::duration<Scalar> time,
+                                     SecondsF time,
                                      Scalar weight) {
   if (values_.empty()) {
     return;
@@ -117,9 +116,7 @@ ScaleTimelineResolver::ScaleTimelineResolver() = default;
 
 ScaleTimelineResolver::~ScaleTimelineResolver() = default;
 
-void ScaleTimelineResolver::Apply(Node& target,
-                                  std::chrono::duration<Scalar> time,
-                                  Scalar weight) {
+void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
   if (values_.empty()) {
     return;
   }

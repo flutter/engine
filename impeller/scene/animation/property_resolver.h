@@ -4,13 +4,13 @@
 
 #pragma once
 
-#include <chrono>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/macros.h"
+#include "impeller/base/timing.h"
 #include "impeller/geometry/quaternion.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
@@ -39,16 +39,14 @@ class PropertyResolver {
 
   virtual ~PropertyResolver();
 
-  virtual std::chrono::duration<Scalar> GetEndTime() = 0;
+  virtual SecondsF GetEndTime() = 0;
 
   /// @brief  Resolve and apply the property value to a target node. This
   ///         operation is additive; a given node property may be amended by
   ///         many different PropertyResolvers prior to rendering. For example,
   ///         an AnimationPlayer may blend multiple Animations together by
   ///         applying several AnimationClips.
-  virtual void Apply(Node& target,
-                     std::chrono::duration<Scalar> time,
-                     Scalar weight) = 0;
+  virtual void Apply(Node& target, SecondsF time, Scalar weight) = 0;
 };
 
 class TimelineResolver : public PropertyResolver {
@@ -56,7 +54,7 @@ class TimelineResolver : public PropertyResolver {
   virtual ~TimelineResolver();
 
   // |Resolver|
-  std::chrono::duration<Scalar> GetEndTime();
+  SecondsF GetEndTime();
 
  protected:
   struct TimelineKey {
@@ -66,7 +64,7 @@ class TimelineResolver : public PropertyResolver {
     /// and `timeline_index`. The range of this value should always be `0>N>=1`.
     Scalar lerp = 1;
   };
-  TimelineKey GetTimelineKey(std::chrono::duration<Scalar> time);
+  TimelineKey GetTimelineKey(SecondsF time);
 
   std::vector<Scalar> times_;
 };
@@ -76,9 +74,7 @@ class TranslationTimelineResolver final : public TimelineResolver {
   ~TranslationTimelineResolver();
 
   // |Resolver|
-  void Apply(Node& target,
-             std::chrono::duration<Scalar> time,
-             Scalar weight) override;
+  void Apply(Node& target, SecondsF time, Scalar weight) override;
 
  private:
   TranslationTimelineResolver();
@@ -95,9 +91,7 @@ class RotationTimelineResolver final : public TimelineResolver {
   ~RotationTimelineResolver();
 
   // |Resolver|
-  void Apply(Node& target,
-             std::chrono::duration<Scalar> time,
-             Scalar weight) override;
+  void Apply(Node& target, SecondsF time, Scalar weight) override;
 
  private:
   RotationTimelineResolver();
@@ -114,9 +108,7 @@ class ScaleTimelineResolver final : public TimelineResolver {
   ~ScaleTimelineResolver();
 
   // |Resolver|
-  void Apply(Node& target,
-             std::chrono::duration<Scalar> time,
-             Scalar weight) override;
+  void Apply(Node& target, SecondsF time, Scalar weight) override;
 
  private:
   ScaleTimelineResolver();
