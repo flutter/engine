@@ -73,7 +73,7 @@ void testMain() {
       final DomCanvasElement secondIncrease = surface.htmlCanvas!;
       expect(secondIncrease, same(firstIncrease));
       expect(secondIncrease.style.transform, _isTranslate(0, -6));
-      expect(secondIncreaseSurface, same(firstIncreaseSurface));
+      expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
       expect(secondIncreaseSurface.width(), 11);
       expect(secondIncreaseSurface.height(), 22);
 
