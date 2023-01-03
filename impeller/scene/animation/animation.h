@@ -60,14 +60,14 @@ class Animation final {
 
   const std::vector<Channel>& GetChannels() const;
 
-  Scalar GetEndTime() const;
+  std::chrono::duration<Scalar> GetEndTime() const;
 
  private:
   Animation();
 
   std::string name_;
   std::vector<Channel> channels_;
-  Scalar end_time_ = 0;
+  std::chrono::duration<Scalar> end_time_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Animation);
 };

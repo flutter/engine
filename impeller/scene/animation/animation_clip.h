@@ -49,15 +49,15 @@ class AnimationClip final {
   void SetWeight(Scalar weight);
 
   /// @brief  Get the current playback time of the animation.
-  Scalar GetPlaybackTime() const;
+  std::chrono::duration<Scalar> GetPlaybackTime() const;
 
   /// @brief  Move the animation to the specified time. The given `time` is
   ///         clamped to the animation's playback range.
-  void Seek(Scalar time);
+  void Seek(std::chrono::duration<Scalar> time);
 
   /// @brief  Advance the animation by `delta_time` seconds. Negative
   ///         `delta_time` values do nothing.
-  void Advance(Scalar delta_time);
+  void Advance(std::chrono::duration<Scalar> delta_time);
 
   /// @brief  Applies the animation to all binded properties in the scene.
   void ApplyToBindings() const;
@@ -73,7 +73,7 @@ class AnimationClip final {
   std::shared_ptr<Animation> animation_;
   std::vector<ChannelBinding> bindings_;
 
-  Scalar playback_time_ = 0;
+  std::chrono::duration<Scalar> playback_time_;
   Scalar playback_time_scale_ = 1;  // Seconds multiplier, can be negative.
   Scalar weight_ = 1;
   bool playing_ = false;

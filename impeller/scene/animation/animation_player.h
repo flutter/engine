@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <unordered_set>
@@ -42,7 +43,8 @@ class AnimationPlayer final {
 
   std::vector<AnimationClip> clips_;
 
-  std::optional<fml::TimeDelta> previous_time_;
+  std::optional<std::chrono::time_point<std::chrono::high_resolution_clock>>
+      previous_time_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AnimationPlayer);
 };
