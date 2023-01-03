@@ -479,7 +479,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'SystemNavigator.pop':
-            // TODO(gspencergoog): As multi-window support expands, the pop call
+            // TODO(a-wallen): As multi-window support expands, the pop call
             // will need to include the window ID. Right now only one window is
             // supported.
             (_views[0]! as EngineFlutterWindow)
@@ -569,7 +569,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/navigation':
-        // TODO(gspencergoog): As multi-window support expands, the navigation call
+        // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the window ID. Right now only one window is
         // supported.
         (_views[0]! as EngineFlutterWindow)
