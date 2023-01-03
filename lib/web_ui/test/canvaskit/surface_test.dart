@@ -37,32 +37,30 @@ void testMain() {
       expect(originalSurface.width(), 9);
       expect(originalSurface.height(), 19);
 
-      // Shrinking reuses the existing canvas but translates it so Skia renders into the visible area.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
       final DomCanvasElement shrunk = surface.htmlCanvas!;
       expect(shrunk, same(original));
-      expect(shrunk.style.width, '9px');
-      expect(shrunk.style.height, '19px');
-      expect(shrunk.style.transform, _isTranslate(0, -4));
+      expect(shrunk.style.width, '5px');
+      expect(shrunk.style.height, '15px');
+      expect(shrunk.style.transform, _isTranslate(0, 0));
       expect(shrunkSurface, isNot(same(original)));
       expect(shrunkSurface.width(), 5);
       expect(shrunkSurface.height(), 15);
 
-      // The first increase will allocate a new canvas, but will overallocate
-      // by 40% to accommodate future increases.
+      // The first increase use the same canvas element.
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
       final DomCanvasElement firstIncrease = surface.htmlCanvas!;
-      expect(firstIncrease, isNot(same(original)));
+      expect(firstIncrease, same(original));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
-      // Expect overallocated dimensions
-      expect(firstIncrease.width, 14);
-      expect(firstIncrease.height, 28);
-      expect(firstIncrease.style.width, '14px');
-      expect(firstIncrease.style.height, '28px');
-      expect(firstIncrease.style.transform, _isTranslate(0, -8));
+      // Expect exact dimensions
+      expect(firstIncrease.width, 10);
+      expect(firstIncrease.height, 20);
+      expect(firstIncrease.style.width, '10px');
+      expect(firstIncrease.style.height, '20px');
+      expect(firstIncrease.style.transform,_isTranslate(0, 0));
       expect(firstIncreaseSurface.width(), 10);
       expect(firstIncreaseSurface.height(), 20);
 
@@ -71,23 +69,23 @@ void testMain() {
           surface.acquireFrame(const ui.Size(11, 22)).skiaSurface;
       final DomCanvasElement secondIncrease = surface.htmlCanvas!;
       expect(secondIncrease, same(firstIncrease));
-      expect(secondIncrease.style.transform, _isTranslate(0, -6));
+      expect(secondIncrease.style.transform, _isTranslate(0, 0));
       expect(secondIncreaseSurface, isNot(same(firstIncreaseSurface)));
       expect(secondIncreaseSurface.width(), 11);
       expect(secondIncreaseSurface.height(), 22);
 
-      // Increases beyond the 40% limit will cause a new allocation.
+      // Increases beyond the 40% limit will still not cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
       final DomCanvasElement huge = surface.htmlCanvas!;
-      expect(huge, isNot(same(secondIncrease)));
+      expect(huge, same(secondIncrease));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
-      // Also over-allocated
-      expect(huge.width, 28);
-      expect(huge.height, 56);
-      expect(huge.style.width, '28px');
-      expect(huge.style.height, '56px');
-      expect(huge.style.transform, _isTranslate(0, -16));
+      // Exactly allocated
+      expect(huge.width, 20);
+      expect(huge.height, 40);
+      expect(huge.style.width, '20px');
+      expect(huge.style.height, '40px');
+      expect(huge.style.transform, _isTranslate(0, 0));
       expect(hugeSurface.width(), 20);
       expect(hugeSurface.height(), 40);
 

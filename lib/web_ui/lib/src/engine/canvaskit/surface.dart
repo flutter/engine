@@ -165,8 +165,8 @@ class Surface {
     final ui.Size? previousCanvasSize = _currentCanvasPhysicalSize;
 
     if (!_forceNewContext && previousCanvasSize != null
-      && (size.width > previousCanvasSize.width ||
-        size.height > previousCanvasSize.height)) {
+      && (size.width != previousCanvasSize.width ||
+        size.height != previousCanvasSize.height)) {
       htmlCanvas!.width = size.width;
       htmlCanvas!.height = size.height;
 
