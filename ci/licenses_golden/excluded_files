@@ -39,6 +39,7 @@
 ../../../flutter/display_list/display_list_matrix_clip_tracker_unittests.cc
 ../../../flutter/display_list/display_list_paint_unittests.cc
 ../../../flutter/display_list/display_list_path_effect_unittests.cc
+../../../flutter/display_list/display_list_rtree_unittests.cc
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/display_list_utils_unittests.cc
 ../../../flutter/display_list/display_list_vertices_unittests.cc
@@ -357,6 +358,8 @@
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_base_unittest.cc
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_mac_unittest.h
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_mac_unittest.mm
+../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win_unittest.cc
+../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win_unittest.cc
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_unittest.cc
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_unittest.h
 ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_win_unittest.cc
