@@ -20,7 +20,8 @@ constexpr int kHasScrollingAction =
     FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
 
 // AccessibilityBridge
-AccessibilityBridge::AccessibilityBridge() {
+AccessibilityBridge::AccessibilityBridge()
+    : tree_(std::make_unique<ui::AXTree>()) {
   event_generator_.SetTree(tree_.get());
   tree_->AddObserver(static_cast<ui::AXTreeObserver*>(this));
   ui::AXTreeData data = tree_->data();
@@ -68,7 +69,7 @@ void AccessibilityBridge::CommitUpdates() {
 
   // Second, apply the pending node updates. This also moves reparented nodes to
   // their new parents if needed.
-  ui::AXTreeUpdate update{.tree_data = tree_.data()};
+  ui::AXTreeUpdate update{.tree_data = tree_->data()};
 
   // Figure out update order, ui::AXTree only accepts update in tree order,
   // where parent node must come before the child node in
@@ -244,7 +245,7 @@ AccessibilityBridge::CreateRemoveReparentedNodesUpdate() {
   }
 
   ui::AXTreeUpdate update{
-      .tree_data = tree_.data(),
+      .tree_data = tree_->data(),
       .nodes = std::vector<ui::AXNodeData>(),
   };
 
