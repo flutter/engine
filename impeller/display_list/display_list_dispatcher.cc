@@ -20,13 +20,14 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/display_list/display_list_image_impeller.h"
+#include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
-#include "impeller/display_list/vertices_converter.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
+#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -35,7 +36,6 @@
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/sigma.h"
-#include "impeller/geometry/vertices.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 
@@ -501,6 +501,20 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case Paint::ColorSourceType::kScene: {
+      // const flutter::DlSceneColorSource* scene_color_source =
+      // source->asScene(); std::shared_ptr<scene::Node> scene_node =
+      // scene_color_source->node(); Matrix camera_transform =
+      //   scene_color_node->camera_transform();
+
+      paint_.color_source = [/*scene_node, camera_transform*/]() {
+        auto contents = std::make_shared<SceneContents>();
+        // contents->SetNode(scene_node);
+        // contents->SetCameraTransform(camera_transform);
+        return contents;
+      };
+    }
+      return;
     case Paint::ColorSourceType::kConicalGradient:
       UNIMPLEMENTED;
       break;
@@ -1104,7 +1118,8 @@ void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawVertices(const flutter::DlVertices* vertices,
                                          flutter::DlBlendMode dl_mode) {
-  canvas_.DrawVertices(ToVertices(vertices), ToBlendMode(dl_mode), paint_);
+  canvas_.DrawVertices(DLVerticesGeometry::MakeVertices(vertices),
+                       ToBlendMode(dl_mode), paint_);
 }
 
 // |flutter::Dispatcher|

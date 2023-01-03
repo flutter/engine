@@ -30,6 +30,16 @@
 @property(nonatomic, readonly, nullable) flutter::FlutterCompositor* macOSCompositor;
 @end
 
+@interface TestPlatformViewFactory : NSObject <FlutterPlatformViewFactory>
+@end
+
+@implementation TestPlatformViewFactory
+- (nonnull NSView*)createWithViewIdentifier:(int64_t)viewId arguments:(nullable id)args {
+  return viewId == 42 ? [[NSView alloc] init] : nil;
+}
+
+@end
+
 namespace flutter::testing {
 
 TEST_F(FlutterEngineTest, CanLaunch) {
@@ -39,11 +49,9 @@ TEST_F(FlutterEngineTest, CanLaunch) {
 }
 
 TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
-  // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
   std::string executable_name = [[engine executableName] UTF8String];
   ASSERT_FALSE(executable_name.empty());
-  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
 
   // Block until notified by the Dart test of the value of Platform.executable.
   fml::AutoResetWaitableEvent latch;
@@ -53,6 +61,10 @@ TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
                       EXPECT_EQ(executable_name, dart_string);
                       latch.Signal();
                     }));
+
+  // Launch the test entrypoint.
+  EXPECT_TRUE([engine runWithEntrypoint:@"executableNameNotNull"]);
+
   latch.Wait();
 }
 
@@ -76,6 +88,11 @@ TEST_F(FlutterEngineTest, MessengerSend) {
 }
 
 TEST_F(FlutterEngineTest, CanLogToStdout) {
+  // Block until completion of print statement.
+  fml::AutoResetWaitableEvent latch;
+  AddNativeCallback("SignalNativeTest",
+                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
+
   // Replace stdout stream buffer with our own.
   std::stringstream buffer;
   std::streambuf* old_buffer = std::cout.rdbuf();
@@ -86,10 +103,6 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
   EXPECT_TRUE([engine runWithEntrypoint:@"canLogToStdout"]);
   EXPECT_TRUE(engine.running);
 
-  // Block until completion of print statement.
-  fml::AutoResetWaitableEvent latch;
-  AddNativeCallback("SignalNativeTest",
-                    CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) { latch.Signal(); }));
   latch.Wait();
 
   // Restore old stdout stream buffer.
@@ -101,19 +114,7 @@ TEST_F(FlutterEngineTest, CanLogToStdout) {
 }
 
 TEST_F(FlutterEngineTest, BackgroundIsBlack) {
-  // Launch the test entrypoint.
   FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
-  EXPECT_TRUE(engine.running);
-
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
-  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
@@ -127,12 +128,8 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
                       }
                       latch.Signal();
                     }));
-  latch.Wait();
-}
 
-TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   // Launch the test entrypoint.
-  FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
@@ -144,7 +141,12 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
-  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
+  latch.Wait();
+}
+
+TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
+  FlutterEngine* engine = GetFlutterEngine();
 
   // Latch to ensure the entire layer tree has been generated and presented.
   fml::AutoResetWaitableEvent latch;
@@ -158,6 +160,21 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
                       }
                       latch.Signal();
                     }));
+
+  // Launch the test entrypoint.
+  EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
+  EXPECT_TRUE(engine.running);
+
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  [viewController loadView];
+  viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
+  [engine setViewController:viewController];
+  viewController.flutterView.backgroundColor = [NSColor whiteColor];
+
   latch.Wait();
 }
 
@@ -425,23 +442,22 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
 }
 
 TEST_F(FlutterEngineTest, NativeCallbacks) {
-  FlutterEngine* engine = GetFlutterEngine();
-  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
-  EXPECT_TRUE(engine.running);
-
   fml::AutoResetWaitableEvent latch;
   bool latch_called = false;
-
   AddNativeCallback("SignalNativeTest", CREATE_NATIVE_ENTRY([&](Dart_NativeArguments args) {
                       latch_called = true;
                       latch.Signal();
                     }));
+
+  FlutterEngine* engine = GetFlutterEngine();
+  EXPECT_TRUE([engine runWithEntrypoint:@"nativeCallback"]);
+  EXPECT_TRUE(engine.running);
+
   latch.Wait();
   ASSERT_TRUE(latch_called);
 }
 
-// TODO(iskakaushik): Enable after https://github.com/flutter/flutter/issues/96668 is fixed.
-TEST(FlutterEngine, DISABLED_Compositor) {
+TEST(FlutterEngine, Compositor) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -455,26 +471,29 @@ TEST(FlutterEngine, DISABLED_Compositor) {
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
 
-  // Latch to ensure the entire layer tree has been generated and presented.
-  fml::AutoResetWaitableEvent latch;
-  auto compositor = engine.macOSCompositor;
-  compositor->SetPresentCallback([&](bool has_flutter_content) {
-    latch.Signal();
-    return true;
-  });
-  latch.Wait();
+  [engine.platformViewController registerViewFactory:[[TestPlatformViewFactory alloc] init]
+                                              withId:@"factory_id"];
+  [engine.platformViewController
+      handleMethodCall:[FlutterMethodCall methodCallWithMethodName:@"create"
+                                                         arguments:@{
+                                                           @"id" : @(42),
+                                                           @"viewType" : @"factory_id",
+                                                         }]
+                result:^(id result){
+                }];
+
+  [viewController.flutterView.threadSynchronizer blockUntilFrameAvailable];
 
   CALayer* rootLayer = viewController.flutterView.layer;
 
-  // There are three layers total - the root layer and two sublayers.
-  // This test will need to be updated when PlatformViews are supported, as
-  // there are two PlatformView layers in this test.
+  // There are two layers with Flutter contents and one view
   EXPECT_EQ(rootLayer.sublayers.count, 2u);
+  EXPECT_EQ(viewController.flutterView.subviews.count, 1u);
 
   // TODO(gw280): add support for screenshot tests in this test harness
 
   [engine shutDownEngine];
-}
+}  // namespace flutter::testing
 
 TEST(FlutterEngine, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
@@ -605,6 +624,48 @@ TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
   [engineMock handleMethodCall:methodCall result:result];
   EXPECT_TRUE(called);
   EXPECT_TRUE(value);
+}
+
+TEST_F(FlutterEngineTest, ResponseAfterEngineDied) {
+  FlutterEngine* engine = GetFlutterEngine();
+  FlutterBasicMessageChannel* channel = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"foo"
+      binaryMessenger:engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
+  __block BOOL didCallCallback = NO;
+  [channel setMessageHandler:^(id message, FlutterReply callback) {
+    ShutDownEngine();
+    callback(nil);
+    didCallCallback = YES;
+  }];
+  EXPECT_TRUE([engine runWithEntrypoint:@"sendFooMessage"]);
+  engine = nil;
+
+  while (!didCallCallback) {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
+}
+
+TEST_F(FlutterEngineTest, ResponseFromBackgroundThread) {
+  FlutterEngine* engine = GetFlutterEngine();
+  FlutterBasicMessageChannel* channel = [[FlutterBasicMessageChannel alloc]
+         initWithName:@"foo"
+      binaryMessenger:engine.binaryMessenger
+                codec:[FlutterStandardMessageCodec sharedInstance]];
+  __block BOOL didCallCallback = NO;
+  [channel setMessageHandler:^(id message, FlutterReply callback) {
+    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+      callback(nil);
+      dispatch_async(dispatch_get_main_queue(), ^{
+        didCallCallback = YES;
+      });
+    });
+  }];
+  EXPECT_TRUE([engine runWithEntrypoint:@"sendFooMessage"]);
+
+  while (!didCallCallback) {
+    [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
+  }
 }
 
 }  // namespace flutter::testing

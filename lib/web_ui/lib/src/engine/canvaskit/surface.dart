@@ -325,9 +325,9 @@ class Surface {
           // Default to no anti-aliasing. Paint commands can be explicitly
           // anti-aliased by setting their `Paint` object's `antialias` property.
           antialias: _kUsingMSAA ? 1 : 0,
-          majorVersion: webGLVersion,
+          majorVersion: webGLVersion.toDouble(),
         ),
-      );
+      ).toInt();
 
       _glContext = glContext;
 
@@ -429,8 +429,8 @@ class CkSurface {
 
   int? get context => _glContext;
 
-  int width() => surface.width();
-  int height() => surface.height();
+  int width() => surface.width().toInt();
+  int height() => surface.height().toInt();
 
   void dispose() {
     if (_isDisposed) {

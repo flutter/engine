@@ -1054,5 +1054,109 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
+                                          flutter::DlColor::kGreen(),
+                                          flutter::DlColor::kWhite()};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      /*texture_coorindates=*/nullptr, colors.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColor(flutter::DlColor::kRed().modulateOpacity(0.5));
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesLinearGradientWithoutIndices) {
+  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                    SkPoint::Make(200, 100),
+                                    SkPoint::Make(300, 300)};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 3, positions.data(),
+      /*texture_coorindates=*/nullptr, /*colors=*/nullptr);
+
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed()};
+  const float stops[2] = {0.0, 1.0};
+
+  auto linear = flutter::DlColorSource::MakeLinear(
+      {100.0, 100.0}, {300.0, 300.0}, 2, colors.data(), stops,
+      flutter::DlTileMode::kRepeat);
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColorSource(linear);
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
+  std::vector<SkPoint> positions = {
+      SkPoint::Make(100, 300), SkPoint::Make(200, 100), SkPoint::Make(300, 300),
+      SkPoint::Make(200, 500)};
+  std::vector<uint16_t> indices = {0, 1, 2, 0, 2, 3};
+
+  auto vertices = flutter::DlVertices::Make(
+      flutter::DlVertexMode::kTriangles, 6, positions.data(),
+      /*texture_coorindates=*/nullptr, /*colors=*/nullptr, 6, indices.data());
+
+  flutter::DisplayListBuilder builder;
+  flutter::DlPaint paint;
+
+  paint.setColor(flutter::DlColor::kWhite());
+  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+TEST_P(DisplayListTest, DrawShapes) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeJoin> joins = {
+      flutter::DlStrokeJoin::kBevel,
+      flutter::DlStrokeJoin::kRound,
+      flutter::DlStrokeJoin::kMiter,
+  };
+  flutter::DlPaint paint =                            //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kWhite())       //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+  flutter::DlPaint stroke_paint =                       //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kWhite())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(10);
+  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+
+  builder.translate(300, 50);
+  builder.scale(0.8, 0.8);
+  for (auto join : joins) {
+    paint.setStrokeJoin(join);
+    stroke_paint.setStrokeJoin(join);
+    builder.drawRect(SkRect::MakeXYWH(0, 0, 100, 100), paint);
+    builder.drawRect(SkRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 150, 100, 100), 30, 30),
+        stroke_paint);
+    builder.drawCircle({350, 50}, 50, paint);
+    builder.drawCircle({350, 200}, 50, stroke_paint);
+    builder.translate(0, 300);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 }  // namespace testing
 }  // namespace impeller

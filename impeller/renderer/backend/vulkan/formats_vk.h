@@ -139,7 +139,7 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
     case PixelFormat::kUnknown:
       return vk::Format::eUndefined;
     case PixelFormat::kA8UNormInt:
-      return vk::Format::eA8B8G8R8UnormPack32;
+      return vk::Format::eR8Unorm;
     case PixelFormat::kR8G8B8A8UNormInt:
       return vk::Format::eR8G8B8A8Unorm;
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
@@ -150,6 +150,8 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
       return vk::Format::eB8G8R8A8Srgb;
     case PixelFormat::kS8UInt:
       return vk::Format::eS8Uint;
+    case PixelFormat::kD32FloatS8UInt:
+      return vk::Format::eD32SfloatS8Uint;
     case PixelFormat::kR8UNormInt:
       return vk::Format::eR8Unorm;
     case PixelFormat::kR8G8UNormInt:
@@ -163,9 +165,6 @@ constexpr PixelFormat ToPixelFormat(vk::Format format) {
   switch (format) {
     case vk::Format::eUndefined:
       return PixelFormat::kUnknown;
-
-    case vk::Format::eA8B8G8R8UnormPack32:
-      return PixelFormat::kA8UNormInt;
 
     case vk::Format::eR8G8B8A8Unorm:
       return PixelFormat::kR8G8B8A8UNormInt;
@@ -181,6 +180,9 @@ constexpr PixelFormat ToPixelFormat(vk::Format format) {
 
     case vk::Format::eS8Uint:
       return PixelFormat::kS8UInt;
+
+    case vk::Format::eD32SfloatS8Uint:
+      return PixelFormat::kD32FloatS8UInt;
 
     case vk::Format::eR8Unorm:
       return PixelFormat::kR8UNormInt;

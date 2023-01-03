@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
 uniform sampler2D texture_sampler;
 
@@ -26,5 +27,6 @@ void main() {
           frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
           frag_info.x_tile_mode,                    // x tile mode
           frag_info.y_tile_mode                     // y tile mode
-      ) * frag_info.alpha;
+          ) *
+      frag_info.alpha;
 }

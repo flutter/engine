@@ -448,7 +448,9 @@ typedef struct {
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
-/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback.
+/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback,
+/// \ref FlutterMetalRendererConfig.get_next_drawable_callback,
+/// and \ref FlutterVulkanRendererConfig.get_next_image_callback.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterFrameInfo).
   size_t struct_size;
@@ -633,6 +635,8 @@ typedef struct {
   int64_t texture_id;
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
+  ///
+  /// A NULL texture is considered invalid.
   FlutterMetalTextureHandle texture;
   /// A baton that is not interpreted by the engine in any way. It will be given
   /// back to the embedder in the destruction callback below. Embedder resources
@@ -2301,7 +2305,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 /// @brief      Dispatch a semantics action to the specified semantics node.
 ///
 /// @param[in]  engine       A running engine instance.
-/// @param[in]  identifier   The semantics action identifier.
+/// @param[in]  node_id      The semantics node identifier.
 /// @param[in]  action       The semantics action.
 /// @param[in]  data         Data associated with the action.
 /// @param[in]  data_length  The data length.
@@ -2311,7 +2315,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length);

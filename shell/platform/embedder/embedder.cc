@@ -463,6 +463,8 @@ InferMetalPlatformViewCreationCallback(
         embedder_texture.struct_size = sizeof(FlutterMetalTexture);
         embedder_texture.texture = texture.texture;
         embedder_texture.texture_id = texture.texture_id;
+        embedder_texture.user_data = texture.destruction_context;
+        embedder_texture.destruction_callback = texture.destruction_callback;
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
@@ -477,6 +479,8 @@ InferMetalPlatformViewCreationCallback(
     FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
     texture_info.texture_id = metal_texture.texture_id;
     texture_info.texture = metal_texture.texture;
+    texture_info.destruction_callback = metal_texture.destruction_callback;
+    texture_info.destruction_context = metal_texture.user_data;
     return texture_info;
   };
 
@@ -1292,6 +1296,7 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
       node.customAccessibilityActions.size(),
       node.customAccessibilityActions.data(),
       node.platformViewId,
+      node.tooltip.c_str(),
   };
 }
 
@@ -2446,7 +2451,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length) {
@@ -2456,7 +2461,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   auto engine_action = static_cast<flutter::SemanticsAction>(action);
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
-               id, engine_action,
+               node_id, engine_action,
                fml::MallocMapping::Copy(data, data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");

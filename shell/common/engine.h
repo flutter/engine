@@ -552,7 +552,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                       corresponding sweep can be performed within the
   ///                       deadline.
   ///
-  void NotifyIdle(fml::TimePoint deadline);
+  void NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the attached flutter view has been
+  ///             destroyed.
+  ///             This enables the engine to notify the Dart VM so it can do
+  ///             some cleanp activities.
+  void NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -715,12 +722,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             originates on the platform view and has been forwarded to the
   ///             engine here on the UI task runner by the shell.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int id,
+  void DispatchSemanticsAction(int node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 

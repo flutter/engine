@@ -551,6 +551,9 @@ def to_gn_args(args):
   elif os.getenv('FLUTTER_IMPELLER_ENABLE_PLAYGROUND', '0') == '1':
     gn_args['impeller_enable_playground'] = True
 
+  if args.enable_impeller_3d:
+    gn_args['impeller_enable_3d'] = True
+
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
@@ -961,6 +964,7 @@ def parse_args(args):
       action='store_true',
       help='Whether impeller unit tests run in playground mode.'
   )
+
   parser.add_argument(
       '--prebuilt-impellerc',
       default=None,
@@ -969,13 +973,11 @@ def parse_args(args):
       'Do not use this outside of CI or with impellerc from a different engine version.'
   )
 
-  # This is currently a no-op, will be removed shortly.
   parser.add_argument(
-      '--enable-impeller-vulkan',
+      '--enable-impeller-3d',
       default=False,
       action='store_true',
-      help='Enables WIP impeller support for vulkan. ' +
-      'https://github.com/flutter/flutter/issues/107357'
+      help='Enables experimental 3d support.'
   )
 
   # Sanitizers.

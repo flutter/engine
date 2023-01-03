@@ -851,6 +851,14 @@ void Shell::OnPlatformViewDestroyed() {
   // This incorrect assumption can lead to deadlock.
   rasterizer_->DisableThreadMergerIfNeeded();
 
+  // Notify the Dart VM that the PlatformView has been destroyed and some
+  // cleanup activity can be done (e.g: garbage collect the Dart heap).
+  task_runners_.GetUITaskRunner()->PostTask([engine = engine_->GetWeakPtr()]() {
+    if (engine) {
+      engine->NotifyDestroyed();
+    }
+  });
+
   // Note:
   // This is a synchronous operation because certain platforms depend on
   // setup/suspension of all activities that may be interacting with the GPU in
@@ -987,17 +995,17 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
+void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                                   SemanticsAction action,
                                                   fml::MallocMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = engine_->GetWeakPtr(), id, action,
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(), node_id, action,
                          args = std::move(args)]() mutable {
         if (engine) {
-          engine->DispatchSemanticsAction(id, action, std::move(args));
+          engine->DispatchSemanticsAction(node_id, action, std::move(args));
         }
       }));
 }
@@ -1125,7 +1133,7 @@ void Shell::OnAnimatorBeginFrame(fml::TimePoint frame_target_time,
 }
 
 // |Animator::Delegate|
-void Shell::OnAnimatorNotifyIdle(fml::TimePoint deadline) {
+void Shell::OnAnimatorNotifyIdle(fml::TimeDelta deadline) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetUITaskRunner()->RunsTasksOnCurrentThread());
 

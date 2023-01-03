@@ -66,6 +66,20 @@ impeller_shaders("entity_shaders") {
   ]
 }
 
+impeller_shaders("modern_entity_shaders") {
+  name = "modern"
+
+  if (impeller_enable_opengles) {
+    gles_language_version = "460"
+  }
+
+  shaders = [
+    "shaders/linear_gradient_ssbo_fill.frag",
+    "shaders/radial_gradient_ssbo_fill.frag",
+    "shaders/sweep_gradient_ssbo_fill.frag",
+  ]
+}
+
 impeller_component("entity") {
   sources = [
     "contents/atlas_contents.cc",
@@ -120,6 +134,8 @@ impeller_component("entity") {
     "contents/rrect_shadow_contents.h",
     "contents/runtime_effect_contents.cc",
     "contents/runtime_effect_contents.h",
+    "contents/scene_contents.cc",
+    "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
     "contents/sweep_gradient_contents.cc",
@@ -146,9 +162,11 @@ impeller_component("entity") {
 
   public_deps = [
     ":entity_shaders",
+    ":modern_entity_shaders",
     "../archivist",
     "../image",
     "../renderer",
+    "../scene",
     "../typographer",
   ]
 

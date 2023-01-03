@@ -12,12 +12,14 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/mapping.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
+#include "impeller/entity/vk/modern_shaders_vk.h"
 #include "impeller/fixtures/vk/fixtures_shaders_vk.h"
 #include "impeller/playground/imgui/vk/imgui_shaders_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_vk.h"
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
+#include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace impeller {
 
@@ -26,11 +28,15 @@ ShaderLibraryMappingsForPlayground() {
   return {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
                                              impeller_entity_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
+                                             impeller_modern_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(
           impeller_fixtures_shaders_vk_data,
           impeller_fixtures_shaders_vk_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_vk_data,
                                              impeller_imgui_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
+                                             impeller_scene_shaders_vk_length),
 
   };
 }

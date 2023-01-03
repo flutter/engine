@@ -73,6 +73,12 @@ class ContextGLES final : public Context,
   // |Context|
   bool SupportsOffscreenMSAA() const override;
 
+  // |Context|
+  const BackendFeatures& GetBackendFeatures() const override;
+
+  // |Context|
+  PixelFormat GetColorAttachmentPixelFormat() const override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };
 

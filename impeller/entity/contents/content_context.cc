@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/content_context.h"
 
+#include <memory>
 #include <sstream>
 
 #include "impeller/entity/entity.h"
@@ -146,7 +147,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
-      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()) {
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
+      scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -157,6 +159,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
+  if (context_->GetBackendFeatures().ssbo_support) {
+    linear_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<LinearGradientSSBOFillPipeline>(*context_);
+    radial_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<RadialGradientSSBOFillPipeline>(*context_);
+    sweep_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
+  }
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
   rrect_blur_pipelines_[{}] =
@@ -290,6 +300,10 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   return subpass_texture;
 }
 
+std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
+  return scene_context_;
+}
+
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
   return tessellator_;
 }
@@ -301,6 +315,10 @@ std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
 
 std::shared_ptr<Context> ContentContext::GetContext() const {
   return context_;
+}
+
+const BackendFeatures& ContentContext::GetBackendFeatures() const {
+  return context_->GetBackendFeatures();
 }
 
 }  // namespace impeller

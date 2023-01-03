@@ -40,8 +40,10 @@ impeller_component("playground") {
 
   public_deps = [
     "../entity:entity_shaders",
+    "../entity:modern_entity_shaders",
     "../fixtures:shader_fixtures",
     "../renderer",
+    "../scene/shaders",
     "imgui:imgui_impeller_backend",
     "//flutter/fml",
     "//third_party/glfw",
