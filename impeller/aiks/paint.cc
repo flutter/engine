@@ -10,7 +10,7 @@ namespace impeller {
 
 std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
                                                          bool cover) const {
-  std::unique_ptr<Geometry> geometry;
+  std::shared_ptr<Geometry> geometry;
   switch (style) {
     case Style::kFill:
       geometry = cover ? Geometry::MakeCover() : Geometry::MakeFillPath(path);
@@ -26,7 +26,7 @@ std::shared_ptr<Contents> Paint::CreateContentsForEntity(const Path& path,
 }
 
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    std::unique_ptr<Geometry> geometry) const {
+    std::shared_ptr<Geometry> geometry) const {
   if (color_source.has_value()) {
     auto& source = color_source.value();
     auto contents = source();

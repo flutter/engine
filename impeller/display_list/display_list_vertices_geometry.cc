@@ -58,9 +58,9 @@ static std::vector<uint16_t> fromFanIndices(
 /////// Vertices Geometry ///////
 
 // static
-std::unique_ptr<VerticesGeometry> DLVerticesGeometry::MakeVertices(
+std::shared_ptr<VerticesGeometry> DLVerticesGeometry::MakeVertices(
     const flutter::DlVertices* vertices) {
-  return std::make_unique<DLVerticesGeometry>(vertices);
+  return std::make_shared<DLVerticesGeometry>(vertices);
 }
 
 DLVerticesGeometry::DLVerticesGeometry(const flutter::DlVertices* vertices)
@@ -151,12 +151,14 @@ GeometryResult DLVerticesGeometry::GetPositionBuffer(
   };
 }
 
+std::shared_ptr<Geometry> DLVerticesGeometry::AsGeometry() {
+  return std::shared_ptr<Geometry>(this);
+}
+
 GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass,
-    Color paint_color,
-    BlendMode blend_mode) {
+    RenderPass& pass) {
   using VS = GeometryColorPipeline::VertexShader;
 
   auto index_count = normalized_indices_.size() == 0
@@ -173,9 +175,8 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
   {
     for (auto i = 0; i < vertex_count; i++) {
       auto dl_color = dl_colors[i];
-      auto pre_color = Color(dl_color.getRedF(), dl_color.getGreenF(),
+      auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
                              dl_color.getBlueF(), dl_color.getAlphaF());
-      auto color = Color::BlendColor(paint_color, pre_color, blend_mode);
       auto sk_point = dl_vertices[i];
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),

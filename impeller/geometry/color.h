@@ -734,10 +734,6 @@ struct Color {
     };
   }
 
-  static Color BlendColor(const Color& src,
-                          const Color& dst,
-                          BlendMode blend_mode);
-
   Color operator*(const Color& c) const {
     return Color(red * c.red, green * c.green, blue * c.blue, alpha * c.alpha);
   }

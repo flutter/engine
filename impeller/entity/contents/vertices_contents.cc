@@ -25,16 +25,8 @@ std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransformation());
 };
 
-void VerticesContents::SetGeometry(std::unique_ptr<VerticesGeometry> geometry) {
+void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
   geometry_ = std::move(geometry);
-}
-
-void VerticesContents::SetColor(Color color) {
-  color_ = color.Premultiply();
-}
-
-void VerticesContents::SetBlendMode(BlendMode blend_mode) {
-  blend_mode_ = blend_mode;
 }
 
 bool VerticesContents::Render(const ContentContext& renderer,
@@ -53,8 +45,8 @@ bool VerticesContents::Render(const ContentContext& renderer,
     case GeometryVertexType::kColor: {
       using VS = GeometryColorPipeline::VertexShader;
 
-      auto geometry_result = geometry_->GetPositionColorBuffer(
-          renderer, entity, pass, color_, blend_mode_);
+      auto geometry_result =
+          geometry_->GetPositionColorBuffer(renderer, entity, pass);
       opts.primitive_type = geometry_result.type;
       cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
       cmd.BindVertices(geometry_result.vertex_buffer);
@@ -63,28 +55,14 @@ bool VerticesContents::Render(const ContentContext& renderer,
       vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                       entity.GetTransformation();
       VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
-      break;
+
+      return pass.AddCommand(std::move(cmd));
     }
     case GeometryVertexType::kUV:
     case GeometryVertexType::kPosition: {
-      using VS = GeometryPositionPipeline::VertexShader;
-
-      auto geometry_result =
-          geometry_->GetPositionBuffer(renderer, entity, pass);
-      opts.primitive_type = geometry_result.type;
-      cmd.pipeline = renderer.GetGeometryPositionPipeline(opts);
-      cmd.BindVertices(geometry_result.vertex_buffer);
-
-      VS::VertInfo vert_info;
-      vert_info.mvp = geometry_result.transform;
-      vert_info.color = color_.Premultiply();
-      VS::BindVertInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(vert_info));
       break;
     }
   }
-  pass.AddCommand(std::move(cmd));
-
   return true;
 }
 

@@ -48,18 +48,18 @@ class Geometry {
 
   virtual ~Geometry();
 
-  static std::unique_ptr<Geometry> MakeFillPath(const Path& path);
+  static std::shared_ptr<Geometry> MakeFillPath(const Path& path);
 
-  static std::unique_ptr<Geometry> MakeStrokePath(
+  static std::shared_ptr<Geometry> MakeStrokePath(
       const Path& path,
       Scalar stroke_width = 0.0,
       Scalar miter_limit = 4.0,
       Cap stroke_cap = Cap::kButt,
       Join stroke_join = Join::kMiter);
 
-  static std::unique_ptr<Geometry> MakeCover();
+  static std::shared_ptr<Geometry> MakeCover();
 
-  static std::unique_ptr<Geometry> MakeRect(Rect rect);
+  static std::shared_ptr<Geometry> MakeRect(Rect rect);
 
   virtual GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                            const Entity& entity,
@@ -75,13 +75,13 @@ class VerticesGeometry : public Geometry {
  public:
   virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
-                                                RenderPass& pass,
-                                                Color paint_color,
-                                                BlendMode blend_mode) = 0;
+                                                RenderPass& pass) = 0;
 
   virtual GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
                                              const Entity& entity,
                                              RenderPass& pass) = 0;
+
+  virtual std::shared_ptr<Geometry> AsGeometry() = 0;
 };
 
 /// @brief A geometry that is created from a filled path object.

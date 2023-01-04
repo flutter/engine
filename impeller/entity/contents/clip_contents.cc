@@ -22,7 +22,7 @@ ClipContents::ClipContents() = default;
 
 ClipContents::~ClipContents() = default;
 
-void ClipContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+void ClipContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
 }
 

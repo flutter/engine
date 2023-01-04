@@ -377,29 +377,35 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
+void Canvas::DrawVertices(std::shared_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
                           Paint paint) {
+  // If there are per-vertex colors, then first draw these as they behave as
+  // the destination for the provided blend_mode. If there is no per-vertex
+  // colors, then use the vertices as a geometry with a color source as normal.
+  auto has_colors = vertices->GetVertexType() == GeometryVertexType::kColor;
+  if (has_colors) {
+    Entity entity;
+    entity.SetTransformation(GetCurrentTransformation());
+    entity.SetStencilDepth(GetStencilDepth());
+    entity.SetBlendMode(paint.blend_mode);
+    std::shared_ptr<VerticesContents> contents =
+        std::make_shared<VerticesContents>();
+    contents->SetGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents), true));
+
+    GetCurrentPass().AddEntity(entity);
+  }
+
+  // Create the src entity. If we previously drew a dst entity, then set the
+  // blend mode to the argument value instead of the paint's blend mode.
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
-  entity.SetBlendMode(paint.blend_mode);
+  entity.SetBlendMode(has_colors ? blend_mode : paint.blend_mode);
 
-  if (paint.color_source.has_value()) {
-    auto& source = paint.color_source.value();
-    auto contents = source();
-    contents->SetGeometry(std::move(vertices));
-    contents->SetAlpha(paint.color.alpha);
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
-  } else {
-    std::shared_ptr<VerticesContents> contents =
-        std::make_shared<VerticesContents>();
-    contents->SetColor(paint.color);
-    contents->SetBlendMode(blend_mode);
-    contents->SetGeometry(std::move(vertices));
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
-  }
-
+  auto contents = paint.CreateContentsForGeometry(vertices);
+  entity.SetContents(paint.WithFilters(std::move(contents), true));
   GetCurrentPass().AddEntity(entity);
 }
 

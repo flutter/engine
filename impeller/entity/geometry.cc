@@ -18,11 +18,11 @@ Geometry::Geometry() = default;
 Geometry::~Geometry() = default;
 
 // static
-std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
-  return std::make_unique<FillPathGeometry>(path);
+std::shared_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
+  return std::make_shared<FillPathGeometry>(path);
 }
 
-std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
+std::shared_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
                                                    Scalar stroke_width,
                                                    Scalar miter_limit,
                                                    Cap stroke_cap,
@@ -31,16 +31,16 @@ std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
   if (miter_limit < 0) {
     miter_limit = 4.0;
   }
-  return std::make_unique<StrokePathGeometry>(path, stroke_width, miter_limit,
+  return std::make_shared<StrokePathGeometry>(path, stroke_width, miter_limit,
                                               stroke_cap, stroke_join);
 }
 
-std::unique_ptr<Geometry> Geometry::MakeCover() {
-  return std::make_unique<CoverGeometry>();
+std::shared_ptr<Geometry> Geometry::MakeCover() {
+  return std::make_shared<CoverGeometry>();
 }
 
-std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
-  return std::make_unique<RectGeometry>(rect);
+std::shared_ptr<Geometry> Geometry::MakeRect(Rect rect) {
+  return std::make_shared<RectGeometry>(rect);
 }
 
 /////// Path Geometry ///////

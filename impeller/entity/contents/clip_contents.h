@@ -21,7 +21,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetGeometry(std::unique_ptr<Geometry> geometry);
+  void SetGeometry(std::shared_ptr<Geometry> geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -43,7 +43,7 @@ class ClipContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  std::unique_ptr<Geometry> geometry_;
+  std::shared_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipContents);

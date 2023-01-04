@@ -104,7 +104,7 @@ struct Paint {
                                                     bool cover = false) const;
 
   std::shared_ptr<Contents> CreateContentsForGeometry(
-      std::unique_ptr<Geometry> geometry) const;
+      std::shared_ptr<Geometry> geometry) const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,
