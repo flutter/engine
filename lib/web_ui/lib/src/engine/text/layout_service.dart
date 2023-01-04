@@ -16,6 +16,19 @@ import 'paragraph.dart';
 import 'ruler.dart';
 import 'text_direction.dart';
 
+/// A single canvas2d context to use for all text measurements.
+final DomCanvasRenderingContext2D _context = _createTextMeasurementCanvas();
+
+DomCanvasRenderingContext2D _createTextMeasurementCanvas() {
+  final DomCanvasElement canvas = createDomCanvasElement();
+  // We don't use this canvas to draw anything, so let's make it as small as
+  // possible to save memory.
+  canvas
+    ..width = 0
+    ..height = 0;
+  return canvas.context2D;
+}
+
 /// Performs layout on a [CanvasParagraph].
 ///
 /// It uses a [DomCanvasElement] to measure text.
@@ -23,9 +36,6 @@ class TextLayoutService {
   TextLayoutService(this.paragraph);
 
   final CanvasParagraph paragraph;
-
-  final DomCanvasRenderingContext2D context =
-      createDomCanvasElement().context2D;
 
   // *** Results of layout *** //
 
@@ -53,7 +63,7 @@ class TextLayoutService {
   ui.Rect get paintBounds => _paintBounds;
   ui.Rect _paintBounds = ui.Rect.zero;
 
-  late final Spanometer spanometer = Spanometer(paragraph, context);
+  late final Spanometer spanometer = Spanometer(paragraph);
 
   late final LayoutFragmenter layoutFragmenter =
       LayoutFragmenter(paragraph.plainText, paragraph.spans);
@@ -882,10 +892,9 @@ class LineBuilder {
 /// it's set, the [Spanometer] updates the underlying [context] so that
 /// subsequent measurements use the correct styles.
 class Spanometer {
-  Spanometer(this.paragraph, this.context);
+  Spanometer(this.paragraph);
 
   final CanvasParagraph paragraph;
-  final DomCanvasRenderingContext2D context;
 
   static final RulerHost _rulerHost = RulerHost();
 
@@ -938,7 +947,7 @@ class Spanometer {
     final String cssFontString = span.style.cssFontString;
     if (_cssFontString != cssFontString) {
       _cssFontString = cssFontString;
-      context.font = cssFontString;
+      _context.font = cssFontString;
     }
   }
 
@@ -955,7 +964,7 @@ class Spanometer {
   double get height => _currentRuler!.height;
 
   double measureText(String text) {
-    return measureSubstring(context, text, 0, text.length);
+    return measureSubstring(_context, text, 0, text.length);
   }
 
   double measureRange(int start, int end) {
@@ -1047,7 +1056,7 @@ class Spanometer {
     assert(end >= currentSpan.start && end <= currentSpan.end);
 
     return measureSubstring(
-      context,
+      _context,
       paragraph.plainText,
       start,
       end,
