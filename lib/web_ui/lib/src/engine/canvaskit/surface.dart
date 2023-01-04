@@ -141,8 +141,10 @@ class Surface {
   double _currentDevicePixelRatio = -1;
 
   CkSurface createRenderTargetSurface(ui.Size size) {
+    // If the GrContext hasn't been setup yet then we need to force initialization
+    // of the canvas and initial surface.
     if (_grContext == null) {
-      print('How did this even happen!');
+        _createNewCanvas(size);
     }
     final SkSurface? skSurface = canvasKit.MakeRenderTarget(
       _grContext!,
