@@ -560,10 +560,10 @@ if (!is_fuchsia) {
            ] + web_engine_libraries
 
     if (build_canvaskit) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit" ]
+      deps += [ "//flutter/third_party/canvaskit:canvaskit_group" ]
     }
     if (build_canvaskit_lite) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit_lite" ]
+      deps += [ "//flutter/third_party/canvaskit:canvaskit_chromium_group" ]
     }
 
     # flutter_ddc_modules
@@ -607,23 +607,23 @@ if (!is_fuchsia) {
       tmp_files += [
         {
           source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
-          destination = "canvaskit/canvaskit.js"
+          destination = "flutter_web_sdk/canvaskit/canvaskit.js"
         },
         {
           source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
-          destination = "canvaskit/canvaskit.wasm"
+          destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
         },
       ]
     }
-    if (build_canvaskit_lite) {
+    if (build_canvaskit_chromium) {
       tmp_files += [
         {
-          source = rebase_path("$root_out_dir/canvaskit_lite/canvaskit.js")
-          destination = "canvaskit_lite/canvaskit.js"
+          source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
+          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
         },
         {
-          source = rebase_path("$root_out_dir/canvaskit_lite/canvaskit.wasm")
-          destination = "canvaskit_lite/canvaskit.wasm"
+          source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
+          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
         },
       ]
     }
