@@ -21,29 +21,26 @@
                   initialVelocity:(double)initialVelocity {
   self = [super init];
   if (self) {
-    _stiffness = stiffness;
-    _damping = damping;
-    _mass = mass;
     _initialVelocity = initialVelocity;
+    _zeta = damping / (2 * sqrt(stiffness * mass));  // damping ratio
+    _omega0 = sqrt(stiffness / mass);                // undamped angular frequency of the oscillator
+    _omega1 = self.omega0 * sqrt(1.0 - (self.zeta * self.zeta));  // exponential decay
   }
   return self;
 }
 
 - (double)curveFunc:(double)t {
-  double zeta = self.damping / (2 * sqrt(self.stiffness * self.mass));  // damping ratio
-  double omega0 = sqrt(self.stiffness / self.mass);  // undamped angular frequency of the oscillator
-  double omega1 = omega0 * sqrt(1.0 - (zeta * zeta));  // exponential decay
-  double v0 = self.initialVelocity;
-
   double y;
-  if (zeta < 1) {
+  if (self.zeta < 1) {
     // Under damped
-    double envelope = exp(-zeta * omega0 * t);
-    y = 1 - envelope * ((v0 + zeta * omega0) / omega1 * sin(omega1 * t) + cos(omega1 * t));
+    double envelope = exp(-self.zeta * self.omega0 * t);
+    y = 1 - envelope * ((self.initialVelocity + self.zeta * self.omega0) / self.omega1 *
+                            sin(self.omega1 * t) +
+                        cos(self.omega1 * t));
   } else {
     // Critically damped spring
-    double envelope = exp(-omega0 * t);
-    y = 1 - envelope * (1 + (v0 + omega0) * t);
+    double envelope = exp(-self.omega0 * t);
+    y = 1 - envelope * (1 + (self.initialVelocity + self.omega0) * t);
   }
 
   return y;
