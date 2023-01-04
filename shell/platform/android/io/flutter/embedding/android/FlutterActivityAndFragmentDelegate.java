@@ -999,7 +999,7 @@ import java.util.List;
      * <p>In the scenario where multiple {@link FlutterActivity} or {@link FlutterFragment} share
      * the same {@link FlutterEngine}, to attach/re-attache a {@link FlutterActivity} or {@link
      * FlutterFragment} to the shared {@link FlutterEngine}, we MUST manually invoke {@link
-     * UIComponentControlSurface#attachToUIComponent(ExclusiveAppComponent, Lifecycle)}.
+     * io.flutter.embedding.engine.plugins.host.HostComponentControlSurface#attachToHostComponent(ExclusiveAppComponent, Lifecycle)}.
      *
      * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
      * FlutterActivity} or {@link FlutterFragment} can access it.
