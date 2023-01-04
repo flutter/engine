@@ -6,8 +6,14 @@
 
 #include <Foundation/Foundation.h>
 
-// Spring calculation adapted from Pan Yusheng's research project.
-// See: https://github.com/CosynPa/RevealSpringAnimation.
+// This simplified spring model is based off of a damped harmonic oscillator.
+// See: https://en.wikipedia.org/wiki/Harmonic_oscillator#Damped_harmonic_oscillator
+//
+// This models the closed form of the second order differential equation which happens to match the
+// algorithm used by CASpringAnimation, a QuartzCore (iOS) API that creates spring animations.
+//
+// Spring code adapted from React Native's Animation Library, see:
+// https://github.com/facebook/react-native/blob/main/Libraries/Animated/animations/SpringAnimation.js
 @implementation KeyboardSpringCurve
 - (instancetype)initWithStiffness:(double)stiffness
                           damping:(double)damping
@@ -15,39 +21,31 @@
                   initialVelocity:(double)initialVelocity {
   self = [super init];
   if (self) {
-    _dampingRatio = MIN(1.0, damping / 2 / sqrt(stiffness * mass));
+    _stiffness = stiffness;
+    _damping = damping;
+    _mass = mass;
     _initialVelocity = initialVelocity;
-
-    double response = MAX(1e-5, 2 * M_PI / sqrt(stiffness / mass));
-    _omega = 2 * M_PI / response;
   }
   return self;
 }
 
 - (double)curveFunc:(double)t {
+  double zeta = self.damping / (2 * sqrt(self.stiffness * self.mass));  // damping ratio
+  double omega0 = sqrt(self.stiffness / self.mass);  // undamped angular frequency of the oscillator
+  double omega1 = omega0 * sqrt(1.0 - (zeta * zeta));  // exponential decay
   double v0 = self.initialVelocity;
-  double zeta = self.dampingRatio;
 
   double y;
-  if (abs(zeta - 1.0) < 1e-8) {
-    double c1 = -1.0;
-    double c2 = v0 - self.omega;
-    y = (c1 + c2 * t) * exp(-self.omega * t);
-  } else if (zeta > 1) {
-    double s1 = self.omega * (-zeta + sqrt(zeta * zeta - 1));
-    double s2 = self.omega * (-zeta - sqrt(zeta * zeta - 1));
-    double c1 = (-s2 - v0) / (s2 - s1);
-    double c2 = (s1 + v0) / (s2 - s1);
-    y = c1 * exp(s1 * t) + c2 * exp(s2 * t);
+  if (zeta < 1) {
+    // Under damped
+    double envelope = exp(-zeta * omega0 * t);
+    y = 1 - envelope * ((v0 + zeta * omega0) / omega1 * sin(omega1 * t) + cos(omega1 * t));
   } else {
-    double a = -self.omega * zeta;
-    double b = self.omega * sqrt(1 - zeta * zeta);
-    double c2 = (v0 + a) / b;
-    double theta = atan(c2);
-    // Alternatively y = (-cos(b * t) + c2 * sin(b * t)) * exp(a * t)
-    y = sqrt(1 + c2 * c2) * exp(a * t) * cos(b * t + theta + M_PI);
+    // Critically damped spring
+    double envelope = exp(-omega0 * t);
+    y = 1 - envelope * (1 + (v0 + omega0) * t);
   }
 
-  return y + 1;
+  return y;
 }
 @end

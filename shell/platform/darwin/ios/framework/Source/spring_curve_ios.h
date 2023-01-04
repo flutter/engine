@@ -16,9 +16,10 @@
 
 - (double)curveFunc:(double)t;
 
+@property(nonatomic, assign) double stiffness;
+@property(nonatomic, assign) double damping;
+@property(nonatomic, assign) double mass;
 @property(nonatomic, assign) double initialVelocity;
-@property(nonatomic, assign) double dampingRatio;
-@property(nonatomic, assign) double omega;
 @end
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_SPRING_CURVE_IOS_H_
