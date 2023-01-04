@@ -41,10 +41,16 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
       DispatchWinAccessibilityEvent(win_delegate,
                                     ax::mojom::Event::kChildrenChanged);
       break;
-    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
+    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
+      ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
+      auto focus_delegate =
+          GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
       DispatchWinAccessibilityEvent(
-          win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
+          std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+              focus_delegate),
+          ax::mojom::Event::kDocumentSelectionChanged);
       break;
+    }
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kFocus);
       SetFocus(win_delegate);
