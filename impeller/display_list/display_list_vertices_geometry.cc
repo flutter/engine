@@ -176,7 +176,7 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
     for (auto i = 0; i < vertex_count; i++) {
       auto dl_color = dl_colors[i];
       auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
-                             dl_color.getBlueF(), dl_color.getAlphaF());
+                         dl_color.getBlueF(), dl_color.getAlphaF());
       auto sk_point = dl_vertices[i];
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
