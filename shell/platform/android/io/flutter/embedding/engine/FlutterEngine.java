@@ -16,9 +16,9 @@ import io.flutter.embedding.engine.dart.DartExecutor.DartEntrypoint;
 import io.flutter.embedding.engine.deferredcomponents.DeferredComponentManager;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
-import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
 import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverControlSurface;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderControlSurface;
+import io.flutter.embedding.engine.plugins.host.HostComponentControlSurface;
 import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.embedding.engine.renderer.FlutterRenderer;
@@ -592,7 +592,7 @@ public class FlutterEngine {
   }
 
   @NonNull
-  public ActivityControlSurface getActivityControlSurface() {
+  public HostComponentControlSurface getHostComponentControlSurface() {
     return pluginRegistry;
   }
 

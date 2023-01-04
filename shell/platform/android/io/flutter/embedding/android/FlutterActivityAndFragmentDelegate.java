@@ -26,7 +26,6 @@ import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterEngineGroup;
 import io.flutter.embedding.engine.FlutterEngineGroupCache;
-import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
@@ -67,7 +66,8 @@ import java.util.List;
  * the same form. <strong>Do not use this class as a convenient shortcut for any other
  * behavior.</strong>
  */
-/* package */ class FlutterActivityAndFragmentDelegate implements ExclusiveAppComponent<Activity> {
+/* package */ public class FlutterActivityAndFragmentDelegate
+    implements ExclusiveAppComponent<HostComponent> {
   private static final String TAG = "FlutterActivityAndFragmentDelegate";
   private static final String FRAMEWORK_RESTORATION_BUNDLE_KEY = "framework";
   private static final String PLUGINS_RESTORATION_BUNDLE_KEY = "plugins";
@@ -194,7 +194,9 @@ import java.util.List;
       // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
       // attached Activity is not a LifecycleOwner.
       Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this delegate.");
-      flutterEngine.getActivityControlSurface().attachToActivity(this, host.getLifecycle());
+      flutterEngine
+          .getHostComponentControlSurface()
+          .attachToHostComponent(this, host.getLifecycle());
     }
 
     // Regardless of whether or not a FlutterEngine already existed, the PlatformPlugin
@@ -209,15 +211,14 @@ import java.util.List;
     isAttached = true;
   }
 
-  @Override
-  public @NonNull Activity getAppComponent() {
+  public @NonNull HostComponent getAppComponent() {
     final Activity activity = host.getActivity();
     if (activity == null) {
       throw new AssertionError(
           "FlutterActivityAndFragmentDelegate's getAppComponent should only "
               + "be queried after onAttach, when the host's activity should always be non-null");
     }
-    return activity;
+    return host;
   }
 
   /**
@@ -410,7 +411,7 @@ import java.util.List;
     }
 
     if (host.shouldAttachEngineToActivity()) {
-      flutterEngine.getActivityControlSurface().onRestoreInstanceState(pluginState);
+      flutterEngine.getHostComponentControlSurface().onRestoreInstanceState(pluginState);
     }
   }
 
@@ -669,7 +670,7 @@ import java.util.List;
 
     if (host.shouldAttachEngineToActivity()) {
       final Bundle plugins = new Bundle();
-      flutterEngine.getActivityControlSurface().onSaveInstanceState(plugins);
+      flutterEngine.getHostComponentControlSurface().onSaveInstanceState(plugins);
       bundle.putBundle(PLUGINS_RESTORATION_BUNDLE_KEY, plugins);
     }
   }
@@ -719,9 +720,9 @@ import java.util.List;
       // Notify plugins that they are no longer attached to an Activity.
       Log.v(TAG, "Detaching FlutterEngine from the Activity that owns this Fragment.");
       if (host.getActivity().isChangingConfigurations()) {
-        flutterEngine.getActivityControlSurface().detachFromActivityForConfigChanges();
+        flutterEngine.getHostComponentControlSurface().detachFromHostComponentForConfigChanges();
       } else {
-        flutterEngine.getActivityControlSurface().detachFromActivity();
+        flutterEngine.getHostComponentControlSurface().detachFromHostComponent();
       }
     }
 
@@ -791,7 +792,7 @@ import java.util.List;
               + "grantResults: "
               + Arrays.toString(grantResults));
       flutterEngine
-          .getActivityControlSurface()
+          .getHostComponentControlSurface()
           .onRequestPermissionsResult(requestCode, permissions, grantResults);
     } else {
       Log.w(
@@ -812,7 +813,7 @@ import java.util.List;
     ensureAlive();
     if (flutterEngine != null) {
       Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine and sending pushRoute message.");
-      flutterEngine.getActivityControlSurface().onNewIntent(intent);
+      flutterEngine.getHostComponentControlSurface().onNewIntent(intent);
       String initialRoute = maybeGetInitialRouteFromIntent(intent);
       if (initialRoute != null && !initialRoute.isEmpty()) {
         flutterEngine.getNavigationChannel().pushRoute(initialRoute);
@@ -842,7 +843,9 @@ import java.util.List;
               + "\n"
               + "data: "
               + data);
-      flutterEngine.getActivityControlSurface().onActivityResult(requestCode, resultCode, data);
+      flutterEngine
+          .getHostComponentControlSurface()
+          .onActivityResult(requestCode, resultCode, data);
     } else {
       Log.w(TAG, "onActivityResult() invoked before FlutterFragment was attached to an Activity.");
     }
@@ -860,7 +863,7 @@ import java.util.List;
     ensureAlive();
     if (flutterEngine != null) {
       Log.v(TAG, "Forwarding onUserLeaveHint() to FlutterEngine.");
-      flutterEngine.getActivityControlSurface().onUserLeaveHint();
+      flutterEngine.getHostComponentControlSurface().onUserLeaveHint();
     } else {
       Log.w(TAG, "onUserLeaveHint() invoked before FlutterFragment was attached to an Activity.");
     }
@@ -911,35 +914,12 @@ import java.util.List;
       extends SplashScreenProvider,
           FlutterEngineProvider,
           FlutterEngineConfigurator,
-          PlatformPlugin.PlatformPluginDelegate {
-    /**
-     * Returns the {@link Context} that backs the host {@link android.app.Activity} or {@code
-     * Fragment}.
-     */
-    @NonNull
-    Context getContext();
+          PlatformPlugin.PlatformPluginDelegate,
+          HostComponent {
 
     /** Returns true if the delegate should retrieve the initial route from the {@link Intent}. */
     @Nullable
     boolean shouldHandleDeeplinking();
-
-    /**
-     * Returns the host {@link android.app.Activity} or the {@code Activity} that is currently
-     * attached to the host {@code Fragment}.
-     */
-    @Nullable
-    Activity getActivity();
-
-    /**
-     * Returns the {@link Lifecycle} that backs the host {@link android.app.Activity} or {@code
-     * Fragment}.
-     */
-    @NonNull
-    Lifecycle getLifecycle();
-
-    /** Returns the {@link FlutterShellArgs} that should be used when initializing Flutter. */
-    @NonNull
-    FlutterShellArgs getFlutterShellArgs();
 
     /**
      * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngine} to
@@ -1019,12 +999,12 @@ import java.util.List;
      * <p>In the scenario where multiple {@link FlutterActivity} or {@link FlutterFragment} share
      * the same {@link FlutterEngine}, to attach/re-attache a {@link FlutterActivity} or {@link
      * FlutterFragment} to the shared {@link FlutterEngine}, we MUST manually invoke {@link
-     * ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)}.
+     * UIComponentControlSurface#attachToUIComponent(ExclusiveAppComponent, Lifecycle)}.
      *
      * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
      * FlutterActivity} or {@link FlutterFragment} can access it.
      */
-    ExclusiveAppComponent<Activity> getExclusiveAppComponent();
+    ExclusiveAppComponent<HostComponent> getExclusiveAppComponent();
 
     @Nullable
     SplashScreen provideSplashScreen();

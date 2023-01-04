@@ -10,15 +10,15 @@ import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.host.HostComponentAware;
+import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 import io.flutter.plugin.platform.PlatformViewRegistry;
 import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
 import io.flutter.view.TextureRegistry;
 
 /**
- * Container class for Android API listeners used by {@link ActivityPluginBinding}.
+ * Container class for Android API listeners used by {@link HostComponentPluginBinding}.
  *
  * <p>This class also contains deprecated v1 embedding APIs used for plugin registration.
  *
@@ -90,11 +90,11 @@ public interface PluginRegistry {
      * {@link Context} is needed, use context() to get the application's context.
      *
      * <p>This registrar is for Flutter's v1 embedding. To access an {@code Activity} from a plugin
-     * using the v2 embedding, see {@link ActivityPluginBinding#getActivity()}. To obtain an
-     * instance of an {@link ActivityPluginBinding} in a Flutter plugin, implement the {@link
-     * ActivityAware} interface. A binding is provided in {@link
-     * ActivityAware#onAttachedToActivity(ActivityPluginBinding)} and {@link
-     * ActivityAware#onReattachedToActivityForConfigChanges(ActivityPluginBinding)}.
+     * using the v2 embedding, see {@link HostComponentPluginBinding#getActivity()}. To obtain an
+     * instance of an {@link HostComponentPluginBinding} in a Flutter plugin, implement the {@link
+     * HostComponentAware} interface. A binding is provided in {@link
+     * HostComponentAware#onAttachedToHostComponent(HostComponentPluginBinding)} and {@link
+     * HostComponentAware#onReattachedToHostComponentForConfigChanges(HostComponentPluginBinding)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -246,7 +246,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for permission results in the v2
      * embedding, use {@link
-     * ActivityPluginBinding#addRequestPermissionsResultListener(PluginRegistry.RequestPermissionsResultListener)}.
+     * HostComponentPluginBinding#addRequestPermissionsResultListener(PluginRegistry.RequestPermissionsResultListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -264,7 +264,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for {@code Activity} results in
      * the v2 embedding, use {@link
-     * ActivityPluginBinding#addActivityResultListener(PluginRegistry.ActivityResultListener)}.
+     * HostComponentPluginBinding#addActivityResultListener(PluginRegistry.ActivityResultListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -281,7 +281,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for new {@code Intent}s in the v2
      * embedding, use {@link
-     * ActivityPluginBinding#addOnNewIntentListener(PluginRegistry.NewIntentListener)}.
+     * HostComponentPluginBinding#addOnNewIntentListener(PluginRegistry.NewIntentListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -298,7 +298,7 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. To listen for leave hints in the v2
      * embedding, use {@link
-     * ActivityPluginBinding#addOnUserLeaveHintListener(PluginRegistry.UserLeaveHintListener)}.
+     * HostComponentPluginBinding#addOnUserLeaveHintListener(PluginRegistry.UserLeaveHintListener)}.
      *
      * <p>For instructions on migrating a plugin from Flutter's v1 Android embedding to v2, visit
      * http://flutter.dev/go/android-plugin-migration
@@ -315,10 +315,11 @@ public interface PluginRegistry {
      *
      * <p>This registrar is for Flutter's v1 embedding. The concept of {@code View} destruction does
      * not exist in the v2 embedding. However, plugins in the v2 embedding can respond to {@link
-     * ActivityAware#onDetachedFromActivityForConfigChanges()} and {@link
-     * ActivityAware#onDetachedFromActivity()}, which indicate the loss of a visual context for the
-     * running Flutter experience. Developers should implement {@link ActivityAware} for their
-     * {@link FlutterPlugin} if such callbacks are needed. Also, plugins can respond to {@link
+     * HostComponentAware#onDetachedFromHostComponentForConfigChanges()} and {@link
+     * HostComponentAware#onDetachedFromHostComponent()}, which indicate the loss of a visual
+     * context for the running Flutter experience. Developers should implement {@link
+     * HostComponentAware} for their {@link FlutterPlugin} if such callbacks are needed. Also,
+     * plugins can respond to {@link
      * FlutterPlugin#onDetachedFromEngine(FlutterPlugin.FlutterPluginBinding)}, which indicates that
      * the given plugin has been completely disconnected from the associated Flutter experience and
      * should clean up any resources.

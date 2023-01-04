@@ -626,7 +626,7 @@ public class FlutterActivity extends Activity
    * io.flutter.embedding.engine.FlutterEngine}.
    */
   @Override
-  public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
+  public ExclusiveAppComponent<HostComponent> getExclusiveAppComponent() {
     return delegate;
   }
 

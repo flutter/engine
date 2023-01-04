@@ -16,23 +16,25 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.Log;
 import io.flutter.embedding.android.ExclusiveAppComponent;
+import io.flutter.embedding.android.HostComponent;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverAware;
 import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverControlSurface;
 import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverPluginBinding;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderAware;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderControlSurface;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderPluginBinding;
+import io.flutter.embedding.engine.plugins.host.HostComponentAware;
+import io.flutter.embedding.engine.plugins.host.HostComponentControlSurface;
+import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference;
 import io.flutter.embedding.engine.plugins.service.ServiceAware;
 import io.flutter.embedding.engine.plugins.service.ServiceControlSurface;
 import io.flutter.embedding.engine.plugins.service.ServicePluginBinding;
 import io.flutter.util.TraceSection;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -47,7 +49,7 @@ import java.util.Set;
  */
 /* package */ class FlutterEngineConnectionRegistry
     implements PluginRegistry,
-        ActivityControlSurface,
+        HostComponentControlSurface,
         ServiceControlSurface,
         BroadcastReceiverControlSurface,
         ContentProviderControlSurface {
@@ -61,13 +63,14 @@ import java.util.Set;
   @NonNull private final FlutterEngine flutterEngine;
   @NonNull private final FlutterPlugin.FlutterPluginBinding pluginBinding;
 
-  // ActivityAware
+  // HostComponentAware
   @NonNull
-  private final Map<Class<? extends FlutterPlugin>, ActivityAware> activityAwarePlugins =
+  private final Map<Class<? extends FlutterPlugin>, HostComponentAware> hostomponentAwarePlugins =
       new HashMap<>();
 
-  @Nullable private ExclusiveAppComponent<Activity> exclusiveActivity;
-  @Nullable private FlutterEngineActivityPluginBinding activityPluginBinding;
+  @Nullable private ExclusiveAppComponent<HostComponent> exclusiveHostComponent;
+  @Nullable private FlutterEngineHostComponentPluginBinding hostComponentPluginBinding;
+
   private boolean isWaitingForActivityReattachment = false;
 
   // ServiceAware
@@ -146,12 +149,12 @@ import java.util.Set;
       // For ActivityAware plugins, add the plugin to our set of ActivityAware
       // plugins, and if this engine is currently attached to an Activity,
       // notify the ActivityAware plugin that it is now attached to an Activity.
-      if (plugin instanceof ActivityAware) {
-        ActivityAware activityAware = (ActivityAware) plugin;
-        activityAwarePlugins.put(plugin.getClass(), activityAware);
+      if (plugin instanceof HostComponentAware) {
+        HostComponentAware hostComponentAware = (HostComponentAware) plugin;
+        hostomponentAwarePlugins.put(plugin.getClass(), hostComponentAware);
 
-        if (isAttachedToActivity()) {
-          activityAware.onAttachedToActivity(activityPluginBinding);
+        if (isAttachedToHostComponent()) {
+          hostComponentAware.onAttachedToHostComponent(hostComponentPluginBinding);
         }
       }
 
@@ -221,15 +224,15 @@ import java.util.Set;
 
     TraceSection.begin("FlutterEngineConnectionRegistry#remove " + pluginClass.getSimpleName());
     try {
-      // For ActivityAware plugins, notify the plugin that it is detached from
+      // For HostComponentAware plugins, notify the plugin that it is detached from
       // an Activity if an Activity is currently attached to this engine. Then
-      // remove the plugin from our set of ActivityAware plugins.
-      if (plugin instanceof ActivityAware) {
-        if (isAttachedToActivity()) {
-          ActivityAware activityAware = (ActivityAware) plugin;
-          activityAware.onDetachedFromActivity();
+      // remove the plugin from our set of HostComponentAware plugins.
+      if (plugin instanceof HostComponentAware) {
+        if (isAttachedToHostComponent()) {
+          HostComponentAware appComponentAware = (HostComponentAware) plugin;
+          appComponentAware.onDetachedFromHostComponent();
         }
-        activityAwarePlugins.remove(pluginClass);
+        hostomponentAwarePlugins.remove(pluginClass);
       }
 
       // For ServiceAware plugins, notify the plugin that it is detached from
@@ -290,8 +293,8 @@ import java.util.Set;
   }
 
   private void detachFromAppComponent() {
-    if (isAttachedToActivity()) {
-      detachFromActivity();
+    if (isAttachedToHostComponent()) {
+      detachFromHostComponent();
     } else if (isAttachedToService()) {
       detachFromService();
     } else if (isAttachedToBroadcastReceiver()) {
@@ -301,41 +304,41 @@ import java.util.Set;
     }
   }
 
-  // -------- Start ActivityControlSurface -------
-  private boolean isAttachedToActivity() {
-    return exclusiveActivity != null;
+  // -------- Start HostComponentControlSurface -------
+  private boolean isAttachedToHostComponent() {
+    return exclusiveHostComponent != null;
   }
 
-  private Activity attachedActivity() {
-    return exclusiveActivity != null ? exclusiveActivity.getAppComponent() : null;
+  private HostComponent attachedHostComponent() {
+    return exclusiveHostComponent != null ? exclusiveHostComponent.getAppComponent() : null;
   }
 
   @Override
-  public void attachToActivity(
-      @NonNull ExclusiveAppComponent<Activity> exclusiveActivity, @NonNull Lifecycle lifecycle) {
-    TraceSection.begin("FlutterEngineConnectionRegistry#attachToActivity");
+  public void attachToHostComponent(
+      @NonNull ExclusiveAppComponent<HostComponent> exclusiveUIComponent,
+      @NonNull Lifecycle lifecycle) {
+    TraceSection.begin("FlutterEngineConnectionRegistry#attachToUIComponent");
     try {
-      if (this.exclusiveActivity != null) {
-        this.exclusiveActivity.detachFromFlutterEngine();
+      if (this.exclusiveHostComponent != null) {
+        this.exclusiveHostComponent.detachFromFlutterEngine();
       }
       // If we were already attached to an app component, detach from it.
       detachFromAppComponent();
-      this.exclusiveActivity = exclusiveActivity;
-      attachToActivityInternal(exclusiveActivity.getAppComponent(), lifecycle);
+      this.exclusiveHostComponent = exclusiveUIComponent;
+      attachToHostComponentInternal(exclusiveUIComponent.getAppComponent(), lifecycle);
     } finally {
       TraceSection.end();
     }
   }
 
-  private void attachToActivityInternal(@NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-    this.activityPluginBinding = new FlutterEngineActivityPluginBinding(activity, lifecycle);
+  private void attachToHostComponentInternal(
+      @NonNull HostComponent hostComponent, @NonNull Lifecycle lifecycle) {
+    this.hostComponentPluginBinding =
+        new FlutterEngineHostComponentPluginBinding(hostComponent, lifecycle);
 
     final boolean useSoftwareRendering =
-        activity.getIntent() != null
-            ? activity
-                .getIntent()
-                .getBooleanExtra(FlutterShellArgs.ARG_KEY_ENABLE_SOFTWARE_RENDERING, false)
-            : false;
+        Arrays.asList(hostComponent.getFlutterShellArgs().toArray())
+            .contains(FlutterShellArgs.ARG_ENABLE_SOFTWARE_RENDERING);
     flutterEngine.getPlatformViewsController().setSoftwareRendering(useSoftwareRendering);
 
     // Activate the PlatformViewsController. This must happen before any plugins attempt
@@ -343,31 +346,34 @@ import java.util.Set;
     // flutter/platform_views channel.
     flutterEngine
         .getPlatformViewsController()
-        .attach(activity, flutterEngine.getRenderer(), flutterEngine.getDartExecutor());
+        .attach(
+            hostComponent.getContext(),
+            flutterEngine.getRenderer(),
+            flutterEngine.getDartExecutor());
 
     // Notify all ActivityAware plugins that they are now attached to a new Activity.
-    for (ActivityAware activityAware : activityAwarePlugins.values()) {
+    for (HostComponentAware hostComponentAware : hostomponentAwarePlugins.values()) {
       if (isWaitingForActivityReattachment) {
-        activityAware.onReattachedToActivityForConfigChanges(activityPluginBinding);
+        hostComponentAware.onReattachedToHostComponentForConfigChanges(hostComponentPluginBinding);
       } else {
-        activityAware.onAttachedToActivity(activityPluginBinding);
+        hostComponentAware.onAttachedToHostComponent(hostComponentPluginBinding);
       }
     }
     isWaitingForActivityReattachment = false;
   }
 
   @Override
-  public void detachFromActivityForConfigChanges() {
-    if (isAttachedToActivity()) {
+  public void detachFromHostComponentForConfigChanges() {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#detachFromActivityForConfigChanges");
       try {
         isWaitingForActivityReattachment = true;
 
-        for (ActivityAware activityAware : activityAwarePlugins.values()) {
-          activityAware.onDetachedFromActivityForConfigChanges();
+        for (HostComponentAware hostComponentAware : hostomponentAwarePlugins.values()) {
+          hostComponentAware.onDetachedFromHostComponentForConfigChanges();
         }
 
-        detachFromActivityInternal();
+        detachFromHostComponentInternal();
       } finally {
         TraceSection.end();
       }
@@ -377,15 +383,15 @@ import java.util.Set;
   }
 
   @Override
-  public void detachFromActivity() {
-    if (isAttachedToActivity()) {
+  public void detachFromHostComponent() {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#detachFromActivity");
       try {
-        for (ActivityAware activityAware : activityAwarePlugins.values()) {
-          activityAware.onDetachedFromActivity();
+        for (HostComponentAware appComponentAware : hostomponentAwarePlugins.values()) {
+          appComponentAware.onDetachedFromHostComponent();
         }
 
-        detachFromActivityInternal();
+        detachFromHostComponentInternal();
       } finally {
         TraceSection.end();
       }
@@ -394,21 +400,21 @@ import java.util.Set;
     }
   }
 
-  private void detachFromActivityInternal() {
+  private void detachFromHostComponentInternal() {
     // Deactivate PlatformViewsController.
     flutterEngine.getPlatformViewsController().detach();
 
-    exclusiveActivity = null;
-    activityPluginBinding = null;
+    exclusiveHostComponent = null;
+    hostComponentPluginBinding = null;
   }
 
   @Override
   public boolean onRequestPermissionsResult(
       int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult) {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onRequestPermissionsResult");
       try {
-        return activityPluginBinding.onRequestPermissionsResult(
+        return hostComponentPluginBinding.onRequestPermissionsResult(
             requestCode, permissions, grantResult);
       } finally {
         TraceSection.end();
@@ -424,10 +430,10 @@ import java.util.Set;
 
   @Override
   public boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onActivityResult");
       try {
-        return activityPluginBinding.onActivityResult(requestCode, resultCode, data);
+        return hostComponentPluginBinding.onActivityResult(requestCode, resultCode, data);
       } finally {
         TraceSection.end();
       }
@@ -442,10 +448,10 @@ import java.util.Set;
 
   @Override
   public void onNewIntent(@NonNull Intent intent) {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onNewIntent");
       try {
-        activityPluginBinding.onNewIntent(intent);
+        hostComponentPluginBinding.onNewIntent(intent);
       } finally {
         TraceSection.end();
       }
@@ -459,10 +465,10 @@ import java.util.Set;
 
   @Override
   public void onUserLeaveHint() {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onUserLeaveHint");
       try {
-        activityPluginBinding.onUserLeaveHint();
+        hostComponentPluginBinding.onUserLeaveHint();
       } finally {
         TraceSection.end();
       }
@@ -476,10 +482,10 @@ import java.util.Set;
 
   @Override
   public void onSaveInstanceState(@NonNull Bundle bundle) {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onSaveInstanceState");
       try {
-        activityPluginBinding.onSaveInstanceState(bundle);
+        hostComponentPluginBinding.onSaveInstanceState(bundle);
       } finally {
         TraceSection.end();
       }
@@ -493,10 +499,10 @@ import java.util.Set;
 
   @Override
   public void onRestoreInstanceState(@Nullable Bundle bundle) {
-    if (isAttachedToActivity()) {
+    if (isAttachedToHostComponent()) {
       TraceSection.begin("FlutterEngineConnectionRegistry#onRestoreInstanceState");
       try {
-        activityPluginBinding.onRestoreInstanceState(bundle);
+        hostComponentPluginBinding.onRestoreInstanceState(bundle);
       } finally {
         TraceSection.end();
       }
@@ -710,8 +716,10 @@ import java.util.Set;
     }
   }
 
-  private static class FlutterEngineActivityPluginBinding implements ActivityPluginBinding {
-    @NonNull private final Activity activity;
+  private static class FlutterEngineHostComponentPluginBinding
+      implements HostComponentPluginBinding {
+    @NonNull private final HostComponent hostComponent;
+
     @NonNull private final HiddenLifecycleReference hiddenLifecycleReference;
 
     @NonNull
@@ -733,16 +741,27 @@ import java.util.Set;
     @NonNull
     private final Set<OnSaveInstanceStateListener> onSaveInstanceStateListeners = new HashSet<>();
 
-    public FlutterEngineActivityPluginBinding(
-        @NonNull Activity activity, @NonNull Lifecycle lifecycle) {
-      this.activity = activity;
+    public FlutterEngineHostComponentPluginBinding(
+        @NonNull HostComponent hostComponent, @NonNull Lifecycle lifecycle) {
+      this.hostComponent = hostComponent;
       this.hiddenLifecycleReference = new HiddenLifecycleReference(lifecycle);
     }
 
-    @Override
     @NonNull
+    @Override
+    public Context getContext() {
+      return hostComponent.getContext();
+    }
+
+    @Override
     public Activity getActivity() {
-      return activity;
+      return hostComponent.getActivity();
+    }
+
+    @NonNull
+    @Override
+    public HostComponent getHostComponent() {
+      return hostComponent;
     }
 
     @NonNull

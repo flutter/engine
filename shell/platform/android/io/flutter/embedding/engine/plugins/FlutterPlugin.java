@@ -55,7 +55,7 @@ import io.flutter.view.TextureRegistry;
  * experience, or may need to react to {@code Activity} lifecycle events, e.g., {@code onCreate()},
  * {@code onStart()}, {@code onResume()}, {@code onPause()}, {@code onStop()}, {@code onDestroy()}.
  * Any such plugin should implement {@link
- * io.flutter.embedding.engine.plugins.activity.ActivityAware} in addition to implementing {@code
+ * io.flutter.embedding.engine.plugins.host.HostComponentAware} in addition to implementing {@code
  * FlutterPlugin}. {@code ActivityAware} provides callback hooks that expose access to an associated
  * {@code Activity} and its {@code Lifecycle}. All plugins must respect the possibility that a
  * Flutter experience may never be associated with an {@code Activity}, e.g., when Flutter is used
@@ -96,7 +96,7 @@ public interface FlutterPlugin {
    * the Flutter context associated with this plugin binding.
    *
    * <p>Plugins that need to respond to {@code Lifecycle} events should implement the additional
-   * {@link io.flutter.embedding.engine.plugins.activity.ActivityAware} and/or {@link
+   * {@link io.flutter.embedding.engine.plugins.host.HostComponentAware} and/or {@link
    * io.flutter.embedding.engine.plugins.service.ServiceAware} interfaces, where a {@link Lifecycle}
    * reference can be obtained.
    */

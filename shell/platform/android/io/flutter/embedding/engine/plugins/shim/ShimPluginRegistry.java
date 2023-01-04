@@ -8,8 +8,8 @@ import androidx.annotation.NonNull;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.host.HostComponentAware;
+import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -79,15 +79,15 @@ public class ShimPluginRegistry implements PluginRegistry {
    * ShimRegistrar}. Therefore, every plugin we would register after the first plugin, would
    * overwrite the previous plugin, because they're all {@link ShimRegistrar} instances.
    *
-   * <p>{@code ShimRegistrarAggregate} multiplexes {@link FlutterPlugin} and {@link ActivityAware}
-   * calls so that we can register just one {@code ShimRegistrarAggregate} with a {@link
-   * FlutterEngine}, while forwarding the relevant plugin resources to any number of {@link
+   * <p>{@code ShimRegistrarAggregate} multiplexes {@link FlutterPlugin} and {@link
+   * HostComponentAware} calls so that we can register just one {@code ShimRegistrarAggregate} with
+   * a {@link FlutterEngine}, while forwarding the relevant plugin resources to any number of {@link
    * ShimRegistrar}s within this {@code ShimRegistrarAggregate}.
    */
-  private static class ShimRegistrarAggregate implements FlutterPlugin, ActivityAware {
+  private static class ShimRegistrarAggregate implements FlutterPlugin, HostComponentAware {
     private final Set<ShimRegistrar> shimRegistrars = new HashSet<>();
     private FlutterPluginBinding flutterPluginBinding;
-    private ActivityPluginBinding activityPluginBinding;
+    private HostComponentPluginBinding HostComponentPluginBinding;
 
     public void addPlugin(@NonNull ShimRegistrar shimRegistrar) {
       shimRegistrars.add(shimRegistrar);
@@ -95,8 +95,8 @@ public class ShimPluginRegistry implements PluginRegistry {
       if (flutterPluginBinding != null) {
         shimRegistrar.onAttachedToEngine(flutterPluginBinding);
       }
-      if (activityPluginBinding != null) {
-        shimRegistrar.onAttachedToActivity(activityPluginBinding);
+      if (HostComponentPluginBinding != null) {
+        shimRegistrar.onAttachedToHostComponent(HostComponentPluginBinding);
       }
     }
 
@@ -114,39 +114,40 @@ public class ShimPluginRegistry implements PluginRegistry {
         shimRegistrar.onDetachedFromEngine(binding);
       }
       flutterPluginBinding = null;
-      activityPluginBinding = null;
+      HostComponentPluginBinding = null;
     }
 
     @Override
-    public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
-      activityPluginBinding = binding;
+    public void onAttachedToHostComponent(@NonNull HostComponentPluginBinding binding) {
+      HostComponentPluginBinding = binding;
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
-        shimRegistrar.onAttachedToActivity(binding);
+        shimRegistrar.onAttachedToHostComponent(binding);
       }
     }
 
     @Override
-    public void onDetachedFromActivityForConfigChanges() {
+    public void onDetachedFromHostComponentForConfigChanges() {
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
-        shimRegistrar.onDetachedFromActivity();
+        shimRegistrar.onDetachedFromHostComponent();
       }
-      activityPluginBinding = null;
+      HostComponentPluginBinding = null;
     }
 
     @Override
-    public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
-      activityPluginBinding = binding;
+    public void onReattachedToHostComponentForConfigChanges(
+        @NonNull HostComponentPluginBinding binding) {
+      HostComponentPluginBinding = binding;
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
-        shimRegistrar.onReattachedToActivityForConfigChanges(binding);
+        shimRegistrar.onReattachedToHostComponentForConfigChanges(binding);
       }
     }
 
     @Override
-    public void onDetachedFromActivity() {
+    public void onDetachedFromHostComponent() {
       for (ShimRegistrar shimRegistrar : shimRegistrars) {
-        shimRegistrar.onDetachedFromActivity();
+        shimRegistrar.onDetachedFromHostComponent();
       }
-      activityPluginBinding = null;
+      HostComponentPluginBinding = null;
     }
   }
 }

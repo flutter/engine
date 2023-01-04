@@ -2,18 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-package io.flutter.embedding.engine.plugins.activity;
+package io.flutter.embedding.engine.plugins.host;
 
 import androidx.annotation.NonNull;
-import io.flutter.embedding.engine.plugins.host.HostComponentAware;
-import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 
 /**
  * {@link io.flutter.embedding.engine.plugins.FlutterPlugin} that is interested in {@link
  * android.app.Activity} lifecycle events related to a {@link
  * io.flutter.embedding.engine.FlutterEngine} running within the given {@link android.app.Activity}.
  */
-public interface ActivityAware extends HostComponentAware {
+public interface HostComponentAware {
   /**
    * This {@code ActivityAware} {@link io.flutter.embedding.engine.plugins.FlutterPlugin} is now
    * associated with an {@link android.app.Activity}.
@@ -30,46 +28,39 @@ public interface ActivityAware extends HostComponentAware {
    *       android.app.Activity}.
    * </ul>
    *
-   * <p>The given {@link ActivityPluginBinding} contains {@link android.app.Activity}-related
+   * <p>The given {@link HostComponentPluginBinding} contains {@link android.app.Activity}-related
    * references that an {@code ActivityAware} {@link
    * io.flutter.embedding.engine.plugins.FlutterPlugin} may require, such as a reference to the
-   * actual {@link android.app.Activity} in question. The {@link ActivityPluginBinding} may be
-   * referenced until either {@link #onDetachedFromActivityForConfigChanges()} or {@link
-   * #onDetachedFromActivity()} is invoked. At the conclusion of either of those methods, the
+   * actual {@link android.app.Activity} in question. The {@link HostComponentPluginBinding} may be
+   * referenced until either {@link #onDetachedFromHostComponentForConfigChanges()} or {@link
+   * #onDetachedFromHostComponent()} is invoked. At the conclusion of either of those methods, the
    * binding is no longer valid. Clear any references to the binding or its resources, and do not
    * invoke any further methods on the binding or its resources.
    */
-  void onAttachedToActivity(@NonNull ActivityPluginBinding binding);
-
-  default void onAttachedToHostComponent(@NonNull HostComponentPluginBinding binding) {
-    onAttachedToActivity(new ActivityPluginBindingAdapter(binding));
-  }
+  void onAttachedToHostComponent(@NonNull HostComponentPluginBinding binding);
 
   /**
    * The {@link android.app.Activity} that was attached and made available in {@link
-   * #onAttachedToActivity(ActivityPluginBinding)} has been detached from this {@code
+   * #onAttachedToHostComponent(HostComponentPluginBinding)} has been detached from this {@code
    * ActivityAware}'s {@link io.flutter.embedding.engine.FlutterEngine} for the purpose of
    * processing a configuration change.
    *
    * <p>By the end of this method, the {@link android.app.Activity} that was made available in
-   * {@link #onAttachedToActivity(ActivityPluginBinding)} is no longer valid. Any references to the
-   * associated {@link android.app.Activity} or {@link ActivityPluginBinding} should be cleared.
+   * {@link #onAttachedToHostComponent(HostComponentPluginBinding)} is no longer valid. Any
+   * references to the associated {@link android.app.Activity} or {@link HostComponentPluginBinding}
+   * should be cleared.
    *
    * <p>This method should be quickly followed by {@link
-   * #onReattachedToActivityForConfigChanges(ActivityPluginBinding)}, which signifies that a new
-   * {@link android.app.Activity} has been created with the new configuration options. That method
-   * provides a new {@link ActivityPluginBinding}, which references the newly created and associated
-   * {@link android.app.Activity}.
+   * #onReattachedToHostComponentForConfigChanges(HostComponentPluginBinding)}, which signifies that
+   * a new {@link android.app.Activity} has been created with the new configuration options. That
+   * method provides a new {@link HostComponentPluginBinding}, which references the newly created
+   * and associated {@link android.app.Activity}.
    *
    * <p>Any {@code Lifecycle} listeners that were registered in {@link
-   * #onAttachedToActivity(ActivityPluginBinding)} should be deregistered here to avoid a possible
-   * memory leak and other side effects.
+   * #onAttachedToHostComponent(HostComponentPluginBinding)} should be deregistered here to avoid a
+   * possible memory leak and other side effects.
    */
-  void onDetachedFromActivityForConfigChanges();
-
-  default void onDetachedFromHostComponentForConfigChanges() {
-    onDetachedFromActivityForConfigChanges();
-  }
+  void onDetachedFromHostComponentForConfigChanges();
 
   /**
    * This plugin and its {@link io.flutter.embedding.engine.FlutterEngine} have been re-attached to
@@ -78,17 +69,12 @@ public interface ActivityAware extends HostComponentAware {
    *
    * <p>{@code binding} includes a reference to the new instance of the {@link
    * android.app.Activity}. {@code binding} and its references may be cached and used from now until
-   * either {@link #onDetachedFromActivityForConfigChanges()} or {@link #onDetachedFromActivity()}
-   * is invoked. At the conclusion of either of those methods, the binding is no longer valid. Clear
-   * any references to the binding or its resources, and do not invoke any further methods on the
-   * binding or its resources.
+   * either {@link #onDetachedFromHostComponentForConfigChanges()} or {@link
+   * #onDetachedFromHostComponent()} is invoked. At the conclusion of either of those methods, the
+   * binding is no longer valid. Clear any references to the binding or its resources, and do not
+   * invoke any further methods on the binding or its resources.
    */
-  void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding);
-
-  default void onReattachedToHostComponentForConfigChanges(
-      @NonNull HostComponentPluginBinding binding) {
-    onReattachedToActivityForConfigChanges(new ActivityPluginBindingAdapter(binding));
-  }
+  void onReattachedToHostComponentForConfigChanges(@NonNull HostComponentPluginBinding binding);
 
   /**
    * This plugin has been detached from an {@link android.app.Activity}.
@@ -104,18 +90,15 @@ public interface ActivityAware extends HostComponentAware {
    *       io.flutter.embedding.engine.FlutterEngine}.
    * </ul>
    *
-   * By the end of this method, the {@link android.app.Activity} that was made available in {@link
-   * #onAttachedToActivity(ActivityPluginBinding)} is no longer valid. Any references to the
-   * associated {@link android.app.Activity} or {@link ActivityPluginBinding} should be cleared.
+   * <p>By the end of this method, the {@link android.app.Activity} that was made available in
+   * {@link #onAttachedToHostComponent(HostComponentPluginBinding)} is no longer valid. Any
+   * references to the associated {@link android.app.Activity} or {@link HostComponentPluginBinding}
+   * should be cleared.
    *
    * <p>Any {@code Lifecycle} listeners that were registered in {@link
-   * #onAttachedToActivity(ActivityPluginBinding)} or {@link
-   * #onReattachedToActivityForConfigChanges(ActivityPluginBinding)} should be deregistered here to
-   * avoid a possible memory leak and other side effects.
+   * #onAttachedToHostComponent(HostComponentPluginBinding)} or {@link
+   * #onReattachedToHostComponentForConfigChanges(HostComponentPluginBinding)} should be
+   * deregistered here to avoid a possible memory leak and other side effects.
    */
-  void onDetachedFromActivity();
-
-  default void onDetachedFromHostComponent() {
-    onDetachedFromActivity();
-  }
+  void onDetachedFromHostComponent();
 }

@@ -21,11 +21,11 @@ public interface FlutterEngineConfigurator {
    *
    * <p>This method is called after the given {@link io.flutter.embedding.engine.FlutterEngine} has
    * been attached to the owning {@code FragmentActivity}. See {@link
-   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
+   * io.flutter.embedding.engine.plugins.host.HostComponentControlSurface#attachToHostComponent(
    * ExclusiveAppComponent, Lifecycle)}.
    *
    * <p>It is possible that the owning {@code FragmentActivity} opted not to connect itself as an
-   * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that case, any
+   * {@link io.flutter.embedding.engine.plugins.host.HostComponentControlSurface}. In that case, any
    * configuration, e.g., plugins, must not expect or depend upon an available {@code Activity} at
    * the time that this method is invoked.
    *

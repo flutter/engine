@@ -10,8 +10,8 @@ import androidx.annotation.NonNull;
 import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
-import io.flutter.embedding.engine.plugins.activity.ActivityAware;
-import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
+import io.flutter.embedding.engine.plugins.host.HostComponentAware;
+import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.plugin.platform.PlatformViewRegistry;
@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * <p>Instances of {@code ShimRegistrar}s are vended internally by a {@link ShimPluginRegistry}.
  */
-class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, ActivityAware {
+class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, HostComponentAware {
   private static final String TAG = "ShimRegistrar";
 
   private final Map<String, Object> globalRegistrarMap;
@@ -40,7 +40,7 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
   private final Set<PluginRegistry.NewIntentListener> newIntentListeners = new HashSet<>();
   private final Set<PluginRegistry.UserLeaveHintListener> userLeaveHintListeners = new HashSet<>();
   private FlutterPlugin.FlutterPluginBinding pluginBinding;
-  private ActivityPluginBinding activityPluginBinding;
+  private HostComponentPluginBinding hostComponentPluginBinding;
 
   public ShimRegistrar(@NonNull String pluginId, @NonNull Map<String, Object> globalRegistrarMap) {
     this.pluginId = pluginId;
@@ -49,7 +49,7 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
   @Override
   public Activity activity() {
-    return activityPluginBinding != null ? activityPluginBinding.getActivity() : null;
+    return hostComponentPluginBinding != null ? hostComponentPluginBinding.getActivity() : null;
   }
 
   @Override
@@ -59,7 +59,7 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
 
   @Override
   public Context activeContext() {
-    return activityPluginBinding == null ? context() : activity();
+    return hostComponentPluginBinding == null ? context() : hostComponentPluginBinding.getContext();
   }
 
   @Override
@@ -104,8 +104,8 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
       PluginRegistry.RequestPermissionsResultListener listener) {
     requestPermissionsResultListeners.add(listener);
 
-    if (activityPluginBinding != null) {
-      activityPluginBinding.addRequestPermissionsResultListener(listener);
+    if (hostComponentPluginBinding != null) {
+      hostComponentPluginBinding.addRequestPermissionsResultListener(listener);
     }
 
     return this;
@@ -116,8 +116,8 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
       PluginRegistry.ActivityResultListener listener) {
     activityResultListeners.add(listener);
 
-    if (activityPluginBinding != null) {
-      activityPluginBinding.addActivityResultListener(listener);
+    if (hostComponentPluginBinding != null) {
+      hostComponentPluginBinding.addActivityResultListener(listener);
     }
 
     return this;
@@ -127,8 +127,8 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
   public PluginRegistry.Registrar addNewIntentListener(PluginRegistry.NewIntentListener listener) {
     newIntentListeners.add(listener);
 
-    if (activityPluginBinding != null) {
-      activityPluginBinding.addOnNewIntentListener(listener);
+    if (hostComponentPluginBinding != null) {
+      hostComponentPluginBinding.addOnNewIntentListener(listener);
     }
 
     return this;
@@ -139,8 +139,8 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
       PluginRegistry.UserLeaveHintListener listener) {
     userLeaveHintListeners.add(listener);
 
-    if (activityPluginBinding != null) {
-      activityPluginBinding.addOnUserLeaveHintListener(listener);
+    if (hostComponentPluginBinding != null) {
+      hostComponentPluginBinding.addOnUserLeaveHintListener(listener);
     }
 
     return this;
@@ -170,48 +170,49 @@ class ShimRegistrar implements PluginRegistry.Registrar, FlutterPlugin, Activity
     }
 
     pluginBinding = null;
-    activityPluginBinding = null;
+    hostComponentPluginBinding = null;
   }
 
   @Override
-  public void onAttachedToActivity(@NonNull ActivityPluginBinding binding) {
+  public void onAttachedToHostComponent(@NonNull HostComponentPluginBinding binding) {
     Log.v(TAG, "Attached to an Activity.");
-    activityPluginBinding = binding;
-    addExistingListenersToActivityPluginBinding();
+    hostComponentPluginBinding = binding;
+    addExistingListenersToHostComponentPluginBinding();
   }
 
   @Override
-  public void onDetachedFromActivityForConfigChanges() {
+  public void onDetachedFromHostComponentForConfigChanges() {
     Log.v(TAG, "Detached from an Activity for config changes.");
-    activityPluginBinding = null;
+    hostComponentPluginBinding = null;
   }
 
   @Override
-  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding binding) {
+  public void onReattachedToHostComponentForConfigChanges(
+      @NonNull HostComponentPluginBinding binding) {
     Log.v(TAG, "Reconnected to an Activity after config changes.");
-    activityPluginBinding = binding;
-    addExistingListenersToActivityPluginBinding();
+    hostComponentPluginBinding = binding;
+    addExistingListenersToHostComponentPluginBinding();
   }
 
   @Override
-  public void onDetachedFromActivity() {
+  public void onDetachedFromHostComponent() {
     Log.v(TAG, "Detached from an Activity.");
-    activityPluginBinding = null;
+    hostComponentPluginBinding = null;
   }
 
-  private void addExistingListenersToActivityPluginBinding() {
+  private void addExistingListenersToHostComponentPluginBinding() {
     for (PluginRegistry.RequestPermissionsResultListener listener :
         requestPermissionsResultListeners) {
-      activityPluginBinding.addRequestPermissionsResultListener(listener);
+      hostComponentPluginBinding.addRequestPermissionsResultListener(listener);
     }
     for (PluginRegistry.ActivityResultListener listener : activityResultListeners) {
-      activityPluginBinding.addActivityResultListener(listener);
+      hostComponentPluginBinding.addActivityResultListener(listener);
     }
     for (PluginRegistry.NewIntentListener listener : newIntentListeners) {
-      activityPluginBinding.addOnNewIntentListener(listener);
+      hostComponentPluginBinding.addOnNewIntentListener(listener);
     }
     for (PluginRegistry.UserLeaveHintListener listener : userLeaveHintListeners) {
-      activityPluginBinding.addOnUserLeaveHintListener(listener);
+      hostComponentPluginBinding.addOnUserLeaveHintListener(listener);
     }
   }
 }

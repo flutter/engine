@@ -360,7 +360,7 @@ public class FlutterFragment extends Fragment
      * {@link io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}. The
      * {@code Activity} will need to be manually connected to this {@code FlutterFragment}'s {@link
      * io.flutter.embedding.engine.FlutterEngine} by the app developer. See {@link
-     * FlutterEngine#getActivityControlSurface()}.
+     * FlutterEngine#getHostComponentControlSurface()}.
      *
      * <p>One reason that a developer might choose to manually manage the relationship between the
      * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
@@ -617,7 +617,7 @@ public class FlutterFragment extends Fragment
      * {@link io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}. The
      * {@code Activity} will need to be manually connected to this {@code FlutterFragment}'s {@link
      * io.flutter.embedding.engine.FlutterEngine} by the app developer. See {@link
-     * FlutterEngine#getActivityControlSurface()}.
+     * FlutterEngine#getHostComponentControlSurface()}.
      *
      * <p>One reason that a developer might choose to manually manage the relationship between the
      * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
@@ -868,7 +868,7 @@ public class FlutterFragment extends Fragment
      * {@link io.flutter.embedding.engine.FlutterEngine} and the surrounding {@code Activity}. The
      * {@code Activity} will need to be manually connected to this {@code FlutterFragment}'s {@link
      * io.flutter.embedding.engine.FlutterEngine} by the app developer. See {@link
-     * FlutterEngine#getActivityControlSurface()}.
+     * FlutterEngine#getHostComponentControlSurface()}.
      *
      * <p>One reason that a developer might choose to manually manage the relationship between the
      * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer
@@ -1034,7 +1034,7 @@ public class FlutterFragment extends Fragment
    * io.flutter.embedding.engine.FlutterEngine}.
    */
   @Override
-  public ExclusiveAppComponent<Activity> getExclusiveAppComponent() {
+  public ExclusiveAppComponent<HostComponent> getExclusiveAppComponent() {
     return delegate;
   }
 
@@ -1491,11 +1491,11 @@ public class FlutterFragment extends Fragment
    * <p>This method is called after {@link #provideFlutterEngine(Context)}, and after the given
    * {@link io.flutter.embedding.engine.FlutterEngine} has been attached to the owning {@code
    * FragmentActivity}. See {@link
-   * io.flutter.embedding.engine.plugins.activity.ActivityControlSurface#attachToActivity(
+   * io.flutter.embedding.engine.plugins.host.HostComponentControlSurface#attachToHostComponent(
    * ExclusiveAppComponent, Lifecycle)}.
    *
    * <p>It is possible that the owning {@code FragmentActivity} opted not to connect itself as an
-   * {@link io.flutter.embedding.engine.plugins.activity.ActivityControlSurface}. In that case, any
+   * {@link io.flutter.embedding.engine.plugins.host.HostComponentControlSurface}. In that case, any
    * configuration, e.g., plugins, must not expect or depend upon an available {@code Activity} at
    * the time that this method is invoked.
    *
