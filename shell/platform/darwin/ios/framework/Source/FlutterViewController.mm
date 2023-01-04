@@ -127,7 +127,7 @@ typedef struct MouseState {
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
-  fml::scoped_nsobject<KeyboardSpringCurve> _keyboardSpringCurve;
+  fml::scoped_nsobject<FlutterKeyboardSpringCurve> _keyboardSpringCurve;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -599,7 +599,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   return _keyboardAnimationView.get();
 }
 
-- (KeyboardSpringCurve*)keyboardSpringCurve {
+- (FlutterKeyboardSpringCurve*)keyboardSpringCurve {
   return _keyboardSpringCurve.get();
 }
 
@@ -1578,10 +1578,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _keyboardSpringCurve.reset();
     return;
   }
-
+    
   // Setup keyboard spring animation details for spring curve animation calculation.
   CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
-  _keyboardSpringCurve.reset([[KeyboardSpringCurve alloc]
+  _keyboardSpringCurve.reset([[FlutterKeyboardSpringCurve alloc]
       initWithStiffness:keyboardSpringAnimation.stiffness
                 damping:keyboardSpringAnimation.damping
                    mass:keyboardSpringAnimation.mass

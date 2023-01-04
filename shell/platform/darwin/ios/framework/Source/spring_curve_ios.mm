@@ -14,7 +14,7 @@
 //
 // Spring code adapted from React Native's Animation Library, see:
 // https://github.com/facebook/react-native/blob/main/Libraries/Animated/animations/SpringAnimation.js
-@implementation KeyboardSpringCurve
+@implementation FlutterKeyboardSpringCurve
 - (instancetype)initWithStiffness:(double)stiffness
                           damping:(double)damping
                              mass:(double)mass

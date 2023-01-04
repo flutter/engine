@@ -136,7 +136,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration;
 - (void)setupKeyboardAnimationVsyncClient;
 - (UIView*)keyboardAnimationView;
-- (KeyboardSpringCurve*)keyboardSpringCurve;
+- (FlutterKeyboardSpringCurve*)keyboardSpringCurve;
 - (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation;
 - (void)ensureViewportMetricsIsCorrect;
 - (void)invalidateKeyboardAnimationVSyncClient;
@@ -236,7 +236,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   // Null check.
   [viewControllerMock setupKeyboardAnimationCurveIfNeeded:nil];
-  KeyboardSpringCurve* keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
+  FlutterKeyboardSpringCurve* keyboardSpringCurve = [viewControllerMock keyboardSpringCurve];
   XCTAssertTrue(keyboardSpringCurve == nil);
 
   // CAAnimation that is not a CASpringAnimation.
