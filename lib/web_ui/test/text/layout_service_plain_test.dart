@@ -691,4 +691,23 @@ Future<void> testMain() async {
       l('i', 9, 10, hardBreak: true, width: 10.0, left: 40.0),
     ]);
   });
+
+  test('uses a single minimal canvas', () {
+    debugResetCanvasCount();
+
+    plain(ahemStyle, 'Lorem').layout(constrain(double.infinity));
+    plain(ahemStyle, 'ipsum dolor').layout(constrain(150.0));
+    // Try different styles too.
+    plain(EngineParagraphStyle(fontWeight: ui.FontWeight.bold), 'sit amet').layout(constrain(300.0));
+
+    expect(textContext.canvas!.width, isZero);
+    expect(textContext.canvas!.height, isZero);
+    // This number is 0 instead of 1 because the canvas is created at the top
+    // level as a global variable. So by the time this test runs, the canvas
+    // would have been created already.
+    //
+    // So we just make sure that no new canvas is created after the above layout
+    // calls.
+    expect(debugCanvasCount, 0);
+  });
 }

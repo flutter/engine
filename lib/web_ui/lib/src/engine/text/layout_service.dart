@@ -17,17 +17,11 @@ import 'ruler.dart';
 import 'text_direction.dart';
 
 /// A single canvas2d context to use for all text measurements.
-final DomCanvasRenderingContext2D _context = _createTextMeasurementCanvas();
-
-DomCanvasRenderingContext2D _createTextMeasurementCanvas() {
-  final DomCanvasElement canvas = createDomCanvasElement();
-  // We don't use this canvas to draw anything, so let's make it as small as
-  // possible to save memory.
-  canvas
-    ..width = 0
-    ..height = 0;
-  return canvas.context2D;
-}
+@visibleForTesting
+final DomCanvasRenderingContext2D textContext =
+    // We don't use this canvas to draw anything, so let's make it as small as
+    // possible to save memory.
+    createDomCanvasElement(width: 0, height: 0).context2D;
 
 /// Performs layout on a [CanvasParagraph].
 ///
@@ -947,7 +941,7 @@ class Spanometer {
     final String cssFontString = span.style.cssFontString;
     if (_cssFontString != cssFontString) {
       _cssFontString = cssFontString;
-      _context.font = cssFontString;
+      textContext.font = cssFontString;
     }
   }
 
@@ -964,7 +958,7 @@ class Spanometer {
   double get height => _currentRuler!.height;
 
   double measureText(String text) {
-    return measureSubstring(_context, text, 0, text.length);
+    return measureSubstring(textContext, text, 0, text.length);
   }
 
   double measureRange(int start, int end) {
@@ -1056,7 +1050,7 @@ class Spanometer {
     assert(end >= currentSpan.start && end <= currentSpan.end);
 
     return measureSubstring(
-      _context,
+      textContext,
       paragraph.plainText,
       start,
       end,
