@@ -33,7 +33,7 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
+typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
@@ -1089,10 +1089,10 @@ class PlatformDispatcher {
   }
 
   /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
+  /// performed on a semantics node.
   ///
   /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by updateSemantics.
+  /// perform based on the semantics node supplied by updateSemantics.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1128,11 +1128,11 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  void _dispatchSemanticsAction(int id, int action, ByteData? args) {
+  void _dispatchSemanticsAction(int nodeId, int action, ByteData? args) {
     _invoke3<int, SemanticsAction, ByteData?>(
       onSemanticsAction,
       _onSemanticsActionZone,
-      id,
+      nodeId,
       SemanticsAction.values[action]!,
       args,
     );
@@ -1156,8 +1156,7 @@ class PlatformDispatcher {
   ///
   /// This callback is not directly invoked by errors in child isolates of the
   /// root isolate. Programs that create new isolates must listen for errors on
-  /// those isolates and forward the errors to the root isolate. An example of
-  /// this can be found in the Flutter framework's `compute` function.
+  /// those isolates and forward the errors to the root isolate.
   ErrorCallback? get onError => _onError;
   set onError(ErrorCallback? callback) {
     _onError = callback;
