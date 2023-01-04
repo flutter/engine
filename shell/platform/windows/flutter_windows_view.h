@@ -16,7 +16,6 @@
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
-#include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 #include "flutter/shell/platform/windows/keyboard_handler_base.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
@@ -96,6 +95,13 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
+  // Sets the cursor that should be used when the mouse is over the Flutter
+  // content. See mouse_cursor.dart for the values and meanings of cursor_name.
+  void UpdateFlutterCursor(const std::string& cursor_name);
+
+  // Sets the cursor directly from a cursor handle.
+  void SetFlutterCursor(HCURSOR cursor);
+
   // Invoked by the engine right before the engine is restarted.
   //
   // This should reset necessary states to as if the view has just been
@@ -112,7 +118,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
-                     int32_t device_id) override;
+                     int32_t device_id,
+                     int modifiers_state) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerDown(double x,
@@ -379,9 +386,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // Handlers for text events from Windows.
   std::unique_ptr<TextInputPlugin> text_input_plugin_;
-
-  // Handler for cursor events.
-  std::unique_ptr<CursorHandler> cursor_handler_;
 
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<WindowBindingHandler> binding_handler_;

@@ -25,8 +25,6 @@ void PlaygroundTest::SetUp() {
 
   SetupContext(GetParam());
   SetupWindow();
-
-  start_time_ = fml::TimePoint::Now().ToEpochDelta();
 }
 
 void PlaygroundTest::TearDown() {
@@ -54,18 +52,13 @@ std::shared_ptr<RuntimeStage> PlaygroundTest::OpenAssetAsRuntimeStage(
 
 static std::string FormatWindowTitle(const std::string& test_name) {
   std::stringstream stream;
-  stream << "Impeller Playground for '" << test_name
-         << "' (Press ESC or 'q' to quit)";
+  stream << "Impeller Playground for '" << test_name << "' (Press ESC to quit)";
   return stream.str();
 }
 
 // |Playground|
 std::string PlaygroundTest::GetWindowTitle() const {
   return FormatWindowTitle(flutter::testing::GetCurrentTestName());
-}
-
-Scalar PlaygroundTest::GetSecondsElapsed() const {
-  return (fml::TimePoint::Now().ToEpochDelta() - start_time_).ToSecondsF();
 }
 
 }  // namespace impeller

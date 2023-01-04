@@ -6,6 +6,14 @@ import("//flutter/impeller/tools/impeller.gni")
 
 impeller_component("scene") {
   sources = [
+    "animation/animation.cc",
+    "animation/animation.h",
+    "animation/animation_clip.cc",
+    "animation/animation_clip.h",
+    "animation/animation_player.cc",
+    "animation/animation_player.h",
+    "animation/property_resolver.cc",
+    "animation/property_resolver.h",
     "camera.cc",
     "camera.h",
     "geometry.cc",
@@ -16,6 +24,7 @@ impeller_component("scene") {
     "mesh.h",
     "node.cc",
     "node.h",
+    "pipeline_key.h",
     "scene.cc",
     "scene.h",
     "scene_context.cc",
@@ -26,6 +35,7 @@ impeller_component("scene") {
 
   public_deps = [
     "../renderer",
+    "importer:conversions",
     "importer:importer_flatbuffers",
     "shaders",
   ]
