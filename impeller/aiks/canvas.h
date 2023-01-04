@@ -97,9 +97,9 @@ class Canvas {
                      Point position,
                      const Paint& paint);
 
-  void DrawVertices(std::shared_ptr<VerticesGeometry> vertices,
+  void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
-                    Paint paint);
+                    const Paint& paint);
 
   void DrawAtlas(const std::shared_ptr<Image>& atlas,
                  std::vector<Matrix> transforms,

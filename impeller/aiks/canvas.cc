@@ -377,9 +377,9 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(std::shared_ptr<VerticesGeometry> vertices,
+void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                           BlendMode blend_mode,
-                          Paint paint) {
+                          const Paint& paint) {
   // If there are per-vertex colors, then first draw these as they behave as
   // the destination for the provided blend_mode. If there is no per-vertex
   // colors, then use the vertices as a geometry with a color source as normal.
