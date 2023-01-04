@@ -425,7 +425,7 @@ FLUTTER_DARWIN_EXPORT
 @property(nonatomic, readonly) NSObject<FlutterBinaryMessenger>* binaryMessenger;
 
 /**
- * The `FlutterTextureRegistry` associated with this FlutterEngine (used for register textures).
+ * The `FlutterTextureRegistry` associated with this FlutterEngine (used to register textures).
  */
 @property(nonatomic, readonly) NSObject<FlutterTextureRegistry>* textureRegistry;
 

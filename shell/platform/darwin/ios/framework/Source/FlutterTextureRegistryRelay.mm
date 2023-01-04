@@ -12,7 +12,7 @@
 
 - (instancetype)initWithParent:(NSObject<FlutterTextureRegistry>*)parent {
   if (self = [super init]) {
-    self.parent = parent;
+    _parent = parent;
   }
   return self;
 }

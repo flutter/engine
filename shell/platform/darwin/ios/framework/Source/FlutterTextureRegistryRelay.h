@@ -9,8 +9,12 @@
 FLUTTER_DARWIN_EXPORT
 #endif
 
-// A proxy object with a weak reference back to the engine serve as the texture registry object that
-// is returned instead.
+/**
+ * A proxy object with a weak reference back to the engine.
+ *
+ * If we make having the |FlutterTextureRegistry| returned by |textures| be the engine itself, it
+ * could be problematic, because if the plugin retains the texture registrar there's a cycle.
+ */
 @interface FlutterTextureRegistryRelay : NSObject <FlutterTextureRegistry>
 @property(nonatomic, assign) NSObject<FlutterTextureRegistry>* parent;
 - (instancetype)initWithParent:(NSObject<FlutterTextureRegistry>*)parent;
