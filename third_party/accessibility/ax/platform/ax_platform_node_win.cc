@@ -5600,13 +5600,13 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       }
       break;
 
-      case UIA_TextEditPatternId:
-      case UIA_TextPatternId:
-        if (IsText() || IsTextField() ||
-            data.role == ax::mojom::Role::kRootWebArea) {
-          return &AXPlatformNodeTextProviderWin::CreateIUnknown;
-        }
-        break;
+    case UIA_TextEditPatternId:
+    case UIA_TextPatternId:
+      if (IsText() || IsTextField() ||
+          data.role == ax::mojom::Role::kRootWebArea) {
+        return &AXPlatformNodeTextProviderWin::CreateIUnknown;
+      }
+      break;
 
     case UIA_TogglePatternId:
       if (SupportsToggle(data.role)) {
