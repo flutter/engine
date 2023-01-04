@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <iostream>
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/flow/layers/image_filter_layer.h"
 
@@ -165,6 +166,34 @@ TEST_F(ImageFilterLayerTest, SimpleFilterWithOffset) {
 
   layer->Paint(display_list_paint_context());
   EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_display_list));
+}
+
+// Verifies that preroll always includes the offset, even if the filter is null.
+TEST_F(ImageFilterLayerTest, OffsetPrerollWithNoFilter) {
+  const SkMatrix initial_transform = SkMatrix::Translate(0.5f, 1.0f);
+  const SkRect initial_cull_rect = SkRect::MakeLTRB(0, 0, 100, 100);
+  const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
+  const SkPath child_path = SkPath().addRect(child_bounds);
+  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const SkPoint layer_offset = SkPoint::Make(5.5, 6.5);
+  auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
+  auto layer = std::make_shared<ImageFilterLayer>(nullptr, layer_offset);
+  layer->Add(mock_layer);
+
+  SkMatrix child_matrix = initial_transform;
+  child_matrix.preTranslate(layer_offset.fX, layer_offset.fY);
+  const SkRect child_offset_bounds =
+      SkRect::MakeLTRB(10.5f, 12.5f, 26.0f, 28.0f);
+
+  preroll_context()->state_stack.set_preroll_delegate(initial_cull_rect,
+                                                      initial_transform);
+  layer->Preroll(preroll_context());
+  EXPECT_EQ(layer->paint_bounds(), child_offset_bounds);
+  EXPECT_EQ(layer->child_paint_bounds(), child_bounds);
+  EXPECT_TRUE(layer->needs_painting(paint_context()));
+  EXPECT_EQ(mock_layer->parent_matrix(), child_matrix);
+  EXPECT_EQ(preroll_context()->state_stack.device_cull_rect(),
+            initial_cull_rect);
 }
 
 TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
