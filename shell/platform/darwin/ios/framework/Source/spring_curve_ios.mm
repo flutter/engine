@@ -21,10 +21,10 @@
                   initialVelocity:(double)initialVelocity {
   self = [super init];
   if (self) {
-    _stiffness = stiffness;
-    _damping = damping;
-    _mass = mass;
-    _initialVelocity = initialVelocity;
+    self.stiffness = stiffness;
+    self.damping = damping;
+    self.mass = mass;
+    self.initialVelocity = initialVelocity;
   }
   return self;
 }
