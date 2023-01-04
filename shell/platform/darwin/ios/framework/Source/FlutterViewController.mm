@@ -1578,7 +1578,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     _keyboardSpringCurve.reset();
     return;
   }
-    
+
   // Setup keyboard spring animation details for spring curve animation calculation.
   CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
   _keyboardSpringCurve.reset([[FlutterKeyboardSpringCurve alloc]
