@@ -7,7 +7,7 @@
 
 #include <Foundation/NSObject.h>
 
-@interface KeyboardSpringCurve : NSObject
+@interface FlutterKeyboardSpringCurve : NSObject
 
 - (instancetype)initWithStiffness:(double)stiffness
                           damping:(double)damping
