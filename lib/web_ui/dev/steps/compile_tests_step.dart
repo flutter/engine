@@ -372,6 +372,8 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     targetFileName, // target path.
   ];
 
+  print('${environment.dartAotRuntimePath} ${arguments.join(' ')}');
+
   final int exitCode = await runProcess(
     environment.dartAotRuntimePath,
     arguments,
