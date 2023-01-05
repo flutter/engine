@@ -42,13 +42,17 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
                                     ax::mojom::Event::kChildrenChanged);
       break;
     case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
+      // An event indicating a change in document selection should be fired
+      // only for the focused node whose selection has changed.
       ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
       auto focus_delegate =
           GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
-      DispatchWinAccessibilityEvent(
-          std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
-              focus_delegate),
-          ax::mojom::Event::kDocumentSelectionChanged);
+      if (focus_delegate) {
+        DispatchWinAccessibilityEvent(
+            std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+                focus_delegate),
+            ax::mojom::Event::kDocumentSelectionChanged);
+      }
       break;
     }
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
