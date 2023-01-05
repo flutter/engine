@@ -51,27 +51,27 @@ PropertyResolver::~PropertyResolver() = default;
 
 TimelineResolver::~TimelineResolver() = default;
 
-Scalar TimelineResolver::GetEndTime() {
+SecondsF TimelineResolver::GetEndTime() {
   if (times_.empty()) {
-    return 0;
+    return SecondsF::zero();
   }
-  return times_.back();
+  return SecondsF(times_.back());
 }
 
-TimelineResolver::TimelineKey TimelineResolver::GetTimelineKey(Scalar time) {
-  if (times_.size() <= 1 || time <= times_.front()) {
+TimelineResolver::TimelineKey TimelineResolver::GetTimelineKey(SecondsF time) {
+  if (times_.size() <= 1 || time.count() <= times_.front()) {
     return {.index = 0, .lerp = 1};
   }
-  if (time >= times_.back()) {
+  if (time.count() >= times_.back()) {
     return {.index = times_.size() - 1, .lerp = 1};
   }
-  auto it = std::lower_bound(times_.begin(), times_.end(), time);
+  auto it = std::lower_bound(times_.begin(), times_.end(), time.count());
   size_t index = std::distance(times_.begin(), it);
 
   Scalar previous_time = *(it - 1);
   Scalar next_time = *it;
   return {.index = index,
-          .lerp = (time - previous_time) / (next_time - previous_time)};
+          .lerp = (time.count() - previous_time) / (next_time - previous_time)};
 }
 
 TranslationTimelineResolver::TranslationTimelineResolver() = default;
@@ -79,7 +79,7 @@ TranslationTimelineResolver::TranslationTimelineResolver() = default;
 TranslationTimelineResolver::~TranslationTimelineResolver() = default;
 
 void TranslationTimelineResolver::Apply(Node& target,
-                                        Scalar time,
+                                        SecondsF time,
                                         Scalar weight) {
   if (values_.empty()) {
     return;
@@ -89,15 +89,17 @@ void TranslationTimelineResolver::Apply(Node& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-  target.SetLocalTransform(Matrix::MakeTranslation(value * weight) *
-                           target.GetLocalTransform());
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeTranslation(value * weight));
 }
 
 RotationTimelineResolver::RotationTimelineResolver() = default;
 
 RotationTimelineResolver::~RotationTimelineResolver() = default;
 
-void RotationTimelineResolver::Apply(Node& target, Scalar time, Scalar weight) {
+void RotationTimelineResolver::Apply(Node& target,
+                                     SecondsF time,
+                                     Scalar weight) {
   if (values_.empty()) {
     return;
   }
@@ -106,15 +108,15 @@ void RotationTimelineResolver::Apply(Node& target, Scalar time, Scalar weight) {
   if (key.lerp < 1) {
     value = values_[key.index - 1].Slerp(value, key.lerp);
   }
-  target.SetLocalTransform(Matrix::MakeRotation(value * weight) *
-                           target.GetLocalTransform());
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeRotation(value * weight));
 }
 
 ScaleTimelineResolver::ScaleTimelineResolver() = default;
 
 ScaleTimelineResolver::~ScaleTimelineResolver() = default;
 
-void ScaleTimelineResolver::Apply(Node& target, Scalar time, Scalar weight) {
+void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
   if (values_.empty()) {
     return;
   }
@@ -123,8 +125,8 @@ void ScaleTimelineResolver::Apply(Node& target, Scalar time, Scalar weight) {
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-  target.SetLocalTransform(Matrix::MakeScale(value * weight) *
-                           target.GetLocalTransform());
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeScale(value * weight));
 }
 
 }  // namespace scene

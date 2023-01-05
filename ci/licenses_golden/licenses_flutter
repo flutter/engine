@@ -1146,6 +1146,7 @@ ORIGIN: ../../../flutter/impeller/base/thread.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/thread.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/thread_safety.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/thread_safety.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/base/timing.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/validation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/validation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/version.cc + ../../../flutter/LICENSE
@@ -1646,6 +1647,8 @@ ORIGIN: ../../../flutter/impeller/scene/scene_encoder.h + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/impeller/scene/shaders/skinned.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/shaders/unlit.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/shaders/unskinned.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/scene/skin.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/scene/skin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/c/tessellator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart + ../../../flutter/LICENSE
@@ -3614,6 +3617,7 @@ FILE: ../../../flutter/impeller/base/thread.cc
 FILE: ../../../flutter/impeller/base/thread.h
 FILE: ../../../flutter/impeller/base/thread_safety.cc
 FILE: ../../../flutter/impeller/base/thread_safety.h
+FILE: ../../../flutter/impeller/base/timing.h
 FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/base/version.cc
@@ -4114,6 +4118,8 @@ FILE: ../../../flutter/impeller/scene/scene_encoder.h
 FILE: ../../../flutter/impeller/scene/shaders/skinned.vert
 FILE: ../../../flutter/impeller/scene/shaders/unlit.frag
 FILE: ../../../flutter/impeller/scene/shaders/unskinned.vert
+FILE: ../../../flutter/impeller/scene/skin.cc
+FILE: ../../../flutter/impeller/scene/skin.h
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.cc
 FILE: ../../../flutter/impeller/tessellator/c/tessellator.h
 FILE: ../../../flutter/impeller/tessellator/dart/lib/tessellator.dart
@@ -6072,6 +6078,11 @@ ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.cc + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.cc + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.h + ../../../flutter/third_party/accessibility/LICENSE
+ORIGIN: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h + ../../../flutter/third_party/accessibility/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h + ../../../flutter/third_party/accessibility/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../flutter/third_party/accessibility/ax/ax_active_popup.cc
@@ -6091,6 +6102,11 @@ FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_wi
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.cc
 FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_utils_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textprovider_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.cc
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_node_textrangeprovider_win.h
+FILE: ../../../flutter/third_party/accessibility/ax/platform/ax_platform_tree_manager.h
 FILE: ../../../flutter/third_party/accessibility/base/win/scoped_safearray.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2019 The Chromium Authors. All rights reserved.
