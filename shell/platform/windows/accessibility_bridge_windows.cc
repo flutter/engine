@@ -44,7 +44,7 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
     case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
       // An event indicating a change in document selection should be fired
       // only for the focused node whose selection has changed. If a valid
-      // carat and selection exist in the app tree, they must both be within
+      // caret and selection exist in the app tree, they must both be within
       // the focus node.
       ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
       auto focus_delegate =
