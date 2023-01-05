@@ -18,6 +18,8 @@
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
+#include "impeller/geometry/matrix.h"
+#include "impeller/scene/animation/property_resolver.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
@@ -31,6 +33,7 @@ class DlRadialGradientColorSource;
 class DlConicalGradientColorSource;
 class DlSweepGradientColorSource;
 class DlRuntimeEffectColorSource;
+class DlSceneColorSource;
 class DlUnknownColorSource;
 
 // The DisplayList ColorSource class. This class implements all of the
@@ -51,6 +54,7 @@ enum class DlColorSourceType {
   kConicalGradient,
   kSweepGradient,
   kRuntimeEffect,
+  kScene,
   kUnknown
 };
 
@@ -159,6 +163,8 @@ class DlColorSource
   virtual const DlRuntimeEffectColorSource* asRuntimeEffect() const {
     return nullptr;
   }
+
+  virtual const DlSceneColorSource* asScene() const { return nullptr; }
 
   // If this filter contains images, specifies the owning context for those
   // images.
@@ -752,6 +758,46 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   std::shared_ptr<std::vector<uint8_t>> uniform_data_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRuntimeEffectColorSource);
+};
+
+class DlSceneColorSource final : public DlColorSource {
+ public:
+  DlSceneColorSource(std::shared_ptr<impeller::scene::Node> node,
+                     impeller::Matrix camera_matrix)
+      : node_(std::move(node)), camera_matrix_(camera_matrix) {}
+
+  const DlSceneColorSource* asScene() const override { return this; }
+
+  std::shared_ptr<DlColorSource> shared() const override {
+    return std::make_shared<DlSceneColorSource>(node_, camera_matrix_);
+  }
+
+  DlColorSourceType type() const override { return DlColorSourceType::kScene; }
+  size_t size() const override { return sizeof(*this); }
+
+  bool is_opaque() const override { return false; }
+
+  std::shared_ptr<impeller::scene::Node> scene_node() const { return node_; }
+
+  impeller::Matrix camera_matrix() const { return camera_matrix_; }
+
+  sk_sp<SkShader> skia_object() const override { return nullptr; }
+
+ protected:
+  bool equals_(DlColorSource const& other) const override {
+    FML_DCHECK(other.type() == DlColorSourceType::kScene);
+    auto that = static_cast<DlSceneColorSource const*>(&other);
+    if (node_ != that->node_) {
+      return false;
+    }
+    return true;
+  }
+
+ private:
+  std::shared_ptr<impeller::scene::Node> node_;
+  impeller::Matrix camera_matrix_;  // the view-projection matrix of the scene.
+
+  FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlSceneColorSource);
 };
 
 class DlUnknownColorSource final : public DlColorSource {

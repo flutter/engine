@@ -91,6 +91,7 @@ namespace flutter {
   V(SetSkColorSource)               \
   V(SetImageColorSource)            \
   V(SetRuntimeEffectColorSource)    \
+  V(SetSceneColorSource)            \
                                     \
   V(ClearImageFilter)               \
   V(SetPodImageFilter)              \

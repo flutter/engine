@@ -312,6 +312,24 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
   }
 };
 
+struct SetSceneColorSourceOp : DLOp {
+  static const auto kType = DisplayListOpType::kSetSceneColorSource;
+
+  SetSceneColorSourceOp(const DlSceneColorSource* source)
+      : source(source->scene_node(), source->camera_matrix()) {}
+
+  const DlSceneColorSource source;
+
+  void dispatch(DispatchContext& ctx) const {
+    ctx.dispatcher.setColorSource(&source);
+  }
+
+  DisplayListCompare equals(const SetSceneColorSourceOp* other) const {
+    return (source == other->source) ? DisplayListCompare::kEqual
+                                     : DisplayListCompare::kNotEqual;
+  }
+};
+
 // 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)
 struct SetSharedImageFilterOp : DLOp {
   static const auto kType = DisplayListOpType::kSetSharedImageFilter;
