@@ -710,4 +710,34 @@ Future<void> testMain() async {
     // calls.
     expect(debugCanvasCount, 0);
   });
+
+  test('does not leak styles across spanometers', () {
+    final CanvasParagraph p1 = plain(
+      EngineParagraphStyle(fontSize: 20.0),
+      'Lorem',
+    )..layout(constrain(double.infinity));
+    // After the layout, the canvas should have the above style applied.
+    expect(textContext.font, contains('20px'));
+    expect(textContext.font, isNot(contains('bold')));
+
+    final CanvasParagraph p2 = plain(
+      EngineParagraphStyle(fontSize: 40.0, fontWeight: ui.FontWeight.bold),
+      'ipsum dolor',
+    )..layout(constrain(double.infinity));
+    // After the layout, the canvas should have the above style applied.
+    expect(textContext.font, contains('40px'));
+    expect(textContext.font, contains('bold'));
+
+    p1.getBoxesForRange(0, 2);
+    // getBoxesForRange performs some text measurements. Let's make sure that it
+    // applied the correct style.
+    expect(textContext.font, contains('20px'));
+    expect(textContext.font, isNot(contains('bold')));
+
+    p2.getBoxesForRange(0, 4);
+    // getBoxesForRange performs some text measurements. Let's make sure that it
+    // applied the correct style.
+    expect(textContext.font, contains('40px'));
+    expect(textContext.font, contains('bold'));
+  });
 }
