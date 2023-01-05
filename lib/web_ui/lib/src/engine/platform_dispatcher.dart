@@ -136,7 +136,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
 
-  /// The current list of windows,
+  /// The current list of windows.
   @override
   Iterable<ui.FlutterView> get views => viewData.values;
   final Map<Object, ui.FlutterView> viewData = <Object, ui.FlutterView>{};
