@@ -9,6 +9,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -29,7 +30,7 @@ bool EmbedderTestCompositorMetal::UpdateOffscrenComposition(
 
   auto surface =
       SkSurface::MakeRenderTarget(context_.get(),            // context
-                                  SkBudgeted::kNo,           // budgeted
+                                  skgpu:Budgeted::kNo,           // budgeted
                                   image_info,                // image info
                                   1,                         // sample count
                                   kTopLeft_GrSurfaceOrigin,  // surface origin

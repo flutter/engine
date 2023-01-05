@@ -6,6 +6,7 @@
 #include "flutter/display_list/display_list_benchmarks.h"
 
 #include "third_party/skia/include/core/SkCanvas.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 
 namespace flutter {
 namespace testing {
@@ -19,7 +20,7 @@ void OpenGLCanvasProvider::InitializeSurface(const size_t width,
 
   const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
   surface_ = SkSurface::MakeRenderTarget(
-      gl_surface_->GetGrContext().get(), SkBudgeted::kNo, image_info, 1,
+      gl_surface_->GetGrContext().get(), skgpu:Budgeted::kNo, image_info, 1,
       kTopLeft_GrSurfaceOrigin, nullptr, false);
   surface_->getCanvas()->clear(SK_ColorTRANSPARENT);
 }
@@ -38,7 +39,7 @@ sk_sp<SkSurface> OpenGLCanvasProvider::MakeOffscreenSurface(
   const auto image_info = SkImageInfo::MakeN32Premul(surface_size_);
 
   auto offscreen_surface = SkSurface::MakeRenderTarget(
-      gl_surface_->GetGrContext().get(), SkBudgeted::kNo, image_info, 1,
+      gl_surface_->GetGrContext().get(), skgpu:Budgeted::kNo, image_info, 1,
       kTopLeft_GrSurfaceOrigin, nullptr, false);
 
   offscreen_surface->getCanvas()->clear(SK_ColorTRANSPARENT);

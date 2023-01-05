@@ -9,6 +9,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 
 namespace flutter {
 
@@ -105,7 +106,7 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               // SkSurface because we want to access texture backed images.
               sk_sp<SkSurface> sk_surface =
                   SkSurface::MakeRenderTarget(context,          // context
-                                              SkBudgeted::kNo,  // budgeted
+                                              skgpu:Budgeted::kNo,  // budgeted
                                               image_info        // image info
                   );
               if (!sk_surface) {

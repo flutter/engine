@@ -914,7 +914,7 @@ TEST(RasterizerTest, TeardownFreesResourceCache) {
   auto image_info =
       SkImageInfo::MakeN32Premul(500, 500, SkColorSpace::MakeSRGB());
   auto sk_surface =
-      SkSurface::MakeRenderTarget(context.get(), SkBudgeted::kYes, image_info);
+      SkSurface::MakeRenderTarget(context.get(), skgpu:Budgeted::kYes, image_info);
   EXPECT_TRUE(sk_surface);
 
   SkPaint paint;

@@ -11,6 +11,7 @@
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+#include "third_party/skia/include/gpu/GpuTypes.h"
 
 #include <cstdlib>
 #include <memory>
@@ -83,7 +84,7 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
 
   auto surface = SkSurface::MakeRenderTarget(
       context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
+      skgpu:Budgeted::kNo,              // budgeted
       image_info,                   // image info
       1,                            // sample count
       kBottomLeft_GrSurfaceOrigin,  // surface origin
@@ -136,7 +137,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
 
   auto surface = SkSurface::MakeRenderTarget(
       context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
+      skgpu:Budgeted::kNo,              // budgeted
       image_info,                   // image info
       1,                            // sample count
       kBottomLeft_GrSurfaceOrigin,  // surface origin
