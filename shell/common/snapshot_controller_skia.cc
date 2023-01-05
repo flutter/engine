@@ -106,7 +106,7 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               // SkSurface because we want to access texture backed images.
               sk_sp<SkSurface> sk_surface =
                   SkSurface::MakeRenderTarget(context,          // context
-                                              skgpu:Budgeted::kNo,  // budgeted
+                                              skgpu::Budgeted::kNo,  // budgeted
                                               image_info        // image info
                   );
               if (!sk_surface) {
