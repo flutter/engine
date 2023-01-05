@@ -712,32 +712,43 @@ Future<void> testMain() async {
   });
 
   test('does not leak styles across spanometers', () {
+    // This prevents the Ahem font from being forced in all paragraphs.
+    ui.debugEmulateFlutterTesterEnvironment = false;
+
     final CanvasParagraph p1 = plain(
-      EngineParagraphStyle(fontSize: 20.0),
+      EngineParagraphStyle(
+        fontSize: 20.0,
+        fontFamily: 'FontFamily1',
+      ),
       'Lorem',
     )..layout(constrain(double.infinity));
     // After the layout, the canvas should have the above style applied.
     expect(textContext.font, contains('20px'));
-    expect(textContext.font, isNot(contains('bold')));
+    expect(textContext.font, contains('FontFamily1'));
 
     final CanvasParagraph p2 = plain(
-      EngineParagraphStyle(fontSize: 40.0, fontWeight: ui.FontWeight.bold),
+      EngineParagraphStyle(
+        fontSize: 40.0,
+        fontFamily: 'FontFamily2',
+      ),
       'ipsum dolor',
     )..layout(constrain(double.infinity));
     // After the layout, the canvas should have the above style applied.
     expect(textContext.font, contains('40px'));
-    expect(textContext.font, contains('bold'));
+    expect(textContext.font, contains('FontFamily2'));
 
     p1.getBoxesForRange(0, 2);
     // getBoxesForRange performs some text measurements. Let's make sure that it
     // applied the correct style.
     expect(textContext.font, contains('20px'));
-    expect(textContext.font, isNot(contains('bold')));
+    expect(textContext.font, contains('FontFamily1'));
 
     p2.getBoxesForRange(0, 4);
     // getBoxesForRange performs some text measurements. Let's make sure that it
     // applied the correct style.
     expect(textContext.font, contains('40px'));
-    expect(textContext.font, contains('bold'));
+    expect(textContext.font, contains('FontFamily2'));
+
+    ui.debugEmulateFlutterTesterEnvironment = true;
   });
 }
