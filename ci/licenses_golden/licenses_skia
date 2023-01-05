@@ -1,4 +1,4 @@
-Signature: 835bb459b9c139d9679922bed7098d89
+Signature: 63f85931f7763ef5605a788ae668a3e3
 
 ====================================================================================================
 LIBRARY: etc1
@@ -4554,7 +4554,6 @@ ORIGIN: ../../../third_party/skia/include/gpu/GrBackendSurface.h + ../../../thir
 ORIGIN: ../../../third_party/skia/include/gpu/mock/GrMockTypes.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/mtl/GrMtlTypes.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/ports/SkFontMgr_mac_ct.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/private/SkImageInfoPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkMalloc.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkSLString.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkShadowFlags.h + ../../../third_party/skia/LICENSE
@@ -4619,6 +4618,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkExecutor.cpp + ../../../third_party
 ORIGIN: ../../../third_party/skia/src/core/SkFontMgrPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkGaussFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkGaussFilter.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkImageInfoPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMaskBlurFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkMaskBlurFilter.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkPromiseImageTexture.cpp + ../../../third_party/skia/LICENSE
@@ -4782,7 +4782,6 @@ FILE: ../../../third_party/skia/include/gpu/GrBackendSurface.h
 FILE: ../../../third_party/skia/include/gpu/mock/GrMockTypes.h
 FILE: ../../../third_party/skia/include/gpu/mtl/GrMtlTypes.h
 FILE: ../../../third_party/skia/include/ports/SkFontMgr_mac_ct.h
-FILE: ../../../third_party/skia/include/private/SkImageInfoPriv.h
 FILE: ../../../third_party/skia/include/private/SkMalloc.h
 FILE: ../../../third_party/skia/include/private/SkSLString.h
 FILE: ../../../third_party/skia/include/private/SkShadowFlags.h
@@ -4847,6 +4846,7 @@ FILE: ../../../third_party/skia/src/core/SkExecutor.cpp
 FILE: ../../../third_party/skia/src/core/SkFontMgrPriv.h
 FILE: ../../../third_party/skia/src/core/SkGaussFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkGaussFilter.h
+FILE: ../../../third_party/skia/src/core/SkImageInfoPriv.h
 FILE: ../../../third_party/skia/src/core/SkMaskBlurFilter.cpp
 FILE: ../../../third_party/skia/src/core/SkMaskBlurFilter.h
 FILE: ../../../third_party/skia/src/core/SkPromiseImageTexture.cpp
