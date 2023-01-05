@@ -138,6 +138,7 @@ source_set("common") {
     "//flutter/shell/profiling",
     "//third_party/dart/runtime:dart_api",
     "//third_party/skia",
+    "//third_party/skia:gpu_shared",
   ]
 
   if (impeller_supports_rendering) {
