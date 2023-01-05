@@ -1356,6 +1356,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   self.keyboardAnimationIsShowing = keyboardWillShow;
 
   if (!keyboardAnimationIsCompounding) {
+    // Match the begin frame of the keyboard notification to ensure spring interpolation accuracy.
+    self.originalViewInsetBottom =
+        ([self mainScreenIfViewLoaded].bounds.size.height - beginKeyboardFrame.origin.y) *
+        [self mainScreenIfViewLoaded].scale;
+
     [self startKeyBoardAnimation:duration];
   }
 }
@@ -1524,7 +1529,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  // When call this method first time,
+  // When this method is called for the first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation.
   if ([self keyboardAnimationView] == nil) {
     UIView* keyboardAnimationView = [[UIView alloc] init];
@@ -1543,7 +1548,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [self keyboardAnimationView].frame =
       CGRectMake(0, _viewportMetrics.physical_view_inset_bottom, 0, 0);
   self.keyboardAnimationStartTime = fml::TimePoint().Now();
-  self.originalViewInsetBottom = _viewportMetrics.physical_view_inset_bottom;
 
   // Invalidate old vsync client if old animation is not completed.
   [self invalidateKeyboardAnimationVSyncClient];
@@ -1619,8 +1623,23 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                    flutterViewController.get().keyboardAnimationStartTime;
       double keyboardAnimationStop =
           [[flutterViewController keyboardSpringCurve] curveFunc:timeElapsed.ToSecondsF()];
-      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
-          start + (end - start) * keyboardAnimationStop;
+      double newY = start + (end - start) * keyboardAnimationStop;
+
+      // When a running animation is interrupted with the opposite animation (e.g. show interrupted
+      // with hide), adjust the spring curve until the model catches up with the current
+      // bottomInset.
+      double currentViewInsetBottom =
+          flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom;
+      double keyboardSpringFrameAdjustment = 0;
+      while ((start > end && currentViewInsetBottom < newY) ||
+             (end > start && currentViewInsetBottom > newY)) {
+        keyboardSpringFrameAdjustment += 1.0 / [DisplayLinkManager displayRefreshRate];
+        keyboardAnimationStop = [[flutterViewController keyboardSpringCurve]
+            curveFunc:timeElapsed.ToSecondsF() + keyboardSpringFrameAdjustment];
+        newY = start + (end - start) * keyboardAnimationStop;
+      }
+
+      flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom = newY;
       [flutterViewController updateViewportMetrics];
     }
   };
