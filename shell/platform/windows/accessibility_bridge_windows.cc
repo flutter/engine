@@ -54,8 +54,8 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
             std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
                 focus_delegate);
       }
-      DispatchWinAccessibilityEvent(win_delegate,
-                                    ax::mojom::Event::kDocumentSelectionChanged);
+      DispatchWinAccessibilityEvent(
+          win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
       break;
     }
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
