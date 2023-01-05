@@ -1524,7 +1524,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     return;
   }
 
-  // When call this method first time,
+  // When this method is called for the first time,
   // initialize the keyboardAnimationView to get animation interpolation during animation.
   if ([self keyboardAnimationView] == nil) {
     UIView* keyboardAnimationView = [[UIView alloc] init];
