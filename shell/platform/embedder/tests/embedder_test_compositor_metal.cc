@@ -30,7 +30,7 @@ bool EmbedderTestCompositorMetal::UpdateOffscrenComposition(
 
   auto surface =
       SkSurface::MakeRenderTarget(context_.get(),            // context
-                                  skgpu::Budgeted::kNo,           // budgeted
+                                  skgpu::Budgeted::kNo,      // budgeted
                                   image_info,                // image info
                                   1,                         // sample count
                                   kTopLeft_GrSurfaceOrigin,  // surface origin
