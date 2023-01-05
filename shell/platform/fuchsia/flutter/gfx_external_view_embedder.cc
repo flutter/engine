@@ -328,14 +328,28 @@ void GfxExternalViewEmbedder::SubmitFrame(
             kScenicZElevationBetweenLayers * scenic_layer_index +
             embedded_views_height;
 
-        // Use built-in get method for SkMatrix to get values
+        // Verify that we're unpacking the mutators' transform matrix correctly
+        // on debug builds Use built-in get method for SkMatrix to get values
         // See:
         // https://source.corp.google.com/piper///depot/google3/third_party/skia/HEAD/include/core/SkMatrix.h;l=391
+#ifdef NDEBUG
         for (int index = 0; index < 9; index++) {
-          FML_CHECK(SkScalarNearlyEqual(
-              view_mutators.total_transform.get(index),
-              view_params.transformMatrix().get(index), 0.0005f));
+          const SkScalar mutators_transform_value =
+              view_mutators.total_transform.get(index);
+          const SkScalar params_transform_value =
+              view_params.transformMatrix().get(index);
+          if (!SkScalarNearlyEqual(mutators_transform_value,
+                                   params_transform_value, 0.0005f)) {
+            FML_LOG(FATAL)
+                << "Assertion failed: view_mutators.total_transform[" << index
+                << "] (" << mutators_transform_value
+                << ") != view_params.transformMatrix()[" << index << "] ("
+                << params_transform_value
+                << "). This likely means there is a bug with the "
+                << "logic for parsing embedded views' transform matrices.";
+          }
         }
+#endif
 
         // Set clips for the platform view.
         if (view_mutators.clips != view_holder.mutators.clips) {
