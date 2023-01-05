@@ -18,7 +18,6 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSamplingOptions.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
 
 @interface TestExternalTexture : NSObject <FlutterTexture>
 

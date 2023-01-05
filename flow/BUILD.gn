@@ -95,7 +95,6 @@ source_set("flow") {
     "//flutter/common/graphics",
     "//flutter/fml",
     "//third_party/skia",
-    "//third_party/skia:gpu_shared",
   ]
 
   public_deps = [ "//flutter/display_list" ]

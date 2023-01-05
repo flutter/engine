@@ -9,7 +9,6 @@
 #include "third_party/skia/include/core/SkSerialProcs.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkSurfaceCharacterization.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
 #include "third_party/skia/include/utils/SkBase64.h"
 
 namespace flutter {

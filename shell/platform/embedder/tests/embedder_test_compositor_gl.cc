@@ -9,7 +9,6 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
 
 namespace flutter {
 namespace testing {

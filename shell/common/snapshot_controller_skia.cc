@@ -9,7 +9,6 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/snapshot_controller.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/gpu/GpuTypes.h"
 
 namespace flutter {
 
