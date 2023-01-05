@@ -328,15 +328,13 @@ void GfxExternalViewEmbedder::SubmitFrame(
             kScenicZElevationBetweenLayers * scenic_layer_index +
             embedded_views_height;
 
-        if (view_mutators.total_transform != view_params.transformMatrix()) {
-          FML_LOG(ERROR) << "Failed assertion: view_mutators.total_transform "
-                            "!= view_params.transformMatrix()";
-          FML_LOG(ERROR) << "view_mutators.total_transform:";
-          view_mutators.total_transform.dump();
-          FML_LOG(ERROR) << "view_params.transformMatrix():";
-          view_params.transformMatrix().dump();
-          FML_LOG(FATAL) << "view_mutators.total_transform "
-                            "!= view_params.transformMatrix()";
+        // Use built-in get method for SkMatrix to get values
+        // See:
+        // https://source.corp.google.com/piper///depot/google3/third_party/skia/HEAD/include/core/SkMatrix.h;l=391
+        for (int index = 0; index < 9; index++) {
+          FML_CHECK(SkScalarNearlyEqual(
+              view_mutators.total_transform.get(index),
+              view_params.transformMatrix().get(index), 0.0005f));
         }
 
         // Set clips for the platform view.
