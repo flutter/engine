@@ -6,12 +6,6 @@
 
 #include <Foundation/Foundation.h>
 
-// This simplified spring model is based off of a damped harmonic oscillator.
-// See: https://en.wikipedia.org/wiki/Harmonic_oscillator#Damped_harmonic_oscillator
-//
-// This models the closed form of the second order differential equation which happens to match the
-// algorithm used by CASpringAnimation, a QuartzCore (iOS) API that creates spring animations.
-//
 // Spring code adapted from React Native's Animation Library, see:
 // https://github.com/facebook/react-native/blob/main/Libraries/Animated/animations/SpringAnimation.js
 @implementation FlutterKeyboardSpringCurve

@@ -7,6 +7,11 @@
 
 #include <Foundation/NSObject.h>
 
+// This simplified spring model is based off of a damped harmonic oscillator.
+// See: https://en.wikipedia.org/wiki/Harmonic_oscillator#Damped_harmonic_oscillator
+//
+// This models the closed form of the second order differential equation which happens to match the
+// algorithm used by CASpringAnimation, a QuartzCore (iOS) API that creates spring animations.
 @interface FlutterKeyboardSpringCurve : NSObject
 
 - (instancetype)initWithStiffness:(double)stiffness
