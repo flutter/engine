@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e # Exit if any program returns an error.
 
-if arch | grep "arm64"; then
+if uname -m | grep "arm64"; then
     variant="host_debug_unopt_arm64"
 else
     variant="host_debug_unopt"
