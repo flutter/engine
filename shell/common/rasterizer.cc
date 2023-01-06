@@ -512,6 +512,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   // frame after calling `BeginFrame` as this operation resets the GL context.
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
   if (frame == nullptr) {
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
     return RasterStatus::kFailed;
   }
 
