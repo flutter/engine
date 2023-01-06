@@ -67,6 +67,12 @@ int convertButtonToButtons(int button) {
   }
 }
 
+/// Handler for contextmenu events that prevents the browser's context menu from
+/// being shown.
+void _handleContextMenu(DomEvent event) {
+  event.preventDefault();
+}
+
 /// Wrapping the Safari iOS workaround that adds a dummy event listener
 /// More info about the issue and workaround: https://github.com/flutter/flutter/issues/70858
 class SafariPointerEventWorkaround {
@@ -730,6 +736,8 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
+    addEventListener(domWindow, 'contextmenu', _handleContextMenu);
+
     _addPointerEventListener(glassPaneElement, 'pointerdown', (DomPointerEvent event) {
       final int device = _getPointerId(event);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -927,6 +935,8 @@ class _TouchAdapter extends _BaseAdapter {
 
   @override
   void setup() {
+    addEventListener(domWindow, 'contextmenu', _handleContextMenu);
+
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
@@ -1088,6 +1098,8 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
 
   @override
   void setup() {
+    addEventListener(domWindow, 'contextmenu', _handleContextMenu);
+
     _addMouseEventListener(glassPaneElement, 'mousedown', (DomMouseEvent event) {
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
       final _SanitizedDetails? up =
