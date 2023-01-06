@@ -80,10 +80,11 @@ bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
 
   auto command_buffer =
       fml::scoped_nsprotocol<id<MTLCommandBuffer>>([[command_queue_ commandBuffer] retain]);
+  [command_buffer.get() presentDrawable:reinterpret_cast<id<CAMetalDrawable>>(drawable)];
   [command_buffer.get() commit];
-  [command_buffer.get() waitUntilScheduled];
+  // [command_buffer.get() waitUntilScheduled];
 
-  [reinterpret_cast<id<CAMetalDrawable>>(drawable) present];
+  // [reinterpret_cast<id<CAMetalDrawable>>(drawable) present];
   return true;
 }
 
