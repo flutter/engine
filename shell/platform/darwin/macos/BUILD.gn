@@ -80,6 +80,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterMenuPlugin_Internal.h",
     "framework/Source/FlutterMouseCursorPlugin.h",
     "framework/Source/FlutterMouseCursorPlugin.mm",
+    "framework/Source/FlutterMutatorView.h",
+    "framework/Source/FlutterMutatorView.mm",
     "framework/Source/FlutterPlatformNodeDelegateMac.h",
     "framework/Source/FlutterPlatformNodeDelegateMac.mm",
     "framework/Source/FlutterPlatformViewController.h",
