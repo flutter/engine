@@ -312,6 +312,7 @@ struct SetRuntimeEffectColorSourceOp : DLOp {
   }
 };
 
+#ifdef IMPELLER_ENABLE_3D
 struct SetSceneColorSourceOp : DLOp {
   static const auto kType = DisplayListOpType::kSetSceneColorSource;
 
@@ -329,6 +330,7 @@ struct SetSceneColorSourceOp : DLOp {
                                      : DisplayListCompare::kNotEqual;
   }
 };
+#endif  // IMPELLER_ENABLE_3D
 
 // 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)
 struct SetSharedImageFilterOp : DLOp {

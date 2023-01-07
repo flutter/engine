@@ -504,6 +504,7 @@ void DisplayListDispatcher::setColorSource(
       return;
     }
     case Paint::ColorSourceType::kScene: {
+#ifdef IMPELLER_ENABLE_3D
       const flutter::DlSceneColorSource* scene_color_source = source->asScene();
       std::shared_ptr<scene::Node> scene_node =
           scene_color_source->scene_node();
@@ -515,8 +516,12 @@ void DisplayListDispatcher::setColorSource(
         contents->SetCameraTransform(camera_transform);
         return contents;
       };
-    }
+#else   // IMPELLER_ENABLE_3D
+      FML_LOG(ERROR) << "ColorSourceType::kScene can only be used if Impeller "
+                        "Scene is enabled.";
+#endif  // IMPELLER_ENABLE_3D
       return;
+    }
     case Paint::ColorSourceType::kConicalGradient:
       UNIMPLEMENTED;
       break;

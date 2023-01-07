@@ -81,10 +81,6 @@ source_set("ui") {
     "painting/picture_recorder.h",
     "painting/rrect.cc",
     "painting/rrect.h",
-    "painting/scene/scene_node.cc",
-    "painting/scene/scene_node.h",
-    "painting/scene/scene_shader.cc",
-    "painting/scene/scene_shader.h",
     "painting/shader.cc",
     "painting/shader.h",
     "painting/single_frame_codec.cc",
@@ -159,7 +155,6 @@ source_set("ui") {
     "//flutter/display_list",
     "//flutter/fml",
     "//flutter/impeller/runtime_stage",
-    "//flutter/impeller/scene",
     "//flutter/runtime:dart_plugin_registrant",
     "//flutter/runtime:test_font",
     "//flutter/third_party/tonic",
@@ -196,6 +191,14 @@ source_set("ui") {
   }
   if (impeller_enable_3d) {
     defines += [ "IMPELLER_ENABLE_3D" ]
+    sources += [
+      "painting/scene/scene_node.cc",
+      "painting/scene/scene_node.h",
+      "painting/scene/scene_shader.cc",
+      "painting/scene/scene_shader.h",
+    ]
+
+    deps += [ "//flutter/impeller/scene" ]
   }
 }
 

@@ -19,10 +19,16 @@
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
 #include "impeller/geometry/matrix.h"
-#include "impeller/scene/node.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
+
+#ifdef IMPELLER_ENABLE_3D
+#include "impeller/scene/node.h"
+namespace flutter {
+class DlSceneColorSource;
+}
+#endif  // IMPELLER_ENABLE_3D
 
 namespace flutter {
 
@@ -33,7 +39,6 @@ class DlRadialGradientColorSource;
 class DlConicalGradientColorSource;
 class DlSweepGradientColorSource;
 class DlRuntimeEffectColorSource;
-class DlSceneColorSource;
 class DlUnknownColorSource;
 
 // The DisplayList ColorSource class. This class implements all of the
@@ -164,7 +169,9 @@ class DlColorSource
     return nullptr;
   }
 
+#ifdef IMPELLER_ENABLE_3D
   virtual const DlSceneColorSource* asScene() const { return nullptr; }
+#endif  // IMPELLER_ENABLE_3D
 
   // If this filter contains images, specifies the owning context for those
   // images.
@@ -760,6 +767,7 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRuntimeEffectColorSource);
 };
 
+#ifdef IMPELLER_ENABLE_3D
 class DlSceneColorSource final : public DlColorSource {
  public:
   DlSceneColorSource(std::shared_ptr<impeller::scene::Node> node,
@@ -799,6 +807,7 @@ class DlSceneColorSource final : public DlColorSource {
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlSceneColorSource);
 };
+#endif  // IMPELLER_ENABLE_3D
 
 class DlUnknownColorSource final : public DlColorSource {
  public:

@@ -12,18 +12,6 @@ class SceneNode extends NativeFieldWrapperClass1 {
 
   String? _debugName;
 
-  void setTransform(Float64List matrix4) {
-    _setTransform(matrix4);
-  }
-
-  void setAnimationState(String animationName, bool playing, double weight, double timeScale) {
-    _setAnimationState(animationName, playing, weight, timeScale);
-  }
-
-  void seekAnimation(String animationName, double time) {
-    _seekAnimation(animationName, time);
-  }
-
   /// Creates a scene node from the asset with key [assetKey].
   ///
   /// The asset must be a file produced as the output of the `scenec` importer.
@@ -36,25 +24,49 @@ class SceneNode extends NativeFieldWrapperClass1 {
     // key they have written in the pubspec.
       final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
     {
-      final SceneNode? scene_node = _ipsceneRegistry[encodedKey]?.target;
-      if (scene_node != null) {
-        return Future<SceneNode>.value(scene_node);
+      final SceneNode? sceneNode = _ipsceneRegistry[encodedKey]?.target;
+      if (sceneNode != null) {
+        return Future<SceneNode>.value(sceneNode);
       }
     }
 
-    final SceneNode scene_node = SceneNode._create();
+    final SceneNode sceneNode = SceneNode._create();
     return _futurize((_Callback<void> callback) {
-      final String error = scene_node._initFromAsset(assetKey, callback);
+      final String error = sceneNode._initFromAsset(assetKey, callback);
       if (error.isNotEmpty) {
         return error;
       }
       assert(() {
-        scene_node._debugName = assetKey;
+        sceneNode._debugName = assetKey;
         return true;
       }());
 
-      _ipsceneRegistry[encodedKey] = WeakReference<SceneNode>(scene_node);
-    }).then((_) => scene_node);
+      _ipsceneRegistry[encodedKey] = WeakReference<SceneNode>(sceneNode);
+
+      return null;
+    }).then((_) => sceneNode);
+  }
+
+  static SceneNode fromTransform(Float64List matrix4) {
+    final SceneNode sceneNode = SceneNode._create();
+    sceneNode._initFromTransform(matrix4);
+    return sceneNode;
+  }
+
+  void addChild(SceneNode sceneNode) {
+    _addChild(sceneNode);
+  }
+
+  void setTransform(Float64List matrix4) {
+    _setTransform(matrix4);
+  }
+
+  void setAnimationState(String animationName, bool playing, double weight, double timeScale) {
+    _setAnimationState(animationName, playing, weight, timeScale);
+  }
+
+  void seekAnimation(String animationName, double time) {
+    _seekAnimation(animationName, time);
   }
 
   // This is a cache of scene nodes that have been loaded by
@@ -65,33 +77,11 @@ class SceneNode extends NativeFieldWrapperClass1 {
   static final Map<String, WeakReference<SceneNode>> _ipsceneRegistry =
       <String, WeakReference<SceneNode>>{};
 
-  static void _reinitializeScene(String assetKey) {
-    // If a shader for the asset isn't already registered, then there's no
-    // need to reinitialize it. The new shader will be loaded and initialized
-    // the next time the program accesses it.
-    final WeakReference<SceneNode>? nodeRef = _ipsceneRegistry == null
-      ? null
-      : _ipsceneRegistry[assetKey];
-    if (nodeRef == null) {
-      return;
-    }
-
-    final SceneNode? program = nodeRef.target;
-    if (program == null) {
-      return;
-    }
-
-    final String result = program._initFromAsset(assetKey, (_) => {});
-    if (result.isNotEmpty) {
-      throw result; // ignore: only_throw_errors
-    }
-  }
-
   @FfiNative<Void Function(Handle)>('SceneNode::Create')
   external void _constructor();
 
   @FfiNative<Handle Function(Pointer<Void>, Handle, Handle)>('SceneNode::initFromAsset')
-  external String _initFromAsset(String assetKey, _Callback<void> completion_callback);
+  external String _initFromAsset(String assetKey, _Callback<void> completionCallback);
 
   @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::initFromTransform')
   external void _initFromTransform(Float64List matrix4);
@@ -121,6 +111,7 @@ class SceneShader extends Shader {
     _constructor(node);
   }
 
+  // ignore: unused_field
   final String? _debugName;
 
   /// Releases the native resources held by the [SceneShader].
