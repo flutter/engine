@@ -76,7 +76,7 @@ source_set("display_list") {
     defines = []
   }
   if (impeller_enable_3d) {
-    defines += [ "IMPELLER_ENABLE_3D" ]
+    #defines += [ "IMPELLER_ENABLE_3D" ]
     public_deps += [ "//flutter/impeller/scene" ]
   }
 }

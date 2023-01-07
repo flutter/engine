@@ -23,8 +23,8 @@
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 
 #ifdef IMPELLER_ENABLE_3D
-#include "impeller/geometry/matrix.h"
-#include "impeller/scene/node.h"
+#include "impeller/geometry/matrix.h"  // nogncheck
+#include "impeller/scene/node.h"       // nogncheck
 namespace flutter {
 class DlSceneColorSource;
 }
