@@ -337,8 +337,10 @@ static std::optional<Paint::ColorSourceType> ToColorSourceType(
       return Paint::ColorSourceType::kSweepGradient;
     case flutter::DlColorSourceType::kRuntimeEffect:
       return Paint::ColorSourceType::kRuntimeEffect;
+#ifdef IMPELLER_ENABLE_3D
     case flutter::DlColorSourceType::kScene:
       return Paint::ColorSourceType::kScene;
+#endif  // IMPELLER_ENABLE_3D
     case flutter::DlColorSourceType::kUnknown:
       return std::nullopt;
   }

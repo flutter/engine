@@ -29,8 +29,6 @@
 #include "flutter/lib/ui/painting/path_measure.h"
 #include "flutter/lib/ui/painting/picture.h"
 #include "flutter/lib/ui/painting/picture_recorder.h"
-#include "flutter/lib/ui/painting/scene/scene_node.h"
-#include "flutter/lib/ui/painting/scene/scene_shader.h"
 #include "flutter/lib/ui/painting/vertices.h"
 #include "flutter/lib/ui/semantics/semantics_update.h"
 #include "flutter/lib/ui/semantics/semantics_update_builder.h"
@@ -42,6 +40,11 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_error.h"
+
+#ifdef IMPELLER_ENABLE_3D
+#include "flutter/lib/ui/painting/scene/scene_node.h"
+#include "flutter/lib/ui/painting/scene/scene_shader.h"
+#endif  // IMPELLER_ENABLE_3D
 
 using tonic::ToDart;
 
