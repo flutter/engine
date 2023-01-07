@@ -18,12 +18,12 @@
 #include "flutter/display_list/display_list_tile_mode.h"
 #include "flutter/display_list/types.h"
 #include "flutter/fml/logging.h"
-#include "impeller/geometry/matrix.h"
 #include "third_party/skia/include/core/SkShader.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 
 #ifdef IMPELLER_ENABLE_3D
+#include "impeller/geometry/matrix.h"
 #include "impeller/scene/node.h"
 namespace flutter {
 class DlSceneColorSource;
