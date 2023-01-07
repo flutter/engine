@@ -1,4 +1,4 @@
-package io.flutter.embedding.android;
+package io.flutter.embedding.engine.plugins.host;
 
 import android.app.Activity;
 import android.content.Context;

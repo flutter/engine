@@ -50,7 +50,8 @@ import io.flutter.Log;
 import io.flutter.embedding.android.FlutterActivityLaunchConfigs.BackgroundMode;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterShellArgs;
-import io.flutter.embedding.engine.plugins.activity.ActivityControlSurface;
+import io.flutter.embedding.engine.plugins.host.HostComponent;
+import io.flutter.embedding.engine.plugins.host.HostComponentControlSurface;
 import io.flutter.embedding.engine.plugins.util.GeneratedPluginRegister;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
@@ -871,8 +872,8 @@ public class FlutterActivity extends Activity
    * io.flutter.embedding.engine.FlutterEngine} and its subcomponents.
    *
    * <p>Calling will disconnect this activity's view from the Flutter renderer, disconnect this
-   * activity from plugins' {@link ActivityControlSurface}, and stop system channel messages from
-   * this activity.
+   * activity from plugins' {@link HostComponentControlSurface}, and stop system channel messages
+   * from this activity.
    *
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
@@ -1340,8 +1341,9 @@ public class FlutterActivity extends Activity
    * io.flutter.embedding.engine.FlutterEngine} from being attaching to a {@code FlutterActivity} -
    * it just prevents the attachment from happening automatically. A developer can choose to
    * subclass {@code FlutterActivity} and then invoke {@link
-   * ActivityControlSurface#attachToActivity(ExclusiveAppComponent, Lifecycle)} and {@link
-   * ActivityControlSurface#detachFromActivity()} at the desired times.
+   * HostComponentControlSurface#attachToHostComponent(ExclusiveAppComponent, Lifecycle)}
+   * (ExclusiveAppComponent, Lifecycle)} and {@link
+   * HostComponentControlSurface#detachFromHostComponent()} ()} at the desired times.
    *
    * <p>One reason that a developer might choose to manually manage the relationship between the
    * {@code Activity} and {@link io.flutter.embedding.engine.FlutterEngine} is if the developer

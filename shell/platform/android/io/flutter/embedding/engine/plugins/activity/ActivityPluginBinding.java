@@ -4,7 +4,6 @@
 
 package io.flutter.embedding.engine.plugins.activity;
 
-import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 
 /**
@@ -17,22 +16,6 @@ import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
  * ActivityAware#onReattachedToActivityForConfigChanges(ActivityPluginBinding)}.
  */
 public interface ActivityPluginBinding extends HostComponentPluginBinding {
-
-  /**
-   * Adds a listener that is invoked when the associated {@code Activity} or {@code Fragment} saves
-   * and restores instance state.
-   */
-  default void addOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener) {
-    addOnSaveStateListener((HostComponentPluginBinding.OnSaveInstanceStateListener) listener);
-  }
-
-  /**
-   * Removes a listener that was added in {@link
-   * #addOnSaveStateListener(OnSaveInstanceStateListener)}.
-   */
-  default void removeOnSaveStateListener(@NonNull OnSaveInstanceStateListener listener) {
-    removeOnSaveStateListener((HostComponentPluginBinding.OnSaveInstanceStateListener) listener);
-  }
 
   interface OnSaveInstanceStateListener
       extends HostComponentPluginBinding.OnSaveInstanceStateListener {}

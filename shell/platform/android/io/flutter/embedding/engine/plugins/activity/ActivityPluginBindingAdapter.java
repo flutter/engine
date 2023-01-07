@@ -3,7 +3,7 @@ package io.flutter.embedding.engine.plugins.activity;
 import android.app.Activity;
 import android.content.Context;
 import androidx.annotation.NonNull;
-import io.flutter.embedding.android.HostComponent;
+import io.flutter.embedding.engine.plugins.host.HostComponent;
 import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
 import io.flutter.plugin.common.PluginRegistry;
 

@@ -9,15 +9,14 @@ import android.content.Context;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.embedding.android.HostComponent;
 import io.flutter.plugin.common.PluginRegistry;
 
 /**
  * Binding that gives {@link HostComponentAware} plugins access to an associated {@link
- * android.app.Activity} and the {@link android.app.Activity}'s lifecycle methods.
+ * HostComponent} and the {@link HostComponent}'s lifecycle methods.
  *
- * <p>To obtain an instance of an {@code ActivityPluginBinding} in a Flutter plugin, implement the
- * {@link HostComponentAware} interface. A binding is provided in {@link
+ * <p>To obtain an instance of an {@code HostComponentPluginBinding} in a Flutter plugin, implement
+ * the {@link HostComponentAware} interface. A binding is provided in {@link
  * HostComponentAware#onAttachedToHostComponent(HostComponentPluginBinding)} and {@link
  * HostComponentAware#onReattachedToHostComponentForConfigChanges(HostComponentPluginBinding)}.
  */
@@ -27,7 +26,7 @@ public interface HostComponentPluginBinding {
   Context getContext();
 
   /**
-   * Returns the {@link android.app.Activity} that is currently attached to the {@link
+   * Returns the {@link HostComponent} that is currently attached to the {@link
    * io.flutter.embedding.engine.FlutterEngine} that owns this {@code ActivityPluginBinding}.
    */
   Activity getActivity();
@@ -36,7 +35,7 @@ public interface HostComponentPluginBinding {
   HostComponent getHostComponent();
 
   /**
-   * Returns the {@code Lifecycle} associated with the attached {@code Activity}.
+   * Returns the {@code Lifecycle} associated with the attached {@code HostComponent}.
    *
    * <p>Use the flutter_plugin_android_lifecycle plugin to turn the returned {@code Object} into a
    * {@code Lifecycle} object. See
@@ -49,7 +48,7 @@ public interface HostComponentPluginBinding {
   Object getLifecycle();
 
   /**
-   * Adds a listener that is invoked whenever the associated {@link android.app.Activity}'s {@code
+   * Adds a listener that is invoked whenever the associated {@link HostComponent}'s {@code
    * onRequestPermissionsResult(...)} method is invoked.
    */
   void addRequestPermissionsResultListener(
@@ -63,7 +62,7 @@ public interface HostComponentPluginBinding {
       @NonNull PluginRegistry.RequestPermissionsResultListener listener);
 
   /**
-   * Adds a listener that is invoked whenever the associated {@link android.app.Activity}'s {@code
+   * Adds a listener that is invoked whenever the associated {@link HostComponent}'s {@code
    * onActivityResult(...)} method is invoked.
    */
   void addActivityResultListener(@NonNull PluginRegistry.ActivityResultListener listener);
@@ -75,7 +74,7 @@ public interface HostComponentPluginBinding {
   void removeActivityResultListener(@NonNull PluginRegistry.ActivityResultListener listener);
 
   /**
-   * Adds a listener that is invoked whenever the associated {@link android.app.Activity}'s {@code
+   * Adds a listener that is invoked whenever the associated {@link HostComponent}'s {@code
    * onNewIntent(...)} method is invoked.
    */
   void addOnNewIntentListener(@NonNull PluginRegistry.NewIntentListener listener);
@@ -87,7 +86,7 @@ public interface HostComponentPluginBinding {
   void removeOnNewIntentListener(@NonNull PluginRegistry.NewIntentListener listener);
 
   /**
-   * Adds a listener that is invoked whenever the associated {@link android.app.Activity}'s {@code
+   * Adds a listener that is invoked whenever the associated {@link HostComponent}'s {@code
    * onUserLeaveHint()} method is invoked.
    */
   void addOnUserLeaveHintListener(@NonNull PluginRegistry.UserLeaveHintListener listener);

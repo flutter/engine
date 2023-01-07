@@ -16,7 +16,6 @@ import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.Log;
 import io.flutter.embedding.android.ExclusiveAppComponent;
-import io.flutter.embedding.android.HostComponent;
 import io.flutter.embedding.engine.loader.FlutterLoader;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.embedding.engine.plugins.PluginRegistry;
@@ -26,6 +25,7 @@ import io.flutter.embedding.engine.plugins.broadcastreceiver.BroadcastReceiverPl
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderAware;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderControlSurface;
 import io.flutter.embedding.engine.plugins.contentprovider.ContentProviderPluginBinding;
+import io.flutter.embedding.engine.plugins.host.HostComponent;
 import io.flutter.embedding.engine.plugins.host.HostComponentAware;
 import io.flutter.embedding.engine.plugins.host.HostComponentControlSurface;
 import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
@@ -317,7 +317,7 @@ import java.util.Set;
 
   @Override
   public void attachToHostComponent(
-      @NonNull ExclusiveAppComponent<HostComponent> exclusiveUIComponent,
+      @NonNull ExclusiveAppComponent<HostComponent> exclusiveHostComponent,
       @NonNull Lifecycle lifecycle) {
     TraceSection.begin("FlutterEngineConnectionRegistry#attachToUIComponent");
     try {
@@ -326,8 +326,8 @@ import java.util.Set;
       }
       // If we were already attached to an app component, detach from it.
       detachFromAppComponent();
-      this.exclusiveHostComponent = exclusiveUIComponent;
-      attachToHostComponentInternal(exclusiveUIComponent.getAppComponent(), lifecycle);
+      this.exclusiveHostComponent = exclusiveHostComponent;
+      attachToHostComponentInternal(exclusiveHostComponent.getAppComponent(), lifecycle);
     } finally {
       TraceSection.end();
     }
@@ -788,7 +788,7 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} has its {@code
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
      * onRequestPermissionsResult(...)} method invoked.
      */
     boolean onRequestPermissionsResult(
@@ -817,7 +817,7 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} has its {@code
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
      * onActivityResult(...)} method invoked.
      */
     boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -844,7 +844,7 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} has its {@code
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
      * onNewIntent(...)} method invoked.
      */
     void onNewIntent(@Nullable Intent intent) {
@@ -878,7 +878,7 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} has its {@code
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
      * onUserLeaveHint()} method invoked.
      */
     void onUserLeaveHint() {
@@ -890,8 +890,8 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} or {@code Fragment}
-     * has its {@code onSaveInstanceState(Bundle)} method invoked.
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
+     * onSaveInstanceState(Bundle)} method invoked.
      */
     void onSaveInstanceState(@NonNull Bundle bundle) {
       for (OnSaveInstanceStateListener listener : onSaveInstanceStateListeners) {
@@ -901,8 +901,8 @@ import java.util.Set;
 
     /**
      * Invoked by the {@link io.flutter.embedding.engine.FlutterEngine} that owns this {@code
-     * ActivityPluginBinding} when its associated {@link android.app.Activity} or {@code Fragment}
-     * has its {@code onCreate(Bundle)} method invoked.
+     * HostComponentPluginBinding} when its associated {@link HostComponent} has its {@code
+     * onCreate(Bundle)} method invoked.
      */
     void onRestoreInstanceState(@Nullable Bundle bundle) {
       for (OnSaveInstanceStateListener listener : onSaveInstanceStateListeners) {

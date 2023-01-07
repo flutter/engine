@@ -5,12 +5,10 @@
 package io.flutter.embedding.engine.plugins.activity;
 
 import android.app.Activity;
-import android.content.Intent;
-import android.os.Bundle;
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.lifecycle.Lifecycle;
 import io.flutter.embedding.android.ExclusiveAppComponent;
+import io.flutter.embedding.engine.plugins.host.HostComponentControlSurface;
 
 /**
  * Control surface through which an {@link android.app.Activity} attaches to a {@link
@@ -49,7 +47,7 @@ import io.flutter.embedding.android.ExclusiveAppComponent;
  * all {@link ActivityAware} plugins that are added to the attached {@link
  * io.flutter.embedding.engine.FlutterEngine}.
  */
-public interface ActivityControlSurface {
+public interface ActivityControlSurface extends HostComponentControlSurface {
   /**
    * Call this method from the {@link ExclusiveAppComponent} that is displaying the visual content
    * of the {@link io.flutter.embedding.engine.FlutterEngine} that is associated with this {@code
@@ -84,52 +82,4 @@ public interface ActivityControlSurface {
    * references before the {@link android.app.Activity is destroyed}.
    */
   void detachFromActivity();
-
-  /**
-   * Call this method from the {@link android.app.Activity} that is attached to this {@code
-   * ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} and the associated
-   * method in the {@link Activity} is invoked.
-   *
-   * <p>Returns true if one or more plugins utilized this permission result.
-   */
-  boolean onRequestPermissionsResult(
-      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResult);
-
-  /**
-   * Call this method from the {@link android.app.Activity} that is attached to this {@code
-   * ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} and the associated
-   * method in the {@link Activity} is invoked.
-   *
-   * <p>Returns true if one or more plugins utilized this {@link android.app.Activity} result.
-   */
-  boolean onActivityResult(int requestCode, int resultCode, @Nullable Intent data);
-
-  /**
-   * Call this method from the {@link android.app.Activity} that is attached to this {@code
-   * ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} and the associated
-   * method in the {@link Activity} is invoked.
-   */
-  void onNewIntent(@NonNull Intent intent);
-
-  /**
-   * Call this method from the {@link android.app.Activity} that is attached to this {@code
-   * ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} and the associated
-   * method in the {@link Activity} is invoked.
-   */
-  void onUserLeaveHint();
-
-  /**
-   * Call this method from the {@link android.app.Activity} or {@code Fragment} that is attached to
-   * this {@code ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} when
-   * the associated method is invoked in the {@link android.app.Activity} or {@code Fragment}.
-   */
-  void onSaveInstanceState(@NonNull Bundle bundle);
-
-  /**
-   * Call this method from the {@link android.app.Activity} or {@code Fragment} that is attached to
-   * this {@code ActivityControlSurface}'s {@link io.flutter.embedding.engine.FlutterEngine} when
-   * {@link android.app.Activity#onCreate(Bundle)} or {@code Fragment#onCreate(Bundle)} is invoked
-   * in the {@link android.app.Activity} or {@code Fragment}.
-   */
-  void onRestoreInstanceState(@Nullable Bundle bundle);
 }

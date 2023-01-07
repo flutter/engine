@@ -27,6 +27,7 @@ import io.flutter.embedding.engine.FlutterEngineCache;
 import io.flutter.embedding.engine.FlutterEngineGroup;
 import io.flutter.embedding.engine.FlutterEngineGroupCache;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.plugins.host.HostComponent;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
 import io.flutter.plugin.platform.PlatformPlugin;
 import io.flutter.util.ViewUtils;
@@ -191,7 +192,7 @@ import java.util.List;
 
     if (host.shouldAttachEngineToActivity()) {
       // Notify any plugins that are currently attached to our FlutterEngine that they
-      // are now attached to an Activity.
+      // are now attached to an HostComponent (Activity or Fragment).
       //
       // Passing this Fragment's Lifecycle should be sufficient because as long as this Fragment
       // is attached to its Activity, the lifecycles should be in sync. Once this Fragment is
@@ -199,7 +200,7 @@ import java.util.List;
       // which means there shouldn't be any possibility for the Fragment Lifecycle to get out of
       // sync with the Activity. We use the Fragment's Lifecycle because it is possible that the
       // attached Activity is not a LifecycleOwner.
-      Log.v(TAG, "Attaching FlutterEngine to the Activity that owns this delegate.");
+      Log.v(TAG, "Attaching FlutterEngine to Activity or Fragment that owns this delegate.");
       flutterEngine
           .getHostComponentControlSurface()
           .attachToHostComponent(this, host.getLifecycle());
@@ -1017,7 +1018,8 @@ import java.util.List;
      * <p>In the scenario where multiple {@link FlutterActivity} or {@link FlutterFragment} share
      * the same {@link FlutterEngine}, to attach/re-attache a {@link FlutterActivity} or {@link
      * FlutterFragment} to the shared {@link FlutterEngine}, we MUST manually invoke {@link
-     * io.flutter.embedding.engine.plugins.host.HostComponentControlSurface#attachToHostComponent(ExclusiveAppComponent, Lifecycle)}.
+     * io.flutter.embedding.engine.plugins.host.HostComponentControlSurface#attachToHostComponent(ExclusiveAppComponent,
+     * Lifecycle)}.
      *
      * <p>The {@link ExclusiveAppComponent} is exposed here so that subclasses of {@link
      * FlutterActivity} or {@link FlutterFragment} can access it.

@@ -12,6 +12,8 @@ import io.flutter.embedding.engine.plugins.host.HostComponentPluginBinding;
  * {@link io.flutter.embedding.engine.plugins.FlutterPlugin} that is interested in {@link
  * android.app.Activity} lifecycle events related to a {@link
  * io.flutter.embedding.engine.FlutterEngine} running within the given {@link android.app.Activity}.
+ *
+ * <p>if {@link io.flutter.embedding.engine.plugins.FlutterPlugin} is interested in lifecycle
  */
 public interface ActivityAware extends HostComponentAware {
   /**
