@@ -59,7 +59,9 @@ enum class DlColorSourceType {
   kConicalGradient,
   kSweepGradient,
   kRuntimeEffect,
+#ifdef IMPELLER_ENABLE_3D
   kScene,
+#endif  // IMPELLER_ENABLE_3D
   kUnknown
 };
 
