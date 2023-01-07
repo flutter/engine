@@ -12,6 +12,7 @@ import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart'  show platformViewManager, registerHotRestartListener;
 import 'clipboard.dart';
+import 'context_menu.dart';
 import 'dom.dart';
 import 'embedder.dart';
 import 'mouse_cursor.dart';
@@ -32,7 +33,6 @@ ui.VoidCallback? scheduleFrameCallback;
 /// Signature of functions added as a listener to high contrast changes
 typedef HighContrastListener = void Function(bool enabled);
 typedef _KeyDataResponseCallback = void Function(bool handled);
-
 
 /// Determines if high contrast is enabled using media query 'forced-colors: active' for Windows
 class HighContrastSupport {
@@ -530,6 +530,19 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/textinput':
         textEditing.channel.handleTextInput(data, callback);
+        return;
+
+      case 'flutter/contextmenu':
+        const MethodCodec codec = StandardMethodCodec();
+        final MethodCall decoded = codec.decodeMethodCall(data);
+        switch (decoded.method) {
+          case 'enableContextMenu':
+            ContextMenu.enableContextMenu();
+            return;
+          case 'disableContextMenu':
+            ContextMenu.disableContextMenu();
+            return;
+        }
         return;
 
       case 'flutter/mousecursor':

@@ -58,6 +58,7 @@ export 'engine/canvaskit/vertices.dart';
 export 'engine/clipboard.dart';
 export 'engine/color_filter.dart';
 export 'engine/configuration.dart';
+export 'engine/context_menu.dart';
 export 'engine/dom.dart';
 export 'engine/embedder.dart';
 export 'engine/engine_canvas.dart';
