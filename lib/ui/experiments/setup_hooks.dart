@@ -4,6 +4,23 @@
 
 part of dart.ui;
 
+Future<developer.ServiceExtensionResponse> _reinitializeScene(
+  String method,
+  Map<String, String> parameters,
+) async {
+  final String? assetKey = parameters['assetKey'];
+  if (assetKey != null) {
+    await SceneNode._reinitializeScene(assetKey);
+  }
+
+  // Always succeed.
+  return developer.ServiceExtensionResponse.result(json.encode(<String, String>{
+    'type': 'Success',
+  }));
+}
+
+// This is a copy of ui/setup_hooks.dart, but with reinitializeScene added for hot reloading 3D scenes.
+
 @pragma('vm:entry-point')
 void _setupHooks() {
   assert(() {
@@ -14,6 +31,12 @@ void _setupHooks() {
     developer.registerExtension(
       'ext.ui.window.reinitializeShader',
       _reinitializeShader,
+    );
+
+    // In debug mode, allow 3D scenes to be reinitialized.
+    developer.registerExtension(
+      'ext.ui.window.reinitializeScene',
+      _reinitializeScene,
     );
     return true;
   }());
