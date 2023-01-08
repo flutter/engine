@@ -216,6 +216,10 @@ if (enable_unittests) {
       "fixtures/FontManifest.json",
       "//flutter/third_party/txt/third_party/fonts/Roboto-Medium.ttf",
     ]
+
+    if (impeller_enable_3d) {
+      deps += [ "//flutter/impeller/fixtures:scene_fixtures" ]
+    }
   }
 
   executable("ui_benchmarks") {
