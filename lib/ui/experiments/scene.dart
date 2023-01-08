@@ -76,7 +76,7 @@ class SceneNode extends NativeFieldWrapperClass1 {
   static final Map<String, WeakReference<SceneNode>> _ipsceneRegistry =
       <String, WeakReference<SceneNode>>{};
 
-  static void _reinitializeScene(String assetKey) async {
+  static Future<void> _reinitializeScene(String assetKey) async {
     final WeakReference<SceneNode>? sceneRef = _ipsceneRegistry == null
       ? null
       : _ipsceneRegistry[assetKey];
