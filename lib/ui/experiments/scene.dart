@@ -138,6 +138,10 @@ class SceneShader extends Shader {
   // ignore: unused_field
   final String? _debugName;
 
+  void setCameraTransform(Float64List matrix4) {
+    _setCameraTransform(matrix4);
+  }
+
   /// Releases the native resources held by the [SceneShader].
   ///
   /// After this method is called, calling methods on the shader, or attaching
@@ -151,6 +155,9 @@ class SceneShader extends Shader {
 
   @FfiNative<Void Function(Handle, Handle)>('SceneShader::Create')
   external void _constructor(SceneNode node);
+
+  @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneShader::SetCameraTransform')
+  external void _setCameraTransform(Float64List matrix4);
 
   @FfiNative<Void Function(Pointer<Void>)>('SceneShader::Dispose')
   external void _dispose();

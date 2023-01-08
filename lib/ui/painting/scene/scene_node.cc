@@ -101,10 +101,10 @@ std::string SceneNode::initFromAsset(const std::string& asset_name,
 void SceneNode::initFromTransform(const tonic::Float64List& matrix4) {
   node_ = std::make_shared<impeller::scene::Node>();
   node_->SetLocalTransform(
-      impeller::Matrix(matrix4[0], matrix4[4], matrix4[8], matrix4[12],   //
-                       matrix4[1], matrix4[5], matrix4[9], matrix4[13],   //
-                       matrix4[2], matrix4[6], matrix4[10], matrix4[14],  //
-                       matrix4[3], matrix4[7], matrix4[11], matrix4[15]));
+      impeller::Matrix(matrix4[0], matrix4[1], matrix4[2], matrix4[3],    //
+                       matrix4[4], matrix4[5], matrix4[6], matrix4[7],    //
+                       matrix4[8], matrix4[9], matrix4[10], matrix4[11],  //
+                       matrix4[12], matrix4[13], matrix4[14], matrix4[15]));
 }
 
 void SceneNode::AddChild(Dart_Handle scene_node_handle) {
