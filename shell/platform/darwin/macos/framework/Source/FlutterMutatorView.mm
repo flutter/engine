@@ -194,6 +194,14 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
   return _platformView;
 }
 
+- (NSMutableArray*)pathClipViews {
+  return _pathClipViews;
+}
+
+- (NSView*)platformViewContainer {
+  return _platformViewContainer;
+}
+
 - (instancetype)initWithPlatformView:(NSView*)platformView {
   if (self = [super initWithFrame:NSZeroRect]) {
     _platformView = platformView;
@@ -215,7 +223,7 @@ CGPathRef PathFromRoundedRect(const FlutterRoundedRect& roundedRect) {
 /// If clipping to path is needed, CAShapeLayer(s) will be used as mask.
 /// Clipping to round rect only clips to path if round corners are intersected.
 - (void)applyFlutterLayer:(const FlutterLayer*)layer {
-  CGFloat scale = self.superview.layer.contentsScale;
+  CGFloat scale = self.superview != nil ? self.superview.layer.contentsScale : 1.0;
 
   // Initial transform to compensate for scale factor. This is needed because all
   // cocoa coordinates are logical but Flutter will send the physical to logical
