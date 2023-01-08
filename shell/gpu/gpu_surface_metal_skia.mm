@@ -86,7 +86,6 @@ void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
-  TRACE_EVENT0("flutter", "GPUSurfaceMetalSkia::AcquireFrame");
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
