@@ -77,23 +77,19 @@ class SceneNode extends NativeFieldWrapperClass1 {
       <String, WeakReference<SceneNode>>{};
 
   static void _reinitializeScene(String assetKey) async {
-    // If a scene for the asset isn't already registered, then there's no
-    // need to reinitialize it.
     final WeakReference<SceneNode>? sceneRef = _ipsceneRegistry == null
       ? null
       : _ipsceneRegistry[assetKey];
+
+    // If a scene for the asset isn't already registered, then there's no
+    // need to reinitialize it.
     if (sceneRef == null) {
       return;
     }
 
-    final SceneNode? scene = sceneRef.target;
-    if (scene == null) {
+    final SceneNode? sceneNode = sceneRef.target;
+    if (sceneNode == null) {
       return;
-    }
-
-    final String result = scene._initFromAsset(assetKey);
-    if (result.isNotEmpty) {
-      throw result; // ignore: only_throw_errors
     }
 
     await _futurize((_Callback<void> callback) {
