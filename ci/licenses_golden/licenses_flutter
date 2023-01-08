@@ -1704,6 +1704,7 @@ ORIGIN: ../../../flutter/lib/ui/dart_ui.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/dart_ui.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/dart_wrapper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/scene.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/experiments/setup_hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/geometry.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hash_codes.dart + ../../../flutter/LICENSE
@@ -1809,6 +1810,7 @@ ORIGIN: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc + ../../..
 ORIGIN: ../../../flutter/lib/ui/semantics/semantics_update_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/semantics/string_attribute.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/semantics/string_attribute.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/setup_hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/snapshot_delegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc + ../../../flutter/LICENSE
@@ -4180,6 +4182,7 @@ FILE: ../../../flutter/lib/ui/dart_ui.cc
 FILE: ../../../flutter/lib/ui/dart_ui.h
 FILE: ../../../flutter/lib/ui/dart_wrapper.h
 FILE: ../../../flutter/lib/ui/experiments/scene.dart
+FILE: ../../../flutter/lib/ui/experiments/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/experiments/ui.dart
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
@@ -4285,6 +4288,7 @@ FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.cc
 FILE: ../../../flutter/lib/ui/semantics/semantics_update_builder.h
 FILE: ../../../flutter/lib/ui/semantics/string_attribute.cc
 FILE: ../../../flutter/lib/ui/semantics/string_attribute.h
+FILE: ../../../flutter/lib/ui/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/snapshot_delegate.h
 FILE: ../../../flutter/lib/ui/text.dart
 FILE: ../../../flutter/lib/ui/text/asset_manager_font_provider.cc
