@@ -39,28 +39,61 @@ std::string SceneNode::initFromAsset(const std::string& asset_name,
     return "Completion callback must be a function.";
   }
 
-  if (!UIDartState::Current()->IsImpellerEnabled()) {
+  auto dart_state = UIDartState::Current();
+  if (!dart_state->IsImpellerEnabled()) {
     return "3D scenes require the Impeller rendering backend to be enabled.";
   }
 
-  std::shared_ptr<AssetManager> asset_manager = UIDartState::Current()
-                                                    ->platform_configuration()
-                                                    ->client()
-                                                    ->GetAssetManager();
+  std::shared_ptr<AssetManager> asset_manager =
+      dart_state->platform_configuration()->client()->GetAssetManager();
   std::unique_ptr<fml::Mapping> data = asset_manager->GetAsMapping(asset_name);
   if (data == nullptr) {
     return std::string("Asset '") + asset_name + std::string("' not found.");
   }
 
-  UIDartState::Current()->GetTaskRunners().GetRasterTaskRunner()->PostTask(
-      fml::MakeCopyable(
-          [this, completion_callback_handle, data = std::move(data)]() {
-            auto& context =
-                *UIDartState::Current()->GetIOManager()->GetImpellerContext();
-            node_ = impeller::scene::Node::MakeFromFlatbuffer(
-                *data, *context.GetResourceAllocator());
-            tonic::DartInvoke(completion_callback_handle, {Dart_TypeVoid()});
-          }));
+  auto& task_runners = dart_state->GetTaskRunners();
+
+  std::promise<std::shared_ptr<impeller::Context>> context_promise;
+  auto impeller_context_promise = context_promise.get_future();
+  task_runners.GetIOTaskRunner()->PostTask(
+      fml::MakeCopyable([promise = std::move(context_promise),
+                         io_manager = dart_state->GetIOManager()]() mutable {
+        promise.set_value(io_manager ? io_manager->GetImpellerContext()
+                                     : nullptr);
+      }));
+
+  auto persistent_completion_callback =
+      std::make_unique<tonic::DartPersistentValue>(dart_state,
+                                                   completion_callback_handle);
+
+  auto ui_task = fml::MakeCopyable(
+      [this, callback = std::move(persistent_completion_callback)](
+          std::shared_ptr<impeller::scene::Node> node) mutable {
+        auto dart_state = callback->dart_state().lock();
+        if (!dart_state) {
+          // The root isolate could have died in the meantime.
+          return;
+        }
+        tonic::DartState::Scope scope(dart_state);
+
+        node_ = std::move(node);
+        tonic::DartInvoke(callback->Get(), {Dart_TypeVoid()});
+
+        // callback is associated with the Dart isolate and must be
+        // deleted on the UI thread.
+        callback.reset();
+      });
+
+  task_runners.GetRasterTaskRunner()->PostTask(
+      fml::MakeCopyable([ui_task = std::move(ui_task), task_runners,
+                         impeller_context = impeller_context_promise.get(),
+                         data = std::move(data)]() {
+        auto node = impeller::scene::Node::MakeFromFlatbuffer(
+            *data, *impeller_context->GetResourceAllocator());
+
+        task_runners.GetUITaskRunner()->PostTask(
+            [ui_task, node = std::move(node)]() { ui_task(node); });
+      }));
 
   return "";
 }

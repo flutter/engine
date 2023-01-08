@@ -149,8 +149,8 @@ class SceneShader extends Shader {
     _dispose();
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle)>('SceneShader::Create')
-  external Float32List _constructor(SceneNode node);
+  @FfiNative<Void Function(Handle, Handle)>('SceneShader::Create')
+  external void _constructor(SceneNode node);
 
   @FfiNative<Void Function(Pointer<Void>)>('SceneShader::Dispose')
   external void _dispose();
