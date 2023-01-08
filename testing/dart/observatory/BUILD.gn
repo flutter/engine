@@ -13,10 +13,7 @@ tests = [
 ]
 
 if (impeller_enable_3d) {
-  # This test is in a subdirectory to avoid the `run_test.py` glob by default.
-  # There is a special check to ensure the test's kernel file is present before
-  # it's added to the list of tests.
-  tests += [ "scene/scene_reload_test.dart" ]
+  tests += [ "scene_reload_test.dart" ]
 }
 
 foreach(test, tests) {

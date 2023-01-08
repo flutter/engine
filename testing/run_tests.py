@@ -759,14 +759,6 @@ def gather_dart_tests(build_dir, test_filter):
   dart_observatory_tests = glob.glob(
       '%s/observatory/*_test.dart' % dart_tests_dir
   )
-  # Only include the 3D scene observatory test if the kernel file has been built.
-  # It'll only be built if Impeller Scene's framework integration is enabled.
-  dart_scene_observatory_tests = '%s/observatory/scene/scene_reload_test.dart' % dart_tests_dir
-  if os.path.isfile(
-      os.path.join(build_dir, 'gen',
-                   os.path.basename(dart_scene_observatory_tests) + '.dill')):
-    dart_observatory_tests += [dart_scene_observatory_tests]
-
   dart_tests = glob.glob('%s/*_test.dart' % dart_tests_dir)
 
   if 'release' not in build_dir:
