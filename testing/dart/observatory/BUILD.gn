@@ -2,7 +2,6 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/dart/compile_test.gni")
 
 tests = [
@@ -11,10 +10,6 @@ tests = [
   "shader_reload_test.dart",
   "vmservice_methods_test.dart",
 ]
-
-if (impeller_enable_3d) {
-  tests += [ "scene_reload_test.dart" ]
-}
 
 foreach(test, tests) {
   compile_flutter_dart_test("compile_$test") {
