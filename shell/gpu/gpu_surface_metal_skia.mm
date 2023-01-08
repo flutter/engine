@@ -86,6 +86,7 @@ void GPUSurfaceMetalSkia::PrecompileKnownSkSLsIfNecessary() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
+  TRACE_EVENT0("flutter", "GPUSurfaceMetalSkia::AcquireFrame");
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
@@ -118,6 +119,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     const SkISize& frame_info) {
+  TRACE_EVENT0("flutter", "GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer");
   auto layer = delegate_->GetCAMetalLayer(frame_info);
   if (!layer) {
     FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
@@ -199,6 +201,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     const SkISize& frame_info) {
+  TRACE_EVENT0("flutter", "GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture");
   GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
 
