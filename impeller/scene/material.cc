@@ -3,9 +3,13 @@
 // found in the LICENSE file.
 
 #include "impeller/scene/material.h"
+#include "impeller/base/validation.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/scene/importer/conversions.h"
+#include "impeller/scene/importer/scene_flatbuffers.h"
+#include "impeller/scene/pipeline_key.h"
 #include "impeller/scene/scene_context.h"
 #include "impeller/scene/shaders/unlit.frag.h"
 
@@ -20,12 +24,27 @@ namespace scene {
 
 Material::~Material() = default;
 
+std::unique_ptr<Material> Material::MakeFromFlatbuffer(
+    const fb::Material& material,
+    const std::vector<std::shared_ptr<Texture>>& textures) {
+  switch (material.type()) {
+    case fb::MaterialType::kUnlit:
+      return UnlitMaterial::MakeFromFlatbuffer(material, textures);
+    case fb::MaterialType::kPhysicallyBased:
+      return PhysicallyBasedMaterial::MakeFromFlatbuffer(material, textures);
+  }
+}
+
 std::unique_ptr<UnlitMaterial> Material::MakeUnlit() {
   return std::make_unique<UnlitMaterial>();
 }
 
-std::unique_ptr<StandardMaterial> Material::MakeStandard() {
-  return std::make_unique<StandardMaterial>();
+std::unique_ptr<PhysicallyBasedMaterial> Material::MakePhysicallyBased() {
+  return std::make_unique<PhysicallyBasedMaterial>();
+}
+
+void Material::SetVertexColorWeight(Scalar weight) {
+  vertex_color_weight_ = weight;
 }
 
 void Material::SetBlendConfig(BlendConfig blend_config) {
@@ -49,6 +68,31 @@ SceneContextOptions Material::GetContextOptions(const RenderPass& pass) const {
 /// UnlitMaterial
 ///
 
+std::unique_ptr<UnlitMaterial> UnlitMaterial::MakeFromFlatbuffer(
+    const fb::Material& material,
+    const std::vector<std::shared_ptr<Texture>>& textures) {
+  if (material.type() != fb::MaterialType::kUnlit) {
+    VALIDATION_LOG << "Cannot unpack unlit material because the ipscene "
+                      "material type is not unlit.";
+    return nullptr;
+  }
+
+  auto result = Material::MakeUnlit();
+
+  if (material.base_color_factor()) {
+    result->SetColor(importer::ToColor(*material.base_color_factor()));
+    result->SetVertexColorWeight(0);
+  }
+
+  if (material.base_color_texture() >= 0 &&
+      material.base_color_texture() < static_cast<int32_t>(textures.size())) {
+    result->SetColorTexture(textures[material.base_color_texture()]);
+    result->SetVertexColorWeight(0);
+  }
+
+  return result;
+}
+
 UnlitMaterial::~UnlitMaterial() = default;
 
 void UnlitMaterial::SetColor(Color color) {
@@ -59,15 +103,9 @@ void UnlitMaterial::SetColorTexture(std::shared_ptr<Texture> color_texture) {
   color_texture_ = std::move(color_texture);
 }
 
-void UnlitMaterial::SetVertexColorWeight(Scalar weight) {
-  vertex_color_weight_ = weight;
-}
-
 // |Material|
-std::shared_ptr<Pipeline<PipelineDescriptor>> UnlitMaterial::GetPipeline(
-    const SceneContext& scene_context,
-    const RenderPass& pass) const {
-  return scene_context.GetUnlitPipeline(GetContextOptions(pass));
+MaterialType UnlitMaterial::GetMaterialType() const {
+  return MaterialType::kUnlit;
 }
 
 // |Material|
@@ -75,11 +113,10 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
                                   HostBuffer& buffer,
                                   Command& command) const {
   // Uniform buffer.
-  UnlitPipeline::FragmentShader::FragInfo info;
+  UnlitFragmentShader::FragInfo info;
   info.color = color_;
   info.vertex_color_weight = vertex_color_weight_;
-  UnlitPipeline::FragmentShader::BindFragInfo(command,
-                                              buffer.EmplaceUniform(info));
+  UnlitFragmentShader::BindFragInfo(command, buffer.EmplaceUniform(info));
 
   // Textures.
   SamplerDescriptor sampler_descriptor;
@@ -87,7 +124,7 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
   sampler_descriptor.min_filter = MinMagFilter::kLinear;
   sampler_descriptor.mag_filter = MinMagFilter::kLinear;
   sampler_descriptor.mip_filter = MipFilter::kLinear;
-  UnlitPipeline::FragmentShader::BindBaseColorTexture(
+  UnlitFragmentShader::BindBaseColorTexture(
       command,
       color_texture_ ? color_texture_ : scene_context.GetPlaceholderTexture(),
       scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -98,52 +135,96 @@ void UnlitMaterial::BindToCommand(const SceneContext& scene_context,
 /// StandardMaterial
 ///
 
-StandardMaterial::~StandardMaterial() = default;
+std::unique_ptr<PhysicallyBasedMaterial>
+PhysicallyBasedMaterial::MakeFromFlatbuffer(
+    const fb::Material& material,
+    const std::vector<std::shared_ptr<Texture>>& textures) {
+  if (material.type() != fb::MaterialType::kPhysicallyBased) {
+    VALIDATION_LOG << "Cannot unpack unlit material because the ipscene "
+                      "material type is not unlit.";
+    return nullptr;
+  }
 
-void StandardMaterial::SetAlbedo(Color albedo) {
+  auto result = Material::MakePhysicallyBased();
+
+  result->SetAlbedo(material.base_color_factor()
+                        ? importer::ToColor(*material.base_color_factor())
+                        : Color::White());
+  result->SetRoughness(material.roughness_factor());
+  result->SetMetallic(material.metallic_factor());
+
+  if (material.base_color_texture() >= 0 &&
+      material.base_color_texture() < static_cast<int32_t>(textures.size())) {
+    result->SetAlbedoTexture(textures[material.base_color_texture()]);
+    result->SetVertexColorWeight(0);
+  }
+  if (material.metallic_roughness_texture() >= 0 &&
+      material.metallic_roughness_texture() <
+          static_cast<int32_t>(textures.size())) {
+    result->SetMetallicRoughnessTexture(
+        textures[material.metallic_roughness_texture()]);
+  }
+  if (material.normal_texture() >= 0 &&
+      material.normal_texture() < static_cast<int32_t>(textures.size())) {
+    result->SetNormalTexture(textures[material.normal_texture()]);
+  }
+  if (material.occlusion_texture() >= 0 &&
+      material.occlusion_texture() < static_cast<int32_t>(textures.size())) {
+    result->SetOcclusionTexture(textures[material.occlusion_texture()]);
+  }
+
+  return result;
+}
+
+PhysicallyBasedMaterial::~PhysicallyBasedMaterial() = default;
+
+void PhysicallyBasedMaterial::SetAlbedo(Color albedo) {
   albedo_ = albedo;
 }
 
-void StandardMaterial::SetRoughness(Scalar roughness) {
+void PhysicallyBasedMaterial::SetRoughness(Scalar roughness) {
   roughness_ = roughness;
 }
 
-void StandardMaterial::SetMetallic(Scalar metallic) {
+void PhysicallyBasedMaterial::SetMetallic(Scalar metallic) {
   metallic_ = metallic;
 }
 
-void StandardMaterial::SetAlbedoTexture(
+void PhysicallyBasedMaterial::SetAlbedoTexture(
     std::shared_ptr<Texture> albedo_texture) {
   albedo_texture_ = std::move(albedo_texture);
 }
 
-void StandardMaterial::SetNormalTexture(
+void PhysicallyBasedMaterial::SetMetallicRoughnessTexture(
+    std::shared_ptr<Texture> metallic_roughness_texture) {
+  metallic_roughness_texture_ = std::move(metallic_roughness_texture);
+}
+
+void PhysicallyBasedMaterial::SetNormalTexture(
     std::shared_ptr<Texture> normal_texture) {
   normal_texture_ = std::move(normal_texture);
 }
 
-void StandardMaterial::SetOcclusionRoughnessMetallicTexture(
-    std::shared_ptr<Texture> occlusion_roughness_metallic_texture) {
-  occlusion_roughness_metallic_texture_ =
-      std::move(occlusion_roughness_metallic_texture);
+void PhysicallyBasedMaterial::SetOcclusionTexture(
+    std::shared_ptr<Texture> occlusion_texture) {
+  occlusion_texture_ = std::move(occlusion_texture);
 }
 
-void StandardMaterial::SetEnvironmentMap(
+void PhysicallyBasedMaterial::SetEnvironmentMap(
     std::shared_ptr<Texture> environment_map) {
   environment_map_ = std::move(environment_map);
 }
 
 // |Material|
-std::shared_ptr<Pipeline<PipelineDescriptor>> StandardMaterial::GetPipeline(
-    const SceneContext& scene_context,
-    const RenderPass& pass) const {
-  return nullptr;
+MaterialType PhysicallyBasedMaterial::GetMaterialType() const {
+  // TODO(bdero): Replace this once a PBR shader has landed.
+  return MaterialType::kUnlit;
 }
 
 // |Material|
-void StandardMaterial::BindToCommand(const SceneContext& scene_context,
-                                     HostBuffer& buffer,
-                                     Command& command) const {}
+void PhysicallyBasedMaterial::BindToCommand(const SceneContext& scene_context,
+                                            HostBuffer& buffer,
+                                            Command& command) const {}
 
 }  // namespace scene
 }  // namespace impeller
