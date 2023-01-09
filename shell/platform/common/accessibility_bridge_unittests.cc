@@ -502,16 +502,17 @@ TEST(AccessibilityBridgeTest, LineBreakingObjectTest) {
 
   const int32_t root_id = 0;
 
-  FlutterSemanticsNode root =
-      CreateSemanticsNode(root_id, "root", {});
+  FlutterSemanticsNode root = CreateSemanticsNode(root_id, "root", {});
 
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(root_id).lock();
   auto root_data = root_node->GetData();
-  EXPECT_TRUE(root_data.HasBoolAttribute(ax::mojom::BoolAttribute::kIsLineBreakingObject));
-  EXPECT_TRUE(root_data.GetBoolAttribute(ax::mojom::BoolAttribute::kIsLineBreakingObject));
+  EXPECT_TRUE(root_data.HasBoolAttribute(
+      ax::mojom::BoolAttribute::kIsLineBreakingObject));
+  EXPECT_TRUE(root_data.GetBoolAttribute(
+      ax::mojom::BoolAttribute::kIsLineBreakingObject));
 
 }
 
