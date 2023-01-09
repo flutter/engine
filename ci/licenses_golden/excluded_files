@@ -420,10 +420,8 @@
 ../../../fuchsia/sdk/linux/AUTHORS
 ../../../fuchsia/sdk/linux/PATENTS
 ../../../fuchsia/sdk/linux/README.md
-../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/asan-ubsan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/arm64/sysroot/dist/lib/ld.so.1
-../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan-ubsan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/asan/ld.so.1
 ../../../fuchsia/sdk/linux/arch/x64/sysroot/dist/lib/ld.so.1
 ../../../fuchsia/sdk/linux/dart/fidl/meta.json
