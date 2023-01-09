@@ -330,7 +330,7 @@ class VideoFrame implements DomCanvasImageSource {}
 
 extension VideoFrameExtension on VideoFrame {
   external double allocationSize();
-  external JsPromise copyTo(Uint8List destination);
+  external JsPromise copyTo(Object destination);
   external String? get format;
   external double get codedWidth;
   external double get codedHeight;

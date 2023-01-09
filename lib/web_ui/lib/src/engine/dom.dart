@@ -943,9 +943,9 @@ class DomHistory {}
 
 extension DomHistoryExtension on DomHistory {
   dynamic get state => js_util.dartify(js_util.getProperty(this, 'state'));
-  void go([int? delta]) =>
+  void go([double? delta]) =>
       js_util.callMethod(this, 'go',
-          <Object>[if (delta != null) delta.toDouble()]);
+          <Object>[if (delta != null) delta]);
   void pushState(dynamic data, String title, String? url) =>
       js_util.callMethod(this, 'pushState', <Object?>[
         if (data is Map || data is Iterable) js_util.jsify(data as Object) else data,

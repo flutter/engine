@@ -10,6 +10,7 @@
 
 import 'dart:async';
 import 'dart:convert' show base64;
+import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -443,7 +444,8 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
   final Uint8List destination = Uint8List(size);
   final JsPromise copyPromise = videoFrame.copyTo(destination);
   await promiseToFuture<void>(copyPromise);
-  return destination.buffer;
+  final Uint8List dartBuffer = js_util.dartify(destination)! as Uint8List;
+  return dartBuffer.buffer;
 }
 
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {

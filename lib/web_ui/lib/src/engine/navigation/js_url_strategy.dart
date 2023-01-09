@@ -82,5 +82,5 @@ extension JsUrlStrategyExtension on JsUrlStrategy {
   /// * `go(3)` moves forward 3 steps in hisotry.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
-  external Future<void> go(int count);
+  external Future<void> go(double count);
 }

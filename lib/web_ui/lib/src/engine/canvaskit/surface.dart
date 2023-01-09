@@ -360,8 +360,8 @@ class Surface {
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
         _grContext!,
-        size.width,
-        size.height,
+        size.width.roundToDouble(),
+        size.height.roundToDouble(),
         SkColorSpaceSRGB,
       );
 
@@ -429,8 +429,8 @@ class CkSurface {
 
   int? get context => _glContext;
 
-  int width() => surface.width().toInt();
-  int height() => surface.height().toInt();
+  int width() => surface.width().round();
+  int height() => surface.height().round();
 
   void dispose() {
     if (_isDisposed) {

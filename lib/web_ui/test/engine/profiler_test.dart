@@ -71,6 +71,9 @@ void _profilerTests() {
     });
     expect(
       () => Profiler.instance.benchmark('foo', 123),
+
+      // dart2js throws a NoSuchMethodError, dart2wasm throws a TypeError here.
+      // Just make make sure it throws an error in this case.
       throwsA(isA<Error>()),
     );
     expect(data, isEmpty);
