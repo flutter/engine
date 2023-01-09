@@ -513,7 +513,6 @@ TEST(AccessibilityBridgeTest, LineBreakingObjectTest) {
       ax::mojom::BoolAttribute::kIsLineBreakingObject));
   EXPECT_TRUE(root_data.GetBoolAttribute(
       ax::mojom::BoolAttribute::kIsLineBreakingObject));
-
 }
 
 }  // namespace testing
