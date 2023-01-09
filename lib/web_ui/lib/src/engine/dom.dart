@@ -1132,6 +1132,11 @@ extension DomWheelEventExtension on DomWheelEvent {
   external double get deltaMode;
 }
 
+DomWheelEvent createDomWheelEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('WheelEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
+
 @JS()
 @staticInterop
 class DomTouchEvent extends DomUIEvent {}
@@ -1141,9 +1146,9 @@ extension DomTouchEventExtension on DomTouchEvent {
   external bool get ctrlKey;
   external bool get metaKey;
   external bool get shiftKey;
-  List<DomTouch>? get changedTouches => js_util
-      .getProperty<List<Object?>?>(this, 'changedTouches')
-      ?.cast<DomTouch>();
+  Iterable<DomTouch> get changedTouches =>
+      createDomTouchListWrapper<DomTouch>(
+        js_util.getProperty<_DomTouchList>(this, 'changedTouches'));
 }
 
 @JS()
@@ -1623,6 +1628,52 @@ class _DomListWrapper<T> extends Iterable<T> {
 /// `toList` on the `Iterable`.
 Iterable<T> createDomListWrapper<T>(_DomList list) =>
     _DomListWrapper<T>._(list).cast<T>();
+
+// https://developer.mozilla.org/en-US/docs/Web/API/TouchList
+@JS()
+@staticInterop
+class _DomTouchList {}
+
+extension DomTouchListExtension on _DomTouchList {
+  external double get length;
+  DomTouch item(int index) =>
+      js_util.callMethod<DomTouch>(this, 'item', <Object>[index.toDouble()]);
+}
+
+class _DomTouchListIterator<T> extends Iterator<T> {
+  _DomTouchListIterator(this.list);
+
+  final _DomTouchList list;
+  int index = -1;
+
+  @override
+  bool moveNext() {
+    index++;
+    if (index > list.length) {
+      throw StateError('Iterator out of bounds');
+    }
+    return index < list.length;
+  }
+
+  @override
+  T get current => list.item(index) as T;
+}
+
+class _DomTouchListWrapper<T> extends Iterable<T> {
+  _DomTouchListWrapper._(this.list);
+
+  final _DomTouchList list;
+
+  @override
+  Iterator<T> get iterator => _DomTouchListIterator<T>(list);
+
+  /// Override the length to avoid iterating through the whole collection.
+  @override
+  int get length => list.length.toInt();
+}
+
+Iterable<T> createDomTouchListWrapper<T>(_DomTouchList list) =>
+    _DomTouchListWrapper<T>._(list).cast<T>();
 
 @JS()
 @staticInterop

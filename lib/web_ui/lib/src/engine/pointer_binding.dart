@@ -907,7 +907,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
           _pressTouch(touch.identifier!.toInt());
@@ -927,7 +927,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _convertEventToPointerData(
@@ -948,7 +948,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
@@ -967,7 +967,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
