@@ -21,7 +21,7 @@ typedef _StringToString = String Function(String);
 typedef _StateOperation = void Function(
     Object? state, String title, String url);
 
-typedef _HistoryMove = Future<void> Function(int count);
+typedef _HistoryMove = Future<void> Function(double count);
 
 /// The JavaScript representation of a URL strategy.
 ///
