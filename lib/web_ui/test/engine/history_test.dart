@@ -720,7 +720,7 @@ class TestPlatformLocation extends PlatformLocation {
   }
 
   @override
-  void go(int count) {
+  void go(double count) {
     throw UnimplementedError();
   }
 
