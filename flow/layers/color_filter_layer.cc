@@ -52,6 +52,7 @@ void ColorFilterLayer::Preroll(PrerollContext* context) {
   SkRect child_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_bounds);
   child_bounds.offset(offset_);
+  set_paint_bounds(child_bounds);
 
   // Our saveLayer would apply any outstanding opacity or any outstanding
   // image filter before it applies our color filter, but that is in the
@@ -62,15 +63,10 @@ void ColorFilterLayer::Preroll(PrerollContext* context) {
   // modulation so in that case we can apply the opacity on behalf of our
   // ancestors - otherwise we can apply no attributes.
   if (filter_) {
-    set_paint_bounds(child_bounds);
-
     context->renderable_state_flags =
         filter_->can_commute_with_opacity()
             ? LayerStateStack::kCallerCanApplyOpacity
             : 0;
-  } else {
-    // else - we can apply whatever our children can apply.
-    set_paint_bounds(child_bounds);
   }
 }
 
