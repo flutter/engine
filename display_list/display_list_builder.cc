@@ -26,8 +26,8 @@ static void CopyV(void* dst, const S* src, int n, Rest&&... rest) {
   CopyV(SkTAddOffset<void>(dst, n * sizeof(S)), std::forward<Rest>(rest)...);
 }
 
-constexpr inline bool is_power_of_two(int value) {
-    return (value & (value - 1)) == 0;
+static constexpr inline bool is_power_of_two(int value) {
+  return (value & (value - 1)) == 0;
 }
 
 template <typename T, typename... Args>
