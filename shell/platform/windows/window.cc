@@ -228,7 +228,6 @@ LRESULT Window::OnGetObject(UINT const message,
     } else if (is_msaa_request) {
       // Create the accessibility root if it does not already exist.
       // Return the IAccessible for the root view.
-      // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
       Microsoft::WRL::ComPtr<IAccessible> root;
       ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
           IID_PPV_ARGS(&root));
