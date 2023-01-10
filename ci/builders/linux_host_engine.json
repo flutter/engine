@@ -240,7 +240,7 @@
             "ninja": {
                 "config": "wasm_release",
                 "targets": [
-                    "flutter/web_sdk",
+                    "flutter/web_sdk"
                 ]
             },
             "tests": []
