@@ -63,8 +63,6 @@ void FlutterWindowsView::SetEngine(
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
-  cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
-                                                    binding_handler_.get());
 
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
@@ -112,6 +110,14 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   }
 
   return kWindowFrameBufferID;
+}
+
+void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
+  binding_handler_->UpdateFlutterCursor(cursor_name);
+}
+
+void FlutterWindowsView::SetFlutterCursor(HCURSOR cursor) {
+  binding_handler_->SetFlutterCursor(cursor);
 }
 
 void FlutterWindowsView::ForceRedraw() {
@@ -166,7 +172,9 @@ void FlutterWindowsView::OnWindowRepaint() {
 void FlutterWindowsView::OnPointerMove(double x,
                                        double y,
                                        FlutterPointerDeviceKind device_kind,
-                                       int32_t device_id) {
+                                       int32_t device_id,
+                                       int modifiers_state) {
+  keyboard_key_handler_->SyncModifiersIfNeeded(modifiers_state);
   SendPointerMove(x, y, GetOrCreatePointerState(device_kind, device_id));
 }
 
@@ -285,8 +293,6 @@ void FlutterWindowsView::OnResetImeComposing() {
 
 void FlutterWindowsView::InitializeKeyboard() {
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  // TODO(cbracken): This can be inlined into KeyboardKeyEmedderHandler once
-  // UWP code is removed. https://github.com/flutter/flutter/issues/102172.
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
       [](UINT virtual_key, bool extended) {

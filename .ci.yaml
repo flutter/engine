@@ -8,7 +8,7 @@
 enabled_branches:
   - main
   - flutter-\d+\.\d+-candidate\.\d+
-  - fuchsia_r\d+
+  - fuchsia_r\d+[a-z]*
 
 platform_properties:
   linux:
@@ -379,6 +379,7 @@ targets:
     recipe: engine/engine_lint
     properties:
       add_recipes_cq: "true"
+      cores: "12"
       jazzy_version: "0.14.1"
       lint_host: "true"
       lint_ios: "false"
