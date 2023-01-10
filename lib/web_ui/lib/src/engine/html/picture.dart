@@ -427,6 +427,12 @@ class PersistedPicture extends PersistedLeafSurface {
         final double pixelCountRatio = newPixelCount / oldPixelCount;
         assert(0 <= pixelCountRatio && pixelCountRatio <= 1.0,
             'Invalid pixel count ratio $pixelCountRatio');
+        
+        if (pixelCountRatio < 0.25) {
+          // The old canvas has more than 4x the number of pixels we need. It's best
+          // to let that canvas be recycled and allocate a smaller one.
+          return 1.0;
+        }
         return 1.0 - pixelCountRatio;
       }
     }
