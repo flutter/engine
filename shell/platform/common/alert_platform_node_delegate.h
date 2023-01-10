@@ -15,7 +15,7 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   AlertPlatformNodeDelegate(ui::AXPlatformNodeDelegate* parent_delegate);
   ~AlertPlatformNodeDelegate();
 
-  void SetText(std::u16string text);
+  void SetText(const std::u16string& text);
 
  private:
   // AXPlatformNodeDelegate overrides.
