@@ -20,7 +20,7 @@ AlertPlatformNodeDelegate::GetTargetForNativeAccessibilityEvent() {
   if (parent_delegate_) {
     return parent_delegate_->GetTargetForNativeAccessibilityEvent();
   }
-  return (gfx::AcceleratedWidget)nullptr;
+  return (gfx::AcceleratedWidget) nullptr;
 }
 
 gfx::NativeViewAccessible AlertPlatformNodeDelegate::GetParent() {
