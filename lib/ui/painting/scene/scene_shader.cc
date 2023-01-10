@@ -48,7 +48,7 @@ void SceneShader::SetCameraTransform(const tonic::Float64List& matrix4) {
 }
 
 static impeller::Matrix DefaultCameraTransform() {
-  // TODO(bdero): There's not way to know what the draw area will be yet, so
+  // TODO(bdero): There's no way to know what the draw area will be yet, so
   //              make the DlSceneColorSource camera transform optional and
   //              defer this default (or parameterize the camera instead).
   return impeller::Matrix::MakePerspective(
