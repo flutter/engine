@@ -4,16 +4,20 @@
 
 #include <cmath>
 #include <memory>
+#include <vector>
 
+#include "flutter/fml/mapping.h"
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/quaternion.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/image/decompressed_image.h"
 #include "impeller/playground/playground.h"
 #include "impeller/playground/playground_test.h"
 #include "impeller/renderer/formats.h"
+#include "impeller/scene/animation/animation_clip.h"
 #include "impeller/scene/camera.h"
 #include "impeller/scene/geometry.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
@@ -72,22 +76,17 @@ TEST_P(SceneTest, FlutterLogo) {
   auto allocator = GetContext()->GetResourceAllocator();
 
   auto mapping =
-      flutter::testing::OpenFixtureAsMapping("flutter_logo.glb.ipscene");
+      flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
   ASSERT_NE(mapping, nullptr);
+
+  flatbuffers::Verifier verifier(mapping->GetMapping(), mapping->GetSize());
+  ASSERT_TRUE(fb::VerifySceneBuffer(verifier));
 
   std::shared_ptr<Node> gltf_scene =
       Node::MakeFromFlatbuffer(*mapping, *allocator);
   ASSERT_NE(gltf_scene, nullptr);
-
-  std::shared_ptr<UnlitMaterial> material = Material::MakeUnlit();
-  auto color_baked = CreateTextureForFixture("flutter_logo_baked.png");
-  material->SetColorTexture(color_baked);
-  material->SetVertexColorWeight(0);
-
   ASSERT_EQ(gltf_scene->GetChildren().size(), 1u);
   ASSERT_EQ(gltf_scene->GetChildren()[0]->GetMesh().GetPrimitives().size(), 1u);
-  gltf_scene->GetChildren()[0]->GetMesh().GetPrimitives()[0].material =
-      material;
 
   auto scene_context = std::make_shared<SceneContext>(GetContext());
   auto scene = Scene(scene_context);
@@ -124,11 +123,43 @@ TEST_P(SceneTest, TwoTriangles) {
       Node::MakeFromFlatbuffer(*mapping, *allocator);
   ASSERT_NE(gltf_scene, nullptr);
 
+  auto animation = gltf_scene->FindAnimationByName("Metronome");
+  ASSERT_NE(animation, nullptr);
+
+  AnimationClip& metronome_clip = gltf_scene->AddAnimation(animation);
+  metronome_clip.SetLoop(true);
+  metronome_clip.Play();
+
   auto scene_context = std::make_shared<SceneContext>(GetContext());
   auto scene = Scene(scene_context);
   scene.GetRoot().AddChild(std::move(gltf_scene));
 
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      static Scalar playback_time_scale = 1;
+      static Scalar weight = 1;
+      static bool loop = true;
+
+      ImGui::SliderFloat("Playback time scale", &playback_time_scale, -5, 5);
+      ImGui::SliderFloat("Weight", &weight, -2, 2);
+      ImGui::Checkbox("Loop", &loop);
+      if (ImGui::Button("Play")) {
+        metronome_clip.Play();
+      }
+      if (ImGui::Button("Pause")) {
+        metronome_clip.Pause();
+      }
+      if (ImGui::Button("Stop")) {
+        metronome_clip.Stop();
+      }
+
+      metronome_clip.SetPlaybackTimeScale(playback_time_scale);
+      metronome_clip.SetWeight(weight);
+      metronome_clip.SetLoop(loop);
+    }
+
+    ImGui::End();
     Node& node = *scene.GetRoot().GetChildren()[0];
     node.SetLocalTransform(node.GetLocalTransform() *
                            Matrix::MakeRotation(0.02, {0, 1, 0, 0}));
