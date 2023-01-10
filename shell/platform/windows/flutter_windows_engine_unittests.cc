@@ -578,6 +578,8 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  AlertPlatformNodeDelegate delegate(nullptr);
+  ON_CALL(*window_binding_handler, GetAlertDelegate).WillByDefault([&delegate]{ return &delegate; });
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
