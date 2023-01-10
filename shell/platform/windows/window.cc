@@ -212,7 +212,7 @@ LRESULT Window::OnGetObject(UINT const message,
       child_delegate->GetAXNode();
     }
     if (is_uia_request) {
-#ifndef FLUTTER_ENGINE_USE_UIA
+#ifdef FLUTTER_ENGINE_USE_UIA
       // Retrieve UIA object for the root view.
       Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
       if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
