@@ -261,20 +261,27 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       }];
 
   [_labelPrefix release];
+  _labelPrefix = nil;
   [_initialRoute release];
+  _initialRoute = nil;
   [_pluginPublications release];
+  _pluginPublications = nil;
   [_registrars release];
+  _registrars = nil;
   _binaryMessenger.parent = nil;
   _textureRegistry.parent = nil;
   [_binaryMessenger release];
+  _binaryMessenger = nil;
   [_textureRegistry release];
   _textureRegistry = nil;
   [_isolateId release];
+  _isolateId = nil;
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
   if (_flutterViewControllerWillDeallocObserver) {
     [center removeObserver:_flutterViewControllerWillDeallocObserver];
     [_flutterViewControllerWillDeallocObserver release];
+    _flutterViewControllerWillDeallocObserver = nil;
   }
   [center removeObserver:self];
 
