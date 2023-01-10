@@ -23,6 +23,7 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/scene/node.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkClipOp.h"
@@ -1119,6 +1120,71 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithIndices) {
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
+
+TEST_P(DisplayListTest, DrawShapes) {
+  flutter::DisplayListBuilder builder;
+  std::vector<flutter::DlStrokeJoin> joins = {
+      flutter::DlStrokeJoin::kBevel,
+      flutter::DlStrokeJoin::kRound,
+      flutter::DlStrokeJoin::kMiter,
+  };
+  flutter::DlPaint paint =                            //
+      flutter::DlPaint()                              //
+          .setColor(flutter::DlColor::kWhite())       //
+          .setDrawStyle(flutter::DlDrawStyle::kFill)  //
+          .setStrokeWidth(10);
+  flutter::DlPaint stroke_paint =                       //
+      flutter::DlPaint()                                //
+          .setColor(flutter::DlColor::kWhite())         //
+          .setDrawStyle(flutter::DlDrawStyle::kStroke)  //
+          .setStrokeWidth(10);
+  SkPath path = SkPath().addPoly({{150, 50}, {160, 50}}, false);
+
+  builder.translate(300, 50);
+  builder.scale(0.8, 0.8);
+  for (auto join : joins) {
+    paint.setStrokeJoin(join);
+    stroke_paint.setStrokeJoin(join);
+    builder.drawRect(SkRect::MakeXYWH(0, 0, 100, 100), paint);
+    builder.drawRect(SkRect::MakeXYWH(0, 150, 100, 100), stroke_paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 0, 100, 100), 30, 30), paint);
+    builder.drawRRect(
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(150, 150, 100, 100), 30, 30),
+        stroke_paint);
+    builder.drawCircle({350, 50}, 50, paint);
+    builder.drawCircle({350, 200}, 50, stroke_paint);
+    builder.translate(0, 300);
+  }
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
+#ifdef IMPELLER_ENABLE_3D
+TEST_P(DisplayListTest, SceneColorSource) {
+  // Load up the scene.
+  auto mapping =
+      flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
+  ASSERT_NE(mapping, nullptr);
+
+  std::shared_ptr<scene::Node> gltf_scene =
+      impeller::scene::Node::MakeFromFlatbuffer(
+          *mapping, *GetContext()->GetResourceAllocator());
+  ASSERT_NE(gltf_scene, nullptr);
+
+  flutter::DisplayListBuilder builder;
+
+  auto color_source = std::make_shared<flutter::DlSceneColorSource>(
+      gltf_scene,
+      Matrix::MakePerspective(Degrees(45), GetWindowSize(), 0.1, 1000) *
+          Matrix::MakeLookAt({3, 2, -5}, {0, 0, 0}, {0, 1, 0}));
+
+  flutter::DlPaint paint = flutter::DlPaint().setColorSource(color_source);
+
+  builder.drawPaint(paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller

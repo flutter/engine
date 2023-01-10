@@ -48,7 +48,7 @@ void Switches::PrintHelp(std::ostream& stream) {
   }
   stream << " ]" << std::endl;
   stream << "--input=<source_file>" << std::endl;
-  stream << "[optional] --input-kind={";
+  stream << "[optional] --input-type={";
   for (const auto& source_type : kKnownSourceTypes) {
     stream << source_type.first << ", ";
   }
@@ -71,6 +71,9 @@ void Switches::PrintHelp(std::ostream& stream) {
   stream << "[optional] --depfile=<depfile_path>" << std::endl;
   stream << "[optional] --gles-language-verision=<number>" << std::endl;
   stream << "[optional] --json" << std::endl;
+  stream << "[optional] --remap-samplers (force metal sampler index to match "
+            "declared order)"
+         << std::endl;
 }
 
 Switches::Switches() = default;
@@ -125,6 +128,7 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
       depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
       json_format(command_line.HasOption("json")),
+      remap_samplers(command_line.HasOption("remap-samplers")),
       gles_language_version(
           stoi(command_line.GetOptionValueWithDefault("gles-language-version",
                                                       "0"))),
