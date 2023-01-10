@@ -218,7 +218,7 @@
                     "base_path": "out/wasm_release/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
-                        "out/wasm_release/zip_archives/flutter-web-sdk.zip",
+                        "out/wasm_release/zip_archives/flutter-web-sdk.zip"
                     ]
                 }
             ],
