@@ -14,7 +14,10 @@
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
-#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
+
+namespace ui {
+  class AXPlatformNodeWin;
+}
 
 namespace flutter {
 
