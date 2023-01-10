@@ -104,7 +104,7 @@ Future<void> testMain() async {
     paintLinesFromPoints(domCanvas, paintStrokeCapButt, twiceShiftedPoints);
 
     domDocument.body!.append(domCanvas.rootElement);
-    await matchGoldenFile('canvas_lines_with_strokeCap', region: region);
+    await matchGoldenFile('canvas_lines_with_strokeCap.png', region: region);
   });
 }
 
