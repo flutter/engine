@@ -12,6 +12,7 @@
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "fml/synchronization/waitable_event.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -576,9 +577,6 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  AccessibilityRootNode* root_node = AccessibilityRootNode::Create();
-  ON_CALL(*window_binding_handler, GetAccessibilityRootNode)
-      .WillByDefault(::testing::Return(root_node));
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();

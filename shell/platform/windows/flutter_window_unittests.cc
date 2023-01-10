@@ -417,7 +417,6 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
-  // AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
   TestFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";
   EXPECT_CALL(view,

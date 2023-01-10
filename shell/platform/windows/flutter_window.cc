@@ -298,13 +298,6 @@ void FlutterWindow::SendInitialAccessibilityFeatures() {
   OnThemeChange();
 }
 
-AccessibilityRootNode* FlutterWindow::GetAccessibilityRootNode() {
-  if (!accessibility_root_) {
-    CreateAccessibilityRootNode();
-  }
-  return accessibility_root_;
-}
-
 ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
   return binding_handler_delegate_->GetAxFragmentRootDelegate();
 }

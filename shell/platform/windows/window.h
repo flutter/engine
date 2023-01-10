@@ -14,7 +14,6 @@
 
 #include "flutter/shell/platform/common/alert_platform_node_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
-#include "flutter/shell/platform/windows/accessibility_root_node.h"
 #include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/keyboard_manager.h"
 #include "flutter/shell/platform/windows/sequential_id_generator.h"
@@ -234,19 +233,12 @@ class Window : public KeyboardManager::WindowDelegate {
   // Returns the root view accessibility node, or nullptr if none.
   virtual gfx::NativeViewAccessible GetNativeViewAccessible() = 0;
 
-  // Create the wrapper node.
-  void CreateAccessibilityRootNode();
-
   // Handles running DirectManipulation on the window to receive trackpad
   // gestures.
   std::unique_ptr<DirectManipulationOwner> direct_manipulation_owner_;
 
   // Called when a theme change message is issued
   virtual void OnThemeChange() = 0;
-
-  // A parent node wrapping the window root, used for siblings.
-  // TODO(schectman): remove if this change works out
-  AccessibilityRootNode* accessibility_root_;
 
   std::unique_ptr<AlertPlatformNodeDelegate> alert_delegate_;
 

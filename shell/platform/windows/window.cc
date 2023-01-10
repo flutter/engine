@@ -61,7 +61,6 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)),
-      accessibility_root_(nullptr),
       ax_fragment_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
@@ -213,7 +212,7 @@ LRESULT Window::OnGetObject(UINT const message,
       child_delegate->GetAXNode();
     }
     if (is_uia_request) {
-#ifdef FLUTTER_ENGINE_USE_UIA
+#ifndef FLUTTER_ENGINE_USE_UIA
       // Retrieve UIA object for the root view.
       Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
       if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
@@ -228,12 +227,8 @@ LRESULT Window::OnGetObject(UINT const message,
 #endif  // FLUTTER_ENGINE_USE_UIA
     } else if (is_msaa_request) {
       // Create the accessibility root if it does not already exist.
-      if (!accessibility_root_) {
-        CreateAccessibilityRootNode();
-      }
       // Return the IAccessible for the root view.
       // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
-      accessibility_root_->SetWindow(root_view);
       Microsoft::WRL::ComPtr<IAccessible> root;
       ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(IID_PPV_ARGS(&root));
       reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
@@ -676,13 +671,6 @@ bool Window::GetHighContrastEnabled() {
                   << "support only for Windows 8 + ";
     return false;
   }
-}
-
-void Window::CreateAccessibilityRootNode() {
-  if (accessibility_root_) {
-    accessibility_root_->Release();
-  }
-  accessibility_root_ = AccessibilityRootNode::Create();
 }
 
 void Window::CreateAlertNode() {
