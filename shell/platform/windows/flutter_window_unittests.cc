@@ -422,7 +422,7 @@ TEST(FlutterWindowTest, AlertNode) {
       .Times(1);
   view.AnnounceAlert(message);
 
-  IAccessible* alert = view.AlertNode();  // root_node->GetOrCreateAlert();
+  IAccessible* alert = view.AlertNode();
   VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);

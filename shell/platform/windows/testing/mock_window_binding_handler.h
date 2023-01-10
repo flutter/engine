@@ -38,6 +38,7 @@ class MockWindowBindingHandler : public WindowBindingHandler {
   MOCK_METHOD0(GetPrimaryPointerLocation, PointerLocation());
   MOCK_METHOD0(SendInitialAccessibilityFeatures, void());
   MOCK_METHOD1(Alert, void(const std::wstring& text));
+  MOCK_METHOD0(GetAlertDelegate, AlertPlatformNodeDelegate*());
   MOCK_METHOD0(GetAlert, ui::AXPlatformNodeWin*());
 };
 

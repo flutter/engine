@@ -662,7 +662,11 @@ FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
 }
 
 void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
-  binding_handler_->Alert(text);
+  auto alert_delegate = binding_handler_->GetAlertDelegate();
+  if (!alert_delegate) {
+    return;
+  }
+  alert_delegate->SetText(base::WideToUTF16(text));
   ui::AXPlatformNodeWin* alert_node = binding_handler_->GetAlert();
   NotifyWinEventWrapper(alert_node, ax::mojom::Event::kAlert);
 }

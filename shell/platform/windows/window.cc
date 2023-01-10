@@ -206,12 +206,9 @@ LRESULT Window::OnGetObject(UINT const message,
   // https://github.com/flutter/flutter/issues/114547
   if (root_view) {
     if (!ax_fragment_root_) {
+      CreateAlertNode();
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
-          window_handle_, GetAxFragmentRootDelegate());
-      FlutterPlatformNodeDelegate* child_delegate =
-          static_cast<FlutterPlatformNodeDelegate*>(
-              ax_fragment_root_->GetChildNodeDelegate());
-      child_delegate->GetAXNode();
+          window_handle_, GetAxFragmentRootDelegate(), alert_node_.get());
     }
     if (is_uia_request) {
 #ifdef FLUTTER_ENGINE_USE_UIA

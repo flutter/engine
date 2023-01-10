@@ -151,7 +151,7 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void SendInitialAccessibilityFeatures() override;
 
   // |WindowBindingHandler|
-  void Alert(const std::wstring& text) override;
+  AlertPlatformNodeDelegate* GetAlertDelegate() override;
 
   // |WindowBindingHandler|
   ui::AXPlatformNodeWin* GetAlert() override;

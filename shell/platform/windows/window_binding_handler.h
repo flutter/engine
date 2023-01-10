@@ -101,8 +101,8 @@ class WindowBindingHandler {
   // Called to set the initial state of accessibility features
   virtual void SendInitialAccessibilityFeatures() = 0;
 
-  // Set the alert text.
-  virtual void Alert(const std::wstring& text) = 0;
+  // Retrieve the delegate for the alert.
+  virtual AlertPlatformNodeDelegate* GetAlertDelegate() = 0;
 
   // Retrieve the alert node.
   virtual ui::AXPlatformNodeWin* GetAlert() = 0;
