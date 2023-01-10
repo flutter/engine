@@ -55,7 +55,7 @@ static PangoContext* get_pango_context(FlAccessibleTextField* self) {
 static PangoLayout* create_pango_layout(FlAccessibleTextField* self) {
   g_autoptr(PangoContext) context = get_pango_context(self);
   PangoLayout* layout = pango_layout_new(context);
-  pango_layout_set_text(layout, get_substring(self, 0, -1), -1);
+  pango_layout_set_text(layout, gtk_entry_buffer_get_text(self->buffer), -1);
   return layout;
 }
 
