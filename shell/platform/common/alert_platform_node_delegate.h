@@ -12,8 +12,11 @@ namespace flutter {
 
 class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
-  AlertPlatformNodeDelegate(ui::AXPlatformNodeDelegate* parent_delegate);
+  explicit AlertPlatformNodeDelegate(ui::AXPlatformNodeDelegate* parent_delegate);
   ~AlertPlatformNodeDelegate();
+
+  AlertPlatformNodeDelegate(const AlertPlatformNodeDelegate& other) = delete;
+  AlertPlatformNodeDelegate operator=(const AlertPlatformNodeDelegate& other) = delete;
 
   void SetText(const std::u16string& text);
 
