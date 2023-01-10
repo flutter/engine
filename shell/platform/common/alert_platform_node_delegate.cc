@@ -6,18 +6,21 @@
 
 namespace flutter {
 
-AlertPlatformNodeDelegate::AlertPlatformNodeDelegate(ui::AXPlatformNodeDelegate* parent_delegate) : parent_delegate_(parent_delegate) {
+AlertPlatformNodeDelegate::AlertPlatformNodeDelegate(
+    ui::AXPlatformNodeDelegate* parent_delegate)
+    : parent_delegate_(parent_delegate) {
   data_.role = ax::mojom::Role::kAlert;
   data_.id = id_.Get();
 }
 
 AlertPlatformNodeDelegate::~AlertPlatformNodeDelegate() {}
 
-gfx::AcceleratedWidget AlertPlatformNodeDelegate::GetTargetForNativeAccessibilityEvent() {
+gfx::AcceleratedWidget
+AlertPlatformNodeDelegate::GetTargetForNativeAccessibilityEvent() {
   if (parent_delegate_) {
     return parent_delegate_->GetTargetForNativeAccessibilityEvent();
   }
-  return nullptr;
+  return (gfx::AcceleratedWidget)nullptr;
 }
 
 gfx::NativeViewAccessible AlertPlatformNodeDelegate::GetParent() {
@@ -41,4 +44,4 @@ void AlertPlatformNodeDelegate::SetText(std::u16string text) {
   data_.SetValue(text);
 }
 
-}
+}  // namespace flutter

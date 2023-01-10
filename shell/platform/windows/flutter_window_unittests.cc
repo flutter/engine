@@ -164,9 +164,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
 
-  MOCK_METHOD2(NotifyWinEventWrapper, void(ui::AXPlatformNodeWin*, ax::mojom::Event));
-
-  
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
@@ -419,12 +418,11 @@ TEST(FlutterWindowTest, AlertNode) {
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
   TestFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";
-  EXPECT_CALL(view,
-              NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
+  EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
       .Times(1);
   view.AnnounceAlert(message);
 
-  IAccessible* alert = view.AlertNode(); //root_node->GetOrCreateAlert();
+  IAccessible* alert = view.AlertNode();  // root_node->GetOrCreateAlert();
   VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);

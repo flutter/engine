@@ -208,15 +208,18 @@ LRESULT Window::OnGetObject(UINT const message,
     if (!ax_fragment_root_) {
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
           window_handle_, GetAxFragmentRootDelegate());
-      FlutterPlatformNodeDelegate* child_delegate = static_cast<FlutterPlatformNodeDelegate*>(ax_fragment_root_->GetChildNodeDelegate());
+      FlutterPlatformNodeDelegate* child_delegate =
+          static_cast<FlutterPlatformNodeDelegate*>(
+              ax_fragment_root_->GetChildNodeDelegate());
       child_delegate->GetAXNode();
     }
     if (is_uia_request) {
 #ifdef FLUTTER_ENGINE_USE_UIA
       // Retrieve UIA object for the root view.
       Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
-      if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
-              IID_PPV_ARGS(&root)))) {
+      if (SUCCEEDED(
+              ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
+                  IID_PPV_ARGS(&root)))) {
         // Return the UIA object via UiaReturnRawElementProvider(). See:
         // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
         reference_result = UiaReturnRawElementProvider(window_handle_, wparam,
@@ -230,7 +233,8 @@ LRESULT Window::OnGetObject(UINT const message,
       // Return the IAccessible for the root view.
       // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
       Microsoft::WRL::ComPtr<IAccessible> root;
-      ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(IID_PPV_ARGS(&root));
+      ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
+          IID_PPV_ARGS(&root));
       reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
     }
   }
@@ -677,8 +681,10 @@ void Window::CreateAlertNode() {
   if (alert_delegate_) {
     return;
   }
-  alert_delegate_ = std::make_unique<AlertPlatformNodeDelegate>(ax_fragment_root_.get());
-  ui::AXPlatformNode* alert_node = ui::AXPlatformNodeWin::Create(alert_delegate_.get());
+  alert_delegate_ =
+      std::make_unique<AlertPlatformNodeDelegate>(ax_fragment_root_.get());
+  ui::AXPlatformNode* alert_node =
+      ui::AXPlatformNodeWin::Create(alert_delegate_.get());
   alert_node_.reset(static_cast<ui::AXPlatformNodeWin*>(alert_node));
 }
 

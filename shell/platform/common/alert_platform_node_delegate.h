@@ -29,6 +29,6 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   ui::AXUniqueId id_;
 };
 
-}
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_COMMON_ALERT_PLATFORM_NODE_DELEGATE_H_

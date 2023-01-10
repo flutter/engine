@@ -16,7 +16,7 @@
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
 
 namespace ui {
-  class AXPlatformNodeWin;
+class AXPlatformNodeWin;
 }
 
 namespace flutter {

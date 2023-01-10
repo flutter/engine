@@ -667,7 +667,8 @@ void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
   NotifyWinEventWrapper(alert_node, ax::mojom::Event::kAlert);
 }
 
-void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node, ax::mojom::Event event) {
+void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
+                                               ax::mojom::Event event) {
   if (node) {
     node->NotifyAccessibilityEvent(event);
   }

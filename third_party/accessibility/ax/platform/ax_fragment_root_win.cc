@@ -431,7 +431,9 @@ void AXFragmentRootWin::SetAlertNode(AXPlatformNodeWin* alert_node) {
   alert_node_ = alert_node;
 }
 
-gfx::Rect AXFragmentRootWin::GetBoundsRect(AXCoordinateSystem sys, AXClippingBehavior clip, AXOffscreenResult* result) const {
+gfx::Rect AXFragmentRootWin::GetBoundsRect(AXCoordinateSystem sys,
+                                           AXClippingBehavior clip,
+                                           AXOffscreenResult* result) const {
   AXPlatformNodeDelegate* child = GetChildNodeDelegate();
   if (!child) {
     return gfx::Rect();

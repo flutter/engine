@@ -5720,12 +5720,14 @@ bool AXPlatformNodeWin::IsDescendantOf(AXPlatformNode* ancestor) const {
     return false;
   }
 
-  // Test if the ancestor is an IRawElementProviderFragmentRoot and if it matches
-  // this node's root fragment.
+  // Test if the ancestor is an IRawElementProviderFragmentRoot and if it
+  // matches this node's root fragment.
   IRawElementProviderFragmentRoot* root;
-  if (SUCCEEDED(const_cast<AXPlatformNodeWin*>(this)->get_FragmentRoot(&root))) {
+  if (SUCCEEDED(
+          const_cast<AXPlatformNodeWin*>(this)->get_FragmentRoot(&root))) {
     AXPlatformNodeWin* root_win;
-    if (SUCCEEDED(root->QueryInterface(__uuidof(AXPlatformNodeWin), (void**) & root_win))) {
+    if (SUCCEEDED(root->QueryInterface(__uuidof(AXPlatformNodeWin),
+                                       (void**)&root_win))) {
       return ancestor == static_cast<AXPlatformNode*>(root_win);
     }
   }

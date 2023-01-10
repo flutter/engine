@@ -73,7 +73,9 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   const ui::AXUniqueId& GetUniqueId() const override;
   AXPlatformNode* GetFromTreeIDAndNodeID(const ui::AXTreeID& ax_tree_id,
                                          int32_t id) override;
-  gfx::Rect GetBoundsRect(const AXCoordinateSystem acs, const AXClippingBehavior acb, AXOffscreenResult* result) const override;
+  gfx::Rect GetBoundsRect(const AXCoordinateSystem acs,
+                          const AXClippingBehavior acb,
+                          AXOffscreenResult* result) const override;
 
   // A fragment root does not correspond to any node in the platform neutral
   // accessibility tree. Rather, the fragment root's child is a child of the

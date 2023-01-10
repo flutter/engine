@@ -568,7 +568,8 @@ class MockFlutterWindowsView : public FlutterWindowsView {
       : FlutterWindowsView(std::move(wbh)) {}
   ~MockFlutterWindowsView() {}
 
-  MOCK_METHOD2(NotifyWinEventWrapper, void(ui::AXPlatformNodeWin*, ax::mojom::Event));
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
 };
 
 TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
@@ -596,9 +597,8 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   bool did_call = false;
   ON_CALL(view, NotifyWinEventWrapper)
-      .WillByDefault([&did_call](ui::AXPlatformNodeWin* node, ax::mojom::Event event) {
-        did_call = true;
-      });
+      .WillByDefault([&did_call](ui::AXPlatformNodeWin* node,
+                                 ax::mojom::Event event) { did_call = true; });
 
   engine->UpdateSemanticsEnabled(true);
   engine->Run();
