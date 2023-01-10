@@ -73,16 +73,15 @@ GPUCAMetalLayerHandle IOSSurfaceMetalSkia::GetCAMetalLayer(const SkISize& frame_
 
 // |GPUSurfaceMetalDelegate|
 bool IOSSurfaceMetalSkia::PresentDrawable(GrMTLHandle drawable) const {
-  if (drawable == nullptr) {
-    FML_DLOG(ERROR) << "Could not acquire next Metal drawable from the SkSurface.";
-    return false;
-  }
+  // if (drawable == nullptr) {
+  //   FML_DLOG(ERROR) << "Could not acquire next Metal drawable from the SkSurface.";
+  //   return false;
+  // }
 
   auto command_buffer =
       fml::scoped_nsprotocol<id<MTLCommandBuffer>>([[command_queue_ commandBuffer] retain]);
-  [command_buffer.get() presentDrawable:reinterpret_cast<id<CAMetalDrawable>>(drawable)];
   [command_buffer.get() commit];
-  // [command_buffer.get() waitUntilScheduled];
+  [command_buffer.get() waitUntilScheduled];
 
   // [reinterpret_cast<id<CAMetalDrawable>>(drawable) present];
   return true;

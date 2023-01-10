@@ -118,23 +118,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
     const SkISize& frame_info) {
-  auto layer = delegate_->GetCAMetalLayer(frame_info);
-  if (!layer) {
-    FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
-    return nullptr;
-  }
+  id<MTLTexture> fakeTexture = nil;
 
-  auto* mtl_layer = (CAMetalLayer*)layer;
-  // Get the drawable eagerly, we will need texture object to identify target framebuffer
-  fml::scoped_nsprotocol<id<CAMetalDrawable>> drawable(
-      reinterpret_cast<id<CAMetalDrawable>>([[mtl_layer nextDrawable] retain]));
-
-  if (!drawable.get()) {
-    FML_LOG(ERROR) << "Could not obtain drawable from the metal layer.";
-    return nullptr;
-  }
-
-  auto surface = CreateSurfaceFromMetalTexture(context_.get(), drawable.get().texture,
+  auto surface = CreateSurfaceFromMetalTexture(context_.get(), fakeTexture,
                                                kTopLeft_GrSurfaceOrigin,  // origin
                                                msaa_samples_,             // sample count
                                                kBGRA_8888_SkColorType,    // color type
@@ -144,13 +130,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
                                                nullptr                    // release context
   );
 
-  if (!surface) {
-    FML_LOG(ERROR) << "Could not create the SkSurface from the CAMetalLayer.";
-    return nullptr;
-  }
+  // if (!surface) {
+  //   FML_LOG(ERROR) << "Could not create the SkSurface from the CAMetalLayer.";
+  //   return nullptr;
+  // }
 
-  auto submit_callback = [this, drawable](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) -> bool {
+  auto submit_callback = [this, &frame_info](const SurfaceFrame& surface_frame,
+                                             SkCanvas* canvas) -> bool {
+    delegate_->PresentDrawable(nullptr);
+
     TRACE_EVENT0("flutter", "GPUSurfaceMetal::Submit");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
@@ -162,36 +150,52 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
       canvas->flush();
     }
 
-    if (!disable_partial_repaint_) {
-      uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
-      for (auto& entry : damage_) {
-        if (entry.first != texture) {
-          // Accumulate damage for other framebuffers
-          if (surface_frame.submit_info().frame_damage) {
-            entry.second.join(*surface_frame.submit_info().frame_damage);
-          }
-        }
-      }
-      // Reset accumulated damage for current framebuffer
-      damage_[texture] = SkIRect::MakeEmpty();
-    }
+    // if (!disable_partial_repaint_) {
+    //   uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
+    //   for (auto& entry : damage_) {
+    //     if (entry.first != texture) {
+    //       // Accumulate damage for other framebuffers
+    //       if (surface_frame.submit_info().frame_damage) {
+    //         entry.second.join(*surface_frame.submit_info().frame_damage);
+    //       }
+    //     }
+    //   }
+    //   // Reset accumulated damage for current framebuffer
+    //   damage_[texture] = SkIRect::MakeEmpty();
+    // }
 
-    return delegate_->PresentDrawable(drawable);
+    auto layer = delegate_->GetCAMetalLayer(frame_info);
+    if (!layer) {
+      FML_LOG(ERROR) << "Invalid CAMetalLayer given by the embedder.";
+      return false;
+    }
+    // auto* mtl_layer = (CAMetalLayer*)layer;
+    // // Get the drawable eagerly, we will need texture object to identify target framebuffer
+    // fml::scoped_nsprotocol<id<CAMetalDrawable>> drawable(
+    //     reinterpret_cast<id<CAMetalDrawable>>([[mtl_layer nextDrawable] retain]));
+
+    // if (!drawable.get()) {
+    //   FML_LOG(ERROR) << "Could not obtain drawable from the metal layer.";
+    //   return false;
+    // }
+
+    // [drawable.get() present];
+    return true;
   };
 
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  if (!disable_partial_repaint_) {
-    // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
-    // front buffer)
-    uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
-    auto i = damage_.find(texture);
-    if (i != damage_.end()) {
-      framebuffer_info.existing_damage = i->second;
-    }
-    framebuffer_info.supports_partial_repaint = true;
-  }
+  // if (!disable_partial_repaint_) {
+  //   // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
+  //   // front buffer)
+  //   uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
+  //   auto i = damage_.find(texture);
+  //   if (i != damage_.end()) {
+  //     framebuffer_info.existing_damage = i->second;
+  //   }
+  //   framebuffer_info.supports_partial_repaint = true;
+  // }
 
   return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info, submit_callback,
                                         frame_info);

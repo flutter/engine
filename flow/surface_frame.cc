@@ -24,14 +24,15 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
       submit_callback_(submit_callback),
       context_result_(std::move(context_result)) {
   FML_DCHECK(submit_callback_);
-  if (surface_) {
-    canvas_ = surface_->getCanvas();
-  } else if (display_list_fallback) {
-    FML_DCHECK(!frame_size.isEmpty());
-    dl_recorder_ =
-        sk_make_sp<DisplayListCanvasRecorder>(SkRect::Make(frame_size));
-    canvas_ = dl_recorder_.get();
-  }
+  canvas_ = new SkCanvas();
+  // if (surface_) {
+  //   canvas_ = surface_->getCanvas();
+  // } else if (display_list_fallback) {
+  //   FML_DCHECK(!frame_size.isEmpty());
+  //   dl_recorder_ =
+  //       sk_make_sp<DisplayListCanvasRecorder>(SkRect::Make(frame_size));
+  //   canvas_ = dl_recorder_.get();
+  // }
 }
 
 bool SurfaceFrame::Submit() {
