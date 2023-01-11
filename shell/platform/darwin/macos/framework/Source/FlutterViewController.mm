@@ -288,7 +288,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   FlutterDartProject* _project;
 }
 
-@dynamic view;
+@synthesize flutterView = _flutterView;
 
 /**
  * Performs initialization that's common between the different init paths.
@@ -349,7 +349,6 @@ static void CommonInit(FlutterViewController* controller) {
     _engine = engine;
     CommonInit(self);
     if (engine.running) {
-      [self loadView];
       engine.viewController = self;
       [self initializeKeyboard];
     }
@@ -409,6 +408,16 @@ static void CommonInit(FlutterViewController* controller) {
 }
 
 #pragma mark - Public methods
+
+- (FlutterView*)flutterView {
+  if (!self.viewLoaded) {
+    // This calls loadView. See
+    // https://developer.apple.com/documentation/appkit/nsviewcontroller/1434401-view?language=objc.
+    [self view];
+  }
+  NSAssert(_flutterView != nil, @"The _flutterView is nil after viewDidLoad.");
+  return _flutterView;
+}
 
 - (void)setMouseTrackingMode:(FlutterMouseTrackingMode)mode {
   if (_mouseTrackingMode == mode) {

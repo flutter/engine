@@ -157,9 +157,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
 }
 
 - (NSView*)view {
-  if (!_flutterEngine.viewController.viewLoaded) {
-    [_flutterEngine.viewController loadView];
-  }
   return _flutterEngine.viewController.flutterView;
 }
 

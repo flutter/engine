@@ -138,7 +138,6 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
 
@@ -170,7 +169,6 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
   viewController.flutterView.backgroundColor = [NSColor whiteColor];
@@ -197,7 +195,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
+  [viewController loadView]; // TODO
   [engine setViewController:viewController];
   // Enable the semantics.
   bool enabled_called = false;
@@ -373,7 +371,6 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   [engine setViewController:viewController];
   // Enable the semantics.
   bool enabled_called = false;
@@ -430,7 +427,6 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
   // Set up a new view controller.
   FlutterViewController* newViewController =
       [[FlutterViewController alloc] initWithProject:project];
-  [newViewController loadView];
   [engine setViewController:newViewController];
 
   auto new_native_root = engine.accessibilityBridge.lock()->GetFlutterPlatformNodeDelegateFromID(0);
@@ -465,7 +461,6 @@ TEST(FlutterEngine, Compositor) {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
   [engine setViewController:viewController];
 

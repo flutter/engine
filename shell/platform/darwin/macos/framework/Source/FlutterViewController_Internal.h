@@ -10,7 +10,12 @@
 
 @interface FlutterViewController () <FlutterKeyboardViewDelegate>
 
-// The FlutterView for this view controller.
+/**
+ * The FlutterView for this view controller.
+ *
+ * Reading this property triggers loadView if the view is not loaded yet,
+ * similar to NSViewController#view.
+ */
 @property(nonatomic, readonly, nullable) FlutterView* flutterView;
 
 /**

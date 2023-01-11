@@ -94,7 +94,6 @@ TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
 
 TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
-  [viewControllerMock loadView];
   EXPECT_EQ([viewControllerMock.flutterView acceptsFirstMouse:nil], YES);
 }
 
@@ -105,7 +104,6 @@ TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   [engine setViewController:viewController];
   // Creates a NSWindow so that sub view can be first responder.
   NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)

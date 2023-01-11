@@ -228,7 +228,6 @@ TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
   [engine setViewController:viewController];
 
   // Unit test localization is unnecessary.
