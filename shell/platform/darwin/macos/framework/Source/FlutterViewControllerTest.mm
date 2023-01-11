@@ -74,7 +74,6 @@ NSResponder* mockResponder() {
 TEST(FlutterViewController, HasViewThatHidesOtherViewsInAccessibility) {
   FlutterViewController* viewControllerMock = CreateMockViewController();
 
-  [viewControllerMock loadView];
   auto subViews = [viewControllerMock.view subviews];
 
   EXPECT_EQ([subViews count], 1u);
@@ -273,10 +272,11 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  [viewController loadView];
+  [viewController view];
 
   @try {
-    // Make sure "renderer" was called during "loadView", which means "flutterView" is created
+    // Make sure "renderer" was called when loading the view, which means
+    // "flutterView" is created
     OCMVerify([engineMock renderer]);
   } @catch (...) {
     return false;
@@ -473,7 +473,7 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  [viewController loadView];
+  [viewController loadView]; // TODO
 
   // Test for pan events.
   // Start gesture.

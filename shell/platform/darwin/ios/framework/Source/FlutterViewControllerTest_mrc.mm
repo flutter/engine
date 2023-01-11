@@ -123,8 +123,6 @@ FLUTTER_ASSERT_NOT_ARC
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
                                                                                 nibName:nil
                                                                                  bundle:nil];
-  [viewController loadView];
-  [viewController viewDidLoad];
 
   VSyncClient* client = viewController.touchRateCorrectionVSyncClient;
   CADisplayLink* link = [client getDisplayLink];
