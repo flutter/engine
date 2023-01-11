@@ -1,7 +1,6 @@
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
-
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 
@@ -19,7 +18,6 @@ generated_file("artifacts_entitlement_config") {
     ]
   }
 }
-
 if (build_engine_artifacts && !is_android) {
   zip_bundle("artifacts") {
     deps = [
@@ -50,7 +48,6 @@ if (build_engine_artifacts && !is_android) {
     if (host_os == "win") {
       exe = ".exe"
     }
-
     # Only include gen_snapshot for all runtime modes.
     files = [
       {
@@ -128,13 +125,11 @@ if (build_engine_artifacts && !is_android) {
     }
   }
 }
-
 if (host_os == "linux" || host_os == "win") {
   group("embedder") {
     deps = [ "//flutter/shell/platform/embedder:embedder-archive" ]
   }
 }
-
 # Generates flutter_patched_sdk.zip for debug and profile runtime modes
 # and saves it in the zips_archive folder. For release runtime mode it
 # generates flutter_patched_sdk_product.zip and saves it to
@@ -159,7 +154,6 @@ zip_bundle("flutter_patched_sdk") {
     },
   ]
 }
-
 generated_file("dart_sdk_entitlement_config") {
   outputs = [ "$target_gen_dir/dart_sdk_entitlements.txt" ]
 
@@ -170,10 +164,8 @@ generated_file("dart_sdk_entitlement_config") {
     "dart-sdk/bin/dartaotruntime",
     "dart-sdk/bin/utils/gen_snapshot",
   ]
-
   deps = []
 }
-
 # Flutter consumes the dart sdk as a prebuilt. Rather than regenerating
 # the zip file we are just copying the original file to the artifacts location.
 if (build_engine_artifacts && flutter_prebuilt_dart_sdk) {
@@ -223,7 +215,6 @@ if (build_engine_artifacts && !flutter_prebuilt_dart_sdk) {
     }
   }
 }
-
 # Archives Flutter Windows Artifacts
 if (host_os == "win") {
   zip_bundle("windows_flutter") {
@@ -261,7 +252,6 @@ if (host_os == "win") {
     ]
   }
 }
-
 # Archives Flutter Mac Artifacts
 if (is_mac) {
   generated_file("snapshot_entitlement_config") {
@@ -271,7 +261,6 @@ if (is_mac) {
 
     deps = [ "//flutter/lib/snapshot:create_macos_gen_snapshots" ]
   }
-
   zip_bundle("archive_gen_snapshot") {
     deps = [
       ":snapshot_entitlement_config",
@@ -293,14 +282,12 @@ if (is_mac) {
       },
     ]
   }
-
   group("flutter_embedder_framework") {
     deps = [
       "//flutter/shell/platform/embedder:flutter_embedder_framework_archive",
     ]
   }
 }
-
 if (host_os == "win") {
   zip_bundle("archive_win_gen_snapshot") {
     deps = [ "//flutter:gen_snapshot" ]
