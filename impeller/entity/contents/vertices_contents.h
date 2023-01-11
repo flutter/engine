@@ -31,6 +31,8 @@ class VerticesContents final : public Contents {
 
   void SetBlendMode(BlendMode blend_mode);
 
+  void SetSrcContents(std::shared_ptr<Contents> src_contents);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
@@ -40,7 +42,12 @@ class VerticesContents final : public Contents {
               RenderPass& pass) const override;
 
  public:
+  bool RenderDestination(const ContentContext& renderer,
+                         const Entity& entity,
+                         RenderPass& pass) const;
+
   Color color_;
+  std::shared_ptr<Contents> src_contents_;
   std::unique_ptr<VerticesGeometry> geometry_;
   BlendMode blend_mode_ = BlendMode::kSource;
 

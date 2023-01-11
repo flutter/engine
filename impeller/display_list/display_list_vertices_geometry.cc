@@ -154,9 +154,7 @@ GeometryResult DLVerticesGeometry::GetPositionBuffer(
 GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
     const ContentContext& renderer,
     const Entity& entity,
-    RenderPass& pass,
-    Color paint_color,
-    BlendMode blend_mode) {
+    RenderPass& pass) {
   using VS = GeometryColorPipeline::VertexShader;
 
   auto index_count = normalized_indices_.size() == 0
@@ -173,13 +171,12 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
   {
     for (auto i = 0; i < vertex_count; i++) {
       auto dl_color = dl_colors[i];
-      auto pre_color = Color(dl_color.getRedF(), dl_color.getGreenF(),
-                             dl_color.getBlueF(), dl_color.getAlphaF());
-      auto color = Color::BlendColor(paint_color, pre_color, blend_mode);
+      auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
+                         dl_color.getBlueF(), dl_color.getAlphaF());
       auto sk_point = dl_vertices[i];
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
-          .color = color,
+          .color = color.Premultiply(),
       };
     }
   }
@@ -226,10 +223,69 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  // TODO(jonahwilliams): support texture coordinates in vertices
-  // https://github.com/flutter/flutter/issues/109956
-  return {};
-}
+  using VS = AtlasBlendSrcOverPipeline::VertexShader;
+
+  auto index_count = normalized_indices_.size() == 0
+                         ? vertices_->index_count()
+                         : normalized_indices_.size();
+  auto vertex_count = vertices_->vertex_count();
+  auto* dl_indices = normalized_indices_.size() == 0
+                         ? vertices_->indices()
+                         : normalized_indices_.data();
+  auto* dl_vertices = vertices_->vertices();
+  auto* dl_colors = vertices_->colors();
+
+  auto coverage = ToRect(vertices_->bounds());
+  std::vector<VS::PerVertexData> vertex_data(vertex_count);
+  for (auto i = 0; i < vertex_count; i++) {
+    auto dl_color = dl_colors[i];
+    auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
+                       dl_color.getBlueF(), dl_color.getAlphaF());
+    auto sk_point = dl_vertices[i];
+    vertex_data[i] = {
+        .vertices = Point(sk_point.x(), sk_point.y()),
+        .dst_color = color,
+        .src_texture_coords = Point(sk_point.x(), sk_point.y()) / coverage.size,
+    };
+  }
+
+  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
+  size_t total_idx_bytes = index_count * sizeof(uint16_t);
+
+  DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
+  buffer_desc.storage_mode = StorageMode::kHostVisible;
+
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
+
+  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
+                              Range{0, total_vtx_bytes}, 0)) {
+    return {};
+  }
+  if (!buffer->CopyHostBuffer(
+          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(dl_indices)),
+          Range{0, total_idx_bytes}, total_vtx_bytes)) {
+    return {};
+  }
+
+  return GeometryResult{
+      .type = GetPrimitiveType(vertices_),
+      .vertex_buffer =
+          {
+              .vertex_buffer = {.buffer = buffer,
+                                .range = Range{0, total_vtx_bytes}},
+              .index_buffer = {.buffer = buffer,
+                               .range =
+                                   Range{total_vtx_bytes, total_idx_bytes}},
+              .index_count = index_count,
+              .index_type = IndexType::k16bit,
+          },
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
+}  // namespace impeller
 
 GeometryVertexType DLVerticesGeometry::GetVertexType() const {
   auto* dl_colors = vertices_->colors();

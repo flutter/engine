@@ -29,9 +29,7 @@ class DLVerticesGeometry : public VerticesGeometry {
   // |VerticesGeometry|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
-                                        RenderPass& pass,
-                                        Color paint_color,
-                                        BlendMode blend_mode) override;
+                                        RenderPass& pass) override;
 
   // |VerticesGeometry|
   GeometryResult GetPositionUVBuffer(const ContentContext& renderer,

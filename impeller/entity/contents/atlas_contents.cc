@@ -266,7 +266,6 @@ bool AtlasContents::RenderOnlyColor(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
   using VS = GeometryColorPipeline::VertexShader;
-  ;
 
   const auto texture_size = texture_->GetSize();
   if (texture_size.IsEmpty()) {
