@@ -33,7 +33,7 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
+typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
@@ -222,10 +222,10 @@ class PlatformDispatcher {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
     if (!_views.containsKey(id)) {
-      _views[id] = FlutterWindow._(id, this);
+      _views[id] = FlutterView._(id, this);
     }
     _viewConfigurations[id] = previousConfiguration.copyWith(
-      window: _views[id],
+      view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: WindowPadding._(
@@ -1089,10 +1089,10 @@ class PlatformDispatcher {
   }
 
   /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
+  /// performed on a semantics node.
   ///
   /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by updateSemantics.
+  /// perform based on the semantics node supplied by updateSemantics.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1128,11 +1128,11 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  void _dispatchSemanticsAction(int id, int action, ByteData? args) {
+  void _dispatchSemanticsAction(int nodeId, int action, ByteData? args) {
     _invoke3<int, SemanticsAction, ByteData?>(
       onSemanticsAction,
       _onSemanticsActionZone,
-      id,
+      nodeId,
       SemanticsAction.values[action]!,
       args,
     );
@@ -1156,8 +1156,7 @@ class PlatformDispatcher {
   ///
   /// This callback is not directly invoked by errors in child isolates of the
   /// root isolate. Programs that create new isolates must listen for errors on
-  /// those isolates and forward the errors to the root isolate. An example of
-  /// this can be found in the Flutter framework's `compute` function.
+  /// those isolates and forward the errors to the root isolate.
   ErrorCallback? get onError => _onError;
   set onError(ErrorCallback? callback) {
     _onError = callback;
@@ -1290,8 +1289,18 @@ class PlatformConfiguration {
 /// An immutable view configuration.
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
+  ///
+  /// When constructing a view configuration, supply either the [view] or the
+  /// [window] property, but not both since the [view] and [window] property
+  /// are backed by the same instance variable.
   const ViewConfiguration({
-    this.window,
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
+    FlutterView? window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -1301,10 +1310,17 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  });
+  }) : assert(window == null || view == null),
+    _view = view ?? window;
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
     FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
@@ -1316,8 +1332,9 @@ class ViewConfiguration {
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
+    assert(view == null || window == null);
     return ViewConfiguration(
-      window: window ?? this.window,
+      view: view ?? window ?? _view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1330,11 +1347,22 @@ class ViewConfiguration {
     );
   }
 
-  /// The top level view into which the view is placed and its geometry is
-  /// relative to.
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
   ///
-  /// If null, then this configuration represents a top level view itself.
-  final FlutterView? window;
+  /// If this property is null, this [ViewConfiguration] is a top level view.
+  @Deprecated('''
+    Use the `view` property instead.
+    This change is related to adding multi-view support in Flutter.
+    This feature was deprecated after 3.7.0-1.2.pre.
+  ''')
+  FlutterView? get window => _view;
+
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
+  ///
+  /// If this property is null, this [ViewConfiguration] is a top level view.
+  FlutterView? get view => _view;
+
+  final FlutterView?  _view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
@@ -1428,7 +1456,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
+    return '$runtimeType[view: $view, geometry: $geometry]';
   }
 }
 
@@ -1667,7 +1695,7 @@ enum AppLifecycleState {
   /// On Android, this corresponds to an app or the Flutter host view running
   /// in the foreground inactive state.  Apps transition to this state when
   /// another activity is focused, such as a split-screen app, a phone call,
-  /// a picture-in-picture app, a system dialog, or another window.
+  /// a picture-in-picture app, a system dialog, or another view.
   ///
   /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
