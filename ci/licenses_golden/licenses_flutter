@@ -1911,6 +1911,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.d
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/texture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart + ../../../flutter/LICENSE
@@ -2033,6 +2034,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_action.dar
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/input_type.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_capitalization.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/text_editing/text_editing.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/texture.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/ulps.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/validators.dart + ../../../flutter/LICENSE
