@@ -110,9 +110,14 @@ void AnimationClip::Advance(SecondsF delta_time) {
   }
 }
 
-void AnimationClip::ApplyToBindings() const {
+void AnimationClip::ApplyToBindings(
+    std::unordered_map<Node*, MatrixDecomposition>& transform_decomps) const {
   for (auto& binding : bindings_) {
-    binding.channel.resolver->Apply(*binding.node, playback_time_, weight_);
+    auto decomp = transform_decomps.find(binding.node);
+    if (decomp == transform_decomps.end()) {
+      continue;
+    }
+    binding.channel.resolver->Apply(decomp->second, playback_time_, weight_);
   }
 }
 

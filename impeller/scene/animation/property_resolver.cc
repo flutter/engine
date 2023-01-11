@@ -8,6 +8,7 @@
 #include <iterator>
 #include <memory>
 
+#include "impeller/geometry/matrix_decomposition.h"
 #include "impeller/geometry/point.h"
 #include "impeller/scene/node.h"
 
@@ -78,7 +79,7 @@ TranslationTimelineResolver::TranslationTimelineResolver() = default;
 
 TranslationTimelineResolver::~TranslationTimelineResolver() = default;
 
-void TranslationTimelineResolver::Apply(Node& target,
+void TranslationTimelineResolver::Apply(MatrixDecomposition& target,
                                         SecondsF time,
                                         Scalar weight) {
   if (values_.empty()) {
@@ -90,24 +91,14 @@ void TranslationTimelineResolver::Apply(Node& target,
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
 
-  // TODO(bdero): Instead of decomposing the matrix and lerping properties here,
-  //              keep track of the decomposed version of the joints in the
-  //              animation player and pass the decompositions around. Then, the
-  //              animation player can apply the joint matrices at the end of
-  //              the update.
-  auto decomp = target.GetLocalTransform().Decompose();
-  if (!decomp.has_value()) {
-    return;
-  }
-  decomp->translation = decomp->translation.Lerp(value, weight);
-  target.SetLocalTransform(Matrix(decomp.value()));
+  target.translation = target.translation.Lerp(value, weight);
 }
 
 RotationTimelineResolver::RotationTimelineResolver() = default;
 
 RotationTimelineResolver::~RotationTimelineResolver() = default;
 
-void RotationTimelineResolver::Apply(Node& target,
+void RotationTimelineResolver::Apply(MatrixDecomposition& target,
                                      SecondsF time,
                                      Scalar weight) {
   if (values_.empty()) {
@@ -119,19 +110,16 @@ void RotationTimelineResolver::Apply(Node& target,
     value = values_[key.index - 1].Slerp(value, key.lerp);
   }
 
-  auto decomp = target.GetLocalTransform().Decompose();
-  if (!decomp.has_value()) {
-    return;
-  }
-  decomp->rotation = decomp->rotation.Slerp(value, weight);
-  target.SetLocalTransform(Matrix(decomp.value()));
+  target.rotation = target.rotation.Slerp(value, weight);
 }
 
 ScaleTimelineResolver::ScaleTimelineResolver() = default;
 
 ScaleTimelineResolver::~ScaleTimelineResolver() = default;
 
-void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
+void ScaleTimelineResolver::Apply(MatrixDecomposition& target,
+                                  SecondsF time,
+                                  Scalar weight) {
   if (values_.empty()) {
     return;
   }
@@ -141,12 +129,7 @@ void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
 
-  auto decomp = target.GetLocalTransform().Decompose();
-  if (!decomp.has_value()) {
-    return;
-  }
-  decomp->scale = decomp->scale.Lerp(value, weight);
-  target.SetLocalTransform(Matrix(decomp.value()));
+  target.scale = target.scale.Lerp(value, weight);
 }
 
 }  // namespace scene

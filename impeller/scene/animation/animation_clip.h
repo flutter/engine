@@ -60,7 +60,8 @@ class AnimationClip final {
   void Advance(SecondsF delta_time);
 
   /// @brief  Applies the animation to all binded properties in the scene.
-  void ApplyToBindings() const;
+  void ApplyToBindings(
+      std::unordered_map<Node*, MatrixDecomposition>& transform_decomps) const;
 
  private:
   void BindToTarget(Node* node);

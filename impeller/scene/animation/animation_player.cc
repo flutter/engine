@@ -5,6 +5,7 @@
 #include "impeller/scene/animation/animation_player.h"
 
 #include <memory>
+#include <unordered_map>
 
 #include "flutter/fml/time/time_point.h"
 #include "impeller/base/timing.h"
@@ -58,18 +59,23 @@ void AnimationPlayer::Update() {
   auto delta_time = new_time - previous_time_.value();
   previous_time_ = new_time;
 
-  Reset();
+  std::unordered_map<Node*, MatrixDecomposition> transform_decomps;
+  for (auto& [node, transform] : default_target_transforms_) {
+    auto decomp = transform.Decompose();
+    if (!decomp.has_value()) {
+      continue;
+    }
+    transform_decomps[node] = decomp.value();
+  }
 
   // Update and apply all clips.
   for (auto& [_, clip] : clips_) {
     clip.Advance(delta_time);
-    clip.ApplyToBindings();
+    clip.ApplyToBindings(transform_decomps);
   }
-}
 
-void AnimationPlayer::Reset() {
-  for (auto& [node, transform] : default_target_transforms_) {
-    node->SetLocalTransform(transform);
+  for (auto& [node, decomp] : transform_decomps) {
+    node->SetLocalTransform(Matrix(decomp));
   }
 }
 

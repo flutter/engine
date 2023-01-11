@@ -37,9 +37,6 @@ class AnimationPlayer final {
   /// @brief  Advanced all clips and updates animated properties in the scene.
   void Update();
 
-  /// @brief  Reset all bound animation target transforms.
-  void Reset();
-
  private:
   std::unordered_map<Node*, Matrix> default_target_transforms_;
 
