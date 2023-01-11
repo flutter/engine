@@ -33,8 +33,12 @@ AnimationClip* AnimationPlayer::AddAnimation(
   // Record all of the unique default transforms that this AnimationClip
   // will mutate.
   for (const auto& binding : clip.bindings_) {
-    default_target_transforms_.insert(
-        {binding.node, binding.node->GetLocalTransform()});
+    auto decomp = binding.node->GetLocalTransform().Decompose();
+    if (!decomp.has_value()) {
+      continue;
+    }
+    target_transforms_.insert(
+        {binding.node, AnimationTransforms{.bind_pose = decomp.value()}});
   }
 
   clips_.insert({animation->GetName(), std::move(clip)});
@@ -59,23 +63,20 @@ void AnimationPlayer::Update() {
   auto delta_time = new_time - previous_time_.value();
   previous_time_ = new_time;
 
-  std::unordered_map<Node*, MatrixDecomposition> transform_decomps;
-  for (auto& [node, transform] : default_target_transforms_) {
-    auto decomp = transform.Decompose();
-    if (!decomp.has_value()) {
-      continue;
-    }
-    transform_decomps[node] = decomp.value();
+  // Reset the animated pose state.
+  for (auto& [node, transforms] : target_transforms_) {
+    transforms.animated_pose = transforms.bind_pose;
   }
 
-  // Update and apply all clips.
+  // Update and apply all clips to the animation pose state.
   for (auto& [_, clip] : clips_) {
     clip.Advance(delta_time);
-    clip.ApplyToBindings(transform_decomps);
+    clip.ApplyToBindings(target_transforms_);
   }
 
-  for (auto& [node, decomp] : transform_decomps) {
-    node->SetLocalTransform(Matrix(decomp));
+  // Apply the animated pose to the bound joints.
+  for (auto& [node, transforms] : target_transforms_) {
+    node->SetLocalTransform(Matrix(transforms.animated_pose));
   }
 }
 

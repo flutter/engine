@@ -79,7 +79,7 @@ TranslationTimelineResolver::TranslationTimelineResolver() = default;
 
 TranslationTimelineResolver::~TranslationTimelineResolver() = default;
 
-void TranslationTimelineResolver::Apply(MatrixDecomposition& target,
+void TranslationTimelineResolver::Apply(AnimationTransforms& target,
                                         SecondsF time,
                                         Scalar weight) {
   if (values_.empty()) {
@@ -91,14 +91,15 @@ void TranslationTimelineResolver::Apply(MatrixDecomposition& target,
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
 
-  target.translation = target.translation.Lerp(value, weight);
+  target.animated_pose.translation +=
+      (value - target.bind_pose.translation) * weight;
 }
 
 RotationTimelineResolver::RotationTimelineResolver() = default;
 
 RotationTimelineResolver::~RotationTimelineResolver() = default;
 
-void RotationTimelineResolver::Apply(MatrixDecomposition& target,
+void RotationTimelineResolver::Apply(AnimationTransforms& target,
                                      SecondsF time,
                                      Scalar weight) {
   if (values_.empty()) {
@@ -110,14 +111,16 @@ void RotationTimelineResolver::Apply(MatrixDecomposition& target,
     value = values_[key.index - 1].Slerp(value, key.lerp);
   }
 
-  target.rotation = target.rotation.Slerp(value, weight);
+  target.animated_pose.rotation =
+      target.animated_pose.rotation *
+      Quaternion().Slerp(target.bind_pose.rotation.Invert() * value, weight);
 }
 
 ScaleTimelineResolver::ScaleTimelineResolver() = default;
 
 ScaleTimelineResolver::~ScaleTimelineResolver() = default;
 
-void ScaleTimelineResolver::Apply(MatrixDecomposition& target,
+void ScaleTimelineResolver::Apply(AnimationTransforms& target,
                                   SecondsF time,
                                   Scalar weight) {
   if (values_.empty()) {
@@ -129,7 +132,8 @@ void ScaleTimelineResolver::Apply(MatrixDecomposition& target,
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
 
-  target.scale = target.scale.Lerp(value, weight);
+  target.animated_pose.scale *=
+      Vector3(1, 1, 1).Lerp(value / target.bind_pose.scale, weight);
 }
 
 }  // namespace scene

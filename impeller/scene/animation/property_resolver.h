@@ -15,6 +15,7 @@
 #include "impeller/geometry/quaternion.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/vector.h"
+#include "impeller/scene/animation/animation_transforms.h"
 
 namespace impeller {
 namespace scene {
@@ -47,7 +48,7 @@ class PropertyResolver {
   ///         many different PropertyResolvers prior to rendering. For example,
   ///         an AnimationPlayer may blend multiple Animations together by
   ///         applying several AnimationClips.
-  virtual void Apply(MatrixDecomposition& target,
+  virtual void Apply(AnimationTransforms& target,
                      SecondsF time,
                      Scalar weight) = 0;
 };
@@ -77,7 +78,7 @@ class TranslationTimelineResolver final : public TimelineResolver {
   ~TranslationTimelineResolver();
 
   // |Resolver|
-  void Apply(MatrixDecomposition& target,
+  void Apply(AnimationTransforms& target,
              SecondsF time,
              Scalar weight) override;
 
@@ -96,7 +97,7 @@ class RotationTimelineResolver final : public TimelineResolver {
   ~RotationTimelineResolver();
 
   // |Resolver|
-  void Apply(MatrixDecomposition& target,
+  void Apply(AnimationTransforms& target,
              SecondsF time,
              Scalar weight) override;
 
@@ -115,7 +116,7 @@ class ScaleTimelineResolver final : public TimelineResolver {
   ~ScaleTimelineResolver();
 
   // |Resolver|
-  void Apply(MatrixDecomposition& target,
+  void Apply(AnimationTransforms& target,
              SecondsF time,
              Scalar weight) override;
 

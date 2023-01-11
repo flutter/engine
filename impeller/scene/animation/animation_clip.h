@@ -9,6 +9,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/scene/animation/animation.h"
+#include "impeller/scene/animation/animation_transforms.h"
 
 namespace impeller {
 namespace scene {
@@ -61,7 +62,7 @@ class AnimationClip final {
 
   /// @brief  Applies the animation to all binded properties in the scene.
   void ApplyToBindings(
-      std::unordered_map<Node*, MatrixDecomposition>& transform_decomps) const;
+      std::unordered_map<Node*, AnimationTransforms>& transform_decomps) const;
 
  private:
   void BindToTarget(Node* node);

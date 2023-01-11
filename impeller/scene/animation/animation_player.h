@@ -14,6 +14,7 @@
 #include "flutter/fml/time/time_delta.h"
 #include "impeller/base/timing.h"
 #include "impeller/geometry/matrix.h"
+#include "impeller/geometry/matrix_decomposition.h"
 #include "impeller/scene/animation/animation_clip.h"
 
 namespace impeller {
@@ -38,7 +39,7 @@ class AnimationPlayer final {
   void Update();
 
  private:
-  std::unordered_map<Node*, Matrix> default_target_transforms_;
+  std::unordered_map<Node*, AnimationTransforms> target_transforms_;
 
   std::map<std::string, AnimationClip> clips_;
 
