@@ -38,7 +38,7 @@ const ui::AXNodeData& AlertPlatformNodeDelegate::GetData() const {
   return data_;
 }
 
-void AlertPlatformNodeDelegate::SetText(const std::u16string& text) {
+void AlertPlatformNodeDelegate::SetText(const std::u16string_view text) {
   data_.SetName(text);
   data_.SetDescription(text);
   data_.SetValue(text);

@@ -56,7 +56,7 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   // If a child node is available, return its delegate.
   AXPlatformNodeDelegate* GetChildNodeDelegate() const;
 
-  // AXPlatformNodeDelegate override.
+  // |AXPlatformNodeDelegate|
   gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
 
   void SetAlertNode(AXPlatformNodeWin* alert_node);

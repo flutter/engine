@@ -5712,12 +5712,12 @@ AXPlatformNodeWin* AXPlatformNodeWin::GetFirstTextOnlyDescendant() {
 }
 
 bool AXPlatformNodeWin::IsDescendantOf(AXPlatformNode* ancestor) const {
-  if (AXPlatformNodeBase::IsDescendantOf(ancestor)) {
-    return true;
-  }
-
   if (!ancestor) {
     return false;
+  }
+
+  if (AXPlatformNodeBase::IsDescendantOf(ancestor)) {
+    return true;
   }
 
   // Test if the ancestor is an IRawElementProviderFragmentRoot and if it
@@ -5727,7 +5727,7 @@ bool AXPlatformNodeWin::IsDescendantOf(AXPlatformNode* ancestor) const {
           const_cast<AXPlatformNodeWin*>(this)->get_FragmentRoot(&root))) {
     AXPlatformNodeWin* root_win;
     if (SUCCEEDED(root->QueryInterface(__uuidof(AXPlatformNodeWin),
-                                       (void**)&root_win))) {
+                                       reinterpret_cast<void**>(&root_win)))) {
       return ancestor == static_cast<AXPlatformNode*>(root_win);
     }
   }

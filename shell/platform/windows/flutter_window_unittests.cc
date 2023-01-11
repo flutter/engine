@@ -423,7 +423,6 @@ TEST(FlutterWindowTest, AlertNode) {
   view.AnnounceAlert(message);
 
   IAccessible* alert = view.AlertNode();
-  FML_LOG(ERROR) << "Alert = " << (void*)alert;
   VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);
