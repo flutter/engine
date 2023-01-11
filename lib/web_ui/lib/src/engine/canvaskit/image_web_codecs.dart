@@ -444,8 +444,7 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
   final Uint8List destination = Uint8List(size);
   final JsPromise copyPromise = videoFrame.copyTo(destination);
   await promiseToFuture<void>(copyPromise);
-  final Uint8List dartBuffer = js_util.dartify(destination)! as Uint8List;
-  return dartBuffer.buffer;
+  return destination.buffer;
 }
 
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
