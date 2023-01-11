@@ -89,7 +89,7 @@ void _runDomTests(HostNode hostNode) {
     test('querySelector', () {
       final DomElement? found = hostNode.querySelector('#yep');
 
-      expect(identical(found, target), isTrue);
+      expect(found, target);
     });
 
     test('.contains and .append', () {

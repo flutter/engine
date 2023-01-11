@@ -495,8 +495,8 @@ void testMain() {
     // Renders a `string` by breaking it up into individual characters and
     // rendering each character into its own layer.
     Future<void> testCase(String string, String description, { int deletions = 0, int additions = 0, int moves = 0 }) {
-      final Set<DomNode> actualDeletions = <DomNode>{};
-      final Set<DomNode> actualAdditions = <DomNode>{};
+      final List<DomNode> actualDeletions = <DomNode>[];
+      final List<DomNode> actualAdditions = <DomNode>[];
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
@@ -529,15 +529,17 @@ void testMain() {
         observer.disconnect();
 
         // Nodes that are removed then added are classified as "moves".
-        final int actualMoves = actualAdditions.intersection(actualDeletions).length;
+        final Iterable<DomNode> actualMoves = actualAdditions.where((DomNode added) {
+          return actualDeletions.firstWhereOrNull((DomNode removed) => added == removed) != null;
+        });
         // Compare all at once instead of one by one because when it fails, it's
         // much more useful to see all numbers, not just the one that failed to
         // match.
         expect(
           <String, int>{
-            'additions': actualAdditions.length - actualMoves,
-            'deletions': actualDeletions.length - actualMoves,
-            'moves': actualMoves,
+            'additions': actualAdditions.length - actualMoves.length,
+            'deletions': actualDeletions.length - actualMoves.length,
+            'moves': actualMoves.length,
           },
           <String, int>{
             'additions': additions,

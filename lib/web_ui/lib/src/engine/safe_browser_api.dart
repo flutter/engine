@@ -110,13 +110,6 @@ void removeJsEventListener(Object target, String type, Function listener, Object
   );
 }
 
-/// The signature of the `parseFloat` JavaScript function.
-typedef _JsParseFloat = num? Function(String source);
-
-/// The JavaScript-side `parseFloat` function.
-@JS('parseFloat')
-external _JsParseFloat get _jsParseFloat;
-
 /// Parses a string [source] into a double.
 ///
 /// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
@@ -126,7 +119,7 @@ external _JsParseFloat get _jsParseFloat;
 num? parseFloat(String source) {
   // Using JavaScript's `parseFloat` here because it can parse values
   // like "20px", while Dart's `double.tryParse` fails.
-  final num? result = _jsParseFloat(source);
+  final num? result = js_util.callMethod(domWindow, 'parseFloat', <Object>[source]);
 
   if (result == null || result.isNaN) {
     return null;

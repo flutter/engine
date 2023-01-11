@@ -466,8 +466,8 @@ void testMain() {
       // EditableTextGeometry.
       void checkPlacementIsSetBySemantics() {
         expect(strategy.activeDomElement.style.transform, '');
-        expect(strategy.activeDomElement.style.width, '${semanticsRect.width}px');
-        expect(strategy.activeDomElement.style.height, '${semanticsRect.height}px');
+        expect(strategy.activeDomElement.style.width, '100px');
+        expect(strategy.activeDomElement.style.height, '50px');
       }
 
       checkPlacementIsSetBySemantics();
