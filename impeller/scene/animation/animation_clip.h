@@ -62,7 +62,8 @@ class AnimationClip final {
 
   /// @brief  Applies the animation to all binded properties in the scene.
   void ApplyToBindings(
-      std::unordered_map<Node*, AnimationTransforms>& transform_decomps) const;
+      std::unordered_map<Node*, AnimationTransforms>& transform_decomps,
+      Scalar weight_multiplier) const;
 
  private:
   void BindToTarget(Node* node);

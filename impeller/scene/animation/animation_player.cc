@@ -68,10 +68,17 @@ void AnimationPlayer::Update() {
     transforms.animated_pose = transforms.bind_pose;
   }
 
+  // Compute a weight multiplier for normalizing the animation.
+  Scalar total_weight = 0;
+  for (auto& [_, clip] : clips_) {
+    total_weight += clip.GetWeight();
+  }
+  Scalar weight_multiplier = total_weight > 1 ? 1 / total_weight : 1;
+
   // Update and apply all clips to the animation pose state.
   for (auto& [_, clip] : clips_) {
     clip.Advance(delta_time);
-    clip.ApplyToBindings(target_transforms_);
+    clip.ApplyToBindings(target_transforms_, weight_multiplier);
   }
 
   // Apply the animated pose to the bound joints.
