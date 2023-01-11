@@ -241,7 +241,9 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
         codec.dispose();
       }
       // TODO(hterkelsen): Firefox and Safari do not currently support ImageDecoder.
-    }, skip: isFirefox || isSafari);
+      // TODO(jacksongardner): enable on wasm
+      // see https://github.com/flutter/flutter/issues/118334
+    }, skip: isFirefox || isSafari || isWasm);
 
     test('CkImage.clone also clones the VideoFrame', () async {
       final CkBrowserImageDecoder image = await CkBrowserImageDecoder.create(
@@ -905,7 +907,9 @@ void _testCkBrowserImageDecoder() {
       expect(rgba!.buffer.asUint8List(), expectedColors[i]);
     }
     testCollector.collectNow();
-  });
+    // TODO(jacksongardner): enable on wasm
+    // see https://github.com/flutter/flutter/issues/118334
+  }, skip: isWasm);
 
   test('ImageDecoder expires after inactivity', () async {
     const Duration testExpireDuration = Duration(milliseconds: 100);
@@ -950,7 +954,9 @@ void _testCkBrowserImageDecoder() {
 
     testCollector.collectNow();
     debugRestoreWebDecoderExpireDuration();
-  });
+    // TODO(jacksongardner): enable on wasm
+    // see https://github.com/flutter/flutter/issues/118334
+  }, skip: isWasm);
 }
 
 class TestHttpRequestMock {
