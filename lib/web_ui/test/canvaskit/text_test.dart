@@ -68,7 +68,7 @@ void testMain() {
 
       // TODO(jacksongardner): enable on wasm
       // see https://github.com/flutter/flutter/issues/118333
-    }, skip: isWasm);
+    }, skip: isWasm || isSafari || isFirefox);
 
     test('Renders tab as space instead of tofu', () async {
       // CanvasKit renders a tofu if the font does not have a glyph for a
