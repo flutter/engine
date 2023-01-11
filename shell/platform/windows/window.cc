@@ -206,9 +206,10 @@ LRESULT Window::OnGetObject(UINT const message,
   // https://github.com/flutter/flutter/issues/114547
   if (root_view) {
     if (!ax_fragment_root_) {
-      CreateAlertNode();
       ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
-          window_handle_, GetAxFragmentRootDelegate(), alert_node_.get());
+          window_handle_, GetAxFragmentRootDelegate());
+      CreateAlertNode();
+      ax_fragment_root_->SetAlertNode(alert_node_.get());
     }
     if (is_uia_request) {
 #ifdef FLUTTER_ENGINE_USE_UIA
@@ -674,7 +675,7 @@ bool Window::GetHighContrastEnabled() {
 }
 
 void Window::CreateAlertNode() {
-  if (alert_delegate_) {
+  if (alert_delegate_ && (alert_delegate_->GetParent() || !ax_fragment_root_)) {
     return;
   }
   alert_delegate_ =

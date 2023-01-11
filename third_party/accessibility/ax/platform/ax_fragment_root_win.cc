@@ -288,9 +288,8 @@ class AXFragmentRootMapWin {
 };
 
 AXFragmentRootWin::AXFragmentRootWin(gfx::AcceleratedWidget widget,
-                                     AXFragmentRootDelegateWin* delegate,
-                                     AXPlatformNodeWin* alert_node)
-    : widget_(widget), delegate_(delegate), alert_node_(alert_node) {
+                                     AXFragmentRootDelegateWin* delegate)
+    : widget_(widget), delegate_(delegate), alert_node_(nullptr) {
   platform_node_ = ui::AXFragmentRootPlatformNodeWin::Create(this);
   AXFragmentRootMapWin::GetInstance().AddFragmentRoot(widget, this);
 }

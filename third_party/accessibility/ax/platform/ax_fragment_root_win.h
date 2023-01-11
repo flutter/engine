@@ -30,8 +30,7 @@ class AXPlatformNodeWin;
 class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
  public:
   AXFragmentRootWin(gfx::AcceleratedWidget widget,
-                    AXFragmentRootDelegateWin* delegate,
-                    AXPlatformNodeWin* alert_node);
+                    AXFragmentRootDelegateWin* delegate);
   ~AXFragmentRootWin() override;
 
   // Fragment roots register themselves in a map upon creation and unregister

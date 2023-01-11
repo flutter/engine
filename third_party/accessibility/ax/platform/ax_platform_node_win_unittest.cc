@@ -374,7 +374,7 @@ AXFragmentRootWin* AXPlatformNodeWinTest::InitNodeAsFragmentRoot(
     delegate->parent_ =
         AXPlatformNodeFromNode(node->parent())->GetNativeViewAccessible();
 
-  return new AXFragmentRootWin(gfx::kMockAcceleratedWidget, delegate, nullptr);
+  return new AXFragmentRootWin(gfx::kMockAcceleratedWidget, delegate);
 }
 
 ComPtr<IRawElementProviderFragmentRoot>

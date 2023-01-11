@@ -22,10 +22,12 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
 
   void SetText(const std::u16string& text);
 
+  // |AXPlatformNodeDelegate|
+  gfx::NativeViewAccessible GetParent() override;
+
  private:
   // AXPlatformNodeDelegate overrides.
   gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
-  gfx::NativeViewAccessible GetParent() override;
   const ui::AXUniqueId& GetUniqueId() const override;
   const ui::AXNodeData& GetData() const override;
 
