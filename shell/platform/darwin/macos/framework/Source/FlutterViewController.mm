@@ -286,9 +286,9 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 @implementation FlutterViewController {
   // The project to run in this controller's engine.
   FlutterDartProject* _project;
-}
 
-@synthesize flutterView = _flutterView;
+  FlutterView* _flutterView;
+}
 
 /**
  * Performs initialization that's common between the different init paths.
