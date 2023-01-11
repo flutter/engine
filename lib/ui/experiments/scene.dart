@@ -32,7 +32,7 @@ class SceneNode extends NativeFieldWrapperClass1 {
 
     final SceneNode sceneNode = SceneNode._create();
 
-    Future<SceneNode> futureSceneNode = _futurize((_Callback<void> callback) {
+    final Future<SceneNode> futureSceneNode = _futurize((_Callback<void> callback) {
       final String error = sceneNode._initFromAsset(assetKey, callback);
       if (error.isNotEmpty) {
         return error;
@@ -93,7 +93,7 @@ class SceneNode extends NativeFieldWrapperClass1 {
     if (sceneNodeFuture == null) {
       return;
     }
-    SceneNode sceneNode = await sceneNodeFuture;
+    final SceneNode sceneNode = await sceneNodeFuture;
 
     await _futurize((_Callback<void> callback) {
       final String error = sceneNode._initFromAsset(assetKey, callback);
