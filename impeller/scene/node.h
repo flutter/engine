@@ -34,14 +34,15 @@ class Node final {
 
     struct SetAnimationStateEntry {
       std::string animation_name;
-      bool playing;
-      float weight;
-      float time_scale;
+      bool playing = false;
+      bool loop = false;
+      Scalar weight = 0;
+      Scalar time_scale = 1;
     };
 
     struct SeekAnimationEntry {
       std::string animation_name;
-      float time;
+      float time = 0;
     };
 
     using Entry = std::

@@ -360,19 +360,42 @@ bool Node::Render(SceneEncoder& encoder,
         local_transform_ = e->transform;
       } else if (auto e =
                      std::get_if<MutationLog::SetAnimationStateEntry>(&entry)) {
-        auto* clip = animation_player_->GetClip(e->animation_name);
+        AnimationClip* clip =
+            animation_player_.has_value()
+                ? animation_player_->GetClip(e->animation_name)
+                : nullptr;
         if (!clip) {
-          continue;
+          auto animation = FindAnimationByName(e->animation_name);
+          if (!animation) {
+            continue;
+          }
+          clip = AddAnimation(animation);
+          if (!clip) {
+            continue;
+          }
         }
+
         clip->SetPlaying(e->playing);
+        clip->SetLoop(e->loop);
         clip->SetWeight(e->weight);
         clip->SetPlaybackTimeScale(e->time_scale);
       } else if (auto e =
                      std::get_if<MutationLog::SeekAnimationEntry>(&entry)) {
-        auto* clip = animation_player_->GetClip(e->animation_name);
+        AnimationClip* clip =
+            animation_player_.has_value()
+                ? animation_player_->GetClip(e->animation_name)
+                : nullptr;
         if (!clip) {
-          continue;
+          auto animation = FindAnimationByName(e->animation_name);
+          if (!animation) {
+            continue;
+          }
+          clip = AddAnimation(animation);
+          if (!clip) {
+            continue;
+          }
         }
+
         clip->Seek(SecondsF(e->time));
       }
     }

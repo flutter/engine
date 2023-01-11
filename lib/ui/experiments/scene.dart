@@ -63,8 +63,8 @@ class SceneNode extends NativeFieldWrapperClass1 {
     _setTransform(matrix4);
   }
 
-  void setAnimationState(String animationName, bool playing, double weight, double timeScale) {
-    _setAnimationState(animationName, playing, weight, timeScale);
+  void setAnimationState(String animationName, bool playing, bool loop, double weight, double timeScale) {
+    _setAnimationState(animationName, playing, loop, weight, timeScale);
   }
 
   void seekAnimation(String animationName, double time) {
@@ -119,10 +119,10 @@ class SceneNode extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::SetTransform')
   external void _setTransform(Float64List matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('SceneScene::SetAnimationState')
-  external void _setAnimationState(String animationName, bool playing, double weight, double timeScale);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Bool, Bool, Double, Double)>('SceneNode::SetAnimationState')
+  external void _setAnimationState(String animationName, bool playing, bool loop, double weight, double timeScale);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('SceneNode::SeekAnimation')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Double)>('SceneNode::SeekAnimation')
   external void _seekAnimation(String animationName, double time);
 
   /// Returns a fresh instance of [SceneShader].

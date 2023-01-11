@@ -132,17 +132,24 @@ void SceneNode::SetTransform(const tonic::Float64List& matrix4) {
 
 void SceneNode::SetAnimationState(const std::string& animation_name,
                                   bool playing,
+                                  bool loop,
                                   double weight,
                                   double time_scale) {
   impeller::scene::Node::MutationLog::SetAnimationStateEntry entry = {
-      animation_name, playing, static_cast<float>(weight),
-      static_cast<float>(time_scale)};
+      .animation_name = animation_name,
+      .playing = playing,
+      .loop = loop,
+      .weight = static_cast<float>(weight),
+      .time_scale = static_cast<float>(time_scale),
+  };
   node_->AddMutation(entry);
 }
 
 void SceneNode::SeekAnimation(const std::string& animation_name, double time) {
   impeller::scene::Node::MutationLog::SeekAnimationEntry entry = {
-      animation_name, static_cast<float>(time)};
+      .animation_name = animation_name,
+      .time = static_cast<float>(time),
+  };
   node_->AddMutation(entry);
 }
 
