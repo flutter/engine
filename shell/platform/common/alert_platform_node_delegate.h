@@ -20,7 +20,7 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   AlertPlatformNodeDelegate operator=(const AlertPlatformNodeDelegate& other) =
       delete;
 
-  void SetText(const std::u16string_view text);
+  void SetText(const std::u16string& text);
 
   // |AXPlatformNodeDelegate|
   gfx::NativeViewAccessible GetParent() override;
