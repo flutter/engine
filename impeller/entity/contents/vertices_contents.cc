@@ -212,8 +212,8 @@ bool VerticesContents::RenderDestination(const ContentContext& renderer,
 
   auto opts = OptionsFromPassAndEntity(pass, entity);
 
-  auto geometry_result = geometry_->GetPositionColorBuffer(
-      renderer, entity, pass);
+  auto geometry_result =
+      geometry_->GetPositionColorBuffer(renderer, entity, pass);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.BindVertices(geometry_result.vertex_buffer);
