@@ -126,9 +126,10 @@ TEST_P(SceneTest, TwoTriangles) {
   auto animation = gltf_scene->FindAnimationByName("Metronome");
   ASSERT_NE(animation, nullptr);
 
-  AnimationClip& metronome_clip = gltf_scene->AddAnimation(animation);
-  metronome_clip.SetLoop(true);
-  metronome_clip.Play();
+  AnimationClip* metronome_clip = gltf_scene->AddAnimation(animation);
+  ASSERT_NE(metronome_clip, nullptr);
+  metronome_clip->SetLoop(true);
+  metronome_clip->Play();
 
   auto scene_context = std::make_shared<SceneContext>(GetContext());
   auto scene = Scene(scene_context);
@@ -145,18 +146,18 @@ TEST_P(SceneTest, TwoTriangles) {
       ImGui::SliderFloat("Weight", &weight, -2, 2);
       ImGui::Checkbox("Loop", &loop);
       if (ImGui::Button("Play")) {
-        metronome_clip.Play();
+        metronome_clip->Play();
       }
       if (ImGui::Button("Pause")) {
-        metronome_clip.Pause();
+        metronome_clip->Pause();
       }
       if (ImGui::Button("Stop")) {
-        metronome_clip.Stop();
+        metronome_clip->Stop();
       }
 
-      metronome_clip.SetPlaybackTimeScale(playback_time_scale);
-      metronome_clip.SetWeight(weight);
-      metronome_clip.SetLoop(loop);
+      metronome_clip->SetPlaybackTimeScale(playback_time_scale);
+      metronome_clip->SetWeight(weight);
+      metronome_clip->SetLoop(loop);
     }
 
     ImGui::End();

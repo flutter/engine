@@ -4,9 +4,9 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <optional>
-#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/hash_combine.h"
@@ -29,8 +29,10 @@ class AnimationPlayer final {
   AnimationPlayer(AnimationPlayer&&);
   AnimationPlayer& operator=(AnimationPlayer&&);
 
-  AnimationClip& AddAnimation(std::shared_ptr<Animation> animation,
+  AnimationClip* AddAnimation(const std::shared_ptr<Animation>& animation,
                               Node* bind_target);
+
+  AnimationClip* GetClip(const std::string& name);
 
   /// @brief  Advanced all clips and updates animated properties in the scene.
   void Update();
@@ -41,7 +43,7 @@ class AnimationPlayer final {
  private:
   std::unordered_map<Node*, Matrix> default_target_transforms_;
 
-  std::vector<AnimationClip> clips_;
+  std::map<std::string, AnimationClip> clips_;
 
   std::optional<TimePoint> previous_time_;
 

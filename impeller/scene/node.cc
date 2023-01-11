@@ -7,6 +7,7 @@
 #include <inttypes.h>
 #include <atomic>
 #include <memory>
+#include <vector>
 
 #include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
@@ -23,6 +24,24 @@ namespace impeller {
 namespace scene {
 
 static std::atomic_uint64_t kNextNodeID = 0;
+
+void Node::MutationLog::Append(const Entry& entry) {
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  dirty_ = true;
+  entries_.push_back(entry);
+}
+
+std::optional<std::vector<Node::MutationLog::Entry>>
+Node::MutationLog::Flush() {
+  if (!dirty_) {
+    return std::nullopt;
+  }
+  std::lock_guard<std::mutex> lock(write_mutex_);
+  dirty_ = false;
+  auto result = entries_;
+  entries_ = {};
+  return result;
+}
 
 std::shared_ptr<Node> Node::MakeFromFlatbuffer(
     const fml::Mapping& ipscene_mapping,
@@ -257,7 +276,7 @@ std::shared_ptr<Animation> Node::FindAnimationByName(
   return nullptr;
 }
 
-AnimationClip& Node::AddAnimation(const std::shared_ptr<Animation>& animation) {
+AnimationClip* Node::AddAnimation(const std::shared_ptr<Animation>& animation) {
   if (!animation_player_.has_value()) {
     animation_player_ = AnimationPlayer();
   }
@@ -287,6 +306,11 @@ Matrix Node::GetGlobalTransform() const {
 }
 
 bool Node::AddChild(std::shared_ptr<Node> node) {
+  if (!node) {
+    VALIDATION_LOG << "Cannot add null child to node.";
+    return false;
+  }
+
   // TODO(bdero): Figure out a better paradigm/rules for nodes with multiple
   //              parents. We should probably disallow this, make deep
   //              copying of nodes cheap and easy, add mesh instancing, etc.
@@ -328,7 +352,32 @@ bool Node::IsJoint() const {
 
 bool Node::Render(SceneEncoder& encoder,
                   Allocator& allocator,
-                  const Matrix& parent_transform) const {
+                  const Matrix& parent_transform) {
+  std::optional<std::vector<MutationLog::Entry>> log = mutation_log_.Flush();
+  if (log.has_value()) {
+    for (const auto& entry : log.value()) {
+      if (auto e = std::get_if<MutationLog::SetTransformEntry>(&entry)) {
+        local_transform_ = e->transform;
+      } else if (auto e =
+                     std::get_if<MutationLog::SetAnimationStateEntry>(&entry)) {
+        auto* clip = animation_player_->GetClip(e->animation_name);
+        if (!clip) {
+          continue;
+        }
+        clip->SetPlaying(e->playing);
+        clip->SetWeight(e->weight);
+        clip->SetPlaybackTimeScale(e->time_scale);
+      } else if (auto e =
+                     std::get_if<MutationLog::SeekAnimationEntry>(&entry)) {
+        auto* clip = animation_player_->GetClip(e->animation_name);
+        if (!clip) {
+          continue;
+        }
+        clip->Seek(SecondsF(e->time));
+      }
+    }
+  }
+
   if (animation_player_.has_value()) {
     animation_player_->Update();
   }
@@ -343,6 +392,10 @@ bool Node::Render(SceneEncoder& encoder,
     }
   }
   return true;
+}
+
+void Node::AddMutation(const MutationLog::Entry& entry) {
+  mutation_log_.Append(entry);
 }
 
 }  // namespace scene

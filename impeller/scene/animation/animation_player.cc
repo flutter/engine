@@ -19,10 +19,15 @@ AnimationPlayer::~AnimationPlayer() = default;
 AnimationPlayer::AnimationPlayer(AnimationPlayer&&) = default;
 AnimationPlayer& AnimationPlayer::operator=(AnimationPlayer&&) = default;
 
-AnimationClip& AnimationPlayer::AddAnimation(
-    std::shared_ptr<Animation> animation,
+AnimationClip* AnimationPlayer::AddAnimation(
+    const std::shared_ptr<Animation>& animation,
     Node* bind_target) {
-  AnimationClip clip(std::move(animation), bind_target);
+  if (!animation) {
+    VALIDATION_LOG << "Cannot add null animation.";
+    return nullptr;
+  }
+
+  AnimationClip clip(animation, bind_target);
 
   // Record all of the unique default transforms that this AnimationClip
   // will mutate.
@@ -31,8 +36,18 @@ AnimationClip& AnimationPlayer::AddAnimation(
         {binding.node, binding.node->GetLocalTransform()});
   }
 
-  clips_.push_back(std::move(clip));
-  return clips_.back();
+  clips_.insert({animation->GetName(), std::move(clip)});
+  auto found = clips_.find(animation->GetName());
+  FML_DCHECK(found != clips_.end());
+  return &found->second;
+}
+
+AnimationClip* AnimationPlayer::GetClip(const std::string& name) {
+  auto result = clips_.find(name);
+  if (result == clips_.end()) {
+    return nullptr;
+  }
+  return &result->second;
 }
 
 void AnimationPlayer::Update() {
@@ -46,7 +61,7 @@ void AnimationPlayer::Update() {
   Reset();
 
   // Update and apply all clips.
-  for (auto& clip : clips_) {
+  for (auto& [_, clip] : clips_) {
     clip.Advance(delta_time);
     clip.ApplyToBindings();
   }
