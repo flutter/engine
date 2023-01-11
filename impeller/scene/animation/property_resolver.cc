@@ -89,8 +89,18 @@ void TranslationTimelineResolver::Apply(Node& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-  target.SetLocalTransform(target.GetLocalTransform() *
-                           Matrix::MakeTranslation(value * weight));
+
+  // TODO(bdero): Instead of decomposing the matrix and lerping properties here,
+  //              keep track of the decomposed version of the joints in the
+  //              animation player and pass the decompositions around. Then, the
+  //              animation player can apply the joint matrices at the end of
+  //              the update.
+  auto decomp = target.GetLocalTransform().Decompose();
+  if (!decomp.has_value()) {
+    return;
+  }
+  decomp->translation = decomp->translation.Lerp(value, weight);
+  target.SetLocalTransform(Matrix(decomp.value()));
 }
 
 RotationTimelineResolver::RotationTimelineResolver() = default;
@@ -108,8 +118,13 @@ void RotationTimelineResolver::Apply(Node& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Slerp(value, key.lerp);
   }
-  target.SetLocalTransform(target.GetLocalTransform() *
-                           Matrix::MakeRotation(value * weight));
+
+  auto decomp = target.GetLocalTransform().Decompose();
+  if (!decomp.has_value()) {
+    return;
+  }
+  decomp->rotation = decomp->rotation.Slerp(value, weight);
+  target.SetLocalTransform(Matrix(decomp.value()));
 }
 
 ScaleTimelineResolver::ScaleTimelineResolver() = default;
@@ -125,8 +140,13 @@ void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-  target.SetLocalTransform(target.GetLocalTransform() *
-                           Matrix::MakeScale(value * weight));
+
+  auto decomp = target.GetLocalTransform().Decompose();
+  if (!decomp.has_value()) {
+    return;
+  }
+  decomp->scale = decomp->scale.Lerp(value, weight);
+  target.SetLocalTransform(Matrix(decomp.value()));
 }
 
 }  // namespace scene
