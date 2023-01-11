@@ -215,6 +215,13 @@ class Window : public KeyboardManager::WindowDelegate {
   // Check if the high contrast feature is enabled on the OS
   virtual bool GetHighContrastEnabled();
 
+  // Creates the alert_delegate_ and alert_node_ if they do not yet exist, or if
+  // the delegate exists but has a null parent and the current ax_fragment_root_
+  // is not null. If alert_delegate_ has not already been set, the creation of
+  // these two objects will execute. If alert_delegate_ is already non-null,
+  // their values will be updated if ax_fragment_root_ is non-null, and
+  // alert_delegate->GetParent() is null.
+  // Once set, alert_node_ is not reset to nullptr.
   void CreateAlertNode();
 
   // Called to obtain a pointer to the fragment root delegate.

@@ -59,6 +59,11 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   // |AXPlatformNodeDelegate|
   gfx::AcceleratedWidget GetTargetForNativeAccessibilityEvent() override;
 
+  // alert_node is an AXPlatformNodeWin whose text value can be set by the
+  // application for the purposes of announcing messages to a screen reader.
+  // AXFragmentRootWin does not own its alert_node_; it is owned by the object
+  // with the responsibility of setting its text. In the case of flutter
+  // windows, this is the Window.
   void SetAlertNode(AXPlatformNodeWin* alert_node);
 
  private:
