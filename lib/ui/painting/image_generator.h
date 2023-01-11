@@ -13,7 +13,7 @@
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/src/codec/SkCodecImageGenerator.h" // nogncheck
+#include "third_party/skia/src/codec/SkCodecImageGenerator.h"  // nogncheck
 
 namespace flutter {
 
