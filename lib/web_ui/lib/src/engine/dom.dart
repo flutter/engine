@@ -1708,7 +1708,7 @@ DomV8BreakIterator createV8BreakIterator() {
   return js_util.callConstructor<DomV8BreakIterator>(
     v8BreakIterator,
     <Object?>[
-      'en',
+      <String>[],
       js_util.jsify(const <String, String>{'type': 'line'}),
     ],
   );
