@@ -473,7 +473,9 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
                                                                                  bundle:nil];
-  [viewController loadView]; // TODO
+  // Load view. It is asserted that the view must be loaded before the view
+  // controller handles the mouse event.
+  [viewController view];
 
   // Test for pan events.
   // Start gesture.

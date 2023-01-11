@@ -195,7 +195,8 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView]; // TODO
+  // Load view. Accessibility tree can only be used when the view is loaded.
+  [viewController view];
   [engine setViewController:viewController];
   // Enable the semantics.
   bool enabled_called = false;
