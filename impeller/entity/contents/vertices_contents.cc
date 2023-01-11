@@ -180,8 +180,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
   }
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
+  frame_info.mvp = geometry_result.transform;
 
   FS::FragInfo frag_info;
   frag_info.src_y_coord_scale = src_texture->texture->GetYCoordScale();
@@ -219,8 +218,7 @@ bool VerticesContents::RenderDestination(const ContentContext& renderer,
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  vert_info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
 
   FS::FragInfo frag_info;

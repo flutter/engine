@@ -235,17 +235,19 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
   auto* dl_vertices = vertices_->vertices();
   auto* dl_colors = vertices_->colors();
 
-  auto coverage = ToRect(vertices_->bounds());
+  auto coverage_rect = ToRect(vertices_->bounds());
   std::vector<VS::PerVertexData> vertex_data(vertex_count);
   for (auto i = 0; i < vertex_count; i++) {
     auto dl_color = dl_colors[i];
     auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
                        dl_color.getBlueF(), dl_color.getAlphaF());
     auto sk_point = dl_vertices[i];
+    auto vertex = Point(sk_point.x(), sk_point.y());
+    auto coverage_coords = (vertex - coverage_rect.origin) / coverage_rect.size;
     vertex_data[i] = {
-        .vertices = Point(sk_point.x(), sk_point.y()),
+        .vertices = vertex,
         .dst_color = color,
-        .src_texture_coords = Point(sk_point.x(), sk_point.y()) / coverage.size,
+        .src_texture_coords = coverage_coords / coverage_rect.size,
     };
   }
 
