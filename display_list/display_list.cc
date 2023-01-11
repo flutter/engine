@@ -59,12 +59,15 @@ uint32_t DisplayList::next_unique_id() {
 
 class Culler {
  public:
+  virtual ~Culler() = default;
   virtual bool init(DispatchContext& context) = 0;
   virtual void update(DispatchContext& context) = 0;
 };
-class NopCuller : public Culler {
+class NopCuller final : public Culler {
  public:
   static NopCuller instance;
+
+  ~NopCuller() = default;
 
   bool init(DispatchContext& context) override {
     // Setting next_render_index to 0 means that
@@ -78,10 +81,12 @@ class NopCuller : public Culler {
   void update(DispatchContext& context) override {}
 };
 NopCuller NopCuller::instance = NopCuller();
-class VectorCuller : public Culler {
+class VectorCuller final : public Culler {
  public:
   VectorCuller(const DlRTree* rtree, const std::vector<int>& rect_indices)
       : rtree_(rtree), cur_(rect_indices.begin()), end_(rect_indices.end()) {}
+
+  ~VectorCuller() = default;
 
   bool init(DispatchContext& context) override {
     if (cur_ < end_) {
@@ -179,6 +184,9 @@ void DisplayList::Dispatch(Dispatcher& dispatcher,
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_DISPATCH(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPATCH
 
@@ -204,6 +212,9 @@ void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_DISPOSE(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPOSE
 
@@ -242,6 +253,9 @@ static bool CompareOps(uint8_t* ptrA,
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_EQUALS)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_EQUALS(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_EQUALS
 

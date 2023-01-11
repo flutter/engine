@@ -84,6 +84,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     _addBrightnessMediaQueryListener();
     HighContrastSupport.instance.addListener(_updateHighContrast);
     _addFontSizeObserver();
+    _addLocaleChangedListener();
     registerHotRestartListener(dispose);
   }
 
@@ -112,6 +113,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   void dispose() {
     _removeBrightnessMediaQueryListener();
     _disconnectFontSizeObserver();
+    _removeLocaleChangedListener();
     HighContrastSupport.instance.removeListener(_updateHighContrast);
   }
 
@@ -134,11 +136,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _onPlatformConfigurationChanged, _onPlatformConfigurationChangedZone);
   }
 
-  /// The current list of windows,
+  /// The current list of windows.
   @override
-  Iterable<ui.FlutterView> get views => _windows.values;
-  Map<Object, ui.FlutterWindow> get windows => _windows;
-  final Map<Object, ui.FlutterWindow> _windows = <Object, ui.FlutterWindow>{};
+  Iterable<ui.FlutterView> get views => viewData.values;
+  final Map<Object, ui.FlutterView> viewData = <Object, ui.FlutterView>{};
 
   /// A map of opaque platform window identifiers to window configurations.
   ///
@@ -476,10 +477,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'SystemNavigator.pop':
-            // TODO(gspencergoog): As multi-window support expands, the pop call
-            // will need to include the window ID. Right now only one window is
+            // TODO(a-wallen): As multi-window support expands, the pop call
+            // will need to include the view ID. Right now only one view is
             // supported.
-            (_windows[0]! as EngineFlutterWindow)
+            (viewData[kSingletonViewId]! as EngineFlutterWindow)
                 .browserHistory
                 .exit()
                 .then((_) {
@@ -566,10 +567,10 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/navigation':
-        // TODO(gspencergoog): As multi-window support expands, the navigation call
-        // will need to include the window ID. Right now only one window is
+        // TODO(a-wallen): As multi-window support expands, the navigation call
+        // will need to include the view ID. Right now only one view is
         // supported.
-        (_windows[0]! as EngineFlutterWindow)
+        (viewData[kSingletonViewId]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
             .then((bool handled) {
           if (handled) {
@@ -742,6 +743,29 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///    observe when this value changes.
   @override
   List<ui.Locale> get locales => configuration.locales;
+
+  // A subscription to the 'languagechange' event of 'window'.
+  DomSubscription? _onLocaleChangedSubscription;
+
+  /// Configures the [_onLocaleChangedSubscription].
+  void _addLocaleChangedListener() {
+    if (_onLocaleChangedSubscription != null) {
+      return;
+    }
+    updateLocales(); // First time, for good measure.
+    _onLocaleChangedSubscription =
+      DomSubscription(domWindow, 'languagechange', allowInterop((DomEvent _) {
+        // Update internal config, then propagate the changes.
+        updateLocales();
+        invokeOnLocaleChanged();
+      }));
+  }
+
+  /// Removes the [_onLocaleChangedSubscription].
+  void _removeLocaleChangedListener() {
+    _onLocaleChangedSubscription?.cancel();
+    _onLocaleChangedSubscription = null;
+  }
 
   /// Performs the platform-native locale resolution.
   ///
@@ -1135,7 +1159,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String get defaultRouteName {
     return _defaultRouteName ??=
-        (_windows[0]! as EngineFlutterWindow).browserHistory.currentPath;
+        (viewData[kSingletonViewId]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.

@@ -7,6 +7,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
+#include "flutter/third_party/accessibility/ax/ax_tree_manager_map.h"
 #include "test_accessibility_bridge.h"
 
 namespace flutter {
@@ -151,7 +152,9 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
-  root.flags = FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField;
+  root.flags = static_cast<FlutterSemanticsFlag>(
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
+      FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->CommitUpdates();
 
@@ -481,6 +484,35 @@ TEST(AccessibilityBridgeTest, CanReparentNodeWithChild) {
       Contains(ui::AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED).Times(1));
   EXPECT_THAT(bridge->accessibility_events,
               Contains(ui::AXEventGenerator::Event::ROLE_CHANGED).Times(1));
+}
+
+TEST(AccessibilityBridgeTest, AXTreeManagerTest) {
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
+
+  ui::AXTreeID tree_id = bridge->GetTreeID();
+  ui::AXTreeManager* manager =
+      ui::AXTreeManagerMap::GetInstance().GetManager(tree_id);
+  ASSERT_EQ(manager, static_cast<ui::AXTreeManager*>(bridge.get()));
+}
+
+TEST(AccessibilityBridgeTest, LineBreakingObjectTest) {
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
+
+  const int32_t root_id = 0;
+
+  FlutterSemanticsNode root = CreateSemanticsNode(root_id, "root", {});
+
+  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->CommitUpdates();
+
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(root_id).lock();
+  auto root_data = root_node->GetData();
+  EXPECT_TRUE(root_data.HasBoolAttribute(
+      ax::mojom::BoolAttribute::kIsLineBreakingObject));
+  EXPECT_TRUE(root_data.GetBoolAttribute(
+      ax::mojom::BoolAttribute::kIsLineBreakingObject));
 }
 
 }  // namespace testing
