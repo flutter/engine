@@ -11,7 +11,7 @@ class NotoFont {
   final String url;
   final String _packedRanges;
   // A sorted list of Unicode ranges.
-  late final List<CodeunitRange> _ranges = _unpackFontRanges(_packedRanges);
+  late final List<CodeunitRange> _ranges = _unpackFontRange(_packedRanges);
 
   List<CodeunitRange> computeUnicodeRanges() => _ranges;
 
@@ -73,21 +73,14 @@ class MutableInt {
   int value;
 }
 
-List<CodeunitRange> _unpackFontRanges(String packedRange) {
+List<CodeunitRange> _unpackFontRange(String packedRange) {
     final MutableInt i = MutableInt(0);
     final List<CodeunitRange> ranges = <CodeunitRange>[];
 
     while (i.value < packedRange.length) {
       final int rangeStart = _consumeInt36(packedRange, i, until: _kCharPipe);
-
-      final int rangeEnd;
-      if (packedRange.codeUnitAt(i.value) == _kCharSemicolon) {
-        rangeEnd = rangeStart;
-        i.value++;
-      } else {
-        rangeEnd = _consumeInt36(packedRange, i, until: _kCharSemicolon);
-      }
-
+      final int rangeLength = _consumeInt36(packedRange, i, until: _kCharSemicolon);
+      final int rangeEnd = rangeStart + rangeLength;
       ranges.add(CodeunitRange(rangeStart, rangeEnd));
     }
     return ranges;
