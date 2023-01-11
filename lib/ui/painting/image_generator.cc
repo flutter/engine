@@ -7,6 +7,8 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+
 
 namespace flutter {
 
