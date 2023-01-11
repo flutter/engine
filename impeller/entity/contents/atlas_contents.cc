@@ -9,11 +9,11 @@
 #include "impeller/renderer/sampler_library.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
-#include "impeller/entity/atlas_fill.frag.h"
-#include "impeller/entity/atlas_fill.vert.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/texture_fill.frag.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -47,7 +47,6 @@ void AtlasContents::SetAlpha(Scalar alpha) {
 }
 
 void AtlasContents::SetBlendMode(BlendMode blend_mode) {
-  // TODO(jonahwilliams): blending of colors with texture.
   blend_mode_ = blend_mode;
 }
 
@@ -81,12 +80,19 @@ const SamplerDescriptor& AtlasContents::GetSamplerDescriptor() const {
 bool AtlasContents::Render(const ContentContext& renderer,
                            const Entity& entity,
                            RenderPass& pass) const {
-  if (texture_ == nullptr) {
+  if (texture_ == nullptr || blend_mode_ == BlendMode::kClear) {
     return true;
   }
 
-  using VS = AtlasFillVertexShader;
-  using FS = AtlasFillFragmentShader;
+  if (blend_mode_ == BlendMode::kSource || colors_.size() == 0) {
+    return RenderNoColor(renderer, entity, pass);
+  }
+  if (blend_mode_ == BlendMode::kDestination) {
+    return RenderOnlyColor(renderer, entity, pass);
+  }
+
+  using VS = AtlasBlendSrcOverPipeline::VertexShader;
+  using FS = AtlasBlendSrcOverPipeline::FragmentShader;
 
   const auto texture_size = texture_->GetSize();
   if (texture_size.IsEmpty()) {
@@ -101,7 +107,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
   for (size_t i = 0; i < texture_coords_.size(); i++) {
     auto sample_rect = texture_coords_[i];
     auto matrix = transforms_[i];
-    auto color = colors_.size() > 0 ? colors_[i] : Color::Black();
+    auto color = colors_[i];
     auto transformed_points =
         Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
 
@@ -135,11 +141,10 @@ bool AtlasContents::Render(const ContentContext& renderer,
   cmd.label = "DrawAtlas";
   switch (blend_mode_) {
     case BlendMode::kClear:
-      return true;
     case BlendMode::kSource:
-      // Color only, just use vertices.
     case BlendMode::kDestination:
-      // Image only, same as no color.
+      // All handled above.
+      return true;
     case BlendMode::kSourceOver:
       cmd.pipeline = renderer.GetAtlasBlendSrcOverPipeline(
           OptionsFromPassAndEntity(pass, entity));
@@ -254,9 +259,118 @@ bool AtlasContents::Render(const ContentContext& renderer,
       cmd, texture_,
       renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           sampler_descriptor_));
-  pass.AddCommand(std::move(cmd));
+  return pass.AddCommand(std::move(cmd));
+}
 
-  return true;
+bool AtlasContents::RenderOnlyColor(const ContentContext& renderer,
+                                    const Entity& entity,
+                                    RenderPass& pass) const {
+  using VS = GeometryColorPipeline::VertexShader;
+  ;
+
+  const auto texture_size = texture_->GetSize();
+  if (texture_size.IsEmpty()) {
+    return true;
+  }
+
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.Reserve(texture_coords_.size() * 6);
+  constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
+  for (size_t i = 0; i < texture_coords_.size(); i++) {
+    auto sample_rect = texture_coords_[i];
+    auto matrix = transforms_[i];
+    auto transformed_points =
+        Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
+
+    for (size_t j = 0; j < 6; j++) {
+      VS::PerVertexData data;
+      data.position = transformed_points[indices[j]];
+      data.color = colors_[i].Premultiply();
+      vertex_builder.AppendVertex(data);
+    }
+  }
+
+  if (!vertex_builder.HasVertices()) {
+    return true;
+  }
+
+  Command cmd;
+  cmd.label = "DrawAtlas";
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation();
+
+  cmd.pipeline =
+      renderer.GetGeometryColorPipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  return pass.AddCommand(std::move(cmd));
+}
+
+bool AtlasContents::RenderNoColor(const ContentContext& renderer,
+                                  const Entity& entity,
+                                  RenderPass& pass) const {
+  using VS = TextureFillVertexShader;
+  using FS = TextureFillFragmentShader;
+
+  const auto texture_size = texture_->GetSize();
+  if (texture_size.IsEmpty()) {
+    return true;
+  }
+
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.Reserve(texture_coords_.size() * 6);
+  constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
+  constexpr Scalar width[6] = {0, 1, 0, 1, 0, 1};
+  constexpr Scalar height[6] = {0, 0, 1, 0, 1, 1};
+  for (size_t i = 0; i < texture_coords_.size(); i++) {
+    auto sample_rect = texture_coords_[i];
+    auto matrix = transforms_[i];
+    auto transformed_points =
+        Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
+
+    for (size_t j = 0; j < 6; j++) {
+      VS::PerVertexData data;
+      data.position = transformed_points[indices[j]];
+      data.texture_coords =
+          (sample_rect.origin + Point(sample_rect.size.width * width[j],
+                                      sample_rect.size.height * height[j])) /
+          texture_size;
+      vertex_builder.AppendVertex(data);
+    }
+  }
+
+  if (!vertex_builder.HasVertices()) {
+    return true;
+  }
+
+  Command cmd;
+  cmd.label = "DrawAtlas";
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation();
+
+  FS::FragInfo frag_info;
+  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
+  frag_info.alpha = alpha_;
+
+  cmd.pipeline =
+      renderer.GetTexturePipeline(OptionsFromPassAndEntity(pass, entity));
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+  FS::BindTextureSampler(cmd, texture_,
+                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                             sampler_descriptor_));
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller
