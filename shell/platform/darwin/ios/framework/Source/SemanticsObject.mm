@@ -10,7 +10,7 @@
 
 namespace {
 
-flutter::SemanticsAction GetSemanticsActionForScrollDirection(
+flutter::SemanticsAction GetSemanticsActionForScrollDirection( 
     UIAccessibilityScrollDirection direction) {
   // To describe the vertical scroll direction, UIAccessibilityScrollDirection uses the
   // direction the scroll bar moves in and SemanticsAction uses the direction the finger
@@ -515,6 +515,48 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
                   : @([self node].tooltip.data());
   }
   return label;
+}
+
+- (bool) semanticsObjectContainsPoint:(SemanticsObject*)semanticsObject 
+                            withPoint:(CGPoint)point {
+  const SkRect& rect = [semanticsObject node].rect;
+  CGRect localRect = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
+  CGRect globalRect = ConvertRectToGlobal(semanticsObject, localRect);
+  return CGRectContainsPoint(globalRect, point);
+}
+
+- (double) getSize:(SemanticsObject*)semanticsObject {
+  const SkRect& rect = [semanticsObject node].rect;
+  return rect.width() * rect.height();
+}
+
+- (SemanticsObject*) search:(SemanticsObject *)semanticsObject 
+                  withPoint:(CGPoint)point {
+  if ([semanticsObject children].count == 0) {
+    if([self semanticsObjectContainsPoint:semanticsObject withPoint: point]) {
+      return semanticsObject;
+    }
+    return nil;
+  }
+
+  SemanticsObject* bestChild = nil;
+  for (SemanticsObject* child in [semanticsObject children]) {
+    if([self semanticsObjectContainsPoint:child withPoint: point]
+       && (bestChild == nil || [self getSize:child] < [self getSize:bestChild]))
+      bestChild=child;
+  }
+  if(bestChild != nil) {
+    return [self search:bestChild withPoint:point];
+  }
+  if([self semanticsObjectContainsPoint:semanticsObject withPoint: point] && ![semanticsObject node].label.empty()) {
+    return semanticsObject;
+  }
+  return nil;
+}
+
+- (id)_accessibilityHitTest:(CGPoint)point 
+                  withEvent:(UIEvent*)event {
+  return [self search:self withPoint:point];
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
