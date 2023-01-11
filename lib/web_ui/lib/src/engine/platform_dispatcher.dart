@@ -538,9 +538,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         switch (decoded.method) {
           case 'enableContextMenu':
             ContextMenu.enableContextMenu();
+            replyToPlatformMessage(callback, null);
             return;
           case 'disableContextMenu':
             ContextMenu.disableContextMenu();
+            replyToPlatformMessage(callback, null);
             return;
         }
         return;
