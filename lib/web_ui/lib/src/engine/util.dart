@@ -414,7 +414,7 @@ String colorComponentsToCssString(int r, int g, int b, int a) {
 /// Firefox exception without interfering with others (potentially useful
 /// for the programmer).
 bool isNsErrorFailureException(Object e) {
-  return false; //getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
+  return getJsProperty<dynamic>(e, 'name') == 'NS_ERROR_FAILURE';
 }
 
 /// From: https://developer.mozilla.org/en-US/docs/Web/CSS/font-family#Syntax
