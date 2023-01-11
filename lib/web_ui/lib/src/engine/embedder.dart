@@ -4,7 +4,6 @@
 
 import 'dart:async';
 
-import 'package:js/js.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart' show buildMode, renderer, window;

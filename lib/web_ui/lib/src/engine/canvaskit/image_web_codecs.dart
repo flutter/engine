@@ -10,7 +10,6 @@
 
 import 'dart:async';
 import 'dart:convert' show base64;
-import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
 

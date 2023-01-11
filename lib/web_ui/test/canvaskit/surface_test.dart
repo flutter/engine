@@ -231,7 +231,7 @@ Matcher _isTranslate(String x, String y) {
   //   Chrome/Safari/Edge: translate(0px, 0px)
   //   Firefox:            translate(0px)
   final String fullFormat = 'translate(${x}px, ${y}px)';
-  if (y != 0) {
+  if (y != '0') {
     return equals(fullFormat);
   } else {
     return anyOf(
