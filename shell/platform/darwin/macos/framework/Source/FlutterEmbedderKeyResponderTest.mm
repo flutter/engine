@@ -5,7 +5,6 @@
 #import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 
-#import "KeyCodeMap_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEmbedderKeyResponder.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #import "flutter/testing/testing.h"
@@ -1215,56 +1214,6 @@ TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeCapsLockStateOnNormalKey) 
   EXPECT_EQ(last_handled, TRUE);
 
   [events removeAllObjects];
-}
-
-// Synthesize modifier keys events if needed.
-TEST(FlutterEmbedderKeyResponderUnittests, SynchronizeModifiersIfNeeded) {
-  __block NSMutableArray<TestKeyEvent*>* events = [[NSMutableArray<TestKeyEvent*> alloc] init];
-
-  FlutterEmbedderKeyResponder* responder = [[FlutterEmbedderKeyResponder alloc]
-      initWithSendEvent:^(const FlutterKeyEvent& event, _Nullable FlutterKeyEventCallback callback,
-                          _Nullable _VoidPtr user_data) {
-        [events addObject:[[TestKeyEvent alloc] initWithEvent:&event
-                                                     callback:callback
-                                                     userData:user_data]];
-      }];
-
-  // Zeroed modifier flag should not synthesize events.
-  [responder syncModifiersIfNeeded:0x00 timestamp:0];
-  EXPECT_EQ([events count], 0u);
-  [events removeAllObjects];
-
-  // For each modifier key, check that key events are synthesized.
-  [flutter::keyCodeToModifierFlag
-      enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL* stop) {
-        FlutterKeyEvent* event;
-        NSNumber* logicalKey;
-        NSNumber* physicalKey;
-
-        // Should synthesize down event.
-        [responder syncModifiersIfNeeded:[flag unsignedLongValue] timestamp:0];
-        EXPECT_EQ([events count], 1u);
-        event = events[0].data;
-        logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
-        physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
-        EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-        EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->synthesized, true);
-
-        // Should synthesize up event.
-        [responder syncModifiersIfNeeded:0x00 timestamp:0];
-        EXPECT_EQ([events count], 2u);
-        event = events[1].data;
-        logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
-        physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
-        EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-        EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->synthesized, true);
-
-        [events removeAllObjects];
-      }];
 }
 
 }  // namespace flutter::testing
