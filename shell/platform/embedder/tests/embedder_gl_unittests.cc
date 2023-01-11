@@ -11,6 +11,7 @@
 
 #include "vulkan/vulkan.h"
 
+#include "GLES3/gl3.h"
 #include "flutter/flow/raster_cache.h"
 #include "flutter/fml/file.h"
 #include "flutter/fml/make_copyable.h"
@@ -33,7 +34,6 @@
 #include "flutter/testing/assertions_skia.h"
 #include "flutter/testing/test_gl_surface.h"
 #include "flutter/testing/testing.h"
-#include "impeller/renderer/backend/gles/gles.h"
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/converter/dart_converter.h"
 
