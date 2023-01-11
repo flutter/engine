@@ -4,9 +4,10 @@
 
 @TestOn('chrome || safari || firefox')
 
+import 'dart:js_util' as js_util;
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-
 import 'package:ui/src/engine.dart' hide window;
 import 'package:ui/ui.dart' as ui;
 
@@ -159,7 +160,7 @@ void testMain() {
       expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
-      expect((textField.editableElement as dynamic).value, 'hello');
+      expect(js_util.getProperty<String>(textField.editableElement, 'value'), 'hello');
       expect(textField.editableElement.getAttribute('aria-label'), 'greeting');
       expect(textField.editableElement.style.width, '10px');
       expect(textField.editableElement.style.height, '15px');
@@ -174,7 +175,7 @@ void testMain() {
       expect(domDocument.activeElement, domDocument.body);
       expect(appHostNode.activeElement, null);
       expect(strategy.domElement, null);
-      expect((textField.editableElement as dynamic).value, 'bye');
+      expect(js_util.getProperty<String>(textField.editableElement, 'value'), 'bye');
       expect(textField.editableElement.getAttribute('aria-label'), 'farewell');
       expect(textField.editableElement.style.width, '12px');
       expect(textField.editableElement.style.height, '17px');

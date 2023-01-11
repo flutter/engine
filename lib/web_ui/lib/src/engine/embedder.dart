@@ -20,15 +20,6 @@ import 'text_editing/text_editing.dart';
 import 'view_embedder/dimensions_provider/dimensions_provider.dart';
 import 'view_embedder/embedding_strategy/embedding_strategy.dart';
 
-/// This is state persistent across hot restarts that indicates what
-/// to clear.  Delay removal of old visible state to make the
-/// transition appear smooth.
-@JS('window.__flutterState')
-external List<Object?>? get hotRestartStore;
-
-@JS('window.__flutterState')
-external set hotRestartStore(List<Object?>? nodes);
-
 /// Controls the placement and lifecycle of a Flutter view on the web page.
 ///
 /// Manages several top-level elements that host Flutter-generated content,
