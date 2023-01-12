@@ -715,8 +715,12 @@ SOFTWARE.
 ====================================================================================================
 LIBRARY: spring_animation
 ORIGIN: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.h + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.mm + ../../../flutter/third_party/spring_animation/LICENSE
 TYPE: LicenseType.mit
 FILE: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.h
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.mm
 ----------------------------------------------------------------------------------------------------
 Copyright (c) Meta Platforms, Inc. and affiliates.
 
