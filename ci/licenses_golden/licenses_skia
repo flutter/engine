@@ -1,4 +1,4 @@
-Signature: fa9e0cdd5cd2189db5a01faa94515a3d
+Signature: dec920048b9357af04d6445d7523a75e
 
 ====================================================================================================
 LIBRARY: etc1
@@ -1216,7 +1216,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/include/gpu/GrConfig.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/gpu/GrTypes.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkImageInfo.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRasterClip.cpp + ../../../third_party/skia/LICENSE
@@ -1239,7 +1238,6 @@ ORIGIN: ../../../third_party/skia/src/gpu/ganesh/geometry/GrRect.h + ../../../th
 ORIGIN: ../../../third_party/skia/src/ports/SkDebug_win.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/text/gpu/Glyph.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/include/gpu/GrConfig.h
 FILE: ../../../third_party/skia/include/gpu/GrTypes.h
 FILE: ../../../third_party/skia/src/core/SkImageInfo.cpp
 FILE: ../../../third_party/skia/src/core/SkRasterClip.cpp
@@ -8191,6 +8189,7 @@ ORIGIN: ../../../third_party/skia/modules/skottie/src/BlendModes.cpp + ../../../
 ORIGIN: ../../../third_party/skia/modules/skottie/src/text/Font.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skottie/src/text/Font.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/codec/SkAvifCodec.cpp + ../../../third_party/skia/LICENSE
@@ -8223,6 +8222,7 @@ FILE: ../../../third_party/skia/modules/skottie/src/BlendModes.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.cpp
 FILE: ../../../third_party/skia/modules/skottie/src/text/Font.h
 FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.cpp
+FILE: ../../../third_party/skia/modules/skunicode/src/SkUnicode_client.h
 FILE: ../../../third_party/skia/modules/svg/include/SkSVGOpenTypeSVGDecoder.h
 FILE: ../../../third_party/skia/modules/svg/src/SkSVGOpenTypeSVGDecoder.cpp
 FILE: ../../../third_party/skia/src/codec/SkAvifCodec.cpp
@@ -8924,15 +8924,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/include/private/SkDeque.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkMalloc.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/private/SkTo.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDiscardableMemory.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFloatingPoint.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/include/private/SkDeque.h
 FILE: ../../../third_party/skia/include/private/SkMalloc.h
-FILE: ../../../third_party/skia/include/private/SkTo.h
 FILE: ../../../third_party/skia/src/core/SkDiscardableMemory.h
 FILE: ../../../third_party/skia/src/core/SkFloatingPoint.cpp
 ----------------------------------------------------------------------------------------------------
