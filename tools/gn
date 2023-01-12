@@ -975,7 +975,7 @@ def parse_args(args):
 
   parser.add_argument(
       '--enable-impeller-3d',
-      default=False,
+      default=True,
       action='store_true',
       help='Enables experimental 3d support.'
   )
