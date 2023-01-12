@@ -379,7 +379,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
 
 void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
-                          Paint paint) {
+                          const Paint& paint) {
   auto has_colors = vertices->GetVertexType() == GeometryVertexType::kColor;
   auto rect = vertices->GetCoverage(GetCurrentTransformation());
   if ((has_colors && blend_mode == BlendMode::kClear) || !rect.has_value()) {
