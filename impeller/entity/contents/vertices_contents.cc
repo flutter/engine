@@ -29,8 +29,8 @@ void VerticesContents::SetGeometry(std::unique_ptr<VerticesGeometry> geometry) {
   geometry_ = std::move(geometry);
 }
 
-void VerticesContents::SetColor(Color color) {
-  color_ = color;
+void VerticesContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
 }
 
 void VerticesContents::SetBlendMode(BlendMode blend_mode) {
@@ -184,7 +184,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
 
   FS::FragInfo frag_info;
   frag_info.src_y_coord_scale = src_texture->texture->GetYCoordScale();
-  frag_info.alpha = color_.alpha;
+  frag_info.alpha = alpha_;
 
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
@@ -222,7 +222,7 @@ bool VerticesContents::RenderDestination(const ContentContext& renderer,
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
 
   FS::FragInfo frag_info;
-  frag_info.alpha = color_.alpha;
+  frag_info.alpha = alpha_;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   return pass.AddCommand(std::move(cmd));

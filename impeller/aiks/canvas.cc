@@ -398,9 +398,11 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
     return;
   }
   auto contents = std::make_shared<VerticesContents>();
-  contents->SetSrcContents(paint.CreateContentsForGeometry(
+  auto opaque_paint = paint;
+  opaque_paint.color = opaque_paint.color.WithAlpha(1.0);
+  contents->SetSrcContents(opaque_paint.CreateContentsForGeometry(
       Geometry::MakeRect(Rect::MakeSize(rect.value().size))));
-  contents->SetColor(paint.color);
+  contents->SetAlpha(paint.color.alpha);
   contents->SetBlendMode(blend_mode);
   contents->SetGeometry(std::move(vertices));
   entity.SetContents(paint.WithFilters(contents));

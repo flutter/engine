@@ -21,6 +21,10 @@ static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
+static Point ToPoint(const SkPoint& point) {
+  return Point::MakeXY(point.fX, point.fY);
+}
+
 // Fan mode isn't natively supported. Unroll into triangle mode by
 // manipulating the index array.
 //
@@ -234,16 +238,21 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
                          : normalized_indices_.data();
   auto* dl_vertices = vertices_->vertices();
   auto* dl_colors = vertices_->colors();
+  auto* dl_tex_coords = vertices_->texture_coordinates();
 
   auto coverage_rect = ToRect(vertices_->bounds());
   std::vector<VS::PerVertexData> vertex_data(vertex_count);
+
   for (auto i = 0; i < vertex_count; i++) {
     auto dl_color = dl_colors[i];
     auto color = Color(dl_color.getRedF(), dl_color.getGreenF(),
                        dl_color.getBlueF(), dl_color.getAlphaF());
     auto sk_point = dl_vertices[i];
     auto vertex = Point(sk_point.x(), sk_point.y());
-    auto coverage_coords = (vertex - coverage_rect.origin) / coverage_rect.size;
+    auto coverage_coords =
+        (dl_tex_coords == nullptr)
+            ? (vertex - coverage_rect.origin) / coverage_rect.size
+            : ToPoint(dl_tex_coords[i]);
 
     vertex_data[i] = {
         .vertices = vertex,

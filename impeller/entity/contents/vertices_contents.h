@@ -27,7 +27,7 @@ class VerticesContents final : public Contents {
 
   void SetGeometry(std::unique_ptr<VerticesGeometry> geometry);
 
-  void SetColor(Color color);
+  void SetAlpha(Scalar alpha);
 
   void SetBlendMode(BlendMode blend_mode);
 
@@ -46,7 +46,7 @@ class VerticesContents final : public Contents {
                          const Entity& entity,
                          RenderPass& pass) const;
 
-  Color color_;
+  Scalar alpha_;
   std::shared_ptr<Contents> src_contents_;
   std::unique_ptr<VerticesGeometry> geometry_;
   BlendMode blend_mode_ = BlendMode::kSource;
