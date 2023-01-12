@@ -40,7 +40,7 @@ class HotRestartCacheHandler {
   List<Object?> get _elements {
     _jsElements = hotRestartStore;
     if (_jsElements == null) {
-      _jsElements = <DomElement?>[];
+      _jsElements = <Object>[];
       hotRestartStore = _jsElements;
     }
     return _jsElements!;
