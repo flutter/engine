@@ -631,7 +631,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         _width = paragraph.getMaxWidth();
         _boxesForPlaceholders =
             skRectsToTextBoxes(
-                paragraph.getRectsForPlaceholders().cast<Float32List>());
+                paragraph.getRectsForPlaceholders().cast<SkRectWithDirection>());
       } catch (e) {
         printWarning('CanvasKit threw an exception while laying '
             'out the paragraph. The font was "${_paragraphStyle._fontFamily}". '
@@ -732,23 +732,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
 
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<Float32List> skRects = paragraph.getRectsForRange(
+    final List<SkRectWithDirection> skRects = paragraph.getRectsForRange(
       start,
       end,
       toSkRectHeightStyle(boxHeightStyle),
       toSkRectWidthStyle(boxWidthStyle),
-    ).cast<Float32List>();
+    ).cast<SkRectWithDirection>();
 
     return skRectsToTextBoxes(skRects);
   }
 
-  List<ui.TextBox> skRectsToTextBoxes(List<Float32List> skRects) {
+  List<ui.TextBox> skRectsToTextBoxes(List<SkRectWithDirection> skRects) {
     final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final Float32List rect = skRects[i];
-      final int skTextDirection =
-          getJsProperty(getJsProperty(rect, 'direction'), 'value');
+      final SkRectWithDirection skRect = skRects[i];
+      final Float32List rect = skRect.rect;
+      final int skTextDirection = skRect.direction.toInt();
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],
