@@ -33,7 +33,7 @@ class AnimationPlayer final {
   AnimationClip* AddAnimation(const std::shared_ptr<Animation>& animation,
                               Node* bind_target);
 
-  AnimationClip* GetClip(const std::string& name);
+  AnimationClip* GetClip(const std::string& name) const;
 
   /// @brief  Advanced all clips and updates animated properties in the scene.
   void Update();

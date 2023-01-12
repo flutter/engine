@@ -10,6 +10,8 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/base/thread.h"
+#include "impeller/base/thread_safety.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/texture.h"
@@ -53,9 +55,9 @@ class Node final {
    private:
     std::optional<std::vector<Entry>> Flush();
 
-    bool dirty_ = false;
-    std::vector<Entry> entries_;
-    std::mutex write_mutex_;
+    RWMutex write_mutex_;
+    bool dirty_ IPLR_GUARDED_BY(write_mutex_) = false;
+    std::vector<Entry> entries_ IPLR_GUARDED_BY(write_mutex_);
 
     friend Node;
   };

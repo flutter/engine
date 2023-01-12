@@ -41,18 +41,16 @@ AnimationClip* AnimationPlayer::AddAnimation(
         {binding.node, AnimationTransforms{.bind_pose = decomp.value()}});
   }
 
-  clips_.insert({animation->GetName(), std::move(clip)});
-  auto found = clips_.find(animation->GetName());
-  FML_DCHECK(found != clips_.end());
-  return &found->second;
+  auto result = clips_.insert({animation->GetName(), std::move(clip)});
+  return &result.first->second;
 }
 
-AnimationClip* AnimationPlayer::GetClip(const std::string& name) {
+AnimationClip* AnimationPlayer::GetClip(const std::string& name) const {
   auto result = clips_.find(name);
   if (result == clips_.end()) {
     return nullptr;
   }
-  return &result->second;
+  return const_cast<AnimationClip*>(&result->second);
 }
 
 void AnimationPlayer::Update() {

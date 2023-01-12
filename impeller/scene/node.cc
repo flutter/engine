@@ -11,6 +11,7 @@
 
 #include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
+#include "impeller/base/thread.h"
 #include "impeller/base/validation.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/scene/animation/animation_player.h"
@@ -26,17 +27,17 @@ namespace scene {
 static std::atomic_uint64_t kNextNodeID = 0;
 
 void Node::MutationLog::Append(const Entry& entry) {
-  std::lock_guard<std::mutex> lock(write_mutex_);
+  WriterLock lock(write_mutex_);
   dirty_ = true;
   entries_.push_back(entry);
 }
 
 std::optional<std::vector<Node::MutationLog::Entry>>
 Node::MutationLog::Flush() {
+  WriterLock lock(write_mutex_);
   if (!dirty_) {
     return std::nullopt;
   }
-  std::lock_guard<std::mutex> lock(write_mutex_);
   dirty_ = false;
   auto result = entries_;
   entries_ = {};
