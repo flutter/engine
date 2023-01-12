@@ -1,4 +1,4 @@
-Signature: fa9e0cdd5cd2189db5a01faa94515a3d
+Signature: abf16892878b3c3ac01fe9d6d7bf0b5c
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8924,15 +8924,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ====================================================================================================
 LIBRARY: skia
-ORIGIN: ../../../third_party/skia/include/private/SkDeque.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkMalloc.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/include/private/SkTo.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDiscardableMemory.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFloatingPoint.cpp + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
-FILE: ../../../third_party/skia/include/private/SkDeque.h
 FILE: ../../../third_party/skia/include/private/SkMalloc.h
-FILE: ../../../third_party/skia/include/private/SkTo.h
 FILE: ../../../third_party/skia/src/core/SkDiscardableMemory.h
 FILE: ../../../third_party/skia/src/core/SkFloatingPoint.cpp
 ----------------------------------------------------------------------------------------------------
