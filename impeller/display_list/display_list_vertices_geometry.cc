@@ -244,10 +244,11 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     auto sk_point = dl_vertices[i];
     auto vertex = Point(sk_point.x(), sk_point.y());
     auto coverage_coords = (vertex - coverage_rect.origin) / coverage_rect.size;
+
     vertex_data[i] = {
         .vertices = vertex,
         .dst_color = color,
-        .src_texture_coords = coverage_coords / coverage_rect.size,
+        .src_texture_coords = coverage_coords,
     };
   }
 
