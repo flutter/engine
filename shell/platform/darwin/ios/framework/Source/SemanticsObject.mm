@@ -460,6 +460,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return false;
   }
 
+  return [self isFocusable:self];
+}
+
+- (bool)isFocusable:(SemanticsObject*)semanticsObject {
+  flutter::SemanticsNode node = [semanticsObject node];
+
   // If the node is scrollable AND hidden OR
   // The node has a label, value, or hint OR
   // The node has non-scrolling related actions.
@@ -468,10 +474,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // hidden but still is a valid target for a11y focus in the tree, e.g. a list
   // item that is currently off screen but the a11y navigation needs to know
   // about.
-  return (([self node].flags & flutter::kScrollableSemanticsFlags) != 0 &&
-          ([self node].flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
-         ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
-         ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
+  return ((node.flags & flutter::kScrollableSemanticsFlags) != 0 &&
+          (node.flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
+         !node.label.empty() || !node.value.empty() || !node.hint.empty() ||
+         (node.actions & ~flutter::kScrollableSemanticsActions) != 0;
 }
 
 - (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges {
@@ -531,7 +537,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
   if ([semanticsObject children].count == 0) {
-    if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point]) {
+    if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
+        [self isFocusable:semanticsObject]) {
       return semanticsObject;
     }
     return nil;
@@ -540,14 +547,15 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   SemanticsObject* bestChild = nil;
   for (SemanticsObject* child in [semanticsObject children]) {
     if ([self semanticsObjectContainsPoint:child withPoint:point] &&
-        (bestChild == nil || [self getSize:child] < [self getSize:bestChild]))
+        (bestChild == nil || [self getSize:child] < [self getSize:bestChild])) {
       bestChild = child;
+    }
   }
   if (bestChild != nil) {
     return [self search:bestChild withPoint:point];
   }
   if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
-      ![semanticsObject node].label.empty()) {
+      [self isFocusable:semanticsObject]) {
     return semanticsObject;
   }
   return nil;
