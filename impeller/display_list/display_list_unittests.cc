@@ -1127,7 +1127,7 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
       texture_coordinates.data(), colors.data());
 
   std::vector<flutter::DlColor> gradient_colors = {flutter::DlColor::kBlue(),
-                                                  flutter::DlColor::kRed()};
+                                                   flutter::DlColor::kRed()};
   const float stops[2] = {0.0, 1.0};
 
   auto linear = flutter::DlColorSource::MakeLinear(
