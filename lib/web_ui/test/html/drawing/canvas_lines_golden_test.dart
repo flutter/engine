@@ -21,7 +21,7 @@ Future<void> testMain() async {
 
   setUp(() {
     canvas = BitmapCanvas(region, RenderStrategy());
-    // seting isInsideSvgFilterTree true forces use of DOM canvas
+    // setting isInsideSvgFilterTree true forces use of DOM canvas
     domCanvas = BitmapCanvas(region, RenderStrategy()..isInsideSvgFilterTree = true);
   });
 
