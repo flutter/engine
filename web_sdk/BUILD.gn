@@ -547,6 +547,8 @@ if (!is_fuchsia) {
   zip_bundle_from_file("flutter_web_sdk_archive") {
     if (target_os == "wasm") {
       output = "flutter-web-sdk.zip"
+    } else if (is_win) {
+      output = "flutter-web-sdk-${full_target_platform_name}.zip"
     } else {
       # TODO(jacksongardner): remove this once we stop making platform-specific
       # flutter_web_sdk archives.
@@ -603,11 +605,11 @@ if (!is_fuchsia) {
       tmp_files += [
         {
           source = rebase_path("$root_out_dir/canvaskit.js")
-          destination = "canvaskit/canvaskit.js"
+          destination = "flutter_web_sdk/canvaskit/canvaskit.js"
         },
         {
           source = rebase_path("$root_out_dir/canvaskit.wasm")
-          destination = "canvaskit/canvaskit.wasm"
+          destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
         },
       ]
     }
