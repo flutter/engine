@@ -640,9 +640,11 @@ class WebGLContext {}
 extension WebGLContextExtension on WebGLContext {
   external int getParameter(int value);
 
-  external int get SAMPLES;
+  @JS('SAMPLES')
+  external int get samples;
 
-  external int get STENCIL_BITS;
+  @JS('STENCIL_BITS')
+  external int get stencilBits;
 }
 
 @JS()

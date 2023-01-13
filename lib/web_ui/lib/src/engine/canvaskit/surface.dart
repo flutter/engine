@@ -358,9 +358,9 @@ class Surface {
   }
 
   void _initWebglParams() {
-    var gl = htmlCanvas!.getGlContext(webGLVersion);
-    _sampleCount = gl.getParameter(gl.SAMPLES);
-    _stencilBits = gl.getParameter(gl.STENCIL_BITS);
+    final WebGLContext gl = htmlCanvas!.getGlContext(webGLVersion);
+    _sampleCount = gl.getParameter(gl.samples);
+    _stencilBits = gl.getParameter(gl.stencilBits);
   }
 
   CkSurface _createNewSurface(ui.Size size) {
