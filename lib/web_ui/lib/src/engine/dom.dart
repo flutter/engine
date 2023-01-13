@@ -952,6 +952,11 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool getModifierState(String keyArg);
 }
 
+DomKeyboardEvent createDomKeyboardEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('KeyboardEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
+
 @JS()
 @staticInterop
 class DomHistory {}

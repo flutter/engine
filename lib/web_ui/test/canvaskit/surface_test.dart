@@ -224,8 +224,8 @@ void testMain() {
 
 /// Checks that the CSS 'transform' property is a translation in a cross-browser way.
 ///
-/// Assumes that the `x` and `y` values are round enough for their `toString` values
-/// to match the stringified CSS length value.
+/// Takes strings directly to avoid issues with floating point or differences
+/// in stringification of numeric values across JS and Wasm targets.
 Matcher _isTranslate(String x, String y) {
   // When the y coordinate is zero, Firefox omits it, e.g.:
   //   Chrome/Safari/Edge: translate(0px, 0px)

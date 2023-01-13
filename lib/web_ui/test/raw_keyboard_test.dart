@@ -748,29 +748,20 @@ DomKeyboardEvent dispatchKeyboardEvent(
 }) {
   target ??= domWindow;
 
-  final Object jsKeyboardEvent =
-      js_util.getProperty<Object>(domWindow, 'KeyboardEvent');
-  final List<Object> eventArgs = <Object>[
-    type,
-    js_util.jsify(<String, dynamic>{
-      'key': key,
-      'code': code,
-      'location': location,
-      'repeat': repeat,
-      'shiftKey': isShiftPressed,
-      'altKey': isAltPressed,
-      'ctrlKey': isControlPressed,
-      'metaKey': isMetaPressed,
-      'isComposing': isComposing,
-      'keyCode': keyCode,
-      'bubbles': true,
-      'cancelable': true,
-    }) as Object,
-  ];
-  final DomKeyboardEvent event = js_util.callConstructor<DomKeyboardEvent>(
-    jsKeyboardEvent,
-    eventArgs,
-  );
+  final DomKeyboardEvent event = createDomKeyboardEvent(type, <String, Object> {
+    if (key != null) 'key': key,
+    if (code != null) 'code': code,
+    'location': location,
+    'repeat': repeat,
+    'shiftKey': isShiftPressed,
+    'altKey': isAltPressed,
+    'ctrlKey': isControlPressed,
+    'metaKey': isMetaPressed,
+    'isComposing': isComposing,
+    'keyCode': keyCode,
+    'bubbles': true,
+    'cancelable': true,
+  });
   target.dispatchEvent(event);
 
   return event;
