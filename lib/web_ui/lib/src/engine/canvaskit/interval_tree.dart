@@ -103,7 +103,7 @@ class IntervalTreeNode<T> {
 
   Iterable<T> enumerateAllElements() {
     final Iterable<T> leftElements = left?.enumerateAllElements() ?? Iterable<T>.empty();
-    final Iterable<T> rightElements = left?.enumerateAllElements() ?? Iterable<T>.empty();
+    final Iterable<T> rightElements = right?.enumerateAllElements() ?? Iterable<T>.empty();
     return leftElements.followedBy(<T>[value]).followedBy(rightElements);
   }
 
