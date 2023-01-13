@@ -1809,5 +1809,5 @@ void _paragraphTests() {
     );
 
     expect(skSurface, isNotNull);
-  });
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 }
