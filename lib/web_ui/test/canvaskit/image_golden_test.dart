@@ -837,7 +837,7 @@ void _testForImageCodecs({required bool useBrowserImageDecoder}) {
           Uint8List.fromList(<int>[0xff, 0xd8, 0xff, 0xe2, 0x0c, 0x58, 0x49, 0x43, 0x43, 0x5f])),
         'image/jpeg');
     });
-  }, timeout: const Timeout.factor(4)); // These tests can take a while. Allow for a longer timeout.
+  }, timeout: const Timeout.factor(10)); // These tests can take a while. Allow for a longer timeout.
 }
 
 /// Tests specific to WASM codecs bundled with CanvasKit.
