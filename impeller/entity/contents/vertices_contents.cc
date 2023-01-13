@@ -179,7 +179,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
           OptionsFromPassAndEntity(pass, entity));
       break;
   }
-  // TODO: skip this step if we're given an image shader.
+  // TODO(jonahwilliams): skip this step if we're given an image shader.
   auto src_texture = src_contents_->RenderToSnapshot(renderer, entity);
   if (!src_texture.has_value()) {
     return false;
@@ -240,7 +240,7 @@ bool VerticesContents::RenderSource(const ContentContext& renderer,
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
 
-  // TODO: skip this step if we're given an image shader.
+  // TODO(jonahwilliams): skip this step if we're given an image shader.
   auto src_texture = src_contents_->RenderToSnapshot(renderer, entity);
   if (!src_texture.has_value()) {
     return false;
