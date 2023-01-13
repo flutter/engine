@@ -417,7 +417,8 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
-  ON_CALL(*win32window, GetAxFragmentRootDelegate()).WillByDefault(Return(nullptr));
+  ON_CALL(*win32window, GetAxFragmentRootDelegate())
+      .WillByDefault(Return(nullptr));
   TestFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";
   EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
