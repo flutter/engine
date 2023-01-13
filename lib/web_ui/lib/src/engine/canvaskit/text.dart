@@ -747,7 +747,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     for (int i = 0; i < skRects.length; i++) {
       final SkRectWithDirection skRect = skRects[i];
       final Float32List rect = skRect.rect;
-      final int skTextDirection = skRect.direction.toInt();
+      final int skTextDirection = skRect.dir.value.toInt();
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],

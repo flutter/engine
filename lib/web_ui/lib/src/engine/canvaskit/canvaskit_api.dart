@@ -2174,7 +2174,7 @@ class SkRectWithDirection {}
 
 extension SkRectWithDirectionExtension on SkRectWithDirection {
   external Float32List rect;
-  external double direction;
+  external SkTextDirection dir;
 }
 
 @JS()
