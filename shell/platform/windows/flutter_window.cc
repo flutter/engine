@@ -303,12 +303,12 @@ ui::AXFragmentRootDelegateWin* FlutterWindow::GetAxFragmentRootDelegate() {
 }
 
 AlertPlatformNodeDelegate* FlutterWindow::GetAlertDelegate() {
-  CreateAlertNode();
+  CreateAxFragmentRoot();
   return alert_delegate_.get();
 }
 
 ui::AXPlatformNodeWin* FlutterWindow::GetAlert() {
-  CreateAlertNode();
+  CreateAxFragmentRoot();
   return alert_node_.get();
 }
 

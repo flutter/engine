@@ -205,12 +205,7 @@ LRESULT Window::OnGetObject(UINT const message,
   // TODO(schectman): UIA is currently disabled by default.
   // https://github.com/flutter/flutter/issues/114547
   if (root_view) {
-    if (!ax_fragment_root_) {
-      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
-          window_handle_, GetAxFragmentRootDelegate());
-      CreateAlertNode();
-      ax_fragment_root_->SetAlertNode(alert_node_.get());
-    }
+    CreateAxFragmentRoot();
     if (is_uia_request) {
 #ifdef FLUTTER_ENGINE_USE_UIA
       // Retrieve UIA object for the root view.
@@ -674,15 +669,18 @@ bool Window::GetHighContrastEnabled() {
   }
 }
 
-void Window::CreateAlertNode() {
-  if (alert_delegate_ && (alert_delegate_->GetParent() || !ax_fragment_root_)) {
+void Window::CreateAxFragmentRoot() {
+  if (ax_fragment_root_) {
     return;
   }
+  ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
+      window_handle_, GetAxFragmentRootDelegate());
   alert_delegate_ =
       std::make_unique<AlertPlatformNodeDelegate>(ax_fragment_root_.get());
   ui::AXPlatformNode* alert_node =
       ui::AXPlatformNodeWin::Create(alert_delegate_.get());
   alert_node_.reset(static_cast<ui::AXPlatformNodeWin*>(alert_node));
+  ax_fragment_root_->SetAlertNode(alert_node_.get());
 }
 
 }  // namespace flutter

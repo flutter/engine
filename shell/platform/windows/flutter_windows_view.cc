@@ -679,6 +679,7 @@ void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
 }
 
 ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
+  auto bridge = engine_->accessibility_bridge().lock().get();
   return engine_->accessibility_bridge().lock().get();
 }
 

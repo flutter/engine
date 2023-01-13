@@ -142,6 +142,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD4(Win32PeekMessage, BOOL(LPMSG, UINT, UINT, UINT));
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
+  MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -416,6 +417,7 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
+  ON_CALL(*win32window, GetAxFragmentRootDelegate()).WillByDefault(Return(nullptr));
   TestFlutterWindowsView view(std::move(win32window));
   std::wstring message = L"Test alert";
   EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
