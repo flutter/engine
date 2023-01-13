@@ -1788,13 +1788,13 @@ void _paragraphTests() {
     final int sampleCount = gl.getParameter(gl.samples);
     final int stencilBits = gl.getParameter(gl.stencilBits);
 
-    final int glContext = canvasKit.GetWebGLContext(
+    final double glContext = canvasKit.GetWebGLContext(
       canvas,
       SkWebGLContextOptions(
         antialias: 0,
         majorVersion: webGLVersion.toDouble(),
       ),
-    ).toInt();
+    );
     final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
     final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
       grContext,
