@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
