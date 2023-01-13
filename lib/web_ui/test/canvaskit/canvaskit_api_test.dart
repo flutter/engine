@@ -4,7 +4,6 @@
 
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:web_gl';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
