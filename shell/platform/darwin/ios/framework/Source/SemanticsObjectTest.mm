@@ -157,7 +157,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   CGPoint point = CGPointMake(10, 10);
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
-  // // Focus to object2 because it's the smallest object
+  // Focus to object2 because it's the smallest object
   XCTAssertEqual(hitTestResult, object2);
 }
 
@@ -194,11 +194,8 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
 
   CGPoint point = CGPointMake(10, 10);
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
-  int resultId = [hitTestResult node].id;
 
-  // Focus to object2 because it's the smallest object
-  XCTAssertEqual(resultId, 0);
-  // XCTAssertNil(hitTestResult);
+  XCTAssertNil(hitTestResult);
 }
 
 - (void)testAccessibilityHitTestOutOfRect {
