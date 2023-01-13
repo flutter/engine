@@ -384,7 +384,7 @@ class TextField extends RoleManager {
     }
 
     _initializeEditableElement();
-    activeEditableElement.style.transform = 'translate(-999px,-999px)';
+    activeEditableElement.style.transform = 'translate(${offScreenOffset}px, ${offScreenOffset}px)';
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = Timer(_delayBeforePlacement, () {
       editableElement?.style.transform = '';

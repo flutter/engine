@@ -776,8 +776,9 @@ void testMain() {
         value: 'hello',
         isFocused: true,
         );
-      expect(strategy.activeDomElement.style.transform, 'translate(-999px, -999px)');
-      await Future<void>.delayed(const Duration(milliseconds: 201) , (){});
+      expect(strategy.activeDomElement.style.transform, 'translate(${offScreenOffset}px, ${offScreenOffset}px)');
+      // See [_delayBeforePlacement].
+      await Future<void>.delayed(const Duration(milliseconds: 120) , (){});
       expect(strategy.activeDomElement.style.transform, '');
     });
 
