@@ -86,9 +86,9 @@ class VerticesGeometry : public Geometry {
       const Entity& entity,
       RenderPass& pass) = 0;
 
-  virtual bool HasTextureCoordinates() const;
+  virtual bool HasTextureCoordinates() const = 0;
 
-  virtual bool HasVertexColors() const;
+  virtual bool HasVertexColors() const = 0;
 };
 
 /// @brief A geometry that is created from a filled path object.
