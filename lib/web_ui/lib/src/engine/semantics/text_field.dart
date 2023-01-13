@@ -244,7 +244,10 @@ class TextField extends RoleManager {
   Timer? _positionInputElementTimer;
   static const Duration _delayBeforePlacement = Duration(milliseconds: 100);
 
-  void _createEditableElement() {
+  void _initializeEditableElement() {
+    assert(editableElement == null,
+        'Editable element has already been initialized');
+
     editableElement = semanticsObject.hasFlag(ui.SemanticsFlag.isMultiline)
         ? createDomHTMLTextAreaElement()
         : createDomHTMLInputElement();
@@ -295,7 +298,7 @@ class TextField extends RoleManager {
   /// When in browser gesture mode, the focus is forwarded to the framework as
   /// a tap to initialize editing.
   void _initializeForBlink() {
-    _createEditableElement();
+    _initializeEditableElement();
     activeEditableElement.addEventListener('focus',
         allowInterop((DomEvent event) {
           if (semanticsObject.owner.gestureMode != GestureMode.browserGestures) {
@@ -380,13 +383,17 @@ class TextField extends RoleManager {
       return;
     }
 
-    _createEditableElement();
+    _initializeEditableElement();
     activeEditableElement.style.transform = 'translate(-999px,-999px)';
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = Timer(_delayBeforePlacement, () {
       editableElement?.style.transform = '';
+      _positionInputElementTimer = null;
     });
 
+    // Can not have both activeEditableElement and semanticsObject.element
+    // represent the same text field. It will confuse VoiceOver, so `role` needs to
+    // be assigned and removed, based on whether or not editableElement exists.
     activeEditableElement.focus();
     semanticsObject.element.removeAttribute('role');
 
@@ -405,34 +412,33 @@ class TextField extends RoleManager {
 
   @override
   void update() {
+    // Ignore the update if editableElement has not been created yet.
+    // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
+    // we recieve a `blur` event from the browswer and a semantic update with
+    // [hasFocus] set to true from the framework. In this case, we ignore the update
+    // and wait for a tap event before invoking the iOS workaround and creating
+    // the editable element.
     if (editableElement != null) {
       activeEditableElement.style
         ..width = '${semanticsObject.rect!.width}px'
         ..height = '${semanticsObject.rect!.height}px';
-    }
 
-    if (semanticsObject.hasFocus) {
-      // Ignore the update if editableElement has not been created yet.
-      // On iOS Safari, when the user dismisses the keyboard using the 'done' button,
-      // we recieve a `blur` event from the browswer and a semantic update with
-      // [hasFocus] set to true from the framework. In this case, we ignore the update
-      // and wait for a tap event before invoking the iOS workaround and creating
-      // the editable element.
-      if (editableElement != null) {
-        if (flutterViewEmbedder.glassPaneShadow!.activeElement != editableElement) {
+      if (semanticsObject.hasFocus) {
+        if (flutterViewEmbedder.glassPaneShadow!.activeElement !=
+            activeEditableElement) {
           semanticsObject.owner.addOneTimePostUpdateCallback(() {
             activeEditableElement.focus();
           });
         }
         SemanticsTextEditingStrategy.instance.activate(this);
+      } else if (flutterViewEmbedder.glassPaneShadow!.activeElement ==
+          activeEditableElement) {
+        if (!isIosSafari) {
+          SemanticsTextEditingStrategy.instance.deactivate(this);
+          // Only apply text, because this node is not focused.
+        }
+        activeEditableElement.blur();
       }
-    } else if (editableElement != null &&
-        flutterViewEmbedder.glassPaneShadow!.activeElement == editableElement) {
-      if (!isIosSafari) {
-        SemanticsTextEditingStrategy.instance.deactivate(this);
-        // Only apply text, because this node is not focused.
-      }
-      activeEditableElement.blur();
     }
 
     final DomElement element = editableElement ?? semanticsObject.element;
@@ -450,7 +456,10 @@ class TextField extends RoleManager {
   void dispose() {
     _positionInputElementTimer?.cancel();
     _positionInputElementTimer = null;
-    activeEditableElement.remove();
+    // on iOS, the `blur` event listener callback will remove the element.
+    if (!isIosSafari) {
+      editableElement?.remove();
+    }
     SemanticsTextEditingStrategy.instance.deactivate(this);
   }
 }
