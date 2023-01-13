@@ -46,6 +46,10 @@ class VerticesContents final : public Contents {
                          const Entity& entity,
                          RenderPass& pass) const;
 
+  bool RenderSource(const ContentContext& renderer,
+                    const Entity& entity,
+                    RenderPass& pass) const;
+
   Scalar alpha_;
   std::shared_ptr<Contents> src_contents_;
   std::unique_ptr<VerticesGeometry> geometry_;

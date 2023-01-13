@@ -47,6 +47,10 @@ bool VerticesContents::Render(const ContentContext& renderer,
   if (blend_mode_ == BlendMode::kDestination) {
     return RenderDestination(renderer, entity, pass);
   }
+  if (blend_mode_ == BlendMode::kSource ||
+      (geometry_->HasTextureCoordinates() && !geometry_->HasVertexColors())) {
+    return RenderSource(renderer, entity, pass);
+  }
 
   using VS = AtlasBlendSrcOverPipeline::VertexShader;
   using FS = AtlasBlendSrcOverPipeline::FragmentShader;
@@ -58,7 +62,8 @@ bool VerticesContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
 
   auto opts = OptionsFromPassAndEntity(pass, entity);
-  auto geometry_result = geometry_->GetPositionUVBuffer(renderer, entity, pass);
+  auto geometry_result =
+      geometry_->GetPositionUVColorBuffer(renderer, entity, pass);
   cmd.BindVertices(geometry_result.vertex_buffer);
   opts.primitive_type = geometry_result.type;
 
@@ -174,6 +179,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
           OptionsFromPassAndEntity(pass, entity));
       break;
   }
+  // TODO: skip this step if we're given an image shader.
   auto src_texture = src_contents_->RenderToSnapshot(renderer, entity);
   if (!src_texture.has_value()) {
     return false;
@@ -224,6 +230,50 @@ bool VerticesContents::RenderDestination(const ContentContext& renderer,
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+  return pass.AddCommand(std::move(cmd));
+}
+
+bool VerticesContents::RenderSource(const ContentContext& renderer,
+                                    const Entity& entity,
+                                    RenderPass& pass) const {
+  using VS = TextureFillVertexShader;
+  using FS = TextureFillFragmentShader;
+
+  // TODO: skip this step if we're given an image shader.
+  auto src_texture = src_contents_->RenderToSnapshot(renderer, entity);
+  if (!src_texture.has_value()) {
+    return false;
+  }
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  Command cmd;
+  cmd.label = "Vertices";
+  cmd.stencil_reference = entity.GetStencilDepth();
+
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+
+  auto geometry_result = geometry_->GetPositionUVBuffer(renderer, entity, pass);
+  opts.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetTexturePipeline(opts);
+  cmd.BindVertices(geometry_result.vertex_buffer);
+
+  VS::VertInfo vert_info;
+  vert_info.mvp = geometry_result.transform;
+
+  FS::FragInfo frag_info;
+  frag_info.texture_sampler_y_coord_scale =
+      src_texture->texture->GetYCoordScale();
+  frag_info.alpha = alpha_;
+
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+  FS::BindTextureSampler(
+      cmd, src_texture.value().texture,
+      renderer.GetContext()->GetSamplerLibrary()->GetSampler({}));
 
   return pass.AddCommand(std::move(cmd));
 }

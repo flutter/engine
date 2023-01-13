@@ -36,6 +36,17 @@ class DLVerticesGeometry : public VerticesGeometry {
                                      const Entity& entity,
                                      RenderPass& pass) override;
 
+  // |VerticesGeometry|
+  GeometryResult GetPositionUVColorBuffer(const ContentContext& renderer,
+                                          const Entity& entity,
+                                          RenderPass& pass) override;
+
+  // |VerticesGeometry|
+  bool HasTextureCoordinates() const override;
+
+  // |VerticesGeometry|
+  bool HasVertexColors() const override;
+
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
                                    const Entity& entity,
