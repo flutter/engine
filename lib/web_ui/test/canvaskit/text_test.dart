@@ -65,10 +65,7 @@ void testMain() {
       // The direction for this span is LTR even though the paragraph is RTL
       // because the directionality of the 'h' is LTR.
       expect(boxes.single.direction, equals(ui.TextDirection.ltr));
-
-      // TODO(jacksongardner): enable on wasm
-      // see https://github.com/flutter/flutter/issues/118333
-    }, skip: isWasm || isSafari || isFirefox);
+    });
 
     test('Renders tab as space instead of tofu', () async {
       // CanvasKit renders a tofu if the font does not have a glyph for a
