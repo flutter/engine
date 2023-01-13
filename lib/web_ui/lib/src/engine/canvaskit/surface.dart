@@ -98,6 +98,8 @@ class Surface {
   DomCanvasElement? htmlCanvas;
   int _pixelWidth = -1;
   int _pixelHeight = -1;
+  int _sampleCount = -1;
+  int _stencilBits = -1;
 
   /// Specify the GPU resource cache limits.
   void setSkiaResourceCacheMaxBytes(int bytes) {
@@ -359,6 +361,9 @@ class Surface {
           majorVersion: webGLVersion.toDouble(),
         ),
       ).toInt();
+      if (_sampleCount == -1 || _stencilBits == -1) {
+        _initWebglParams();
+      }
 
       _glContext = glContext;
 
@@ -375,6 +380,12 @@ class Surface {
     }
 
     htmlElement.append(htmlCanvas);
+  }
+
+  void _initWebglParams() {
+    final WebGLContext gl = htmlCanvas!.getGlContext(webGLVersion);
+    _sampleCount = gl.getParameter(gl.samples);
+    _stencilBits = gl.getParameter(gl.stencilBits);
   }
 
   CkSurface _createNewSurface(ui.Size size) {
@@ -394,6 +405,8 @@ class Surface {
         size.width.ceil(),
         size.height.ceil(),
         SkColorSpaceSRGB,
+        _sampleCount,
+        _stencilBits
       );
 
       if (skSurface == null) {

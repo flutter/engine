@@ -117,6 +117,8 @@ extension CanvasKitExtension on CanvasKit {
     int width,
     int height,
     ColorSpace colorSpace,
+    int sampleCount,
+    int stencil,
   );
   external SkSurface? MakeRenderTarget(
     SkGrContext grContext,
@@ -141,15 +143,7 @@ extension CanvasKitExtension on CanvasKit {
     Object src,
     SkPartialImageInfo info,
   );
-
-  /// Retrieve the RuntimeEffect namespace for null checking.
-  external Object? get RuntimeEffect;
 }
-
-// TODO(jonahwilliams): remove this once all CanvasKit versions
-// are built in the SDK.
-// https://github.com/flutter/flutter/issues/114260
-final bool isRuntimeEffectAvailable = windowFlutterCanvasKit?.RuntimeEffect != null;
 
 @JS('window.CanvasKitInit')
 external Object _CanvasKitInit(CanvasKitInitOptions options);
@@ -2175,6 +2169,16 @@ extension SkLineMetricsExtension on SkLineMetrics {
 @JS()
 @anonymous
 @staticInterop
+class SkRectWithDirection {}
+
+extension SkRectWithDirectionExtension on SkRectWithDirection {
+  external Float32List rect;
+  external SkTextDirection dir;
+}
+
+@JS()
+@anonymous
+@staticInterop
 class SkParagraph {}
 
 extension SkParagraphExtension on SkParagraph {
@@ -2187,13 +2191,13 @@ extension SkParagraphExtension on SkParagraph {
   external double getMaxIntrinsicWidth();
   external double getMinIntrinsicWidth();
   external double getMaxWidth();
-  external /* List<Float32List> */ List<Object?> getRectsForRange(
+  external /* List<SkRectWithDirection> */ List<Object?> getRectsForRange(
     int start,
     int end,
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
-  external /* List<Float32List> */ List<Object?> getRectsForPlaceholders();
+  external /* List<SkRectWithDirection> */ List<Object?> getRectsForPlaceholders();
   external SkTextPosition getGlyphPositionAtCoordinate(
     double x,
     double y,
