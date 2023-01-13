@@ -106,6 +106,7 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     ckCanvas.clear(const ui.Color(0x00000000));
     ckCanvas.drawPicture(this);
     final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    ckSurface.dispose();
     return CkImage(skImage);
   }
 
