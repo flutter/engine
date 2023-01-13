@@ -8,7 +8,6 @@
 #include <windows.h>
 
 #include <chrono>
-#include <iostream>
 #include <string>
 
 #include "flutter/shell/platform/windows/keyboard_utils.h"
