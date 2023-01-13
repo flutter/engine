@@ -22,17 +22,16 @@ class SceneNode extends NativeFieldWrapperClass1 {
     // encoded paths (replacing ' ' with '%20', for example). We perform
     // the same encoding here so that users can load assets with the same
     // key they have written in the pubspec.
-    final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
+      final String encodedKey = Uri(path: Uri.encodeFull(assetKey)).path;
     {
-      final Future<SceneNode>? futureSceneNode = _ipsceneRegistry[encodedKey]?.target;
-      if (futureSceneNode != null) {
-        return futureSceneNode;
+      final SceneNode? sceneNode = _ipsceneRegistry[encodedKey]?.target;
+      if (sceneNode != null) {
+        return Future<SceneNode>.value(sceneNode);
       }
     }
 
     final SceneNode sceneNode = SceneNode._create();
-
-    final Future<SceneNode> futureSceneNode = _futurize((_Callback<void> callback) {
+    return _futurize((_Callback<void> callback) {
       final String error = sceneNode._initFromAsset(assetKey, callback);
       if (error.isNotEmpty) {
         return error;
@@ -42,11 +41,10 @@ class SceneNode extends NativeFieldWrapperClass1 {
         return true;
       }());
 
+      _ipsceneRegistry[encodedKey] = WeakReference<SceneNode>(sceneNode);
+
       return null;
     }).then((_) => sceneNode);
-
-    _ipsceneRegistry[encodedKey] = WeakReference<Future<SceneNode>>(futureSceneNode);
-    return futureSceneNode;
   }
 
   static SceneNode fromTransform(Float64List matrix4) {
@@ -63,8 +61,8 @@ class SceneNode extends NativeFieldWrapperClass1 {
     _setTransform(matrix4);
   }
 
-  void setAnimationState(String animationName, bool playing, bool loop, double weight, double timeScale) {
-    _setAnimationState(animationName, playing, loop, weight, timeScale);
+  void setAnimationState(String animationName, bool playing, double weight, double timeScale) {
+    _setAnimationState(animationName, playing, weight, timeScale);
   }
 
   void seekAnimation(String animationName, double time) {
@@ -75,11 +73,11 @@ class SceneNode extends NativeFieldWrapperClass1 {
   // SceneNode.fromAsset. It holds weak references to the SceneNodes so that the
   // case where an in-use ipscene is requested again can be fast, but scenes
   // that are no longer referenced are not retained because of the cache.
-  static final Map<String, WeakReference<Future<SceneNode>>> _ipsceneRegistry =
-      <String, WeakReference<Future<SceneNode>>>{};
+  static final Map<String, WeakReference<SceneNode>> _ipsceneRegistry =
+      <String, WeakReference<SceneNode>>{};
 
   static Future<void> _reinitializeScene(String assetKey) async {
-    final WeakReference<Future<SceneNode>>? sceneRef = _ipsceneRegistry == null
+    final WeakReference<SceneNode>? sceneRef = _ipsceneRegistry == null
       ? null
       : _ipsceneRegistry[assetKey];
 
@@ -89,11 +87,10 @@ class SceneNode extends NativeFieldWrapperClass1 {
       return;
     }
 
-    final Future<SceneNode>? sceneNodeFuture = sceneRef.target;
-    if (sceneNodeFuture == null) {
+    final SceneNode? sceneNode = sceneRef.target;
+    if (sceneNode == null) {
       return;
     }
-    final SceneNode sceneNode = await sceneNodeFuture;
 
     await _futurize((_Callback<void> callback) {
       final String error = sceneNode._initFromAsset(assetKey, callback);
@@ -119,10 +116,10 @@ class SceneNode extends NativeFieldWrapperClass1 {
   @FfiNative<Void Function(Pointer<Void>, Handle)>('SceneNode::SetTransform')
   external void _setTransform(Float64List matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Bool, Bool, Double, Double)>('SceneNode::SetAnimationState')
-  external void _setAnimationState(String animationName, bool playing, bool loop, double weight, double timeScale);
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('SceneScene::SetAnimationState')
+  external void _setAnimationState(String animationName, bool playing, double weight, double timeScale);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Double)>('SceneNode::SeekAnimation')
+  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('SceneNode::SeekAnimation')
   external void _seekAnimation(String animationName, double time);
 
   /// Returns a fresh instance of [SceneShader].

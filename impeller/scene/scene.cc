@@ -31,7 +31,7 @@ Node& Scene::GetRoot() {
 }
 
 bool Scene::Render(const RenderTarget& render_target,
-                   const Matrix& camera_transform) {
+                   const Matrix& camera_transform) const {
   // Collect the render commands from the scene.
   SceneEncoder encoder;
   if (!root_.Render(encoder,
@@ -57,7 +57,8 @@ bool Scene::Render(const RenderTarget& render_target,
   return true;
 }
 
-bool Scene::Render(const RenderTarget& render_target, const Camera& camera) {
+bool Scene::Render(const RenderTarget& render_target,
+                   const Camera& camera) const {
   return Render(render_target,
                 camera.GetTransform(render_target.GetRenderTargetSize()));
 }

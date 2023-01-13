@@ -5,13 +5,10 @@
 #pragma once
 
 #include <memory>
-#include <mutex>
 #include <optional>
 #include <vector>
 
 #include "flutter/fml/macros.h"
-#include "impeller/base/thread.h"
-#include "impeller/base/thread_safety.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/texture.h"
@@ -28,40 +25,6 @@ namespace scene {
 
 class Node final {
  public:
-  class MutationLog {
-   public:
-    struct SetTransformEntry {
-      Matrix transform;
-    };
-
-    struct SetAnimationStateEntry {
-      std::string animation_name;
-      bool playing = false;
-      bool loop = false;
-      Scalar weight = 0;
-      Scalar time_scale = 1;
-    };
-
-    struct SeekAnimationEntry {
-      std::string animation_name;
-      float time = 0;
-    };
-
-    using Entry = std::
-        variant<SetTransformEntry, SetAnimationStateEntry, SeekAnimationEntry>;
-
-    void Append(const Entry& entry);
-
-   private:
-    std::optional<std::vector<Entry>> Flush();
-
-    RWMutex write_mutex_;
-    bool dirty_ IPLR_GUARDED_BY(write_mutex_) = false;
-    std::vector<Entry> entries_ IPLR_GUARDED_BY(write_mutex_);
-
-    friend Node;
-  };
-
   static std::shared_ptr<Node> MakeFromFlatbuffer(
       const fml::Mapping& ipscene_mapping,
       Allocator& allocator);
@@ -81,7 +44,7 @@ class Node final {
       bool exclude_animation_players = false) const;
 
   std::shared_ptr<Animation> FindAnimationByName(const std::string& name) const;
-  AnimationClip* AddAnimation(const std::shared_ptr<Animation>& animation);
+  AnimationClip& AddAnimation(const std::shared_ptr<Animation>& animation);
 
   void SetLocalTransform(Matrix transform);
   Matrix GetLocalTransform() const;
@@ -100,9 +63,7 @@ class Node final {
 
   bool Render(SceneEncoder& encoder,
               Allocator& allocator,
-              const Matrix& parent_transform);
-
-  void AddMutation(const MutationLog::Entry& entry);
+              const Matrix& parent_transform) const;
 
  private:
   void UnpackFromFlatbuffer(
@@ -110,8 +71,6 @@ class Node final {
       const std::vector<std::shared_ptr<Node>>& scene_nodes,
       const std::vector<std::shared_ptr<Texture>>& textures,
       Allocator& allocator);
-
-  mutable MutationLog mutation_log_;
 
   Matrix local_transform_;
 

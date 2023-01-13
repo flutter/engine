@@ -8,7 +8,6 @@
 #include <iterator>
 #include <memory>
 
-#include "impeller/geometry/matrix_decomposition.h"
 #include "impeller/geometry/point.h"
 #include "impeller/scene/node.h"
 
@@ -79,7 +78,7 @@ TranslationTimelineResolver::TranslationTimelineResolver() = default;
 
 TranslationTimelineResolver::~TranslationTimelineResolver() = default;
 
-void TranslationTimelineResolver::Apply(AnimationTransforms& target,
+void TranslationTimelineResolver::Apply(Node& target,
                                         SecondsF time,
                                         Scalar weight) {
   if (values_.empty()) {
@@ -90,16 +89,15 @@ void TranslationTimelineResolver::Apply(AnimationTransforms& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-
-  target.animated_pose.translation +=
-      (value - target.bind_pose.translation) * weight;
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeTranslation(value * weight));
 }
 
 RotationTimelineResolver::RotationTimelineResolver() = default;
 
 RotationTimelineResolver::~RotationTimelineResolver() = default;
 
-void RotationTimelineResolver::Apply(AnimationTransforms& target,
+void RotationTimelineResolver::Apply(Node& target,
                                      SecondsF time,
                                      Scalar weight) {
   if (values_.empty()) {
@@ -110,19 +108,15 @@ void RotationTimelineResolver::Apply(AnimationTransforms& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Slerp(value, key.lerp);
   }
-
-  target.animated_pose.rotation =
-      target.animated_pose.rotation *
-      Quaternion().Slerp(target.bind_pose.rotation.Invert() * value, weight);
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeRotation(value * weight));
 }
 
 ScaleTimelineResolver::ScaleTimelineResolver() = default;
 
 ScaleTimelineResolver::~ScaleTimelineResolver() = default;
 
-void ScaleTimelineResolver::Apply(AnimationTransforms& target,
-                                  SecondsF time,
-                                  Scalar weight) {
+void ScaleTimelineResolver::Apply(Node& target, SecondsF time, Scalar weight) {
   if (values_.empty()) {
     return;
   }
@@ -131,9 +125,8 @@ void ScaleTimelineResolver::Apply(AnimationTransforms& target,
   if (key.lerp < 1) {
     value = values_[key.index - 1].Lerp(value, key.lerp);
   }
-
-  target.animated_pose.scale *=
-      Vector3(1, 1, 1).Lerp(value / target.bind_pose.scale, weight);
+  target.SetLocalTransform(target.GetLocalTransform() *
+                           Matrix::MakeScale(value * weight));
 }
 
 }  // namespace scene
