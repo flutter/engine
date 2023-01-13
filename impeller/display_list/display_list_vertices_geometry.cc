@@ -234,8 +234,8 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     auto sk_point = dl_vertices[i];
     auto vertex = Point(sk_point.x(), sk_point.y());
 
-    // TODO(jonahwilliams): Instead of the coverage rect, this should use the size
-    // of what is being sampled, such as the image size or gradient bounds.
+    // TODO(jonahwilliams): Instead of the coverage rect, this should use the
+    // size of what is being sampled, such as the image size or gradient bounds.
     auto coverage_coords = ToPoint(dl_tex_coords[i]) / coverage_rect.size;
 
     vertex_data[i] = {
@@ -284,8 +284,8 @@ GeometryResult DLVerticesGeometry::GetPositionUVColorBuffer(
     auto sk_point = dl_vertices[i];
     auto vertex = Point(sk_point.x(), sk_point.y());
 
-    // TODO(jonahwilliams): Instead of the coverage rect, this should use the size
-    // of what is being sampled, such as the image size or gradient bounds.
+    // TODO(jonahwilliams): Instead of the coverage rect, this should use the
+    // size of what is being sampled, such as the image size or gradient bounds.
     auto coverage_coords = (vertex - coverage_rect.origin) / coverage_rect.size;
     if (dl_tex_coords != nullptr) {
       coverage_coords = ToPoint(dl_tex_coords[i]) / coverage_rect.size;

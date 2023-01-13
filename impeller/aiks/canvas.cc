@@ -383,11 +383,14 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
   // drawVertices rendering:
   //  * If there are no per-vertex colors and no texture coordinates, use the
   //    color source and apply the vertex geometry to this.
-  //  * If there are vertex colors or vertex colors and texture coordinates, then
+  //  * If there are vertex colors or vertex colors and texture coordinates,
+  //  then
   //    the blend_mode parameter applies:
-  //      * The paint color, if any, is treated as fully opaque. The alpha is applied
+  //      * The paint color, if any, is treated as fully opaque. The alpha is
+  //      applied
   //        separately even to other paint sources.
-  //  * If there are only texture coordinates and the paint source is not a solid
+  //  * If there are only texture coordinates and the paint source is not a
+  //  solid
   //    color, then pretend this is per-vertex color with a source blend mode.
 
   auto has_colors = vertices->HasVertexColors();
@@ -404,11 +407,12 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  // No vertex colors or texture coordinates, this can be treated as a regular paint
-  // op.
-  // TODO(jonahwilliams): optimization, texture coordinate + solid color contents
-  // should exit here too.
-  if (!has_texture_coordinates && (blend_mode == BlendMode::kSource || !has_colors)) {
+  // No vertex colors or texture coordinates, this can be treated as a regular
+  // paint op.
+  // TODO(jonahwilliams): optimization, texture coordinate + solid color
+  // contents should exit here too.
+  if (!has_texture_coordinates &&
+      (blend_mode == BlendMode::kSource || !has_colors)) {
     entity.SetContents(paint.WithFilters(
         paint.CreateContentsForGeometry(std::move(vertices))));
     GetCurrentPass().AddEntity(entity);

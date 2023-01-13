@@ -81,9 +81,10 @@ class VerticesGeometry : public Geometry {
                                              const Entity& entity,
                                              RenderPass& pass) = 0;
 
-  virtual GeometryResult GetPositionUVColorBuffer(const ContentContext& renderer,
-                                                  const Entity& entity,
-                                                  RenderPass& pass) = 0;
+  virtual GeometryResult GetPositionUVColorBuffer(
+      const ContentContext& renderer,
+      const Entity& entity,
+      RenderPass& pass) = 0;
 
   virtual bool HasTextureCoordinates() const;
 
