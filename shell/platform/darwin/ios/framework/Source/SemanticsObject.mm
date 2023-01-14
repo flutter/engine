@@ -546,7 +546,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   }
 
   SemanticsObject* bestChild = nil;
-  // Traverse all semantics children to find an elligable and smallest one.
+  // Traverse all semantics children to find an eligible and smallest one.
   for (SemanticsObject* child in [semanticsObject children]) {
     if ([self semanticsObjectContainsPoint:child withPoint:point] &&
         (bestChild == nil || [self getSize:child] < [self getSize:bestChild])) {
