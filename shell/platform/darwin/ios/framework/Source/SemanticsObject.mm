@@ -537,6 +537,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 - (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
   if ([semanticsObject children].count == 0) {
+    // Check if the current semantic object should be returned.
     if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
         [self isFocusable:semanticsObject]) {
       return semanticsObject;
@@ -545,15 +546,20 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   }
 
   SemanticsObject* bestChild = nil;
+  // Traverse all semantics children to find an elligable and smallest one.
   for (SemanticsObject* child in [semanticsObject children]) {
     if ([self semanticsObjectContainsPoint:child withPoint:point] &&
         (bestChild == nil || [self getSize:child] < [self getSize:bestChild])) {
       bestChild = child;
     }
   }
+
+  // Continue searching the child semantic tree.
   if (bestChild != nil) {
     return [self search:bestChild withPoint:point];
   }
+
+  // Check if the current semantic object should be returned.
   if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
       [self isFocusable:semanticsObject]) {
     return semanticsObject;
@@ -561,6 +567,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return nil;
 }
 
+// Override apple private method to fix https://github.com/flutter/flutter/issues/113377.
+// For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus goes to the smallest
+// object before IOS 16, but to the top-left object in IOS 16.
+// Override this method to focus the smallest object.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
   return [self search:self withPoint:point];
 }
