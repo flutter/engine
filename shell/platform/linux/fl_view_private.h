@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_
 #define FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #include "flutter/shell/platform/linux/public/flutter_linux/fl_view.h"
 
 #include "flutter/shell/platform/linux/fl_gl_area.h"
@@ -51,5 +53,9 @@ void fl_view_add_widget(FlView* view,
  * Apply changes made by fl_view_add_gl_area and fl_view_add_widget.
  */
 void fl_view_end_frame(FlView* view);
+
+
+
+FlutterPointerDeviceKind check_device_is_stylus(FlView *view, GdkEvent *event, double *pressure);
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_

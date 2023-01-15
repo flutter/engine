@@ -926,6 +926,8 @@ typedef struct {
   double scale;
   /// The rotation of the pan/zoom in radians, where 0.0 is the initial angle.
   double rotation;
+  /// The pen pressure from stylus between 0.0 and 1.0
+  double pressure;
 } FlutterPointerEvent;
 
 typedef enum {

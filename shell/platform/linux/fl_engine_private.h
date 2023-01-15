@@ -167,6 +167,17 @@ void fl_engine_send_window_metrics_event(FlEngine* engine,
                                          size_t height,
                                          double pixel_ratio);
 
+void fl_engine_send_pointer_event(FlEngine* engine,
+                                        FlutterPointerPhase phase,
+                                        FlutterPointerDeviceKind kind,
+                                        size_t timestamp,
+                                        double x,
+                                        double y,
+                                        double scroll_delta_x,
+                                        double scroll_delta_y,
+                                        int64_t buttons,
+                                        double pressure);
+
 /**
  * fl_engine_send_mouse_pointer_event:
  * @engine: an #FlEngine.
@@ -188,6 +199,16 @@ void fl_engine_send_mouse_pointer_event(FlEngine* engine,
                                         double scroll_delta_x,
                                         double scroll_delta_y,
                                         int64_t buttons);
+
+void fl_engine_send_stylus_pointer_event(FlEngine* engine,
+                                        FlutterPointerPhase phase,
+                                        size_t timestamp,
+                                        double x,
+                                        double y,
+                                        double scroll_delta_x,
+                                        double scroll_delta_y,
+                                        int64_t buttons,
+                                        double pressure);
 
 void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
                                            size_t timestamp,
