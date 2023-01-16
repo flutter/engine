@@ -2105,7 +2105,7 @@ Future<Codec> instantiateImageCodec(
   bool allowUpscaling = true,
 }) async {
   final ImmutableBuffer buffer = await ImmutableBuffer.fromUint8List(list);
-  return await instantiateImageCodecFromBuffer(
+  return instantiateImageCodecFromBuffer(
     buffer,
     targetWidth: targetWidth,
     targetHeight: targetHeight,
