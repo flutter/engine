@@ -177,9 +177,9 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
                                                void* user_data) {
   g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
+
                                     layers_count);
 }
-
 // Flutter engine rendering callbacks.
 
 static void* fl_engine_gl_proc_resolver(void* user_data, const char* name) {
@@ -737,19 +737,22 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
 }
 
 void fl_engine_send_pointer_event(FlEngine* engine,
-                                        FlutterPointerPhase phase,
-                                        FlutterPointerDeviceKind kind,
-                                        size_t timestamp,
-                                        double x,
-                                        double y,
-                                        double scroll_delta_x,
-                                        double scroll_delta_y,
-                                        int64_t buttons,
-                                        double pressure) {
-  if(kind == kFlutterPointerDeviceKindStylus) {
-    fl_engine_send_stylus_pointer_event(engine, phase, timestamp, x, y, scroll_delta_x, scroll_delta_y, buttons, pressure);
-  } else if(kind == kFlutterPointerDeviceKindMouse) {
-    fl_engine_send_mouse_pointer_event(engine, phase, timestamp, x, y, scroll_delta_x, scroll_delta_y, buttons);
+                                  FlutterPointerPhase phase,
+                                  FlutterPointerDeviceKind kind,
+                                  size_t timestamp,
+                                  double x,
+                                  double y,
+                                  double scroll_delta_x,
+                                  double scroll_delta_y,
+                                  int64_t buttons,
+                                  double pressure) {
+  if (kind == kFlutterPointerDeviceKindStylus) {
+    fl_engine_send_stylus_pointer_event(engine, phase, timestamp, x, y,
+                                        scroll_delta_x, scroll_delta_y, buttons,
+                                        pressure);
+  } else if (kind == kFlutterPointerDeviceKindMouse) {
+    fl_engine_send_mouse_pointer_event(engine, phase, timestamp, x, y,
+                                       scroll_delta_x, scroll_delta_y, buttons);
   } else {
     // TODO: handle any other types.
   }
@@ -787,13 +790,14 @@ void fl_engine_send_mouse_pointer_event(FlEngine* self,
 }
 
 void fl_engine_send_stylus_pointer_event(FlEngine* self,
-                                        FlutterPointerPhase phase,
-                                        size_t timestamp,
-                                        double x,
-                                        double y,
-                                        double scroll_delta_x,
-                                        double scroll_delta_y,
-                                        int64_t buttons, double pressure) {
+                                         FlutterPointerPhase phase,
+                                         size_t timestamp,
+                                         double x,
+                                         double y,
+                                         double scroll_delta_x,
+                                         double scroll_delta_y,
+                                         int64_t buttons,
+                                         double pressure) {
   g_return_if_fail(FL_IS_ENGINE(self));
 
   if (self->engine == nullptr) {
@@ -817,7 +821,6 @@ void fl_engine_send_stylus_pointer_event(FlEngine* self,
   fl_event.pressure = pressure;
   self->embedder_api.SendPointerEvent(self->engine, &fl_event, 1);
 }
-
 
 void fl_engine_send_pointer_pan_zoom_event(FlEngine* self,
                                            size_t timestamp,
