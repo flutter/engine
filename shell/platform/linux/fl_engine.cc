@@ -753,8 +753,6 @@ void fl_engine_send_pointer_event(FlEngine* engine,
   } else if (kind == kFlutterPointerDeviceKindMouse) {
     fl_engine_send_mouse_pointer_event(engine, phase, timestamp, x, y,
                                        scroll_delta_x, scroll_delta_y, buttons);
-  } else {
-    // TODO: handle any other types.
   }
 }
 
