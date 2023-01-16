@@ -820,7 +820,7 @@ class BrowserManager {
 
   /// Loads [_BrowserEnvironment].
   Future<_BrowserEnvironment> _loadBrowserEnvironment() async {
-    return _BrowserEnvironment(this, await _browser.observatoryUrl,
+    return _BrowserEnvironment(this, await _browser.vmServiceUrl,
         await _browser.remoteDebuggerUrl, _onRestartController.stream);
   }
 
@@ -984,7 +984,7 @@ class BrowserManager {
 ///
 /// All methods forward directly to [BrowserManager].
 class _BrowserEnvironment implements Environment {
-  _BrowserEnvironment(this._manager, this.observatoryUrl,
+  _BrowserEnvironment(this._manager, this.vmServiceUrl,
       this.remoteDebuggerUrl, this.onRestart);
 
   final BrowserManager _manager;
@@ -993,7 +993,7 @@ class _BrowserEnvironment implements Environment {
   final bool supportsDebugging = true;
 
   @override
-  final Uri? observatoryUrl;
+  final Uri? vmServiceUrl;
 
   @override
   final Uri? remoteDebuggerUrl;
