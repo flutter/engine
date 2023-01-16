@@ -57,6 +57,7 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   // TODO(bdero): The geometry should be fetched from GetPositionUVBuffer and
   //              contain coverage-mapped UVs, and this should use
   //              position_uv.vert.
+  //              https://github.com/flutter/flutter/issues/118553
 
   VS::VertInfo vert_info;
   vert_info.mvp = geometry_result.transform;
