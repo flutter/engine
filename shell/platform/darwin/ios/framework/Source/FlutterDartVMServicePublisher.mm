@@ -65,12 +65,17 @@
 
 @implementation DartVMServiceDNSServiceDelegate {
   DNSServiceRef _dnsServiceRef;
+  DNSServiceRef _legacyDnsServiceRef;
 }
 
 - (void)stopService {
   if (_dnsServiceRef) {
     DNSServiceRefDeallocate(_dnsServiceRef);
     _dnsServiceRef = NULL;
+  }
+  if (_legacyDnsServiceRef) {
+    DNSServiceRefDeallocate(_legacyDnsServiceRef);
+    _legacyDnsServiceRef = NULL;
   }
 }
 
@@ -84,6 +89,8 @@
   uint32_t interfaceIndex = 0;
 #endif  // TARGET_IPHONE_SIMULATOR
   const char* registrationType = "_dartVmService._tcp";
+  const char* legacyRegistrationType = "_dartobservatory._tcp";
+
   const char* domain = "local.";  // default domain
   uint16_t port = [[url port] unsignedShortValue];
 
@@ -109,6 +116,31 @@
     }
   } else {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
+  }
+
+  // TODO(bkonyi): remove once flutter_tools no longer looks for the legacy registration type.
+  // See https://github.com/dart-lang/sdk/issues/50233
+  err = DNSServiceRegister(&_legacyDnsServiceRef, flags, interfaceIndex,
+                           FlutterDartVMServicePublisher.serviceName.UTF8String,
+                           legacyRegistrationType, domain, NULL, htons(port), txtData.length,
+                           txtData.bytes, RegistrationCallback, NULL);
+
+  if (err != 0) {
+    FML_LOG(ERROR) << "Failed to register Dart VM Service port with mDNS with error " << err << ".";
+    if (@available(iOS 14.0, *)) {
+      FML_LOG(ERROR) << "On iOS 14+, local network broadcast in apps need to be declared in "
+                     << "the app's Info.plist. Debug and profile Flutter apps and modules host "
+                     << "VM services on the local network to support debugging features such "
+                     << "as hot reload and DevTools. To make your Flutter app or module "
+                     << "attachable and debuggable, add a '" << legacyRegistrationType << "' value "
+                     << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
+                     << "Profile configurations. "
+                     << "For more information, see "
+                     << "https://flutter.dev/docs/development/add-to-app/ios/"
+                        "project-setup#local-network-privacy-permissions";
+    }
+  } else {
+    DNSServiceSetDispatchQueue(_legacyDnsServiceRef, dispatch_get_main_queue());
   }
 }
 
