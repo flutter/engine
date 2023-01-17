@@ -96,6 +96,7 @@ class AX_EXPORT AXFragmentRootWin : public ui::AXPlatformNodeDelegateBase {
   Microsoft::WRL::ComPtr<ui::AXFragmentRootPlatformNodeWin> platform_node_;
   ui::AXUniqueId unique_id_;
 
+  // Node that presents the alert, if any.
   AXPlatformNodeWin* alert_node_;
 };
 

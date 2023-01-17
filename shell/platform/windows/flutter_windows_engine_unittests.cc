@@ -578,7 +578,8 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  AlertPlatformNodeDelegate delegate(nullptr);
+  ui::AXPlatformNodeDelegateBase parent_delegate;
+  AlertPlatformNodeDelegate delegate(&parent_delegate);
   ON_CALL(*window_binding_handler, GetAlertDelegate).WillByDefault([&delegate] {
     return &delegate;
   });

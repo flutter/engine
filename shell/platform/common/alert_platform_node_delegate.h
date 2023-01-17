@@ -10,6 +10,10 @@
 
 namespace flutter {
 
+// A delegate for a node that holds the text of an a11y alert that a
+// screen-reader should announce. The delegate is used to construct an
+// AXPlatformNode, and in order to serve as an alert, only needs to be able to
+// hold a text announcement and make that text available to the platform node.
 class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
   explicit AlertPlatformNodeDelegate(
@@ -20,6 +24,7 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   AlertPlatformNodeDelegate operator=(const AlertPlatformNodeDelegate& other) =
       delete;
 
+  // Set the alert text of the node for which this is the delegate.
   void SetText(const std::u16string& text);
 
   // |AXPlatformNodeDelegate|
@@ -31,8 +36,13 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   const ui::AXUniqueId& GetUniqueId() const override;
   const ui::AXNodeData& GetData() const override;
 
+  // Delegate of the parent of this node. Returned by GetParent.
   ui::AXPlatformNodeDelegate* parent_delegate_;
+
+  // Node Data that contains the alert text. Returned by GetData.
   ui::AXNodeData data_;
+
+  // A unique ID used to identify this node. Returned by GetUniqueId.
   ui::AXUniqueId id_;
 };
 

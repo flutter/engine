@@ -243,8 +243,10 @@ class Window : public KeyboardManager::WindowDelegate {
   // Called when a theme change message is issued
   virtual void OnThemeChange() = 0;
 
+  // Delegate to a alert_node_ used to set the announcement text.
   std::unique_ptr<AlertPlatformNodeDelegate> alert_delegate_;
 
+  // Accessibility node that represents an alert.
   std::unique_ptr<ui::AXPlatformNodeWin> alert_node_;
 
  private:
