@@ -534,11 +534,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         const MethodCodec codec = StandardMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
-          case 'enableContextMenu':
+          case 'ContextMenu.enableContextMenu':
             flutterViewEmbedder.enableContextMenu();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
-          case 'disableContextMenu':
+          case 'ContextMenu.disableContextMenu':
             flutterViewEmbedder.disableContextMenu();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
