@@ -121,4 +121,33 @@ void doTests() {
           reason: 'Should be injected `nextTo` the passed element.');
     });
   });
+
+  group('context menu', () {
+    setUp(() {
+      target = createDomElement('this-is-the-target');
+      domDocument.body!.append(target);
+      strategy = CustomElementEmbeddingStrategy(target);
+      strategy.initialize();
+    });
+
+    tearDown(() {
+      target.remove();
+    });
+
+    test('disableContextMenu and enableContextMenu can toggle the context menu', () {
+      expect(strategy.contextMenuEnabled, isTrue);
+
+      strategy.disableContextMenu();
+      expect(strategy.contextMenuEnabled, isFalse);
+
+      strategy.disableContextMenu();
+      expect(strategy.contextMenuEnabled, isFalse);
+
+      strategy.enableContextMenu();
+      expect(strategy.contextMenuEnabled, isTrue);
+
+      strategy.enableContextMenu();
+      expect(strategy.contextMenuEnabled, isTrue);
+    });
+  });
 }

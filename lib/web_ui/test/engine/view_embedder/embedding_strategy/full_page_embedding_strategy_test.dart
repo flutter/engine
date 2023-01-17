@@ -129,4 +129,24 @@ void doTests() {
           reason: 'Should be injected `nextTo` the passed element.');
     });
   });
+
+  group('context menu', () {
+    test('disableContextMenu and enableContextMenu can toggle the context menu', () {
+      final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
+
+      expect(strategy.contextMenuEnabled, isTrue);
+
+      strategy.disableContextMenu();
+      expect(strategy.contextMenuEnabled, isFalse);
+
+      strategy.disableContextMenu();
+      expect(strategy.contextMenuEnabled, isFalse);
+
+      strategy.enableContextMenu();
+      expect(strategy.contextMenuEnabled, isTrue);
+
+      strategy.enableContextMenu();
+      expect(strategy.contextMenuEnabled, isTrue);
+    });
+  });
 }
