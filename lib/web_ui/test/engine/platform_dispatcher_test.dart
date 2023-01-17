@@ -105,7 +105,7 @@ void testMain() {
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
-          'ContextMenu.enableContextMenu',
+          'enableContextMenu',
         )),
         completer.complete,
       );
@@ -124,7 +124,7 @@ void testMain() {
       ui.PlatformDispatcher.instance.sendPlatformMessage(
         'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
-          'ContextMenu.disableContextMenu',
+          'disableContextMenu',
         )),
         completer.complete,
       );
