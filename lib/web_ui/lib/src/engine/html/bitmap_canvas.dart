@@ -538,20 +538,6 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRenderingFill(paint)) {
       final Matrix4 transform = _canvasPool.currentTransform;
       final SurfacePath surfacePath = path as SurfacePath;
-      final ui.Rect? pathAsLine = surfacePath.toStraightLine();
-      if (pathAsLine != null) {
-        ui.Rect rect = (pathAsLine.top == pathAsLine.bottom)
-            ? ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
-            : ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
-
-        rect = adjustRectForDom(rect, paint);
-        final DomHTMLElement element = buildDrawRectElement(
-            rect, paint, 'draw-rect', _canvasPool.currentTransform);
-        _drawElement(element, rect.topLeft, paint);
-        return;
-      }
 
       final ui.Rect? pathAsRect = surfacePath.toRect();
       if (pathAsRect != null) {
