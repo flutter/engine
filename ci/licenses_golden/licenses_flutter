@@ -1668,6 +1668,7 @@ ORIGIN: ../../../flutter/impeller/scene/animation/animation_clip.cc + ../../../f
 ORIGIN: ../../../flutter/impeller/scene/animation/animation_clip.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation_player.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/animation_player.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/scene/animation/animation_transforms.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/property_resolver.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/animation/property_resolver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/scene/camera.cc + ../../../flutter/LICENSE
@@ -4175,6 +4176,7 @@ FILE: ../../../flutter/impeller/scene/animation/animation_clip.cc
 FILE: ../../../flutter/impeller/scene/animation/animation_clip.h
 FILE: ../../../flutter/impeller/scene/animation/animation_player.cc
 FILE: ../../../flutter/impeller/scene/animation/animation_player.h
+FILE: ../../../flutter/impeller/scene/animation/animation_transforms.h
 FILE: ../../../flutter/impeller/scene/animation/property_resolver.cc
 FILE: ../../../flutter/impeller/scene/animation/property_resolver.h
 FILE: ../../../flutter/impeller/scene/camera.cc
