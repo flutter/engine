@@ -8,7 +8,7 @@ import("//third_party/dart/build/dart/dart_action.gni")
 
 declare_args() {
   build_canvaskit = false
-  build_canvaskit_lite = false
+  build_canvaskit_chromium = false
   archive_flutter_web_sdk = true
 }
 
@@ -564,7 +564,7 @@ if (!is_fuchsia) {
     if (build_canvaskit) {
       deps += [ "//flutter/third_party/canvaskit:canvaskit_group" ]
     }
-    if (build_canvaskit_lite) {
+    if (build_canvaskit_chromium) {
       deps += [ "//flutter/third_party/canvaskit:canvaskit_chromium_group" ]
     }
 
