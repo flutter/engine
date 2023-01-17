@@ -7,9 +7,11 @@
 #include <inttypes.h>
 #include <atomic>
 #include <memory>
+#include <vector>
 
 #include "flutter/fml/logging.h"
 #include "impeller/base/strings.h"
+#include "impeller/base/thread.h"
 #include "impeller/base/validation.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/scene/animation/animation_player.h"
@@ -23,6 +25,24 @@ namespace impeller {
 namespace scene {
 
 static std::atomic_uint64_t kNextNodeID = 0;
+
+void Node::MutationLog::Append(const Entry& entry) {
+  WriterLock lock(write_mutex_);
+  dirty_ = true;
+  entries_.push_back(entry);
+}
+
+std::optional<std::vector<Node::MutationLog::Entry>>
+Node::MutationLog::Flush() {
+  WriterLock lock(write_mutex_);
+  if (!dirty_) {
+    return std::nullopt;
+  }
+  dirty_ = false;
+  auto result = entries_;
+  entries_ = {};
+  return result;
+}
 
 std::shared_ptr<Node> Node::MakeFromFlatbuffer(
     const fml::Mapping& ipscene_mapping,
@@ -126,6 +146,8 @@ std::shared_ptr<Node> Node::MakeFromFlatbuffer(const fb::Scene& scene,
   }
 
   auto result = std::make_shared<Node>();
+  result->SetLocalTransform(importer::ToMatrix(*scene.transform()));
+
   if (!scene.nodes() || !scene.children()) {
     return result;  // The scene is empty.
   }
@@ -190,17 +212,21 @@ void Node::UnpackFromFlatbuffer(
 
   /// Child nodes.
 
-  if (!source_node.children()) {
-    return;
+  if (source_node.children()) {
+    // Wire up graph connections.
+    for (int child : *source_node.children()) {
+      if (child < 0 || static_cast<size_t>(child) >= scene_nodes.size()) {
+        VALIDATION_LOG << "Node child index out of range.";
+        continue;
+      }
+      AddChild(scene_nodes[child]);
+    }
   }
 
-  // Wire up graph connections.
-  for (int child : *source_node.children()) {
-    if (child < 0 || static_cast<size_t>(child) >= scene_nodes.size()) {
-      VALIDATION_LOG << "Node child index out of range.";
-      continue;
-    }
-    AddChild(scene_nodes[child]);
+  /// Skin.
+
+  if (source_node.skin()) {
+    skin_ = Skin::MakeFromFlatbuffer(*source_node.skin(), scene_nodes);
   }
 }
 
@@ -218,6 +244,10 @@ const std::string& Node::GetName() const {
 
 void Node::SetName(const std::string& new_name) {
   name_ = new_name;
+}
+
+Node* Node::GetParent() const {
+  return parent_;
 }
 
 std::shared_ptr<Node> Node::FindChildByName(
@@ -247,7 +277,7 @@ std::shared_ptr<Animation> Node::FindAnimationByName(
   return nullptr;
 }
 
-AnimationClip& Node::AddAnimation(const std::shared_ptr<Animation>& animation) {
+AnimationClip* Node::AddAnimation(const std::shared_ptr<Animation>& animation) {
   if (!animation_player_.has_value()) {
     animation_player_ = AnimationPlayer();
   }
@@ -277,12 +307,24 @@ Matrix Node::GetGlobalTransform() const {
 }
 
 bool Node::AddChild(std::shared_ptr<Node> node) {
-  // This ensures that cycles are impossible.
-  if (node->parent_ != nullptr) {
-    VALIDATION_LOG
-        << "Cannot add a node as a child which already has a parent.";
+  if (!node) {
+    VALIDATION_LOG << "Cannot add null child to node.";
     return false;
   }
+
+  // TODO(bdero): Figure out a better paradigm/rules for nodes with multiple
+  //              parents. We should probably disallow this, make deep
+  //              copying of nodes cheap and easy, add mesh instancing, etc.
+  //              Today, the parent link is only used for skin posing, and so
+  //              it's reasonable to not have a check and allow multi-parenting.
+  //              Even still, there should still be some kind of cycle
+  //              prevention/detection, ideally at the protocol level.
+  //
+  // if (node->parent_ != nullptr) {
+  //   VALIDATION_LOG
+  //       << "Cannot add a node as a child which already has a parent.";
+  //   return false;
+  // }
   node->parent_ = this;
   children_.push_back(std::move(node));
 
@@ -301,20 +343,83 @@ Mesh& Node::GetMesh() {
   return mesh_;
 }
 
-bool Node::Render(SceneEncoder& encoder, const Matrix& parent_transform) const {
+void Node::SetIsJoint(bool is_joint) {
+  is_joint_ = is_joint;
+}
+
+bool Node::IsJoint() const {
+  return is_joint_;
+}
+
+bool Node::Render(SceneEncoder& encoder,
+                  Allocator& allocator,
+                  const Matrix& parent_transform) {
+  std::optional<std::vector<MutationLog::Entry>> log = mutation_log_.Flush();
+  if (log.has_value()) {
+    for (const auto& entry : log.value()) {
+      if (auto e = std::get_if<MutationLog::SetTransformEntry>(&entry)) {
+        local_transform_ = e->transform;
+      } else if (auto e =
+                     std::get_if<MutationLog::SetAnimationStateEntry>(&entry)) {
+        AnimationClip* clip =
+            animation_player_.has_value()
+                ? animation_player_->GetClip(e->animation_name)
+                : nullptr;
+        if (!clip) {
+          auto animation = FindAnimationByName(e->animation_name);
+          if (!animation) {
+            continue;
+          }
+          clip = AddAnimation(animation);
+          if (!clip) {
+            continue;
+          }
+        }
+
+        clip->SetPlaying(e->playing);
+        clip->SetLoop(e->loop);
+        clip->SetWeight(e->weight);
+        clip->SetPlaybackTimeScale(e->time_scale);
+      } else if (auto e =
+                     std::get_if<MutationLog::SeekAnimationEntry>(&entry)) {
+        AnimationClip* clip =
+            animation_player_.has_value()
+                ? animation_player_->GetClip(e->animation_name)
+                : nullptr;
+        if (!clip) {
+          auto animation = FindAnimationByName(e->animation_name);
+          if (!animation) {
+            continue;
+          }
+          clip = AddAnimation(animation);
+          if (!clip) {
+            continue;
+          }
+        }
+
+        clip->Seek(SecondsF(e->time));
+      }
+    }
+  }
+
   if (animation_player_.has_value()) {
     animation_player_->Update();
   }
 
   Matrix transform = parent_transform * local_transform_;
-  mesh_.Render(encoder, transform);
+  mesh_.Render(encoder, transform,
+               skin_ ? skin_->GetJointsTexture(allocator) : nullptr);
 
   for (auto& child : children_) {
-    if (!child->Render(encoder, transform)) {
+    if (!child->Render(encoder, allocator, transform)) {
       return false;
     }
   }
   return true;
+}
+
+void Node::AddMutation(const MutationLog::Entry& entry) {
+  mutation_log_.Append(entry);
 }
 
 }  // namespace scene

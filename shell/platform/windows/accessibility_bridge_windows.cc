@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
 
@@ -13,8 +14,8 @@ AccessibilityBridgeWindows::AccessibilityBridgeWindows(
     FlutterWindowsEngine* engine,
     FlutterWindowsView* view)
     : engine_(engine), view_(view) {
-  assert(engine_);
-  assert(view_);
+  FML_DCHECK(engine_);
+  FML_DCHECK(view_);
 }
 
 void AccessibilityBridgeWindows::OnAccessibilityEvent(
@@ -24,7 +25,8 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
 
   auto node_delegate =
       GetFlutterPlatformNodeDelegateFromID(ax_node->id()).lock();
-  assert(node_delegate);
+  FML_DCHECK(node_delegate)
+      << "No FlutterPlatformNodeDelegate found for node ID " << ax_node->id();
   std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
       std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
           node_delegate);
@@ -41,10 +43,23 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
       DispatchWinAccessibilityEvent(win_delegate,
                                     ax::mojom::Event::kChildrenChanged);
       break;
-    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
+    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
+      // An event indicating a change in document selection should be fired
+      // only for the focused node whose selection has changed. If a valid
+      // caret and selection exist in the app tree, they must both be within
+      // the focus node.
+      ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
+      auto focus_delegate =
+          GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
+      if (!focus_delegate) {
+        win_delegate =
+            std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+                focus_delegate);
+      }
       DispatchWinAccessibilityEvent(
           win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
       break;
+    }
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kFocus);
       SetFocus(win_delegate);
