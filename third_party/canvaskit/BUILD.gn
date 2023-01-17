@@ -27,6 +27,5 @@ wasm_toolchain("canvaskit_chromium") {
 
 group("canvaskit_chromium_group") {
   visibility = [ "//flutter/web_sdk:*" ]
-  public_deps =
-      [ "//third_party/skia/modules/canvaskit(:canvaskit_chromium)" ]
+  public_deps = [ "//third_party/skia/modules/canvaskit(:canvaskit_chromium)" ]
 }

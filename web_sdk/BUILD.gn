@@ -624,7 +624,8 @@ if (!is_fuchsia) {
           destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
         },
         {
-          source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
+          source =
+              rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
           destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
         },
       ]
