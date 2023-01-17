@@ -12,7 +12,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart'  show platformViewManager, registerHotRestartListener;
 import 'clipboard.dart';
-import 'context_menu.dart';
 import 'dom.dart';
 import 'embedder.dart';
 import 'mouse_cursor.dart';
@@ -537,11 +536,11 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'enableContextMenu':
-            ContextMenu.enableContextMenu();
+            flutterViewEmbedder.enableContextMenu();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'disableContextMenu':
-            ContextMenu.disableContextMenu();
+            flutterViewEmbedder.disableContextMenu();
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
         }

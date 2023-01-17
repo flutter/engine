@@ -48,6 +48,12 @@ class FullPageEmbeddingStrategy extends EmbeddingStrategy {
     registerElementForCleanup(resourceHost);
   }
 
+  @override
+  void disableContextMenu() => disableContextMenuOn(domDocument.body!);
+
+  @override
+  void enableContextMenu() => enableContextMenuOn(domDocument.body!);
+
   void _setHostAttribute(String name, String value) {
     domDocument.body!.setAttribute(name, value);
   }

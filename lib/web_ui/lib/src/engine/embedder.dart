@@ -356,6 +356,20 @@ class FlutterViewEmbedder {
     assert(element.parentNode == _resourcesHost);
     element.remove();
   }
+
+  /// Enables the browser's context menu for this part of the DOM.
+  ///
+  /// By default, when a Flutter web app starts, the context menu is already
+  /// enabled. Typically, this method would be used after calling
+  /// [disableContextMenu] to first disable it.
+  void enableContextMenu() => _embeddingStrategy.enableContextMenu();
+
+  /// Disables the browser's context menu for this part of the DOM.
+  ///
+  /// By default, when a Flutter web app starts, the context menu is enabled.
+  ///
+  /// Can be re-enabled by calling [enableContextMenu].
+  void disableContextMenu() => _embeddingStrategy.disableContextMenu();
 }
 
 /// The embedder singleton.
