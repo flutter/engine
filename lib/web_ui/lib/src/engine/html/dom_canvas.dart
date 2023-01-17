@@ -334,8 +334,7 @@ String _borderStrokeToCssUnit(double value) {
   return '${value.toStringAsFixed(3)}px';
 }
 
-SVGSVGElement pathToSvgElement(
-    SurfacePath path, SurfacePaintData paint, String width, String height) {
+SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
   final SVGSVGElement root = createSVGSVGElement()

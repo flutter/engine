@@ -549,9 +549,7 @@ class BitmapCanvas extends EngineCanvas {
         drawRRect(pathAsRRect, paint);
         return;
       }
-      final ui.Rect pathBounds = surfacePath.getBounds();
-      final DomElement svgElm = pathToSvgElement(
-          surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
+      final DomElement svgElm = pathToSvgElement(surfacePath, paint);
       if (!_canvasPool.isClipped) {
         final DomCSSStyleDeclaration style = svgElm.style;
         style.position = 'absolute';
