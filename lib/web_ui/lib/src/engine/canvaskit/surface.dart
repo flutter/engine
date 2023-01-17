@@ -145,14 +145,10 @@ class Surface {
     // If the GrContext hasn't been setup yet then we need to force initialization
     // of the canvas and initial surface.
     if (_surface == null) {
-      assert(_grContext == null);
-      assert(_glContext == null);
-      _createNewCanvas(window.physicalSize);
-      _currentCanvasPhysicalSize = window.physicalSize;
-      _currentDevicePixelRatio = window.devicePixelRatio;
-      _currentSurfaceSize = window.physicalSize;
-      _translateCanvas();
-      _surface = _createNewSurface(window.physicalSize);
+      // TODO(jonahwilliams): this is somewhat wasteful. We should probably
+      // eagerly setup this surface instead of delaying until the first frame?
+      // Or at least cache the estimated window size.
+      createOrUpdateSurface(const ui.Size(1, 1));
     }
     final SkSurface? skSurface = canvasKit.MakeRenderTarget(
       _grContext!,
