@@ -60,8 +60,7 @@ abstract class EmbeddingStrategy with _ContextMenu {
 
 mixin _ContextMenu {
   /// False when the context menu has been disabled, otherwise true.
-  @visibleForTesting
-  bool contextMenuEnabled = true;
+  bool _contextMenuEnabled = true;
 
   /// Listener for contextmenu events that prevents the browser's context menu
   /// from being shown.
@@ -89,12 +88,13 @@ mixin _ContextMenu {
   ///    [DomElement].
   @protected
   void disableContextMenuOn(DomElement element) {
-    if (!contextMenuEnabled) {
+    if (!_contextMenuEnabled) {
       return;
     }
 
+    print('justin disabling');
     element.addEventListener('contextmenu', _disablingContextMenuListener);
-    contextMenuEnabled = false;
+    _contextMenuEnabled = false;
   }
 
   /// Enables the browser's context menu for this part of the DOM.
@@ -117,11 +117,11 @@ mixin _ContextMenu {
   ///    [DomElement].
   @protected
   void enableContextMenuOn(DomElement element) {
-    if (contextMenuEnabled) {
+    if (_contextMenuEnabled) {
       return;
     }
 
     element.removeEventListener('contextmenu', _disablingContextMenuListener);
-    contextMenuEnabled = true;
+    _contextMenuEnabled = true;
   }
 }

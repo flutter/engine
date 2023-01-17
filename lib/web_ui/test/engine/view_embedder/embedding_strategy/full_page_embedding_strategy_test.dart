@@ -131,22 +131,48 @@ void doTests() {
   });
 
   group('context menu', () {
+    setUp(() {
+      strategy = FullPageEmbeddingStrategy();
+      strategy.initialize();
+    });
+
     test('disableContextMenu and enableContextMenu can toggle the context menu', () {
       final FullPageEmbeddingStrategy strategy = FullPageEmbeddingStrategy();
 
-      expect(strategy.contextMenuEnabled, isTrue);
+      // When the app starts, contextmenu events are not prevented.
+      DomEvent event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented, isFalse);
 
+      // Disabling the context menu causes contextmenu events to be prevented.
       strategy.disableContextMenu();
-      expect(strategy.contextMenuEnabled, isFalse);
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented, isTrue);
 
+      // Disabling again has no effect.
       strategy.disableContextMenu();
-      expect(strategy.contextMenuEnabled, isFalse);
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented, isTrue);
 
+      // Enabling the context menu means that contextmenu events are back to not
+      // being prevented.
       strategy.enableContextMenu();
-      expect(strategy.contextMenuEnabled, isTrue);
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented, isFalse);
 
+      // Enabling again has no effect.
       strategy.enableContextMenu();
-      expect(strategy.contextMenuEnabled, isTrue);
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      target.dispatchEvent(event);
+      expect(event.defaultPrevented, isFalse);
     });
   });
 }
