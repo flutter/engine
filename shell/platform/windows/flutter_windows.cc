@@ -292,10 +292,12 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
-  flutter::FlutterDesktopMessenger::FromRef(messenger)
-      ->GetEngine()
-      ->message_dispatcher()
-      ->SetMessageCallback(channel, callback, user_data);
+  auto engine =
+      flutter::FlutterDesktopMessenger::FromRef(messenger)->GetEngine();
+  if (engine) {
+    engine->message_dispatcher()->SetMessageCallback(channel, callback,
+                                                     user_data);
+  }
 }
 
 FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(

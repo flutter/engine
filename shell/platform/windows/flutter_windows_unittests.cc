@@ -279,5 +279,25 @@ TEST_F(WindowsTest, GetGraphicsAdapter) {
   ASSERT_TRUE(SUCCEEDED(dxgi_adapter->GetDesc(&desc)));
 }
 
+// Verify that calling FlutterDesktopMessengerSetCallback
+// after shutting the engine down is safe.
+// Prevent regression: https://github.com/flutter/flutter/issues/118611
+TEST_F(WindowsTest, SetMessengerCallbackAfterEngineShutdown) {
+  auto& context = GetContext();
+  WindowsConfigBuilder builder(context);
+  EnginePtr engine{builder.InitializeEngine()};
+  ASSERT_NE(engine, nullptr);
+
+  auto messenger = FlutterDesktopEngineGetMessenger(engine.get());
+  FlutterDesktopMessengerAddRef(messenger);
+  ASSERT_TRUE(FlutterDesktopMessengerIsAvailable(messenger));
+
+  engine.reset();
+
+  ASSERT_FALSE(FlutterDesktopMessengerIsAvailable(messenger));
+  FlutterDesktopMessengerSetCallback(messenger, "my_channel", nullptr, nullptr);
+  FlutterDesktopMessengerRelease(messenger);
+}
+
 }  // namespace testing
 }  // namespace flutter
