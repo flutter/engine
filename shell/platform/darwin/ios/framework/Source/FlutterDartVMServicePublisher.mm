@@ -9,7 +9,7 @@
 #if FLUTTER_RELEASE
 
 @implementation FlutterDartVMServicePublisher
-- (instancetype)initWithEnableVMServicePublication:(BOOL)EnableVMServicePublication {
+- (instancetype)initWithEnableVMServicePublication:(BOOL)enableVMServicePublication {
   return [super init];
 }
 @end
@@ -56,7 +56,7 @@
 @property(readonly, class) NSString* serviceName;
 @property(readonly) fml::scoped_nsobject<NSObject<FlutterDartVMServicePublisherDelegate>> delegate;
 @property(nonatomic, readwrite) NSURL* url;
-@property(readonly) BOOL EnableVMServicePublication;
+@property(readonly) BOOL enableVMServicePublication;
 
 @end
 
@@ -139,12 +139,12 @@ static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
   std::unique_ptr<fml::WeakPtrFactory<FlutterDartVMServicePublisher>> _weakFactory;
 }
 
-- (instancetype)initWithEnableVMServicePublication:(BOOL)EnableVMServicePublication {
+- (instancetype)initWithEnableVMServicePublication:(BOOL)enableVMServicePublication {
   self = [super init];
   NSAssert(self, @"Super must not return null on init.");
 
   _delegate.reset([[DartVMServiceDNSServiceDelegate alloc] init]);
-  _EnableVMServicePublication = EnableVMServicePublication;
+  _enableVMServicePublication = enableVMServicePublication;
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterDartVMServicePublisher>>(self);
 
   fml::MessageLoop::EnsureInitializedForCurrentThread();
@@ -160,7 +160,7 @@ static void DNSSD_API RegistrationCallback(DNSServiceRef sdRef,
               NSURL* url = [[[NSURL alloc]
                   initWithString:[NSString stringWithUTF8String:uri.c_str()]] autorelease];
               weak.get().url = url;
-              if (weak.get().EnableVMServicePublication) {
+              if (weak.get().enableVMServicePublication) {
                 [[weak.get() delegate] publishServiceProtocolPort:url];
               }
             }
