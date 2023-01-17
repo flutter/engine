@@ -676,7 +676,7 @@ void Window::CreateAxFragmentRoot() {
   ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
       window_handle_, GetAxFragmentRootDelegate());
   alert_delegate_ =
-      std::make_unique<AlertPlatformNodeDelegate>(ax_fragment_root_.get());
+      std::make_unique<AlertPlatformNodeDelegate>(*ax_fragment_root_);
   ui::AXPlatformNode* alert_node =
       ui::AXPlatformNodeWin::Create(alert_delegate_.get());
   alert_node_.reset(static_cast<ui::AXPlatformNodeWin*>(alert_node));

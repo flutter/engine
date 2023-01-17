@@ -17,7 +17,7 @@ namespace flutter {
 class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
  public:
   explicit AlertPlatformNodeDelegate(
-      ui::AXPlatformNodeDelegate* parent_delegate);
+      ui::AXPlatformNodeDelegate& parent_delegate);
   ~AlertPlatformNodeDelegate();
 
   AlertPlatformNodeDelegate(const AlertPlatformNodeDelegate& other) = delete;
@@ -37,7 +37,7 @@ class AlertPlatformNodeDelegate : public ui::AXPlatformNodeDelegateBase {
   const ui::AXNodeData& GetData() const override;
 
   // Delegate of the parent of this node. Returned by GetParent.
-  ui::AXPlatformNodeDelegate* parent_delegate_;
+  ui::AXPlatformNodeDelegate& parent_delegate_;
 
   // Node Data that contains the alert text. Returned by GetData.
   ui::AXNodeData data_;
