@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:meta/meta.dart';
+
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
@@ -12,7 +14,8 @@ import 'safe_browser_api.dart';
 class ContextMenu {
   const ContextMenu._();
 
-  static bool _contextMenuEnabled = true;
+  @visibleForTesting
+  static bool contextMenuEnabled = true;
 
   /// Handler for contextmenu events that prevents the browser's context menu
   /// from being shown.
@@ -26,7 +29,7 @@ class ContextMenu {
   ///
   /// Can be re-enabled by calling [enableContextMenu].
   static void disableContextMenu() {
-    if (!_contextMenuEnabled) {
+    if (!contextMenuEnabled) {
       return;
     }
 
@@ -35,7 +38,7 @@ class ContextMenu {
     } else {
       domWindow.addEventListener('contextmenu', _handleContextMenu);
     }
-    _contextMenuEnabled = false;
+    contextMenuEnabled = false;
   }
 
   /// Enables the browser's context menu for the Flutter app.
@@ -44,11 +47,11 @@ class ContextMenu {
   /// enabled. Typically, this method would be used after calling
   /// [disableContextMenu] to first disable it.
   static void enableContextMenu() {
-    if (_contextMenuEnabled) {
+    if (contextMenuEnabled) {
       return;
     }
 
     domWindow.removeEventListener('contextmenu', _handleContextMenu);
-    _contextMenuEnabled = true;
+    contextMenuEnabled = true;
   }
 }
