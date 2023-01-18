@@ -410,50 +410,49 @@
       [viewMock convertRect:NSMakeRect(28, 10, 2, 19) toView:nil])
       .andReturn(NSMakeRect(28, 10, 2, 19));
 
-  // OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
-  //     [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)])
-  //     .andReturn(NSMakeRect(38, 20, 2, 19));
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)])
+      .andReturn(NSMakeRect(38, 20, 2, 19));
 
-  // FlutterTextInputPlugin* plugin =
-  // [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+  FlutterTextInputPlugin* plugin =
+  [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
 
-  // FlutterMethodCall* call = [FlutterMethodCall
-  //     methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
-  //                    arguments:@{
-  //                      @"height" : @(20.0),
-  //                      @"transform" : @[
-  //                        @(1.0), @(0.0), @(0.0), @(0.0), @(0.0), @(1.0), @(0.0), @(0.0), @(0.0),
-  //                        @(0.0), @(1.0), @(0.0), @(20.0), @(10.0), @(0.0), @(1.0)
-  //                      ],
-  //                      @"width" : @(400.0),
-  //                    }];
+  FlutterMethodCall* call = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                     arguments:@{
+                       @"height" : @(20.0),
+                       @"transform" : @[
+                         @(1.0), @(0.0), @(0.0), @(0.0), @(0.0), @(1.0), @(0.0), @(0.0), @(0.0),
+                         @(0.0), @(1.0), @(0.0), @(20.0), @(10.0), @(0.0), @(1.0)
+                       ],
+                       @"width" : @(400.0),
+                     }];
 
-  // [plugin handleMethodCall:call
-  //                   result:^(id){
-  //                   }];
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
 
-  // call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
-  //                                          arguments:@{
-  //                                            @"height" : @(19.0),
-  //                                            @"width" : @(2.0),
-  //                                            @"x" : @(8.0),
-  //                                            @"y" : @(0.0),
-  //                                          }];
+  call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
+                                           arguments:@{
+                                             @"height" : @(19.0),
+                                             @"width" : @(2.0),
+                                             @"x" : @(8.0),
+                                             @"y" : @(0.0),
+                                           }];
 
-  // [plugin handleMethodCall:call
-  //                   result:^(id){
-  //                   }];
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
 
-  // NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
-  // @try {
-  //   OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
-  //       [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)]);
-  // } @catch (...) {
-  //   return false;
-  // }
+  NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)]);
+  } @catch (...) {
+    return false;
+  }
 
-  // return NSEqualRects(rect, NSMakeRect(38, 20, 2, 19));
-  return true;
+  return NSEqualRects(rect, NSMakeRect(38, 20, 2, 19));
 }
 
 - (bool)testFirstRectForCharacterRangeAtInfinity {
