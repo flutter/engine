@@ -532,18 +532,18 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 }
 
 // Find the smallest eligiable semantics object for _accessibilityHitTest.
-- (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
-  if ([semanticsObject children].count == 0) {
+- (SemanticsObject*)search:(CGPoint)point {
+  if ([self children].count == 0) {
     // Check if the current semantic object should be returned.
-    if ([semanticsObject containsPoint:point] && [semanticsObject isFocusable]) {
-      return semanticsObject;
+    if ([self containsPoint:point] && [self isFocusable]) {
+      return self;
     }
     return nil;
   }
 
   SemanticsObject* smallestObject = nil;
   // Traverse all semantics children to find an eligible and smallest one.
-  for (SemanticsObject* child in [semanticsObject children]) {
+  for (SemanticsObject* child in [self children]) {
     if ([child containsPoint:point] &&
         (smallestObject == nil || [child size] < [smallestObject size])) {
       smallestObject = child;
@@ -552,12 +552,12 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   // Continue searching the child semantic tree.
   if (smallestObject != nil) {
-    return [self search:smallestObject withPoint:point];
+    return [smallestObject search: point];
   }
 
   // Check if the current semantic object should be returned.
-  if ([semanticsObject containsPoint:point] && [semanticsObject isFocusable]) {
-    return semanticsObject;
+  if ([self containsPoint:point] && [self isFocusable]) {
+    return self;
   }
   return nil;
 }
@@ -569,7 +569,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // TODO(hangyujin): The ideal way is to pass the z-inex from framework to search the object
 // with the highest z-index. https://github.com/flutter/flutter/issues/118656
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  return [self search:self withPoint:point];
+  return [self search: point];
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
