@@ -57,8 +57,8 @@ FlutterViewController* CreateTestViewController() {
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterEngine* engine = [[AccessibilityBridgeTestEngine alloc] initWithName:@"test"
-                                                     project:project
-                                      allowHeadlessExecution:true];
+                                                                      project:project
+                                                       allowHeadlessExecution:true];
   return [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
 }
 }  // namespace
