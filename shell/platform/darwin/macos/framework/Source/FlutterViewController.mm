@@ -293,14 +293,20 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 /**
  * Performs initialization that's common between the different init paths.
  */
-static void CommonInit(FlutterViewController* controller) {
-  if (!controller->_engine) {
-    controller->_engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
-                                                      project:controller->_project
-                                       allowHeadlessExecution:NO];
+static void CommonInit(FlutterViewController* controller, FlutterEngine* engine) {
+  if (!engine) {
+    engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                         project:controller->_project
+                          allowHeadlessExecution:NO];
   }
+  NSCAssert(controller.engine == nil && controller.id == 0,
+            @"Incorrect starting condition: engine %@ ID %llu", controller.engine, controller.id);
+  engine.viewController = controller;
+  NSCAssert(controller.engine != nil && controller.id != 0,
+            @"Incorrect ending condition: engine %@ ID %llu", controller.engine, controller.id);
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
+  [controller initializeKeyboard];
   // macOS fires this message when changing IMEs.
   CFNotificationCenterRef cfCenter = CFNotificationCenterGetDistributedCenter();
   __weak FlutterViewController* weakSelf = controller;
@@ -313,7 +319,7 @@ static void CommonInit(FlutterViewController* controller) {
   self = [super initWithCoder:coder];
   NSAssert(self, @"Super init cannot be nil");
 
-  CommonInit(self);
+  CommonInit(self, nil);
   return self;
 }
 
@@ -321,7 +327,7 @@ static void CommonInit(FlutterViewController* controller) {
   self = [super initWithNibName:nibNameOrNil bundle:nibBundleOrNil];
   NSAssert(self, @"Super init cannot be nil");
 
-  CommonInit(self);
+  CommonInit(self, nil);
   return self;
 }
 
@@ -330,7 +336,7 @@ static void CommonInit(FlutterViewController* controller) {
   NSAssert(self, @"Super init cannot be nil");
 
   _project = project;
-  CommonInit(self);
+  CommonInit(self, nil);
   return self;
 }
 
@@ -346,13 +352,7 @@ static void CommonInit(FlutterViewController* controller) {
 
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    _engine = engine;
-    CommonInit(self);
-    if (engine.running) {
-      [self loadView];
-      engine.viewController = self;
-      [self initializeKeyboard];
-    }
+    CommonInit(self, engine);
   }
 
   return self;
@@ -370,9 +370,7 @@ static void CommonInit(FlutterViewController* controller) {
     NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
     return;
   }
-  flutterView = [[FlutterView alloc] initWithMTLDevice:device
-                                          commandQueue:commandQueue
-                                       reshapeListener:self];
+  flutterView = [self createFlutterViewWithMTLDevice:device commandQueue:commandQueue];
   if (_backgroundColor != nil) {
     [flutterView setBackgroundColor:_backgroundColor];
   }
@@ -427,12 +425,27 @@ static void CommonInit(FlutterViewController* controller) {
   [self initializeKeyboard];
 }
 
+- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
+  // TODO(dkwingsmt): We are allowing engine not running here because a lot of
+  // tests creates an FVC using initWithProject:nibName:bundle: and set the FVC
+  // to the engine. We should migrate these tests to initWithEngine: and stop
+  // supporting all non-nil engines here.
+  NSAssert((_engine == nil && _id == 0) || ![_engine running],
+           @"Already attached to an running engine, engine %@ ID %llu.", _engine, _id);
+  _engine = engine;
+  _id = viewId;
+}
+
+- (void)detachFromEngine {
+  NSAssert(_engine != nil && _id != 0, @"Not attached to an engine, engine %@ ID %llu.", _engine,
+           _id);
+  _engine = nil;
+  _id = 0;
+}
+
 #pragma mark - Private methods
 
 - (BOOL)launchEngine {
-  [self initializeKeyboard];
-
-  _engine.viewController = self;
   if (![_engine runWithEntrypoint:nil]) {
     return NO;
   }
@@ -687,6 +700,13 @@ static void CommonInit(FlutterViewController* controller) {
     // back.
     [self.view addSubview:_textInputPlugin];
   }
+}
+
+- (nonnull FlutterView*)createFlutterViewWithMTLDevice:(id<MTLDevice>)device
+                                          commandQueue:(id<MTLCommandQueue>)commandQueue {
+  return [[FlutterView alloc] initWithMTLDevice:device
+                                   commandQueue:commandQueue
+                                reshapeListener:self];
 }
 
 - (void)onKeyboardLayoutChanged {

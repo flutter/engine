@@ -4,6 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include <memory>
+
 #import "FlutterEngine.h"
 #import "FlutterMacros.h"
 #import "FlutterPlatformViews.h"
@@ -31,8 +33,18 @@ FLUTTER_DARWIN_EXPORT
 
 /**
  * The Flutter engine associated with this view controller.
+ *
+ * The engine is strongly referenced by the FlutterViewController, and weakly
+ * vice versa.
  */
 @property(nonatomic, nonnull, readonly) FlutterEngine* engine;
+
+/**
+ * The identifier for this view controller.
+ *
+ * The ID is assigned when the view controller is added to FlutterEngine.
+ */
+@property(nonatomic, readonly) uint64_t id;
 
 /**
  * The style of mouse tracking to use for the view. Defaults to
@@ -65,6 +77,7 @@ FLUTTER_DARWIN_EXPORT
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
+
 /**
  * Invoked by the engine right before the engine is restarted.
  *

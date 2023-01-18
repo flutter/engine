@@ -67,6 +67,15 @@ FLUTTER_DARWIN_EXPORT
  *
  * The default view always has ID kFlutterDefaultViewId, and is the view
  * operated by the APIs that do not have a view ID specified.
+ *
+ * Setting this field from nil to a non-nil view controller also updates
+ * the view controller's engine and ID.
+ *
+ * Setting this field to non-nil to nil will terminate the engine if
+ * allowHeadlessExecution is NO.
+ *
+ * Setting this field from non-nil to a different non-nil is prohibited and
+ * will throw an assertion error.
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
 
