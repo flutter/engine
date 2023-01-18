@@ -58,6 +58,7 @@ abstract class EmbeddingStrategy with _ContextMenu {
   }
 }
 
+/// Provides functionality to disable and enable the browser's context menu.
 mixin _ContextMenu {
   /// False when the context menu has been disabled, otherwise true.
   bool _contextMenuEnabled = true;
@@ -92,7 +93,6 @@ mixin _ContextMenu {
       return;
     }
 
-    print('justin disabling');
     element.addEventListener('contextmenu', _disablingContextMenuListener);
     _contextMenuEnabled = false;
   }
