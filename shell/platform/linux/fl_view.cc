@@ -197,8 +197,8 @@ static void check_pointer_inside(FlView* view, GdkEvent* event) {
 }
 
 FlutterPointerDeviceKind fl_view_check_device_is_stylus(FlView* self,
-                                                GdkEvent* event,
-                                                double* pressure) {
+                                                        GdkEvent* event,
+                                                        double* pressure) {
   GdkDevice* device = gdk_event_get_device(event);
   GdkAxisFlags flags = gdk_device_get_axes(device);
   // Setting a default value for pressure
