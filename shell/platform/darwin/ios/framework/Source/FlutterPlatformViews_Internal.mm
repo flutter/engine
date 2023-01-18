@@ -456,6 +456,7 @@ static BOOL _preparedOnce = NO;
 
 @property(assign, nonatomic) NSUInteger capacity;
 @property(retain, nonatomic) NSMutableArray<FlutterClippingMaskView*>* pool;
+// The index points to the first available FlutterClippingMaskView in the `pool`.
 @property(assign, nonatomic) NSUInteger availableIndex;
 
 @end
@@ -471,7 +472,6 @@ static BOOL _preparedOnce = NO;
   return self;
 }
 
-// Reuse a maskView from the pool, or allocate a new one.
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame {
   FML_DCHECK(self.availableIndex <= self.capacity);
   FlutterClippingMaskView* maskView;

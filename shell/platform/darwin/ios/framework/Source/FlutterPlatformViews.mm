@@ -566,11 +566,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   CGFloat screenScale = [UIScreen mainScreen].scale;
   // The UIKit frame is set based on the logical resolution (points) instead of physical.
-  //
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
-  // 500 points in UIKit for devices that has screenScale of 2. We need to scale the
-  // transformMatrix
+  // 500 points in UIKit for devices that has screenScale of 2. We need to scale the transformMatrix
   // down to the logical resoltion before applying it to the layer of PlatformView.
   transformMatrix.postScale(1 / screenScale, 1 / screenScale);
 
@@ -579,13 +577,11 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   // Thus, this translate needs to be reversed so the platform view can layout at the correct
   // offset.
   //
-  // Note that the transforms are not applied to the clipping paths because clipping paths happen
-  // on
+  // Note that the transforms are not applied to the clipping paths because clipping paths happen on
   // the mask view, whose origin is always (0,0) to the flutter_view.
   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
 
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
-  // embedded_view.frame = clipView.bounds;
 }
 
 void FlutterPlatformViewsController::CompositeWithParams(int view_id,
@@ -911,7 +907,6 @@ void FlutterPlatformViewsController::CommitCATransactionIfNeeded() {
   if (catransaction_added_) {
     FML_DCHECK([[NSThread currentThread] isMainThread]);
     [CATransaction commit];
-
     catransaction_added_ = false;
   }
 }

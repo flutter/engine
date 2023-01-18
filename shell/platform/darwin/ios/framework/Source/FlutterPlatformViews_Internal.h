@@ -51,14 +51,22 @@
 
 // A pool that provides |FlutterClippingMaskView|s.
 //
-// Allocation and deallocation of |FlutterClippingMaskView| is minimized while using the pool.
+// The pool has a capacity that can be set in the initializer.
+// When requesting a FlutterClippingMaskView, the pool will first try to reuse an available maskView
+// in the pool. If there are none available, a new FlutterClippingMaskView is constructed. If the
+// capacity is reached, the newly constructed FlutterClippingMaskView is not added to the pool.
+//
+// Call |recycleMaskViews| to mark all the FlutterClippingMaskViews in the pool available.
 @interface FlutterClippingMaskViewPool : NSObject
 
+// Initialize the pool with `capacity`. When the `capacity` is reached, a FlutterClippingMaskView is
+// constructed when requested, and it is not added to the pool.
 - (instancetype)initWithCapacity:(NSInteger)capacity;
 
 // Reuse a maskView from the pool, or allocate a new one.
 - (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
 
+// Mark all the maskViews available.
 - (void)recycleMaskViews;
 
 @end
