@@ -54,7 +54,7 @@ void fl_view_add_widget(FlView* view,
  */
 void fl_view_end_frame(FlView* view);
 
-FlutterPointerDeviceKind check_device_is_stylus(FlView* view,
+FlutterPointerDeviceKind fl_view_check_device_is_stylus(FlView* self,
                                                 GdkEvent* event,
                                                 double* pressure);
 

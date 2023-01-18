@@ -168,7 +168,7 @@ static gboolean send_pointer_button_event(FlView* self, GdkEventButton* event) {
                                               event->state, event->time);
   gdouble pressure;
   FlutterPointerDeviceKind kind =
-      check_device_is_stylus(self, (GdkEvent*)event, &pressure);
+      fl_view_check_device_is_stylus(self, (GdkEvent*)event, &pressure);
   fl_engine_send_pointer_event(self->engine, phase, kind,
                                event->time * kMicrosecondsPerMillisecond,
                                event->x * scale_factor, event->y * scale_factor,
@@ -186,7 +186,7 @@ static void check_pointer_inside(FlView* view, GdkEvent* event) {
     if (gdk_event_get_coords(event, &x, &y)) {
       gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
       FlutterPointerDeviceKind kind =
-          check_device_is_stylus(view, (GdkEvent*)event, &pressure);
+          fl_view_check_device_is_stylus(view, (GdkEvent*)event, &pressure);
       fl_engine_send_pointer_event(
           view->engine, kAdd, kind,
           gdk_event_get_time(event) * kMicrosecondsPerMillisecond,
@@ -196,7 +196,7 @@ static void check_pointer_inside(FlView* view, GdkEvent* event) {
   }
 }
 
-FlutterPointerDeviceKind check_device_is_stylus(FlView* view,
+FlutterPointerDeviceKind fl_view_check_device_is_stylus(FlView* self,
                                                 GdkEvent* event,
                                                 double* pressure) {
   GdkDevice* device = gdk_event_get_device(event);
@@ -206,7 +206,7 @@ FlutterPointerDeviceKind check_device_is_stylus(FlView* view,
   if (!(flags & GDK_AXIS_FLAG_PRESSURE)) {
     return kFlutterPointerDeviceKindMouse;
   }
-  GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(view));
+  GdkWindow* window = gtk_widget_get_window(GTK_WIDGET(self));
   gdouble axes[GDK_AXIS_LAST] = {
       0,
   };
@@ -433,7 +433,7 @@ static gboolean motion_notify_event_cb(GtkWidget* widget,
                                               event->state, event->time);
   gdouble pressure;
   FlutterPointerDeviceKind kind =
-      check_device_is_stylus(view, (GdkEvent*)event, &pressure);
+      fl_view_check_device_is_stylus(view, (GdkEvent*)event, &pressure);
   fl_engine_send_pointer_event(
       view->engine, view->button_state != 0 ? kMove : kHover, kind,
       event->time * kMicrosecondsPerMillisecond, event->x * scale_factor,
@@ -470,7 +470,7 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
     gint scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
     gdouble pressure;
     FlutterPointerDeviceKind kind =
-        check_device_is_stylus(view, (GdkEvent*)event, &pressure);
+        fl_view_check_device_is_stylus(view, (GdkEvent*)event, &pressure);
     fl_engine_send_pointer_event(
         view->engine, kRemove, kind, event->time * kMicrosecondsPerMillisecond,
         event->x * scale_factor, event->y * scale_factor, 0, 0,

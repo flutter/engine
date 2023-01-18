@@ -177,7 +177,6 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
                                                void* user_data) {
   g_return_val_if_fail(FL_IS_RENDERER(user_data), false);
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
-
                                     layers_count);
 }
 // Flutter engine rendering callbacks.
