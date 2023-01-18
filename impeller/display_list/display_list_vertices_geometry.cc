@@ -100,6 +100,10 @@ static PrimitiveType GetPrimitiveType(const flutter::DlVertices* vertices) {
   }
 }
 
+bool DLVerticesGeometry::HasVertexColors() const {
+  return vertices_->colors() != nullptr;
+}
+
 GeometryResult DLVerticesGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,

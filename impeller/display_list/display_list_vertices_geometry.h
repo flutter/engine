@@ -49,6 +49,9 @@ class DLVerticesGeometry : public VerticesGeometry {
   // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
+  // |VerticesGeometry|
+  bool HasVertexColors() const override;
+
  private:
   void NormalizeIndices();
 
