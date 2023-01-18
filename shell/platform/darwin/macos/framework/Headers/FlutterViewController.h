@@ -4,8 +4,6 @@
 
 #import <Cocoa/Cocoa.h>
 
-#include <memory>
-
 #import "FlutterEngine.h"
 #import "FlutterMacros.h"
 #import "FlutterPlatformViews.h"
@@ -77,7 +75,6 @@ FLUTTER_DARWIN_EXPORT
 - (nonnull instancetype)initWithEngine:(nonnull FlutterEngine*)engine
                                nibName:(nullable NSString*)nibName
                                 bundle:(nullable NSBundle*)nibBundle NS_DESIGNATED_INITIALIZER;
-
 /**
  * Invoked by the engine right before the engine is restarted.
  *

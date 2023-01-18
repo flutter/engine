@@ -215,8 +215,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // when the engine is destroyed.
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
-  FlutterViewEngineProvider* _viewProvider;
-
   // FlutterCompositor is copied and used in embedder.cc.
   FlutterCompositor _compositor;
 
@@ -250,7 +248,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _currentMessengerConnection = 1;
   _allowHeadlessExecution = allowHeadlessExecution;
   _semanticsEnabled = NO;
-  _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:self];
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
 
@@ -432,8 +429,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (FlutterCompositor*)createFlutterCompositor {
-  _macOSCompositor =
-      std::make_unique<flutter::FlutterCompositor>(_viewProvider, _platformViewController);
+  _macOSCompositor = std::make_unique<flutter::FlutterCompositor>(
+      [[FlutterViewEngineProvider alloc] initWithEngine:self], _platformViewController);
 
   _compositor = {};
   _compositor.struct_size = sizeof(FlutterCompositor);
