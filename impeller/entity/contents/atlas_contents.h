@@ -56,8 +56,8 @@ class AtlasContents final : public Contents {
                      bool apply_blend = false) const;
 
   bool RenderColors(const ContentContext& renderer,
-                       const Entity& entity,
-                       RenderPass& pass) const;
+                    const Entity& entity,
+                    RenderPass& pass) const;
 
   Rect ComputeBoundingBox() const;
 
