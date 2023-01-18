@@ -526,7 +526,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return CGRectContainsPoint([self globalRect], point);
 }
 
-- (double)getSize {
+- (double)size {
   const SkRect& rect = [self node].rect;
   return rect.width() * rect.height();
 }
@@ -545,7 +545,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // Traverse all semantics children to find an eligible and smallest one.
   for (SemanticsObject* child in [semanticsObject children]) {
     if ([child containsPoint:point] &&
-        (smallestObject == nil || [child getSize] < [smallestObject getSize])) {
+        (smallestObject == nil || [child size] < [smallestObject size])) {
       smallestObject = child;
     }
   }
