@@ -531,6 +531,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return rect.width() * rect.height();
 }
 
+// Find the smallest eligiable semantics object for _accessibilityHitTest.
 - (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
   if ([semanticsObject children].count == 0) {
     // Check if the current semantic object should be returned.
@@ -565,6 +566,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus goes to the smallest
 // object before IOS 16, but to the top-left object in IOS 16.
 // Override this method to focus the smallest object.
+// TODO(hangyujin): The ideal way is to pass the z-inex from framework to search the object 
+// with the highest z-index. https://github.com/flutter/flutter/issues/118656
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
   return [self search:self withPoint:point];
 }
