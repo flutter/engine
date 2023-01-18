@@ -160,7 +160,7 @@ void testMain() {
       final TextField textField =
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       final DomHTMLInputElement editableElement =
-          textField.editableElement as DomHTMLInputElement;
+          textField.activeEditableElement as DomHTMLInputElement;
 
       expect(editableElement, strategy.domElement);
       expect(editableElement.value, '');
@@ -192,7 +192,7 @@ void testMain() {
       final TextField textField =
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       final DomHTMLInputElement editableElement =
-          textField.editableElement as DomHTMLInputElement;
+          textField.activeEditableElement as DomHTMLInputElement;
 
       // No updates expected on semantic updates
       expect(editableElement, strategy.domElement);
@@ -556,7 +556,7 @@ void testMain() {
       final TextField textField =
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       final DomHTMLInputElement editableElement =
-          textField.editableElement as DomHTMLInputElement;
+          textField.activeEditableElement as DomHTMLInputElement;
 
       expect(editableElement, strategy.domElement);
       expect(editableElement.value, '');
@@ -588,7 +588,7 @@ void testMain() {
       final TextField textField =
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
       final DomHTMLInputElement editableElement =
-          textField.editableElement as DomHTMLInputElement;
+          textField.activeEditableElement as DomHTMLInputElement;
 
       // No updates expected on semantic updates
       expect(editableElement, strategy.domElement);
