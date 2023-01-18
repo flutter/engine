@@ -5,8 +5,6 @@
 @TestOn('chrome || safari || firefox')
 import 'dart:typed_data';
 
-import 'dart:js_util' as js_util;
-
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart' hide window;
