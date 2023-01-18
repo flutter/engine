@@ -415,7 +415,7 @@
       .andReturn(NSMakeRect(38, 20, 2, 19));
 
   FlutterTextInputPlugin* plugin =
-  [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+      [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
 
   FlutterMethodCall* call = [FlutterMethodCall
       methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"

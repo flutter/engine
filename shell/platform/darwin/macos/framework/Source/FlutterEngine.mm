@@ -424,7 +424,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       [self shutDownEngine];
     }
   } else {
-    NSAssert(NO, @"Replacing the view controller of the engine is not supported.");
+    NSLog(@"Failed to set view controller to the engine: "
+          @"Replacing the view controller of the engine is not supported.");
   }
 }
 
