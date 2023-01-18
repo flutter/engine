@@ -460,12 +460,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return false;
   }
 
-  return [self isFocusable:self];
+  return [self isFocusable];
 }
 
-- (bool)isFocusable:(SemanticsObject*)semanticsObject {
-  flutter::SemanticsNode node = [semanticsObject node];
-
+- (bool)isFocusable {
   // If the node is scrollable AND hidden OR
   // The node has a label, value, or hint OR
   // The node has non-scrolling related actions.
@@ -474,10 +472,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   // hidden but still is a valid target for a11y focus in the tree, e.g. a list
   // item that is currently off screen but the a11y navigation needs to know
   // about.
-  return ((node.flags & flutter::kScrollableSemanticsFlags) != 0 &&
-          (node.flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
-         !node.label.empty() || !node.value.empty() || !node.hint.empty() ||
-         (node.actions & ~flutter::kScrollableSemanticsActions) != 0;
+  return (([self node].flags & flutter::kScrollableSemanticsFlags) != 0 &&
+          ([self node].flags & static_cast<int32_t>(flutter::SemanticsFlags::kIsHidden)) != 0) ||
+         ![self node].label.empty() || ![self node].value.empty() || ![self node].hint.empty() ||
+         ([self node].actions & ~flutter::kScrollableSemanticsActions) != 0;
 }
 
 - (void)collectRoutes:(NSMutableArray<SemanticsObject*>*)edges {
@@ -523,44 +521,42 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return label;
 }
 
-- (bool)semanticsObjectContainsPoint:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
-  const SkRect& rect = [semanticsObject node].rect;
-  CGRect localRect = CGRectMake(rect.x(), rect.y(), rect.width(), rect.height());
-  CGRect globalRect = ConvertRectToGlobal(semanticsObject, localRect);
-  return CGRectContainsPoint(globalRect, point);
+// The point is in global coordinates, so use the global rect here.
+- (bool)containsPoint:(CGPoint)point {
+  return CGRectContainsPoint([self globalRect], point);
 }
 
-- (double)getSize:(SemanticsObject*)semanticsObject {
-  const SkRect& rect = [semanticsObject node].rect;
+- (double)getSize {
+  const SkRect& rect = [self node].rect;
   return rect.width() * rect.height();
 }
 
 - (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
   if ([semanticsObject children].count == 0) {
     // Check if the current semantic object should be returned.
-    if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
+    if ([semanticsObject containsPoint:point] &&
         [self isFocusable:semanticsObject]) {
       return semanticsObject;
     }
     return nil;
   }
 
-  SemanticsObject* bestChild = nil;
+  SemanticsObject* smallestObject = nil;
   // Traverse all semantics children to find an eligible and smallest one.
   for (SemanticsObject* child in [semanticsObject children]) {
-    if ([self semanticsObjectContainsPoint:child withPoint:point] &&
-        (bestChild == nil || [self getSize:child] < [self getSize:bestChild])) {
-      bestChild = child;
+    if ([child containsPoint:point] &&
+        (smallestObject == nil || [child getSize] < [smallestObject getSize])) {
+      smallestObject = child;
     }
   }
 
   // Continue searching the child semantic tree.
-  if (bestChild != nil) {
-    return [self search:bestChild withPoint:point];
+  if (smallestObject != nil) {
+    return [self search:smallestObject withPoint:point];
   }
 
   // Check if the current semantic object should be returned.
-  if ([self semanticsObjectContainsPoint:semanticsObject withPoint:point] &&
+  if ([semanticsObject containsPoint:point] &&
       [self isFocusable:semanticsObject]) {
     return semanticsObject;
   }
