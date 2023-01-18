@@ -552,7 +552,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
   // Continue searching the child semantic tree.
   if (smallestObject != nil) {
-    return [smallestObject search: point];
+    return [smallestObject search:point];
   }
 
   // Check if the current semantic object should be returned.
@@ -569,7 +569,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 // TODO(hangyujin): The ideal way is to pass the z-inex from framework to search the object
 // with the highest z-index. https://github.com/flutter/flutter/issues/118656
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
-  return [self search: point];
+  return [self search:point];
 }
 
 - (NSAttributedString*)accessibilityAttributedLabel {
