@@ -82,6 +82,18 @@ const SamplerDescriptor& AtlasContents::GetSamplerDescriptor() const {
   return sampler_descriptor_;
 }
 
+const std::vector<Matrix>& AtlasContents::GetTransforms() const {
+  return transforms_;
+}
+
+const std::vector<Rect>& AtlasContents::GetTextureCoordinates() const {
+  return texture_coords_;
+}
+
+const std::vector<Color>& AtlasContents::GetColors() const {
+  return colors_;
+}
+
 bool AtlasContents::Render(const ContentContext& renderer,
                            const Entity& entity,
                            RenderPass& pass) const {
@@ -89,137 +101,76 @@ bool AtlasContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  if (blend_mode_ == BlendMode::kSource || colors_.size() == 0) {
-    return RenderTexture(renderer, entity, pass, alpha_);
-  }
-  if (blend_mode_ == BlendMode::kDestination) {
-    return RenderColors(renderer, entity, pass, alpha_);
-  }
-
   // Ensure that we use the actual computed bounds and not a cull-rect
   // approximation of them.
   auto coverage = ComputeBoundingBox();
-  auto size = coverage.size;
 
-  // Simple blends.
-  if (blend_mode_ < BlendMode::kScreen) {
-    auto subpass_texture = renderer.MakeSubpass(
-        ISize::Ceil(size),
-        [&contents = *this, &coverage](const ContentContext& renderer,
-                                       RenderPass& pass) -> bool {
-          Entity sub_entity;
-          sub_entity.SetBlendMode(BlendMode::kSourceOver);
-          sub_entity.SetTransformation(
-              Matrix::MakeTranslation(Vector3(-coverage.origin)));
-          if (!contents.RenderColors(renderer, sub_entity, pass, 1.0)) {
-            return false;
-          }
-          return contents.RenderTexture(renderer, sub_entity, pass, 1.0, true);
-        });
-    auto contents = ColorFilterContents::MakeBlend(
-        blend_mode_, {FilterInput::Make(subpass_texture)});
-    contents->SetAlpha(alpha_);
-    return contents->Render(renderer, entity, pass);
+  if (blend_mode_ == BlendMode::kSource || colors_.size() == 0) {
+    auto child_contents = AtlasTextureContents(*this);
+    child_contents.SetAlpha(alpha_);
+    child_contents.SetCoverage(coverage);
+    return child_contents.Render(renderer, entity, pass);
+  }
+  if (blend_mode_ == BlendMode::kDestination) {
+    auto child_contents = AtlasColorContents(*this);
+    child_contents.SetAlpha(alpha_);
+    child_contents.SetCoverage(coverage);
+    return child_contents.Render(renderer, entity, pass);
   }
 
-  auto dst_texture = renderer.MakeSubpass(
-      ISize::Ceil(size),
-      [&contents = *this, &coverage](const ContentContext& renderer,
-                                     RenderPass& pass) -> bool {
-        Entity sub_entity;
-        sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage.origin)));
-        return contents.RenderColors(renderer, sub_entity, pass, 1.0);
-      });
-  auto src_texture = renderer.MakeSubpass(
-      ISize::Ceil(size),
-      [&contents = *this, &coverage](const ContentContext& renderer,
-                                     RenderPass& pass) -> bool {
-        Entity sub_entity;
-        sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage.origin)));
-        return contents.RenderTexture(renderer, sub_entity, pass, 1.0);
-      });
+  auto src_contents = std::make_shared<AtlasTextureContents>(*this);
+  src_contents->SetCoverage(coverage);
 
-  if (!src_texture || !dst_texture) {
-    return false;
-  }
+  auto dst_contents = std::make_shared<AtlasColorContents>(*this);
+  dst_contents->SetCoverage(coverage);
+
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
-      {FilterInput::Make(src_texture), FilterInput::Make(dst_texture)});
+      {FilterInput::Make(dst_contents), FilterInput::Make(src_contents)});
   contents->SetAlpha(alpha_);
   return contents->Render(renderer, entity, pass);
 }
 
-bool AtlasContents::RenderColors(const ContentContext& renderer,
-                                 const Entity& entity,
-                                 RenderPass& pass,
-                                 Scalar alpha) const {
-  using VS = GeometryColorPipeline::VertexShader;
-  using FS = GeometryColorPipeline::FragmentShader;
+// AtlasTextureContents
+// ---------------------------------------------------------
 
-  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  vertex_builder.Reserve(texture_coords_.size() * 6);
-  constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
-  for (size_t i = 0; i < texture_coords_.size(); i++) {
-    auto sample_rect = texture_coords_[i];
-    auto matrix = transforms_[i];
-    auto transformed_points =
-        Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
+AtlasTextureContents::AtlasTextureContents(const AtlasContents& parent)
+    : parent_(parent) {}
 
-    for (size_t j = 0; j < 6; j++) {
-      VS::PerVertexData data;
-      data.position = transformed_points[indices[j]];
-      data.color = colors_[i].Premultiply();
-      vertex_builder.AppendVertex(data);
-    }
-  }
+AtlasTextureContents::~AtlasTextureContents() {}
 
-  if (!vertex_builder.HasVertices()) {
-    return true;
-  }
-
-  Command cmd;
-  cmd.label = "DrawAtlas";
-
-  auto& host_buffer = pass.GetTransientsBuffer();
-
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
-
-  FS::FragInfo frag_info;
-  frag_info.alpha = alpha;
-
-  auto opts = OptionsFromPassAndEntity(pass, entity);
-  opts.blend_mode = BlendMode::kSourceOver;
-  cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
-  cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  return pass.AddCommand(std::move(cmd));
+std::optional<Rect> AtlasTextureContents::GetCoverage(
+    const Entity& entity) const {
+  return coverage_.TransformBounds(entity.GetTransformation());
 }
 
-bool AtlasContents::RenderTexture(const ContentContext& renderer,
+void AtlasTextureContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+void AtlasTextureContents::SetCoverage(Rect coverage) {
+  coverage_ = coverage;
+}
+
+bool AtlasTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
-                                  RenderPass& pass,
-                                  Scalar alpha,
-                                  bool apply_blend) const {
+                                  RenderPass& pass) const {
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
 
-  const auto texture_size = texture_->GetSize();
+  auto texture = parent_.GetTexture();
+  auto texture_coords = parent_.GetTextureCoordinates();
+  auto transforms = parent_.GetTransforms();
+
+  const auto texture_size = texture->GetSize();
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  vertex_builder.Reserve(texture_coords_.size() * 6);
+  vertex_builder.Reserve(texture_coords.size() * 6);
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
   constexpr Scalar width[6] = {0, 1, 0, 1, 0, 1};
   constexpr Scalar height[6] = {0, 0, 1, 0, 1, 1};
-  for (size_t i = 0; i < texture_coords_.size(); i++) {
-    auto sample_rect = texture_coords_[i];
-    auto matrix = transforms_[i];
+  for (size_t i = 0; i < texture_coords.size(); i++) {
+    auto sample_rect = texture_coords[i];
+    auto matrix = transforms[i];
     auto transformed_points =
         Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
 
@@ -239,7 +190,7 @@ bool AtlasContents::RenderTexture(const ContentContext& renderer,
   }
 
   Command cmd;
-  cmd.label = "DrawAtlas";
+  cmd.label = "AtlasTexture";
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
@@ -248,21 +199,92 @@ bool AtlasContents::RenderTexture(const ContentContext& renderer,
                   entity.GetTransformation();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frag_info.alpha = alpha;
+  frag_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
+  frag_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
-  if (apply_blend) {
-    options.blend_mode = blend_mode_;
-  }
   cmd.pipeline = renderer.GetTexturePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  FS::BindTextureSampler(cmd, texture_,
+  FS::BindTextureSampler(cmd, texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
+                             parent_.GetSamplerDescriptor()));
+  return pass.AddCommand(std::move(cmd));
+}
+
+// AtlasColorContents
+// ---------------------------------------------------------
+
+AtlasColorContents::AtlasColorContents(const AtlasContents& parent)
+    : parent_(parent) {}
+
+AtlasColorContents::~AtlasColorContents() {}
+
+std::optional<Rect> AtlasColorContents::GetCoverage(
+    const Entity& entity) const {
+  return coverage_.TransformBounds(entity.GetTransformation());
+}
+
+void AtlasColorContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+void AtlasColorContents::SetCoverage(Rect coverage) {
+  coverage_ = coverage;
+}
+
+bool AtlasColorContents::Render(const ContentContext& renderer,
+                                const Entity& entity,
+                                RenderPass& pass) const {
+  using VS = GeometryColorPipeline::VertexShader;
+  using FS = GeometryColorPipeline::FragmentShader;
+
+  auto texture_coords = parent_.GetTextureCoordinates();
+  auto transforms = parent_.GetTransforms();
+  auto colors = parent_.GetColors();
+
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  vertex_builder.Reserve(texture_coords.size() * 6);
+  constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
+  for (size_t i = 0; i < texture_coords.size(); i++) {
+    auto sample_rect = texture_coords[i];
+    auto matrix = transforms[i];
+    auto transformed_points =
+        Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
+
+    for (size_t j = 0; j < 6; j++) {
+      VS::PerVertexData data;
+      data.position = transformed_points[indices[j]];
+      data.color = colors[i].Premultiply();
+      vertex_builder.AppendVertex(data);
+    }
+  }
+
+  if (!vertex_builder.HasVertices()) {
+    return true;
+  }
+
+  Command cmd;
+  cmd.label = "AtlasColors";
+
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  VS::VertInfo vert_info;
+  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                  entity.GetTransformation();
+
+  FS::FragInfo frag_info;
+  frag_info.alpha = alpha_;
+
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.blend_mode = BlendMode::kSourceOver;
+  cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
+  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   return pass.AddCommand(std::move(cmd));
 }
 

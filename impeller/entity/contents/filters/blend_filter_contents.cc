@@ -111,7 +111,7 @@ static std::optional<Snapshot> AdvancedBlend(
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, sampler);
     blend_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
     blend_info.dst_input_alpha =
-        absorb_opacity ? dst_snapshot->opacity : alpha.value_or(1.0f);
+        (absorb_opacity ? dst_snapshot->opacity : 1.0) * alpha.value_or(1.0);
 
     if (foreground_color.has_value()) {
       blend_info.color_factor = 1;
@@ -206,7 +206,7 @@ static std::optional<Snapshot> PipelineBlend(
       frag_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
       frag_info.input_alpha =
-          absorb_opacity ? input->opacity : alpha.value_or(1.0f);
+          (absorb_opacity ? input->opacity : 1.0) * alpha.value_or(1.0);
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
