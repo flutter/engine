@@ -101,11 +101,9 @@ TEST(FlutterViewController, FlutterViewAcceptsFirstMouse) {
 
 TEST(FlutterViewController, ReparentsPluginWhenAccessibilityDisabled) {
   FlutterEngine* engine = CreateTestEngine();
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   [engine setViewController:viewController];
   // Creates a NSWindow so that sub view can be first responder.

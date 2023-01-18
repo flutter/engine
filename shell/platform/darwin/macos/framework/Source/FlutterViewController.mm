@@ -426,12 +426,8 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 }
 
 - (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
-  // TODO(dkwingsmt): We are allowing engine not running here because a lot of
-  // tests creates an FVC using initWithProject:nibName:bundle: and set the FVC
-  // to the engine. We should migrate these tests to initWithEngine: and stop
-  // supporting all non-nil engines here.
-  NSAssert((_engine == nil && _id == 0) || ![_engine running],
-           @"Already attached to an running engine, engine %@ ID %llu.", _engine, _id);
+  NSAssert(_engine == nil && _id == 0, @"Already attached to an engine, engine %@ ID %llu.",
+           _engine, _id);
   _engine = engine;
   _id = viewId;
 }

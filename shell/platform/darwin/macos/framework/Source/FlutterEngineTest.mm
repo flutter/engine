@@ -134,14 +134,11 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   latch.Wait();
 }
@@ -166,14 +163,11 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
   viewController.flutterView.backgroundColor = [NSColor whiteColor];
 
   latch.Wait();
@@ -193,13 +187,10 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   // Set up view controller.
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
-  [engine setViewController:viewController];
   // Enable the semantics.
   bool enabled_called = false;
   engine.embedderAPI.UpdateSemanticsEnabled =
@@ -380,10 +371,11 @@ TEST(FlutterEngine, Compositor) {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
 
