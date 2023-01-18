@@ -535,7 +535,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 - (SemanticsObject*)search:(SemanticsObject*)semanticsObject withPoint:(CGPoint)point {
   if ([semanticsObject children].count == 0) {
     // Check if the current semantic object should be returned.
-    if ([semanticsObject containsPoint:point] && [self isFocusable:semanticsObject]) {
+    if ([semanticsObject containsPoint:point] && [semanticsObject isFocusable]) {
       return semanticsObject;
     }
     return nil;
@@ -556,7 +556,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   }
 
   // Check if the current semantic object should be returned.
-  if ([semanticsObject containsPoint:point] && [self isFocusable:semanticsObject]) {
+  if ([semanticsObject containsPoint:point] && [semanticsObject isFocusable]) {
     return semanticsObject;
   }
   return nil;
