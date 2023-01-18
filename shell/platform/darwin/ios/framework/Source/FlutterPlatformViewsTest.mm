@@ -1478,7 +1478,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       kFloatCompareEpsilon);
 }
 
-- (void)testClipRectDoNotInterceptWithPlatformViewShouldNotAddMaskView {
+- (void)testClipsDoNotInterceptWithPlatformViewShouldNotAddMaskView {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -1510,20 +1510,21 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 30, 30)] autorelease];
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
-  // Create embedded view params
+  // Create embedded view params.
   flutter::MutatorsStack stack;
-  // Layer tree always pushes a screen scale factor to the stack
+  // Layer tree always pushes a screen scale factor to the stack.
   SkMatrix screenScaleMatrix =
       SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   SkMatrix translateMatrix = SkMatrix::Translate(5, 5);
-  // The platform view's rect for this test will be (5, 5, 10, 10)
+  // The platform view's rect for this test will be (5, 5, 10, 10).
   stack.PushTransform(translateMatrix);
-  // Push a clip rect, big enough to contain the entire platform view bound
+  // Push a clip rect, big enough to contain the entire platform view bound.
   SkRect rect = SkRect::MakeXYWH(0, 0, 25, 25);
   stack.PushClipRect(rect);
-  // Push a clip rrect, big enough to contain the entire platform view bound
-  SkRect rect_for_rrect = SkRect::MakeXYWH(0, 0, 24, 24);
+  // Push a clip rrect, big enough to contain the entire platform view bound without clipping it.
+  // Make the origin (-1, -1) so that the top left rounded corner isn't clipping the PlatformView.
+  SkRect rect_for_rrect = SkRect::MakeXYWH(-1, -1, 25, 25);
   SkRRect rrect = SkRRect::MakeRectXY(rect_for_rrect, 1, 1);
   stack.PushClipRRect(rrect);
 
@@ -1539,7 +1540,6 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
 
   [mockFlutterView setNeedsLayout];
   [mockFlutterView layoutIfNeeded];
-
   XCTAssertNil(childClippingView.maskView);
 }
 
@@ -1577,15 +1577,15 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->SetFlutterView(mockFlutterView);
   // Create embedded view params
   flutter::MutatorsStack stack;
-  // Layer tree always pushes a screen scale factor to the stack
+  // Layer tree always pushes a screen scale factor to the stack.
   SkMatrix screenScaleMatrix =
       SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
   stack.PushTransform(screenScaleMatrix);
   SkMatrix translateMatrix = SkMatrix::Translate(5, 5);
-  // The platform view's rect for this test will be (5, 5, 10, 10)
+  // The platform view's rect for this test will be (5, 5, 10, 10).
   stack.PushTransform(translateMatrix);
 
-  // Push a clip rrect, the rect of the rrect is the same as the PlatformView of the corner should
+  // Push a clip rrect, the rect of the rrect is the same as the PlatformView of the corner should.
   // clip the PlatformView.
   SkRect rect_for_rrect = SkRect::MakeXYWH(0, 0, 10, 10);
   SkRRect rrect = SkRRect::MakeRectXY(rect_for_rrect, 1, 1);
