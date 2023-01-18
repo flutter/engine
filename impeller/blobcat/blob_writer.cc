@@ -22,6 +22,8 @@ std::optional<BlobShaderType> InferShaderTypefromFileExtension(
     return BlobShaderType::kVertex;
   } else if (path == ".frag") {
     return BlobShaderType::kFragment;
+  } else if (path == ".comp") {
+    return BlobShaderType::kCompute;
   }
   return std::nullopt;
 }
@@ -66,8 +68,7 @@ bool BlobWriter::AddBlobAtPath(const std::string& std_path) {
     return false;
   }
 
-  return AddBlob(shader_type.value(), std::move(shader_name),
-                 std::move(file_mapping));
+  return AddBlob(shader_type.value(), shader_name, std::move(file_mapping));
 }
 
 bool BlobWriter::AddBlob(BlobShaderType type,
@@ -88,6 +89,8 @@ constexpr fb::Stage ToStage(BlobShaderType type) {
       return fb::Stage::kVertex;
     case BlobShaderType::kFragment:
       return fb::Stage::kFragment;
+    case BlobShaderType::kCompute:
+      return fb::Stage::kCompute;
   }
   FML_UNREACHABLE();
 }

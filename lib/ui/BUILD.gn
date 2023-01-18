@@ -30,8 +30,8 @@ source_set("ui") {
     "painting/codec.h",
     "painting/color_filter.cc",
     "painting/color_filter.h",
-    "painting/display_list_deferred_image_gpu.cc",
-    "painting/display_list_deferred_image_gpu.h",
+    "painting/display_list_deferred_image_gpu_skia.cc",
+    "painting/display_list_deferred_image_gpu_skia.h",
     "painting/display_list_image_gpu.cc",
     "painting/display_list_image_gpu.h",
     "painting/engine_layer.cc",
@@ -53,6 +53,8 @@ source_set("ui") {
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_encoding_impl.h",
+    "painting/image_encoding_skia.cc",
+    "painting/image_encoding_skia.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_generator.cc",
@@ -124,6 +126,8 @@ source_set("ui") {
     "window/platform_message_response.h",
     "window/platform_message_response_dart.cc",
     "window/platform_message_response_dart.h",
+    "window/platform_message_response_dart_port.cc",
+    "window/platform_message_response_dart_port.h",
     "window/pointer_data.cc",
     "window/pointer_data.h",
     "window/pointer_data_packet.cc",
@@ -140,6 +144,7 @@ source_set("ui") {
 
   public_deps = [
     "//flutter/flow",
+    "//flutter/shell/common:platform_message_handler",
     "//flutter/third_party/txt",
   ]
 
@@ -160,8 +165,12 @@ source_set("ui") {
 
   if (impeller_supports_rendering) {
     sources += [
+      "painting/display_list_deferred_image_gpu_impeller.cc",
+      "painting/display_list_deferred_image_gpu_impeller.h",
       "painting/image_decoder_impeller.cc",
       "painting/image_decoder_impeller.h",
+      "painting/image_encoding_impeller.cc",
+      "painting/image_encoding_impeller.h",
     ]
 
     deps += [ "//flutter/impeller" ]
@@ -179,6 +188,17 @@ source_set("ui") {
   if (is_win) {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+    sources += [
+      "painting/scene/scene_node.cc",
+      "painting/scene/scene_node.h",
+      "painting/scene/scene_shader.cc",
+      "painting/scene/scene_shader.h",
+    ]
+
+    deps += [ "//flutter/impeller/scene" ]
   }
 }
 
@@ -226,13 +246,15 @@ if (enable_unittests) {
       "painting/image_dispose_unittests.cc",
       "painting/image_encoding_unittests.cc",
       "painting/image_generator_registry_unittests.cc",
+      "painting/paint_unittests.cc",
       "painting/path_unittests.cc",
       "painting/single_frame_codec_unittests.cc",
-      "painting/vertices_unittests.cc",
       "semantics/semantics_update_builder_unittests.cc",
       "window/platform_configuration_unittests.cc",
+      "window/platform_message_response_dart_port_unittests.cc",
       "window/platform_message_response_dart_unittests.cc",
       "window/pointer_data_packet_converter_unittests.cc",
+      "window/pointer_data_packet_unittests.cc",
     ]
 
     deps = [

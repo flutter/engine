@@ -20,13 +20,25 @@ impeller_component("renderer") {
     "command.h",
     "command_buffer.cc",
     "command_buffer.h",
+    "compute_command.cc",
+    "compute_command.h",
+    "compute_pass.cc",
+    "compute_pass.h",
+    "compute_pipeline_builder.cc",
+    "compute_pipeline_builder.h",
+    "compute_pipeline_descriptor.cc",
+    "compute_pipeline_descriptor.h",
     "context.cc",
     "context.h",
     "descriptor_set_layout.h",
     "device_buffer.cc",
     "device_buffer.h",
+    "device_buffer_descriptor.cc",
+    "device_buffer_descriptor.h",
     "formats.cc",
     "formats.h",
+    "gpu_tracer.cc",
+    "gpu_tracer.h",
     "host_buffer.cc",
     "host_buffer.h",
     "pipeline.cc",
@@ -94,8 +106,13 @@ impeller_component("renderer_unittests") {
   sources = [
     "device_buffer_unittests.cc",
     "host_buffer_unittests.cc",
+    "pipeline_descriptor_unittests.cc",
     "renderer_unittests.cc",
   ]
+
+  if (impeller_enable_metal || impeller_enable_vulkan) {
+    sources += [ "compute_unittests.cc" ]
+  }
 
   deps = [
     ":renderer",

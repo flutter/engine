@@ -6,12 +6,15 @@
 
 #include <optional>
 
+#include "flutter/fml/container.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/promise.h"
 #include "impeller/base/validation.h"
+#include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/pipeline_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_function_vk.h"
+#include "impeller/renderer/backend/vulkan/vertex_descriptor_vk.h"
 
 namespace impeller {
 
@@ -51,7 +54,7 @@ bool PipelineLibraryVK::IsValid() const {
 }
 
 // |PipelineLibrary|
-PipelineFuture PipelineLibraryVK::GetRenderPipeline(
+PipelineFuture<PipelineDescriptor> PipelineLibraryVK::GetPipeline(
     PipelineDescriptor descriptor) {
   Lock lock(pipelines_mutex_);
   if (auto found = pipelines_.find(descriptor); found != pipelines_.end()) {
@@ -59,12 +62,16 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
   }
 
   if (!IsValid()) {
-    return RealizedFuture<std::shared_ptr<Pipeline>>(nullptr);
+    return {
+        descriptor,
+        RealizedFuture<std::shared_ptr<Pipeline<PipelineDescriptor>>>(nullptr)};
   }
 
-  auto promise = std::make_shared<std::promise<std::shared_ptr<Pipeline>>>();
-  auto future = PipelineFuture{promise->get_future()};
-  pipelines_[descriptor] = future;
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
+  auto pipeline_future =
+      PipelineFuture<PipelineDescriptor>{descriptor, promise->get_future()};
+  pipelines_[descriptor] = pipeline_future;
 
   auto weak_this = weak_from_this();
 
@@ -82,12 +89,23 @@ PipelineFuture PipelineLibraryVK::GetRenderPipeline(
         weak_this, descriptor, std::move(pipeline_create_info)));
   });
 
-  return future;
+  return pipeline_future;
+}
+
+// |PipelineLibrary|
+PipelineFuture<ComputePipelineDescriptor> PipelineLibraryVK::GetPipeline(
+    ComputePipelineDescriptor descriptor) {
+  auto promise = std::make_shared<
+      std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
+  // TODO(dnfield): implement compute for GLES.
+  promise->set_value(nullptr);
+  return {descriptor, promise->get_future()};
 }
 
 static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
     vk::Format format,
-    SampleCount sample_count) {
+    SampleCount sample_count,
+    bool is_color) {
   vk::AttachmentDescription desc;
 
   // See
@@ -103,10 +121,27 @@ static vk::AttachmentDescription CreatePlaceholderAttachmentDescription(
   desc.setStoreOp(vk::AttachmentStoreOp::eDontCare);
   desc.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
   desc.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-  desc.setInitialLayout(vk::ImageLayout::eUndefined);
-  desc.setFinalLayout(vk::ImageLayout::eGeneral);
+
+  if (!is_color) {
+    desc.setInitialLayout(vk::ImageLayout::eGeneral);
+    desc.setFinalLayout(vk::ImageLayout::eGeneral);
+  } else {
+    desc.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
+    desc.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
+  }
 
   return desc;
+}
+
+// |PipelineLibrary|
+void PipelineLibraryVK::RemovePipelinesWithEntryPoint(
+    std::shared_ptr<const ShaderFunction> function) {
+  Lock lock(pipelines_mutex_);
+
+  fml::erase_if(pipelines_, [&](auto item) {
+    return item->first.GetEntrypointForStage(function->GetStage())
+        ->IsEqual(*function);
+  });
 }
 
 //----------------------------------------------------------------------------
@@ -125,8 +160,9 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   std::vector<vk::AttachmentDescription> render_pass_attachments;
   const auto sample_count = desc.GetSampleCount();
   // Set the color attachment.
+  const auto& format = desc.GetColorAttachmentDescriptor(0)->format;
   render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-      vk::Format::eR8G8B8A8Unorm, sample_count));
+      ToVKImageFormat(format), sample_count, true));
 
   std::vector<vk::AttachmentReference> color_attachment_references;
   std::vector<vk::AttachmentReference> resolve_attachment_references;
@@ -137,24 +173,30 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
   color_attachment_references.push_back(vk::AttachmentReference(
       render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
 
+#if false
+  // see: https://github.com/flutter/flutter/issues/112388
   // Set the resolve attachment if MSAA is enabled.
   if (sample_count != SampleCount::kCount1) {
     render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1));
+        vk::Format::eR8G8B8A8Unorm, SampleCount::kCount1, false));
     resolve_attachment_references.push_back(vk::AttachmentReference(
         render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral));
   }
 
   if (desc.HasStencilAttachmentDescriptors()) {
     render_pass_attachments.push_back(CreatePlaceholderAttachmentDescription(
-        vk::Format::eS8Uint, sample_count));
+        vk::Format::eS8Uint, sample_count, false));
     depth_stencil_attachment_reference = vk::AttachmentReference(
         render_pass_attachments.size() - 1u, vk::ImageLayout::eGeneral);
   }
+#endif
 
   vk::SubpassDescription subpass_info;
   subpass_info.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
   subpass_info.setColorAttachments(color_attachment_references);
+
+#if false
+  // see: https://github.com/flutter/flutter/issues/112388
   if (sample_count != SampleCount::kCount1) {
     subpass_info.setResolveAttachments(resolve_attachment_references);
   }
@@ -162,6 +204,7 @@ std::optional<vk::UniqueRenderPass> PipelineLibraryVK::CreateRenderPass(
     subpass_info.setPDepthStencilAttachment(
         &depth_stencil_attachment_reference.value());
   }
+#endif
 
   vk::RenderPassCreateInfo render_pass_info;
   render_pass_info.setSubpasses(subpass_info);
@@ -220,7 +263,7 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
     info.setPName("main");
     info.setModule(
         ShaderFunctionVK::Cast(entrypoint.second.get())->GetModule());
-    shader_stages.push_back(std::move(info));
+    shader_stages.push_back(info);
   }
   pipeline_info.setStages(shader_stages);
 
@@ -251,11 +294,9 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   //----------------------------------------------------------------------------
   /// Primitive Input Assembly State
-  /// TODO(106379): Move primitive topology to the the pipeline instead of it
-  ///               being on the draw call. This is hard-coded right now.
-  ///
   vk::PipelineInputAssemblyStateCreateInfo input_assembly;
-  input_assembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+  const auto topology = ToVKPrimitiveTopology(desc.GetPrimitiveType());
+  input_assembly.setTopology(topology);
   pipeline_info.setPInputAssemblyState(&input_assembly);
 
   //----------------------------------------------------------------------------
@@ -288,19 +329,20 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   binding_description.setInputRate(vk::VertexInputRate::eVertex);
 
   std::vector<vk::VertexInputAttributeDescription> attr_descs;
-  uint32_t stride = 0;
+  uint32_t offset = 0;
   const auto& stage_inputs = desc.GetVertexDescriptor()->GetStageInputs();
   for (const ShaderStageIOSlot& stage_in : stage_inputs) {
     vk::VertexInputAttributeDescription attr_desc;
     attr_desc.setBinding(stage_in.binding);
     attr_desc.setLocation(stage_in.location);
-    attr_desc.setFormat(vk::Format::eR8G8B8A8Unorm);
-    attr_desc.setOffset(stride);
+    attr_desc.setFormat(ToVertexDescriptorFormat(stage_in));
+    attr_desc.setOffset(offset);
     attr_descs.push_back(attr_desc);
-    stride += stage_in.bit_width * stage_in.vec_size;
+    uint32_t len = (stage_in.bit_width * stage_in.vec_size) / 8;
+    offset += len;
   }
 
-  binding_description.setStride(stride);
+  binding_description.setStride(offset);
 
   vk::PipelineVertexInputStateCreateInfo vertex_input_state;
   vertex_input_state.setVertexAttributeDescriptions(attr_descs);
@@ -331,6 +373,8 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
 
   vk::UniqueDescriptorSetLayout descriptor_set_layout =
       std::move(descriptor_set_create_res.value);
+  ContextVK::SetDebugName(device_, descriptor_set_layout.get(),
+                          "descriptor_set_layout_" + desc.GetLabel());
 
   vk::PipelineLayoutCreateInfo pipeline_layout_info;
   pipeline_layout_info.setSetLayouts(descriptor_set_layout.get());
@@ -357,12 +401,19 @@ std::unique_ptr<PipelineCreateInfoVK> PipelineLibraryVK::CreatePipeline(
   auto pipeline =
       device_.createGraphicsPipelineUnique(cache_.get(), pipeline_info);
   if (pipeline.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Could not create graphics pipeline: " << desc.GetLabel();
+    VALIDATION_LOG << "Could not create graphics pipeline - " << desc.GetLabel()
+                   << ": " << vk::to_string(pipeline.result);
     return nullptr;
   }
 
-  return std::make_unique<PipelineCreateInfoVK>(std::move(pipeline.value),
-                                                std::move(render_pass.value()));
+  ContextVK::SetDebugName(device_, *pipeline_layout.value,
+                          "pipeline_layout_" + desc.GetLabel());
+  ContextVK::SetDebugName(device_, *pipeline.value,
+                          "pipeline_" + desc.GetLabel());
+
+  return std::make_unique<PipelineCreateInfoVK>(
+      std::move(pipeline.value), std::move(render_pass.value()),
+      std::move(pipeline_layout.value), std::move(descriptor_set_layout));
 }
 
 }  // namespace impeller

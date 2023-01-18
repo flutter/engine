@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "flutter/fml/macros.h"
+#include "impeller/geometry/rect.h"
 
 namespace impeller {
 
@@ -15,9 +16,26 @@ namespace impeller {
 /// @brief      The glyph index in the typeface.
 ///
 struct Glyph {
+  enum class Type {
+    kPath,
+    kBitmap,
+  };
+
   uint16_t index = 0;
 
-  Glyph(uint16_t p_index) : index(p_index) {}
+  //------------------------------------------------------------------------------
+  /// @brief  Whether the glyph is a path or a bitmap.
+  ///
+  Type type = Type::kPath;
+
+  //------------------------------------------------------------------------------
+  /// @brief  Visibility coverage of the glyph in text run space (relative to
+  ///         the baseline, no scaling applied).
+  ///
+  Rect bounds;
+
+  Glyph(uint16_t p_index, Type p_type, Rect p_bounds)
+      : index(p_index), type(p_type), bounds(p_bounds) {}
 };
 
 }  // namespace impeller

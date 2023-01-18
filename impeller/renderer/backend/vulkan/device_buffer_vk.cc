@@ -5,57 +5,35 @@
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 
 #include "fml/logging.h"
+#include "vulkan/vulkan_handles.hpp"
 
 namespace impeller {
 
-DeviceBufferAllocationVK::DeviceBufferAllocationVK(
-    const VmaAllocator& allocator,
-    VkBuffer buffer,
-    VmaAllocation allocation,
-    VmaAllocationInfo allocation_info)
-    : allocator_(allocator),
-      buffer_(buffer),
-      allocation_(allocation),
-      allocation_info_(allocation_info) {}
-
-DeviceBufferAllocationVK::~DeviceBufferAllocationVK() {
-  if (buffer_) {
-    vmaDestroyBuffer(allocator_, buffer_, allocation_);
-  }
+void* DeviceBufferAllocationVK::GetMapping() const {
+  return backing_allocation.allocation_info.pMappedData;
 }
 
 vk::Buffer DeviceBufferAllocationVK::GetBufferHandle() const {
-  return buffer_;
-}
-
-void* DeviceBufferAllocationVK::GetMapping() const {
-  return allocation_info_.pMappedData;
+  return buffer;
 }
 
 DeviceBufferVK::DeviceBufferVK(
-    size_t size,
-    StorageMode mode,
+    DeviceBufferDescriptor desc,
     ContextVK& context,
     std::unique_ptr<DeviceBufferAllocationVK> device_allocation)
-    : DeviceBuffer(size, mode),
+    : DeviceBuffer(desc),
       context_(context),
       device_allocation_(std::move(device_allocation)) {}
 
 DeviceBufferVK::~DeviceBufferVK() = default;
 
-bool DeviceBufferVK::CopyHostBuffer(const uint8_t* source,
-                                    Range source_range,
-                                    size_t offset) {
-  if (mode_ != StorageMode::kHostVisible) {
-    // One of the storage modes where a transfer queue must be used.
-    return false;
-  }
+uint8_t* DeviceBufferVK::OnGetContents() const {
+  return reinterpret_cast<uint8_t*>(device_allocation_->GetMapping());
+}
 
-  if (offset + source_range.length > size_) {
-    // Out of bounds of this buffer.
-    return false;
-  }
-
+bool DeviceBufferVK::OnCopyHostBuffer(const uint8_t* source,
+                                      Range source_range,
+                                      size_t offset) {
   auto dest = static_cast<uint8_t*>(device_allocation_->GetMapping());
 
   if (!dest) {
@@ -76,6 +54,10 @@ bool DeviceBufferVK::SetLabel(const std::string& label) {
 
 bool DeviceBufferVK::SetLabel(const std::string& label, Range range) {
   return SetLabel(label);
+}
+
+vk::Buffer DeviceBufferVK::GetVKBufferHandle() const {
+  return device_allocation_->GetBufferHandle();
 }
 
 }  // namespace impeller

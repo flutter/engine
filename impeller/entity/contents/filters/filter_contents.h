@@ -16,8 +16,6 @@
 
 namespace impeller {
 
-class Pipeline;
-
 class FilterContents : public Contents {
  public:
   enum class BlurStyle {
@@ -36,10 +34,7 @@ class FilterContents : public Contents {
     float array[20];
   };
 
-  static std::shared_ptr<FilterContents> MakeBlend(
-      Entity::BlendMode blend_mode,
-      FilterInput::Vector inputs,
-      std::optional<Color> foreground_color = std::nullopt);
+  enum class MorphType { kDilate, kErode };
 
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
       FilterInput::Ref input,
@@ -52,7 +47,7 @@ class FilterContents : public Contents {
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeGaussianBlur(
-      FilterInput::Ref input,
+      const FilterInput::Ref& input,
       Sigma sigma_x,
       Sigma sigma_y,
       BlurStyle blur_style = BlurStyle::kNormal,
@@ -66,15 +61,33 @@ class FilterContents : public Contents {
       BlurStyle blur_style = BlurStyle::kNormal,
       const Matrix& effect_transform = Matrix());
 
-  static std::shared_ptr<FilterContents> MakeColorMatrix(
+  static std::shared_ptr<FilterContents> MakeDirectionalMorphology(
       FilterInput::Ref input,
-      const ColorMatrix& matrix);
+      Radius radius,
+      Vector2 direction,
+      MorphType morph_type,
+      const Matrix& effect_transform = Matrix());
 
-  static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
-      FilterInput::Ref input);
+  static std::shared_ptr<FilterContents> MakeMorphology(
+      FilterInput::Ref input,
+      Radius radius_x,
+      Radius radius_y,
+      MorphType morph_type,
+      const Matrix& effect_transform = Matrix());
 
-  static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
-      FilterInput::Ref input);
+  static std::shared_ptr<FilterContents> MakeMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix,
+      const SamplerDescriptor& desc);
+
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
+      FilterInput::Ref input,
+      const Matrix& matrix);
+
+  static std::shared_ptr<FilterContents> MakeYUVToRGBFilter(
+      std::shared_ptr<Texture> y_texture,
+      std::shared_ptr<Texture> uv_texture,
+      YUVColorSpace yuv_color_space);
 
   FilterContents();
 
@@ -106,7 +119,7 @@ class FilterContents : public Contents {
   std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
                                            const Entity& entity) const override;
 
-  virtual Matrix GetLocalTransform() const;
+  virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
   Matrix GetTransform(const Matrix& parent_transform) const;
 

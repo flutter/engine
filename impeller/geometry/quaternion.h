@@ -45,6 +45,8 @@ struct Quaternion {
     return {x * m, y * m, z * m, w * m};
   }
 
+  Quaternion Invert() const { return {-x, -y, -z, w}; }
+
   Quaternion Slerp(const Quaternion& to, double time) const;
 
   Quaternion operator*(const Quaternion& o) const {
@@ -58,6 +60,13 @@ struct Quaternion {
 
   Quaternion operator*(double scale) const {
     return {scale * x, scale * y, scale * z, scale * w};
+  }
+
+  Vector3 operator*(Vector3 vector) const {
+    Vector3 v(x, y, z);
+    return v * v.Dot(vector) * 2 +        //
+           vector * (w * w - v.Dot(v)) +  //
+           v.Cross(vector) * 2 * w;
   }
 
   Quaternion operator+(const Quaternion& o) const {

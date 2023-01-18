@@ -14,9 +14,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMetalRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterOpenGLRenderer.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderingBackend.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
@@ -29,6 +27,11 @@ using flutter::LayoutClue;
 // device (mouse v.s. trackpad).
 static constexpr int32_t kMousePointerDeviceId = 0;
 static constexpr int32_t kPointerPanZoomDeviceId = 1;
+
+// A trackpad touch following inertial scrolling should cause an inertia cancel
+// event to be issued. Use a window of 50 milliseconds after the scroll to account
+// for delays in event propagation observed in macOS Ventura.
+static constexpr double kTrackpadTouchInertiaCancelWindowMs = 0.050;
 
 /**
  * State tracking for mouse events, to adapt between the events coming from the system and the
@@ -93,9 +96,9 @@ struct MouseState {
   bool rotate_gesture_active = false;
 
   /**
-   * System scroll inertia is currently sending us events.
+   * Time of last scroll momentum event.
    */
-  bool system_scroll_inertia_active = false;
+  NSTimeInterval last_scroll_momentum_changed_time = 0;
 
   /**
    * Resets all gesture state to default values.
@@ -158,6 +161,8 @@ NSData* currentKeyboardLayoutData() {
  * of FlutterView.
  */
 @interface FlutterViewWrapper : NSView
+
+- (void)setBackgroundColor:(NSColor*)color;
 
 @end
 
@@ -266,6 +271,10 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
   return self;
 }
 
+- (void)setBackgroundColor:(NSColor*)color {
+  [_flutterView setBackgroundColor:color];
+}
+
 - (NSArray*)accessibilityChildren {
   return @[ _flutterView ];
 }
@@ -329,18 +338,21 @@ static void CommonInit(FlutterViewController* controller) {
                        nibName:(nullable NSString*)nibName
                         bundle:(nullable NSBundle*)nibBundle {
   NSAssert(engine != nil, @"Engine is required");
+  NSAssert(engine.viewController == nil,
+           @"The supplied FlutterEngine is already used with FlutterViewController "
+            "instance. One instance of the FlutterEngine can only be attached to one "
+            "FlutterViewController at a time. Set FlutterEngine.viewController "
+            "to nil before attaching it to another FlutterViewController.");
+
   self = [super initWithNibName:nibName bundle:nibBundle];
   if (self) {
-    if (engine.viewController) {
-      NSLog(@"The supplied FlutterEngine %@ is already used with FlutterViewController "
-             "instance %@. One instance of the FlutterEngine can only be attached to one "
-             "FlutterViewController at a time. Set FlutterEngine.viewController "
-             "to nil before attaching it to another FlutterViewController.",
-            [engine description], [engine.viewController description]);
-    }
     _engine = engine;
     CommonInit(self);
-    [engine setViewController:self];
+    if (engine.running) {
+      [self loadView];
+      engine.viewController = self;
+      [self initializeKeyboard];
+    }
   }
 
   return self;
@@ -352,26 +364,17 @@ static void CommonInit(FlutterViewController* controller) {
 
 - (void)loadView {
   FlutterView* flutterView;
-  if ([FlutterRenderingBackend renderUsingMetal]) {
-    FlutterMetalRenderer* metalRenderer = reinterpret_cast<FlutterMetalRenderer*>(_engine.renderer);
-    id<MTLDevice> device = metalRenderer.device;
-    id<MTLCommandQueue> commandQueue = metalRenderer.commandQueue;
-    if (!device || !commandQueue) {
-      NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
-      return;
-    }
-    flutterView = [[FlutterView alloc] initWithMTLDevice:device
-                                            commandQueue:commandQueue
-                                         reshapeListener:self];
-  } else {
-    FlutterOpenGLRenderer* openGLRenderer =
-        reinterpret_cast<FlutterOpenGLRenderer*>(_engine.renderer);
-    NSOpenGLContext* mainContext = openGLRenderer.openGLContext;
-    if (!mainContext) {
-      NSLog(@"Unable to create FlutterView; no GL context available.");
-      return;
-    }
-    flutterView = [[FlutterView alloc] initWithMainContext:mainContext reshapeListener:self];
+  id<MTLDevice> device = _engine.renderer.device;
+  id<MTLCommandQueue> commandQueue = _engine.renderer.commandQueue;
+  if (!device || !commandQueue) {
+    NSLog(@"Unable to create FlutterView; no MTLDevice or MTLCommandQueue available.");
+    return;
+  }
+  flutterView = [[FlutterView alloc] initWithMTLDevice:device
+                                          commandQueue:commandQueue
+                                       reshapeListener:self];
+  if (_backgroundColor != nil) {
+    [flutterView setBackgroundColor:_backgroundColor];
   }
   FlutterViewWrapper* wrapperView = [[FlutterViewWrapper alloc] initWithFlutterView:flutterView];
   self.view = wrapperView;
@@ -413,6 +416,11 @@ static void CommonInit(FlutterViewController* controller) {
   }
   _mouseTrackingMode = mode;
   [self configureTrackingArea];
+}
+
+- (void)setBackgroundColor:(NSColor*)color {
+  _backgroundColor = color;
+  [_flutterView setBackgroundColor:_backgroundColor];
 }
 
 - (void)onPreEngineRestart {
@@ -517,11 +525,11 @@ static void CommonInit(FlutterViewController* controller) {
   } else if (event.phase == NSEventPhaseNone && event.momentumPhase == NSEventPhaseNone) {
     [self dispatchMouseEvent:event phase:kHover];
   } else {
-    if (event.momentumPhase == NSEventPhaseBegan) {
-      _mouseState.system_scroll_inertia_active = true;
-    } else if (event.momentumPhase == NSEventPhaseEnded ||
-               event.momentumPhase == NSEventPhaseCancelled) {
-      _mouseState.system_scroll_inertia_active = false;
+    // Waiting until the first momentum change event is a workaround for an issue where
+    // touchesBegan: is called unexpectedly while in low power mode within the interval between
+    // momentum start and the first momentum change.
+    if (event.momentumPhase == NSEventPhaseChanged) {
+      _mouseState.last_scroll_momentum_changed_time = event.timestamp;
     }
     // Skip momentum update events, the framework will generate scroll momentum.
     NSAssert(event.momentumPhase != NSEventPhaseNone,
@@ -545,6 +553,8 @@ static void CommonInit(FlutterViewController* controller) {
                               _mouseState.rotate_gesture_active;
     if (event.type == NSEventTypeScrollWheel) {
       _mouseState.pan_gesture_active = true;
+      // Ensure scroll inertia cancel event is not sent afterwards.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     } else if (event.type == NSEventTypeMagnify) {
       _mouseState.scale_gesture_active = true;
     } else if (event.type == NSEventTypeRotate) {
@@ -611,7 +621,7 @@ static void CommonInit(FlutterViewController* controller) {
     } else if (event.type == NSEventTypeMagnify) {
       _mouseState.scale += event.magnification;
     } else if (event.type == NSEventTypeRotate) {
-      _mouseState.rotation += event.rotation * (M_PI / 180.0);
+      _mouseState.rotation += event.rotation * (-M_PI / 180.0);
     }
     flutterEvent.pan_x = _mouseState.delta_x;
     flutterEvent.pan_y = _mouseState.delta_y;
@@ -633,8 +643,23 @@ static void CommonInit(FlutterViewController* controller) {
       pixelsPerLine = 40.0;
     }
     double scaleFactor = self.flutterView.layer.contentsScale;
-    flutterEvent.scroll_delta_x = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
-    flutterEvent.scroll_delta_y = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
+    // When mouse input is received while shift is pressed (regardless of
+    // any other pressed keys), Mac automatically flips the axis. Other
+    // platforms do not do this, so we flip it back to normalize the input
+    // received by the framework. The keyboard+mouse-scroll mechanism is exposed
+    // in the ScrollBehavior of the framework so developers can customize the
+    // behavior.
+    // At time of change, Apple does not expose any other type of API or signal
+    // that the X/Y axes have been flipped.
+    double scaledDeltaX = -event.scrollingDeltaX * pixelsPerLine * scaleFactor;
+    double scaledDeltaY = -event.scrollingDeltaY * pixelsPerLine * scaleFactor;
+    if (event.modifierFlags & NSShiftKeyMask) {
+      flutterEvent.scroll_delta_x = scaledDeltaY;
+      flutterEvent.scroll_delta_y = scaledDeltaX;
+    } else {
+      flutterEvent.scroll_delta_x = scaledDeltaX;
+      flutterEvent.scroll_delta_y = scaledDeltaY;
+    }
   }
   [_engine sendPointerEvent:flutterEvent];
 
@@ -837,8 +862,9 @@ static void CommonInit(FlutterViewController* controller) {
 - (void)touchesBeganWithEvent:(NSEvent*)event {
   NSTouch* touch = event.allTouches.anyObject;
   if (touch != nil) {
-    if (_mouseState.system_scroll_inertia_active) {
-      // The trackpad has been touched and a scroll gesture is still sending inertia events.
+    if ((event.timestamp - _mouseState.last_scroll_momentum_changed_time) <
+        kTrackpadTouchInertiaCancelWindowMs) {
+      // The trackpad has been touched following a scroll momentum event.
       // A scroll inertia cancel message should be sent to the framework.
       NSPoint locationInView = [self.flutterView convertPoint:event.locationInWindow fromView:nil];
       NSPoint locationInBackingCoordinates =
@@ -854,6 +880,8 @@ static void CommonInit(FlutterViewController* controller) {
       };
 
       [_engine sendPointerEvent:flutterEvent];
+      // Ensure no further scroll inertia cancel event will be sent.
+      _mouseState.last_scroll_momentum_changed_time = 0;
     }
   }
 }

@@ -82,6 +82,12 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
+#if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
+    (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
+  // Setup the gpu tracer.
+  { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
+#endif
+
   is_valid_ = true;
 }
 
@@ -152,7 +158,7 @@ static id<MTLDevice> CreateMetalDevice() {
   return ::MTLCreateSystemDefaultDevice();
 }
 
-std::shared_ptr<Context> ContextMTL::Create(
+std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::string>& shader_library_paths) {
   auto device = CreateMetalDevice();
   auto context = std::shared_ptr<ContextMTL>(new ContextMTL(
@@ -164,7 +170,7 @@ std::shared_ptr<Context> ContextMTL::Create(
   return context;
 }
 
-std::shared_ptr<Context> ContextMTL::Create(
+std::shared_ptr<ContextMTL> ContextMTL::Create(
     const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
     const std::string& label) {
   auto device = CreateMetalDevice();
@@ -210,6 +216,10 @@ std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
   return work_queue_;
 }
 
+std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {
+  return gpu_tracer_;
+}
+
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBufferInQueue(
     id<MTLCommandQueue> queue) const {
   if (!IsValid()) {
@@ -235,6 +245,11 @@ id<MTLDevice> ContextMTL::GetMTLDevice() const {
 // |Context|
 bool ContextMTL::SupportsOffscreenMSAA() const {
   return true;
+}
+
+// |Context|
+const BackendFeatures& ContextMTL::GetBackendFeatures() const {
+  return kModernBackendFeatures;
 }
 
 }  // namespace impeller

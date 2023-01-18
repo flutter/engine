@@ -134,13 +134,6 @@ num? parseFloat(String source) {
   return result;
 }
 
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(domWindow, 'FontFace');
-
-final bool supportsFontsClearApi =
-    js_util.hasProperty(domDocument, 'fonts') &&
-        js_util.hasProperty(domDocument.fonts!, 'clear');
-
 /// Used to decide if the browser tab still has the focus.
 ///
 /// This information is useful for deciding on the blur behavior.
@@ -202,8 +195,8 @@ DomCanvasElement? tryCreateCanvasElement(int width, int height) {
     return null;
   }
   try {
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width.toDouble();
+    canvas.height = height.toDouble();
   } catch (e) {
     // It seems the tribal knowledge of why we anticipate an exception while
     // setting width/height on a non-null canvas and why it's OK to return null
@@ -242,15 +235,19 @@ void debugResetBrowserSupportsImageDecoder() {
       _imageDecoderConstructor != null;
 }
 
+/// The signature of the function passed to the constructor of JavaScript `Promise`.
+typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
+
 /// Corresponds to JavaScript's `Promise`.
 ///
 /// This type doesn't need any members. Instead, it should be first converted
 /// to Dart's [Future] using [promiseToFuture] then interacted with through the
 /// [Future] API.
-@JS()
-@anonymous
+@JS('window.Promise')
 @staticInterop
-class JsPromise {}
+class JsPromise {
+  external factory JsPromise(JsPromiseCallback callback);
+}
 
 /// Corresponds to the browser's `ImageDecoder` type.
 ///
@@ -283,8 +280,8 @@ class ImageDecoderOptions {
     required String type,
     required Uint8List data,
     required String premultiplyAlpha,
-    required int? desiredWidth,
-    required int? desiredHeight,
+    int? desiredWidth,
+    int? desiredHeight,
     required String colorSpaceConversion,
     required bool preferAnimation,
   });
@@ -332,14 +329,15 @@ class DecodeOptions {
 class VideoFrame implements DomCanvasImageSource {}
 
 extension VideoFrameExtension on VideoFrame {
-  external int allocationSize();
+  external double allocationSize();
   external JsPromise copyTo(Uint8List destination);
   external String? get format;
-  external int get codedWidth;
-  external int get codedHeight;
-  external int get displayWidth;
-  external int get displayHeight;
-  external int? get duration;
+  external double get codedWidth;
+  external double get codedHeight;
+  external double get displayWidth;
+  external double get displayHeight;
+  external double? get duration;
+  external VideoFrame clone();
   external void close();
 }
 
@@ -369,8 +367,8 @@ extension ImageTrackListExtension on ImageTrackList {
 class ImageTrack {}
 
 extension ImageTrackExtension on ImageTrack {
-  external int get repetitionCount;
-  external int get frameCount;
+  external double get repetitionCount;
+  external double get frameCount;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {
@@ -985,11 +983,11 @@ class OffScreenCanvas {
       width = requestedWidth;
       height = requestedHeight;
       if(offScreenCanvas != null) {
-        offScreenCanvas!.width = requestedWidth;
-        offScreenCanvas!.height = requestedHeight;
+        offScreenCanvas!.width = requestedWidth.toDouble();
+        offScreenCanvas!.height = requestedHeight.toDouble();
       } else if (canvasElement != null) {
-        canvasElement!.width = requestedWidth;
-        canvasElement!.height = requestedHeight;
+        canvasElement!.width = requestedWidth.toDouble();
+        canvasElement!.height = requestedHeight.toDouble();
         _updateCanvasCssSize(canvasElement!);
       }
     }

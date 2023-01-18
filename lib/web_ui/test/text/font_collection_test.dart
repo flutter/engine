@@ -29,9 +29,10 @@ void testMain() {
         const String testFontFamily = 'Ahem';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -39,17 +40,16 @@ void testMain() {
 
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'Ahem');
-      },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
-          skip: browserEngine == BrowserEngine.edge);
+      });
 
       test('Register Asset with white space in the family name', () async {
         const String testFontFamily = 'Ahem ahem ahem';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -58,18 +58,17 @@ void testMain() {
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'Ahem ahem ahem');
       },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
           // TODO(mdebbar): https://github.com/flutter/flutter/issues/51142
-          skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.webkit);
+          skip: browserEngine == BrowserEngine.webkit);
 
       test('Register Asset with capital case letters', () async {
         const String testFontFamily = 'AhEm';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -77,9 +76,7 @@ void testMain() {
 
         expect(fontFamilyList.length, equals(1));
         expect(fontFamilyList.first, 'AhEm');
-      },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
-          skip: browserEngine == BrowserEngine.edge);
+      });
     });
 
     group('fonts with special characters', () {
@@ -87,9 +84,10 @@ void testMain() {
         const String testFontFamily = '/Ahem';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -104,18 +102,17 @@ void testMain() {
           expect(fontFamilyList.first, '"/Ahem"');
         }
       },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
           // TODO(mdebbar): https://github.com/flutter/flutter/issues/51142
-          skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.webkit);
+          skip: browserEngine == BrowserEngine.webkit);
 
       test('Register Asset twice with exclamation mark', () async {
         const String testFontFamily = 'Ahem!!ahem';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -130,18 +127,17 @@ void testMain() {
           expect(fontFamilyList.first, '"Ahem!!ahem"');
         }
       },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
           // TODO(mdebbar): https://github.com/flutter/flutter/issues/51142
-          skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.webkit);
+          skip: browserEngine == BrowserEngine.webkit);
 
       test('Register Asset twice with comma', () async {
         const String testFontFamily = 'Ahem ,ahem';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -156,19 +152,18 @@ void testMain() {
           expect(fontFamilyList.first, '"Ahem ,ahem"');
         }
       },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
           // TODO(mdebbar): https://github.com/flutter/flutter/issues/51142
-          skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.webkit);
+          skip: browserEngine == BrowserEngine.webkit);
 
       test('Register Asset twice with a digit at the start of a token',
           () async {
         const String testFontFamily = 'Ahem 1998';
         final List<String> fontFamilyList = <String>[];
 
-        fontManager.registerAsset(
+        fontManager.downloadAsset(
             testFontFamily, 'url($testFontUrl)', const <String, String>{});
-        await fontManager.ensureFontsLoaded();
+        await fontManager.downloadAllFonts();
+        fontManager.registerDownloadedFonts();
         domDocument.fonts!
             .forEach(allowInterop((DomFontFace f, DomFontFace f2, DomFontFaceSet s) {
           fontFamilyList.add(f.family!);
@@ -183,10 +178,8 @@ void testMain() {
           expect(fontFamilyList.first, '"Ahem 1998"');
         }
       },
-          // TODO(mdebbar): https://github.com/flutter/flutter/issues/50770
           // TODO(mdebbar): https://github.com/flutter/flutter/issues/51142
-          skip: browserEngine == BrowserEngine.edge ||
-              browserEngine == BrowserEngine.webkit);
+          skip: browserEngine == BrowserEngine.webkit);
     });
   });
 }

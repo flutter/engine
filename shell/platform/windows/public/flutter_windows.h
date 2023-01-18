@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_PUBLIC_FLUTTER_H_
 
+#include <dxgi.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <windows.h>
@@ -146,7 +147,7 @@ FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 // set in the dart_entrypoint field of the FlutterDesktopEngineProperties
 // struct passed to FlutterDesktopEngineCreate.
 //
-// If sprecified, entry_point must be the name of a top-level function from the
+// If specified, entry_point must be the name of a top-level function from the
 // same Dart library that contains the app's main() function, and must be
 // decorated with `@pragma(vm:entry-point)` to ensure the method is not
 // tree-shaken by the Dart compiler. If conflicting non-null values are passed
@@ -180,6 +181,12 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
                                        const char* plugin_name);
 
 // Returns the messenger associated with the engine.
+//
+// This does not provide an owning reference, so should *not* be balanced with a
+// call to |FlutterDesktopMessengerRelease|.
+//
+// Callers should use |FlutterDesktopMessengerAddRef| if the returned pointer
+// will potentially outlive 'engine', such as when passing it to another thread.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 
@@ -200,6 +207,10 @@ FLUTTER_EXPORT void FlutterDesktopEngineSetNextFrameCallback(
 
 // Return backing HWND for manipulation in host application.
 FLUTTER_EXPORT HWND FlutterDesktopViewGetHWND(FlutterDesktopViewRef view);
+
+// Returns the DXGI adapter used for rendering or nullptr in case of error.
+FLUTTER_EXPORT IDXGIAdapter* FlutterDesktopViewGetGraphicsAdapter(
+    FlutterDesktopViewRef view);
 
 // ========== Plugin Registrar (extensions) ==========
 // These are Windows-specific extensions to flutter_plugin_registrar.h

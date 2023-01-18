@@ -6,6 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_FRAGMENT_SHADER_H_
 
 #include "flutter/lib/ui/dart_wrapper.h"
+#include "flutter/lib/ui/painting/fragment_program.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_shader.h"
 #include "flutter/lib/ui/painting/shader.h"
@@ -19,22 +20,38 @@
 
 namespace flutter {
 
-class FragmentShader : public Shader {
+class FragmentProgram;
+
+class ReusableFragmentShader : public Shader {
   DEFINE_WRAPPERTYPEINFO();
-  FML_FRIEND_MAKE_REF_COUNTED(FragmentShader);
+  FML_FRIEND_MAKE_REF_COUNTED(ReusableFragmentShader);
 
  public:
-  ~FragmentShader() override;
-  static fml::RefPtr<FragmentShader> Create(
-      Dart_Handle dart_handle,
-      std::shared_ptr<DlRuntimeEffectColorSource> shader);
+  ~ReusableFragmentShader() override;
 
+  static Dart_Handle Create(Dart_Handle wrapper,
+                            Dart_Handle program,
+                            Dart_Handle float_count,
+                            Dart_Handle sampler_count);
+
+  void SetImageSampler(Dart_Handle index, Dart_Handle image);
+
+  bool ValidateSamplers();
+
+  void Dispose();
+
+  // |Shader|
   std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
 
  private:
-  explicit FragmentShader(std::shared_ptr<DlRuntimeEffectColorSource> shader);
+  ReusableFragmentShader(fml::RefPtr<FragmentProgram> program,
+                         uint64_t float_count,
+                         uint64_t sampler_count);
 
-  std::shared_ptr<DlRuntimeEffectColorSource> source_;
+  fml::RefPtr<FragmentProgram> program_;
+  sk_sp<SkData> uniform_data_;
+  std::vector<std::shared_ptr<DlColorSource>> samplers_;
+  size_t float_count_;
 };
 
 }  // namespace flutter

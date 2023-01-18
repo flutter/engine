@@ -26,7 +26,9 @@ class CompilerTest : public ::testing::TestWithParam<TargetPlatform> {
 
   bool CanCompileAndReflect(
       const char* fixture_name,
-      SourceType source_type = SourceType::kUnknown) const;
+      SourceType source_type = SourceType::kUnknown,
+      SourceLanguage source_language = SourceLanguage::kGLSL,
+      const char* entry_point_name = "main") const;
 
  private:
   fml::UniqueFD intermediates_directory_;

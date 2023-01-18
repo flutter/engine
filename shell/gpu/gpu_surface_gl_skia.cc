@@ -68,7 +68,7 @@ GPUSurfaceGLSkia::GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate,
   context_owner_ = true;
 }
 
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
+GPUSurfaceGLSkia::GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
                                    GPUSurfaceGLDelegate* delegate,
                                    bool render_to_surface)
     : delegate_(delegate),
@@ -226,10 +226,11 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   if (!render_to_surface_) {
     framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
-        nullptr, std::move(framebuffer_info),
+        nullptr, framebuffer_info,
         [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
           return true;
-        });
+        },
+        size);
   }
 
   const auto root_surface_transformation = GetRootTransformation();
@@ -252,8 +253,8 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
   if (!framebuffer_info.existing_damage.has_value()) {
     framebuffer_info.existing_damage = existing_damage_;
   }
-  return std::make_unique<SurfaceFrame>(surface, std::move(framebuffer_info),
-                                        submit_callback,
+  return std::make_unique<SurfaceFrame>(surface, framebuffer_info,
+                                        submit_callback, size,
                                         std::move(context_switch));
 }
 

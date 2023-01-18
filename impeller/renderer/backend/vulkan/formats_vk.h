@@ -9,6 +9,7 @@
 #include "impeller/renderer/descriptor_set_layout.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/shader_types.h"
+#include "vulkan/vulkan_enums.hpp"
 
 namespace impeller {
 
@@ -138,7 +139,7 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
     case PixelFormat::kUnknown:
       return vk::Format::eUndefined;
     case PixelFormat::kA8UNormInt:
-      return vk::Format::eA8B8G8R8UnormPack32;
+      return vk::Format::eR8Unorm;
     case PixelFormat::kR8G8B8A8UNormInt:
       return vk::Format::eR8G8B8A8Unorm;
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
@@ -147,18 +148,27 @@ constexpr vk::Format ToVKImageFormat(PixelFormat format) {
       return vk::Format::eB8G8R8A8Unorm;
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
       return vk::Format::eB8G8R8A8Srgb;
+    case PixelFormat::kR32G32B32A32Float:
+      return vk::Format::eR32G32B32A32Sfloat;
+    case PixelFormat::kR16G16B16A16Float:
+      return vk::Format::eR16G16B16A16Sfloat;
     case PixelFormat::kS8UInt:
       return vk::Format::eS8Uint;
+    case PixelFormat::kD32FloatS8UInt:
+      return vk::Format::eD32SfloatS8Uint;
+    case PixelFormat::kR8UNormInt:
+      return vk::Format::eR8Unorm;
+    case PixelFormat::kR8G8UNormInt:
+      return vk::Format::eR8G8Unorm;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr PixelFormat ToPixelFormat(vk::Format format) {
   switch (format) {
     case vk::Format::eUndefined:
       return PixelFormat::kUnknown;
-
-    case vk::Format::eA8B8G8R8UnormPack32:
-      return PixelFormat::kA8UNormInt;
 
     case vk::Format::eR8G8B8A8Unorm:
       return PixelFormat::kR8G8B8A8UNormInt;
@@ -172,8 +182,23 @@ constexpr PixelFormat ToPixelFormat(vk::Format format) {
     case vk::Format::eB8G8R8A8Srgb:
       return PixelFormat::kB8G8R8A8UNormIntSRGB;
 
+    case vk::Format::eR32G32B32A32Sfloat:
+      return PixelFormat::kR32G32B32A32Float;
+
+    case vk::Format::eR16G16B16A16Sfloat:
+      return PixelFormat::kR16G16B16A16Float;
+
     case vk::Format::eS8Uint:
       return PixelFormat::kS8UInt;
+
+    case vk::Format::eD32SfloatS8Uint:
+      return PixelFormat::kD32FloatS8UInt;
+
+    case vk::Format::eR8Unorm:
+      return PixelFormat::kR8UNormInt;
+
+    case vk::Format::eR8G8Unorm:
+      return PixelFormat::kR8G8UNormInt;
 
     default:
       return PixelFormat::kUnknown;
@@ -243,6 +268,8 @@ constexpr vk::ShaderStageFlags ToVkShaderStage(ShaderStage stage) {
     case ShaderStage::kVertex:
       return vk::ShaderStageFlagBits::eVertex;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
@@ -273,6 +300,8 @@ constexpr vk::AttachmentLoadOp ToVKAttachmentLoadOp(LoadAction load_action) {
     case LoadAction::kDontCare:
       return vk::AttachmentLoadOp::eDontCare;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
@@ -287,6 +316,38 @@ constexpr vk::AttachmentStoreOp ToVKAttachmentStoreOp(
       // TODO (kaushikiska): vulkan doesn't support multisample resolve.
       return vk::AttachmentStoreOp::eDontCare;
   }
+
+  FML_UNREACHABLE();
+}
+
+constexpr vk::IndexType ToVKIndexType(IndexType index_type) {
+  switch (index_type) {
+    case IndexType::k16bit:
+      return vk::IndexType::eUint16;
+    case IndexType::k32bit:
+      return vk::IndexType::eUint32;
+    case IndexType::kUnknown:
+      return vk::IndexType::eUint32;
+  }
+
+  FML_UNREACHABLE();
+}
+
+constexpr vk::PrimitiveTopology ToVKPrimitiveTopology(PrimitiveType primitive) {
+  switch (primitive) {
+    case PrimitiveType::kTriangle:
+      return vk::PrimitiveTopology::eTriangleList;
+    case PrimitiveType::kTriangleStrip:
+      return vk::PrimitiveTopology::eTriangleStrip;
+    case PrimitiveType::kLine:
+      return vk::PrimitiveTopology::eLineList;
+    case PrimitiveType::kLineStrip:
+      return vk::PrimitiveTopology::eLineStrip;
+    case PrimitiveType::kPoint:
+      return vk::PrimitiveTopology::ePointList;
+  }
+
+  FML_UNREACHABLE();
 }
 
 }  // namespace impeller

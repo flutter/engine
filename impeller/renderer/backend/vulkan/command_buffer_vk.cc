@@ -4,9 +4,13 @@
 
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
 
+#include <memory>
+#include <utility>
+
 #include "flutter/fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/render_pass_vk.h"
 #include "impeller/renderer/command_buffer.h"
@@ -15,35 +19,30 @@
 namespace impeller {
 
 std::shared_ptr<CommandBufferVK> CommandBufferVK::Create(
-    std::weak_ptr<const Context> context,
-    vk::Device device,
-    vk::CommandPool command_pool,
-    SurfaceProducerVK* surface_producer) {
-  vk::CommandBufferAllocateInfo allocate_info;
-  allocate_info.setLevel(vk::CommandBufferLevel::ePrimary);
-  allocate_info.setCommandBufferCount(1);
-  allocate_info.setCommandPool(command_pool);
-
-  auto res = device.allocateCommandBuffersUnique(allocate_info);
-  if (res.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Failed to allocate command buffer: "
-                   << vk::to_string(res.result);
+    const std::weak_ptr<const Context>& context_arg,
+    vk::Device device) {
+  if (auto context = context_arg.lock()) {
+    auto context_vk = reinterpret_cast<const ContextVK*>(context.get());
+    auto queue = context_vk->GetGraphicsQueue();
+    auto command_pool = context_vk->CreateGraphicsCommandPool();
+    auto fenced_command_buffer = std::make_shared<FencedCommandBufferVK>(
+        device, queue, command_pool->Get());
+    return std::make_shared<CommandBufferVK>(
+        context, device, std::move(command_pool), fenced_command_buffer);
+  } else {
     return nullptr;
   }
-
-  vk::UniqueCommandBuffer cmd = std::move(res.value[0]);
-  return std::make_shared<CommandBufferVK>(context, device, surface_producer,
-                                           std::move(cmd));
 }
 
-CommandBufferVK::CommandBufferVK(std::weak_ptr<const Context> context,
-                                 vk::Device device,
-                                 SurfaceProducerVK* surface_producer,
-                                 vk::UniqueCommandBuffer command_buffer)
-    : CommandBuffer(context),
+CommandBufferVK::CommandBufferVK(
+    std::weak_ptr<const Context> context,
+    vk::Device device,
+    std::unique_ptr<CommandPoolVK> command_pool,
+    std::shared_ptr<FencedCommandBufferVK> command_buffer)
+    : CommandBuffer(std::move(context)),
       device_(device),
-      command_buffer_(std::move(command_buffer)),
-      surface_producer_(surface_producer) {
+      command_pool_(std::move(command_pool)),
+      fenced_command_buffer_(std::move(command_buffer)) {
   is_valid_ = true;
 }
 
@@ -52,7 +51,7 @@ CommandBufferVK::~CommandBufferVK() = default;
 void CommandBufferVK::SetLabel(const std::string& label) const {
   if (auto context = context_.lock()) {
     reinterpret_cast<const ContextVK*>(context.get())
-        ->SetDebugName(*command_buffer_, label);
+        ->SetDebugName(fenced_command_buffer_->Get(), label);
   }
 }
 
@@ -61,25 +60,16 @@ bool CommandBufferVK::IsValid() const {
 }
 
 bool CommandBufferVK::OnSubmitCommands(CompletionCallback callback) {
-  bool result = surface_producer_->Submit(*command_buffer_);
-
+  bool submit = fenced_command_buffer_->Submit();
   if (callback) {
-    callback(result ? CommandBuffer::Status::kCompleted
+    callback(submit ? CommandBuffer::Status::kCompleted
                     : CommandBuffer::Status::kError);
   }
-
-  return result;
+  return submit;
 }
 
 std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
-    RenderTarget target) const {
-  vk::CommandBufferBeginInfo begin_info;
-  auto res = command_buffer_->begin(begin_info);
-  if (res != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
-    return nullptr;
-  }
-
+    RenderTarget target) {
   std::vector<vk::AttachmentDescription> color_attachments;
   for (const auto& [k, attachment] : target.GetColorAttachments()) {
     const TextureDescriptor& tex_desc =
@@ -93,7 +83,7 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
 
     color_attachment.setStencilLoadOp(vk::AttachmentLoadOp::eDontCare);
     color_attachment.setStencilStoreOp(vk::AttachmentStoreOp::eDontCare);
-    color_attachment.setInitialLayout(vk::ImageLayout::eUndefined);
+    color_attachment.setInitialLayout(vk::ImageLayout::eColorAttachmentOptimal);
     color_attachment.setFinalLayout(vk::ImageLayout::ePresentSrcKHR);
 
     color_attachments.push_back(color_attachment);
@@ -116,21 +106,27 @@ std::shared_ptr<RenderPass> CommandBufferVK::OnCreateRenderPass(
   render_pass_create.setSubpassCount(1);
   render_pass_create.setPSubpasses(&subpass_desc);
 
-  auto render_pass_create_res =
-      device_.createRenderPassUnique(render_pass_create);
+  auto render_pass_create_res = device_.createRenderPass(render_pass_create);
   if (render_pass_create_res.result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Failed to create render pass: "
                    << vk::to_string(render_pass_create_res.result);
     return nullptr;
   }
 
-  return std::make_shared<RenderPassVK>(
-      context_, std::move(target), *command_buffer_,
-      std::move(render_pass_create_res.value));
+  vk::RenderPass render_pass = render_pass_create_res.value;
+  return std::make_shared<RenderPassVK>(context_, device_, std::move(target),
+                                        fenced_command_buffer_, render_pass);
 }
 
 std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {
-  FML_UNREACHABLE();
+  // TODO(kaushikiska): https://github.com/flutter/flutter/issues/112649
+  return nullptr;
+}
+
+std::shared_ptr<ComputePass> CommandBufferVK::OnCreateComputePass() const {
+  // TODO(dnfield): https://github.com/flutter/flutter/issues/110622
+  VALIDATION_LOG << "ComputePasses unimplemented for Vulkan";
+  return nullptr;
 }
 
 }  // namespace impeller

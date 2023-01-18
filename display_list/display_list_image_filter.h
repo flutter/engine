@@ -669,6 +669,10 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
 
   const SkMatrix& matrix() const { return matrix_; }
 
+  const std::shared_ptr<DlImageFilter> image_filter() const {
+    return image_filter_;
+  }
+
   const DlLocalMatrixImageFilter* asLocalMatrix() const override {
     return this;
   }
@@ -712,7 +716,11 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
     if (!image_filter_) {
       return nullptr;
     }
-    return image_filter_->skia_object()->makeWithLocalMatrix(matrix_);
+    sk_sp<SkImageFilter> skia_object = image_filter_->skia_object();
+    if (!skia_object) {
+      return nullptr;
+    }
+    return skia_object->makeWithLocalMatrix(matrix_);
   }
 
  protected:

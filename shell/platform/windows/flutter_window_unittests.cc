@@ -42,6 +42,9 @@ class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _, _))
         .WillByDefault(Invoke(real_implementation_.get(),
                               &KeyboardKeyHandler::KeyboardHook));
+    ON_CALL(*this, SyncModifiersIfNeeded(_))
+        .WillByDefault(Invoke(real_implementation_.get(),
+                              &KeyboardKeyHandler::SyncModifiersIfNeeded));
   }
 
   MOCK_METHOD7(KeyboardHook,
@@ -52,6 +55,8 @@ class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
                     bool extended,
                     bool was_down,
                     KeyEventCallback callback));
+
+  MOCK_METHOD1(SyncModifiersIfNeeded, void(int modifiers_state));
 
  private:
   std::unique_ptr<KeyboardKeyHandler> real_implementation_;
@@ -128,6 +133,7 @@ class MockFlutterWindow : public FlutterWindow {
                void(double, double, FlutterPointerDeviceKind, int32_t));
   MOCK_METHOD0(OnSetCursor, void());
   MOCK_METHOD0(GetScrollOffsetMultiplier, float());
+  MOCK_METHOD0(GetHighContrastEnabled, bool());
   MOCK_METHOD0(GetDpiScale, float());
   MOCK_METHOD0(IsVisible, bool());
   MOCK_METHOD1(UpdateCursorRect, void(const Rect&));
@@ -135,6 +141,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD3(Win32DispatchMessage, UINT(UINT, WPARAM, LPARAM));
   MOCK_METHOD4(Win32PeekMessage, BOOL(LPMSG, UINT, UINT, UINT));
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
+  MOCK_METHOD0(GetPlatformWindow, HWND());
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -152,9 +159,12 @@ class TestFlutterWindowsView : public FlutterWindowsView {
  public:
   TestFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window_binding)
       : FlutterWindowsView(std::move(window_binding)) {}
+  ~TestFlutterWindowsView() {}
 
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
+
+  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
@@ -261,15 +271,15 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
   // Move
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
 
   // Down
@@ -318,7 +328,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
       .Times(1);
 
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
@@ -328,7 +338,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
 
   // Touch
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
@@ -338,7 +348,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
 
   // Pen
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindStylus,
@@ -375,6 +385,60 @@ TEST(FlutterWindowTest, OnWindowRepaint) {
   EXPECT_CALL(delegate, OnWindowRepaint()).Times(1);
 
   win32window.InjectWindowMessage(WM_PAINT, 0, 0);
+}
+
+TEST(FlutterWindowTest, OnThemeChange) {
+  MockFlutterWindow win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  ON_CALL(win32window, GetHighContrastEnabled()).WillByDefault(Return(true));
+  EXPECT_CALL(delegate, UpdateHighContrastEnabled(true)).Times(1);
+
+  win32window.InjectWindowMessage(WM_THEMECHANGED, 0, 0);
+}
+
+TEST(FlutterWindowTest, InitialAccessibilityFeatures) {
+  MockFlutterWindow win32window;
+  MockWindowBindingHandlerDelegate delegate;
+  win32window.SetView(&delegate);
+
+  ON_CALL(win32window, GetHighContrastEnabled()).WillByDefault(Return(true));
+  EXPECT_CALL(delegate, UpdateHighContrastEnabled(true)).Times(1);
+
+  win32window.SendInitialAccessibilityFeatures();
+}
+
+// Ensure that announcing the alert propagates the message to the alert node.
+// Different screen readers use different properties for alerts.
+TEST(FlutterWindowTest, AlertNode) {
+  std::unique_ptr<MockFlutterWindow> win32window =
+      std::make_unique<MockFlutterWindow>();
+  ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
+  AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
+  TestFlutterWindowsView view(std::move(win32window));
+  EXPECT_CALL(view,
+              NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT,
+                                    AccessibilityRootNode::kAlertChildId))
+      .Times(1);
+  std::wstring message = L"Test alert";
+  view.AnnounceAlert(message);
+  IAccessible* alert = root_node->GetOrCreateAlert();
+  VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
+  BSTR strptr;
+  alert->get_accName(self, &strptr);
+  EXPECT_EQ(message, strptr);
+
+  alert->get_accDescription(self, &strptr);
+  EXPECT_EQ(message, strptr);
+
+  alert->get_accValue(self, &strptr);
+  EXPECT_EQ(message, strptr);
+
+  VARIANT role;
+  alert->get_accRole(self, &role);
+  EXPECT_EQ(role.vt, VT_I4);
+  EXPECT_EQ(role.lVal, ROLE_SYSTEM_ALERT);
 }
 
 }  // namespace testing

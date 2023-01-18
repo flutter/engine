@@ -4,11 +4,14 @@
 
 #include "impeller/entity/entity.h"
 
+#include <algorithm>
 #include <optional>
 
 #include "impeller/base/validation.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/entity_pass.h"
+#include "impeller/geometry/vector.h"
 #include "impeller/renderer/render_pass.h"
 
 namespace impeller {
@@ -25,27 +28,24 @@ void Entity::SetTransformation(const Matrix& transformation) {
   transformation_ = transformation;
 }
 
-void Entity::SetAddsToCoverage(bool adds) {
-  adds_to_coverage_ = adds;
-}
-
-bool Entity::AddsToCoverage() const {
-  return adds_to_coverage_;
-}
-
 std::optional<Rect> Entity::GetCoverage() const {
-  if (!adds_to_coverage_ || !contents_) {
+  if (!contents_) {
     return std::nullopt;
   }
 
   return contents_->GetCoverage(*this);
 }
 
-bool Entity::ShouldRender(const ISize& target_size) const {
-  if (BlendModeShouldCoverWholeScreen(blend_mode_)) {
-    return true;
+Contents::StencilCoverage Entity::GetStencilCoverage(
+    const std::optional<Rect>& current_stencil_coverage) const {
+  if (!contents_) {
+    return {};
   }
-  return contents_->ShouldRender(*this, target_size);
+  return contents_->GetStencilCoverage(*this, current_stencil_coverage);
+}
+
+bool Entity::ShouldRender(const std::optional<Rect>& stencil_coverage) const {
+  return contents_->ShouldRender(*this, stencil_coverage);
 }
 
 void Entity::SetContents(std::shared_ptr<Contents> contents) {
@@ -72,7 +72,7 @@ void Entity::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
-Entity::BlendMode Entity::GetBlendMode() const {
+BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 

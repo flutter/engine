@@ -82,7 +82,7 @@ bool RenderTarget::IsValid() const {
 }
 
 void RenderTarget::IterateAllAttachments(
-    std::function<bool(const Attachment& attachment)> iterator) const {
+    const std::function<bool(const Attachment& attachment)>& iterator) const {
   for (const auto& color : colors_) {
     if (!iterator(color.second)) {
       return;
@@ -140,23 +140,30 @@ std::shared_ptr<Texture> RenderTarget::GetRenderTargetTexture() const {
                                        : found->second.texture;
 }
 
-RenderTarget& RenderTarget::SetColorAttachment(ColorAttachment attachment,
-                                               size_t index) {
-  if (attachment) {
+RenderTarget& RenderTarget::SetColorAttachment(
+    const ColorAttachment& attachment,
+    size_t index) {
+  if (attachment.IsValid()) {
     colors_[index] = attachment;
   }
   return *this;
 }
 
-RenderTarget& RenderTarget::SetDepthAttachment(DepthAttachment attachment) {
-  if (attachment) {
+RenderTarget& RenderTarget::SetDepthAttachment(
+    std::optional<DepthAttachment> attachment) {
+  if (!attachment.has_value()) {
+    depth_ = std::nullopt;
+  } else if (attachment->IsValid()) {
     depth_ = std::move(attachment);
   }
   return *this;
 }
 
-RenderTarget& RenderTarget::SetStencilAttachment(StencilAttachment attachment) {
-  if (attachment) {
+RenderTarget& RenderTarget::SetStencilAttachment(
+    std::optional<StencilAttachment> attachment) {
+  if (!attachment.has_value()) {
+    stencil_ = std::nullopt;
+  } else if (attachment->IsValid()) {
     stencil_ = std::move(attachment);
   }
   return *this;
@@ -178,7 +185,7 @@ const std::optional<StencilAttachment>& RenderTarget::GetStencilAttachment()
 
 RenderTarget RenderTarget::CreateOffscreen(const Context& context,
                                            ISize size,
-                                           std::string label,
+                                           const std::string& label,
                                            StorageMode color_storage_mode,
                                            LoadAction color_load_action,
                                            StoreAction color_store_action,
@@ -190,12 +197,14 @@ RenderTarget RenderTarget::CreateOffscreen(const Context& context,
   }
 
   TextureDescriptor color_tex0;
-  color_tex0.format = PixelFormat::kDefaultColor;
+  color_tex0.storage_mode = color_storage_mode;
+  color_tex0.format = context.GetColorAttachmentPixelFormat();
   color_tex0.size = size;
   color_tex0.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
                      static_cast<uint64_t>(TextureUsage::kShaderRead);
 
   TextureDescriptor stencil_tex0;
+  stencil_tex0.storage_mode = stencil_storage_mode;
   stencil_tex0.format = PixelFormat::kDefaultStencil;
   stencil_tex0.size = size;
   stencil_tex0.usage =
@@ -205,8 +214,7 @@ RenderTarget RenderTarget::CreateOffscreen(const Context& context,
   color0.clear_color = Color::BlackTransparent();
   color0.load_action = color_load_action;
   color0.store_action = color_store_action;
-  color0.texture = context.GetResourceAllocator()->CreateTexture(
-      color_storage_mode, color_tex0);
+  color0.texture = context.GetResourceAllocator()->CreateTexture(color_tex0);
 
   if (!color0.texture) {
     return {};
@@ -218,8 +226,8 @@ RenderTarget RenderTarget::CreateOffscreen(const Context& context,
   stencil0.load_action = stencil_load_action;
   stencil0.store_action = stencil_store_action;
   stencil0.clear_stencil = 0u;
-  stencil0.texture = context.GetResourceAllocator()->CreateTexture(
-      stencil_storage_mode, stencil_tex0);
+  stencil0.texture =
+      context.GetResourceAllocator()->CreateTexture(stencil_tex0);
 
   if (!stencil0.texture) {
     return {};
@@ -228,7 +236,7 @@ RenderTarget RenderTarget::CreateOffscreen(const Context& context,
   stencil0.texture->SetLabel(SPrintF("%s Stencil Texture", label.c_str()));
 
   RenderTarget target;
-  target.SetColorAttachment(std::move(color0), 0u);
+  target.SetColorAttachment(color0, 0u);
   target.SetStencilAttachment(std::move(stencil0));
 
   return target;
@@ -237,7 +245,7 @@ RenderTarget RenderTarget::CreateOffscreen(const Context& context,
 RenderTarget RenderTarget::CreateOffscreenMSAA(
     const Context& context,
     ISize size,
-    std::string label,
+    const std::string& label,
     StorageMode color_storage_mode,
     StorageMode color_resolve_storage_mode,
     LoadAction color_load_action,
@@ -252,15 +260,15 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Create MSAA color texture.
 
   TextureDescriptor color0_tex_desc;
+  color0_tex_desc.storage_mode = color_storage_mode;
   color0_tex_desc.type = TextureType::kTexture2DMultisample;
   color0_tex_desc.sample_count = SampleCount::kCount4;
-  color0_tex_desc.format = PixelFormat::kDefaultColor;
+  color0_tex_desc.format = context.GetColorAttachmentPixelFormat();
   color0_tex_desc.size = size;
-  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget) |
-                          static_cast<uint64_t>(TextureUsage::kShaderRead);
+  color0_tex_desc.usage = static_cast<uint64_t>(TextureUsage::kRenderTarget);
 
-  auto color0_msaa_tex = context.GetResourceAllocator()->CreateTexture(
-      color_storage_mode, color0_tex_desc);
+  auto color0_msaa_tex =
+      context.GetResourceAllocator()->CreateTexture(color0_tex_desc);
   if (!color0_msaa_tex) {
     VALIDATION_LOG << "Could not create multisample color texture.";
     return {};
@@ -271,14 +279,15 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Create color resolve texture.
 
   TextureDescriptor color0_resolve_tex_desc;
-  color0_resolve_tex_desc.format = PixelFormat::kDefaultColor;
+  color0_resolve_tex_desc.storage_mode = color_resolve_storage_mode;
+  color0_resolve_tex_desc.format = context.GetColorAttachmentPixelFormat();
   color0_resolve_tex_desc.size = size;
   color0_resolve_tex_desc.usage =
       static_cast<uint64_t>(TextureUsage::kRenderTarget) |
       static_cast<uint64_t>(TextureUsage::kShaderRead);
 
-  auto color0_resolve_tex = context.GetResourceAllocator()->CreateTexture(
-      color_resolve_storage_mode, color0_resolve_tex_desc);
+  auto color0_resolve_tex =
+      context.GetResourceAllocator()->CreateTexture(color0_resolve_tex_desc);
   if (!color0_resolve_tex) {
     VALIDATION_LOG << "Could not create color texture.";
     return {};
@@ -297,6 +306,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   // Create MSAA stencil texture.
 
   TextureDescriptor stencil_tex0;
+  stencil_tex0.storage_mode = stencil_storage_mode;
   stencil_tex0.type = TextureType::kTexture2DMultisample;
   stencil_tex0.sample_count = SampleCount::kCount4;
   stencil_tex0.format = PixelFormat::kDefaultStencil;
@@ -308,8 +318,8 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   stencil0.load_action = stencil_load_action;
   stencil0.store_action = stencil_store_action;
   stencil0.clear_stencil = 0u;
-  stencil0.texture = context.GetResourceAllocator()->CreateTexture(
-      stencil_storage_mode, stencil_tex0);
+  stencil0.texture =
+      context.GetResourceAllocator()->CreateTexture(stencil_tex0);
 
   if (!stencil0.texture) {
     return {};
@@ -318,7 +328,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   stencil0.texture->SetLabel(SPrintF("%s Stencil Texture", label.c_str()));
 
   RenderTarget target;
-  target.SetColorAttachment(std::move(color0), 0u);
+  target.SetColorAttachment(color0, 0u);
   target.SetStencilAttachment(std::move(stencil0));
 
   return target;

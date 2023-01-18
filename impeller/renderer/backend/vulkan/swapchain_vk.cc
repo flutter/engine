@@ -28,7 +28,7 @@ std::unique_ptr<SwapchainVK> SwapchainVK::Create(vk::Device device,
   create_info.imageArrayLayers = 1;
   create_info.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
   create_info.preTransform = details.GetTransform();
-  create_info.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+  create_info.compositeAlpha = details.PickCompositeAlpha();
   create_info.clipped = VK_TRUE;
 
   create_info.imageSharingMode = vk::SharingMode::eExclusive;
@@ -140,6 +140,10 @@ ISize SwapchainImageVK::GetSize() const {
 
 vk::Image SwapchainImageVK::GetImage() const {
   return image_;
+}
+
+vk::ImageView SwapchainImageVK::GetImageView() const {
+  return image_view_.get();
 }
 
 SwapchainImageVK::~SwapchainImageVK() = default;

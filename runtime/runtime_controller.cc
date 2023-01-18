@@ -4,6 +4,8 @@
 
 #include "flutter/runtime/runtime_controller.h"
 
+#include <utility>
+
 #include "flutter/fml/message_loop.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/lib/ui/compositing/scene.h"
@@ -11,6 +13,7 @@
 #include "flutter/lib/ui/window/platform_configuration.h"
 #include "flutter/lib/ui/window/viewport_metrics.h"
 #include "flutter/lib/ui/window/window.h"
+#include "flutter/runtime/dart_isolate_group_data.h"
 #include "flutter/runtime/isolate_configuration.h"
 #include "flutter/runtime/runtime_delegate.h"
 #include "third_party/tonic/dart_message_handler.h"
@@ -18,7 +21,7 @@
 namespace flutter {
 
 RuntimeController::RuntimeController(RuntimeDelegate& p_client,
-                                     TaskRunners task_runners)
+                                     const TaskRunners& task_runners)
     : client_(p_client), vm_(nullptr), context_(task_runners) {}
 
 RuntimeController::RuntimeController(
@@ -33,9 +36,9 @@ RuntimeController::RuntimeController(
     const UIDartState::Context& p_context)
     : client_(p_client),
       vm_(p_vm),
-      isolate_snapshot_(p_isolate_snapshot),
+      isolate_snapshot_(std::move(p_isolate_snapshot)),
       idle_notification_callback_(p_idle_notification_callback),
-      platform_data_(std::move(p_platform_data)),
+      platform_data_(p_platform_data),
       isolate_create_callback_(p_isolate_create_callback),
       isolate_shutdown_callback_(p_isolate_shutdown_callback),
       persistent_isolate_data_(std::move(p_persistent_isolate_data)),
@@ -48,17 +51,18 @@ std::unique_ptr<RuntimeController> RuntimeController::Spawn(
     const std::function<void(int64_t)>& p_idle_notification_callback,
     const fml::closure& p_isolate_create_callback,
     const fml::closure& p_isolate_shutdown_callback,
-    std::shared_ptr<const fml::Mapping> p_persistent_isolate_data,
+    const std::shared_ptr<const fml::Mapping>& p_persistent_isolate_data,
     fml::WeakPtr<IOManager> io_manager,
     fml::WeakPtr<ImageDecoder> image_decoder,
     fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
   UIDartState::Context spawned_context{
-      context_.task_runners,         std::move(snapshot_delegate),
-      std::move(io_manager),         context_.unref_queue,
-      std::move(image_decoder),      std::move(image_generator_registry),
-      advisory_script_uri,           advisory_script_entrypoint,
-      context_.volatile_path_tracker};
+      context_.task_runners,          std::move(snapshot_delegate),
+      std::move(io_manager),          context_.unref_queue,
+      std::move(image_decoder),       std::move(image_generator_registry),
+      std::move(advisory_script_uri), std::move(advisory_script_entrypoint),
+      context_.volatile_path_tracker, context_.concurrent_task_runner,
+      context_.enable_impeller};
   auto result =
       std::make_unique<RuntimeController>(p_client,                      //
                                           vm_,                           //
@@ -207,7 +211,15 @@ bool RuntimeController::ReportTimings(std::vector<int64_t> timings) {
   return false;
 }
 
-bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
+bool RuntimeController::NotifyIdle(fml::TimeDelta deadline) {
+  if (deadline - fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros()) <
+      fml::TimeDelta::FromMilliseconds(1)) {
+    // There's less than 1ms left before the deadline. Upstream callers do not
+    // check to see if the deadline is in the past, and work after this point
+    // will be in vain.
+    return false;
+  }
+
   std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
   if (!root_isolate) {
     return false;
@@ -215,13 +227,32 @@ bool RuntimeController::NotifyIdle(fml::TimePoint deadline) {
 
   tonic::DartState::Scope scope(root_isolate);
 
-  Dart_NotifyIdle(deadline.ToEpochDelta().ToMicroseconds());
+  Dart_PerformanceMode performance_mode =
+      PlatformConfigurationNativeApi::GetDartPerformanceMode();
+  if (performance_mode == Dart_PerformanceMode::Dart_PerformanceMode_Latency) {
+    return false;
+  }
+
+  Dart_NotifyIdle(deadline.ToMicroseconds());
 
   // Idle notifications being in isolate scope are part of the contract.
   if (idle_notification_callback_) {
     TRACE_EVENT0("flutter", "EmbedderIdleNotification");
-    idle_notification_callback_(deadline.ToEpochDelta().ToMicroseconds());
+    idle_notification_callback_(deadline.ToMicroseconds());
   }
+  return true;
+}
+
+bool RuntimeController::NotifyDestroyed() {
+  std::shared_ptr<DartIsolate> root_isolate = root_isolate_.lock();
+  if (!root_isolate) {
+    return false;
+  }
+
+  tonic::DartState::Scope scope(root_isolate);
+
+  Dart_NotifyDestroyed();
+
   return true;
 }
 
@@ -247,13 +278,13 @@ bool RuntimeController::DispatchPointerDataPacket(
   return false;
 }
 
-bool RuntimeController::DispatchSemanticsAction(int32_t id,
+bool RuntimeController::DispatchSemanticsAction(int32_t node_id,
                                                 SemanticsAction action,
                                                 fml::MallocMapping args) {
   TRACE_EVENT1("flutter", "RuntimeController::DispatchSemanticsAction", "mode",
                "basic");
   if (auto* platform_configuration = GetPlatformConfigurationIfAvailable()) {
-    platform_configuration->DispatchSemanticsAction(id, action,
+    platform_configuration->DispatchSemanticsAction(node_id, action,
                                                     std::move(args));
     return true;
   }
@@ -355,7 +386,7 @@ tonic::DartErrorHandleType RuntimeController::GetLastError() {
 
 bool RuntimeController::LaunchRootIsolate(
     const Settings& settings,
-    fml::closure root_isolate_create_callback,
+    const fml::closure& root_isolate_create_callback,
     std::optional<std::string> dart_entrypoint,
     std::optional<std::string> dart_entrypoint_library,
     const std::vector<std::string>& dart_entrypoint_args,
@@ -374,8 +405,8 @@ bool RuntimeController::LaunchRootIsolate(
           root_isolate_create_callback,                   //
           isolate_create_callback_,                       //
           isolate_shutdown_callback_,                     //
-          dart_entrypoint,                                //
-          dart_entrypoint_library,                        //
+          std::move(dart_entrypoint),                     //
+          std::move(dart_entrypoint_library),             //
           dart_entrypoint_args,                           //
           std::move(isolate_configuration),               //
           context_,                                       //
@@ -386,6 +417,11 @@ bool RuntimeController::LaunchRootIsolate(
     FML_LOG(ERROR) << "Could not create root isolate.";
     return false;
   }
+
+  // Enable platform channels for background isolates.
+  strong_root_isolate->GetIsolateGroupData().SetPlatformMessageHandler(
+      strong_root_isolate->GetRootIsolateToken(),
+      client_.GetPlatformMessageHandler());
 
   // The root isolate ivar is weak.
   root_isolate_ = strong_root_isolate;
@@ -446,7 +482,8 @@ void RuntimeController::LoadDartDeferredLibrary(
 
 void RuntimeController::LoadDartDeferredLibraryError(
     intptr_t loading_unit_id,
-    const std::string error_message,
+    const std::string
+        error_message,  // NOLINT(performance-unnecessary-value-param)
     bool transient) {
   root_isolate_.lock()->LoadLoadingUnitError(loading_unit_id, error_message,
                                              transient);
@@ -460,10 +497,10 @@ RuntimeController::Locale::Locale(std::string language_code_,
                                   std::string country_code_,
                                   std::string script_code_,
                                   std::string variant_code_)
-    : language_code(language_code_),
-      country_code(country_code_),
-      script_code(script_code_),
-      variant_code(variant_code_) {}
+    : language_code(std::move(language_code_)),
+      country_code(std::move(country_code_)),
+      script_code(std::move(script_code_)),
+      variant_code(std::move(variant_code_)) {}
 
 RuntimeController::Locale::~Locale() = default;
 

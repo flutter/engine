@@ -9,9 +9,11 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/blit_pass.h"
+#include "impeller/renderer/compute_pass.h"
 
 namespace impeller {
 
+class ComputePass;
 class Context;
 class RenderPass;
 class RenderTarget;
@@ -59,7 +61,7 @@ class CommandBuffer {
   ///
   /// @param[in]  callback  The completion callback.
   ///
-  [[nodiscard]] bool SubmitCommands(CompletionCallback callback);
+  [[nodiscard]] bool SubmitCommands(const CompletionCallback& callback);
 
   [[nodiscard]] bool SubmitCommands();
 
@@ -72,7 +74,7 @@ class CommandBuffer {
   /// @return     A valid render pass or null.
   ///
   std::shared_ptr<RenderPass> CreateRenderPass(
-      RenderTarget render_target) const;
+      const RenderTarget& render_target);
 
   //----------------------------------------------------------------------------
   /// @brief      Create a blit pass to record blit commands into.
@@ -81,17 +83,26 @@ class CommandBuffer {
   ///
   std::shared_ptr<BlitPass> CreateBlitPass() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Create a compute pass to record compute commands into.
+  ///
+  /// @return     A valid compute pass or null.
+  ///
+  std::shared_ptr<ComputePass> CreateComputePass() const;
+
  protected:
   std::weak_ptr<const Context> context_;
 
   explicit CommandBuffer(std::weak_ptr<const Context> context);
 
   virtual std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget render_target) const = 0;
+      RenderTarget render_target) = 0;
 
   virtual std::shared_ptr<BlitPass> OnCreateBlitPass() const = 0;
 
   [[nodiscard]] virtual bool OnSubmitCommands(CompletionCallback callback) = 0;
+
+  virtual std::shared_ptr<ComputePass> OnCreateComputePass() const = 0;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBuffer);

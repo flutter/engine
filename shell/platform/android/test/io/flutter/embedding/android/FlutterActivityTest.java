@@ -88,6 +88,36 @@ public class FlutterActivityTest {
     assertTrue(activity.findViewById(FlutterActivity.FLUTTER_VIEW_ID) instanceof FlutterView);
   }
 
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itRegistersOnBackInvokedCallbackOnCreate() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.onCreate(null);
+
+    verify(activity, times(1)).registerOnBackInvokedCallback();
+  }
+
+  // TODO(garyq): Robolectric does not yet support android api 33 yet. Switch to a robolectric
+  // test that directly exercises the OnBackInvoked APIs when API 33 is supported.
+  @Test
+  @TargetApi(33)
+  public void itUnregistersOnBackInvokedCallbackOnRelease() {
+    Intent intent = FlutterActivityWithReportFullyDrawn.createDefaultIntent(ctx);
+    ActivityController<FlutterActivityWithReportFullyDrawn> activityController =
+        Robolectric.buildActivity(FlutterActivityWithReportFullyDrawn.class, intent);
+    FlutterActivityWithReportFullyDrawn activity = spy(activityController.get());
+
+    activity.release();
+
+    verify(activity, times(1)).unregisterOnBackInvokedCallback();
+  }
+
   @Test
   public void itCreatesDefaultIntentWithExpectedDefaults() {
     Intent intent = FlutterActivity.createDefaultIntent(ctx);
@@ -157,6 +187,31 @@ public class FlutterActivityTest {
     assertTrue(flutterActivity.shouldAttachEngineToActivity());
     assertNull(flutterActivity.getCachedEngineId());
     assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+    assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
+    assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
+    assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
+  }
+
+  @Test
+  public void itCreatesNewEngineInGroupIntentWithRequestedSettings() {
+    Intent intent =
+        FlutterActivity.withNewEngineInGroup("my_cached_engine_group")
+            .dartEntrypoint("custom_entrypoint")
+            .initialRoute("/custom/route")
+            .backgroundMode(BackgroundMode.transparent)
+            .build(ctx);
+    ActivityController<FlutterActivity> activityController =
+        Robolectric.buildActivity(FlutterActivity.class, intent);
+    FlutterActivity flutterActivity = activityController.get();
+    flutterActivity.setDelegate(new FlutterActivityAndFragmentDelegate(flutterActivity));
+
+    assertEquals("my_cached_engine_group", flutterActivity.getCachedEngineGroupId());
+    assertEquals("custom_entrypoint", flutterActivity.getDartEntrypointFunctionName());
+    assertEquals("/custom/route", flutterActivity.getInitialRoute());
+    assertArrayEquals(new String[] {}, flutterActivity.getFlutterShellArgs().toArray());
+    assertTrue(flutterActivity.shouldAttachEngineToActivity());
+    assertTrue(flutterActivity.shouldDestroyEngineWithHost());
+    assertNull(flutterActivity.getCachedEngineId());
     assertEquals(BackgroundMode.transparent, flutterActivity.getBackgroundMode());
     assertEquals(RenderMode.texture, flutterActivity.getRenderMode());
     assertEquals(TransparencyMode.transparent, flutterActivity.getTransparencyMode());
@@ -594,6 +649,14 @@ public class FlutterActivityTest {
     public void resetFullyDrawn() {
       fullyDrawn = false;
     }
+  }
+
+  private class FlutterActivityWithMockBackInvokedHandling extends FlutterActivity {
+    @Override
+    public void registerOnBackInvokedCallback() {}
+
+    @Override
+    public void unregisterOnBackInvokedCallback() {}
   }
 
   private static final class FakeFlutterPlugin

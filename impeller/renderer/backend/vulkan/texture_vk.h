@@ -7,6 +7,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/texture.h"
@@ -14,19 +15,21 @@
 namespace impeller {
 
 enum class TextureBackingTypeVK {
+  kUnknownType,
   kAllocatedTexture,
   kWrappedTexture,
 };
 
 struct WrappedTextureInfoVK {
   SwapchainImageVK* swapchain_image = nullptr;
+  uint32_t frame_num = 0;
 };
 
 struct AllocatedTextureInfoVK {
-  VmaAllocator* allocator = nullptr;
-  VmaAllocation allocation = nullptr;
-  VmaAllocationInfo allocation_info = {};
-  VkImage image = nullptr;
+  DeviceBufferAllocationVK staging_buffer = {};
+  BackingAllocationVK backing_allocation = {};
+  VkImage image = VK_NULL_HANDLE;
+  VkImageView image_view = VK_NULL_HANDLE;
 };
 
 struct TextureInfoVK {
@@ -49,6 +52,12 @@ class TextureVK final : public Texture, public BackendCast<TextureVK, Texture> {
   bool IsWrapped() const;
 
   vk::Image GetImage() const;
+
+  vk::ImageView GetImageView() const;
+
+  vk::Buffer GetStagingBuffer() const;
+
+  TextureInfoVK* GetTextureInfo() const;
 
  private:
   ContextVK* context_;

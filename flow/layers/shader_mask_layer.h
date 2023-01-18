@@ -12,18 +12,18 @@ namespace flutter {
 
 class ShaderMaskLayer : public CacheableContainerLayer {
  public:
-  ShaderMaskLayer(std::shared_ptr<DlColorSource> shader,
+  ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
                   const SkRect& mask_rect,
                   DlBlendMode blend_mode);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
   void Paint(PaintContext& context) const override;
 
  private:
-  std::shared_ptr<DlColorSource> shader_;
+  std::shared_ptr<DlColorSource> color_source_;
   SkRect mask_rect_;
   DlBlendMode blend_mode_;
 

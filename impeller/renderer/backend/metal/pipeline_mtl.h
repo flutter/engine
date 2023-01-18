@@ -12,8 +12,9 @@
 
 namespace impeller {
 
-class PipelineMTL final : public Pipeline,
-                          public BackendCast<PipelineMTL, Pipeline> {
+class PipelineMTL final
+    : public Pipeline<PipelineDescriptor>,
+      public BackendCast<PipelineMTL, Pipeline<PipelineDescriptor>> {
  public:
   // |Pipeline|
   ~PipelineMTL() override;
@@ -30,7 +31,7 @@ class PipelineMTL final : public Pipeline,
   bool is_valid_ = false;
 
   PipelineMTL(std::weak_ptr<PipelineLibrary> library,
-              PipelineDescriptor desc,
+              const PipelineDescriptor& desc,
               id<MTLRenderPipelineState> state,
               id<MTLDepthStencilState> depth_stencil_state);
 

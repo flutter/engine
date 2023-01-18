@@ -5,6 +5,8 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/command_pool_vk.h"
+#include "impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_buffer.h"
@@ -14,15 +16,13 @@ namespace impeller {
 class CommandBufferVK final : public CommandBuffer {
  public:
   static std::shared_ptr<CommandBufferVK> Create(
-      std::weak_ptr<const Context> context,
-      vk::Device device,
-      vk::CommandPool command_pool,
-      SurfaceProducerVK* surface_producer);
+      const std::weak_ptr<const Context>& context,
+      vk::Device device);
 
   CommandBufferVK(std::weak_ptr<const Context> context,
                   vk::Device device,
-                  SurfaceProducerVK* surface_producer,
-                  vk::UniqueCommandBuffer command_buffer);
+                  std::unique_ptr<CommandPoolVK> command_pool,
+                  std::shared_ptr<FencedCommandBufferVK> command_buffer);
 
   // |CommandBuffer|
   ~CommandBufferVK() override;
@@ -31,8 +31,9 @@ class CommandBufferVK final : public CommandBuffer {
   friend class ContextVK;
 
   vk::Device device_;
-  vk::UniqueCommandBuffer command_buffer_;
-  SurfaceProducerVK* surface_producer_;
+  std::unique_ptr<CommandPoolVK> command_pool_;
+  vk::UniqueRenderPass render_pass_;
+  std::shared_ptr<FencedCommandBufferVK> fenced_command_buffer_;
   bool is_valid_ = false;
 
   // |CommandBuffer|
@@ -45,11 +46,13 @@ class CommandBufferVK final : public CommandBuffer {
   bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget target) const override;
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
 
   // |CommandBuffer|
   std::shared_ptr<BlitPass> OnCreateBlitPass() const override;
+
+  // |CommandBuffer|
+  std::shared_ptr<ComputePass> OnCreateComputePass() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CommandBufferVK);
 };

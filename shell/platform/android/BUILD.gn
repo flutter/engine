@@ -13,7 +13,7 @@ import("//flutter/shell/version/version.gni")
 shell_gpu_configuration("android_gpu_configuration") {
   enable_software = true
   enable_gl = true
-  enable_vulkan = false
+  enable_vulkan = true
   enable_metal = false
 }
 
@@ -85,6 +85,8 @@ source_set("flutter_shell_native_src") {
     "android_surface_gl_skia.h",
     "android_surface_software.cc",
     "android_surface_software.h",
+    "android_surface_vulkan_impeller.cc",
+    "android_surface_vulkan_impeller.h",
     "apk_asset_provider.cc",
     "apk_asset_provider.h",
     "flutter_main.cc",
@@ -123,6 +125,7 @@ source_set("flutter_shell_native_src") {
     "//flutter/shell/platform/android/platform_view_android_delegate",
     "//flutter/shell/platform/android/surface",
     "//flutter/shell/platform/android/surface:native_window",
+    "//flutter/vulkan",
     "//third_party/skia",
   ]
 
@@ -200,6 +203,7 @@ android_java_sources = [
   "io/flutter/embedding/engine/FlutterEngineCache.java",
   "io/flutter/embedding/engine/FlutterEngineConnectionRegistry.java",
   "io/flutter/embedding/engine/FlutterEngineGroup.java",
+  "io/flutter/embedding/engine/FlutterEngineGroupCache.java",
   "io/flutter/embedding/engine/FlutterJNI.java",
   "io/flutter/embedding/engine/FlutterOverlaySurface.java",
   "io/flutter/embedding/engine/FlutterShellArgs.java",
@@ -279,6 +283,7 @@ android_java_sources = [
   "io/flutter/plugin/localization/LocalizationPlugin.java",
   "io/flutter/plugin/mouse/MouseCursorPlugin.java",
   "io/flutter/plugin/platform/AccessibilityEventsDelegate.java",
+  "io/flutter/plugin/platform/PlatformOverlayView.java",
   "io/flutter/plugin/platform/PlatformPlugin.java",
   "io/flutter/plugin/platform/PlatformView.java",
   "io/flutter/plugin/platform/PlatformViewFactory.java",
@@ -588,6 +593,12 @@ zip_bundle("android_javadoc") {
   deps = [ ":gen_android_javadoc" ]
 }
 
+generated_file("android_entitlement_config") {
+  outputs = [ "$target_gen_dir/android_entitlements.txt" ]
+  contents = [ "gen_snapshot" ]
+  deps = []
+}
+
 if (target_cpu != "x86") {
   zip_bundle("gen_snapshot") {
     gen_snapshot_bin = "gen_snapshot"
@@ -643,6 +654,16 @@ if (target_cpu != "x86") {
     ]
 
     deps = [ "//third_party/dart/runtime/bin:gen_snapshot($host_toolchain)" ]
+
+    if (host_os == "mac") {
+      deps += [ ":android_entitlement_config" ]
+      files += [
+        {
+          source = "$target_gen_dir/android_entitlements.txt"
+          destination = "entitlements.txt"
+        },
+      ]
+    }
   }
 }
 

@@ -33,7 +33,7 @@ typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
 
 /// Signature for [PlatformDispatcher.onSemanticsAction].
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
+typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
 
 /// Signature for responses to platform messages.
 ///
@@ -72,6 +72,24 @@ const String _kFlutterKeyDataChannel = 'flutter/keydata';
 @pragma('vm:entry-point')
 ByteData? _wrapUnmodifiableByteData(ByteData? byteData) =>
     byteData == null ? null : UnmodifiableByteDataView(byteData);
+
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  RootIsolateToken._(this._token);
+
+  /// An enumeration representing the root isolate (0 if not a root isolate).
+  final int _token;
+
+  /// The token for the root isolate that is executing this Dart code.  If this
+  /// Dart code is not executing on a root isolate [instance] will be null.
+  static final RootIsolateToken? instance = () {
+    final int token = __getRootIsolateToken();
+    return token == 0 ? null : RootIsolateToken._(token);
+  }();
+
+  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateToken')
+  external static int __getRootIsolateToken();
+}
 
 /// Platform event dispatcher singleton.
 ///
@@ -204,10 +222,10 @@ class PlatformDispatcher {
     final ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const ViewConfiguration();
     if (!_views.containsKey(id)) {
-      _views[id] = FlutterWindow._(id, this);
+      _views[id] = FlutterView._(id, this);
     }
     _viewConfigurations[id] = previousConfiguration.copyWith(
-      window: _views[id],
+      view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
       viewPadding: WindowPadding._(
@@ -532,11 +550,47 @@ class PlatformDispatcher {
     }
   }
 
-  String? _sendPlatformMessage(String name,PlatformMessageResponseCallback? callback, ByteData? data) =>
+  String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
   @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
+
+  /// Sends a message to a platform-specific plugin via a [SendPort].
+  ///
+  /// This operates similarly to [sendPlatformMessage] but is used when sending
+  /// messages from background isolates. The [port] parameter allows Flutter to
+  /// know which isolate to send the result to. The [name] parameter is the name
+  /// of the channel communication will happen on. The [data] parameter is the
+  /// payload of the message. The [identifier] parameter is a unique integer
+  /// assigned to the message.
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    SendPort port) {
+    final String? error =
+        _sendPortPlatformMessage(name, identifier, port.nativePort, data);
+    if (error != null) {
+      throw Exception(error);
+    }
+  }
+
+  String? _sendPortPlatformMessage(String name, int identifier, int port, ByteData? data) =>
+      __sendPortPlatformMessage(name, identifier, port, data);
+
+  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
+  external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
+
+  /// Registers the current isolate with the isolate identified with by the
+  /// [token]. This is required if platform channels are to be used on a
+  /// background isolate.
+  void registerBackgroundIsolate(RootIsolateToken token) {
+    DartPluginRegistrant.ensureInitialized();
+    __registerBackgroundIsolate(token._token);
+  }
+  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
+  external static void __registerBackgroundIsolate(int rootIsolateId);
 
   /// Called whenever this platform dispatcher receives a message from a
   /// platform-specific plugin.
@@ -627,6 +681,19 @@ class PlatformDispatcher {
   @FfiNative<Void Function(Handle)>('PlatformConfigurationNativeApi::SetIsolateDebugName')
   external static void _setIsolateDebugName(String name);
 
+  /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
+  ///
+  /// This operation is a no-op of web. The request to change a performance may be ignored by the
+  /// engine or not resolve in a predictable way.
+  ///
+  /// See [DartPerformanceMode] for more information on individual performance modes.
+  void requestDartPerformanceMode(DartPerformanceMode mode) {
+    _requestDartPerformanceMode(mode.index);
+  }
+
+  @FfiNative<Int Function(Int)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
+  external static int _requestDartPerformanceMode(int mode);
+
   /// The embedder can specify data that the isolate can request synchronously
   /// on launch. This accessor fetches that data.
   ///
@@ -691,6 +758,14 @@ class PlatformDispatcher {
   ///
   /// In either case, this function disposes the given update, which means the
   /// semantics update cannot be used further.
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
   @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
@@ -981,7 +1056,7 @@ class PlatformDispatcher {
     }
   }
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   ///
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
@@ -1014,10 +1089,10 @@ class PlatformDispatcher {
   }
 
   /// A callback that is invoked whenever the user requests an action to be
-  /// performed.
+  /// performed on a semantics node.
   ///
   /// This callback is used when the user expresses the action they wish to
-  /// perform based on the semantics supplied by [updateSemantics].
+  /// perform based on the semantics node supplied by updateSemantics.
   ///
   /// The framework invokes this callback in the same zone in which the
   /// callback was set.
@@ -1053,11 +1128,11 @@ class PlatformDispatcher {
   }
 
   // Called from the engine, via hooks.dart
-  void _dispatchSemanticsAction(int id, int action, ByteData? args) {
+  void _dispatchSemanticsAction(int nodeId, int action, ByteData? args) {
     _invoke3<int, SemanticsAction, ByteData?>(
       onSemanticsAction,
       _onSemanticsActionZone,
-      id,
+      nodeId,
       SemanticsAction.values[action]!,
       args,
     );
@@ -1081,8 +1156,7 @@ class PlatformDispatcher {
   ///
   /// This callback is not directly invoked by errors in child isolates of the
   /// root isolate. Programs that create new isolates must listen for errors on
-  /// those isolates and forward the errors to the root isolate. An example of
-  /// this can be found in the Flutter framework's `compute` function.
+  /// those isolates and forward the errors to the root isolate.
   ErrorCallback? get onError => _onError;
   set onError(ErrorCallback? callback) {
     _onError = callback;
@@ -1189,7 +1263,7 @@ class PlatformConfiguration {
   /// format.
   final bool alwaysUse24HourFormat;
 
-  /// Whether the user has requested that [updateSemantics] be called when the
+  /// Whether the user has requested that updateSemantics be called when the
   /// semantic contents of a view changes.
   final bool semanticsEnabled;
 
@@ -1215,8 +1289,18 @@ class PlatformConfiguration {
 /// An immutable view configuration.
 class ViewConfiguration {
   /// A const constructor for an immutable [ViewConfiguration].
+  ///
+  /// When constructing a view configuration, supply either the [view] or the
+  /// [window] property, but not both since the [view] and [window] property
+  /// are backed by the same instance variable.
   const ViewConfiguration({
-    this.window,
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
+    FlutterView? window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -1226,10 +1310,17 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  });
+  }) : assert(window == null || view == null),
+    _view = view ?? window;
 
   /// Copy this configuration with some fields replaced.
   ViewConfiguration copyWith({
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
     FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
@@ -1241,8 +1332,9 @@ class ViewConfiguration {
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
+    assert(view == null || window == null);
     return ViewConfiguration(
-      window: window ?? this.window,
+      view: view ?? window ?? _view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1255,11 +1347,22 @@ class ViewConfiguration {
     );
   }
 
-  /// The top level view into which the view is placed and its geometry is
-  /// relative to.
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
   ///
-  /// If null, then this configuration represents a top level view itself.
-  final FlutterView? window;
+  /// If this property is null, this [ViewConfiguration] is a top level view.
+  @Deprecated('''
+    Use the `view` property instead.
+    This change is related to adding multi-view support in Flutter.
+    This feature was deprecated after 3.7.0-1.2.pre.
+  ''')
+  FlutterView? get window => _view;
+
+  /// The top level view for which this [ViewConfiguration]'s properties apply to.
+  ///
+  /// If this property is null, this [ViewConfiguration] is a top level view.
+  FlutterView? get view => _view;
+
+  final FlutterView?  _view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
@@ -1353,7 +1456,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
+    return '$runtimeType[view: $view, geometry: $geometry]';
   }
 }
 
@@ -1592,7 +1695,7 @@ enum AppLifecycleState {
   /// On Android, this corresponds to an app or the Flutter host view running
   /// in the foreground inactive state.  Apps transition to this state when
   /// another activity is focused, such as a split-screen app, a phone call,
-  /// a picture-in-picture app, a system dialog, or another window.
+  /// a picture-in-picture app, a system dialog, or another view.
   ///
   /// Apps in this state should assume that they may be [paused] at any time.
   inactive,
@@ -2086,4 +2189,27 @@ class Locale {
     }
     return out.toString();
   }
+}
+
+/// Various performance modes for tuning the Dart VM's GC performance.
+///
+/// For the editor of this enum, please keep the order in sync with `Dart_PerformanceMode`
+/// in [dart_api.h](https://github.com/dart-lang/sdk/blob/main/runtime/include/dart_api.h#L1302).
+enum DartPerformanceMode {
+  /// This is the default mode that the Dart VM is in.
+  balanced,
+
+  /// Optimize for low latency, at the expense of throughput and memory overhead
+  /// by performing work in smaller batches (requiring more overhead) or by
+  /// delaying work (requiring more memory). An embedder should not remain in
+  /// this mode indefinitely.
+  latency,
+
+  /// Optimize for high throughput, at the expense of latency and memory overhead
+  /// by performing work in larger batches with more intervening growth.
+  throughput,
+
+  /// Optimize for low memory, at the expensive of throughput and latency by more
+  /// frequently performing work.
+  memory,
 }

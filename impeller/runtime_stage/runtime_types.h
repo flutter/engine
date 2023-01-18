@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string>
 
 namespace impeller {
@@ -44,7 +45,10 @@ struct RuntimeUniformDescription {
   RuntimeUniformType type = RuntimeUniformType::kFloat;
   RuntimeUniformDimensions dimensions;
   size_t bit_width;
-  size_t array_elements;
+  std::optional<size_t> array_elements;
+
+  /// @brief  Computes the total number of bytes that this uniform requires.
+  size_t GetSize() const;
 };
 
 }  // namespace impeller

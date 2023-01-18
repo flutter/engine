@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include <optional>
+#include <utility>
 
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/sampler_library.h"
@@ -30,22 +31,22 @@ std::shared_ptr<Texture> AtlasContents::GetTexture() const {
 }
 
 void AtlasContents::SetTransforms(std::vector<Matrix> transforms) {
-  transforms_ = transforms;
+  transforms_ = std::move(transforms);
 }
 
 void AtlasContents::SetTextureCoordinates(std::vector<Rect> texture_coords) {
-  texture_coords_ = texture_coords;
+  texture_coords_ = std::move(texture_coords);
 }
 
 void AtlasContents::SetColors(std::vector<Color> colors) {
-  colors_ = colors;
+  colors_ = std::move(colors);
 }
 
 void AtlasContents::SetAlpha(Scalar alpha) {
   alpha_ = alpha;
 }
 
-void AtlasContents::SetBlendMode(Entity::BlendMode blend_mode) {
+void AtlasContents::SetBlendMode(BlendMode blend_mode) {
   // TODO(jonahwilliams): blending of colors with texture.
   blend_mode_ = blend_mode;
 }
@@ -100,7 +101,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
   for (size_t i = 0; i < texture_coords_.size(); i++) {
     auto sample_rect = texture_coords_[i];
     auto matrix = transforms_[i];
-    auto color = (colors_.size() > 0 ? colors_[i] : Color::Black());
+    auto color = colors_.size() > 0 ? colors_[i] : Color::Black();
     auto transformed_points =
         Rect::MakeSize(sample_rect.size).GetTransformedPoints(matrix);
 

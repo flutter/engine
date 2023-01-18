@@ -57,6 +57,21 @@ class SurfaceVertices implements ui.Vertices {
     }
     return list;
   }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Vertices.debugDisposed is only available when asserts are enabled.');
+  }
 }
 
 /// Lazily initializes web gl.
@@ -215,10 +230,9 @@ class _WebGlRenderer implements GlRenderer {
 
       // Buffer kBGRA_8888.
       if (vertices.colors == null) {
-        final ui.Color color = paint.color ?? const ui.Color(0xFF000000);
         final Uint32List vertexColors = Uint32List(vertexCount);
         for (int i = 0; i < vertexCount; i++) {
-          vertexColors[i] = color.value;
+          vertexColors[i] = paint.color;
         }
         gl.bufferData(vertexColors, gl.kStaticDraw);
       } else {

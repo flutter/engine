@@ -94,14 +94,19 @@ TEST(MutatorsStack, PushBackdropFilter) {
   const int num_of_mutators = 10;
   for (int i = 0; i < num_of_mutators; i++) {
     auto filter = std::make_shared<DlBlurImageFilter>(i, 5, DlTileMode::kClamp);
-    stack.PushBackdropFilter(filter);
+    stack.PushBackdropFilter(filter, SkRect::MakeXYWH(i, i, i, i));
   }
 
   auto iter = stack.Begin();
   int i = 0;
   while (iter != stack.End()) {
     ASSERT_EQ(iter->get()->GetType(), MutatorType::kBackdropFilter);
-    ASSERT_EQ(iter->get()->GetFilter().asBlur()->sigma_x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilter().asBlur()->sigma_x(),
+              i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().x(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().width(), i);
+    ASSERT_EQ(iter->get()->GetFilterMutation().GetFilterRect().height(), i);
     ++iter;
     ++i;
   }
@@ -163,20 +168,25 @@ TEST(MutatorsStack, Equality) {
   stack.PushClipPath(path);
   int alpha = 240;
   stack.PushOpacity(alpha);
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stack.PushBackdropFilter(filter, SkRect::MakeEmpty());
 
-  MutatorsStack stackOther;
-  SkMatrix matrixOther = SkMatrix::Scale(1, 1);
-  stackOther.PushTransform(matrixOther);
-  SkRect rectOther = SkRect::MakeEmpty();
-  stackOther.PushClipRect(rectOther);
-  SkRRect rrectOther = SkRRect::MakeEmpty();
-  stackOther.PushClipRRect(rrectOther);
-  SkPath otherPath;
-  stackOther.PushClipPath(otherPath);
-  int otherAlpha = 240;
-  stackOther.PushOpacity(otherAlpha);
+  MutatorsStack stack_other;
+  SkMatrix matrix_other = SkMatrix::Scale(1, 1);
+  stack_other.PushTransform(matrix_other);
+  SkRect rect_other = SkRect::MakeEmpty();
+  stack_other.PushClipRect(rect_other);
+  SkRRect rrect_other = SkRRect::MakeEmpty();
+  stack_other.PushClipRRect(rrect_other);
+  SkPath other_path;
+  stack_other.PushClipPath(other_path);
+  int other_alpha = 240;
+  stack_other.PushOpacity(other_alpha);
+  auto other_filter =
+      std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  stack_other.PushBackdropFilter(other_filter, SkRect::MakeEmpty());
 
-  ASSERT_TRUE(stack == stackOther);
+  ASSERT_TRUE(stack == stack_other);
 }
 
 TEST(Mutator, Initialization) {
@@ -204,6 +214,11 @@ TEST(Mutator, Initialization) {
   int alpha = 240;
   Mutator mutator5 = Mutator(alpha);
   ASSERT_TRUE(mutator5.GetType() == MutatorType::kOpacity);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
+  ASSERT_TRUE(mutator6.GetType() == MutatorType::kBackdropFilter);
+  ASSERT_TRUE(mutator6.GetFilterMutation().GetFilter() == *filter);
 }
 
 TEST(Mutator, CopyConstructor) {
@@ -232,34 +247,45 @@ TEST(Mutator, CopyConstructor) {
   Mutator mutator5 = Mutator(alpha);
   Mutator copy5 = Mutator(mutator5);
   ASSERT_TRUE(mutator5 == copy5);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter, SkRect::MakeEmpty());
+  Mutator copy6 = Mutator(mutator6);
+  ASSERT_TRUE(mutator6 == copy6);
 }
 
 TEST(Mutator, Equality) {
   SkMatrix matrix;
   matrix.setIdentity();
   Mutator mutator = Mutator(matrix);
-  Mutator otherMutator = Mutator(matrix);
-  ASSERT_TRUE(mutator == otherMutator);
+  Mutator other_mutator = Mutator(matrix);
+  ASSERT_TRUE(mutator == other_mutator);
 
   SkRect rect = SkRect::MakeEmpty();
   Mutator mutator2 = Mutator(rect);
-  Mutator otherMutator2 = Mutator(rect);
-  ASSERT_TRUE(mutator2 == otherMutator2);
+  Mutator other_mutator2 = Mutator(rect);
+  ASSERT_TRUE(mutator2 == other_mutator2);
 
   SkRRect rrect = SkRRect::MakeEmpty();
   Mutator mutator3 = Mutator(rrect);
-  Mutator otherMutator3 = Mutator(rrect);
-  ASSERT_TRUE(mutator3 == otherMutator3);
+  Mutator other_mutator3 = Mutator(rrect);
+  ASSERT_TRUE(mutator3 == other_mutator3);
 
   SkPath path;
   flutter::Mutator mutator4 = flutter::Mutator(path);
-  flutter::Mutator otherMutator4 = flutter::Mutator(path);
-  ASSERT_TRUE(mutator4 == otherMutator4);
+  flutter::Mutator other_mutator4 = flutter::Mutator(path);
+  ASSERT_TRUE(mutator4 == other_mutator4);
   ASSERT_FALSE(mutator2 == mutator);
   int alpha = 240;
   Mutator mutator5 = Mutator(alpha);
-  Mutator otherMutator5 = Mutator(alpha);
-  ASSERT_TRUE(mutator5 == otherMutator5);
+  Mutator other_mutator5 = Mutator(alpha);
+  ASSERT_TRUE(mutator5 == other_mutator5);
+
+  auto filter1 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter2 = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  Mutator mutator6 = Mutator(filter1, SkRect::MakeEmpty());
+  Mutator other_mutator6 = Mutator(filter2, SkRect::MakeEmpty());
+  ASSERT_TRUE(mutator6 == other_mutator6);
 }
 
 TEST(Mutator, UnEquality) {
@@ -267,14 +293,21 @@ TEST(Mutator, UnEquality) {
   Mutator mutator = Mutator(rect);
   SkMatrix matrix;
   matrix.setIdentity();
-  Mutator notEqualMutator = Mutator(matrix);
-  ASSERT_TRUE(notEqualMutator != mutator);
+  Mutator not_equal_mutator = Mutator(matrix);
+  ASSERT_TRUE(not_equal_mutator != mutator);
 
   int alpha = 240;
   int alpha2 = 241;
   Mutator mutator2 = Mutator(alpha);
-  Mutator otherMutator2 = Mutator(alpha2);
-  ASSERT_TRUE(mutator2 != otherMutator2);
+  Mutator other_mutator2 = Mutator(alpha2);
+  ASSERT_TRUE(mutator2 != other_mutator2);
+
+  auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
+  auto filter2 =
+      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  Mutator mutator3 = Mutator(filter, SkRect::MakeEmpty());
+  Mutator other_mutator3 = Mutator(filter2, SkRect::MakeEmpty());
+  ASSERT_TRUE(mutator3 != other_mutator3);
 }
 
 }  // namespace testing

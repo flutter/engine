@@ -8,6 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/playground/playground.h"
 
 namespace impeller {
@@ -26,6 +27,9 @@ class PlaygroundTest : public Playground,
   // |Playground|
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
+
+  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
+      const char* asset_name) const;
 
   // |Playground|
   std::string GetWindowTitle() const override;

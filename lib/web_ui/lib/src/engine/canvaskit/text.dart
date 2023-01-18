@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
@@ -178,6 +177,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           toSkStrutStyleProperties(strutStyle, textHeightBehavior);
     }
 
+    properties.replaceTabCharacters = true;
     properties.textStyle = toSkTextStyleProperties(
         fontFamily, fontSize, height, fontWeight, fontStyle);
 
@@ -219,6 +219,7 @@ class CkTextStyle implements ui.TextStyle {
     CkPaint? foreground,
     List<ui.Shadow>? shadows,
     List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations,
   }) {
     return CkTextStyle._(
       color,
@@ -241,6 +242,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground,
       shadows,
       fontFeatures,
+      fontVariations,
     );
   }
 
@@ -265,6 +267,7 @@ class CkTextStyle implements ui.TextStyle {
     this.foreground,
     this.shadows,
     this.fontFeatures,
+    this.fontVariations,
   );
 
   final ui.Color? color;
@@ -287,6 +290,7 @@ class CkTextStyle implements ui.TextStyle {
   final CkPaint? foreground;
   final List<ui.Shadow>? shadows;
   final List<ui.FontFeature>? fontFeatures;
+  final List<ui.FontVariation>? fontVariations;
 
   /// Merges this text style with [other] and returns the new text style.
   ///
@@ -314,6 +318,7 @@ class CkTextStyle implements ui.TextStyle {
       foreground: other.foreground ?? foreground,
       shadows: other.shadows ?? shadows,
       fontFeatures: other.fontFeatures ?? fontFeatures,
+      fontVariations: other.fontVariations ?? fontVariations,
     );
   }
 
@@ -344,6 +349,7 @@ class CkTextStyle implements ui.TextStyle {
     final CkPaint? foreground = this.foreground;
     final List<ui.Shadow>? shadows = this.shadows;
     final List<ui.FontFeature>? fontFeatures = this.fontFeatures;
+    final List<ui.FontVariation>? fontVariations = this.fontVariations;
 
     final SkTextStyleProperties properties = SkTextStyleProperties();
 
@@ -356,15 +362,15 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (decoration != null) {
-      int decorationValue = canvasKit.NoDecoration;
+      int decorationValue = canvasKit.NoDecoration.toInt();
       if (decoration.contains(ui.TextDecoration.underline)) {
-        decorationValue |= canvasKit.UnderlineDecoration;
+        decorationValue |= canvasKit.UnderlineDecoration.toInt();
       }
       if (decoration.contains(ui.TextDecoration.overline)) {
-        decorationValue |= canvasKit.OverlineDecoration;
+        decorationValue |= canvasKit.OverlineDecoration.toInt();
       }
       if (decoration.contains(ui.TextDecoration.lineThrough)) {
-        decorationValue |= canvasKit.LineThroughDecoration;
+        decorationValue |= canvasKit.LineThroughDecoration.toInt();
       }
       properties.decoration = decorationValue;
     }
@@ -447,6 +453,17 @@ class CkTextStyle implements ui.TextStyle {
         skFontFeatures.add(skFontFeature);
       }
       properties.fontFeatures = skFontFeatures;
+    }
+
+    if (fontVariations != null) {
+      final List<SkFontVariation> skFontVariations = <SkFontVariation>[];
+      for (final ui.FontVariation fontVariation in fontVariations) {
+        final SkFontVariation skFontVariation = SkFontVariation();
+        skFontVariation.axis = fontVariation.axis;
+        skFontVariation.value = fontVariation.value;
+        skFontVariations.add(skFontVariation);
+      }
+      properties.fontVariations = skFontVariations;
     }
 
     return canvasKit.TextStyle(properties);
@@ -613,7 +630,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         _width = paragraph.getMaxWidth();
         _boxesForPlaceholders =
             skRectsToTextBoxes(
-                paragraph.getRectsForPlaceholders().cast<Float32List>());
+                paragraph.getRectsForPlaceholders().cast<SkRectWithDirection>());
       } catch (e) {
         printWarning('CanvasKit threw an exception while laying '
             'out the paragraph. The font was "${_paragraphStyle._fontFamily}". '
@@ -657,7 +674,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
 
   @override
   void delete() {
-    _skParagraph!.delete();
+    _skParagraph?.delete();
+    _skParagraph = null;
   }
 
   @override
@@ -713,23 +731,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
 
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<Float32List> skRects = paragraph.getRectsForRange(
+    final List<SkRectWithDirection> skRects = paragraph.getRectsForRange(
       start,
       end,
       toSkRectHeightStyle(boxHeightStyle),
       toSkRectWidthStyle(boxWidthStyle),
-    ).cast<Float32List>();
+    ).cast<SkRectWithDirection>();
 
     return skRectsToTextBoxes(skRects);
   }
 
-  List<ui.TextBox> skRectsToTextBoxes(List<Float32List> skRects) {
+  List<ui.TextBox> skRectsToTextBoxes(List<SkRectWithDirection> skRects) {
     final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final Float32List rect = skRects[i];
-      final int skTextDirection =
-          getJsProperty(getJsProperty(rect, 'direction'), 'value');
+      final SkRectWithDirection skRect = skRects[i];
+      final Float32List rect = skRect.rect;
+      final int skTextDirection = skRect.dir.value.toInt();
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],
@@ -756,8 +774,17 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   @override
   ui.TextRange getWordBoundary(ui.TextPosition position) {
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final SkTextRange skRange = paragraph.getWordBoundary(position.offset);
-    return ui.TextRange(start: skRange.start, end: skRange.end);
+    final int characterPosition;
+    switch (position.affinity) {
+      case ui.TextAffinity.upstream:
+        characterPosition = position.offset - 1;
+        break;
+      case ui.TextAffinity.downstream:
+        characterPosition = position.offset;
+        break;
+    }
+    final SkTextRange skRange = paragraph.getWordBoundary(characterPosition);
+    return ui.TextRange(start: skRange.start.toInt(), end: skRange.end.toInt());
   }
 
   @override
@@ -780,7 +807,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     final int offset = position.offset;
     for (final SkLineMetrics metric in metrics) {
       if (offset >= metric.startIndex && offset <= metric.endIndex) {
-        return ui.TextRange(start: metric.startIndex, end: metric.endIndex);
+        return ui.TextRange(start: metric.startIndex.toInt(), end: metric.endIndex.toInt());
       }
     }
     return ui.TextRange.empty;
@@ -796,6 +823,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
       result.add(CkLineMetrics._(metric));
     }
     return result;
+  }
+
+  bool _disposed = false;
+
+  @override
+  void dispose() {
+    delete();
+    didDelete();
+    _disposed = true;
+  }
+
+  @override
+  bool get debugDisposed {
+    if (assertionsEnabled) {
+      return _disposed;
+    }
+    throw StateError('Paragraph.debugDisposed is only available when asserts are enabled.');
   }
 }
 
@@ -831,7 +875,7 @@ class CkLineMetrics implements ui.LineMetrics {
   double get width => skLineMetrics.width;
 
   @override
-  int get lineNumber => skLineMetrics.lineNumber;
+  int get lineNumber => skLineMetrics.lineNumber.toInt();
 }
 
 class CkParagraphBuilder implements ui.ParagraphBuilder {

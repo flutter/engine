@@ -222,9 +222,17 @@ class FakeFlatland
                       fuchsia::math::Vec translation) override;
 
   // |fuchsia::ui::composition::Flatland|
+  void SetScale(fuchsia::ui::composition::TransformId transform_id,
+                fuchsia::math::VecF scale) override;
+
+  // |fuchsia::ui::composition::Flatland|
   void SetOrientation(
       fuchsia::ui::composition::TransformId transform_id,
       fuchsia::ui::composition::Orientation orientation) override;
+
+  // |fuchsia::ui::composition::Flatland|
+  void SetOpacity(fuchsia::ui::composition::TransformId transform_id,
+                  float value) override;
 
   // |fuchsia::ui::composition::Flatland|
   void SetClipBoundary(fuchsia::ui::composition::TransformId transform_id,
@@ -301,6 +309,11 @@ class FakeFlatland
   void SetHitRegions(
       fuchsia::ui::composition::TransformId transform_id,
       std::vector<fuchsia::ui::composition::HitRegion> regions) override;
+
+  // |fuchsia::ui::composition::Flatland|
+  void SetInfiniteHitRegion(
+      fuchsia::ui::composition::TransformId transform_id,
+      fuchsia::ui::composition::HitTestInteraction hit_test) override;
 
   // |fuchsia::ui::composition::Flatland|
   void Clear() override;

@@ -12,9 +12,13 @@
 #import <OCMock/OCMock.h>
 #import "flutter/testing/testing.h"
 
+@interface FlutterTextField (Testing)
+- (void)setPlatformNode:(flutter::FlutterTextPlatformNode*)node;
+@end
+
 @interface FlutterTextFieldMock : FlutterTextField
 
-@property(nonatomic) NSString* lastUpdatedString;
+@property(nonatomic, nullable, copy) NSString* lastUpdatedString;
 @property(nonatomic) NSRange lastUpdatedSelection;
 
 @end
@@ -438,7 +442,6 @@
                     }];
 
   NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
-
   @try {
     OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
         [windowMock convertRectToScreen:NSMakeRect(28, 10, 2, 19)]);
@@ -447,6 +450,148 @@
   }
 
   return NSEqualRects(rect, NSMakeRect(38, 20, 2, 19));
+}
+
+- (bool)testFirstRectForCharacterRangeAtInfinity {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  FlutterViewController* controllerMock = OCMClassMock([FlutterViewController class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock engine])
+      .andReturn(engineMock);
+
+  id viewMock = OCMClassMock([NSView class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock bounds])
+      .andReturn(NSMakeRect(0, 0, 200, 200));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      controllerMock.viewLoaded)
+      .andReturn(YES);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock flutterView])
+      .andReturn(viewMock);
+
+  id windowMock = OCMClassMock([NSWindow class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock window])
+      .andReturn(windowMock);
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+
+  FlutterMethodCall* call = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                     arguments:@{
+                       @"height" : @(20.0),
+                       // Projects all points to infinity.
+                       @"transform" : @[
+                         @(1.0), @(0.0), @(0.0), @(0.0), @(0.0), @(1.0), @(0.0), @(0.0), @(0.0),
+                         @(0.0), @(1.0), @(0.0), @(20.0), @(10.0), @(0.0), @(0.0)
+                       ],
+                       @"width" : @(400.0),
+                     }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
+                                           arguments:@{
+                                             @"height" : @(19.0),
+                                             @"width" : @(2.0),
+                                             @"x" : @(8.0),
+                                             @"y" : @(0.0),
+                                           }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
+  return NSEqualRects(rect, CGRectZero);
+}
+
+- (bool)testFirstRectForCharacterRangeWithEsotericAffineTransform {
+  id engineMock = OCMClassMock([FlutterEngine class]);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  FlutterViewController* controllerMock = OCMClassMock([FlutterViewController class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock engine])
+      .andReturn(engineMock);
+
+  id viewMock = OCMClassMock([NSView class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock bounds])
+      .andReturn(NSMakeRect(0, 0, 200, 200));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      controllerMock.viewLoaded)
+      .andReturn(YES);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [controllerMock flutterView])
+      .andReturn(viewMock);
+
+  id windowMock = OCMClassMock([NSWindow class]);
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock window])
+      .andReturn(windowMock);
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [viewMock convertRect:NSMakeRect(-18, 6, 3, 3) toView:nil])
+      .andReturn(NSMakeRect(-18, 6, 3, 3));
+
+  OCMExpect(  // NOLINT(google-objc-avoid-throwing-exception)
+      [windowMock convertRectToScreen:NSMakeRect(-18, 6, 3, 3)])
+      .andReturn(NSMakeRect(-18, 6, 3, 3));
+
+  FlutterTextInputPlugin* plugin =
+      [[FlutterTextInputPlugin alloc] initWithViewController:controllerMock];
+
+  FlutterMethodCall* call = [FlutterMethodCall
+      methodCallWithMethodName:@"TextInput.setEditableSizeAndTransform"
+                     arguments:@{
+                       @"height" : @(20.0),
+                       // This matrix can be generated by running this dart code snippet:
+                       // Matrix4.identity()..scale(3.0)..rotateZ(math.pi/2)..translate(1.0, 2.0,
+                       // 3.0);
+                       @"transform" : @[
+                         @(0.0), @(3.0), @(0.0), @(0.0), @(-3.0), @(0.0), @(0.0), @(0.0), @(0.0),
+                         @(0.0), @(3.0), @(0.0), @(-6.0), @(3.0), @(9.0), @(1.0)
+                       ],
+                       @"width" : @(400.0),
+                     }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  call = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setCaretRect"
+                                           arguments:@{
+                                             @"height" : @(1.0),
+                                             @"width" : @(1.0),
+                                             @"x" : @(1.0),
+                                             @"y" : @(3.0),
+                                           }];
+
+  [plugin handleMethodCall:call
+                    result:^(id){
+                    }];
+
+  NSRect rect = [plugin firstRectForCharacterRange:NSMakeRange(0, 0) actualRange:nullptr];
+
+  @try {
+    OCMVerify(  // NOLINT(google-objc-avoid-throwing-exception)
+        [windowMock convertRectToScreen:NSMakeRect(-18, 6, 3, 3)]);
+  } @catch (...) {
+    return false;
+  }
+
+  return NSEqualRects(rect, NSMakeRect(-18, 6, 3, 3));
 }
 
 - (bool)testSetEditingStateWithTextEditingDelta {
@@ -1226,6 +1371,15 @@ TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRange) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRange]);
 }
 
+TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeAtInfinity) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testFirstRectForCharacterRangeAtInfinity]);
+}
+
+TEST(FlutterTextInputPluginTest, TestFirstRectForCharacterRangeWithEsotericAffineTransform) {
+  ASSERT_TRUE([[FlutterInputPluginTestObjc alloc]
+      testFirstRectForCharacterRangeWithEsotericAffineTransform]);
+}
+
 TEST(FlutterTextInputPluginTest, TestSetEditingStateWithTextEditingDelta) {
   ASSERT_TRUE([[FlutterInputPluginTestObjc alloc] testSetEditingStateWithTextEditingDelta]);
 }
@@ -1277,44 +1431,54 @@ TEST(FlutterTextInputPluginTest, CanWorkWithFlutterTextField) {
   engine.semanticsEnabled = YES;
 
   auto bridge = engine.accessibilityBridge.lock();
-  FlutterPlatformNodeDelegateMac delegate(engine, viewController);
+  FlutterPlatformNodeDelegateMac delegate(bridge, viewController);
   ui::AXTree tree;
   ui::AXNode ax_node(&tree, nullptr, 0, 0);
   ui::AXNodeData node_data;
   node_data.SetValue("initial text");
   ax_node.SetData(node_data);
   delegate.Init(engine.accessibilityBridge, &ax_node);
-  FlutterTextPlatformNode text_platform_node(&delegate, viewController);
+  {
+    FlutterTextPlatformNode text_platform_node(&delegate, viewController);
 
-  FlutterTextFieldMock* mockTextField =
-      [[FlutterTextFieldMock alloc] initWithPlatformNode:&text_platform_node
-                                             fieldEditor:viewController.textInputPlugin];
-  [viewController.view addSubview:mockTextField];
-  [mockTextField startEditing];
+    FlutterTextFieldMock* mockTextField =
+        [[FlutterTextFieldMock alloc] initWithPlatformNode:&text_platform_node
+                                               fieldEditor:viewController.textInputPlugin];
+    [viewController.view addSubview:mockTextField];
+    [mockTextField startEditing];
 
-  NSDictionary* arguments = @{
-    @"inputAction" : @"action",
-    @"inputType" : @{@"name" : @"inputName"},
-  };
-  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
-                                                                    arguments:@[ @(1), arguments ]];
-  FlutterResult result = ^(id result) {
-  };
-  [viewController.textInputPlugin handleMethodCall:methodCall result:result];
+    NSDictionary* arguments = @{
+      @"inputAction" : @"action",
+      @"inputType" : @{@"name" : @"inputName"},
+    };
+    FlutterMethodCall* methodCall =
+        [FlutterMethodCall methodCallWithMethodName:@"TextInput.setClient"
+                                          arguments:@[ @(1), arguments ]];
+    FlutterResult result = ^(id result) {
+    };
+    [viewController.textInputPlugin handleMethodCall:methodCall result:result];
 
-  arguments = @{
-    @"text" : @"new text",
-    @"selectionBase" : @(1),
-    @"selectionExtent" : @(2),
-    @"composingBase" : @(-1),
-    @"composingExtent" : @(-1),
-  };
+    arguments = @{
+      @"text" : @"new text",
+      @"selectionBase" : @(1),
+      @"selectionExtent" : @(2),
+      @"composingBase" : @(-1),
+      @"composingExtent" : @(-1),
+    };
 
-  methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
-                                                 arguments:arguments];
-  [viewController.textInputPlugin handleMethodCall:methodCall result:result];
-  EXPECT_EQ([mockTextField.lastUpdatedString isEqualToString:@"new text"], YES);
-  EXPECT_EQ(NSEqualRanges(mockTextField.lastUpdatedSelection, NSMakeRange(1, 1)), YES);
+    methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.setEditingState"
+                                                   arguments:arguments];
+    [viewController.textInputPlugin handleMethodCall:methodCall result:result];
+    EXPECT_EQ([mockTextField.lastUpdatedString isEqualToString:@"new text"], YES);
+    EXPECT_EQ(NSEqualRanges(mockTextField.lastUpdatedSelection, NSMakeRange(1, 1)), YES);
+
+    // This blocks the FlutterTextFieldMock, which is held onto by the main event
+    // loop, from crashing.
+    [mockTextField setPlatformNode:nil];
+  }
+
+  // This verifies that clearing the platform node works.
+  [[NSRunLoop currentRunLoop] runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.1]];
 }
 
 TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
@@ -1336,7 +1500,7 @@ TEST(FlutterTextInputPluginTest, CanNotBecomeResponderIfNoViewController) {
   engine.semanticsEnabled = YES;
 
   auto bridge = engine.accessibilityBridge.lock();
-  FlutterPlatformNodeDelegateMac delegate(engine, viewController);
+  FlutterPlatformNodeDelegateMac delegate(bridge, viewController);
   ui::AXTree tree;
   ui::AXNode ax_node(&tree, nullptr, 0, 0);
   ui::AXNodeData node_data;

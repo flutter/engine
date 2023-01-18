@@ -146,7 +146,7 @@ class Color {
 
   static int getAlphaFromOpacity(double opacity) {
     assert(opacity != null);
-    return (opacity.clamp(0.0, 1.0) * 255).round();
+    return (clampDouble(opacity, 0.0, 1.0) * 255).round();
   }
 
   @override
@@ -270,6 +270,10 @@ abstract class Paint {
 
 abstract class Shader {
   Shader._();
+
+  void dispose();
+
+  bool get debugDisposed;
 }
 
 abstract class Gradient extends Shader {
@@ -333,7 +337,12 @@ abstract class Gradient extends Shader {
     matrix4 != null ? engine.toMatrix32(matrix4) : null);
 }
 
+typedef ImageEventCallback = void Function(Image image);
+
 abstract class Image {
+  static ImageEventCallback? onCreate;
+  static ImageEventCallback? onDispose;
+
   int get width;
   int get height;
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba});
@@ -350,7 +359,7 @@ abstract class Image {
   String toString() => '[$width\u00D7$height]';
 }
 
-abstract class ColorFilter {
+class ColorFilter implements ImageFilter {
   const factory ColorFilter.mode(Color color, BlendMode blendMode) = engine.EngineColorFilter.mode;
   const factory ColorFilter.matrix(List<double> matrix) = engine.EngineColorFilter.matrix;
   const factory ColorFilter.linearToSrgbGamma() = engine.EngineColorFilter.linearToSrgbGamma;
@@ -700,8 +709,10 @@ abstract class ImageShader extends Shader {
     FilterQuality? filterQuality,
   }) => engine.renderer.createImageShader(image, tmx, tmy, matrix4, filterQuality);
 
+  @override
   void dispose();
 
+  @override
   bool get debugDisposed;
 }
 
@@ -715,6 +726,10 @@ class ImmutableBuffer {
 
   static Future<ImmutableBuffer> fromAsset(String assetKey) async {
     throw UnsupportedError('ImmutableBuffer.fromAsset is not supported on the web.');
+  }
+
+  static Future<ImmutableBuffer> fromFilePath(String path) async {
+    throw UnsupportedError('ImmutableBuffer.fromFilePath is not supported on the web.');
   }
 
   Uint8List? _list;
@@ -792,19 +807,22 @@ class ImageDescriptor {
   }
 }
 
-class FragmentProgram {
-  FragmentProgram._();
-
+abstract class FragmentProgram {
   static Future<FragmentProgram> fromAsset(String assetKey) {
-    throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
+    return engine.renderer.createFragmentProgram(assetKey);
   }
 
-  static Future<FragmentProgram> fromAssetAsync(String assetKey) {
-    return Future<FragmentProgram>.microtask(() => FragmentProgram.fromAsset(assetKey));
-  }
+  FragmentShader fragmentShader();
+}
 
-  Shader shader({
-    Float32List? floatUniforms,
-    List<ImageShader>? samplerUniforms,
-  }) => throw UnsupportedError('FragmentProgram is not supported for the CanvasKit or HTML renderers.');
+abstract class FragmentShader implements Shader {
+  void setFloat(int index, double value);
+
+  void setImageSampler(int index, Image image);
+
+  @override
+  void dispose();
+
+  @override
+  bool get debugDisposed;
 }

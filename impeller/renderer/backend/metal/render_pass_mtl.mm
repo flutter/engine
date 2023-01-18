@@ -131,9 +131,9 @@ static MTLRenderPassDescriptor* ToMTLRenderPassDescriptor(
 }
 
 RenderPassMTL::RenderPassMTL(std::weak_ptr<const Context> context,
-                             RenderTarget target,
+                             const RenderTarget& target,
                              id<MTLCommandBuffer> buffer)
-    : RenderPass(std::move(context), std::move(target)),
+    : RenderPass(std::move(context), target),
       buffer_(buffer),
       desc_(ToMTLRenderPassDescriptor(GetRenderTarget())) {
   if (!buffer_ || !desc_ || !render_target_.IsValid()) {
@@ -494,6 +494,8 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       return false;
     }
 
+    const PrimitiveType primitive_type = pipeline_desc.GetPrimitiveType();
+
     FML_DCHECK(command.index_count *
                    (command.index_type == IndexType::k16bit ? 2 : 4) ==
                command.index_buffer.range.length);
@@ -503,7 +505,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
       VALIDATION_LOG << "iOS Simulator does not support instanced rendering.";
       return false;
 #endif
-      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
                           indexCount:command.index_count
                            indexType:ToMTLIndexType(command.index_type)
                          indexBuffer:mtl_index_buffer
@@ -512,7 +514,7 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                           baseVertex:command.base_vertex
                         baseInstance:0u];
     } else {
-      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(command.primitive_type)
+      [encoder drawIndexedPrimitives:ToMTLPrimitiveType(primitive_type)
                           indexCount:command.index_count
                            indexType:ToMTLIndexType(command.index_type)
                          indexBuffer:mtl_index_buffer

@@ -6,6 +6,7 @@
 
 #include <cmath>
 #include <iomanip>
+#include <limits>
 #include <optional>
 #include <ostream>
 #include <utility>
@@ -63,6 +64,33 @@ struct Matrix {
 
   Matrix(const MatrixDecomposition& decomposition);
 
+  // clang-format off
+  static constexpr Matrix MakeColumn(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m1,  m2,  m3,
+                  m4,  m5,  m6,  m7,
+                  m8,  m9,  m10, m11,
+                  m12, m13, m14, m15);
+
+  }
+  // clang-format on
+
+  // clang-format off
+  static constexpr Matrix MakeRow(
+                   Scalar m0,  Scalar m1,  Scalar m2,  Scalar m3,
+                   Scalar m4,  Scalar m5,  Scalar m6,  Scalar m7,
+                   Scalar m8,  Scalar m9,  Scalar m10, Scalar m11,
+                   Scalar m12, Scalar m13, Scalar m14, Scalar m15){
+    return Matrix(m0,  m4,  m8,   m12,
+                  m1,  m5,  m9,   m13,
+                  m2,  m6,  m10,  m14,
+                  m3,  m7,  m11,  m15);
+  }
+  // clang-format on
+
   static constexpr Matrix MakeTranslation(const Vector3& t) {
     // clang-format off
     return Matrix(1.0, 0.0, 0.0, 0.0,
@@ -91,6 +119,31 @@ struct Matrix {
                   sx , 1.0, 0.0, 0.0,
                   0.0, 0.0, 1.0, 0.0,
                   0.0, 0.0, 0.0, 1.0);
+    // clang-format on
+  }
+
+  static Matrix MakeRotation(Quaternion q) {
+    // clang-format off
+    return Matrix(
+      1.0 - 2.0 * q.y * q.y - 2.0 * q.z * q.z,
+      2.0 * q.x * q.y + 2.0 * q.z * q.w,
+      2.0 * q.x * q.z - 2.0 * q.y * q.w,
+      0.0,
+
+      2.0 * q.x * q.y - 2.0 * q.z * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.z * q.z,
+      2.0 * q.y * q.z + 2.0 * q.x * q.w,
+      0.0,
+
+      2.0 * q.x * q.z + 2.0 * q.y * q.w,
+      2.0 * q.y * q.z - 2.0 * q.x * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.y * q.y,
+      0.0,
+
+      0.0,
+      0.0,
+      0.0,
+      1.0);
     // clang-format on
   }
 
@@ -249,13 +302,38 @@ struct Matrix {
   }
 
   constexpr Scalar GetDirectionScale(Vector3 direction) const {
-    return 1.0 / (this->Invert() * direction.Normalize()).Length() *
+    return 1.0 / (this->Basis().Invert() * direction.Normalize()).Length() *
            direction.Length();
   }
 
   constexpr bool IsAffine() const {
     return (m[2] == 0 && m[3] == 0 && m[6] == 0 && m[7] == 0 && m[8] == 0 &&
             m[9] == 0 && m[10] == 1 && m[11] == 0 && m[14] == 0 && m[15] == 1);
+  }
+
+  constexpr bool IsAligned(Scalar tolerance = 0) const {
+    int v[] = {!ScalarNearlyZero(m[0], tolerance),  //
+               !ScalarNearlyZero(m[1], tolerance),  //
+               !ScalarNearlyZero(m[2], tolerance),  //
+               !ScalarNearlyZero(m[4], tolerance),  //
+               !ScalarNearlyZero(m[5], tolerance),  //
+               !ScalarNearlyZero(m[6], tolerance),  //
+               !ScalarNearlyZero(m[8], tolerance),  //
+               !ScalarNearlyZero(m[9], tolerance),  //
+               !ScalarNearlyZero(m[10], tolerance)};
+    // Check if all three basis vectors are aligned to an axis.
+    if (v[0] + v[1] + v[2] != 1 ||  //
+        v[3] + v[4] + v[5] != 1 ||  //
+        v[6] + v[7] + v[8] != 1) {
+      return false;
+    }
+    // Ensure that none of the basis vectors overlap.
+    if (v[0] + v[3] + v[6] != 1 ||  //
+        v[1] + v[4] + v[7] != 1 ||  //
+        v[2] + v[5] + v[8] != 1) {
+      return false;
+    }
+    return true;
   }
 
   constexpr bool IsIdentity() const {
@@ -305,14 +383,30 @@ struct Matrix {
   }
 
   constexpr Vector3 operator*(const Vector3& v) const {
-    return Vector3(v.x * m[0] + v.y * m[4] + v.z * m[8] + m[12],
+    Scalar w = v.x * m[3] + v.y * m[7] + v.z * m[11] + m[15];
+    Vector3 result(v.x * m[0] + v.y * m[4] + v.z * m[8] + m[12],
                    v.x * m[1] + v.y * m[5] + v.z * m[9] + m[13],
                    v.x * m[2] + v.y * m[6] + v.z * m[10] + m[14]);
+
+    // This is Skia's behavior, but it may be reasonable to allow UB for the w=0
+    // case.
+    if (w) {
+      w = 1 / w;
+    }
+    return result * w;
   }
 
   constexpr Point operator*(const Point& v) const {
-    return Point(v.x * m[0] + v.y * m[4] + m[12],
+    Scalar w = v.x * m[3] + v.y * m[7] + m[15];
+    Point result(v.x * m[0] + v.y * m[4] + m[12],
                  v.x * m[1] + v.y * m[5] + m[13]);
+
+    // This is Skia's behavior, but it may be reasonable to allow UB for the w=0
+    // case.
+    if (w) {
+      w = 1 / w;
+    }
+    return result * w;
   }
 
   constexpr Vector4 TransformDirection(const Vector4& v) const {
@@ -352,7 +446,7 @@ struct Matrix {
     return {
       1.0f / width, 0.0f,           0.0f,                                 0.0f,
       0.0f,         1.0f / height,  0.0f,                                 0.0f,
-      0.0f,         0.0f,           z_far / (z_near - z_far),            -1.0f,
+      0.0f,         0.0f,           z_far / (z_far - z_near),             1.0f,
       0.0f,         0.0f,          -(z_far * z_near) / (z_far - z_near),  0.0f,
     };
     // clang-format on
@@ -365,6 +459,23 @@ struct Matrix {
                                           Scalar z_far) {
     return MakePerspective(fov_y, static_cast<Scalar>(size.width) / size.height,
                            z_near, z_far);
+  }
+
+  static constexpr Matrix MakeLookAt(Vector3 position,
+                                     Vector3 target,
+                                     Vector3 up) {
+    Vector3 forward = (target - position).Normalize();
+    Vector3 right = up.Cross(forward);
+    up = forward.Cross(right);
+
+    // clang-format off
+    return {
+       right.x,              up.x,              forward.x,             0.0f,
+       right.y,              up.y,              forward.y,             0.0f,
+       right.z,              up.z,              forward.z,             0.0f,
+      -right.Dot(position), -up.Dot(position), -forward.Dot(position), 1.0f
+    };
+    // clang-format on
   }
 };
 

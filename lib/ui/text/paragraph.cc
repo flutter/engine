@@ -22,13 +22,6 @@ Paragraph::Paragraph(std::unique_ptr<txt::Paragraph> paragraph)
 
 Paragraph::~Paragraph() = default;
 
-size_t Paragraph::GetAllocationSize() const {
-  // We don't have an accurate accounting of the paragraph's memory consumption,
-  // so return a fixed size to indicate that its impact is more than the size
-  // of the Paragraph class.
-  return 2000;
-}
-
 double Paragraph::width() {
   return m_paragraph->GetMaxWidth();
 }
@@ -66,11 +59,20 @@ void Paragraph::layout(double width) {
 }
 
 void Paragraph::paint(Canvas* canvas, double x, double y) {
-  SkCanvas* sk_canvas = canvas->canvas();
-  if (!sk_canvas) {
+  if (!m_paragraph || !canvas) {
+    // disposed.
     return;
   }
-  m_paragraph->Paint(sk_canvas, x, y);
+
+  DisplayListBuilder* builder = canvas->builder();
+  if (builder && m_paragraph->Paint(builder, x, y)) {
+    return;
+  }
+  // Fall back to SkCanvas if painting to DisplayListBuilder is not supported.
+  SkCanvas* sk_canvas = canvas->canvas();
+  if (sk_canvas) {
+    m_paragraph->Paint(sk_canvas, x, y);
+  }
 }
 
 static tonic::Float32List EncodeTextBoxes(
@@ -166,6 +168,11 @@ tonic::Float64List Paragraph::computeLineMetrics() {
   }
 
   return result;
+}
+
+void Paragraph::dispose() {
+  m_paragraph.reset();
+  ClearDartWrapper();
 }
 
 }  // namespace flutter

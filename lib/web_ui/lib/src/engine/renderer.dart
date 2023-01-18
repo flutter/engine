@@ -15,6 +15,7 @@ import 'embedder.dart';
 import 'fonts.dart';
 import 'html/renderer.dart';
 import 'html_image_codec.dart';
+import 'skwasm/skwasm_stub/renderer.dart' if (dart.library.ffi) 'skwasm/skwasm_impl/renderer.dart';
 
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
@@ -26,10 +27,13 @@ Renderer get renderer => _renderer;
 /// of functionality needed by the rest of the generic web engine code.
 abstract class Renderer {
   factory Renderer._internal() {
+    if (FlutterConfiguration.flutterWebUseSkwasm) {
+      return SkwasmRenderer();
+    }
     bool useCanvasKit;
     if (FlutterConfiguration.flutterWebAutoDetect) {
-      if (requestedRendererType != null) {
-        useCanvasKit = requestedRendererType == 'canvaskit';
+      if (configuration.requestedRendererType != null) {
+        useCanvasKit = configuration.requestedRendererType == 'canvaskit';
       } else {
         // If requestedRendererType is not specified, use CanvasKit for desktop and
         // html for mobile.
@@ -149,32 +153,35 @@ abstract class Renderer {
     ui.FilterQuality? filterQuality,
   );
 
+  void clearFragmentProgramCache();
+  Future<ui.FragmentProgram> createFragmentProgram(String assetKey);
+
   ui.Path createPath();
   ui.Path copyPath(ui.Path src);
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2);
 
   ui.TextStyle createTextStyle({
-    ui.Color? color,
-    ui.TextDecoration? decoration,
-    ui.Color? decorationColor,
-    ui.TextDecorationStyle? decorationStyle,
-    double? decorationThickness,
-    ui.FontWeight? fontWeight,
-    ui.FontStyle? fontStyle,
-    ui.TextBaseline? textBaseline,
-    String? fontFamily,
-    List<String>? fontFamilyFallback,
-    double? fontSize,
-    double? letterSpacing,
-    double? wordSpacing,
-    double? height,
-    ui.TextLeadingDistribution? leadingDistribution,
-    ui.Locale? locale,
-    ui.Paint? background,
-    ui.Paint? foreground,
-    List<ui.Shadow>? shadows,
-    List<ui.FontFeature>? fontFeatures,
-    List<ui.FontVariation>? fontVariations,
+    required ui.Color? color,
+    required ui.TextDecoration? decoration,
+    required ui.Color? decorationColor,
+    required ui.TextDecorationStyle? decorationStyle,
+    required double? decorationThickness,
+    required ui.FontWeight? fontWeight,
+    required ui.FontStyle? fontStyle,
+    required ui.TextBaseline? textBaseline,
+    required String? fontFamily,
+    required List<String>? fontFamilyFallback,
+    required double? fontSize,
+    required double? letterSpacing,
+    required double? wordSpacing,
+    required double? height,
+    required ui.TextLeadingDistribution? leadingDistribution,
+    required ui.Locale? locale,
+    required ui.Paint? background,
+    required ui.Paint? foreground,
+    required List<ui.Shadow>? shadows,
+    required List<ui.FontFeature>? fontFeatures,
+    required List<ui.FontVariation>? fontVariations,
   });
 
   ui.ParagraphStyle createParagraphStyle({

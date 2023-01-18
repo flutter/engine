@@ -3,56 +3,98 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
+
 #include "flutter/fml/logging.h"
 
 namespace flutter {
 
-FlutterCompositor::FlutterCompositor(FlutterViewController* view_controller) {
-  FML_CHECK(view_controller != nullptr) << "FlutterViewController* cannot be nullptr";
-
-  view_controller_ = view_controller;
+FlutterCompositor::FlutterCompositor(id<FlutterViewProvider> view_provider,
+                                     FlutterPlatformViewController* platform_view_controller)
+    : view_provider_(view_provider), platform_view_controller_(platform_view_controller) {
+  FML_CHECK(view_provider != nullptr) << "view_provider cannot be nullptr";
 }
 
-void FlutterCompositor::SetPresentCallback(
-    const FlutterCompositor::PresentCallback& present_callback) {
-  present_callback_ = present_callback;
-}
-
-void FlutterCompositor::StartFrame() {
-  // First remove all CALayers from the superlayer.
-  for (auto layer : active_ca_layers_) {
-    [layer removeFromSuperlayer];
+bool FlutterCompositor::CreateBackingStore(const FlutterBackingStoreConfig* config,
+                                           FlutterBackingStore* backing_store_out) {
+  // TODO(dkwingsmt): This class only supports single-view for now. As more
+  // classes are gradually converted to multi-view, it should get the view ID
+  // from somewhere.
+  FlutterView* view = [view_provider_ getView:kFlutterDefaultViewId];
+  if (!view) {
+    return false;
   }
 
-  // Reset active layers.
-  active_ca_layers_.clear();
-  SetFrameStatus(FrameStatus::kStarted);
+  CGSize size = CGSizeMake(config->size.width, config->size.height);
+  FlutterSurface* surface = [view.surfaceManager surfaceForSize:size];
+  memset(backing_store_out, 0, sizeof(FlutterBackingStore));
+  backing_store_out->struct_size = sizeof(FlutterBackingStore);
+  backing_store_out->type = kFlutterBackingStoreTypeMetal;
+  backing_store_out->metal.struct_size = sizeof(FlutterMetalBackingStore);
+  backing_store_out->metal.texture = surface.asFlutterMetalTexture;
+  return true;
 }
 
-bool FlutterCompositor::EndFrame(bool has_flutter_content) {
-  bool status = present_callback_(has_flutter_content);
-  SetFrameStatus(FrameStatus::kEnded);
-  return status;
+bool FlutterCompositor::Present(uint64_t view_id,
+                                const FlutterLayer** layers,
+                                size_t layers_count) {
+  FlutterView* view = [view_provider_ getView:view_id];
+  if (!view) {
+    return false;
+  }
+
+  NSMutableArray* surfaces = [NSMutableArray array];
+  for (size_t i = 0; i < layers_count; i++) {
+    const FlutterLayer* layer = layers[i];
+    if (layer->type == kFlutterLayerContentTypeBackingStore) {
+      FlutterSurface* surface =
+          [FlutterSurface fromFlutterMetalTexture:&layer->backing_store->metal.texture];
+
+      if (surface) {
+        FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
+        info.surface = surface;
+        info.offset = CGPointMake(layer->offset.x, layer->offset.y);
+        info.zIndex = i;
+        [surfaces addObject:info];
+      }
+    }
+  }
+
+  [view.surfaceManager present:surfaces
+                        notify:^{
+                          for (size_t i = 0; i < layers_count; i++) {
+                            const FlutterLayer* layer = layers[i];
+                            switch (layer->type) {
+                              case kFlutterLayerContentTypeBackingStore:
+                                break;
+                              case kFlutterLayerContentTypePlatformView:
+                                PresentPlatformView(view, layer, i);
+                                break;
+                            }
+                          }
+                          [platform_view_controller_ disposePlatformViews];
+                        }];
+
+  return true;
 }
 
-void FlutterCompositor::SetFrameStatus(FlutterCompositor::FrameStatus frame_status) {
-  frame_status_ = frame_status;
-}
+void FlutterCompositor::PresentPlatformView(FlutterView* default_base_view,
+                                            const FlutterLayer* layer,
+                                            size_t layer_position) {
+  FML_DCHECK([[NSThread currentThread] isMainThread])
+      << "Must be on the main thread to present platform views";
 
-FlutterCompositor::FrameStatus FlutterCompositor::GetFrameStatus() {
-  return frame_status_;
-}
+  int64_t platform_view_id = layer->platform_view->identifier;
+  NSView* platform_view = [platform_view_controller_ platformViewWithID:platform_view_id];
 
-void FlutterCompositor::InsertCALayerForIOSurface(const IOSurfaceRef& io_surface,
-                                                  CATransform3D transform) {
-  // FlutterCompositor manages the lifecycle of CALayers.
-  CALayer* content_layer = [[CALayer alloc] init];
-  content_layer.transform = transform;
-  content_layer.frame = view_controller_.flutterView.layer.bounds;
-  [content_layer setContents:(__bridge id)io_surface];
-  [view_controller_.flutterView.layer addSublayer:content_layer];
+  FML_DCHECK(platform_view) << "Platform view not found for id: " << platform_view_id;
 
-  active_ca_layers_.push_back(content_layer);
+  CGFloat scale = default_base_view.layer.contentsScale;
+  platform_view.frame = CGRectMake(layer->offset.x / scale, layer->offset.y / scale,
+                                   layer->size.width / scale, layer->size.height / scale);
+  if (platform_view.superview == nil) {
+    [default_base_view addSubview:platform_view];
+  }
+  platform_view.layer.zPosition = layer_position;
 }
 
 }  // namespace flutter

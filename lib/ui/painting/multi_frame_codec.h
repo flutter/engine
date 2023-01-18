@@ -44,6 +44,7 @@ class MultiFrameCodec : public Codec {
     const std::shared_ptr<ImageGenerator> generator_;
     const int frameCount_;
     const int repetitionCount_;
+    bool is_impeller_enabled_ = false;
 
     // The non-const members and functions below here are only read or written
     // to on the IO thread. They are not safe to access or write on the UI
@@ -55,17 +56,20 @@ class MultiFrameCodec : public Codec {
     // The index of the last decoded required frame.
     int lastRequiredFrameIndex_ = -1;
 
-    sk_sp<SkImage> GetNextFrameImage(
+    sk_sp<DlImage> GetNextFrameImage(
         fml::WeakPtr<GrDirectContext> resourceContext,
-        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch);
+        const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
+        std::shared_ptr<impeller::Context> impeller_context_,
+        fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue);
 
     void GetNextFrameAndInvokeCallback(
         std::unique_ptr<DartPersistentValue> callback,
-        fml::RefPtr<fml::TaskRunner> ui_task_runner,
+        const fml::RefPtr<fml::TaskRunner>& ui_task_runner,
         fml::WeakPtr<GrDirectContext> resourceContext,
         fml::RefPtr<flutter::SkiaUnrefQueue> unref_queue,
         const std::shared_ptr<const fml::SyncSwitch>& gpu_disable_sync_switch,
-        size_t trace_id);
+        size_t trace_id,
+        std::shared_ptr<impeller::Context> impeller_context_);
   };
 
   // Shared across the UI and IO task runners.

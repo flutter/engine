@@ -21,8 +21,8 @@ void main() {
 Future<void> testMain() async {
   setUpAll(() async {
     await ui.webOnlyInitializePlatform();
-    renderer.fontCollection.debugRegisterTestFonts();
-    await renderer.fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   setUp(() async {
@@ -302,7 +302,7 @@ Future<void> testMain() async {
     final DomElement viewElement3 = builder3.build().webOnlyRootElement!;
     domDocument.body!.append(viewElement3);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region, maxDiffRatePercent: 0.8);
+        region: region);
     viewElement3.remove();
 
     /// Update shape from arbitrary path to rect.
@@ -337,8 +337,7 @@ Future<void> testMain() async {
     final DomElement viewElement5 = builder5.build().webOnlyRootElement!;
     domDocument.body!.append(viewElement5);
     await matchGoldenFile('compositing_physical_update_3.png',
-        region: region,
-        maxDiffRatePercent: browserEngine == BrowserEngine.webkit ? 0.6 : 0.4);
+        region: region);
     viewElement5.remove();
 
     /// Update shadow color.
@@ -390,6 +389,41 @@ Future<void> testMain() async {
     domDocument.body!.append(builder.build().webOnlyRootElement!);
 
     await matchGoldenFile('compositing_image_filter_matrix.png', region: region);
+  });
+
+  test('pushImageFilter using mode ColorFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    // Applying the colorFilter should turn all the circles red.
+    builder.pushImageFilter(
+        const ui.ColorFilter.mode(
+          ui.Color(0xFFFF0000),
+          ui.BlendMode.srcIn,
+        ));
+    _drawTestPicture(builder);
+    builder.pop();
+
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+
+    await matchGoldenFile('compositing_image_filter_using_mode_color_filter.png', region: region);
+  });
+
+  test('pushImageFilter using matrix ColorFilter', () async {
+    final SurfaceSceneBuilder builder = SurfaceSceneBuilder();
+    // Apply a "greyscale" color filter.
+    final List<double> colorMatrix = <double>[
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0.2126, 0.7152, 0.0722, 0, 0, //
+      0, 0, 0, 1, 0, //
+    ];
+
+    builder.pushImageFilter(ui.ColorFilter.matrix(colorMatrix));
+    _drawTestPicture(builder);
+    builder.pop();
+
+    domDocument.body!.append(builder.build().webOnlyRootElement!);
+
+    await matchGoldenFile('compositing_image_filter_using_matrix_color_filter.png', region: region);
   });
 
   group('Cull rect computation', () {
@@ -883,8 +917,6 @@ void _testCullRectComputation() {
       await matchGoldenFile(
         'compositing_draw_high_quality_text.png',
         region: canvasSize,
-        maxDiffRatePercent: 0.0,
-        pixelComparison: PixelComparison.precise,
       );
     },
     testOn: 'chrome',

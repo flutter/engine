@@ -7,21 +7,24 @@
 #include <dwmapi.h>
 
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/client_wrapper/binary_messenger_impl.h"
+#include "flutter/shell/platform/common/client_wrapper/include/flutter/standard_message_codec.h"
 #include "flutter/shell/platform/common/path_utils.h"
-#include "flutter/shell/platform/windows/accessibility_bridge_delegate_windows.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/system_utils.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/third_party/accessibility/ax/ax_node.h"
 
 // winbase.h defines GetCurrentTime as a macro.
 #undef GetCurrentTime
+
+static constexpr char kAccessibilityChannelName[] = "flutter/accessibility";
 
 namespace flutter {
 
@@ -152,9 +155,12 @@ FlutterLocale CovertToFlutterLocale(const LanguageInfo& info) {
 
 }  // namespace
 
-FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
+FlutterWindowsEngine::FlutterWindowsEngine(
+    const FlutterProjectBundle& project,
+    std::unique_ptr<WindowsRegistry> registry)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
-      aot_data_(nullptr, nullptr) {
+      aot_data_(nullptr, nullptr),
+      windows_registry_(std::move(registry)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -172,14 +178,24 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
           });
 
   // Set up the legacy structs backing the API handles.
-  messenger_ = std::make_unique<FlutterDesktopMessenger>();
-  messenger_->engine = this;
+  messenger_ =
+      fml::RefPtr<FlutterDesktopMessenger>(new FlutterDesktopMessenger());
+  messenger_->SetEngine(this);
   plugin_registrar_ = std::make_unique<FlutterDesktopPluginRegistrar>();
   plugin_registrar_->engine = this;
 
-  messenger_wrapper_ = std::make_unique<BinaryMessengerImpl>(messenger_.get());
+  messenger_wrapper_ =
+      std::make_unique<BinaryMessengerImpl>(messenger_->ToRef());
   message_dispatcher_ =
-      std::make_unique<IncomingMessageDispatcher>(messenger_.get());
+      std::make_unique<IncomingMessageDispatcher>(messenger_->ToRef());
+  message_dispatcher_->SetMessageCallback(
+      kAccessibilityChannelName,
+      [](FlutterDesktopMessengerRef messenger,
+         const FlutterDesktopMessage* message, void* data) {
+        FlutterWindowsEngine* engine = static_cast<FlutterWindowsEngine*>(data);
+        engine->HandleAccessibilityMessage(messenger, message);
+      },
+      static_cast<void*>(this));
 
   FlutterWindowsTextureRegistrar::ResolveGlFunctions(gl_procs_);
   texture_registrar_ =
@@ -190,11 +206,16 @@ FlutterWindowsEngine::FlutterWindowsEngine(const FlutterProjectBundle& project)
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
+  cursor_handler_ =
+      std::make_unique<CursorHandler>(messenger_wrapper_.get(), this);
+  platform_handler_ =
+      std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
                                                       task_runner_.get());
 }
 
 FlutterWindowsEngine::~FlutterWindowsEngine() {
+  messenger_->SetEngine(nullptr);
   Stop();
 }
 
@@ -303,25 +324,23 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->view()->OnPreEngineRestart();
   };
-  args.update_semantics_node_callback = [](const FlutterSemanticsNode* node,
-                                           void* user_data) {
+  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                      void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    if (!node || node->id == kFlutterSemanticsNodeIdBatchEnd) {
-      host->accessibility_bridge_->CommitUpdates();
-      return;
+
+    for (size_t i = 0; i < update->nodes_count; i++) {
+      const FlutterSemanticsNode* node = &update->nodes[i];
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
     }
-    host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+
+    for (size_t i = 0; i < update->custom_actions_count; i++) {
+      const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
+      host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
+          action);
+    }
+
+    host->accessibility_bridge_->CommitUpdates();
   };
-  args.update_semantics_custom_action_callback =
-      [](const FlutterSemanticsCustomAction* action, void* user_data) {
-        auto host = static_cast<FlutterWindowsEngine*>(user_data);
-        if (!action || action->id == kFlutterSemanticsNodeIdBatchEnd) {
-          host->accessibility_bridge_->CommitUpdates();
-          return;
-        }
-        host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-            action);
-      };
   args.root_isolate_create_callback = [](void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     if (host->root_isolate_create_callback_) {
@@ -525,7 +544,8 @@ void FlutterWindowsEngine::SetNextFrameCallback(fml::closure callback) {
 }
 
 void FlutterWindowsEngine::SendSystemLocales() {
-  std::vector<LanguageInfo> languages = GetPreferredLanguageInfo();
+  std::vector<LanguageInfo> languages =
+      GetPreferredLanguageInfo(*windows_registry_);
   std::vector<FlutterLocale> flutter_locales;
   flutter_locales.reserve(languages.size());
   for (const auto& info : languages) {
@@ -557,6 +577,26 @@ bool FlutterWindowsEngine::MarkExternalTextureFrameAvailable(
               engine_, texture_id) == kSuccess);
 }
 
+bool FlutterWindowsEngine::PostRasterThreadTask(fml::closure callback) {
+  struct Captures {
+    fml::closure callback;
+  };
+  auto captures = new Captures();
+  captures->callback = std::move(callback);
+  if (embedder_api_.PostRenderThreadTask(
+          engine_,
+          [](void* opaque) {
+            auto captures = reinterpret_cast<Captures*>(opaque);
+            captures->callback();
+            delete captures;
+          },
+          captures) == kSuccess) {
+    return true;
+  }
+  delete captures;
+  return false;
+}
+
 bool FlutterWindowsEngine::DispatchSemanticsAction(
     uint64_t target,
     FlutterSemanticsAction action,
@@ -574,10 +614,15 @@ void FlutterWindowsEngine::UpdateSemanticsEnabled(bool enabled) {
     if (!semantics_enabled_ && accessibility_bridge_) {
       accessibility_bridge_.reset();
     } else if (semantics_enabled_ && !accessibility_bridge_) {
-      accessibility_bridge_ = std::make_shared<AccessibilityBridge>(
-          std::make_unique<AccessibilityBridgeDelegateWindows>(this));
+      accessibility_bridge_ = CreateAccessibilityBridge(this, view());
     }
   }
+}
+
+std::shared_ptr<AccessibilityBridgeWindows>
+FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine,
+                                                FlutterWindowsView* view) {
+  return std::make_shared<AccessibilityBridgeWindows>(engine, view);
 }
 
 gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
@@ -605,6 +650,56 @@ std::string FlutterWindowsEngine::GetExecutableName() const {
     return executable_path.substr(last_separator + 1);
   }
   return "Flutter";
+}
+
+void FlutterWindowsEngine::UpdateAccessibilityFeatures(
+    FlutterAccessibilityFeature flags) {
+  embedder_api_.UpdateAccessibilityFeatures(engine_, flags);
+}
+
+void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
+  high_contrast_enabled_ = enabled;
+  int flags = EnabledAccessibilityFeatures();
+  if (enabled) {
+    flags |=
+        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  } else {
+    flags &=
+        ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
+}
+
+int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {
+  int flags = 0;
+  if (high_contrast_enabled()) {
+    flags |=
+        FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
+  }
+  // As more accessibility features are enabled for Windows,
+  // the corresponding checks and flags should be added here.
+  return flags;
+}
+
+void FlutterWindowsEngine::HandleAccessibilityMessage(
+    FlutterDesktopMessengerRef messenger,
+    const FlutterDesktopMessage* message) {
+  const auto& codec = StandardMessageCodec::GetInstance();
+  auto data = codec.DecodeMessage(message->message, message->message_size);
+  EncodableMap map = std::get<EncodableMap>(*data);
+  std::string type = std::get<std::string>(map.at(EncodableValue("type")));
+  if (type.compare("announce") == 0) {
+    if (semantics_enabled_) {
+      EncodableMap data_map =
+          std::get<EncodableMap>(map.at(EncodableValue("data")));
+      std::string text =
+          std::get<std::string>(data_map.at(EncodableValue("message")));
+      std::wstring wide_text = fml::Utf8ToWideString(text);
+      view_->AnnounceAlert(wide_text);
+    }
+  }
+  SendPlatformMessageResponse(message->response_handle,
+                              reinterpret_cast<const uint8_t*>(""), 0);
 }
 
 }  // namespace flutter

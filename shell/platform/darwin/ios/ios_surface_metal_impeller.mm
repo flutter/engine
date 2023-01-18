@@ -8,11 +8,11 @@
 
 namespace flutter {
 
-IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(fml::scoped_nsobject<CAMetalLayer> layer,
-                                                 std::shared_ptr<IOSContext> context)
+IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
+                                                 const std::shared_ptr<IOSContext>& context)
     : IOSSurface(context),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
-      layer_(std::move(layer)),
+      layer_(layer),
       impeller_context_(context ? context->GetImpellerContext() : nullptr) {
   if (!impeller_context_) {
     return;
@@ -48,6 +48,12 @@ GPUCAMetalLayerHandle IOSSurfaceMetalImpeller::GetCAMetalLayer(const SkISize& fr
   if (!CGSizeEqualToSize(drawable_size, layer.drawableSize)) {
     layer.drawableSize = drawable_size;
   }
+
+  // When there are platform views in the scene, the drawable needs to be presented in the same
+  // transaction as the one created for platform views. When the drawable are being presented from
+  // the raster thread, there is no such transaction.
+  layer.presentsWithTransaction = [[NSThread currentThread] isMainThread];
+
   return layer;
 }
 

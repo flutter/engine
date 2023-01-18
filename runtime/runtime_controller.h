@@ -103,11 +103,11 @@ class RuntimeController : public PlatformConfigurationClient {
       const std::function<void(int64_t)>& idle_notification_callback,
       const fml::closure& isolate_create_callback,
       const fml::closure& isolate_shutdown_callback,
-      std::shared_ptr<const fml::Mapping> persistent_isolate_data,
+      const std::shared_ptr<const fml::Mapping>& persistent_isolate_data,
       fml::WeakPtr<IOManager> io_manager,
       fml::WeakPtr<ImageDecoder> image_decoder,
       fml::WeakPtr<ImageGeneratorRegistry> image_generator_registry,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const;
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   // |PlatformConfigurationClient|
   ~RuntimeController() override;
@@ -146,7 +146,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   [[nodiscard]] bool LaunchRootIsolate(
       const Settings& settings,
-      fml::closure root_isolate_create_callback,
+      const fml::closure& root_isolate_create_callback,
       std::optional<std::string> dart_entrypoint,
       std::optional<std::string> dart_entrypoint_library,
       const std::vector<std::string>& dart_entrypoint_args,
@@ -358,7 +358,18 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  virtual bool NotifyIdle(fml::TimePoint deadline);
+  virtual bool NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Dart VM that the attached flutter view has been
+  ///             destroyed. This gives the Dart VM to perform some cleanup
+  ///             activities e.g: perform garbage collection to free up any
+  ///             unused memory.
+  ///
+  /// NotifyDestroyed is advisory. The VM may or may not perform any clean up
+  /// activities.
+  ///
+  virtual bool NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -396,7 +407,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Dispatch the semantics action to the specified accessibility
   ///             node.
   ///
-  /// @param[in]  id      The identified of the accessibility node.
+  /// @param[in]  node_id The identified of the accessibility node.
   /// @param[in]  action  The semantics action to perform on the specified
   ///                     accessibility node.
   /// @param[in]  args    Optional data that applies to the specified action.
@@ -404,7 +415,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the semantics action was dispatched. This may fail if an
   ///             isolate is not running.
   ///
-  bool DispatchSemanticsAction(int32_t id,
+  bool DispatchSemanticsAction(int32_t node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -554,7 +565,8 @@ class RuntimeController : public PlatformConfigurationClient {
     return context_.unref_queue;
   }
 
-  const fml::WeakPtr<SnapshotDelegate>& GetSnapshotDelegate() const {
+  const fml::TaskRunnerAffineWeakPtr<SnapshotDelegate>& GetSnapshotDelegate()
+      const {
     return context_.snapshot_delegate;
   }
 
@@ -564,7 +576,7 @@ class RuntimeController : public PlatformConfigurationClient {
 
  protected:
   /// Constructor for Mocks.
-  RuntimeController(RuntimeDelegate& p_client, TaskRunners task_runners);
+  RuntimeController(RuntimeDelegate& p_client, const TaskRunners& task_runners);
 
  private:
   struct Locale {

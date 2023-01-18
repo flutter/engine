@@ -24,6 +24,7 @@
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_builder.h"
+#include "impeller/renderer/pipeline_descriptor.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/range.h"
 #include "impeller/renderer/render_pass.h"
@@ -36,7 +37,7 @@
 struct ImGui_ImplImpeller_Data {
   std::shared_ptr<impeller::Context> context;
   std::shared_ptr<impeller::Texture> font_texture;
-  std::shared_ptr<impeller::Pipeline> pipeline;
+  std::shared_ptr<impeller::Pipeline<impeller::PipelineDescriptor>> pipeline;
   std::shared_ptr<const impeller::Sampler> sampler;
 };
 
@@ -47,7 +48,8 @@ static ImGui_ImplImpeller_Data* ImGui_ImplImpeller_GetBackendData() {
              : nullptr;
 }
 
-bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
+bool ImGui_ImplImpeller_Init(
+    const std::shared_ptr<impeller::Context>& context) {
   ImGuiIO& io = ImGui::GetIO();
   IM_ASSERT(io.BackendRendererUserData == nullptr &&
             "Already initialized a renderer backend!");
@@ -70,12 +72,13 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 
     auto texture_descriptor = impeller::TextureDescriptor{};
+    texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
     texture_descriptor.format = impeller::PixelFormat::kR8G8B8A8UNormInt;
     texture_descriptor.size = {width, height};
     texture_descriptor.mip_count = 1u;
 
-    bd->font_texture = context->GetResourceAllocator()->CreateTexture(
-        impeller::StorageMode::kHostVisible, texture_descriptor);
+    bd->font_texture =
+        context->GetResourceAllocator()->CreateTexture(texture_descriptor);
     IM_ASSERT(bd->font_texture != nullptr &&
               "Could not allocate ImGui font texture.");
     bd->font_texture->SetLabel("ImGui Font Texture");
@@ -91,16 +94,13 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    desc->SetSampleCount(impeller::SampleCount::kCount4);
-    auto stencil = desc->GetFrontStencilAttachmentDescriptor();
-    if (stencil.has_value()) {
-      stencil->stencil_compare = impeller::CompareFunction::kAlways;
-      stencil->depth_stencil_pass = impeller::StencilOperation::kKeep;
-      desc->SetStencilAttachmentDescriptors(stencil.value());
-    }
+    desc->SetStencilPixelFormat(impeller::PixelFormat::kUnknown);
+    desc->SetStencilAttachmentDescriptors(std::nullopt);
+    desc->SetDepthPixelFormat(impeller::PixelFormat::kUnknown);
+    desc->SetDepthStencilAttachmentDescriptor(std::nullopt);
 
     bd->pipeline =
-        context->GetPipelineLibrary()->GetRenderPipeline(std::move(desc)).get();
+        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});
@@ -136,8 +136,11 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
   }
 
   // Allocate buffer for vertices + indices.
-  auto buffer = bd->context->GetResourceAllocator()->CreateBuffer(
-      impeller::StorageMode::kHostVisible, total_vtx_bytes + total_idx_bytes);
+  impeller::DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
+  buffer_desc.storage_mode = impeller::StorageMode::kHostVisible;
+
+  auto buffer = bd->context->GetResourceAllocator()->CreateBuffer(buffer_desc);
   buffer->SetLabel(impeller::SPrintF("ImGui vertex+index buffer"));
 
   auto display_rect =
@@ -259,7 +262,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;
-        cmd.primitive_type = impeller::PrimitiveType::kTriangle;
 
         render_pass.AddCommand(std::move(cmd));
       }

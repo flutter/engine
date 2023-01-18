@@ -13,6 +13,7 @@
 #include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
 #include "impeller/renderer/backend/metal/command_buffer_mtl.h"
+#include "impeller/renderer/backend/metal/gpu_tracer_mtl.h"
 #include "impeller/renderer/backend/metal/pipeline_library_mtl.h"
 #include "impeller/renderer/backend/metal/shader_library_mtl.h"
 #include "impeller/renderer/context.h"
@@ -23,10 +24,10 @@ namespace impeller {
 class ContextMTL final : public Context,
                          public BackendCast<ContextMTL, Context> {
  public:
-  static std::shared_ptr<Context> Create(
+  static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::string>& shader_library_paths);
 
-  static std::shared_ptr<Context> Create(
+  static std::shared_ptr<ContextMTL> Create(
       const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries_data,
       const std::string& label);
 
@@ -43,6 +44,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<SamplerLibrary> sampler_library_;
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<WorkQueue> work_queue_;
+  std::shared_ptr<GPUTracerMTL> gpu_tracer_;
   bool is_valid_ = false;
 
   ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
@@ -69,7 +71,13 @@ class ContextMTL final : public Context,
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
+  std::shared_ptr<GPUTracer> GetGPUTracer() const override;
+
+  // |Context|
   bool SupportsOffscreenMSAA() const override;
+
+  // |Context|
+  const BackendFeatures& GetBackendFeatures() const override;
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;

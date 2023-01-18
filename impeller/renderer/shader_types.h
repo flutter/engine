@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cstddef>
+#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -67,6 +68,8 @@ struct ShaderStructMemberMetadata {
   std::string name;
   size_t offset;
   size_t size;
+  size_t byte_length;
+  std::optional<size_t> array_elements;
 };
 
 struct ShaderMetadata {
@@ -76,6 +79,8 @@ struct ShaderMetadata {
 
 struct ShaderUniformSlot {
   const char* name;
+  size_t ext_res_0;
+  size_t set;
   size_t binding;
 };
 
@@ -110,6 +115,8 @@ struct SampledImageSlot {
   const char* name;
   size_t texture_index;
   size_t sampler_index;
+  size_t binding;
+  size_t set;
 
   constexpr bool HasTexture() const { return texture_index < 32u; }
 
@@ -120,6 +127,17 @@ template <size_t Size>
 struct Padding {
  private:
   uint8_t pad_[Size];
+};
+
+/// @brief Struct used for padding uniform buffer array elements.
+template <typename T,
+          size_t Size,
+          class = std::enable_if_t<std::is_standard_layout_v<T>>>
+struct Padded {
+  T value;
+  Padding<Size> _PADDING_;
+
+  Padded(T p_value) : value(p_value){};  // NOLINT(google-explicit-constructor)
 };
 
 inline constexpr Vector4 ToVector(Color color) {

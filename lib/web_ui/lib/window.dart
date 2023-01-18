@@ -7,6 +7,7 @@ part of ui;
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
   ViewConfiguration get viewConfiguration;
+  Object get viewId;
   double get devicePixelRatio => viewConfiguration.devicePixelRatio;
   Rect get physicalGeometry => viewConfiguration.geometry;
   Size get physicalSize => viewConfiguration.geometry.size;
@@ -16,17 +17,10 @@ abstract class FlutterView {
   WindowPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
+  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
-abstract class FlutterWindow extends FlutterView {
-  @override
-  PlatformDispatcher get platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration;
-}
-
-abstract class SingletonFlutterWindow extends FlutterWindow {
+abstract class SingletonFlutterWindow extends FlutterView {
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback) {
     platformDispatcher.onMetricsChanged = callback;
@@ -129,8 +123,6 @@ abstract class SingletonFlutterWindow extends FlutterWindow {
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
-
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   void sendPlatformMessage(
     String name,

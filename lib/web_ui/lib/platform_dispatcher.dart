@@ -9,12 +9,20 @@ typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
+typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
 typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
+
+// ignore: avoid_classes_with_only_static_members
+/// A token that represents a root isolate.
+class RootIsolateToken {
+  static RootIsolateToken? get instance {
+    throw UnsupportedError('Root isolate not identifiable on web.');
+  }
+}
 
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
@@ -49,10 +57,20 @@ abstract class PlatformDispatcher {
       PlatformMessageResponseCallback? callback,
   );
 
+  void sendPortPlatformMessage(
+    String name,
+    ByteData? data,
+    int identifier,
+    Object port);
+
+  void registerBackgroundIsolate(RootIsolateToken token);
+
   PlatformMessageCallback? get onPlatformMessage;
   set onPlatformMessage(PlatformMessageCallback? callback);
 
   void setIsolateDebugName(String name) {}
+
+  void requestDartPerformanceMode(DartPerformanceMode mode) {}
 
   ByteData? getPersistentIsolateData() => null;
 
@@ -65,6 +83,14 @@ abstract class PlatformDispatcher {
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(SemanticsUpdate update);
 
   Locale get locale;
@@ -164,7 +190,13 @@ class PlatformConfiguration {
 
 class ViewConfiguration {
   const ViewConfiguration({
-    this.window,
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
+    FlutterView? window,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
@@ -174,10 +206,17 @@ class ViewConfiguration {
     this.padding = WindowPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
-  });
+  }) : assert(window == null || view == null),
+  _view = view ?? window;
 
   ViewConfiguration copyWith({
-    FlutterWindow? window,
+    FlutterView? view,
+    @Deprecated('''
+      Use the `view` property instead.
+      This change is related to adding multi-view support in Flutter.
+      This feature was deprecated after 3.7.0-1.2.pre.
+    ''')
+    FlutterView? window,
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
@@ -188,8 +227,9 @@ class ViewConfiguration {
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
+    assert(view == null || window == null);
     return ViewConfiguration(
-      window: window ?? this.window,
+      view: view ?? window ?? _view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -202,7 +242,14 @@ class ViewConfiguration {
     );
   }
 
-  final FlutterWindow? window;
+  @Deprecated('''
+    Use the `view` property instead.
+    This change is related to adding multi-view support in Flutter.
+    This feature was deprecated after 3.7.0-1.2.pre.
+  ''')
+  FlutterView? get window => _view;
+  FlutterView? get view => _view;
+  final FlutterView? _view;
   final double devicePixelRatio;
   final Rect geometry;
   final bool visible;
@@ -215,7 +262,7 @@ class ViewConfiguration {
 
   @override
   String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
+    return '$runtimeType[view: $view, geometry: $geometry]';
   }
 }
 
@@ -543,4 +590,11 @@ class Locale {
     }
     return out.toString();
   }
+}
+
+enum DartPerformanceMode {
+  balanced,
+  latency,
+  throughput,
+  memory,
 }

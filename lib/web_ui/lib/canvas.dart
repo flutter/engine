@@ -21,12 +21,12 @@ enum VertexMode {
   triangleFan,
 }
 
-class Vertices {
+abstract class Vertices {
   factory Vertices(
     VertexMode mode,
     List<Offset> positions, {
-    List<Offset>? textureCoordinates,
     List<Color>? colors,
+    List<Offset>? textureCoordinates,
     List<int>? indices,
   }) {
     return engine.renderer.createVertices(mode,
@@ -38,8 +38,8 @@ class Vertices {
   factory Vertices.raw(
     VertexMode mode,
     Float32List positions, {
-    Float32List? textureCoordinates,
     Int32List? colors,
+    Float32List? textureCoordinates,
     Uint16List? indices,
   }) {
     return engine.renderer.createVerticesRaw(mode,
@@ -48,6 +48,9 @@ class Vertices {
       colors: colors,
       indices: indices);
   }
+
+  void dispose();
+  bool get debugDisposed;
 }
 
 abstract class PictureRecorder {
@@ -63,6 +66,7 @@ abstract class Canvas {
   void saveLayer(Rect? bounds, Paint paint);
   void restore();
   int getSaveCount();
+  void restoreToCount(int count);
   void translate(double dx, double dy);
   void scale(double sx, [double? sy]);
   void rotate(double radians);
@@ -121,7 +125,11 @@ abstract class Canvas {
   );
 }
 
+typedef PictureEventCallback = void Function(Picture picture);
+
 abstract class Picture {
+  static PictureEventCallback? onCreate;
+  static PictureEventCallback? onDispose;
   Future<Image> toImage(int width, int height);
   Image toImageSync(int width, int height);
   void dispose();

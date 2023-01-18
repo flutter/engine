@@ -5,8 +5,8 @@ part of dart.ui;
 
 /// A view into which a Flutter [Scene] is drawn.
 ///
-/// Each [FlutterView] has its own layer tree that is rendered into an area
-/// inside of a [FlutterWindow] whenever [render] is called with a [Scene].
+/// Each [FlutterView] has its own layer tree that is rendered
+/// whenever [render] is called on it with a [Scene].
 ///
 /// ## Insets and Padding
 ///
@@ -51,18 +51,21 @@ part of dart.ui;
 /// the [viewPadding] anyway, so there is no need to account for
 /// that in the [padding], which is always safe to use for such
 /// calculations.
-///
-/// See also:
-///
-///  * [FlutterWindow], a special case of a [FlutterView] that is represented on
-///    the platform as a separate window which can host other [FlutterView]s.
-abstract class FlutterView {
+class FlutterView {
+  FlutterView._(this.viewId, this.platformDispatcher);
+
+  /// The opaque ID for this view.
+  final Object viewId;
+
   /// The platform dispatcher that this view is registered with, and gets its
   /// information from.
-  PlatformDispatcher get platformDispatcher;
+  final PlatformDispatcher platformDispatcher;
 
   /// The configuration of this view.
-  ViewConfiguration get viewConfiguration;
+  ViewConfiguration get viewConfiguration {
+    assert(platformDispatcher._viewConfigurations.containsKey(viewId));
+    return platformDispatcher._viewConfigurations[viewId]!;
+  }
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.
@@ -266,41 +269,22 @@ abstract class FlutterView {
 
   @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::Render')
   external static void _render(Scene scene);
+
+  /// Change the retained semantics data about this [FlutterView].
+  ///
+  /// If [PlatformDispatcher.semanticsEnabled] is true, the user has requested that this function
+  /// be called whenever the semantic content of this [FlutterView]
+  /// changes.
+  ///
+  /// This function disposes the given update, which means the semantics update
+  /// cannot be used further.
+  void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
+
+  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
+  external static void _updateSemantics(SemanticsUpdate update);
 }
 
-/// A top-level platform window displaying a Flutter layer tree drawn from a
-/// [Scene].
-///
-/// The current list of all Flutter views for the application is available from
-/// `WidgetsBinding.instance.platformDispatcher.views`. Only views that are of type
-/// [FlutterWindow] are top level platform windows.
-///
-/// There is also a [PlatformDispatcher.instance] singleton object in `dart:ui`
-/// if `WidgetsBinding` is unavailable, but we strongly advise avoiding a static
-/// reference to it. See the documentation for [PlatformDispatcher.instance] for
-/// more details about why it should be avoided.
-///
-/// See also:
-///
-/// * [PlatformDispatcher], which manages the current list of [FlutterView] (and
-///   thus [FlutterWindow]) instances.
-class FlutterWindow extends FlutterView {
-  FlutterWindow._(this._windowId, this.platformDispatcher);
-
-  /// The opaque ID for this view.
-  final Object _windowId;
-
-  @override
-  final PlatformDispatcher platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration {
-    assert(platformDispatcher._viewConfigurations.containsKey(_windowId));
-    return platformDispatcher._viewConfigurations[_windowId]!;
-  }
-}
-
-/// A [FlutterWindow] that includes access to setting callbacks and retrieving
+/// A [FlutterView] that includes access to setting callbacks and retrieving
 /// properties that reside on the [PlatformDispatcher].
 ///
 /// It is the type of the global [window] singleton used by applications that
@@ -315,7 +299,7 @@ class FlutterWindow extends FlutterView {
 /// `WidgetsBinding.instance.platformDispatcher` over a static reference to
 /// [window], or [PlatformDispatcher.instance]. See the documentation for
 /// [PlatformDispatcher.instance] for more details about this recommendation.
-class SingletonFlutterWindow extends FlutterWindow {
+class SingletonFlutterWindow extends FlutterView {
   SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
       : super._();
 
@@ -720,17 +704,6 @@ class SingletonFlutterWindow extends FlutterWindow {
   set onAccessibilityFeaturesChanged(VoidCallback? callback) {
     platformDispatcher.onAccessibilityFeaturesChanged = callback;
   }
-
-  /// Change the retained semantics data about this window.
-  ///
-  /// {@macro dart.ui.window.functionForwardWarning}
-  ///
-  /// If [semanticsEnabled] is true, the user has requested that this function
-  /// be called whenever the semantic content of this window changes.
-  ///
-  /// In either case, this function disposes the given update, which means the
-  /// semantics update cannot be used further.
-  void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 
   /// Sends a message to a platform-specific plugin.
   ///

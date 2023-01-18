@@ -17,9 +17,9 @@
 namespace impeller {
 
 RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
-                               RenderTarget target,
+                               const RenderTarget& target,
                                ReactorGLES::Ref reactor)
-    : RenderPass(std::move(context), std::move(target)),
+    : RenderPass(std::move(context), target),
       reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
@@ -411,7 +411,8 @@ struct RenderPassData {
     //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    gl.DrawElements(ToMode(command.primitive_type),   // mode
+    PrimitiveType primitive_type = pipeline.GetDescriptor().GetPrimitiveType();
+    gl.DrawElements(ToMode(primitive_type),           // mode
                     command.index_count,              // count
                     ToIndexType(command.index_type),  // type
                     reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(

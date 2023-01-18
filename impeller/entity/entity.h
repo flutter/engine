@@ -19,48 +19,8 @@ class RenderPass;
 
 class Entity {
  public:
-  /// All blend modes assume that both the source (fragment output) and
-  /// destination (first color attachment) have colors with premultiplied alpha.
-  enum class BlendMode {
-    // The following blend modes are able to be used as pipeline blend modes or
-    // via `BlendFilterContents`.
-    kClear,
-    kSource,
-    kDestination,
-    kSourceOver,
-    kDestinationOver,
-    kSourceIn,
-    kDestinationIn,
-    kSourceOut,
-    kDestinationOut,
-    kSourceATop,
-    kDestinationATop,
-    kXor,
-    kPlus,
-    kModulate,
-
-    // The following blend modes use equations that are not available for
-    // pipelines on most graphics devices without extensions, and so they are
-    // only able to be used via `BlendFilterContents`.
-    kScreen,
-    kOverlay,
-    kDarken,
-    kLighten,
-    kColorDodge,
-    kColorBurn,
-    kHardLight,
-    kSoftLight,
-    kDifference,
-    kExclusion,
-    kMultiply,
-    kHue,
-    kSaturation,
-    kColor,
-    kLuminosity,
-
-    kLastPipelineBlendMode = kModulate,
-    kLastAdvancedBlendMode = kLuminosity,
-  };
+  static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kModulate;
+  static constexpr BlendMode kLastAdvancedBlendMode = BlendMode::kLuminosity;
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
@@ -97,13 +57,12 @@ class Entity {
 
   void SetTransformation(const Matrix& transformation);
 
-  void SetAddsToCoverage(bool adds);
-
-  bool AddsToCoverage() const;
-
   std::optional<Rect> GetCoverage() const;
 
-  bool ShouldRender(const ISize& target_size) const;
+  Contents::StencilCoverage GetStencilCoverage(
+      const std::optional<Rect>& current_stencil_coverage) const;
+
+  bool ShouldRender(const std::optional<Rect>& stencil_coverage) const;
 
   void SetContents(std::shared_ptr<Contents> contents);
 
@@ -128,7 +87,6 @@ class Entity {
   std::shared_ptr<Contents> contents_;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   uint32_t stencil_depth_ = 0u;
-  bool adds_to_coverage_ = true;
 };
 
 }  // namespace impeller

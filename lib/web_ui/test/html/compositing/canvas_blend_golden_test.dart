@@ -20,8 +20,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    renderer.fontCollection.debugRegisterTestFonts();
-    await renderer.fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   test('Blend circles with difference and color', () async {
@@ -57,10 +57,7 @@ Future<void> testMain() async {
           ..color = const Color.fromARGB(128, 255, 0, 0));
     rc.restore();
 
-    await canvasScreenshot(rc, 'canvas_blend_circle_diff_color',
-        region: const Rect.fromLTWH(0, 0, 500, 500),
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
-            operatingSystem == OperatingSystem.iOs ? 1.0 : 0);
+    await canvasScreenshot(rc, 'canvas_blend_circle_diff_color');
   });
 
   test('Blend circle and text with multiply', () async {
@@ -96,10 +93,7 @@ Future<void> testMain() async {
     rc.drawImage(createTestImage(), const Offset(135.0, 130.0),
         SurfacePaint()..blendMode = BlendMode.multiply);
     rc.restore();
-    await canvasScreenshot(rc, 'canvas_blend_image_multiply',
-        region: const Rect.fromLTWH(0, 0, 500, 500),
-        maxDiffRatePercent: operatingSystem == OperatingSystem.macOs ? 2.95 :
-        operatingSystem == OperatingSystem.iOs ? 2.0 : 0);
+    await canvasScreenshot(rc, 'canvas_blend_image_multiply');
   });
 }
 

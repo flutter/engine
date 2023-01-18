@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data' show ByteData, Float64List;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
@@ -42,16 +42,16 @@ void main() {
     builder.addTexture(0, width: 10, height: 10);
 
     final Scene scene = builder.build();
-    final Image image = scene.toImageSync(10, 10);
+    final Image image = scene.toImageSync(20, 20);
     scene.dispose();
 
-    expect(image.width, 10);
-    expect(image.height, 10);
+    expect(image.width, 20);
+    expect(image.height, 20);
 
     final ByteData? data = await image.toByteData();
 
     expect(data, isNotNull);
-    expect(data!.lengthInBytes, 10 * 10 * 4);
+    expect(data!.lengthInBytes, 20 * 20 * 4);
     expect(data.buffer.asUint8List()[0], 0);
     expect(data.buffer.asUint8List()[1], 0);
     expect(data.buffer.asUint8List()[2], 0);

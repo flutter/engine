@@ -6,8 +6,14 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
+#include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
+#include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
+#include "flutter/shell/platform/windows/testing/windows_test.h"
+#include "fml/synchronization/waitable_event.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 // winbase.h defines GetCurrentTime as a macro.
@@ -16,31 +22,14 @@
 namespace flutter {
 namespace testing {
 
-namespace {
-// Returns an engine instance configured with dummy project path values.
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = L"C:\\foo\\flutter_assets";
-  properties.icu_data_path = L"C:\\foo\\icudtl.dat";
-  properties.aot_library_path = L"C:\\foo\\aot.so";
+class FlutterWindowsEngineTest : public WindowsTest {};
 
-  std::vector<const char*> test_arguments = {"arg1", "arg2"};
-  properties.dart_entrypoint_argc = test_arguments.size();
-  properties.dart_entrypoint_argv = test_arguments.data();
+TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.AddDartEntrypointArgument("arg1");
+  builder.AddDartEntrypointArgument("arg2");
 
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
-
-  EngineModifier modifier(engine.get());
-  // Force the non-AOT path unless overridden by the test.
-  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-
-  return engine;
-}
-}  // namespace
-
-TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   // The engine should be run with expected configuration values.
@@ -59,8 +48,8 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_EQ(config->type, kOpenGL);
         EXPECT_EQ(user_data, engine_instance);
         // Spot-check arguments.
-        EXPECT_STREQ(args->assets_path, "C:\\foo\\flutter_assets");
-        EXPECT_STREQ(args->icu_data_path, "C:\\foo\\icudtl.dat");
+        EXPECT_NE(args->assets_path, nullptr);
+        EXPECT_NE(args->icu_data_path, nullptr);
         EXPECT_EQ(args->dart_entrypoint_argc, 2U);
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[0], "arg1"), 0);
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[1], "arg2"), 0);
@@ -69,6 +58,9 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
         EXPECT_NE(args->custom_task_runners->thread_priority_setter, nullptr);
         EXPECT_EQ(args->custom_dart_entrypoint, nullptr);
         EXPECT_NE(args->vsync_callback, nullptr);
+        EXPECT_NE(args->update_semantics_callback, nullptr);
+        EXPECT_EQ(args->update_semantics_node_callback, nullptr);
+        EXPECT_EQ(args->update_semantics_custom_action_callback, nullptr);
 
         args->custom_task_runners->thread_priority_setter(
             FlutterThreadPriority::kRaster);
@@ -76,6 +68,11 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
                   THREAD_PRIORITY_ABOVE_NORMAL);
         return kSuccess;
       }));
+  // Accessibility updates must do nothing when the embedder engine is mocked
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // It should send locale info.
   bool update_locales_called = false;
@@ -142,8 +139,9 @@ TEST(FlutterWindowsEngine, RunDoesExpectedInitialization) {
   modifier.ReleaseSurfaceManager();
 }
 
-TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, ConfiguresFrameVsync) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
   bool on_vsync_called = false;
 
@@ -168,8 +166,9 @@ TEST(FlutterWindowsEngine, ConfiguresFrameVsync) {
   EXPECT_TRUE(on_vsync_called);
 }
 
-TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEUsesSoftware) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   modifier.embedder_api().NotifyDisplayUpdate =
@@ -193,6 +192,11 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
         EXPECT_EQ(config->type, kSoftware);
         return kSuccess;
       }));
+  // Accessibility updates must do nothing when the embedder engine is mocked
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures,
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine,
+         FlutterAccessibilityFeature flags) { return kSuccess; });
 
   // Stub out UpdateLocales and SendPlatformMessage as we don't have a fully
   // initialized engine instance.
@@ -215,8 +219,9 @@ TEST(FlutterWindowsEngine, RunWithoutANGLEUsesSoftware) {
   modifier.embedder_api().Shutdown = [](auto engine) { return kSuccess; };
 }
 
-TEST(FlutterWindowsEngine, SendPlatformMessageWithoutResponse) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithoutResponse) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   const char* channel = "test";
@@ -241,8 +246,105 @@ TEST(FlutterWindowsEngine, SendPlatformMessageWithoutResponse) {
   EXPECT_TRUE(called);
 }
 
-TEST(FlutterWindowsEngine, SendPlatformMessageWithResponse) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, PlatformMessageRoundTrip) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("hiPlatformChannels");
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+
+  engine->Run();
+  bool did_call_callback = false;
+  bool did_call_reply = false;
+  bool did_call_dart_reply = false;
+  std::string channel = "hi";
+  binary_messenger->SetMessageHandler(
+      channel,
+      [&did_call_callback, &did_call_dart_reply](
+          const uint8_t* message, size_t message_size, BinaryReply reply) {
+        if (message_size == 5) {
+          EXPECT_EQ(message[0], static_cast<uint8_t>('h'));
+          char response[] = {'b', 'y', 'e'};
+          reply(reinterpret_cast<uint8_t*>(response), 3);
+          did_call_callback = true;
+        } else {
+          EXPECT_EQ(message_size, 3);
+          EXPECT_EQ(message[0], static_cast<uint8_t>('b'));
+          did_call_dart_reply = true;
+        }
+      });
+  char payload[] = {'h', 'e', 'l', 'l', 'o'};
+  binary_messenger->Send(
+      channel, reinterpret_cast<uint8_t*>(payload), 5,
+      [&did_call_reply](const uint8_t* reply, size_t reply_size) {
+        EXPECT_EQ(reply_size, 5);
+        EXPECT_EQ(reply[0], static_cast<uint8_t>('h'));
+        did_call_reply = true;
+      });
+  // Rely on timeout mechanism in CI.
+  while (!did_call_callback || !did_call_reply || !did_call_dart_reply) {
+    engine->task_runner()->ProcessTasks();
+  }
+}
+
+TEST_F(FlutterWindowsEngineTest, PlatformMessageRespondOnDifferentThread) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("hiPlatformChannels");
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+
+  engine->Run();
+  bool did_call_callback = false;
+  bool did_call_reply = false;
+  bool did_call_dart_reply = false;
+  std::string channel = "hi";
+  std::unique_ptr<std::thread> reply_thread;
+  binary_messenger->SetMessageHandler(
+      channel,
+      [&did_call_callback, &did_call_dart_reply, &reply_thread](
+          const uint8_t* message, size_t message_size, BinaryReply reply) {
+        if (message_size == 5) {
+          EXPECT_EQ(message[0], static_cast<uint8_t>('h'));
+          reply_thread.reset(new std::thread([reply = std::move(reply)]() {
+            char response[] = {'b', 'y', 'e'};
+            reply(reinterpret_cast<uint8_t*>(response), 3);
+          }));
+          did_call_callback = true;
+        } else {
+          EXPECT_EQ(message_size, 3);
+          EXPECT_EQ(message[0], static_cast<uint8_t>('b'));
+          did_call_dart_reply = true;
+        }
+      });
+  char payload[] = {'h', 'e', 'l', 'l', 'o'};
+  binary_messenger->Send(
+      channel, reinterpret_cast<uint8_t*>(payload), 5,
+      [&did_call_reply](const uint8_t* reply, size_t reply_size) {
+        EXPECT_EQ(reply_size, 5);
+        EXPECT_EQ(reply[0], static_cast<uint8_t>('h'));
+        did_call_reply = true;
+      });
+  // Rely on timeout mechanism in CI.
+  while (!did_call_callback || !did_call_reply || !did_call_dart_reply) {
+    engine->task_runner()->ProcessTasks();
+  }
+  ASSERT_TRUE(reply_thread);
+  reply_thread->join();
+}
+
+TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithResponse) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   const char* channel = "test";
@@ -299,8 +401,9 @@ TEST(FlutterWindowsEngine, SendPlatformMessageWithResponse) {
   EXPECT_TRUE(send_message_called);
 }
 
-TEST(FlutterWindowsEngine, DispatchSemanticsAction) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, DispatchSemanticsAction) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -323,7 +426,7 @@ TEST(FlutterWindowsEngine, DispatchSemanticsAction) {
   EXPECT_TRUE(called);
 }
 
-TEST(FlutterWindowsEngine, SetsThreadPriority) {
+TEST_F(FlutterWindowsEngineTest, SetsThreadPriority) {
   WindowsPlatformThreadPrioritySetter(FlutterThreadPriority::kBackground);
   EXPECT_EQ(GetThreadPriority(GetCurrentThread()),
             THREAD_PRIORITY_BELOW_NORMAL);
@@ -344,8 +447,9 @@ TEST(FlutterWindowsEngine, SetsThreadPriority) {
   EXPECT_EQ(GetThreadPriority(GetCurrentThread()), THREAD_PRIORITY_NORMAL);
 }
 
-TEST(FlutterWindowsEngine, AddPluginRegistrarDestructionCallback) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, AddPluginRegistrarDestructionCallback) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   MockEmbedderApiForKeyboard(modifier,
@@ -374,8 +478,9 @@ TEST(FlutterWindowsEngine, AddPluginRegistrarDestructionCallback) {
   EXPECT_EQ(result2, 2);
 }
 
-TEST(FlutterWindowsEngine, ScheduleFrame) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, ScheduleFrame) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -389,8 +494,9 @@ TEST(FlutterWindowsEngine, ScheduleFrame) {
   EXPECT_TRUE(called);
 }
 
-TEST(FlutterWindowsEngine, SetNextFrameCallback) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, SetNextFrameCallback) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -404,9 +510,105 @@ TEST(FlutterWindowsEngine, SetNextFrameCallback) {
   EXPECT_TRUE(called);
 }
 
-TEST(FlutterWindowsEngine, GetExecutableName) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+TEST_F(FlutterWindowsEngineTest, GetExecutableName) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EXPECT_EQ(engine->GetExecutableName(), "flutter_windows_unittests.exe");
+}
+
+// Ensure that after setting or resetting the high contrast feature,
+// the corresponding status flag can be retrieved from the engine.
+TEST_F(FlutterWindowsEngineTest, UpdateHighContrastFeature) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+  EngineModifier modifier(engine.get());
+
+  bool called = false;
+  modifier.embedder_api().UpdateAccessibilityFeatures = MOCK_ENGINE_PROC(
+      UpdateAccessibilityFeatures, ([&called](auto engine, auto flags) {
+        called = true;
+        return kSuccess;
+      }));
+
+  engine->UpdateHighContrastEnabled(true);
+  EXPECT_TRUE(
+      engine->EnabledAccessibilityFeatures() &
+      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
+  EXPECT_TRUE(engine->high_contrast_enabled());
+  EXPECT_TRUE(called);
+
+  engine->UpdateHighContrastEnabled(false);
+  EXPECT_FALSE(
+      engine->EnabledAccessibilityFeatures() &
+      FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast);
+  EXPECT_FALSE(engine->high_contrast_enabled());
+}
+
+TEST_F(FlutterWindowsEngineTest, PostRasterThreadTask) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+  EngineModifier modifier(engine.get());
+
+  modifier.embedder_api().PostRenderThreadTask = MOCK_ENGINE_PROC(
+      PostRenderThreadTask, ([](auto engine, auto callback, auto context) {
+        callback(context);
+        return kSuccess;
+      }));
+
+  bool called = false;
+  engine->PostRasterThreadTask([&called]() { called = true; });
+
+  EXPECT_TRUE(called);
+}
+
+class MockFlutterWindowsView : public FlutterWindowsView {
+ public:
+  MockFlutterWindowsView(std::unique_ptr<WindowBindingHandler> wbh)
+      : FlutterWindowsView(std::move(wbh)) {}
+  ~MockFlutterWindowsView() {}
+
+  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
+};
+
+TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("alertPlatformChannel");
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  AccessibilityRootNode* root_node = AccessibilityRootNode::Create();
+  ON_CALL(*window_binding_handler, GetAccessibilityRootNode)
+      .WillByDefault(::testing::Return(root_node));
+  MockFlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(builder.Build());
+  FlutterWindowsEngine* engine = view.GetEngine();
+
+  EngineModifier modifier(engine);
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  binary_messenger->SetMessageHandler(
+      "semantics", [&engine](const uint8_t* message, size_t message_size,
+                             BinaryReply reply) {
+        engine->UpdateSemanticsEnabled(true);
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
+
+  bool did_call = false;
+  ON_CALL(view, NotifyWinEventWrapper)
+      .WillByDefault([&did_call](DWORD event, HWND hwnd, LONG obj, LONG child) {
+        did_call = true;
+      });
+
+  engine->UpdateSemanticsEnabled(true);
+  engine->Run();
+
+  // Rely on timeout mechanism in CI.
+  while (!did_call) {
+    engine->task_runner()->ProcessTasks();
+  }
 }
 
 }  // namespace testing

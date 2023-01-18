@@ -40,7 +40,11 @@ class EnginePictureRecorder implements ui.PictureRecorder {
     }
     _isRecording = false;
     _canvas!.endRecording();
-    return EnginePicture(_canvas, cullRect);
+    final EnginePicture result = EnginePicture(_canvas, cullRect);
+    // We invoke the handler here, not in the Picture constructor, because we want
+    // [result.approximateBytesUsed] to be available for the handler.
+    ui.Picture.onCreate?.call(result);
+    return result;
   }
 }
 
@@ -60,8 +64,8 @@ class EnginePicture implements ui.Picture {
     final String imageDataUrl = canvas.toDataUrl();
     final DomHTMLImageElement imageElement = createDomHTMLImageElement()
       ..src = imageDataUrl
-      ..width = width
-      ..height = height;
+      ..width = width.toDouble()
+      ..height = height.toDouble();
 
     // The image loads asynchronously. We need to wait before returning,
     // otherwise the returned HtmlImage will be temporarily unusable.
@@ -97,6 +101,7 @@ class EnginePicture implements ui.Picture {
 
   @override
   void dispose() {
+    ui.Picture.onDispose?.call(this);
     _disposed = true;
   }
 

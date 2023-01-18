@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 
+#include "flow/layers/layer.h"
 #include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
 #include "third_party/skia/include/core/SkImage.h"
@@ -31,15 +32,17 @@ EmbedderExternalTextureMetal::EmbedderExternalTextureMetal(int64_t texture_ident
 EmbedderExternalTextureMetal::~EmbedderExternalTextureMetal() = default;
 
 // |flutter::Texture|
-void EmbedderExternalTextureMetal::Paint(SkCanvas& canvas,
+void EmbedderExternalTextureMetal::Paint(PaintContext& context,
                                          const SkRect& bounds,
                                          bool freeze,
-                                         GrDirectContext* context,
-                                         const SkSamplingOptions& sampling,
-                                         const SkPaint* paint) {
+                                         const SkSamplingOptions& sampling) {
   if (last_image_ == nullptr) {
-    last_image_ = ResolveTexture(Id(), context, SkISize::Make(bounds.width(), bounds.height()));
+    last_image_ =
+        ResolveTexture(Id(), context.gr_context, SkISize::Make(bounds.width(), bounds.height()));
   }
+
+  SkCanvas& canvas = *context.canvas;
+  const SkPaint* paint = context.sk_paint;
 
   if (last_image_) {
     if (bounds != SkRect::Make(last_image_->bounds())) {
@@ -77,8 +80,13 @@ sk_sp<SkImage> EmbedderExternalTextureMetal::ResolveTexture(int64_t texture_id,
       if (ValidNumTextures(2, texture->num_textures)) {
         id<MTLTexture> yTex = (__bridge id<MTLTexture>)texture->textures[0];
         id<MTLTexture> uvTex = (__bridge id<MTLTexture>)texture->textures[1];
+        SkYUVColorSpace colorSpace =
+            texture->yuv_color_space == FlutterMetalExternalTextureYUVColorSpace::kBT601LimitedRange
+                ? kRec601_Limited_SkYUVColorSpace
+                : kJPEG_Full_SkYUVColorSpace;
         image = [FlutterDarwinExternalTextureSkImageWrapper wrapYUVATexture:yTex
                                                                       UVTex:uvTex
+                                                              YUVColorSpace:colorSpace
                                                                   grContext:context
                                                                       width:size.width()
                                                                      height:size.height()];

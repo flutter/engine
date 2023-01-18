@@ -19,14 +19,19 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
+#include "flutter/shell/platform/windows/cursor_handler.h"
+#include "flutter/shell/platform/windows/flutter_desktop_messenger.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
 namespace flutter {
@@ -66,8 +71,13 @@ static void WindowsPlatformThreadPrioritySetter(
 // run in headless mode.
 class FlutterWindowsEngine {
  public:
+  // Creates a new Flutter engine with an injectible windows registry.
+  FlutterWindowsEngine(const FlutterProjectBundle& project,
+                       std::unique_ptr<WindowsRegistry> windows_registry);
+
   // Creates a new Flutter engine object configured to run |project|.
-  explicit FlutterWindowsEngine(const FlutterProjectBundle& project);
+  explicit FlutterWindowsEngine(const FlutterProjectBundle& project)
+      : FlutterWindowsEngine(project, std::make_unique<WindowsRegistry>()) {}
 
   virtual ~FlutterWindowsEngine();
 
@@ -118,7 +128,7 @@ class FlutterWindowsEngine {
   // Sets switches member to the given switches.
   void SetSwitches(const std::vector<std::string>& switches);
 
-  FlutterDesktopMessengerRef messenger() { return messenger_.get(); }
+  FlutterDesktopMessengerRef messenger() { return messenger_->ToRef(); }
 
   IncomingMessageDispatcher* message_dispatcher() {
     return message_dispatcher_.get();
@@ -134,7 +144,7 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
-  std::weak_ptr<AccessibilityBridge> accessibility_bridge() {
+  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
     return accessibility_bridge_;
   }
 
@@ -190,6 +200,9 @@ class FlutterWindowsEngine {
   // given |texture_id|.
   bool MarkExternalTextureFrameAvailable(int64_t texture_id);
 
+  // Posts the given callback onto the raster thread.
+  bool PostRasterThreadTask(fml::closure callback);
+
   // Invoke on the embedder's vsync callback to schedule a frame.
   void OnVsync(intptr_t baton);
 
@@ -203,6 +216,15 @@ class FlutterWindowsEngine {
 
   // Returns true if the semantics tree is enabled.
   bool semantics_enabled() const { return semantics_enabled_; }
+
+  // Update the high contrast feature state.
+  void UpdateHighContrastEnabled(bool enabled);
+
+  // Returns the flags for all currently enabled accessibility features
+  int EnabledAccessibilityFeatures() const;
+
+  // Returns true if the high contrast feature is enabled.
+  bool high_contrast_enabled() const { return high_contrast_enabled_; }
 
   // Returns the native accessibility node with the given id.
   gfx::NativeViewAccessible GetNativeAccessibleFromId(AccessibilityNodeId id);
@@ -223,6 +245,18 @@ class FlutterWindowsEngine {
   // Returns the executable name for this process or "Flutter" if unknown.
   std::string GetExecutableName() const;
 
+  // Updates accessibility, e.g. switch to high contrast mode
+  void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
+
+ protected:
+  // Creates an accessibility bridge with the provided parameters.
+  //
+  // By default this method calls AccessibilityBridge's constructor. Exposing
+  // this method allows unit tests to override in order to capture information.
+  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
+      FlutterWindowsEngine* engine,
+      FlutterWindowsView* view);
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;
@@ -232,6 +266,9 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
+                                  const FlutterDesktopMessage* message);
 
   // The handle to the embedder.h engine instance.
   FLUTTER_API_SYMBOL(FlutterEngine) engine_ = nullptr;
@@ -250,7 +287,7 @@ class FlutterWindowsEngine {
   std::unique_ptr<TaskRunner> task_runner_;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger_;
+  fml::RefPtr<flutter::FlutterDesktopMessenger> messenger_;
 
   // A wrapper around messenger_ for interacting with client_wrapper-level APIs.
   std::unique_ptr<BinaryMessengerImpl> messenger_wrapper_;
@@ -271,6 +308,12 @@ class FlutterWindowsEngine {
   // surfaces. Surface creation functionality requires a valid render_target.
   // May be nullptr if ANGLE failed to initialize.
   std::unique_ptr<AngleSurfaceManager> surface_manager_;
+
+  // Handler for cursor events.
+  std::unique_ptr<CursorHandler> cursor_handler_;
+
+  // Handler for the flutter/platform channel.
+  std::unique_ptr<PlatformHandler> platform_handler_;
 
   // The settings plugin.
   std::unique_ptr<SettingsPlugin> settings_plugin_;
@@ -293,7 +336,9 @@ class FlutterWindowsEngine {
 
   bool semantics_enabled_ = false;
 
-  std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
+  bool high_contrast_enabled_ = false;
+
+  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;
@@ -303,6 +348,9 @@ class FlutterWindowsEngine {
 
   // The on frame drawn callback.
   fml::closure next_frame_callback_;
+
+  // Wrapper providing Windows registry access.
+  std::unique_ptr<WindowsRegistry> windows_registry_;
 };
 
 }  // namespace flutter

@@ -18,6 +18,7 @@
 #include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/engine_layer.h"
 #include "flutter/lib/ui/painting/fragment_program.h"
+#include "flutter/lib/ui/painting/fragment_shader.h"
 #include "flutter/lib/ui/painting/gradient.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_descriptor.h"
@@ -39,6 +40,11 @@
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_error.h"
+
+#ifdef IMPELLER_ENABLE_3D
+#include "flutter/lib/ui/painting/scene/scene_node.h"
+#include "flutter/lib/ui/painting/scene/scene_shader.h"
+#endif  // IMPELLER_ENABLE_3D
 
 using tonic::ToDart;
 
@@ -67,6 +73,7 @@ typedef CanvasPath Path;
   V(Canvas::Create, 6)                                                \
   V(ColorFilter::Create, 1)                                           \
   V(FragmentProgram::Create, 1)                                       \
+  V(ReusableFragmentShader::Create, 4)                                \
   V(Gradient::Create, 1)                                              \
   V(ImageFilter::Create, 1)                                           \
   V(ImageShader::Create, 1)                                           \
@@ -81,6 +88,7 @@ typedef CanvasPath Path;
   V(ImageDescriptor::initEncoded, 3)                                  \
   V(ImmutableBuffer::init, 3)                                         \
   V(ImmutableBuffer::initFromAsset, 3)                                \
+  V(ImmutableBuffer::initFromFile, 3)                                 \
   V(ImageDescriptor::initRaw, 6)                                      \
   V(IsolateNameServerNatives::LookupPortByName, 1)                    \
   V(IsolateNameServerNatives::RegisterPortWithName, 2)                \
@@ -93,10 +101,14 @@ typedef CanvasPath Path;
   V(PlatformConfigurationNativeApi::UpdateSemantics, 1)               \
   V(PlatformConfigurationNativeApi::SetNeedsReportTimings, 1)         \
   V(PlatformConfigurationNativeApi::SetIsolateDebugName, 1)           \
+  V(PlatformConfigurationNativeApi::RequestDartPerformanceMode, 1)    \
   V(PlatformConfigurationNativeApi::GetPersistentIsolateData, 0)      \
   V(PlatformConfigurationNativeApi::ComputePlatformResolvedLocale, 1) \
   V(PlatformConfigurationNativeApi::SendPlatformMessage, 3)           \
   V(PlatformConfigurationNativeApi::RespondToPlatformMessage, 2)      \
+  V(PlatformConfigurationNativeApi::GetRootIsolateToken, 0)           \
+  V(PlatformConfigurationNativeApi::RegisterBackgroundIsolate, 1)     \
+  V(PlatformConfigurationNativeApi::SendPortPlatformMessage, 4)       \
   V(DartRuntimeHooks::Logger_PrintDebugString, 1)                     \
   V(DartRuntimeHooks::Logger_PrintString, 1)                          \
   V(DartRuntimeHooks::ScheduleMicrotask, 1)                           \
@@ -147,6 +159,7 @@ typedef CanvasPath Path;
   V(Canvas, getSaveCount, 1)                           \
   V(Canvas, getTransform, 2)                           \
   V(Canvas, restore, 1)                                \
+  V(Canvas, restoreToCount, 2)                         \
   V(Canvas, rotate, 2)                                 \
   V(Canvas, save, 1)                                   \
   V(Canvas, saveLayer, 7)                              \
@@ -165,7 +178,9 @@ typedef CanvasPath Path;
   V(ColorFilter, initSrgbToLinearGamma, 1)             \
   V(EngineLayer, dispose, 1)                           \
   V(FragmentProgram, initFromAsset, 2)                 \
-  V(FragmentProgram, shader, 4)                        \
+  V(ReusableFragmentShader, Dispose, 1)                \
+  V(ReusableFragmentShader, SetImageSampler, 3)        \
+  V(ReusableFragmentShader, ValidateSamplers, 1)       \
   V(Gradient, initLinear, 6)                           \
   V(Gradient, initRadial, 8)                           \
   V(Gradient, initSweep, 9)                            \
@@ -197,6 +212,7 @@ typedef CanvasPath Path;
   V(Paragraph, alphabeticBaseline, 1)                  \
   V(Paragraph, computeLineMetrics, 1)                  \
   V(Paragraph, didExceedMaxLines, 1)                   \
+  V(Paragraph, dispose, 1)                             \
   V(Paragraph, getLineBoundary, 2)                     \
   V(Paragraph, getPositionForOffset, 3)                \
   V(Paragraph, getRectsForPlaceholders, 1)             \
@@ -280,7 +296,25 @@ typedef CanvasPath Path;
   V(SemanticsUpdateBuilder, build, 2)                  \
   V(SemanticsUpdateBuilder, updateCustomAction, 5)     \
   V(SemanticsUpdateBuilder, updateNode, 36)            \
-  V(SemanticsUpdate, dispose, 1)
+  V(SemanticsUpdate, dispose, 1)                       \
+  V(Vertices, dispose, 1)
+
+#ifdef IMPELLER_ENABLE_3D
+
+#define FFI_FUNCTION_LIST_3D(V) \
+  V(SceneNode::Create, 1) V(SceneShader::Create, 2)
+
+#define FFI_METHOD_LIST_3D(V)           \
+  V(SceneNode, initFromAsset, 3)        \
+  V(SceneNode, initFromTransform, 2)    \
+  V(SceneNode, AddChild, 2)             \
+  V(SceneNode, SetTransform, 2)         \
+  V(SceneNode, SetAnimationState, 5)    \
+  V(SceneNode, SeekAnimation, 3)        \
+  V(SceneShader, SetCameraTransform, 2) \
+  V(SceneShader, Dispose, 1)
+
+#endif  // IMPELLER_ENABLE_3D
 
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
   g_function_dispatchers.insert(std::make_pair( \
@@ -308,6 +342,10 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+#ifdef IMPELLER_ENABLE_3D
+  FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
+  FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
+#endif  // IMPELLER_ENABLE_3D
 }
 
 }  // anonymous namespace

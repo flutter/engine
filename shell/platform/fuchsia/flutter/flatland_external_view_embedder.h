@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/rtree.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/canvas_spy.h"
@@ -113,6 +114,12 @@ class FlatlandExternalViewEmbedder final
                          bool hit_testable,
                          bool focusable);
 
+  // Holds the clip transform that may be applied on a FlatlandView.
+  struct ClipTransform {
+    fuchsia::ui::composition::TransformId transform_id;
+    std::vector<fuchsia::ui::composition::TransformId> children;
+  };
+
  private:
   void Reset();  // Reset state for a new frame.
 
@@ -144,28 +151,43 @@ class FlatlandExternalViewEmbedder final
 
   struct EmbedderLayer {
     EmbedderLayer(const SkISize& frame_size,
-                  std::optional<flutter::EmbeddedViewParams> view_params)
-        : embedded_view_params(std::move(view_params)),
+                  std::optional<flutter::EmbeddedViewParams> view_params,
+                  flutter::RTreeFactory rtree_factory)
+        : rtree(rtree_factory.getInstance()),
+          embedded_view_params(std::move(view_params)),
           recorder(std::make_unique<SkPictureRecorder>()),
           canvas_spy(std::make_unique<flutter::CanvasSpy>(
-              recorder->beginRecording(frame_size.width(),
-                                       frame_size.height()))),
-          surface_size(frame_size) {}
+              recorder->beginRecording(SkRect::Make(frame_size),
+                                       &rtree_factory))),
+          surface_size(frame_size),
+          picture(nullptr) {}
+
+    // Records paint operations applied to this layer's `SkCanvas`.
+    // These records are used to determine which portions of this layer
+    // contain content. The embedder propagates this information to scenic, so
+    // that scenic can accurately decide which portions of this layer may
+    // interact with input.
+    sk_sp<flutter::RTree> rtree;
 
     std::optional<flutter::EmbeddedViewParams> embedded_view_params;
     std::unique_ptr<SkPictureRecorder> recorder;
     std::unique_ptr<flutter::CanvasSpy> canvas_spy;
     SkISize surface_size;
+    sk_sp<SkPicture> picture;
   };
   using EmbedderLayerId = std::optional<uint32_t>;
   constexpr static EmbedderLayerId kRootLayerId = EmbedderLayerId{};
 
   struct FlatlandView {
+    std::vector<ClipTransform> clip_transforms;
     fuchsia::ui::composition::TransformId transform_id;
     fuchsia::ui::composition::ContentId viewport_id;
     ViewMutators mutators;
     SkSize size = SkSize::MakeEmpty();
-    fit::callback<void(const SkSize&)> pending_create_viewport_callback;
+    SkRect pending_occlusion_hint = SkRect::MakeEmpty();
+    SkRect occlusion_hint = SkRect::MakeEmpty();
+    fit::callback<void(const SkSize&, const SkRect&)>
+        pending_create_viewport_callback;
   };
 
   struct FlatlandLayer {
@@ -187,6 +209,12 @@ class FlatlandExternalViewEmbedder final
   std::vector<EmbedderLayerId> frame_composition_order_;
   std::vector<fuchsia::ui::composition::TransformId> child_transforms_;
   SkISize frame_size_ = SkISize::Make(0, 0);
+  float frame_dpr_ = 1.f;
+
+  // TransformId for the input interceptor node when input shield is turned on,
+  // std::nullptr otherwise.
+  std::optional<fuchsia::ui::composition::TransformId>
+      input_interceptor_transform_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlatlandExternalViewEmbedder);
 };

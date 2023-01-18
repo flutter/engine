@@ -3,8 +3,10 @@
 // found in the LICENSE file.
 
 #include "flutter/display_list/display_list_color_source.h"
-#include "display_list_color_source.h"
+
+#include "flutter/display_list/display_list_runtime_effect.h"
 #include "flutter/display_list/display_list_sampling_options.h"
+#include "flutter/fml/logging.h"
 
 namespace flutter {
 
@@ -130,9 +132,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
 }
 
 std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(
-    sk_sp<SkRuntimeEffect> runtime_effect,
+    sk_sp<DlRuntimeEffect> runtime_effect,
     std::vector<std::shared_ptr<DlColorSource>> samplers,
-    sk_sp<SkData> uniform_data) {
+    std::shared_ptr<std::vector<uint8_t>> uniform_data) {
+  FML_DCHECK(uniform_data != nullptr);
   return std::make_shared<DlRuntimeEffectColorSource>(
       std::move(runtime_effect), std::move(samplers), std::move(uniform_data));
 }

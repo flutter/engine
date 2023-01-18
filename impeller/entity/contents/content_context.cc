@@ -4,22 +4,25 @@
 
 #include "impeller/entity/contents/content_context.h"
 
+#include <memory>
 #include <sstream>
 
+#include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/tessellator/tessellator.h"
 
 namespace impeller {
 
 void ContentContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
   auto pipeline_blend = blend_mode;
-  if (blend_mode > Entity::BlendMode::kLastPipelineBlendMode) {
+  if (blend_mode > Entity::kLastPipelineBlendMode) {
     VALIDATION_LOG << "Cannot use blend mode " << static_cast<int>(blend_mode)
                    << " as a pipeline blend.";
-    pipeline_blend = Entity::BlendMode::kSourceOver;
+    pipeline_blend = BlendMode::kSourceOver;
   }
 
   desc.SetSampleCount(sample_count);
@@ -28,91 +31,87 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
-  static_assert(Entity::BlendMode::kLastPipelineBlendMode ==
-                Entity::BlendMode::kModulate);
-
   switch (pipeline_blend) {
-    case Entity::BlendMode::kClear:
+    case BlendMode::kClear:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSource:
+    case BlendMode::kSource:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kDestination:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+    case BlendMode::kDestination:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceOver:
+    case BlendMode::kSourceOver:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kDestinationOver:
-      color0.dst_alpha_blend_factor = BlendFactor::kDestinationAlpha;
+    case BlendMode::kDestinationOver:
+      color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kSourceIn:
+    case BlendMode::kSourceIn:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationIn:
+    case BlendMode::kDestinationIn:
       color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceOut:
+    case BlendMode::kSourceOut:
       color0.dst_alpha_blend_factor = BlendFactor::kZero;
       color0.dst_color_blend_factor = BlendFactor::kZero;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationOut:
+    case BlendMode::kDestinationOut:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
       break;
-    case Entity::BlendMode::kSourceATop:
+    case BlendMode::kSourceATop:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kDestinationAlpha;
       break;
-    case Entity::BlendMode::kDestinationATop:
+    case BlendMode::kDestinationATop:
       color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kXor:
+    case BlendMode::kXor:
       color0.dst_alpha_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kOneMinusSourceAlpha;
       color0.src_alpha_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       color0.src_color_blend_factor = BlendFactor::kOneMinusDestinationAlpha;
       break;
-    case Entity::BlendMode::kPlus:
+    case BlendMode::kPlus:
       color0.dst_alpha_blend_factor = BlendFactor::kOne;
       color0.dst_color_blend_factor = BlendFactor::kOne;
       color0.src_alpha_blend_factor = BlendFactor::kOne;
       color0.src_color_blend_factor = BlendFactor::kOne;
       break;
-    case Entity::BlendMode::kModulate:
-      // kSourceColor and kDestinationColor override the alpha blend factor.
-      color0.dst_alpha_blend_factor = BlendFactor::kZero;
+    case BlendMode::kModulate:
+      color0.dst_alpha_blend_factor = BlendFactor::kSourceAlpha;
       color0.dst_color_blend_factor = BlendFactor::kSourceColor;
       color0.src_alpha_blend_factor = BlendFactor::kZero;
       color0.src_color_blend_factor = BlendFactor::kZero;
@@ -120,7 +119,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     default:
       FML_UNREACHABLE();
   }
-  desc.SetColorAttachmentDescriptor(0u, std::move(color0));
+  desc.SetColorAttachmentDescriptor(0u, color0);
 
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
@@ -129,6 +128,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
     stencil.depth_stencil_pass = stencil_operation;
     desc.SetStencilAttachmentDescriptors(stencil);
   }
+
+  desc.SetPrimitiveType(primitive_type);
 }
 
 template <typename PipelineT>
@@ -144,7 +145,10 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 }
 
 ContentContext::ContentContext(std::shared_ptr<Context> context)
-    : context_(std::move(context)) {
+    : context_(std::move(context)),
+      tessellator_(std::make_shared<Tessellator>()),
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
+      scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -155,6 +159,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
+  if (context_->GetBackendFeatures().ssbo_support) {
+    linear_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<LinearGradientSSBOFillPipeline>(*context_);
+    radial_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<RadialGradientSSBOFillPipeline>(*context_);
+    sweep_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
+  }
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
   rrect_blur_pipelines_[{}] =
@@ -197,24 +209,29 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
+  morphology_filter_pipelines_[{}] =
+      CreateDefaultPipeline<MorphologyFilterPipeline>(*context_);
   color_matrix_color_filter_pipelines_[{}] =
       CreateDefaultPipeline<ColorMatrixColorFilterPipeline>(*context_);
   linear_to_srgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<LinearToSrgbFilterPipeline>(*context_);
   srgb_to_linear_filter_pipelines_[{}] =
       CreateDefaultPipeline<SrgbToLinearFilterPipeline>(*context_);
-  solid_stroke_pipelines_[{}] =
-      CreateDefaultPipeline<SolidStrokePipeline>(*context_);
   glyph_atlas_pipelines_[{}] =
       CreateDefaultPipeline<GlyphAtlasPipeline>(*context_);
-  vertices_pipelines_[{}] = CreateDefaultPipeline<VerticesPipeline>(*context_);
+  glyph_atlas_sdf_pipelines_[{}] =
+      CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
+  geometry_color_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryColorPipeline>(*context_);
+  geometry_position_pipelines_[{}] =
+      CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
+  yuv_to_rgb_filter_pipelines_[{}] =
+      CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
-  // Pipelines that are variants of the base pipelines with custom descriptors.
-  // TODO(98684): Rework this API to allow fetching the descriptor without
-  //              waiting for the pipeline to build.
-  if (auto solid_fill_pipeline = solid_fill_pipelines_[{}]->WaitAndGet()) {
-    auto clip_pipeline_descriptor = solid_fill_pipeline->GetDescriptor();
+  if (solid_fill_pipelines_[{}]->GetDescriptor().has_value()) {
+    auto clip_pipeline_descriptor =
+        solid_fill_pipelines_[{}]->GetDescriptor().value();
     clip_pipeline_descriptor.SetLabel("Clip Pipeline");
     // Disable write to all color attachments.
     auto color_attachments =
@@ -242,7 +259,7 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    SubpassCallback subpass_callback) const {
+    const SubpassCallback& subpass_callback) const {
   auto context = GetContext();
 
   RenderTarget subpass_target;
@@ -283,8 +300,25 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   return subpass_texture;
 }
 
+std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
+  return scene_context_;
+}
+
+std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {
+  return tessellator_;
+}
+
+std::shared_ptr<GlyphAtlasContext> ContentContext::GetGlyphAtlasContext()
+    const {
+  return glyph_atlas_context_;
+}
+
 std::shared_ptr<Context> ContentContext::GetContext() const {
   return context_;
+}
+
+const BackendFeatures& ContentContext::GetBackendFeatures() const {
+  return context_->GetBackendFeatures();
 }
 
 }  // namespace impeller

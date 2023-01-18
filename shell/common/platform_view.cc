@@ -13,10 +13,8 @@
 
 namespace flutter {
 
-PlatformView::PlatformView(Delegate& delegate, TaskRunners task_runners)
-    : delegate_(delegate),
-      task_runners_(std::move(task_runners)),
-      weak_factory_(this) {}
+PlatformView::PlatformView(Delegate& delegate, const TaskRunners& task_runners)
+    : delegate_(delegate), task_runners_(task_runners), weak_factory_(this) {}
 
 PlatformView::~PlatformView() = default;
 
@@ -38,10 +36,11 @@ void PlatformView::DispatchPointerDataPacket(
       pointer_data_packet_converter_.Convert(std::move(packet)));
 }
 
-void PlatformView::DispatchSemanticsAction(int32_t id,
+void PlatformView::DispatchSemanticsAction(int32_t node_id,
                                            SemanticsAction action,
                                            fml::MallocMapping args) {
-  delegate_.OnPlatformViewDispatchSemanticsAction(id, action, std::move(args));
+  delegate_.OnPlatformViewDispatchSemanticsAction(node_id, action,
+                                                  std::move(args));
 }
 
 void PlatformView::SetSemanticsEnabled(bool enabled) {
@@ -109,8 +108,10 @@ fml::WeakPtr<PlatformView> PlatformView::GetWeakPtr() const {
   return weak_factory_.GetWeakPtr();
 }
 
-void PlatformView::UpdateSemantics(SemanticsNodeUpdates update,
-                                   CustomAccessibilityActionUpdates actions) {}
+void PlatformView::UpdateSemantics(
+    SemanticsNodeUpdates update,  // NOLINT(performance-unnecessary-value-param)
+    // NOLINTNEXTLINE(performance-unnecessary-value-param)
+    CustomAccessibilityActionUpdates actions) {}
 
 void PlatformView::HandlePlatformMessage(
     std::unique_ptr<PlatformMessage> message) {
@@ -171,9 +172,11 @@ void PlatformView::LoadDartDeferredLibrary(
     std::unique_ptr<const fml::Mapping> snapshot_data,
     std::unique_ptr<const fml::Mapping> snapshot_instructions) {}
 
-void PlatformView::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                                const std::string error_message,
-                                                bool transient) {}
+void PlatformView::LoadDartDeferredLibraryError(
+    intptr_t loading_unit_id,
+    const std::string
+        error_message,  // NOLINT(performance-unnecessary-value-param)
+    bool transient) {}
 
 void PlatformView::UpdateAssetResolverByType(
     std::unique_ptr<AssetResolver> updated_asset_resolver,

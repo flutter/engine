@@ -10,7 +10,9 @@ import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_DART_ENTRYPOINT;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.DEFAULT_INITIAL_ROUTE;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_BACKGROUND_MODE;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_GROUP_ID;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_CACHED_ENGINE_ID;
+import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DART_ENTRYPOINT;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DART_ENTRYPOINT_ARGS;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_DESTROY_ENGINE_WITH_ACTIVITY;
 import static io.flutter.embedding.android.FlutterActivityLaunchConfigs.EXTRA_ENABLE_STATE_RESTORATION;
@@ -35,6 +37,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -145,7 +149,8 @@ import java.util.List;
  *
  * <pre>{@code
  * // Create and pre-warm a FlutterEngine.
- * FlutterEngine flutterEngine = new FlutterEngine(context);
+ * FlutterEngineGroup group = new FlutterEngineGroup(context);
+ * FlutterEngine flutterEngine = group.createAndRunDefaultEngine(context);
  * flutterEngine.getDartExecutor().executeDartEntrypoint(DartEntrypoint.createDefault());
  *
  * // Cache the pre-warmed FlutterEngine in the FlutterEngineCache.
@@ -274,7 +279,7 @@ public class FlutterActivity extends Activity
     }
 
     /**
-     * The initial route that a Flutter app will render in this {@link FlutterFragment}, defaults to
+     * The initial route that a Flutter app will render in this {@link FlutterActivity}, defaults to
      * "/".
      *
      * @param initialRoute The route.
@@ -446,6 +451,149 @@ public class FlutterActivity extends Activity
     }
   }
 
+  /**
+   * Creates a {@link NewEngineInGroupIntentBuilder}, which can be used to configure an {@link
+   * Intent} to launch a {@code FlutterActivity} by internally creating a FlutterEngine from an
+   * existing {@link io.flutter.embedding.engine.FlutterEngineGroup} cached in a specified {@link
+   * io.flutter.embedding.engine.FlutterEngineGroupCache}.
+   *
+   * <pre>{@code
+   * // Create a FlutterEngineGroup, such as in the onCreate method of the Application.
+   * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
+   * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
+   *
+   * // Start a FlutterActivity with the FlutterEngineGroup by creating an intent with withNewEngineInGroup
+   * Intent intent = FlutterActivity.withNewEngineInGroup("my_cached_engine_group_id")
+   *     .dartEntrypoint("custom_entrypoint")
+   *     .initialRoute("/custom/route")
+   *     .backgroundMode(BackgroundMode.transparent)
+   *     .build(context);
+   * startActivity(intent);
+   * }</pre>
+   *
+   * @param engineGroupId A cached engine group ID.
+   * @return The builder.
+   */
+  public static NewEngineInGroupIntentBuilder withNewEngineInGroup(@NonNull String engineGroupId) {
+    return new NewEngineInGroupIntentBuilder(FlutterActivity.class, engineGroupId);
+  }
+
+  /**
+   * Builder to create an {@code Intent} that launches a {@code FlutterActivity} with a new {@link
+   * FlutterEngine} created by FlutterEngineGroup#createAndRunEngine.
+   */
+  public static class NewEngineInGroupIntentBuilder {
+    private final Class<? extends FlutterActivity> activityClass;
+    private final String cachedEngineGroupId;
+    private String dartEntrypoint = DEFAULT_DART_ENTRYPOINT;
+    private String initialRoute = DEFAULT_INITIAL_ROUTE;
+    private String backgroundMode = DEFAULT_BACKGROUND_MODE;
+
+    /**
+     * Constructor that allows this {@code NewEngineInGroupIntentBuilder} to be used by subclasses
+     * of {@code FlutterActivity}.
+     *
+     * <p>Subclasses of {@code FlutterActivity} should provide their own static version of {@link
+     * #withNewEngineInGroup}, which returns an instance of {@code NewEngineInGroupIntentBuilder}
+     * constructed with a {@code Class} reference to the {@code FlutterActivity} subclass, e.g.:
+     *
+     * <p>{@code return new NewEngineInGroupIntentBuilder(MyFlutterActivity.class,
+     * cacheedEngineGroupId); }
+     *
+     * <pre>{@code
+     * // Create a FlutterEngineGroup, such as in the onCreate method of the Application.
+     * FlutterEngineGroup engineGroup = new FlutterEngineGroup(this);
+     * FlutterEngineGroupCache.getInstance().put("my_cached_engine_group_id", engineGroup);
+     *
+     * // Create a NewEngineInGroupIntentBuilder that would build an intent to start my custom FlutterActivity subclass.
+     * FlutterActivity.NewEngineInGroupIntentBuilder intentBuilder =
+     *     new FlutterActivity.NewEngineInGroupIntentBuilder(
+     *           MyFlutterActivity.class,
+     *           app.engineGroupId);
+     * intentBuilder.dartEntrypoint("main")
+     *     .initialRoute("/custom/route")
+     *     .backgroundMode(BackgroundMode.transparent);
+     * startActivity(intentBuilder.build(context));
+     * }</pre>
+     *
+     * @param activityClass A subclass of {@code FlutterActivity}.
+     * @param engineGroupId The engine group id.
+     */
+    public NewEngineInGroupIntentBuilder(
+        @NonNull Class<? extends FlutterActivity> activityClass, @NonNull String engineGroupId) {
+      this.activityClass = activityClass;
+      this.cachedEngineGroupId = engineGroupId;
+    }
+
+    /**
+     * The Dart entrypoint that will be executed in the newly created FlutterEngine as soon as the
+     * Dart snapshot is loaded. Default to "main".
+     *
+     * @param dartEntrypoint The dart entrypoint's name
+     * @return The engine group intent builder
+     */
+    @NonNull
+    public NewEngineInGroupIntentBuilder dartEntrypoint(@NonNull String dartEntrypoint) {
+      this.dartEntrypoint = dartEntrypoint;
+      return this;
+    }
+
+    /**
+     * The initial route that a Flutter app will render in this {@link FlutterActivity}, defaults to
+     * "/".
+     *
+     * @param initialRoute The route.
+     * @return The engine group intent builder.
+     */
+    @NonNull
+    public NewEngineInGroupIntentBuilder initialRoute(@NonNull String initialRoute) {
+      this.initialRoute = initialRoute;
+      return this;
+    }
+
+    /**
+     * The mode of {@code FlutterActivity}'s background, either {@link BackgroundMode#opaque} or
+     * {@link BackgroundMode#transparent}.
+     *
+     * <p>The default background mode is {@link BackgroundMode#opaque}.
+     *
+     * <p>Choosing a background mode of {@link BackgroundMode#transparent} will configure the inner
+     * {@link FlutterView} of this {@code FlutterActivity} to be configured with a {@link
+     * FlutterTextureView} to support transparency. This choice has a non-trivial performance
+     * impact. A transparent background should only be used if it is necessary for the app design
+     * being implemented.
+     *
+     * <p>A {@code FlutterActivity} that is configured with a background mode of {@link
+     * BackgroundMode#transparent} must have a theme applied to it that includes the following
+     * property: {@code <item name="android:windowIsTranslucent">true</item>}.
+     *
+     * @param backgroundMode The background mode.
+     * @return The engine group intent builder.
+     */
+    @NonNull
+    public NewEngineInGroupIntentBuilder backgroundMode(@NonNull BackgroundMode backgroundMode) {
+      this.backgroundMode = backgroundMode.name();
+      return this;
+    }
+
+    /**
+     * Creates and returns an {@link Intent} that will launch a {@code FlutterActivity} with the
+     * desired configuration.
+     *
+     * @param context The context. e.g. An Activity.
+     * @return The intent.
+     */
+    @NonNull
+    public Intent build(@NonNull Context context) {
+      return new Intent(context, activityClass)
+          .putExtra(EXTRA_DART_ENTRYPOINT, dartEntrypoint)
+          .putExtra(EXTRA_INITIAL_ROUTE, initialRoute)
+          .putExtra(EXTRA_CACHED_ENGINE_GROUP_ID, cachedEngineGroupId)
+          .putExtra(EXTRA_BACKGROUND_MODE, backgroundMode)
+          .putExtra(EXTRA_DESTROY_ENGINE_WITH_ACTIVITY, true);
+    }
+  }
+
   // Delegate that runs all lifecycle and OS hook logic that is common between
   // FlutterActivity and FlutterFragment. See the FlutterActivityAndFragmentDelegate
   // implementation for details about why it exists.
@@ -495,12 +643,60 @@ public class FlutterActivity extends Activity
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
+    registerOnBackInvokedCallback();
+
     configureWindowForTransparency();
 
     setContentView(createFlutterView());
 
     configureStatusBarForFullscreenFlutterExperience();
   }
+
+  /**
+   * Registers the callback with OnBackInvokedDispatcher to capture back navigation gestures and
+   * pass them to the framework.
+   *
+   * <p>This replaces the deprecated onBackPressed method override in order to support API 33's
+   * predictive back navigation feature.
+   *
+   * <p>The callback must be unregistered in order to prevent unpredictable behavior once outside
+   * the Flutter app.
+   */
+  @VisibleForTesting
+  public void registerOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher()
+          .registerOnBackInvokedCallback(
+              OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
+    }
+  }
+
+  /**
+   * Unregisters the callback from OnBackInvokedDispatcher.
+   *
+   * <p>This should be called when the activity is no longer in use to prevent unpredictable
+   * behavior such as being stuck and unable to press back.
+   */
+  @VisibleForTesting
+  public void unregisterOnBackInvokedCallback() {
+    if (Build.VERSION.SDK_INT >= 33) {
+      getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
+    }
+  }
+
+  private final OnBackInvokedCallback onBackInvokedCallback =
+      Build.VERSION.SDK_INT >= 33
+          ? new OnBackInvokedCallback() {
+            // TODO(garyq): Remove SuppressWarnings annotation. This was added to workaround
+            // a google3 bug where the linter is not properly running against API 33, causing
+            // a failure here. See b/243609613 and https://github.com/flutter/flutter/issues/111295
+            @SuppressWarnings("Override")
+            @Override
+            public void onBackInvoked() {
+              onBackPressed();
+            }
+          }
+          : null;
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
@@ -680,7 +876,9 @@ public class FlutterActivity extends Activity
    *
    * <p>After calling, this activity should be disposed immediately and not be re-used.
    */
-  private void release() {
+  @VisibleForTesting
+  public void release() {
+    unregisterOnBackInvokedCallback();
     if (delegate != null) {
       delegate.release();
       delegate = null;
@@ -815,6 +1013,17 @@ public class FlutterActivity extends Activity
   }
 
   /**
+   * Returns the ID of a statically cached {@link io.flutter.embedding.engine.FlutterEngineGroup} to
+   * use within this {@code FlutterActivity}, or {@code null} if this {@code FlutterActivity} does
+   * not want to use a cached {@link io.flutter.embedding.engine.FlutterEngineGroup}.
+   */
+  @Override
+  @Nullable
+  public String getCachedEngineGroupId() {
+    return getIntent().getStringExtra(EXTRA_CACHED_ENGINE_GROUP_ID);
+  }
+
+  /**
    * Returns false if the {@link io.flutter.embedding.engine.FlutterEngine} backing this {@code
    * FlutterActivity} should outlive this {@code FlutterActivity}, or true to be destroyed when the
    * {@code FlutterActivity} is destroyed.
@@ -840,14 +1049,26 @@ public class FlutterActivity extends Activity
   /**
    * The Dart entrypoint that will be executed as soon as the Dart snapshot is loaded.
    *
-   * <p>This preference can be controlled by setting a {@code <meta-data>} called {@link
-   * FlutterActivityLaunchConfigs#DART_ENTRYPOINT_META_DATA_KEY} within the Android manifest
-   * definition for this {@code FlutterActivity}.
+   * <p>This preference can be controlled with 2 methods:
+   *
+   * <ol>
+   *   <li>Pass a boolean as {@link FlutterActivityLaunchConfigs#EXTRA_DART_ENTRYPOINT} with the
+   *       launching {@code Intent}, or
+   *   <li>Set a {@code <meta-data>} called {@link
+   *       FlutterActivityLaunchConfigs#DART_ENTRYPOINT_META_DATA_KEY} within the Android manifest
+   *       definition for this {@code FlutterActivity}
+   * </ol>
+   *
+   * If both preferences are set, the {@code Intent} preference takes priority.
    *
    * <p>Subclasses may override this method to directly control the Dart entrypoint.
    */
   @NonNull
   public String getDartEntrypointFunctionName() {
+    if (getIntent().hasExtra(EXTRA_DART_ENTRYPOINT)) {
+      return getIntent().getStringExtra(EXTRA_DART_ENTRYPOINT);
+    }
+
     try {
       Bundle metaData = getMetaData();
       String desiredDartEntrypoint =

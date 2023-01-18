@@ -23,7 +23,7 @@ TEST_F(PhysicalShapeLayerTest, PaintingEmptyLayerDies) {
                                            0.0f,  // elevation
                                            SkPath(), Clip::none);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), SkRect::MakeEmpty());
   EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_FALSE(layer->needs_painting(paint_context()));
@@ -54,7 +54,7 @@ TEST_F(PhysicalShapeLayerTest, NonEmptyLayer) {
       std::make_shared<PhysicalShapeLayer>(SK_ColorGREEN, SK_ColorBLACK,
                                            0.0f,  // elevation
                                            layer_path, Clip::none);
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
   EXPECT_EQ(layer->child_paint_bounds(), SkRect::MakeEmpty());
   EXPECT_TRUE(layer->needs_painting(paint_context()));
@@ -90,7 +90,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathClip) {
   layer->Add(child2);
 
   SkRect child_paint_bounds = SkRect::MakeEmpty();
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   child_paint_bounds.join(child1->paint_bounds());
   child_paint_bounds.join(child2->paint_bounds());
   EXPECT_EQ(layer->paint_bounds(), layer_path.getBounds());
@@ -118,10 +118,31 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathClip) {
                                                 SkClipOp::kIntersect}},
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawPathData{child1_path, child1_paint}},
+                // Child 2 is rendered when using Skia as a state delegate
+                // because the quickReject tests are conservative.
                 MockCanvas::DrawCall{
                     1, MockCanvas::DrawPathData{child2_path, child2_paint}},
                 MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}},
             }));
+  DisplayListBuilder expected_builder;
+  {  // layer::Paint()
+    expected_builder.drawPath(
+        layer_path, DlPaint().setColor(DlColor::kGreen()).setAntiAlias(true));
+    expected_builder.save();
+    {
+      expected_builder.clipPath(layer_path, SkClipOp::kIntersect, false);
+      {  // child1::Paint()
+        expected_builder.drawPath(
+            child1_path,
+            DlPaint().setColor(DlColor::kRed()).setAntiAlias(true));
+      }
+      // child2::Paint() is not called due to layer cullling
+      // This is the expected and intended behavior.
+    }
+    expected_builder.restore();
+  }
+  layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(display_list(), expected_builder.Build()));
 }
 
 TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathNoClip) {
@@ -145,7 +166,7 @@ TEST_F(PhysicalShapeLayerTest, ChildrenLargerThanPathNoClip) {
   layer->Add(child1);
   layer->Add(child2);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   SkRect child_bounds = child1->paint_bounds();
   child_bounds.join(child2->paint_bounds());
   SkRect total_bounds = child_bounds;
@@ -182,7 +203,7 @@ TEST_F(PhysicalShapeLayerTest, ElevationSimple) {
   auto layer = std::make_shared<PhysicalShapeLayer>(
       SK_ColorGREEN, SK_ColorBLACK, initial_elevation, layer_path, Clip::none);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
@@ -229,7 +250,7 @@ TEST_F(PhysicalShapeLayerTest, ElevationComplex) {
   layers[0]->Add(layers[2]);
   layers[2]->Add(layers[3]);
 
-  layers[0]->Preroll(preroll_context(), SkMatrix());
+  layers[0]->Preroll(preroll_context());
   for (int i = 0; i < 4; i += 1) {
     // On Fuchsia, the system compositor handles all elevated
     // PhysicalShapeLayers and their shadows , so we do not do any painting
@@ -278,10 +299,10 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsCtm) {
     SkRect baseline_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
         path, elevation, 1.0f, SkMatrix());
     for (SkScalar scale : scales) {
-      for (SkScalar translateX : translates) {
-        for (SkScalar translateY : translates) {
+      for (SkScalar translate_x : translates) {
+        for (SkScalar translate_y : translates) {
           SkMatrix ctm;
-          ctm.setScaleTranslate(scale, scale, translateX, translateY);
+          ctm.setScaleTranslate(scale, scale, translate_x, translate_y);
           SkRect bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
               path, elevation, scale, ctm);
           EXPECT_FLOAT_EQ(bounds.fLeft, baseline_bounds.fLeft);
@@ -355,9 +376,8 @@ TEST_F(PhysicalShapeLayerTest, ShadowNotDependsPathSize) {
 
 static bool ReadbackResult(PrerollContext* context,
                            Clip clip_behavior,
-                           std::shared_ptr<Layer> child,
+                           const std::shared_ptr<Layer>& child,
                            bool before) {
-  const SkMatrix initial_matrix = SkMatrix();
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath layer_path = SkPath().addRect(layer_bounds);
   auto layer =
@@ -368,7 +388,7 @@ static bool ReadbackResult(PrerollContext* context,
     layer->Add(child);
   }
   context->surface_needs_readback = before;
-  layer->Preroll(context, initial_matrix);
+  layer->Preroll(context);
   return context->surface_needs_readback;
 }
 
@@ -382,7 +402,8 @@ TEST_F(PhysicalShapeLayerTest, Readback) {
   const Clip save_layer = Clip::antiAliasWithSaveLayer;
 
   std::shared_ptr<MockLayer> nochild;
-  auto reader = std::make_shared<MockLayer>(path, paint, false, true);
+  auto reader = std::make_shared<MockLayer>(path, paint);
+  reader->set_fake_reads_surface(true);
   auto nonreader = std::make_shared<MockLayer>(path, paint);
 
   // No children, no prior readback -> no readback after
@@ -425,9 +446,9 @@ TEST_F(PhysicalShapeLayerTest, OpacityInheritance) {
                                            layer_path, Clip::none);
 
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
-  layer->Preroll(context, SkMatrix());
-  EXPECT_FALSE(context->subtree_can_inherit_opacity);
+  context->renderable_state_flags = 0;
+  layer->Preroll(context);
+  EXPECT_EQ(context->renderable_state_flags, 0);
 }
 
 using PhysicalShapeLayerDiffTest = DiffContextTest;

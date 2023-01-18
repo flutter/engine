@@ -8,5 +8,10 @@ import("//build/fuchsia/sdk.gni")
 
 group("integration") {
   testonly = true
-  deps = [ "embedder:tests" ]
+  deps = [
+    "embedder:tests",
+    "mouse-input:tests",
+    "text-input:tests",
+    "touch-input:tests",
+  ]
 }

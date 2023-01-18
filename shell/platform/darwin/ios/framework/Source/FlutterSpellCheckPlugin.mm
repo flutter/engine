@@ -61,6 +61,14 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
 // Returns an empty array if no spell check suggestions.
 - (NSArray<NSDictionary<NSString*, id>*>*)findAllSpellCheckSuggestionsForText:(NSString*)text
                                                                    inLanguage:(NSString*)language {
+  // Transform Dart Locale format to iOS language format if necessary.
+  if ([language containsString:@"-"]) {
+    NSArray<NSString*>* languageCodes = [language componentsSeparatedByString:@"-"];
+    FML_DCHECK(languageCodes.count == 2);
+    NSString* lastCode = [[languageCodes lastObject] uppercaseString];
+    language = [NSString stringWithFormat:@"%@_%@", [languageCodes firstObject], lastCode];
+  }
+
   if (![UITextChecker.availableLanguages containsObject:language]) {
     return nil;
   }
@@ -145,7 +153,9 @@ static NSString* const kInitiateSpellCheck = @"SpellCheck.initiateSpellCheck";
 - (NSDictionary<NSString*, NSObject*>*)toDictionary {
   NSMutableDictionary* result = [[[NSMutableDictionary alloc] initWithCapacity:3] autorelease];
   result[@"startIndex"] = @(_misspelledRange.location);
-  result[@"endIndex"] = @(_misspelledRange.location + _misspelledRange.length - 1);
+  // The end index represents the next index after the last character of a misspelled word to match
+  // the behavior of Dart's TextRange: https://api.flutter.dev/flutter/dart-ui/TextRange/end.html
+  result[@"endIndex"] = @(_misspelledRange.location + _misspelledRange.length);
   result[@"suggestions"] = _suggestions;
   return result;
 }

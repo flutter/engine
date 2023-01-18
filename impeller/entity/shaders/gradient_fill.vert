@@ -3,11 +3,13 @@
 // found in the LICENSE file.
 
 #include <impeller/transform.glsl>
+#include <impeller/types.glsl>
 
 uniform FrameInfo {
   mat4 mvp;
   mat4 matrix;
-} frame_info;
+}
+frame_info;
 
 in vec2 position;
 

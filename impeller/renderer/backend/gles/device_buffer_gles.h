@@ -18,15 +18,17 @@ class DeviceBufferGLES final
     : public DeviceBuffer,
       public BackendCast<DeviceBufferGLES, DeviceBuffer> {
  public:
-  DeviceBufferGLES(ReactorGLES::Ref reactor,
-                   std::shared_ptr<Allocation> buffer,
-                   size_t size,
-                   StorageMode mode);
+  DeviceBufferGLES(DeviceBufferDescriptor desc,
+                   ReactorGLES::Ref reactor,
+                   std::shared_ptr<Allocation> backing_store);
 
   // |DeviceBuffer|
   ~DeviceBufferGLES() override;
 
   const uint8_t* GetBufferData() const;
+
+  void UpdateBufferData(
+      const std::function<void(uint8_t*, size_t length)>& update_buffer_data);
 
   enum class BindingType {
     kArrayBuffer,
@@ -43,9 +45,12 @@ class DeviceBufferGLES final
   mutable uint32_t upload_generation_ = 0;
 
   // |DeviceBuffer|
-  bool CopyHostBuffer(const uint8_t* source,
-                      Range source_range,
-                      size_t offset) override;
+  uint8_t* OnGetContents() const override;
+
+  // |DeviceBuffer|
+  bool OnCopyHostBuffer(const uint8_t* source,
+                        Range source_range,
+                        size_t offset) override;
 
   // |DeviceBuffer|
   bool SetLabel(const std::string& label) override;

@@ -10,6 +10,7 @@ import 'package:test/test.dart';
 
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
+import 'package:web_engine_tester/golden_tester.dart';
 
 import '../matchers.dart';
 import 'common.dart';
@@ -49,7 +50,9 @@ void testMain() {
     _matrix4x4CompositionTests();
     _toSkRectTests();
     _skVerticesTests();
-    _paragraphTests();
+    group('SkParagraph', () {
+      _paragraphTests();
+    });
     group('SkPath', () {
       _pathTests();
     });
@@ -344,6 +347,44 @@ void _shaderTests() {
         ),
         isNotNull);
   });
+
+  test('RuntimeEffect', () {
+    const String kSkSlProgram = r'''
+half4 main(vec2 fragCoord) {
+  return vec4(1.0, 0.0, 0.0, 1.0);
+}
+  ''';
+
+    final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
+    expect(effect, isNotNull);
+
+    const String kInvalidSkSlProgram = '';
+
+    // Invalid SkSL returns null.
+    final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
+    expect(invalidEffect, isNull);
+
+    final SkShader? shader = effect!.makeShader(<double>[]);
+    expect(shader, isNotNull);
+
+    // mismatched uniforms returns null.
+    final SkShader? invalidShader = effect.makeShader(<double>[1]);
+
+    expect(invalidShader, isNull);
+
+    const String kSkSlProgramWithUniforms = r'''
+uniform vec4 u_color;
+
+half4 main(vec2 fragCoord) {
+return u_color;
+}
+''';
+
+    final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
+      !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
+
+    expect(shaderWithUniform, isNotNull);
+  });
 }
 
 SkShader _makeTestShader() {
@@ -489,11 +530,40 @@ void _imageFilterTests() {
 }
 
 void _mallocTests() {
-  test('SkFloat32List', () {
+  test('$SkFloat32List', () {
+    final List<SkFloat32List> lists = <SkFloat32List>[];
+
     for (int size = 0; size < 1000; size++) {
       final SkFloat32List skList = mallocFloat32List(4);
       expect(skList, isNotNull);
-      expect(skList.toTypedArray().length, 4);
+      expect(skList.toTypedArray(), hasLength(4));
+      lists.add(skList);
+    }
+
+    for (final SkFloat32List skList in lists) {
+      // toTypedArray() still works.
+      expect(() => skList.toTypedArray(), returnsNormally);
+      free(skList);
+      // toTypedArray() throws after free.
+      expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
+    }
+  });
+  test('$SkUint32List', () {
+    final List<SkUint32List> lists = <SkUint32List>[];
+
+    for (int size = 0; size < 1000; size++) {
+      final SkUint32List skList = mallocUint32List(4);
+      expect(skList, isNotNull);
+      expect(skList.toTypedArray(), hasLength(4));
+      lists.add(skList);
+    }
+
+    for (final SkUint32List skList in lists) {
+      // toTypedArray() still works.
+      expect(() => skList.toTypedArray(), returnsNormally);
+      free(skList);
+      // toTypedArray() throws after free.
+      expect(() => skList.toTypedArray(), throwsA(isA<Error>()));
     }
   });
 }
@@ -692,8 +762,7 @@ void _matrix4x4CompositionTests() {
     final bool areEqual =
         await fuzzyCompareImages(incrementalMatrixImage, combinedMatrixImage);
     expect(areEqual, true);
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _toSkRectTests() {
@@ -769,7 +838,7 @@ void _pathTests() {
       ui.Offset(10, 10),
     ]);
     path.addPoly(encodedPoints.toTypedArray(), true);
-    freeFloat32List(encodedPoints);
+    free(encodedPoints);
   });
 
   test('addRRect', () {
@@ -1339,6 +1408,34 @@ void _canvasTests() {
     );
   });
 
+  test('Paragraph converts caret position to charactor position', () {
+    final CkParagraphBuilder builder = CkParagraphBuilder(
+      CkParagraphStyle(),
+    );
+    builder.addText('Hello there');
+    final CkParagraph paragraph = builder.build();
+    paragraph.layout(const ui.ParagraphConstraints(width: 100));
+    ui.TextRange range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5, affinity: ui.TextAffinity.upstream));
+    expect(range.start, 0);
+    expect(range.end, 5);
+
+    range = paragraph.getWordBoundary(const ui.TextPosition(offset: 5));
+    expect(range.start, 5);
+    expect(range.end, 6);
+  });
+
+  test('Paragraph dispose', () {
+    final CkParagraphBuilder builder = CkParagraphBuilder(
+      CkParagraphStyle(),
+    );
+    builder.addText('Hello');
+    final CkParagraph paragraph = builder.build();
+
+    paragraph.delete();
+    paragraph.dispose();
+    expect(paragraph.debugDisposed, true);
+  });
+
   test('toImage.toByteData', () async {
     // Pretend that FinalizationRegistry is supported, so we can run this
     // test in older browsers (the test will use a TestCollector instead of
@@ -1371,8 +1468,7 @@ void _canvasTests() {
     final ByteData pngData =
         await image.toByteData(format: ui.ImageByteFormat.png);
     expect(pngData.lengthInBytes, greaterThan(0));
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-  }, skip: isFirefox);
+  });
 }
 
 void _textStyleTests() {
@@ -1435,31 +1531,36 @@ void _textStyleTests() {
 }
 
 void _paragraphTests() {
+  setUpAll(() async {
+    await CanvasKitRenderer.instance.fontCollection.debugDownloadTestFonts();
+    CanvasKitRenderer.instance.fontCollection.registerDownloadedFonts();
+  });
+
   // This test is just a kitchen sink that blasts CanvasKit with all paragraph
   // properties all at once, making sure CanvasKit doesn't choke on anything.
   // In particular, this tests that our JS bindings are correct, such as that
   // arguments are of acceptable types and passed in the correct order.
-  test('SkParagraph API kitchensink', () {
+  test('kitchensink', () async {
     final SkParagraphStyleProperties props = SkParagraphStyleProperties();
-    props.textAlign = canvasKit.TextAlign.Center;
+    props.textAlign = canvasKit.TextAlign.Left;
     props.textDirection = canvasKit.TextDirection.RTL;
     props.heightMultiplier = 3;
     props.textHeightBehavior = canvasKit.TextHeightBehavior.All;
     props.maxLines = 4;
     props.ellipsis = '___';
     props.textStyle = SkTextStyleProperties()
-      ..backgroundColor = Float32List.fromList(<double>[1, 2, 3, 4])
-      ..color = Float32List.fromList(<double>[5, 6, 7, 8])
-      ..foregroundColor = Float32List.fromList(<double>[9, 10, 11, 12])
+      ..backgroundColor = Float32List.fromList(<double>[0.2, 0, 0, 0.5])
+      ..color = Float32List.fromList(<double>[0, 1, 0, 1])
+      ..foregroundColor = Float32List.fromList(<double>[1, 0, 1, 1])
       ..decoration = 0x2
       ..decorationThickness = 2.0
       ..decorationColor = Float32List.fromList(<double>[13, 14, 15, 16])
       ..decorationStyle = canvasKit.DecorationStyle.Dotted
       ..textBaseline = canvasKit.TextBaseline.Ideographic
-      ..fontSize = 24
+      ..fontSize = 48
       ..letterSpacing = 5
       ..wordSpacing = 10
-      ..heightMultiplier = 2.5
+      ..heightMultiplier = 1.3
       ..halfLeading = true
       ..locale = 'en_CA'
       ..fontFamilies = <String>['Roboto', 'serif']
@@ -1474,23 +1575,24 @@ void _paragraphTests() {
         SkFontFeature()
           ..name = 'tnum'
           ..value = 1,
-      ];
+      ]
+    ;
     props.strutStyle = SkStrutStyleProperties()
       ..fontFamilies = <String>['Roboto', 'Noto']
       ..fontStyle = (SkFontStyle()
         ..slant = canvasKit.FontSlant.Italic
         ..weight = canvasKit.FontWeight.Bold)
-      ..fontSize = 23
-      ..heightMultiplier = 5
+      ..fontSize = 72
+      ..heightMultiplier = 1.5
       ..halfLeading = true
-      ..leading = 6
+      ..leading = 0
       ..strutEnabled = true
       ..forceStrutHeight = false;
 
     final SkParagraphStyle paragraphStyle = canvasKit.ParagraphStyle(props);
-    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.Make(
+    final SkParagraphBuilder builder = canvasKit.ParagraphBuilder.MakeFromFontProvider(
       paragraphStyle,
-      CanvasKitRenderer.instance.fontCollection.skFontMgr,
+      CanvasKitRenderer.instance.fontCollection.fontProvider,
     );
 
     builder.addText('Hello');
@@ -1501,51 +1603,97 @@ void _paragraphTests() {
       canvasKit.TextBaseline.Ideographic,
       4.0,
     );
-    builder
-        .pushStyle(canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12));
+    builder.pushStyle(canvasKit.TextStyle(SkTextStyleProperties()
+      ..color = Float32List.fromList(<double>[1, 0, 0, 1])
+      ..fontSize = 24
+      ..fontFamilies = <String>['Roboto', 'serif']
+    ));
     builder.addText('World');
     builder.pop();
     builder.pushPaintStyle(
-        canvasKit.TextStyle(SkTextStyleProperties()..fontSize = 12),
-        SkPaint(),
-        SkPaint());
+      canvasKit.TextStyle(SkTextStyleProperties()
+        ..color = Float32List.fromList(<double>[1, 0, 0, 1])
+        ..fontSize = 60
+        ..fontFamilies = <String>['Roboto', 'serif']
+      ),
+      SkPaint()..setColorInt(0xFF0000FF),
+      SkPaint()..setColorInt(0xFFFF0000),
+    );
     builder.addText('!');
     builder.pop();
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
     final SkParagraph paragraph = builder.build();
-    paragraph.layout(55);
-    expect(paragraph.getAlphabeticBaseline(),
-        within<double>(distance: 0.5, from: 20.7));
+    paragraph.layout(500);
+
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: 400,
+      height: 160,
+    );
+    domDocument.body!.append(canvas);
+
+    // TODO(yjbanov): WebGL screenshot tests do not work on Firefox - https://github.com/flutter/flutter/issues/109265
+    if (!isFirefox) {
+      final SkSurface surface = canvasKit.MakeWebGLCanvasSurface(canvas);
+      final SkCanvas skCanvas = surface.getCanvas();
+      skCanvas.drawColorInt(0xFFCCCCCC, toSkBlendMode(ui.BlendMode.srcOver));
+      skCanvas.drawParagraph(paragraph, 20, 20);
+      skCanvas.drawRect(
+        Float32List.fromList(<double>[20, 20, 20 + paragraph.getMaxIntrinsicWidth(), 20 + paragraph.getHeight()]),
+        SkPaint()
+          ..setStyle(toSkPaintStyle(ui.PaintingStyle.stroke))
+          ..setStrokeWidth(1)
+          ..setColorInt(0xFF00FF00),
+      );
+      surface.flush();
+
+      await matchGoldenFile(
+        'paragraph_kitchen_sink.png',
+        region: const ui.Rect.fromLTRB(0, 0, 400, 160),
+      );
+    }
+
+    void expectAlmost(double actual, double expected) {
+      expect(actual, within<double>(distance: actual / 100, from: expected));
+    }
+
+    expectAlmost(paragraph.getAlphabeticBaseline(), 85.5);
     expect(paragraph.didExceedMaxLines(), isFalse);
-    expect(paragraph.getHeight(), 25);
-    expect(paragraph.getIdeographicBaseline(),
-        within<double>(distance: 0.5, from: 25));
-    expect(paragraph.getLongestLine(), 50);
-    expect(paragraph.getMaxIntrinsicWidth(), 50);
-    expect(paragraph.getMinIntrinsicWidth(), 50);
-    expect(paragraph.getMaxWidth(), 55);
+    expectAlmost(paragraph.getHeight(), 108);
+    expectAlmost(paragraph.getIdeographicBaseline(), 108);
+    expectAlmost(paragraph.getLongestLine(), 263);
+    expectAlmost(paragraph.getMaxIntrinsicWidth(), 263);
+    expectAlmost(paragraph.getMinIntrinsicWidth(), 135);
+    expectAlmost(paragraph.getMaxWidth(), 500);
+    final SkRectWithDirection rectWithDirection =
+      paragraph.getRectsForRange(
+        1,
+        3,
+        canvasKit.RectHeightStyle.Tight,
+        canvasKit.RectWidthStyle.Max).single! as SkRectWithDirection;
     expect(
-        paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight,
-            canvasKit.RectWidthStyle.Max),
-        <double>[]);
+      rectWithDirection.rect,
+      hasLength(4),
+    );
     expect(paragraph.getRectsForPlaceholders(), hasLength(1));
     expect(paragraph.getLineMetrics(), hasLength(1));
 
     final SkLineMetrics lineMetrics =
         paragraph.getLineMetrics().cast<SkLineMetrics>().single;
-    expect(lineMetrics.ascent, within<double>(distance: 0.5, from: 20.7));
-    expect(lineMetrics.descent, within<double>(distance: 0.2, from: 4.3));
+    expectAlmost(lineMetrics.ascent, 55.6);
+    expectAlmost(lineMetrics.descent, 14.8);
     expect(lineMetrics.isHardBreak, isTrue);
-    expect(lineMetrics.baseline, within<double>(distance: 0.5, from: 20.7));
-    expect(lineMetrics.height, 25);
-    expect(lineMetrics.left, 2.5);
-    expect(lineMetrics.width, 50);
+    expectAlmost(lineMetrics.baseline, 85.5);
+    expectAlmost(lineMetrics.height, 108);
+    expectAlmost(lineMetrics.left, 2.5);
+    expectAlmost(lineMetrics.width, 263);
     expect(lineMetrics.lineNumber, 0);
 
-    expect(paragraph.getGlyphPositionAtCoordinate(5, 5).affinity,
-        canvasKit.Affinity.Downstream);
+    expect(
+      paragraph.getGlyphPositionAtCoordinate(5, 5).affinity,
+      canvasKit.Affinity.Upstream,
+    );
 
     // "Hello"
     for (int i = 0; i < 5; i++) {
@@ -1594,17 +1742,15 @@ void _paragraphTests() {
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
-    expect(
-      paragraph.getRectsForRange(
-        0,
-        1,
-        canvasKit.RectHeightStyle.Strut,
-        canvasKit.RectWidthStyle.Tight,
-      ),
-      <List<double>>[
-        <double>[0, 0, 13.770000457763672, 75],
-      ],
-    );
+    final List<SkRectWithDirection> rects = paragraph.getRectsForRange(
+      0,
+      1,
+      canvasKit.RectHeightStyle.Strut,
+      canvasKit.RectWidthStyle.Tight,
+    ).cast<SkRectWithDirection>();
+    expect(rects.length, 1);
+    final SkRectWithDirection rect = rects.first;
+    expect(rect.rect, <double>[0, 0, 13.770000457763672, 75]);
   });
 
   test('TextHeightBehavior', () {
@@ -1632,4 +1778,33 @@ void _paragraphTests() {
       canvasKit.TextHeightBehavior.DisableAll,
     );
   });
+
+  test('MakeOnScreenGLSurface test', () {
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: 100,
+      height: 100,
+    );
+    final WebGLContext gl = canvas.getGlContext(webGLVersion);
+    final int sampleCount = gl.getParameter(gl.samples);
+    final int stencilBits = gl.getParameter(gl.stencilBits);
+
+    final int glContext = canvasKit.GetWebGLContext(
+      canvas,
+      SkWebGLContextOptions(
+        antialias: 0,
+        majorVersion: webGLVersion.toDouble(),
+      ),
+    ).toInt();
+    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
+    final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+      grContext,
+      100,
+      100,
+      SkColorSpaceSRGB,
+      sampleCount,
+      stencilBits
+    );
+
+    expect(skSurface, isNotNull);
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 }

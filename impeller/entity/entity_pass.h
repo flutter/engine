@@ -49,15 +49,16 @@ class EntityPass {
 
   EntityPass* GetSuperpass() const;
 
-  bool Render(ContentContext& renderer, RenderTarget render_target) const;
+  bool Render(ContentContext& renderer,
+              const RenderTarget& render_target) const;
 
-  void IterateAllEntities(std::function<bool(Entity&)> iterator);
+  void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
   void SetTransformation(Matrix xformation);
 
   void SetStencilDepth(size_t stencil_depth);
 
-  void SetBlendMode(Entity::BlendMode blend_mode);
+  void SetBlendMode(BlendMode blend_mode);
 
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
@@ -100,22 +101,23 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(ContentContext& renderer,
-                ISize root_pass_size,
-                RenderTarget render_target,
-                Point position,
-                Point parent_position,
-                uint32_t pass_depth,
-                size_t stencil_depth_floor = 0,
-                std::shared_ptr<Contents> backdrop_contents = nullptr) const;
+  bool OnRender(
+      ContentContext& renderer,
+      ISize root_pass_size,
+      const RenderTarget& render_target,
+      Point position,
+      Point parent_position,
+      uint32_t pass_depth,
+      size_t stencil_depth_floor = 0,
+      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
 
   std::vector<Element> elements_;
 
   EntityPass* superpass_ = nullptr;
   Matrix xformation_;
   size_t stencil_depth_ = 0u;
-  Entity::BlendMode blend_mode_ = Entity::BlendMode::kSourceOver;
-  bool cover_whole_screen = false;
+  BlendMode blend_mode_ = BlendMode::kSourceOver;
+  bool cover_whole_screen_ = false;
 
   /// This value is incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

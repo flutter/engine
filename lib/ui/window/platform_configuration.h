@@ -23,6 +23,7 @@
 namespace flutter {
 class FontCollection;
 class PlatformMessage;
+class PlatformMessageHandler;
 class Scene;
 
 //--------------------------------------------------------------------------
@@ -324,12 +325,12 @@ class PlatformConfiguration final {
   ///             originates on the platform view and has been forwarded to the
   ///             platform configuration here by the engine.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int32_t id,
+  void DispatchSemanticsAction(int32_t node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -443,6 +444,20 @@ class PlatformConfiguration final {
 };
 
 //----------------------------------------------------------------------------
+/// An inteface that the result of `Dart_CurrentIsolateGroupData` should
+/// implement for registering background isolates to work.
+class PlatformMessageHandlerStorage {
+ public:
+  virtual ~PlatformMessageHandlerStorage() = default;
+  virtual void SetPlatformMessageHandler(
+      int64_t root_isolate_token,
+      std::weak_ptr<PlatformMessageHandler> handler) = 0;
+
+  virtual std::weak_ptr<PlatformMessageHandler> GetPlatformMessageHandler(
+      int64_t root_isolate_token) const = 0;
+};
+
+//----------------------------------------------------------------------------
 // API exposed as FFI calls in Dart.
 //
 // These are probably not supposed to be called directly, and should instead
@@ -469,14 +484,49 @@ class PlatformConfigurationNativeApi {
   static Dart_Handle ComputePlatformResolvedLocale(
       Dart_Handle supportedLocalesHandle);
 
-  static void SetIsolateDebugName(const std::string name);
+  static void SetIsolateDebugName(const std::string& name);
 
   static Dart_Handle SendPlatformMessage(const std::string& name,
                                          Dart_Handle callback,
                                          Dart_Handle data_handle);
 
+  static Dart_Handle SendPortPlatformMessage(const std::string& name,
+                                             Dart_Handle identifier,
+                                             Dart_Handle send_port,
+                                             Dart_Handle data_handle);
+
   static void RespondToPlatformMessage(int response_id,
                                        const tonic::DartByteData& data);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Requests the Dart VM to adjusts the GC heuristics based on
+  ///             the requested `performance_mode`. Returns the old performance
+  ///             mode.
+  ///
+  ///             Requesting a performance mode doesn't guarantee any
+  ///             performance characteristics. This is best effort, and should
+  ///             be used after careful consideration of the various GC
+  ///             trade-offs.
+  ///
+  /// @param[in]  performance_mode The requested performance mode. Please refer
+  ///                              to documentation of `Dart_PerformanceMode`
+  ///                              for more details about what each performance
+  ///                              mode does.
+  ///
+  static int RequestDartPerformanceMode(int mode);
+
+  //--------------------------------------------------------------------------
+  /// @brief      Returns the current performance mode of the Dart VM. Defaults
+  /// to `Dart_PerformanceMode_Default` if no prior requests to change the
+  /// performance mode have been made.
+  static Dart_PerformanceMode GetDartPerformanceMode();
+
+  static int64_t GetRootIsolateToken();
+
+  static void RegisterBackgroundIsolate(int64_t root_isolate_token);
+
+ private:
+  static Dart_PerformanceMode current_performace_mode_;
 };
 
 }  // namespace flutter

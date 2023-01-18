@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 
+#include <utility>
+
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/fml/task_runner.h"
 #include "flutter/fml/trace_event.h"
@@ -15,11 +17,11 @@ AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
     const AndroidContext& android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     std::shared_ptr<AndroidSurfaceFactory> surface_factory,
-    TaskRunners task_runners)
+    const TaskRunners& task_runners)
     : ExternalViewEmbedder(),
       android_context_(android_context),
-      jni_facade_(jni_facade),
-      surface_factory_(surface_factory),
+      jni_facade_(std::move(jni_facade)),
+      surface_factory_(std::move(surface_factory)),
       surface_pool_(std::make_unique<SurfacePool>()),
       task_runners_(task_runners) {}
 
@@ -124,7 +126,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
     slice->end_recording();
 
-    SkRect joined_rect = SkRect::MakeEmpty();
+    SkRect full_joined_rect = SkRect::MakeEmpty();
 
     // Determinate if Flutter UI intersects with any of the previous
     // platform views stacked by z position.
@@ -135,6 +137,8 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     for (ssize_t j = i; j >= 0; j--) {
       int64_t current_view_id = composition_order_[j];
       SkRect current_view_rect = GetViewRect(current_view_id);
+      // The rect above the `current_view_rect`
+      SkRect partial_joined_rect = SkRect::MakeEmpty();
       // Each rect corresponds to a native view that renders Flutter UI.
       std::list<SkRect> intersection_rects =
           slice->searchNonOverlappingDrawnRects(current_view_rect);
@@ -144,21 +148,26 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       // In this case, the rects are merged into a single one that is the union
       // of all the rects.
       for (const SkRect& rect : intersection_rects) {
-        joined_rect.join(rect);
+        partial_joined_rect.join(rect);
       }
+      // Get the intersection rect with the `current_view_rect`,
+      partial_joined_rect.intersect(current_view_rect);
+      // Join the `partial_joined_rect` into `full_joined_rect` to get the rect
+      // above the current `slice`
+      full_joined_rect.join(partial_joined_rect);
     }
-    if (!joined_rect.isEmpty()) {
+    if (!full_joined_rect.isEmpty()) {
       // Subpixels in the platform may not align with the canvas subpixels.
       //
       // To workaround it, round the floating point bounds and make the rect
       // slightly larger.
       //
       // For example, {0.3, 0.5, 3.1, 4.7} becomes {0, 0, 4, 5}.
-      joined_rect.set(joined_rect.roundOut());
-      overlay_layers.insert({view_id, joined_rect});
+      full_joined_rect.set(full_joined_rect.roundOut());
+      overlay_layers.insert({view_id, full_joined_rect});
       // Clip the background canvas, so it doesn't contain any of the pixels
       // drawn on the overlay layer.
-      background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+      background_canvas->clipRect(full_joined_rect, SkClipOp::kDifference);
     }
     if (background_builder) {
       slice->render_into(background_builder);

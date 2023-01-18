@@ -11,22 +11,23 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/display_list_image_impeller.h"
 #include "flutter/impeller/renderer/allocator.h"
+#include "flutter/impeller/renderer/command_buffer.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/impeller/renderer/texture.h"
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
+#include "impeller/geometry/size.h"
 #include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkMallocPixelRef.h"
 #include "third_party/skia/include/core/SkPixmap.h"
 
 namespace flutter {
 
 ImageDecoderImpeller::ImageDecoderImpeller(
-    TaskRunners runners,
+    const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-    fml::WeakPtr<IOManager> io_manager)
-    : ImageDecoder(std::move(runners),
-                   std::move(concurrent_task_runner),
-                   io_manager) {
+    const fml::WeakPtr<IOManager>& io_manager)
+    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -66,23 +67,21 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     return nullptr;
   }
 
-  if (!descriptor->is_compressed()) {
-    FML_DLOG(ERROR)
-        << "Uncompressed images are not implemented in Impeller yet.";
-    return nullptr;
-  }
   target_size.set(std::min(static_cast<int32_t>(max_texture_size.width),
                            target_size.width()),
                   std::min(static_cast<int32_t>(max_texture_size.height),
                            target_size.height()));
 
   const SkISize source_size = descriptor->image_info().dimensions();
-  auto decode_size = descriptor->get_scaled_dimensions(std::max(
-      static_cast<double>(target_size.width()) / source_size.width(),
-      static_cast<double>(target_size.height()) / source_size.height()));
+  auto decode_size = source_size;
+  if (descriptor->is_compressed()) {
+    decode_size = descriptor->get_scaled_dimensions(std::max(
+        static_cast<double>(target_size.width()) / source_size.width(),
+        static_cast<double>(target_size.height()) / source_size.height()));
+  }
 
   //----------------------------------------------------------------------------
-  /// 1. Decode the image into the image generator's closest supported size.
+  /// 1. Decode the image.
   ///
 
   const auto base_image_info = descriptor->image_info();
@@ -99,18 +98,26 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   }
 
   auto bitmap = std::make_shared<SkBitmap>();
-  if (!bitmap->tryAllocPixels(image_info)) {
-    FML_DLOG(ERROR)
-        << "Could not allocate intermediate for image decompression.";
-    return nullptr;
+  if (descriptor->is_compressed()) {
+    if (!bitmap->tryAllocPixels(image_info)) {
+      FML_DLOG(ERROR)
+          << "Could not allocate intermediate for image decompression.";
+      return nullptr;
+    }
+    // Decode the image into the image generator's closest supported size.
+    if (!descriptor->get_pixels(bitmap->pixmap())) {
+      FML_DLOG(ERROR) << "Could not decompress image.";
+      return nullptr;
+    }
+  } else {
+    bitmap->setInfo(image_info);
+    auto pixel_ref = SkMallocPixelRef::MakeWithData(
+        image_info, descriptor->row_bytes(), descriptor->data());
+    bitmap->setPixelRef(pixel_ref, 0, 0);
+    bitmap->setImmutable();
   }
 
-  if (!descriptor->get_pixels(bitmap->pixmap())) {
-    FML_DLOG(ERROR) << "Could not decompress image.";
-    return nullptr;
-  }
-
-  if (decode_size == target_size) {
+  if (bitmap->dimensions() == target_size) {
     return bitmap;
   }
 
@@ -137,8 +144,9 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   return scaled_bitmap;
 }
 
-static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
-                                    std::shared_ptr<SkBitmap> bitmap) {
+sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<SkBitmap> bitmap) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context || !bitmap) {
     return nullptr;
@@ -151,11 +159,13 @@ static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
   }
 
   impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
 
-  auto texture = context->GetResourceAllocator()->CreateTexture(
-      impeller::StorageMode::kHostVisible, texture_descriptor);
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!texture) {
     FML_DLOG(ERROR) << "Could not create Impeller texture.";
     return nullptr;
@@ -173,6 +183,30 @@ static sk_sp<DlImage> UploadTexture(std::shared_ptr<impeller::Context> context,
   }
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+
+  {
+    auto command_buffer = context->CreateCommandBuffer();
+    if (!command_buffer) {
+      FML_DLOG(ERROR)
+          << "Could not create command buffer for mipmap generation.";
+      return nullptr;
+    }
+    command_buffer->SetLabel("Mipmap Command Buffer");
+
+    auto blit_pass = command_buffer->CreateBlitPass();
+    if (!blit_pass) {
+      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
+      return nullptr;
+    }
+    blit_pass->SetLabel("Mipmap Blit Pass");
+    blit_pass->GenerateMipmap(texture);
+
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+    if (!command_buffer->SubmitCommands()) {
+      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+      return nullptr;
+    }
+  }
 
   return impeller::DlImageImpeller::Make(std::move(texture));
 }
@@ -205,6 +239,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        io_runner = runners_.GetIOTaskRunner(),                    //
        result                                                     //
   ]() {
+        FML_CHECK(context) << "No valid impeller context";
         auto max_size_supported =
             context->GetResourceAllocator()->GetMaxTextureSizeSupported();
 

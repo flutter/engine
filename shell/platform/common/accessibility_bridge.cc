@@ -7,6 +7,7 @@
 #include <functional>
 #include <utility>
 
+#include "flutter/third_party/accessibility/ax/ax_tree_manager_map.h"
 #include "flutter/third_party/accessibility/ax/ax_tree_update.h"
 #include "flutter/third_party/accessibility/base/logging.h"
 
@@ -19,16 +20,20 @@ constexpr int kHasScrollingAction =
     FlutterSemanticsAction::kFlutterSemanticsActionScrollDown;
 
 // AccessibilityBridge
-AccessibilityBridge::AccessibilityBridge(
-    std::unique_ptr<AccessibilityBridgeDelegate> delegate)
-    : delegate_(std::move(delegate)) {
-  event_generator_.SetTree(&tree_);
-  tree_.AddObserver(static_cast<ui::AXTreeObserver*>(this));
+AccessibilityBridge::AccessibilityBridge()
+    : tree_(std::make_unique<ui::AXTree>()) {
+  event_generator_.SetTree(tree_.get());
+  tree_->AddObserver(static_cast<ui::AXTreeObserver*>(this));
+  ui::AXTreeData data = tree_->data();
+  data.tree_id = ui::AXTreeID::CreateNewAXTreeID();
+  tree_->UpdateData(data);
+  ui::AXTreeManagerMap::GetInstance().AddTreeManager(tree_->GetAXTreeID(),
+                                                     this);
 }
 
 AccessibilityBridge::~AccessibilityBridge() {
   event_generator_.ReleaseTree();
-  tree_.RemoveObserver(static_cast<ui::AXTreeObserver*>(this));
+  tree_->RemoveObserver(static_cast<ui::AXTreeObserver*>(this));
 }
 
 void AccessibilityBridge::AddFlutterSemanticsNodeUpdate(
@@ -43,7 +48,30 @@ void AccessibilityBridge::AddFlutterSemanticsCustomActionUpdate(
 }
 
 void AccessibilityBridge::CommitUpdates() {
-  ui::AXTreeUpdate update{.tree_data = tree_.data()};
+  // AXTree cannot move a node in a single update.
+  // This must be split across two updates:
+  //
+  // * Update 1: remove nodes from their old parents.
+  // * Update 2: re-add nodes (including their children) to their new parents.
+  //
+  // First, start by removing nodes if necessary.
+  std::optional<ui::AXTreeUpdate> remove_reparented =
+      CreateRemoveReparentedNodesUpdate();
+  if (remove_reparented.has_value()) {
+    tree_->Unserialize(remove_reparented.value());
+
+    std::string error = tree_->error();
+    if (!error.empty()) {
+      FML_LOG(ERROR) << "Failed to update ui::AXTree, error: " << error;
+      assert(false);
+      return;
+    }
+  }
+
+  // Second, apply the pending node updates. This also moves reparented nodes to
+  // their new parents if needed.
+  ui::AXTreeUpdate update{.tree_data = tree_->data()};
+
   // Figure out update order, ui::AXTree only accepts update in tree order,
   // where parent node must come before the child node in
   // ui::AXTreeUpdate.nodes. We start with picking a random node and turn the
@@ -63,17 +91,17 @@ void AccessibilityBridge::CommitUpdates() {
 
   for (size_t i = results.size(); i > 0; i--) {
     for (SemanticsNode node : results[i - 1]) {
-      ConvertFluterUpdate(node, update);
+      ConvertFlutterUpdate(node, update);
     }
   }
 
-  tree_.Unserialize(update);
+  tree_->Unserialize(update);
   pending_semantics_node_updates_.clear();
   pending_semantics_custom_action_updates_.clear();
 
-  std::string error = tree_.error();
+  std::string error = tree_->error();
   if (!error.empty()) {
-    BASE_LOG() << "Failed to update ui::AXTree, error: " << error;
+    FML_LOG(ERROR) << "Failed to update ui::AXTree, error: " << error;
     return;
   }
   // Handles accessibility events as the result of the semantics update.
@@ -84,7 +112,7 @@ void AccessibilityBridge::CommitUpdates() {
       continue;
     }
 
-    delegate_->OnAccessibilityEvent(targeted_event);
+    OnAccessibilityEvent(targeted_event);
   }
   event_generator_.ClearEvents();
 }
@@ -101,24 +129,20 @@ AccessibilityBridge::GetFlutterPlatformNodeDelegateFromID(
 }
 
 const ui::AXTreeData& AccessibilityBridge::GetAXTreeData() const {
-  return tree_.data();
+  return tree_->data();
 }
 
 const std::vector<ui::AXEventGenerator::TargetedEvent>
-AccessibilityBridge::GetPendingEvents() {
+AccessibilityBridge::GetPendingEvents() const {
   std::vector<ui::AXEventGenerator::TargetedEvent> result(
       event_generator_.begin(), event_generator_.end());
   return result;
 }
 
-void AccessibilityBridge::UpdateDelegate(
-    std::unique_ptr<AccessibilityBridgeDelegate> delegate) {
-  delegate_ = std::move(delegate);
-  // Recreate FlutterPlatformNodeDelegates since they may contain stale state
-  // from the previous AccessibilityBridgeDelegate.
+void AccessibilityBridge::RecreateNodeDelegates() {
   for (const auto& [node_id, old_platform_node_delegate] : id_wrapper_map_) {
     std::shared_ptr<FlutterPlatformNodeDelegate> platform_node_delegate =
-        delegate_->CreateFlutterPlatformNodeDelegate();
+        CreateFlutterPlatformNodeDelegate();
     platform_node_delegate->Init(
         std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
             shared_from_this()),
@@ -143,7 +167,7 @@ void AccessibilityBridge::OnRoleChanged(ui::AXTree* tree,
 
 void AccessibilityBridge::OnNodeCreated(ui::AXTree* tree, ui::AXNode* node) {
   BASE_DCHECK(node);
-  id_wrapper_map_[node->id()] = delegate_->CreateFlutterPlatformNodeDelegate();
+  id_wrapper_map_[node->id()] = CreateFlutterPlatformNodeDelegate();
   id_wrapper_map_[node->id()]->Init(
       std::static_pointer_cast<FlutterPlatformNodeDelegate::OwnerBridge>(
           shared_from_this()),
@@ -177,8 +201,64 @@ void AccessibilityBridge::OnAtomicUpdateFinished(
   }
 }
 
+std::optional<ui::AXTreeUpdate>
+AccessibilityBridge::CreateRemoveReparentedNodesUpdate() {
+  std::unordered_map<int32_t, ui::AXNodeData> updates;
+
+  for (auto node_update : pending_semantics_node_updates_) {
+    for (int32_t child_id : node_update.second.children_in_traversal_order) {
+      // Skip nodes that don't exist or have a parent in the current tree.
+      ui::AXNode* child = tree_->GetFromId(child_id);
+      if (!child) {
+        continue;
+      }
+
+      // Flutter's root node should never be reparented.
+      assert(child->parent());
+
+      // Skip nodes whose parents are unchanged.
+      if (child->parent()->id() == node_update.second.id) {
+        continue;
+      }
+
+      // This pending update moves the current child node.
+      // That new child must have a corresponding pending update.
+      assert(pending_semantics_node_updates_.find(child_id) !=
+             pending_semantics_node_updates_.end());
+
+      // Create an update to remove the child from its previous parent.
+      int32_t parent_id = child->parent()->id();
+      if (updates.find(parent_id) == updates.end()) {
+        updates[parent_id] = tree_->GetFromId(parent_id)->data();
+      }
+
+      ui::AXNodeData* parent = &updates[parent_id];
+      auto iter = std::find(parent->child_ids.begin(), parent->child_ids.end(),
+                            child_id);
+
+      assert(iter != parent->child_ids.end());
+      parent->child_ids.erase(iter);
+    }
+  }
+
+  if (updates.empty()) {
+    return std::nullopt;
+  }
+
+  ui::AXTreeUpdate update{
+      .tree_data = tree_->data(),
+      .nodes = std::vector<ui::AXNodeData>(),
+  };
+
+  for (std::pair<int32_t, ui::AXNodeData> data : updates) {
+    update.nodes.push_back(std::move(data.second));
+  }
+
+  return update;
+}
+
 // Private method.
-void AccessibilityBridge::GetSubTreeList(SemanticsNode target,
+void AccessibilityBridge::GetSubTreeList(const SemanticsNode& target,
                                          std::vector<SemanticsNode>& result) {
   result.push_back(target);
   for (int32_t child : target.children_in_traversal_order) {
@@ -191,8 +271,8 @@ void AccessibilityBridge::GetSubTreeList(SemanticsNode target,
   }
 }
 
-void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node,
-                                              ui::AXTreeUpdate& tree_update) {
+void AccessibilityBridge::ConvertFlutterUpdate(const SemanticsNode& node,
+                                               ui::AXTreeUpdate& tree_update) {
   ui::AXNodeData node_data;
   node_data.id = node.id;
   SetRoleFromFlutterUpdate(node_data, node);
@@ -204,6 +284,7 @@ void AccessibilityBridge::ConvertFluterUpdate(const SemanticsNode& node,
   SetStringListAttributesFromFlutterUpdate(node_data, node);
   SetNameFromFlutterUpdate(node_data, node);
   SetValueFromFlutterUpdate(node_data, node);
+  SetTooltipFromFlutterUpdate(node_data, node);
   node_data.relative_bounds.bounds.SetRect(node.rect.left, node.rect.top,
                                            node.rect.right - node.rect.left,
                                            node.rect.bottom - node.rect.top);
@@ -354,6 +435,12 @@ void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
       ax::mojom::BoolAttribute::kEditableRoot,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
           (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0);
+  // Mark nodes as line breaking so that screen readers don't
+  // merge all consecutive objects into one.
+  // TODO(schectman): When should a node have this attribute set?
+  // https://github.com/flutter/flutter/issues/118184
+  node_data.AddBoolAttribute(ax::mojom::BoolAttribute::kIsLineBreakingObject,
+                             true);
 }
 
 void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
@@ -380,7 +467,16 @@ void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
     node_data.AddIntAttribute(
         ax::mojom::IntAttribute::kCheckedState,
         static_cast<int32_t>(
-            flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
+            flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed
+                ? ax::mojom::CheckedState::kMixed
+            : flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked
+                ? ax::mojom::CheckedState::kTrue
+                : ax::mojom::CheckedState::kFalse));
+  } else if (node_data.role == ax::mojom::Role::kToggleButton) {
+    node_data.AddIntAttribute(
+        ax::mojom::IntAttribute::kCheckedState,
+        static_cast<int32_t>(
+            flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsToggled
                 ? ax::mojom::CheckedState::kTrue
                 : ax::mojom::CheckedState::kFalse));
   }
@@ -428,14 +524,21 @@ void AccessibilityBridge::SetValueFromFlutterUpdate(ui::AXNodeData& node_data,
   node_data.SetValue(node.value);
 }
 
+void AccessibilityBridge::SetTooltipFromFlutterUpdate(
+    ui::AXNodeData& node_data,
+    const SemanticsNode& node) {
+  node_data.SetTooltip(node.tooltip);
+}
+
 void AccessibilityBridge::SetTreeData(const SemanticsNode& node,
                                       ui::AXTreeUpdate& tree_update) {
   FlutterSemanticsFlag flags = node.flags;
-  // Set selection if:
+  // Set selection of the focused node if:
   // 1. this text field has a valid selection
   // 2. this text field doesn't have a valid selection but had selection stored
   //    in the tree.
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField) {
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused) {
     if (node.text_selection_base != -1) {
       tree_update.tree_data.sel_anchor_object_id = node.id;
       tree_update.tree_data.sel_anchor_offset = node.text_selection_base;
@@ -494,6 +597,9 @@ AccessibilityBridge::FromFlutterSemanticsNode(
   if (flutter_node->decreased_value) {
     result.decreased_value = std::string(flutter_node->decreased_value);
   }
+  if (flutter_node->tooltip) {
+    result.tooltip = std::string(flutter_node->tooltip);
+  }
   result.text_direction = flutter_node->text_direction;
   result.rect = flutter_node->rect;
   result.transform = flutter_node->transform;
@@ -531,7 +637,7 @@ void AccessibilityBridge::SetLastFocusedId(AccessibilityNodeId node_id) {
     auto last_focused_child =
         GetFlutterPlatformNodeDelegateFromID(last_focused_id_);
     if (!last_focused_child.expired()) {
-      delegate_->DispatchAccessibilityAction(
+      DispatchAccessibilityAction(
           last_focused_id_,
           FlutterSemanticsAction::
               kFlutterSemanticsActionDidLoseAccessibilityFocus,
@@ -557,15 +663,60 @@ gfx::NativeViewAccessible AccessibilityBridge::GetNativeAccessibleFromId(
 gfx::RectF AccessibilityBridge::RelativeToGlobalBounds(const ui::AXNode* node,
                                                        bool& offscreen,
                                                        bool clip_bounds) {
-  return tree_.RelativeToTreeBounds(node, gfx::RectF(), &offscreen,
-                                    clip_bounds);
+  return tree_->RelativeToTreeBounds(node, gfx::RectF(), &offscreen,
+                                     clip_bounds);
 }
 
-void AccessibilityBridge::DispatchAccessibilityAction(
-    AccessibilityNodeId target,
-    FlutterSemanticsAction action,
-    fml::MallocMapping data) {
-  delegate_->DispatchAccessibilityAction(target, action, std::move(data));
+ui::AXNode* AccessibilityBridge::GetNodeFromTree(
+    ui::AXTreeID tree_id,
+    ui::AXNode::AXID node_id) const {
+  return GetNodeFromTree(node_id);
+}
+
+ui::AXNode* AccessibilityBridge::GetNodeFromTree(
+    ui::AXNode::AXID node_id) const {
+  return tree_->GetFromId(node_id);
+}
+
+ui::AXTreeID AccessibilityBridge::GetTreeID() const {
+  return tree_->GetAXTreeID();
+}
+
+ui::AXTreeID AccessibilityBridge::GetParentTreeID() const {
+  return ui::AXTreeIDUnknown();
+}
+
+ui::AXNode* AccessibilityBridge::GetRootAsAXNode() const {
+  return tree_->root();
+}
+
+ui::AXNode* AccessibilityBridge::GetParentNodeFromParentTreeAsAXNode() const {
+  return nullptr;
+}
+
+ui::AXTree* AccessibilityBridge::GetTree() const {
+  return tree_.get();
+}
+
+ui::AXPlatformNode* AccessibilityBridge::GetPlatformNodeFromTree(
+    const ui::AXNode::AXID node_id) const {
+  auto platform_delegate_weak = GetFlutterPlatformNodeDelegateFromID(node_id);
+  auto platform_delegate = platform_delegate_weak.lock();
+  if (!platform_delegate) {
+    return nullptr;
+  }
+  return platform_delegate->GetPlatformNode();
+}
+
+ui::AXPlatformNode* AccessibilityBridge::GetPlatformNodeFromTree(
+    const ui::AXNode& node) const {
+  return GetPlatformNodeFromTree(node.id());
+}
+
+ui::AXPlatformNodeDelegate* AccessibilityBridge::RootDelegate() const {
+  return GetFlutterPlatformNodeDelegateFromID(GetRootAsAXNode()->id())
+      .lock()
+      .get();
 }
 
 }  // namespace flutter

@@ -5,8 +5,11 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <memory>
@@ -21,8 +24,10 @@ class AllocatorVK final : public Allocator {
  private:
   friend class ContextVK;
 
+  fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
   ContextVK& context_;
+  vk::Device device_;
   bool is_valid_ = false;
 
   AllocatorVK(ContextVK& context,
@@ -37,16 +42,17 @@ class AllocatorVK final : public Allocator {
   bool IsValid() const;
 
   // |Allocator|
-  std::shared_ptr<DeviceBuffer> CreateBuffer(StorageMode mode,
-                                             size_t length) override;
+  std::shared_ptr<DeviceBuffer> OnCreateBuffer(
+      const DeviceBufferDescriptor& desc) override;
 
   // |Allocator|
-  std::shared_ptr<Texture> CreateTexture(
-      StorageMode mode,
+  std::shared_ptr<Texture> OnCreateTexture(
       const TextureDescriptor& desc) override;
 
   // |Allocator|
   ISize GetMaxTextureSizeSupported() const override;
+
+  DeviceBufferAllocationVK CreateHostVisibleDeviceAllocation(size_t size);
 
   FML_DISALLOW_COPY_AND_ASSIGN(AllocatorVK);
 };

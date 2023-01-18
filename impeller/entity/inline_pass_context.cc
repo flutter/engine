@@ -4,16 +4,19 @@
 
 #include "impeller/entity/inline_pass_context.h"
 
+#include <utility>
+
 #include "impeller/base/validation.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
+#include "impeller/renderer/texture_descriptor.h"
 
 namespace impeller {
 
 InlinePassContext::InlinePassContext(std::shared_ptr<Context> context,
-                                     RenderTarget render_target,
+                                     const RenderTarget& render_target,
                                      uint32_t pass_texture_reads)
-    : context_(context),
+    : context_(std::move(context)),
       render_target_(render_target),
       total_pass_reads_(pass_texture_reads) {}
 
@@ -59,10 +62,10 @@ const RenderTarget& InlinePassContext::GetRenderTarget() const {
   return render_target_;
 }
 
-std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
+InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     uint32_t pass_depth) {
   if (IsActive()) {
-    return pass_;
+    return {.pass = pass_};
   }
 
   /// Create a new render pass if one isn't active. This path will run the first
@@ -72,48 +75,65 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
   command_buffer_ = context_->CreateCommandBuffer();
   if (!command_buffer_) {
     VALIDATION_LOG << "Could not create command buffer.";
-    return nullptr;
+    return {};
   }
 
   if (render_target_.GetColorAttachments().empty()) {
     VALIDATION_LOG << "Color attachment unexpectedly missing from the "
                       "EntityPass render target.";
-    return nullptr;
+    return {};
   }
   auto color0 = render_target_.GetColorAttachments().find(0)->second;
-
-  auto stencil = render_target_.GetStencilAttachment();
-  if (!stencil.has_value()) {
-    VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
-                      "EntityPass render target.";
-    return nullptr;
-  }
 
   command_buffer_->SetLabel(
       "EntityPass Command Buffer: Depth=" + std::to_string(pass_depth) +
       " Count=" + std::to_string(pass_count_));
 
-  // Only clear the color and stencil if this is the very first pass of the
-  // layer.
-  color0.load_action = pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
-  stencil->load_action = color0.load_action;
+  RenderPassResult result;
 
+  if (pass_count_ > 0 && color0.resolve_texture) {
+    result.backdrop_texture = color0.resolve_texture;
+  }
+
+  if (color0.resolve_texture) {
+    color0.load_action =
+        pass_count_ > 0 ? LoadAction::kDontCare : LoadAction::kClear;
+    color0.store_action = StoreAction::kMultisampleResolve;
+  } else {
+    color0.load_action = LoadAction::kClear;
+    color0.store_action = StoreAction::kStore;
+  }
+
+#ifndef IMPELLER_ENABLE_VULKAN
+  auto stencil = render_target_.GetStencilAttachment();
+  if (!stencil.has_value()) {
+    VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
+                      "EntityPass render target.";
+    return {};
+  }
+
+  // Only clear the stencil if this is the very first pass of the
+  // layer.
+  stencil->load_action =
+      pass_count_ > 0 ? LoadAction::kLoad : LoadAction::kClear;
   // If we're on the last pass of the layer, there's no need to store the
-  // multisample texture or stencil because nothing needs to read it.
-  color0.store_action = pass_count_ == total_pass_reads_
-                            ? StoreAction::kMultisampleResolve
-                            : StoreAction::kStoreAndMultisampleResolve;
+  // stencil because nothing needs to read it.
   stencil->store_action = pass_count_ == total_pass_reads_
                               ? StoreAction::kDontCare
                               : StoreAction::kStore;
+  render_target_.SetStencilAttachment(stencil.value());
+#else
+  // Touch this variable to avoid a compiler warnings.
+  // This will go away once stencil support is added for vulkan.
+  total_pass_reads_ = 1;
+#endif
 
   render_target_.SetColorAttachment(color0, 0);
-  render_target_.SetStencilAttachment(stencil.value());
 
   pass_ = command_buffer_->CreateRenderPass(render_target_);
   if (!pass_) {
     VALIDATION_LOG << "Could not create render pass.";
-    return nullptr;
+    return {};
   }
 
   pass_->SetLabel(
@@ -122,7 +142,12 @@ std::shared_ptr<RenderPass> InlinePassContext::GetRenderPass(
 
   ++pass_count_;
 
-  return pass_;
+  result.pass = pass_;
+  return result;
+}
+
+uint32_t InlinePassContext::GetPassCount() const {
+  return pass_count_;
 }
 
 }  // namespace impeller

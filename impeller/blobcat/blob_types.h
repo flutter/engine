@@ -9,6 +9,7 @@ namespace impeller {
 enum class BlobShaderType {
   kVertex,
   kFragment,
+  kCompute,
 };
 
 }  // namespace impeller

@@ -9,7 +9,8 @@
 
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
-#include "impeller/runtime_stage/runtime_types.h"
+
+#include "flutter/impeller/runtime_stage/runtime_types.h"
 
 namespace impeller {
 
@@ -18,6 +19,8 @@ class RuntimeStage {
   explicit RuntimeStage(std::shared_ptr<fml::Mapping> payload);
 
   ~RuntimeStage();
+  RuntimeStage(RuntimeStage&&);
+  RuntimeStage& operator=(RuntimeStage&&);
 
   bool IsValid() const;
 
@@ -31,13 +34,21 @@ class RuntimeStage {
 
   const std::shared_ptr<fml::Mapping>& GetCodeMapping() const;
 
+  const std::shared_ptr<fml::Mapping>& GetSkSLMapping() const;
+
+  bool IsDirty() const;
+
+  void SetClean();
+
  private:
   RuntimeShaderStage stage_ = RuntimeShaderStage::kVertex;
   std::shared_ptr<fml::Mapping> payload_;
   std::string entrypoint_;
   std::shared_ptr<fml::Mapping> code_mapping_;
+  std::shared_ptr<fml::Mapping> sksl_mapping_;
   std::vector<RuntimeUniformDescription> uniforms_;
   bool is_valid_ = false;
+  bool is_dirty_ = true;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RuntimeStage);
 };

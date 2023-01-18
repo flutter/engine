@@ -8,7 +8,31 @@
 
 namespace impeller {
 
-Tessellator::Tessellator() = default;
+static void* HeapAlloc(void* userData, unsigned int size) {
+  return malloc(size);
+}
+
+static void* HeapRealloc(void* userData, void* ptr, unsigned int size) {
+  return realloc(ptr, size);
+}
+
+static void HeapFree(void* userData, void* ptr) {
+  free(ptr);
+}
+
+// Note: these units are "number of entities" for bucket size and not in KB.
+static TESSalloc alloc = {
+    HeapAlloc, HeapRealloc, HeapFree, 0, /* =userData */
+    16,                                  /* =meshEdgeBucketSize */
+    16,                                  /* =meshVertexBucketSize */
+    16,                                  /* =meshFaceBucketSize */
+    16,                                  /* =dictNodeBucketSize */
+    16,                                  /* =regionBucketSize */
+    0                                    /* =extraVertices */
+};
+
+Tessellator::Tessellator()
+    : c_tessellator_(::tessNewTess(&alloc), &DestroyTessellator) {}
 
 Tessellator::~Tessellator() = default;
 
@@ -28,15 +52,10 @@ static int ToTessWindingRule(FillType fill_type) {
   return TESS_WINDING_ODD;
 }
 
-static void DestroyTessellator(TESStesselator* tessellator) {
-  if (tessellator != nullptr) {
-    ::tessDeleteTess(tessellator);
-  }
-}
-
-Tessellator::Result Tessellator::Tessellate(FillType fill_type,
-                                            const Path::Polyline& polyline,
-                                            VertexCallback callback) const {
+Tessellator::Result Tessellator::Tessellate(
+    FillType fill_type,
+    const Path::Polyline& polyline,
+    const BuilderCallback& callback) const {
   if (!callback) {
     return Result::kInputError;
   }
@@ -45,13 +64,7 @@ Tessellator::Result Tessellator::Tessellate(FillType fill_type,
     return Result::kInputError;
   }
 
-  using CTessellator =
-      std::unique_ptr<TESStesselator, decltype(&DestroyTessellator)>;
-
-  CTessellator tessellator(
-      ::tessNewTess(nullptr /* the default ::malloc based allocator */),
-      DestroyTessellator);
-
+  auto tessellator = c_tessellator_.get();
   if (!tessellator) {
     return Result::kTessellationError;
   }
@@ -69,8 +82,8 @@ Tessellator::Result Tessellator::Tessellate(FillType fill_type,
     std::tie(start_point_index, end_point_index) =
         polyline.GetContourPointBounds(contour_i);
 
-    ::tessAddContour(tessellator.get(),  // the C tessellator
-                     kVertexSize,        //
+    ::tessAddContour(tessellator,  // the C tessellator
+                     kVertexSize,  //
                      polyline.points.data() + start_point_index,  //
                      sizeof(Point),                               //
                      end_point_index - start_point_index          //
@@ -80,7 +93,7 @@ Tessellator::Result Tessellator::Tessellate(FillType fill_type,
   //----------------------------------------------------------------------------
   /// Let's tessellate.
   ///
-  auto result = ::tessTesselate(tessellator.get(),             // tessellator
+  auto result = ::tessTesselate(tessellator,                   // tessellator
                                 ToTessWindingRule(fill_type),  // winding
                                 TESS_POLYGONS,                 // element type
                                 kPolygonSize,                  // polygon size
@@ -92,28 +105,27 @@ Tessellator::Result Tessellator::Tessellate(FillType fill_type,
     return Result::kTessellationError;
   }
 
-  // TODO(csg): This copy can be elided entirely for the current use case.
-  std::vector<Point> points;
-  std::vector<uint32_t> indices;
-
-  int vertexItemCount = tessGetVertexCount(tessellator.get()) * kVertexSize;
-  auto vertices = tessGetVertices(tessellator.get());
-  for (int i = 0; i < vertexItemCount; i += 2) {
-    points.emplace_back(vertices[i], vertices[i + 1]);
-  }
-
-  int elementItemCount = tessGetElementCount(tessellator.get()) * kPolygonSize;
-  auto elements = tessGetElements(tessellator.get());
+  int vertexItemCount = tessGetVertexCount(tessellator) * kVertexSize;
+  auto vertices = tessGetVertices(tessellator);
+  int elementItemCount = tessGetElementCount(tessellator) * kPolygonSize;
+  auto elements = tessGetElements(tessellator);
+  // libtess uses an int index internally due to usage of -1 as a sentinel
+  // value.
+  std::vector<uint16_t> indices(elementItemCount);
   for (int i = 0; i < elementItemCount; i++) {
-    indices.emplace_back(elements[i]);
+    indices[i] = static_cast<uint16_t>(elements[i]);
   }
-
-  for (auto index : indices) {
-    auto vtx = points[index];
-    callback(vtx);
+  if (!callback(vertices, vertexItemCount, indices.data(), elementItemCount)) {
+    return Result::kInputError;
   }
 
   return Result::kSuccess;
+}
+
+void DestroyTessellator(TESStesselator* tessellator) {
+  if (tessellator != nullptr) {
+    ::tessDeleteTess(tessellator);
+  }
 }
 
 }  // namespace impeller

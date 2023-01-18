@@ -11,6 +11,7 @@ import 'package:path/path.dart' as path;
 
 import 'cache.dart';
 import 'limits.dart';
+import 'patterns.dart';
 
 enum FileType {
   binary, // won't have its own license block
@@ -20,14 +21,14 @@ enum FileType {
   tar, // should be parsed as an archive and drilled into
   gz, // should be parsed as a single compressed file and exposed
   bzip2, // should be parsed as a single compressed file and exposed
-  metadata, // can be skipped entirely (e.g. Mac OS X ._foo files)
+  notPartOfBuild, // can be skipped entirely (e.g. Mac OS X ._foo files, bash scripts)
 }
 
 typedef Reader = List<int> Function();
 
-class BytesOf extends Key { BytesOf(dynamic value) : super(value); }
-class UTF8Of extends Key { UTF8Of(dynamic value) : super(value); }
-class Latin1Of extends Key { Latin1Of(dynamic value) : super(value); }
+class BytesOf extends Key { BytesOf(super.value); }
+class UTF8Of extends Key { UTF8Of(super.value); }
+class Latin1Of extends Key { Latin1Of(super.value); }
 
 bool matchesSignature(List<int> bytes, List<int> signature) {
   if (bytes.length < signature.length) {
@@ -69,22 +70,27 @@ bool isMultiLicenseNotice(Reader reader) {
 }
 
 FileType identifyFile(String name, Reader reader) {
-  List<int> bytes;
+  List<int>? bytes;
   if ((path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/extra/uconv/README') || // This specific ICU README isn't in UTF-8.
       (path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/icu/source/samples/uresb/sr.txt') || // This specific sample contains non-UTF-8 data (unlike other sr.txt files).
       (path.split(name).reversed.take(2).toList().reversed.join('/') == 'builds/detect.mk') || // This specific freetype sample contains non-UTF-8 data (unlike other .mk files).
       (path.split(name).reversed.take(3).toList().reversed.join('/') == 'third_party/cares/cares.rc')) {
     return FileType.latin1Text;
   }
-  if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot' || // Not any particular format
-      path.split(name).reversed.take(8).toList().reversed.join('/') == 'third_party/android_tools/ndk/sources/cxx-stl/stlport/src/stlport.rc') {
+  if (path.split(name).reversed.take(6).toList().reversed.join('/') == 'dart/runtime/tests/vm/dart/bad_snapshot') { // Not any particular format
+    return FileType.binary;
+  }
+  if (path.split(name).reversed.take(9).toList().reversed.join('/') == 'fuchsia/sdk/linux/dart/zircon/lib/src/fakes/handle_disposition.dart' || // has bogus but benign "authors" reference, reported to jamesr@
+      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.c' || // has bogus but benign "authors" reference, reported to author and legal team
+      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl.h' || // has bogus but benign "authors" reference, reported to author and legal team
+      path.split(name).reversed.take(6).toList().reversed.join('/') == 'third_party/angle/src/common/fuchsia_egl/fuchsia_egl_backend.h') { // has bogus but benign "authors" reference, reported to author and legal team
     return FileType.binary;
   }
   final String base = path.basename(name);
   if (base.startsWith('._')) {
     bytes ??= reader();
     if (matchesSignature(bytes, <int>[0x00, 0x05, 0x16, 0x07, 0x00, 0x02, 0x00, 0x00, 0x4d, 0x61, 0x63, 0x20, 0x4f, 0x53, 0x20, 0x58])) {
-      return FileType.metadata;
+      return FileType.notPartOfBuild;
     } // The ._* files in Mac OS X archives that gives icons and stuff
   }
   if (path.split(name).contains('cairo')) {
@@ -150,21 +156,22 @@ FileType identifyFile(String name, Reader reader) {
     case '.cc': return FileType.text;
     case '.cpp': return FileType.text;
     case '.inc': return FileType.text;
+    // Go code
+    case '.go': return FileType.text;
     // ObjectiveC code
     case '.m': return FileType.text;
     // Assembler
     case '.asm': return FileType.text;
     // Shell
-    case '.sh': return FileType.text;
-    case '.bat': return FileType.text;
+    case '.sh': return FileType.notPartOfBuild;
+    case '.bat': return FileType.notPartOfBuild;
     // Build files
-    case '.in': return FileType.text;
-    case '.ac': return FileType.text;
-    case '.am': return FileType.text;
-    case '.gn': return FileType.text;
-    case '.gni': return FileType.text;
-    case '.gyp': return FileType.text;
-    case '.gypi': return FileType.text;
+    case '.ac': return FileType.notPartOfBuild;
+    case '.am': return FileType.notPartOfBuild;
+    case '.gn': return FileType.notPartOfBuild;
+    case '.gni': return FileType.notPartOfBuild;
+    case '.gyp': return FileType.notPartOfBuild;
+    case '.gypi': return FileType.notPartOfBuild;
     // Java code
     case '.java': return FileType.text;
     case '.jar': return FileType.zip; // Java package
@@ -218,6 +225,7 @@ FileType identifyFile(String name, Reader reader) {
     case '.emf': return FileType.binary; // Windows enhanced metafile format
     case '.skp': return FileType.binary; // Skia picture format
     case '.mskp': return FileType.binary; // Skia picture format
+    case '.spv': return FileType.binary; // SPIR-V
     // Videos
     case '.ogg': return FileType.binary; // Ogg media
     case '.mp4': return FileType.binary; // MPEG media
@@ -332,7 +340,17 @@ FileType identifyFile(String name, Reader reader) {
   if (matchesSignature(bytes, <int>[0x58, 0x50, 0x43, 0x4f, 0x4d, 0x0a, 0x54, 0x79, 0x70, 0x65, 0x4c, 0x69, 0x62, 0x0d, 0x0a, 0x1a])) {
     return FileType.binary;
   } // XPCOM Type Library
+  if (matchesSignature(bytes, <int>[0x23, 0x21])) {
+    // #! indicates a shell script, those are not part of the build
+    return FileType.notPartOfBuild;
+  }
   return FileType.text;
+}
+
+String _normalize(String fileContents) {
+  fileContents = fileContents.replaceAll(newlinePattern, '\n');
+  fileContents = fileContents.replaceAll('\t', ' ' * 4);
+  return fileContents;
 }
 
 
@@ -351,7 +369,7 @@ abstract class IoNode {
 
 // interface
 abstract class File extends IoNode {
-  List<int> readBytes();
+  List<int>? readBytes();
 }
 
 // interface
@@ -363,7 +381,7 @@ mixin UTF8TextFile implements TextFile {
   @override
   String readString() {
     try {
-      return cache(UTF8Of(this), () => utf8.decode(readBytes()));
+      return cache(UTF8Of(this), () => _normalize(utf8.decode(readBytes()!)));
     } on FormatException {
       print(fullName);
       rethrow;
@@ -375,13 +393,13 @@ mixin Latin1TextFile implements TextFile {
   @override
   String readString() {
     return cache(Latin1Of(this), () {
-      final List<int> bytes = readBytes();
+      final List<int> bytes = readBytes()!;
       if (bytes.any((int byte) => byte == 0x00)) {
         throw '$fullName contains a U+0000 NULL and is probably not actually encoded as Win1252';
       }
       bool isUTF8 = false;
       try {
-        cache(UTF8Of(this), () => utf8.decode(readBytes()));
+        cache(UTF8Of(this), () => utf8.decode(readBytes()!));
         isUTF8 = true;
       } on FormatException {
         // Exceptions are fine/expected for non-UTF8 text, which we test for
@@ -390,13 +408,14 @@ mixin Latin1TextFile implements TextFile {
       if (isUTF8) {
         throw '$fullName contains valid UTF-8 and is probably not actually encoded as Win1252';
       }
-      return latin1.decode(bytes);
+      return _normalize(latin1.decode(bytes));
     });
   }
 }
 
 // interface
 abstract class Directory extends IoNode {
+  // lists children (shallow walk, not deep walk)
   Iterable<IoNode> get walk;
 }
 
@@ -404,13 +423,13 @@ abstract class Directory extends IoNode {
 abstract class Link extends IoNode { }
 
 mixin ZipFile on File implements Directory {
-  ArchiveDirectory _root;
+  ArchiveDirectory? _root;
 
   @override
   Iterable<IoNode> get walk {
     try {
-      _root ??= ArchiveDirectory.parseArchive(a.ZipDecoder().decodeBytes(readBytes()), fullName);
-      return _root.walk;
+      _root ??= ArchiveDirectory.parseArchive(a.ZipDecoder().decodeBytes(readBytes()!), fullName);
+      return _root!.walk;
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
       rethrow;
@@ -419,13 +438,13 @@ mixin ZipFile on File implements Directory {
 }
 
 mixin TarFile on File implements Directory {
-  ArchiveDirectory _root;
+  ArchiveDirectory? _root;
 
   @override
   Iterable<IoNode> get walk {
     try {
-      _root ??= ArchiveDirectory.parseArchive(a.TarDecoder().decodeBytes(readBytes()), fullName);
-      return _root.walk;
+      _root ??= ArchiveDirectory.parseArchive(a.TarDecoder().decodeBytes(readBytes()!), fullName);
+      return _root!.walk;
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
       rethrow;
@@ -434,15 +453,15 @@ mixin TarFile on File implements Directory {
 }
 
 mixin GZipFile on File implements Directory {
-  InMemoryFile _data;
+  InMemoryFile? _data;
 
   @override
   Iterable<IoNode> get walk sync* {
     try {
       final String innerName = path.basenameWithoutExtension(fullName);
-      _data ??= InMemoryFile.parse('$fullName!$innerName', a.GZipDecoder().decodeBytes(readBytes()));
+      _data ??= InMemoryFile.parse('$fullName!$innerName', a.GZipDecoder().decodeBytes(readBytes()!))!;
       if (_data != null) {
-        yield _data;
+        yield _data!;
       }
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
@@ -452,15 +471,15 @@ mixin GZipFile on File implements Directory {
 }
 
 mixin BZip2File on File implements Directory {
-  InMemoryFile _data;
+  InMemoryFile? _data;
 
   @override
   Iterable<IoNode> get walk sync* {
     try {
       final String innerName = path.basenameWithoutExtension(fullName);
-      _data ??= InMemoryFile.parse('$fullName!$innerName', a.BZip2Decoder().decodeBytes(readBytes()));
+      _data ??= InMemoryFile.parse('$fullName!$innerName', a.BZip2Decoder().decodeBytes(readBytes()!))!;
       if (_data != null) {
-        yield _data;
+        yield _data!;
       }
     } catch (exception) {
       print('failed to parse archive:\n$fullName');
@@ -488,7 +507,7 @@ class FileSystemDirectory extends IoNode implements Directory {
   String get fullName => _directory.path;
 
   List<int> _readBytes(io.File file) {
-    return cache/*List<int>*/(BytesOf(file), () => file.readAsBytesSync());
+    return cache(BytesOf(file), () => file.readAsBytesSync());
   }
 
   @override
@@ -512,7 +531,7 @@ class FileSystemDirectory extends IoNode implements Directory {
             case FileType.bzip2: yield FileSystemBZip2File(fileEntity); break;
             case FileType.text: yield FileSystemUTF8TextFile(fileEntity); break;
             case FileType.latin1Text: yield FileSystemLatin1TextFile(fileEntity); break;
-            case FileType.metadata: break; // ignore this file
+            case FileType.notPartOfBuild: break; // ignore this file
           }
         }
       }
@@ -550,27 +569,27 @@ class FileSystemFile extends IoNode implements File {
 }
 
 class FileSystemUTF8TextFile extends FileSystemFile with UTF8TextFile {
-  FileSystemUTF8TextFile(io.File file) : super(file);
+  FileSystemUTF8TextFile(super.file);
 }
 
 class FileSystemLatin1TextFile extends FileSystemFile with Latin1TextFile {
-  FileSystemLatin1TextFile(io.File file) : super(file);
+  FileSystemLatin1TextFile(super.file);
 }
 
 class FileSystemZipFile extends FileSystemFile with ZipFile {
-  FileSystemZipFile(io.File file) : super(file);
+  FileSystemZipFile(super.file);
 }
 
 class FileSystemTarFile extends FileSystemFile with TarFile {
-  FileSystemTarFile(io.File file) : super(file);
+  FileSystemTarFile(super.file);
 }
 
 class FileSystemGZipFile extends FileSystemFile with GZipFile {
-  FileSystemGZipFile(io.File file) : super(file);
+  FileSystemGZipFile(super.file);
 }
 
 class FileSystemBZip2File extends FileSystemFile with BZip2File {
-  FileSystemBZip2File(io.File file) : super(file);
+  FileSystemBZip2File(super.file);
 }
 
 
@@ -606,7 +625,7 @@ class ArchiveDirectory extends IoNode implements Directory {
           case FileType.bzip2: _files.add(ArchiveBZip2File(entryFullName, entry)); break;
           case FileType.text: _files.add(ArchiveUTF8TextFile(entryFullName, entry)); break;
           case FileType.latin1Text: _files.add(ArchiveLatin1TextFile(entryFullName, entry)); break;
-          case FileType.metadata: break; // ignore this file
+          case FileType.notPartOfBuild: break; // ignore this file
         }
       }
     }
@@ -641,33 +660,33 @@ class ArchiveFile extends IoNode implements File {
   final String fullName;
 
   @override
-  List<int> readBytes() {
-    return _file.content as List<int>;
+  List<int>? readBytes() {
+    return _file.content as List<int>?;
   }
 }
 
 class ArchiveUTF8TextFile extends ArchiveFile with UTF8TextFile {
-  ArchiveUTF8TextFile(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveUTF8TextFile(super.fullName, super.file);
 }
 
 class ArchiveLatin1TextFile extends ArchiveFile with Latin1TextFile {
-  ArchiveLatin1TextFile(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveLatin1TextFile(super.fullName, super.file);
 }
 
 class ArchiveZipFile extends ArchiveFile with ZipFile {
-  ArchiveZipFile(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveZipFile(super.fullName, super.file);
 }
 
 class ArchiveTarFile extends ArchiveFile with TarFile {
-  ArchiveTarFile(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveTarFile(super.fullName, super.file);
 }
 
 class ArchiveGZipFile extends ArchiveFile with GZipFile {
-  ArchiveGZipFile(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveGZipFile(super.fullName, super.file);
 }
 
 class ArchiveBZip2File extends ArchiveFile with BZip2File {
-  ArchiveBZip2File(String fullName, a.ArchiveFile file) : super(fullName, file);
+  ArchiveBZip2File(super.fullName, super.file);
 }
 
 
@@ -676,19 +695,19 @@ class ArchiveBZip2File extends ArchiveFile with BZip2File {
 class InMemoryFile extends IoNode implements File {
   InMemoryFile(this.fullName, this._bytes);
 
-  static InMemoryFile parse(String fullName, List<int> bytes) {
+  static InMemoryFile? parse(String fullName, List<int> bytes) {
     if (bytes.isEmpty) {
       return null;
     }
     switch (identifyFile(fullName, () => bytes)) {
-      case FileType.binary: return InMemoryFile(fullName, bytes); break;
-      case FileType.zip: return InMemoryZipFile(fullName, bytes); break;
-      case FileType.tar: return InMemoryTarFile(fullName, bytes); break;
-      case FileType.gz: return InMemoryGZipFile(fullName, bytes); break;
-      case FileType.bzip2: return InMemoryBZip2File(fullName, bytes); break;
-      case FileType.text: return InMemoryUTF8TextFile(fullName, bytes); break;
-      case FileType.latin1Text: return InMemoryLatin1TextFile(fullName, bytes); break;
-      case FileType.metadata: break; // ignore this file
+      case FileType.binary: return InMemoryFile(fullName, bytes);
+      case FileType.zip: return InMemoryZipFile(fullName, bytes);
+      case FileType.tar: return InMemoryTarFile(fullName, bytes);
+      case FileType.gz: return InMemoryGZipFile(fullName, bytes);
+      case FileType.bzip2: return InMemoryBZip2File(fullName, bytes);
+      case FileType.text: return InMemoryUTF8TextFile(fullName, bytes);
+      case FileType.latin1Text: return InMemoryLatin1TextFile(fullName, bytes);
+      case FileType.notPartOfBuild: break; // ignore this file
     }
     assert(false);
     return null;
@@ -707,25 +726,25 @@ class InMemoryFile extends IoNode implements File {
 }
 
 class InMemoryUTF8TextFile extends InMemoryFile with UTF8TextFile {
-  InMemoryUTF8TextFile(String fullName, List<int> file) : super(fullName, file);
+  InMemoryUTF8TextFile(super.fullName, super.file);
 }
 
 class InMemoryLatin1TextFile extends InMemoryFile with Latin1TextFile {
-  InMemoryLatin1TextFile(String fullName, List<int> file) : super(fullName, file);
+  InMemoryLatin1TextFile(super.fullName, super.file);
 }
 
 class InMemoryZipFile extends InMemoryFile with ZipFile {
-  InMemoryZipFile(String fullName, List<int> file) : super(fullName, file);
+  InMemoryZipFile(super.fullName, super.file);
 }
 
 class InMemoryTarFile extends InMemoryFile with TarFile {
-  InMemoryTarFile(String fullName, List<int> file) : super(fullName, file);
+  InMemoryTarFile(super.fullName, super.file);
 }
 
 class InMemoryGZipFile extends InMemoryFile with GZipFile {
-  InMemoryGZipFile(String fullName, List<int> file) : super(fullName, file);
+  InMemoryGZipFile(super.fullName, super.file);
 }
 
 class InMemoryBZip2File extends InMemoryFile with BZip2File {
-  InMemoryBZip2File(String fullName, List<int> file) : super(fullName, file);
+  InMemoryBZip2File(super.fullName, super.file);
 }

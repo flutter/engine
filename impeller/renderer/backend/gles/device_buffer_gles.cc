@@ -14,11 +14,10 @@
 
 namespace impeller {
 
-DeviceBufferGLES::DeviceBufferGLES(ReactorGLES::Ref reactor,
-                                   std::shared_ptr<Allocation> backing_store,
-                                   size_t size,
-                                   StorageMode mode)
-    : DeviceBuffer(size, mode),
+DeviceBufferGLES::DeviceBufferGLES(DeviceBufferDescriptor desc,
+                                   ReactorGLES::Ref reactor,
+                                   std::shared_ptr<Allocation> backing_store)
+    : DeviceBuffer(desc),
       reactor_(std::move(reactor)),
       handle_(reactor_ ? reactor_->CreateHandle(HandleType::kBuffer)
                        : HandleGLES::DeadHandle()),
@@ -32,20 +31,18 @@ DeviceBufferGLES::~DeviceBufferGLES() {
 }
 
 // |DeviceBuffer|
-bool DeviceBufferGLES::CopyHostBuffer(const uint8_t* source,
-                                      Range source_range,
-                                      size_t offset) {
-  if (mode_ != StorageMode::kHostVisible) {
-    // One of the storage modes where a transfer queue must be used.
-    return false;
-  }
-
+uint8_t* DeviceBufferGLES::OnGetContents() const {
   if (!reactor_) {
-    return false;
+    return nullptr;
   }
+  return backing_store_->GetBuffer();
+}
 
-  if (offset + source_range.length > size_) {
-    // Out of bounds of this buffer.
+// |DeviceBuffer|
+bool DeviceBufferGLES::OnCopyHostBuffer(const uint8_t* source,
+                                        Range source_range,
+                                        size_t offset) {
+  if (!reactor_) {
     return false;
   }
 
@@ -112,4 +109,15 @@ bool DeviceBufferGLES::SetLabel(const std::string& label, Range range) {
 const uint8_t* DeviceBufferGLES::GetBufferData() const {
   return backing_store_->GetBuffer();
 }
+
+void DeviceBufferGLES::UpdateBufferData(
+    const std::function<void(uint8_t* data, size_t length)>&
+        update_buffer_data) {
+  if (update_buffer_data) {
+    update_buffer_data(backing_store_->GetBuffer(),
+                       backing_store_->GetLength());
+    ++generation_;
+  }
+}
+
 }  // namespace impeller

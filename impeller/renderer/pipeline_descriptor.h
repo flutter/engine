@@ -24,6 +24,7 @@ namespace impeller {
 
 class ShaderFunction;
 class VertexDescriptor;
+template <typename T>
 class Pipeline;
 
 class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
@@ -70,17 +71,17 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   const ColorAttachmentDescriptor* GetLegacyCompatibleColorAttachment() const;
 
   PipelineDescriptor& SetDepthStencilAttachmentDescriptor(
-      DepthAttachmentDescriptor desc);
+      std::optional<DepthAttachmentDescriptor> desc);
 
   std::optional<DepthAttachmentDescriptor> GetDepthStencilAttachmentDescriptor()
       const;
 
   PipelineDescriptor& SetStencilAttachmentDescriptors(
-      StencilAttachmentDescriptor front_and_back);
+      std::optional<StencilAttachmentDescriptor> front_and_back);
 
   PipelineDescriptor& SetStencilAttachmentDescriptors(
-      StencilAttachmentDescriptor front,
-      StencilAttachmentDescriptor back);
+      std::optional<StencilAttachmentDescriptor> front,
+      std::optional<StencilAttachmentDescriptor> back);
 
   std::optional<StencilAttachmentDescriptor>
   GetFrontStencilAttachmentDescriptor() const;
@@ -114,6 +115,10 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
 
   WindingOrder GetWindingOrder() const;
 
+  void SetPrimitiveType(PrimitiveType type);
+
+  PrimitiveType GetPrimitiveType() const;
+
  private:
   std::string label_;
   SampleCount sample_count_ = SampleCount::kCount1;
@@ -130,12 +135,7 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
       front_stencil_attachment_descriptor_;
   std::optional<StencilAttachmentDescriptor>
       back_stencil_attachment_descriptor_;
+  PrimitiveType primitive_type_ = PrimitiveType::kTriangle;
 };
-
-using PipelineMap =
-    std::unordered_map<PipelineDescriptor,
-                       std::shared_future<std::shared_ptr<Pipeline>>,
-                       ComparableHash<PipelineDescriptor>,
-                       ComparableEqual<PipelineDescriptor>>;
 
 }  // namespace impeller

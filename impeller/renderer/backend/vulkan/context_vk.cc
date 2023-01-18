@@ -2,33 +2,85 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/68331
+
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "flutter/fml/build_config.h"
+#include "flutter/fml/string_conversion.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/base/work_queue_common.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "vulkan/vulkan.hpp"
+#include "impeller/renderer/backend_features.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
+namespace {
+
+VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT severity,
+    VkDebugUtilsMessageTypeFlagsEXT type,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+  const auto prefix = impeller::vk::to_string(
+      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+
+  FML_DCHECK(false) << prefix << "[" << pCallbackData->messageIdNumber << "]["
+                    << pCallbackData->pMessageIdName
+                    << "] : " << pCallbackData->pMessage;
+
+  // The return value of this callback controls whether the Vulkan call that
+  // caused the validation message will be aborted or not We return VK_TRUE as
+  // we DO want Vulkan calls that cause a validation message to abort
+  return VK_TRUE;
+}
+
+}  // namespace
+
 namespace impeller {
+
+namespace vk {
+
+bool HasValidationLayers() {
+  auto capabilities = std::make_unique<CapabilitiesVK>();
+  return capabilities->HasLayer(kKhronosValidationLayerName);
+}
+
+}  // namespace vk
 
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
+#endif
+};
+
+std::vector<std::string> kRequiredWSIInstanceExtensions = {
+#if FML_OS_WIN
+    "VK_KHR_win32_surface",
+#elif FML_OS_ANDROID
+    "VK_KHR_android_surface",
+#elif FML_OS_LINUX
+    "VK_KHR_xcb_surface",
+    "VK_KHR_xlib_surface",
+    "VK_KHR_wayland_surface",
+#elif FML_OS_MACOSX
+    "VK_EXT_metal_surface",
 #endif
 };
 
@@ -50,17 +102,19 @@ static bool HasRequiredQueues(const vk::PhysicalDevice& device) {
                                     vk::QueueFlagBits::eTransfer));
 }
 
-static bool HasRequiredExtensions(const vk::PhysicalDevice& device) {
+static std::vector<std::string> HasRequiredExtensions(
+    const vk::PhysicalDevice& device) {
   std::set<std::string> exts;
+  std::vector<std::string> missing;
   for (const auto& ext : device.enumerateDeviceExtensionProperties().value) {
     exts.insert(ext.extensionName);
   }
   for (const auto& req_ext : kRequiredDeviceExtensions) {
     if (exts.count(req_ext) != 1u) {
-      return false;
+      missing.push_back(req_ext);
     }
   }
-  return true;
+  return missing;
 }
 
 static vk::PhysicalDeviceFeatures GetRequiredPhysicalDeviceFeatures() {
@@ -80,15 +134,17 @@ static bool HasRequiredProperties(const vk::PhysicalDevice& device) {
 
 static bool IsPhysicalDeviceCompatible(const vk::PhysicalDevice& device) {
   if (!HasRequiredQueues(device)) {
-    VALIDATION_LOG << "Device doesn't have required queues.";
+    FML_LOG(ERROR) << "Device doesn't have required queues.";
     return false;
   }
-  if (!HasRequiredExtensions(device)) {
-    VALIDATION_LOG << "Device doesn't have required extensions.";
+  auto missing_exts = HasRequiredExtensions(device);
+  if (!missing_exts.empty()) {
+    FML_LOG(ERROR) << "Device doesn't have required extensions: "
+                   << fml::Join(missing_exts, ", ");
     return false;
   }
   if (!HasRequiredProperties(device)) {
-    VALIDATION_LOG << "Device doesn't have required properties.";
+    FML_LOG(ERROR) << "Device doesn't have required properties.";
     return false;
   }
   return true;
@@ -252,14 +308,29 @@ ContextVK::ContextVK(
   enabled_extensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
   //----------------------------------------------------------------------------
+  /// Enable WSI Instance Extensions. Having any one of these is sufficient.
+  ///
+  bool has_wsi_extensions = false;
+  for (const auto& wsi_ext : kRequiredWSIInstanceExtensions) {
+    if (capabilities->HasExtension(wsi_ext)) {
+      enabled_extensions.push_back(wsi_ext.c_str());
+      has_wsi_extensions = true;
+    }
+  }
+  if (!has_wsi_extensions) {
+    VALIDATION_LOG
+        << "Instance doesn't have any of the required WSI extensions: "
+        << fml::Join(kRequiredWSIInstanceExtensions, ", ");
+    return;
+  }
+
+  //----------------------------------------------------------------------------
   /// Enable any and all validation as well as debug toggles.
   ///
   auto has_debug_utils = false;
-  constexpr const char* kKhronosValidationLayerName =
-      "VK_LAYER_KHRONOS_validation";
-  if (capabilities->HasLayer(kKhronosValidationLayerName)) {
-    enabled_layers.push_back(kKhronosValidationLayerName);
-    if (capabilities->HasLayerExtension(kKhronosValidationLayerName,
+  if (vk::HasValidationLayers()) {
+    enabled_layers.push_back(vk::kKhronosValidationLayerName);
+    if (capabilities->HasLayerExtension(vk::kKhronosValidationLayerName,
                                         VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
       enabled_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
       has_debug_utils = true;
@@ -272,7 +343,7 @@ ContextVK::ContextVK(
 
   vk::ApplicationInfo application_info;
   application_info.setApplicationVersion(VK_API_VERSION_1_0);
-  application_info.setApiVersion(VK_API_VERSION_1_0);
+  application_info.setApiVersion(VK_API_VERSION_1_1);
   application_info.setEngineVersion(VK_API_VERSION_1_0);
   application_info.setPEngineName("Impeller");
   application_info.setPApplicationName("Impeller");
@@ -296,7 +367,6 @@ ContextVK::ContextVK(
 
   if (has_debug_utils) {
     vk::DebugUtilsMessengerCreateInfoEXT debug_messenger_info;
-
     debug_messenger_info.messageSeverity =
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning |
         vk::DebugUtilsMessageSeverityFlagBitsEXT::eError;
@@ -305,16 +375,7 @@ ContextVK::ContextVK(
         vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance |
         vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation;
     debug_messenger_info.pUserData = nullptr;
-    debug_messenger_info.pfnUserCallback =
-        [](VkDebugUtilsMessageSeverityFlagBitsEXT severity,
-           VkDebugUtilsMessageTypeFlagsEXT type,
-           const VkDebugUtilsMessengerCallbackDataEXT* data,
-           void* user_data) -> VkBool32 {
-      FML_DCHECK(false)
-          << vk::to_string(vk::DebugUtilsMessageSeverityFlagBitsEXT{severity})
-          << ": " << data->pMessage;
-      return true;
-    };
+    debug_messenger_info.pfnUserCallback = DebugUtilsMessengerCallback;
 
     auto debug_messenger_result =
         instance.value->createDebugUtilsMessengerEXTUnique(
@@ -337,6 +398,7 @@ ContextVK::ContextVK(
 
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
+  graphics_queue_idx_ = graphics_queue->index;
   auto transfer_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eTransfer);
   auto compute_queue =
@@ -430,8 +492,7 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
-  graphics_command_pool_ =
-      CommandPoolVK::Create(*device_, graphics_queue->index);
+
   is_valid_ = true;
 }
 
@@ -463,18 +524,38 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  return CommandBufferVK::Create(weak_from_this(), *device_,
-                                 graphics_command_pool_->Get(),
-                                 surface_producer_.get());
+  return CommandBufferVK::Create(weak_from_this(), *device_);
 }
 
 vk::Instance ContextVK::GetInstance() const {
   return *instance_;
 }
 
-std::unique_ptr<Surface> ContextVK::AcquireSurface() {
-  return surface_producer_->AcquireSurface();
+std::unique_ptr<Surface> ContextVK::AcquireSurface(size_t current_frame) {
+  return surface_producer_->AcquireSurface(current_frame);
 }
+
+#ifdef FML_OS_ANDROID
+
+vk::UniqueSurfaceKHR ContextVK::CreateAndroidSurface(
+    ANativeWindow* window) const {
+  if (!instance_) {
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  auto create_info = vk::AndroidSurfaceCreateInfoKHR().setWindow(window);
+  auto surface_res = instance_->createAndroidSurfaceKHRUnique(create_info);
+
+  if (surface_res.result != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Could not create Android surface, error: "
+                   << vk::to_string(surface_res.result);
+    return vk::UniqueSurfaceKHR{VK_NULL_HANDLE};
+  }
+
+  return std::move(surface_res.value);
+}
+
+#endif  // FML_OS_ANDROID
 
 void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
   surface_ = std::move(surface);
@@ -490,6 +571,7 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
   if (!swapchain_details) {
     return;
   }
+  surface_format_ = swapchain_details->PickSurfaceFormat().format;
   swapchain_ = SwapchainVK::Create(*device_, *surface_, *swapchain_details);
   auto weak_this = weak_from_this();
   surface_producer_ = SurfaceProducerVK::Create(
@@ -503,6 +585,26 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
 
 bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
+}
+
+std::unique_ptr<DescriptorPoolVK> ContextVK::CreateDescriptorPool() const {
+  return std::make_unique<DescriptorPoolVK>(*device_);
+}
+
+PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
+  return ToPixelFormat(surface_format_);
+}
+
+const BackendFeatures& ContextVK::GetBackendFeatures() const {
+  return kModernBackendFeatures;
+}
+
+vk::Queue ContextVK::GetGraphicsQueue() const {
+  return graphics_queue_;
+}
+
+std::unique_ptr<CommandPoolVK> ContextVK::CreateGraphicsCommandPool() const {
+  return CommandPoolVK::Create(*device_, graphics_queue_idx_);
 }
 
 }  // namespace impeller

@@ -159,6 +159,27 @@ Future<void> testMain() async {
       editingStrategy!.disable();
     });
 
+    test('Knows how to create non-default text actions', () {
+      final InputConfiguration config = InputConfiguration(
+        inputAction: 'TextInputAction.send'
+      );
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+      expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(1));
+      final DomElement input = defaultTextEditingRoot.querySelector('input')!;
+      expect(editingStrategy!.domElement, input);
+      if (operatingSystem == OperatingSystem.iOs || operatingSystem == OperatingSystem.android){
+        expect(input.getAttribute('enterkeyhint'), 'send');
+      } else {
+        expect(input.getAttribute('enterkeyhint'), null);
+      }
+
+      editingStrategy!.disable();
+    });
+
     test('Knows to turn autocorrect off', () {
       final InputConfiguration config = InputConfiguration(
         autocorrect: false,
@@ -342,9 +363,7 @@ Future<void> testMain() async {
         keyCode: _kReturnKeyCode,
       );
       expect(lastInputAction, 'TextInputAction.done');
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('Triggers input action in multi-line mode', () {
       final InputConfiguration config = InputConfiguration(
@@ -369,6 +388,28 @@ Future<void> testMain() async {
       expect(lastInputAction, 'TextInputAction.done');
       // And default behavior of keyboard event shouldn't have been prevented.
       expect(event.defaultPrevented, isFalse);
+    });
+
+    test('Triggers input action and prevent new line key event for single line field', () {
+      // Regression test for https://github.com/flutter/flutter/issues/113559
+      final InputConfiguration config = InputConfiguration();
+      editingStrategy!.enable(
+        config,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      // No input action so far.
+      expect(lastInputAction, isNull);
+
+      final DomKeyboardEvent event = dispatchKeyboardEvent(
+        editingStrategy!.domElement!,
+        'keydown',
+        keyCode: _kReturnKeyCode,
+      );
+      expect(lastInputAction, 'TextInputAction.done');
+      // And default behavior of keyboard event should have been prevented.
+      expect(event.defaultPrevented, isTrue);
     });
 
     test('globally positions and sizes its DOM element', () {
@@ -666,9 +707,7 @@ Future<void> testMain() async {
       // DOM element still keeps the focus.
       expect(defaultTextEditingRoot.activeElement,
           textEditing!.strategy.domElement);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('focus and disconnection with delaying blur in iOS', () async {
       final MethodCall setClient = MethodCall(
@@ -767,9 +806,7 @@ Future<void> testMain() async {
       spy.messages.clear();
       // Input element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('input'), hasLength(0));
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('finishAutofillContext removes form from DOM', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -825,9 +862,7 @@ Future<void> testMain() async {
       // Form element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), isEmpty);
       expect(formsOnTheDom, hasLength(0));
-    },
-        // TODO(nurhan): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('finishAutofillContext with save submits forms', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -880,9 +915,7 @@ Future<void> testMain() async {
 
       // `submit` action is called on form.
       await expectLater(await submittedForm.future, isTrue);
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('forms submits for focused input', () async {
       // Create a configuration with an AutofillGroup of four text fields.
@@ -941,9 +974,7 @@ Future<void> testMain() async {
       // Form element is removed from DOM.
       expect(defaultTextEditingRoot.querySelectorAll('form'), hasLength(0));
       expect(formsOnTheDom, hasLength(0));
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('setClient, setEditingState, show, setClient', () {
       final MethodCall setClient = MethodCall(
@@ -1388,7 +1419,6 @@ Future<void> testMain() async {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
-          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(textEditing!.strategy.domElement!.classList.contains('transparentTextEditing'),
             isTrue);
@@ -1549,8 +1579,8 @@ Future<void> testMain() async {
             'text': 'something',
             'selectionBase': 9,
             'selectionExtent': 9,
-            'composingBase': null,
-            'composingExtent': null
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1575,8 +1605,8 @@ Future<void> testMain() async {
             'text': 'something',
             'selectionBase': 2,
             'selectionExtent': 5,
-            'composingBase': null,
-            'composingExtent': null
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1633,8 +1663,8 @@ Future<void> testMain() async {
                 'deltaEnd': -1,
                 'selectionBase': 2,
                 'selectionExtent': 5,
-                'composingBase': null,
-                'composingExtent': null
+                'composingBase': -1,
+                'composingExtent': -1
               }
             ],
           }
@@ -1716,8 +1746,8 @@ Future<void> testMain() async {
               'text': 'something',
               'selectionBase': 9,
               'selectionExtent': 9,
-              'composingBase': null,
-              'composingExtent': null
+              'composingBase': -1,
+              'composingExtent': -1
             }
           },
         ],
@@ -1788,8 +1818,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 14,
             'selectionExtent': 14,
-            'composingBase': null,
-            'composingExtent': null
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1804,8 +1834,8 @@ Future<void> testMain() async {
             'text': 'something\nelse',
             'selectionBase': 2,
             'selectionExtent': 5,
-            'composingBase': null,
-            'composingExtent': null
+            'composingBase': -1,
+            'composingExtent': -1
           }
         ],
       );
@@ -1914,9 +1944,7 @@ Future<void> testMain() async {
         spy.messages[0].methodArguments,
         <dynamic>[clientId, 'TextInputAction.next'],
       );
-    },
-        // TODO(mdebbar): https://github.com/flutter/flutter/issues/50769
-        skip: browserEngine == BrowserEngine.edge);
+    });
 
     test('sends input action in multi-line mode', () {
       showKeyboard(
@@ -1997,7 +2025,6 @@ Future<void> testMain() async {
 
       // For `blink` and `webkit` browser engines the overlay would be hidden.
       if (browserEngine == BrowserEngine.blink ||
-          browserEngine == BrowserEngine.samsung ||
           browserEngine == BrowserEngine.webkit) {
         expect(firstElement.classList.contains('transparentTextEditing'), isTrue);
       } else {
@@ -2226,6 +2253,34 @@ Future<void> testMain() async {
       );
     });
 
+    test('Sets default composing offsets if none given', () {
+      final EditingState editingState =
+          EditingState(text: 'Test', baseOffset: 2, extentOffset: 4);
+      final EditingState editingStateFromFrameworkMsg =
+          EditingState.fromFrameworkMessage(<String, dynamic>{
+        'selectionBase': 10,
+        'selectionExtent': 4,
+      });
+
+      expect(editingState.composingBaseOffset, -1);
+      expect(editingState.composingExtentOffset, -1);
+
+      expect(editingStateFromFrameworkMsg.composingBaseOffset, -1);
+      expect(editingStateFromFrameworkMsg.composingExtentOffset, -1);
+    });
+
+    test('Correctly identifies min and max offsets', () {
+      final EditingState flippedEditingState =
+          EditingState(baseOffset: 10, extentOffset: 4);
+      final EditingState normalEditingState =
+          EditingState(baseOffset: 2, extentOffset: 6);
+
+      expect(flippedEditingState.minOffset, 4);
+      expect(flippedEditingState.maxOffset, 10);
+      expect(normalEditingState.minOffset, 2);
+      expect(normalEditingState.maxOffset, 6);
+    });
+
     test('Configure input element from the editing state', () {
       final DomHTMLInputElement input =
           defaultTextEditingRoot.querySelector('input')! as DomHTMLInputElement;
@@ -2257,6 +2312,20 @@ Future<void> testMain() async {
       expect(textArea.value, 'Test');
       expect(textArea.selectionStart, 1);
       expect(textArea.selectionEnd, 2);
+    });
+
+    test('Configure input element editing state for a flipped base and extent',
+        () {
+      final DomHTMLInputElement input =
+          defaultTextEditingRoot.querySelector('input')! as DomHTMLInputElement;
+      editingState =
+          EditingState(text: 'Hello World', baseOffset: 10, extentOffset: 2);
+
+      editingState.applyToDomElement(input);
+
+      expect(input.value, 'Hello World');
+      expect(input.selectionStart, 2);
+      expect(input.selectionEnd, 10);
     });
 
     test('Get Editing State from input element', () {
@@ -2313,6 +2382,17 @@ Future<void> testMain() async {
         expect(editingState1 != editingState3, isTrue);
       });
 
+      test('Takes flipped base and extent offsets into account', () {
+        final EditingState flippedEditingState =
+            EditingState(baseOffset: 10, extentOffset: 4);
+        final EditingState normalEditingState =
+            EditingState(baseOffset: 4, extentOffset: 10);
+
+        expect(normalEditingState, flippedEditingState);
+
+        expect(normalEditingState == flippedEditingState, isTrue);
+      });
+
       test('takes composition range into account', () {
           final EditingState editingState1 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
           final EditingState editingState2 = EditingState(composingBaseOffset: 1, composingExtentOffset: 2);
@@ -2344,10 +2424,18 @@ Future<void> testMain() async {
       expect(textEditingDeltaState.composingExtent, -1);
     });
 
-    test('Verify correct delta is inferred - deletion', () {
+    test('Verify correct delta is inferred - Backward deletion - Empty selection', () {
       final EditingState newEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
       final EditingState lastEditState = EditingState(text: 'world', baseOffset: 5, extentOffset: 5);
-      final TextEditingDeltaState deltaState = TextEditingDeltaState(oldText: 'world', deltaStart: 4, deltaEnd: 5, baseOffset: -1, extentOffset: -1, composingOffset: -1, composingExtent: -1);
+      // `deltaState.deltaEnd` is initialized accordingly to what is done in `DefaultTextEditingStrategy.handleBeforeInput`
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(
+        oldText: 'world',
+        deltaEnd: 5,
+        baseOffset: -1,
+        extentOffset: -1,
+        composingOffset: -1,
+        composingExtent: -1,
+      );
 
       final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
 
@@ -2357,6 +2445,56 @@ Future<void> testMain() async {
       expect(textEditingDeltaState.deltaEnd, 5);
       expect(textEditingDeltaState.baseOffset, 4);
       expect(textEditingDeltaState.extentOffset, 4);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
+    test('Verify correct delta is inferred - Forward deletion - Empty selection', () {
+      final EditingState newEditState = EditingState(text: 'worl', baseOffset: 4, extentOffset: 4);
+      final EditingState lastEditState = EditingState(text: 'world', baseOffset: 4, extentOffset: 4);
+      // `deltaState.deltaEnd` is initialized accordingly to what is done in `DefaultTextEditingStrategy.handleBeforeInput`
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(
+        oldText: 'world',
+        deltaEnd: 4,
+        baseOffset: -1,
+        extentOffset: -1,
+        composingOffset: -1,
+        composingExtent: -1,
+      );
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'world');
+      expect(textEditingDeltaState.deltaText, '');
+      expect(textEditingDeltaState.deltaStart, 4);
+      expect(textEditingDeltaState.deltaEnd, 5);
+      expect(textEditingDeltaState.baseOffset, 4);
+      expect(textEditingDeltaState.extentOffset, 4);
+      expect(textEditingDeltaState.composingOffset, -1);
+      expect(textEditingDeltaState.composingExtent, -1);
+    });
+
+    test('Verify correct delta is inferred - Deletion - Non-empty selection', () {
+      final EditingState newEditState = EditingState(text: 'w', baseOffset: 1, extentOffset: 1);
+      final EditingState lastEditState = EditingState(text: 'world', baseOffset: 1, extentOffset: 5);
+      // `deltaState.deltaEnd` is initialized accordingly to what is done in `DefaultTextEditingStrategy.handleBeforeInput`
+      final TextEditingDeltaState deltaState = TextEditingDeltaState(
+        oldText: 'world',
+        deltaEnd: 5,
+        baseOffset: -1,
+        extentOffset: -1,
+        composingOffset: -1,
+        composingExtent: -1,
+      );
+
+      final TextEditingDeltaState textEditingDeltaState = TextEditingDeltaState.inferDeltaState(newEditState, lastEditState, deltaState);
+
+      expect(textEditingDeltaState.oldText, 'world');
+      expect(textEditingDeltaState.deltaText, '');
+      expect(textEditingDeltaState.deltaStart, 1);
+      expect(textEditingDeltaState.deltaEnd, 5);
+      expect(textEditingDeltaState.baseOffset, 1);
+      expect(textEditingDeltaState.extentOffset, 1);
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
@@ -2411,6 +2549,38 @@ Future<void> testMain() async {
       expect(textEditingDeltaState.composingOffset, -1);
       expect(textEditingDeltaState.composingExtent, -1);
     });
+  });
+
+  group('text editing styles', () {
+    test('invisible element', () {
+      editingStrategy!.enable(
+        singlelineConfig,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      final DomHTMLElement input = editingStrategy!.activeDomElement;
+      expect(input.style.color, 'transparent');
+      expect(input.style.background, 'transparent');
+      expect(input.style.backgroundColor, 'transparent');
+      expect(input.style.caretColor, 'transparent');
+      expect(input.style.outline, 'none');
+      expect(input.style.border, 'none');
+      expect(input.style.textShadow, 'none');
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/115327
+    }, skip: isFirefox);
+
+    test('prevents effect of (forced-colors: active)', () {
+      editingStrategy!.enable(
+        singlelineConfig,
+        onChange: trackEditingState,
+        onAction: trackInputAction,
+      );
+
+      final DomHTMLElement input = editingStrategy!.activeDomElement;
+      expect(input.style.getPropertyValue('forced-color-adjust'), 'none');
+    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/115327
+    }, skip: isFirefox || isSafari);
   });
 }
 

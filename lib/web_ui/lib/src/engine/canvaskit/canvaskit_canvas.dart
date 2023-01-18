@@ -66,6 +66,11 @@ class CanvasKitCanvas implements ui.Canvas {
   }
 
   @override
+  void restoreToCount(int count) {
+    _canvas.restoreToCount(count);
+  }
+
+  @override
   int getSaveCount() {
     return _canvas.saveCount!;
   }
@@ -321,7 +326,7 @@ class CanvasKitCanvas implements ui.Canvas {
       pointMode,
       skPoints.toTypedArray(),
     );
-    freeFloat32List(skPoints);
+    free(skPoints);
   }
 
   @override

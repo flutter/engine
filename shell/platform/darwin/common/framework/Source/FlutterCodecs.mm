@@ -6,6 +6,8 @@
 
 #include <cstring>
 
+FLUTTER_ASSERT_ARC
+
 @implementation FlutterBinaryCodec
 + (instancetype)sharedInstance {
   static id _sharedInstance = nil;
@@ -48,7 +50,7 @@
   if (message == nil) {
     return nil;
   }
-  return [[[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding] autorelease];
+  return [[NSString alloc] initWithData:message encoding:NSUTF8StringEncoding];
 }
 @end
 
@@ -66,17 +68,18 @@
     return nil;
   }
   NSData* encoding;
+  NSError* error;
   if ([message isKindOfClass:[NSArray class]] || [message isKindOfClass:[NSDictionary class]]) {
-    encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:nil];
+    encoding = [NSJSONSerialization dataWithJSONObject:message options:0 error:&error];
   } else {
     // NSJSONSerialization does not support top-level simple values.
     // We encode as singleton array, then extract the relevant bytes.
-    encoding = [NSJSONSerialization dataWithJSONObject:@[ message ] options:0 error:nil];
+    encoding = [NSJSONSerialization dataWithJSONObject:@[ message ] options:0 error:&error];
     if (encoding) {
       encoding = [encoding subdataWithRange:NSMakeRange(1, encoding.length - 2)];
     }
   }
-  NSAssert(encoding, @"Invalid JSON message, encoding failed");
+  NSAssert(encoding, @"Invalid JSON message, encoding failed: %@", error);
   return encoding;
 }
 

@@ -4,13 +4,15 @@
 
 #include "impeller/entity/contents/filters/inputs/filter_contents_filter_input.h"
 
+#include <utility>
+
 #include "impeller/entity/contents/filters/filter_contents.h"
 
 namespace impeller {
 
 FilterContentsFilterInput::FilterContentsFilterInput(
     std::shared_ptr<FilterContents> filter)
-    : filter_(filter) {}
+    : filter_(std::move(filter)) {}
 
 FilterContentsFilterInput::~FilterContentsFilterInput() = default;
 
@@ -34,7 +36,7 @@ std::optional<Rect> FilterContentsFilterInput::GetCoverage(
 
 Matrix FilterContentsFilterInput::GetLocalTransform(
     const Entity& entity) const {
-  return filter_->GetLocalTransform();
+  return filter_->GetLocalTransform(entity.GetTransformation());
 }
 
 Matrix FilterContentsFilterInput::GetTransform(const Entity& entity) const {

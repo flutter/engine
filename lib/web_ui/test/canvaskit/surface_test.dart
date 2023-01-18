@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_util' as js_util;
+
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
@@ -21,7 +23,7 @@ void testMain() {
     });
 
     test('Surface allocates canvases efficiently', () {
-      final Surface? surface = SurfaceFactory.instance.getOverlay();
+      final Surface? surface = SurfaceFactory.instance.getSurface();
       final CkSurface originalSurface =
           surface!.acquireFrame(const ui.Size(9, 19)).skiaSurface;
       final DomCanvasElement original = surface.htmlCanvas!;
@@ -35,7 +37,8 @@ void testMain() {
       expect(originalSurface.width(), 9);
       expect(originalSurface.height(), 19);
 
-      // Shrinking reuses the existing canvas but translates it so Skia renders into the visible area.
+      // Shrinking reuses the existing canvas but translates it so
+      // Skia renders into the visible area.
       final CkSurface shrunkSurface =
           surface.acquireFrame(const ui.Size(5, 15)).skiaSurface;
       final DomCanvasElement shrunk = surface.htmlCanvas!;
@@ -43,16 +46,16 @@ void testMain() {
       expect(shrunk.style.width, '9px');
       expect(shrunk.style.height, '19px');
       expect(shrunk.style.transform, _isTranslate(0, -4));
-      expect(shrunkSurface, isNot(same(original)));
+      expect(shrunkSurface, isNot(same(originalSurface)));
       expect(shrunkSurface.width(), 5);
       expect(shrunkSurface.height(), 15);
 
-      // The first increase will allocate a new canvas, but will overallocate
+      // The first increase will allocate a new surface, but will overallocate
       // by 40% to accommodate future increases.
       final CkSurface firstIncreaseSurface =
           surface.acquireFrame(const ui.Size(10, 20)).skiaSurface;
       final DomCanvasElement firstIncrease = surface.htmlCanvas!;
-      expect(firstIncrease, isNot(same(original)));
+      expect(firstIncrease, same(original));
       expect(firstIncreaseSurface, isNot(same(shrunkSurface)));
 
       // Expect overallocated dimensions
@@ -77,7 +80,7 @@ void testMain() {
       // Increases beyond the 40% limit will cause a new allocation.
       final CkSurface hugeSurface = surface.acquireFrame(const ui.Size(20, 40)).skiaSurface;
       final DomCanvasElement huge = surface.htmlCanvas!;
-      expect(huge, isNot(same(secondIncrease)));
+      expect(huge, same(secondIncrease));
       expect(hugeSurface, isNot(same(secondIncreaseSurface)));
 
       // Also over-allocated
@@ -125,7 +128,7 @@ void testMain() {
     test(
       'Surface creates new context when WebGL context is restored',
       () async {
-        final Surface? surface = SurfaceFactory.instance.getOverlay();
+        final Surface? surface = SurfaceFactory.instance.getSurface();
         expect(surface!.debugForceNewContext, isTrue);
         final CkSurface before =
             surface.acquireFrame(const ui.Size(9, 19)).skiaSurface;
@@ -141,20 +144,23 @@ void testMain() {
         // Emulate WebGL context loss.
         final DomCanvasElement canvas =
             surface.htmlElement.children.single as DomCanvasElement;
-        final dynamic ctx = canvas.getContext('webgl2');
-        expect(ctx, isNotNull);
-        final dynamic loseContextExtension =
-            ctx.getExtension('WEBGL_lose_context');
-        loseContextExtension.loseContext();
+        final Object ctx = canvas.getContext('webgl2')!;
+        final Object loseContextExtension = js_util.callMethod(
+          ctx,
+          'getExtension',
+          <String>['WEBGL_lose_context'],
+        );
+        js_util.callMethod(loseContextExtension, 'loseContext', const <void>[]);
 
         // Pump a timer to allow the "lose context" event to propagate.
         await Future<void>.delayed(Duration.zero);
         // We don't create a new GL context until the context is restored.
         expect(surface.debugContextLost, isTrue);
-        expect(ctx.isContextLost(), isTrue);
+        final bool isContextLost = js_util.callMethod<bool>(ctx, 'isContextLost', const <void>[]);
+        expect(isContextLost, isTrue);
 
         // Emulate WebGL context restoration.
-        loseContextExtension.restoreContext();
+        js_util.callMethod(loseContextExtension, 'restoreContext', const <void>[]);
 
         // Pump a timer to allow the "restore context" event to propagate.
         await Future<void>.delayed(Duration.zero);
@@ -165,8 +171,8 @@ void testMain() {
         // A new context is created.
         expect(afterContextLost, isNot(same(before)));
       },
-      // Firefox doesn't have the WEBGL_lose_context extension.
-      skip: isFirefox || isSafari,
+      // Firefox can't create a WebGL2 context in headless mode.
+      skip: isFirefox,
     );
 
     // Regression test for https://github.com/flutter/flutter/issues/75286

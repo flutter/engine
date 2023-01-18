@@ -75,10 +75,10 @@ void Path::SetContourClosed(bool is_closed) {
 }
 
 void Path::EnumerateComponents(
-    Applier<LinearPathComponent> linear_applier,
-    Applier<QuadraticPathComponent> quad_applier,
-    Applier<CubicPathComponent> cubic_applier,
-    Applier<ContourComponent> contour_applier) const {
+    const Applier<LinearPathComponent>& linear_applier,
+    const Applier<QuadraticPathComponent>& quad_applier,
+    const Applier<CubicPathComponent>& cubic_applier,
+    const Applier<ContourComponent>& contour_applier) const {
   size_t currentIndex = 0;
   for (const auto& component : components_) {
     switch (component.type) {
@@ -221,8 +221,7 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(
-    const SmoothingApproximation& approximation) const {
+Path::Polyline Path::CreatePolyline(Scalar tolerance) const {
   Polyline polyline;
 
   std::optional<Point> previous_contour_point;
@@ -231,8 +230,6 @@ Path::Polyline Path::CreatePolyline(
     if (collection.empty()) {
       return;
     }
-
-    polyline.points.reserve(polyline.points.size() + collection.size());
 
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
@@ -253,10 +250,10 @@ Path::Polyline Path::CreatePolyline(
         collect_points(linears_[component.index].CreatePolyline());
         break;
       case ComponentType::kQuadratic:
-        collect_points(quads_[component.index].CreatePolyline(approximation));
+        collect_points(quads_[component.index].CreatePolyline(tolerance));
         break;
       case ComponentType::kCubic:
-        collect_points(cubics_[component.index].CreatePolyline(approximation));
+        collect_points(cubics_[component.index].CreatePolyline(tolerance));
         break;
       case ComponentType::kContour:
         if (component_i == components_.size() - 1) {
@@ -302,33 +299,37 @@ std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
 
   std::optional<Point> min, max;
 
-  auto clamp = [&min, &max](const std::vector<Point>& extrema) {
-    for (const auto& extremum : extrema) {
-      if (!min.has_value()) {
-        min = extremum;
-      }
+  auto clamp = [&min, &max](const Point& point) {
+    if (min.has_value()) {
+      min->x = std::min(min->x, point.x);
+      min->y = std::min(min->y, point.y);
+    } else {
+      min = point;
+    }
 
-      if (!max.has_value()) {
-        max = extremum;
-      }
-
-      min->x = std::min(min->x, extremum.x);
-      min->y = std::min(min->y, extremum.y);
-      max->x = std::max(max->x, extremum.x);
-      max->y = std::max(max->y, extremum.y);
+    if (max.has_value()) {
+      max->x = std::max(max->x, point.x);
+      max->y = std::max(max->y, point.y);
+    } else {
+      max = point;
     }
   };
 
   for (const auto& linear : linears_) {
-    clamp(linear.Extrema());
+    clamp(linear.p1);
+    clamp(linear.p2);
   }
 
   for (const auto& quad : quads_) {
-    clamp(quad.Extrema());
+    for (const Point& point : quad.Extrema()) {
+      clamp(point);
+    }
   }
 
   for (const auto& cubic : cubics_) {
-    clamp(cubic.Extrema());
+    for (const Point& point : cubic.Extrema()) {
+      clamp(point);
+    }
   }
 
   if (!min.has_value() || !max.has_value()) {

@@ -4,6 +4,8 @@
 
 #include "flutter/shell/common/shell_io_manager.h"
 
+#include <utility>
+
 #include "flutter/fml/message_loop.h"
 #include "flutter/shell/common/context_options.h"
 #include "third_party/skia/include/gpu/gl/GrGLInterface.h"
@@ -12,7 +14,7 @@ namespace flutter {
 
 sk_sp<GrDirectContext> ShellIOManager::CreateCompatibleResourceLoadingContext(
     GrBackend backend,
-    sk_sp<const GrGLInterface> gl_interface) {
+    const sk_sp<const GrGLInterface>& gl_interface) {
 #if SK_GL
   if (backend != GrBackend::kOpenGL_GrBackend) {
     return nullptr;
@@ -47,7 +49,7 @@ ShellIOManager::ShellIOManager(
           std::move(unref_queue_task_runner),
           unref_queue_drain_delay,
           resource_context_)),
-      is_gpu_disabled_sync_switch_(is_gpu_disabled_sync_switch),
+      is_gpu_disabled_sync_switch_(std::move(is_gpu_disabled_sync_switch)),
       impeller_context_(std::move(impeller_context)),
       weak_factory_(this) {
   if (!resource_context_) {

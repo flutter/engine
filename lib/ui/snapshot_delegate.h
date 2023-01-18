@@ -9,6 +9,7 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/display_list.h"
+#include "flutter/flow/skia_gpu_object.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkPicture.h"
 #include "third_party/skia/include/core/SkPromiseImageTexture.h"
@@ -17,8 +18,13 @@
 
 namespace flutter {
 
+class DlImage;
+
 class SnapshotDelegate {
  public:
+  //----------------------------------------------------------------------------
+  /// @brief      A data structure used by the Skia implementation of deferred
+  ///             GPU based images.
   struct GpuImageResult {
     GpuImageResult(const GrBackendTexture& p_texture,
                    sk_sp<GrDirectContext> p_context,
@@ -43,6 +49,14 @@ class SnapshotDelegate {
   };
 
   //----------------------------------------------------------------------------
+  /// @brief      Attempts to create a GrBackendTexture for the specified
+  ///             DisplayList. May result in a raster bitmap if no GPU context
+  ///             is available.
+  virtual std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
+      sk_sp<DisplayList> display_list,
+      const SkImageInfo& image_info) = 0;
+
+  //----------------------------------------------------------------------------
   /// @brief      Gets the registry of external textures currently in use by the
   ///             rasterizer. These textures may be updated at a cadence
   ///             different from that of the Flutter application. When an
@@ -55,15 +69,7 @@ class SnapshotDelegate {
 
   virtual GrDirectContext* GetGrContext() = 0;
 
-  virtual std::unique_ptr<GpuImageResult> MakeGpuImage(
-      sk_sp<DisplayList> display_list,
-      const SkImageInfo& image_info) = 0;
-
-  virtual sk_sp<SkImage> MakeRasterSnapshot(
-      std::function<void(SkCanvas*)> draw_callback,
-      SkISize picture_size) = 0;
-
-  virtual sk_sp<SkImage> MakeRasterSnapshot(sk_sp<SkPicture> picture,
+  virtual sk_sp<DlImage> MakeRasterSnapshot(sk_sp<DisplayList> display_list,
                                             SkISize picture_size) = 0;
 
   virtual sk_sp<SkImage> ConvertToRasterImage(sk_sp<SkImage> image) = 0;

@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include <cmath>
+#include <utility>
 #include <valarray>
 
 #include "impeller/base/strings.h"
@@ -77,7 +78,7 @@ void DirectionalGaussianBlurFilterContents::SetTileMode(
 
 void DirectionalGaussianBlurFilterContents::SetSourceOverride(
     FilterInput::Ref source_override) {
-  source_override_ = source_override;
+  source_override_ = std::move(source_override);
 }
 
 std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
@@ -207,7 +208,7 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
     cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
                         transformed_blur_radius_length);
     auto options = OptionsFromPass(pass);
-    options.blend_mode = Entity::BlendMode::kSource;
+    options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
     cmd.BindVertices(vtx_buffer);
 
@@ -226,14 +227,19 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   };
 
   Vector2 scale;
+  auto scale_curve = [](Scalar radius) {
+    constexpr Scalar decay = 4.0;   // Larger is more gradual.
+    constexpr Scalar limit = 0.95;  // The maximum percentage of the scaledown.
+    const Scalar curve =
+        std::min(1.0, decay / (std::max(1.0f, radius) + decay - 1.0));
+    return (curve - 1) * limit + 1;
+  };
   {
-    scale.x =
-        1.0 /
-        std::ceil(std::log2(std::max(2.0f, transformed_blur_radius_length)));
+    scale.x = scale_curve(transformed_blur_radius_length);
 
     Scalar y_radius = std::abs(pass_transform.GetDirectionScale(Vector2(
         0, source_override_ ? Radius{secondary_blur_sigma_}.radius : 1)));
-    scale.y = 1.0 / std::ceil(std::log2(std::max(2.0f, y_radius)));
+    scale.y = scale_curve(y_radius);
   }
 
   Vector2 scaled_size = pass_texture_rect.size * scale;
@@ -256,7 +262,8 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
           texture_rotate.Invert() *
           Matrix::MakeTranslation(pass_texture_rect.origin) *
           Matrix::MakeScale((1 / scale) * (scaled_size / floored_size)),
-      .sampler_descriptor = sampler_desc};
+      .sampler_descriptor = sampler_desc,
+      .opacity = input_snapshot->opacity};
 }
 
 std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(

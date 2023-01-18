@@ -398,7 +398,13 @@ class CanvasPool extends _SaveStackTracking {
 
   /// Returns a "data://" URI containing a representation of the image in this
   /// canvas in PNG format.
-  String toDataUrl() => _canvas?.toDataURL() ?? '';
+  String toDataUrl() {
+    if (_canvas == null) {
+      _createCanvas();
+    }
+    return _canvas!.toDataURL();
+  }
+
 
   @override
   void save() {
@@ -773,6 +779,10 @@ class CanvasPool extends _SaveStackTracking {
     contextHandle.paintPath(style, path.fillType);
   }
 
+  void drawImage(DomHTMLImageElement element, ui.Offset p) {
+    context.drawImage(element, p.dx, p.dy);
+  }
+
   /// Draws a shadow for a Path representing the given material elevation.
   void drawShadow(ui.Path path, ui.Color color, double elevation,
       bool transparentOccluder) {
@@ -1002,7 +1012,7 @@ class ContextStateHandle {
         }
       }
     } else if (paint.color != null) {
-      final String? colorString = colorToCssString(paint.color);
+      final String? colorString = colorValueToCssString(paint.color);
       fillStyle = colorString;
       strokeStyle = colorString;
     } else {
@@ -1026,12 +1036,8 @@ class ContextStateHandle {
       if (maskFilter != null) {
         context.save();
         context.shadowBlur = convertSigmaToRadius(maskFilter.webOnlySigma);
-        if (paint.color != null) {
-          // Shadow color must be fully opaque.
-          context.shadowColor = colorToCssString(paint.color!.withAlpha(255));
-        } else {
-          context.shadowColor = colorToCssString(const ui.Color(0xFF000000));
-        }
+        // Shadow color must be fully opaque.
+        context.shadowColor = colorToCssString(ui.Color(paint.color).withAlpha(255));
 
         // On the web a shadow must always be painted together with the shape
         // that casts it. In order to paint just the shadow, we offset the shape
