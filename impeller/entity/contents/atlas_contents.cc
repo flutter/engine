@@ -90,24 +90,37 @@ bool AtlasContents::Render(const ContentContext& renderer,
   }
 
   if (blend_mode_ == BlendMode::kSource || colors_.size() == 0) {
-    return RenderTexture(renderer, entity, pass);
+    return RenderTexture(renderer, entity, pass, alpha_);
   }
   if (blend_mode_ == BlendMode::kDestination) {
-    return RenderColors(renderer, entity, pass);
-  }
-
-  // Simple blends.
-  if (blend_mode_ < BlendMode::kScreen) {
-    if (!RenderColors(renderer, entity, pass)) {
-      return false;
-    }
-    return RenderTexture(renderer, entity, pass, true);
+    return RenderColors(renderer, entity, pass, alpha_);
   }
 
   // Ensure that we use the actual computed bounds and not a cull-rect
   // approximation of them.
   auto coverage = ComputeBoundingBox();
   auto size = coverage.size;
+
+  // Simple blends.
+  if (blend_mode_ < BlendMode::kScreen) {
+    auto subpass_texture = renderer.MakeSubpass(
+        ISize::Ceil(size),
+        [&contents = *this, &coverage](const ContentContext& renderer,
+                                       RenderPass& pass) -> bool {
+          Entity sub_entity;
+          sub_entity.SetBlendMode(BlendMode::kSourceOver);
+          sub_entity.SetTransformation(
+              Matrix::MakeTranslation(Vector3(-coverage.origin)));
+          if (!contents.RenderColors(renderer, sub_entity, pass, 1.0)) {
+            return false;
+          }
+          return contents.RenderTexture(renderer, sub_entity, pass, 1.0, true);
+        });
+    auto contents = ColorFilterContents::MakeBlend(
+        blend_mode_, {FilterInput::Make(subpass_texture)});
+    contents->SetAlpha(alpha_);
+    return contents->Render(renderer, entity, pass);
+  }
 
   auto dst_texture = renderer.MakeSubpass(
       ISize::Ceil(size),
@@ -117,7 +130,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
         sub_entity.SetTransformation(
             Matrix::MakeTranslation(Vector3(-coverage.origin)));
-        return contents.RenderColors(renderer, sub_entity, pass);
+        return contents.RenderColors(renderer, sub_entity, pass, 1.0);
       });
   auto src_texture = renderer.MakeSubpass(
       ISize::Ceil(size),
@@ -127,7 +140,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
         sub_entity.SetBlendMode(BlendMode::kSourceOver);
         sub_entity.SetTransformation(
             Matrix::MakeTranslation(Vector3(-coverage.origin)));
-        return contents.RenderTexture(renderer, sub_entity, pass);
+        return contents.RenderTexture(renderer, sub_entity, pass, 1.0);
       });
 
   if (!src_texture || !dst_texture) {
@@ -136,12 +149,14 @@ bool AtlasContents::Render(const ContentContext& renderer,
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
       {FilterInput::Make(src_texture), FilterInput::Make(dst_texture)});
+  contents->SetAlpha(alpha_);
   return contents->Render(renderer, entity, pass);
 }
 
 bool AtlasContents::RenderColors(const ContentContext& renderer,
                                  const Entity& entity,
-                                 RenderPass& pass) const {
+                                 RenderPass& pass,
+                                 Scalar alpha) const {
   using VS = GeometryColorPipeline::VertexShader;
   using FS = GeometryColorPipeline::FragmentShader;
 
@@ -176,7 +191,7 @@ bool AtlasContents::RenderColors(const ContentContext& renderer,
                   entity.GetTransformation();
 
   FS::FragInfo frag_info;
-  frag_info.alpha = 1.0;
+  frag_info.alpha = alpha;
 
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.blend_mode = BlendMode::kSourceOver;
@@ -191,6 +206,7 @@ bool AtlasContents::RenderColors(const ContentContext& renderer,
 bool AtlasContents::RenderTexture(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass,
+                                  Scalar alpha,
                                   bool apply_blend) const {
   using VS = TextureFillVertexShader;
   using FS = TextureFillFragmentShader;
@@ -233,7 +249,7 @@ bool AtlasContents::RenderTexture(const ContentContext& renderer,
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-  frag_info.alpha = alpha_;
+  frag_info.alpha = alpha;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (apply_blend) {

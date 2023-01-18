@@ -414,12 +414,6 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   if (!atlas) {
     return;
   }
-  auto size = atlas->GetSize();
-
-  if (size.IsEmpty()) {
-    return;
-  }
-  SaveLayer(Paint());
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
   contents->SetColors(std::move(colors));
@@ -438,8 +432,6 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   entity.SetContents(paint.WithFilters(contents, false));
 
   GetCurrentPass().AddEntity(entity);
-
-  Restore();
 }
 
 }  // namespace impeller

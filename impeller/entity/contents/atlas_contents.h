@@ -53,11 +53,13 @@ class AtlasContents final : public Contents {
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
                      RenderPass& pass,
+                     Scalar alpha,
                      bool apply_blend = false) const;
 
   bool RenderColors(const ContentContext& renderer,
                     const Entity& entity,
-                    RenderPass& pass) const;
+                    RenderPass& pass,
+                    Scalar alpha) const;
 
   Rect ComputeBoundingBox() const;
 
