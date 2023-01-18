@@ -2197,9 +2197,9 @@ Future<Codec> instantiateImageCodecFromBuffer(
 /// failed.
 Future<Codec> instantiateImageCodecWithSize(
   ImmutableBuffer buffer, {
-  TargetImageSizeProducer? getTargetSize,
+  TargetImageSizeCallback? getTargetSize,
 }) async {
-  getTargetSize ??= (ImageDescriptor descriptor) => const TargetImageSize();
+  getTargetSize ??= _getDefaultImageSize;
   final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
   try {
     final TargetImageSize targetSize = getTargetSize(descriptor);
@@ -2214,6 +2214,8 @@ Future<Codec> instantiateImageCodecWithSize(
   }
 }
 
+TargetImageSize _getDefaultImageSize(ImageDescriptor descriptor) => const TargetImageSize();
+
 /// Signature for a callback that determines the size to which an image should
 /// be decoded given its [ImageDescriptor].
 ///
@@ -2221,13 +2223,13 @@ Future<Codec> instantiateImageCodecWithSize(
 ///
 ///  * [instantiateImageCodecWithSize], which used this signature for its
 ///    `getTargetSize` argument.
-typedef TargetImageSizeProducer = TargetImageSize Function(ImageDescriptor descriptor);
+typedef TargetImageSizeCallback = TargetImageSize Function(ImageDescriptor descriptor);
 
 /// A specification of the size to which an image should be decoded.
 ///
 /// See also:
 ///
-///  * [TargetImageSizeProducer], a callback that returns instances of this
+///  * [TargetImageSizeCallback], a callback that returns instances of this
 ///    class when consulted by image decoding methods such as
 ///    [instantiateImageCodecWithSize].
 class TargetImageSize {
