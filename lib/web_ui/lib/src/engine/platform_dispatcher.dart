@@ -531,7 +531,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         return;
 
       case 'flutter/contextmenu':
-        const MethodCodec codec = StandardMethodCodec();
+        const MethodCodec codec = JSONMethodCodec();
         final MethodCall decoded = codec.decodeMethodCall(data);
         switch (decoded.method) {
           case 'enableContextMenu':
