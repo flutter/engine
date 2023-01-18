@@ -29,23 +29,14 @@ class DLVerticesGeometry : public VerticesGeometry {
   // |VerticesGeometry|
   GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                         const Entity& entity,
-                                        RenderPass& pass) override;
+                                        RenderPass& pass,
+                                        Color paint_color,
+                                        BlendMode blend_mode) override;
 
   // |VerticesGeometry|
   GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) override;
-
-  // |VerticesGeometry|
-  GeometryResult GetPositionUVColorBuffer(const ContentContext& renderer,
-                                          const Entity& entity,
-                                          RenderPass& pass) override;
-
-  // |VerticesGeometry|
-  bool HasTextureCoordinates() const override;
-
-  // |VerticesGeometry|
-  bool HasVertexColors() const override;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,

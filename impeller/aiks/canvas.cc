@@ -380,55 +380,25 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
 void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
                           const Paint& paint) {
-  // drawVertices rendering:
-  //  * If there are no per-vertex colors and no texture coordinates, use the
-  //    color source and apply the vertex geometry to this.
-  //  * If there are vertex colors or vertex colors and texture coordinates,
-  //  then
-  //    the blend_mode parameter applies:
-  //      * The paint color, if any, is treated as fully opaque. The alpha is
-  //      applied
-  //        separately even to other paint sources.
-  //  * If there are only texture coordinates and the paint source is not a
-  //  solid
-  //    color, then pretend this is per-vertex color with a source blend mode.
-
-  auto has_colors = vertices->HasVertexColors();
-  auto has_texture_coordinates = vertices->HasTextureCoordinates();
-  auto rect = vertices->GetCoverage(GetCurrentTransformation());
-
-  // Clear blend mode can be ignored entirely.
-  if ((has_colors && blend_mode == BlendMode::kClear) || !rect.has_value()) {
-    return;
-  }
-
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  // No vertex colors or texture coordinates, this can be treated as a regular
-  // paint op.
-  // TODO(jonahwilliams): optimization, texture coordinate + solid color
-  // contents should exit here too.
-  if (!has_texture_coordinates &&
-      (blend_mode == BlendMode::kSource || !has_colors)) {
-    entity.SetContents(paint.WithFilters(
-        paint.CreateContentsForGeometry(std::move(vertices))));
-    GetCurrentPass().AddEntity(entity);
-    return;
+  if (paint.color_source.has_value()) {
+    auto& source = paint.color_source.value();
+    auto contents = source();
+    contents->SetGeometry(std::move(vertices));
+    contents->SetAlpha(paint.color.alpha);
+    entity.SetContents(paint.WithFilters(std::move(contents), true));
+  } else {
+    std::shared_ptr<VerticesContents> contents =
+        std::make_shared<VerticesContents>();
+    contents->SetColor(paint.color);
+    contents->SetBlendMode(blend_mode);
+    contents->SetGeometry(std::move(vertices));
+    entity.SetContents(paint.WithFilters(std::move(contents), true));
   }
-  // The paint color, if present, should be treated as fully opaque.
-  auto opaque_paint = paint;
-  opaque_paint.color = opaque_paint.color.WithAlpha(1.0);
-
-  auto contents = std::make_shared<VerticesContents>();
-  contents->SetSrcContents(opaque_paint.CreateContentsForGeometry(
-      Geometry::MakeRect(Rect::MakeSize(rect.value().size))));
-  contents->SetAlpha(paint.color.alpha);
-  contents->SetBlendMode(blend_mode);
-  contents->SetGeometry(std::move(vertices));
-  entity.SetContents(paint.WithFilters(contents));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -449,6 +419,7 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   if (size.IsEmpty()) {
     return;
   }
+  SaveLayer(Paint());
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
   contents->SetColors(std::move(colors));
@@ -467,6 +438,8 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   entity.SetContents(paint.WithFilters(contents, false));
 
   GetCurrentPass().AddEntity(entity);
+
+  Restore();
 }
 
 }  // namespace impeller

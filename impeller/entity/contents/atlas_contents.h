@@ -50,13 +50,16 @@ class AtlasContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  bool RenderNoColor(const ContentContext& renderer,
+  bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
-                     RenderPass& pass) const;
+                     RenderPass& pass,
+                     bool apply_blend = false) const;
 
-  bool RenderOnlyColor(const ContentContext& renderer,
+  bool RenderColors(const ContentContext& renderer,
                        const Entity& entity,
                        RenderPass& pass) const;
+
+  Rect ComputeBoundingBox() const;
 
   std::shared_ptr<Texture> texture_;
   std::vector<Rect> texture_coords_;

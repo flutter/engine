@@ -1313,35 +1313,8 @@ ORIGIN: ../../../flutter/impeller/entity/geometry.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/inline_pass_context.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend.glsl + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_color.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_colorburn.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_colordodge.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_darken.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_difference.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_exclusion.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_hardlight.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_hue.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_lighten.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_luminosity.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_multiply.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_overlay.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_saturation.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_screen.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_softlight.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend.glsl + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_a_top.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_in.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_out.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_over.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_modulate.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_plus.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_a_top.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_in.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_out.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_over.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_xor.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_fill.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/atlas_fill.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag + ../../../flutter/LICENSE
@@ -3821,35 +3794,8 @@ FILE: ../../../flutter/impeller/entity/geometry.cc
 FILE: ../../../flutter/impeller/entity/geometry.h
 FILE: ../../../flutter/impeller/entity/inline_pass_context.cc
 FILE: ../../../flutter/impeller/entity/inline_pass_context.h
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend.glsl
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_color.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_colorburn.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_colordodge.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_darken.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_difference.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_exclusion.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_hardlight.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_hue.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_lighten.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_luminosity.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_multiply.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_overlay.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_saturation.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_screen.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_advanced_blend_softlight.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend.glsl
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend.vert
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_a_top.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_in.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_out.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_dst_over.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_modulate.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_plus.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_a_top.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_in.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_out.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_src_over.frag
-FILE: ../../../flutter/impeller/entity/shaders/atlas_blending/atlas_blend_xor.frag
+FILE: ../../../flutter/impeller/entity/shaders/atlas_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/atlas_fill.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.glsl
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend.vert
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_color.frag
