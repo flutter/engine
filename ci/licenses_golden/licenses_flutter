@@ -878,17 +878,6 @@ ORIGIN: ../../../flutter/display_list/display_list_utils.cc + ../../../flutter/L
 ORIGIN: ../../../flutter/display_list/display_list_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_vertices.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_vertices.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_equality.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_snippets.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_snippets.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_gl.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_gl.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_metal.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_metal.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_provider.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_provider.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_software.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/testing/dl_test_surface_software.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.h + ../../../flutter/LICENSE
@@ -3366,17 +3355,6 @@ FILE: ../../../flutter/display_list/display_list_utils.cc
 FILE: ../../../flutter/display_list/display_list_utils.h
 FILE: ../../../flutter/display_list/display_list_vertices.cc
 FILE: ../../../flutter/display_list/display_list_vertices.h
-FILE: ../../../flutter/display_list/testing/dl_equality.h
-FILE: ../../../flutter/display_list/testing/dl_test_snippets.cc
-FILE: ../../../flutter/display_list/testing/dl_test_snippets.h
-FILE: ../../../flutter/display_list/testing/dl_test_surface_gl.cc
-FILE: ../../../flutter/display_list/testing/dl_test_surface_gl.h
-FILE: ../../../flutter/display_list/testing/dl_test_surface_metal.cc
-FILE: ../../../flutter/display_list/testing/dl_test_surface_metal.h
-FILE: ../../../flutter/display_list/testing/dl_test_surface_provider.cc
-FILE: ../../../flutter/display_list/testing/dl_test_surface_provider.h
-FILE: ../../../flutter/display_list/testing/dl_test_surface_software.cc
-FILE: ../../../flutter/display_list/testing/dl_test_surface_software.h
 FILE: ../../../flutter/display_list/types.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
