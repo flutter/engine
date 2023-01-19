@@ -8,9 +8,15 @@
 #include "third_party/skia/include/core/SkData.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
-#include "flutter/display_list/testing/dl_test_surface_gl.h"
-#include "flutter/display_list/testing/dl_test_surface_metal.h"
+#ifdef ENABLE_SOFTWARE_BENCHMARKS
 #include "flutter/display_list/testing/dl_test_surface_software.h"
+#endif
+#ifdef ENABLE_OPENGL_BENCHMARKS
+#include "flutter/display_list/testing/dl_test_surface_gl.h"
+#endif
+#ifdef ENABLE_METAL_BENCHMARKS
+#include "flutter/display_list/testing/dl_test_surface_metal.h"
+#endif
 
 namespace flutter {
 namespace testing {
