@@ -2470,6 +2470,20 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   XCTAssertNotEqual(view2, view3);
 }
 
+- (void)testMaskViewsReleasedWhenPoolIsReleased {
+  UIView* retainedView;
+  @autoreleasepool {
+    FlutterClippingMaskViewPool* pool =
+        [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+    FlutterClippingMaskView* view = [pool getMaskViewWithFrame:CGRectZero];
+    retainedView = [view retain];
+    XCTAssertGreaterThan(retainedView.retainCount, 1u);
+  }
+  // The only retain left is our manual retain called inside the autorelease pool, meaning the
+  // maskViews are dealloc'd.
+  XCTAssertEqual(retainedView.retainCount, 1u);
+}
+
 - (void)testClipMaskViewIsReused {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
