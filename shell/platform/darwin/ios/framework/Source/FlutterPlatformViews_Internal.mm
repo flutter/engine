@@ -491,6 +491,7 @@ static BOOL _preparedOnce = NO;
     [self.pool addObject:maskView];
     FML_DCHECK(self.pool.count <= self.capacity);
   } else {
+    // Reuse a maskView from the pool.
     maskView = [self.pool objectAtIndex:self.availableIndex];
     maskView.frame = frame;
     [maskView reset];
