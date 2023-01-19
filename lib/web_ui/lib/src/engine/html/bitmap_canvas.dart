@@ -556,8 +556,7 @@ class BitmapCanvas extends EngineCanvas {
         if (!transform.isIdentity()) {
           style
             ..transform = matrix4ToCssTransform(transform)
-            ..transformOrigin = '0 0 0'
-            ..overflow = 'visible';
+            ..transformOrigin = '0 0 0';
         }
       }
       _applyFilter(svgElm, paint);

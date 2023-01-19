@@ -337,7 +337,8 @@ String _borderStrokeToCssUnit(double value) {
 SVGSVGElement pathToSvgElement(SurfacePath path, SurfacePaintData paint) {
   // In Firefox some SVG typed attributes are returned as null without a
   // setter. So we use strings here.
-  final SVGSVGElement root = createSVGSVGElement();
+  final SVGSVGElement root = createSVGSVGElement()
+    ..setAttribute('overflow', 'visible');
 
   final SVGPathElement svgPath = createSVGPathElement();
   root.append(svgPath);
