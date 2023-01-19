@@ -17,6 +17,7 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../alarm_clock.dart';
+import '../codec.dart';
 import '../dom.dart';
 import '../safe_browser_api.dart';
 import '../util.dart';
@@ -41,7 +42,7 @@ void debugRestoreWebDecoderExpireDuration() {
 }
 
 /// Image decoder backed by the browser's `ImageDecoder`.
-class CkBrowserImageDecoder implements ui.Codec {
+class CkBrowserImageDecoder implements EngineCodec {
   CkBrowserImageDecoder._({
     required this.contentType,
     required this.data,
@@ -90,6 +91,12 @@ class CkBrowserImageDecoder implements ui.Codec {
 
   @override
   late int repetitionCount;
+
+  @override
+  late int width;
+
+  @override
+  late int height;
 
   /// Whether this decoder has been disposed of.
   ///
@@ -177,6 +184,14 @@ class CkBrowserImageDecoder implements ui.Codec {
       repetitionCount = rawRepetitionCount == double.infinity ? -1 :
           rawRepetitionCount.toInt();
       _cachedWebDecoder = webDecoder;
+
+      final DecodeResult result = await promiseToFuture<DecodeResult>(
+        webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toDouble())),
+      );
+      final VideoFrame frame = result.image;
+      width = frame.displayWidth.toInt();
+      height = frame.displayHeight.toInt();
+      frame.close();
 
       // Expire the decoder if it's not used for several seconds. If the image is
       // not animated, it could mean that the framework has cached the frame and

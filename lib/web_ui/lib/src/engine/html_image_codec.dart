@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
+import 'codec.dart';
 import 'dom.dart';
 import 'safe_browser_api.dart';
 import 'util.dart';
@@ -24,7 +25,7 @@ final bool _supportsDecode = _jsImageDecodeFunction != null;
 typedef WebOnlyImageCodecChunkCallback = void Function(
     int cumulativeBytesLoaded, int expectedTotalBytes);
 
-class HtmlCodec implements ui.Codec {
+class HtmlCodec implements EngineCodec {
   HtmlCodec(this.src, {this.chunkCallback});
 
   final String src;
@@ -35,6 +36,12 @@ class HtmlCodec implements ui.Codec {
 
   @override
   int get repetitionCount => 0;
+
+  @override
+  int get width => -1;
+
+  @override
+  int get height => -1;
 
   @override
   Future<ui.FrameInfo> getNextFrame() async {

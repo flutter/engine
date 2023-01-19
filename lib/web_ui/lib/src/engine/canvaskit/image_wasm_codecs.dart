@@ -14,6 +14,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../codec.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'image.dart';
@@ -23,7 +24,7 @@ import 'skia_object_cache.dart';
 ///
 /// Wraps `SkAnimatedImage`.
 class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
-    implements ui.Codec {
+    implements EngineCodec {
   /// Decodes an image from a list of encoded bytes.
   CkAnimatedImage.decodeFromBytes(this._bytes, this.src, {this.targetWidth, this.targetHeight});
 
@@ -31,6 +32,8 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
   final Uint8List _bytes;
   int _frameCount = 0;
   int _repetitionCount = -1;
+  int _width = -1;
+  int _height = -1;
 
   /// Current frame index.
   int _currentFrameIndex = 0;
@@ -65,6 +68,8 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
 
     _frameCount = animatedImage.getFrameCount().toInt();
     _repetitionCount = animatedImage.getRepetitionCount().toInt();
+    _width = animatedImage.width().toInt();
+    _height = animatedImage.height().toInt();
 
     // Normally CanvasKit initializes `SkAnimatedImage` to point to the first
     // frame in the animation. However, if the Skia object has been deleted then
@@ -131,6 +136,18 @@ class CkAnimatedImage extends ManagedSkiaObject<SkAnimatedImage>
   int get repetitionCount {
     assert(_debugCheckIsNotDisposed());
     return _repetitionCount;
+  }
+
+ @override
+  int get height {
+    assert(_debugCheckIsNotDisposed());
+    return _height;
+  }
+
+  @override
+  int get width {
+    assert(_debugCheckIsNotDisposed());
+    return _width;
   }
 
   @override
