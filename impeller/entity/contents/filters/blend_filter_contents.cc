@@ -157,8 +157,7 @@ static std::optional<Snapshot> PipelineBlend(
     const Rect& coverage,
     BlendMode pipeline_blend,
     std::optional<Color> foreground_color,
-    bool absorb_opacity,
-    std::optional<Scalar> alpha) {
+    bool absorb_opacity) {
   using VS = BlendPipeline::VertexShader;
   using FS = BlendPipeline::FragmentShader;
 
@@ -205,8 +204,7 @@ static std::optional<Snapshot> PipelineBlend(
       FS::FragInfo frag_info;
       frag_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
-      frag_info.input_alpha =
-          (absorb_opacity ? input->opacity : 1.0) * alpha.value_or(1.0);
+      frag_info.input_alpha = absorb_opacity ? input->opacity : 1.0;
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
@@ -333,12 +331,12 @@ std::optional<Snapshot> BlendFilterContents::RenderFilter(
   if (inputs.size() == 1 && !foreground_color_.has_value()) {
     // Nothing to blend.
     return PipelineBlend(inputs, renderer, entity, coverage, BlendMode::kSource,
-                         std::nullopt, GetAbsorbOpacity(), GetAlpha());
+                         std::nullopt, GetAbsorbOpacity());
   }
 
   if (blend_mode_ <= Entity::kLastPipelineBlendMode) {
     return PipelineBlend(inputs, renderer, entity, coverage, blend_mode_,
-                         foreground_color_, GetAbsorbOpacity(), GetAlpha());
+                         foreground_color_, GetAbsorbOpacity());
   }
 
   if (blend_mode_ <= Entity::kLastAdvancedBlendMode) {

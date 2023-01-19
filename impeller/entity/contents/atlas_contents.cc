@@ -5,18 +5,19 @@
 #include <optional>
 #include <utility>
 
-#include "impeller/entity/contents/filters/color_filter_contents.h"
-#include "impeller/entity/contents/filters/filter_contents.h"
-#include "impeller/renderer/formats.h"
-#include "impeller/renderer/sampler_library.h"
-#include "impeller/renderer/vertex_buffer_builder.h"
-
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/entity/texture_fill.frag.h"
 #include "impeller/entity/texture_fill.vert.h"
+#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
+#include "impeller/renderer/vertex_buffer_builder.h"
 
 namespace impeller {
 
@@ -124,9 +125,37 @@ bool AtlasContents::Render(const ContentContext& renderer,
   auto dst_contents = std::make_shared<AtlasColorContents>(*this);
   dst_contents->SetCoverage(coverage);
 
+  if (blend_mode_ < BlendMode::kScreen) {
+    auto subpass_texture = renderer.MakeSubpass(
+        ISize::Ceil(coverage.size),
+        [&contents = *this, &coverage, &dst_contents, &src_contents](
+            const ContentContext& renderer, RenderPass& pass) -> bool {
+          Entity sub_entity;
+          sub_entity.SetBlendMode(BlendMode::kSourceOver);
+          sub_entity.SetTransformation(
+              Matrix::MakeTranslation(Vector3(-coverage.origin)));
+
+          auto filter_contents = ColorFilterContents::MakeBlend(
+              contents.blend_mode_, {FilterInput::Make(dst_contents),
+                                     FilterInput::Make(src_contents)});
+
+          return filter_contents->Render(renderer, sub_entity, pass);
+        });
+    if (!subpass_texture) {
+      return false;
+    }
+    auto texture_contents = TextureContents::MakeRect(coverage);
+    texture_contents->SetTexture(subpass_texture);
+    texture_contents->SetOpacity(alpha_);
+    texture_contents->SetSourceRect(Rect::MakeSize(subpass_texture->GetSize()));
+    return texture_contents->Render(renderer, entity, pass);
+  }
+
+  // For some reason this looks backwards compared to Skia unless
+  // we reverse the src/dst.
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
-      {FilterInput::Make(dst_contents), FilterInput::Make(src_contents)});
+      {FilterInput::Make(src_contents), FilterInput::Make(dst_contents)});
   contents->SetAlpha(alpha_);
   return contents->Render(renderer, entity, pass);
 }

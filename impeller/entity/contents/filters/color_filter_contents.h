@@ -35,6 +35,8 @@ class ColorFilterContents : public FilterContents {
 
   /// @brief Sets an alpha that is applied to the blended result, overriding any
   ///        inherited opacity.
+  ///
+  ///        This is only used for advanced blends.
   void SetAlpha(Scalar alpha);
 
   std::optional<Scalar> GetAlpha() const;
