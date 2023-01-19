@@ -38,6 +38,7 @@
 #include "base/logging.h"
 #include "base/win/atl_module.h"
 #include "base/win/display.h"
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "gfx/geometry/rect_conversions.h"
 
 // From ax.constants.mojom
@@ -1739,7 +1740,7 @@ IFACEMETHODIMP AXPlatformNodeWin::SetValue(LPCWSTR value) {
 
   AXActionData data;
   data.action = ax::mojom::Action::kSetValue;
-  data.value = base::UTF16ToUTF8(base::WideToUTF16(value));
+  data.value = base::UTF16ToUTF8(fml::WideStringToUtf16(value));
   if (GetDelegate()->AccessibilityPerformAction(data))
     return S_OK;
   return E_FAIL;

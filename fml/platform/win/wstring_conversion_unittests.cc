@@ -33,5 +33,29 @@ TEST(StringConversion, WideStringToUtf8Unicode) {
   EXPECT_EQ(WideStringToUtf8(L"\x2603"), "\xe2\x98\x83");
 }
 
+TEST(StringConversion, WideStringToUtf16Empty) {
+  EXPECT_EQ(WideStringToUtf16(L""), u"");
+}
+
+TEST(StringConversion, WideStringToUtf16Ascii) {
+  EXPECT_EQ(WideStringToUtf16(L"abc123"), u"abc123");
+}
+
+TEST(StringConversion, WideStringToUtf16Unicode) {
+  EXPECT_EQ(WideStringToUtf16(L"\xe2\x98\x83"), u"\x2603");
+}
+
+TEST(StringConversion, Utf16ToWideStringEmpty) {
+  EXPECT_EQ(Utf16ToWideString(u""), L"");
+}
+
+TEST(StringConversion, Utf16ToWideStringAscii) {
+  EXPECT_EQ(Utf16ToWideString(u"abc123"), L"abc123");
+}
+
+TEST(StringConversion, Utf16ToWideStringUtf8Unicode) {
+  EXPECT_EQ(Utf16ToWideString(u"\x2603"), L"\xe2\x98\x83");
+}
+
 }  // namespace testing
 }  // namespace fml
