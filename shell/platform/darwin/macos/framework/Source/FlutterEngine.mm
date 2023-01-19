@@ -415,6 +415,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
   if (_viewController == nil && controller != nil) {
+    NSAssert(controller.engine == nil,
+             @"Failed to set view controller to the engine: "
+             @"The given FlutterViewController is already attached to an engine %@. "
+             @"If you wanted to create an FlutterViewController and set it to an existing engine, "
+             @"you should create it with init(engine:, nibName, bundle:) instead.",
+             controller.engine);
     _viewController = controller;
     [_viewController attachToEngine:self withId:kFlutterDefaultViewId];
   } else if (_viewController != nil && controller == nil) {
@@ -424,8 +430,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
       [self shutDownEngine];
     }
   } else {
-    NSLog(@"Failed to set view controller to the engine: "
-          @"Replacing the view controller of the engine is not supported.");
+    NSAssert(NO,
+             @"Failed to set view controller to the engine: "
+             @"The engine already has a default view controller %@. "
+             @"If you wanted to make the default view render in a different window, "
+             @"you should attach the current view controller to the window instead.",
+             _viewController);
   }
 }
 

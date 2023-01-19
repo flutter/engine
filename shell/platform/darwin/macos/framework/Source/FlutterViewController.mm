@@ -300,10 +300,14 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                           allowHeadlessExecution:NO];
   }
   NSCAssert(controller.engine == nil && controller.id == 0,
-            @"Incorrect starting condition: engine %@ ID %llu", controller.engine, controller.id);
+            @"The FlutterViewController is unexpectedly attached to "
+            @"engine %@ with ID %llu before initialization.",
+            controller.engine, controller.id);
   engine.viewController = controller;
   NSCAssert(controller.engine != nil && controller.id != 0,
-            @"Incorrect ending condition: engine %@ ID %llu", controller.engine, controller.id);
+            @"The FlutterViewController unexpectedly stays unattached after initialization. "
+            @"In unit tests, this is likely because either the FlutterViewController or "
+            @"the FlutterEngine is mocked. Please subclass these classes instead.");
   controller->_mouseTrackingMode = FlutterMouseTrackingModeInKeyWindow;
   controller->_textInputPlugin = [[FlutterTextInputPlugin alloc] initWithViewController:controller];
   [controller initializeKeyboard];
