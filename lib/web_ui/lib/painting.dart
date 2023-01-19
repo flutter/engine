@@ -491,6 +491,50 @@ Future<Codec> instantiateImageCodecFromBuffer(
   targetHeight: targetHeight,
   allowUpscaling: allowUpscaling);
 
+class _SizeOnlyImageDescriptor implements ImageDescriptor {
+  const _SizeOnlyImageDescriptor(this.width, this.height);
+
+  @override
+  final int width;
+
+  @override
+  final int height;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnsupportedError('ImageDescriptor.${invocation.method} is not supported on web within a TargetImageSizeCallback.');
+}
+
+Future<Codec> instantiateImageCodecWithSize(
+  ImmutableBuffer buffer, {
+  TargetImageSizeCallback? getTargetSize,
+}) async {
+  if (getTargetSize == null) {
+    return engine.renderer.instantiateImageCodec(buffer._list!);
+  } else {
+    final Codec codec = await engine.renderer.instantiateImageCodec(buffer._list!);
+    final FrameInfo info = await codec.getNextFrame();
+    final int width = info.image.width;
+    final int height = info.image.height;
+    info.image.dispose();
+    codec.dispose();
+    final ImageDescriptor descriptor = _SizeOnlyImageDescriptor(width, height);
+    final TargetImageSize targetSize = getTargetSize(descriptor);
+    return engine.renderer.instantiateImageCodec(buffer._list!,
+        targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
+  }
+}
+
+typedef TargetImageSizeCallback = TargetImageSize Function(ImageDescriptor descriptor);
+
+class TargetImageSize {
+  const TargetImageSize({this.width, this.height})
+      : assert(width == null || width > 0),
+        assert(width == null || width > 0);
+
+  final int? width;
+  final int? height;
+}
+
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
   {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
   engine.renderer.instantiateImageCodecFromUrl(uri, chunkCallback: chunkCallback);
