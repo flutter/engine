@@ -53,6 +53,12 @@ FLUTTER_DARWIN_EXPORT
 /**
  * Initializes a controller that will run the given project.
  *
+ * In this initializer, this controller creates an engine, and is attached to
+ * this engine as the default controller. In this way, this controller can not
+ * be set to other engines. This initializer is suitable for the first Flutter
+ * view controller of the app. To use the controller for an existing engine,
+ * use initWithEngine:nibName:bundle: instead.
+ *
  * @param project The project to run in this view controller. If nil, a default `FlutterDartProject`
  *                will be used.
  */
@@ -66,7 +72,8 @@ FLUTTER_DARWIN_EXPORT
 /**
  * Initializes this FlutterViewController with the specified `FlutterEngine`.
  *
- * The initialized viewcontroller will attach itself to the engine as part of this process.
+ * This initializer is suitable for both the first Flutter view controller and
+ * the following ones of the app.
  *
  * @param engine The `FlutterEngine` instance to attach to. Cannot be nil.
  * @param nibName The NIB name to initialize this controller with.

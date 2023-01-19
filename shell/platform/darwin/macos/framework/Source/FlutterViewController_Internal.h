@@ -24,8 +24,18 @@
  */
 - (BOOL)isDispatchingKeyEvent:(nonnull NSEvent*)event;
 
+/**
+ * Set the `engine` and `id` of this controller.
+ *
+ * This method is called by FlutterEngine.
+ */
 - (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId;
 
+/**
+ * Reset the `engine` and `id` of this controller.
+ *
+ * This method is called by FlutterEngine.
+ */
 - (void)detachFromEngine;
 
 @end
