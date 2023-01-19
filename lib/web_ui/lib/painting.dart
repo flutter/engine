@@ -491,19 +491,6 @@ Future<Codec> instantiateImageCodecFromBuffer(
   targetHeight: targetHeight,
   allowUpscaling: allowUpscaling);
 
-class _SizeOnlyImageDescriptor implements ImageDescriptor {
-  const _SizeOnlyImageDescriptor(this.width, this.height);
-
-  @override
-  final int width;
-
-  @override
-  final int height;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnsupportedError('ImageDescriptor.${invocation.memberName} is not supported on web within a TargetImageSizeCallback.');
-}
-
 Future<Codec> instantiateImageCodecWithSize(
   ImmutableBuffer buffer, {
   TargetImageSizeCallback? getTargetSize,
