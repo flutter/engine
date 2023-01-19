@@ -501,7 +501,7 @@ class _SizeOnlyImageDescriptor implements ImageDescriptor {
   final int height;
 
   @override
-  dynamic noSuchMethod(Invocation invocation) => throw UnsupportedError('ImageDescriptor.${invocation.method} is not supported on web within a TargetImageSizeCallback.');
+  dynamic noSuchMethod(Invocation invocation) => throw UnsupportedError('ImageDescriptor.${invocation.memberName} is not supported on web within a TargetImageSizeCallback.');
 }
 
 Future<Codec> instantiateImageCodecWithSize(
