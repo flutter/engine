@@ -28,7 +28,7 @@ surface_provider_include_software = !is_android && !is_ios
 surface_provider_include_gl = !is_fuchsia && !is_ios && !impeller_enable_vulkan
 
 # TODO (https://github.com/flutter/flutter/issues/107357):
-# impeller_enable_vulkan currently requires skia to not use VMA, which inturn
+# impeller_enable_vulkan currently requires skia to not use VMA, which in turn
 # causes linkage problems with swiftshader.
 
 surface_provider_include_metal = is_mac || is_ios
