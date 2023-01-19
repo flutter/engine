@@ -9,7 +9,7 @@
 namespace fml {
 namespace testing {
 
-TEST(StringConversion, Utf16ToWideStringEmpty) {
+TEST(StringConversion, Utf8ToWideStringEmpty) {
   EXPECT_EQ(Utf8ToWideString(""), L"");
 }
 
@@ -42,7 +42,7 @@ TEST(StringConversion, WideStringToUtf16Ascii) {
 }
 
 TEST(StringConversion, WideStringToUtf16Unicode) {
-  EXPECT_EQ(WideStringToUtf16(L"\xe2\x98\x83"), u"\x2603");
+  EXPECT_EQ(WideStringToUtf16(L"\xe2\x98\x83"), u"\xe2\x98\x83");
 }
 
 TEST(StringConversion, Utf16ToWideStringEmpty) {
@@ -54,7 +54,7 @@ TEST(StringConversion, Utf16ToWideStringAscii) {
 }
 
 TEST(StringConversion, Utf16ToWideStringUtf8Unicode) {
-  EXPECT_EQ(Utf16ToWideString(u"\x2603"), L"\xe2\x98\x83");
+  EXPECT_EQ(Utf16ToWideString(u"\xe2\x98\x83"), L"\xe2\x98\x83");
 }
 
 }  // namespace testing

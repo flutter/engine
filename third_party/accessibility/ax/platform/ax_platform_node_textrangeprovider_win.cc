@@ -704,7 +704,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::GetText(int max_count, BSTR* text) {
   if (max_count < -1)
     return E_INVALIDARG;
 
-  std::wstring full_text = base::UTF16ToWide(GetString(max_count));
+  std::wstring full_text = fml::Utf16ToWideString(GetString(max_count));
   if (!full_text.empty()) {
     size_t length = full_text.length();
 
