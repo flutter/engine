@@ -512,24 +512,29 @@ Future<Codec> instantiateImageCodecWithSize(
     return engine.renderer.instantiateImageCodec(buffer._list!);
   } else {
     final Codec codec = await engine.renderer.instantiateImageCodec(buffer._list!);
-    final FrameInfo info = await codec.getNextFrame();
-    final int width = info.image.width;
-    final int height = info.image.height;
-    info.image.dispose();
-    codec.dispose();
-    final ImageDescriptor descriptor = _SizeOnlyImageDescriptor(width, height);
-    final TargetImageSize targetSize = getTargetSize(descriptor);
-    return engine.renderer.instantiateImageCodec(buffer._list!,
-        targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
+    try {
+      final FrameInfo info = await codec.getNextFrame();
+      try {
+        final int width = info.image.width;
+        final int height = info.image.height;
+        final TargetImageSize targetSize = getTargetSize(width, height);
+        return engine.renderer.instantiateImageCodec(buffer._list!,
+            targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
+      } finally {
+        info.image.dispose();
+      }
+    } finally {
+      codec.dispose();
+    }
   }
 }
 
-typedef TargetImageSizeCallback = TargetImageSize Function(ImageDescriptor descriptor);
+typedef TargetImageSizeCallback = TargetImageSize Function(int intrinsicWidth, int intrinsicHeight);
 
 class TargetImageSize {
   const TargetImageSize({this.width, this.height})
       : assert(width == null || width > 0),
-        assert(width == null || width > 0);
+        assert(height == null || height > 0);
 
   final int? width;
   final int? height;

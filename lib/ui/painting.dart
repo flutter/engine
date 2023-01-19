@@ -2145,6 +2145,13 @@ Future<Codec> instantiateImageCodec(
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
+///
+/// ## Compatibility note on the web
+///
+/// When running Flutter on the web, only the CanvasKit renderer supports image
+/// resizing capabilities (not the HTML renderer). So if image resizing is
+/// critical to your use case, and you're deploying to the web, you should
+/// build using the CanvasKit renderer.
 Future<Codec> instantiateImageCodecFromBuffer(
   ImmutableBuffer buffer, {
   int? targetWidth,
@@ -2153,13 +2160,13 @@ Future<Codec> instantiateImageCodecFromBuffer(
 }) {
   return instantiateImageCodecWithSize(
     buffer,
-    getTargetSize: (ImageDescriptor descriptor) {
+    getTargetSize: (int intrinsicWidth, int intrinsicHeight) {
       if (!allowUpscaling) {
-        if (targetWidth != null && targetWidth! > descriptor.width) {
-          targetWidth = descriptor.width;
+        if (targetWidth != null && targetWidth! > intrinsicWidth) {
+          targetWidth = intrinsicWidth;
         }
-        if (targetHeight != null && targetHeight! > descriptor.height) {
-          targetHeight = descriptor.height;
+        if (targetHeight != null && targetHeight! > intrinsicHeight) {
+          targetHeight = intrinsicHeight;
         }
       }
       return TargetImageSize(width: targetWidth, height: targetHeight);
@@ -2171,23 +2178,23 @@ Future<Codec> instantiateImageCodecFromBuffer(
 ///
 /// This method is a convenience wrapper around the [ImageDescriptor] API.
 ///
-/// The [buffer] parameter is the binary image data (e.g a PNG or GIF binary data).
-/// The data can be for either static or animated images. The following image
-/// formats are supported: {@macro dart.ui.imageFormats}
+/// The [buffer] parameter is the binary image data (e.g a PNG or GIF binary
+/// data). The data can be for either static or animated images. The following
+/// image formats are supported: {@macro dart.ui.imageFormats}
 ///
-/// The [buffer] will be disposed by this method once the codec has been created,
-/// so the caller must relinquish ownership of the [buffer] when they call this
-/// method.
+/// The [buffer] will be disposed by this method once the codec has been
+/// created, so the caller must relinquish ownership of the [buffer] when they
+/// call this method.
 ///
 /// The [getTargetSize] parameter, when specified, will be invoked and passed
-/// the image's [ImageDescriptor] to determine the size to decode the image to.
+/// the image's intrinsic size to determine the size to decode the image to.
 /// The width and the height of the size it returns must be positive values
-/// greater than or equal to 1, or null. It is valid to return a [TargetImageSize]
-/// that specifies only one of `width` and `height` with the other remaining
-/// null, in which case the omitted dimension will be scaled to maintain the
-/// aspect ratio of the original dimensions. When both are null or omitted,
-/// the image will be decoded at its native resolution (as will be the case if
-/// the [getTargetSize] parameter is omitted).
+/// greater than or equal to 1, or null. It is valid to return a
+/// [TargetImageSize] that specifies only one of `width` and `height` with the
+/// other remaining null, in which case the omitted dimension will be scaled to
+/// maintain the aspect ratio of the original dimensions. When both are null or
+/// omitted, the image will be decoded at its native resolution (as will be the
+/// case if the [getTargetSize] parameter is omitted).
 ///
 /// Scaling the image to larger than its intrinsic size should usually be
 /// avoided, since it causes the image to use more memory than necessary.
@@ -2195,6 +2202,13 @@ Future<Codec> instantiateImageCodecFromBuffer(
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
+///
+/// ## Compatibility note on the web
+///
+/// When running Flutter on the web, only the CanvasKit renderer supports image
+/// resizing capabilities (not the HTML renderer). So if image resizing is
+/// critical to your use case, and you're deploying to the web, you should
+/// build using the CanvasKit renderer.
 Future<Codec> instantiateImageCodecWithSize(
   ImmutableBuffer buffer, {
   TargetImageSizeCallback? getTargetSize,
@@ -2202,7 +2216,7 @@ Future<Codec> instantiateImageCodecWithSize(
   getTargetSize ??= _getDefaultImageSize;
   final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
   try {
-    final TargetImageSize targetSize = getTargetSize(descriptor);
+    final TargetImageSize targetSize = getTargetSize(descriptor.width, descriptor.height);
     assert(targetSize.width == null || targetSize.width! > 0);
     assert(targetSize.height == null || targetSize.height! > 0);
     return descriptor.instantiateCodec(
@@ -2214,16 +2228,21 @@ Future<Codec> instantiateImageCodecWithSize(
   }
 }
 
-TargetImageSize _getDefaultImageSize(ImageDescriptor descriptor) => const TargetImageSize();
+TargetImageSize _getDefaultImageSize(int intrinsicWidth, int intrinsicHeight) {
+  return const TargetImageSize();
+}
 
 /// Signature for a callback that determines the size to which an image should
-/// be decoded given its [ImageDescriptor].
+/// be decoded given its intrinsic size.
 ///
 /// See also:
 ///
 ///  * [instantiateImageCodecWithSize], which used this signature for its
 ///    `getTargetSize` argument.
-typedef TargetImageSizeCallback = TargetImageSize Function(ImageDescriptor descriptor);
+typedef TargetImageSizeCallback = TargetImageSize Function(
+  int intrinsicWidth,
+  int intrinsicHeight,
+);
 
 /// A specification of the size to which an image should be decoded.
 ///
@@ -2239,7 +2258,7 @@ class TargetImageSize {
   /// must be positive.
   const TargetImageSize({this.width, this.height})
       : assert(width == null || width > 0),
-        assert(width == null || width > 0);
+        assert(height == null || height > 0);
 
   /// The width into which to load the image.
   ///
