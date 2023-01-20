@@ -67,8 +67,8 @@ def launch_package(package_name, activity_name, adb_path='adb'):
   subprocess.check_output([
       adb_path, 'shell', 'am ', 'start', '-n',
       '%s/%s' % (package_name, activity_name)
-  ], stderr=subprocess.STDOUT)
-
+  ],
+                          stderr=subprocess.STDOUT)
   for line in logcat.stdout:
     print('>>>>>>>> ' + line.strip())
     if ('Observatory listening' in line) or ('Dart VM service is listening'
@@ -80,32 +80,22 @@ def launch_package(package_name, activity_name, adb_path='adb'):
 def collect_and_validate_trace(adb_path='adb'):
   print('Fetching trace')
   subprocess.check_output([
-      adb_path,
-      'shell',
-      'perfetto',
-      '--attach',
-      PERFETTO_SESSION_KEY,
-      '--stop'
-  ], stderr=subprocess.STDOUT)
-
-  subprocess.check_output([
-       adb_path,
-       'pull',
-       PERFETTO_TRACE_FILE,
-       'trace.pb'
-   ], stderr=subprocess.STDOUT)
+      adb_path, 'shell', 'perfetto', '--attach', PERFETTO_SESSION_KEY, '--stop'
+  ],
+                          stderr=subprocess.STDOUT)
+  subprocess.check_output([adb_path, 'pull', PERFETTO_TRACE_FILE, 'trace.pb'],
+                          stderr=subprocess.STDOUT)
 
   print('Validating trace')
   traceconv = os.path.join(
       BUILDROOT_DIR, 'third_party', 'android_tools', 'trace_to_text',
       'trace_to_text'
   )
-
   traceconv_output = subprocess.check_output([
-      traceconv,
-      'systrace',
-      'trace.pb'
-  ], stderr=subprocess.STDOUT, universal_newlines=True)
+      traceconv, 'systrace', 'trace.pb'
+  ],
+                                             stderr=subprocess.STDOUT,
+                                             universal_newlines=True)
 
   print('Trace output:')
   print(traceconv_output)
