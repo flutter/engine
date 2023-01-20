@@ -834,38 +834,38 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
   EXPECT_EQ([events count], 0u);
 
   // For each modifier key, check that key events are synthesized.
-  [flutter::keyCodeToModifierFlag
-      enumerateKeysAndObjectsUsingBlock:^(NSNumber* keyCode, NSNumber* flag, BOOL* stop) {
-        FlutterKeyEvent* event;
-        NSNumber* logicalKey;
-        NSNumber* physicalKey;
+  for (NSNumber* keyCode in flutter::keyCodeToModifierFlag) {
+    FlutterKeyEvent* event;
+    NSNumber* logicalKey;
+    NSNumber* physicalKey;
+    NSNumber* flag = flutter::keyCodeToModifierFlag[keyCode];
 
-        // Should synthesize down event.
-        NSEvent* mouseEvent = flutter::testing::CreateMouseEvent([flag unsignedLongValue]);
-        [viewController mouseMoved:mouseEvent];
-        EXPECT_EQ([events count], 1u);
-        event = events[0].data;
-        logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
-        physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
-        EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
-        EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->synthesized, true);
+    // Should synthesize down event.
+    NSEvent* mouseEvent = flutter::testing::CreateMouseEvent([flag unsignedLongValue]);
+    [viewController mouseMoved:mouseEvent];
+    EXPECT_EQ([events count], 1u);
+    event = events[0].data;
+    logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
+    physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
+    EXPECT_EQ(event->type, kFlutterKeyEventTypeDown);
+    EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
+    EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
+    EXPECT_EQ(event->synthesized, true);
 
-        // Should synthesize up event.
-        mouseEvent = flutter::testing::CreateMouseEvent(0x00);
-        [viewController mouseMoved:mouseEvent];
-        EXPECT_EQ([events count], 2u);
-        event = events[1].data;
-        logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
-        physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
-        EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
-        EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
-        EXPECT_EQ(event->synthesized, true);
+    // Should synthesize up event.
+    mouseEvent = flutter::testing::CreateMouseEvent(0x00);
+    [viewController mouseMoved:mouseEvent];
+    EXPECT_EQ([events count], 2u);
+    event = events[1].data;
+    logicalKey = [flutter::keyCodeToLogicalKey objectForKey:keyCode];
+    physicalKey = [flutter::keyCodeToPhysicalKey objectForKey:keyCode];
+    EXPECT_EQ(event->type, kFlutterKeyEventTypeUp);
+    EXPECT_EQ(event->logical, logicalKey.unsignedLongLongValue);
+    EXPECT_EQ(event->physical, physicalKey.unsignedLongLongValue);
+    EXPECT_EQ(event->synthesized, true);
 
-        [events removeAllObjects];
-      }];
+    [events removeAllObjects];
+  };
 
   return true;
 }
