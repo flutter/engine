@@ -21,12 +21,13 @@ if 'GCP_PROJECT' not in os.environ:
   sys.exit(1)
 PROJECT = os.environ['GCP_PROJECT']
 
+ENCODING = 'UTF-8'
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
 error_re = re.compile(r'[EF]/flutter.+')
 
-ENCODING = 'UTF-8'
 
 def run_firebase_test(apk, results_dir):
   # game-loop tests are meant for OpenGL apps.

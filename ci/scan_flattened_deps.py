@@ -26,8 +26,7 @@ HELP_STR = 'To find complete information on this vulnerability, navigate to '
 OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
 SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
-
-ENCODING='UTF-8'
+ENCODING = 'UTF-8'
 
 failed_deps = []  # deps which fail to be be cloned or git-merge based
 
@@ -186,12 +185,7 @@ def get_common_ancestor_commit(dep, deps_list):
     temp_dep_dir = DEP_CLONE_DIR + '/' + dep_name
     # clone dependency from mirror
     subprocess.check_output([
-        'git',
-        'clone',
-        '--quiet',
-        '--',
-        dep[0],
-        temp_dep_dir
+        'git', 'clone', '--quiet', '--', dep[0], temp_dep_dir
     ])
 
     # create branch that will track the upstream dep
@@ -200,33 +194,20 @@ def get_common_ancestor_commit(dep, deps_list):
             upstream=upstream
         )
     )
-
     subprocess.check_output([
-        'git',
-        '--git-dir',
-        temp_dep_dir + '/.git',
-        'remote',
-        'add',
-        'upstream',
+        'git', '--git-dir', temp_dep_dir + '/.git', 'remote', 'add', 'upstream',
         upstream
     ])
-
     subprocess.check_output([
-        'git',
-        '--git-dir',
-        temp_dep_dir + '/.git',
-        'fetch',
-        '--quiet',
+        'git', '--git-dir', temp_dep_dir + '/.git', 'fetch', '--quiet',
         'upstream'
     ])
-
     # get name of the default branch for upstream (e.g. main/master/etc.)
     default_branch = subprocess.check_output(
         'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
         "| sed -n \'/HEAD branch/s/.*: //p\'",
         shell=True
     ).decode(ENCODING).strip()
-
     print(
         'default_branch found: {default_branch}'.format(
             default_branch=default_branch
@@ -234,14 +215,8 @@ def get_common_ancestor_commit(dep, deps_list):
     )
     # make upstream branch track the upstream dep
     subprocess.check_output([
-        'git',
-        '--git-dir',
-        temp_dep_dir + '/.git',
-        'checkout',
-        '-b',
-        'upstream',
-        '--track',
-        'upstream/' + default_branch
+        'git', '--git-dir', temp_dep_dir + '/.git', 'checkout', '-b',
+        'upstream', '--track', 'upstream/' + default_branch
     ])
     # get the most recent commit from default branch of upstream
     commit = subprocess.check_output(
@@ -249,7 +224,7 @@ def get_common_ancestor_commit(dep, deps_list):
         "--format=\'%(objectname:short)\' refs/heads/upstream",
         shell=True
     ).decode(ENCODING).strip()
-    # commit = commit.decode().strip()
+    
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
@@ -258,7 +233,7 @@ def get_common_ancestor_commit(dep, deps_list):
         ),
         shell=True
     ).decode(ENCODING).strip()
-    # ancestor_commit = ancestor_commit.decode().strip()
+    
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
   except subprocess.CalledProcessError as error:
