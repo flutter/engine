@@ -245,8 +245,9 @@ static char markerKey;
 }
 
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
-  // The view needs a non-zero frame.
-  self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
+  // The view needs a non-zero frame and must be placed outside of visible area.
+  // https://github.com/flutter/flutter/issues/118504
+  self = [super initWithFrame:NSMakeRect(-100, -100, 1, 1)];
   if (self != nil) {
     _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
