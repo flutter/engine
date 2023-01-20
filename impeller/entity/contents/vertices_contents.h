@@ -53,10 +53,10 @@ class VerticesContents final : public Contents {
 };
 
 class VerticesColorContents final : public Contents {
-  public:
-    explicit VerticesColorContents(const VerticesContents& parent);
+ public:
+  explicit VerticesColorContents(const VerticesContents& parent);
 
-    ~VerticesColorContents() override;
+  ~VerticesColorContents() override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;

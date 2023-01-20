@@ -106,7 +106,7 @@ struct Paint {
   std::shared_ptr<Contents> CreateContentsForGeometry(
       std::unique_ptr<Geometry> geometry) const;
 
-std::shared_ptr<Contents> CreateContentsForGeometry(
+  std::shared_ptr<Contents> CreateContentsForGeometry(
       std::shared_ptr<Geometry> geometry) const;
 
  private:
