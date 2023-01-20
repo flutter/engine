@@ -81,10 +81,20 @@ def launch_package(package_name, activity_name, adb_path='adb'):
 def collect_and_validate_trace(adb_path='adb'):
   print('Fetching trace')
   subprocess.check_output([
-      adb_path, 'shell', 'perfetto', '--attach', PERFETTO_SESSION_KEY, '--stop'
+      adb_path,
+      'shell',
+      'perfetto',
+      '--attach',
+      PERFETTO_SESSION_KEY,
+      '--stop'
   ], stderr=subprocess.STDOUT)
-  subprocess.check_output([adb_path, 'pull', PERFETTO_TRACE_FILE, 'trace.pb'],
-                          stderr=subprocess.STDOUT)
+
+  subprocess.check_output([
+       adb_path,
+       'pull',
+       PERFETTO_TRACE_FILE,
+       'trace.pb'
+   ], stderr=subprocess.STDOUT)
 
   print('Validating trace')
   traceconv = os.path.join(
@@ -93,7 +103,9 @@ def collect_and_validate_trace(adb_path='adb'):
   )
 
   traceconv_output = subprocess.check_output([
-      traceconv, 'systrace', 'trace.pb'
+      traceconv,
+      'systrace',
+      'trace.pb'
   ], stderr=subprocess.STDOUT, universal_newlines=True).decode('UTF-8')
 
   print('Trace output:')

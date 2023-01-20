@@ -66,7 +66,8 @@ def run_firebase_test(apk, results_dir):
 
 def check_logcat(results_dir):
   logcat = subprocess.check_output([
-      'gsutil', 'cat',
+      'gsutil', 
+      'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
   ]).decode(encoding)
 
@@ -82,9 +83,9 @@ def check_logcat(results_dir):
 
 def check_timeline(results_dir):
   gsutil_du = subprocess.check_output([
-      'gsutil', 'du',
-      '%s/%s/*/game_loop_results/results_scenario_0.json' %
-      (BUCKET, results_dir)
+      'gsutil',
+      'du',
+      '%s/%s/*/game_loop_results/results_scenario_0.json' % (BUCKET, results_dir)
   ]).decode(encoding).strip()
   
   if gsutil_du == '0':
@@ -116,8 +117,12 @@ def main():
     print('No APKs found at %s' % apks_dir)
     return 1
 
-  git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
-                                         cwd=script_dir).decode(encoding).strip()
+  git_revision = subprocess.check_output([
+      'git',
+      'rev-parse',
+      'HEAD'],
+      cwd=script_dir
+  ).decode(encoding).strip()
 
   results = []
   apk = None
