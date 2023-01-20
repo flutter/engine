@@ -414,6 +414,11 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
   if (!atlas) {
     return;
   }
+  auto size = atlas->GetSize();
+
+  if (size.IsEmpty()) {
+    return;
+  }
 
   std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
   contents->SetColors(std::move(colors));
