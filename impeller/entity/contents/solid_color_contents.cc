@@ -24,8 +24,8 @@ const Color& SolidColorContents::GetColor() const {
   return color_;
 }
 
-void SolidColorContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
-  geometry_ = std::move(geometry);
+void SolidColorContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
+  geometry_ = geometry;
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(

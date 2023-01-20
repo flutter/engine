@@ -7,6 +7,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/position_uv.vert.h"
@@ -27,12 +28,16 @@ std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransformation());
 };
 
-void VerticesContents::SetGeometry(std::unique_ptr<VerticesGeometry> geometry) {
-  geometry_ = std::move(geometry);
+void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
+  geometry_ = geometry;
 }
 
 void VerticesContents::SetSourceContents(std::shared_ptr<Contents> contents) {
   src_contents_ = std::move(contents);
+}
+
+std::shared_ptr<VerticesGeometry> VerticesContents::GetGeometry() const {
+  return geometry_;
 }
 
 void VerticesContents::SetColor(Color color) {
@@ -51,66 +56,101 @@ bool VerticesContents::Render(const ContentContext& renderer,
   if (geometry_->HasVertexColors() && blend_mode_ == BlendMode::kClear) {
     return true;
   }
-  if (geometry_->HasVertexColors() && blend_mode_ == BlendMode::kDestination) {
-    return RenderColors(renderer, entity, pass, color_.alpha);
-  }
   if (!geometry_->HasVertexColors() || blend_mode_ == BlendMode::kSource) {
     return src_contents_->Render(renderer, entity, pass);
   }
 
-  auto coverage =
-      geometry_->GetCoverage(Matrix()).value_or(Rect::MakeLTRB(0, 0, 0, 0));
-  auto size = coverage.size;
-  if (size.IsEmpty()) {
-    return true;
+  auto dst_contents = std::make_shared<VerticesColorContents>(*this);
+
+  if (geometry_->HasVertexColors() && blend_mode_ == BlendMode::kDestination) {
+    return dst_contents->Render(renderer, entity, pass);
   }
 
-  auto dst_texture = renderer.MakeSubpass(
-      ISize::Ceil(size),
-      [&contents = *this, &coverage](const ContentContext& renderer,
-                                     RenderPass& pass) -> bool {
-        Entity sub_entity;
-        sub_entity.SetBlendMode(BlendMode::kSourceOver);
-        sub_entity.SetTransformation(
-            Matrix::MakeTranslation(Vector3(-coverage.origin)));
-        return contents.RenderColors(renderer, sub_entity, pass, 1.0);
-      });
+  if (blend_mode_ < BlendMode::kScreen) {
+    auto subpass_coverage = geometry_->GetCoverage(Matrix());
+    if (!subpass_coverage.has_value()) {
+      return true;
+    }
+    auto coverage = subpass_coverage.value();
+    auto subpass_texture = renderer.MakeSubpass(
+        ISize::Ceil(coverage.size),
+        [&contents = *this, &coverage, &dst_contents](
+            const ContentContext& renderer, RenderPass& pass) -> bool {
+          Entity sub_entity;
+          sub_entity.SetBlendMode(BlendMode::kSourceOver);
+          sub_entity.SetTransformation(
+              Matrix::MakeTranslation(Vector3(-coverage.origin)));
 
-  if (!dst_texture) {
-    return false;
+          auto filter_contents = ColorFilterContents::MakeBlend(
+              contents.blend_mode_,
+              {FilterInput::Make(dst_contents),
+               FilterInput::Make(contents.src_contents_)});
+
+          return filter_contents->Render(renderer, sub_entity, pass);
+        });
+    if (!subpass_texture) {
+      return false;
+    }
+    auto texture_contents = TextureContents::MakeRect(coverage);
+    texture_contents->SetTexture(subpass_texture);
+    texture_contents->SetOpacity(color_.alpha);
+    texture_contents->SetSourceRect(Rect::MakeSize(subpass_texture->GetSize()));
+    return texture_contents->Render(renderer, entity, pass);
   }
+
+  // For some reason this looks backwards compared to Skia unless
+  // we reverse the src/dst.
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
-      {FilterInput::Make(src_contents_), FilterInput::Make(dst_texture)});
+      {FilterInput::Make(src_contents_), FilterInput::Make(dst_contents)});
   contents->SetAlpha(color_.alpha);
+
   return contents->Render(renderer, entity, pass);
 }
 
-bool VerticesContents::RenderColors(const ContentContext& renderer,
-                                    const Entity& entity,
-                                    RenderPass& pass,
-                                    Scalar alpha) const {
+//------------------------------------------------------
+// VerticesColorContents
+
+VerticesColorContents::VerticesColorContents(const VerticesContents& parent)
+    : parent_(parent) {}
+
+VerticesColorContents::~VerticesColorContents() {}
+
+// |Contents|
+std::optional<Rect> VerticesColorContents::GetCoverage(
+    const Entity& entity) const {
+  return parent_.GetCoverage(entity);
+}
+
+void VerticesColorContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+// |Contents|
+bool VerticesColorContents::Render(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) const {
   using VS = GeometryColorPipeline::VertexShader;
   using FS = GeometryColorPipeline::FragmentShader;
 
   Command cmd;
   cmd.label = "VerticesColors";
   auto& host_buffer = pass.GetTransientsBuffer();
+  auto geometry = parent_.GetGeometry();
 
-  auto geometry_result = geometry_->GetPositionColorBuffer(
-      renderer, entity, pass, color_, blend_mode_);
+  auto geometry_result =
+      geometry->GetPositionColorBuffer(renderer, entity, pass);
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  vert_info.mvp = geometry_result.transform;
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
 
   FS::FragInfo frag_info;
-  frag_info.alpha = alpha;
+  frag_info.alpha = 1.0;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   return pass.AddCommand(std::move(cmd));

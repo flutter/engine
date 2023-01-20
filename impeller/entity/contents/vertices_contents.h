@@ -25,13 +25,15 @@ class VerticesContents final : public Contents {
 
   ~VerticesContents() override;
 
-  void SetGeometry(std::unique_ptr<VerticesGeometry> geometry);
+  void SetGeometry(std::shared_ptr<VerticesGeometry> geometry);
 
   void SetColor(Color color);
 
   void SetBlendMode(BlendMode blend_mode);
 
   void SetSourceContents(std::shared_ptr<Contents> contents);
+
+  std::shared_ptr<VerticesGeometry> GetGeometry() const;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -42,17 +44,35 @@ class VerticesContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  bool RenderColors(const ContentContext& renderer,
-                    const Entity& entity,
-                    RenderPass& pass,
-                    Scalar alpha) const;
-
   Color color_;
-  std::unique_ptr<VerticesGeometry> geometry_;
+  std::shared_ptr<VerticesGeometry> geometry_;
   BlendMode blend_mode_ = BlendMode::kSource;
   std::shared_ptr<Contents> src_contents_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(VerticesContents);
+};
+
+class VerticesColorContents final : public Contents {
+  public:
+    explicit VerticesColorContents(const VerticesContents& parent);
+
+    ~VerticesColorContents() override;
+
+  // |Contents|
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  bool Render(const ContentContext& renderer,
+              const Entity& entity,
+              RenderPass& pass) const override;
+
+  void SetAlpha(Scalar alpha);
+
+ private:
+  const VerticesContents& parent_;
+  Scalar alpha_ = 1.0;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(VerticesColorContents);
 };
 
 }  // namespace impeller
