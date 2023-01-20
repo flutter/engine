@@ -159,6 +159,12 @@ void doTests() {
       target.dispatchEvent(event);
       expect(event.defaultPrevented, isTrue);
 
+      // Dispatching on the document body is still disabled.
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      domDocument.body!.dispatchEvent(event);
+      expect(event.defaultPrevented, isTrue);
+
       // Enabling the context menu means that contextmenu events are back to not
       // being prevented.
       strategy.enableContextMenu();

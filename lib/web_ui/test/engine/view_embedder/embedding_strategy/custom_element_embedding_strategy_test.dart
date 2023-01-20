@@ -155,6 +155,12 @@ void doTests() {
       target.dispatchEvent(event);
       expect(event.defaultPrevented, isTrue);
 
+      // Dispatching on a DOM element outside of target's subtree has no effect.
+      event = createDomEvent('Event', 'contextmenu');
+      expect(event.defaultPrevented, isFalse);
+      domDocument.body!.dispatchEvent(event);
+      expect(event.defaultPrevented, isFalse);
+
       // Enabling the context menu means that contextmenu events are back to not
       // being prevented.
       strategy.enableContextMenu();
