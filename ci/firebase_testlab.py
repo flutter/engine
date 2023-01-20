@@ -120,7 +120,8 @@ def main():
   git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                          cwd=script_dir)
 
-  git_revision = git_revision if isinstance(git_revision, str) else git_revision.decode(ENCODING)
+  git_revision = git_revision if isinstance(
+      git_revision, str) else git_revision.decode(ENCODING)
   git_revision = git_revision.strip()
   results = []
   apk = None
