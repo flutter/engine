@@ -453,7 +453,7 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
   return clipCount;
 }
 
-void FlutterPlatformViewsController::ClipViewAddMaskView(UIView* clipView) {
+void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
   if (clipView.maskView) {
     return;
   }
@@ -496,7 +496,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                      transformMatrix)) {
           break;
         }
-        ClipViewAddMaskView(clipView);
+        ClipViewSetMaskView(clipView);
         [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
                                                        matrix:transformMatrix];
         break;
@@ -506,7 +506,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                       transformMatrix)) {
           break;
         }
-        ClipViewAddMaskView(clipView);
+        ClipViewSetMaskView(clipView);
         [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
                                                         matrix:transformMatrix];
         break;
@@ -515,7 +515,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         // TODO(cyanglaz): Find a way to pre-determine if path contains the PlatformView boudning
         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
         // https://github.com/flutter/flutter/issues/118650
-        ClipViewAddMaskView(clipView);
+        ClipViewSetMaskView(clipView);
         [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
                                                        matrix:transformMatrix];
         break;

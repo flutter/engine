@@ -454,6 +454,8 @@ static BOOL _preparedOnce = NO;
 
 @interface FlutterClippingMaskViewPool ()
 
+// The maximum number of `FlutterClippingMaskView` the pool can contain.
+// This prevents the pool to grow infinately and limits the maximum memory a pool can use.
 @property(assign, nonatomic) NSUInteger capacity;
 @property(retain, nonatomic) NSMutableArray<FlutterClippingMaskView*>* pool;
 // The index points to the first available FlutterClippingMaskView in the `pool`.
