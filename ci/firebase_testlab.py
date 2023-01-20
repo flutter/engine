@@ -68,12 +68,11 @@ def check_logcat(results_dir):
   logcat = subprocess.check_output([
       'gsutil', 'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
-  ])
-  
+  ]).decode(encoding)
+
   if not logcat:
     sys.exit(1)
 
-  logcat = str(logcat, encoding)
   logcat_matches = error_re.findall(logcat)
   if logcat_matches:
     print('Errors in logcat:')
@@ -86,8 +85,8 @@ def check_timeline(results_dir):
       'gsutil', 'du',
       '%s/%s/*/game_loop_results/results_scenario_0.json' %
       (BUCKET, results_dir)
-  ]).strip()
-  gsutil_du = str(gsutil_du, encoding)
+  ]).decode(encoding).strip()
+  
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
     sys.exit(1)
@@ -118,9 +117,7 @@ def main():
     return 1
 
   git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
-                                         cwd=script_dir).strip()
-
-  git_revision = str(git_revision, encoding)
+                                         cwd=script_dir).decode(encoding).strip()
 
   results = []
   apk = None
