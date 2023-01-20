@@ -98,7 +98,8 @@ const std::vector<Color>& AtlasContents::GetColors() const {
 bool AtlasContents::Render(const ContentContext& renderer,
                            const Entity& entity,
                            RenderPass& pass) const {
-  if (texture_ == nullptr || blend_mode_ == BlendMode::kClear) {
+  if (texture_ == nullptr || blend_mode_ == BlendMode::kClear ||
+      alpha_ <= 0.0) {
     return true;
   }
 
@@ -126,29 +127,11 @@ bool AtlasContents::Render(const ContentContext& renderer,
   dst_contents->SetCoverage(coverage);
 
   if (blend_mode_ < BlendMode::kScreen) {
-    auto subpass_texture = renderer.MakeSubpass(
-        ISize::Ceil(coverage.size),
-        [&contents = *this, &coverage, &dst_contents, &src_contents](
-            const ContentContext& renderer, RenderPass& pass) -> bool {
-          Entity sub_entity;
-          sub_entity.SetBlendMode(BlendMode::kSourceOver);
-          sub_entity.SetTransformation(
-              Matrix::MakeTranslation(Vector3(-coverage.origin)));
-
-          auto filter_contents = ColorFilterContents::MakeBlend(
-              contents.blend_mode_, {FilterInput::Make(dst_contents),
-                                     FilterInput::Make(src_contents)});
-
-          return filter_contents->Render(renderer, sub_entity, pass);
-        });
-    if (!subpass_texture) {
-      return false;
-    }
-    auto texture_contents = TextureContents::MakeRect(coverage);
-    texture_contents->SetTexture(subpass_texture);
-    texture_contents->SetOpacity(alpha_);
-    texture_contents->SetSourceRect(Rect::MakeSize(subpass_texture->GetSize()));
-    return texture_contents->Render(renderer, entity, pass);
+    auto contents = ColorFilterContents::MakeBlend(
+        blend_mode_,
+        {FilterInput::Make(dst_contents), FilterInput::Make(src_contents)});
+    contents->SetAlpha(alpha_);
+    return contents->Render(renderer, entity, pass);
   }
 
   // For some reason this looks backwards compared to Skia unless

@@ -40,10 +40,8 @@ std::shared_ptr<VerticesGeometry> VerticesContents::GetGeometry() const {
   return geometry_;
 }
 
-void VerticesContents::SetColor(Color color) {
-  // Note: for blending the fully opaque color is used, and the alpha is
-  // applied as a final step.
-  color_ = color;
+void VerticesContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
 }
 
 void VerticesContents::SetBlendMode(BlendMode blend_mode) {
@@ -53,49 +51,17 @@ void VerticesContents::SetBlendMode(BlendMode blend_mode) {
 bool VerticesContents::Render(const ContentContext& renderer,
                               const Entity& entity,
                               RenderPass& pass) const {
-  if (geometry_->HasVertexColors() && blend_mode_ == BlendMode::kClear) {
+  if (blend_mode_ == BlendMode::kClear) {
     return true;
   }
-  if (!geometry_->HasVertexColors() || blend_mode_ == BlendMode::kSource) {
-    return src_contents_->Render(renderer, entity, pass);
-  }
-
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
-  if (geometry_->HasVertexColors() && blend_mode_ == BlendMode::kDestination) {
-    return dst_contents->Render(renderer, entity, pass);
-  }
-
   if (blend_mode_ < BlendMode::kScreen) {
-    auto subpass_coverage = geometry_->GetCoverage(Matrix());
-    if (!subpass_coverage.has_value()) {
-      return true;
-    }
-    auto coverage = subpass_coverage.value();
-    auto subpass_texture = renderer.MakeSubpass(
-        ISize::Ceil(coverage.size),
-        [&contents = *this, &coverage, &dst_contents](
-            const ContentContext& renderer, RenderPass& pass) -> bool {
-          Entity sub_entity;
-          sub_entity.SetBlendMode(BlendMode::kSourceOver);
-          sub_entity.SetTransformation(
-              Matrix::MakeTranslation(Vector3(-coverage.origin)));
-
-          auto filter_contents = ColorFilterContents::MakeBlend(
-              contents.blend_mode_,
-              {FilterInput::Make(dst_contents),
-               FilterInput::Make(contents.src_contents_)});
-
-          return filter_contents->Render(renderer, sub_entity, pass);
-        });
-    if (!subpass_texture) {
-      return false;
-    }
-    auto texture_contents = TextureContents::MakeRect(coverage);
-    texture_contents->SetTexture(subpass_texture);
-    texture_contents->SetOpacity(color_.alpha);
-    texture_contents->SetSourceRect(Rect::MakeSize(subpass_texture->GetSize()));
-    return texture_contents->Render(renderer, entity, pass);
+    auto contents = ColorFilterContents::MakeBlend(
+        blend_mode_,
+        {FilterInput::Make(dst_contents), FilterInput::Make(src_contents_)});
+    contents->SetAlpha(alpha_);
+    return contents->Render(renderer, entity, pass);
   }
 
   // For some reason this looks backwards compared to Skia unless
@@ -103,7 +69,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
       {FilterInput::Make(src_contents_), FilterInput::Make(dst_contents)});
-  contents->SetAlpha(color_.alpha);
+  contents->SetAlpha(alpha_);
 
   return contents->Render(renderer, entity, pass);
 }
@@ -150,7 +116,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
 
   FS::FragInfo frag_info;
-  frag_info.alpha = 1.0;
+  frag_info.alpha = alpha_;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
   return pass.AddCommand(std::move(cmd));

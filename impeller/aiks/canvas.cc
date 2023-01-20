@@ -385,10 +385,19 @@ void Canvas::DrawVertices(std::shared_ptr<VerticesGeometry> vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  auto src_contents = paint.CreateContentsForGeometry(vertices);
+  if (!vertices->HasVertexColors()) {
+    auto contents = paint.CreateContentsForGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    GetCurrentPass().AddEntity(entity);
+    return;
+  }
+
+  auto src_paint = paint;
+  src_paint.color = paint.color.WithAlpha(1.0);
+  auto src_contents = src_paint.CreateContentsForGeometry(vertices);
 
   auto contents = std::make_shared<VerticesContents>();
-  contents->SetColor(paint.color);
+  contents->SetAlpha(paint.color.alpha);
   contents->SetBlendMode(blend_mode);
   contents->SetGeometry(vertices);
   contents->SetSourceContents(std::move(src_contents));
