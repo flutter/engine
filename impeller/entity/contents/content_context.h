@@ -27,7 +27,6 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
-
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
