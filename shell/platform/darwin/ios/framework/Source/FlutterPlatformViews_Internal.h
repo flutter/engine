@@ -292,7 +292,7 @@ class FlutterPlatformViewsController {
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
 
-  void ClipViewAddMaskView(UIView* clipView);
+  void ClipViewSetMaskView(UIView* clipView);
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
