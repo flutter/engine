@@ -88,7 +88,7 @@ mixin _ContextMenu {
   ///  * [disableContextMenu], which is like this but is not passed a
   ///    [DomElement].
   @protected
-  void disableContextMenuOn(DomElement element) {
+  void disableContextMenuOn(DomEventTarget element) {
     if (!_contextMenuEnabled) {
       return;
     }
@@ -116,7 +116,7 @@ mixin _ContextMenu {
   ///  * [enableContextMenu], which is like this but is not passed a
   ///    [DomElement].
   @protected
-  void enableContextMenuOn(DomElement element) {
+  void enableContextMenuOn(DomEventTarget element) {
     if (_contextMenuEnabled) {
       return;
     }
