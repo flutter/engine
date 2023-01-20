@@ -105,7 +105,7 @@ def collect_and_validate_trace(adb_path='adb'):
       traceconv,
       'systrace',
       'trace.pb'
-  ], stderr=subprocess.STDOUT, universal_newlines=True).decode('UTF-8')
+  ], stderr=subprocess.STDOUT, universal_newlines=True)
 
   print('Trace output:')
   print(traceconv_output)
