@@ -207,7 +207,9 @@ def get_common_ancestor_commit(dep, deps_list):
         'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
         "| sed -n \'/HEAD branch/s/.*: //p\'",
         shell=True
-    ).decode(ENCODING).strip()
+    )
+    default_branch = default_branch if isinstance(default_branch, str) else default_branch.decode(ENCODING)
+    default_branch = default_branch.strip()
     print(
         'default_branch found: {default_branch}'.format(
             default_branch=default_branch
@@ -223,17 +225,18 @@ def get_common_ancestor_commit(dep, deps_list):
         'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
         "--format=\'%(objectname:short)\' refs/heads/upstream",
         shell=True
-    ).decode(ENCODING).strip()
-    
-
+    )
+    commit = commit if isinstance(commit, str) else commit.decode(ENCODING)
+    commit = commit.strip()
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
         'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
             temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
         ),
         shell=True
-    ).decode(ENCODING).strip()
-    
+    )
+    ancestor_commit = ancestor_commit if isinstance(ancestor_commit, str) else ancestor_commit.decode(ENCODING)
+    ancestor_commit = ancestor_commit.strip()
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
   except subprocess.CalledProcessError as error:
