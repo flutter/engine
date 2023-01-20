@@ -1542,7 +1542,7 @@
 ../../../third_party/dart/runtime/tools/gen_library_src_paths.py
 ../../../third_party/dart/runtime/tools/graphexplorer/graphexplorer.css
 ../../../third_party/dart/runtime/tools/heapsnapshot/CHANGELOG.md
-../../../third_party/dart/runtime/tools/heapsnapshot/README
+../../../third_party/dart/runtime/tools/heapsnapshot/README.md
 ../../../third_party/dart/runtime/tools/heapsnapshot/pubspec.yaml
 ../../../third_party/dart/runtime/tools/heapsnapshot/test
 ../../../third_party/dart/runtime/tools/utils.py
@@ -1709,6 +1709,7 @@
 ../../../third_party/dart/sdk/lib/_internal/sdk_library_metadata/pubspec.yaml
 ../../../third_party/dart/sdk/lib/_internal/vm/OWNERS
 ../../../third_party/dart/sdk/lib/_internal/wasm/OWNERS
+../../../third_party/dart/sdk/lib/analysis_options.yaml
 ../../../third_party/dart/sdk/lib/html/doc
 ../../../third_party/dart/sdk/lib/libraries.json
 ../../../third_party/dart/sdk/lib/libraries.yaml
