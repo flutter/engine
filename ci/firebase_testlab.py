@@ -26,7 +26,7 @@ buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
 error_re = re.compile(r'[EF]/flutter.+')
 
-encoding='UTF-8'
+ENCODING='UTF-8'
 
 
 def run_firebase_test(apk, results_dir):
@@ -69,7 +69,7 @@ def check_logcat(results_dir):
       'gsutil',
       'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
-  ]).decode(encoding)
+  ]).decode(ENCODING)
 
   if not logcat:
     sys.exit(1)
@@ -86,7 +86,7 @@ def check_timeline(results_dir):
       'gsutil',
       'du',
       '%s/%s/*/game_loop_results/results_scenario_0.json' % (BUCKET, results_dir)
-  ]).decode(encoding).strip()
+  ]).decode(ENCODING).strip()
 
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
@@ -122,7 +122,7 @@ def main():
       'rev-parse',
       'HEAD'],
       cwd=script_dir
-  ).decode(encoding).strip()
+  ).decode(ENCODING).strip()
 
   results = []
   apk = None

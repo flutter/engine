@@ -27,7 +27,7 @@ OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
 SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
 
-encoding='UTF-8'
+ENCODING='UTF-8'
 
 failed_deps = []  # deps which fail to be be cloned or git-merge based
 
@@ -225,7 +225,7 @@ def get_common_ancestor_commit(dep, deps_list):
         'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
         "| sed -n \'/HEAD branch/s/.*: //p\'",
         shell=True
-    ).decode().strip()
+    ).decode(ENCODING).strip()
 
     print(
         'default_branch found: {default_branch}'.format(
@@ -248,7 +248,7 @@ def get_common_ancestor_commit(dep, deps_list):
         'git --git-dir ' + temp_dep_dir + '/.git for-each-ref ' +
         "--format=\'%(objectname:short)\' refs/heads/upstream",
         shell=True
-    ).decode(encoding).strip()
+    ).decode(ENCODING).strip()
     # commit = commit.decode().strip()
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
@@ -257,7 +257,7 @@ def get_common_ancestor_commit(dep, deps_list):
             temp_dep_dir=temp_dep_dir, commit=commit, depUrl=dep[1]
         ),
         shell=True
-    ).decode(encoding).strip()
+    ).decode(ENCODING).strip()
     # ancestor_commit = ancestor_commit.decode().strip()
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
