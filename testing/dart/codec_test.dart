@@ -91,10 +91,10 @@ void main() {
     final ui.ImmutableBuffer buffer = await ui.ImmutableBuffer.fromUint8List(data);
     final ui.Codec codec = await ui.instantiateImageCodecWithSize(
       buffer,
-      getTargetSize: (ui.ImageDescriptor descriptor) {
+      getTargetSize: (int intrinsicWidth, int intrinsicHeight) {
         return ui.TargetImageSize(
-          width: descriptor.width ~/ 2,
-          height: descriptor.height ~/ 2,
+          width: intrinsicWidth ~/ 2,
+          height: intrinsicHeight ~/ 2,
         );
       },
     );
