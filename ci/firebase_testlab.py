@@ -26,6 +26,8 @@ buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
 out_dir = os.path.join(buildroot_dir, 'out')
 error_re = re.compile(r'[EF]/flutter.+')
 
+encoding='UTF-8'
+
 
 def run_firebase_test(apk, results_dir):
   # game-loop tests are meant for OpenGL apps.
@@ -67,9 +69,11 @@ def check_logcat(results_dir):
       'gsutil', 'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
   ])
+  
   if not logcat:
     sys.exit(1)
 
+  logcat = str(logcat, encoding)
   logcat_matches = error_re.findall(logcat)
   if logcat_matches:
     print('Errors in logcat:')
@@ -83,6 +87,7 @@ def check_timeline(results_dir):
       '%s/%s/*/game_loop_results/results_scenario_0.json' %
       (BUCKET, results_dir)
   ]).strip()
+  gsutil_du = str(gsutil_du, encoding)
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
     sys.exit(1)
@@ -114,6 +119,8 @@ def main():
 
   git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                          cwd=script_dir).strip()
+
+  git_revision = str(git_revision, encoding)
 
   results = []
   apk = None
