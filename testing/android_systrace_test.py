@@ -64,7 +64,6 @@ def launch_package(package_name, activity_name, adb_path='adb'):
                             universal_newlines=True)
 
   print('Launching %s (%s)' % (package_name, activity_name))
-  
   subprocess.check_output([
       adb_path, 'shell', 'am ', 'start', '-n',
       '%s/%s' % (package_name, activity_name)

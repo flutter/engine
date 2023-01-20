@@ -597,7 +597,7 @@ def ensure_ios_tests_are_built(ios_out_dir):
 
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
-  
+
   version_output = subprocess.check_output([
        'xcodebuild',
        '-version'

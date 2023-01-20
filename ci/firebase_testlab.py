@@ -66,7 +66,7 @@ def run_firebase_test(apk, results_dir):
 
 def check_logcat(results_dir):
   logcat = subprocess.check_output([
-      'gsutil', 
+      'gsutil',
       'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
   ]).decode(encoding)
@@ -87,7 +87,7 @@ def check_timeline(results_dir):
       'du',
       '%s/%s/*/game_loop_results/results_scenario_0.json' % (BUCKET, results_dir)
   ]).decode(encoding).strip()
-  
+
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
     sys.exit(1)
