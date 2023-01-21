@@ -41,7 +41,7 @@
     _toValue = toValue;
 
     _zeta = _damping / (2 * sqrt(_stiffness * _mass));  // Damping ratio.
-    _omega0 = sqrt(_stiffness / _mass);  // Undamped angular frequency of the oscillator.
+    _omega0 = sqrt(_stiffness / _mass);             // Undamped angular frequency of the oscillator.
     _omega1 = _omega0 * sqrt(1.0 - _zeta * _zeta);  // Exponential decay.
     _v0 = -_initialVelocity;
     _x0 = _toValue - _fromValue;
