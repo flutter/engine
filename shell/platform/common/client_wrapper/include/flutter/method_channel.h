@@ -91,9 +91,8 @@ class MethodChannel {
   // Registers a handler that should be called any time a method call is
   // received on this channel. A null handler will remove any previous handler.
   //
-  // Note that the MethodChannel does not own the handler, and will not
-  // unregister it on destruction, so the caller is responsible for
-  // unregistering explicitly if it should no longer be called.
+  // The handler will be owned by the underlying BinaryMessageHandler.
+  // Destroying the MethodChannel will not unregister the handler.
   void SetMethodCallHandler(MethodCallHandler<T> handler) const {
     if (!handler) {
       messenger_->SetMessageHandler(name_, nullptr);
