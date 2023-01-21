@@ -599,7 +599,8 @@ def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
   version_output = version_output if isinstance(
-      version_output, str) else version_output.decode('UTF-8')
+      version_output, str
+  ) else version_output.decode('UTF-8')
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'
   assert match, message
