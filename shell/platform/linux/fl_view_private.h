@@ -54,8 +54,4 @@ void fl_view_add_widget(FlView* view,
  */
 void fl_view_end_frame(FlView* view);
 
-FlutterPointerDeviceKind fl_view_check_device_is_stylus(FlView* self,
-                                                        GdkEvent* event,
-                                                        double* pressure);
-
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_VIEW_PRIVATE_H_

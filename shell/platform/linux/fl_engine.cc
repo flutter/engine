@@ -179,6 +179,7 @@ static bool compositor_present_layers_callback(const FlutterLayer** layers,
   return fl_renderer_present_layers(FL_RENDERER(user_data), layers,
                                     layers_count);
 }
+
 // Flutter engine rendering callbacks.
 
 static void* fl_engine_gl_proc_resolver(void* user_data, const char* name) {
@@ -735,25 +736,6 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
-void fl_engine_send_pointer_event(FlEngine* engine,
-                                  FlutterPointerPhase phase,
-                                  FlutterPointerDeviceKind kind,
-                                  size_t timestamp,
-                                  double x,
-                                  double y,
-                                  double scroll_delta_x,
-                                  double scroll_delta_y,
-                                  int64_t buttons,
-                                  double pressure) {
-  if (kind == kFlutterPointerDeviceKindStylus) {
-    fl_engine_send_stylus_pointer_event(engine, phase, timestamp, x, y,
-                                        scroll_delta_x, scroll_delta_y, buttons,
-                                        pressure);
-  } else if (kind == kFlutterPointerDeviceKindMouse) {
-    fl_engine_send_mouse_pointer_event(engine, phase, timestamp, x, y,
-                                       scroll_delta_x, scroll_delta_y, buttons);
-  }
-}
 
 void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         FlutterPointerPhase phase,
