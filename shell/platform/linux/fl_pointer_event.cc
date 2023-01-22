@@ -11,27 +11,27 @@ static void dispose_origin_from_gdk_event(gpointer origin) {
   gdk_event_free(reinterpret_cast<GdkEvent*>(origin));
 }
 
-FlPointerEvent* fl_pointer_event_new_from_gdk_event(GdkEvent* event, FlView *view) {
+FlPointerEvent* fl_pointer_event_new_from_gdk_event(GdkEvent* event,
+                                                    FlView* view) {
   g_return_val_if_fail(event != nullptr, nullptr);
   FlPointerEvent* result = g_new(FlPointerEvent, 1);
 
   result->time = gdk_event_get_time(event) * kMicrosecondsPerMillisecond;
   result->type = event->type;
-  if(!gdk_event_get_coords(event, &result->x, &result->y)) {
-      g_warning("expected a pointer event");
-      return nullptr;
+  if (!gdk_event_get_coords(event, &result->x, &result->y)) {
+    g_warning("expected a pointer event");
+    return nullptr;
   }
   result->scale_factor = gtk_widget_get_scale_factor(GTK_WIDGET(view));
-  if (event->type == GDK_BUTTON_PRESS || 
-          event->type == GDK_BUTTON_RELEASE||
-          event->type == GDK_DOUBLE_BUTTON_PRESS ||
-          event->type == GDK_TRIPLE_BUTTON_PRESS) {
+  if (event->type == GDK_BUTTON_PRESS || event->type == GDK_BUTTON_RELEASE ||
+      event->type == GDK_DOUBLE_BUTTON_PRESS ||
+      event->type == GDK_TRIPLE_BUTTON_PRESS) {
     GdkEventButton* eventBtn = reinterpret_cast<GdkEventButton*>(event);
     result->button = eventBtn->button;
     result->button_state = eventBtn->state;
   }
-  result->fl_pointer_device_kind = fl_pointer_check_device_is_stylus(
-          view, event, &result->pressure);
+  result->fl_pointer_device_kind =
+      fl_pointer_check_device_is_stylus(view, event, &result->pressure);
   result->origin = event;
   result->dispose_origin = dispose_origin_from_gdk_event;
 
@@ -52,8 +52,8 @@ FlPointerEvent* fl_pointer_event_clone(const FlPointerEvent* event) {
 }
 
 FlutterPointerDeviceKind fl_pointer_check_device_is_stylus(FlView* view,
-                                                        GdkEvent* event,
-                                                        double* pressure) {
+                                                           GdkEvent* event,
+                                                           double* pressure) {
   GdkDevice* device = gdk_event_get_device(event);
   GdkAxisFlags flags = gdk_device_get_axes(device);
   // Setting a default value for pressure
@@ -69,4 +69,3 @@ FlutterPointerDeviceKind fl_pointer_check_device_is_stylus(FlView* view,
   gdk_device_get_axis(device, axes, GDK_AXIS_PRESSURE, pressure);
   return kFlutterPointerDeviceKindStylus;
 }
-

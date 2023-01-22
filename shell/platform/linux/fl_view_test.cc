@@ -6,8 +6,8 @@
 #include "gtest/gtest.h"
 
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
-#include "flutter/shell/platform/linux/fl_pointer_event.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
+#include "flutter/shell/platform/linux/fl_pointer_event.h"
 #include "flutter/shell/platform/linux/testing/fl_test.h"
 
 // MOCK_ENGINE_PROC is leaky by design
@@ -106,6 +106,5 @@ TEST(FlEngineTest, SendPointerEventStylus) {
   fl_view_send_pointer_event(&view, &fl_event, kDown);
   EXPECT_TRUE(called);
 }
-
 
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)

@@ -11,12 +11,12 @@
 #include "flutter/shell/platform/linux/fl_accessibility_plugin.h"
 #include "flutter/shell/platform/linux/fl_engine_private.h"
 #include "flutter/shell/platform/linux/fl_key_event.h"
-#include "flutter/shell/platform/linux/fl_pointer_event.h"
 #include "flutter/shell/platform/linux/fl_keyboard_manager.h"
 #include "flutter/shell/platform/linux/fl_keyboard_view_delegate.h"
 #include "flutter/shell/platform/linux/fl_mouse_cursor_plugin.h"
 #include "flutter/shell/platform/linux/fl_platform_plugin.h"
 #include "flutter/shell/platform/linux/fl_plugin_registrar_private.h"
+#include "flutter/shell/platform/linux/fl_pointer_event.h"
 #include "flutter/shell/platform/linux/fl_renderer_gl.h"
 #include "flutter/shell/platform/linux/fl_scrolling_manager.h"
 #include "flutter/shell/platform/linux/fl_scrolling_view_delegate.h"
@@ -119,15 +119,18 @@ static void init_scrolling(FlView* self) {
       fl_scrolling_manager_new(FL_SCROLLING_VIEW_DELEGATE(self));
 }
 
-
-void fl_view_send_pointer_event(FlView* self, FlPointerEvent *event, 
-        FlutterPointerPhase phase) {
+void fl_view_send_pointer_event(FlView* self,
+                                FlPointerEvent* event,
+                                FlutterPointerPhase phase) {
   if (event->fl_pointer_device_kind == kFlutterPointerDeviceKindStylus) {
-    fl_engine_send_stylus_pointer_event(self->engine, phase, event->time, event->x * event->scale_factor , 
-            event->y * event->scale_factor, 0, 0, self->button_state, event->pressure);
+    fl_engine_send_stylus_pointer_event(self->engine, phase, event->time,
+                                        event->x * event->scale_factor,
+                                        event->y * event->scale_factor, 0, 0,
+                                        self->button_state, event->pressure);
   } else if (event->fl_pointer_device_kind == kFlutterPointerDeviceKindMouse) {
-    fl_engine_send_mouse_pointer_event(self->engine, phase, event->time, event->x * event->scale_factor , 
-            event->y * event->scale_factor, 0, 0, self->button_state);
+    fl_engine_send_mouse_pointer_event(
+        self->engine, phase, event->time, event->x * event->scale_factor,
+        event->y * event->scale_factor, 0, 0, self->button_state);
   }
 }
 
@@ -189,7 +192,6 @@ static void check_pointer_inside(FlView* view, FlPointerEvent* event) {
     fl_view_send_pointer_event(view, event, kAdd);
   }
 }
-
 
 // Updates the engine with the current window metrics.
 static void handle_geometry_changed(FlView* self) {
@@ -369,9 +371,10 @@ static gboolean button_press_event_cb(GtkWidget* widget,
   if (!gtk_widget_has_focus(GTK_WIDGET(view))) {
     gtk_widget_grab_focus(GTK_WIDGET(view));
   }
-  FlPointerEvent *fl_event = fl_pointer_event_new_from_gdk_event(reinterpret_cast<GdkEvent*>(event), view);
+  FlPointerEvent* fl_event = fl_pointer_event_new_from_gdk_event(
+      reinterpret_cast<GdkEvent*>(event), view);
   if (!fl_event) {
-      return FALSE;
+    return FALSE;
   }
 
   return send_pointer_button_event(view, fl_event);
@@ -381,9 +384,10 @@ static gboolean button_press_event_cb(GtkWidget* widget,
 static gboolean button_release_event_cb(GtkWidget* widget,
                                         GdkEventButton* event,
                                         FlView* view) {
-  FlPointerEvent *fl_event = fl_pointer_event_new_from_gdk_event(reinterpret_cast<GdkEvent*>(event), view);
-  if(!fl_event) {
-      return FALSE;
+  FlPointerEvent* fl_event = fl_pointer_event_new_from_gdk_event(
+      reinterpret_cast<GdkEvent*>(event), view);
+  if (!fl_event) {
+    return FALSE;
   }
   return send_pointer_button_event(view, fl_event);
 }
@@ -409,18 +413,18 @@ static gboolean motion_notify_event_cb(GtkWidget* widget,
     return FALSE;
   }
 
-  FlPointerEvent *fl_event = fl_pointer_event_new_from_gdk_event(reinterpret_cast<GdkEvent*>(event), view);
-  if(!fl_event) {
-      return FALSE;
+  FlPointerEvent* fl_event = fl_pointer_event_new_from_gdk_event(
+      reinterpret_cast<GdkEvent*>(event), view);
+  if (!fl_event) {
+    return FALSE;
   }
   check_pointer_inside(view, fl_event);
-
 
   fl_keyboard_manager_sync_modifier_if_needed(view->keyboard_manager,
                                               event->state, event->time);
 
-  fl_view_send_pointer_event(view, fl_event, 
-          view->button_state !=0 ? kMove: kHover);
+  fl_view_send_pointer_event(view, fl_event,
+                             view->button_state != 0 ? kMove : kHover);
 
   return TRUE;
 }
@@ -433,9 +437,10 @@ static gboolean enter_notify_event_cb(GtkWidget* widget,
     return FALSE;
   }
 
-  FlPointerEvent *fl_event = fl_pointer_event_new_from_gdk_event(reinterpret_cast<GdkEvent*>(event), view);
-  if(!fl_event) {
-      return FALSE;
+  FlPointerEvent* fl_event = fl_pointer_event_new_from_gdk_event(
+      reinterpret_cast<GdkEvent*>(event), view);
+  if (!fl_event) {
+    return FALSE;
   }
   check_pointer_inside(view, fl_event);
 
@@ -454,9 +459,10 @@ static gboolean leave_notify_event_cb(GtkWidget* widget,
   // window with mouse grab active Gtk will send another leave notify on
   // release.
   if (view->pointer_inside && view->button_state == 0) {
-    FlPointerEvent *fl_event = fl_pointer_event_new_from_gdk_event(reinterpret_cast<GdkEvent*>(event), view);
-    if(!fl_event) {
-         return FALSE;
+    FlPointerEvent* fl_event = fl_pointer_event_new_from_gdk_event(
+        reinterpret_cast<GdkEvent*>(event), view);
+    if (!fl_event) {
+      return FALSE;
     }
     fl_view_send_pointer_event(view, fl_event, kRemove);
     view->pointer_inside = FALSE;

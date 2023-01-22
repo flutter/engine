@@ -59,11 +59,12 @@ typedef struct _FlPointerEvent {
  * #GdkEvent, and will be destroyed by #fl_pointer_event_dispose.
  * @view: the #FLView that received this pointer event.
  *
- * Create a new #FlPointerEvent based on a #GdkEvent 
+ * Create a new #FlPointerEvent based on a #GdkEvent
  *
  * Returns: a new #FlPointerEvent. Must be freed with #fl_pointer_event_dispose.
  */
-FlPointerEvent* fl_pointer_event_new_from_gdk_event(GdkEvent* event, FlView* view);
+FlPointerEvent* fl_pointer_event_new_from_gdk_event(GdkEvent* event,
+                                                    FlView* view);
 
 /**
  * fl_pointer_event_dispose:
@@ -75,8 +76,7 @@ void fl_pointer_event_dispose(FlPointerEvent* event);
 
 FlPointerEvent* fl_pointer_event_clone(const FlPointerEvent* source);
 
-
 FlutterPointerDeviceKind fl_pointer_check_device_is_stylus(FlView* view,
-                                                        GdkEvent* event,
-                                                        double* pressure);
+                                                           GdkEvent* event,
+                                                           double* pressure);
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_POINTER_EVENT_H_

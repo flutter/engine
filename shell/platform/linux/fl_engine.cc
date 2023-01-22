@@ -736,7 +736,6 @@ void fl_engine_send_window_metrics_event(FlEngine* self,
   self->embedder_api.SendWindowMetricsEvent(self->engine, &event);
 }
 
-
 void fl_engine_send_mouse_pointer_event(FlEngine* self,
                                         FlutterPointerPhase phase,
                                         size_t timestamp,
