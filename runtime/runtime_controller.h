@@ -477,7 +477,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Get an identifier that represents the Dart isolate group the
   ///             root isolate is in.
   ///
-  /// @return     The root isolate isolate group identifier, zero if one can't
+  /// @return     The root isolate group identifier, zero if one can't
   ///             be established.
   uint64_t GetRootIsolateGroup() const;
 
