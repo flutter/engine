@@ -60,10 +60,20 @@
 
 - (void)layoutSubviews {
   if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+    CAMetalLayer* layer = (CAMetalLayer*)self.layer;
     CGFloat screenScale = [UIScreen mainScreen].scale;
-    self.layer.allowsGroupOpacity = YES;
-    self.layer.contentsScale = screenScale;
-    self.layer.rasterizationScale = screenScale;
+    layer.allowsGroupOpacity = YES;
+    layer.contentsScale = screenScale;
+    layer.rasterizationScale = screenScale;
+    CGColorSpaceRef srgb =
+      CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+    layer.colorspace = srgb;
+    CFRelease(srgb);
+    if (self.opaque) {
+      layer.pixelFormat = MTLPixelFormatBGR10_XR_sRGB;
+    } else {
+      layer.pixelFormat = MTLPixelFormatBGRA10_XR_sRGB;
+    }
   }
 
   [super layoutSubviews];
