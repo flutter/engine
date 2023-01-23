@@ -18,7 +18,7 @@ vars = {
   'llvm_git': 'https://llvm.googlesource.com',
   # OCMock is for testing only so there is no google clone
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
-  'skia_revision': 'f6a5c806294dbc1088955645accc3c2f83d4f04f',
+  'skia_revision': '1ccf2093cfa9cae96363e66d524eca8168c050cc',
 
   # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
   # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
@@ -236,7 +236,7 @@ allowed_hosts = [
 ]
 
 deps = {
-  'src': 'https://github.com/flutter/buildroot.git' + '@' + 'b2ab6e1908b3eb268d2a2cab1ec5b63f38e1bc11',
+  'src': 'https://github.com/flutter/buildroot.git' + '@' + '5ca962cdf56fa8e7313a37237d9f1d7e7466b93b',
 
    # Fuchsia compatibility
    #

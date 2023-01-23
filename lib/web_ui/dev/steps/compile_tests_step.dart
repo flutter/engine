@@ -177,6 +177,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
     environment.wasmReleaseOutDir.path,
+    'canvaskit',
     'canvaskit.wasm',
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
@@ -196,6 +197,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
       localCanvasKitWasm,
       io.File(pathlib.join(
         environment.wasmReleaseOutDir.path,
+        'canvaskit',
         'canvaskit.js',
       )),
     ];
