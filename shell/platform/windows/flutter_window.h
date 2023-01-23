@@ -5,7 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOW_H_
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -41,7 +40,8 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
-                     int32_t device_id) override;
+                     int32_t device_id,
+                     int modifiers_state) override;
 
   // |Window|
   void OnPointerDown(double x,
@@ -150,7 +150,10 @@ class FlutterWindow : public Window, public WindowBindingHandler {
   void SendInitialAccessibilityFeatures() override;
 
   // |WindowBindingHandler|
-  AccessibilityRootNode* GetAccessibilityRootNode() override;
+  AlertPlatformNodeDelegate* GetAlertDelegate() override;
+
+  // |WindowBindingHandler|
+  ui::AXPlatformNodeWin* GetAlert() override;
 
   // |Window|
   ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;

@@ -14,7 +14,9 @@
 
 #include <cstring>
 
+#include "flutter/shell/platform/common/flutter_platform_node_delegate.h"
 #include "flutter/shell/platform/windows/dpi_utils.h"
+#include "flutter/shell/platform/windows/keyboard_utils.h"
 
 namespace flutter {
 
@@ -59,7 +61,6 @@ Window::Window(std::unique_ptr<WindowsProcTable> windows_proc_table,
     : touch_id_generator_(kMinTouchDeviceId, kMaxTouchDeviceId),
       windows_proc_table_(std::move(windows_proc_table)),
       text_input_manager_(std::move(text_input_manager)),
-      accessibility_root_(nullptr),
       ax_fragment_root_(nullptr) {
   // Get the DPI of the primary monitor as the initial DPI. If Per-Monitor V2 is
   // supported, |current_dpi_| should be updated in the
@@ -203,35 +204,31 @@ LRESULT Window::OnGetObject(UINT const message,
   gfx::NativeViewAccessible root_view = GetNativeViewAccessible();
   // TODO(schectman): UIA is currently disabled by default.
   // https://github.com/flutter/flutter/issues/114547
-  if (is_uia_request && root_view) {
+  if (root_view) {
+    CreateAxFragmentRoot();
+    if (is_uia_request) {
 #ifdef FLUTTER_ENGINE_USE_UIA
-    if (!ax_fragment_root_) {
-      ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
-          window_handle_, GetAxFragmentRootDelegate());
-    }
-
-    // Retrieve UIA object for the root view.
-    Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
-    if (SUCCEEDED(ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
-            IID_PPV_ARGS(&root)))) {
-      // Return the UIA object via UiaReturnRawElementProvider(). See:
-      // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
-      reference_result = UiaReturnRawElementProvider(window_handle_, wparam,
-                                                     lparam, root.Get());
-    } else {
-      FML_LOG(ERROR) << "Failed to query AX fragment root.";
-    }
+      // Retrieve UIA object for the root view.
+      Microsoft::WRL::ComPtr<IRawElementProviderSimple> root;
+      if (SUCCEEDED(
+              ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
+                  IID_PPV_ARGS(&root)))) {
+        // Return the UIA object via UiaReturnRawElementProvider(). See:
+        // https://docs.microsoft.com/en-us/windows/win32/winauto/wm-getobject
+        reference_result = UiaReturnRawElementProvider(window_handle_, wparam,
+                                                       lparam, root.Get());
+      } else {
+        FML_LOG(ERROR) << "Failed to query AX fragment root.";
+      }
 #endif  // FLUTTER_ENGINE_USE_UIA
-  } else if (is_msaa_request && root_view) {
-    // Create the accessibility root if it does not already exist.
-    if (!accessibility_root_) {
-      CreateAccessibilityRootNode();
+    } else if (is_msaa_request) {
+      // Create the accessibility root if it does not already exist.
+      // Return the IAccessible for the root view.
+      Microsoft::WRL::ComPtr<IAccessible> root;
+      ax_fragment_root_->GetNativeViewAccessible()->QueryInterface(
+          IID_PPV_ARGS(&root));
+      reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
     }
-    // Return the IAccessible for the root view.
-    // Microsoft::WRL::ComPtr<IAccessible> root(root_view);
-    accessibility_root_->SetWindow(root_view);
-    Microsoft::WRL::ComPtr<IAccessible> root(accessibility_root_);
-    reference_result = LresultFromObject(IID_IAccessible, wparam, root.Get());
   }
   return reference_result;
 }
@@ -379,7 +376,7 @@ Window::HandleMessage(UINT const message,
             OnPointerDown(x, y, kFlutterPointerDeviceKindTouch, touch_id,
                           WM_LBUTTONDOWN);
           } else if (touch.dwFlags & TOUCHEVENTF_MOVE) {
-            OnPointerMove(x, y, kFlutterPointerDeviceKindTouch, touch_id);
+            OnPointerMove(x, y, kFlutterPointerDeviceKindTouch, touch_id, 0);
           } else if (touch.dwFlags & TOUCHEVENTF_UP) {
             OnPointerUp(x, y, kFlutterPointerDeviceKindTouch, touch_id,
                         WM_LBUTTONDOWN);
@@ -401,7 +398,15 @@ Window::HandleMessage(UINT const message,
         mouse_x_ = static_cast<double>(xPos);
         mouse_y_ = static_cast<double>(yPos);
 
-        OnPointerMove(mouse_x_, mouse_y_, device_kind, kDefaultPointerDeviceId);
+        int mods = 0;
+        if (wparam & MK_CONTROL) {
+          mods |= kControl;
+        }
+        if (wparam & MK_SHIFT) {
+          mods |= kShift;
+        }
+        OnPointerMove(mouse_x_, mouse_y_, device_kind, kDefaultPointerDeviceId,
+                      mods);
       }
       break;
     case WM_MOUSELEAVE:
@@ -612,11 +617,6 @@ void Window::Destroy() {
     window_handle_ = nullptr;
   }
 
-  if (accessibility_root_) {
-    accessibility_root_->Release();
-    accessibility_root_ = nullptr;
-  }
-
   UnregisterClass(window_class_name_.c_str(), nullptr);
 }
 
@@ -669,11 +669,18 @@ bool Window::GetHighContrastEnabled() {
   }
 }
 
-void Window::CreateAccessibilityRootNode() {
-  if (accessibility_root_) {
-    accessibility_root_->Release();
+void Window::CreateAxFragmentRoot() {
+  if (ax_fragment_root_) {
+    return;
   }
-  accessibility_root_ = AccessibilityRootNode::Create();
+  ax_fragment_root_ = std::make_unique<ui::AXFragmentRootWin>(
+      window_handle_, GetAxFragmentRootDelegate());
+  alert_delegate_ =
+      std::make_unique<AlertPlatformNodeDelegate>(*ax_fragment_root_);
+  ui::AXPlatformNode* alert_node =
+      ui::AXPlatformNodeWin::Create(alert_delegate_.get());
+  alert_node_.reset(static_cast<ui::AXPlatformNodeWin*>(alert_node));
+  ax_fragment_root_->SetAlertNode(alert_node_.get());
 }
 
 }  // namespace flutter

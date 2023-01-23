@@ -23,6 +23,7 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/scene/node.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkClipOp.h"
@@ -1055,9 +1056,11 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
+  // Use negative coordinates and then scale the transform by -1, -1 to make
+  // sure coverage is taking the transform into account.
+  std::vector<SkPoint> positions = {SkPoint::Make(-100, -300),
+                                    SkPoint::Make(-200, -100),
+                                    SkPoint::Make(-300, -300)};
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
                                           flutter::DlColor::kGreen(),
                                           flutter::DlColor::kWhite()};
@@ -1070,6 +1073,7 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   flutter::DlPaint paint;
 
   paint.setColor(flutter::DlColor::kRed().modulateOpacity(0.5));
+  builder.scale(-1, -1);
   builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1157,6 +1161,33 @@ TEST_P(DisplayListTest, DrawShapes) {
   }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
+
+#ifdef IMPELLER_ENABLE_3D
+TEST_P(DisplayListTest, SceneColorSource) {
+  // Load up the scene.
+  auto mapping =
+      flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
+  ASSERT_NE(mapping, nullptr);
+
+  std::shared_ptr<scene::Node> gltf_scene =
+      impeller::scene::Node::MakeFromFlatbuffer(
+          *mapping, *GetContext()->GetResourceAllocator());
+  ASSERT_NE(gltf_scene, nullptr);
+
+  flutter::DisplayListBuilder builder;
+
+  auto color_source = std::make_shared<flutter::DlSceneColorSource>(
+      gltf_scene,
+      Matrix::MakePerspective(Degrees(45), GetWindowSize(), 0.1, 1000) *
+          Matrix::MakeLookAt({3, 2, -5}, {0, 0, 0}, {0, 1, 0}));
+
+  flutter::DlPaint paint = flutter::DlPaint().setColorSource(color_source);
+
+  builder.drawPaint(paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller

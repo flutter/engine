@@ -51,7 +51,6 @@ class CompileTestsStep implements PipelineStep {
     await environment.webUiBuildDir.create();
     if (isWasm) {
       await copyDart2WasmTestScript();
-      await copyDart2WasmRuntime();
     }
     await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     if (useSkwasm) {
@@ -135,20 +134,6 @@ Future<void> copySkiaTestImages() async {
     destination.createSync(recursive: true);
     await imageFile.copy(destination.path);
   }
-}
-
-Future<void> copyDart2WasmRuntime() async {
-  final io.File sourceFile = io.File(pathlib.join(
-    environment.dartSdkDir.path,
-    'bin',
-    'dart2wasm_runtime.mjs',
-  ));
-  final io.File targetFile = io.File(pathlib.join(
-    environment.webUiBuildDir.path,
-    'dart2wasm_runtime.mjs',
-  ));
-
-  await sourceFile.copy(targetFile.path);
 }
 
 Future<void> copyDart2WasmTestScript() async {
@@ -393,6 +378,7 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     environment.dart2wasmSnapshotPath,
 
     '--dart-sdk=${environment.dartSdkDir.path}',
+    '--enable-asserts',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the

@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:js/js.dart';
 import 'package:js/js_util.dart' as js_util;
+import 'package:meta/meta.dart';
 
 /// This file contains static interop classes for interacting with the DOM and
 /// some helpers. All of the classes in this file are named after their
@@ -174,6 +175,7 @@ class DomEvent {}
 
 extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
+  external DomEventTarget? get currentTarget;
   external double? get timeStamp;
   external String get type;
   external void preventDefault();
@@ -285,12 +287,12 @@ extension DomElementExtension on DomElement {
   external set className(String value);
   external String get className;
   external void blur();
-  List<DomNode> getElementsByTagName(String tag) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
-  List<DomNode> getElementsByClassName(String className) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
+  Iterable<DomNode> getElementsByTagName(String tag) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByTagName', <Object>[tag]));
+  Iterable<DomNode> getElementsByClassName(String className) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByClassName', <Object>[className]));
   external void click();
   external bool hasAttribute(String name);
   Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
@@ -461,6 +463,9 @@ class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
   external double get offsetWidth;
+  external double get offsetLeft;
+  external double get offsetTop;
+  external DomHTMLElement? get offsetParent;
 }
 
 @JS()
@@ -580,7 +585,16 @@ class DomPerformanceMeasure extends DomPerformanceEntry {}
 @staticInterop
 class DomCanvasElement extends DomHTMLElement {}
 
+@visibleForTesting
+int debugCanvasCount = 0;
+
+@visibleForTesting
+void debugResetCanvasCount() {
+  debugCanvasCount = 0;
+}
+
 DomCanvasElement createDomCanvasElement({int? width, int? height}) {
+  debugCanvasCount++;
   final DomCanvasElement canvas =
       domWindow.document.createElement('canvas') as DomCanvasElement;
   if (width != null) {
@@ -610,6 +624,27 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
   DomCanvasRenderingContext2D get context2D =>
       getContext('2d')! as DomCanvasRenderingContext2D;
+
+  WebGLContext getGlContext(int majorVersion) {
+    if (majorVersion == 1) {
+      return getContext('webgl')! as WebGLContext;
+    }
+    return getContext('webgl2')! as WebGLContext;
+  }
+}
+
+@JS()
+@staticInterop
+class WebGLContext {}
+
+extension WebGLContextExtension on WebGLContext {
+  external int getParameter(int value);
+
+  @JS('SAMPLES')
+  external int get samples;
+
+  @JS('STENCIL_BITS')
+  external int get stencilBits;
 }
 
 @JS()
@@ -621,6 +656,7 @@ abstract class DomCanvasImageSource {}
 class DomCanvasRenderingContext2D {}
 
 extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
+  external DomCanvasElement? get canvas;
   external Object? get fillStyle;
   external set fillStyle(Object? style);
   external String get font;
@@ -937,15 +973,20 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external bool getModifierState(String keyArg);
 }
 
+DomKeyboardEvent createDomKeyboardEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('KeyboardEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
+
 @JS()
 @staticInterop
 class DomHistory {}
 
 extension DomHistoryExtension on DomHistory {
   dynamic get state => js_util.dartify(js_util.getProperty(this, 'state'));
-  void go([int? delta]) =>
+  void go([double? delta]) =>
       js_util.callMethod(this, 'go',
-          <Object>[if (delta != null) delta.toDouble()]);
+          <Object>[if (delta != null) delta]);
   void pushState(dynamic data, String title, String? url) =>
       js_util.callMethod(this, 'pushState', <Object?>[
         if (data is Map || data is Iterable) js_util.jsify(data as Object) else data,
@@ -1089,6 +1130,8 @@ extension DomMouseEventExtension on DomMouseEvent {
   external double get clientY;
   external double get offsetX;
   external double get offsetY;
+  external double get pageX;
+  external double get pageY;
   DomPoint get client => DomPoint(clientX, clientY);
   DomPoint get offset => DomPoint(offsetX, offsetY);
   external double get button;
@@ -1132,6 +1175,11 @@ extension DomWheelEventExtension on DomWheelEvent {
   external double get deltaMode;
 }
 
+DomWheelEvent createDomWheelEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('WheelEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
+
 @JS()
 @staticInterop
 class DomTouchEvent extends DomUIEvent {}
@@ -1141,9 +1189,9 @@ extension DomTouchEventExtension on DomTouchEvent {
   external bool get ctrlKey;
   external bool get metaKey;
   external bool get shiftKey;
-  List<DomTouch>? get changedTouches => js_util
-      .getProperty<List<Object?>?>(this, 'changedTouches')
-      ?.cast<DomTouch>();
+  Iterable<DomTouch> get changedTouches =>
+      createDomTouchListWrapper<DomTouch>(
+        js_util.getProperty<_DomTouchList>(this, 'changedTouches'));
 }
 
 @JS()
@@ -1312,7 +1360,10 @@ class DomStyleSheet {}
 class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
-  external DomCSSRuleList get cssRules;
+  Iterable<DomCSSRule> get cssRules =>
+      createDomListWrapper<DomCSSRule>(js_util
+          .getProperty<_DomList>(this, 'cssRules'));
+
   double insertRule(String rule, [int? index]) => js_util
       .callMethod<double>(
           this, 'insertRule',
@@ -1322,6 +1373,12 @@ extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
 @JS()
 @staticInterop
 class DomCSSRule {}
+
+@JS()
+@staticInterop
+extension DomCSSRuleExtension on DomCSSRule {
+  external String get cssText;
+}
 
 @JS()
 @staticInterop
@@ -1420,12 +1477,75 @@ extension DomMessageChannelExtension on DomMessageChannel {
   external DomMessagePort get port2;
 }
 
+/// ResizeObserver JS binding.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
 @JS()
 @staticInterop
-class DomCSSRuleList {}
+abstract class DomResizeObserver {}
 
-extension DomCSSRuleListExtension on DomCSSRuleList {
-  external double get length;
+/// Creates a DomResizeObserver with a callback.
+///
+/// Internally converts the `List<dynamic>` of entries into the expected
+/// `List<DomResizeObserverEntry>`
+DomResizeObserver? createDomResizeObserver(DomResizeObserverCallbackFn fn) {
+  return domCallConstructorString('ResizeObserver', <Object?>[
+    allowInterop(
+      (List<dynamic> entries, DomResizeObserver observer) {
+        fn(entries.cast<DomResizeObserverEntry>(), observer);
+      }
+    ),
+  ]) as DomResizeObserver?;
+}
+
+/// ResizeObserver instance methods.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#instance_methods
+extension DomResizeObserverExtension on DomResizeObserver {
+  external void disconnect();
+  external void observe(DomElement target, [DomResizeObserverObserveOptions options]);
+  external void unobserve(DomElement target);
+}
+
+/// Options object passed to the `observe` method of a [DomResizeObserver].
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver/observe#parameters
+@JS()
+@staticInterop
+@anonymous
+abstract class DomResizeObserverObserveOptions {
+  external factory DomResizeObserverObserveOptions({
+    String box,
+  });
+}
+
+/// Type of the function used to create a Resize Observer.
+typedef DomResizeObserverCallbackFn = void Function(List<DomResizeObserverEntry> entries, DomResizeObserver observer);
+
+/// The object passed to the [DomResizeObserverCallbackFn], which allows access to the new dimensions of the observed element.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry
+@JS()
+@staticInterop
+abstract class DomResizeObserverEntry {}
+
+/// ResizeObserverEntry instance properties.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry#instance_properties
+extension DomResizeObserverEntryExtension on DomResizeObserverEntry {
+  /// A DOMRectReadOnly object containing the new size of the observed element when the callback is run.
+  ///
+  /// Note that this is better supported than the above two properties, but it
+  /// is left over from an earlier implementation of the Resize Observer API, is
+  /// still included in the spec for web compat reasons, and may be deprecated
+  /// in future versions.
+  external DomRectReadOnly get contentRect;
+  external DomElement get target;
+  // Some more future getters:
+  //
+  // borderBoxSize
+  // contentBoxSize
+  // devicePixelContentBoxSize
 }
 
 /// A factory to create `TrustedTypePolicy` objects.
@@ -1624,6 +1744,52 @@ class _DomListWrapper<T> extends Iterable<T> {
 Iterable<T> createDomListWrapper<T>(_DomList list) =>
     _DomListWrapper<T>._(list).cast<T>();
 
+// https://developer.mozilla.org/en-US/docs/Web/API/TouchList
+@JS()
+@staticInterop
+class _DomTouchList {}
+
+extension DomTouchListExtension on _DomTouchList {
+  external double get length;
+  DomTouch item(int index) =>
+      js_util.callMethod<DomTouch>(this, 'item', <Object>[index.toDouble()]);
+}
+
+class _DomTouchListIterator<T> extends Iterator<T> {
+  _DomTouchListIterator(this.list);
+
+  final _DomTouchList list;
+  int index = -1;
+
+  @override
+  bool moveNext() {
+    index++;
+    if (index > list.length) {
+      throw StateError('Iterator out of bounds');
+    }
+    return index < list.length;
+  }
+
+  @override
+  T get current => list.item(index) as T;
+}
+
+class _DomTouchListWrapper<T> extends Iterable<T> {
+  _DomTouchListWrapper._(this.list);
+
+  final _DomTouchList list;
+
+  @override
+  Iterator<T> get iterator => _DomTouchListIterator<T>(list);
+
+  /// Override the length to avoid iterating through the whole collection.
+  @override
+  int get length => list.length.toInt();
+}
+
+Iterable<T> createDomTouchListWrapper<T>(_DomTouchList list) =>
+    _DomTouchListWrapper<T>._(list).cast<T>();
+
 @JS()
 @staticInterop
 class DomIntl {}
@@ -1657,7 +1823,7 @@ DomV8BreakIterator createV8BreakIterator() {
   return js_util.callConstructor<DomV8BreakIterator>(
     v8BreakIterator,
     <Object?>[
-      js_util.getProperty(domWindow, 'undefined'),
+      <String>[],
       js_util.jsify(const <String, String>{'type': 'line'}),
     ],
   );
