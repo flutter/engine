@@ -89,7 +89,7 @@ enum class PixelFormat {
   kB8G8R8A8UNormIntSRGB,
   kR32G32B32A32Float,
   kR16G16B16A16Float,
-
+  kB10G10R10XRSRGB,
   // Depth and stencil formats.
   kS8UInt,
   kD32FloatS8UInt,
@@ -99,7 +99,7 @@ enum class PixelFormat {
   //
   // On Metal, this is a support format for layer drawable and can be used to
   // specify the format of the resolve texture if needed.
-  kDefaultColor = kB8G8R8A8UNormInt,
+  kDefaultColor = kB10G10R10XRSRGB,
   kDefaultStencil = kS8UInt,
 };
 
@@ -289,6 +289,7 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
     case PixelFormat::kB8G8R8A8UNormInt:
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
+    case PixelFormat::kB10G10R10XRSRGB:
       return 4u;
     case PixelFormat::kD32FloatS8UInt:
       return 5u;

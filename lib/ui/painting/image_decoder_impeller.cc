@@ -23,6 +23,32 @@
 
 namespace flutter {
 
+namespace {
+bool IsApproximately(const SkColorSpace& x, const SkColorSpace& y) {
+  skcms_Matrix3x3 x_xyzd50;
+  skcms_Matrix3x3 y_xyzd50;
+
+  x.toXYZD50(&x_xyzd50);
+  y.toXYZD50(&y_xyzd50);
+
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      if (fabsf(x_xyzd50.vals[i][j] - y_xyzd50.vals[i][j]) > 0.01f) {
+        return false;
+      }
+    }
+  }
+  return x.transferFnHash() == y.transferFnHash();
+}
+
+bool IsDisplayP3(const SkColorSpace& color_space) {
+  static const SkColorSpace* display_p3 =
+      SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3)
+          .release();
+  return IsApproximately(color_space, *display_p3);
+}
+}  // namespace
+
 ImageDecoderImpeller::ImageDecoderImpeller(
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
@@ -51,6 +77,8 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   switch (type) {
     case kRGBA_8888_SkColorType:
       return impeller::PixelFormat::kR8G8B8A8UNormInt;
+    case kRGBA_F16_SkColorType:
+      return impeller::PixelFormat::kR16G16B16A16Float;
     default:
       return std::nullopt;
   }
@@ -85,11 +113,22 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  const auto image_info =
-      base_image_info.makeWH(decode_size.width(), decode_size.height())
-          .makeColorType(ChooseCompatibleColorType(base_image_info.colorType()))
-          .makeAlphaType(
-              ChooseCompatibleAlphaType(base_image_info.alphaType()));
+  if (IsDisplayP3(*base_image_info.colorSpace())) {
+    FML_DLOG(ERROR) << "loading display p3 image";
+  }
+  SkAlphaType alpha_type = ChooseCompatibleAlphaType(base_image_info.alphaType());
+  SkImageInfo image_info;
+  if (IsDisplayP3(*base_image_info.colorSpace())) {
+    // TODO(gaaclarke): branch on alphatype.
+    SkColorType color_type = kRGBA_F16_SkColorType;
+    image_info = base_image_info.makeWH(decode_size.width(), decode_size.height())
+        .makeColorType(color_type)
+        .makeAlphaType(alpha_type);
+  } else {
+    image_info = base_image_info.makeWH(decode_size.width(), decode_size.height())
+        .makeColorType(ChooseCompatibleColorType(base_image_info.colorType()))
+        .makeAlphaType(alpha_type);
+  }
 
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format.has_value()) {

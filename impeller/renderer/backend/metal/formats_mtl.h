@@ -37,11 +37,15 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
       return PixelFormat::kS8UInt;
     case MTLPixelFormatDepth32Float_Stencil8:
       return PixelFormat::kD32FloatS8UInt;
+    case MTLPixelFormatBGR10_XR_sRGB:
+      return PixelFormat::kB10G10R10XRSRGB;
     default:
       return PixelFormat::kUnknown;
   }
   return PixelFormat::kUnknown;
 }
+
+MTLPixelFormat SafeMTLPixelFormatBGR10_XR_sRGB();
 
 constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
   switch (format) {
@@ -69,6 +73,8 @@ constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {
       return MTLPixelFormatStencil8;
     case PixelFormat::kD32FloatS8UInt:
       return MTLPixelFormatDepth32Float_Stencil8;
+    case PixelFormat::kB10G10R10XRSRGB:
+      return SafeMTLPixelFormatBGR10_XR_sRGB();
   }
   return MTLPixelFormatInvalid;
 };
