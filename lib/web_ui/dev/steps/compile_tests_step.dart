@@ -144,6 +144,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
     environment.wasmReleaseOutDir.path,
+    'canvaskit',
     'canvaskit.wasm',
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
@@ -163,6 +164,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
       localCanvasKitWasm,
       io.File(pathlib.join(
         environment.wasmReleaseOutDir.path,
+        'canvaskit',
         'canvaskit.js',
       )),
     ];
@@ -345,6 +347,7 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     environment.dart2wasmSnapshotPath,
 
     '--dart-sdk=${environment.dartSdkDir.path}',
+    '--enable-asserts',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the
