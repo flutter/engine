@@ -70,9 +70,9 @@
     layer.colorspace = srgb;
     CFRelease(srgb);
     if (self.opaque) {
-      layer.pixelFormat = MTLPixelFormatBGR10_XR_sRGB;
+      layer.pixelFormat = MTLPixelFormatBGR10_XR;
     } else {
-      layer.pixelFormat = MTLPixelFormatBGRA10_XR_sRGB;
+      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
     }
   }
 
