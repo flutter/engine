@@ -85,6 +85,8 @@ data:
 const List<String> _canvaskitAssets = <String>[
   'canvaskit.js',
   'canvaskit.wasm',
+  'profiling/canvaskit.js',
+  'profiling/canvaskit.wasm',
 ];
 
 String _readCanvaskitVersion() {
