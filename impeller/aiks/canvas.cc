@@ -377,7 +377,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(std::shared_ptr<VerticesGeometry> vertices,
+void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                           BlendMode blend_mode,
                           const Paint& paint) {
   Entity entity;

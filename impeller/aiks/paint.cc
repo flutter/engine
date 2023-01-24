@@ -41,7 +41,7 @@ std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
 }
 
 std::shared_ptr<Contents> Paint::CreateContentsForGeometry(
-    std::shared_ptr<Geometry> geometry) const {
+    const std::shared_ptr<Geometry>& geometry) const {
   if (color_source.has_value()) {
     auto& source = color_source.value();
     auto contents = source();
