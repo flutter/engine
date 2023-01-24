@@ -141,30 +141,34 @@ class Surface {
   ui.Size? _currentSurfaceSize;
   double _currentDevicePixelRatio = -1;
 
-  CkSurface createRenderTargetSurface(ui.Size size) {
+  /// This is only valid after the first frame or if [ensureSurface] has been
+  /// called
+  bool get usingSoftwareBackend => _glContext == null ||
+      _grContext == null || webGLVersion == -1 || !configuration.canvasKitForceCpuOnly;
+
+  /// Ensure that the initial surface, gl/grcontext have been populated so
+  /// that software rendering can be detected.
+  void ensureSurface() {
     // If the GrContext hasn't been setup yet then we need to force initialization
     // of the canvas and initial surface.
-    if (_surface == null) {
-      // TODO(jonahwilliams): this is somewhat wasteful. We should probably
-      // eagerly setup this surface instead of delaying until the first frame?
-      // Or at least cache the estimated window size.
-      createOrUpdateSurface(const ui.Size(1, 1));
+    if (_surface != null) {
+      return;
     }
-    // No context means software rendering.
-    if (_glContext == null ||_grContext == null ||
-        webGLVersion == -1 || configuration.canvasKitForceCpuOnly) {
-      return _makeSoftwareCanvasSurface(
-          htmlCanvas!, 'Failed to initialize WebGL surface');
-    }
-    final SkSurface? skSurface = canvasKit.MakeRenderTarget(
+    // TODO(jonahwilliams): this is somewhat wasteful. We should probably
+    // eagerly setup this surface instead of delaying until the first frame?
+    // Or at least cache the estimated window size.
+    createOrUpdateSurface(const ui.Size(1, 1));
+  }
+
+  /// This method is not supported if software rendering is used.
+  CkSurface createRenderTargetSurface(ui.Size size) {
+    assert(!usingSoftwareBackend);
+
+    final SkSurface skSurface = canvasKit.MakeRenderTarget(
       _grContext!,
       size.width.ceil(),
       size.height.ceil(),
-    );
-    if (skSurface == null) {
-      return _makeSoftwareCanvasSurface(
-          htmlCanvas!, 'Failed to initialize WebGL surface');
-    }
+    )!;
     return CkSurface(skSurface, _glContext);
   }
 

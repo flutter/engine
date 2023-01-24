@@ -2,8 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:typed_data';
+
 import 'package:ui/ui.dart' as ui;
 
+import '../../engine.dart';
+import '../configuration.dart';
 import '../profiler.dart';
 import '../util.dart';
 import 'canvas.dart';
@@ -99,7 +103,16 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
 
   @override
   ui.Image toImageSync(int width, int height) {
+    SurfaceFactory.instance.baseSurface.ensureSurface();
+    if (SurfaceFactory.instance.baseSurface.usingSoftwareBackend) {
+      return toImageSyncSoftware(width, height);
+    }
+    return toImageSyncGPU(width, height);
+  }
+
+  ui.Image toImageSyncGPU(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
+
     final CkSurface ckSurface = SurfaceFactory.instance.baseSurface
       .createRenderTargetSurface(ui.Size(width.toDouble(), height.toDouble()));
     final CkCanvas ckCanvas = ckSurface.getCanvas();
@@ -108,6 +121,31 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
     final SkImage skImage = ckSurface.surface.makeImageSnapshot();
     ckSurface.dispose();
     return CkImage(skImage);
+  }
+
+  ui.Image toImageSyncSoftware(int width, int height) {
+    assert(debugCheckNotDisposed('Cannot convert picture to image.'));
+
+    final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
+    final CkSurface ckSurface =
+      surface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
+    final CkCanvas ckCanvas = ckSurface.getCanvas();
+    ckCanvas.clear(const ui.Color(0x00000000));
+    ckCanvas.drawPicture(this);
+    final SkImage skImage = ckSurface.surface.makeImageSnapshot();
+    final SkImageInfo imageInfo = SkImageInfo(
+      alphaType: canvasKit.AlphaType.Premul,
+      colorType: canvasKit.ColorType.RGBA_8888,
+      colorSpace: SkColorSpaceSRGB,
+      width: width.toDouble(),
+      height: height.toDouble(),
+    );
+    final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
+    final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
+    if (rasterImage == null) {
+      throw StateError('Unable to convert image pixels into SkImage.');
+    }
+    return CkImage(rasterImage);
   }
 
   @override
