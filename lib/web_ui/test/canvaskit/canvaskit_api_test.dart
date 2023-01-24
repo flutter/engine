@@ -1821,7 +1821,7 @@ void _paragraphTests() {
         majorVersion: webGLVersion.toDouble(),
       ),
     ).toInt();
-    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
+    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
     final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
 
     if (isFirefox) {
