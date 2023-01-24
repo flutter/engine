@@ -92,7 +92,9 @@ class MethodChannel {
   // received on this channel. A null handler will remove any previous handler.
   //
   // The handler will be owned by the underlying BinaryMessageHandler.
-  // Destroying the MethodChannel will not unregister the handler.
+  // Destroying the MethodChannel will not unregister the handler, so
+  // the caller is responsible for unregistering explicitly if the handler
+  // stops being valid before the engine is destroyed.
   void SetMethodCallHandler(MethodCallHandler<T> handler) const {
     if (!handler) {
       messenger_->SetMessageHandler(name_, nullptr);
