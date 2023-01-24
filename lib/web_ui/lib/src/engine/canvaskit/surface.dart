@@ -151,7 +151,8 @@ class Surface {
       createOrUpdateSurface(const ui.Size(1, 1));
     }
     // No context means software rendering.
-    if (_grContext == null) {
+    if (_glContext == null ||_grContext == null ||
+        webGLVersion == -1 || configuration.canvasKitForceCpuOnly) {
       return _makeSoftwareCanvasSurface(
           htmlCanvas!, 'Failed to initialize WebGL surface');
     }

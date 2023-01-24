@@ -1824,11 +1824,6 @@ void _paragraphTests() {
     final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
     final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
 
-    if (isFirefox) {
-      // Fails when there is no webgl support.
-      expect(surface, isNull);
-    } else {
-      expect(surface, isNotNull);
-    }
-  });
+    expect(surface, isNotNull);
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 }
