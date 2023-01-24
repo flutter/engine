@@ -142,6 +142,7 @@ if (enable_unittests) {
       "//flutter/fml",
       "//flutter/testing",
       "//flutter/testing:skia",
+      "//third_party/benchmark",
       "//third_party/skia",
     ]
 

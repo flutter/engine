@@ -5,7 +5,6 @@
 #include "flutter/display_list/display_list_benchmarks.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
-#include "flutter/testing/assertions_skia.h"
 
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSurface.h"
