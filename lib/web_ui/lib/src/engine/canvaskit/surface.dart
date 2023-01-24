@@ -150,6 +150,11 @@ class Surface {
       // Or at least cache the estimated window size.
       createOrUpdateSurface(const ui.Size(1, 1));
     }
+    // No context means software rendering.
+    if (_grContext == null) {
+      return _makeSoftwareCanvasSurface(
+          htmlCanvas!, 'Failed to initialize WebGL surface');
+    }
     final SkSurface? skSurface = canvasKit.MakeRenderTarget(
       _grContext!,
       size.width.ceil(),
