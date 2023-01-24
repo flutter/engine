@@ -7,8 +7,7 @@ import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/html_image_codec.dart';
-import 'package:ui/src/engine/test_embedding.dart';
+import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
 void main() {
@@ -73,8 +72,8 @@ Future<void> testMain() async {
     });
     test('provides image loading progress', () async {
       final StringBuffer buffer = StringBuffer();
-      final HtmlCodec codec = HtmlCodec('sample_image1.png',
-          chunkCallback: (int loaded, int total) {
+      final HtmlCodec codec =
+          HtmlCodec('sample_image1.png', chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       });
       await codec.getNextFrame();
@@ -84,19 +83,58 @@ Future<void> testMain() async {
     /// Regression test for Firefox
     /// https://github.com/flutter/flutter/issues/66412
     test('Returns nonzero natural width/height', () async {
-      final HtmlCodec codec = HtmlCodec(
-          'data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9I'
-          'jAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dG'
-          'l0bGU+QWJzdHJhY3QgaWNvbjwvdGl0bGU+PHBhdGggZD0iTTEyIDBjOS42MDEgMCAx'
-          'MiAyLjM5OSAxMiAxMiAwIDkuNjAxLTIuMzk5IDEyLTEyIDEyLTkuNjAxIDAtMTItMi'
-          '4zOTktMTItMTJDMCAyLjM5OSAyLjM5OSAwIDEyIDB6bS0xLjk2OSAxOC41NjRjMi41'
-          'MjQuMDAzIDQuNjA0LTIuMDcgNC42MDktNC41OTUgMC0yLjUyMS0yLjA3NC00LjU5NS'
-          '00LjU5NS00LjU5NVM1LjQ1IDExLjQ0OSA1LjQ1IDEzLjk2OWMwIDIuNTE2IDIuMDY1'
-          'IDQuNTg4IDQuNTgxIDQuNTk1em04LjM0NC0uMTg5VjUuNjI1SDUuNjI1djIuMjQ3aD'
-          'EwLjQ5OHYxMC41MDNoMi4yNTJ6bS04LjM0NC02Ljc0OGEyLjM0MyAyLjM0MyAwIDEx'
-          'LS4wMDIgNC42ODYgMi4zNDMgMi4zNDMgMCAwMS4wMDItNC42ODZ6Ii8+PC9zdmc+');
+      final HtmlCodec codec =
+          HtmlCodec('data:image/svg+xml;base64,PHN2ZyByb2xlPSJpbWciIHZpZXdCb3g9I'
+              'jAgMCAyNCAyNCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48dG'
+              'l0bGU+QWJzdHJhY3QgaWNvbjwvdGl0bGU+PHBhdGggZD0iTTEyIDBjOS42MDEgMCAx'
+              'MiAyLjM5OSAxMiAxMiAwIDkuNjAxLTIuMzk5IDEyLTEyIDEyLTkuNjAxIDAtMTItMi'
+              '4zOTktMTItMTJDMCAyLjM5OSAyLjM5OSAwIDEyIDB6bS0xLjk2OSAxOC41NjRjMi41'
+              'MjQuMDAzIDQuNjA0LTIuMDcgNC42MDktNC41OTUgMC0yLjUyMS0yLjA3NC00LjU5NS'
+              '00LjU5NS00LjU5NVM1LjQ1IDExLjQ0OSA1LjQ1IDEzLjk2OWMwIDIuNTE2IDIuMDY1'
+              'IDQuNTg4IDQuNTgxIDQuNTk1em04LjM0NC0uMTg5VjUuNjI1SDUuNjI1djIuMjQ3aD'
+              'EwLjQ5OHYxMC41MDNoMi4yNTJ6bS04LjM0NC02Ljc0OGEyLjM0MyAyLjM0MyAwIDEx'
+              'LS4wMDIgNC42ODYgMi4zNDMgMi4zNDMgMCAwMS4wMDItNC42ODZ6Ii8+PC9zdmc+');
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image.width, isNot(0));
+    });
+
+    group('toByteData', () {
+      test('returns unmodified bytes', () async {
+        final DomXMLHttpRequest request =
+            await domHttpRequest('sample_image1.png', responseType: 'blob');
+        final DomBlob blob = request.response as DomBlob;
+        final Uint8List responseBytes = (await blob.arrayBuffer() as ByteBuffer).asUint8List();
+
+        final HtmlCodec codec = HtmlBlobCodec(blob);
+        final ui.FrameInfo frameInfo = await codec.getNextFrame();
+
+        final Uint8List bytes =
+            (await frameInfo.image.toByteData(format: ui.ImageByteFormat.rawUnmodified))!
+                .buffer
+                .asUint8List();
+
+        expect(listEquals(bytes, responseBytes), isTrue);
+      });
+
+      test('transforms jpg to png', () async {
+        final HtmlCodec codec = HtmlCodec('sample_image1.jpg');
+        final ui.FrameInfo frameInfo = await codec.getNextFrame();
+
+        expect(frameInfo.image, isNotNull);
+        expect(frameInfo.image.width, 100);
+
+        final Uint8List bytes = (await frameInfo.image.toByteData(format: ui.ImageByteFormat.png))!
+            .buffer
+            .asUint8List();
+
+        // PNG-encoding is browser-specific, but the header is standard. We only
+        // test the header.
+        final List<int> pngHeader = <int>[137, 80, 78, 71, 13, 10, 26, 10];
+        expect(
+          bytes.buffer.asUint8List().sublist(0, pngHeader.length),
+          pngHeader,
+        );
+      });
     });
   });
 
@@ -111,8 +149,8 @@ Future<void> testMain() async {
     test('provides image loading progress from web', () async {
       final Uri uri = Uri.base.resolve('sample_image1.png');
       final StringBuffer buffer = StringBuffer();
-      final HtmlCodec codec = await ui.webOnlyInstantiateImageCodecFromUrl(uri,
-          chunkCallback: (int loaded, int total) {
+      final HtmlCodec codec =
+          await ui.webOnlyInstantiateImageCodecFromUrl(uri, chunkCallback: (int loaded, int total) {
         buffer.write('$loaded/$total,');
       }) as HtmlCodec;
       await codec.getNextFrame();

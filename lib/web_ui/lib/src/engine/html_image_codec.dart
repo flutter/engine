@@ -13,12 +13,12 @@ import 'safe_browser_api.dart';
 import 'util.dart';
 
 Object? get _jsImageDecodeFunction => getJsProperty<Object?>(
-  getJsProperty<Object>(
-    getJsProperty<Object>(domWindow, 'Image'),
-    'prototype',
-  ),
-  'decode',
-);
+      getJsProperty<Object>(
+        getJsProperty<Object>(domWindow, 'Image'),
+        'prototype',
+      ),
+      'decode',
+    );
 final bool _supportsDecode = _jsImageDecodeFunction != null;
 
 typedef WebOnlyImageCodecChunkCallback = void Function(
@@ -42,7 +42,7 @@ class HtmlCodec implements ui.Codec {
     // Currently there is no way to watch decode progress, so
     // we add 0/100 , 100/100 progress callbacks to enable loading progress
     // builders to create UI.
-      chunkCallback?.call(0, 100);
+    chunkCallback?.call(0, 100);
     if (_supportsDecode) {
       final DomHTMLImageElement imgElement = createDomHTMLImageElement();
       imgElement.src = src;
@@ -146,6 +146,7 @@ class HtmlImage implements ui.Image {
   bool _didClone = false;
 
   bool _disposed = false;
+
   @override
   void dispose() {
     ui.Image.onDispose?.call(this);
@@ -163,7 +164,6 @@ class HtmlImage implements ui.Image {
     }
     return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
   }
-
 
   @override
   ui.Image clone() => this;
@@ -194,13 +194,53 @@ class HtmlImage implements ui.Image {
         ctx.drawImage(imgElement, 0, 0);
         final DomImageData imageData = ctx.getImageData(0, 0, width, height);
         return Future<ByteData?>.value(imageData.data.buffer.asByteData());
-      default:
+      case ui.ImageByteFormat.png:
+        if (imgElement.src?.startsWith('data:image/png') ?? false) {
+          return _byteDataFromDataString(imgElement.src!);
+        }
+
+        final DomCanvasElement canvas = createDomCanvasElement()
+          ..width = width.toDouble()
+          ..height = height.toDouble();
+        final DomCanvasRenderingContext2D ctx = canvas.context2D;
+        ctx.drawImage(imgElement, 0, 0);
+        // canvas.toDataURL defaults to: 'image/png'
+        final String dataUrl = canvas.toDataURL();
+        final UriData data = UriData.fromUri(Uri.parse(dataUrl));
+
+        return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+      case ui.ImageByteFormat.rawUnmodified:
         if (imgElement.src?.startsWith('data:') ?? false) {
-          final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
-          return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+          return _byteDataFromDataString(imgElement.src!);
+        } else if (imgElement.src?.startsWith('blob:') ?? false) {
+          return _byteDataFromBlobString(imgElement.src!);
         } else {
           return Future<ByteData?>.value();
         }
+    }
+  }
+
+  Future<ByteData?> _byteDataFromDataString(String dataString) {
+    assert(dataString.startsWith('data:'));
+
+    final UriData data = UriData.fromUri(Uri.parse(dataString));
+    return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+  }
+
+  Future<ByteData?> _byteDataFromBlobString(String blobString) async {
+    assert(blobString.startsWith('blob:'));
+
+    try {
+      final DomXMLHttpRequest request = await domHttpRequest(blobString, responseType: 'blob');
+      final ByteBuffer byteBuffer = await (request.response as DomBlob).arrayBuffer() as ByteBuffer;
+
+      return byteBuffer.asByteData();
+    } catch (e) {
+      throw Exception(
+        "Couldn't load Blob Image\n"
+        'URL: $blobString\n'
+        'error: $e',
+      );
     }
   }
 
