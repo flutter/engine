@@ -7,8 +7,8 @@
     priority for the team is to support iOS, Android, Desktops, and Embedder API
     users (in that rough order).
 * I am running into issues when Impeller is enabled, how do I report them?
-  * Like any other Flutter issue, you can report them on the GitHub issue
-    tracker(https://github.com/flutter/flutter/issues/new/choose).
+  * Like any other Flutter issue, you can report them on the [GitHub issue
+    tracker](https://github.com/flutter/flutter/issues/new/choose).
   * Please explicitly mention that this is an Impeller specific regression. You
     can quickly swap between the Impeller and Skia backends using the command
     line flag flag detailed in [section in the README on how to try
