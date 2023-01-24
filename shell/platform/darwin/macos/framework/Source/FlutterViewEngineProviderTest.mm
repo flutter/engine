@@ -29,13 +29,13 @@ TEST(FlutterViewEngineProviderUnittests, GetViewReturnsTheCorrectView) {
   viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:mockEngine];
 
   // When the view controller is not set, the returned view is nil.
-  EXPECT_EQ([viewProvider getView:1], nil);
+  EXPECT_EQ([viewProvider getView:0], nil);
 
   // When the view controller is set, the returned view is the controller's view.
   mockFlutterViewController = OCMStrictClassMock([FlutterViewController class]);
   id mockView = OCMStrictClassMock([FlutterView class]);
   OCMStub([mockFlutterViewController flutterView]).andReturn(mockView);
-  EXPECT_EQ([viewProvider getView:1], mockView);
+  EXPECT_EQ([viewProvider getView:0], mockView);
 }
 
 }  // namespace flutter::testing

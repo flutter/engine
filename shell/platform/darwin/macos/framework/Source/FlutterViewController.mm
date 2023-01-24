@@ -286,8 +286,11 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 @implementation FlutterViewController {
   // The project to run in this controller's engine.
   FlutterDartProject* _project;
+
+  uint64_t _id;
 }
 
+@dynamic id;
 @dynamic view;
 
 /**
@@ -299,12 +302,12 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
                                          project:controller->_project
                           allowHeadlessExecution:NO];
   }
-  NSCAssert(controller.engine == nil && controller.id == 0,
+  NSCAssert(controller.engine == nil,
             @"The FlutterViewController is unexpectedly attached to "
-            @"engine %@ with ID %llu before initialization.",
-            controller.engine, controller.id);
+            @"engine %@ before initialization.",
+            controller.engine);
   engine.viewController = controller;
-  NSCAssert(controller.engine != nil && controller.id != 0,
+  NSCAssert(controller.engine != nil,
             @"The FlutterViewController unexpectedly stays unattached after initialization. "
             @"In unit tests, this is likely because either the FlutterViewController or "
             @"the FlutterEngine is mocked. Please subclass these classes instead.");
@@ -425,22 +428,28 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
+- (uint64_t)id {
+  NSAssert([self attached], @"This view controller is not attched.");
+  return _id;
+}
+
 - (void)onPreEngineRestart {
   [self initializeKeyboard];
 }
 
 - (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
-  NSAssert(_engine == nil && _id == 0, @"Already attached to an engine, engine %@ ID %llu.",
-           _engine, _id);
+  NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _id = viewId;
 }
 
 - (void)detachFromEngine {
-  NSAssert(_engine != nil && _id != 0, @"Not attached to an engine, engine %@ ID %llu.", _engine,
-           _id);
+  NSAssert(_engine != nil, @"Not attached to any engine.");
   _engine = nil;
-  _id = 0;
+}
+
+- (BOOL)attached {
+  return _engine != nil;
 }
 
 #pragma mark - Private methods

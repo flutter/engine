@@ -18,7 +18,7 @@
  * backward compatibility, single-view APIs will always operate the view with
  * this ID. Also, the first view assigned to the engine will also have this ID.
  */
-constexpr uint64_t kFlutterDefaultViewId = 1;
+constexpr uint64_t kFlutterDefaultViewId = 0;
 
 /**
  * Listener for view resizing.
