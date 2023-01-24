@@ -46,7 +46,6 @@ class CompileTestsStep implements PipelineStep {
     await environment.webUiBuildDir.create();
     if (isWasm) {
       await copyDart2WasmTestScript();
-      await copyDart2WasmRuntime();
     }
     await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
@@ -129,20 +128,6 @@ Future<void> copySkiaTestImages() async {
   }
 }
 
-Future<void> copyDart2WasmRuntime() async {
-  final io.File sourceFile = io.File(pathlib.join(
-    environment.dartSdkDir.path,
-    'bin',
-    'dart2wasm_runtime.mjs',
-  ));
-  final io.Directory targetDir = io.Directory(pathlib.join(
-    environment.webUiBuildDir.path,
-    'dart2wasm_runtime.mjs',
-  ));
-
-  await sourceFile.copy(targetDir.path);
-}
-
 Future<void> copyDart2WasmTestScript() async {
   final io.File sourceFile = io.File(pathlib.join(
     environment.webUiDevDir.path,
@@ -159,6 +144,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
   // If CanvasKit has been built locally, use that instead of the CIPD version.
   final io.File localCanvasKitWasm = io.File(pathlib.join(
     environment.wasmReleaseOutDir.path,
+    'canvaskit',
     'canvaskit.wasm',
   ));
   final bool builtLocalCanvasKit = localCanvasKitWasm.existsSync();
@@ -178,6 +164,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
       localCanvasKitWasm,
       io.File(pathlib.join(
         environment.wasmReleaseOutDir.path,
+        'canvaskit',
         'canvaskit.js',
       )),
     ];
@@ -353,6 +340,7 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     environment.dart2wasmSnapshotPath,
 
     '--dart-sdk=${environment.dartSdkDir.path}',
+    '--enable-asserts',
 
     // We do not want to auto-select a renderer in tests. As of today, tests
     // are designed to run in one specific mode. So instead, we specify the

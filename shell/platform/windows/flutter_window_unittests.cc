@@ -42,6 +42,9 @@ class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
     ON_CALL(*this, KeyboardHook(_, _, _, _, _, _, _))
         .WillByDefault(Invoke(real_implementation_.get(),
                               &KeyboardKeyHandler::KeyboardHook));
+    ON_CALL(*this, SyncModifiersIfNeeded(_))
+        .WillByDefault(Invoke(real_implementation_.get(),
+                              &KeyboardKeyHandler::SyncModifiersIfNeeded));
   }
 
   MOCK_METHOD7(KeyboardHook,
@@ -52,6 +55,8 @@ class SpyKeyboardKeyHandler : public KeyboardHandlerBase {
                     bool extended,
                     bool was_down,
                     KeyEventCallback callback));
+
+  MOCK_METHOD1(SyncModifiersIfNeeded, void(int modifiers_state));
 
  private:
   std::unique_ptr<KeyboardKeyHandler> real_implementation_;
@@ -137,6 +142,7 @@ class MockFlutterWindow : public FlutterWindow {
   MOCK_METHOD4(Win32PeekMessage, BOOL(LPMSG, UINT, UINT, UINT));
   MOCK_METHOD1(Win32MapVkToChar, uint32_t(uint32_t));
   MOCK_METHOD0(GetPlatformWindow, HWND());
+  MOCK_METHOD0(GetAxFragmentRootDelegate, ui::AXFragmentRootDelegateWin*());
 
  protected:
   // |KeyboardManager::WindowDelegate|
@@ -159,7 +165,8 @@ class TestFlutterWindowsView : public FlutterWindowsView {
   SpyKeyboardKeyHandler* key_event_handler;
   SpyTextInputPlugin* text_input_plugin;
 
-  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
 
  protected:
   std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
@@ -266,15 +273,15 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
   // Move
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
   EXPECT_CALL(delegate,
               OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kDefaultPointerDeviceId))
+                            kDefaultPointerDeviceId, 0))
       .Times(1);
 
   // Down
@@ -323,7 +330,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
       .Times(1);
 
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindMouse,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindMouse,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindMouse,
@@ -333,7 +340,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
 
   // Touch
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindTouch,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindTouch,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindTouch,
@@ -343,7 +350,7 @@ TEST(FlutterWindowTest, OnPointerStarSendsDeviceType) {
 
   // Pen
   win32window.OnPointerMove(10.0, 10.0, kFlutterPointerDeviceKindStylus,
-                            kDefaultPointerDeviceId);
+                            kDefaultPointerDeviceId, 0);
   win32window.OnPointerDown(10.0, 10.0, kFlutterPointerDeviceKindStylus,
                             kDefaultPointerDeviceId, WM_LBUTTONDOWN);
   win32window.OnPointerUp(10.0, 10.0, kFlutterPointerDeviceKindStylus,
@@ -410,15 +417,15 @@ TEST(FlutterWindowTest, AlertNode) {
   std::unique_ptr<MockFlutterWindow> win32window =
       std::make_unique<MockFlutterWindow>();
   ON_CALL(*win32window, GetPlatformWindow()).WillByDefault(Return(nullptr));
-  AccessibilityRootNode* root_node = win32window->GetAccessibilityRootNode();
+  ON_CALL(*win32window, GetAxFragmentRootDelegate())
+      .WillByDefault(Return(nullptr));
   TestFlutterWindowsView view(std::move(win32window));
-  EXPECT_CALL(view,
-              NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, nullptr, OBJID_CLIENT,
-                                    AccessibilityRootNode::kAlertChildId))
-      .Times(1);
   std::wstring message = L"Test alert";
+  EXPECT_CALL(view, NotifyWinEventWrapper(_, ax::mojom::Event::kAlert))
+      .Times(1);
   view.AnnounceAlert(message);
-  IAccessible* alert = root_node->GetOrCreateAlert();
+
+  IAccessible* alert = view.AlertNode();
   VARIANT self{.vt = VT_I4, .lVal = CHILDID_SELF};
   BSTR strptr;
   alert->get_accName(self, &strptr);

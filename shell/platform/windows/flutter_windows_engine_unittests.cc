@@ -8,9 +8,11 @@
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/shell/platform/windows/testing/engine_modifier.h"
+#include "flutter/shell/platform/windows/testing/flutter_windows_engine_builder.h"
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "fml/synchronization/waitable_event.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -21,34 +23,14 @@
 namespace flutter {
 namespace testing {
 
-namespace {
-
-// Returns an engine instance configured with dummy project path values.
-std::unique_ptr<FlutterWindowsEngine> GetTestEngine() {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = L"C:\\foo\\flutter_assets";
-  properties.icu_data_path = L"C:\\foo\\icudtl.dat";
-  properties.aot_library_path = L"C:\\foo\\aot.so";
-
-  std::vector<const char*> test_arguments = {"arg1", "arg2"};
-  properties.dart_entrypoint_argc = test_arguments.size();
-  properties.dart_entrypoint_argv = test_arguments.data();
-
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
-
-  EngineModifier modifier(engine.get());
-  // Force the non-AOT path unless overridden by the test.
-  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
-
-  return engine;
-}
-}  // namespace
-
 class FlutterWindowsEngineTest : public WindowsTest {};
 
 TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.AddDartEntrypointArgument("arg1");
+  builder.AddDartEntrypointArgument("arg2");
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   // The engine should be run with expected configuration values.
@@ -67,8 +49,8 @@ TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
         EXPECT_EQ(config->type, kOpenGL);
         EXPECT_EQ(user_data, engine_instance);
         // Spot-check arguments.
-        EXPECT_STREQ(args->assets_path, "C:\\foo\\flutter_assets");
-        EXPECT_STREQ(args->icu_data_path, "C:\\foo\\icudtl.dat");
+        EXPECT_NE(args->assets_path, nullptr);
+        EXPECT_NE(args->icu_data_path, nullptr);
         EXPECT_EQ(args->dart_entrypoint_argc, 2U);
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[0], "arg1"), 0);
         EXPECT_EQ(strcmp(args->dart_entrypoint_argv[1], "arg2"), 0);
@@ -159,7 +141,8 @@ TEST_F(FlutterWindowsEngineTest, RunDoesExpectedInitialization) {
 }
 
 TEST_F(FlutterWindowsEngineTest, ConfiguresFrameVsync) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
   bool on_vsync_called = false;
 
@@ -185,7 +168,8 @@ TEST_F(FlutterWindowsEngineTest, ConfiguresFrameVsync) {
 }
 
 TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEUsesSoftware) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   modifier.embedder_api().NotifyDisplayUpdate =
@@ -237,7 +221,8 @@ TEST_F(FlutterWindowsEngineTest, RunWithoutANGLEUsesSoftware) {
 }
 
 TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithoutResponse) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   const char* channel = "test";
@@ -263,14 +248,10 @@ TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithoutResponse) {
 }
 
 TEST_F(FlutterWindowsEngineTest, PlatformMessageRoundTrip) {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = GetContext().GetAssetsPath().c_str();
-  properties.icu_data_path = GetContext().GetIcuDataPath().c_str();
-  properties.dart_entrypoint = "hiPlatformChannels";
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("hiPlatformChannels");
 
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
-
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
 
@@ -312,13 +293,10 @@ TEST_F(FlutterWindowsEngineTest, PlatformMessageRoundTrip) {
 }
 
 TEST_F(FlutterWindowsEngineTest, PlatformMessageRespondOnDifferentThread) {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = GetContext().GetAssetsPath().c_str();
-  properties.icu_data_path = GetContext().GetIcuDataPath().c_str();
-  properties.dart_entrypoint = "hiPlatformChannels";
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("hiPlatformChannels");
 
-  FlutterProjectBundle project(properties);
-  auto engine = std::make_unique<FlutterWindowsEngine>(project);
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
 
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
@@ -366,7 +344,8 @@ TEST_F(FlutterWindowsEngineTest, PlatformMessageRespondOnDifferentThread) {
 }
 
 TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithResponse) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   const char* channel = "test";
@@ -424,7 +403,8 @@ TEST_F(FlutterWindowsEngineTest, SendPlatformMessageWithResponse) {
 }
 
 TEST_F(FlutterWindowsEngineTest, DispatchSemanticsAction) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -469,7 +449,8 @@ TEST_F(FlutterWindowsEngineTest, SetsThreadPriority) {
 }
 
 TEST_F(FlutterWindowsEngineTest, AddPluginRegistrarDestructionCallback) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   MockEmbedderApiForKeyboard(modifier,
@@ -499,7 +480,8 @@ TEST_F(FlutterWindowsEngineTest, AddPluginRegistrarDestructionCallback) {
 }
 
 TEST_F(FlutterWindowsEngineTest, ScheduleFrame) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -514,7 +496,8 @@ TEST_F(FlutterWindowsEngineTest, ScheduleFrame) {
 }
 
 TEST_F(FlutterWindowsEngineTest, SetNextFrameCallback) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -529,14 +512,16 @@ TEST_F(FlutterWindowsEngineTest, SetNextFrameCallback) {
 }
 
 TEST_F(FlutterWindowsEngineTest, GetExecutableName) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EXPECT_EQ(engine->GetExecutableName(), "flutter_windows_unittests.exe");
 }
 
 // Ensure that after setting or resetting the high contrast feature,
 // the corresponding status flag can be retrieved from the engine.
 TEST_F(FlutterWindowsEngineTest, UpdateHighContrastFeature) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   bool called = false;
@@ -561,7 +546,8 @@ TEST_F(FlutterWindowsEngineTest, UpdateHighContrastFeature) {
 }
 
 TEST_F(FlutterWindowsEngineTest, PostRasterThreadTask) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
   EngineModifier modifier(engine.get());
 
   modifier.embedder_api().PostRenderThreadTask = MOCK_ENGINE_PROC(
@@ -582,24 +568,23 @@ class MockFlutterWindowsView : public FlutterWindowsView {
       : FlutterWindowsView(std::move(wbh)) {}
   ~MockFlutterWindowsView() {}
 
-  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
 };
 
 TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
-  FlutterDesktopEngineProperties properties = {};
-  properties.assets_path = GetContext().GetAssetsPath().c_str();
-  properties.icu_data_path = GetContext().GetIcuDataPath().c_str();
-  properties.dart_entrypoint = "alertPlatformChannel";
-
-  FlutterProjectBundle project(properties);
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("alertPlatformChannel");
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  AccessibilityRootNode* root_node = AccessibilityRootNode::Create();
-  ON_CALL(*window_binding_handler, GetAccessibilityRootNode)
-      .WillByDefault(::testing::Return(root_node));
+  ui::AXPlatformNodeDelegateBase parent_delegate;
+  AlertPlatformNodeDelegate delegate(parent_delegate);
+  ON_CALL(*window_binding_handler, GetAlertDelegate).WillByDefault([&delegate] {
+    return &delegate;
+  });
   MockFlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::make_unique<FlutterWindowsEngine>(project));
+  view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
 
   EngineModifier modifier(engine);
@@ -617,9 +602,8 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   bool did_call = false;
   ON_CALL(view, NotifyWinEventWrapper)
-      .WillByDefault([&did_call](DWORD event, HWND hwnd, LONG obj, LONG child) {
-        did_call = true;
-      });
+      .WillByDefault([&did_call](ui::AXPlatformNodeWin* node,
+                                 ax::mojom::Event event) { did_call = true; });
 
   engine->UpdateSemanticsEnabled(true);
   engine->Run();

@@ -7,11 +7,9 @@
 #include <io.h>
 
 #include <algorithm>
-#include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -145,7 +143,12 @@ bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine_ref) {
 
 bool FlutterDesktopEngineRun(FlutterDesktopEngineRef engine,
                              const char* entry_point) {
-  return EngineFromHandle(engine)->Run(entry_point);
+  std::string_view entry_point_view{""};
+  if (entry_point != nullptr) {
+    entry_point_view = entry_point;
+  }
+
+  return EngineFromHandle(engine)->Run(entry_point_view);
 }
 
 uint64_t FlutterDesktopEngineProcessMessages(FlutterDesktopEngineRef engine) {

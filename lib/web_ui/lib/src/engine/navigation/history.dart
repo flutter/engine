@@ -145,14 +145,14 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     if (_hasSerialCount(currentState)) {
       final Map<dynamic, dynamic> stateMap =
           currentState! as Map<dynamic, dynamic>;
-      return stateMap['serialCount'] as int;
+      return (stateMap['serialCount'] as double).toInt();
     }
     return 0;
   }
 
   Object _tagWithSerialCount(Object? originialState, int count) {
     return <dynamic, dynamic>{
-      'serialCount': count,
+      'serialCount': count.toDouble(),
       'state': originialState,
     };
   }
@@ -220,7 +220,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(_hasSerialCount(currentState));
     final int backCount = _currentSerialCount;
     if (backCount > 0) {
-      await urlStrategy!.go(-backCount);
+      await urlStrategy!.go(-backCount.toDouble());
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
