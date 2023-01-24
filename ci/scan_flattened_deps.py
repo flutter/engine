@@ -28,7 +28,7 @@ SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
 ENCODING = 'UTF-8'
 
-failed_deps = []  # deps which fail to be be cloned or git-merge based
+failed_deps = []  # deps which fail to be cloned or git-merge based
 
 sarif_log = {
     '$schema':
