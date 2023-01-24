@@ -456,9 +456,11 @@ bool EntityPass::OnRender(
           return true;
         }
 
-        FML_DCHECK(stencil_stack.size() > 1);
+        auto restoration_depth =
+            element_entity.GetStencilDepth() - stencil_depth_floor;
+        FML_DCHECK(restoration_depth < stencil_stack.size());
 
-        stencil_stack.pop_back();
+        stencil_stack.resize(restoration_depth + 1);
 
         if (!stencil_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
@@ -529,9 +531,9 @@ bool EntityPass::OnRender(
       }
 
       FilterInput::Vector inputs = {
-          FilterInput::Make(result.entity.GetContents()),
           FilterInput::Make(texture,
-                            result.entity.GetTransformation().Invert())};
+                            result.entity.GetTransformation().Invert()),
+          FilterInput::Make(result.entity.GetContents())};
       auto contents =
           ColorFilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
       contents->SetCoverageCrop(result.entity.GetCoverage());

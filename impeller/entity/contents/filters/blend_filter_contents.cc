@@ -162,7 +162,7 @@ static std::optional<Snapshot> PipelineBlend(
   using VS = BlendPipeline::VertexShader;
   using FS = BlendPipeline::FragmentShader;
 
-  auto input_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
 
   ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
                                                  RenderPass& pass) {
@@ -216,7 +216,7 @@ static std::optional<Snapshot> PipelineBlend(
     // Draw the first texture using kSource.
     options.blend_mode = BlendMode::kSource;
     cmd.pipeline = renderer.GetBlendPipeline(options);
-    if (!add_blend_command(input_snapshot)) {
+    if (!add_blend_command(dst_snapshot)) {
       return true;
     }
 
@@ -228,8 +228,8 @@ static std::optional<Snapshot> PipelineBlend(
 
       for (auto texture_i = inputs.begin() + 1; texture_i < inputs.end();
            texture_i++) {
-        auto input = texture_i->get()->GetSnapshot(renderer, entity);
-        if (!add_blend_command(input)) {
+        auto src_input = texture_i->get()->GetSnapshot(renderer, entity);
+        if (!add_blend_command(src_input)) {
           return true;
         }
       }
@@ -267,7 +267,7 @@ static std::optional<Snapshot> PipelineBlend(
       .transform = Matrix::MakeTranslation(coverage.origin),
       .sampler_descriptor =
           inputs[0]->GetSnapshot(renderer, entity)->sampler_descriptor,
-      .opacity = (absorb_opacity ? 1.0f : input_snapshot->opacity) *
+      .opacity = (absorb_opacity ? 1.0f : dst_snapshot->opacity) *
                  alpha.value_or(1.0)};
 }
 

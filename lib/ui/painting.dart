@@ -1879,10 +1879,10 @@ class _Image extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   _Image._();
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('Image::width', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::width', isLeaf: true)
   external int get width;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('Image::height', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::height', isLeaf: true)
   external int get height;
 
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
@@ -1894,7 +1894,7 @@ class _Image extends NativeFieldWrapperClass1 {
   }
 
   /// Returns an error message on failure, null on success.
-  @FfiNative<Handle Function(Pointer<Void>, Int32, Handle)>('Image::toByteData')
+  @Native<Handle Function(Pointer<Void>, Int32, Handle)>(symbol: 'Image::toByteData')
   external String? _toByteData(int format, _Callback<Uint8List?> callback);
 
   bool _disposed = false;
@@ -1913,7 +1913,7 @@ class _Image extends NativeFieldWrapperClass1 {
 
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('Image::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Image::dispose')
   external void _dispose();
 
   final Set<Image> _handles = <Image>{};
@@ -2011,7 +2011,7 @@ class Codec extends NativeFieldWrapperClass1 {
   /// Number of frames in this image.
   int get frameCount => _cachedFrameCount ??= _frameCount;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('Codec::frameCount', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Codec::frameCount', isLeaf: true)
   external int get _frameCount;
 
   int? _cachedRepetitionCount;
@@ -2021,7 +2021,7 @@ class Codec extends NativeFieldWrapperClass1 {
   /// * -1 for infinity repetitions.
   int get repetitionCount => _cachedRepetitionCount ??= _repetitionCount;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('Codec::repetitionCount', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Codec::repetitionCount', isLeaf: true)
   external int get _repetitionCount;
 
   /// Fetches the next animation frame.
@@ -2051,7 +2051,7 @@ class Codec extends NativeFieldWrapperClass1 {
   }
 
   /// Returns an error message on failure, null on success.
-  @FfiNative<Handle Function(Pointer<Void>, Handle)>('Codec::getNextFrame')
+  @Native<Handle Function(Pointer<Void>, Handle)>(symbol: 'Codec::getNextFrame')
   external String? _getNextFrame(void Function(_Image?, int) callback);
 
   /// Release the resources used by this object. The object is no longer usable
@@ -2059,7 +2059,7 @@ class Codec extends NativeFieldWrapperClass1 {
   ///
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('Codec::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Codec::dispose')
   external void dispose();
 }
 
@@ -2124,6 +2124,10 @@ Future<Codec> instantiateImageCodec(
 /// The data can be for either static or animated images. The following image
 /// formats are supported: {@macro dart.ui.imageFormats}
 ///
+/// The [buffer] will be disposed by this method once the codec has been created,
+/// so the caller must relinquish ownership of the [buffer] when they call this
+/// method.
+///
 /// The [targetWidth] and [targetHeight] arguments specify the size of the
 /// output image, in image pixels. If they are not equal to the intrinsic
 /// dimensions of the image, then the image will be scaled after being decoded.
@@ -2141,26 +2145,145 @@ Future<Codec> instantiateImageCodec(
 ///
 /// The returned future can complete with an error if the image decoding has
 /// failed.
+///
+/// ## Compatibility note on the web
+///
+/// When running Flutter on the web, only the CanvasKit renderer supports image
+/// resizing capabilities (not the HTML renderer). So if image resizing is
+/// critical to your use case, and you're deploying to the web, you should
+/// build using the CanvasKit renderer.
 Future<Codec> instantiateImageCodecFromBuffer(
   ImmutableBuffer buffer, {
   int? targetWidth,
   int? targetHeight,
   bool allowUpscaling = true,
-}) async {
-  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
-  if (!allowUpscaling) {
-    if (targetWidth != null && targetWidth > descriptor.width) {
-      targetWidth = descriptor.width;
-    }
-    if (targetHeight != null && targetHeight > descriptor.height) {
-      targetHeight = descriptor.height;
-    }
-  }
-  buffer.dispose();
-  return descriptor.instantiateCodec(
-    targetWidth: targetWidth,
-    targetHeight: targetHeight,
+}) {
+  return instantiateImageCodecWithSize(
+    buffer,
+    getTargetSize: (int intrinsicWidth, int intrinsicHeight) {
+      if (!allowUpscaling) {
+        if (targetWidth != null && targetWidth! > intrinsicWidth) {
+          targetWidth = intrinsicWidth;
+        }
+        if (targetHeight != null && targetHeight! > intrinsicHeight) {
+          targetHeight = intrinsicHeight;
+        }
+      }
+      return TargetImageSize(width: targetWidth, height: targetHeight);
+    },
   );
+}
+
+/// Instantiates an image [Codec].
+///
+/// This method is a convenience wrapper around the [ImageDescriptor] API.
+///
+/// The [buffer] parameter is the binary image data (e.g a PNG or GIF binary
+/// data). The data can be for either static or animated images. The following
+/// image formats are supported: {@macro dart.ui.imageFormats}
+///
+/// The [buffer] will be disposed by this method once the codec has been
+/// created, so the caller must relinquish ownership of the [buffer] when they
+/// call this method.
+///
+/// The [getTargetSize] parameter, when specified, will be invoked and passed
+/// the image's intrinsic size to determine the size to decode the image to.
+/// The width and the height of the size it returns must be positive values
+/// greater than or equal to 1, or null. It is valid to return a
+/// [TargetImageSize] that specifies only one of `width` and `height` with the
+/// other remaining null, in which case the omitted dimension will be scaled to
+/// maintain the aspect ratio of the original dimensions. When both are null or
+/// omitted, the image will be decoded at its native resolution (as will be the
+/// case if the [getTargetSize] parameter is omitted).
+///
+/// Scaling the image to larger than its intrinsic size should usually be
+/// avoided, since it causes the image to use more memory than necessary.
+/// Instead, prefer scaling the [Canvas] transform.
+///
+/// The returned future can complete with an error if the image decoding has
+/// failed.
+///
+/// ## Compatibility note on the web
+///
+/// When running Flutter on the web, only the CanvasKit renderer supports image
+/// resizing capabilities (not the HTML renderer). So if image resizing is
+/// critical to your use case, and you're deploying to the web, you should
+/// build using the CanvasKit renderer.
+Future<Codec> instantiateImageCodecWithSize(
+  ImmutableBuffer buffer, {
+  TargetImageSizeCallback? getTargetSize,
+}) async {
+  getTargetSize ??= _getDefaultImageSize;
+  final ImageDescriptor descriptor = await ImageDescriptor.encoded(buffer);
+  try {
+    final TargetImageSize targetSize = getTargetSize(descriptor.width, descriptor.height);
+    assert(targetSize.width == null || targetSize.width! > 0);
+    assert(targetSize.height == null || targetSize.height! > 0);
+    return descriptor.instantiateCodec(
+      targetWidth: targetSize.width,
+      targetHeight: targetSize.height,
+    );
+  } finally {
+    buffer.dispose();
+  }
+}
+
+TargetImageSize _getDefaultImageSize(int intrinsicWidth, int intrinsicHeight) {
+  return const TargetImageSize();
+}
+
+/// Signature for a callback that determines the size to which an image should
+/// be decoded given its intrinsic size.
+///
+/// See also:
+///
+///  * [instantiateImageCodecWithSize], which used this signature for its
+///    `getTargetSize` argument.
+typedef TargetImageSizeCallback = TargetImageSize Function(
+  int intrinsicWidth,
+  int intrinsicHeight,
+);
+
+/// A specification of the size to which an image should be decoded.
+///
+/// See also:
+///
+///  * [TargetImageSizeCallback], a callback that returns instances of this
+///    class when consulted by image decoding methods such as
+///    [instantiateImageCodecWithSize].
+class TargetImageSize {
+  /// Creates a new instance of this class.
+  ///
+  /// The `width` and `height` may both be null, but if they're non-null, they
+  /// must be positive.
+  const TargetImageSize({this.width, this.height})
+      : assert(width == null || width > 0),
+        assert(height == null || height > 0);
+
+  /// The width into which to load the image.
+  ///
+  /// If this is non-null, the image will be decoded into the specified width.
+  /// If this is null and [height] is also null, the image will be decoded into
+  /// its intrinsic size. If this is null and [height] is non-null, the image
+  /// will be decoded into a width that maintains its intrinsic aspect ratio
+  /// while respecting the [height] value.
+  ///
+  /// If this value is non-null, it must be positive.
+  final int? width;
+
+  /// The height into which to load the image.
+  ///
+  /// If this is non-null, the image will be decoded into the specified height.
+  /// If this is null and [width] is also null, the image will be decoded into
+  /// its intrinsic size. If this is null and [width] is non-null, the image
+  /// will be decoded into a height that maintains its intrinsic aspect ratio
+  /// while respecting the [width] value.
+  ///
+  /// If this value is non-null, it must be positive.
+  final int? height;
+
+  @override
+  String toString() => 'TargetImageSize($width x $height)';
 }
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -2361,7 +2484,7 @@ class EngineLayer extends NativeFieldWrapperClass1 {
   ///
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('EngineLayer::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'EngineLayer::dispose')
   external void dispose();
 }
 
@@ -2402,10 +2525,10 @@ class Path extends NativeFieldWrapperClass1 {
     return clonedPath;
   }
 
-  @FfiNative<Void Function(Handle)>('Path::Create')
+  @Native<Void Function(Handle)>(symbol: 'Path::Create')
   external void _constructor();
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::clone')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Path::clone')
   external void _clone(Path outPath);
 
   /// Determines how the interior of this path is calculated.
@@ -2414,28 +2537,28 @@ class Path extends NativeFieldWrapperClass1 {
   PathFillType get fillType => PathFillType.values[_getFillType()];
   set fillType(PathFillType value) => _setFillType(value.index);
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('Path::getFillType', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Path::getFillType', isLeaf: true)
   external int _getFillType();
 
-  @FfiNative<Void Function(Pointer<Void>, Int32)>('Path::setFillType', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Int32)>(symbol: 'Path::setFillType', isLeaf: true)
   external void _setFillType(int fillType);
 
   /// Starts a new sub-path at the given coordinate.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::moveTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float)>(symbol: 'Path::moveTo', isLeaf: true)
   external void moveTo(double x, double y);
 
   /// Starts a new sub-path at the given offset from the current point.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::relativeMoveTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float)>(symbol: 'Path::relativeMoveTo', isLeaf: true)
   external void relativeMoveTo(double dx, double dy);
 
   /// Adds a straight line segment from the current point to the given
   /// point.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::lineTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float)>(symbol: 'Path::lineTo', isLeaf: true)
   external void lineTo(double x, double y);
 
   /// Adds a straight line segment from the current point to the point
   /// at the given offset from the current point.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float)>('Path::relativeLineTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float)>(symbol: 'Path::relativeLineTo', isLeaf: true)
   external void relativeLineTo(double dx, double dy);
 
   /// Adds a quadratic bezier segment that curves from the current
@@ -2444,14 +2567,14 @@ class Path extends NativeFieldWrapperClass1 {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_quadratic_to.png#gh-light-mode-only)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_quadratic_to_dark.png#gh-dark-mode-only)
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>('Path::quadraticBezierTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float)>(symbol: 'Path::quadraticBezierTo', isLeaf: true)
   external void quadraticBezierTo(double x1, double y1, double x2, double y2);
 
   /// Adds a quadratic bezier segment that curves from the current
   /// point to the point at the offset (x2,y2) from the current point,
   /// using the control point at the offset (x1,y1) from the current
   /// point.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>('Path::relativeQuadraticBezierTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float)>(symbol: 'Path::relativeQuadraticBezierTo', isLeaf: true)
   external void relativeQuadraticBezierTo(
       double x1, double y1, double x2, double y2);
 
@@ -2461,14 +2584,14 @@ class Path extends NativeFieldWrapperClass1 {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_cubic_to.png#gh-light-mode-only)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_cubic_to_dark.png#gh-dark-mode-only)
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>('Path::cubicTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>(symbol: 'Path::cubicTo', isLeaf: true)
   external void cubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
 
   /// Adds a cubic bezier segment that curves from the current point
   /// to the point at the offset (x3,y3) from the current point, using
   /// the control points at the offsets (x1,y1) and (x2,y2) from the
   /// current point.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>('Path::relativeCubicTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>(symbol: 'Path::relativeCubicTo', isLeaf: true)
   external void relativeCubicTo(double x1, double y1, double x2, double y2, double x3, double y3);
 
   /// Adds a bezier segment that curves from the current point to the
@@ -2479,7 +2602,7 @@ class Path extends NativeFieldWrapperClass1 {
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_conic_to.png#gh-light-mode-only)
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/path_conic_to_dark.png#gh-dark-mode-only)
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>('Path::conicTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>(symbol: 'Path::conicTo', isLeaf: true)
   external void conicTo(double x1, double y1, double x2, double y2, double w);
 
   /// Adds a bezier segment that curves from the current point to the
@@ -2488,7 +2611,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// the weight w. If the weight is greater than 1, then the curve is
   /// a hyperbola; if the weight equals 1, it's a parabola; and if it
   /// is less than 1, it is an ellipse.
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>('Path::relativeConicTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float)>(symbol: 'Path::relativeConicTo', isLeaf: true)
   external void relativeConicTo(double x1, double y1, double x2, double y2, double w);
 
   /// If the `forceMoveTo` argument is false, adds a straight line
@@ -2512,7 +2635,7 @@ class Path extends NativeFieldWrapperClass1 {
     _arcTo(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, forceMoveTo);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float, Bool)>('Path::arcTo', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float, Bool)>(symbol: 'Path::arcTo', isLeaf: true)
   external void _arcTo(double left, double top, double right, double bottom, double startAngle, double sweepAngle, bool forceMoveTo);
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
@@ -2523,7 +2646,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// `clockwise` and `largeArc` in such a way that the sweep angle
   /// is always less than 360 degrees.
   ///
-  /// A simple line is appended if either either radii are zero or the last
+  /// A simple line is appended if either radii are zero or the last
   /// point in the path is `arcEnd`. The radii are scaled to fit the last path
   /// point if both are greater than zero but too small to describe an arc.
   ///
@@ -2538,7 +2661,7 @@ class Path extends NativeFieldWrapperClass1 {
     _arcToPoint(arcEnd.dx, arcEnd.dy, radius.x, radius.y, rotation, largeArc, clockwise);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool, Bool)>('Path::arcToPoint', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool, Bool)>(symbol: 'Path::arcToPoint', isLeaf: true)
   external void _arcToPoint(double arcEndX, double arcEndY, double radiusX, double radiusY, double rotation, bool largeArc, bool clockwise);
 
   /// Appends up to four conic curves weighted to describe an oval of `radius`
@@ -2551,7 +2674,7 @@ class Path extends NativeFieldWrapperClass1 {
   /// path in a direction determined by `clockwise` and `largeArc`
   /// in such a way that the sweep angle is always less than 360 degrees.
   ///
-  /// A simple line is appended if either either radii are zero, or, both
+  /// A simple line is appended if either radii are zero, or, both
   /// `arcEndDelta.dx` and `arcEndDelta.dy` are zero. The radii are scaled to
   /// fit the last path point if both are greater than zero but too small to
   /// describe an arc.
@@ -2567,7 +2690,7 @@ class Path extends NativeFieldWrapperClass1 {
     _relativeArcToPoint(arcEndDelta.dx, arcEndDelta.dy, radius.x, radius.y, rotation, largeArc, clockwise);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool, Bool)>('Path::relativeArcToPoint', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Bool, Bool)>(symbol: 'Path::relativeArcToPoint', isLeaf: true)
   external void _relativeArcToPoint(
       double arcEndX,
       double arcEndY,
@@ -2584,7 +2707,7 @@ class Path extends NativeFieldWrapperClass1 {
     _addRect(rect.left, rect.top, rect.right, rect.bottom);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>('Path::addRect', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float)>(symbol: 'Path::addRect', isLeaf: true)
   external void _addRect(double left, double top, double right, double bottom);
 
   /// Adds a new sub-path that consists of a curve that forms the
@@ -2597,7 +2720,7 @@ class Path extends NativeFieldWrapperClass1 {
     _addOval(oval.left, oval.top, oval.right, oval.bottom);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float)>('Path::addOval', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float)>(symbol: 'Path::addOval', isLeaf: true)
   external void _addOval(double left, double top, double right, double bottom);
 
   /// Adds a new sub-path with one arc segment that consists of the arc
@@ -2619,7 +2742,7 @@ class Path extends NativeFieldWrapperClass1 {
     _addArc(oval.left, oval.top, oval.right, oval.bottom, startAngle, sweepAngle);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>('Path::addArc', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Float, Float, Float, Float, Float, Float)>(symbol: 'Path::addArc', isLeaf: true)
   external void _addArc(double left, double top, double right, double bottom, double startAngle, double sweepAngle);
 
   /// Adds a new sub-path with a sequence of line segments that connect the given
@@ -2634,7 +2757,7 @@ class Path extends NativeFieldWrapperClass1 {
     _addPolygon(_encodePointList(points), close);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('Path::addPolygon')
+  @Native<Void Function(Pointer<Void>, Handle, Bool)>(symbol: 'Path::addPolygon')
   external void _addPolygon(Float32List points, bool close);
 
   /// Adds a new sub-path that consists of the straight lines and
@@ -2645,7 +2768,7 @@ class Path extends NativeFieldWrapperClass1 {
     _addRRect(rrect._getValue32());
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Path::addRRect')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Path::addRRect')
   external void _addRRect(Float32List rrect);
 
   /// Adds the sub-paths of `path`, offset by `offset`, to this path.
@@ -2664,10 +2787,10 @@ class Path extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>('Path::addPath')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(symbol: 'Path::addPath')
   external void _addPath(Path path, double dx, double dy);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::addPathWithMatrix')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>(symbol: 'Path::addPathWithMatrix')
   external void _addPathWithMatrix(Path path, double dx, double dy, Float64List matrix);
 
   /// Adds the sub-paths of `path`, offset by `offset`, to this path.
@@ -2688,21 +2811,21 @@ class Path extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>('Path::extendWithPath')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Double, Double)>(symbol: 'Path::extendWithPath')
   external void _extendWithPath(Path path, double dx, double dy);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>('Path::extendWithPathAndMatrix')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle)>(symbol: 'Path::extendWithPathAndMatrix')
   external void _extendWithPathAndMatrix(Path path, double dx, double dy, Float64List matrix);
 
   /// Closes the last sub-path, as if a straight line had been drawn
   /// from the current point to the first point of the sub-path.
-  @FfiNative<Void Function(Pointer<Void>)>('Path::close', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Path::close', isLeaf: true)
   external void close();
 
   /// Clears the [Path] object of all sub-paths, returning it to the
   /// same state it had when it was created. The _current point_ is
   /// reset to the origin.
-  @FfiNative<Void Function(Pointer<Void>)>('Path::reset', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Path::reset', isLeaf: true)
   external void reset();
 
   /// Tests to see if the given point is within the path. (That is, whether the
@@ -2717,7 +2840,7 @@ class Path extends NativeFieldWrapperClass1 {
     return _contains(point.dx, point.dy);
   }
 
-  @FfiNative<Bool Function(Pointer<Void>, Double, Double)>('Path::contains', isLeaf: true)
+  @Native<Bool Function(Pointer<Void>, Double, Double)>(symbol: 'Path::contains', isLeaf: true)
   external bool _contains(double x, double y);
 
   /// Returns a copy of the path with all the segments of every
@@ -2729,7 +2852,7 @@ class Path extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Double, Double)>('Path::shift')
+  @Native<Void Function(Pointer<Void>, Handle, Double, Double)>(symbol: 'Path::shift')
   external void _shift(Path outPath, double dx, double dy);
 
   /// Returns a copy of the path with all the segments of every
@@ -2741,7 +2864,7 @@ class Path extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Path::transform')
+  @Native<Void Function(Pointer<Void>, Handle, Handle)>(symbol: 'Path::transform')
   external void _transform(Path outPath, Float64List matrix4);
 
   /// Computes the bounding rectangle for this path.
@@ -2764,7 +2887,7 @@ class Path extends NativeFieldWrapperClass1 {
     return Rect.fromLTRB(rect[0], rect[1], rect[2], rect[3]);
   }
 
-  @FfiNative<Handle Function(Pointer<Void>)>('Path::getBounds')
+  @Native<Handle Function(Pointer<Void>)>(symbol: 'Path::getBounds')
   external Float32List _getBounds();
 
   /// Combines the two paths according to the manner specified by the given
@@ -2783,7 +2906,7 @@ class Path extends NativeFieldWrapperClass1 {
     throw StateError('Path.combine() failed.  This may be due an invalid path; in particular, check for NaN values.');
   }
 
-  @FfiNative<Bool Function(Pointer<Void>, Pointer<Void>, Pointer<Void>, Int32)>('Path::op')
+  @Native<Bool Function(Pointer<Void>, Pointer<Void>, Pointer<Void>, Int32)>(symbol: 'Path::op')
   external bool _op(Path path1, Path path2, int operation);
 
   /// Creates a [PathMetrics] object for this path, which can describe various
@@ -3009,7 +3132,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     _constructor(path, forceClosed);
   }
 
-  @FfiNative<Void Function(Handle, Pointer<Void>, Bool)>('PathMeasure::Create')
+  @Native<Void Function(Handle, Pointer<Void>, Bool)>(symbol: 'PathMeasure::Create')
   external void _constructor(Path path, bool forceClosed);
 
   double length(int contourIndex) {
@@ -3017,7 +3140,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     return _length(contourIndex);
   }
 
-  @FfiNative<Float Function(Pointer<Void>, Int32)>('PathMeasure::getLength', isLeaf: true)
+  @Native<Float Function(Pointer<Void>, Int32)>(symbol: 'PathMeasure::getLength', isLeaf: true)
   external double _length(int contourIndex);
 
   Tangent? getTangentForOffset(int contourIndex, double distance) {
@@ -3035,7 +3158,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Int32, Float)>('PathMeasure::getPosTan')
+  @Native<Handle Function(Pointer<Void>, Int32, Float)>(symbol: 'PathMeasure::getPosTan')
   external Float32List _getPosTan(int contourIndex, double distance);
 
   Path extractPath(int contourIndex, double start, double end,
@@ -3046,7 +3169,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     return path;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Int32, Float, Float, Bool)>('PathMeasure::getSegment')
+  @Native<Void Function(Pointer<Void>, Handle, Int32, Float, Float, Bool)>(symbol: 'PathMeasure::getSegment')
   external void _extractPath(Path outPath, int contourIndex, double start, double end, bool startWithMoveTo);
 
   bool isClosed(int contourIndex) {
@@ -3054,7 +3177,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     return _isClosed(contourIndex);
   }
 
-  @FfiNative<Bool Function(Pointer<Void>, Int32)>('PathMeasure::isClosed', isLeaf: true)
+  @Native<Bool Function(Pointer<Void>, Int32)>(symbol: 'PathMeasure::isClosed', isLeaf: true)
   external bool _isClosed(int contourIndex);
 
   // Move to the next contour in the path.
@@ -3069,7 +3192,7 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
     return next;
   }
 
-  @FfiNative<Bool Function(Pointer<Void>)>('PathMeasure::nextContour', isLeaf: true)
+  @Native<Bool Function(Pointer<Void>)>(symbol: 'PathMeasure::nextContour', isLeaf: true)
   external bool _nativeNextContour();
 
   /// The index of the current contour in the list of contours in the path.
@@ -3379,19 +3502,19 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
   /// the values used for the filter.
   final ColorFilter creator;
 
-  @FfiNative<Void Function(Handle)>('ColorFilter::Create')
+  @Native<Void Function(Handle)>(symbol: 'ColorFilter::Create')
   external void _constructor();
 
-  @FfiNative<Void Function(Pointer<Void>, Int32, Int32)>('ColorFilter::initMode', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Int32, Int32)>(symbol: 'ColorFilter::initMode', isLeaf: true)
   external void _initMode(int color, int blendMode);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('ColorFilter::initMatrix')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'ColorFilter::initMatrix')
   external void _initMatrix(Float32List matrix);
 
-  @FfiNative<Void Function(Pointer<Void>)>('ColorFilter::initLinearToSrgbGamma', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ColorFilter::initLinearToSrgbGamma', isLeaf: true)
   external void _initLinearToSrgbGamma();
 
-  @FfiNative<Void Function(Pointer<Void>)>('ColorFilter::initSrgbToLinearGamma', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ColorFilter::initSrgbToLinearGamma', isLeaf: true)
   external void _initSrgbToLinearGamma();
 }
 
@@ -3692,25 +3815,25 @@ class _ImageFilter extends NativeFieldWrapperClass1 {
     _initComposed(nativeFilterOuter, nativeFilterInner);
   }
 
-  @FfiNative<Void Function(Handle)>('ImageFilter::Create')
+  @Native<Void Function(Handle)>(symbol: 'ImageFilter::Create')
   external void _constructor();
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Int32)>('ImageFilter::initBlur', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double, Int32)>(symbol: 'ImageFilter::initBlur', isLeaf: true)
   external void _initBlur(double sigmaX, double sigmaY, int tileMode);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initDilate', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'ImageFilter::initDilate', isLeaf: true)
   external void _initDilate(double radiusX, double radiusY);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('ImageFilter::initErode', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'ImageFilter::initErode', isLeaf: true)
   external void _initErode(double radiusX, double radiusY);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Int32)>('ImageFilter::initMatrix')
+  @Native<Void Function(Pointer<Void>, Handle, Int32)>(symbol: 'ImageFilter::initMatrix')
   external void _initMatrix(Float64List matrix4, int filterQuality);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>('ImageFilter::initColorFilter')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>)>(symbol: 'ImageFilter::initColorFilter')
   external void _initColorFilter(_ColorFilter? colorFilter);
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>('ImageFilter::initComposeFilter')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Pointer<Void>)>(symbol: 'ImageFilter::initComposeFilter')
   external void _initComposed(_ImageFilter outerFilter, _ImageFilter innerFilter);
 
   /// The original Dart object that created the native wrapper, which retains
@@ -4046,13 +4169,13 @@ class Gradient extends Shader {
     _initSweep(center.dx, center.dy, colorsBuffer, colorStopsBuffer, tileMode.index, startAngle, endAngle, matrix4);
   }
 
-  @FfiNative<Void Function(Handle)>('Gradient::Create')
+  @Native<Void Function(Handle)>(symbol: 'Gradient::Create')
   external void _constructor();
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Gradient::initLinear')
+  @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initLinear')
   external void _initLinear(Float32List endPoints, Int32List colors, Float32List? colorStops, int tileMode, Float64List? matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>('Gradient::initRadial')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initRadial')
   external void _initRadial(
       double centerX,
       double centerY,
@@ -4062,8 +4185,7 @@ class Gradient extends Shader {
       int tileMode,
       Float64List? matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32, Handle)>(
-      'Gradient::initTwoPointConical')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32, Handle)>(symbol: 'Gradient::initTwoPointConical')
   external void _initConical(
       double startX,
       double startY,
@@ -4076,7 +4198,7 @@ class Gradient extends Shader {
       int tileMode,
       Float64List? matrix4);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Handle, Handle, Int32, Double, Double, Handle)>('Gradient::initSweep')
+  @Native<Void Function(Pointer<Void>, Double, Double, Handle, Handle, Int32, Double, Double, Handle)>(symbol: 'Gradient::initSweep')
   external void _initSweep(
       double centerX,
       double centerY,
@@ -4148,15 +4270,15 @@ class ImageShader extends Shader {
     _dispose();
   }
 
-  @FfiNative<Void Function(Handle)>('ImageShader::Create')
+  @Native<Void Function(Handle)>(symbol: 'ImageShader::Create')
   external void _constructor();
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>('ImageShader::initWithImage')
+  @Native<Handle Function(Pointer<Void>, Pointer<Void>, Int32, Int32, Int32, Handle)>(symbol: 'ImageShader::initWithImage')
   external String? _initWithImage(_Image image, int tmx, int tmy, int filterQualityIndex, Float64List matrix4);
 
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('ImageShader::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ImageShader::dispose')
   external void _dispose();
 }
 
@@ -4239,10 +4361,10 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   late int _samplerCount;
 
-  @FfiNative<Void Function(Handle)>('FragmentProgram::Create')
+  @Native<Void Function(Handle)>(symbol: 'FragmentProgram::Create')
   external void _constructor();
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle)>('FragmentProgram::initFromAsset')
+  @Native<Handle Function(Pointer<Void>, Handle)>(symbol: 'FragmentProgram::initFromAsset')
   external String _initFromAsset(String assetKey);
 
   /// Returns a fresh instance of [FragmentShader].
@@ -4348,16 +4470,16 @@ class FragmentShader extends Shader {
     _dispose();
   }
 
-  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('ReusableFragmentShader::Create')
+  @Native<Handle Function(Handle, Handle, Handle, Handle)>(symbol: 'ReusableFragmentShader::Create')
   external Float32List _constructor(FragmentProgram program, int floatUniforms, int samplerUniforms);
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('ReusableFragmentShader::SetImageSampler')
+  @Native<Void Function(Pointer<Void>, Handle, Handle)>(symbol: 'ReusableFragmentShader::SetImageSampler')
   external void _setImageSampler(int index, _Image sampler);
 
-  @FfiNative<Bool Function(Pointer<Void>)>('ReusableFragmentShader::ValidateSamplers')
+  @Native<Bool Function(Pointer<Void>)>(symbol: 'ReusableFragmentShader::ValidateSamplers')
   external bool _validateSamplers();
 
-  @FfiNative<Void Function(Pointer<Void>)>('ReusableFragmentShader::Dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ReusableFragmentShader::Dispose')
   external void _dispose();
 }
 
@@ -4578,7 +4700,7 @@ class Vertices extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Bool Function(Handle, Int32, Handle, Handle, Handle, Handle)>('Vertices::init')
+  @Native<Bool Function(Handle, Int32, Handle, Handle, Handle, Handle)>(symbol: 'Vertices::init')
   external static bool _init(Vertices outVertices,
                              int mode,
                              Float32List positions,
@@ -4599,7 +4721,7 @@ class Vertices extends NativeFieldWrapperClass1 {
 
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('Vertices::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Vertices::dispose')
   external void _dispose();
 
   bool _disposed = false;
@@ -4701,7 +4823,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _constructor(recorder, cullRect.left, cullRect.top, cullRect.right, cullRect.bottom);
   }
 
-  @FfiNative<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>('Canvas::Create')
+  @Native<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>(symbol: 'Canvas::Create')
   external void _constructor(PictureRecorder recorder, double left, double top, double right, double bottom);
 
   // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
@@ -4717,7 +4839,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   ///  * [saveLayer], which does the same thing but additionally also groups the
   ///    commands done until the matching [restore].
-  @FfiNative<Void Function(Pointer<Void>)>('Canvas::save', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::save', isLeaf: true)
   external void save();
 
   /// Saves a copy of the current transform and clip on the save stack, and then
@@ -4839,10 +4961,10 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::saveLayerWithoutBounds')
+  @Native<Void Function(Pointer<Void>, Handle, Handle)>(symbol: 'Canvas::saveLayerWithoutBounds')
   external void _saveLayerWithoutBounds(List<Object?>? paintObjects, ByteData paintData);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::saveLayer')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::saveLayer')
   external void _saveLayer(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Pops the current save stack, if there is anything to pop.
@@ -4850,9 +4972,9 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// Use [save] and [saveLayer] to push state onto the stack.
   ///
-  /// If the state was pushed with with [saveLayer], then this call will also
+  /// If the state was pushed with [saveLayer], then this call will also
   /// cause the new layer to be composited into the previous layer.
-  @FfiNative<Void Function(Pointer<Void>)>('Canvas::restore', isLeaf: true)
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Canvas::restore', isLeaf: true)
   external void restore();
 
   /// Restores the save stack to a previous level as might be obtained from [getSaveCount].
@@ -4864,7 +4986,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// If any of the state stack levels restored by this call were pushed with
   /// [saveLayer], then this call will also cause those layers to be composited
   /// into their previous layers.
-  @FfiNative<Void Function(Pointer<Void>, Int32)>('Canvas::restoreToCount', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Int32)>(symbol: 'Canvas::restoreToCount', isLeaf: true)
   external void restoreToCount(int count);
 
   /// Returns the number of items on the save stack, including the
@@ -4873,12 +4995,12 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// each matching call to [restore] decrements it.
   ///
   /// This number cannot go below 1.
-  @FfiNative<Int32 Function(Pointer<Void>)>('Canvas::getSaveCount', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Canvas::getSaveCount', isLeaf: true)
   external int getSaveCount();
 
   /// Add a translation to the current transform, shifting the coordinate space
   /// horizontally by the first argument and vertically by the second argument.
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::translate', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'Canvas::translate', isLeaf: true)
   external void translate(double dx, double dy);
 
   /// Add an axis-aligned scale to the current transform, scaling by the first
@@ -4889,18 +5011,18 @@ class Canvas extends NativeFieldWrapperClass1 {
   /// directions.
   void scale(double sx, [double? sy]) => _scale(sx, sy ?? sx);
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::scale', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'Canvas::scale', isLeaf: true)
   external void _scale(double sx, double sy);
 
   /// Add a rotation to the current transform. The argument is in radians clockwise.
-  @FfiNative<Void Function(Pointer<Void>, Double)>('Canvas::rotate', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double)>(symbol: 'Canvas::rotate', isLeaf: true)
   external void rotate(double radians);
 
   /// Add an axis-aligned skew to the current transform, with the first argument
   /// being the horizontal skew in rise over run units clockwise around the
   /// origin, and the second argument being the vertical skew in rise over run
   /// units clockwise around the origin.
-  @FfiNative<Void Function(Pointer<Void>, Double, Double)>('Canvas::skew', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double)>(symbol: 'Canvas::skew', isLeaf: true)
   external void skew(double sx, double sy);
 
   /// Multiply the current transform by the specified 4⨉4 transformation matrix
@@ -4913,7 +5035,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _transform(matrix4);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::transform')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Canvas::transform')
   external void _transform(Float64List matrix4);
 
   /// Returns the current transform including the combined result of all transform
@@ -4930,7 +5052,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     return matrix4;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getTransform')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Canvas::getTransform')
   external void _getTransform(Float64List matrix4);
 
   /// Reduces the clip region to the intersection of the current clip and the
@@ -4953,7 +5075,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _clipRect(rect.left, rect.top, rect.right, rect.bottom, clipOp.index, doAntiAlias);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Int32, Bool)>('Canvas::clipRect', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Int32, Bool)>(symbol: 'Canvas::clipRect', isLeaf: true)
   external void _clipRect(double left, double top, double right, double bottom, int clipOp, bool doAntiAlias);
 
   /// Reduces the clip region to the intersection of the current clip and the
@@ -4972,7 +5094,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _clipRRect(rrect._getValue32(), doAntiAlias);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Bool)>('Canvas::clipRRect')
+  @Native<Void Function(Pointer<Void>, Handle, Bool)>(symbol: 'Canvas::clipRRect')
   external void _clipRRect(Float32List rrect, bool doAntiAlias);
 
   /// Reduces the clip region to the intersection of the current clip and the
@@ -4991,7 +5113,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _clipPath(path, doAntiAlias);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Bool)>('Canvas::clipPath')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Bool)>(symbol: 'Canvas::clipPath')
   external void _clipPath(Path path, bool doAntiAlias);
 
   /// Returns the conservative bounds of the combined result of all clip methods
@@ -5052,7 +5174,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getLocalClipBounds')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Canvas::getLocalClipBounds')
   external void _getLocalClipBounds(Float64List bounds);
 
   /// Returns the conservative bounds of the combined result of all clip methods
@@ -5075,7 +5197,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     return Rect.fromLTRB(bounds[0], bounds[1], bounds[2], bounds[3]);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('Canvas::getDestinationClipBounds')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'Canvas::getDestinationClipBounds')
   external void _getDestinationClipBounds(Float64List bounds);
 
   /// Paints the given [Color] onto the canvas, applying the given
@@ -5087,7 +5209,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawColor(color.value, blendMode.index);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Uint32, Int32)>('Canvas::drawColor', isLeaf: true)
+  @Native<Void Function(Pointer<Void>, Uint32, Int32)>(symbol: 'Canvas::drawColor', isLeaf: true)
   external void _drawColor(int color, int blendMode);
 
   /// Draws a line between the given points using the given paint. The line is
@@ -5104,7 +5226,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawLine(p1.dx, p1.dy, p2.dx, p2.dy, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawLine')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawLine')
   external void _drawLine(double x1, double y1, double x2, double y2, List<Object?>? paintObjects, ByteData paintData);
 
   /// Fills the canvas with the given [Paint].
@@ -5116,7 +5238,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPaint(paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle)>('Canvas::drawPaint')
+  @Native<Void Function(Pointer<Void>, Handle, Handle)>(symbol: 'Canvas::drawPaint')
   external void _drawPaint(List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a rectangle with the given [Paint]. Whether the rectangle is filled
@@ -5130,7 +5252,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRect(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawRect')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawRect')
   external void _drawRect(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a rounded rectangle with the given [Paint]. Whether the rectangle is
@@ -5144,7 +5266,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawRRect(rrect._getValue32(), paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle)>('Canvas::drawRRect')
+  @Native<Void Function(Pointer<Void>, Handle, Handle, Handle)>(symbol: 'Canvas::drawRRect')
   external void _drawRRect(Float32List rrect, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a shape consisting of the difference between two rounded rectangles
@@ -5159,7 +5281,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawDRRect(outer._getValue32(), inner._getValue32(), paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>('Canvas::drawDRRect')
+  @Native<Void Function(Pointer<Void>, Handle, Handle, Handle, Handle)>(symbol: 'Canvas::drawDRRect')
   external void _drawDRRect(Float32List outer, Float32List inner, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws an axis-aligned oval that fills the given axis-aligned rectangle
@@ -5174,7 +5296,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawOval(rect.left, rect.top, rect.right, rect.bottom, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>('Canvas::drawOval')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawOval')
   external void _drawOval(double left, double top, double right, double bottom, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws a circle centered at the point given by the first argument and
@@ -5190,7 +5312,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawCircle(c.dx, c.dy, radius, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>('Canvas::drawCircle')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Handle, Handle)>(symbol: 'Canvas::drawCircle')
   external void _drawCircle(double x, double y, double radius, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draw an arc scaled to fit inside the given rectangle.
@@ -5213,7 +5335,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawArc(rect.left, rect.top, rect.right, rect.bottom, startAngle, sweepAngle, useCenter, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle, Handle)>('Canvas::drawArc')
+  @Native<Void Function(Pointer<Void>, Double, Double, Double, Double, Double, Double, Bool, Handle, Handle)>(symbol: 'Canvas::drawArc')
   external void _drawArc(
       double left,
       double top,
@@ -5236,7 +5358,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPath(path, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>('Canvas::drawPath')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Handle, Handle)>(symbol: 'Canvas::drawPath')
   external void _drawPath(Path path, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws the given [Image] into the canvas with its top-left corner at the
@@ -5252,7 +5374,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>('Canvas::drawImage')
+  @Native<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Handle, Handle, Int32)>(symbol: 'Canvas::drawImage')
   external String? _drawImage(_Image image, double x, double y, List<Object?>? paintObjects, ByteData paintData, int filterQualityIndex);
 
   /// Draws the subset of the given image described by the `src` argument into
@@ -5287,7 +5409,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>('Canvas::drawImageRect')
+  @Native<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>(symbol: 'Canvas::drawImageRect')
   external String? _drawImageRect(
       _Image image,
       double srcLeft,
@@ -5338,7 +5460,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>('Canvas::drawImageNine')
+  @Native<Handle Function(Pointer<Void>, Pointer<Void>, Double, Double, Double, Double, Double, Double, Double, Double, Handle, Handle, Int32)>(symbol: 'Canvas::drawImageNine')
   external String? _drawImageNine(
       _Image image,
       double centerLeft,
@@ -5361,7 +5483,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPicture(picture);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>)>('Canvas::drawPicture')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>)>(symbol: 'Canvas::drawPicture')
   external void _drawPicture(Picture picture);
 
   /// Draws the text in the given [Paragraph] into this canvas at the given
@@ -5432,7 +5554,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawPoints(paint._objects, paint._data, pointMode.index, points);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>('Canvas::drawPoints')
+  @Native<Void Function(Pointer<Void>, Handle, Handle, Int32, Handle)>(symbol: 'Canvas::drawPoints')
   external void _drawPoints(List<Object?>? paintObjects, ByteData paintData, int pointMode, Float32List points);
 
   /// Draws a set of [Vertices] onto the canvas as one or more triangles.
@@ -5471,7 +5593,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawVertices(vertices, blendMode.index, paint._objects, paint._data);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>('Canvas::drawVertices')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Int32, Handle, Handle)>(symbol: 'Canvas::drawVertices')
   external void _drawVertices(Vertices vertices, int blendMode, List<Object?>? paintObjects, ByteData paintData);
 
   /// Draws many parts of an image - the [atlas] - onto the canvas.
@@ -5844,7 +5966,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     }
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>('Canvas::drawAtlas')
+  @Native<Handle Function(Pointer<Void>, Handle, Handle, Int32, Pointer<Void>, Handle, Handle, Handle, Int32, Handle)>(symbol: 'Canvas::drawAtlas')
   external String? _drawAtlas(
       List<Object?>? paintObjects,
       ByteData paintData,
@@ -5869,7 +5991,7 @@ class Canvas extends NativeFieldWrapperClass1 {
     _drawShadow(path, color.value, elevation, transparentOccluder);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>('Canvas::drawShadow')
+  @Native<Void Function(Pointer<Void>, Pointer<Void>, Uint32, Double, Bool)>(symbol: 'Canvas::drawShadow')
   external void _drawShadow(Path path, int color, double elevation, bool transparentOccluder);
 }
 
@@ -5927,7 +6049,7 @@ class Picture extends NativeFieldWrapperClass1 {
     );
   }
 
-  @FfiNative<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImage')
+  @Native<Handle Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Picture::toImage')
   external String? _toImage(int width, int height, void Function(_Image?) callback);
 
   /// Synchronously creates a handle to an image of this picture.
@@ -5958,7 +6080,7 @@ class Picture extends NativeFieldWrapperClass1 {
     return Image._(image, image.width, image.height);
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Uint32, Uint32, Handle)>('Picture::toImageSync')
+  @Native<Void Function(Pointer<Void>, Uint32, Uint32, Handle)>(symbol: 'Picture::toImageSync')
   external void _toImageSync(int width, int height, _Image outImage);
 
   /// Release the resources used by this object. The object is no longer usable
@@ -5975,7 +6097,7 @@ class Picture extends NativeFieldWrapperClass1 {
 
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('Picture::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'Picture::dispose')
   external void _dispose();
 
   bool _disposed = false;
@@ -5996,7 +6118,7 @@ class Picture extends NativeFieldWrapperClass1 {
   ///
   /// The actual size of this picture may be larger, particularly if it contains
   /// references to image or other large objects.
-  @FfiNative<Uint64 Function(Pointer<Void>)>('Picture::GetAllocationSize', isLeaf: true)
+  @Native<Uint64 Function(Pointer<Void>)>(symbol: 'Picture::GetAllocationSize', isLeaf: true)
   external int get approximateBytesUsed;
 }
 
@@ -6011,7 +6133,7 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   PictureRecorder() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('PictureRecorder::Create')
+  @Native<Void Function(Handle)>(symbol: 'PictureRecorder::Create')
   external void _constructor();
 
   /// Whether this object is currently recording commands.
@@ -6042,7 +6164,7 @@ class PictureRecorder extends NativeFieldWrapperClass1 {
     return picture;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('PictureRecorder::endRecording')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'PictureRecorder::endRecording')
   external void _endRecording(Picture outPicture);
 
   Canvas? _canvas;
@@ -6137,7 +6259,7 @@ class Shadow {
 
   /// Linearly interpolate between two shadows.
   ///
-  /// If either shadow is null, this function linearly interpolates from a
+  /// If either shadow is null, this function linearly interpolates from
   /// a shadow that matches the other shadow in color but has a zero
   /// offset and a zero blurRadius.
   ///
@@ -6303,13 +6425,13 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     });
   }
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::init')
+  @Native<Handle Function(Handle, Handle, Handle)>(symbol: 'ImmutableBuffer::init')
   external String? _init(Uint8List list, _Callback<void> callback);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::initFromAsset')
+  @Native<Handle Function(Handle, Handle, Handle)>(symbol: 'ImmutableBuffer::initFromAsset')
   external String? _initFromAsset(String assetKey, _Callback<int> callback);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('ImmutableBuffer::initFromFile')
+  @Native<Handle Function(Handle, Handle, Handle)>(symbol: 'ImmutableBuffer::initFromFile')
   external String? _initFromFile(String assetKey, _Callback<int> callback);
 
   /// The length, in bytes, of the underlying data.
@@ -6350,7 +6472,7 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
 
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('ImmutableBuffer::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ImmutableBuffer::dispose')
   external void _dispose();
 }
 
@@ -6393,15 +6515,15 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     }).then((_) => descriptor);
   }
 
-  @FfiNative<Handle Function(Handle, Pointer<Void>, Handle)>('ImageDescriptor::initEncoded')
+  @Native<Handle Function(Handle, Pointer<Void>, Handle)>(symbol: 'ImageDescriptor::initEncoded')
   external String? _initEncoded(ImmutableBuffer buffer, _Callback<void> callback);
 
-  @FfiNative<Void Function(Handle, Handle, Int32, Int32, Int32, Int32)>('ImageDescriptor::initRaw')
+  @Native<Void Function(Handle, Handle, Int32, Int32, Int32, Int32)>(symbol: 'ImageDescriptor::initRaw')
   external static void _initRaw(ImageDescriptor outDescriptor, ImmutableBuffer buffer, int width, int height, int rowBytes, int pixelFormat);
 
   int? _width;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::width', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'ImageDescriptor::width', isLeaf: true)
   external int _getWidth();
 
   /// The width, in pixels, of the image.
@@ -6411,7 +6533,7 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   int? _height;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::height', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'ImageDescriptor::height', isLeaf: true)
   external int _getHeight();
 
   /// The height, in pixels, of the image.
@@ -6421,7 +6543,7 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
 
   int? _bytesPerPixel;
 
-  @FfiNative<Int32 Function(Pointer<Void>)>('ImageDescriptor::bytesPerPixel', isLeaf: true)
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'ImageDescriptor::bytesPerPixel', isLeaf: true)
   external int _getBytesPerPixel();
 
   /// The number of bytes per pixel in the image.
@@ -6434,7 +6556,7 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
   ///
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('ImageDescriptor::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'ImageDescriptor::dispose')
   external void dispose();
 
   /// Creates a [Codec] object which is suitable for decoding the data in the
@@ -6472,7 +6594,7 @@ class ImageDescriptor extends NativeFieldWrapperClass1 {
     return codec;
   }
 
-  @FfiNative<Void Function(Pointer<Void>, Handle, Int32, Int32)>('ImageDescriptor::instantiateCodec')
+  @Native<Void Function(Pointer<Void>, Handle, Int32, Int32)>(symbol: 'ImageDescriptor::instantiateCodec')
   external void _instantiateCodec(Codec outCodec, int targetWidth, int targetHeight);
 }
 

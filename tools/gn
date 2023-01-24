@@ -391,8 +391,7 @@ def to_gn_args(args):
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
-  # flags allow preventing those those targets from being part of the build
-  # tree.
+  # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
@@ -557,6 +556,9 @@ def to_gn_args(args):
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
+  if args.malioc_path is not None:
+    gn_args['impeller_malioc_path'] = args.malioc_path
+
   # ANGLE is exclusively used for:
   #  - Windows at runtime
   #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
@@ -617,7 +619,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_gpu'] = True
   gn_args['skia_enable_sksl_tracing'] = False
-  gn_args['skia_use_icu'] = True
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -656,6 +657,9 @@ def to_gn_wasm_args(args, gn_args):
   # than forced to true, once the recipes are updated.
   # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
+  # TODO(mdebbar): Read this from an input argument.
+  # https://github.com/flutter/flutter/issues/118744
+  gn_args['build_canvaskit_chromium'] = False
   gn_args['flutter_build_web_sdk'] = True
 
 
@@ -978,6 +982,10 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Enables experimental 3d support.'
+  )
+
+  parser.add_argument(
+      '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
   # Sanitizers.
