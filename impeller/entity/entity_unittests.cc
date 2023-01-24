@@ -679,7 +679,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
   std::vector<BlendMode> blend_mode_values;
   {
     // Force an exhausiveness check with a switch. When adding blend modes,
-    // update this switch with a new name/value to to make it selectable in the
+    // update this switch with a new name/value to make it selectable in the
     // test GUI.
 
     const BlendMode b{};
@@ -2133,11 +2133,11 @@ TEST_P(EntityTest, RuntimeEffect) {
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
-      Scalar iTime;
       Vector2 iResolution;
+      Scalar iTime;
     } frag_uniforms = {
-        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
         .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
     };
     auto uniform_data = std::make_shared<std::vector<uint8_t>>();
     uniform_data->resize(sizeof(FragUniforms));
