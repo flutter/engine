@@ -6260,7 +6260,7 @@ class Shadow {
 
   /// Linearly interpolate between two shadows.
   ///
-  /// If either shadow is null, this function linearly interpolates from a
+  /// If either shadow is null, this function linearly interpolates from
   /// a shadow that matches the other shadow in color but has a zero
   /// offset and a zero blurRadius.
   ///

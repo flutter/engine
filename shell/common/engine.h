@@ -870,7 +870,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
