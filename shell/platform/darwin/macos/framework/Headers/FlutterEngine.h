@@ -71,11 +71,11 @@ FLUTTER_DARWIN_EXPORT
  * Setting this field from nil to a non-nil view controller also updates
  * the view controller's engine and ID.
  *
- * Setting this field to non-nil to nil will terminate the engine if
+ * Setting this field from non-nil to nil will terminate the engine if
  * allowHeadlessExecution is NO.
  *
- * Setting this field from non-nil to a different non-nil is prohibited and
- * will throw an assertion error.
+ * Setting this field from non-nil to a different non-nil FlutterViewController
+ * is prohibited and will throw an assertion error.
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
 

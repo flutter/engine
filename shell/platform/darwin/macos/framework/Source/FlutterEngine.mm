@@ -415,6 +415,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     return;
   }
   if (_viewController == nil && controller != nil) {
+    // From nil to non-nil.
     NSAssert(controller.engine == nil,
              @"Failed to set view controller to the engine: "
              @"The given FlutterViewController is already attached to an engine %@. "
@@ -424,12 +425,14 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     _viewController = controller;
     [_viewController attachToEngine:self withId:kFlutterDefaultViewId];
   } else if (_viewController != nil && controller == nil) {
+    // From non-nil to nil.
     [_viewController detachFromEngine];
     _viewController = nil;
     if (!_allowHeadlessExecution) {
       [self shutDownEngine];
     }
   } else {
+    // From non-nil to a different non-nil view controller.
     NSAssert(NO,
              @"Failed to set view controller to the engine: "
              @"The engine already has a default view controller %@. "
