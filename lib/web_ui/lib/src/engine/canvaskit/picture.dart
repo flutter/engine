@@ -6,8 +6,6 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import '../../engine.dart';
-import '../configuration.dart';
 import '../profiler.dart';
 import '../util.dart';
 import 'canvas.dart';
