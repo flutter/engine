@@ -381,8 +381,7 @@ abstract class RoleManager {
   /// Initializes a role for [semanticsObject].
   ///
   /// A single role object manages exactly one [SemanticsObject].
-  RoleManager(this.role, this.semanticsObject)
-      : assert(semanticsObject != null);
+  RoleManager(this.role, this.semanticsObject);
 
   /// Role identifier.
   final Role role;
@@ -1478,8 +1477,6 @@ class EngineSemanticsOwner {
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    assert(child != null);
-    assert(parent != null);
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -1618,7 +1615,6 @@ class EngineSemanticsOwner {
   /// The default mode is [AccessibilityMode.unknown].
   AccessibilityMode get mode => _mode;
   set mode(AccessibilityMode value) {
-    assert(value != null);
     _mode = value;
   }
 
