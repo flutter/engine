@@ -803,7 +803,7 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 }
 
 - (bool)testModifierKeysAreSynthesizedOnMouseMove {
-  id engineMock = OCMClassMock([FlutterEngine class]);
+  id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   // Need to return a real renderer to allow view controller to load.
   FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
   OCMStub([engineMock renderer]).andReturn(renderer_);
@@ -824,7 +824,6 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
                                                                                 nibName:@""
                                                                                  bundle:nil];
   [viewController loadView];
-  [engineMock setViewController:viewController];
   [viewController viewWillAppear];
 
   // Zeroed modifier flag should not synthesize events.
