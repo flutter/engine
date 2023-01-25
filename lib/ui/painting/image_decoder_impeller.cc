@@ -116,18 +116,22 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   if (IsDisplayP3(*base_image_info.colorSpace())) {
     FML_DLOG(ERROR) << "loading display p3 image";
   }
-  SkAlphaType alpha_type = ChooseCompatibleAlphaType(base_image_info.alphaType());
+  SkAlphaType alpha_type =
+      ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;
   if (IsDisplayP3(*base_image_info.colorSpace())) {
     // TODO(gaaclarke): branch on alphatype.
     SkColorType color_type = kRGBA_F16_SkColorType;
-    image_info = base_image_info.makeWH(decode_size.width(), decode_size.height())
-        .makeColorType(color_type)
-        .makeAlphaType(alpha_type);
+    image_info =
+        base_image_info.makeWH(decode_size.width(), decode_size.height())
+            .makeColorType(color_type)
+            .makeAlphaType(alpha_type);
   } else {
-    image_info = base_image_info.makeWH(decode_size.width(), decode_size.height())
-        .makeColorType(ChooseCompatibleColorType(base_image_info.colorType()))
-        .makeAlphaType(alpha_type);
+    image_info =
+        base_image_info.makeWH(decode_size.width(), decode_size.height())
+            .makeColorType(
+                ChooseCompatibleColorType(base_image_info.colorType()))
+            .makeAlphaType(alpha_type);
   }
 
   const auto pixel_format = ToPixelFormat(image_info.colorType());

@@ -65,8 +65,7 @@
     layer.allowsGroupOpacity = YES;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
-    CGColorSpaceRef srgb =
-      CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+    CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
     layer.colorspace = srgb;
     CFRelease(srgb);
     if (self.opaque) {
