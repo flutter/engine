@@ -86,7 +86,8 @@ def check_timeline(results_dir):
       '%s/%s/*/game_loop_results/results_scenario_0.json' %
       (BUCKET, results_dir)
   ])
-  gsutil_du = gsutil_du if isinstance(gsutil_du, str) else gsutil_du.decode(ENCODING)
+  gsutil_du = gsutil_du if isinstance(gsutil_du,
+                                      str) else gsutil_du.decode(ENCODING)
   gsutil_du = gsutil_du.strip()
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
@@ -119,7 +120,8 @@ def main():
 
   git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                          cwd=script_dir)
-  git_revision = git_revision if isinstance(git_revision, str) else git_revision.decode(ENCODING)
+  git_revision = git_revision if isinstance(git_revision, str
+                                           ) else git_revision.decode(ENCODING)
   git_revision = git_revision.strip()
   results = []
   apk = None

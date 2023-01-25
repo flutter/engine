@@ -35,6 +35,7 @@ FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
 FML_UNITTESTS_FILTER = '--gtest_filter=-*TimeSensitiveTest*'
 ENCODING = 'UTF-8'
 
+
 def print_divider(char='='):
   print('\n')
   for _ in range(4):
@@ -598,7 +599,9 @@ def ensure_ios_tests_are_built(ios_out_dir):
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
-  version_output = version_output if isinstance(version_output, str) else version_output.decode(ENCODING)
+  version_output = version_output if isinstance(
+      version_output, str
+  ) else version_output.decode(ENCODING)
   version_output = version_output.strip()
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'

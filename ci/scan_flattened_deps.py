@@ -208,7 +208,9 @@ def get_common_ancestor_commit(dep, deps_list):
         "| sed -n \'/HEAD branch/s/.*: //p\'",
         shell=True
     )
-    default_branch = default_branch if isinstance(default_branch, str) else default_branch.decode(ENCODING)
+    default_branch = default_branch if isinstance(
+        default_branch, str
+    ) else default_branch.decode(ENCODING)
     default_branch = default_branch.strip()
     print(
         'default_branch found: {default_branch}'.format(
@@ -236,7 +238,9 @@ def get_common_ancestor_commit(dep, deps_list):
         ),
         shell=True
     )
-    ancestor_commit = ancestor_commit if isinstance(ancestor_commit, str) else ancestor_commit.decode(ENCODING)
+    ancestor_commit = ancestor_commit if isinstance(
+        ancestor_commit, str
+    ) else ancestor_commit.decode(ENCODING)
     ancestor_commit = ancestor_commit.strip()
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
