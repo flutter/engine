@@ -599,6 +599,7 @@ def ensure_ios_tests_are_built(ios_out_dir):
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
+  # TODO ricardoamador: remove this check when python 2 is deprecated.
   version_output = version_output if isinstance(
       version_output, str
   ) else version_output.decode(ENCODING)
