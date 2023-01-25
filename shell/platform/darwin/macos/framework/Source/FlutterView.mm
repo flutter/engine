@@ -9,8 +9,6 @@
 
 #import <QuartzCore/QuartzCore.h>
 
-const uint64_t kFlutterDefaultViewId = 0;
-
 @interface FlutterView () <FlutterSurfaceManagerDelegate> {
   __weak id<FlutterViewReshapeListener> _reshapeListener;
   FlutterThreadSynchronizer* _threadSynchronizer;

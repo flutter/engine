@@ -19,6 +19,8 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
+const uint64_t kFlutterDefaultViewId = 0;
+
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
  * the returned struct.
