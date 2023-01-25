@@ -19,7 +19,6 @@ import sys
 import time
 import csv
 import xvfb
-
 sys.path.append('ci')
 from compatibility_helper import byte_str_decode
 
