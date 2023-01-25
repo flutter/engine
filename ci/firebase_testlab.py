@@ -10,6 +10,7 @@ import re
 import os
 import subprocess
 import sys
+from compatibility_helper import byte_str_decode
 
 if 'STORAGE_BUCKET' not in os.environ:
   print('The GCP storage bucket must be provided as an environment variable.')
@@ -20,8 +21,6 @@ if 'GCP_PROJECT' not in os.environ:
   print('The GCP project must be provided as an environment variable.')
   sys.exit(1)
 PROJECT = os.environ['GCP_PROJECT']
-
-ENCODING = 'UTF-8'
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 buildroot_dir = os.path.abspath(os.path.join(script_dir, '..', '..'))
@@ -69,7 +68,7 @@ def check_logcat(results_dir):
       'gsutil', 'cat',
       '%s/%s/*/logcat' % (BUCKET, results_dir)
   ])
-  logcat = logcat if isinstance(logcat, str) else logcat.decode(ENCODING)
+  logcat = byte_str_decode(logcat)
   if not logcat:
     sys.exit(1)
 
@@ -86,8 +85,7 @@ def check_timeline(results_dir):
       '%s/%s/*/game_loop_results/results_scenario_0.json' %
       (BUCKET, results_dir)
   ])
-  gsutil_du = gsutil_du if isinstance(gsutil_du,
-                                      str) else gsutil_du.decode(ENCODING)
+  gsutil_du = byte_str_decode(gsutil_du)
   gsutil_du = gsutil_du.strip()
   if gsutil_du == '0':
     print('Failed to produce a timeline.')
@@ -120,8 +118,7 @@ def main():
 
   git_revision = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
                                          cwd=script_dir)
-  git_revision = git_revision if isinstance(git_revision, str
-                                           ) else git_revision.decode(ENCODING)
+  git_revision = byte_str_decode(git_revision)
   git_revision = git_revision.strip()
   results = []
   apk = None

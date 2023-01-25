@@ -19,6 +19,7 @@ import sys
 import time
 import csv
 import xvfb
+from ci.compatibility_helper import byte_str_decode
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(
@@ -599,9 +600,7 @@ def ensure_ios_tests_are_built(ios_out_dir):
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
-  version_output = version_output if isinstance(
-      version_output, str
-  ) else version_output.decode(ENCODING)
+  version_output = byte_str_decode(version_output)
   version_output = version_output.strip()
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'
