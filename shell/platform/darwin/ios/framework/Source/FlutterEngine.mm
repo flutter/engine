@@ -498,6 +498,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _keyEventChannel.get();
 }
 
+- (NSURL*)observatoryUrl {
+  return [_publisher.get() url];
+}
+
 - (NSURL*)vmServiceUrl {
   return [_publisher.get() url];
 }
