@@ -26,6 +26,7 @@ HELP_STR = 'To find complete information on this vulnerability, navigate to '
 OSV_VULN_DB_URL = 'https://osv.dev/vulnerability/'
 SECONDS_PER_YEAR = 31556952
 UPSTREAM_PREFIX = 'upstream_'
+ENCODING = 'UTF-8'
 
 failed_deps = []  # deps which fail to be cloned or git-merge based
 
@@ -206,7 +207,9 @@ def get_common_ancestor_commit(dep, deps_list):
         'git --git-dir ' + temp_dep_dir + '/.git remote show upstream ' +
         "| sed -n \'/HEAD branch/s/.*: //p\'",
         shell=True
-    ).decode().strip()
+    )
+    default_branch = default_branch if isinstance(default_branch, str) else default_branch.decode(ENCODING)
+    default_branch = default_branch.strip()
     print(
         'default_branch found: {default_branch}'.format(
             default_branch=default_branch
@@ -223,7 +226,8 @@ def get_common_ancestor_commit(dep, deps_list):
         "--format=\'%(objectname:short)\' refs/heads/upstream",
         shell=True
     )
-    commit = commit.decode().strip()
+    commit = commit if isinstance(commit, str) else commit.decode(ENCODING)
+    commit = commit.strip()
 
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
@@ -232,7 +236,8 @@ def get_common_ancestor_commit(dep, deps_list):
         ),
         shell=True
     )
-    ancestor_commit = ancestor_commit.decode().strip()
+    ancestor_commit = ancestor_commit if isinstance(ancestor_commit, str) else ancestor_commit.decode(ENCODING)
+    ancestor_commit = ancestor_commit.strip()
     print('Ancestor commit: ' + ancestor_commit)
     return ancestor_commit
   except subprocess.CalledProcessError as error:
