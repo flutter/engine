@@ -1,4 +1,4 @@
-Signature: a9da8a6e3643f28c49bcc2571400f56b
+Signature: 41895191dec98ad65192d3c4dd5b895d
 
 ====================================================================================================
 LIBRARY: etc1
@@ -2192,7 +2192,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/src/core/SkImageFilter.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/core/SkUtilsArm.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp + ../../../third_party/skia/LICENSE
@@ -2202,7 +2201,6 @@ ORIGIN: ../../../third_party/skia/src/effects/imagefilters/SkMorphologyImageFilt
 ORIGIN: ../../../third_party/skia/src/images/SkImageEncoderFns.h + ../../../third_party/skia/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/src/core/SkImageFilter.cpp
-FILE: ../../../third_party/skia/src/core/SkUtilsArm.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkColorFilterImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkLightingImageFilter.cpp
 FILE: ../../../third_party/skia/src/effects/imagefilters/SkMagnifierImageFilter.cpp
