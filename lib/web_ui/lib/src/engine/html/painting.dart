@@ -268,9 +268,7 @@ class SurfacePaintData {
       if (strokeJoin != null) {
         buffer.write('strokeJoin = $strokeJoin; ');
       }
-      if (color != null) {
-        buffer.write('color = ${colorToCssString(ui.Color(color))}; ');
-      }
+      buffer.write('color = ${colorToCssString(ui.Color(color))}; ');
       if (shader != null) {
         buffer.write('shader = $shader; ');
       }

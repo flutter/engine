@@ -868,7 +868,6 @@ class SemanticsObject {
   void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
-    assert(update.flags != null);
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
@@ -1613,12 +1612,7 @@ class EngineSemanticsOwner {
   /// the Web Engine.
   ///
   /// The default mode is [AccessibilityMode.unknown].
-  AccessibilityMode get mode => _mode;
-  set mode(AccessibilityMode value) {
-    _mode = value;
-  }
-
-  AccessibilityMode _mode = AccessibilityMode.unknown;
+  AccessibilityMode mode = AccessibilityMode.unknown;
 
   /// Currently used [GestureMode].
   ///
@@ -1760,7 +1754,7 @@ class EngineSemanticsOwner {
   /// not accompanied by pointer events. In the presence of pointer events,
   /// delegate to Flutter's gesture detection system to produce gestures.
   bool shouldAcceptBrowserGesture(String eventType) {
-    if (_mode == AccessibilityMode.known) {
+    if (mode == AccessibilityMode.known) {
       // Do not ignore accessibility gestures in known mode, unless semantics
       // is explicitly disabled.
       return semanticsEnabled;
