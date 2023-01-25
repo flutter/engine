@@ -4280,9 +4280,7 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
     // If a shader for the asset isn't already registered, then there's no
     // need to reinitialize it. The new shader will be loaded and initialized
     // the next time the program access it.
-    final WeakReference<FragmentProgram>? programRef = _shaderRegistry == null
-      ? null
-      : _shaderRegistry[assetKey];
+    final WeakReference<FragmentProgram>? programRef = _shaderRegistry[assetKey];
     if (programRef == null) {
       return;
     }
@@ -6241,25 +6239,20 @@ class Shadow {
     int shadowOffset = 0;
     for (int shadowIndex = 0; shadowIndex < shadows.length; ++shadowIndex) {
       final Shadow shadow = shadows[shadowIndex];
-      // TODO(yjbanov): remove the null check when the framework is migrated. While the list
-      //                of shadows contains non-nullable elements, unmigrated code can still
-      //                pass nulls.
-      if (shadow != null) {
-        shadowOffset = shadowIndex * _kBytesPerShadow;
+      shadowOffset = shadowIndex * _kBytesPerShadow;
 
-        shadowsData.setInt32(_kColorOffset + shadowOffset,
-          shadow.color.value ^ Shadow._kColorDefault, _kFakeHostEndian);
+      shadowsData.setInt32(_kColorOffset + shadowOffset,
+        shadow.color.value ^ Shadow._kColorDefault, _kFakeHostEndian);
 
-        shadowsData.setFloat32(_kXOffset + shadowOffset,
-          shadow.offset.dx, _kFakeHostEndian);
+      shadowsData.setFloat32(_kXOffset + shadowOffset,
+        shadow.offset.dx, _kFakeHostEndian);
 
-        shadowsData.setFloat32(_kYOffset + shadowOffset,
-          shadow.offset.dy, _kFakeHostEndian);
+      shadowsData.setFloat32(_kYOffset + shadowOffset,
+        shadow.offset.dy, _kFakeHostEndian);
 
-        final double blurSigma = Shadow.convertRadiusToSigma(shadow.blurRadius);
-        shadowsData.setFloat32(_kBlurOffset + shadowOffset,
-          blurSigma, _kFakeHostEndian);
-      }
+      final double blurSigma = Shadow.convertRadiusToSigma(shadow.blurRadius);
+      shadowsData.setFloat32(_kBlurOffset + shadowOffset,
+        blurSigma, _kFakeHostEndian);
     }
 
     return shadowsData;
