@@ -99,7 +99,7 @@ Future<void> testMain() async {
     });
 
     group('toByteData', () {
-      test('returns unmodified bytes', () async {
+      test('returns unmodified blob bytes', () async {
         final DomXMLHttpRequest request =
             await domHttpRequest('sample_image1.png', responseType: 'blob');
         final DomBlob blob = request.response as DomBlob;
@@ -113,7 +113,7 @@ Future<void> testMain() async {
                 .buffer
                 .asUint8List();
 
-        expect(listEquals(bytes, responseBytes), isTrue);
+        expect(bytes, responseBytes);
       });
 
       test('transforms jpg to png', () async {

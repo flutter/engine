@@ -206,9 +206,7 @@ class HtmlImage implements ui.Image {
         ctx.drawImage(imgElement, 0, 0);
         // canvas.toDataURL defaults to: 'image/png'
         final String dataUrl = canvas.toDataURL();
-        final UriData data = UriData.fromUri(Uri.parse(dataUrl));
-
-        return Future<ByteData?>.value(data.contentAsBytes().buffer.asByteData());
+        return _byteDataFromDataString(dataUrl);
       case ui.ImageByteFormat.rawUnmodified:
         if (imgElement.src?.startsWith('data:') ?? false) {
           return _byteDataFromDataString(imgElement.src!);
