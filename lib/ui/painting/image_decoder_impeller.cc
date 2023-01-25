@@ -27,7 +27,7 @@ namespace {
 /**
  *  Loads the gamut as a set of three points (triangle).
  */
-void load_gamut(SkPoint abc[3], const skcms_Matrix3x3& xyz) {
+void LoadGamut(SkPoint abc[3], const skcms_Matrix3x3& xyz) {
   // rx = rX / (rX + rY + rZ)
   // ry = rY / (rX + rY + rZ)
   // gx, gy, bx, and gy are calculated similarly.
@@ -41,7 +41,7 @@ void load_gamut(SkPoint abc[3], const skcms_Matrix3x3& xyz) {
 /**
  *  Calculates the area of the triangular gamut.
  */
-float calculate_area(SkPoint abc[3]) {
+float CalculateArea(SkPoint abc[3]) {
   const SkPoint& a = abc[0];
   const SkPoint& b = abc[1];
   const SkPoint& c = abc[2];
@@ -51,12 +51,13 @@ float calculate_area(SkPoint abc[3]) {
 
 constexpr float kSRGB_D50_GamutArea = 0.084f;
 
-bool calculate_is_wide_gamut(const SkColorSpace& color_space) {
+// Source: https://source.chromium.org/chromium/_/skia/skia.git/+/393fb1ec80f41d8ad7d104921b6920e69749fda1:src/codec/SkAndroidCodec.cpp;l=67;drc=46572b4d445f41943059d0e377afc6d6748cd5ca;bpv=1;bpt=0
+bool IsWideGamut(const SkColorSpace& color_space) {
   skcms_Matrix3x3 xyzd50;
   color_space.toXYZD50(&xyzd50);
   SkPoint rgb[3];
-  load_gamut(rgb, xyzd50);
-  return calculate_area(rgb) > kSRGB_D50_GamutArea;
+  LoadGamut(rgb, xyzd50);
+  return CalculateArea(rgb) > kSRGB_D50_GamutArea;
 }
 }  // namespace
 
@@ -124,8 +125,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  const bool is_wide_gamut =
-      calculate_is_wide_gamut(*base_image_info.colorSpace());
+  const bool is_wide_gamut = IsWideGamut(*base_image_info.colorSpace());
   if (is_wide_gamut) {
     FML_DLOG(ERROR) << "loading display p3 image";
   }
