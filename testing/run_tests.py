@@ -19,7 +19,9 @@ import sys
 import time
 import csv
 import xvfb
-from ci.compatibility_helper import byte_str_decode
+
+sys.path.append('ci')
+from compatibility_helper import byte_str_decode
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(
