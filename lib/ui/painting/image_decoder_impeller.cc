@@ -42,6 +42,8 @@ bool IsApproximately(const SkColorSpace& x, const SkColorSpace& y) {
 }
 
 bool IsDisplayP3(const SkColorSpace& color_space) {
+  // TODO(gaaclarke): Make this measure the area of the gamut instead of looking
+  // for display P3 directly.
   static const SkColorSpace* display_p3 =
       SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3)
           .release();
@@ -120,7 +122,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;
   if (IsDisplayP3(*base_image_info.colorSpace())) {
-    // TODO(gaaclarke): branch on alphatype.
+    // TODO(gaaclarke): Branch on alpha_type so it's 32bpp for opaque images.
     SkColorType color_type = kRGBA_F16_SkColorType;
     image_info =
         base_image_info.makeWH(decode_size.width(), decode_size.height())
