@@ -123,6 +123,9 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   SkImageInfo image_info;
   if (IsDisplayP3(*base_image_info.colorSpace())) {
     // TODO(gaaclarke): Branch on alpha_type so it's 32bpp for opaque images.
+    //                  I tried using kBGRA_1010102_SkColorType and
+    //                  kBGR_101010x_SkColorType but Skia fails to decode the
+    //                  image that way.
     SkColorType color_type = kRGBA_F16_SkColorType;
     image_info =
         base_image_info.makeWH(decode_size.width(), decode_size.height())
