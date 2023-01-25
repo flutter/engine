@@ -8,13 +8,13 @@ class Stack extends Opaque {}
 typedef StackPointer = Pointer<Stack>;
 
 /// Generic linear memory allocation
-@FfiNative<StackPointer Function(Size)>('skwasm.stackAlloc', isLeaf: true)
+@Native<StackPointer Function(Size)>(symbol: 'skwasm.stackAlloc', isLeaf: true)
 external StackPointer stackAlloc(int length);
 
-@FfiNative<StackPointer Function()>('skwasm.stackSave', isLeaf: true)
+@Native<StackPointer Function()>(symbol: 'skwasm.stackSave', isLeaf: true)
 external StackPointer stackSave();
 
-@FfiNative<Void Function(StackPointer)>('skwasm.stackRestore', isLeaf: true)
+@Native<Void Function(StackPointer)>(symbol: 'skwasm.stackRestore', isLeaf: true)
 external void stackRestore(StackPointer pointer);
 
 class StackScope {

@@ -4,53 +4,53 @@ class RawPaint extends Opaque {}
 
 typedef PaintHandle = Pointer<RawPaint>;
 
-@FfiNative<PaintHandle Function()>('skwasm.paint_create', isLeaf: true)
+@Native<PaintHandle Function()>(symbol: 'skwasm.paint_create', isLeaf: true)
 external PaintHandle paintCreate();
 
-@FfiNative<Void Function(PaintHandle)>('skwasm.paint_destroy', isLeaf: true)
+@Native<Void Function(PaintHandle)>(symbol: 'skwasm.paint_destroy', isLeaf: true)
 external void paintDestroy(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setBlendMode', isLeaf: true)
+@Native<Void Function(PaintHandle, Int)>(symbol: 'skwasm.paint_setBlendMode', isLeaf: true)
 external void paintSetBlendMode(PaintHandle paint, int blendMode);
 
-@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStyle', isLeaf: true)
+@Native<Void Function(PaintHandle, Int)>(symbol: 'skwasm.paint_setStyle', isLeaf: true)
 external void paintSetStyle(PaintHandle paint, int paintStyle);
 
-@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStyle', isLeaf: true)
+@Native<Int Function(PaintHandle)>(symbol: 'skwasm.paint_getStyle', isLeaf: true)
 external int paintGetStyle(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Float)>('skwasm.paint_setStrokeWidth', isLeaf: true)
+@Native<Void Function(PaintHandle, Float)>(symbol: 'skwasm.paint_setStrokeWidth', isLeaf: true)
 external void paintSetStrokeWidth(PaintHandle paint, double strokeWidth);
 
-@FfiNative<Float Function(PaintHandle)>('skwasm.paint_getStrokeWidth', isLeaf: true)
+@Native<Float Function(PaintHandle)>(symbol: 'skwasm.paint_getStrokeWidth', isLeaf: true)
 external double paintGetStrokeWidth(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStrokeCap', isLeaf: true)
+@Native<Void Function(PaintHandle, Int)>(symbol: 'skwasm.paint_setStrokeCap', isLeaf: true)
 external void paintSetStrokeCap(PaintHandle paint, int cap);
 
-@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStrokeCap', isLeaf: true)
+@Native<Int Function(PaintHandle)>(symbol: 'skwasm.paint_getStrokeCap', isLeaf: true)
 external int paintGetStrokeCap(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Int)>('skwasm.paint_setStrokeJoin', isLeaf: true)
+@Native<Void Function(PaintHandle, Int)>(symbol: 'skwasm.paint_setStrokeJoin', isLeaf: true)
 external void paintSetStrokeJoin(PaintHandle paint, int join);
 
-@FfiNative<Int Function(PaintHandle)>('skwasm.paint_getStrokeJoin', isLeaf: true)
+@Native<Int Function(PaintHandle)>(symbol: 'skwasm.paint_getStrokeJoin', isLeaf: true)
 external int paintGetStrokeJoin(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Bool)>('skwasm.paint_setAntiAlias', isLeaf: true)
+@Native<Void Function(PaintHandle, Bool)>(symbol: 'skwasm.paint_setAntiAlias', isLeaf: true)
 external void paintSetAntiAlias(PaintHandle paint, bool antiAlias);
 
-@FfiNative<Bool Function(PaintHandle)>('skwasm.paint_getAntiAlias', isLeaf: true)
+@Native<Bool Function(PaintHandle)>(symbol: 'skwasm.paint_getAntiAlias', isLeaf: true)
 external bool paintGetAntiAlias(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Uint32)>('skwasm.paint_setColorInt', isLeaf: true)
+@Native<Void Function(PaintHandle, Uint32)>(symbol: 'skwasm.paint_setColorInt', isLeaf: true)
 external void paintSetColorInt(PaintHandle paint, int color);
 
-@FfiNative<Uint32 Function(PaintHandle)>('skwasm.paint_getColorInt', isLeaf: true)
+@Native<Uint32 Function(PaintHandle)>(symbol: 'skwasm.paint_getColorInt', isLeaf: true)
 external int paintGetColorInt(PaintHandle paint);
 
-@FfiNative<Void Function(PaintHandle, Float)>('skwasm.paint_setMiterLimit', isLeaf: true)
+@Native<Void Function(PaintHandle, Float)>(symbol: 'skwasm.paint_setMiterLimit', isLeaf: true)
 external void paintSetMiterLimit(PaintHandle paint, double miterLimit);
 
-@FfiNative<Float Function(PaintHandle)>('skwasm.paint_getMiterLimit', isLeaf: true)
+@Native<Float Function(PaintHandle)>(symbol: 'skwasm.paint_getMiterLimit', isLeaf: true)
 external double paintGetMiterLimit(PaintHandle paint);

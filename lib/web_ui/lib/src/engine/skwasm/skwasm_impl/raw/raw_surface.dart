@@ -4,18 +4,18 @@ import 'raw_picture.dart';
 class RawSurface extends Opaque {}
 typedef SurfaceHandle = Pointer<RawSurface>;
 
-@FfiNative<SurfaceHandle Function(Pointer<Int8>)>(
-  'skwasm.surface_createFromCanvas',
+@Native<SurfaceHandle Function(Pointer<Int8>)>(
+  symbol: 'skwasm.surface_createFromCanvas',
   isLeaf: true)
 external SurfaceHandle surfaceCreateFromCanvas(Pointer<Int8> querySelector);
 
-@FfiNative<Void Function(SurfaceHandle)>(
-  'skwasm.surface_destroy',
+@Native<Void Function(SurfaceHandle)>(
+  symbol: 'skwasm.surface_destroy',
   isLeaf: true)
 external void surfaceDestroy(SurfaceHandle surface);
 
-@FfiNative<Void Function(SurfaceHandle, Int, Int)>(
-  'skwasm.surface_setCanvasSize',
+@Native<Void Function(SurfaceHandle, Int, Int)>(
+  symbol: 'skwasm.surface_setCanvasSize',
   isLeaf: true)
 external void surfaceSetCanvasSize(
   SurfaceHandle surface,
@@ -23,7 +23,7 @@ external void surfaceSetCanvasSize(
   int height
 );
 
-@FfiNative<Void Function(SurfaceHandle, PictureHandle)>(
-  'skwasm.surface_renderPicture',
+@Native<Void Function(SurfaceHandle, PictureHandle)>(
+  symbol: 'skwasm.surface_renderPicture',
   isLeaf: true)
 external void surfaceRenderPicture(SurfaceHandle surface, PictureHandle picture);
