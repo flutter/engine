@@ -443,14 +443,14 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != ''),
+  ])  : assert(_languageCode.isNotEmpty),
         scriptCode = null;
 
   const Locale.fromSubtags({
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != ''),
+  })  : assert(languageCode.isNotEmpty),
         _languageCode = languageCode,
         assert(scriptCode != ''),
         assert(countryCode != ''),
