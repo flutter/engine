@@ -230,7 +230,7 @@ def get_common_ancestor_commit(dep, deps_list):
     )
     commit = commit if isinstance(commit, str) else commit.decode(ENCODING)
     commit = commit.strip()
-   
+
     # perform merge-base on most recent default branch commit and pinned mirror commit
     ancestor_commit = subprocess.check_output(
         'git --git-dir {temp_dep_dir}/.git merge-base {commit} {depUrl}'.format(
