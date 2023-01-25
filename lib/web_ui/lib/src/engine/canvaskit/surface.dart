@@ -144,11 +144,15 @@ class Surface {
   /// This is only valid after the first frame or if [ensureSurface] has been
   /// called
   bool get usingSoftwareBackend => _glContext == null ||
-      _grContext == null || webGLVersion == -1 || !configuration.canvasKitForceCpuOnly;
+      _grContext == null || webGLVersion == -1 || configuration.canvasKitForceCpuOnly;
 
-  /// Ensure that the initial surface, gl/grcontext have been populated so
+  /// Ensure that the initial surface exists and has a size of at least [size].
+  ///
+  /// If not provided, [size] defaults to 1x1.
+  ///
+  /// This also ensures that the gl/grcontext have been populated so
   /// that software rendering can be detected.
-  void ensureSurface() {
+  void ensureSurface([ui.Size size = const ui.Size(1, 1)]) {
     // If the GrContext hasn't been setup yet then we need to force initialization
     // of the canvas and initial surface.
     if (_surface != null) {
@@ -157,7 +161,7 @@ class Surface {
     // TODO(jonahwilliams): this is somewhat wasteful. We should probably
     // eagerly setup this surface instead of delaying until the first frame?
     // Or at least cache the estimated window size.
-    createOrUpdateSurface(const ui.Size(1, 1));
+    createOrUpdateSurface(size);
   }
 
   /// This method is not supported if software rendering is used.
