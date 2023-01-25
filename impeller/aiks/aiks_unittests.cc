@@ -15,6 +15,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
@@ -1174,6 +1175,20 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     }
     canvas.Restore();
   }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TextRotated) {
+  Canvas canvas;
+  canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
+                          0, 1, 0, 0,            //
+                          0, 0, 0.3, 0,          //
+                          100, 100, 0, 1.3));
+
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
