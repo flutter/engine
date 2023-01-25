@@ -80,12 +80,7 @@ void ImageFilterLayer::Preroll(PrerollContext* context) {
   filter_->map_device_bounds(filter_in_bounds, SkMatrix::I(),
                              filter_out_bounds);
   child_bounds.set(filter_out_bounds);
-  if (context->raster_cache) {
-    child_bounds.offset(SkScalarRoundToScalar(offset_.x()),
-                        SkScalarRoundToScalar(offset_.y()));
-  } else {
-    child_bounds.offset(offset_);
-  }
+  child_bounds.offset(offset_);
 
   set_paint_bounds(child_bounds);
 

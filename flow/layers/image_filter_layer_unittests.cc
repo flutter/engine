@@ -482,6 +482,8 @@ TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
   auto offset = SkPoint::Make(53.8, 24.4);
   auto offset_rounded =
       SkPoint::Make(std::round(offset.x()), std::round(offset.y()));
+  auto offset_rounded_out =
+      SkPoint::Make(std::floor(offset.x()), std::floor(offset.y()));
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter, offset);
   layer->Add(mock_layer);
 
@@ -555,8 +557,8 @@ TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
       mock_canvas().draw_calls()[2].data));
   auto cached_call2_data = std::get<MockCanvas::DrawImageDataNoPaint>(
       mock_canvas().draw_calls()[2].data);
-  EXPECT_EQ(cached_call2_data.x, offset_rounded.fX);
-  EXPECT_EQ(cached_call2_data.y, offset_rounded.fY);
+  EXPECT_EQ(cached_call2_data.x, offset_rounded_out.fX);
+  EXPECT_EQ(cached_call2_data.y, offset_rounded_out.fY);
   auto cached_call3 = MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}};
   EXPECT_EQ(mock_canvas().draw_calls()[3], cached_call3);
 }
