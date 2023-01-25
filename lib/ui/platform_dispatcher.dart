@@ -1972,8 +1972,8 @@ class Locale {
     String? countryCode,
   }) : assert(languageCode.isNotEmpty),
        _languageCode = languageCode,
-       assert(scriptCode != ''),
-       assert(countryCode != ''),
+       assert(scriptCode == null || scriptCode.isNotEmpty),
+       assert(countryCode == null || countryCode.isNotEmpty),
        _countryCode = countryCode;
 
   /// The primary language subtag for the locale.
