@@ -24,30 +24,39 @@
 namespace flutter {
 
 namespace {
-bool IsApproximately(const SkColorSpace& x, const SkColorSpace& y) {
-  skcms_Matrix3x3 x_xyzd50;
-  skcms_Matrix3x3 y_xyzd50;
-
-  x.toXYZD50(&x_xyzd50);
-  y.toXYZD50(&y_xyzd50);
-
-  for (int i = 0; i < 3; ++i) {
-    for (int j = 0; j < 3; ++j) {
-      if (fabsf(x_xyzd50.vals[i][j] - y_xyzd50.vals[i][j]) > 0.01f) {
-        return false;
-      }
-    }
+/**
+ *  Loads the gamut as a set of three points (triangle).
+ */
+void load_gamut(SkPoint abc[3], const skcms_Matrix3x3& xyz) {
+  // rx = rX / (rX + rY + rZ)
+  // ry = rY / (rX + rY + rZ)
+  // gx, gy, bx, and gy are calculated similarly.
+  for (int index = 0; index < 3; index++) {
+    float sum = xyz.vals[index][0] + xyz.vals[index][1] + xyz.vals[index][2];
+    abc[index].fX = xyz.vals[index][0] / sum;
+    abc[index].fY = xyz.vals[index][1] / sum;
   }
-  return x.transferFnHash() == y.transferFnHash();
 }
 
-bool IsDisplayP3(const SkColorSpace& color_space) {
-  // TODO(gaaclarke): Make this measure the area of the gamut instead of looking
-  // for display P3 directly.
-  static const SkColorSpace* display_p3 =
-      SkColorSpace::MakeRGB(SkNamedTransferFn::kSRGB, SkNamedGamut::kDisplayP3)
-          .release();
-  return IsApproximately(color_space, *display_p3);
+/**
+ *  Calculates the area of the triangular gamut.
+ */
+float calculate_area(SkPoint abc[3]) {
+  const SkPoint& a = abc[0];
+  const SkPoint& b = abc[1];
+  const SkPoint& c = abc[2];
+  return 0.5f * fabsf(a.fX * b.fY + b.fX * c.fY - a.fX * c.fY - c.fX * b.fY -
+                      b.fX * a.fY);
+}
+
+constexpr float kSRGB_D50_GamutArea = 0.084f;
+
+bool calculate_is_wide_gamut(const SkColorSpace& color_space) {
+  skcms_Matrix3x3 xyzd50;
+  color_space.toXYZD50(&xyzd50);
+  SkPoint rgb[3];
+  load_gamut(rgb, xyzd50);
+  return calculate_area(rgb) > kSRGB_D50_GamutArea;
 }
 }  // namespace
 
@@ -115,13 +124,15 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  if (IsDisplayP3(*base_image_info.colorSpace())) {
+  const bool is_wide_gamut =
+      calculate_is_wide_gamut(*base_image_info.colorSpace());
+  if (is_wide_gamut) {
     FML_DLOG(ERROR) << "loading display p3 image";
   }
   SkAlphaType alpha_type =
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;
-  if (IsDisplayP3(*base_image_info.colorSpace())) {
+  if (is_wide_gamut) {
     // TODO(gaaclarke): Branch on alpha_type so it's 32bpp for opaque images.
     //                  I tried using kBGRA_1010102_SkColorType and
     //                  kBGR_101010x_SkColorType but Skia fails to decode the
