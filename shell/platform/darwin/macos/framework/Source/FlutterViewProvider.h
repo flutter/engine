@@ -16,10 +16,17 @@ extern const uint64_t kFlutterDefaultViewId;
 @protocol FlutterViewProvider
 
 /**
+ * Get the FlutterView for the default view.
+ *
+ * Returns nil if it doesn't exist.
+ */
+- (nullable FlutterView*)getDefaultView;
+
+/**
  * Get the FlutterView with the given view ID.
  *
  * Returns nil if the ID is invalid.
  */
-- (nullable FlutterView*)getView:(uint64_t)id;
+- (nullable FlutterView*)getViewForId:(uint64_t)id;
 
 @end

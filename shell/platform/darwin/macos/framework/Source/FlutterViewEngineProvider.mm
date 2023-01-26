@@ -22,14 +22,12 @@
   return self;
 }
 
-- (nullable FlutterView*)getView:(uint64_t)viewId {
-  // TODO(dkwingsmt): This class only supports the first view for now. After
-  // FlutterEngine supports multi-view, it should get the view associated to the
-  // ID.
-  if (viewId == kFlutterDefaultViewId) {
-    return _engine.viewController.flutterView;
-  }
-  return nil;
+- (nullable FlutterView*)getDefaultView {
+  return _engine.viewController.flutterView;
+}
+
+- (nullable FlutterView*)getViewForId:(uint64_t)viewId {
+  return [_engine viewControllerForId:viewId].flutterView;
 }
 
 @end

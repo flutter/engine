@@ -614,6 +614,76 @@ TEST(EngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
   rasterThread.join();
 }
 
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+
+  FlutterEngine* engine;
+  FlutterViewController* viewController2;
+
+  @autoreleasepool {
+    // Create FVC1.
+    FlutterViewController* viewController1 =
+        [[FlutterViewController alloc] initWithProject:project];
+    EXPECT_EQ(viewController1.id, 0ull);
+
+    engine = viewController1.engine;
+    // Create FVC2 based on the same engine.
+    viewController2 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    EXPECT_EQ(engine.viewController, viewController1);
+    EXPECT_EQ([engine viewControllerForId:0], viewController1);
+    EXPECT_EQ([engine viewControllerForId:1], viewController2);
+  }
+  // FVC1 is deallocated but FVC2 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+  EXPECT_EQ([engine viewControllerForId:0], nil);
+  EXPECT_EQ([engine viewControllerForId:1], viewController2);
+
+  // Create FVC3. The default view controller will stay nil.
+  FlutterViewController* viewController3 =
+      [[FlutterViewController alloc] initWithEngine:viewController2.engine nibName:nil bundle:nil];
+  EXPECT_EQ(engine.viewController, nil);
+  EXPECT_EQ(viewController3.id, 2ull);
+  EXPECT_EQ([engine viewControllerForId:2], viewController3);
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
+  // Don't create the engine with `CreateMockFlutterEngine` because the latter
+  // introduces memory leakage.
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:nil
+                                       allowHeadlessExecution:NO];
+  FlutterViewController* viewController2;
+
+  @autoreleasepool {
+    FlutterViewController* viewController1 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController1);
+
+    viewController2 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    EXPECT_EQ(viewController2.id, 1ull);
+    EXPECT_EQ([engine viewControllerForId:0], viewController1);
+    EXPECT_EQ([engine viewControllerForId:1], viewController2);
+  }
+  // FVC1 is deallocated but FVC2 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+  EXPECT_EQ([engine viewControllerForId:0], nil);
+  EXPECT_EQ([engine viewControllerForId:1], viewController2);
+
+  // Create FVC3. The default view controller will stay nil.
+  FlutterViewController* viewController3 =
+      [[FlutterViewController alloc] initWithEngine:viewController2.engine nibName:nil bundle:nil];
+  EXPECT_EQ(engine.viewController, nil);
+  EXPECT_EQ(viewController3.id, 2ull);
+  EXPECT_EQ([engine viewControllerForId:2], viewController3);
+}
+
 }  // namespace flutter::testing
 
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)

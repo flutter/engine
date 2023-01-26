@@ -48,9 +48,9 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Informs the engine that the associated view controller's view size has changed.
+ * Informs the engine that the specified view controller's view size has changed.
  */
-- (void)updateWindowMetrics;
+- (void)updateWindowMetricsForViewController:(nonnull FlutterViewController*)viewController;
 
 /**
  * Dispatches the given pointer event data to engine.

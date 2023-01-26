@@ -6,6 +6,7 @@
 #define FLUTTER_FLUTTERENGINE_H_
 
 #import <Foundation/Foundation.h>
+#include <stdint.h>
 
 #include <stdint.h>
 
@@ -76,10 +77,11 @@ FLUTTER_DARWIN_EXPORT
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
 
 /**
- * The default `FlutterViewController` associated with this engine, if any.
+ * The default `FlutterViewController` of this engine, if any.
  *
- * The default view always has ID kFlutterDefaultViewId, and is the view
- * operated by the APIs that do not have a view ID specified.
+ * The default view is the first view added to the engine, always has ID
+ * kFlutterDefaultViewId, and is operated by the legacy APIs that do not specify
+ * view IDs.
  *
  * Setting this field from nil to a non-nil view controller also updates
  * the view controller's engine and ID.
@@ -89,8 +91,39 @@ FLUTTER_DARWIN_EXPORT
  *
  * Setting this field from non-nil to a different non-nil FlutterViewController
  * is prohibited and will throw an assertion error.
+ *
+ * This method is deprecated. Querying view controllers should use
+ * viewControllerForId: instead. Assigning or replacing view controllers do not
+ * have a replacement. Consider addViewController: and removeViewController:.
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
+
+/**
+ * Attach a view controller to the engine and associate it with a newly
+ * generated ID.
+ *
+ * The engine holds a weak reference to each attached view controller.
+ *
+ * The first added view controller (either with this method or the
+ * viewController property) will always have ID kFlutterDefaultViewId.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ */
+- (void)addViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * Deassociate the given view controller from this engine.
+ *
+ * If the view controller is not associated with this engine, this call throws an
+ * assertion.
+ */
+- (void)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * The `FlutterViewController` associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
 /**
  * The `FlutterBinaryMessenger` for communicating with this engine.
