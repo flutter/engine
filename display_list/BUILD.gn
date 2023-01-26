@@ -136,14 +136,9 @@ if (enable_unittests) {
     deps = [
       ":display_list",
       ":display_list_fixtures",
-      "//flutter/common/graphics",
       "//flutter/display_list/testing:display_list_surface_provider",
       "//flutter/display_list/testing:display_list_testing",
-      "//flutter/fml",
       "//flutter/testing",
-      "//flutter/testing:skia",
-      "//third_party/benchmark",
-      "//third_party/skia",
     ]
 
     if (!defined(defines)) {

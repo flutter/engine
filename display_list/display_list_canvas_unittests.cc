@@ -2442,7 +2442,7 @@ class DisplayListCanvasTestBase : public BaseT, protected DisplayListOpFlags {
       }
       if (arg == "--enable-software") {
         do_software = enable;
-      } else if (arg == "--enable-opengl") {
+      } else if (arg == "--enable-opengl" || arg == "--enable-gl") {
         do_opengl = enable;
       } else if (arg == "--enable-metal") {
         do_metal = enable;
