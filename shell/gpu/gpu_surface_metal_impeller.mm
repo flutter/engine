@@ -32,11 +32,7 @@ GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delega
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
-          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)) {
-  // TODO(gaaclarke): Make the pixel format of the surface get used for making the AiksContext.
-  // (lldb) p (((IOSSurfaceMetalImpeller*)delegate)->layer_.object_).pixelFormat
-  // (MTLPixelFormat) $12 = MTLPixelFormatBGR10_XR_sRGB
-}
+          std::make_shared<impeller::AiksContext>(impeller_renderer_ ? context : nullptr)) {}
 
 GPUSurfaceMetalImpeller::~GPUSurfaceMetalImpeller() = default;
 
