@@ -48,5 +48,4 @@ struct StopData {
 std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
                                            const std::vector<Scalar>& stops);
 
-
 }  // namespace impeller
