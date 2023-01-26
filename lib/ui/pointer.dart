@@ -132,9 +132,18 @@ enum PointerSignalKind {
 
   /// A pointer-generated scale event (e.g. trackpad pinch).
   scale,
+    
+  stylusAction,
 
   /// An unknown pointer signal kind.
   unknown
+}
+
+enum PointerPreferredAction {
+  ignore,
+  showColorPalette,
+  switchEraser,
+  switchPrevious
 }
 
 /// Information about the state of a pointer.
@@ -176,6 +185,7 @@ class PointerData {
     this.panDeltaY = 0.0,
     this.scale = 0.0,
     this.rotation = 0.0,
+    this.preferredAction = PointerPreferredAction.ignore,
   });
 
   /// Unique identifier that ties the [PointerEvent] to embedder event created it.
@@ -373,6 +383,11 @@ class PointerData {
   ///
   /// The current angle of the pan/zoom in radians, with 0.0 as the initial angle.
   final double rotation;
+  
+  /// For events with change of PointerChange.panZoomUpdate:
+  ///
+  /// The current angle of the pan/zoom in radians, with 0.0 as the initial angle.
+  final PointerPreferredAction preferredAction;
 
   @override
   String toString() => 'PointerData(x: $physicalX, y: $physicalY)';
@@ -414,6 +429,7 @@ class PointerData {
              'panDeltaY: $panDeltaY, '
              'scale: $scale, '
              'rotation: $rotation'
+             'preferredAction: $preferredAction, '
            ')';
   }
 }

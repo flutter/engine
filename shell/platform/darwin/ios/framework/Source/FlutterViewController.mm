@@ -31,6 +31,8 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
+#import <UIKit/UIKit.h>
+
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
@@ -55,7 +57,7 @@ typedef struct MouseState {
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
-@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate, UIPencilInteractionDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -93,6 +95,8 @@ typedef struct MouseState {
 // Trackpad rotating
 @property(nonatomic, retain)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
+@property(nonatomic, retain)
+    UIPencilInteraction* pencilInteraction API_AVAILABLE(ios(13.4));
 
 /**
  * Creates and registers plugins used by this view controller.
@@ -449,6 +453,7 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
   [self.view addSubview:scrollView];
   _scrollView.reset(scrollView);
+
 }
 
 - (flutter::PointerData)generatePointerDataForFake {
@@ -692,6 +697,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - UIViewController lifecycle notifications
 
 - (void)viewDidLoad {
+  NSLog(@"Detected");
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engine && _engineNeedsLaunch) {
@@ -709,6 +715,11 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self createTouchRateCorrectionVSyncClientIfNeeded];
 
   if (@available(iOS 13.4, *)) {
+    
+    _pencilInteraction = [[UIPencilInteraction alloc] init];
+    _pencilInteraction.delegate = self;
+    [_flutterView addInteraction:_pencilInteraction];
+    
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
     _hoverGestureRecognizer.delegate = self;
@@ -882,6 +893,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [_pinchGestureRecognizer release];
   _rotationGestureRecognizer.delegate = nil;
   [_rotationGestureRecognizer release];
+  
   [super dealloc];
 }
 
@@ -956,7 +968,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     case UITouchTypeDirect:
     case UITouchTypeIndirect:
       return flutter::PointerData::DeviceKind::kTouch;
-    case UITouchTypeStylus:
+    case UITouchTypePencil:
       return flutter::PointerData::DeviceKind::kStylus;
     case UITouchTypeIndirectPointer:
       return flutter::PointerData::DeviceKind::kMouse;
@@ -1680,7 +1692,41 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Orientation updates
 
-- (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
+#pragma clang diagnostic push
+
+- (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction API_AVAILABLE(ios(13.4)){
+  
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  
+  switch (UIPencilInteraction.preferredTapAction) {
+    case UIPencilPreferredActionIgnore:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kIgnore;
+      break;
+    case UIPencilPreferredActionShowColorPalette:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kShowColorPalette;
+      break;
+    case UIPencilPreferredActionSwitchEraser:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchEraser;
+      break;
+    case UIPencilPreferredActionSwitchPrevious:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchPrevious;
+    default:
+      break;
+  }
+
+  pointer_data.device = reinterpret_cast<int64_t>(_pencilInteraction);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAction;
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+#pragma clang diagnostic pop
+
+
+- (void)onOrientationPreferencesUpdated:(NSNotification*)notification API_AVAILABLE(ios(12.1)) {
   // Notifications may not be on the iOS UI thread
   dispatch_async(dispatch_get_main_queue(), ^{
     NSDictionary* info = notification.userInfo;
