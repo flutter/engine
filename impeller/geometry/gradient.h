@@ -30,6 +30,11 @@ struct GradientData {
 GradientData CreateGradientBuffer(const std::vector<Color>& colors,
                                   const std::vector<Scalar>& stops);
 
+struct StopData {
+  Color color;
+  Scalar stop;
+};
+
 /**
  * @brief Populate a vector with the interpolated colors for the linear gradient
  * described  by colors and stops.
@@ -39,10 +44,9 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
  *
  * @param colors
  * @param stops
- * @return GradientData
+ * @return StopData
  */
-std::optional<std::vector<Color>> CreateGradientColors(
-    const std::vector<Color>& colors,
-    const std::vector<Scalar>& stops);
+std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
+                                           const std::vector<Scalar>& stops);
 
 }  // namespace impeller
