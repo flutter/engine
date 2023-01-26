@@ -104,10 +104,7 @@ std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
 
   std::vector<StopData> result(stops.size());
   for (auto i = 0u; i < stops.size(); i++) {
-    result[i] = {
-        .color = colors[i],
-        .stop = stops[i]
-    };
+    result[i] = {.color = colors[i], .stop = stops[i]};
   }
   return result;
 }

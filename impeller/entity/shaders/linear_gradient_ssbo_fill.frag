@@ -56,6 +56,6 @@ void main() {
       break;
     }
   }
-  frag_color =
-      vec4(result_color.xyz * result_color.a, result_color.a) * gradient_info.alpha;
+  frag_color = vec4(result_color.xyz * result_color.a, result_color.a) *
+               gradient_info.alpha;
 }
