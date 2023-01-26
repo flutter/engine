@@ -183,9 +183,28 @@ class HtmlImage implements ui.Image {
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
     switch (format) {
-      // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
-      // The format rawRgba always returns straight rather than premul currently.
+      // Solution based on https://stackoverflow.com/a/60564905/4609658
       case ui.ImageByteFormat.rawRgba:
+        if (webGLVersion < 2) {
+          continue rawStraightRgba;
+        }
+
+        final DomCanvasElement canvas = createDomCanvasElement()
+          ..width = width.toDouble()
+          ..height = height.toDouble();
+        final WebGLContext gl = canvas.getGlContext(webGLVersion);
+        gl.activeTexture(gl.texture0);
+        final WebGLTexture? texture = gl.createTexture();
+        gl.bindTexture(gl.texture2d, texture);
+        final WebGLFramebuffer? framebuffer = gl.createFramebuffer();
+        gl.bindFramebuffer(gl.framebuffer, framebuffer);
+        gl.framebufferTexture2D(gl.framebuffer, gl.colorAttachment0, gl.texture2d, texture, 0);
+        gl.texImage2D(gl.texture2d, 0, gl.rgba, gl.rgba, gl.unsignedByte, imgElement);
+        gl.drawBuffers(<int>[gl.colorAttachment0]);
+        final Uint8List data = Uint8List(width * height * 4);
+        gl.readPixels(0, 0, width.toDouble(), height.toDouble(), gl.rgba, gl.unsignedByte, data);
+        return Future<ByteData?>.value(data.buffer.asByteData());
+      rawStraightRgba:
       case ui.ImageByteFormat.rawStraightRgba:
         final DomCanvasElement canvas = createDomCanvasElement()
           ..width = width.toDouble()

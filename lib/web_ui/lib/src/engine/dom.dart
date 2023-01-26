@@ -493,7 +493,7 @@ class DomHTMLBodyElement extends DomHTMLElement {}
 @JS()
 @staticInterop
 class DomHTMLImageElement extends DomHTMLElement
-    implements DomCanvasImageSource {}
+    implements DomCanvasImageSource, DomTexImageSource {}
 
 DomHTMLImageElement createDomHTMLImageElement() =>
     domDocument.createElement('img') as DomHTMLImageElement;
@@ -635,6 +635,18 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
 @JS()
 @staticInterop
+class DomTexImageSource {}
+
+@JS()
+@staticInterop
+class WebGLFramebuffer {}
+
+@JS()
+@staticInterop
+class WebGLTexture {}
+
+@JS()
+@staticInterop
 class WebGLContext {}
 
 extension WebGLContextExtension on WebGLContext {
@@ -645,6 +657,67 @@ extension WebGLContextExtension on WebGLContext {
 
   @JS('STENCIL_BITS')
   external int get stencilBits;
+
+  @JS('TEXTURE0')
+  external int get texture0;
+
+  @JS('TEXTURE_2D')
+  external int get texture2d;
+
+  @JS('FRAMEBUFFER')
+  external int get framebuffer;
+
+  @JS('COLOR_ATTACHMENT0')
+  external int get colorAttachment0;
+
+  @JS('RGBA')
+  external int get rgba;
+
+  @JS('UNSIGNED_BYTE')
+  external int get unsignedByte;
+
+  void activeTexture(int texture) {
+    return js_util.callMethod(this, 'activeTexture', <Object?>[texture]);
+  }
+
+  WebGLTexture? createTexture() {
+    return js_util.callMethod(this, 'createTexture', <Object?>[]);
+  }
+
+  void bindTexture(int target, WebGLTexture? texture) {
+    return js_util.callMethod(this, 'bindTexture', <Object?>[target, texture]);
+  }
+
+  WebGLFramebuffer? createFramebuffer() {
+    return js_util.callMethod(this, 'createFramebuffer', <Object?>[]);
+  }
+
+  void framebufferTexture2D(int target, int attachment, int textarget,
+      WebGLTexture? texture, int level) {
+    return js_util.callMethod(this, 'framebufferTexture2D',
+        <Object?>[target, attachment, textarget, texture, level]);
+  }
+
+  void texImage2D(int target, int level, int internalformat, int format,
+      int type, DomTexImageSource source) {
+    return js_util.callMethod(this, 'texImage2D',
+        <Object?>[target, level, internalformat, format, type, source]);
+  }
+
+  void bindFramebuffer(int target, WebGLFramebuffer? framebuffer) {
+    return js_util
+        .callMethod(this, 'bindFramebuffer', <Object?>[target, framebuffer]);
+  }
+
+  void drawBuffers(List<int> buffers) {
+    return js_util.callMethod(this, 'drawBuffers', <Object?>[buffers]);
+  }
+
+  void readPixels(int x, int y, double width, double height, int format,
+      int type, TypedData? pixels) {
+    return js_util.callMethod(this, 'readPixels',
+        <Object?>[x, y, width, height, format, type, pixels]);
+  }
 }
 
 @JS()

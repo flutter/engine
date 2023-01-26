@@ -98,6 +98,19 @@ Future<void> testMain() async {
       final ui.FrameInfo frameInfo = await codec.getNextFrame();
       expect(frameInfo.image.width, isNot(0));
     });
+
+    group('toByteData', () {
+      test('ImageByteFormat.rawRgba returns expected bytes', () async {
+        final HtmlCodec codec = HtmlCodec(
+            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGPg2T3JDgADyAGYmiSbAQAAAABJRU5ErkJggg==');
+        final ui.FrameInfo frameInfo = await codec.getNextFrame();
+
+        final Uint8List bytes = (await frameInfo.image.toByteData())!.buffer.asUint8List();
+
+        final List<int> expectedBytes = <int>[12, 187, 146, 62];
+        expect(bytes, expectedBytes);
+      });
+    });
   });
 
   group('ImageCodecUrl', () {
