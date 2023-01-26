@@ -1324,6 +1324,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return *_threadHost;
 }
 
+- (FlutterDartProject*)project {
+  return _dartProject.get();
+}
+
 @end
 
 @implementation FlutterEngineRegistrar {

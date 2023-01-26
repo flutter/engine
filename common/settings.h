@@ -199,6 +199,9 @@ struct Settings {
   // Selects the SkParagraph implementation of the text layout engine.
   bool enable_skparagraph = false;
 
+  // Enable the rendering of colors outside of the sRGB gamut.
+  bool enable_wide_gamut = false;
+
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
   bool enable_impeller = false;

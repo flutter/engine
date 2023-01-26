@@ -16,8 +16,16 @@
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
+static BOOL IsWideGamutSupported() {
+  // This predicates the decision on the capabilities of the iOS device's
+  // display.  This means external displays will not support wide gamut if the
+  // device's display doesn't support it.  It practice that should be never.
+  return UIScreen.mainScreen.traitCollection.displayGamut != UIDisplayGamutSRGB;
+}
+
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
+  BOOL _isWideGamutEnabled;
 }
 
 - (instancetype)init {
@@ -35,7 +43,9 @@
   return nil;
 }
 
-- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate opaque:(BOOL)opaque {
+- (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
+                          opaque:(BOOL)opaque
+                 enableWideGamut:(BOOL)isWideGamutEnabled {
   if (delegate == nil) {
     NSLog(@"FlutterView delegate was nil.");
     [self release];
@@ -46,6 +56,7 @@
 
   if (self) {
     _delegate = delegate;
+    _isWideGamutEnabled = isWideGamutEnabled;
     self.layer.opaque = opaque;
 
     // This line is necessary. CoreAnimation(or UIKit) may take this to do
@@ -65,13 +76,15 @@
     layer.allowsGroupOpacity = YES;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
-    CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
-    layer.colorspace = srgb;
-    CFRelease(srgb);
-    if (self.opaque) {
-      layer.pixelFormat = MTLPixelFormatBGR10_XR;
-    } else {
-      layer.pixelFormat = MTLPixelFormatBGRA10_XR;
+    if (_isWideGamutEnabled && IsWideGamutSupported()) {
+      CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
+      layer.colorspace = srgb;
+      CFRelease(srgb);
+      if (self.opaque) {
+        layer.pixelFormat = MTLPixelFormatBGR10_XR;
+      } else {
+        layer.pixelFormat = MTLPixelFormatBGRA10_XR;
+      }
     }
   }
 
