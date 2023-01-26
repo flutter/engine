@@ -286,6 +286,9 @@ class KeyboardConverter {
   static const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
 
   static int _getPhysicalCode(String code) {
+    if (code.isEmpty) {
+      return _kWebKeyIdPlane;
+    }
     return kWebToPhysicalKey[code] ?? (code.hashCode + _kWebKeyIdPlane);
   }
 
@@ -366,7 +369,7 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
     _keyGuards[physicalKey] = cancelingCallback;
   }
-  // Call this method on an up event event of a non-modifier key.
+  // Call this method on an up event of a non-modifier key.
   void _stopGuardingKey(int physicalKey) {
     _keyGuards.remove(physicalKey)?.call();
   }

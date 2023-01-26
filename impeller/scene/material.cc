@@ -79,13 +79,13 @@ std::unique_ptr<UnlitMaterial> UnlitMaterial::MakeFromFlatbuffer(
 
   auto result = Material::MakeUnlit();
 
-  result->SetColor(material.base_color_factor()
-                       ? importer::ToColor(*material.base_color_factor())
-                       : Color::White());
+  if (material.base_color_factor()) {
+    result->SetColor(importer::ToColor(*material.base_color_factor()));
+  }
+
   if (material.base_color_texture() >= 0 &&
       material.base_color_texture() < static_cast<int32_t>(textures.size())) {
     result->SetColorTexture(textures[material.base_color_texture()]);
-    result->SetVertexColorWeight(0);
   }
 
   return result;

@@ -435,6 +435,12 @@ void AccessibilityBridge::SetBooleanAttributesFromFlutterUpdate(
       ax::mojom::BoolAttribute::kEditableRoot,
       flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
           (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly) == 0);
+  // Mark nodes as line breaking so that screen readers don't
+  // merge all consecutive objects into one.
+  // TODO(schectman): When should a node have this attribute set?
+  // https://github.com/flutter/flutter/issues/118184
+  node_data.AddBoolAttribute(ax::mojom::BoolAttribute::kIsLineBreakingObject,
+                             true);
 }
 
 void AccessibilityBridge::SetIntAttributesFromFlutterUpdate(
@@ -527,11 +533,12 @@ void AccessibilityBridge::SetTooltipFromFlutterUpdate(
 void AccessibilityBridge::SetTreeData(const SemanticsNode& node,
                                       ui::AXTreeUpdate& tree_update) {
   FlutterSemanticsFlag flags = node.flags;
-  // Set selection if:
+  // Set selection of the focused node if:
   // 1. this text field has a valid selection
   // 2. this text field doesn't have a valid selection but had selection stored
   //    in the tree.
-  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField) {
+  if (flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField &&
+      flags & FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused) {
     if (node.text_selection_base != -1) {
       tree_update.tree_data.sel_anchor_object_id = node.id;
       tree_update.tree_data.sel_anchor_offset = node.text_selection_base;

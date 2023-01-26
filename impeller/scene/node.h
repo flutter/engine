@@ -5,10 +5,13 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/base/thread.h"
+#include "impeller/base/thread_safety.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/texture.h"
@@ -18,12 +21,47 @@
 #include "impeller/scene/camera.h"
 #include "impeller/scene/mesh.h"
 #include "impeller/scene/scene_encoder.h"
+#include "impeller/scene/skin.h"
 
 namespace impeller {
 namespace scene {
 
 class Node final {
  public:
+  class MutationLog {
+   public:
+    struct SetTransformEntry {
+      Matrix transform;
+    };
+
+    struct SetAnimationStateEntry {
+      std::string animation_name;
+      bool playing = false;
+      bool loop = false;
+      Scalar weight = 0;
+      Scalar time_scale = 1;
+    };
+
+    struct SeekAnimationEntry {
+      std::string animation_name;
+      float time = 0;
+    };
+
+    using Entry = std::
+        variant<SetTransformEntry, SetAnimationStateEntry, SeekAnimationEntry>;
+
+    void Append(const Entry& entry);
+
+   private:
+    std::optional<std::vector<Entry>> Flush();
+
+    RWMutex write_mutex_;
+    bool dirty_ IPLR_GUARDED_BY(write_mutex_) = false;
+    std::vector<Entry> entries_ IPLR_GUARDED_BY(write_mutex_);
+
+    friend Node;
+  };
+
   static std::shared_ptr<Node> MakeFromFlatbuffer(
       const fml::Mapping& ipscene_mapping,
       Allocator& allocator);
@@ -36,12 +74,14 @@ class Node final {
   const std::string& GetName() const;
   void SetName(const std::string& new_name);
 
+  Node* GetParent() const;
+
   std::shared_ptr<Node> FindChildByName(
       const std::string& name,
       bool exclude_animation_players = false) const;
 
   std::shared_ptr<Animation> FindAnimationByName(const std::string& name) const;
-  AnimationClip& AddAnimation(const std::shared_ptr<Animation>& animation);
+  AnimationClip* AddAnimation(const std::shared_ptr<Animation>& animation);
 
   void SetLocalTransform(Matrix transform);
   Matrix GetLocalTransform() const;
@@ -55,7 +95,14 @@ class Node final {
   void SetMesh(Mesh mesh);
   Mesh& GetMesh();
 
-  bool Render(SceneEncoder& encoder, const Matrix& parent_transform) const;
+  void SetIsJoint(bool is_joint);
+  bool IsJoint() const;
+
+  bool Render(SceneEncoder& encoder,
+              Allocator& allocator,
+              const Matrix& parent_transform);
+
+  void AddMutation(const MutationLog::Entry& entry);
 
  private:
   void UnpackFromFlatbuffer(
@@ -64,10 +111,13 @@ class Node final {
       const std::vector<std::shared_ptr<Texture>>& textures,
       Allocator& allocator);
 
+  mutable MutationLog mutation_log_;
+
   Matrix local_transform_;
 
   std::string name_;
   bool is_root_ = false;
+  bool is_joint_ = false;
   Node* parent_ = nullptr;
   std::vector<std::shared_ptr<Node>> children_;
   Mesh mesh_;
@@ -75,6 +125,8 @@ class Node final {
   // For convenience purposes, deserialized nodes hang onto an animation library
   std::vector<std::shared_ptr<Animation>> animations_;
   mutable std::optional<AnimationPlayer> animation_player_;
+
+  std::unique_ptr<Skin> skin_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(Node);
 

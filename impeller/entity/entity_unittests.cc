@@ -679,7 +679,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
   std::vector<BlendMode> blend_mode_values;
   {
     // Force an exhausiveness check with a switch. When adding blend modes,
-    // update this switch with a new name/value to to make it selectable in the
+    // update this switch with a new name/value to make it selectable in the
     // test GUI.
 
     const BlendMode b{};
@@ -807,28 +807,37 @@ TEST_P(EntityTest, BlendingModeOptions) {
 }
 
 TEST_P(EntityTest, BezierCircleScaled) {
-  Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  auto path = PathBuilder{}
-                  .MoveTo({97.325, 34.818})
-                  .CubicCurveTo({98.50862885295136, 34.81812293973836},
-                                {99.46822048142015, 33.85863261475589},
-                                {99.46822048142015, 32.67499810206613})
-                  .CubicCurveTo({99.46822048142015, 31.491363589376355},
-                                {98.50862885295136, 30.53187326439389},
-                                {97.32499434685802, 30.531998226542708})
-                  .CubicCurveTo({96.14153655073771, 30.532123170035373},
-                                {95.18222070648729, 31.491540299350355},
-                                {95.18222070648729, 32.67499810206613})
-                  .CubicCurveTo({95.18222070648729, 33.85845590478189},
-                                {96.14153655073771, 34.81787303409686},
-                                {97.32499434685802, 34.81799797758954})
-                  .Close()
-                  .TakePath();
-  entity.SetTransformation(
-      Matrix::MakeScale({20.0, 20.0, 1.0}).Translate({-80, -15, 0}));
-  entity.SetContents(SolidColorContents::Make(path, Color::Red()));
-  ASSERT_TRUE(OpenPlaygroundHere(entity));
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    static float scale = 20;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Scale", &scale, 1, 100);
+    ImGui::End();
+
+    Entity entity;
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+    auto path = PathBuilder{}
+                    .MoveTo({97.325, 34.818})
+                    .CubicCurveTo({98.50862885295136, 34.81812293973836},
+                                  {99.46822048142015, 33.85863261475589},
+                                  {99.46822048142015, 32.67499810206613})
+                    .CubicCurveTo({99.46822048142015, 31.491363589376355},
+                                  {98.50862885295136, 30.53187326439389},
+                                  {97.32499434685802, 30.531998226542708})
+                    .CubicCurveTo({96.14153655073771, 30.532123170035373},
+                                  {95.18222070648729, 31.491540299350355},
+                                  {95.18222070648729, 32.67499810206613})
+                    .CubicCurveTo({95.18222070648729, 33.85845590478189},
+                                  {96.14153655073771, 34.81787303409686},
+                                  {97.32499434685802, 34.81799797758954})
+                    .Close()
+                    .TakePath();
+    entity.SetTransformation(
+        Matrix::MakeScale({scale, scale, 1.0}).Translate({-90, -20, 0}));
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(EntityTest, Filters) {
@@ -847,7 +856,7 @@ TEST_P(EntityTest, Filters) {
 
     auto blend1 = ColorFilterContents::MakeBlend(
         BlendMode::kScreen,
-        {fi_bridge, FilterInput::Make(blend0), fi_bridge, fi_bridge});
+        {FilterInput::Make(blend0), fi_bridge, fi_bridge, fi_bridge});
 
     Entity entity;
     entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
@@ -1235,7 +1244,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   ASSERT_TRUE(OpenPlaygroundHere(e));
 }
 
-TEST_P(EntityTest, DrawAtlasWithColor) {
+TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
   // Draws the image as four squares stiched together. Because blend modes
   // aren't implented this ends up as four solid color blocks.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
@@ -1262,7 +1271,43 @@ TEST_P(EntityTest, DrawAtlasWithColor) {
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
   contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kModulate);
+
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawAtlasWithColorSimple) {
+  // Draws the image as four squares stiched together. Because blend modes
+  // aren't implented this ends up as four solid color blocks.
+  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
+  auto size = atlas->GetSize();
+  // Divide image into four quadrants.
+  Scalar half_width = size.width / 2;
+  Scalar half_height = size.height / 2;
+  std::vector<Rect> texture_coordinates = {
+      Rect::MakeLTRB(0, 0, half_width, half_height),
+      Rect::MakeLTRB(half_width, 0, size.width, half_height),
+      Rect::MakeLTRB(0, half_height, half_width, size.height),
+      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
+  // Position quadrants adjacent to eachother.
+  std::vector<Matrix> transforms = {
+      Matrix::MakeTranslation({0, 0, 0}),
+      Matrix::MakeTranslation({half_width, 0, 0}),
+      Matrix::MakeTranslation({0, half_height, 0}),
+      Matrix::MakeTranslation({half_width, half_height, 0})};
+  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
+                               Color::Yellow()};
+  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
+
+  contents->SetTransforms(std::move(transforms));
+  contents->SetTextureCoordinates(std::move(texture_coordinates));
+  contents->SetTexture(atlas);
+  contents->SetColors(colors);
+  contents->SetBlendMode(BlendMode::kSourceATop);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -2088,11 +2133,11 @@ TEST_P(EntityTest, RuntimeEffect) {
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
-      Scalar iTime;
       Vector2 iResolution;
+      Scalar iTime;
     } frag_uniforms = {
-        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
         .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
     };
     auto uniform_data = std::make_shared<std::vector<uint8_t>>();
     uniform_data->resize(sizeof(FragUniforms));
