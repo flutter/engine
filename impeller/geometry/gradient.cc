@@ -103,10 +103,10 @@ std::vector<StopData> CreateGradientColors(const std::vector<Color>& colors,
   FML_DCHECK(stops.size() == colors.size());
 
   std::vector<StopData> result(stops.size());
-  for (auto i = 0; i < stops.size(); i++) {
+  for (auto i = 0u; i < stops.size(); i++) {
     result[i] = {
         .color = colors[i],
-        .stop = stops[i],
+        .stop = stops[i]
     };
   }
   return result;

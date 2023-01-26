@@ -11,7 +11,7 @@ struct ColorPoint {
   float stop;
 };
 
-readonly buffer ColorData {
+layout(std140) readonly buffer ColorData {
   ColorPoint colors[];
 }
 color_data;
@@ -46,9 +46,16 @@ void main() {
     ColorPoint prev_point = color_data.colors[i - 1];
     ColorPoint current_point = color_data.colors[i];
     if (t >= prev_point.stop && t <= current_point.stop) {
-      result_color = mix(prev_point.color, current_point.color, t - prev_point.stop / (current_point.stop - prev_point.stop));
+      float delta = (current_point.stop - prev_point.stop);
+      if (delta < 0.001) {
+        result_color = current_point.color;
+      } else {
+        float ratio = (t - prev_point.stop) / delta;
+        result_color = mix(prev_point.color, current_point.color, ratio);
+      }
       break;
     }
   }
-  frag_color = result_color;
+  frag_color =
+      vec4(result_color.xyz * result_color.a, result_color.a) * gradient_info.alpha;
 }

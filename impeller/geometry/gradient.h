@@ -33,6 +33,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
 struct StopData {
   Color color;
   Scalar stop;
+  float __padding[3];
 };
 
 /**
