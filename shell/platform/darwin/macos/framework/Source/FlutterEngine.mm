@@ -252,6 +252,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   std::unique_ptr<flutter::FlutterCompositor> _macOSCompositor;
 
   // The information of all views attached to this engine mapped from IDs.
+  //
+  // It can't use NSDictionary, because the values need to be weak references.
   NSMapTable* _viewControllers;
 
   // FlutterCompositor is copied and used in embedder.cc.

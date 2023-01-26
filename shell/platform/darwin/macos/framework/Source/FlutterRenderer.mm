@@ -99,20 +99,16 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
 }
 
 - (BOOL)present:(uint64_t)viewId texture:(const FlutterMetalTexture*)texture {
-  NSLog(@"Present %llu", viewId);
   FlutterView* view = [_viewProvider getViewForId:viewId];
-  NSLog(@"Present View %@", view);
   if (view == nil) {
     return NO;
   }
   FlutterSurface* surface = [FlutterSurface fromFlutterMetalTexture:texture];
-  NSLog(@"Present surface %@", surface);
   if (surface == nil) {
     return NO;
   }
   FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
   info.surface = surface;
-  NSLog(@"Present surfaceMgr %@", view.surfaceManager);
   [view.surfaceManager present:@[ info ] notify:nil];
   return YES;
 }

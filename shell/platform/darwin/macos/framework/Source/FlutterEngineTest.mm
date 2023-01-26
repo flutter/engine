@@ -651,8 +651,9 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
-  // Don't create the engine with `CreateMockFlutterEngine` because the latter
-  // introduces memory leakage.
+  // Don't create the engine with `CreateMockFlutterEngine`, because it adds
+  // additional references to FlutterViewControllers, which is crucial to this
+  // test case.
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
                                                       project:nil
                                        allowHeadlessExecution:NO];
