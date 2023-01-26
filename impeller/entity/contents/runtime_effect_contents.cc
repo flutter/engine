@@ -5,7 +5,6 @@
 #include "impeller/entity/contents/runtime_effect_contents.h"
 
 #include <future>
-#include <iostream>
 #include <memory>
 
 #include "flutter/fml/logging.h"
@@ -208,7 +207,6 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
 
   size_t sampler_index = 0;
-  FML_DCHECK(minimum_sampler_index >= 0);
   for (auto uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
