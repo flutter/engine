@@ -693,7 +693,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   }
   _semanticsEnabled = enabled;
 
-  // Update all view controllers' bridge.
+  // Update all view controllers' bridges.
   NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
@@ -788,9 +788,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   FlutterViewController* nextViewController;
   while ((nextViewController = [viewControllerEnumerator nextObject])) {
     [nextViewController onPreEngineRestart];
-    if (nextViewController.id != kFlutterDefaultViewId) {
-      [_viewControllers removeObjectForKey:@(nextViewController.id)];
-    }
   }
 }
 
