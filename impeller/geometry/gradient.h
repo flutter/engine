@@ -10,6 +10,7 @@
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/point.h"
+#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
 
@@ -33,7 +34,7 @@ GradientData CreateGradientBuffer(const std::vector<Color>& colors,
 struct StopData {
   Color color;
   Scalar stop;
-  float __padding[3];
+  Padding<3> _padding_;
 };
 
 /**
