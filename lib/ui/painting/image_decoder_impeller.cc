@@ -51,7 +51,8 @@ float CalculateArea(SkPoint abc[3]) {
 
 constexpr float kSRGB_D50_GamutArea = 0.084f;
 
-// Source: https://source.chromium.org/chromium/_/skia/skia.git/+/393fb1ec80f41d8ad7d104921b6920e69749fda1:src/codec/SkAndroidCodec.cpp;l=67;drc=46572b4d445f41943059d0e377afc6d6748cd5ca;bpv=1;bpt=0
+// Source:
+// https://source.chromium.org/chromium/_/skia/skia.git/+/393fb1ec80f41d8ad7d104921b6920e69749fda1:src/codec/SkAndroidCodec.cpp;l=67;drc=46572b4d445f41943059d0e377afc6d6748cd5ca;bpv=1;bpt=0
 bool IsWideGamut(const SkColorSpace& color_space) {
   skcms_Matrix3x3 xyzd50;
   color_space.toXYZD50(&xyzd50);
