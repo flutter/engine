@@ -424,7 +424,7 @@ TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStops) {
       contents->SetColors(std::move(colors));
       contents->SetStops(std::move(stops));
       contents->SetTileMode(tile_mode);
-      contents->SetMatrix(matrix);
+      contents->SetEffectTransform(matrix);
       return contents;
     };
     paint.color = Color(1.0, 1.0, 1.0, alpha);
