@@ -112,7 +112,7 @@ public class FlutterActivity extends Activity
 
   @Override
   public void onBackPressed() {
-    Log.v("justin", "onBackPressed in FlutterActivity");
+    Log.e("justin", "onBackPressed in FlutterActivity");
     if (!eventDelegate.onBackPressed()) {
       super.onBackPressed();
     }

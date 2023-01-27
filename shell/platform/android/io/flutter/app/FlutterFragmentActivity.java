@@ -102,7 +102,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   @Override
   public void onBackPressed() {
-    Log.v("justin", "onBackPressed ok in FlutterFragmentActivity");
+    Log.e("justin", "onBackPressed ok in FlutterFragmentActivity");
     if (!eventDelegate.onBackPressed()) {
       super.onBackPressed();
     }

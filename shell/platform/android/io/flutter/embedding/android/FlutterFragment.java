@@ -1003,7 +1003,7 @@ public class FlutterFragment extends Fragment
       new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
-          Log.v(
+          Log.e(
               "justin",
               "calling onBackPressed in onBackPressedCallback in FlutterFragment (embedder)");
           onBackPressed();
@@ -1050,7 +1050,7 @@ public class FlutterFragment extends Fragment
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       // TODO(justinmc): This is highly suspicious, but it's not blocking the
       // pback gesture. Maybe it's only in some cases.
-      Log.v("justin", "onAttach in FlutterFragment (embedding) adding a callback");
+      Log.e("justin", "onAttach in FlutterFragment (embedding) adding a callback");
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
     context.registerComponentCallbacks(this);
@@ -1206,7 +1206,7 @@ public class FlutterFragment extends Fragment
    */
   @ActivityCallThrough
   public void onBackPressed() {
-    Log.v("justin", "onBackPressed in FlutterFragment (embedder)");
+    Log.e("justin", "onBackPressed in FlutterFragment (embedder)");
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
     }
@@ -1650,7 +1650,7 @@ public class FlutterFragment extends Fragment
         // Unless we disable the callback, the dispatcher call will trigger it. This will then
         // trigger the fragment's onBackPressed() implementation, which will call through to the
         // dart side and likely call back through to this method, creating an infinite call loop.
-        Log.v("justin", "changine enabled on onBackPressedCallback");
+        Log.e("justin", "changine enabled on onBackPressedCallback");
         onBackPressedCallback.setEnabled(false);
         activity.getOnBackPressedDispatcher().onBackPressed();
         onBackPressedCallback.setEnabled(true);

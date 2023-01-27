@@ -667,6 +667,7 @@ public class FlutterActivity extends Activity
     if (Build.VERSION.SDK_INT >= 33) {
       // TODO(justinmc): This is really the one and only thing that stops root
       // pback for me.
+      Log.e("justin", "registerOnBackInvokedCallback");
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
@@ -695,7 +696,7 @@ public class FlutterActivity extends Activity
             @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
-              Log.v(
+              Log.e(
                   "justin",
                   "calling onBackPressed in onBackInvokedCallback in FlutterActivity (embedder)");
               onBackPressed();
@@ -936,7 +937,7 @@ public class FlutterActivity extends Activity
   // versions? Or it's just written by us and doesn't affect pback?
   @Override
   public void onBackPressed() {
-    Log.v("justin", "onBackPressed in FlutterActivity (embedder)");
+    Log.e("justin", "onBackPressed in FlutterActivity (embedder)");
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
     }

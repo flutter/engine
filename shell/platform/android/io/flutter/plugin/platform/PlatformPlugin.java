@@ -484,7 +484,7 @@ public class PlatformPlugin {
     // TODO(justinmc): This is another use of backpresseddispatcher that is not
     // blocking the pback gesture for me.
     if (activity instanceof OnBackPressedDispatcherOwner) {
-      Log.v("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
+      Log.e("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();
