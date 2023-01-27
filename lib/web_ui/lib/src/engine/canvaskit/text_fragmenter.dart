@@ -4,8 +4,6 @@
 
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart' as ui;
-
 import '../text/line_breaker.dart';
 
 abstract class CkTextFragmenter {
@@ -16,29 +14,6 @@ abstract class CkTextFragmenter {
 
   /// Performs the fragmenting of [text] and returns a [Uint32List].
   Uint32List fragment();
-}
-
-class CkBidiFragmenter extends CkTextFragmenter {
-  CkBidiFragmenter(super.text, this.textDirection);
-
-  final ui.TextDirection? textDirection;
-
-  int? get _defaultBidiLevel {
-    switch (textDirection) {
-      case null:
-        return null;
-      case ui.TextDirection.rtl:
-        return 1;
-      case ui.TextDirection.ltr:
-        return 0;
-    }
-  }
-
-  @override
-  Uint32List fragment() {
-    // TODO(mdebbar): Use ICU4X to get actual bidi regions.
-    return Uint32List.fromList(<int> [0, text.length, _defaultBidiLevel ?? 0]);
-  }
 }
 
 class CkWordFragmenter extends CkTextFragmenter {

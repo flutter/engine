@@ -1892,8 +1892,6 @@ extension SkParagraphBuilderExtension on SkParagraphBuilder {
   // into a utf16 string.
   String getText() => utf8.decode(getTextUtf8().codeUnits);
 
-  external void setBidiRegionsUtf8(Uint32List bidiRegions);
-  external void setBidiRegionsUtf16(Uint32List bidiRegions);
   external void setWordsUtf8(Uint32List words);
   external void setWordsUtf16(Uint32List words);
   external void setGraphemeBreaksUtf8(Uint32List graphemes);
