@@ -270,6 +270,7 @@ shared_library("ios_test_flutter") {
     "//build/config:symbol_visibility_hidden",
   ]
   sources = [
+    "../../../../third_party/spring_animation/SpringAnimationTest.mm",
     "framework/Source/FlutterAppDelegateTest.mm",
     "framework/Source/FlutterBinaryMessengerRelayTest.mm",
     "framework/Source/FlutterChannelKeyResponderTest.mm",
@@ -301,6 +302,7 @@ shared_library("ios_test_flutter") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/third_party/spring_animation",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/ocmock:ocmock_shared",
