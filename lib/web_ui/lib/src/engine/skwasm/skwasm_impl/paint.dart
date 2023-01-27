@@ -1,5 +1,5 @@
 import 'package:ui/ui.dart' as ui;
-import 'raw/raw_paint.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 class SkwasmPaint implements ui.Paint {
   factory SkwasmPaint() {

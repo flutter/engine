@@ -2,9 +2,8 @@ import 'dart:ffi';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
-import 'raw/raw_memory.dart';
-import 'raw/raw_path.dart';
 
 enum PathDirection {
   clockwise,

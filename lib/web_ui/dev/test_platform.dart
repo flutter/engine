@@ -92,7 +92,15 @@ class BrowserPlatform extends PlatformPlugin {
         .add(_screenshotHandler)
         .add(_fileNotFoundCatcher);
 
-    server.mount(cascade.handler);
+    final shelf.Handler rootHandler = const shelf.Pipeline()
+      .addMiddleware(shelf.createMiddleware(
+        responseHandler: (shelf.Response response) => response.change(headers: <String, String>{
+          'Cross-Origin-Opener-Policy': 'same-origin',
+          'Cross-Origin-Embedder-Policy': 'require-corp',
+        })
+      ))
+      .addHandler(cascade.handler);
+    server.mount(rootHandler);
   }
 
   /// Starts the server.
@@ -443,7 +451,7 @@ class BrowserPlatform extends PlatformPlugin {
 
       // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase">';
+      final String link = '<link rel="x-dart-test" href="$scriptBase" skwasm>';
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
@@ -462,7 +470,9 @@ class BrowserPlatform extends PlatformPlugin {
           <script src="$testRunner"></script>
         </head>
         </html>
-      ''', headers: <String, String>{'Content-Type': 'text/html'});
+      ''', headers: <String, String>{
+        'Content-Type': 'text/html',
+      });
     }
 
     return shelf.Response.notFound('Not found.');

@@ -358,11 +358,13 @@ Future<bool> compileUnitTestToJS(FilePath input, {required Renderer renderer}) a
 Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer}) async {
   final String targetFileName = pathlib.join(
     environment.webUiBuildDir.path,
+    getBuildDirForRenderer(renderer),
     '${input.relativeToWebUi}.browser_test.dart.wasm',
   );
 
   final io.Directory directoryToTarget = io.Directory(pathlib.join(
       environment.webUiBuildDir.path,
+      getBuildDirForRenderer(renderer),
       pathlib.dirname(input.relativeToWebUi)));
 
   if (!directoryToTarget.existsSync()) {
@@ -381,6 +383,13 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     '-DFLUTTER_WEB_AUTO_DETECT=false',
     '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvasKit}',
     '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
+
+    if (renderer == Renderer.skwasm) 
+      ...<String>[
+        '--import-shared-memory',
+        '--shared-memory-max-pages=32768',
+      ],
+    
     input.relativeToWebUi, // current path.
     targetFileName, // target path.
   ];

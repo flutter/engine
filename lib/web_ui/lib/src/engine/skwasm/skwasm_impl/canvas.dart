@@ -3,12 +3,7 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
-import 'paint.dart';
-import 'path.dart';
-import 'picture.dart';
-import 'raw/raw_canvas.dart';
-import 'raw/raw_memory.dart';
-import 'raw/raw_picture.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 class SkwasmCanvas implements ui.Canvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>

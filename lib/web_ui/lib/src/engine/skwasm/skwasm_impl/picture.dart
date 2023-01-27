@@ -1,6 +1,5 @@
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
-
-import 'raw/raw_picture.dart';
 
 class SkwasmPicture implements ui.Picture {
   SkwasmPicture.fromHandle(this._handle);

@@ -1,3 +1,6 @@
+@DefaultAsset('skwasm')
+library skwasm_impl;
+
 import 'dart:convert';
 import 'dart:ffi';
 import 'dart:typed_data';
@@ -8,13 +11,13 @@ class Stack extends Opaque {}
 typedef StackPointer = Pointer<Stack>;
 
 /// Generic linear memory allocation
-@Native<StackPointer Function(Size)>(symbol: 'skwasm.stackAlloc', isLeaf: true)
+@Native<StackPointer Function(Size)>(symbol: 'stackAlloc', isLeaf: true)
 external StackPointer stackAlloc(int length);
 
-@Native<StackPointer Function()>(symbol: 'skwasm.stackSave', isLeaf: true)
+@Native<StackPointer Function()>(symbol: 'stackSave', isLeaf: true)
 external StackPointer stackSave();
 
-@Native<Void Function(StackPointer)>(symbol: 'skwasm.stackRestore', isLeaf: true)
+@Native<Void Function(StackPointer)>(symbol: 'stackRestore', isLeaf: true)
 external void stackRestore(StackPointer pointer);
 
 class StackScope {

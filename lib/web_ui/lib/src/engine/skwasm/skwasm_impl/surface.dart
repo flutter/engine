@@ -1,8 +1,6 @@
 import 'dart:ffi';
 
-import 'picture.dart';
-import 'raw/raw_memory.dart';
-import 'raw/raw_surface.dart';
+import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
 class Surface {
   factory Surface(String canvasQuerySelector) {
