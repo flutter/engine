@@ -724,6 +724,26 @@ static void fl_view_get_preferred_height(GtkWidget* widget,
   }
 }
 
+static void size_allocate_child(FlView* view,
+                                FlViewChild* child,
+                                GtkAllocation* allocation) {
+  GtkAllocation child_allocation = child->geometry;
+  GtkRequisition child_requisition;
+  gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
+
+  if (!gtk_widget_get_has_window(GTK_WIDGET(view))) {
+    child_allocation.x += allocation->x;
+    child_allocation.y += allocation->y;
+  }
+
+  if (child_allocation.width == 0 && child_allocation.height == 0) {
+    child_allocation.width = allocation->width;
+    child_allocation.height = allocation->height;
+  }
+
+  gtk_widget_size_allocate(child->widget, &child_allocation);
+}
+
 // Implements GtkWidget::size-allocate.
 static void fl_view_size_allocate(GtkWidget* widget,
                                   GtkAllocation* allocation) {
@@ -746,21 +766,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
       continue;
     }
 
-    GtkAllocation child_allocation = child->geometry;
-    GtkRequisition child_requisition;
-    gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
-
-    if (!gtk_widget_get_has_window(widget)) {
-      child_allocation.x += allocation->x;
-      child_allocation.y += allocation->y;
-    }
-
-    if (child_allocation.width == 0 && child_allocation.height == 0) {
-      child_allocation.width = allocation->width;
-      child_allocation.height = allocation->height;
-    }
-
-    gtk_widget_size_allocate(child->widget, &child_allocation);
+    size_allocate_child(self, child, allocation);
   }
 
   GtkAllocation event_box_allocation = {
@@ -978,6 +984,9 @@ void fl_view_add_widget(FlView* view,
 }
 
 void fl_view_end_frame(FlView* view) {
+  GtkAllocation allocation;
+  gtk_widget_get_allocation(GTK_WIDGET(view), &allocation);
+
   for (GList* pending_child = view->pending_children_list; pending_child;
        pending_child = pending_child->next) {
     FlViewChild* pending_view_child =
@@ -991,6 +1000,7 @@ void fl_view_end_frame(FlView* view) {
     } else {
       // newly added child
       gtk_widget_set_parent(pending_view_child->widget, GTK_WIDGET(view));
+      size_allocate_child(view, pending_view_child, &allocation);
     }
   }
 
