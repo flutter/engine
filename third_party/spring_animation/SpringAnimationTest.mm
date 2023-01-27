@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Foundation/Foundation.h>
 #import <OCMock/OCMock.h>
 #import <XCTest/XCTest.h>
 
@@ -37,14 +36,14 @@
                                                           initialVelocity:0
                                                                 fromValue:0
                                                                   toValue:1000];
-  const double epsilon = 1.0;
+  const double accuracy = 1.0;
   const double startTime = 0;
   const double endTime = 0.6;
 
   const double startValue = [animation curveFunction:startTime];
-  XCTAssert(fabs(startValue - animation.fromValue) < epsilon);
+  XCTAssertEqualWithAccuracy(startValue, animation.fromValue, accuracy);
   const double toValue = [animation curveFunction:endTime];
-  XCTAssert(fabs(toValue - animation.toValue) < epsilon);
+  XCTAssertEqualWithAccuracy(toValue, animation.toValue, accuracy);
 }
 
 @end
