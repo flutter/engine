@@ -71,7 +71,12 @@ static BOOL IsWideGamutSupported() {
 
 - (void)layoutSubviews {
   if ([self.layer isKindOfClass:NSClassFromString(@"CAMetalLayer")]) {
+// It is a known Apple bug that CAMetalLayer incorrectly reports its supported
+// SDKs. It is, in fact, available since iOS 8.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunguarded-availability-new"
     CAMetalLayer* layer = (CAMetalLayer*)self.layer;
+#pragma clang diagnostic pop
     CGFloat screenScale = [UIScreen mainScreen].scale;
     layer.allowsGroupOpacity = YES;
     layer.contentsScale = screenScale;
