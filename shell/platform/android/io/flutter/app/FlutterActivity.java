@@ -110,6 +110,7 @@ public class FlutterActivity extends Activity
     super.onDestroy();
   }
 
+  /*
   @Override
   public void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterActivity");
@@ -117,6 +118,7 @@ public class FlutterActivity extends Activity
       super.onBackPressed();
     }
   }
+  */
 
   @Override
   protected void onStop() {

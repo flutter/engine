@@ -100,6 +100,7 @@ public class FlutterFragmentActivity extends FragmentActivity
     super.onDestroy();
   }
 
+  /*
   @Override
   public void onBackPressed() {
     Log.v("justin", "onBackPressed ok in FlutterFragmentActivity");
@@ -107,6 +108,7 @@ public class FlutterFragmentActivity extends FragmentActivity
       super.onBackPressed();
     }
   }
+  */
 
   @Override
   protected void onStart() {

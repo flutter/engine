@@ -661,11 +661,13 @@ public class FlutterFragmentActivity extends FragmentActivity
     super.onNewIntent(intent);
   }
 
+  /*
   @Override
   public void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterFragmentActivity (embedder)");
     flutterFragment.onBackPressed();
   }
+  */
 
   @Override
   public void onRequestPermissionsResult(

@@ -246,6 +246,7 @@ public final class FlutterActivityDelegate
     }
   }
 
+  /*
   @Override
   public boolean onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterActivityDelegate");
@@ -255,6 +256,7 @@ public final class FlutterActivityDelegate
     }
     return false;
   }
+  */
 
   @Override
   public void onUserLeaveHint() {
