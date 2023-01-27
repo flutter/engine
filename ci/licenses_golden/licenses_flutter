@@ -793,6 +793,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: accessibility
 LIBRARY: engine
+LIBRARY: spring_animation
 LIBRARY: tonic
 LIBRARY: txt
 LIBRARY: web_unicode
@@ -3166,6 +3167,7 @@ ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.cc + ../../
 ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/build_config.h + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.cc + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.h + ../../../flutter/third_party/tonic/LICENSE
@@ -5670,6 +5672,7 @@ FILE: ../../../flutter/third_party/accessibility/base/string_utils.cc
 FILE: ../../../flutter/third_party/accessibility/base/string_utils.h
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.h
+FILE: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm
 FILE: ../../../flutter/third_party/tonic/common/build_config.h
 FILE: ../../../flutter/third_party/tonic/common/log.cc
 FILE: ../../../flutter/third_party/tonic/common/log.h
@@ -5738,7 +5741,6 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
 FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
 FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
-FILE: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.h
 FILE: ../../../flutter/vulkan/procs/vulkan_interface.cc
