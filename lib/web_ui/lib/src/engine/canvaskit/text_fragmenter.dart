@@ -4,6 +4,7 @@
 
 import 'dart:typed_data';
 
+import '../dom.dart';
 import '../text/line_breaker.dart';
 
 abstract class CkTextFragmenter {
@@ -16,23 +17,44 @@ abstract class CkTextFragmenter {
   Uint32List fragment();
 }
 
-class CkWordFragmenter extends CkTextFragmenter {
-  CkWordFragmenter(super.text);
-
-  @override
-  Uint32List fragment() {
-    // TODO(mdebbar): Use Intl.Segmenter to get actual word boundaries.
-    return Uint32List.fromList(<int> [0, text.length]);
-  }
+/// The granularity at which to segment text.
+///
+/// To find all supported granularities, see:
+/// - https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl/Segmenter/Segmenter
+enum IntlSegmenterGranularity {
+  grapheme,
+  word,
 }
 
-class CkGraphemeBreakFragmenter extends CkTextFragmenter {
-  CkGraphemeBreakFragmenter(super.text);
+class CkIntlFragmenter extends CkTextFragmenter {
+  CkIntlFragmenter(super.text, this.granularity)
+      : assert(domIntl.Segmenter != null);
+
+  final IntlSegmenterGranularity granularity;
+
+  String get _granularityString {
+    switch (granularity) {
+      case IntlSegmenterGranularity.grapheme:
+        return 'grapheme';
+      case IntlSegmenterGranularity.word:
+        return 'word';
+    }
+  }
 
   @override
   Uint32List fragment() {
-    // TODO(mdebbar): Use Intl.Segmenter to get actual grapheme boundaries.
-    return Uint32List.fromList(List<int>.generate(text.length + 1, (int i) => i));
+    final DomIteratorWrapper<DomSegment> iterator =
+        createIntlSegmenter(granularity: _granularityString)
+            .segment(text)
+            .iterator();
+
+    final List<int> breaks = <int>[];
+    while (iterator.moveNext()) {
+      breaks.add(iterator.current.index);
+    }
+    breaks.add(text.length);
+
+    return Uint32List.fromList(breaks);
   }
 }
 

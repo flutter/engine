@@ -979,9 +979,15 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   SkParagraph _buildSkParagraph() {
     if (useClientICU) {
       final String text = _paragraphBuilder.getText();
-      _paragraphBuilder.setWordsUtf16(CkWordFragmenter(text).fragment());
-      _paragraphBuilder.setGraphemeBreaksUtf16(CkGraphemeBreakFragmenter(text).fragment());
-      _paragraphBuilder.setLineBreaksUtf16(CkLineBreakFragmenter(text).fragment());
+      _paragraphBuilder.setWordsUtf16(
+        CkIntlFragmenter(text, IntlSegmenterGranularity.word).fragment(),
+      );
+      _paragraphBuilder.setGraphemeBreaksUtf16(
+        CkIntlFragmenter(text, IntlSegmenterGranularity.grapheme).fragment(),
+      );
+      _paragraphBuilder.setLineBreaksUtf16(
+        CkLineBreakFragmenter(text).fragment(),
+      );
     }
     final SkParagraph result = _paragraphBuilder.build();
     _paragraphBuilder.delete();
