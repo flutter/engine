@@ -142,7 +142,8 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     image_info =
         base_image_info.makeWH(decode_size.width(), decode_size.height())
             .makeColorType(color_type)
-            .makeAlphaType(alpha_type);
+            .makeAlphaType(alpha_type)
+            .makeColorSpace(SkColorSpace::MakeSRGB());
   } else {
     image_info =
         base_image_info.makeWH(decode_size.width(), decode_size.height())
