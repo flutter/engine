@@ -25,7 +25,7 @@ enum class FillType {
 //------------------------------------------------------------------------------
 /// @brief      Paths are lightweight objects that describe a collection of
 ///             linear, quadratic, or cubic segments. These segments may be
-///             be broken up by move commands, which are effectively linear
+///             broken up by move commands, which are effectively linear
 ///             commands that pick up the pen rather than continuing to draw.
 ///
 ///             All shapes supported by Impeller are paths either directly or
@@ -49,6 +49,11 @@ class Path {
     /// Denotes whether the last point of this contour is connected to the first
     /// point of this contour or not.
     bool is_closed;
+
+    /// The direction of the contour's start cap.
+    Vector2 start_direction;
+    /// The direction of the contour's end cap.
+    Vector2 end_direction;
   };
 
   /// One or more contours represented as a series of points and indices in
