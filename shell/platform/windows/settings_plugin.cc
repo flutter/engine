@@ -103,19 +103,29 @@ float SettingsPlugin::GetTextScaleFactor() {
 }
 
 SettingsPlugin::PlatformBrightness SettingsPlugin::GetPreferredBrightness() {
-  DWORD use_light_theme;
-  DWORD use_light_theme_size = sizeof(use_light_theme);
-  LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
-                            kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
-                            nullptr, &use_light_theme, &use_light_theme_size);
-
-  if (result == 0) {
-    return use_light_theme ? SettingsPlugin::PlatformBrightness::kLight
-                           : SettingsPlugin::PlatformBrightness::kDark;
+  if (is_high_contrast_) {
+    DWORD text_color = GetSysColor(COLOR_WINDOW);
+    int r = GetRValue(text_color);
+    int g = GetGValue(text_color);
+    int b = GetBValue(text_color);
+    int luminance = (r + r + r + b + (g << 2)) >> 3;
+    return luminance >= 0.5 ? SettingsPlugin::PlatformBrightness::kLight
+                            : SettingsPlugin::PlatformBrightness::kDark;
   } else {
-    // The current OS does not support dark mode. (Older Windows 10 or before
-    // Windows 10)
-    return SettingsPlugin::PlatformBrightness::kLight;
+    DWORD use_light_theme;
+    DWORD use_light_theme_size = sizeof(use_light_theme);
+    LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
+                              kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
+                              nullptr, &use_light_theme, &use_light_theme_size);
+
+    if (result == 0) {
+      return use_light_theme ? SettingsPlugin::PlatformBrightness::kLight
+                             : SettingsPlugin::PlatformBrightness::kDark;
+    } else {
+      // The current OS does not support dark mode. (Older Windows 10 or before
+      // Windows 10)
+      return SettingsPlugin::PlatformBrightness::kLight;
+    }
   }
 }
 
@@ -144,6 +154,11 @@ void SettingsPlugin::WatchTextScaleFactorChanged() {
   RegNotifyChangeKeyValue(
       text_scale_factor_reg_hkey_, FALSE, REG_NOTIFY_CHANGE_LAST_SET,
       text_scale_factor_changed_watcher_->GetHandle(), TRUE);
+}
+
+void SettingsPlugin::UpdateHighContrastMode(bool is_high_contrast) {
+  is_high_contrast_ = is_high_contrast;
+  SendSettings();
 }
 
 }  // namespace flutter

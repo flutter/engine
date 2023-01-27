@@ -26,6 +26,10 @@ class MockSettingsPlugin : public SettingsPlugin {
   MOCK_METHOD0(GetTextScaleFactor, float());
   MOCK_METHOD0(GetPreferredBrightness, PlatformBrightness());
 
+  bool is_high_contrast() {
+    return is_high_contrast_;
+  }
+
   MOCK_METHOD0(WatchPreferredBrightnessChanged, void());
   MOCK_METHOD0(WatchTextScaleFactorChanged, void());
 };
@@ -68,6 +72,19 @@ TEST(SettingsPluginTest, StartWatchingStartsWatchingChanges) {
   EXPECT_CALL(settings_plugin, WatchTextScaleFactorChanged).Times(1);
 
   settings_plugin.StartWatching();
+}
+
+TEST(SettingsPluginTest, HighContrastModeHonored) {
+  TestBinaryMessenger messenger([](const std::string& channel,
+                                   const uint8_t* message, size_t message_size,
+                                   BinaryReply reply) {});
+  ::testing::NiceMock<MockSettingsPlugin> settings_plugin(&messenger, nullptr);
+
+  settings_plugin.UpdateHighContrastMode(true);
+  EXPECT_TRUE(settings_plugin.is_high_contrast());
+
+  settings_plugin.UpdateHighContrastMode(false);
+  EXPECT_FALSE(settings_plugin.is_high_contrast());
 }
 
 }  // namespace testing
