@@ -18,6 +18,7 @@
 #include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
@@ -278,11 +279,11 @@ TEST_P(AiksTest, CanRenderWithContiguousClipRestores) {
 
   canvas.Save();
 
-  // Append two clips. First with empty coverage.
+  // Append two clips, the second resulting in empty coverage.
   canvas.ClipPath(
       PathBuilder{}.AddRect(Rect::MakeXYWH(100, 100, 100, 100)).TakePath());
   canvas.ClipPath(
-      PathBuilder{}.AddRect(Rect::MakeXYWH(100, 100, 100, 100)).TakePath());
+      PathBuilder{}.AddRect(Rect::MakeXYWH(300, 300, 100, 100)).TakePath());
 
   // Restore to no clips.
   canvas.Restore();
@@ -1179,6 +1180,20 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     }
     canvas.Restore();
   }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TextRotated) {
+  Canvas canvas;
+  canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
+                          0, 1, 0, 0,            //
+                          0, 0, 0.3, 0,          //
+                          100, 100, 0, 1.3));
+
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
