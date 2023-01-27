@@ -13,6 +13,7 @@ import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
+import io.flutter.Log;
 
 /**
  * Deprecated class for activities that use Flutter who also require the use of the Android v4
@@ -101,6 +102,7 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   @Override
   public void onBackPressed() {
+    Log.v("justin", "onBackPressed ok in FlutterFragmentActivity");
     if (!eventDelegate.onBackPressed()) {
       super.onBackPressed();
     }

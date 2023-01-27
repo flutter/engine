@@ -248,6 +248,7 @@ public final class FlutterActivityDelegate
 
   @Override
   public boolean onBackPressed() {
+    Log.v("justin", "onBackPressed in FlutterActivityDelegate");
     if (flutterView != null) {
       flutterView.popRoute();
       return true;

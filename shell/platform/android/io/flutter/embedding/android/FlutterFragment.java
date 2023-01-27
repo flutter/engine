@@ -1003,6 +1003,7 @@ public class FlutterFragment extends Fragment
       new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
+          Log.v("justin", "calling onBackPressed in onBackPressedCallback in FlutterFragment (embedder)");
           onBackPressed();
         }
       };
@@ -1200,6 +1201,7 @@ public class FlutterFragment extends Fragment
    */
   @ActivityCallThrough
   public void onBackPressed() {
+    Log.v("justin", "onBackPressed in FlutterFragment (embedder)");
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
     }
@@ -1643,6 +1645,7 @@ public class FlutterFragment extends Fragment
         // Unless we disable the callback, the dispatcher call will trigger it. This will then
         // trigger the fragment's onBackPressed() implementation, which will call through to the
         // dart side and likely call back through to this method, creating an infinite call loop.
+        Log.v("justin", "changine enabled on onBackPressedCallback");
         onBackPressedCallback.setEnabled(false);
         activity.getOnBackPressedDispatcher().onBackPressed();
         onBackPressedCallback.setEnabled(true);

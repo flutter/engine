@@ -482,6 +482,7 @@ public class PlatformPlugin {
     }
 
     if (activity instanceof OnBackPressedDispatcherOwner) {
+      Log.v("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();

@@ -693,6 +693,7 @@ public class FlutterActivity extends Activity
             @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
+              Log.v("justin", "calling onBackPressed in onBackInvokedCallback in FlutterActivity (embedder)");
               onBackPressed();
             }
           }
