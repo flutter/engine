@@ -100,7 +100,7 @@ enum class PixelFormat {
   //
   // On Metal, this is a support format for layer drawable and can be used to
   // specify the format of the resolve texture if needed.
-  kDefaultColor = kB8G8R8A8UNormInt,
+  kDefaultColor = kB10G10R10XR,
   kDefaultStencil = kS8UInt,
 };
 
