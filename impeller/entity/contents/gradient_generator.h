@@ -35,11 +35,7 @@ struct StopData {
 };
 
 /**
- * @brief Populate a vector with the interpolated colors for the linear gradient
- * described  by colors and stops.
- *
- * If the returned result is std::nullopt, the original color buffer can be used
- * instead.
+ * @brief Populate a vector with the color and stop data for a gradient
  *
  * @param colors
  * @param stops
