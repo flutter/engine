@@ -460,9 +460,8 @@ Future<void> testMain() async {
   // Set dir attribute for RTL fragments in order to let the browser
   // handle mirrored characters.
   test('Sets "dir" attribute for RTL fragment', () {
-    const double fontSize = 20.0;
     final EngineParagraphStyle style = EngineParagraphStyle(
-      fontSize: fontSize,
+      fontSize: 20.0,
       textDirection: TextDirection.rtl,
     );
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
@@ -477,13 +476,13 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span dir="rtl" style="${spanStyle(top: null, left: null, width: null, fontSize: fontSize)}">'
+      '<flt-span dir="rtl" style="${spanStyle(top: null, left: null, width: null, fontSize: 20)}">'
       '('
       '</flt-span>'
-      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: fontSize)}">'
+      '<flt-span style="${spanStyle(top: null, left: null, width: null, fontSize: 20)}">'
       '1'
       '</flt-span>'
-      '<flt-span dir="rtl" style="${spanStyle(top: null, left: null, width: null, fontSize: fontSize)}">'
+      '<flt-span dir="rtl" style="${spanStyle(top: null, left: null, width: null, fontSize: 20)}">'
       ')'
       '</flt-span>'
       '</flt-paragraph>',
