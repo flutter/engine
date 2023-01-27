@@ -476,7 +476,7 @@ std::string CompilerSkSL::to_function_args(const TextureFunctionArguments& args,
   std::string glsl_args = CompilerGLSL::to_function_args(args, p_forward);
   // SkSL only supports coordinates. All other arguments to texture are
   // unsupported and will generate invalid SkSL.
-  if (args.grad_x || args.grad_y || args.lod || args.coffset || args.offset ||
+  if (args.grad_x || args.grad_y || args.lod || args.offset ||
       args.sample || args.min_lod || args.sparse_texel || args.bias ||
       args.component) {
     FLUTTER_CROSS_THROW(
