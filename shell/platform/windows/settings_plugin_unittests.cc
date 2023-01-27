@@ -73,9 +73,10 @@ TEST(SettingsPluginTest, StartWatchingStartsWatchingChanges) {
 }
 
 TEST(SettingsPluginTest, HighContrastModeHonored) {
-  TestBinaryMessenger messenger([](const std::string& channel,
+  int times = 0;
+  TestBinaryMessenger messenger([&times](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
-                                   BinaryReply reply) {});
+                                   BinaryReply reply) { times++; });
   ::testing::NiceMock<MockSettingsPlugin> settings_plugin(&messenger, nullptr);
 
   settings_plugin.UpdateHighContrastMode(true);
@@ -83,6 +84,8 @@ TEST(SettingsPluginTest, HighContrastModeHonored) {
 
   settings_plugin.UpdateHighContrastMode(false);
   EXPECT_FALSE(settings_plugin.is_high_contrast());
+
+  EXPECT_EQ(times, 2);
 }
 
 }  // namespace testing
