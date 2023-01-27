@@ -102,7 +102,9 @@ struct TSize {
     if (!IsPositive()) {
       return 1u;
     }
-    return std::max(ceil(log2(width)), ceil(log2(height)));
+    constexpr size_t minimumMip = 1u;
+    size_t result = std::max(ceil(log2(width)), ceil(log2(height)));
+    return std::max(result, minimumMip);
   }
 };
 
