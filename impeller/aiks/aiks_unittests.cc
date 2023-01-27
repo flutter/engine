@@ -1170,7 +1170,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
