@@ -10,8 +10,8 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import androidx.annotation.NonNull;
-import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.Log;
+import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
 import io.flutter.view.FlutterView;
@@ -110,7 +110,6 @@ public class FlutterActivity extends Activity
     super.onDestroy();
   }
 
-  /*
   @Override
   public void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterActivity");
@@ -118,7 +117,6 @@ public class FlutterActivity extends Activity
       super.onBackPressed();
     }
   }
-  */
 
   @Override
   protected void onStop() {

@@ -12,7 +12,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-//import androidx.activity.OnBackPressedCallback;
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -36,11 +36,14 @@ import java.util.List;
  *
  * <ol>
  *   <li>{@link #onPostResume()}
+ *   <li>{@link #onBackPressed()}
  *   <li>{@link #onRequestPermissionsResult(int, String[], int[])}
  *   <li>{@link #onNewIntent(Intent)}
  *   <li>{@link #onUserLeaveHint()}
  * </ol>
  *
+ * {@link #onBackPressed()} does not need to be called through if the fragment is constructed by one
+ * of the builders with {@code shouldAutomaticallyHandleOnBackPressed(true)}.
  *
  * <p>Additionally, when starting an {@code Activity} for a result from this {@code Fragment}, be
  * sure to invoke {@link Fragment#startActivityForResult(Intent, int)} rather than {@link
@@ -158,6 +161,7 @@ public class FlutterFragment extends Fragment
    */
   protected static final String ARG_ENABLE_STATE_RESTORATION = "enable_state_restoration";
   /**
+   * True if the fragment should receive {@link #onBackPressed()} events automatically, without
    * requiring an explicit activity call through.
    */
   protected static final String ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED =
@@ -387,10 +391,13 @@ public class FlutterFragment extends Fragment
     }
 
     /**
-     * Whether or not this {@code FlutterFragment} should automatically receive @link
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
      * by default.
      *
      * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
      * manually.
      *
      * <p>This behavior relies on the implementation of {@link #popSystemNavigator()}. It's not
@@ -401,8 +408,7 @@ public class FlutterFragment extends Fragment
     @NonNull
     public NewEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
         boolean shouldAutomaticallyHandleOnBackPressed) {
-      //this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
-      this.shouldAutomaticallyHandleOnBackPressed = false;//shouldAutomaticallyHandleOnBackPressed;
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
       return this;
     }
 
@@ -642,9 +648,13 @@ public class FlutterFragment extends Fragment
     }
 
     /**
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
      * by default.
      *
      * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
      * manually.
      *
      * <p>Enabling this behavior relies on explicit behavior in {@link #popSystemNavigator()}. It's
@@ -655,8 +665,7 @@ public class FlutterFragment extends Fragment
     @NonNull
     public CachedEngineFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
         boolean shouldAutomaticallyHandleOnBackPressed) {
-      //this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
-      this.shouldAutomaticallyHandleOnBackPressed = false;//shouldAutomaticallyHandleOnBackPressed;
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
       return this;
     }
 
@@ -890,7 +899,14 @@ public class FlutterFragment extends Fragment
     }
 
     /**
-     * Whether or not this {@code FlutterFragment} should automatically receive
+     * Whether or not this {@code FlutterFragment} should automatically receive {@link
+     * #onBackPressed()} events, rather than requiring an explicit activity call through. Disabled
+     * by default.
+     *
+     * <p>When enabled, the activity will automatically dispatch back-press events to the fragment's
+     * {@link OnBackPressedCallback}, instead of requiring the activity to manually call {@link
+     * #onBackPressed()} in client code. If enabled, do <b>not</b> invoke {@link #onBackPressed()}
+     * manually.
      *
      * <p>This behavior relies on the implementation of {@link #popSystemNavigator()}. It's not
      * recommended to override that method when enabling this attribute, but if you do, you should
@@ -900,8 +916,7 @@ public class FlutterFragment extends Fragment
     @NonNull
     public NewEngineInGroupFragmentBuilder shouldAutomaticallyHandleOnBackPressed(
         boolean shouldAutomaticallyHandleOnBackPressed) {
-      //this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
-      this.shouldAutomaticallyHandleOnBackPressed = false;
+      this.shouldAutomaticallyHandleOnBackPressed = shouldAutomaticallyHandleOnBackPressed;
       return this;
     }
 
@@ -984,16 +999,16 @@ public class FlutterFragment extends Fragment
     return new FlutterActivityAndFragmentDelegate(host);
   }
 
-  /*
   private final OnBackPressedCallback onBackPressedCallback =
       new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
-          Log.v("justin", "calling onBackPressed in onBackPressedCallback in FlutterFragment (embedder)");
+          Log.v(
+              "justin",
+              "calling onBackPressed in onBackPressedCallback in FlutterFragment (embedder)");
           onBackPressed();
         }
       };
-      */
 
   public FlutterFragment() {
     // Ensure that we at least have an empty Bundle of arguments so that we don't
@@ -1033,10 +1048,10 @@ public class FlutterFragment extends Fragment
     delegate = delegateFactory.createDelegate(this);
     delegate.onAttach(context);
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
-      /*
-      Log.v("justin", "onBackPressedDispatcher addCallback in FlutterFragment");
+      // TODO(justinmc): This is highly suspicious, but it's not blocking the
+      // pback gesture. Maybe it's only in some cases.
+      Log.v("justin", "onAttach in FlutterFragment (embedding) adding a callback");
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
-      */
     }
     context.registerComponentCallbacks(this);
   }
@@ -1187,8 +1202,8 @@ public class FlutterFragment extends Fragment
    * <p>If the fragment uses {@code shouldAutomaticallyHandleOnBackPressed(true)}, this method
    * should not be called through. It will be called automatically instead.
    *
+   * <p>See {@link android.app.Activity#onBackPressed()}
    */
-  /*
   @ActivityCallThrough
   public void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterFragment (embedder)");
@@ -1196,7 +1211,6 @@ public class FlutterFragment extends Fragment
       delegate.onBackPressed();
     }
   }
-  */
 
   /**
    * A result has been returned after an invocation of {@link
@@ -1626,7 +1640,7 @@ public class FlutterFragment extends Fragment
    * <p>Avoid overriding this method when using {@code
    * shouldAutomaticallyHandleOnBackPressed(true)}. If you do, you must always {@code return
    * super.popSystemNavigator()} rather than {@code return false}. Otherwise the navigation behavior
-   * will recurse infinitely between this method and @link #onBackPressed()}, breaking navigation.
+   * will recurse infinitely between this method and {@link #onBackPressed()}, breaking navigation.
    */
   @Override
   public boolean popSystemNavigator() {
@@ -1636,12 +1650,10 @@ public class FlutterFragment extends Fragment
         // Unless we disable the callback, the dispatcher call will trigger it. This will then
         // trigger the fragment's onBackPressed() implementation, which will call through to the
         // dart side and likely call back through to this method, creating an infinite call loop.
-        /*
         Log.v("justin", "changine enabled on onBackPressedCallback");
         onBackPressedCallback.setEnabled(false);
         activity.getOnBackPressedDispatcher().onBackPressed();
         onBackPressedCallback.setEnabled(true);
-        */
         return true;
       }
     }

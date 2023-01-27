@@ -60,9 +60,7 @@ public interface FlutterActivityEvents
    *     continue with its default back button handling.
    * @see android.app.Activity#onBackPressed()
    */
-  /*
   boolean onBackPressed();
-  */
 
   /** @see android.app.Activity#onUserLeaveHint() */
   void onUserLeaveHint();

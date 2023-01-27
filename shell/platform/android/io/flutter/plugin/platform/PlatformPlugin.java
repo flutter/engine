@@ -17,7 +17,7 @@ import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-//import androidx.activity.OnBackPressedDispatcherOwner;
+import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -481,15 +481,14 @@ public class PlatformPlugin {
       return;
     }
 
-    /*
+    // TODO(justinmc): This is another use of backpresseddispatcher that is not
+    // blocking the pback gesture for me.
     if (activity instanceof OnBackPressedDispatcherOwner) {
       Log.v("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
       activity.finish();
     }
-      */
-    activity.finish();
   }
 
   private CharSequence getClipboardData(PlatformChannel.ClipboardContentFormat format) {

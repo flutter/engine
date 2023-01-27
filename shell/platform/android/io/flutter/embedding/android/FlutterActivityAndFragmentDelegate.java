@@ -777,7 +777,6 @@ import java.util.List;
    *
    * <p>This method instructs Flutter's navigation system to "pop route".
    */
-/*
   void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterFragmentAndFragmentDelegate");
     ensureAlive();
@@ -788,7 +787,6 @@ import java.util.List;
       Log.w(TAG, "Invoked onBackPressed() before FlutterFragment was attached to an Activity.");
     }
   }
-  */
 
   /**
    * Invoke this from {@link android.app.Activity#onRequestPermissionsResult(int, String[], int[])}

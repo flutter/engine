@@ -37,8 +37,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-//import android.window.OnBackInvokedCallback;
-//import android.window.OnBackInvokedDispatcher;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
@@ -643,7 +643,7 @@ public class FlutterActivity extends Activity
 
     lifecycle.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
 
-    //registerOnBackInvokedCallback();
+    registerOnBackInvokedCallback();
 
     configureWindowForTransparency();
 
@@ -662,16 +662,16 @@ public class FlutterActivity extends Activity
    * <p>The callback must be unregistered in order to prevent unpredictable behavior once outside
    * the Flutter app.
    */
-  /*
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
     if (Build.VERSION.SDK_INT >= 33) {
+      // TODO(justinmc): This is really the one and only thing that stops root
+      // pback for me.
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
     }
   }
-  */
 
   /**
    * Unregisters the callback from OnBackInvokedDispatcher.
@@ -679,16 +679,13 @@ public class FlutterActivity extends Activity
    * <p>This should be called when the activity is no longer in use to prevent unpredictable
    * behavior such as being stuck and unable to press back.
    */
-  /*
   @VisibleForTesting
   public void unregisterOnBackInvokedCallback() {
     if (Build.VERSION.SDK_INT >= 33) {
       getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(onBackInvokedCallback);
     }
   }
-  */
 
-  /*
   private final OnBackInvokedCallback onBackInvokedCallback =
       Build.VERSION.SDK_INT >= 33
           ? new OnBackInvokedCallback() {
@@ -698,12 +695,13 @@ public class FlutterActivity extends Activity
             @SuppressWarnings("Override")
             @Override
             public void onBackInvoked() {
-              Log.v("justin", "calling onBackPressed in onBackInvokedCallback in FlutterActivity (embedder)");
+              Log.v(
+                  "justin",
+                  "calling onBackPressed in onBackInvokedCallback in FlutterActivity (embedder)");
               onBackPressed();
             }
           }
           : null;
-          */
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
@@ -885,7 +883,7 @@ public class FlutterActivity extends Activity
    */
   @VisibleForTesting
   public void release() {
-    //unregisterOnBackInvokedCallback();
+    unregisterOnBackInvokedCallback();
     if (delegate != null) {
       delegate.release();
       delegate = null;
@@ -934,7 +932,8 @@ public class FlutterActivity extends Activity
     }
   }
 
-  /*
+  // TODO(justinmc): Do I need to get rid of this? Or use it for old Android
+  // versions? Or it's just written by us and doesn't affect pback?
   @Override
   public void onBackPressed() {
     Log.v("justin", "onBackPressed in FlutterActivity (embedder)");
@@ -942,7 +941,6 @@ public class FlutterActivity extends Activity
       delegate.onBackPressed();
     }
   }
-  */
 
   @Override
   public void onRequestPermissionsResult(
