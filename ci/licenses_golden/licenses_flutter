@@ -5738,6 +5738,7 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
 FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
 FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
+FILE: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.h
 FILE: ../../../flutter/vulkan/procs/vulkan_interface.cc
