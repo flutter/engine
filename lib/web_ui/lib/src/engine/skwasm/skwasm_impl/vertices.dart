@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// ignore_for_file: avoid_unused_constructor_parameters
+
 import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;

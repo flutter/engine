@@ -7,6 +7,7 @@ import("//build/toolchain/wasm.gni")
 wasm_lib("skwasm") {
   sources = [
     "canvas.cpp",
+    "contour_measure.cpp",
     "export.h",
     "helpers.h",
     "paint.cpp",

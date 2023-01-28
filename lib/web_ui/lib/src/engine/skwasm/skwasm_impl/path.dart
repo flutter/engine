@@ -21,14 +21,14 @@ enum PathArcSize {
 
 class SkwasmPath implements ui.Path {
   factory SkwasmPath() {
-    return SkwasmPath._fromHandle(pathCreate());
+    return SkwasmPath.fromHandle(pathCreate());
   }
 
   factory SkwasmPath.from(SkwasmPath source) {
-    return SkwasmPath._fromHandle(pathCopy(source._handle));
+    return SkwasmPath.fromHandle(pathCopy(source._handle));
   }
 
-  SkwasmPath._fromHandle(this._handle);
+  SkwasmPath.fromHandle(this._handle);
   final PathHandle _handle;
 
   PathHandle get handle => _handle;
@@ -232,7 +232,7 @@ class SkwasmPath implements ui.Path {
     return withStackScope((StackScope s) {
       final PathHandle newPathHandle = pathCopy(_handle);
       pathTransform(newPathHandle, s.convertMatrix4toSkMatrix(matrix4));
-      return SkwasmPath._fromHandle(newPathHandle);
+      return SkwasmPath.fromHandle(newPathHandle);
     });
   }
 
@@ -254,12 +254,11 @@ class SkwasmPath implements ui.Path {
     ui.PathOperation operation,
     SkwasmPath path1,
     SkwasmPath path2) =>
-    SkwasmPath._fromHandle(pathCombine(
+    SkwasmPath.fromHandle(pathCombine(
         operation.index, path1._handle, path2._handle));
 
   @override
   ui.PathMetrics computeMetrics({bool forceClosed = false}) {
-    // TODO(jacksongardner): implement computeMetrics
-    throw UnimplementedError();
+    return SkwasmPathMetrics(path: this, forceClosed: forceClosed);
   }
 }
