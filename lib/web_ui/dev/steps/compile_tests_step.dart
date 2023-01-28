@@ -238,7 +238,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
 Future<void> compileTests(List<FilePath> testFiles, bool isWasm) async {
   final Stopwatch stopwatch = Stopwatch()..start();
 
-  final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
+  final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles, isWasm);
 
   await Future.wait(<Future<void>>[
     if (sortedTests.htmlTests.isNotEmpty)
