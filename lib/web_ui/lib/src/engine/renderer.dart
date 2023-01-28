@@ -6,7 +6,6 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
-import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 import 'browser_detection.dart';
@@ -16,6 +15,8 @@ import 'embedder.dart';
 import 'fonts.dart';
 import 'html/renderer.dart';
 import 'html_image_codec.dart';
+import 'scenelet/renderer.dart';
+import 'skwasm/skwasm_stub/renderer.dart' if (dart.library.ffi) 'skwasm/skwasm_impl/renderer.dart';
 
 final Renderer _renderer = Renderer._internal();
 Renderer get renderer => _renderer;
@@ -27,6 +28,9 @@ Renderer get renderer => _renderer;
 /// of functionality needed by the rest of the generic web engine code.
 abstract class Renderer {
   factory Renderer._internal() {
+    if (SceneletRenderer.enabled) {
+      return SceneletRenderer();
+    }
     if (FlutterConfiguration.flutterWebUseSkwasm) {
       return SkwasmRenderer();
     }

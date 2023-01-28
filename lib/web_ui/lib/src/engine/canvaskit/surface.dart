@@ -111,6 +111,9 @@ class Surface {
     }
   }
 
+  // TODO: Remove this. Surface should not be responsible for adding
+  //       itself to the scene host. That should be the responsibility of the
+  //       owner of the surface.
   bool _addedToScene = false;
 
   /// Acquire a frame of the given [size] containing a drawable canvas.
@@ -128,6 +131,9 @@ class Surface {
     return SurfaceFrame(surface, submitCallback);
   }
 
+  // TODO: Remove this method. Surface should not be responsible for adding
+  //       itself to the scene host. That should be the responsibility of the
+  //       owner of the surface.
   void addToScene() {
     if (!_addedToScene) {
       CanvasKitRenderer.instance.sceneHost!.prepend(htmlElement);

@@ -496,6 +496,9 @@ class HtmlViewEmbedder {
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int view = _compositionOrder[i];
         if (_overlays[view] != null) {
+          // TODO: this is brittle. Surface also has the _addedToScene field,
+          //       which tracks whether it's added to scene, and this code does
+          //       not update it.
           final DomElement overlayElement = _overlays[view]!.htmlElement;
           if (!overlayElement.isConnected!) {
             // This overlay wasn't added to the DOM.
