@@ -136,6 +136,10 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+              case "SystemNavigator.isEmpty":
+                platformMessageHandler.navigatorIsEmpty();
+                result.success(null);
+                break;
               case "SystemNavigator.pop":
                 platformMessageHandler.popSystemNavigator();
                 result.success(null);
@@ -508,6 +512,8 @@ public class PlatformChannel {
      * systemUiOverlayStyle}, i.e., the given status bar and navigation bar colors and brightness.
      */
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
+
+    void navigatorIsEmpty();
 
     /**
      * The Flutter application would like to pop the top item off of the Android app's navigation

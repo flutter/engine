@@ -110,6 +110,11 @@ public class PlatformPlugin {
         }
 
         @Override
+        public void navigatorIsEmpty() {
+          PlatformPlugin.this.navigatorIsEmpty();
+        }
+
+        @Override
         public void popSystemNavigator() {
           PlatformPlugin.this.popSystemNavigator();
         }
@@ -475,6 +480,12 @@ public class PlatformPlugin {
     currentTheme = systemChromeStyle;
   }
 
+  private void navigatorIsEmpty() {
+    Log.e("justin", "navigatorIsEmpty in PlatformPlugin");
+    // TODO(justinmc): Can't quite call it like this, need FlutterActivity.
+    // activity.unregisterOnBackInvokedCallback();
+  }
+
   private void popSystemNavigator() {
     if (platformPluginDelegate != null && platformPluginDelegate.popSystemNavigator()) {
       // A custom behavior was executed by the delegate. Don't execute default behavior.
@@ -482,11 +493,15 @@ public class PlatformPlugin {
     }
 
     // TODO(justinmc): This is another use of backpresseddispatcher that is not
-    // blocking the pback gesture for me.
+    // blocking the pback gesture for me. It seems like this if is false, so the
+    // app exits here.
     if (activity instanceof OnBackPressedDispatcherOwner) {
       Log.e("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
+      Log.e(
+          "justin",
+          "popSystemNavigator in PlatformPlugin finishing the activity because it's not an OnBackPressedDispatcherOwner");
       activity.finish();
     }
   }
