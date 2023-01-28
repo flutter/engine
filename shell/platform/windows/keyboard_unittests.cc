@@ -262,7 +262,7 @@ class MockKeyboardManagerDelegate : public KeyboardManager::WindowDelegate,
   }
 
   // This method is called for each message injected by test cases with
-  // `InjectMessages`.
+  // `tester.InjectMessages`.
   LRESULT Win32SendMessage(UINT const message,
                            WPARAM const wparam,
                            LPARAM const lparam) override {
@@ -1976,6 +1976,7 @@ TEST_F(KeyboardTest, UpOnlyImeEventsAreCorrectlyHandled) {
 // will crash upon the response.
 TEST_F(KeyboardTest, SlowFrameworkResponse) {
   KeyboardTester tester{GetContext()};
+
   std::vector<MockKeyResponseController::ResponseCallback> recorded_callbacks;
 
   // Store callbacks to manually call them.
@@ -2181,7 +2182,6 @@ TEST_F(KeyboardTest, TextInputSubmit) {
 }
 
 TEST_F(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
-  KeyboardTester tester{GetContext()};
   // In this test, the user presses the folloing keys:
   //
   //   Key         Current text
@@ -2191,6 +2191,7 @@ TEST_F(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
   //
   // And the Backspace event is responded immediately.
 
+  KeyboardTester tester{GetContext()};
   tester.Responding(false);
 
   // US Keyboard layout
@@ -2264,7 +2265,6 @@ TEST_F(KeyboardTest, VietnameseTelexAddDiacriticWithFastResponse) {
 
 void VietnameseTelexAddDiacriticWithSlowResponse(WindowsTestContext& context,
                                                  bool backspace_response) {
-  KeyboardTester tester{context};
   // In this test, the user presses the following keys:
   //
   //   Key         Current text
@@ -2273,6 +2273,8 @@ void VietnameseTelexAddDiacriticWithSlowResponse(WindowsTestContext& context,
   //   F           à
   //
   // And the Backspace down event is responded slowly with `backspace_response`.
+
+  KeyboardTester tester{context};
   tester.Responding(false);
 
   // US Keyboard layout
