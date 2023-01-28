@@ -1,9 +1,12 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
 import 'dart:ffi';
 import 'dart:typed_data';
 
-import 'package:ui/ui.dart' as ui;
-
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
+import 'package:ui/ui.dart' as ui;
 
 class SkwasmCanvas implements ui.Canvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>

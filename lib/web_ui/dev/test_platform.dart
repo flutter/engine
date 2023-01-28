@@ -451,7 +451,7 @@ class BrowserPlatform extends PlatformPlugin {
 
       // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase" skwasm>';
+      final String link = '<link rel="x-dart-test" href="$scriptBase"${renderer == Renderer.skwasm ? " skwasm" : ""}>';
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 

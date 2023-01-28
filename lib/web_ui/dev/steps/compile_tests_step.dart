@@ -384,12 +384,12 @@ Future<bool> compileUnitTestToWasm(FilePath input, {required Renderer renderer})
     '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvasKit}',
     '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
 
-    if (renderer == Renderer.skwasm) 
+    if (renderer == Renderer.skwasm)
       ...<String>[
         '--import-shared-memory',
         '--shared-memory-max-pages=32768',
       ],
-    
+
     input.relativeToWebUi, // current path.
     targetFileName, // target path.
   ];

@@ -1,3 +1,7 @@
+# Copyright 2019 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
 import("//build/toolchain/wasm.gni")
 
 wasm_lib("skwasm") {
@@ -51,26 +55,8 @@ wasm_lib("skwasm") {
     ]
   }
 
-  # extra_outputs = [ "$root_out_dir/skwasm.worker.js" ]
-
   deps = [
     "//third_party/skia",
     "//third_party/skia/modules/canvaskit:create_notomono_cpp",
   ]
 }
-
-# copy("copy_skwasm") {
-#   skwasm_target = ":skwasm(//build/toolchain/wasm)"
-
-#   deps = [ skwasm_target ]
-
-#   skwasm_out_dir = get_label_info(skwasm_target, "root_out_dir")
-
-#   sources = [
-#     "$skwasm_out_dir/skwasm.js",
-#     "$skwasm_out_dir/skwasm.wasm",
-#     "$skwasm_out_dir/skwasm.worker.js",
-#   ]
-
-#   outputs = [ "$root_out_dir/skwasm/{{source_file_part}}" ]
-# }
