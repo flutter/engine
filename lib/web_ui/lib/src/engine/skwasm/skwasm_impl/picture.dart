@@ -17,14 +17,17 @@ class SkwasmPicture implements ui.Picture {
   }
 
   @override
-  void dispose() => pictureDispose(_handle);
+  void dispose() {
+    ui.Picture.onDispose?.call(this);
+    pictureDispose(_handle);
+    debugDisposed = true;
+  }
 
   @override
   int get approximateBytesUsed => pictureApproximateBytesUsed(_handle);
 
   @override
-  // TODO(jacksongardner): implement debugDisposed
-  bool get debugDisposed => throw UnimplementedError();
+  bool debugDisposed = false;
 
   @override
   ui.Image toImageSync(int width, int height) {
@@ -45,10 +48,14 @@ class SkwasmPictureRecorder implements ui.PictureRecorder {
   void delete() => pictureRecorderDestroy(_handle);
 
   @override
-  SkwasmPicture endRecording() =>
-    SkwasmPicture.fromHandle(pictureRecorderEndRecording(_handle));
+  SkwasmPicture endRecording() {
+    isRecording = false;
+
+    final SkwasmPicture picture = SkwasmPicture.fromHandle(pictureRecorderEndRecording(_handle));
+    ui.Picture.onCreate?.call(picture);
+    return picture;
+  }
 
   @override
-  // TODO(jacksongardner): implement isRecording
-  bool get isRecording => throw UnimplementedError();
+  bool isRecording = true;
 }

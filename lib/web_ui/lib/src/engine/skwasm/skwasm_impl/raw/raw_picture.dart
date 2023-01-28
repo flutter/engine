@@ -37,11 +37,11 @@ external CanvasHandle pictureRecorderBeginRecording(
 external PictureHandle pictureRecorderEndRecording(PictureRecorderHandle picture);
 
 @Native<Void Function(PictureHandle)>(
-  symbol: 'pictureRecorder_dispose',
+  symbol: 'picture_dispose',
   isLeaf: true)
 external void pictureDispose(PictureHandle handle);
 
 @Native<Uint32 Function(PictureHandle)>(
-  symbol: 'pictureRecorder_approximateBytesUsed',
+  symbol: 'picture_approximateBytesUsed',
   isLeaf: true)
 external int pictureApproximateBytesUsed(PictureHandle handle);
