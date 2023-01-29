@@ -9,8 +9,6 @@
 
 #import "FlutterMacros.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
 /**
  * A set of Flutter and Dart assets used by a `FlutterEngine` to initialize execution.
  *
@@ -57,7 +55,7 @@ FLUTTER_DARWIN_EXPORT
  * @param asset The name of the asset. The name can be hierarchical.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (NSString*)lookupKeyForAsset:(NSString*)asset;
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset;
 
 /**
  * Returns the file name for the given asset.
@@ -67,7 +65,7 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The `NSBundle` to use for looking up the asset.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (NSString*)lookupKeyForAsset:(NSString*)asset fromBundle:(nullable NSBundle*)bundle;
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset fromBundle:(nullable NSBundle*)bundle;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -77,7 +75,7 @@ FLUTTER_DARWIN_EXPORT
  * @param package The name of the package from which the asset originates.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package;
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset fromPackage:(nonnull NSString*)package;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -88,12 +86,11 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The bundle to use when doing the lookup.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (NSString*)lookupKeyForAsset:(NSString*)asset
-                   fromPackage:(NSString*)package
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                   fromPackage:(nonnull NSString*)package
                     fromBundle:(nullable NSBundle*)bundle;
 
 @end
 
-NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_
