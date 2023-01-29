@@ -9,7 +9,7 @@ import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 class Surface {
   factory Surface(String canvasQuerySelector) {
     final SurfaceHandle surfaceHandle = withStackScope((StackScope scope) {
-      final Pointer<Int8> pointer = scope.convertString(canvasQuerySelector);
+      final Pointer<Int8> pointer = scope.convertStringToNative(canvasQuerySelector);
       return surfaceCreateFromCanvas(pointer);
     });
     return Surface._fromHandle(surfaceHandle);

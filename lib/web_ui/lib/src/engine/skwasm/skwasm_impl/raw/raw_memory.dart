@@ -25,7 +25,7 @@ external StackPointer stackSave();
 external void stackRestore(StackPointer pointer);
 
 class StackScope {
-  Pointer<Int8> convertString(String string) {
+  Pointer<Int8> convertStringToNative(String string) {
     final Utf8Encoder utf8Encoder = utf8.encoder;
     final Uint8List encoded = utf8Encoder.convert(string);
     final Pointer<Int8> pointer = allocInt8Array(encoded.length + 1);
@@ -59,7 +59,7 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Float> convertMatrix4toSkM44(Float64List matrix4) {
+  Pointer<Float> convertMatrix44toNative(Float64List matrix4) {
     assert(matrix4.length == 16);
     final Pointer<Float> pointer = allocFloatArray(16);
     for (int i = 0; i < 16; i++) {
@@ -68,7 +68,15 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Float> convertRect(ui.Rect rect) {
+  Float64List convertMatrix44FromNative(Pointer<Float> buffer) {
+    final Float64List matrix = Float64List(16);
+    for (int i = 0; i < 16; i++) {
+      matrix[i] = buffer[i];
+    }
+    return matrix;
+  }
+
+  Pointer<Float> convertRectToNative(ui.Rect rect) {
     final Pointer<Float> pointer = allocFloatArray(4);
     pointer[0] = rect.left;
     pointer[1] = rect.top;
@@ -77,7 +85,34 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Float> convertRRect(ui.RRect rect) {
+  ui.Rect convertRectFromNative(Pointer<Float> buffer) {
+    return ui.Rect.fromLTRB(
+      buffer[0],
+      buffer[1],
+      buffer[2],
+      buffer[3],
+    );
+  }
+
+  Pointer<Int32> convertIRectToNative(ui.Rect rect) {
+    final Pointer<Int32> pointer = allocInt32Array(4);
+    pointer[0] = rect.left.floor();
+    pointer[1] = rect.top.floor();
+    pointer[2] = rect.right.ceil();
+    pointer[3] = rect.bottom.ceil();
+    return pointer;
+  }
+
+  ui.Rect convertIRectFromNative(Pointer<Int32> buffer) {
+    return ui.Rect.fromLTRB(
+      buffer[0].toDouble(),
+      buffer[1].toDouble(),
+      buffer[2].toDouble(),
+      buffer[3].toDouble(),
+    );
+  }
+
+  Pointer<Float> convertRRectToNative(ui.RRect rect) {
     final Pointer<Float> pointer = allocFloatArray(12);
     pointer[0] = rect.left;
     pointer[1] = rect.top;
@@ -97,7 +132,7 @@ class StackScope {
     return pointer;
   }
 
-  Pointer<Float> convertPointArray(List<ui.Offset> points) {
+  Pointer<Float> convertPointArrayToNative(List<ui.Offset> points) {
     final Pointer<Float> pointer = allocFloatArray(points.length * 2);
     for (int i = 0; i < points.length; i++) {
       pointer[i * 2] = points[i].dx;
@@ -109,6 +144,11 @@ class StackScope {
   Pointer<Int8> allocInt8Array(int count) {
     final int length = count * sizeOf<Int8>();
     return stackAlloc(length).cast<Int8>();
+  }
+
+  Pointer<Int32> allocInt32Array(int count) {
+    final int length = count * sizeOf<Int32>();
+    return stackAlloc(length).cast<Int32>();
   }
 
   Pointer<Float> allocFloatArray(int count) {

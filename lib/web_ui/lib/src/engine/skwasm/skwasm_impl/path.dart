@@ -97,7 +97,7 @@ class SkwasmPath implements ui.Path {
     withStackScope((StackScope s) {
       pathArcToOval(
           _handle,
-          s.convertRect(rect),
+          s.convertRectToNative(rect),
           ui.toDegrees(startAngle),
           ui.toDegrees(sweepAngle),
           forceMoveTo
@@ -156,14 +156,14 @@ class SkwasmPath implements ui.Path {
   @override
   void addRect(ui.Rect rect) {
     withStackScope((StackScope s) {
-      pathAddRect(_handle, s.convertRect(rect));
+      pathAddRect(_handle, s.convertRectToNative(rect));
     });
   }
 
   @override
   void addOval(ui.Rect rect) {
     withStackScope((StackScope s) {
-      pathAddOval(_handle, s.convertRect(rect));
+      pathAddOval(_handle, s.convertRectToNative(rect));
     });
   }
 
@@ -172,7 +172,7 @@ class SkwasmPath implements ui.Path {
     withStackScope((StackScope s) {
       pathAddArc(
         _handle,
-        s.convertRect(rect),
+        s.convertRectToNative(rect),
         ui.toDegrees(startAngle),
         ui.toDegrees(sweepAngle)
       );
@@ -182,14 +182,14 @@ class SkwasmPath implements ui.Path {
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
     withStackScope((StackScope s) {
-      pathAddPolygon(_handle, s.convertPointArray(points), points.length, close);
+      pathAddPolygon(_handle, s.convertPointArrayToNative(points), points.length, close);
     });
   }
 
   @override
   void addRRect(ui.RRect rrect) {
     withStackScope((StackScope s) {
-      pathAddRRect(_handle, s.convertRRect(rrect));
+      pathAddRRect(_handle, s.convertRRectToNative(rrect));
     });
   }
 
@@ -241,12 +241,7 @@ class SkwasmPath implements ui.Path {
     return withStackScope((StackScope s) {
       final Pointer<Float> rectBuffer = s.allocFloatArray(4);
       pathGetBounds(_handle, rectBuffer);
-      return ui.Rect.fromLTRB(
-        rectBuffer[0],
-        rectBuffer[1],
-        rectBuffer[2],
-        rectBuffer[3]
-      );
+      return s.convertRectFromNative(rectBuffer);
     });
   }
 

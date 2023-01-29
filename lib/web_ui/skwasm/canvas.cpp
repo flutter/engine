@@ -27,6 +27,10 @@ SKWASM_EXPORT void canvas_restore(CanvasWrapper* wrapper) {
   wrapper->canvas->restore();
 }
 
+SKWASM_EXPORT void canvas_restoreToCount(CanvasWrapper* wrapper, int count) {
+  wrapper->canvas->restoreToCount(count);
+}
+
 SKWASM_EXPORT int canvas_getSaveCount(CanvasWrapper* wrapper) {
   return wrapper->canvas->getSaveCount();
 }
@@ -163,4 +167,19 @@ SKWASM_EXPORT void canvas_drawPicture(CanvasWrapper* wrapper,
   makeCurrent(wrapper->context);
 
   wrapper->canvas->drawPicture(picture);
+}
+
+SKWASM_EXPORT void canvas_getTransform(CanvasWrapper* wrapper,
+                                       SkM44* outTransform) {
+  *outTransform = wrapper->canvas->getLocalToDevice();
+}
+
+SKWASM_EXPORT void canvas_getLocalClipBounds(CanvasWrapper* wrapper,
+                                             SkRect* outRect) {
+  *outRect = wrapper->canvas->getLocalClipBounds();
+}
+
+SKWASM_EXPORT void canvas_getDeviceClipBounds(CanvasWrapper* wrapper,
+                                              SkIRect* outRect) {
+  *outRect = wrapper->canvas->getDeviceClipBounds();
 }

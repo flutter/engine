@@ -5,14 +5,15 @@
 import 'dart:ffi';
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
 class SkwasmCanvas implements ui.Canvas {
   factory SkwasmCanvas(SkwasmPictureRecorder recorder, ui.Rect cullRect) =>
-    SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
-      pictureRecorderBeginRecording(recorder.handle, s.convertRect(cullRect))
-    ));
+      SkwasmCanvas.fromHandle(withStackScope((StackScope s) =>
+          pictureRecorderBeginRecording(
+              recorder.handle, s.convertRectToNative(cullRect))));
 
   SkwasmCanvas.fromHandle(this._handle);
   CanvasHandle _handle;
@@ -32,7 +33,7 @@ class SkwasmCanvas implements ui.Canvas {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
-        canvasSaveLayer(_handle, s.convertRect(bounds), paint.handle);
+        canvasSaveLayer(_handle, s.convertRectToNative(bounds), paint.handle);
       });
     } else {
       canvasSaveLayer(_handle, nullptr, paint.handle);
@@ -42,6 +43,11 @@ class SkwasmCanvas implements ui.Canvas {
   @override
   void restore() {
     canvasRestore(_handle);
+  }
+
+  @override
+  void restoreToCount(int count) {
+    canvasRestoreToCount(_handle, count);
   }
 
   @override
@@ -62,7 +68,7 @@ class SkwasmCanvas implements ui.Canvas {
   @override
   void transform(Float64List matrix4) {
     withStackScope((StackScope s) {
-      canvasTransform(_handle, s.convertMatrix4toSkM44(matrix4));
+      canvasTransform(_handle, s.convertMatrix44toNative(matrix4));
     });
   }
 
@@ -70,14 +76,14 @@ class SkwasmCanvas implements ui.Canvas {
   void clipRect(ui.Rect rect,
       {ui.ClipOp clipOp = ui.ClipOp.intersect, bool doAntiAlias = true}) {
     withStackScope((StackScope s) {
-      canvasClipRect(_handle, s.convertRect(rect), clipOp.index, doAntiAlias);
+      canvasClipRect(_handle, s.convertRectToNative(rect), clipOp.index, doAntiAlias);
     });
   }
 
   @override
   void clipRRect(ui.RRect rrect, {bool doAntiAlias = true}) {
     withStackScope((StackScope s) {
-      canvasClipRRect(_handle, s.convertRRect(rrect), doAntiAlias);
+      canvasClipRRect(_handle, s.convertRRectToNative(rrect), doAntiAlias);
     });
   }
 
@@ -90,7 +96,7 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void drawColor(ui.Color color, ui.BlendMode blendMode) =>
-    canvasDrawColor(_handle, color.value, blendMode.index);
+      canvasDrawColor(_handle, color.value, blendMode.index);
 
   @override
   void drawLine(ui.Offset p1, ui.Offset p2, ui.Paint uiPaint) {
@@ -108,7 +114,11 @@ class SkwasmCanvas implements ui.Canvas {
   void drawRect(ui.Rect rect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvasDrawRect(_handle, s.convertRect(rect), paint.handle);
+      canvasDrawRect(
+        _handle,
+        s.convertRectToNative(rect),
+        paint.handle
+      );
     });
   }
 
@@ -116,7 +126,11 @@ class SkwasmCanvas implements ui.Canvas {
   void drawRRect(ui.RRect rrect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvasDrawRRect(_handle, s.convertRRect(rrect), paint.handle);
+      canvasDrawRRect(
+        _handle,
+        s.convertRRectToNative(rrect),
+        paint.handle
+      );
     });
   }
 
@@ -125,7 +139,11 @@ class SkwasmCanvas implements ui.Canvas {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
       canvasDrawDRRect(
-          _handle, s.convertRRect(outer), s.convertRRect(inner), paint.handle);
+        _handle,
+        s.convertRRectToNative(outer),
+        s.convertRRectToNative(inner),
+        paint.handle
+      );
     });
   }
 
@@ -133,7 +151,7 @@ class SkwasmCanvas implements ui.Canvas {
   void drawOval(ui.Rect rect, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
-      canvasDrawOval(_handle, s.convertRect(rect), paint.handle);
+      canvasDrawOval(_handle, s.convertRectToNative(rect), paint.handle);
     });
   }
 
@@ -144,17 +162,18 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawArc(ui.Rect rect, double startAngle, double sweepAngle, bool useCenter,
-      ui.Paint uiPaint) {
+  void drawArc(ui.Rect rect, double startAngle, double sweepAngle,
+      bool useCenter, ui.Paint uiPaint) {
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     withStackScope((StackScope s) {
       canvasDrawArc(
-          _handle,
-          s.convertRect(rect),
-          ui.toDegrees(startAngle),
-          ui.toDegrees(sweepAngle),
-          useCenter,
-          paint.handle);
+        _handle,
+        s.convertRectToNative(rect),
+        ui.toDegrees(startAngle),
+        ui.toDegrees(sweepAngle),
+        useCenter,
+        paint.handle
+      );
     });
   }
 
@@ -171,12 +190,14 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawImageRect(ui.Image uiImage, ui.Rect src, ui.Rect dst, ui.Paint uiPaint) {
+  void drawImageRect(
+      ui.Image uiImage, ui.Rect src, ui.Rect dst, ui.Paint uiPaint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawImageNine(ui.Image uiImage, ui.Rect center, ui.Rect dst, ui.Paint uiPaint) {
+  void drawImageNine(
+      ui.Image uiImage, ui.Rect center, ui.Rect dst, ui.Paint uiPaint) {
     throw UnimplementedError();
   }
 
@@ -191,17 +212,20 @@ class SkwasmCanvas implements ui.Canvas {
   }
 
   @override
-  void drawPoints(ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
+  void drawPoints(
+      ui.PointMode pointMode, List<ui.Offset> points, ui.Paint paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawRawPoints(ui.PointMode pointMode, Float32List points, ui.Paint paint) {
+  void drawRawPoints(
+      ui.PointMode pointMode, Float32List points, ui.Paint paint) {
     throw UnimplementedError();
   }
 
   @override
-  void drawVertices(ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
+  void drawVertices(
+      ui.Vertices vertices, ui.BlendMode blendMode, ui.Paint paint) {
     throw UnimplementedError();
   }
 
@@ -243,24 +267,30 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   ui.Rect getDestinationClipBounds() {
-    // TODO(jacksongardner): implement getDestinationClipBounds
-    throw UnimplementedError();
+    return withStackScope((StackScope scope) {
+      final Pointer<Int32> outRect = scope.allocInt32Array(4);
+      canvasGetDeviceClipBounds(_handle, outRect);
+      return scope.convertIRectFromNative(outRect);
+    });
   }
 
   @override
   ui.Rect getLocalClipBounds() {
-    // TODO(jacksongardner): implement getLocalClipBounds
-    throw UnimplementedError();
+    final Float64List transform = getTransform();
+    final Matrix4 matrix = Matrix4.fromFloat32List(Float32List.fromList(transform));
+    if (matrix.invert() == 0) {
+      // non-invertible transforms collapse space to a line or point
+      return ui.Rect.zero;
+    }
+    return transformRect(matrix, getDestinationClipBounds());
   }
 
   @override
   Float64List getTransform() {
-    // TODO(jacksongardner): implement getTransform
-    throw UnimplementedError();
-  }
-
-  @override
-  void restoreToCount(int count) {
-    // TODO(jacksongardner): implement restoreToCount
+    return withStackScope((StackScope scope) {
+      final Pointer<Float> outMatrix = scope.allocFloatArray(16);
+      canvasGetTransform(_handle, outMatrix);
+      return scope.convertMatrix44FromNative(outMatrix);
+    });
   }
 }
