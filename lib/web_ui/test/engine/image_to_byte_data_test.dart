@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -28,6 +29,20 @@ Future<void> testMain() async {
     final Picture testPicture = recorder.endRecording();
     final Image testImage = await testPicture.toImage(2, 2);
     return testImage;
+  }
+
+  Future<Image> testDecodeFromPixels(Uint8List pixels, int width, int height) async {
+    final Completer<Image> completer = Completer<Image>();
+    decodeImageFromPixels(
+      pixels,
+      width,
+      height,
+      PixelFormat.rgba8888,
+          (Image image) {
+        completer.complete(image);
+      },
+    );
+    return completer.future;
   }
 
   test('Picture.toImage().toByteData()', () async {
@@ -60,6 +75,33 @@ Future<void> testMain() async {
     expect(
       bytes.buffer.asUint32List(),
       <int>[0xAA00FFFF, 0xAA00FFFF, 0xAA00FFFF, 0xAA00FFFF],
+    );
+  });
+
+  test(
+      'Image.toByteData(format: ImageByteFormat.rawStraightRgba) returns straight RGBA pixels',
+      () async {
+    final Uint8List pixels = Uint8List.fromList(<int>[255, 255, 255, 127]);
+    final Image testImage = await testDecodeFromPixels(pixels, 1, 1);
+
+    final ByteData bytes =
+        (await testImage.toByteData(format: ImageByteFormat.rawStraightRgba))!;
+    expect(
+      bytes.buffer.asUint8List(),
+      <int>[255, 255, 255, 127],
+    );
+  });
+
+  test(
+      'Image.toByteData(format: ImageByteFormat.rawRgba) returns premultiplied RGBA pixels',
+      () async {
+    final Uint8List pixels = Uint8List.fromList(<int>[255, 255, 255, 127]);
+    final Image testImage = await testDecodeFromPixels(pixels, 1, 1);
+
+    final ByteData bytes = (await testImage.toByteData())!;
+    expect(
+      bytes.buffer.asUint8List(),
+      <int>[255 ~/ 2, 255 ~/ 2, 255 ~/ 2, 127],
     );
   });
 }

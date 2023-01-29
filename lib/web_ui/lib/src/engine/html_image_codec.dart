@@ -185,34 +185,12 @@ class HtmlImage implements ui.Image {
     switch (format) {
       // Solution based on https://stackoverflow.com/a/60564905/4609658
       case ui.ImageByteFormat.rawRgba:
-        if (webGLVersion < 2) {
-          continue rawStraightRgba;
-        }
-
-        final DomCanvasElement canvas = createDomCanvasElement()
-          ..width = width.toDouble()
-          ..height = height.toDouble();
-        final WebGLContext gl = canvas.getGlContext(webGLVersion);
-        gl.activeTexture(gl.texture0);
-        final WebGLTexture? texture = gl.createTexture();
-        gl.bindTexture(gl.texture2d, texture);
-        final WebGLFramebuffer? framebuffer = gl.createFramebuffer();
-        gl.bindFramebuffer(gl.framebuffer, framebuffer);
-        gl.framebufferTexture2D(gl.framebuffer, gl.colorAttachment0, gl.texture2d, texture, 0);
-        gl.texImage2D(gl.texture2d, 0, gl.rgba, gl.rgba, gl.unsignedByte, imgElement);
-        gl.drawBuffers(<int>[gl.colorAttachment0]);
-        final Uint8List data = Uint8List(width * height * 4);
-        gl.readPixels(0, 0, width.toDouble(), height.toDouble(), gl.rgba, gl.unsignedByte, data);
-        return Future<ByteData?>.value(data.buffer.asByteData());
-      rawStraightRgba:
+        final ByteBuffer buffer = _getStraightRgba();
+        _straightRgbaToPremultipliedRgba(buffer);
+        return Future<ByteData?>.value(buffer.asByteData());
       case ui.ImageByteFormat.rawStraightRgba:
-        final DomCanvasElement canvas = createDomCanvasElement()
-          ..width = width.toDouble()
-          ..height = height.toDouble();
-        final DomCanvasRenderingContext2D ctx = canvas.context2D;
-        ctx.drawImage(imgElement, 0, 0);
-        final DomImageData imageData = ctx.getImageData(0, 0, width, height);
-        return Future<ByteData?>.value(imageData.data.buffer.asByteData());
+        final ByteBuffer buffer = _getStraightRgba();
+        return Future<ByteData?>.value(buffer.asByteData());
       default:
         if (imgElement.src?.startsWith('data:') ?? false) {
           final UriData data = UriData.fromUri(Uri.parse(imgElement.src!));
@@ -220,6 +198,52 @@ class HtmlImage implements ui.Image {
         } else {
           return Future<ByteData?>.value();
         }
+    }
+  }
+
+  /// Converts [imgElement] to straight RGBA.
+  /// Prefer [WebGLContext] whenever possible since Canvas keeps the RGBA as premultiplied-alpha
+  /// and [DomCanvasRenderingContext2DExtension.getImageData] converts back to straight RGBA
+  /// which is lossy algorithm for instance when Alpha chanel is 0
+  /// then there is no way to get back original straight RGBA
+  /// https://stackoverflow.com/questions/23497925/how-can-i-stop-the-alpha-premultiplication-with-canvas-imagedata
+  ByteBuffer _getStraightRgba() {
+    if (webGLVersion >= 2) {
+      final DomCanvasElement canvas = createDomCanvasElement()
+        ..width = width.toDouble()
+        ..height = height.toDouble();
+      final WebGLContext gl = canvas.getGlContext(webGLVersion);
+      gl.activeTexture(gl.texture0);
+      final WebGLTexture? texture = gl.createTexture();
+      gl.bindTexture(gl.texture2d, texture);
+      final WebGLFramebuffer? framebuffer = gl.createFramebuffer();
+      gl.bindFramebuffer(gl.framebuffer, framebuffer);
+      gl.framebufferTexture2D(gl.framebuffer, gl.colorAttachment0, gl.texture2d, texture, 0);
+      gl.texImage2D(gl.texture2d, 0, gl.rgba, gl.rgba, gl.unsignedByte, imgElement);
+      gl.drawBuffers(<int>[gl.colorAttachment0]);
+      final Uint8List data = Uint8List(width * height * 4);
+      gl.readPixels(0, 0, width.toDouble(), height.toDouble(), gl.rgba, gl.unsignedByte, data);
+      return data.buffer;
+    } else {
+      final DomCanvasElement canvas = createDomCanvasElement()
+        ..width = width.toDouble()
+        ..height = height.toDouble();
+      final DomCanvasRenderingContext2D ctx = canvas.context2D;
+      ctx.drawImage(imgElement, 0, 0);
+      final DomImageData imageData = ctx.getImageData(0, 0, width, height);
+      return imageData.data.buffer;
+    }
+  }
+
+  /// Mutates the [pixels], converting them from straight RGBA to premultiplied RGBA.
+  void _straightRgbaToPremultipliedRgba(ByteBuffer pixels) {
+    final int pixelCount = pixels.lengthInBytes ~/ 4;
+    final Uint8List pixelBytes = pixels.asUint8List();
+    for (int i = 0; i < pixelCount; i += 4) {
+      final double alpha = pixelBytes[i + 3] / 255;
+      pixelBytes[i] = (pixelBytes[i] * alpha).floor();
+      pixelBytes[i + 1] = (pixelBytes[i + 1] * alpha).floor();
+      pixelBytes[i + 2] = (pixelBytes[i + 2] * alpha).floor();
     }
   }
 
