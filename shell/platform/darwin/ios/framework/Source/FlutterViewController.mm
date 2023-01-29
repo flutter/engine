@@ -453,7 +453,6 @@ static UIView* GetViewOrPlaceholder(UIView* existing_view) {
   scrollView.contentOffset = CGPointMake(kScrollViewContentSize, kScrollViewContentSize);
   [self.view addSubview:scrollView];
   _scrollView.reset(scrollView);
-
 }
 
 - (flutter::PointerData)generatePointerDataForFake {
@@ -697,7 +696,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 #pragma mark - UIViewController lifecycle notifications
 
 - (void)viewDidLoad {
-  NSLog(@"Detected");
   TRACE_EVENT0("flutter", "viewDidLoad");
 
   if (_engine && _engineNeedsLaunch) {
@@ -893,7 +891,6 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [_pinchGestureRecognizer release];
   _rotationGestureRecognizer.delegate = nil;
   [_rotationGestureRecognizer release];
-  
   [super dealloc];
 }
 
@@ -1222,6 +1219,41 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_touchRateCorrectionVSyncClient release];
   _touchRateCorrectionVSyncClient = nil;
 }
+
+#pragma mark - Stylus Events
+
+#pragma clang diagnostic push
+
+- (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction API_AVAILABLE(ios(13.4)){
+  
+  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  
+  switch (UIPencilInteraction.preferredTapAction) {
+    case UIPencilPreferredActionIgnore:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kIgnore;
+      break;
+    case UIPencilPreferredActionShowColorPalette:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kShowColorPalette;
+      break;
+    case UIPencilPreferredActionSwitchEraser:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchEraser;
+      break;
+    case UIPencilPreferredActionSwitchPrevious:
+      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchPrevious;
+    default:
+      break;
+  }
+
+  pointer_data.device = reinterpret_cast<int64_t>(_pencilInteraction);
+  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAction;
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+#pragma clang diagnostic pop
 
 #pragma mark - Handle view resizing
 
@@ -1691,40 +1723,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 #pragma mark - Orientation updates
-
-#pragma clang diagnostic push
-
-- (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction API_AVAILABLE(ios(13.4)){
-  
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
-  
-  switch (UIPencilInteraction.preferredTapAction) {
-    case UIPencilPreferredActionIgnore:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kIgnore;
-      break;
-    case UIPencilPreferredActionShowColorPalette:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kShowColorPalette;
-      break;
-    case UIPencilPreferredActionSwitchEraser:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchEraser;
-      break;
-    case UIPencilPreferredActionSwitchPrevious:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchPrevious;
-    default:
-      break;
-  }
-
-  pointer_data.device = reinterpret_cast<int64_t>(_pencilInteraction);
-  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
-  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAction;
-
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
-  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
-}
-
-#pragma clang diagnostic pop
-
 
 - (void)onOrientationPreferencesUpdated:(NSNotification*)notification API_AVAILABLE(ios(12.1)) {
   // Notifications may not be on the iOS UI thread

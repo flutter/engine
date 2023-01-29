@@ -121,6 +121,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
@@ -1478,6 +1479,28 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [[[self.mockEngine verify] ignoringNonObjectArgs]
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
 }
+
+- (void)testPencilSupport API_AVAILABLE(ios(13.4)) {
+  if (@available(iOS 13.4, *)) {
+    // noop
+  } else {
+    return;
+  }
+
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
+  XCTAssertNotNil(mockPencilInteraction);
+
+  [vc pencilInteractionDidTap:mockPencilInteraction];
+
+  [[[self.mockEngine verify] ignoringNonObjectArgs]
+      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
+}
+
 
 
 
