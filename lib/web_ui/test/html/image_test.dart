@@ -88,6 +88,8 @@ Future<bool> rawImageUsesCorrectBehavior(PixelFormat format) async {
 }
 
 Future<void> testMain() async {
+  final bool hasWebGl2 = webGLVersion >= 2;
+
   test('Correctly encodes an opaque image', () async {
     // A 2x2 testing image without transparency.
     final Image sourceImage = await _encodeToHtmlThenDecode(
@@ -97,10 +99,15 @@ Future<void> testMain() async {
     );
     final Uint8List actualPixels  = Uint8List.sublistView(
         (await sourceImage.toByteData(format: ImageByteFormat.rawStraightRgba))!);
-    // The `benchmarkPixels` is identical to `sourceImage` except for the fully
-    // transparent last pixel, whose channels are turned 0.
+    // The `benchmarkPixels` is identical to `sourceImage` in case of webgl2 support.
+    // In case of canvas the fully transparent last pixel channels are turned 0.
     final Uint8List benchmarkPixels = _pixelsToBytes(
-      <int>[0xFF0102FF, 0x04FE05FF, 0x0708FDFF, 0x00000000],
+      <int>[
+        0xFF0102FF,
+        0x04FE05FF,
+        0x0708FDFF,
+        if (hasWebGl2) 0x0A0B0C00 else 0x00000000,
+      ],
     );
     expect(actualPixels, listEqual(benchmarkPixels));
   });
@@ -115,9 +122,15 @@ Future<void> testMain() async {
     final Uint8List actualPixels  = Uint8List.sublistView(
         (await sourceImage.toByteData(format: ImageByteFormat.rawStraightRgba))!);
     // The `benchmarkPixels` is the same as `sourceImage` except that the R and
-    // G channels are swapped and the fully transparent last pixel is turned 0.
+    // G channels are swapped and the fully transparent last pixel is turned 0
+    // if webgl2 support is not available.
     final Uint8List benchmarkPixels = _pixelsToBytes(
-      <int>[0x0201FFFF, 0x05FE04FF, 0xFD0807FF, 0x00000000],
+      <int>[
+        0x0201FFFF,
+        0x05FE04FF,
+        0xFD0807FF,
+        if (hasWebGl2) 0x0A0B0C00 else 0x00000000,
+      ],
     );
     expect(actualPixels, listEqual(benchmarkPixels));
   });
