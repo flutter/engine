@@ -185,7 +185,6 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
-  // TODO RESET HERE?
   if (reads_from_pass_texture_ > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
