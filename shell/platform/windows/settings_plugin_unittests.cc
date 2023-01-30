@@ -76,7 +76,10 @@ TEST(SettingsPluginTest, HighContrastModeHonored) {
   int times = 0;
   TestBinaryMessenger messenger([&times](const std::string& channel,
                                    const uint8_t* message, size_t message_size,
-                                   BinaryReply reply) { times++; });
+                                   BinaryReply reply) {
+    ASSERT_EQ(channel, "flutter/settings");
+    times++;
+  });
   ::testing::NiceMock<MockSettingsPlugin> settings_plugin(&messenger, nullptr);
 
   settings_plugin.UpdateHighContrastMode(true);
