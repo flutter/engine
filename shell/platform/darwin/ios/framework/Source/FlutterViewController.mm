@@ -57,7 +57,9 @@ typedef struct MouseState {
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
-@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate, UIPencilInteractionDelegate>
+@interface FlutterViewController () <FlutterBinaryMessenger,
+                                     UIScrollViewDelegate,
+                                     UIPencilInteractionDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -95,9 +97,7 @@ typedef struct MouseState {
 // Trackpad rotating
 @property(nonatomic, retain)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
-@property(nonatomic, retain)
-    UIPencilInteraction* pencilInteraction API_AVAILABLE(ios(13.4));
-
+@property(nonatomic, retain) UIPencilInteraction* pencilInteraction API_AVAILABLE(ios(13.4));
 /**
  * Creates and registers plugins used by this view controller.
  */
@@ -1223,7 +1223,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma clang diagnostic push
 
-- (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction API_AVAILABLE(ios(13.4)){
+- (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction API_AVAILABLE(ios(13.4)) {
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
 
   switch (UIPencilInteraction.preferredTapAction) {
