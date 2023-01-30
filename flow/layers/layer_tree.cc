@@ -19,13 +19,10 @@
 
 namespace flutter {
 
-LayerTree::LayerTree(const SkISize& frame_size, float device_pixel_ratio)
-    : frame_size_(frame_size),
-      device_pixel_ratio_(device_pixel_ratio),
-      rasterizer_tracing_threshold_(0),
+LayerTree::LayerTree()
+    : rasterizer_tracing_threshold_(0),
       checkerboard_raster_cache_images_(false),
       checkerboard_offscreen_layers_(false) {
-  FML_CHECK(device_pixel_ratio_ != 0.0f);
 }
 
 inline SkColorSpace* GetColorSpace(SkCanvas* canvas) {
@@ -63,7 +60,6 @@ bool LayerTree::Preroll(CompositorContext::ScopedFrame& frame,
       .raster_time                   = frame.context().raster_time(),
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .raster_cached_entries         = &raster_cache_items_,
       .display_list_enabled          = frame.display_list_builder() != nullptr,
       // clang-format on
@@ -145,7 +141,6 @@ void LayerTree::Paint(CompositorContext::ScopedFrame& frame,
       .ui_time                       = frame.context().ui_time(),
       .texture_registry              = frame.context().texture_registry(),
       .raster_cache                  = cache,
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = snapshot_store,
       .enable_leaf_layer_tracing     = enable_leaf_layer_tracing_,
       .aiks_context                  = frame.aiks_context(),
@@ -186,7 +181,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .raster_time                   = unused_stopwatch,
       .ui_time                       = unused_stopwatch,
       .texture_registry              = texture_registry,
-      .frame_device_pixel_ratio      = device_pixel_ratio_
       // clang-format on
   };
 
@@ -204,7 +198,6 @@ sk_sp<DisplayList> LayerTree::Flatten(
       .ui_time                       = unused_stopwatch,
       .texture_registry              = texture_registry,
       .raster_cache                  = nullptr,
-      .frame_device_pixel_ratio      = device_pixel_ratio_,
       .layer_snapshot_store          = nullptr,
       .enable_leaf_layer_tracing     = false,
       // clang-format on

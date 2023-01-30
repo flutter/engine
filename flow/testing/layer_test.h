@@ -57,7 +57,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .raster_time                   = raster_time_,
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
-            .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .raster_cached_entries         = &cacheable_items_,
             // clang-format on
@@ -72,7 +71,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
         display_list_recorder_(kDlBounds),
@@ -87,7 +85,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         },
         checkerboard_context_{
@@ -100,7 +97,6 @@ class LayerTestBase : public CanvasTestBase<BaseT> {
             .ui_time                       = ui_time_,
             .texture_registry              = texture_registry_,
             .raster_cache                  = nullptr,
-            .frame_device_pixel_ratio      = 1.0f,
             // clang-format on
         } {
     use_null_raster_cache();

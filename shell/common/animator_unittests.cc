@@ -155,8 +155,7 @@ TEST_F(ShellTest, AnimatorDoesNotNotifyIdleBeforeRender) {
   task_runners.GetUITaskRunner()->PostDelayedTask(
       [&] {
         ASSERT_FALSE(delegate.notify_idle_called_);
-        auto layer_tree =
-            std::make_shared<LayerTree>(SkISize::Make(600, 800), 1.0);
+        auto layer_tree = std::make_shared<LayerTree>();
         animator->Render(std::move(layer_tree));
         task_runners.GetPlatformTaskRunner()->PostTask(flush_vsync_task);
       },
