@@ -85,8 +85,8 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
     bool absorb_opacity) const {
   if (color_filter.has_value()) {
-    const ColorFilterProc& filter = color_filter.value();
-    auto color_filter_contents = filter(FilterInput::Make(input));
+    auto filter = color_filter.value();
+    auto color_filter_contents = filter->MakeContents(FilterInput::Make(input));
     if (color_filter_contents) {
       color_filter_contents->SetAbsorbOpacity(absorb_opacity);
     }

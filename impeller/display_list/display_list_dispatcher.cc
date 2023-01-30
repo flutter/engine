@@ -19,6 +19,8 @@
 #include "display_list/display_list_tile_mode.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+#include "impeller/display_list/display_list_color_filter.h"
+#include "impeller/display_list/conversion.h"
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
@@ -49,83 +51,6 @@ namespace impeller {
 DisplayListDispatcher::DisplayListDispatcher() = default;
 
 DisplayListDispatcher::~DisplayListDispatcher() = default;
-
-static BlendMode ToBlendMode(flutter::DlBlendMode mode) {
-  switch (mode) {
-    case flutter::DlBlendMode::kClear:
-      return BlendMode::kClear;
-    case flutter::DlBlendMode::kSrc:
-      return BlendMode::kSource;
-    case flutter::DlBlendMode::kDst:
-      return BlendMode::kDestination;
-    case flutter::DlBlendMode::kSrcOver:
-      return BlendMode::kSourceOver;
-    case flutter::DlBlendMode::kDstOver:
-      return BlendMode::kDestinationOver;
-    case flutter::DlBlendMode::kSrcIn:
-      return BlendMode::kSourceIn;
-    case flutter::DlBlendMode::kDstIn:
-      return BlendMode::kDestinationIn;
-    case flutter::DlBlendMode::kSrcOut:
-      return BlendMode::kSourceOut;
-    case flutter::DlBlendMode::kDstOut:
-      return BlendMode::kDestinationOut;
-    case flutter::DlBlendMode::kSrcATop:
-      return BlendMode::kSourceATop;
-    case flutter::DlBlendMode::kDstATop:
-      return BlendMode::kDestinationATop;
-    case flutter::DlBlendMode::kXor:
-      return BlendMode::kXor;
-    case flutter::DlBlendMode::kPlus:
-      return BlendMode::kPlus;
-    case flutter::DlBlendMode::kModulate:
-      return BlendMode::kModulate;
-    case flutter::DlBlendMode::kScreen:
-      return BlendMode::kScreen;
-    case flutter::DlBlendMode::kOverlay:
-      return BlendMode::kOverlay;
-    case flutter::DlBlendMode::kDarken:
-      return BlendMode::kDarken;
-    case flutter::DlBlendMode::kLighten:
-      return BlendMode::kLighten;
-    case flutter::DlBlendMode::kColorDodge:
-      return BlendMode::kColorDodge;
-    case flutter::DlBlendMode::kColorBurn:
-      return BlendMode::kColorBurn;
-    case flutter::DlBlendMode::kHardLight:
-      return BlendMode::kHardLight;
-    case flutter::DlBlendMode::kSoftLight:
-      return BlendMode::kSoftLight;
-    case flutter::DlBlendMode::kDifference:
-      return BlendMode::kDifference;
-    case flutter::DlBlendMode::kExclusion:
-      return BlendMode::kExclusion;
-    case flutter::DlBlendMode::kMultiply:
-      return BlendMode::kMultiply;
-    case flutter::DlBlendMode::kHue:
-      return BlendMode::kHue;
-    case flutter::DlBlendMode::kSaturation:
-      return BlendMode::kSaturation;
-    case flutter::DlBlendMode::kColor:
-      return BlendMode::kColor;
-    case flutter::DlBlendMode::kLuminosity:
-      return BlendMode::kLuminosity;
-  }
-  FML_UNREACHABLE();
-}
-
-static Entity::TileMode ToTileMode(flutter::DlTileMode tile_mode) {
-  switch (tile_mode) {
-    case flutter::DlTileMode::kClamp:
-      return Entity::TileMode::kClamp;
-    case flutter::DlTileMode::kRepeat:
-      return Entity::TileMode::kRepeat;
-    case flutter::DlTileMode::kMirror:
-      return Entity::TileMode::kMirror;
-    case flutter::DlTileMode::kDecal:
-      return Entity::TileMode::kDecal;
-  }
-}
 
 static impeller::SamplerDescriptor ToSamplerDescriptor(
     const flutter::DlImageSampling options) {
@@ -257,15 +182,6 @@ void DisplayListDispatcher::setStrokeJoin(flutter::DlStrokeJoin join) {
 
 static Point ToPoint(const SkPoint& point) {
   return Point::MakeXY(point.fX, point.fY);
-}
-
-static Color ToColor(const SkColor& color) {
-  return {
-      static_cast<Scalar>(SkColorGetR(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetG(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetB(color) / 255.0),  //
-      static_cast<Scalar>(SkColorGetA(color) / 255.0)   //
-  };
 }
 
 static std::vector<Color> ToColors(const flutter::DlColor colors[], int count) {
@@ -530,38 +446,20 @@ void DisplayListDispatcher::setColorSource(
   }
 }
 
-static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
+static std::optional<std::shared_ptr<ColorFilterFactory>> ToColorFilterProc(
     const flutter::DlColorFilter* filter) {
   if (filter == nullptr) {
     return std::nullopt;
   }
   switch (filter->type()) {
-    case flutter::DlColorFilterType::kBlend: {
-      auto dl_blend = filter->asBlend();
-      auto blend_mode = ToBlendMode(dl_blend->mode());
-      auto color = ToColor(dl_blend->color());
-      return [blend_mode, color](FilterInput::Ref input) {
-        return ColorFilterContents::MakeBlend(blend_mode, {std::move(input)},
-                                              color);
-      };
-    }
-    case flutter::DlColorFilterType::kMatrix: {
-      const flutter::DlMatrixColorFilter* dl_matrix = filter->asMatrix();
-      impeller::FilterContents::ColorMatrix color_matrix;
-      dl_matrix->get_matrix(color_matrix.array);
-      return [color_matrix](FilterInput::Ref input) {
-        return ColorFilterContents::MakeColorMatrix({std::move(input)},
-                                                    color_matrix);
-      };
-    }
+    case flutter::DlColorFilterType::kBlend:
+      return std::make_shared<DlBlendColorFilterFactory>(filter);
+    case flutter::DlColorFilterType::kMatrix:
+      return std::make_shared<DlMatrixColorFilterFactory>(filter);
     case flutter::DlColorFilterType::kSrgbToLinearGamma:
-      return [](FilterInput::Ref input) {
-        return ColorFilterContents::MakeSrgbToLinearFilter({std::move(input)});
-      };
+      return std::make_shared<DlSrgbToLinearColorFilterFactory>();
     case flutter::DlColorFilterType::kLinearToSrgbGamma:
-      return [](FilterInput::Ref input) {
-        return ColorFilterContents::MakeLinearToSrgbFilter({std::move(input)});
-      };
+      return std::make_shared<DlLinearToSrgbColorFilterFactory>();
     case flutter::DlColorFilterType::kUnknown:
       FML_LOG(ERROR) << "Requested DlColorFilterType::kUnknown";
       UNIMPLEMENTED;
@@ -732,7 +630,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       return [color_filter = color_filter_proc.value()](
                  FilterInput::Ref input, const Matrix& effect_transform) {
-        return color_filter(std::move(input));
+        return color_filter->MakeContents(std::move(input));
       };
       break;
     }

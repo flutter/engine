@@ -6,6 +6,8 @@ import("../tools/impeller.gni")
 
 impeller_component("aiks") {
   sources = [
+    "color_filter_factory.h",
+    "color_filter_factory.cc",
     "aiks_context.cc",
     "aiks_context.h",
     "canvas.cc",

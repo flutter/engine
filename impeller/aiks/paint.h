@@ -16,6 +16,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
+#include "impeller/aiks/color_filter_factory.h"
 
 namespace impeller {
 
@@ -69,7 +70,7 @@ struct Paint {
   BlendMode blend_mode = BlendMode::kSourceOver;
 
   std::optional<ImageFilterProc> image_filter;
-  std::optional<ColorFilterProc> color_filter;
+  std::optional<std::shared_ptr<ColorFilterFactory>> color_filter;
   std::optional<MaskBlurDescriptor> mask_blur_descriptor;
 
   /// @brief      Wrap this paint's configured filters to the given contents.
