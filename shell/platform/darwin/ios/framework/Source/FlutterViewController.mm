@@ -31,8 +31,6 @@
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
 
-#import <UIKit/UIKit.h>
-
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
 
