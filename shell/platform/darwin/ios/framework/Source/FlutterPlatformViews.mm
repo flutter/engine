@@ -484,6 +484,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   }
   [mask_view_pool_.get() recycleMaskViews];
   clipView.maskView = nil;
+  CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
@@ -530,6 +531,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         }
         CGRect filterRect =
             flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+        // `filterRect` is in global coordinates. We need to convert to local space.
+        filterRect = CGRectApplyAffineTransform(
+            filterRect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
         // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
         // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
         // filtered.
@@ -564,7 +568,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
     [clipView applyBlurBackdropFilters:blurFilters];
   }
 
-  CGFloat screenScale = [UIScreen mainScreen].scale;
   // The UIKit frame is set based on the logical resolution (points) instead of physical.
   // (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
