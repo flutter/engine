@@ -1854,7 +1854,7 @@ TEST_P(AiksTest, PaintWithFilters) {
 
   ASSERT_TRUE(paint.HasFilters());
 
-  paint.color_filter = std::nullopt;
+
   paint.image_filter = [](const FilterInput::Ref& input,
                           const Matrix& effect_transform) {
     return FilterContents::MakeGaussianBlur(
@@ -1864,11 +1864,13 @@ TEST_P(AiksTest, PaintWithFilters) {
 
   ASSERT_TRUE(paint.HasFilters());
 
-  paint.color_filter = std::nullopt;
-  paint.image_filter = std::nullopt;
   paint.mask_blur_descriptor = {};
 
   ASSERT_TRUE(paint.HasFilters());
+
+  paint.color_filter = std::nullopt;
+
+  ASSERT_FALSE(paint.HasFilters());
 }
 
 }  // namespace testing

@@ -107,6 +107,8 @@ struct Paint {
       std::unique_ptr<Geometry> geometry) const;
 
   /// @brief   Whether this paint has a filter that can apply opacity
+  ///
+  ///          Only color filters can absorb opacity currently.
   bool HasFilters() const;
 
  private:
