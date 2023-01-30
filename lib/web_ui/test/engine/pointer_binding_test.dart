@@ -1265,6 +1265,7 @@ void testMain() {
           packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[0].data[1].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[0].data[1].device, equals(-2));
       expect(packets[0].data[1].pointerIdentifier, equals(0));
       expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
@@ -1281,6 +1282,7 @@ void testMain() {
           packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[1].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[1].data[0].device, equals(-2));
       expect(packets[1].data[0].pointerIdentifier, equals(0));
       expect(packets[1].data[0].synthesized, isFalse);
       expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
@@ -1297,6 +1299,7 @@ void testMain() {
           packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[2].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[2].data[0].device, equals(-2));
       expect(packets[2].data[0].pointerIdentifier, equals(0));
       expect(packets[2].data[0].synthesized, isFalse);
       expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
@@ -1313,6 +1316,7 @@ void testMain() {
           packets[3].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[3].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[3].data[0].device, equals(-2));
       expect(packets[3].data[0].pointerIdentifier, equals(0));
       expect(packets[3].data[0].synthesized, isFalse);
       expect(packets[3].data[0].physicalX, equals(10.0 * dpi));
@@ -1330,6 +1334,7 @@ void testMain() {
           packets[4].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[4].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[4].data[0].pointerIdentifier, equals(-2));
       expect(packets[4].data[0].pointerIdentifier, equals(0));
       expect(packets[4].data[0].synthesized, isFalse);
       expect(packets[4].data[0].physicalX, equals(10.0 * dpi));
@@ -1347,6 +1352,7 @@ void testMain() {
           packets[5].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[5].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[0].device, equals(-1));
       expect(packets[5].data[0].pointerIdentifier, equals(0));
       expect(packets[5].data[0].synthesized, isFalse);
       expect(packets[5].data[0].physicalX, equals(10.0 * dpi));
@@ -1364,6 +1370,7 @@ void testMain() {
           packets[6].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[6].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[6].data[0].device, equals(-1));
       expect(packets[6].data[0].pointerIdentifier, equals(0));
       expect(packets[6].data[0].synthesized, isFalse);
       expect(packets[6].data[0].physicalX, equals(10.0 * dpi));
