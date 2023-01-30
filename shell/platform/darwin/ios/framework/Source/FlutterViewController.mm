@@ -713,11 +713,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self createTouchRateCorrectionVSyncClientIfNeeded];
 
   if (@available(iOS 13.4, *)) {
-    
     _pencilInteraction = [[UIPencilInteraction alloc] init];
     _pencilInteraction.delegate = self;
     [_flutterView addInteraction:_pencilInteraction];
-    
+
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
     _hoverGestureRecognizer.delegate = self;
@@ -1225,9 +1224,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma clang diagnostic push
 
 - (void)pencilInteractionDidTap:(UIPencilInteraction *)interaction API_AVAILABLE(ios(13.4)){
-  
   flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
-  
+
   switch (UIPencilInteraction.preferredTapAction) {
     case UIPencilPreferredActionIgnore:
       pointer_data.preferred_action = flutter::PointerData::PreferredAction::kIgnore;

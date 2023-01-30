@@ -132,7 +132,7 @@ enum PointerSignalKind {
 
   /// A pointer-generated scale event (e.g. trackpad pinch).
   scale,
-    
+
   /// A stylus generated action (e.g. double tap on Apple Pencil 2)
   stylusAction,
 
@@ -140,7 +140,7 @@ enum PointerSignalKind {
   unknown
 }
 
-/// The preferred action for stylus action 
+  /// The preferred action for stylus action
 enum PointerPreferredAction {
   ignore,
   showColorPalette,
@@ -385,7 +385,7 @@ class PointerData {
   ///
   /// The current angle of the pan/zoom in radians, with 0.0 as the initial angle.
   final double rotation;
-  
+
   /// For events with signal kind of stylusAction
   ///
   /// The current preferred action for stylusAction, with ignore as the default.

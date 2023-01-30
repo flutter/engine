@@ -1502,8 +1502,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 
-
-
 - (void)testFakeEventTimeStamp {
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
