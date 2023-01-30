@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "impeller/aiks/color_filter_factory.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -16,7 +17,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
-#include "impeller/aiks/color_filter_factory.h"
 
 namespace impeller {
 
