@@ -1170,8 +1170,7 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
-                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
@@ -1840,6 +1839,35 @@ TEST_P(AiksTest, SceneColorSource) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, PaintWithFilters) {
+  Paint paint;
+
+  ASSERT_FALSE(paint.HasFilters());
+
+  paint.color_filter = [](FilterInput::Ref input) {
+    return ColorFilterContents::MakeBlend(BlendMode::kSourceOver,
+                                          {std::move(input)}, Color::Blue());
+  };
+
+  ASSERT_TRUE(paint.HasFilters());
+
+  paint.color_filter = std::nullopt;
+  paint.image_filter = [](const FilterInput::Ref& input,
+                          const Matrix& effect_transform) {
+    return FilterContents::MakeGaussianBlur(
+        input, Sigma(1.0), Sigma(1.0), FilterContents::BlurStyle::kNormal,
+        Entity::TileMode::kClamp, effect_transform);
+  };
+
+  ASSERT_TRUE(paint.HasFilters());
+
+  paint.color_filter = std::nullopt;
+  paint.image_filter = std::nullopt;
+  paint.mask_blur_descriptor = {};
+
+  ASSERT_TRUE(paint.HasFilters());
 }
 
 }  // namespace testing
