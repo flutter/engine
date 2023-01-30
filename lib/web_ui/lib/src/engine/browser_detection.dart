@@ -236,10 +236,15 @@ bool? debugIsIOS15;
 
 int? _cachedWebGLVersion;
 
+/// Use in tests to simulate the wegGLVersion.
+int? debugWebGLVersion;
+
 /// The highest WebGL version supported by the current browser, or -1 if WebGL
 /// is not supported.
 int get webGLVersion =>
-    _cachedWebGLVersion ?? (_cachedWebGLVersion = _detectWebGLVersion());
+    debugWebGLVersion ??
+    _cachedWebGLVersion ??
+    (_cachedWebGLVersion = _detectWebGLVersion());
 
 /// Detects the highest WebGL version supported by the current browser, or
 /// -1 if WebGL is not supported.

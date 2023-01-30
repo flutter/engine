@@ -183,7 +183,6 @@ class HtmlImage implements ui.Image {
   @override
   Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
     switch (format) {
-      // Solution based on https://stackoverflow.com/a/60564905/4609658
       case ui.ImageByteFormat.rawRgba:
         final ByteBuffer buffer = _getStraightRgba();
         _straightRgbaToPremultipliedRgba(buffer);

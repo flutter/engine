@@ -83,11 +83,13 @@ Future<void> testMain() async {
       () async {
     final Uint8List pixels = Uint8List.fromList(<int>[255, 255, 255, 127]);
     final Image testImage = await testDecodeFromPixels(pixels, 1, 1);
-
-    final ByteData bytes =
-        (await testImage.toByteData(format: ImageByteFormat.rawStraightRgba))!;
+    // The `benchmarkPixels` is identical to `pixels`.
+    final Uint8List benchmarkPixels =
+        (await testImage.toByteData(format: ImageByteFormat.rawStraightRgba))!
+            .buffer
+            .asUint8List();
     expect(
-      bytes.buffer.asUint8List(),
+      benchmarkPixels,
       <int>[255, 255, 255, 127],
     );
   });
@@ -97,10 +99,12 @@ Future<void> testMain() async {
       () async {
     final Uint8List pixels = Uint8List.fromList(<int>[255, 255, 255, 127]);
     final Image testImage = await testDecodeFromPixels(pixels, 1, 1);
-
-    final ByteData bytes = (await testImage.toByteData())!;
+    // The `benchmarkPixels` is identical to half of `pixels` and alpha
+    // channel remains the same.
+    final Uint8List benchmarkPixels =
+        (await testImage.toByteData())!.buffer.asUint8List();
     expect(
-      bytes.buffer.asUint8List(),
+      benchmarkPixels,
       <int>[255 ~/ 2, 255 ~/ 2, 255 ~/ 2, 127],
     );
   });
