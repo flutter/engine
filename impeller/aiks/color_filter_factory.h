@@ -25,8 +25,6 @@ class ColorFilterFactory {
       FilterInput::Ref input) const = 0;
 
   virtual ColorSourceType GetType() const = 0;
-
-  virtual bool Equal(const ColorFilterFactory& other) const = 0;
 };
 
 }  // namespace impeller

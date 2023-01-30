@@ -26,9 +26,6 @@ class DlBlendColorFilterFactory : public ColorFilterFactory {
   ColorSourceType GetType() const override;
 
   // |ColorFilterFactory|
-  bool Equal(const ColorFilterFactory& other) const override;
-
-  // |ColorFilterFactory|
   std::shared_ptr<ColorFilterContents> MakeContents(
       FilterInput::Ref input) const override;
 
@@ -45,9 +42,6 @@ class DlMatrixColorFilterFactory : public ColorFilterFactory {
  private:
   // |ColorFilterFactory|
   ColorSourceType GetType() const override;
-
-  // |ColorFilterFactory|
-  bool Equal(const ColorFilterFactory& other) const override;
 
   // |ColorFilterFactory|
   std::shared_ptr<ColorFilterContents> MakeContents(
@@ -68,9 +62,6 @@ class DlSrgbToLinearColorFilterFactory : public ColorFilterFactory {
   ColorSourceType GetType() const override;
 
   // |ColorFilterFactory|
-  bool Equal(const ColorFilterFactory& other) const override;
-
-  // |ColorFilterFactory|
   std::shared_ptr<ColorFilterContents> MakeContents(
       FilterInput::Ref input) const override;
 };
@@ -85,9 +76,6 @@ class DlLinearToSrgbColorFilterFactory : public ColorFilterFactory {
  private:
   // |ColorFilterFactory|
   ColorSourceType GetType() const override;
-
-  // |ColorFilterFactory|
-  bool Equal(const ColorFilterFactory& other) const override;
 
   // |ColorFilterFactory|
   std::shared_ptr<ColorFilterContents> MakeContents(
