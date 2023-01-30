@@ -1854,7 +1854,6 @@ TEST_P(AiksTest, PaintWithFilters) {
 
   ASSERT_TRUE(paint.HasFilters());
 
-
   paint.image_filter = [](const FilterInput::Ref& input,
                           const Matrix& effect_transform) {
     return FilterContents::MakeGaussianBlur(
