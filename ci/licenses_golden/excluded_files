@@ -181,6 +181,7 @@
 ../../../flutter/lib/web_ui/dart_test_firefox.yaml
 ../../../flutter/lib/web_ui/dart_test_safari.yaml
 ../../../flutter/lib/web_ui/dev
+../../../flutter/lib/web_ui/pubspec.lock
 ../../../flutter/lib/web_ui/pubspec.yaml
 ../../../flutter/lib/web_ui/test
 ../../../flutter/prebuilts
