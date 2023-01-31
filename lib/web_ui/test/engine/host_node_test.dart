@@ -112,6 +112,30 @@ void testMain() {
       expect(hidesRevealIcons, isFalse);
     }, skip: isEdge);
 
+    test(
+        'Attaches styles to hide the autofill overlay for browsers that support it',
+        () {
+      final DomElement? style =
+          hostNode.querySelector('#flt-internals-stylesheet');
+      final bool autofillOverlay = hasCssRule(style,
+          selector: '.transparentTextEditing:-webkit-autofill',
+          declaration: 'opacity: 0');
+      final bool autofillOverlayHovered = hasCssRule(style,
+          selector: '.transparentTextEditing:-webkit-autofill:hover',
+          declaration: 'opacity: 0');
+      final bool autofillOverlayFocused = hasCssRule(style,
+          selector: '.transparentTextEditing:-webkit-autofill:focus',
+          declaration: 'opacity: 0');
+      final bool autofillOverlayActive = hasCssRule(style,
+          selector: '.transparentTextEditing:-webkit-autofill:active',
+          declaration: 'opacity: 0');
+
+      expect(autofillOverlay, isTrue);
+      expect(autofillOverlayHovered, isTrue);
+      expect(autofillOverlayFocused, isTrue);
+      expect(autofillOverlayActive, isTrue);
+    }, skip: !browserHasAutofillOverlay());
+
     _runDomTests(hostNode);
   });
 
