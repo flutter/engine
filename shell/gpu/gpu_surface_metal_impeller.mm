@@ -146,10 +146,20 @@ Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
         bytesPerPixel = 4;
         pixel_format = "MTLPixelFormatBGR10_XR";
         break;
+      case MTLPixelFormatBGRA10_XR:
+        bytesPerPixel = 8;
+        pixel_format = "MTLPixelFormatBGRA10_XR";
+        break;
+      case MTLPixelFormatBGRA8Unorm:
+        bytesPerPixel = 4;
+        pixel_format = "MTLPixelFormatBGRA8Unorm";
+        break;
       default:
         return {};
     }
-    // TODO(gaaclarke): Switch this to uninitialized.
+
+    // Zero initialized so that errors are easier to find at the cost of
+    // performance.
     sk_sp<SkData> result =
         SkData::MakeZeroInitialized(texture.width * texture.height * bytesPerPixel);
     [texture getBytes:result->writable_data()
