@@ -26,6 +26,14 @@ constexpr wchar_t kGetPreferredBrightnessRegValue[] = L"AppsUseLightTheme";
 constexpr wchar_t kGetTextScaleFactorRegKey[] =
     L"Software\\Microsoft\\Accessibility";
 constexpr wchar_t kGetTextScaleFactorRegValue[] = L"TextScaleFactor";
+
+// Return an approximation of the apparent luminance of a given color.
+int GetLuminance(DWORD color) {
+  int r = GetRValue(color);
+  int g = GetGValue(color);
+  int b = GetBValue(color);
+  return (r + r + r + b + (g << 2)) >> 3;
+}
 }  // namespace
 
 SettingsPlugin::SettingsPlugin(BinaryMessenger* messenger,
@@ -104,12 +112,9 @@ float SettingsPlugin::GetTextScaleFactor() {
 
 SettingsPlugin::PlatformBrightness SettingsPlugin::GetPreferredBrightness() {
   if (is_high_contrast_) {
-    DWORD text_color = GetSysColor(COLOR_WINDOW);
-    int r = GetRValue(text_color);
-    int g = GetGValue(text_color);
-    int b = GetBValue(text_color);
-    int luminance = (r + r + r + b + (g << 2)) >> 3;
-    return luminance >= 0.5 ? SettingsPlugin::PlatformBrightness::kLight
+    DWORD window_color = GetSysColor(COLOR_WINDOW);
+    int luminance = GetLuminance(window_color);
+    return luminance >= 127 ? SettingsPlugin::PlatformBrightness::kLight
                             : SettingsPlugin::PlatformBrightness::kDark;
   } else {
     DWORD use_light_theme;
