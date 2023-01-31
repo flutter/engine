@@ -44,7 +44,7 @@ SettingsPlugin::PlatformBrightness GetThemeBrightness() {DWORD use_light_theme;
 
   if (result == 0) {
     return use_light_theme ? SettingsPlugin::PlatformBrightness::kLight
-                            : SettingsPlugin::PlatformBrightness::kDark;
+                           : SettingsPlugin::PlatformBrightness::kDark;
   } else {
     // The current OS does not support dark mode. (Older Windows 10 or before
     // Windows 10)
