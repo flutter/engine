@@ -56,9 +56,12 @@
                     },
                     {
                         "name": "web engine analysis",
-                        "parameters": [],
+                        "parameters": [
+                            "analyze"
+                        ],
                         "scripts": [
-                            "flutter/lib/web_ui/dev/web_engine_analysis.sh"
+                            "out/host_debug_unopt/dart-sdk/bin/dart",
+                            "flutter/lib/web_ui/dev/felt.dart"
                         ]
                     }
                 ]

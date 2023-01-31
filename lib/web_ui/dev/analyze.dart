@@ -41,7 +41,7 @@ class PubGetStep extends ProcessStep {
     print('Running `dart pub get`...');
     return startProcess(
       environment.dartExecutable,
-      <String>['pub', 'get'],
+      <String>['pub', 'get', '--enforce-lockfile'],
       workingDirectory: environment.webUiRootDir.path,
     );
   }

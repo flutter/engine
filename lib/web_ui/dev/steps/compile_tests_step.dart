@@ -427,6 +427,7 @@ Future<void> buildHostPage() async {
     <String>[
       'pub',
       'get',
+      '--enforce-lockfile',
     ],
     workingDirectory: environment.webEngineTesterRootDir.path
   );

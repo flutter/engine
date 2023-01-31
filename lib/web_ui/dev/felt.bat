@@ -32,7 +32,7 @@ SET DART_BIN=%DART_SDK_DIR%\bin\dart
 cd %WEB_UI_DIR%
 
 :: We need to invoke pub get here before we actually invoke felt.
-%DART_BIN% pub get
+%DART_BIN% pub get --enforce-lockfile
 %DART_BIN% run dev/felt.dart %*
 
 EXIT /B %ERRORLEVEL%
