@@ -996,7 +996,7 @@ void _testVerticalScrolling() {
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testHorizontalScrolling() {
@@ -1129,7 +1129,7 @@ void _testHorizontalScrolling() {
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testIncrementables() {
@@ -1628,6 +1628,27 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   });
+
+  test('focuses on tappable after element has been attached', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
+      isFocused: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    tester.apply();
+
+    expect(flutterViewEmbedder.glassPaneShadow!.activeElement, tester.getSemanticsObject(0).element);
+    semantics().semanticsEnabled = false;
+  });
 }
 
 void _testImage() {
@@ -1743,11 +1764,42 @@ void _testImage() {
   });
 }
 
+class MockAccessibilityAnnouncements implements AccessibilityAnnouncements {
+  int announceInvoked = 0;
+
+  @override
+  void announce(String message, Assertiveness assertiveness) {
+    announceInvoked += 1;
+  }
+
+  @override
+  DomHTMLElement ariaLiveElementFor(Assertiveness assertiveness) {
+    throw UnsupportedError(
+        'ariaLiveElementFor is not supported in MockAccessibilityAnnouncements');
+  }
+
+  @override
+  void dispose() {
+    throw UnsupportedError(
+        'dispose is not supported in MockAccessibilityAnnouncements!');
+  }
+
+  @override
+  void handleMessage(StandardMessageCodec codec, ByteData? data) {
+    throw UnsupportedError(
+        'handleMessage is not supported in MockAccessibilityAnnouncements!');
+  }
+}
+
 void _testLiveRegion() {
-  test('renders a live region if there is a label', () async {
+  test('announces the label after an update', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1758,18 +1810,19 @@ void _testLiveRegion() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
     semantics().updateSemantics(builder.build());
-
-    expectSemanticsTree('''
-<sem aria-label="This is a snackbar" aria-live="polite" style="$rootSemanticStyle"></sem>
-''');
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
 
     semantics().semanticsEnabled = false;
   });
 
-  test('does not render a live region if there is no label', () async {
+  test('does not announce anything if there is no label', () async {
     semantics()
       ..debugOverrideTimestampFunction(() => _testTime)
       ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
 
     final ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
     updateNode(
@@ -1779,10 +1832,41 @@ void _testLiveRegion() {
       rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
     );
     semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 0);
 
-    expectSemanticsTree('''
-<sem style="$rootSemanticStyle"></sem>
-''');
+    semantics().semanticsEnabled = false;
+  });
+
+  test('does not announce the same label over and over', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final MockAccessibilityAnnouncements mockAccessibilityAnnouncements =
+        MockAccessibilityAnnouncements();
+    debugOverrideAccessibilityAnnouncements(mockAccessibilityAnnouncements);
+
+    ui.SemanticsUpdateBuilder builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      label: 'This is a snackbar',
+      flags: 0 | ui.SemanticsFlag.isLiveRegion.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
+
+    builder = ui.SemanticsUpdateBuilder();
+    updateNode(
+      builder,
+      label: 'This is a snackbar',
+      flags: 0 | ui.SemanticsFlag.isLiveRegion.index,
+      transform: Matrix4.identity().toFloat64(),
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    semantics().updateSemantics(builder.build());
+    expect(mockAccessibilityAnnouncements.announceInvoked, 1);
 
     semantics().semanticsEnabled = false;
   });

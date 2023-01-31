@@ -190,7 +190,7 @@ void testMain() {
     final CkFragmentProgram program = await CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);
-    expect(program.floatCount, 17);
+    expect(program.floatCount, 32);
     expect(program.textureCount, 0);
     expect(program.uniforms, hasLength(17));
     expect(program.name, 'test');
@@ -207,6 +207,5 @@ void testMain() {
     shader.setFloat(0, 5);
     shader2.dispose();
     expect(shader2.debugDisposed, true);
-  // TODO(hterkelsen): https://github.com/flutter/flutter/issues/115327
-  }, skip: true);
+  });
 }

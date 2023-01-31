@@ -4,8 +4,11 @@
 Checks: "bugprone-use-after-move,\
 clang-analyzer-*,\
 clang-diagnostic-*,\
+darwin-*,\
 google-*,\
 modernize-use-default-member-init,\
+objc-*,\
+-objc-nsinvocation-argument-lifetime,\
 readability-identifier-naming,\
 -google-build-using-namespace,\
 -google-default-arguments,\

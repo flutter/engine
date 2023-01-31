@@ -21,6 +21,7 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
@@ -38,6 +39,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
     void* pUserData) {
   const auto prefix = impeller::vk::to_string(
       impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+
+  // There isn't stable messageIdNumber for this validation failure.
+  if (strstr(pCallbackData->pMessageIdName,
+             "CoreValidation-Shader-OutputNotConsumed") != nullptr) {
+    return VK_FALSE;
+  }
 
   FML_DCHECK(false) << prefix << "[" << pCallbackData->messageIdNumber << "]["
                     << pCallbackData->pMessageIdName
@@ -397,6 +404,7 @@ ContextVK::ContextVK(
 
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
+  graphics_queue_idx_ = graphics_queue->index;
   auto transfer_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eTransfer);
   auto compute_queue =
@@ -490,9 +498,7 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
-  graphics_command_pool_ =
-      CommandPoolVK::Create(*device_, graphics_queue->index);
-  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
+
   is_valid_ = true;
 }
 
@@ -524,9 +530,7 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  return CommandBufferVK::Create(weak_from_this(), *device_,
-                                 graphics_command_pool_->Get(),
-                                 surface_producer_.get());
+  return CommandBufferVK::Create(weak_from_this(), *device_);
 }
 
 vk::Instance ContextVK::GetInstance() const {
@@ -589,8 +593,8 @@ bool ContextVK::SupportsOffscreenMSAA() const {
   return true;
 }
 
-std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
-  return descriptor_pool_;
+std::unique_ptr<DescriptorPoolVK> ContextVK::CreateDescriptorPool() const {
+  return std::make_unique<DescriptorPoolVK>(*device_);
 }
 
 PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
@@ -598,7 +602,15 @@ PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
 }
 
 const BackendFeatures& ContextVK::GetBackendFeatures() const {
-  return kModernBackendFeatures;
+  return kLegacyBackendFeatures;
+}
+
+vk::Queue ContextVK::GetGraphicsQueue() const {
+  return graphics_queue_;
+}
+
+std::unique_ptr<CommandPoolVK> ContextVK::CreateGraphicsCommandPool() const {
+  return CommandPoolVK::Create(*device_, graphics_queue_idx_);
 }
 
 }  // namespace impeller

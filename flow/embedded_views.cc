@@ -40,7 +40,9 @@ void SkPictureEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
 }
 
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
-  recorder_ = std::make_unique<DisplayListCanvasRecorder>(view_bounds);
+  recorder_ = std::make_unique<DisplayListCanvasRecorder>(
+      /*bounds=*/view_bounds,
+      /*prepare_rtree=*/true);
 }
 
 SkCanvas* DisplayListEmbedderViewSlice::canvas() {
@@ -58,7 +60,7 @@ void DisplayListEmbedderViewSlice::end_recording() {
 
 std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
     const SkRect& query) const {
-  return display_list_->rtree()->searchNonOverlappingDrawnRects(query);
+  return display_list_->rtree()->searchAndConsolidateRects(query);
 }
 
 void DisplayListEmbedderViewSlice::render_into(SkCanvas* canvas) {

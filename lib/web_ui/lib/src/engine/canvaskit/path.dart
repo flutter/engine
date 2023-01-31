@@ -86,10 +86,9 @@ class CkPath extends ManagedSkiaObject<SkPath> implements ui.Path {
 
   @override
   void addPolygon(List<ui.Offset> points, bool close) {
-    assert(points != null);
     final SkFloat32List encodedPoints = toMallocedSkPoints(points);
     skiaObject.addPoly(encodedPoints.toTypedArray(), close);
-    freeFloat32List(encodedPoints);
+    free(encodedPoints);
   }
 
   @override

@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:quiver/testing/async.dart';
@@ -299,7 +298,9 @@ void testMain() {
       RawKeyboard.instance!.dispose();
     });
 
-    test('the "Tab" key should never be ignored', () {
+    test(
+        'the "Tab" key should never be ignored when it is not a part of IME composition',
+        () {
       RawKeyboard.initialize();
 
       int count = 0;
@@ -320,6 +321,28 @@ void testMain() {
 
         expect(event.defaultPrevented, isTrue);
         expect(count, 1);
+      });
+
+      RawKeyboard.instance!.dispose();
+    });
+
+    test('Ignores event when Tab key is hit during IME composition', () {
+      RawKeyboard.initialize();
+
+      int count = 0;
+      ui.window.onPlatformMessage = (String channel, ByteData? data,
+          ui.PlatformMessageResponseCallback? callback) {
+        count += 1;
+        final ByteData response = const JSONMessageCodec()
+            .encodeMessage(<String, dynamic>{'handled': true})!;
+        callback!(response);
+      };
+
+      useTextEditingElement((DomElement element) {
+        dispatchKeyboardEvent('keydown',
+            key: 'Tab', code: 'Tab', target: element, isComposing: true);
+
+        expect(count, 0); // no message sent to framework
       });
 
       RawKeyboard.instance!.dispose();
@@ -719,32 +742,25 @@ DomKeyboardEvent dispatchKeyboardEvent(
   bool isAltPressed = false,
   bool isControlPressed = false,
   bool isMetaPressed = false,
+  bool isComposing = false,
   int keyCode = 0,
 }) {
   target ??= domWindow;
 
-  final Function jsKeyboardEvent =
-      js_util.getProperty<Function>(domWindow, 'KeyboardEvent');
-  final List<dynamic> eventArgs = <dynamic>[
-    type,
-    <String, dynamic>{
-      'key': key,
-      'code': code,
-      'location': location,
-      'repeat': repeat,
-      'shiftKey': isShiftPressed,
-      'altKey': isAltPressed,
-      'ctrlKey': isControlPressed,
-      'metaKey': isMetaPressed,
-      'keyCode': keyCode,
-      'bubbles': true,
-      'cancelable': true,
-    }
-  ];
-  final DomKeyboardEvent event = js_util.callConstructor<DomKeyboardEvent>(
-    jsKeyboardEvent,
-    js_util.jsify(eventArgs) as List<Object?>,
-  );
+  final DomKeyboardEvent event = createDomKeyboardEvent(type, <String, Object> {
+    if (key != null) 'key': key,
+    if (code != null) 'code': code,
+    'location': location,
+    'repeat': repeat,
+    'shiftKey': isShiftPressed,
+    'altKey': isAltPressed,
+    'ctrlKey': isControlPressed,
+    'metaKey': isMetaPressed,
+    'isComposing': isComposing,
+    'keyCode': keyCode,
+    'bubbles': true,
+    'cancelable': true,
+  });
   target.dispatchEvent(event);
 
   return event;

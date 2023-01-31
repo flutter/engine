@@ -25,10 +25,9 @@ get help for a specific subcommand, run `felt help SUBCOMMAND`.
 The most useful subcommands are:
 
 - `felt build` - builds a local Flutter Web engine ready to be used by the
-  Flutter framework. To use the local engine build, build with
-  `felt build --host`, then pass `--local-engine=host_debug_unopt` to the
-  `flutter` command, or to `dev/bots/test.dart` when running a web shard, such
-  as `web_tests`.
+  Flutter framework. To use a locally built web sdk, build with `felt build`, 
+  then pass `--local-web-sdk=wasm_release` to the `flutter` command, or to 
+  `dev/bots/test.dart` when running a web shard, such as `web_tests`.
 - `felt test` - runs web engine tests. By default, this runs all tests using
   Chromium. Passing one or more paths to specific tests would run just the
   specified tests. Run `felt help test` for more options.
@@ -44,7 +43,7 @@ Builds the web engine, the runs a Flutter app using it:
 ```
 felt build
 cd path/to/some/app
-flutter --local-engine=host_debug_unopt run -d chrome
+flutter --local-web-sdk=wasm_release run -d chrome
 ```
 
 Runs all tests in Chromium:
@@ -247,39 +246,6 @@ Instead, we update this file manually once in a while.
 
 `canvaskit_lock.yaml` locks the version of CanvasKit for tests and production
 use.
-
-## Troubleshooting
-
-### Can't load Kernel binary: Invalid kernel binary format version.
-
-Sometimes `.dart_tool` cache invalidation fails, and you'll end up with a
-cached version of `felt` that is not compatible with the Dart SDK that you're
-using.
-
-In that case, any invocation to `felt` will fail with:
-
-```
-Can't load Kernel binary: Invalid kernel binary format version.
-```
-
-The solution is to delete the cached `felt.snapshot` files under `lib/web_ui`:
-
-```
-rm .dart_tool/felt.snapshot*
-```
-
-## Hacking on the `felt` tool itself
-
-If you are making changes in the `felt` tool itself, you need to be aware of
-Dart snapshots. We create a Dart snapshot of the `felt` tool to make the startup
-faster.
-
-To run `felt` from sources, disable the snapshot using the `FELT_USE_SNAPSHOT`
-environment variable:
-
-```
-FELT_USE_SNAPSHOT=false felt <command>
-```
 
 ## Building CanvasKit
 

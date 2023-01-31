@@ -194,6 +194,11 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 }
 
 void Canvas::DrawRect(Rect rect, const Paint& paint) {
+  if (paint.style == Paint::Style::kStroke) {
+    DrawPath(PathBuilder{}.AddRect(rect).TakePath(), paint);
+    return;
+  }
+
   if (AttemptDrawBlurredRRect(rect, 0, paint)) {
     return;
   }
@@ -374,7 +379,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
 
 void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
                           BlendMode blend_mode,
-                          Paint paint) {
+                          const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());

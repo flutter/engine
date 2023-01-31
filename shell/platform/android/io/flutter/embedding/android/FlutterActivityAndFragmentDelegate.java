@@ -24,6 +24,8 @@ import io.flutter.FlutterInjector;
 import io.flutter.Log;
 import io.flutter.embedding.engine.FlutterEngine;
 import io.flutter.embedding.engine.FlutterEngineCache;
+import io.flutter.embedding.engine.FlutterEngineGroup;
+import io.flutter.embedding.engine.FlutterEngineGroupCache;
 import io.flutter.embedding.engine.FlutterShellArgs;
 import io.flutter.embedding.engine.dart.DartExecutor;
 import io.flutter.embedding.engine.renderer.FlutterUiDisplayListener;
@@ -88,6 +90,7 @@ import java.util.List;
   private boolean isFirstFrameRendered;
   private boolean isAttached;
   private Integer previousVisibility;
+  @Nullable private FlutterEngineGroup engineGroup;
 
   @NonNull
   private final FlutterUiDisplayListener flutterUiDisplayListener =
@@ -107,8 +110,13 @@ import java.util.List;
       };
 
   FlutterActivityAndFragmentDelegate(@NonNull Host host) {
+    this(host, null);
+  }
+
+  FlutterActivityAndFragmentDelegate(@NonNull Host host, @Nullable FlutterEngineGroup engineGroup) {
     this.host = host;
     this.isFirstFrameRendered = false;
+    this.engineGroup = engineGroup;
   }
 
   /**
@@ -218,6 +226,21 @@ import java.util.List;
     return activity;
   }
 
+  private FlutterEngineGroup.Options addEntrypointOptions(FlutterEngineGroup.Options options) {
+    String appBundlePathOverride = host.getAppBundlePath();
+    if (appBundlePathOverride == null || appBundlePathOverride.isEmpty()) {
+      appBundlePathOverride = FlutterInjector.instance().flutterLoader().findAppBundlePath();
+    }
+
+    DartExecutor.DartEntrypoint dartEntrypoint =
+        new DartExecutor.DartEntrypoint(
+            appBundlePathOverride, host.getDartEntrypointFunctionName());
+    return options
+        .setDartEntrypoint(dartEntrypoint)
+        .setInitialRoute(host.getInitialRoute())
+        .setDartEntrypointArgs(host.getDartEntrypointArgs());
+  }
+
   /**
    * Obtains a reference to a FlutterEngine to back this delegate and its {@code host}.
    *
@@ -229,6 +252,10 @@ import java.util.List;
    *
    * <p>Second, the {@code host} is given an opportunity to provide a {@link
    * io.flutter.embedding.engine.FlutterEngine} via {@link Host#provideFlutterEngine(Context)}.
+   *
+   * <p>Third, the {@code host} is asked if it would like to use a cached {@link
+   * io.flutter.embedding.engine.FlutterEngineGroup} to create a new {@link FlutterEngine} by {@link
+   * FlutterEngineGroup#createAndRunEngine}
    *
    * <p>If the {@code host} does not provide a {@link io.flutter.embedding.engine.FlutterEngine},
    * then a new {@link FlutterEngine} is instantiated.
@@ -258,18 +285,43 @@ import java.util.List;
       return;
     }
 
+    // Third, check if the host wants to use a cached FlutterEngineGroup
+    // and create new FlutterEngine using FlutterEngineGroup#createAndRunEngine
+    String cachedEngineGroupId = host.getCachedEngineGroupId();
+    if (cachedEngineGroupId != null) {
+      FlutterEngineGroup flutterEngineGroup =
+          FlutterEngineGroupCache.getInstance().get(cachedEngineGroupId);
+      if (flutterEngineGroup == null) {
+        throw new IllegalStateException(
+            "The requested cached FlutterEngineGroup did not exist in the FlutterEngineGroupCache: '"
+                + cachedEngineGroupId
+                + "'");
+      }
+
+      flutterEngine =
+          flutterEngineGroup.createAndRunEngine(
+              addEntrypointOptions(new FlutterEngineGroup.Options(host.getContext())));
+      isFlutterEngineFromHost = false;
+      return;
+    }
+
     // Our host did not provide a custom FlutterEngine. Create a FlutterEngine to back our
     // FlutterView.
     Log.v(
         TAG,
         "No preferred FlutterEngine was provided. Creating a new FlutterEngine for"
             + " this FlutterFragment.");
+
+    FlutterEngineGroup group =
+        engineGroup == null
+            ? new FlutterEngineGroup(host.getContext(), host.getFlutterShellArgs().toArray())
+            : engineGroup;
     flutterEngine =
-        new FlutterEngine(
-            host.getContext(),
-            host.getFlutterShellArgs().toArray(),
-            /*automaticallyRegisterPlugins=*/ false,
-            /*willProvideRestorationData=*/ host.shouldRestoreAndSaveState());
+        group.createAndRunEngine(
+            addEntrypointOptions(
+                new FlutterEngineGroup.Options(host.getContext())
+                    .setAutomaticallyRegisterPlugins(false)
+                    .setWaitForRestorationData(host.shouldRestoreAndSaveState())));
     isFlutterEngineFromHost = false;
   }
 
@@ -914,6 +966,9 @@ import java.util.List;
      */
     @Nullable
     String getCachedEngineId();
+
+    @Nullable
+    String getCachedEngineGroupId();
 
     /**
      * Returns true if the {@link io.flutter.embedding.engine.FlutterEngine} used in this delegate

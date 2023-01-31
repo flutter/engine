@@ -17,6 +17,7 @@ import 'package:ui/src/engine/profiler.dart';
 import 'package:ui/src/engine/raw_keyboard.dart';
 import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/src/engine/safe_browser_api.dart';
+import 'package:ui/src/engine/semantics/accessibility.dart';
 import 'package:ui/src/engine/window.dart';
 import 'package:ui/ui.dart' as ui;
 
@@ -240,6 +241,7 @@ Future<void> initializeEngineUi() async {
   }
   _initializationState = DebugEngineInitializationState.initializingUi;
 
+  initializeAccessibilityAnnouncements();
   RawKeyboard.initialize(onMacOs: operatingSystem == OperatingSystem.macOs);
   MouseCursor.initialize();
   ensureFlutterViewEmbedderInitialized();
@@ -250,7 +252,6 @@ AssetManager get assetManager => _assetManager!;
 AssetManager? _assetManager;
 
 void _setAssetManager(AssetManager assetManager) {
-  assert(assetManager != null, 'Cannot set assetManager to null');
   if (assetManager == _assetManager) {
     return;
   }

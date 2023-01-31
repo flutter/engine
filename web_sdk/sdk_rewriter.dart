@@ -94,6 +94,7 @@ final Map<Pattern, String> extraImportsMap = <Pattern, String>{
   RegExp('skwasm_(stub|impl)'): "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
   'engine': "import 'dart:_engine';",
   'web_unicode': "import 'dart:_web_unicode';",
+  'web_locale_keymap': "import 'dart:_web_locale_keymap' as locale_keymap;",
 };
 
 // Rewrites the "package"-style web ui library into a dart:ui implementation.
@@ -110,7 +111,7 @@ void main(List<String> arguments) {
   if (results['ui'] as bool) {
     replacementPatterns = uiPatterns;
   } else {
-    libraryName = results['library-name'] as String;
+    libraryName = results['library-name'] as String?;
     if (libraryName == null) {
       throw Exception('library-name must be specified if not rewriting ui');
     }

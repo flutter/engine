@@ -10,10 +10,14 @@
 #include <string>
 #include <variant>
 
+#include "flutter/shell/platform/common/alert_platform_node_delegate.h"
 #include "flutter/shell/platform/common/geometry.h"
-#include "flutter/shell/platform/windows/accessibility_root_node.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
+
+namespace ui {
+class AXPlatformNodeWin;
+}
 
 namespace flutter {
 
@@ -72,6 +76,9 @@ class WindowBindingHandler {
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
   virtual void UpdateFlutterCursor(const std::string& cursor_name) = 0;
 
+  // Sets the cursor directly from a cursor handle.
+  virtual void SetFlutterCursor(HCURSOR cursor) = 0;
+
   // Invoked when the cursor/composing rect has been updated in the framework.
   virtual void OnCursorRectUpdated(const Rect& rect) = 0;
 
@@ -94,8 +101,11 @@ class WindowBindingHandler {
   // Called to set the initial state of accessibility features
   virtual void SendInitialAccessibilityFeatures() = 0;
 
-  // Returns the wrapper parent accessibility node.
-  virtual AccessibilityRootNode* GetAccessibilityRootNode() = 0;
+  // Retrieve the delegate for the alert.
+  virtual AlertPlatformNodeDelegate* GetAlertDelegate() = 0;
+
+  // Retrieve the alert node.
+  virtual ui::AXPlatformNodeWin* GetAlert() = 0;
 };
 
 }  // namespace flutter

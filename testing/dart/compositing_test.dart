@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:typed_data' show ByteData, Float64List;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:litetest/litetest.dart';
@@ -83,7 +83,6 @@ void main() {
     }
 
     final Scene scene = builder.build();
-    expect(scene != null, true);
     scene.dispose();
   });
 

@@ -23,13 +23,15 @@ typedef _ContextTestBody<T> = void Function(T);
 void _testEach<T extends _BasicEventContext>(
   Iterable<T> contexts,
   String description,
-  _ContextTestBody<T> body,
+  _ContextTestBody<T> body, {
+    Object? skip,
+  }
 ) {
   for (final T context in contexts) {
     if (context.isSupported) {
       test('${context.name} $description', () {
         body(context);
-      });
+      }, skip: skip);
     }
   }
 }
@@ -52,7 +54,7 @@ void testMain() {
     return KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
   }
 
   test('ios workaround', () {
@@ -280,10 +282,10 @@ void testMain() {
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(100));
-    expect(event.changedTouches![0].client.y, equals(101));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(100));
+    expect(event.changedTouches.first.client.y, equals(101));
 
     events = expectCorrectTypes(context.multiTouchDown(const <_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
@@ -291,20 +293,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchstart'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(100));
-    expect(events[0].changedTouches![0].client.x, equals(120));
-    expect(events[0].changedTouches![0].client.y, equals(121));
-    expect(events[0].changedTouches![1].identifier, equals(101));
-    expect(events[0].changedTouches![1].client.x, equals(122));
-    expect(events[0].changedTouches![1].client.y, equals(123));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(100));
+    expect(events[0].changedTouches.first.client.x, equals(120));
+    expect(events[0].changedTouches.first.client.y, equals(121));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(101));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(122));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(123));
 
     event = expectCorrectType(context.primaryMove(clientX: 200, clientY: 201));
     expect(event.type, equals('touchmove'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(200));
-    expect(event.changedTouches![0].client.y, equals(201));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(200));
+    expect(event.changedTouches.first.client.y, equals(201));
 
     events = expectCorrectTypes(context.multiTouchMove(const <_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
@@ -312,20 +314,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchmove'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(102));
-    expect(events[0].changedTouches![0].client.x, equals(220));
-    expect(events[0].changedTouches![0].client.y, equals(221));
-    expect(events[0].changedTouches![1].identifier, equals(103));
-    expect(events[0].changedTouches![1].client.x, equals(222));
-    expect(events[0].changedTouches![1].client.y, equals(223));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(102));
+    expect(events[0].changedTouches.first.client.x, equals(220));
+    expect(events[0].changedTouches.first.client.y, equals(221));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(103));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(222));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(223));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('touchend'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(300));
-    expect(event.changedTouches![0].client.y, equals(301));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(300));
+    expect(event.changedTouches.first.client.y, equals(301));
 
     events = expectCorrectTypes(context.multiTouchUp(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -333,13 +335,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchend'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     events = expectCorrectTypes(context.multiTouchCancel(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -347,13 +349,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchcancel'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     context.pressAllModifiers();
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
@@ -388,6 +390,8 @@ void testMain() {
     expect(event.buttons, equals(1));
     expect(event.client.x, equals(100));
     expect(event.client.y, equals(101));
+    expect(event.offset.x, equals(100));
+    expect(event.offset.y, equals(101));
 
     event = expectCorrectType(
         context.mouseDown(clientX: 110, clientY: 111, button: 2, buttons: 2));
@@ -849,7 +853,7 @@ void testMain() {
       packets.clear();
 
       // Release the pointer on the semantics placeholder.
-      domWindow.dispatchEvent(context.primaryUp(
+      glassPane.dispatchEvent(context.primaryUp(
         clientX: 100.0,
         clientY: 200.0,
       ));
@@ -865,6 +869,7 @@ void testMain() {
 
       semanticsPlaceholder.remove();
     },
+    skip: isFirefox, // https://bugzilla.mozilla.org/show_bug.cgi?id=1804190
   );
 
   // BUTTONED ADAPTERS
@@ -1144,6 +1149,229 @@ void testMain() {
       window.debugOverrideDevicePixelRatio(1.0);
       debugOperatingSystemOverride = null;
       debugBrowserEngineOverride = null;
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'does set pointer device kind based on delta precision and wheelDelta',
+    (_ButtonedEventMixin context) {
+      if (isFirefox) {
+        // Firefox does not support trackpad events, as they cannot be
+        // disambiguated from smoothed mouse wheel events.
+        return;
+      }
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 119,
+        deltaY: 119,
+        wheelDeltaX: -357,
+        wheelDeltaY: -357,
+        timeStamp: 0,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 120,
+        deltaY: 120,
+        wheelDeltaX: -360,
+        wheelDeltaY: -360,
+        timeStamp: 10,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 120,
+        deltaY: 120,
+        wheelDeltaX: -360,
+        wheelDeltaY: -360,
+        timeStamp: 20,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 119,
+        deltaY: 119,
+        wheelDeltaX: -357,
+        wheelDeltaY: -357,
+        timeStamp: 1000,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: -120,
+        deltaY: -120,
+        wheelDeltaX: 360,
+        wheelDeltaY: 360,
+        timeStamp: 1010,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: -120,
+        wheelDeltaX: 0,
+        wheelDeltaY: 360,
+        timeStamp: 2000,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 40,
+        wheelDeltaX: 0,
+        wheelDeltaY: -360,
+        timeStamp: 3000,
+      ));
+
+      expect(packets, hasLength(7));
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      // Because the delta is not in increments of 120 and has matching wheelDelta,
+      // it will be a trackpad event.
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[0].data[1].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaX, equals(119.0));
+      expect(packets[0].data[1].scrollDeltaY, equals(119.0));
+
+      // Because the delta is in increments of 120, but is similar to the
+      // previous event, it will be a trackpad event.
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[1].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, isFalse);
+      expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[1].data[0].scrollDeltaX, equals(120.0));
+      expect(packets[1].data[0].scrollDeltaY, equals(120.0));
+
+      // Because the delta is in increments of 120, but is again similar to the
+      // previous event, it will be a trackpad event.
+      expect(packets[2].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[2].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[2].data[0].pointerIdentifier, equals(0));
+      expect(packets[2].data[0].synthesized, isFalse);
+      expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaX, equals(120.0));
+      expect(packets[2].data[0].scrollDeltaY, equals(120.0));
+
+      // Because the delta is not in increments of 120 and has matching wheelDelta,
+      // it will be a trackpad event.
+      expect(packets[3].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[3].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[3].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[3].data[0].pointerIdentifier, equals(0));
+      expect(packets[3].data[0].synthesized, isFalse);
+      expect(packets[3].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[3].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[3].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[3].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[3].data[0].scrollDeltaX, equals(119.0));
+      expect(packets[3].data[0].scrollDeltaY, equals(119.0));
+
+      // Because the delta is in increments of 120, and is not similar to the
+      // previous event, but occured soon after the previous event, it will be
+      // a trackpad event.
+      expect(packets[4].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[4].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[4].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[4].data[0].pointerIdentifier, equals(0));
+      expect(packets[4].data[0].synthesized, isFalse);
+      expect(packets[4].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[4].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[4].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[4].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[4].data[0].scrollDeltaX, equals(-120.0));
+      expect(packets[4].data[0].scrollDeltaY, equals(-120.0));
+
+      // Because the delta is in increments of 120, and is not similar to
+      // the previous event, and occured long after the previous event, it will be a mouse event.
+      expect(packets[5].data, hasLength(1));
+      expect(packets[5].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[5].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[0].pointerIdentifier, equals(0));
+      expect(packets[5].data[0].synthesized, isFalse);
+      expect(packets[5].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[5].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[5].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[5].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[5].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[5].data[0].scrollDeltaY, equals(-120.0));
+
+      // Because the delta is not in increments of 120 and has non-matching
+      // wheelDelta, it will be a mouse event.
+      expect(packets[6].data, hasLength(1));
+      expect(packets[6].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[6].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[6].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[6].data[0].pointerIdentifier, equals(0));
+      expect(packets[6].data[0].synthesized, isFalse);
+      expect(packets[6].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[6].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[6].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[6].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[6].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[6].data[0].scrollDeltaY, equals(40.0));
     },
   );
 
@@ -2249,7 +2477,7 @@ void testMain() {
       packets.clear();
 
       // Move outside the glasspane.
-      domWindow.dispatchEvent(context.primaryMove(
+      glassPane.dispatchEvent(context.primaryMove(
         clientX: 900.0,
         clientY: 1900.0,
       ));
@@ -2261,7 +2489,7 @@ void testMain() {
       packets.clear();
 
       // Release outside the glasspane.
-      domWindow.dispatchEvent(context.primaryUp(
+      glassPane.dispatchEvent(context.primaryUp(
         clientX: 1000.0,
         clientY: 2000.0,
       ));
@@ -2854,22 +3082,35 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     required double? clientY,
     required double? deltaX,
     required double? deltaY,
+    double? wheelDeltaX,
+    double? wheelDeltaY,
+    int? timeStamp,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      'wheel',
-      <String, dynamic>{
-        'buttons': buttons,
-        'clientX': clientX,
-        'clientY': clientY,
-        'deltaX': deltaX,
-        'deltaY': deltaY,
-      }
-    ];
-    return js_util.callConstructor<DomEvent>(
-      jsWheelEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    final DomEvent event = createDomWheelEvent('wheel', <String, Object>{
+        if (buttons != null) 'buttons': buttons,
+        if (clientX != null) 'clientX': clientX,
+        if (clientY != null) 'clientY': clientY,
+        if (deltaX != null) 'deltaX': deltaX,
+        if (deltaY != null) 'deltaY': deltaY,
+        if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
+        if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
+    });
+    // timeStamp can't be set in the constructor, need to override the getter.
+    if (timeStamp != null) {
+      js_util.callMethod(
+        objectConstructor,
+        'defineProperty',
+        <dynamic>[
+          event,
+          'timeStamp',
+          js_util.jsify(<String, dynamic>{
+            'value': timeStamp,
+            'configurable': true
+          })
+        ]
+      );
+    }
+    return event;
   }
 }
 
@@ -3102,25 +3343,17 @@ class _MouseEventContext extends _BasicEventContext
     double? clientX,
     double? clientY,
   }) {
-    final Function jsMouseEvent =
-        js_util.getProperty<Function>(domWindow, 'MouseEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      type,
-      <String, dynamic>{
-        'buttons': buttons,
-        'button': button,
-        'clientX': clientX,
-        'clientY': clientY,
-        'altKey': altPressed,
-        'ctrlKey': ctrlPressed,
-        'metaKey': metaPressed,
-        'shiftKey': shiftPressed,
-      }
-    ];
-    return js_util.callConstructor<DomMouseEvent>(
-      jsMouseEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    return createDomMouseEvent(type, <String, Object>{
+      if (buttons != null) 'buttons': buttons,
+      if (button != null) 'button': button,
+      if (clientX != null) 'clientX': clientX,
+      if (clientY != null) 'clientY': clientY,
+      'bubbles': true,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shiftPressed,
+    });
   }
 }
 
@@ -3325,6 +3558,7 @@ class _PointerEventContext extends _BasicEventContext
     String? pointerType,
   }) {
     return createDomPointerEvent('pointerup', <String, dynamic>{
+      'bubbles': true,
       'pointerId': pointer,
       'button': button,
       'buttons': buttons,

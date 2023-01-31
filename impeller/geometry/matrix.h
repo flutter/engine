@@ -122,6 +122,31 @@ struct Matrix {
     // clang-format on
   }
 
+  static Matrix MakeRotation(Quaternion q) {
+    // clang-format off
+    return Matrix(
+      1.0 - 2.0 * q.y * q.y - 2.0 * q.z * q.z,
+      2.0 * q.x * q.y + 2.0 * q.z * q.w,
+      2.0 * q.x * q.z - 2.0 * q.y * q.w,
+      0.0,
+
+      2.0 * q.x * q.y - 2.0 * q.z * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.z * q.z,
+      2.0 * q.y * q.z + 2.0 * q.x * q.w,
+      0.0,
+
+      2.0 * q.x * q.z + 2.0 * q.y * q.w,
+      2.0 * q.y * q.z - 2.0 * q.x * q.w,
+      1.0 - 2.0 * q.x * q.x - 2.0 * q.y * q.y,
+      0.0,
+
+      0.0,
+      0.0,
+      0.0,
+      1.0);
+    // clang-format on
+  }
+
   static Matrix MakeRotation(Scalar radians, const Vector4& r) {
     const Vector4 v = r.Normalize();
 
@@ -322,6 +347,19 @@ struct Matrix {
     );
   }
 
+  /// @brief  Returns true if the matrix has a scale-only basis and is
+  ///         non-projective. Note that an identity matrix meets this criteria.
+  constexpr bool IsTranslationScaleOnly() const {
+    return (
+        // clang-format off
+        m[0] != 0.0 && m[1]  == 0.0 && m[2]  == 0.0 && m[3]  == 0.0 &&
+        m[4] == 0.0 && m[5]  != 0.0 && m[6]  == 0.0 && m[7]  == 0.0 &&
+        m[8] == 0.0 && m[9]  == 0.0 && m[10] != 0.0 && m[11] == 0.0 &&
+                                                       m[15] == 1.0
+        // clang-format on
+    );
+  }
+
   std::optional<MatrixDecomposition> Decompose() const;
 
   constexpr bool operator==(const Matrix& m) const {
@@ -421,7 +459,7 @@ struct Matrix {
     return {
       1.0f / width, 0.0f,           0.0f,                                 0.0f,
       0.0f,         1.0f / height,  0.0f,                                 0.0f,
-      0.0f,         0.0f,           z_far / (z_near - z_far),            -1.0f,
+      0.0f,         0.0f,           z_far / (z_far - z_near),             1.0f,
       0.0f,         0.0f,          -(z_far * z_near) / (z_far - z_near),  0.0f,
     };
     // clang-format on
