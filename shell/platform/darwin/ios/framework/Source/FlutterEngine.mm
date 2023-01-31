@@ -651,7 +651,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
             NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
                                           length:screenshot.data->size()];
             NSString* format = [NSString stringWithCString:screenshot.format.c_str()];
-            result(@[ format, data ]);
+            NSNumber* width = @(screenshot.frame_size.fWidth);
+            NSNumber* height = @(screenshot.frame_size.fHeight);
+            result(@[ width, height, format, data ]);
           } else {
             result([FlutterError errorWithCode:@"failure"
                                        message:@"Unable to get screenshot."
