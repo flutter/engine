@@ -36,7 +36,8 @@ int GetLuminance(DWORD color) {
 }
 
 // Return kLight if light mode for apps is selected, otherwise return kDark.
-SettingsPlugin::PlatformBrightness GetThemeBrightness() {DWORD use_light_theme;
+SettingsPlugin::PlatformBrightness GetThemeBrightness() {
+  DWORD use_light_theme;
   DWORD use_light_theme_size = sizeof(use_light_theme);
   LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
                             kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
