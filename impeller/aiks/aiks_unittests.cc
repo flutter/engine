@@ -1843,6 +1843,8 @@ TEST_P(AiksTest, SceneColorSource) {
 }
 
 TEST_P(AiksTest, PaintWithFilters) {
+  // validate that a paint with a color filter "HasFilters", no other filters
+  // impact this setting.
   Paint paint;
 
   ASSERT_FALSE(paint.HasFilters());
