@@ -317,7 +317,7 @@ void applyGlobalCssRulesToSheet(
     }
   ''', sheet.cssRules.length);
 
-  // This CSS makes the autofill overlay transparent in order to prevent it 
+  // This CSS makes the autofill overlay transparent in order to prevent it
   // from overlaying on top of Flutter-rendered text inputs.
   // See: https://github.com/flutter/flutter/issues/118337.
   if (browserHasAutofillOverlay()) {
