@@ -2,56 +2,54 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
 
+#import "flutter/shell/platform/darwin/embedder/FlutterEmbedderAPIBridge.h"
 #import "flutter/shell/platform/darwin/embedder/FlutterExternalTexture.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
+// #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+// #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 #pragma mark - Static callbacks that require the engine.
 
-static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterEngine* engine,
+static FlutterMetalTexture OnGetNextDrawableForDefaultView(FlutterRenderer* renderer,
                                                            const FlutterFrameInfo* frameInfo) {
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID, or pass the ID via FlutterFrameInfo.
   uint64_t viewId = kFlutterDefaultViewId;
   CGSize size = CGSizeMake(frameInfo->size.width, frameInfo->size.height);
-  return [engine.renderer createTextureForView:viewId size:size];
+  return [renderer.presenter createTextureForView:viewId size:size];
 }
 
-static bool OnPresentDrawableOfDefaultView(FlutterEngine* engine,
+static bool OnPresentDrawableOfDefaultView(FlutterRenderer* renderer,
                                            const FlutterMetalTexture* texture) {
   // TODO(dkwingsmt): This callback only supports single-view, therefore it only
   // operates on the default view. To support multi-view, we need a new callback
   // that also receives a view ID.
   uint64_t viewId = kFlutterDefaultViewId;
-  return [engine.renderer present:viewId texture:texture];
+  return [renderer.presenter present:viewId texture:texture];
 }
 
-static bool OnAcquireExternalTexture(FlutterEngine* engine,
+static bool OnAcquireExternalTexture(FlutterRenderer* renderer,
                                      int64_t textureIdentifier,
                                      size_t width,
                                      size_t height,
                                      FlutterMetalExternalTexture* metalTexture) {
-  return [engine.renderer populateTextureWithIdentifier:textureIdentifier
-                                           metalTexture:metalTexture];
+  return [renderer populateTextureWithIdentifier:textureIdentifier metalTexture:metalTexture];
 }
 
 #pragma mark - FlutterRenderer implementation
 
 @implementation FlutterRenderer {
-  FlutterViewEngineProvider* _viewProvider;
-
   FlutterDarwinContextMetalSkia* _darwinMetalContext;
 }
 
-- (instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine {
-  self = [super initWithDelegate:self engine:flutterEngine];
+- (instancetype)initWithEmbedderAPIBridge:(nonnull FlutterEmbedderAPIBridge*)bridge
+                                presenter:(NSObject<FlutterPresenter>*)presenter {
+  self = [super initWithDelegate:self embedderAPIBridge:bridge];
   if (self) {
-    _viewProvider = [[FlutterViewEngineProvider alloc] initWithEngine:flutterEngine];
+    _presenter = presenter;
     _device = MTLCreateSystemDefaultDevice();
     if (!_device) {
       NSLog(@"Could not acquire Metal device.");
@@ -84,33 +82,6 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
           reinterpret_cast<FlutterMetalTextureFrameCallback>(OnAcquireExternalTexture),
   };
   return config;
-}
-
-#pragma mark - Embedder callback implementations.
-
-- (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size {
-  FlutterView* view = [_viewProvider getView:viewId];
-  NSAssert(view != nil, @"Can't create texture on a non-existent view 0x%llx.", viewId);
-  if (view == nil) {
-    // FlutterMetalTexture has texture `null`, therefore is discarded.
-    return FlutterMetalTexture{};
-  }
-  return [view.surfaceManager surfaceForSize:size].asFlutterMetalTexture;
-}
-
-- (BOOL)present:(uint64_t)viewId texture:(const FlutterMetalTexture*)texture {
-  FlutterView* view = [_viewProvider getView:viewId];
-  if (view == nil) {
-    return NO;
-  }
-  FlutterSurface* surface = [FlutterSurface fromFlutterMetalTexture:texture];
-  if (surface == nil) {
-    return NO;
-  }
-  FlutterSurfacePresentInfo* info = [[FlutterSurfacePresentInfo alloc] init];
-  info.surface = surface;
-  [view.surfaceManager present:@[ info ] notify:nil];
-  return YES;
 }
 
 #pragma mark - FlutterTextureRegistrar methods.

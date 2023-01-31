@@ -10,23 +10,13 @@
 #include <stdint.h>
 
 #import "FlutterBinaryMessenger.h"
-#import "FlutterDartProject.h"
 #import "FlutterMacros.h"
 #import "FlutterPluginRegistrarMacOS.h"
 #import "FlutterTexture.h"
 
-// TODO: Merge this file with the iOS FlutterEngine.h.
+@class FlutterDartProject;
 
-/**
- * The view ID for APIs that don't support multi-view.
- *
- * Some single-view APIs will eventually be replaced by their multi-view
- * variant. During the deprecation period, the single-view APIs will coexist with
- * and work with the multi-view APIs as if the other views don't exist.  For
- * backward compatibility, single-view APIs will always operate on the view with
- * this ID. Also, the first view assigned to the engine will also have this ID.
- */
-extern const uint64_t kFlutterDefaultViewId;
+// TODO: Merge this file with the iOS FlutterEngine.h.
 
 @class FlutterViewController;
 
@@ -34,7 +24,7 @@ extern const uint64_t kFlutterDefaultViewId;
  * Coordinates a single instance of execution of a Flutter engine.
  */
 FLUTTER_DARWIN_EXPORT
-@interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
+@interface FlutterEngine : NSObject <FlutterPluginRegistry>
 
 /**
  * Initializes an engine with the given project.

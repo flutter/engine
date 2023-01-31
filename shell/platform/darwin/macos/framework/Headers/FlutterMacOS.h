@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "FlutterAppDelegate.h"
+#import "FlutterBaseDartProject.h"
 #import "FlutterBinaryMessenger.h"
 #import "FlutterChannels.h"
 #import "FlutterCodecs.h"

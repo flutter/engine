@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBaseDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
@@ -76,7 +78,7 @@ TEST_F(FlutterEngineTest, MessengerSend) {
   NSData* test_message = [@"a message" dataUsingEncoding:NSUTF8StringEncoding];
   bool called = false;
 
-  engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
+  engine.embedderAPIBridge.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage, ([&called, test_message](auto engine, auto message) {
         called = true;
         EXPECT_STREQ(message->channel, "test");
@@ -176,9 +178,9 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
 TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
-  auto original_init = engine.embedderAPI.Initialize;
+  auto original_init = engine.embedderAPIBridge.embedderAPI.Initialize;
   std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
-  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
+  engine.embedderAPIBridge.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
@@ -193,7 +195,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   [viewController loadView];
   // Enable the semantics.
   bool enabled_called = false;
-  engine.embedderAPI.UpdateSemanticsEnabled =
+  engine.embedderAPIBridge.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
                          enabled_called = enabled;
                          return kSuccess;
@@ -254,7 +256,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
   EXPECT_EQ([native_child1.accessibilityChildren count], 0u);
   // Disable the semantics.
   bool semanticsEnabled = true;
-  engine.embedderAPI.UpdateSemanticsEnabled =
+  engine.embedderAPIBridge.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&semanticsEnabled](auto engine, bool enabled) {
                          semanticsEnabled = enabled;
                          return kSuccess;
@@ -270,9 +272,9 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
 TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterEngine* engine = GetFlutterEngine();
   // Capture the update callbacks before the embedder API initializes.
-  auto original_init = engine.embedderAPI.Initialize;
+  auto original_init = engine.embedderAPIBridge.embedderAPI.Initialize;
   std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
-  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
+  engine.embedderAPIBridge.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&update_semantics_callback, &original_init](
                        size_t version, const FlutterRendererConfig* config,
                        const FlutterProjectArgs* args, void* user_data, auto engine_out) {
@@ -283,7 +285,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
 
   // Enable the semantics without attaching a view controller.
   bool enabled_called = false;
-  engine.embedderAPI.UpdateSemanticsEnabled =
+  engine.embedderAPIBridge.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
                          enabled_called = enabled;
                          return kSuccess;
@@ -337,7 +339,7 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
 
   // Disable the semantics.
   bool semanticsEnabled = true;
-  engine.embedderAPI.UpdateSemanticsEnabled =
+  engine.embedderAPIBridge.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&semanticsEnabled](auto engine, bool enabled) {
                          semanticsEnabled = enabled;
                          return kSuccess;
@@ -354,7 +356,7 @@ TEST_F(FlutterEngineTest, ProducesAccessibilityTreeWhenAddingViews) {
 
   // Enable the semantics without attaching a view controller.
   bool enabled_called = false;
-  engine.embedderAPI.UpdateSemanticsEnabled =
+  engine.embedderAPIBridge.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
                          enabled_called = enabled;
                          return kSuccess;
@@ -438,8 +440,8 @@ TEST(FlutterEngine, DartEntrypointArguments) {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
   bool called = false;
-  auto original_init = engine.embedderAPI.Initialize;
-  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
+  auto original_init = engine.embedderAPIBridge.embedderAPI.Initialize;
+  engine.embedderAPIBridge.embedderAPI.Initialize = MOCK_ENGINE_PROC(
       Initialize, ([&called, &original_init](size_t version, const FlutterRendererConfig* config,
                                              const FlutterProjectArgs* args, void* user_data,
                                              FLUTTER_API_SYMBOL(FlutterEngine) * engine_out) {
@@ -476,7 +478,7 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   // Mock SendPlatformMessage so that if a message is sent to
   // "test/send_message", act as if the framework has sent an empty message to
   // the channel marked by the `sendOnChannel:message:` call's message.
-  engine.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
+  engine.embedderAPIBridge.embedderAPI.SendPlatformMessage = MOCK_ENGINE_PROC(
       SendPlatformMessage, ([](auto engine_, auto message_) {
         if (strcmp(message_->channel, "test/send_message") == 0) {
           // The simplest message that is acceptable to a method channel.

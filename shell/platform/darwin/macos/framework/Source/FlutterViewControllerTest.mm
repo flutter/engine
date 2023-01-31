@@ -9,12 +9,14 @@
 #import <OCMock/OCMock.h>
 
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBaseDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/test_utils/key_codes.g.h"
 #import "flutter/testing/testing.h"
 
@@ -308,8 +310,11 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 - (bool)testFlutterViewIsConfigured {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
 
-  FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
-  OCMStub([engineMock renderer]).andReturn(renderer_);
+  FlutterViewEngineProvider* viewProvider =
+      [[FlutterViewEngineProvider alloc] initWithEngine:engineMock];
+  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithEmbedderAPIBridge:engineMock
+                                                                       presenter:viewProvider];
+  OCMStub([engineMock renderer]).andReturn(renderer);
 
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engineMock
                                                                                 nibName:@""
@@ -499,8 +504,11 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 - (bool)testTrackpadGesturesAreSentToFramework {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   // Need to return a real renderer to allow view controller to load.
-  FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
-  OCMStub([engineMock renderer]).andReturn(renderer_);
+  FlutterViewEngineProvider* viewProvider =
+      [[FlutterViewEngineProvider alloc] initWithEngine:engineMock];
+  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithEmbedderAPIBridge:engineMock
+                                                                       presenter:viewProvider];
+  OCMStub([engineMock renderer]).andReturn(renderer);
   __block bool called = false;
   __block FlutterPointerEvent last_event;
   OCMStub([[engineMock ignoringNonObjectArgs] sendPointerEvent:FlutterPointerEvent{}])
@@ -805,8 +813,11 @@ TEST(FlutterViewControllerTest, testFlutterViewIsConfigured) {
 - (bool)testModifierKeysAreSynthesizedOnMouseMove {
   id engineMock = flutter::testing::CreateMockFlutterEngine(@"");
   // Need to return a real renderer to allow view controller to load.
-  FlutterRenderer* renderer_ = [[FlutterRenderer alloc] initWithFlutterEngine:engineMock];
-  OCMStub([engineMock renderer]).andReturn(renderer_);
+  FlutterViewEngineProvider* viewProvider =
+      [[FlutterViewEngineProvider alloc] initWithEngine:engineMock];
+  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithEmbedderAPIBridge:engineMock
+                                                                       presenter:viewProvider];
+  OCMStub([engineMock renderer]).andReturn(renderer);
 
   // Capture calls to sendKeyEvent
   __block NSMutableArray<KeyEventWrapper*>* events =

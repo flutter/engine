@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBaseDartProject_Internal.h"
 
 namespace flutter::testing {
 

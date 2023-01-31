@@ -14,7 +14,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyPrimaryResponder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterKeyboardManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterTextInputSemanticsObject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"

@@ -2,18 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Cocoa/Cocoa.h>
+@class FlutterEmbedderAPIBridge;
+
+#include <Metal/Metal.h>
 
 #import "flutter/shell/platform/darwin/embedder/FlutterTextureRegistrar.h"
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@protocol FlutterPresenter
+
+- (BOOL)present:(uint64_t)viewId texture:(nonnull const FlutterMetalTexture*)texture;
+
+- (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size;
+
+@end
 
 /**
  * Rendering backend agnostic FlutterRendererConfig provider to be used by the embedder API.
  */
-@interface FlutterRenderer
-    : FlutterTextureRegistrar <FlutterTextureRegistry, FlutterTextureRegistrarDelegate>
+@interface FlutterRenderer : FlutterTextureRegistrar <FlutterTextureRegistrarDelegate>
 
 /**
  * Interface to the system GPU. Used to issue all the rendering commands.
@@ -25,25 +34,18 @@
  */
 @property(nonatomic, readonly, nonnull) id<MTLCommandQueue> commandQueue;
 
+@property(strong, nonatomic, nonnull, readonly) NSObject<FlutterPresenter>* presenter;
+
 /**
- * Intializes the renderer with the given FlutterEngine.
+ * Intializes the renderer with the given FlutterEmbedderAPIBridge.
  */
-- (nullable instancetype)initWithFlutterEngine:(nonnull FlutterEngine*)flutterEngine;
+- (nullable instancetype)initWithEmbedderAPIBridge:(FlutterEmbedderAPIBridge*)embedderAPIBridge
+                                         presenter:(NSObject<FlutterPresenter>*)presenter;
 
 /**
  * Creates a FlutterRendererConfig that renders using the appropriate backend.
  */
 - (FlutterRendererConfig)createRendererConfig;
-
-/**
- * Called by the engine when the given view's buffers should be swapped.
- */
-- (BOOL)present:(uint64_t)viewId texture:(nonnull const FlutterMetalTexture*)texture;
-
-/**
- * Creates a Metal texture for the given view with the given size.
- */
-- (FlutterMetalTexture)createTextureForView:(uint64_t)viewId size:(CGSize)size;
 
 /**
  * Populates the texture registry with the provided metalTexture.
@@ -52,3 +54,5 @@
                          metalTexture:(nonnull FlutterMetalExternalTexture*)metalTexture;
 
 @end
+
+NS_ASSUME_NONNULL_END

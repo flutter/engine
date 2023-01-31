@@ -4,12 +4,14 @@
 
 #import <OCMock/OCMock.h>
 
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBaseDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/testing/testing.h"
@@ -36,7 +38,11 @@ void SetEngineDefaultView(FlutterEngine* engine, id flutterView) {
 
 TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
-  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
+  FlutterViewEngineProvider* viewProvider =
+      [[FlutterViewEngineProvider alloc] initWithEngine:engine];
+  FlutterRenderer* renderer =
+      [[FlutterRenderer alloc] initWithEmbedderAPIBridge:engine.embedderAPIBridge
+                                               presenter:viewProvider];
 
   id viewMock = OCMClassMock([FlutterView class]);
   SetEngineDefaultView(engine, viewMock);
@@ -56,13 +62,17 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
                                }]
                                 notify:nil];
 
-  [renderer present:kFlutterDefaultViewId texture:&texture];
+  [renderer.presenter present:kFlutterDefaultViewId texture:&texture];
   [surfaceManagerMock verify];
 }
 
 TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   FlutterEngine* engine = CreateTestEngine();
-  FlutterRenderer* renderer = [[FlutterRenderer alloc] initWithFlutterEngine:engine];
+  FlutterViewEngineProvider* viewProvider =
+      [[FlutterViewEngineProvider alloc] initWithEngine:engine];
+  FlutterRenderer* renderer =
+      [[FlutterRenderer alloc] initWithEmbedderAPIBridge:engine.embedderAPIBridge
+                                               presenter:viewProvider];
 
   id viewMock = OCMClassMock([FlutterView class]);
   SetEngineDefaultView(engine, viewMock);
@@ -79,7 +89,7 @@ TEST(FlutterRenderer, TextureReturnedByFlutterView) {
   CGSize size = CGSizeMake(dimensions.width, dimensions.height);
 
   [[surfaceManagerMock expect] surfaceForSize:size];
-  [renderer createTextureForView:kFlutterDefaultViewId size:size];
+  [renderer.presenter createTextureForView:kFlutterDefaultViewId size:size];
   [surfaceManagerMock verify];
 }
 

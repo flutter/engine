@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#import "flutter/shell/platform/darwin/embedder/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewProvider.h"
 
 @class FlutterEngine;
@@ -12,7 +13,7 @@
  *
  * FlutterViewProvider only holds a weak reference to FlutterEngine.
  */
-@interface FlutterViewEngineProvider : NSObject <FlutterViewProvider>
+@interface FlutterViewEngineProvider : NSObject <FlutterViewProvider, FlutterPresenter>
 
 /**
  * Create a FlutterViewProvider with the underlying engine.

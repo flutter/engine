@@ -6,6 +6,7 @@
 
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Embedding side texture wrappers for Metal external textures.
@@ -34,3 +35,5 @@
 - (BOOL)populateTexture:(nonnull FlutterMetalExternalTexture*)metalTexture;
 
 @end
+
+NS_ASSUME_NONNULL_END
