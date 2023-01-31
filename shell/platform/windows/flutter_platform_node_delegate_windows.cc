@@ -6,10 +6,12 @@
 
 #include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 #include "flutter/third_party/accessibility/ax/ax_clipping_behavior.h"
 #include "flutter/third_party/accessibility/ax/ax_coordinate_system.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_fragment_root_win.h"
 
 namespace flutter {
 
@@ -17,8 +19,9 @@ FlutterPlatformNodeDelegateWindows::FlutterPlatformNodeDelegateWindows(
     std::weak_ptr<AccessibilityBridge> bridge,
     FlutterWindowsView* view)
     : bridge_(bridge), view_(view) {
-  assert(!bridge_.expired());
-  assert(view_);
+  FML_DCHECK(!bridge_.expired())
+      << "Expired AccessibilityBridge passed to node delegate";
+  FML_DCHECK(view_);
 }
 
 FlutterPlatformNodeDelegateWindows::~FlutterPlatformNodeDelegateWindows() {
@@ -32,13 +35,13 @@ void FlutterPlatformNodeDelegateWindows::Init(std::weak_ptr<OwnerBridge> bridge,
                                               ui::AXNode* node) {
   FlutterPlatformNodeDelegate::Init(bridge, node);
   ax_platform_node_ = ui::AXPlatformNode::Create(this);
-  assert(ax_platform_node_);
+  FML_DCHECK(ax_platform_node_) << "Failed to create AXPlatformNode";
 }
 
 // |ui::AXPlatformNodeDelegate|
 gfx::NativeViewAccessible
 FlutterPlatformNodeDelegateWindows::GetNativeViewAccessible() {
-  assert(ax_platform_node_);
+  FML_DCHECK(ax_platform_node_) << "AXPlatformNode hasn't been created";
   return ax_platform_node_->GetNativeViewAccessible();
 }
 
@@ -57,12 +60,13 @@ gfx::NativeViewAccessible FlutterPlatformNodeDelegateWindows::HitTestSync(
 
   // If any child in this node's subtree contains the point, return that child.
   auto bridge = bridge_.lock();
-  assert(bridge);
+  FML_DCHECK(bridge);
   for (const ui::AXNode* child : GetAXNode()->children()) {
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
         std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
             bridge->GetFlutterPlatformNodeDelegateFromID(child->id()).lock());
-    assert(win_delegate);
+    FML_DCHECK(win_delegate)
+        << "No FlutterPlatformNodeDelegate found for node " << child->id();
     auto hit_view = win_delegate->HitTestSync(screen_physical_pixel_x,
                                               screen_physical_pixel_y);
     if (hit_view) {
@@ -90,14 +94,8 @@ gfx::Rect FlutterPlatformNodeDelegateWindows::GetBoundsRect(
 }
 
 void FlutterPlatformNodeDelegateWindows::DispatchWinAccessibilityEvent(
-    DWORD event_type) {
-  HWND hwnd = view_->GetPlatformWindow();
-  if (!hwnd) {
-    return;
-  }
-  assert(ax_platform_node_);
-  ::NotifyWinEvent(event_type, hwnd, OBJID_CLIENT,
-                   -ax_platform_node_->GetUniqueId());
+    ax::mojom::Event event_type) {
+  ax_platform_node_->NotifyAccessibilityEvent(event_type);
 }
 
 void FlutterPlatformNodeDelegateWindows::SetFocus() {
@@ -105,6 +103,16 @@ void FlutterPlatformNodeDelegateWindows::SetFocus() {
   varchild.vt = VT_I4;
   varchild.lVal = CHILDID_SELF;
   GetNativeViewAccessible()->accSelect(SELFLAG_TAKEFOCUS, varchild);
+}
+
+gfx::AcceleratedWidget
+FlutterPlatformNodeDelegateWindows::GetTargetForNativeAccessibilityEvent() {
+  return view_->GetPlatformWindow();
+}
+
+ui::AXPlatformNode* FlutterPlatformNodeDelegateWindows::GetPlatformNode()
+    const {
+  return ax_platform_node_;
 }
 
 }  // namespace flutter

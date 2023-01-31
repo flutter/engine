@@ -10,6 +10,8 @@
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/texture.h"
+#include "impeller/scene/importer/scene_flatbuffers.h"
+#include "impeller/scene/pipeline_key.h"
 
 namespace impeller {
 namespace scene {
@@ -19,7 +21,7 @@ struct SceneContextOptions;
 class Geometry;
 
 class UnlitMaterial;
-class StandardMaterial;
+class PhysicallyBasedMaterial;
 
 class Material {
  public:
@@ -37,24 +39,31 @@ class Material {
     CompareFunction compare = CompareFunction::kAlways;
   };
 
-  static std::unique_ptr<UnlitMaterial> MakeUnlit();
-  static std::unique_ptr<StandardMaterial> MakeStandard();
+  static std::unique_ptr<Material> MakeFromFlatbuffer(
+      const fb::Material& material,
+      const std::vector<std::shared_ptr<Texture>>& textures);
 
+  static std::unique_ptr<UnlitMaterial> MakeUnlit();
+  static std::unique_ptr<PhysicallyBasedMaterial> MakePhysicallyBased();
+
+  virtual ~Material();
+
+  void SetVertexColorWeight(Scalar weight);
   void SetBlendConfig(BlendConfig blend_config);
   void SetStencilConfig(StencilConfig stencil_config);
 
   void SetTranslucent(bool is_translucent);
 
-  virtual std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
-      const SceneContext& scene_context,
-      const RenderPass& pass) const = 0;
+  SceneContextOptions GetContextOptions(const RenderPass& pass) const;
+
+  virtual MaterialType GetMaterialType() const = 0;
+
   virtual void BindToCommand(const SceneContext& scene_context,
                              HostBuffer& buffer,
                              Command& command) const = 0;
 
  protected:
-  SceneContextOptions GetContextOptions(const RenderPass& pass) const;
-
+  Scalar vertex_color_weight_ = 1;
   BlendConfig blend_config_;
   StencilConfig stencil_config_;
   bool is_translucent_ = false;
@@ -62,14 +71,18 @@ class Material {
 
 class UnlitMaterial final : public Material {
  public:
+  static std::unique_ptr<UnlitMaterial> MakeFromFlatbuffer(
+      const fb::Material& material,
+      const std::vector<std::shared_ptr<Texture>>& textures);
+
+  ~UnlitMaterial();
+
   void SetColor(Color color);
 
   void SetColorTexture(std::shared_ptr<Texture> color_texture);
 
   // |Material|
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
-      const SceneContext& scene_context,
-      const RenderPass& pass) const override;
+  MaterialType GetMaterialType() const override;
 
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
@@ -81,23 +94,28 @@ class UnlitMaterial final : public Material {
   std::shared_ptr<Texture> color_texture_;
 };
 
-class StandardMaterial final : public Material {
+class PhysicallyBasedMaterial final : public Material {
  public:
+  static std::unique_ptr<PhysicallyBasedMaterial> MakeFromFlatbuffer(
+      const fb::Material& material,
+      const std::vector<std::shared_ptr<Texture>>& textures);
+
+  ~PhysicallyBasedMaterial();
+
   void SetAlbedo(Color albedo);
   void SetRoughness(Scalar roughness);
   void SetMetallic(Scalar metallic);
 
   void SetAlbedoTexture(std::shared_ptr<Texture> albedo_texture);
+  void SetMetallicRoughnessTexture(
+      std::shared_ptr<Texture> metallic_roughness_texture);
   void SetNormalTexture(std::shared_ptr<Texture> normal_texture);
-  void SetOcclusionRoughnessMetallicTexture(
-      std::shared_ptr<Texture> occlusion_roughness_metallic_texture);
+  void SetOcclusionTexture(std::shared_ptr<Texture> occlusion_texture);
 
   void SetEnvironmentMap(std::shared_ptr<Texture> environment_map);
 
   // |Material|
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
-      const SceneContext& scene_context,
-      const RenderPass& pass) const override;
+  MaterialType GetMaterialType() const override;
 
   // |Material|
   void BindToCommand(const SceneContext& scene_context,
@@ -106,12 +124,13 @@ class StandardMaterial final : public Material {
 
  private:
   Color albedo_ = Color::White();
-  Scalar roughness_ = 0.5;
   Scalar metallic_ = 0.5;
+  Scalar roughness_ = 0.5;
 
   std::shared_ptr<Texture> albedo_texture_;
+  std::shared_ptr<Texture> metallic_roughness_texture_;
   std::shared_ptr<Texture> normal_texture_;
-  std::shared_ptr<Texture> occlusion_roughness_metallic_texture_;
+  std::shared_ptr<Texture> occlusion_texture_;
 
   std::shared_ptr<Texture> environment_map_;
 };

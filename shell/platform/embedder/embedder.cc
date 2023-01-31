@@ -463,6 +463,8 @@ InferMetalPlatformViewCreationCallback(
         embedder_texture.struct_size = sizeof(FlutterMetalTexture);
         embedder_texture.texture = texture.texture;
         embedder_texture.texture_id = texture.texture_id;
+        embedder_texture.user_data = texture.destruction_context;
+        embedder_texture.destruction_callback = texture.destruction_callback;
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
@@ -560,7 +562,7 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
   auto proc_addr =
-      vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
+      vulkan_get_instance_proc_address(vk_instance, "vkGetInstanceProcAddr");
 
   flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
       .get_instance_proc_address =
@@ -2449,7 +2451,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length) {
@@ -2459,7 +2461,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   auto engine_action = static_cast<flutter::SemanticsAction>(action);
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
-               id, engine_action,
+               node_id, engine_action,
                fml::MallocMapping::Copy(data, data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");

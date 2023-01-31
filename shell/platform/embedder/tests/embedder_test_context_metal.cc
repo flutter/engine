@@ -47,10 +47,22 @@ TestMetalContext* EmbedderTestContextMetal::GetTestMetalContext() {
   return metal_context_.get();
 }
 
+TestMetalSurface* EmbedderTestContextMetal::GetTestMetalSurface() {
+  return metal_surface_.get();
+}
+
+void EmbedderTestContextMetal::SetPresentCallback(
+    PresentCallback present_callback) {
+  present_callback_ = std::move(present_callback);
+}
+
 bool EmbedderTestContextMetal::Present(int64_t texture_id) {
   FireRootSurfacePresentCallbackIfPresent(
       [&]() { return metal_surface_->GetRasterSurfaceSnapshot(); });
   present_count_++;
+  if (present_callback_ != nullptr) {
+    return present_callback_(texture_id);
+  }
   return metal_context_->Present(texture_id);
 }
 
@@ -69,10 +81,6 @@ bool EmbedderTestContextMetal::PopulateExternalTexture(
   } else {
     return false;
   }
-}
-
-TestMetalContext::TextureInfo EmbedderTestContextMetal::GetTextureInfo() {
-  return metal_surface_->GetTextureInfo();
 }
 
 void EmbedderTestContextMetal::SetNextDrawableCallback(

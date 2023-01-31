@@ -707,7 +707,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  trace_flow_id  The trace flow identifier associated with the
   ///                            pointer data packet. The engine uses this trace
   ///                            identifier to connect trace flows in the
-  ///                            timeline from the input event event to the
+  ///                            timeline from the input event to the
   ///                            frames generated due to those input events.
   ///                            These flows are tagged as "PointerEvent" in the
   ///                            timeline and allow grouping frames and input
@@ -722,12 +722,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             originates on the platform view and has been forwarded to the
   ///             engine here on the UI task runner by the shell.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int id,
+  void DispatchSemanticsAction(int node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -870,7 +870,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.

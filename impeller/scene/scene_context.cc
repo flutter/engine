@@ -4,26 +4,33 @@
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/renderer/formats.h"
+#include "impeller/scene/material.h"
+#include "impeller/scene/shaders/skinned.vert.h"
+#include "impeller/scene/shaders/unlit.frag.h"
+#include "impeller/scene/shaders/unskinned.vert.h"
 
 namespace impeller {
 namespace scene {
 
 void SceneContextOptions::ApplyToPipelineDescriptor(
     PipelineDescriptor& desc) const {
+  DepthAttachmentDescriptor depth;
+  depth.depth_compare = CompareFunction::kLess;
+  depth.depth_write_enabled = true;
+  desc.SetDepthStencilAttachmentDescriptor(depth);
+  desc.SetDepthPixelFormat(PixelFormat::kD32FloatS8UInt);
+
+  StencilAttachmentDescriptor stencil;
+  stencil.stencil_compare = CompareFunction::kAlways;
+  stencil.depth_stencil_pass = StencilOperation::kKeep;
+  desc.SetStencilAttachmentDescriptors(stencil);
+  desc.SetStencilPixelFormat(PixelFormat::kD32FloatS8UInt);
+
   desc.SetSampleCount(sample_count);
   desc.SetPrimitiveType(primitive_type);
-}
 
-template <typename PipelineT>
-static std::unique_ptr<PipelineT> CreateDefaultPipeline(
-    const Context& context) {
-  auto desc = PipelineT::Builder::MakeDefaultPipelineDescriptor(context);
-  if (!desc.has_value()) {
-    return nullptr;
-  }
-  // Apply default ContentContextOptions to the descriptor.
-  SceneContextOptions{}.ApplyToPipelineDescriptor(*desc);
-  return std::make_unique<PipelineT>(context, desc);
+  desc.SetWindingOrder(WindingOrder::kCounterClockwise);
+  desc.SetCullMode(CullMode::kBackFace);
 }
 
 SceneContext::SceneContext(std::shared_ptr<Context> context)
@@ -32,25 +39,30 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
     return;
   }
 
-  unlit_pipeline_[{}] = CreateDefaultPipeline<UnlitPipeline>(*context_);
+  pipelines_[{PipelineKey{GeometryType::kUnskinned, MaterialType::kUnlit}}] =
+      MakePipelineVariants<UnskinnedVertexShader, UnlitFragmentShader>(
+          *context_);
+  pipelines_[{PipelineKey{GeometryType::kSkinned, MaterialType::kUnlit}}] =
+      MakePipelineVariants<SkinnedVertexShader, UnlitFragmentShader>(*context_);
 
   {
     impeller::TextureDescriptor texture_descriptor;
     texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
-    texture_descriptor.format = PixelFormat::kDefaultColor;
+    texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
     texture_descriptor.size = {1, 1};
     texture_descriptor.mip_count = 1u;
 
     placeholder_texture_ =
         context_->GetResourceAllocator()->CreateTexture(texture_descriptor);
+    placeholder_texture_->SetLabel("Placeholder Texture");
     if (!placeholder_texture_) {
-      FML_DLOG(ERROR) << "Could not create placeholder texture.";
+      FML_LOG(ERROR) << "Could not create placeholder texture.";
       return;
     }
 
     uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
-    if (!placeholder_texture_->SetContents(pixel, 4, 0)) {
-      FML_DLOG(ERROR) << "Could not set contents of placeholder texture.";
+    if (!placeholder_texture_->SetContents(pixel, 4)) {
+      FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
       return;
     }
   }
@@ -59,6 +71,18 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
 }
 
 SceneContext::~SceneContext() = default;
+
+std::shared_ptr<Pipeline<PipelineDescriptor>> SceneContext::GetPipeline(
+    PipelineKey key,
+    SceneContextOptions opts) const {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  if (auto found = pipelines_.find(key); found != pipelines_.end()) {
+    return found->second->GetPipeline(opts);
+  }
+  return nullptr;
+}
 
 bool SceneContext::IsValid() const {
   return is_valid_;

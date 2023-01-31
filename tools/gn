@@ -391,8 +391,7 @@ def to_gn_args(args):
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
-  # flags allow preventing those those targets from being part of the build
-  # tree.
+  # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
@@ -557,6 +556,9 @@ def to_gn_args(args):
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
+  if args.malioc_path is not None:
+    gn_args['impeller_malioc_path'] = args.malioc_path
+
   # ANGLE is exclusively used for:
   #  - Windows at runtime
   #  - Non-fuchsia host unit tests (is_host_build evaluates to false).
@@ -575,6 +577,11 @@ def to_gn_args(args):
     # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
+
+    # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
+    # but we only need these enabled for SwiftShader.
+    gn_args['angle_use_x11'] = False
+    gn_args['angle_use_wayland'] = False
 
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
@@ -617,7 +624,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_gpu'] = True
   gn_args['skia_enable_sksl_tracing'] = False
-  gn_args['skia_use_icu'] = True
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -656,6 +662,7 @@ def to_gn_wasm_args(args, gn_args):
   # than forced to true, once the recipes are updated.
   # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
+  gn_args['build_canvaskit_chromium'] = args.build_canvaskit_chromium
   gn_args['flutter_build_web_sdk'] = True
 
 
@@ -877,6 +884,14 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--build-canvaskit-chromium',
+      default=False,
+      dest='build_canvaskit_chromium',
+      action='store_true',
+      help='build the Chromium variant of CanvasKit from sources'
+  )
+
+  parser.add_argument(
       '--ide',
       default='',
       type=str,
@@ -964,6 +979,7 @@ def parse_args(args):
       action='store_true',
       help='Whether impeller unit tests run in playground mode.'
   )
+
   parser.add_argument(
       '--prebuilt-impellerc',
       default=None,
@@ -972,20 +988,15 @@ def parse_args(args):
       'Do not use this outside of CI or with impellerc from a different engine version.'
   )
 
-  # This is currently a no-op, will be removed shortly.
-  parser.add_argument(
-      '--enable-impeller-vulkan',
-      default=False,
-      action='store_true',
-      help='Enables WIP impeller support for vulkan. ' +
-      'https://github.com/flutter/flutter/issues/107357'
-  )
-
   parser.add_argument(
       '--enable-impeller-3d',
       default=False,
       action='store_true',
       help='Enables experimental 3d support.'
+  )
+
+  parser.add_argument(
+      '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
   # Sanitizers.

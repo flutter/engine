@@ -44,7 +44,11 @@ class PortableUITest : public ::loop_fixture::RealLoop {
       "flutter_jit_runner.cm";
   static constexpr auto kFlutterRunnerEnvironment = "flutter_runner_env";
 
-  void SetUp();
+  void SetUp(bool build_realm = true);
+
+  // Calls the Build method for Realm Builder to build the realm
+  // Can only be called once, panics otherwise
+  void BuildRealm();
 
   // Attaches a client view to the scene, and waits for it to render.
   void LaunchClient();
@@ -64,6 +68,9 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   // scale of [-1000, 1000] on both axes and scroll is measured from [-100, 100]
   // on both axes.
   void RegisterMouse();
+
+  // Register a fake keyboard
+  void RegisterKeyboard();
 
   // Simulates a tap at location (x, y).
   void InjectTap(int32_t x, int32_t y);
@@ -85,6 +92,9 @@ class PortableUITest : public ::loop_fixture::RealLoop {
       int scroll_y,
       bool use_physical_units = false);
 
+  // Helper method to simluate text input
+  void SimulateTextEntry(std::string text);
+
  protected:
   component_testing::RealmBuilder* realm_builder() { return &realm_builder_; }
   component_testing::RealmRoot* realm_root() { return realm_.get(); }
@@ -104,10 +114,10 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   virtual void ExtendRealm() = 0;
 
   // Returns the test-specific test-ui-stack component url to use.
-  // Usually overriden to return a value from gtest GetParam()
+  // Usually overridden to return a value from gtest GetParam()
   virtual std::string GetTestUIStackUrl() = 0;
 
-  // Helper method to watch watch for view geometry updates.
+  // Helper method to watch for view geometry updates.
   void WatchViewGeometry();
 
   // Helper method to process a view geometry update.
@@ -117,6 +127,7 @@ class PortableUITest : public ::loop_fixture::RealLoop {
   fuchsia::ui::test::input::RegistryPtr input_registry_;
   fuchsia::ui::test::input::TouchScreenPtr fake_touchscreen_;
   fuchsia::ui::test::input::MousePtr fake_mouse_;
+  fuchsia::ui::test::input::KeyboardPtr fake_keyboard_;
   fuchsia::ui::test::scene::ControllerPtr scene_provider_;
   fuchsia::ui::observation::geometry::ViewTreeWatcherPtr view_tree_watcher_;
 

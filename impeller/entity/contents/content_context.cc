@@ -4,6 +4,7 @@
 
 #include "impeller/entity/contents/content_context.h"
 
+#include <memory>
 #include <sstream>
 
 #include "impeller/entity/entity.h"
@@ -146,7 +147,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
 ContentContext::ContentContext(std::shared_ptr<Context> context)
     : context_(std::move(context)),
       tessellator_(std::make_shared<Tessellator>()),
-      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()) {
+      glyph_atlas_context_(std::make_shared<GlyphAtlasContext>()),
+      scene_context_(std::make_shared<scene::SceneContext>(context_)) {
   if (!context_ || !context_->IsValid()) {
     return;
   }
@@ -223,7 +225,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
   geometry_position_pipelines_[{}] =
       CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
-  atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
@@ -296,6 +297,10 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   }
 
   return subpass_texture;
+}
+
+std::shared_ptr<scene::SceneContext> ContentContext::GetSceneContext() const {
+  return scene_context_;
 }
 
 std::shared_ptr<Tessellator> ContentContext::GetTessellator() const {

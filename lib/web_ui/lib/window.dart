@@ -7,6 +7,7 @@ part of ui;
 abstract class FlutterView {
   PlatformDispatcher get platformDispatcher;
   ViewConfiguration get viewConfiguration;
+  Object get viewId;
   double get devicePixelRatio => viewConfiguration.devicePixelRatio;
   Rect get physicalGeometry => viewConfiguration.geometry;
   Size get physicalSize => viewConfiguration.geometry.size;
@@ -19,15 +20,7 @@ abstract class FlutterView {
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
 }
 
-abstract class FlutterWindow extends FlutterView {
-  @override
-  PlatformDispatcher get platformDispatcher;
-
-  @override
-  ViewConfiguration get viewConfiguration;
-}
-
-abstract class SingletonFlutterWindow extends FlutterWindow {
+abstract class SingletonFlutterWindow extends FlutterView {
   VoidCallback? get onMetricsChanged => platformDispatcher.onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback) {
     platformDispatcher.onMetricsChanged = callback;
@@ -165,8 +158,7 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null.");
+  CallbackHandle.fromRawHandle(this._handle);
 
   final int _handle;
 

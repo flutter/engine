@@ -10,6 +10,7 @@ namespace impeller {
 
 class ColorFilterContents : public FilterContents {
  public:
+  /// @brief the [inputs] are expected to be in the order of dst, src.
   static std::shared_ptr<ColorFilterContents> MakeBlend(
       BlendMode blend_mode,
       FilterInput::Vector inputs,
@@ -33,8 +34,14 @@ class ColorFilterContents : public FilterContents {
 
   bool GetAbsorbOpacity() const;
 
+  /// @brief Sets an alpha that is applied to the final blended result.
+  void SetAlpha(Scalar alpha);
+
+  std::optional<Scalar> GetAlpha() const;
+
  private:
   bool absorb_opacity_ = false;
+  std::optional<Scalar> alpha_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorFilterContents);
 };

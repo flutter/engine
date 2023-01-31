@@ -35,8 +35,8 @@ class SceneEncoder {
 
   std::shared_ptr<CommandBuffer> BuildSceneCommandBuffer(
       const SceneContext& scene_context,
-      const Camera& camera,
-      const RenderTarget& render_target) const;
+      const Matrix& camera_transform,
+      RenderTarget render_target) const;
 
   std::vector<SceneCommand> commands_;
 

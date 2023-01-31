@@ -27,6 +27,7 @@
 #include "impeller/entity/contents/linear_gradient_contents.h"
 #include "impeller/entity/contents/radial_gradient_contents.h"
 #include "impeller/entity/contents/runtime_effect_contents.h"
+#include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/sweep_gradient_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/entity.h"
@@ -336,6 +337,10 @@ static std::optional<Paint::ColorSourceType> ToColorSourceType(
       return Paint::ColorSourceType::kSweepGradient;
     case flutter::DlColorSourceType::kRuntimeEffect:
       return Paint::ColorSourceType::kRuntimeEffect;
+#ifdef IMPELLER_ENABLE_3D
+    case flutter::DlColorSourceType::kScene:
+      return Paint::ColorSourceType::kScene;
+#endif  // IMPELLER_ENABLE_3D
     case flutter::DlColorSourceType::kUnknown:
       return std::nullopt;
   }
@@ -389,7 +394,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetStops(stops);
         contents->SetEndPoints(start_point, end_point);
         contents->SetTileMode(tile_mode);
-        contents->SetMatrix(matrix);
+        contents->SetEffectTransform(matrix);
         return contents;
       };
       return;
@@ -413,7 +418,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetStops(stops);
         contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
-        contents->SetMatrix(matrix);
+        contents->SetEffectTransform(matrix);
         return contents;
       };
       return;
@@ -440,7 +445,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetColors(colors);
         contents->SetStops(stops);
         contents->SetTileMode(tile_mode);
-        contents->SetMatrix(matrix);
+        contents->SetEffectTransform(matrix);
         return contents;
       };
       return;
@@ -460,7 +465,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetTexture(texture);
         contents->SetTileModes(x_tile_mode, y_tile_mode);
         contents->SetSamplerDescriptor(desc);
-        contents->SetMatrix(matrix);
+        contents->SetEffectTransform(matrix);
         return contents;
       };
       return;
@@ -498,6 +503,25 @@ void DisplayListDispatcher::setColorSource(
         contents->SetTextureInputs(texture_inputs);
         return contents;
       };
+      return;
+    }
+    case Paint::ColorSourceType::kScene: {
+#ifdef IMPELLER_ENABLE_3D
+      const flutter::DlSceneColorSource* scene_color_source = source->asScene();
+      std::shared_ptr<scene::Node> scene_node =
+          scene_color_source->scene_node();
+      Matrix camera_transform = scene_color_source->camera_matrix();
+
+      paint_.color_source = [scene_node, camera_transform]() {
+        auto contents = std::make_shared<SceneContents>();
+        contents->SetNode(scene_node);
+        contents->SetCameraTransform(camera_transform);
+        return contents;
+      };
+#else   // IMPELLER_ENABLE_3D
+      FML_LOG(ERROR) << "ColorSourceType::kScene can only be used if Impeller "
+                        "Scene is enabled.";
+#endif  // IMPELLER_ENABLE_3D
       return;
     }
     case Paint::ColorSourceType::kConicalGradient:
@@ -1016,7 +1040,6 @@ void DisplayListDispatcher::drawOval(const SkRect& bounds) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
-  auto path = PathBuilder{}.AddCircle(ToPoint(center), radius).TakePath();
   canvas_.DrawCircle(ToPoint(center), radius, paint_);
 }
 

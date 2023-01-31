@@ -473,6 +473,9 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   static std::optional<PROPERTYID> MojoEventToUIAProperty(
       ax::mojom::Event event);
 
+  // |AXPlatformNodeBase|
+  bool IsDescendantOf(AXPlatformNode* ancestor) const override;
+
  protected:
   // This is hard-coded; all products based on the Chromium engine will have the
   // same framework name, so that assistive technology can detect any
@@ -695,7 +698,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   };
 
   // Determine if a text range overlaps a |marker_type|, and whether
-  // the overlap is a partial or or complete match.
+  // the overlap is a partial or complete match.
   MarkerTypeRangeResult GetMarkerTypeFromRange(
       const std::optional<int>& start_offset,
       const std::optional<int>& end_offset,

@@ -35,6 +35,7 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
   sl_compiler->set_msl_options(sl_options);
+
   return CompilerBackend(sl_compiler);
 }
 

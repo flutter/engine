@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <map>
+#include <vector>
 
 #include "impeller/geometry/matrix.h"
 #include "impeller/scene/importer/scene_flatbuffers.h"
@@ -34,7 +35,9 @@ Color ToColor(const fb::Color& c);
 /// Impeller -> Flatbuffers
 ///
 
-std::unique_ptr<fb::Matrix> ToFBMatrix(const Matrix& m);
+fb::Matrix ToFBMatrix(const Matrix& m);
+
+std::unique_ptr<fb::Matrix> ToFBMatrixUniquePtr(const Matrix& m);
 
 fb::Vec2 ToFBVec2(const Vector2 v);
 
@@ -43,6 +46,8 @@ fb::Vec3 ToFBVec3(const Vector3 v);
 fb::Vec4 ToFBVec4(const Vector4 v);
 
 fb::Color ToFBColor(const Color c);
+
+std::unique_ptr<fb::Color> ToFBColor(const std::vector<double>& c);
 
 }  // namespace importer
 }  // namespace scene
