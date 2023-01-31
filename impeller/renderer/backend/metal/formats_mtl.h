@@ -47,8 +47,13 @@ constexpr PixelFormat FromMTLPixelFormat(MTLPixelFormat format) {
   return PixelFormat::kUnknown;
 }
 
+/// Safe accessor for MTLPixelFormatBGR10_XR_sRGB.
+/// Returns PixelFormat::kUnknown if MTLPixelFormatBGR10_XR_sRGB isn't
+/// supported.
 MTLPixelFormat SafeMTLPixelFormatBGR10_XR_sRGB();
 
+/// Safe accessor for MTLPixelFormatBGR10_XR.
+/// Returns PixelFormat::kUnknown if MTLPixelFormatBGR10_XR isn't supported.
 MTLPixelFormat SafeMTLPixelFormatBGR10_XR();
 
 constexpr MTLPixelFormat ToMTLPixelFormat(PixelFormat format) {

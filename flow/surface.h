@@ -21,6 +21,7 @@ namespace flutter {
 /// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
+  /// A screenshot of the surface's raw data.
   struct SurfaceData {
     std::string pixel_format;
     sk_sp<SkData> data;
@@ -48,6 +49,10 @@ class Surface {
 
   virtual impeller::AiksContext* GetAiksContext() const;
 
+  /// Capture the `SurfaceData` currently present in the surface.
+  ///
+  /// Not guaranteed to work on all setups and not intended to be used in
+  /// production. The data field will be null if it was unable to work.
   virtual SurfaceData GetSurfaceData() const;
 
  private:

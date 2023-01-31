@@ -127,9 +127,6 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
 
   const auto base_image_info = descriptor->image_info();
   const bool is_wide_gamut = IsWideGamut(*base_image_info.colorSpace());
-  if (is_wide_gamut) {
-    FML_DLOG(ERROR) << "loading display p3 image";
-  }
   SkAlphaType alpha_type =
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;

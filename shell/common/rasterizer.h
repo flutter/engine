@@ -313,6 +313,9 @@ class Rasterizer final : public SnapshotDelegate,
     ///
     SkISize frame_size = SkISize::MakeEmpty();
 
+    //--------------------------------------------------------------------------
+    /// Characterization of the format of the data in `data`.
+    ///
     std::string format;
 
     //--------------------------------------------------------------------------
@@ -325,6 +328,7 @@ class Rasterizer final : public SnapshotDelegate,
     ///
     /// @param[in]  p_data  The screenshot data
     /// @param[in]  p_size  The screenshot size.
+    /// @param[in]  p_format  The screenshot format.
     ///
     Screenshot(sk_sp<SkData> p_data,
                SkISize p_size,

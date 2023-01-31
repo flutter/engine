@@ -17,7 +17,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
 @interface FlutterDartProject ()
 
 @property(nonatomic, readonly) BOOL isWideGamutEnabled;
-//- (BOOL)isWideGamutEnabled;
 
 /**
  * This is currently used for *only for tests* to override settings.
