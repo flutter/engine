@@ -578,6 +578,11 @@ def to_gn_args(args):
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
 
+    # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
+    # but we only need these enabled for SwiftShader.
+    gn_args['angle_use_x11'] = False
+    gn_args['angle_use_wayland'] = False
+
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
     gn_args['angle_enable_vulkan_validation_layers'] = False
@@ -657,9 +662,7 @@ def to_gn_wasm_args(args, gn_args):
   # than forced to true, once the recipes are updated.
   # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
-  # TODO(mdebbar): Read this from an input argument.
-  # https://github.com/flutter/flutter/issues/118744
-  gn_args['build_canvaskit_chromium'] = False
+  gn_args['build_canvaskit_chromium'] = args.build_canvaskit_chromium
   gn_args['flutter_build_web_sdk'] = True
 
 
@@ -878,6 +881,14 @@ def parse_args(args):
   )
   parser.add_argument(
       '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
+  )
+
+  parser.add_argument(
+      '--build-canvaskit-chromium',
+      default=False,
+      dest='build_canvaskit_chromium',
+      action='store_true',
+      help='build the Chromium variant of CanvasKit from sources'
   )
 
   parser.add_argument(

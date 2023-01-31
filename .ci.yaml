@@ -150,6 +150,7 @@ targets:
 
   - name: Linux Fuchsia FEMU
     recipe: engine/femu_test
+    bringup: true
     properties:
       add_recipes_cq: "true"
       build_fuchsia: "true"
@@ -308,6 +309,8 @@ targets:
       - master
     properties:
       add_recipes_cq: "true"
+      gclient_variables: >-
+        {"download_emsdk": true}
       dependencies: >-
         [
           {"dependency": "chrome_and_driver", "version": "version:96.2"},

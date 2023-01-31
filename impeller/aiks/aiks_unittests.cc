@@ -18,6 +18,7 @@
 #include "impeller/entity/contents/scene_contents.h"
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
+#include "impeller/geometry/constants.h"
 #include "impeller/geometry/geometry_unittests.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
@@ -375,6 +376,59 @@ TEST_P(AiksTest, CanRenderLinearGradient) {
     };
     paint.color = Color(1.0, 1.0, 1.0, alpha);
     canvas.DrawRect({0, 0, 600, 600}, paint);
+    return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, CanRenderLinearGradientWithOverlappingStops) {
+  auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
+    const char* tile_mode_names[] = {"Clamp", "Repeat", "Mirror", "Decal"};
+    const Entity::TileMode tile_modes[] = {
+        Entity::TileMode::kClamp, Entity::TileMode::kRepeat,
+        Entity::TileMode::kMirror, Entity::TileMode::kDecal};
+
+    static int selected_tile_mode = 0;
+    static float alpha = 1;
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Alpha", &alpha, 0, 1);
+    ImGui::Combo("Tile mode", &selected_tile_mode, tile_mode_names,
+                 sizeof(tile_mode_names) / sizeof(char*));
+    static Matrix matrix = {
+        1, 0, 0, 0,  //
+        0, 1, 0, 0,  //
+        0, 0, 1, 0,  //
+        0, 0, 0, 1   //
+    };
+    std::string label = "##1";
+    for (int i = 0; i < 4; i++) {
+      ImGui::InputScalarN(label.c_str(), ImGuiDataType_Float, &(matrix.vec[i]),
+                          4, NULL, NULL, "%.2f", 0);
+      label[2]++;
+    }
+    ImGui::End();
+
+    Canvas canvas;
+    Paint paint;
+    canvas.Translate({100.0, 100.0, 0});
+    auto tile_mode = tile_modes[selected_tile_mode];
+    paint.color_source = [tile_mode]() {
+      std::vector<Color> colors = {Color{0.9568, 0.2627, 0.2118, 1.0},
+                                   Color{0.9568, 0.2627, 0.2118, 1.0},
+                                   Color{0.1294, 0.5882, 0.9529, 1.0},
+                                   Color{0.1294, 0.5882, 0.9529, 1.0}};
+      std::vector<Scalar> stops = {0.0, 0.5, 0.5, 1.0};
+
+      auto contents = std::make_shared<LinearGradientContents>();
+      contents->SetEndPoints({0, 0}, {500, 500});
+      contents->SetColors(std::move(colors));
+      contents->SetStops(std::move(stops));
+      contents->SetTileMode(tile_mode);
+      contents->SetEffectTransform(matrix);
+      return contents;
+    };
+    paint.color = Color(1.0, 1.0, 1.0, alpha);
+    canvas.DrawRect({0, 0, 500, 500}, paint);
     return renderer.Render(canvas.EndRecordingAsPicture(), render_target);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
@@ -1116,7 +1170,8 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
@@ -1179,6 +1234,20 @@ TEST_P(AiksTest, CanRenderTextOutsideBoundaries) {
     }
     canvas.Restore();
   }
+
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, TextRotated) {
+  Canvas canvas;
+  canvas.Transform(Matrix(0.5, -0.3, 0, -0.002,  //
+                          0, 1, 0, 0,            //
+                          0, 0, 0.3, 0,          //
+                          100, 100, 0, 1.3));
+
+  ASSERT_TRUE(RenderTextInCanvas(
+      GetContext(), canvas, "the quick brown fox jumped over the lazy dog!.?",
+      "Roboto-Regular.ttf"));
 
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
