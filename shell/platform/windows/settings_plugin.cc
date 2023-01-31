@@ -34,6 +34,23 @@ int GetLuminance(DWORD color) {
   int b = GetBValue(color);
   return (r + r + r + b + (g << 2)) >> 3;
 }
+
+// Return kLight if light mode for apps is selected, otherwise return kDark.
+SettingsPlugin::PlatformBrightness GetThemeBrightness() {DWORD use_light_theme;
+  DWORD use_light_theme_size = sizeof(use_light_theme);
+  LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
+                            kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
+                            nullptr, &use_light_theme, &use_light_theme_size);
+
+  if (result == 0) {
+    return use_light_theme ? SettingsPlugin::PlatformBrightness::kLight
+                            : SettingsPlugin::PlatformBrightness::kDark;
+  } else {
+    // The current OS does not support dark mode. (Older Windows 10 or before
+    // Windows 10)
+    return SettingsPlugin::PlatformBrightness::kLight;
+  }
+}
 }  // namespace
 
 SettingsPlugin::SettingsPlugin(BinaryMessenger* messenger,
@@ -117,20 +134,7 @@ SettingsPlugin::PlatformBrightness SettingsPlugin::GetPreferredBrightness() {
     return luminance >= 127 ? SettingsPlugin::PlatformBrightness::kLight
                             : SettingsPlugin::PlatformBrightness::kDark;
   } else {
-    DWORD use_light_theme;
-    DWORD use_light_theme_size = sizeof(use_light_theme);
-    LONG result = RegGetValue(HKEY_CURRENT_USER, kGetPreferredBrightnessRegKey,
-                              kGetPreferredBrightnessRegValue, RRF_RT_REG_DWORD,
-                              nullptr, &use_light_theme, &use_light_theme_size);
-
-    if (result == 0) {
-      return use_light_theme ? SettingsPlugin::PlatformBrightness::kLight
-                             : SettingsPlugin::PlatformBrightness::kDark;
-    } else {
-      // The current OS does not support dark mode. (Older Windows 10 or before
-      // Windows 10)
-      return SettingsPlugin::PlatformBrightness::kLight;
-    }
+    return GetThemeBrightness();
   }
 }
 
