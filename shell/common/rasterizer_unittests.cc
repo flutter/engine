@@ -892,8 +892,7 @@ TEST(RasterizerTest,
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
-      auto layer_tree =
-          std::make_shared<LayerTree>();
+      auto layer_tree = std::make_shared<LayerTree>();
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
       PipelineProduceResult result =
@@ -1062,8 +1061,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
     rasterizer->Setup(std::move(surface));
     auto pipeline = std::make_shared<LayerTreePipeline>(/*depth=*/10);
     for (int i = 0; i < 2; i++) {
-      auto layer_tree =
-          std::make_shared<LayerTree>();
+      auto layer_tree = std::make_shared<LayerTree>();
       auto layer_tree_item = std::make_unique<LayerTreeItem>(
           std::move(layer_tree), CreateFinishedBuildRecorder(timestamps[i]));
       PipelineProduceResult result =

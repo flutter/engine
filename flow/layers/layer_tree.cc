@@ -22,8 +22,7 @@ namespace flutter {
 LayerTree::LayerTree()
     : rasterizer_tracing_threshold_(0),
       checkerboard_raster_cache_images_(false),
-      checkerboard_offscreen_layers_(false) {
-}
+      checkerboard_offscreen_layers_(false) {}
 
 inline SkColorSpace* GetColorSpace(SkCanvas* canvas) {
   return canvas ? canvas->imageInfo().colorSpace() : nullptr;
