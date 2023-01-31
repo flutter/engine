@@ -134,6 +134,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
   int64_t _nextTextureId;
 
@@ -633,6 +634,34 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
          initWithChannel:_restorationChannel.get()
       restorationEnabled:_restorationEnabled]);
   _spellCheckPlugin.reset([[FlutterSpellCheckPlugin alloc] init]);
+
+  _screenshotChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/screenshot"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
+  [_screenshotChannel.get()
+      setMethodCallHandler:^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
+        if (weakSelf.get() && weakSelf.get()->_shell && weakSelf.get()->_shell->IsSetup()) {
+          flutter::Rasterizer::Screenshot screenshot =
+              [weakSelf.get() screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData
+                            base64Encode:NO];
+          if (screenshot.data) {
+            // TODO(gaaclarke): Find way to eliminate this data copy.
+            NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
+                                          length:screenshot.data->size()];
+            result(data);
+          } else {
+            result([FlutterError errorWithCode:@"failure"
+                                       message:@"Unable to get screenshot."
+                                       details:nil]);
+          }
+        } else {
+          result([FlutterError errorWithCode:@"invalid_state"
+                                     message:@"Requesting screenshot while engine is not running."
+                                     details:nil]);
+        }
+      }];
 }
 
 - (void)maybeSetupPlatformViewChannels {

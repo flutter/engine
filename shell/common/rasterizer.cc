@@ -727,6 +727,9 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
                                         surface_context, true);
       break;
+    case ScreenshotType::SurfaceData:
+      data = surface_->GetSurfaceData();
+      break;
   }
 
   if (data == nullptr) {

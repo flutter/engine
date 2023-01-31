@@ -287,6 +287,12 @@ class Rasterizer final : public SnapshotDelegate,
     /// container is used.
     ///
     CompressedImage,
+
+    //--------------------------------------------------------------------------
+    /// Reads the data directly from the Rasterizer's surface. The pixel format
+    /// is determined from the surface. This is the only way to read wide gamut
+    /// color data, but isn't supported everywhere.
+    SurfaceData,
   };
 
   //----------------------------------------------------------------------------

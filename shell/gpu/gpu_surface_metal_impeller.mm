@@ -60,6 +60,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 
   auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
       impeller_renderer_->GetContext(), mtl_layer);
+  last_drawable_.reset([surface->drawable() retain]);
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
@@ -127,6 +128,36 @@ bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
 // |Surface|
 impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
   return aiks_context_.get();
+}
+
+sk_sp<SkData> GPUSurfaceMetalImpeller::GetSurfaceData() const {
+  if (last_drawable_) {
+    id<CAMetalDrawable> metal_drawable;
+    if ([last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)]) {
+      metal_drawable = static_cast<id<CAMetalDrawable>>(last_drawable_);
+    } else {
+      return {};
+    }
+    id<MTLTexture> texture = metal_drawable.texture;
+    int bytesPerPixel = 0;
+    switch (texture.pixelFormat) {
+      case MTLPixelFormatBGR10_XR:
+        bytesPerPixel = 4;
+        break;
+      default:
+        return {};
+    }
+    // TODO(gaaclarke): Switch this to uninitialized.
+    sk_sp<SkData> result =
+        SkData::MakeZeroInitialized(texture.width * texture.height * bytesPerPixel);
+    [texture getBytes:result->writable_data()
+          bytesPerRow:texture.width * bytesPerPixel
+           fromRegion:MTLRegionMake2D(0, 0, texture.width, texture.height)
+          mipmapLevel:0];
+    return result;
+  } else {
+    return {};
+  }
 }
 
 }  // namespace flutter

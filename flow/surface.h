@@ -43,6 +43,8 @@ class Surface {
 
   virtual impeller::AiksContext* GetAiksContext() const;
 
+  virtual sk_sp<SkData> GetSurfaceData() const;
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);
 };
