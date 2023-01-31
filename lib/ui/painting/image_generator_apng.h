@@ -100,7 +100,7 @@ class APNGImageGenerator : public ImageGenerator {
     PNG_FIELD(uint8_t, blend_op)
   };
 
-  /// @brief  The first PNG frame is always the "default" PNG frame. Absense of
+  /// @brief  The first PNG frame is always the "default" PNG frame. Absence of
   ///         `frame_info` is only possible on the "default" PNG frame.
   ///         Each frame goes through two decoding stages:
   ///         1. Demuxing stage: An individual PNG codec is created for a frame
@@ -145,7 +145,7 @@ class APNGImageGenerator : public ImageGenerator {
                                          const ChunkHeader* current_chunk);
 
   /// @brief  This is a utility template for casting a png buffer pointer to a
-  ///         chunk header. It's primary purpose is to statically insert runtime
+  ///         chunk header. Its primary purpose is to statically insert runtime
   ///         debug checks that detect invalid decoding behavior.
   template <typename T>
   static constexpr const T* CastChunkData(const ChunkHeader* chunk) {

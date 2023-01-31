@@ -127,8 +127,6 @@ bool APNGImageGenerator::GetPixels(const SkImageInfo& info,
 
     uint8_t GetAlpha() { return channel[3]; }
 
-    void SetAlpha(uint8_t value) { channel[3] = value; }
-
     void Premultiply() {
       for (int i = 0; i < 3; i++) {
         channel[i] = channel[i] * GetAlpha() / 0xFF;
