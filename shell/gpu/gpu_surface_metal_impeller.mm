@@ -130,7 +130,7 @@ impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
   return aiks_context_.get();
 }
 
-sk_sp<SkData> GPUSurfaceMetalImpeller::GetSurfaceData() const {
+Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
   if (last_drawable_) {
     id<CAMetalDrawable> metal_drawable;
     if ([last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)]) {
@@ -140,9 +140,11 @@ sk_sp<SkData> GPUSurfaceMetalImpeller::GetSurfaceData() const {
     }
     id<MTLTexture> texture = metal_drawable.texture;
     int bytesPerPixel = 0;
+    std::string pixel_format;
     switch (texture.pixelFormat) {
       case MTLPixelFormatBGR10_XR:
         bytesPerPixel = 4;
+        pixel_format = "MTLPixelFormatBGR10_XR";
         break;
       default:
         return {};
@@ -154,7 +156,10 @@ sk_sp<SkData> GPUSurfaceMetalImpeller::GetSurfaceData() const {
           bytesPerRow:texture.width * bytesPerPixel
            fromRegion:MTLRegionMake2D(0, 0, texture.width, texture.height)
           mipmapLevel:0];
-    return result;
+    return {
+        .pixel_format = pixel_format,
+        .data = result,
+    };
   } else {
     return {};
   }

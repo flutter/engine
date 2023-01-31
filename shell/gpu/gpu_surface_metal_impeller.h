@@ -27,7 +27,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   // |Surface|
   bool IsValid() override;
 
-  virtual sk_sp<SkData> GetSurfaceData() const override;
+  virtual Surface::SurfaceData GetSurfaceData() const override;
 
  private:
   const GPUSurfaceMetalDelegate* delegate_;

@@ -650,7 +650,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
             // TODO(gaaclarke): Find way to eliminate this data copy.
             NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
                                           length:screenshot.data->size()];
-            result(data);
+            NSString* format = [NSString stringWithCString:screenshot.format.c_str()];
+            result(@[ format, data ]);
           } else {
             result([FlutterError errorWithCode:@"failure"
                                        message:@"Unable to get screenshot."

@@ -21,6 +21,11 @@ namespace flutter {
 /// Abstract Base Class that represents where we will be rendering content.
 class Surface {
  public:
+  struct SurfaceData {
+    std::string pixel_format;
+    sk_sp<SkData> data;
+  };
+
   Surface();
 
   virtual ~Surface();
@@ -43,7 +48,7 @@ class Surface {
 
   virtual impeller::AiksContext* GetAiksContext() const;
 
-  virtual sk_sp<SkData> GetSurfaceData() const;
+  virtual SurfaceData GetSurfaceData() const;
 
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(Surface);

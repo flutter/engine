@@ -30,7 +30,7 @@ impeller::AiksContext* Surface::GetAiksContext() const {
   return nullptr;
 }
 
-sk_sp<SkData> Surface::GetSurfaceData() const {
+Surface::SurfaceData Surface::GetSurfaceData() const {
   return {};
 }
 

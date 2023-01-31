@@ -313,6 +313,8 @@ class Rasterizer final : public SnapshotDelegate,
     ///
     SkISize frame_size = SkISize::MakeEmpty();
 
+    std::string format;
+
     //--------------------------------------------------------------------------
     /// @brief      Creates an empty screenshot
     ///
@@ -324,7 +326,9 @@ class Rasterizer final : public SnapshotDelegate,
     /// @param[in]  p_data  The screenshot data
     /// @param[in]  p_size  The screenshot size.
     ///
-    Screenshot(sk_sp<SkData> p_data, SkISize p_size);
+    Screenshot(sk_sp<SkData> p_data,
+               SkISize p_size,
+               const std::string& p_format);
 
     //--------------------------------------------------------------------------
     /// @brief      The copy constructor for a screenshot.
