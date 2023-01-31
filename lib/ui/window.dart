@@ -310,16 +310,16 @@ class FlutterView {
 
 /// Deprecated. Will be removed in a future version of Flutter.
 ///
-/// This class has been deprecated to prepare for Flutter's upcoming support
-/// for multiple views and eventually multiple windows.
+/// This class is deprecated to prepare for Flutter's upcoming support for
+/// multiple views and eventually multiple windows.
 ///
 /// This class has been split into two classes: [FlutterView] and
 /// [PlatformDispatcher]. The [FlutterView] gives an application access to
 /// view-specific functionality while the [PlatformDispatcher] contains
 /// platform-specific functionality that applies to all views.
 ///
-/// This class is used to back the global [window] singleton, which is also
-/// deprecated. See the docs on [window] for migration options.
+/// This class backs the global [window] singleton, which is also deprecated.
+/// See the docs on [window] for migration options.
 ///
 /// See also:
 ///
@@ -902,15 +902,14 @@ enum Brightness {
 
 /// Deprecated. Will be removed in a future version of Flutter.
 ///
-/// This property has been deprecated to prepare for Flutter's upcoming support
-/// for multiple views and eventually multiple windows.
+/// This global property is deprecated to prepare for Flutter's upcoming support
+/// for multiple views and  multiple windows.
 ///
-/// It used to represent the only window into which an application could draw
-/// content while giving the application access to window- and platform-specific
-/// functionality.
+/// It represents the main window for applications where there is only one
+/// window, such as applications designed for single-display mobile devices.
 ///
-/// Several options exist to migrate code that relies on this property. They are
-/// listed below in order of preference:
+/// Several options exist to migrate code that relies on this global singleton.
+/// They are listed below in order of preference:
 ///
 /// The current [FlutterView] can be obtained from the context via [View.of]. It
 /// gives access to the same functionality as this deprecated global [window]
