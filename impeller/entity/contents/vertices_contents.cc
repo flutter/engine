@@ -56,19 +56,9 @@ bool VerticesContents::Render(const ContentContext& renderer,
   }
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
-  if (blend_mode_ < BlendMode::kScreen) {
-    auto contents = ColorFilterContents::MakeBlend(
-        blend_mode_,
-        {FilterInput::Make(dst_contents), FilterInput::Make(src_contents_)});
-    contents->SetAlpha(alpha_);
-    return contents->Render(renderer, entity, pass);
-  }
-
-  // For some reason this looks backwards compared to Skia unless
-  // we reverse the src/dst.
   auto contents = ColorFilterContents::MakeBlend(
       blend_mode_,
-      {FilterInput::Make(src_contents_), FilterInput::Make(dst_contents)});
+      {FilterInput::Make(dst_contents), FilterInput::Make(src_contents_)});
   contents->SetAlpha(alpha_);
 
   return contents->Render(renderer, entity, pass);
