@@ -431,9 +431,9 @@ class BrowserPlatform extends PlatformPlugin {
       return shelf.Response.internalServerError(body: error);
     }
 
-    final bool needsCoopCoep = 
-      extension == '.js' || 
-      extension == '.mjs' || 
+    final bool needsCoopCoep =
+      extension == '.js' ||
+      extension == '.mjs' ||
       extension == '.html';
     return shelf.Response.ok(
       fileInBuild.readAsBytesSync(),
