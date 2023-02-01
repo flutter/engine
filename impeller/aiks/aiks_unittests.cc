@@ -1170,8 +1170,7 @@ TEST_P(AiksTest, CanRenderItalicizedText) {
 
 TEST_P(AiksTest, CanRenderEmojiTextFrame) {
   Canvas canvas;
-  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
-                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas, "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
@@ -1845,14 +1844,14 @@ TEST_P(AiksTest, SceneColorSource) {
 TEST_P(AiksTest, PaintWithFilters) {
   Paint paint;
 
-  ASSERT_FALSE(paint.HasFilters());
+  ASSERT_FALSE(paint.HasColorFilter());
 
   paint.color_filter = [](FilterInput::Ref input) {
     return ColorFilterContents::MakeBlend(BlendMode::kSourceOver,
                                           {std::move(input)}, Color::Blue());
   };
 
-  ASSERT_TRUE(paint.HasFilters());
+  ASSERT_TRUE(paint.HasColorFilter());
 
   paint.image_filter = [](const FilterInput::Ref& input,
                           const Matrix& effect_transform) {
@@ -1861,15 +1860,15 @@ TEST_P(AiksTest, PaintWithFilters) {
         Entity::TileMode::kClamp, effect_transform);
   };
 
-  ASSERT_TRUE(paint.HasFilters());
+  ASSERT_TRUE(paint.HasColorFilter());
 
   paint.mask_blur_descriptor = {};
 
-  ASSERT_TRUE(paint.HasFilters());
+  ASSERT_TRUE(paint.HasColorFilter());
 
   paint.color_filter = std::nullopt;
 
-  ASSERT_FALSE(paint.HasFilters());
+  ASSERT_FALSE(paint.HasColorFilter());
 }
 
 }  // namespace testing
