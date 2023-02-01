@@ -8,9 +8,9 @@
 
 namespace impeller {
 
-ContentsFilterInput::ContentsFilterInput(std::shared_ptr<Contents> contents, bool msaa_enabled)
-    : contents_(std::move(contents)),
-      msaa_enabled_(msaa_enabled) {}
+ContentsFilterInput::ContentsFilterInput(std::shared_ptr<Contents> contents,
+                                         bool msaa_enabled)
+    : contents_(std::move(contents)), msaa_enabled_(msaa_enabled) {}
 
 ContentsFilterInput::~ContentsFilterInput() = default;
 
