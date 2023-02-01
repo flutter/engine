@@ -119,16 +119,16 @@ void testMain() {
           hostNode.querySelector('#flt-internals-stylesheet');
       final bool autofillOverlay = hasCssRule(style,
           selector: '.transparentTextEditing:-webkit-autofill',
-          declaration: 'opacity: 0');
+          declaration: 'opacity: 0 !important');
       final bool autofillOverlayHovered = hasCssRule(style,
           selector: '.transparentTextEditing:-webkit-autofill:hover',
-          declaration: 'opacity: 0');
+          declaration: 'opacity: 0 !important');
       final bool autofillOverlayFocused = hasCssRule(style,
           selector: '.transparentTextEditing:-webkit-autofill:focus',
-          declaration: 'opacity: 0');
+          declaration: 'opacity: 0 !important');
       final bool autofillOverlayActive = hasCssRule(style,
           selector: '.transparentTextEditing:-webkit-autofill:active',
-          declaration: 'opacity: 0');
+          declaration: 'opacity: 0 !important');
 
       expect(autofillOverlay, isTrue);
       expect(autofillOverlayHovered, isTrue);
