@@ -1661,6 +1661,13 @@ public class FlutterFragment extends Fragment
     return false;
   }
 
+  @Override
+  public void navigatorIsEmpty() {
+    // TODO(justinmc): Implement. Implementing in FlutterActivity first.
+    // unregisterOnBackInvokedCallback();
+    Log.e("justin", "navigatorIsEmpty in embedding FlutterFragment");
+  }
+
   @VisibleForTesting
   @NonNull
   boolean shouldDelayFirstAndroidViewDraw() {

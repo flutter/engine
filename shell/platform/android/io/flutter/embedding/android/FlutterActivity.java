@@ -666,12 +666,19 @@ public class FlutterActivity extends Activity
   public void registerOnBackInvokedCallback() {
     if (Build.VERSION.SDK_INT >= 33) {
       // TODO(justinmc): This is really the one and only thing that stops root
-      // pback for me.
+      // pback for me. There are probably other places you need to mess with
+      // this for other embedding strategies!
       Log.e("justin", "registerOnBackInvokedCallback");
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
     }
+  }
+
+  @Override
+  public void navigatorIsEmpty() {
+    Log.e("justin", "navigatorIsEmpty in embedding FlutterActivity");
+    unregisterOnBackInvokedCallback();
   }
 
   /**

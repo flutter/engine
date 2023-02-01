@@ -56,6 +56,8 @@ public class PlatformPlugin {
      *     androidx.activity.OnBackPressedDispatcher} will be executed.
      */
     boolean popSystemNavigator();
+
+    void navigatorIsEmpty();
   }
 
   @VisibleForTesting
@@ -111,6 +113,7 @@ public class PlatformPlugin {
 
         @Override
         public void navigatorIsEmpty() {
+          Log.e("justin", "navigatorIsEmpty in PlatformHandler.PlatformMessageChannel.");
           PlatformPlugin.this.navigatorIsEmpty();
         }
 
@@ -482,8 +485,7 @@ public class PlatformPlugin {
 
   private void navigatorIsEmpty() {
     Log.e("justin", "navigatorIsEmpty in PlatformPlugin");
-    // TODO(justinmc): Can't quite call it like this, need FlutterActivity.
-    // activity.unregisterOnBackInvokedCallback();
+    platformPluginDelegate.navigatorIsEmpty();
   }
 
   private void popSystemNavigator() {
