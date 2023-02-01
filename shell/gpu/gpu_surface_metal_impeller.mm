@@ -7,6 +7,7 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/trace_event.h"
@@ -60,7 +61,9 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 
   auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
       impeller_renderer_->GetContext(), mtl_layer);
-  last_drawable_.reset([surface->drawable() retain]);
+  if (Settings::kSurfaceDataAccessible) {
+    last_drawable_.reset([surface->drawable() retain]);
+  }
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //

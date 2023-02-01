@@ -96,6 +96,15 @@ struct Settings {
 
   ~Settings();
 
+  /// Determines if attempts at grabbing the Surface's SurfaceData can be
+  /// attempted.
+  static constexpr bool kSurfaceDataAccessible =
+#ifdef _NDEBUG
+      false;
+#else
+      true;
+#endif
+
   // VM settings
   std::string vm_snapshot_data_path;  // deprecated
   MappingCallback vm_snapshot_data;

@@ -81,7 +81,7 @@ static BOOL IsWideGamutSupported() {
     layer.allowsGroupOpacity = YES;
     layer.contentsScale = screenScale;
     layer.rasterizationScale = screenScale;
-    layer.framebufferOnly = NO;
+    layer.framebufferOnly = flutter::Settings::kSurfaceDataAccessible ? NO : YES;
     if (_isWideGamutEnabled && IsWideGamutSupported()) {
       CGColorSpaceRef srgb = CGColorSpaceCreateWithName(kCGColorSpaceExtendedSRGB);
       layer.colorspace = srgb;
