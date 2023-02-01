@@ -333,6 +333,11 @@ class FlutterView {
   'This feature was deprecated after v3.7.0-32.0.pre.'
 )
 class SingletonFlutterWindow extends FlutterView {
+  @Deprecated(
+    'Use FlutterView or PlatformDispatcher instead. '
+    'Deprecated to prepare for the upcoming multi-window support. '
+    'This feature was deprecated after v3.7.0-32.0.pre.'
+  )
   SingletonFlutterWindow._(super.windowId, super.platformDispatcher)
       : super._();
 
