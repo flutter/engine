@@ -4,12 +4,7 @@
 
 import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
-import("//flutter/third_party/canvaskit/canvaskit.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
-
-declare_args() {
-  archive_flutter_web_sdk = true
-}
 
 dart_sdk_package_config = "//third_party/dart/.dart_tool/package_config.json"
 
@@ -35,10 +30,6 @@ group("web_sdk") {
     ":flutter_ddc_modules",
     ":flutter_platform_dills",
   ]
-
-  if (archive_flutter_web_sdk && !is_fuchsia) {
-    deps += [ ":flutter_web_sdk_archive" ]
-  }
 }
 
 template("sdk_rewriter") {
@@ -558,18 +549,11 @@ if (!is_fuchsia) {
     deps = [
              ":flutter_ddc_modules",
              ":flutter_platform_dills",
+             "//flutter/third_party/canvaskit:canvaskit_group",
+             "//flutter/third_party/canvaskit:canvaskit_chromium_group",
+             "//flutter/lib/web_ui/skwasm"
+
            ] + web_engine_libraries
-
-    if (build_canvaskit) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit_group" ]
-    }
-    if (build_canvaskit_chromium) {
-      deps += [ "//flutter/third_party/canvaskit:canvaskit_chromium_group" ]
-    }
-
-    if (build_skwasm) {
-      deps += [ "//flutter/lib/web_ui/skwasm" ]
-    }
 
     # flutter_ddc_modules
     sources = get_target_outputs(":flutter_dartdevc_kernel_sdk")
@@ -608,49 +592,37 @@ if (!is_fuchsia) {
         },
       ]
     }
-    if (build_canvaskit) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.js"
-        },
-        {
-          source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
-        },
-      ]
-    }
-
-    if (build_skwasm) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/skwasm.js")
-          destination = "skwasm/skwasm.js"
-        },
-        {
-          source = rebase_path("$root_out_dir/skwasm.js")
-          destination = "skwasm/skwasm.worker.js"
-        },
-        {
-          source = rebase_path("$root_out_dir/canvaskit.wasm")
-          destination = "skwasm/skwasm.wasm"
-        },
-      ]
-    }
-
-    if (build_canvaskit_chromium) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
-          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
-        },
-        {
-          source =
-              rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
-          destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
-        },
-      ]
-    }
+    tmp_files += [
+      {
+        source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
+        destination = "flutter_web_sdk/canvaskit/canvaskit.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
+        destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
+      },
+      {
+        source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
+        destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
+      },
+      {
+        source =
+            rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
+        destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
+      },
+            {
+        source = rebase_path("$root_out_dir/skwasm.js")
+        destination = "skwasm/skwasm.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/skwasm.worker.js")
+        destination = "skwasm/skwasm.worker.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/skwasm.wasm")
+        destination = "skwasm/skwasm.wasm"
+      },
+    ]
     files = tmp_files
   }
 }
