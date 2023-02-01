@@ -1129,6 +1129,8 @@ ORIGIN: ../../../flutter/impeller/aiks/aiks_playground.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/impeller/aiks/aiks_playground.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/canvas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/color_filter_factory.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/aiks/color_filter_factory.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/image.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/aiks/paint.cc + ../../../flutter/LICENSE
@@ -1225,6 +1227,10 @@ ORIGIN: ../../../flutter/impeller/compiler/types.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/conversion.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/conversion.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/display_list_color_filter.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/display_list/display_list_color_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/display_list_image_impeller.cc + ../../../flutter/LICENSE
@@ -3605,6 +3611,8 @@ FILE: ../../../flutter/impeller/aiks/aiks_playground.cc
 FILE: ../../../flutter/impeller/aiks/aiks_playground.h
 FILE: ../../../flutter/impeller/aiks/canvas.cc
 FILE: ../../../flutter/impeller/aiks/canvas.h
+FILE: ../../../flutter/impeller/aiks/color_filter_factory.cc
+FILE: ../../../flutter/impeller/aiks/color_filter_factory.h
 FILE: ../../../flutter/impeller/aiks/image.cc
 FILE: ../../../flutter/impeller/aiks/image.h
 FILE: ../../../flutter/impeller/aiks/paint.cc
@@ -3701,6 +3709,10 @@ FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
+FILE: ../../../flutter/impeller/display_list/conversion.cc
+FILE: ../../../flutter/impeller/display_list/conversion.h
+FILE: ../../../flutter/impeller/display_list/display_list_color_filter.cc
+FILE: ../../../flutter/impeller/display_list/display_list_color_filter.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/impeller/display_list/display_list_image_impeller.cc
