@@ -117,17 +117,18 @@ void testMain() {
         () {
       final DomElement? style =
           hostNode.querySelector('#flt-internals-stylesheet');
+      final String vendorPrefix = (isSafari || isFirefox) ? '' : '-webkit-';
       final bool autofillOverlay = hasCssRule(style,
-          selector: '.transparentTextEditing:-webkit-autofill',
+          selector: '.transparentTextEditing:${vendorPrefix}autofill',
           declaration: 'opacity: 0 !important');
       final bool autofillOverlayHovered = hasCssRule(style,
-          selector: '.transparentTextEditing:-webkit-autofill:hover',
+          selector: '.transparentTextEditing:${vendorPrefix}autofill:hover',
           declaration: 'opacity: 0 !important');
       final bool autofillOverlayFocused = hasCssRule(style,
-          selector: '.transparentTextEditing:-webkit-autofill:focus',
+          selector: '.transparentTextEditing:${vendorPrefix}autofill:focus',
           declaration: 'opacity: 0 !important');
       final bool autofillOverlayActive = hasCssRule(style,
-          selector: '.transparentTextEditing:-webkit-autofill:active',
+          selector: '.transparentTextEditing:${vendorPrefix}autofill:active',
           declaration: 'opacity: 0 !important');
 
       expect(autofillOverlay, isTrue);
