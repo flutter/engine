@@ -110,4 +110,134 @@ Color Min(Color c, float threshold) {
                std::min(c.blue, threshold), std::min(c.alpha, threshold));
 }
 
+Color Color::BlendColor(const Color& src,
+                        const Color& dst,
+                        BlendMode blend_mode) {
+  static auto apply_rgb_srcover_alpha = [&](auto f) -> Color {
+    return Color(f(src.red, dst.red), f(src.green, dst.green),
+                 f(src.blue, dst.blue),
+                 dst.alpha * (1 - src.alpha) + src.alpha  // srcOver alpha
+    );
+  };
+
+  switch (blend_mode) {
+    case BlendMode::kClear:
+      return Color::BlackTransparent();
+    case BlendMode::kSource:
+      return src;
+    case BlendMode::kDestination:
+      return dst;
+    case BlendMode::kSourceOver:
+      // r = s + (1-sa)*d
+      return src + dst * (1 - src.alpha);
+    case BlendMode::kDestinationOver:
+      // r = d + (1-da)*s
+      return dst + src * (1 - dst.alpha);
+    case BlendMode::kSourceIn:
+      // r = s * da
+      return src * dst.alpha;
+    case BlendMode::kDestinationIn:
+      // r = d * sa
+      return dst * src.alpha;
+    case BlendMode::kSourceOut:
+      // r = s * ( 1- da)
+      return src * (1 - dst.alpha);
+    case BlendMode::kDestinationOut:
+      // r = d * (1-sa)
+      return dst * (1 - src.alpha);
+    case BlendMode::kSourceATop:
+      // r = s*da + d*(1-sa)
+      return src * dst.alpha + dst * (1 - src.alpha);
+    case BlendMode::kDestinationATop:
+      // r = d*sa + s*(1-da)
+      return dst * src.alpha + src * (1 - dst.alpha);
+    case BlendMode::kXor:
+      // r = s*(1-da) + d*(1-sa)
+      return src * (1 - dst.alpha) + dst * (1 - src.alpha);
+    case BlendMode::kPlus:
+      // r = min(s + d, 1)
+      return Min(src + dst, 1);
+    case BlendMode::kModulate:
+      // r = s*d
+      return src * dst;
+    case BlendMode::kScreen: {
+      // r = s + d - s*d
+      return src + dst - src * dst;
+    }
+    case BlendMode::kOverlay:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        if (d * 2 < dst.alpha) {
+          return 2 * s * d;
+        }
+        return src.alpha * dst.alpha - 2 * (dst.alpha - s) * (src.alpha - d);
+      });
+    case BlendMode::kDarken: {
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        return (1 - dst.alpha) * s + (1 - src.alpha) * d + std::min(s, d);
+      });
+    }
+    case BlendMode::kLighten:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        return (1 - dst.alpha) * s + (1 - src.alpha) * d + std::max(s, d);
+      });
+    case BlendMode::kColorDodge:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        if (d == 0) {
+          return s * (1 - src.alpha);
+        }
+        if (s == src.alpha) {
+          return s + dst.alpha * (1 - src.alpha);
+        }
+        return src.alpha *
+                   std::min(dst.alpha, d * src.alpha / (src.alpha - s)) +
+               s * (1 - dst.alpha + dst.alpha * (1 - src.alpha));
+      });
+    case BlendMode::kColorBurn:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        if (s == 0) {
+          return dst.alpha * (1 - src.alpha);
+        }
+        if (d == dst.alpha) {
+          return d + s * (1 - dst.alpha);
+        }
+        // s.a * (d.a - min(d.a, (d.a - s) * s.a/s)) + s * (1-d.a) + d.a * (1 -
+        // s.a)
+        return src.alpha *
+                   (dst.alpha -
+                    std::min(dst.alpha, (dst.alpha - d) * src.alpha / s)) +
+               s * (1 - dst.alpha) + dst.alpha * (1 - src.alpha);
+      });
+    case BlendMode::kHardLight:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        if (src.alpha >= s * (1 - dst.alpha) + d * (1 - src.alpha) + 2 * s) {
+          return 2 * s * d;
+        }
+        // s.a * d.a - 2 * (d.a - d) * (s.a - s)
+        return src.alpha * dst.alpha - 2 * (dst.alpha - d) * (src.alpha - s);
+      });
+    case BlendMode::kDifference:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        // s + d - 2 * min(s * d.a, d * s.a);
+        return s + d - 2 * std::min(s * dst.alpha, d * src.alpha);
+      });
+    case BlendMode::kExclusion:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        // s + d - 2 * s * d
+        return s + d - 2 * s * d;
+      });
+    case BlendMode::kMultiply:
+      return apply_rgb_srcover_alpha([&](auto s, auto d) {
+        // s * (1 - d.a) + d * (1 - s.a) + (s * d)
+        return s * (1 - dst.alpha) + d * (1 - src.alpha) + (s * d);
+      });
+    case BlendMode::kHue:
+    case BlendMode::kSaturation:
+    case BlendMode::kColor:
+    case BlendMode::kLuminosity:
+    case BlendMode::kSoftLight:
+    default:
+      return src + dst * (1 - src.alpha);
+  }
+}
+
 }  // namespace impeller

@@ -57,8 +57,8 @@ bool VerticesContents::Render(const ContentContext& renderer,
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
   auto contents = ColorFilterContents::MakeBlend(
-      blend_mode_,
-      {FilterInput::Make(dst_contents), FilterInput::Make(src_contents_)});
+      blend_mode_, {FilterInput::Make(dst_contents, false),
+                    FilterInput::Make(src_contents_, false)});
   contents->SetAlpha(alpha_);
 
   return contents->Render(renderer, entity, pass);

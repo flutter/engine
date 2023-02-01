@@ -117,7 +117,8 @@ class FilterContents : public Contents {
 
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
-                                           const Entity& entity) const override;
+                                           const Entity& entity,
+                                           bool msaa_enabled = true) const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 

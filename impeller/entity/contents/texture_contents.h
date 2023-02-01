@@ -53,7 +53,8 @@ class TextureContents final : public Contents {
 
   // |Contents|
   std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
-                                           const Entity& entity) const override;
+                                           const Entity& entity,
+                                           bool msaa_enabled = true) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
