@@ -28,6 +28,10 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
       defaultsTo: true
     );
     argParser.addFlag(
+      'build-canvaskit-chromium',
+      help: 'Build the Chromium variant of CanvasKit. Disabled by default.',
+    );
+    argParser.addFlag(
       'build-skwasm',
       help: 'Build skwasm library',
     );
@@ -47,7 +51,7 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   bool get isWatchMode => boolArg('watch');
 
   bool get buildCanvasKit => boolArg('build-canvaskit');
-
+  bool get buildCanvasKitChromium => boolArg('build-canvaskit-chromium');
   bool get buildSkwasm => boolArg('build-skwasm');
 
   bool get host => boolArg('host');
@@ -56,7 +60,12 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
   FutureOr<bool> run() async {
     final FilePath libPath = FilePath.fromWebUi('lib');
     final List<PipelineStep> steps = <PipelineStep>[
-      GnPipelineStep(buildCanvasKit: buildCanvasKit, buildSkwasm: buildSkwasm, host: host),
+      GnPipelineStep(
+        buildCanvasKit: buildCanvasKit,
+        buildCanvasKitChromium: buildCanvasKitChromium,
+        buildSkwasm: buildSkwasm,
+        host: host,
+      ),
       NinjaPipelineStep(target: host ? environment.hostDebugUnoptDir : environment.wasmReleaseOutDir),
     ];
     final Pipeline buildPipeline = Pipeline(steps: steps);
@@ -81,9 +90,15 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 /// Not safe to interrupt as it may leave the `out/` directory in a corrupted
 /// state. GN is pretty quick though, so it's OK to not support interruption.
 class GnPipelineStep extends ProcessStep {
-  GnPipelineStep({required this.buildCanvasKit, required this.buildSkwasm, required this.host});
+  GnPipelineStep({
+    required this.buildCanvasKit,
+    required this.buildCanvasKitChromium,
+    required this.buildSkwasm,
+    required this.host,
+  });
 
   final bool buildCanvasKit;
+  final bool buildCanvasKitChromium;
   final bool buildSkwasm;
   final bool host;
 
@@ -104,6 +119,7 @@ class GnPipelineStep extends ProcessStep {
         '--web',
         '--runtime-mode=release',
         if (buildCanvasKit) '--build-canvaskit',
+        if (buildCanvasKitChromium) '--build-canvaskit-chromium',
         if (buildSkwasm) '--build-skwasm',
       ];
     }
