@@ -366,23 +366,18 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
       SortUniforms(ir_.get(), compiler_.GetCompiler());
 
   for (auto& sorted_id : uniforms) {
-    ir_->for_each_typed_id<spirv_cross::SPIRVariable>(
-        [&](uint32_t id, const spirv_cross::SPIRVariable& var) {
-          uint32_t sorted_typed_id = sorted_id;
-          if (id == sorted_typed_id) {
-            const auto spir_type = compiler_->get_type(var.basetype);
-            UniformDescription uniform_description;
-            uniform_description.name = compiler_->get_name(var.self);
-            uniform_description.location = compiler_->get_decoration(
-                var.self, spv::Decoration::DecorationLocation);
-            uniform_description.type = spir_type.basetype;
-            uniform_description.rows = spir_type.vecsize;
-            uniform_description.columns = spir_type.columns;
-            uniform_description.bit_width = spir_type.width;
-            uniform_description.array_elements = GetArrayElements(spir_type);
-            data->AddUniformDescription(std::move(uniform_description));
-          }
-        });
+    auto var = ir_->ids[sorted_id].get<spirv_cross::SPIRVariable>();
+    const auto spir_type = compiler_->get_type(var.basetype);
+    UniformDescription uniform_description;
+    uniform_description.name = compiler_->get_name(var.self);
+    uniform_description.location = compiler_->get_decoration(
+        var.self, spv::Decoration::DecorationLocation);
+    uniform_description.type = spir_type.basetype;
+    uniform_description.rows = spir_type.vecsize;
+    uniform_description.columns = spir_type.columns;
+    uniform_description.bit_width = spir_type.width;
+    uniform_description.array_elements = GetArrayElements(spir_type);
+    data->AddUniformDescription(std::move(uniform_description));
   }
   return data;
 }
