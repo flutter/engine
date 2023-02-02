@@ -27,10 +27,10 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterView.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/platform_message_response_darwin.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/spring_curve_ios.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/vsync_waiter_ios.h"
 #import "flutter/shell/platform/darwin/ios/platform_view_ios.h"
 #import "flutter/shell/platform/embedder/embedder.h"
+#import "flutter/third_party/spring_animation/spring_animation.h"
 
 static constexpr int kMicrosecondsPerSecond = 1000 * 1000;
 static constexpr CGFloat kScrollViewContentSize = 2.0;
@@ -127,7 +127,7 @@ typedef struct MouseState {
   // https://github.com/flutter/flutter/issues/35050
   fml::scoped_nsobject<UIScrollView> _scrollView;
   fml::scoped_nsobject<UIView> _keyboardAnimationView;
-  fml::scoped_nsobject<FlutterKeyboardSpringCurve> _keyboardSpringCurve;
+  fml::scoped_nsobject<SpringAnimation> _keyboardSpringAnimation;
   MouseState _mouseState;
   // Timestamp after which a scroll inertia cancel event should be inferred.
   NSTimeInterval _scrollInertiaEventStartline;
@@ -599,8 +599,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   return _keyboardAnimationView.get();
 }
 
-- (FlutterKeyboardSpringCurve*)keyboardSpringCurve {
-  return _keyboardSpringCurve.get();
+- (SpringAnimation*)keyboardSpringAnimation {
+  return _keyboardSpringAnimation.get();
 }
 
 - (UIScreen*)mainScreenIfViewLoaded {
@@ -1519,7 +1519,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)startKeyBoardAnimation:(NSTimeInterval)duration {
-  // If current physical_view_inset_bottom == targetViewInsetBottom,do nothing.
+  // If current physical_view_inset_bottom == targetViewInsetBottom, do nothing.
   if (_viewportMetrics.physical_view_inset_bottom == self.targetViewInsetBottom) {
     return;
   }
@@ -1558,7 +1558,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         // Setup keyboard animation interpolation.
         CAAnimation* keyboardAnimation =
             [[self keyboardAnimationView].layer animationForKey:@"position"];
-        [self setupKeyboardAnimationCurveIfNeeded:keyboardAnimation];
+        [self setupKeyboardSpringAnimationIfNeeded:keyboardAnimation];
       }
       completion:^(BOOL finished) {
         if (_keyboardAnimationVSyncClient == currentVsyncClient) {
@@ -1572,20 +1572,23 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }];
 }
 
-- (void)setupKeyboardAnimationCurveIfNeeded:(CAAnimation*)keyboardAnimation {
+- (void)setupKeyboardSpringAnimationIfNeeded:(CAAnimation*)keyboardAnimation {
   // If keyboard animation is null or not a spring animation, fallback to DisplayLink tracking.
   if (keyboardAnimation == nil || ![keyboardAnimation isKindOfClass:[CASpringAnimation class]]) {
-    _keyboardSpringCurve.reset();
+    _keyboardSpringAnimation.reset();
     return;
   }
 
   // Setup keyboard spring animation details for spring curve animation calculation.
-  CASpringAnimation* keyboardSpringAnimation = (CASpringAnimation*)keyboardAnimation;
-  _keyboardSpringCurve.reset([[FlutterKeyboardSpringCurve alloc]
-      initWithStiffness:keyboardSpringAnimation.stiffness
-                damping:keyboardSpringAnimation.damping
-                   mass:keyboardSpringAnimation.mass
-        initialVelocity:keyboardSpringAnimation.initialVelocity]);
+  CASpringAnimation* keyboardCASpringAnimation = (CASpringAnimation*)keyboardAnimation;
+  _keyboardSpringAnimation.reset([[SpringAnimation alloc]
+      initWithStiffness:keyboardCASpringAnimation.stiffness
+                damping:keyboardCASpringAnimation.damping
+                   mass:keyboardCASpringAnimation.mass
+        initialVelocity:keyboardCASpringAnimation.initialVelocity
+              fromValue: 0.0 //self.originalViewInsetBottom
+                toValue: 1.0 //self.targetViewInsetBottom
+                                 ]);
 }
 
 - (void)setupKeyboardAnimationVsyncClient {
@@ -1605,7 +1608,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       [flutterViewController.get().view addSubview:[flutterViewController keyboardAnimationView]];
     }
 
-    if ([flutterViewController keyboardSpringCurve] == nil) {
+    if ([flutterViewController keyboardSpringAnimation] == nil) {
       if (flutterViewController.get().keyboardAnimationView.layer.presentationLayer) {
         flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
             flutterViewController.get()
@@ -1618,7 +1621,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
                                    flutterViewController.get().keyboardAnimationStartTime;
       double keyboardAnimationStop =
-          [[flutterViewController keyboardSpringCurve] curveFunc:timeElapsed.ToSecondsF()];
+          [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           start + (end - start) * keyboardAnimationStop;
       [flutterViewController updateViewportMetrics];
