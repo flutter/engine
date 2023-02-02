@@ -65,8 +65,10 @@ bool IsWideGamut(const SkColorSpace& color_space) {
 ImageDecoderImpeller::ImageDecoderImpeller(
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-    const fml::WeakPtr<IOManager>& io_manager)
-    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager) {
+    const fml::WeakPtr<IOManager>& io_manager,
+    bool supports_wide_gamut)
+    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager),
+      supports_wide_gamut_(supports_wide_gamut) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -101,7 +103,8 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
-    impeller::ISize max_texture_size) {
+    impeller::ISize max_texture_size,
+    bool supports_wide_gamut) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -126,7 +129,8 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  const bool is_wide_gamut = IsWideGamut(*base_image_info.colorSpace());
+  const bool is_wide_gamut =
+      supports_wide_gamut ? IsWideGamut(*base_image_info.colorSpace()) : false;
   SkAlphaType alpha_type =
       ChooseCompatibleAlphaType(base_image_info.alphaType());
   SkImageInfo image_info;
@@ -295,7 +299,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        context = context_.get(),                                  //
        target_size = SkISize::Make(target_width, target_height),  //
        io_runner = runners_.GetIOTaskRunner(),                    //
-       result                                                     //
+       result,
+       supports_wide_gamut = supports_wide_gamut_  //
   ]() {
         FML_CHECK(context) << "No valid impeller context";
         auto max_size_supported =
@@ -303,7 +308,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
 
         // Always decompress on the concurrent runner.
         auto bitmap =
-            DecompressTexture(raw_descriptor, target_size, max_size_supported);
+            DecompressTexture(raw_descriptor, target_size, max_size_supported,
+                              supports_wide_gamut);
         if (!bitmap) {
           result(nullptr);
           return;
