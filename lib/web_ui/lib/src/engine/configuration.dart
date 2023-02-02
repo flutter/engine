@@ -51,7 +51,7 @@ import 'dom.dart';
 /// The version of CanvasKit used by the web engine by default.
 // DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
 // See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-const String _canvaskitVersion = '0.37.1';
+const String _canvaskitVersion = '0.38.0';
 
 /// The Web Engine configuration for the current application.
 FlutterConfiguration get configuration =>
@@ -160,10 +160,8 @@ class FlutterConfiguration {
   ///
   /// The expected directory structure nested under this URL is as follows:
   ///
-  ///     /canvaskit.js              - the release build of CanvasKit JS API bindings
-  ///     /canvaskit.wasm            - the release build of CanvasKit WASM module
-  ///     /profiling/canvaskit.js    - the profile build of CanvasKit JS API bindings
-  ///     /profiling/canvaskit.wasm  - the profile build of CanvasKit WASM module
+  ///     /canvaskit.js              - the build of CanvasKit JS API bindings
+  ///     /canvaskit.wasm            - the build of CanvasKit WASM module
   ///
   /// The base URL can be overridden using the `FLUTTER_WEB_CANVASKIT_URL`
   /// environment variable or using the configuration API for JavaScript.

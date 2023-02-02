@@ -21,11 +21,12 @@
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
@@ -87,7 +88,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @interface FlutterEngine () <FlutterIndirectScribbleDelegate,
                              FlutterUndoManagerDelegate,
                              FlutterTextInputDelegate,
-                             FlutterBinaryMessenger>
+                             FlutterBinaryMessenger,
+                             FlutterTextureRegistry>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -106,7 +108,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
+  fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
@@ -138,6 +140,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   BOOL _allowHeadlessExecution;
   BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
+  FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
 
@@ -197,6 +200,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self recreatePlatformViewController];
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _textureRegistry = [[FlutterTextureRegistryRelay alloc] initWithParent:self];
   _connections.reset(new flutter::ConnectionCollection());
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -261,7 +265,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_pluginPublications release];
   [_registrars release];
   _binaryMessenger.parent = nil;
+  _textureRegistry.parent = nil;
   [_binaryMessenger release];
+  [_textureRegistry release];
+  _textureRegistry = nil;
   [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -495,6 +502,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [_publisher.get() url];
 }
 
+- (NSURL*)vmServiceUrl {
+  return [_publisher.get() url];
+}
+
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
@@ -673,13 +684,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
-    withObservatoryPublication:(BOOL)doesObservatoryPublication {
+    withVMServicePublication:(BOOL)doesVMServicePublication {
   _shell = std::move(shell);
   [self setupChannels];
   [self onLocaleUpdated:nil];
   [self initializeDisplays];
-  _publisher.reset([[FlutterObservatoryPublisher alloc]
-      initWithEnableObservatoryPublication:doesObservatoryPublication]);
+  _publisher.reset([[FlutterDartVMServicePublisher alloc]
+      initWithEnableVMServicePublication:doesVMServicePublication]);
   [self maybeSetupPlatformViewChannels];
   _shell->SetGpuAvailability(_isGpuDisabled ? flutter::GpuAvailability::kUnavailable
                                             : flutter::GpuAvailability::kAvailable);
@@ -809,7 +820,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                    << entrypoint.UTF8String;
   } else {
     [self setupShell:std::move(shell)
-        withObservatoryPublication:settings.enable_observatory_publication];
+        withVMServicePublication:settings.enable_vm_service_publication];
     if ([FlutterEngine isProfilerEnabled]) {
       [self startProfiler];
     }
@@ -1073,6 +1084,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   return _binaryMessenger;
 }
 
+- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  return _textureRegistry;
+}
+
 // For test only. Ideally we should create a dependency injector for all dependencies and
 // remove this.
 - (void)setBinaryMessenger:(FlutterBinaryMessengerRelay*)binaryMessenger {
@@ -1301,7 +1316,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler = _profiler;
   result->_profiler_metrics = _profiler_metrics;
   result->_isGpuDisabled = _isGpuDisabled;
-  [result setupShell:std::move(shell) withObservatoryPublication:NO];
+  [result setupShell:std::move(shell) withVMServicePublication:NO];
   return [result autorelease];
 }
 
@@ -1333,7 +1348,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (NSObject<FlutterTextureRegistry>*)textures {
-  return _flutterEngine;
+  return _flutterEngine.textureRegistry;
 }
 
 - (void)publish:(NSObject*)value {

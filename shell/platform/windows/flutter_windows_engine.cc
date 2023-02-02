@@ -7,7 +7,6 @@
 #include <dwmapi.h>
 
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
@@ -669,6 +668,7 @@ void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
         ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
   }
   UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
+  settings_plugin_->UpdateHighContrastMode(enabled);
 }
 
 int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {

@@ -19,6 +19,7 @@
 #include "flutter/fml/thread.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -562,7 +563,7 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
   auto proc_addr =
-      vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
+      vulkan_get_instance_proc_address(vk_instance, "vkGetInstanceProcAddr");
 
   flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
       .get_instance_proc_address =

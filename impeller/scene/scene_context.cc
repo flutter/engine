@@ -28,6 +28,9 @@ void SceneContextOptions::ApplyToPipelineDescriptor(
 
   desc.SetSampleCount(sample_count);
   desc.SetPrimitiveType(primitive_type);
+
+  desc.SetWindingOrder(WindingOrder::kCounterClockwise);
+  desc.SetCullMode(CullMode::kBackFace);
 }
 
 SceneContext::SceneContext(std::shared_ptr<Context> context)
@@ -51,14 +54,15 @@ SceneContext::SceneContext(std::shared_ptr<Context> context)
 
     placeholder_texture_ =
         context_->GetResourceAllocator()->CreateTexture(texture_descriptor);
+    placeholder_texture_->SetLabel("Placeholder Texture");
     if (!placeholder_texture_) {
-      FML_DLOG(ERROR) << "Could not create placeholder texture.";
+      FML_LOG(ERROR) << "Could not create placeholder texture.";
       return;
     }
 
     uint8_t pixel[] = {0xFF, 0xFF, 0xFF, 0xFF};
-    if (!placeholder_texture_->SetContents(pixel, 4, 0)) {
-      FML_DLOG(ERROR) << "Could not set contents of placeholder texture.";
+    if (!placeholder_texture_->SetContents(pixel, 4)) {
+      FML_LOG(ERROR) << "Could not set contents of placeholder texture.";
       return;
     }
   }

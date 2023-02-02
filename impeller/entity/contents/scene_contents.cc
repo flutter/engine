@@ -71,6 +71,8 @@ bool SceneContents::Render(const ContentContext& renderer,
   TiledTextureContents contents;
   contents.SetGeometry(GetGeometry());
   contents.SetTexture(subpass_target.GetRenderTargetTexture());
+  contents.SetEffectTransform(
+      Matrix::MakeScale(1 / entity.GetTransformation().GetScale()));
   return contents.Render(renderer, entity, pass);
 }
 
