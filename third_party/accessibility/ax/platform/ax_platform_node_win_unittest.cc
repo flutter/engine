@@ -4678,12 +4678,16 @@ TEST_F(AXPlatformNodeWinTest, MojoEventToUIAPropertyTest) {
   AXNodeData root;
   root.id = 1;
   root.role = ax::mojom::Role::kCheckBox;
-  root.AddIntAttribute(ax::mojom::IntAttribute::kCheckedState, static_cast<int>(ax::mojom::CheckedState::kMixed));
+  root.AddIntAttribute(ax::mojom::IntAttribute::kCheckedState,
+                       static_cast<int>(ax::mojom::CheckedState::kMixed));
 
   Init(root);
 
-  ComPtr<AXPlatformNodeWin> platform_node = QueryInterfaceFromNode<AXPlatformNodeWin>(GetRootAsAXNode());
-  EXPECT_EQ(platform_node->MojoEventToUIAProperty(ax::mojom::Event::kValueChanged), UIA_ToggleToggleStatePropertyId);
+  ComPtr<AXPlatformNodeWin> platform_node =
+      QueryInterfaceFromNode<AXPlatformNodeWin>(GetRootAsAXNode());
+  EXPECT_EQ(
+      platform_node->MojoEventToUIAProperty(ax::mojom::Event::kValueChanged),
+      UIA_ToggleToggleStatePropertyId);
 }
 
 }  // namespace ui
