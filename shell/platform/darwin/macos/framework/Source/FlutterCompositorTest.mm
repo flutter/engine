@@ -32,11 +32,7 @@ extern const uint64_t kFlutterDefaultViewId;
   return self;
 }
 
-- (nullable FlutterView*)getDefaultView {
-  return [self getViewForId:kFlutterDefaultViewId];
-}
-
-- (nullable FlutterView*)getViewForId:(uint64_t)viewId {
+- (nullable FlutterView*)viewForId:(uint64_t)viewId {
   if (viewId == kFlutterDefaultViewId) {
     return _defaultView;
   }

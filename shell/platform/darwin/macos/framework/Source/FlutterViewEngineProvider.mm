@@ -22,11 +22,7 @@
   return self;
 }
 
-- (nullable FlutterView*)getDefaultView {
-  return _engine.viewController.flutterView;
-}
-
-- (nullable FlutterView*)getViewForId:(uint64_t)viewId {
+- (nullable FlutterView*)viewForId:(uint64_t)viewId {
   return [_engine viewControllerForId:viewId].flutterView;
 }
 
