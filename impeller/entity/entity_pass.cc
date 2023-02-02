@@ -324,11 +324,11 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     RenderTarget subpass_target;
     if (subpass->reads_from_pass_texture_ > 0) {
-      subpass_target = CreateRenderTarget(
-          renderer, ISize::Ceil(subpass_coverage->size), true);
+      subpass_target =
+          CreateRenderTarget(renderer, ISize(subpass_coverage->size), true);
     } else {
-      subpass_target = CreateRenderTarget(
-          renderer, ISize::Ceil(subpass_coverage->size), false);
+      subpass_target =
+          CreateRenderTarget(renderer, ISize(subpass_coverage->size), false);
     }
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
