@@ -1793,6 +1793,8 @@ ORIGIN: ../../../flutter/lib/ui/painting/image_filter.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/lib/ui/painting/image_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_shader.cc + ../../../flutter/LICENSE
