@@ -197,12 +197,13 @@ std::unique_ptr<ImageGenerator> APNGImageGenerator::MakeFromData(
     sk_sp<SkData> data) {
   // Ensure the buffer is large enough to at least contain the PNG signature
   // and a chunk header.
-  if (data->size() < 8 + sizeof(ChunkHeader)) {
+  if (data->size() < sizeof(kPngSignature) + sizeof(ChunkHeader)) {
     return nullptr;
   }
   // Validate the full PNG signature.
   const uint8_t* data_p = static_cast<const uint8_t*>(data.get()->data());
-  if (png_sig_cmp(static_cast<png_const_bytep>(data_p), 0, 8)) {
+  if (png_sig_cmp(static_cast<png_const_bytep>(data_p), 0,
+                  sizeof(kPngSignature))) {
     return nullptr;
   }
 
@@ -316,11 +317,12 @@ const APNGImageGenerator::ChunkHeader* APNGImageGenerator::GetNextChunk(
 
 std::pair<std::optional<std::vector<uint8_t>>, const void*>
 APNGImageGenerator::ExtractHeader(const void* buffer_p, size_t buffer_size) {
-  std::vector<uint8_t> result = {137, 80, 78, 71,
-                                 13,  10, 26, 10};  // PNG signature
+  std::vector<uint8_t> result;
+  result.emplace(result.end(), kPngSignature,
+                 kPngSignature + sizeof(kPngSignature));
 
   const ChunkHeader* chunk = reinterpret_cast<const ChunkHeader*>(
-      static_cast<const uint8_t*>(buffer_p) + 8);
+      static_cast<const uint8_t*>(buffer_p) + sizeof(kPngSignature));
   // Validate the first chunk to ensure it's safe to read.
   if (!IsValidChunkHeader(buffer_p, buffer_size, chunk)) {
     return std::make_pair(std::nullopt, nullptr);

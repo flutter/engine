@@ -51,6 +51,7 @@ class APNGImageGenerator : public ImageGenerator {
   static std::unique_ptr<ImageGenerator> MakeFromData(sk_sp<SkData> data);
 
  private:
+  static constexpr uint8_t kPngSignature[8] = {137, 80, 78, 71, 13, 10, 26, 10};
   static constexpr size_t kChunkCrcSize = 4;
 
   enum ChunkType {
