@@ -6,7 +6,6 @@
 #define FLUTTER_FLUTTERENGINE_H_
 
 #import <Foundation/Foundation.h>
-#include <stdint.h>
 
 #include <stdint.h>
 
@@ -80,8 +79,7 @@ FLUTTER_DARWIN_EXPORT
  * The default `FlutterViewController` of this engine, if any.
  *
  * The default view is the first view added to the engine, always has ID
- * kFlutterDefaultViewId, and is operated by the legacy APIs that do not specify
- * view IDs.
+ * kFlutterDefaultViewId, and is used by legacy APIs that assume a single view.
  *
  * Setting this field from nil to a non-nil view controller also updates
  * the view controller's engine and ID.
@@ -113,7 +111,7 @@ FLUTTER_DARWIN_EXPORT
 - (void)addViewController:(nonnull FlutterViewController*)viewController;
 
 /**
- * Deassociate the given view controller from this engine.
+ * Dissociate the given view controller from this engine.
  *
  * If the view controller is not associated with this engine, this call throws an
  * assertion.
