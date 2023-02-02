@@ -37,8 +37,8 @@ void testMain() {
     expect(lerpDouble(0.0, 10.0, -5.0), within(from: -50.0));
     expect(lerpDouble(10.0, 0.0, -5.0), within(from: 60.0));
 
-    expect(lerpDouble(0, 10, -5), within(from: -50));
-    expect(lerpDouble(10, 0, -5), within(from: 60));
+    expect(lerpDouble(0, 10, -5), within(from: -50.0));
+    expect(lerpDouble(10, 0, -5), within(from: 60.0));
   });
 
   test('lerpDouble should return the start value at 0.0', () {
@@ -78,8 +78,8 @@ void testMain() {
     expect(lerpDouble(0.0, 10.0, 5.0), within(from: 50.0));
     expect(lerpDouble(10.0, 0.0, 5.0), within(from: -40.0));
 
-    expect(lerpDouble(0, 10, 5), within(from: 50));
-    expect(lerpDouble(10, 0, 5), within(from: -40));
+    expect(lerpDouble(0, 10, 5), within(from: 50.0));
+    expect(lerpDouble(10, 0, 5), within(from: -40.0));
   });
 
   test('lerpDouble should return input value in all cases if begin/end are equal', () {

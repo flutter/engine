@@ -80,7 +80,7 @@ typedef DistanceFunction<T> = double Function(T a, T b);
 ///
 /// Calling an instance of this type must either be done dynamically, or by
 /// first casting it to a [DistanceFunction<T>] for some concrete T.
-typedef AnyDistanceFunction = num Function(Never a, Never b);
+typedef AnyDistanceFunction = double Function(Never a, Never b);
 
 const Map<Type, AnyDistanceFunction> _kStandardDistanceFunctions =
     <Type, AnyDistanceFunction>{
