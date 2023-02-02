@@ -19,7 +19,6 @@
 #import "flutter/shell/platform/embedder/embedder.h"
 #import "flutter/third_party/spring_animation/spring_animation.h"
 
-
 FLUTTER_ASSERT_ARC
 
 @interface FlutterEngine ()
