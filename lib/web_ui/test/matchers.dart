@@ -67,7 +67,7 @@ Iterable<PersistedOffset> enumerateOffsets([PersistedSurface? root]) {
 ///
 /// This makes it useful for comparing numbers, [Color]s, [Offset]s and other
 /// sets of value for which a metric space is defined.
-typedef DistanceFunction<T> = num Function(T a, T b);
+typedef DistanceFunction<T> = double Function(T a, T b);
 
 /// The type of a union of instances of [DistanceFunction<T>] for various types
 /// T.
@@ -92,7 +92,7 @@ const Map<Type, AnyDistanceFunction> _kStandardDistanceFunctions =
   Size: _sizeDistance,
 };
 
-int _intDistance(int a, int b) => (b - a).abs();
+double _intDistance(int a, int b) => (b - a).abs().toDouble();
 double _doubleDistance(double a, double b) => (b - a).abs();
 double _offsetDistance(Offset a, Offset b) => (b - a).distance;
 
@@ -138,8 +138,8 @@ double _sizeDistance(Size a, Size b) {
 ///    [double]s and has an optional `epsilon` parameter.
 ///  * [closeTo], which specializes in numbers only.
 Matcher within<T>({
-  required num distance,
   required T from,
+  double distance = precisionErrorTolerance,
   DistanceFunction<T>? distanceFunction,
 }) {
   distanceFunction ??= _kStandardDistanceFunctions[T] as DistanceFunction<T>?;
@@ -159,7 +159,7 @@ class _IsWithinDistance<T> extends Matcher {
 
   final DistanceFunction<T> distanceFunction;
   final T value;
-  final num epsilon;
+  final double epsilon;
 
   @override
   bool matches(Object? object, Map<dynamic, dynamic> matchState) {
@@ -170,7 +170,7 @@ class _IsWithinDistance<T> extends Matcher {
       return true;
     }
     final T test = object;
-    final num distance = distanceFunction(test, value);
+    final double distance = distanceFunction(test, value);
     if (distance < 0) {
       throw ArgumentError(
           'Invalid distance function was used to compare a ${value.runtimeType} '
