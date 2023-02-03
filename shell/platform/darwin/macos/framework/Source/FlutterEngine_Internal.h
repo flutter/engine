@@ -48,6 +48,36 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
+ * Attach a view controller to the engine and associate it with a newly
+ * generated ID.
+ *
+ * The engine holds a weak reference to each attached view controller.
+ *
+ * The first added view controller (either with this method or the
+ * viewController property) will always have ID kFlutterDefaultViewId.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ *
+ * TODO(dkwingsmt): Move this method to the public API once stable. This method
+ * should be a public method but its behavior is "broken" before we implement
+ * the proper embedder API. See its implementation for detail.
+ */
+- (void)addViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * Dissociate the given view controller from this engine.
+ *
+ * If the view controller is not associated with this engine, this call throws an
+ * assertion.
+ *
+ * TODO(dkwingsmt): Move this method to the public API once stable. This method
+ * should be a public method but its behavior is "broken" before we implement
+ * the proper embedder API. See its implementation for detail.
+ */
+- (void)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
  * Informs the engine that the specified view controller's view size has changed.
  */
 - (void)updateWindowMetricsForViewController:(nonnull FlutterViewController*)viewController;

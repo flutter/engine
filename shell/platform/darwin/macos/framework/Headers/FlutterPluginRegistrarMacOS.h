@@ -40,9 +40,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * This method may return |nil|, for instance in a headless environment.
  *
- * The default view is a special view operated by the legacy single-view APIs.
- * This property is deprecated. Its calls should be replaced with viewForId:
- * kFlutterDefaultViewId for viewId.
+ * The default view is a special view operated by single-view APIs.
  */
 - (nullable NSView*)view;
 

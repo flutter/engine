@@ -89,34 +89,8 @@ FLUTTER_DARWIN_EXPORT
  *
  * Setting this field from non-nil to a different non-nil FlutterViewController
  * is prohibited and will throw an assertion error.
- *
- * This method is deprecated. Querying view controllers should use
- * viewControllerForId: instead. Assigning or replacing view controllers do not
- * have a replacement. Consider addViewController: and removeViewController:.
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
-
-/**
- * Attach a view controller to the engine and associate it with a newly
- * generated ID.
- *
- * The engine holds a weak reference to each attached view controller.
- *
- * The first added view controller (either with this method or the
- * viewController property) will always have ID kFlutterDefaultViewId.
- *
- * If the given view controller is already attached to an engine, this call
- * throws an assertion.
- */
-- (void)addViewController:(nonnull FlutterViewController*)viewController;
-
-/**
- * Dissociate the given view controller from this engine.
- *
- * If the view controller is not associated with this engine, this call throws an
- * assertion.
- */
-- (void)removeViewController:(nonnull FlutterViewController*)viewController;
 
 /**
  * The `FlutterViewController` associated with the given view ID, if any.

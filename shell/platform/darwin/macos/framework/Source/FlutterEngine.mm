@@ -357,8 +357,11 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
                                                   void* user_data) {
+    // TODO(dkwingsmt): This callback only supports single-view, therefore it
+    // only operates on the default view. To support multi-view, we need a
+    // way to pass in the ID (probably through FlutterSemanticsUpdate).
     FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
-    [engine.viewController updateSemantics:update];
+    [[engine viewControllerForId:kFlutterDefaultViewId] updateSemantics:update];
   };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
@@ -870,7 +873,12 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (void)onAccessibilityStatusChanged:(NSNotification*)notification {
   BOOL enabled = [notification.userInfo[kEnhancedUserInterfaceKey] boolValue];
-  [self.viewController onAccessibilityStatusChanged:enabled];
+  NSEnumerator* viewControllerEnumerator = [_viewControllers objectEnumerator];
+  FlutterViewController* nextViewController;
+  while ((nextViewController = [viewControllerEnumerator nextObject])) {
+    [nextViewController onAccessibilityStatusChanged:enabled];
+  }
+
   self.semanticsEnabled = enabled;
 }
 
