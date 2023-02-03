@@ -14,9 +14,14 @@
 namespace impeller {
 
 /// @brief Sorts uniform declarations in an IR according to decoration order.
+///
+/// The [type_filter] may be optionally supplied to limit which types are
+/// returned The [include] value can be set to false change this filter to
+/// exclude instead of include.
 std::vector<spirv_cross::ID> SortUniforms(
     const spirv_cross::ParsedIR* ir,
     const spirv_cross::Compiler* compiler,
-    std::optional<spirv_cross::SPIRType::BaseType> type_filter = std::nullopt);
+    std::optional<spirv_cross::SPIRType::BaseType> type_filter = std::nullopt,
+    bool include = true);
 
 }  // namespace impeller

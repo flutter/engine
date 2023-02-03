@@ -9,7 +9,8 @@ namespace impeller {
 std::vector<spirv_cross::ID> SortUniforms(
     const spirv_cross::ParsedIR* ir,
     const spirv_cross::Compiler* compiler,
-    std::optional<spirv_cross::SPIRType::BaseType> type_filter) {
+    std::optional<spirv_cross::SPIRType::BaseType> type_filter,
+    bool include) {
   // Sort the IR so that the uniforms are in declaration order.
   std::vector<spirv_cross::ID> uniforms;
   ir->for_each_typed_id<spirv_cross::SPIRVariable>(
@@ -18,7 +19,9 @@ std::vector<spirv_cross::ID> SortUniforms(
           return;
         }
         const auto type = compiler->get_type(var.basetype);
-        if (!type_filter.has_value() || type_filter.value() == type.basetype) {
+        if (!type_filter.has_value() ||
+            (include && type_filter.value() == type.basetype) ||
+            (!include && type_filter.value() != type.basetype)) {
           uniforms.push_back(var.self);
         }
       });

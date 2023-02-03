@@ -220,7 +220,8 @@ bool CompilerSkSL::emit_uniform_resources() {
   bool emitted = false;
 
   // Output Uniform Constants (values, samplers, images, etc).
-  std::vector<ID> regular_uniforms = SortUniforms(&ir, this, SPIRType::Float);
+  std::vector<ID> regular_uniforms =
+      SortUniforms(&ir, this, SPIRType::SampledImage, /*include=*/false);
   std::vector<ID> shader_uniforms =
       SortUniforms(&ir, this, SPIRType::SampledImage);
   if (regular_uniforms.size() > 0 || shader_uniforms.size() > 0) {
