@@ -48,7 +48,7 @@
 }
 
 - (double)curveFunction:(double)t {
-  double x0 = _toValue - _fromValue;
+  const double x0 = _toValue - _fromValue;
 
   double y;
   if (_zeta < 1) {

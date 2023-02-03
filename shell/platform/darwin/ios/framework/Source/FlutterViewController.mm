@@ -1358,7 +1358,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (!keyboardAnimationIsCompounding) {
     [self startKeyBoardAnimation:duration];
   } else if ([self keyboardSpringAnimation]) {
-    [self keyboardSpringAnimation].toValue = self.targetViewInsetBottom.
+    [self keyboardSpringAnimation].toValue = self.targetViewInsetBottom;
   }
 }
 
