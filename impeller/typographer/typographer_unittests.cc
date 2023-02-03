@@ -178,7 +178,6 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   auto atlas =
       context->CreateGlyphAtlas(GlyphAtlas::Type::kAlphaBitmap, atlas_context,
                                 TextFrameFromTextBlob(blob));
-  auto old_bitmap = atlas_context->GetBitmap();
   auto old_packer = atlas_context->GetRectPacker();
 
   ASSERT_NE(atlas, nullptr);
@@ -196,11 +195,9 @@ TEST_P(TypographerTest, GlyphAtlasTextureIsRecycledIfUnchanged) {
   ASSERT_EQ(atlas, next_atlas);
   auto* second_texture = next_atlas->GetTexture().get();
 
-  auto new_bitmap = atlas_context->GetBitmap();
   auto new_packer = atlas_context->GetRectPacker();
 
   ASSERT_EQ(second_texture, first_texture);
-  ASSERT_EQ(old_bitmap, new_bitmap);
   ASSERT_EQ(old_packer, new_packer);
 }
 

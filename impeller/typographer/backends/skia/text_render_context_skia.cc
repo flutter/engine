@@ -110,7 +110,7 @@ static bool CanAppendToExistingAtlas(
   // We assume that all existing glyphs will fit. After all, they fit before.
   // The glyph_positions only contains the values for the additional glyphs
   // from extra_pairs.
-  glyph_positions.clear();
+  FML_DCHECK(glyph_positions.size() == 0);
   glyph_positions.reserve(extra_pairs.size());
   for (size_t i = 0; i < extra_pairs.size(); i++) {
     const auto& pair = extra_pairs[i];
