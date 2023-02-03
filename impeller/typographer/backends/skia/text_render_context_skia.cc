@@ -282,6 +282,11 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
         metrics.point_size);
+    sk_font.setEdging(SkFont::Edging::kAntiAlias);
+    sk_font.setHinting(SkFontHinting::kSlight);
+    sk_font.setEmbolden(metrics.embolden);
+    sk_font.setSkewX(metrics.skewX);
+
     auto glyph_color = SK_ColorWHITE;
 
     SkPaint glyph_paint;
