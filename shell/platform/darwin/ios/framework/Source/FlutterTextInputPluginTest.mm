@@ -1400,6 +1400,21 @@ FLUTTER_ASSERT_ARC
   ]];
   point = CGPointMake(125, 250);
   XCTAssertEqual(4U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+
+  // Minimize vertical distance if the difference is more than 1 point.
+  [inputView setSelectionRects:@[
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(0, 2, 100, 100) position:0U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(100, 2, 100, 100) position:1U],
+    [FlutterTextSelectionRect selectionRectWithRect:CGRectMake(200, 0, 100, 100) position:2U],
+  ]];
+  point = CGPointMake(110, 50);
+  XCTAssertEqual(2U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+
+  // In floating cursor mode, the vertical difference is allowed to be 10 points.
+  // The closest horizontal position will now win.
+  [inputView beginFloatingCursorAtPoint:CGPointZero];
+  XCTAssertEqual(1U, ((FlutterTextPosition*)[inputView closestPositionToPoint:point]).index);
+  [inputView endFloatingCursor];
 }
 
 - (void)testClosestPositionToPointRTL {
