@@ -66,7 +66,6 @@ typedef struct MouseState {
  */
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, retain) VSyncClient* keyboardAnimationVSyncClient;
-@property(nonatomic, assign) CASpringAnimation* keyboardCASpringAnimation;
 @property(nonatomic, assign) BOOL keyboardAnimationIsShowing;
 @property(nonatomic, assign) fml::TimePoint keyboardAnimationStartTime;
 @property(nonatomic, assign) CGFloat originalViewInsetBottom;
@@ -1359,13 +1358,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (!keyboardAnimationIsCompounding) {
     [self startKeyBoardAnimation:duration];
   } else {
-    _keyboardSpringAnimation.reset([[SpringAnimation alloc]
-        initWithStiffness:self.keyboardCASpringAnimation.stiffness
-                  damping:self.keyboardCASpringAnimation.damping
-                     mass:self.keyboardCASpringAnimation.mass
-          initialVelocity:self.keyboardCASpringAnimation.initialVelocity
-                fromValue:self.originalViewInsetBottom
-                  toValue:self.targetViewInsetBottom]);
+    _keyboardSpringAnimation.get().toValue = self.targetViewInsetBottom;
   }
 }
 
@@ -1589,12 +1582,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   }
 
   // Setup keyboard spring animation details for spring curve animation calculation.
-  self.keyboardCASpringAnimation = (CASpringAnimation*)keyboardAnimation;
+  CASpringAnimation* keyboardCASpringAnimation = (CASpringAnimation*)keyboardAnimation;
   _keyboardSpringAnimation.reset([[SpringAnimation alloc]
-      initWithStiffness:self.keyboardCASpringAnimation.stiffness
-                damping:self.keyboardCASpringAnimation.damping
-                   mass:self.keyboardCASpringAnimation.mass
-        initialVelocity:self.keyboardCASpringAnimation.initialVelocity
+      initWithStiffness:keyboardCASpringAnimation.stiffness
+                damping:keyboardCASpringAnimation.damping
+                   mass:keyboardCASpringAnimation.mass
+        initialVelocity:keyboardCASpringAnimation.initialVelocity
               fromValue:self.originalViewInsetBottom
                 toValue:self.targetViewInsetBottom]);
 }
@@ -1652,7 +1645,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if ([self keyboardAnimationView].superview != nil) {
     [[self keyboardAnimationView] removeFromSuperview];
   }
-  _keyboardSpringAnimation.reset();
 }
 
 - (void)ensureViewportMetricsIsCorrect {

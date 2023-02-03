@@ -38,3 +38,24 @@ TEST(SpringAnimationTest, CurveFunctionCanWorkCorrectly) {
   const double toValue = [animation curveFunction:endTime];
   ASSERT_TRUE(fabs(toValue - animation.toValue) < accuracy);
 }
+
+TEST(SpringAnimationTest, CanUpdatePositionValuesCorrectly) {
+  SpringAnimation* animation = [[SpringAnimation alloc] initWithStiffness:1000
+                                                                  damping:500
+                                                                     mass:3
+                                                          initialVelocity:0
+                                                                fromValue:0
+                                                                  toValue:1000];
+  ASSERT_TRUE(animation.stiffness == 1000);
+  ASSERT_TRUE(animation.damping == 500);
+  ASSERT_TRUE(animation.mass == 3);
+  ASSERT_TRUE(animation.initialVelocity == 0);
+  ASSERT_TRUE(animation.fromValue == 0);
+  ASSERT_TRUE(animation.toValue == 1000);
+
+  animation.fromValue = 10;
+  animation.toValue = 800;
+
+  ASSERT_TRUE(animation.fromValue == 10);
+  ASSERT_TRUE(animation.toValue == 800);
+}
