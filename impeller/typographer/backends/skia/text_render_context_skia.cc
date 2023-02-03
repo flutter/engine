@@ -98,7 +98,7 @@ static size_t PairsFitInAtlasOfSize(
 }
 
 static bool CanAppendToExistingAtlas(
-    const td::shared_ptr<GlyphAtlas>& atlas,
+    const std::shared_ptr<GlyphAtlas>& atlas,
     const FontGlyphPair::Vector& extra_pairs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
