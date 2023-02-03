@@ -138,7 +138,7 @@ static bool CanAppendToExistingAtlas(
 static ISize OptimumAtlasSizeForFontGlyphPairs(
     const FontGlyphPair::Vector& pairs,
     std::vector<Rect>& glyph_positions,
-    std::shared_ptr<GlyphAtlasContext> atlas_context) {
+    const std::shared_ptr<GlyphAtlasContext>& atlas_context) {
   static constexpr auto kMinAtlasSize = 8u;
   static constexpr auto kMaxAtlasSize = 4096u;
 
