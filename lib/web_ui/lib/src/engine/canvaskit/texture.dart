@@ -44,7 +44,7 @@ class CkTexture {
     }
 
     context.leafNodesCanvas?.drawImageRect(
-      _ckImage!.clone(),
+      _ckImage!,
       ui.Rect.fromLTWH(
         0,
         0,
