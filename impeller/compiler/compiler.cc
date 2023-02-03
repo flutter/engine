@@ -37,6 +37,14 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
   sl_compiler->set_msl_options(sl_options);
 
+  // Sort the float and sampler uniforms according to their declared/decorated
+  // order. For user authored fragment shaders, the API for setting uniform
+  // values uses the index of the uniform in the declared order. By default, the
+  // metal backend of spirv-cross will order uniforms according to usage. To fix
+  // this, we use the sorted order and the add_msl_resource_binding API to force
+  // the ordering to match the declared order. Note that while this code runs
+  // for all compiled shaders, it will only affect fragment shaders due to the
+  // specified stage.
   auto floats =
       SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::Float);
   auto images =
