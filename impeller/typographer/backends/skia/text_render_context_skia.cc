@@ -25,7 +25,7 @@ namespace impeller {
 // TODO(bdero): We might be able to remove this per-glyph padding if we fix
 //              the underlying causes of the overlap.
 //              https://github.com/flutter/flutter/issues/114563
-constexpr auto padding = 2;
+constexpr auto kPadding = 2;
 
 TextRenderContextSkia::TextRenderContextSkia(std::shared_ptr<Context> context)
     : TextRenderContext(std::move(context)) {}
@@ -63,10 +63,11 @@ static FontGlyphPair::Vector CollectUniqueFontGlyphPairs(
   return vector;
 }
 
-static size_t PairsFitInAtlasOfSize(const FontGlyphPair::Vector& pairs,
-                                    const ISize& atlas_size,
-                                    std::vector<Rect>& glyph_positions,
-                                    std::shared_ptr<GrRectanizer> rect_packer) {
+static size_t PairsFitInAtlasOfSize(
+    const FontGlyphPair::Vector& pairs,
+    const ISize& atlas_size,
+    std::vector<Rect>& glyph_positions,
+    const std::shared_ptr<GrRectanizer>& rect_packer) {
   if (atlas_size.IsEmpty()) {
     return false;
   }
@@ -80,9 +81,9 @@ static size_t PairsFitInAtlasOfSize(const FontGlyphPair::Vector& pairs,
     const auto glyph_size =
         ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
     SkIPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + padding,   //
-                              glyph_size.height + padding,  //
-                              &location_in_atlas            //
+    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+                              glyph_size.height + kPadding,  //
+                              &location_in_atlas             //
                               )) {
       return pairs.size() - i;
     }
@@ -97,11 +98,11 @@ static size_t PairsFitInAtlasOfSize(const FontGlyphPair::Vector& pairs,
 }
 
 static bool CanAppendToExistingAtlas(
-    std::shared_ptr<GlyphAtlas> atlas,
+    const td::shared_ptr<GlyphAtlas>& atlas,
     const FontGlyphPair::Vector& extra_pairs,
     std::vector<Rect>& glyph_positions,
     ISize atlas_size,
-    std::shared_ptr<GrRectanizer> rect_packer) {
+    const std::shared_ptr<GrRectanizer>& rect_packer) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!rect_packer || atlas_size.IsEmpty()) {
     return false;
@@ -118,9 +119,9 @@ static bool CanAppendToExistingAtlas(
     const auto glyph_size =
         ISize::Ceil((pair.glyph.bounds * pair.font.GetMetrics().scale).size);
     SkIPoint16 location_in_atlas;
-    if (!rect_packer->addRect(glyph_size.width + padding,   //
-                              glyph_size.height + padding,  //
-                              &location_in_atlas            //
+    if (!rect_packer->addRect(glyph_size.width + kPadding,   //
+                              glyph_size.height + kPadding,  //
+                              &location_in_atlas             //
                               )) {
       return false;
     }
@@ -313,8 +314,8 @@ static void DrawGlyph(SkCanvas* canvas,
 }
 
 static bool UpdateAtlasBitmap(const GlyphAtlas& atlas,
-                              std::shared_ptr<SkBitmap> bitmap,
-                              const FontGlyphPair::Vector new_pairs) {
+                              const std::shared_ptr<SkBitmap>& bitmap,
+                              const FontGlyphPair::Vector& new_pairs) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   FML_DCHECK(bitmap != nullptr);
 
@@ -377,7 +378,7 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 }
 
 static bool UpdateGlyphTextureAtlas(std::shared_ptr<SkBitmap> bitmap,
-                                    std::shared_ptr<Texture> texture) {
+                                    const std::shared_ptr<Texture>& texture) {
   TRACE_EVENT0("impeller", __FUNCTION__);
 
   FML_DCHECK(bitmap != nullptr);
