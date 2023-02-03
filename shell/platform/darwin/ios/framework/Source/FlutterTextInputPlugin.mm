@@ -1636,36 +1636,36 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
     // There is no character before the caret, so this will be the bounds of the character after the
     // caret position.
     CGRect characterAfterCaret = rects[0].rect;
-    // Return a zero-width rectangle 30% in from the left edge of the character after the caret
+    // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
     if ([self isRTLAtPosition:index]) {
-      return CGRectMake(characterAfterCaret.origin.x + 0.7 * characterAfterCaret.size.width,
+      return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
-      return CGRectMake(characterAfterCaret.origin.x + 0.3 * characterAfterCaret.size.width,
-                        characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
+      return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
+                        characterAfterCaret.size.height);
     }
   } else if (rects.count == 2 && _selectionAffinity == kTextAffinityDownstream) {
     // It's better to use the character after the caret.
     CGRect characterAfterCaret = rects[1].rect;
-    // Return a zero-width rectangle 30% in from the left edge of the character after the caret
+    // Return a zero-width rectangle along the upstream edge of the character after the caret
     // position.
     if ([self isRTLAtPosition:index]) {
-      return CGRectMake(characterAfterCaret.origin.x + 0.7 * characterAfterCaret.size.width,
+      return CGRectMake(characterAfterCaret.origin.x + characterAfterCaret.size.width,
                         characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
     } else {
-      return CGRectMake(characterAfterCaret.origin.x + 0.3 * characterAfterCaret.size.width,
-                        characterAfterCaret.origin.y, 0, characterAfterCaret.size.height);
+      return CGRectMake(characterAfterCaret.origin.x, characterAfterCaret.origin.y, 0,
+                        characterAfterCaret.size.height);
     }
   }
   CGRect characterBeforeCaret = rects[0].rect;
-  // Return a zero-width rectangle 30% in from the right edge of the character before the caret
+  // Return a zero-width rectangle along the downstream edge of the character before the caret
   // position.
   if ([self isRTLAtPosition:index - 1]) {
-    return CGRectMake(characterBeforeCaret.origin.x + 0.3 * characterBeforeCaret.size.width,
-                      characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
+    return CGRectMake(characterBeforeCaret.origin.x, characterBeforeCaret.origin.y, 0,
+                      characterBeforeCaret.size.height);
   } else {
-    return CGRectMake(characterBeforeCaret.origin.x + 0.7 * characterBeforeCaret.size.width,
+    return CGRectMake(characterBeforeCaret.origin.x + characterBeforeCaret.size.width,
                       characterBeforeCaret.origin.y, 0, characterBeforeCaret.size.height);
   }
 }
