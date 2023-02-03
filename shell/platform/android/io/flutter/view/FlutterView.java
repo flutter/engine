@@ -361,7 +361,7 @@ public class FlutterView extends SurfaceView
   }
 
   public void pushRoute(String route) {
-    navigationChannel.pushRoute(route);
+    navigationChannel.pushRouteInformation(route);
   }
 
   public void popRoute() {

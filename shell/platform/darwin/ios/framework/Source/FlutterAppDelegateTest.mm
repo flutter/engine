@@ -67,7 +67,7 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
+  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
                                            arguments:@"/custom/route?query=test"]);
 }
 
@@ -104,7 +104,7 @@ FLUTTER_ASSERT_ARC
           openURL:[NSURL URLWithString:@"http://myApp/custom/route?query=test#fragment"]
           options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
+  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
                                            arguments:@"/custom/route?query=test#fragment"]);
 }
 
@@ -117,7 +117,7 @@ FLUTTER_ASSERT_ARC
                             openURL:[NSURL URLWithString:@"http://myApp/custom/route#fragment"]
                             options:@{}];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
+  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
                                            arguments:@"/custom/route#fragment"]);
 }
 
@@ -139,7 +139,7 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Deep linking
 
-- (void)testUniversalLinkPushRoute {
+- (void)testUniversalLinkPushRouteInformation {
   OCMStub([self.mockMainBundle objectForInfoDictionaryKey:@"FlutterDeepLinkingEnabled"])
       .andReturn(@YES);
 
@@ -151,7 +151,7 @@ FLUTTER_ASSERT_ARC
         restorationHandler:^(NSArray<id<UIUserActivityRestoring>>* __nullable restorableObjects){
         }];
   XCTAssertTrue(result);
-  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRoute"
+  OCMVerify([self.mockNavigationChannel invokeMethod:@"pushRouteInformation"
                                            arguments:@"/custom/route?query=test"]);
 }
 
