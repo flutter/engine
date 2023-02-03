@@ -80,11 +80,11 @@ public class AndroidTouchProcessor {
 
   // Must match the PointerPreferredStylusAuxiliaryAction enum in pointer.dart.
   @IntDef({
-          PointerPreferredStylusAuxiliaryAction.IGNORE,
-          PointerPreferredStylusAuxiliaryAction.SHOW_COLOR_PALETTE,
-          PointerPreferredStylusAuxiliaryAction.SWITCH_ERASER,
-          PointerPreferredStylusAuxiliaryAction.SWITCH_PREVIOUS,
-          PointerPreferredStylusAuxiliaryAction.UNKNOWN
+    PointerPreferredStylusAuxiliaryAction.IGNORE,
+    PointerPreferredStylusAuxiliaryAction.SHOW_COLOR_PALETTE,
+    PointerPreferredStylusAuxiliaryAction.SWITCH_ERASER,
+    PointerPreferredStylusAuxiliaryAction.SWITCH_PREVIOUS,
+    PointerPreferredStylusAuxiliaryAction.UNKNOWN
   })
   public @interface PointerPreferredStylusAuxiliaryAction {
     int IGNORE = 0;

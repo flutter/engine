@@ -1228,19 +1228,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   switch (UIPencilInteraction.preferredTapAction) {
     case UIPencilPreferredActionIgnore:
-      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
       break;
     case UIPencilPreferredActionShowColorPalette:
-      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
       break;
     case UIPencilPreferredActionSwitchEraser:
-      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser;
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser;
       break;
     case UIPencilPreferredActionSwitchPrevious:
-      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious;
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious;
       break;
     default:
-      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
       break;
   }
 

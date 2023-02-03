@@ -144,16 +144,16 @@ enum PointerSignalKind {
 enum PointerPreferredStylusAuxiliaryAction {
   /// Ignore pointer input
   ignore,
-  
+
   /// Show colour palette if available
   showColorPalette,
-  
+
   /// Switch to eraser if available
   switchEraser,
-  
+
   /// Switch to previous tool
   switchPrevious,
-  
+
   /// unknown preferred action
   unknown,
 }

@@ -65,9 +65,9 @@ struct alignas(8) PointerData {
     kScale,
     kStylusAuxiliaryAction,
   };
-  
+
   // Must match the PreferredStylusAuxiliaryAction enum in pointer.dart.
-  
+
   enum class PreferredStylusAuxiliaryAction : int64_t {
     kIgnore,
     kShowColorPalette,
