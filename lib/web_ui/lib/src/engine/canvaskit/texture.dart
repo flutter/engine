@@ -19,6 +19,8 @@ class CkTexture {
 
   bool _newFrameReady = false;
 
+  final CkPaint _paint = CkPaint();
+
   void markNewFrameAvailable() {
     _newFrameReady = true;
   }
@@ -52,7 +54,7 @@ class CkTexture {
         _ckImage!.height.toDouble(),
       ),
       ui.Rect.fromLTWH(offset.dx, offset.dy, width, height),
-      CkPaint()..filterQuality = filterQuality,
+      _paint..filterQuality = filterQuality,
     );
   }
 
