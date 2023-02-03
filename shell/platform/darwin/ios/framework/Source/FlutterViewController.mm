@@ -888,6 +888,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [_pinchGestureRecognizer release];
   _rotationGestureRecognizer.delegate = nil;
   [_rotationGestureRecognizer release];
+  _pencilInteraction.delegate = nil;
+  [_pencilInteraction release];
   [super dealloc];
 }
 
@@ -1226,23 +1228,24 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
   switch (UIPencilInteraction.preferredTapAction) {
     case UIPencilPreferredActionIgnore:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kIgnore;
+      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
       break;
     case UIPencilPreferredActionShowColorPalette:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kShowColorPalette;
+      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
       break;
     case UIPencilPreferredActionSwitchEraser:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchEraser;
+      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser;
       break;
     case UIPencilPreferredActionSwitchPrevious:
-      pointer_data.preferred_action = flutter::PointerData::PreferredAction::kSwitchPrevious;
+      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious;
+      break;
     default:
+      pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
       break;
   }
 
-  pointer_data.device = reinterpret_cast<int64_t>(_pencilInteraction);
   pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
-  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAction;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
   packet->SetPointerData(/*index=*/0, pointer_data);
@@ -1720,7 +1723,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Orientation updates
 
-- (void)onOrientationPreferencesUpdated:(NSNotification*)notification API_AVAILABLE(ios(12.1)) {
+- (void)onOrientationPreferencesUpdated:(NSNotification*)notification {
   // Notifications may not be on the iOS UI thread
   dispatch_async(dispatch_get_main_queue(), ^{
     NSDictionary* info = notification.userInfo;

@@ -63,15 +63,17 @@ struct alignas(8) PointerData {
     kScroll,
     kScrollInertiaCancel,
     kScale,
-    kStylusAction,
+    kStylusAuxiliaryAction,
   };
-
-  // Must match the PointerPreferredAction enum in pointer.dart.
-  enum class PreferredAction : int64_t {
+  
+  // Must match the PreferredStylusAuxiliaryAction enum in pointer.dart.
+  
+  enum class PreferredStylusAuxiliaryAction : int64_t {
     kIgnore,
     kShowColorPalette,
     kSwitchEraser,
-    kSwitchPrevious
+    kSwitchPrevious,
+    kUnknown
   };
 
   int64_t embedder_id;
@@ -109,7 +111,7 @@ struct alignas(8) PointerData {
   double pan_delta_y;
   double scale;
   double rotation;
-  PreferredAction preferred_action;
+  PreferredStylusAuxiliaryAction preferred_auxiliary_stylus_action;
 
   void Clear();
 };

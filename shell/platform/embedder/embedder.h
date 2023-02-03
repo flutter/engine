@@ -888,7 +888,7 @@ typedef enum {
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
   kFlutterPointerSignalKindScale,
-  kFlutterPointerSignalKindStylusAction,
+  kFlutterPointerSignalKindStylusAuxiliaryAction,
 } FlutterPointerSignalKind;
 
 typedef struct {

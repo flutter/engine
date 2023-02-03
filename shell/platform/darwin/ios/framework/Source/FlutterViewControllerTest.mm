@@ -1496,9 +1496,18 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertNotNil(mockPencilInteraction);
 
   [vc pencilInteractionDidTap:mockPencilInteraction];
+  
+  flutter::PointerData pointer_data;
+  
+  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
+  pointer_data.preferred_auxiliary_stylus_action = flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
+  
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
-      dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
+      dispatchPointerDataPacket:std::move(packet)];
 }
 
 - (void)testFakeEventTimeStamp {

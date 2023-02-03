@@ -417,7 +417,7 @@ class PlatformDispatcher {
         panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
-        preferredAction: PointerPreferredAction.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
+        preferredStylusAuxiliaryAction: PointerPreferredStylusAuxiliaryAction.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
