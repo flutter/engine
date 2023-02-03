@@ -4,13 +4,16 @@
 
 /// A collection of textures available to the engine.
 abstract class TextureRegistry {
-  /// Registers a texture.
+  /// Registers a texture, returns an id that can be used to reference that
+  /// texture in subsequent calls.
   int registerTexture(Object source);
 
-  /// Unregisters the texture with the given id.
+  /// Unregisters a texture that was previously registered with
+  /// [registerTexture].
   void unregisterTexture(int id);
 
   /// Notifies Flutter that the content of the previously registered texture
-  /// has been updated.
+  /// has been updated. [id] is the id of the texture that was previously
+  /// returned by [registerTexture].
   void textureFrameAvailable(int id);
 }
