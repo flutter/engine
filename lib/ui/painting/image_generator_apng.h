@@ -119,7 +119,7 @@ class APNGImageGenerator : public ImageGenerator {
     // The rendered frame pixels.
     std::vector<uint8_t> pixels;
 
-    // Absense of frame info is possible on the "default" image.
+    // Absence of frame info is possible on the "default" image.
     std::optional<ImageGenerator::FrameInfo> frame_info;
 
     // X offset of this image when composited. Only applicable to frames.

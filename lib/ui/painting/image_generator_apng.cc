@@ -217,17 +217,18 @@ std::unique_ptr<ImageGenerator> APNGImageGenerator::MakeFromData(
 
   // Walk the chunks to find the "animation control" chunk. If an "image data"
   // chunk is found first, this PNG is not animated.
-  do {
+  while (true) {
+    chunk = GetNextChunk(data_p, data->size(), chunk);
+
+    if (chunk == nullptr) {
+      return nullptr;
+    }
     if (chunk->get_type() == kImageDataChunkType) {
       return nullptr;
-    } else if (chunk->get_type() == kAnimationControlChunkType) {
+    }
+    if (chunk->get_type() == kAnimationControlChunkType) {
       break;
     }
-
-    chunk = GetNextChunk(data_p, data->size(), chunk);
-  } while (chunk != nullptr);
-  if (chunk == nullptr) {
-    return nullptr;
   }
 
   const AnimationControlChunkData* animation_data =
@@ -247,7 +248,7 @@ std::unique_ptr<ImageGenerator> APNGImageGenerator::MakeFromData(
   const void* next_chunk_p;
   std::tie(default_image, next_chunk_p) =
       DemuxNextImage(data_p, data->size(), header.value(), first_chunk_p);
-  if (default_image == std::nullopt) {
+  if (!default_image.has_value()) {
     return nullptr;
   }
 
@@ -317,9 +318,8 @@ const APNGImageGenerator::ChunkHeader* APNGImageGenerator::GetNextChunk(
 
 std::pair<std::optional<std::vector<uint8_t>>, const void*>
 APNGImageGenerator::ExtractHeader(const void* buffer_p, size_t buffer_size) {
-  std::vector<uint8_t> result;
-  result.emplace(result.end(), kPngSignature,
-                 kPngSignature + sizeof(kPngSignature));
+  std::vector<uint8_t> result(sizeof(kPngSignature));
+  memcpy(result.data(), kPngSignature, sizeof(kPngSignature));
 
   const ChunkHeader* chunk = reinterpret_cast<const ChunkHeader*>(
       static_cast<const uint8_t*>(buffer_p) + sizeof(kPngSignature));
@@ -455,7 +455,7 @@ APNGImageGenerator::DemuxNextImage(const void* buffer_p,
     // If this is a frame, override the width/height in the IHDR chunk.
     if (control_data) {
       ChunkHeader* ihdr_header =
-          reinterpret_cast<ChunkHeader*>(write_cursor + 8);
+          reinterpret_cast<ChunkHeader*>(write_cursor + sizeof(kPngSignature));
       ImageHeaderChunkData* ihdr_data = const_cast<ImageHeaderChunkData*>(
           CastChunkData<ImageHeaderChunkData>(ihdr_header));
       ihdr_data->set_width(control_data->get_width());
@@ -582,7 +582,7 @@ uint32_t APNGImageGenerator::ChunkHeader::ComputeChunkCrc32() {
   uint8_t* chunk_data_p = reinterpret_cast<uint8_t*>(this) + 4;
   uint32_t crc = 0;
 
-  // zlib's crc32 can only takes 16 bits at a time for the length, but PNG
+  // zlib's crc32 can only take 16 bits at a time for the length, but PNG
   // supports a 32 bit chunk length, so looping is necessary here.
   // Note that crc32 is always called at least once, even if the chunk has an
   // empty data section.
