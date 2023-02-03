@@ -1652,9 +1652,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if ([self keyboardAnimationView].superview != nil) {
     [[self keyboardAnimationView] removeFromSuperview];
   }
-  if (_keyboardSpringAnimation != nil) {
-    _keyboardSpringAnimation.reset();
-  }
+  _keyboardSpringAnimation.reset();
 }
 
 - (void)ensureViewportMetricsIsCorrect {
