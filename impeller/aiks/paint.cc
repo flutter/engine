@@ -122,4 +122,8 @@ std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(
                                             effect_transform);
 }
 
+bool Paint::HasColorFilter() const {
+  return color_filter.has_value();
+}
+
 }  // namespace impeller
