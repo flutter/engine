@@ -53,18 +53,13 @@ std::shared_ptr<RuntimeStage> ComputePlaygroundTest::OpenAssetAsRuntimeStage(
 
 static std::string FormatWindowTitle(const std::string& test_name) {
   std::stringstream stream;
-  stream << "Impeller Playground for '" << test_name
-         << "' (Press ESC or 'q' to quit)";
+  stream << "Impeller Playground for '" << test_name << "' (Press ESC to quit)";
   return stream.str();
 }
 
 // |Playground|
 std::string ComputePlaygroundTest::GetWindowTitle() const {
   return FormatWindowTitle(flutter::testing::GetCurrentTestName());
-}
-
-Scalar ComputePlaygroundTest::GetSecondsElapsed() const {
-  return (fml::TimePoint::Now().ToEpochDelta() - start_time_).ToSecondsF();
 }
 
 }  // namespace impeller

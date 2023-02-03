@@ -53,10 +53,13 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  auto tolerance =
+      kDefaultCurveTolerance / entity.GetTransformation().GetMaxBasisLength();
+
   VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_.GetFillType(), path_.CreatePolyline(),
+      path_.GetFillType(), path_.CreatePolyline(tolerance),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
@@ -236,7 +239,13 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
     case Cap::kButt:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                     const Point& position, const Point& offset,
-                    Scalar tolerance) {};
+                    Scalar tolerance) {
+        VS::PerVertexData vtx;
+        vtx.position = position + offset;
+        vtx_builder.AppendVertex(vtx);
+        vtx.position = position - offset;
+        vtx_builder.AppendVertex(vtx);
+      };
       break;
     case Cap::kRound:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
@@ -270,7 +279,6 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
                     const Point& position, const Point& offset,
                     Scalar tolerance) {
         VS::PerVertexData vtx;
-        vtx.position = position;
 
         Point forward(offset.y, -offset.x);
 
@@ -316,6 +324,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
   for (size_t contour_i = 0; contour_i < polyline.contours.size();
        contour_i++) {
+    auto contour = polyline.contours[contour_i];
     size_t contour_start_point_i, contour_end_point_i;
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
@@ -361,7 +370,10 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
     // Generate start cap.
     if (!polyline.contours[contour_i].is_closed) {
-      cap_proc(vtx_builder, polyline.points[contour_start_point_i], -offset,
+      auto cap_offset =
+          Vector2(contour.start_direction.y, -contour.start_direction.x) *
+          stroke_width * 0.5;
+      cap_proc(vtx_builder, polyline.points[contour_start_point_i], cap_offset,
                tolerance);
     }
 
@@ -391,8 +403,11 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
     // Generate end cap or join.
     if (!polyline.contours[contour_i].is_closed) {
-      cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1], offset,
-               tolerance);
+      auto cap_offset =
+          Vector2(-contour.end_direction.y, contour.end_direction.x) *
+          stroke_width * 0.5;
+      cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1],
+               cap_offset, tolerance);
     } else {
       join_proc(vtx_builder, polyline.points[contour_start_point_i], offset,
                 contour_first_offset, scaled_miter_limit, tolerance);

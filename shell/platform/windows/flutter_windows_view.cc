@@ -6,10 +6,12 @@
 
 #include <chrono>
 
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
 #include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 
 namespace flutter {
 
@@ -63,8 +65,6 @@ void FlutterWindowsView::SetEngine(
   // Set up the system channel handlers.
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
   InitializeKeyboard();
-  cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
-                                                    binding_handler_.get());
 
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
@@ -112,6 +112,14 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   }
 
   return kWindowFrameBufferID;
+}
+
+void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
+  binding_handler_->UpdateFlutterCursor(cursor_name);
+}
+
+void FlutterWindowsView::SetFlutterCursor(HCURSOR cursor) {
+  binding_handler_->SetFlutterCursor(cursor);
 }
 
 void FlutterWindowsView::ForceRedraw() {
@@ -166,7 +174,9 @@ void FlutterWindowsView::OnWindowRepaint() {
 void FlutterWindowsView::OnPointerMove(double x,
                                        double y,
                                        FlutterPointerDeviceKind device_kind,
-                                       int32_t device_id) {
+                                       int32_t device_id,
+                                       int modifiers_state) {
+  keyboard_key_handler_->SyncModifiersIfNeeded(modifiers_state);
   SendPointerMove(x, y, GetOrCreatePointerState(device_kind, device_id));
 }
 
@@ -285,8 +295,6 @@ void FlutterWindowsView::OnResetImeComposing() {
 
 void FlutterWindowsView::InitializeKeyboard() {
   auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  // TODO(cbracken): This can be inlined into KeyboardKeyEmedderHandler once
-  // UWP code is removed. https://github.com/flutter/flutter/issues/102172.
   KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
   KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
       [](UINT virtual_key, bool extended) {
@@ -655,28 +663,28 @@ FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
 }
 
 void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
-  AccessibilityRootNode* root_node =
-      binding_handler_->GetAccessibilityRootNode();
-  AccessibilityAlert* alert =
-      binding_handler_->GetAccessibilityRootNode()->GetOrCreateAlert();
-  alert->SetText(text);
-  HWND hwnd = GetPlatformWindow();
-  NotifyWinEventWrapper(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
-                        AccessibilityRootNode::kAlertChildId);
+  auto alert_delegate = binding_handler_->GetAlertDelegate();
+  if (!alert_delegate) {
+    return;
+  }
+  alert_delegate->SetText(fml::WideStringToUtf16(text));
+  ui::AXPlatformNodeWin* alert_node = binding_handler_->GetAlert();
+  NotifyWinEventWrapper(alert_node, ax::mojom::Event::kAlert);
 }
 
-void FlutterWindowsView::NotifyWinEventWrapper(DWORD event,
-                                               HWND hwnd,
-                                               LONG idObject,
-                                               LONG idChild) {
-  if (hwnd) {
-    NotifyWinEvent(EVENT_SYSTEM_ALERT, hwnd, OBJID_CLIENT,
-                   AccessibilityRootNode::kAlertChildId);
+void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
+                                               ax::mojom::Event event) {
+  if (node) {
+    node->NotifyAccessibilityEvent(event);
   }
 }
 
 ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
   return engine_->accessibility_bridge().lock().get();
+}
+
+ui::AXPlatformNodeWin* FlutterWindowsView::AlertNode() const {
+  return binding_handler_->GetAlert();
 }
 
 }  // namespace flutter

@@ -6,7 +6,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -31,7 +31,7 @@
               "device_type=none",
               "os=Linux"
           ],
-          "gclient_custom_vars": {
+          "gclient_variables": {
               "download_android_deps": false
           },
           "gn": [
@@ -78,7 +78,6 @@
                         "out/host_debug/zip_archives/linux-x64/font-subset.zip",
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip",
-                        "out/host_debug/zip_archives/flutter-web-sdk-linux-x64.zip",
                         "out/host_debug/zip_archives/linux-x64/linux-x64-flutter-gtk.zip"
                     ]
                 }
@@ -87,13 +86,12 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
                 "--runtime-mode",
                 "debug",
-                "--full-dart-sdk",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples"
             ],
@@ -105,7 +103,6 @@
                     "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/web_sdk",
                     "flutter/tools/font-subset",
                     "flutter/shell/platform/linux:flutter_gtk"
                 ]
@@ -127,7 +124,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -177,7 +174,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "gclient_custom_vars": {
+            "gclient_variables": {
                 "download_android_deps": false
             },
             "gn": [
@@ -210,6 +207,40 @@
                     "type": "local"
                 }
             ]
+        },
+        {
+            "archives": [
+                {
+                    "name": "wasm_release",
+                    "base_path": "out/wasm_release/zip_archives/",
+                    "type": "gcs",
+                    "include_paths": [
+                        "out/wasm_release/zip_archives/flutter-web-sdk.zip"
+                    ]
+                }
+            ],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_emsdk": true,
+                "download_android_deps": false
+            },
+            "gn": [
+                "--runtime-mode",
+                "release",
+                "--web",
+                "--build-canvaskit"
+            ],
+            "name": "wasm_release",
+            "ninja": {
+                "config": "wasm_release",
+                "targets": [
+                    "flutter/web_sdk"
+                ]
+            },
+            "tests": []
         }
     ],
     "tests": []

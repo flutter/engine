@@ -7,7 +7,6 @@
 #include <dwmapi.h>
 
 #include <filesystem>
-#include <iostream>
 #include <sstream>
 
 #include "flutter/fml/logging.h"
@@ -207,6 +206,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
   // https://github.com/flutter/flutter/issues/71099
+  cursor_handler_ =
+      std::make_unique<CursorHandler>(messenger_wrapper_.get(), this);
   platform_handler_ =
       std::make_unique<PlatformHandler>(messenger_wrapper_.get(), this);
   settings_plugin_ = std::make_unique<SettingsPlugin>(messenger_wrapper_.get(),
@@ -667,6 +668,7 @@ void FlutterWindowsEngine::UpdateHighContrastEnabled(bool enabled) {
         ~FlutterAccessibilityFeature::kFlutterAccessibilityFeatureHighContrast;
   }
   UpdateAccessibilityFeatures(static_cast<FlutterAccessibilityFeature>(flags));
+  settings_plugin_->UpdateHighContrastMode(enabled);
 }
 
 int FlutterWindowsEngine::EnabledAccessibilityFeatures() const {

@@ -8,8 +8,8 @@
 #include <unordered_map>
 
 #include "flutter/fml/hash_combine.h"
+#include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
-#include "fml/logging.h"
 #include "impeller/base/validation.h"
 #include "impeller/entity/advanced_blend.vert.h"
 #include "impeller/entity/advanced_blend_color.frag.h"
@@ -27,8 +27,6 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
-#include "impeller/entity/atlas_fill.frag.h"
-#include "impeller/entity/atlas_fill.vert.h"
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -38,6 +36,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
+#include "impeller/entity/gaussian_blur_decal.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_sdf.frag.h"
@@ -65,11 +64,13 @@
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
+#include "impeller/scene/scene_context.h"
 
 #include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/position_uv.vert.h"
 
+#include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
 
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
@@ -146,6 +147,8 @@ using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
                                              TiledTextureFillFragmentShader>;
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
+using GaussianBlurDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurDecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -164,8 +167,6 @@ using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasSdfPipeline =
     RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
-using AtlasPipeline =
-    RenderPipelineT<AtlasFillVertexShader, AtlasFillFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
@@ -215,6 +216,8 @@ class ContentContext {
   ~ContentContext();
 
   bool IsValid() const;
+
+  std::shared_ptr<scene::SceneContext> GetSceneContext() const;
 
   std::shared_ptr<Tessellator> GetTessellator() const;
 
@@ -281,6 +284,11 @@ class ContentContext {
     return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(gaussian_blur_decal_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
@@ -329,11 +337,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryPositionPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(geometry_position_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(atlas_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -460,6 +463,7 @@ class ContentContext {
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
+  mutable Variants<GaussianBlurDecalPipeline> gaussian_blur_decal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -469,7 +473,6 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
-  mutable Variants<AtlasPipeline> atlas_pipelines_;
   mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
@@ -522,6 +525,7 @@ class ContentContext {
   bool is_valid_ = false;
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
+  std::shared_ptr<scene::SceneContext> scene_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };

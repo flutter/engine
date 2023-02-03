@@ -327,6 +327,30 @@ bool CompilerSkSL::emit_global_variable_resources() {
   return emitted;
 }
 
+bool CompilerSkSL::emit_undefined_values() {
+  bool emitted = false;
+
+  ir.for_each_typed_id<SPIRUndef>([&](uint32_t, const SPIRUndef& undef) {
+    auto& type = this->get<SPIRType>(undef.basetype);
+    // OpUndef can be void for some reason ...
+    if (type.basetype == SPIRType::Void) {
+      return;
+    }
+
+    std::string initializer;
+    if (options.force_zero_initialized_variables &&
+        type_can_zero_initialize(type)) {
+      initializer = join(" = ", to_zero_initialized_expression(undef.basetype));
+    }
+
+    statement(variable_decl(type, to_name(undef.self), undef.self), initializer,
+              ";");
+    emitted = true;
+  });
+
+  return emitted;
+}
+
 void CompilerSkSL::emit_resources() {
   detect_unsupported_resources();
 
@@ -350,7 +374,9 @@ void CompilerSkSL::emit_resources() {
     statement("");
   }
 
-  declare_undefined_values();
+  if (emit_undefined_values()) {
+    statement("");
+  }
 }
 
 void CompilerSkSL::emit_interface_block(const SPIRVariable& var) {
@@ -450,9 +476,8 @@ std::string CompilerSkSL::to_function_args(const TextureFunctionArguments& args,
   std::string glsl_args = CompilerGLSL::to_function_args(args, p_forward);
   // SkSL only supports coordinates. All other arguments to texture are
   // unsupported and will generate invalid SkSL.
-  if (args.grad_x || args.grad_y || args.lod || args.coffset || args.offset ||
-      args.sample || args.min_lod || args.sparse_texel || args.bias ||
-      args.component) {
+  if (args.grad_x || args.grad_y || args.lod || args.offset || args.sample ||
+      args.min_lod || args.sparse_texel || args.bias || args.component) {
     FLUTTER_CROSS_THROW(
         "Only sampler and position arguments are supported in texture() "
         "calls.");

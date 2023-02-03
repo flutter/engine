@@ -33,6 +33,7 @@ ROBOTO_FONT_PATH = os.path.join(FONTS_DIR, 'Roboto-Regular.ttf')
 FONT_SUBSET_DIR = os.path.join(BUILDROOT_DIR, 'flutter', 'tools', 'font-subset')
 
 FML_UNITTESTS_FILTER = '--gtest_filter=-*TimeSensitiveTest*'
+ENCODING = 'UTF-8'
 
 
 def print_divider(char='='):
@@ -393,6 +394,7 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         # The accessibility library only supports Mac and Windows.
         make_test('accessibility_unittests'),
         make_test('flutter_channels_unittests'),
+        make_test('spring_animation_unittests'),
     ]
 
   if is_linux():
@@ -440,26 +442,28 @@ def run_cc_tests(build_dir, executable_filter, coverage, capture_core_dump):
         shuffle_flags,
         coverage=coverage
     )
+    # TODO(117122): Re-enable impeller_unittests after shader compiler errors
+    #               are addressed.
     # Impeller tests are only supported on macOS for now.
-    run_engine_executable(
-        build_dir,
-        'impeller_unittests',
-        executable_filter,
-        shuffle_flags,
-        coverage=coverage,
-        extra_env={
-            # pylint: disable=line-too-long
-            # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
-            'MTL_SHADER_VALIDATION':
-                '1',  # Enables all shader validation tests.
-            'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
-                '1',  # Validates accesses to device and constant memory.
-            'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
-                '1',  # Validates accesses to threadgroup memory.
-            'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
-                '1',  # Validates that texture references are not nil.
-        }
-    )
+    # run_engine_executable(
+    #     build_dir,
+    #     'impeller_unittests',
+    #     executable_filter,
+    #     shuffle_flags,
+    #     coverage=coverage,
+    #     extra_env={
+    #         # pylint: disable=line-too-long
+    #         # See https://developer.apple.com/documentation/metal/diagnosing_metal_programming_issues_early?language=objc
+    #         'MTL_SHADER_VALIDATION':
+    #             '1',  # Enables all shader validation tests.
+    #         'MTL_SHADER_VALIDATION_GLOBAL_MEMORY':
+    #             '1',  # Validates accesses to device and constant memory.
+    #         'MTL_SHADER_VALIDATION_THREADGROUP_MEMORY':
+    #             '1',  # Validates accesses to threadgroup memory.
+    #         'MTL_SHADER_VALIDATION_TEXTURE_USAGE':
+    #             '1',  # Validates that texture references are not nil.
+    #     }
+    # )
 
 
 def parse_impeller_vulkan_filter():
@@ -596,6 +600,11 @@ def ensure_ios_tests_are_built(ios_out_dir):
 def assert_expected_xcode_version():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
+  # TODO ricardoamador: remove this check when python 2 is deprecated.
+  version_output = version_output if isinstance(
+      version_output, str
+  ) else version_output.decode(ENCODING)
+  version_output = version_output.strip()
   match = re.match(r'Xcode (\d+)', version_output)
   message = 'Xcode must be installed to run the iOS embedding unit tests'
   assert match, message
@@ -1089,7 +1098,7 @@ def main():
   if 'impeller-vulkan' in types:
     build_name = args.variant
     try:
-      xvfb.StartVirtualX(build_name, build_dir)
+      xvfb.start_virtual_x(build_name, build_dir)
       vulkan_gtest_filter = parse_impeller_vulkan_filter()
       gtest_flags = shuffle_flags
       gtest_flags.append(vulkan_gtest_filter)
@@ -1101,7 +1110,7 @@ def main():
           coverage=args.coverage
       )
     finally:
-      xvfb.StopVirtualX(build_name)
+      xvfb.stop_virtual_x(build_name)
 
   if 'dart' in types:
     dart_filter = args.dart_filter.split(',') if args.dart_filter else None

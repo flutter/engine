@@ -15,22 +15,32 @@
 namespace impeller {
 namespace scene {
 
+class Skin;
+
 class Mesh final {
  public:
   struct Primitive {
-    std::shared_ptr<Geometry> geometry_;
-    std::shared_ptr<Material> material_;
+    std::shared_ptr<Geometry> geometry;
+    std::shared_ptr<Material> material;
   };
 
   Mesh();
   ~Mesh();
 
-  void AddPrimitive(Primitive mesh_);
+  Mesh(Mesh&& mesh);
+  Mesh& operator=(Mesh&& mesh);
 
-  bool Render(SceneEncoder& encoder, const Matrix& transform) const;
+  void AddPrimitive(Primitive mesh_);
+  std::vector<Primitive>& GetPrimitives();
+
+  bool Render(SceneEncoder& encoder,
+              const Matrix& transform,
+              const std::shared_ptr<Texture>& joints) const;
 
  private:
-  std::vector<Primitive> meshes_;
+  std::vector<Primitive> primitives_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(Mesh);
 };
 
 }  // namespace scene

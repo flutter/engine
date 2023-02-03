@@ -151,8 +151,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Fragment stage uniforms.
   ///
 
+  size_t minimum_sampler_index = 100000000;
   size_t buffer_index = 0;
-  size_t sampler_index = 0;
+  size_t buffer_offset = 0;
   for (auto uniform : runtime_stage_->GetUniforms()) {
     // TODO(113715): Populate this metadata once GLES is able to handle
     //               non-struct uniform names.
@@ -160,28 +161,24 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
     switch (uniform.type) {
       case kSampledImage: {
-        FML_DCHECK(sampler_index < texture_inputs_.size());
-        auto& input = texture_inputs_[sampler_index];
-
-        auto sampler =
-            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
-
-        SampledImageSlot image_slot;
-        image_slot.name = uniform.name.c_str();
-        image_slot.texture_index = sampler_index;
-        image_slot.sampler_index = sampler_index;
-        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
-                         input.texture, sampler);
-
-        sampler_index++;
+        // Sampler uniforms are ordered in the IPLR according to their
+        // declaration and the uniform location reflects the correct offset to
+        // be mapped to - except that it may include all proceeding float
+        // uniforms. For example, a float sampler that comes after 4 float
+        // uniforms may have a location of 4. To convert to the actual offset we
+        // need to find the largest location assigned to a float uniform and
+        // then subtract this from all uniform locations. This is more or less
+        // the same operation we previously performed in the shader compiler.
+        minimum_sampler_index =
+            std::min(minimum_sampler_index, uniform.location);
         break;
       }
       case kFloat: {
         size_t alignment =
             std::max(uniform.bit_width / 8, DefaultUniformAlignment());
         auto buffer_view = pass.GetTransientsBuffer().Emplace(
-            uniform_data_->data() + uniform.location * sizeof(float),
-            uniform.GetSize(), alignment);
+            uniform_data_->data() + buffer_offset, uniform.GetSize(),
+            alignment);
 
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
@@ -189,6 +186,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
         cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
                          buffer_view);
         buffer_index++;
+        buffer_offset += uniform.GetSize();
         break;
       }
       case kBoolean:
@@ -208,10 +206,41 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
     }
   }
 
+  size_t sampler_index = 0;
+  for (auto uniform : runtime_stage_->GetUniforms()) {
+    // TODO(113715): Populate this metadata once GLES is able to handle
+    //               non-struct uniform names.
+    ShaderMetadata metadata;
+
+    switch (uniform.type) {
+      case kSampledImage: {
+        FML_DCHECK(sampler_index < texture_inputs_.size());
+        auto& input = texture_inputs_[sampler_index];
+
+        auto sampler =
+            context->GetSamplerLibrary()->GetSampler(input.sampler_descriptor);
+
+        SampledImageSlot image_slot;
+        image_slot.name = uniform.name.c_str();
+        image_slot.texture_index = uniform.location - minimum_sampler_index;
+        image_slot.sampler_index = uniform.location - minimum_sampler_index;
+        cmd.BindResource(ShaderStage::kFragment, image_slot, metadata,
+                         input.texture, sampler);
+
+        sampler_index++;
+        break;
+      }
+      default:
+        continue;
+    }
+  }
+
   pass.AddCommand(std::move(cmd));
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }
