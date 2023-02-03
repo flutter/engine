@@ -47,6 +47,7 @@
   if (self) {
     _delegate = delegate;
     self.layer.opaque = opaque;
+    self.backgroundColor = UIColor.clearColor;
   }
 
   return self;
