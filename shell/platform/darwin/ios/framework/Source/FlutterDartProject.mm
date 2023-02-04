@@ -163,7 +163,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   // Whether to enable Impeller.
   NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
   // TODO(gaaclarke): Make this value `on` by default (pending memory audit).
-  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : YES;
+  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
   settings.enable_wide_gamut = enableWideGamut;
 
   // Whether to enable Impeller.
