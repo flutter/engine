@@ -272,8 +272,10 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
     return nullptr;
   }
 
-  atlas.IterateGlyphs([canvas](const FontGlyphPair& font_glyph,
-                               const Rect& location) -> bool {
+  bool has_color = atlas.GetType() == GlyphAtlas::Type::kColorBitmap;
+
+  atlas.IterateGlyphs([canvas, has_color](const FontGlyphPair& font_glyph,
+                                          const Rect& location) -> bool {
     const auto& metrics = font_glyph.font.GetMetrics();
     const auto position = SkPoint::Make(location.origin.x / metrics.scale,
                                         location.origin.y / metrics.scale);
@@ -281,13 +283,12 @@ static std::shared_ptr<SkBitmap> CreateAtlasBitmap(const GlyphAtlas& atlas,
 
     SkFont sk_font(
         TypefaceSkia::Cast(*font_glyph.font.GetTypeface()).GetSkiaTypeface(),
-        metrics.point_size);
+        metrics.point_size, metrics.scaleX, metrics.skewX);
     sk_font.setEdging(SkFont::Edging::kAntiAlias);
     sk_font.setHinting(SkFontHinting::kSlight);
     sk_font.setEmbolden(metrics.embolden);
-    sk_font.setSkewX(metrics.skewX);
 
-    auto glyph_color = SK_ColorWHITE;
+    auto glyph_color = has_color ? SK_ColorWHITE : SK_ColorBLACK;
 
     SkPaint glyph_paint;
     glyph_paint.setColor(glyph_color);
