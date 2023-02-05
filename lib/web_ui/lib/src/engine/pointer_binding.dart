@@ -817,9 +817,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomPointerEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
@@ -930,7 +927,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
           _pressTouch(touch.identifier!.toInt());
@@ -950,7 +947,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _convertEventToPointerData(
@@ -971,7 +968,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
@@ -990,7 +987,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
@@ -1147,9 +1144,6 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomMouseEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
     final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,

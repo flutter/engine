@@ -27,8 +27,6 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
-#include "impeller/entity/atlas_fill.frag.h"
-#include "impeller/entity/atlas_fill.vert.h"
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -38,6 +36,7 @@
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
+#include "impeller/entity/gaussian_blur_decal.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_sdf.frag.h"
@@ -148,6 +147,8 @@ using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
                                              TiledTextureFillFragmentShader>;
 using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
+using GaussianBlurDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurDecalFragmentShader>;
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -166,8 +167,6 @@ using GlyphAtlasPipeline =
     RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
 using GlyphAtlasSdfPipeline =
     RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
-using AtlasPipeline =
-    RenderPipelineT<AtlasFillVertexShader, AtlasFillFragmentShader>;
 // Instead of requiring new shaders for clips, the solid fill stages are used
 // to redirect writing to the stencil instead of color attachments.
 using ClipPipeline =
@@ -285,6 +284,11 @@ class ContentContext {
     return GetPipeline(gaussian_blur_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(gaussian_blur_decal_pipelines_, opts);
+  }
+
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(border_mask_blur_pipelines_, opts);
@@ -333,11 +337,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryPositionPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(geometry_position_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetAtlasPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(atlas_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -433,9 +432,9 @@ class ContentContext {
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(
-      ISize texture_size,
-      const SubpassCallback& subpass_callback) const;
+  std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
+                                       const SubpassCallback& subpass_callback,
+                                       bool msaa_enabled = true) const;
 
  private:
   std::shared_ptr<Context> context_;
@@ -464,6 +463,7 @@ class ContentContext {
   mutable Variants<TexturePipeline> texture_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
+  mutable Variants<GaussianBlurDecalPipeline> gaussian_blur_decal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>
@@ -473,7 +473,6 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
-  mutable Variants<AtlasPipeline> atlas_pipelines_;
   mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;

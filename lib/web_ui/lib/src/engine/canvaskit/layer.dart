@@ -476,7 +476,6 @@ class PictureLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
-    assert(picture != null);
     assert(needsPainting);
 
     paintContext.leafNodesCanvas!.save();
