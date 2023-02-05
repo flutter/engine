@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/compiler/spirv_sksl.h"
+#include "impeller/compiler/uniform_sorter.h"
 
 using namespace spv;
 using namespace SPIRV_CROSS_NAMESPACE;
@@ -219,46 +220,13 @@ bool CompilerSkSL::emit_uniform_resources() {
   bool emitted = false;
 
   // Output Uniform Constants (values, samplers, images, etc).
-  std::vector<ID> regular_uniforms;
-  std::vector<ID> shader_uniforms;
-  for (auto& id : ir.ids) {
-    if (id.get_type() == TypeVariable) {
-      auto& var = id.get<SPIRVariable>();
-      auto& type = get<SPIRType>(var.basetype);
-      if (var.storage != StorageClassFunction && !is_hidden_variable(var) &&
-          type.pointer &&
-          (type.storage == StorageClassUniformConstant ||
-           type.storage == StorageClassAtomicCounter)) {
-        // Separate out the uniforms that will be of SkSL 'shader' type since
-        // we need to make sure they are emitted only after the other uniforms.
-        if (type.basetype == SPIRType::SampledImage) {
-          shader_uniforms.push_back(var.self);
-        } else {
-          regular_uniforms.push_back(var.self);
-        }
-        emitted = true;
-      }
-    }
+  std::vector<ID> regular_uniforms =
+      SortUniforms(&ir, this, SPIRType::SampledImage, /*include=*/false);
+  std::vector<ID> shader_uniforms =
+      SortUniforms(&ir, this, SPIRType::SampledImage);
+  if (regular_uniforms.size() > 0 || shader_uniforms.size() > 0) {
+    emitted = true;
   }
-
-  // Sort uniforms by location.
-  auto compare_locations = [this](ID id1, ID id2) {
-    auto& flags1 = get_decoration_bitset(id1);
-    auto& flags2 = get_decoration_bitset(id2);
-    // Put the uniforms with no location after the ones that have a location.
-    if (!flags1.get(DecorationLocation)) {
-      return false;
-    }
-    if (!flags2.get(DecorationLocation)) {
-      return true;
-    }
-    // Sort in increasing order of location.
-    return get_decoration(id1, DecorationLocation) <
-           get_decoration(id2, DecorationLocation);
-  };
-  std::sort(regular_uniforms.begin(), regular_uniforms.end(),
-            compare_locations);
-  std::sort(shader_uniforms.begin(), shader_uniforms.end(), compare_locations);
 
   for (const auto& id : regular_uniforms) {
     auto& var = get<SPIRVariable>(id);
@@ -327,6 +295,30 @@ bool CompilerSkSL::emit_global_variable_resources() {
   return emitted;
 }
 
+bool CompilerSkSL::emit_undefined_values() {
+  bool emitted = false;
+
+  ir.for_each_typed_id<SPIRUndef>([&](uint32_t, const SPIRUndef& undef) {
+    auto& type = this->get<SPIRType>(undef.basetype);
+    // OpUndef can be void for some reason ...
+    if (type.basetype == SPIRType::Void) {
+      return;
+    }
+
+    std::string initializer;
+    if (options.force_zero_initialized_variables &&
+        type_can_zero_initialize(type)) {
+      initializer = join(" = ", to_zero_initialized_expression(undef.basetype));
+    }
+
+    statement(variable_decl(type, to_name(undef.self), undef.self), initializer,
+              ";");
+    emitted = true;
+  });
+
+  return emitted;
+}
+
 void CompilerSkSL::emit_resources() {
   detect_unsupported_resources();
 
@@ -350,7 +342,9 @@ void CompilerSkSL::emit_resources() {
     statement("");
   }
 
-  declare_undefined_values();
+  if (emit_undefined_values()) {
+    statement("");
+  }
 }
 
 void CompilerSkSL::emit_interface_block(const SPIRVariable& var) {
@@ -450,9 +444,8 @@ std::string CompilerSkSL::to_function_args(const TextureFunctionArguments& args,
   std::string glsl_args = CompilerGLSL::to_function_args(args, p_forward);
   // SkSL only supports coordinates. All other arguments to texture are
   // unsupported and will generate invalid SkSL.
-  if (args.grad_x || args.grad_y || args.lod || args.coffset || args.offset ||
-      args.sample || args.min_lod || args.sparse_texel || args.bias ||
-      args.component) {
+  if (args.grad_x || args.grad_y || args.lod || args.offset || args.sample ||
+      args.min_lod || args.sparse_texel || args.bias || args.component) {
     FLUTTER_CROSS_THROW(
         "Only sampler and position arguments are supported in texture() "
         "calls.");

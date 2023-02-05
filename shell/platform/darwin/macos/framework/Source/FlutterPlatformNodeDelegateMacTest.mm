@@ -19,20 +19,21 @@
 namespace flutter::testing {
 
 namespace {
-// Returns an engine configured for the text fixture resource configuration.
-FlutterEngine* CreateTestEngine() {
+// Returns a view controller configured for the text fixture resource configuration.
+FlutterViewController* CreateTestViewController() {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  return [[FlutterEngine alloc] initWithName:@"test" project:project allowHeadlessExecution:true];
+  return [[FlutterViewController alloc] initWithProject:project];
 }
 }  // namespace
 
 TEST(FlutterPlatformNodeDelegateMac, Basics) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   engine.semanticsEnabled = YES;
-  auto bridge = engine.accessibilityBridge.lock();
+  auto bridge = viewController.accessibilityBridge.lock();
   // Initialize ax node data.
   FlutterSemanticsNode root;
   root.id = 0;
@@ -65,9 +66,10 @@ TEST(FlutterPlatformNodeDelegateMac, Basics) {
 }
 
 TEST(FlutterPlatformNodeDelegateMac, SelectableTextHasCorrectSemantics) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   engine.semanticsEnabled = YES;
-  auto bridge = engine.accessibilityBridge.lock();
+  auto bridge = viewController.accessibilityBridge.lock();
   // Initialize ax node data.
   FlutterSemanticsNode root;
   root.id = 0;
@@ -106,9 +108,10 @@ TEST(FlutterPlatformNodeDelegateMac, SelectableTextHasCorrectSemantics) {
 }
 
 TEST(FlutterPlatformNodeDelegateMac, SelectableTextWithoutSelectionReturnZeroRange) {
-  FlutterEngine* engine = CreateTestEngine();
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   engine.semanticsEnabled = YES;
-  auto bridge = engine.accessibilityBridge.lock();
+  auto bridge = viewController.accessibilityBridge.lock();
   // Initialize ax node data.
   FlutterSemanticsNode root;
   root.id = 0;
@@ -144,15 +147,8 @@ TEST(FlutterPlatformNodeDelegateMac, SelectableTextWithoutSelectionReturnZeroRan
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
 
 TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
-  FlutterEngine* engine = CreateTestEngine();
-
-  // Set up view controller.
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [engine setViewController:viewController];
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
 
   // Attach the view to a NSWindow.
   NSWindow* window = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
@@ -162,7 +158,7 @@ TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
   window.contentView = viewController.view;
 
   engine.semanticsEnabled = YES;
-  auto bridge = engine.accessibilityBridge.lock();
+  auto bridge = viewController.accessibilityBridge.lock();
   // Initialize ax node data.
   FlutterSemanticsNode root;
   root.id = 0;
@@ -222,14 +218,9 @@ TEST(FlutterPlatformNodeDelegateMac, CanPerformAction) {
 // NOLINTEND(clang-analyzer-core.StackAddressEscape)
 
 TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
-  FlutterEngine* engine = CreateTestEngine();
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   [viewController loadView];
-  [engine setViewController:viewController];
 
   // Unit test localization is unnecessary.
   // NOLINTNEXTLINE(clang-analyzer-optin.osx.cocoa.localizability.NonLocalizedStringChecker)
@@ -242,7 +233,7 @@ TEST(FlutterPlatformNodeDelegateMac, TextFieldUsesFlutterTextField) {
   window.contentView = viewController.view;
   engine.semanticsEnabled = YES;
 
-  auto bridge = engine.accessibilityBridge.lock();
+  auto bridge = viewController.accessibilityBridge.lock();
   // Initialize ax node data.
   FlutterSemanticsNode root;
   root.id = 0;

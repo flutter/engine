@@ -23,6 +23,7 @@
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/point.h"
 #include "impeller/playground/widgets.h"
+#include "impeller/scene/node.h"
 #include "third_party/imgui/imgui.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkClipOp.h"
@@ -32,6 +33,15 @@
 
 namespace impeller {
 namespace testing {
+
+flutter::DlColor toColor(const float* components) {
+  auto value = (((std::lround(components[3] * 255) & 0xff) << 24) |
+                ((std::lround(components[0] * 255) & 0xff) << 16) |
+                ((std::lround(components[1] * 255) & 0xff) << 8) |
+                ((std::lround(components[2] * 255) & 0xff) << 0)) &
+               0xFFFFFFFF;
+  return flutter::DlColor(value);
+}
 
 using DisplayListTest = DisplayListPlayground;
 INSTANTIATE_PLAYGROUND_SUITE(DisplayListTest);
@@ -126,11 +136,13 @@ TEST_P(DisplayListTest, CanDrawArc) {
   auto callback = [&]() {
     static float start_angle = 45;
     static float sweep_angle = 270;
+    static float stroke_width = 10;
     static bool use_center = true;
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     ImGui::SliderFloat("Start angle", &start_angle, -360, 360);
     ImGui::SliderFloat("Sweep angle", &sweep_angle, -360, 360);
+    ImGui::SliderFloat("Stroke width", &stroke_width, 0, 100);
     ImGui::Checkbox("Use center", &use_center);
     ImGui::End();
 
@@ -142,7 +154,7 @@ TEST_P(DisplayListTest, CanDrawArc) {
     Vector2 scale = GetContentScale();
     builder.scale(scale.x, scale.y);
     builder.setStyle(flutter::DlDrawStyle::kStroke);
-    builder.setStrokeCap(flutter::DlStrokeCap::kRound);
+    builder.setStrokeCap(flutter::DlStrokeCap::kButt);
     builder.setStrokeJoin(flutter::DlStrokeJoin::kMiter);
     builder.setStrokeMiter(10);
     auto rect = SkRect::MakeLTRB(p1.x, p1.y, p2.x, p2.y);
@@ -150,7 +162,7 @@ TEST_P(DisplayListTest, CanDrawArc) {
     builder.setStrokeWidth(2);
     builder.drawRect(rect);
     builder.setColor(SK_ColorRED);
-    builder.setStrokeWidth(10);
+    builder.setStrokeWidth(stroke_width);
     builder.drawArc(rect, start_angle, sweep_angle, use_center);
 
     return builder.Build();
@@ -1073,9 +1085,11 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
 }
 
 TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
-  std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
-                                    SkPoint::Make(200, 100),
-                                    SkPoint::Make(300, 300)};
+  // Use negative coordinates and then scale the transform by -1, -1 to make
+  // sure coverage is taking the transform into account.
+  std::vector<SkPoint> positions = {SkPoint::Make(-100, -300),
+                                    SkPoint::Make(-200, -100),
+                                    SkPoint::Make(-300, -300)};
   std::vector<flutter::DlColor> colors = {flutter::DlColor::kWhite(),
                                           flutter::DlColor::kGreen(),
                                           flutter::DlColor::kWhite()};
@@ -1088,6 +1102,7 @@ TEST_P(DisplayListTest, DrawVerticesSolidColorTrianglesWithoutIndices) {
   flutter::DlPaint paint;
 
   paint.setColor(flutter::DlColor::kRed().modulateOpacity(0.5));
+  builder.scale(-1, -1);
   builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1175,6 +1190,124 @@ TEST_P(DisplayListTest, DrawShapes) {
   }
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
+
+TEST_P(DisplayListTest, DrawVerticesBlendModes) {
+  std::vector<const char*> blend_mode_names;
+  std::vector<flutter::DlBlendMode> blend_mode_values;
+  {
+    const std::vector<std::tuple<const char*, flutter::DlBlendMode>> blends = {
+        // Pipeline blends (Porter-Duff alpha compositing)
+        {"Clear", flutter::DlBlendMode::kClear},
+        {"Source", flutter::DlBlendMode::kSrc},
+        {"Destination", flutter::DlBlendMode::kDst},
+        {"SourceOver", flutter::DlBlendMode::kSrcOver},
+        {"DestinationOver", flutter::DlBlendMode::kDstOver},
+        {"SourceIn", flutter::DlBlendMode::kSrcIn},
+        {"DestinationIn", flutter::DlBlendMode::kDstIn},
+        {"SourceOut", flutter::DlBlendMode::kSrcOut},
+        {"DestinationOut", flutter::DlBlendMode::kDstOut},
+        {"SourceATop", flutter::DlBlendMode::kSrcATop},
+        {"DestinationATop", flutter::DlBlendMode::kDstATop},
+        {"Xor", flutter::DlBlendMode::kXor},
+        {"Plus", flutter::DlBlendMode::kPlus},
+        {"Modulate", flutter::DlBlendMode::kModulate},
+        // Advanced blends (color component blends)
+        {"Screen", flutter::DlBlendMode::kScreen},
+        {"Overlay", flutter::DlBlendMode::kOverlay},
+        {"Darken", flutter::DlBlendMode::kDarken},
+        {"Lighten", flutter::DlBlendMode::kLighten},
+        {"ColorDodge", flutter::DlBlendMode::kColorDodge},
+        {"ColorBurn", flutter::DlBlendMode::kColorBurn},
+        {"HardLight", flutter::DlBlendMode::kHardLight},
+        {"SoftLight", flutter::DlBlendMode::kSoftLight},
+        {"Difference", flutter::DlBlendMode::kDifference},
+        {"Exclusion", flutter::DlBlendMode::kExclusion},
+        {"Multiply", flutter::DlBlendMode::kMultiply},
+        {"Hue", flutter::DlBlendMode::kHue},
+        {"Saturation", flutter::DlBlendMode::kSaturation},
+        {"Color", flutter::DlBlendMode::kColor},
+        {"Luminosity", flutter::DlBlendMode::kLuminosity},
+    };
+    assert(blends.size() ==
+           static_cast<size_t>(flutter::DlBlendMode::kLastMode) + 1);
+    for (const auto& [name, mode] : blends) {
+      blend_mode_names.push_back(name);
+      blend_mode_values.push_back(mode);
+    }
+  }
+
+  auto callback = [&]() {
+    static int current_blend_index = 3;
+    static float dst_alpha = 1;
+    static float src_alpha = 1;
+    static float color0[4] = {1.0f, 0.0f, 0.0f, 1.0f};
+    static float color1[4] = {0.0f, 1.0f, 0.0f, 1.0f};
+    static float color2[4] = {0.0f, 0.0f, 1.0f, 1.0f};
+    static float src_color[4] = {1.0f, 1.0f, 1.0f, 1.0f};
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    {
+      ImGui::ListBox("Blending mode", &current_blend_index,
+                     blend_mode_names.data(), blend_mode_names.size());
+      ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
+      ImGui::ColorEdit4("Color A", color0);
+      ImGui::ColorEdit4("Color B", color1);
+      ImGui::ColorEdit4("Color C", color2);
+      ImGui::ColorEdit4("Source Color", src_color);
+      ImGui::SliderFloat("Destination alpha", &dst_alpha, 0, 1);
+    }
+    ImGui::End();
+
+    std::vector<SkPoint> positions = {SkPoint::Make(100, 300),
+                                      SkPoint::Make(200, 100),
+                                      SkPoint::Make(300, 300)};
+    std::vector<flutter::DlColor> colors = {
+        toColor(color0).modulateOpacity(dst_alpha),
+        toColor(color1).modulateOpacity(dst_alpha),
+        toColor(color2).modulateOpacity(dst_alpha)};
+
+    auto vertices = flutter::DlVertices::Make(
+        flutter::DlVertexMode::kTriangles, 3, positions.data(),
+        /*texture_coorindates=*/nullptr, colors.data());
+
+    flutter::DisplayListBuilder builder;
+    flutter::DlPaint paint;
+
+    paint.setColor(toColor(src_color).modulateOpacity(src_alpha));
+    builder.drawVertices(vertices, blend_mode_values[current_blend_index],
+                         paint);
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+#ifdef IMPELLER_ENABLE_3D
+TEST_P(DisplayListTest, SceneColorSource) {
+  // Load up the scene.
+  auto mapping =
+      flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
+  ASSERT_NE(mapping, nullptr);
+
+  std::shared_ptr<scene::Node> gltf_scene =
+      impeller::scene::Node::MakeFromFlatbuffer(
+          *mapping, *GetContext()->GetResourceAllocator());
+  ASSERT_NE(gltf_scene, nullptr);
+
+  flutter::DisplayListBuilder builder;
+
+  auto color_source = std::make_shared<flutter::DlSceneColorSource>(
+      gltf_scene,
+      Matrix::MakePerspective(Degrees(45), GetWindowSize(), 0.1, 1000) *
+          Matrix::MakeLookAt({3, 2, -5}, {0, 0, 0}, {0, 1, 0}));
+
+  flutter::DlPaint paint = flutter::DlPaint().setColorSource(color_source);
+
+  builder.drawPaint(paint);
+
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+#endif
 
 }  // namespace testing
 }  // namespace impeller

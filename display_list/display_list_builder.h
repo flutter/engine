@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/display_list_matrix_clip_tracker.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/display_list_sampling_options.h"
@@ -210,11 +211,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
   /// Returns the 4x4 full perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
-  SkM44 getTransformFullPerspective() const { return current_layer_->matrix(); }
+  SkM44 getTransformFullPerspective() const { return tracker_.matrix_4x4(); }
   /// Returns the 3x3 partial perspective transform representing all transform
   /// operations executed so far in this DisplayList within the enclosing
   /// save stack.
-  SkMatrix getTransform() const { return current_layer_->matrix33(); }
+  SkMatrix getTransform() const { return tracker_.matrix_3x3(); }
 
   void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override;
   void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override;
@@ -223,11 +224,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// measured in the coordinate space within which this DisplayList will
   /// be rendered.
-  SkRect getDestinationClipBounds() { return current_layer_->clip_bounds(); }
+  SkRect getDestinationClipBounds() { return tracker_.device_cull_rect(); }
   /// Conservative estimate of the bounds of all outstanding clip operations
   /// transformed into the local coordinate space in which currently
   /// recorded rendering operations are interpreted.
-  SkRect getLocalClipBounds();
+  SkRect getLocalClipBounds() { return tracker_.local_cull_rect(); }
 
   /// Return true iff the supplied bounds are easily shown to be outside
   /// of the current clip bounds. This method may conservatively return
@@ -362,10 +363,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
  private:
   void checkForDeferredSave();
 
-  SkAutoTMalloc<uint8_t> storage_;
+  DisplayListStorage storage_;
   size_t used_ = 0;
   size_t allocated_ = 0;
-  int op_count_ = 0;
+  int render_op_count_ = 0;
+  int op_index_ = 0;
 
   // bytes and ops from |drawPicture| and |drawDisplayList|
   size_t nested_bytes_ = 0;
@@ -386,32 +388,15 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   class LayerInfo {
    public:
-    explicit LayerInfo(const SkM44& matrix,
-                       const SkMatrix& matrix33,
-                       const SkRect& clip_bounds,
-                       size_t save_layer_offset = 0,
+    explicit LayerInfo(size_t save_offset = 0,
                        bool has_layer = false,
                        std::shared_ptr<const DlImageFilter> filter = nullptr)
-        : save_layer_offset_(save_layer_offset),
+        : save_offset_(save_offset),
           has_layer_(has_layer),
           cannot_inherit_opacity_(false),
           has_compatible_op_(false),
-          matrix_(matrix),
-          matrix33_(matrix33),
-          clip_bounds_(clip_bounds),
           filter_(filter),
           is_unbounded_(false) {}
-
-    explicit LayerInfo(const LayerInfo* current_layer,
-                       size_t save_layer_offset = 0,
-                       bool has_layer = false,
-                       std::shared_ptr<const DlImageFilter> filter = nullptr)
-        : LayerInfo(current_layer->matrix_,
-                    current_layer->matrix33_,
-                    current_layer->clip_bounds_,
-                    save_layer_offset,
-                    has_layer,
-                    filter) {}
 
     // The offset into the memory buffer where the saveLayer DLOp record
     // for this saveLayer() call is placed. This may be needed if the
@@ -419,16 +404,11 @@ class DisplayListBuilder final : public virtual Dispatcher,
     // the records inside the saveLayer that may impact how the saveLayer
     // is handled (e.g., |cannot_inherit_opacity| == false).
     // This offset is only valid if |has_layer| is true.
-    size_t save_layer_offset() const { return save_layer_offset_; }
+    size_t save_offset() const { return save_offset_; }
 
     bool has_layer() const { return has_layer_; }
     bool cannot_inherit_opacity() const { return cannot_inherit_opacity_; }
     bool has_compatible_op() const { return cannot_inherit_opacity_; }
-    SkM44& matrix() { return matrix_; }
-    SkMatrix& matrix33() { return matrix33_; }
-    SkRect& clip_bounds() { return clip_bounds_; }
-
-    void update_matrix33() { matrix33_ = matrix_.asM33(); }
 
     bool is_group_opacity_compatible() const {
       return !cannot_inherit_opacity_;
@@ -482,13 +462,10 @@ class DisplayListBuilder final : public virtual Dispatcher,
     bool is_unbounded() const { return is_unbounded_; }
 
    private:
-    size_t save_layer_offset_;
+    size_t save_offset_;
     bool has_layer_;
     bool cannot_inherit_opacity_;
     bool has_compatible_op_;
-    SkM44 matrix_;
-    SkMatrix matrix33_;
-    SkRect clip_bounds_;
     std::shared_ptr<const DlImageFilter> filter_;
     bool is_unbounded_;
     bool has_deferred_save_op_ = false;
@@ -498,6 +475,7 @@ class DisplayListBuilder final : public virtual Dispatcher,
 
   std::vector<LayerInfo> layer_stack_;
   LayerInfo* current_layer_;
+  DisplayListMatrixClipTracker tracker_;
   std::unique_ptr<BoundsAccumulator> accumulator_;
   BoundsAccumulator* accumulator() { return accumulator_.get(); }
 

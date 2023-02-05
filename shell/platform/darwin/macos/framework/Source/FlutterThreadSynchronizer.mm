@@ -1,10 +1,12 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
-#import "fml/synchronization/waitable_event.h"
 
 #import <QuartzCore/QuartzCore.h>
 
 #include <mutex>
 #include <vector>
+
+#import "flutter/fml/logging.h"
+#import "flutter/fml/synchronization/waitable_event.h"
 
 @interface FlutterThreadSynchronizer () {
   std::mutex _mutex;
@@ -23,7 +25,7 @@
 @implementation FlutterThreadSynchronizer
 
 - (void)drain {
-  assert([NSThread isMainThread]);
+  FML_DCHECK([NSThread isMainThread]);
 
   [CATransaction begin];
   [CATransaction setDisableActions:YES];
@@ -77,6 +79,11 @@
   fml::AutoResetWaitableEvent event;
   {
     std::unique_lock<std::mutex> lock(_mutex);
+    if (_shuttingDown) {
+      // Engine is shutting down, main thread may be blocked by the engine
+      // waiting for raster thread to finish.
+      return;
+    }
     fml::AutoResetWaitableEvent& e = event;
     _scheduledBlocks.push_back(^{
       notify();

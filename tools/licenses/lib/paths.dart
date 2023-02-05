@@ -132,6 +132,17 @@ final Set<String> skippedPaths = <String>{
   r'third_party/libwebp/webp_js',
   r'third_party/libxml', // dependency of the testing system that we don't actually use
   r'third_party/ocmock', // only used for tests
+  r'third_party/perfetto/debian', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/infra', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/protos', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/python/perfetto/trace_processor', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/ipc', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/profiling/memory', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/tools', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/trace_processor', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/traced', // contains nothing that ends up in the binary executable
+  r'third_party/perfetto/src/tracing', // contains nothing that ends up in the binary executable
+  r'third_party/protobuf', // build-time dependency only
   r'third_party/pkg/archive', // contains nothing that ends up in the binary executable
   r'third_party/pkg/equatable',
   r'third_party/pkg/file',
@@ -141,6 +152,7 @@ final Set<String> skippedPaths = <String>{
   r'third_party/pkg/platform',
   r'third_party/pkg/process',
   r'third_party/pkg/process_runner',
+  r'third_party/pkg/quiver',
   r'third_party/pkg/vector_math',
   r'third_party/pyyaml', // build-time dependency only
   r'third_party/rapidjson/contrib', // contains nothing that ends up in the binary executable

@@ -7,6 +7,10 @@ import("//flutter/testing/testing.gni")
 
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
+
+  # Not analyzing because they are not performance critical, and mipmap uses
+  # textureLod, which uses an extension that malioc does not support.
+  analyze = false
   shaders = [
     "array.frag",
     "array.vert",
@@ -34,7 +38,10 @@ impeller_shaders("shader_fixtures") {
 }
 
 scenec("scene_fixtures") {
-  geometry = [ "flutter_logo.glb" ]
+  geometry = [
+    "flutter_logo_baked.glb",
+    "two_triangles.glb",
+  ]
   type = "gltf"
 }
 
@@ -58,8 +65,7 @@ test_fixtures("file_fixtures") {
     "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
-    "flutter_logo.glb",
-    "flutter_logo_baked.png",
+    "flutter_logo_baked.glb",
     "kalimba.jpg",
     "multiple_stages.hlsl",
     "resources_limit.vert",
@@ -79,6 +85,7 @@ test_fixtures("file_fixtures") {
     "table_mountain_py.png",
     "table_mountain_pz.png",
     "test_texture.frag",
+    "two_triangles.glb",
     "types.h",
     "wtf.otf",
   ]
