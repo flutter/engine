@@ -526,7 +526,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return CGRectContainsPoint([self globalRect], point);
 }
 
-// Finds the smallest eligiable semantics object for _accessibilityHitTest.
+// Finds the first eligiable semantics object in hit test order.
 - (SemanticsObject*)search:(CGPoint)point {
   if ([self children].count == 0) {
     // Check if the current semantic object should be returned.
@@ -536,9 +536,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     return nil;
   }
 
-  // Traverse all semantics children to find an eligible one.
+  // Search children in hit test order.
   for (SemanticsObject* child in [self childrenInHitTestOrder]) {
-    // Continue searching the child semantic tree if it contains the point.
     if ([child containsPoint:point]) {
       return [child search:point];
     }
@@ -547,12 +546,10 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return nil;
 }
 
-// Override apple private method to fix https://github.com/flutter/flutter/issues/113377.
+// Overrides apple private method to fix https://github.com/flutter/flutter/issues/113377.
 // For overlapping UIAccessibilityElements (e.g. a stack) in IOS, the focus goes to the smallest
 // object before IOS 16, but to the top-left object in IOS 16.
-// Override this method to focus the smallest object.
-// TODO(hangyujin): The ideal way is to pass the z-inex from framework to search the object
-// with the highest z-index. https://github.com/flutter/flutter/issues/118656
+// Overrides this method to focus the first eligiable semantics object in hit test order.
 - (id)_accessibilityHitTest:(CGPoint)point withEvent:(UIEvent*)event {
   return [self search:point];
 }
