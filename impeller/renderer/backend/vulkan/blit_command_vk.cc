@@ -1,0 +1,182 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+#include "impeller/renderer/backend/vulkan/blit_command_vk.h"
+
+#include "impeller/renderer/backend/vulkan/commands_vk.h"
+#include "impeller/renderer/backend/vulkan/texture_vk.h"
+
+namespace impeller {
+
+BlitEncodeVK::~BlitEncodeVK() = default;
+
+// BEGIN: BlitCopyTextureToTextureCommandVK
+
+BlitCopyTextureToTextureCommandVK::~BlitCopyTextureToTextureCommandVK() =
+    default;
+
+std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
+  return label;
+}
+
+[[nodiscard]] bool BlitCopyTextureToTextureCommandVK::Encode(
+    const BlitCommandEncoderArgsVK& args) const {
+  // cast source and destination to TextureVK
+  auto& source_tex_vk = TextureVK::Cast(*source);
+  auto& dest_tex_vk = TextureVK::Cast(*destination);
+
+  // get the vulkan image and image view
+  auto source_image = source_tex_vk.GetImage();
+  auto source_image_view = source_tex_vk.GetImageView();
+
+  auto dest_image = dest_tex_vk.GetImage();
+  auto dest_image_view = dest_tex_vk.GetImageView();
+
+  // copy the source image to the destination image, from source_region to
+  // destination_origin.
+  vk::ImageCopy image_copy{};
+  image_copy.setSrcSubresource(
+      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setDstSubresource(
+      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+
+  image_copy.srcOffset =
+      vk::Offset3D(source_region.origin.x, source_region.origin.y, 0);
+  image_copy.dstOffset =
+      vk::Offset3D(destination_origin.x, destination_origin.y, 0);
+  image_copy.extent =
+      vk::Extent3D(source_region.size.width, source_region.size.height, 1);
+
+  // get single use command buffer
+  auto copy_cmd = args.command_buffer->GetSingleUseChild();
+
+  vk::CommandBufferBeginInfo begin_info;
+  begin_info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+  auto res = copy_cmd.begin(begin_info);
+
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
+    return false;
+  }
+
+  // transition the source image to transfer source optimal
+  TransitionImageLayoutCommandVK transition_source_cmd =
+      TransitionImageLayoutCommandVK(source_image, vk::ImageLayout::eUndefined,
+                                     vk::ImageLayout::eTransferSrcOptimal);
+  bool success = transition_source_cmd.Submit(args.command_buffer.get());
+  if (!success) {
+    return false;
+  }
+
+  // transition the destination image to transfer destination optimal
+  TransitionImageLayoutCommandVK transition_dest_cmd =
+      TransitionImageLayoutCommandVK(dest_image, vk::ImageLayout::eUndefined,
+                                     vk::ImageLayout::eTransferDstOptimal);
+  success = transition_dest_cmd.Submit(args.command_buffer.get());
+  if (!success) {
+    return false;
+  }
+
+  // issue the copy command
+  copy_cmd.copyImage(source_image, vk::ImageLayout::eTransferSrcOptimal,
+                     dest_image, vk::ImageLayout::eTransferDstOptimal,
+                     image_copy);
+  res = copy_cmd.end();
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(res);
+    return false;
+  }
+
+  return true;
+}
+
+// END: BlitCopyTextureToTextureCommandVK
+
+// BEGIN: BlitCopyTextureToBufferCommandVK
+
+BlitCopyTextureToBufferCommandVK::~BlitCopyTextureToBufferCommandVK() = default;
+
+std::string BlitCopyTextureToBufferCommandVK::GetLabel() const {
+  return label;
+}
+
+[[nodiscard]] bool BlitCopyTextureToBufferCommandVK::Encode(
+    const BlitCommandEncoderArgsVK& args) const {
+  // cast source and destination to TextureVK
+  auto& source_tex_vk = TextureVK::Cast(*source);
+  auto& dest_buf_vk = DeviceBufferVK::Cast(*destination);
+
+  // get the vulkan image and image view
+  auto source_image = source_tex_vk.GetImage();
+  auto source_image_view = source_tex_vk.GetImageView();
+
+  // get buffer image handle
+  auto dest_buffer = dest_buf_vk.GetVKBufferHandle();
+
+  // copy the source image to the destination buffer, from source_region to
+  // destination_origin.
+  vk::BufferImageCopy image_copy{};
+  image_copy.setBufferOffset(destination_offset);
+  image_copy.setBufferRowLength(0);
+  image_copy.setBufferImageHeight(0);
+  image_copy.setImageSubresource(
+      vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
+  image_copy.setImageOffset(
+      vk::Offset3D(source_region.origin.x, source_region.origin.y, 0));
+  image_copy.setImageExtent(
+      vk::Extent3D(source_region.size.width, source_region.size.height, 1));
+
+  // transition the source image to transfer source optimal
+  TransitionImageLayoutCommandVK transition_source_cmd =
+      TransitionImageLayoutCommandVK(source_image, vk::ImageLayout::eUndefined,
+                                     vk::ImageLayout::eTransferSrcOptimal);
+  bool success = transition_source_cmd.Submit(args.command_buffer.get());
+  if (!success) {
+    return false;
+  }
+
+  // get single use command buffer
+  auto copy_cmd = args.command_buffer->GetSingleUseChild();
+
+  vk::CommandBufferBeginInfo begin_info;
+  begin_info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+  auto res = copy_cmd.begin(begin_info);
+
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to begin command buffer: " << vk::to_string(res);
+    return false;
+  }
+
+  // issue the copy command
+  copy_cmd.copyImageToBuffer(source_image, vk::ImageLayout::eTransferSrcOptimal,
+                             dest_buffer, image_copy);
+  res = copy_cmd.end();
+  if (res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to end command buffer: " << vk::to_string(res);
+  }
+
+  return true;
+}
+
+// END: BlitCopyTextureToBufferCommandVK
+
+// BEGIN: BlitGenerateMipmapCommandVK
+
+BlitGenerateMipmapCommandVK::~BlitGenerateMipmapCommandVK() = default;
+
+std::string BlitGenerateMipmapCommandVK::GetLabel() const {
+  return label;
+}
+
+[[nodiscard]] bool BlitGenerateMipmapCommandVK::Encode(
+    const BlitCommandEncoderArgsVK& args) const {
+  // TODO(https://github.com/flutter/flutter/issues/120134): Support generating
+  // mipmaps on Vulkan.
+  FML_LOG(ERROR) << "Generating mipmaps is not yet supported on Vulkan";
+  return true;
+}
+
+// END: BlitGenerateMipmapCommandVK
+
+}  // namespace impeller

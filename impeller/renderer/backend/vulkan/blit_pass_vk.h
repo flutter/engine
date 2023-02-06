@@ -5,19 +5,29 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/blit_command_vk.h"
+#include "impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
 
 class BlitPassVK final : public BlitPass {
  public:
+  BlitPassVK(std::weak_ptr<const Context> context,
+             vk::Device device,
+             std::shared_ptr<FencedCommandBufferVK> command_buffer);
+
   // |BlitPass|
   ~BlitPassVK() override;
 
  private:
   friend class CommandBufferVK;
 
-  BlitPassVK();
+  std::weak_ptr<const Context> context_;
+  vk::Device device_;
+  std::shared_ptr<FencedCommandBufferVK> command_buffer_;
+  std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
+  std::string label_;
 
   // |BlitPass|
   bool IsValid() const override;
