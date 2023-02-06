@@ -103,6 +103,8 @@ enum class PixelFormat {
   kDefaultStencil = kS8UInt,
 };
 
+const char* PixelFormatToString(PixelFormat format);
+
 enum class BlendFactor {
   kZero,
   kOne,

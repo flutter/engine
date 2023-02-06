@@ -135,7 +135,9 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
                                           &alloc_create_info, &img, &allocation,
                                           &allocation_info)};
   if (result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Unable to allocate an image";
+    VALIDATION_LOG << "Unable to allocate an image, format requested was: "
+                   << PixelFormatToString(desc.format)
+                   << ", error was: " << vk::to_string(result);
     return nullptr;
   }
 
