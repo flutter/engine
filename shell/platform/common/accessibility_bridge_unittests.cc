@@ -68,7 +68,7 @@ TEST(AccessibilityBridgeTest, BasicTest) {
 
 // Flutter used to assume that the accessibility root had ID 0.
 // In a multi-view world, each view has its own accessibility root
-// with a unique node ID that is globally unique.
+// with a globally unique node ID.
 TEST(AccessibilityBridgeTest, AccessibilityRootId) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
