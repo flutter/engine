@@ -138,11 +138,26 @@ zip_bundle("client_wrapper_archive") {
       },
     ]
   }
+
+  # Headers
   headers = core_cpp_client_wrapper_includes +
             core_cpp_client_wrapper_internal_headers
   foreach(header, headers) {
     rebased_path =
         rebase_path(header, "//flutter/shell/platform/common/client_wrapper")
+    tmp_files += [
+      {
+        source = header
+        destination = "cpp_client_wrapper/$rebased_path"
+      },
+    ]
+  }
+
+  # Wrapper includes
+  foreach(header, _wrapper_includes) {
+    rebased_path =
+        rebase_path("//flutter/shell/platform/windows/client_wrapper/$header",
+                    "//flutter/shell/platform/windows/client_wrapper")
     tmp_files += [
       {
         source = header
