@@ -531,7 +531,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return rect.width() * rect.height();
 }
 
-// Find the smallest eligiable semantics object for _accessibilityHitTest.
+// Finds the smallest eligiable semantics object for _accessibilityHitTest.
 - (SemanticsObject*)search:(CGPoint)point {
   if ([self children].count == 0) {
     // Check if the current semantic object should be returned.
