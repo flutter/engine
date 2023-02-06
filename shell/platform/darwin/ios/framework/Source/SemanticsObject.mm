@@ -521,8 +521,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return label;
 }
 
-// The point is in global coordinates, so use the global rect here.
 - (bool)containsPoint:(CGPoint)point {
+  // The point is in global coordinates, so use the global rect here.
   return CGRectContainsPoint([self globalRect], point);
 }
 
