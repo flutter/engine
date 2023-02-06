@@ -125,8 +125,7 @@ std::shared_ptr<BlitPass> CommandBufferVK::OnCreateBlitPass() const {
     return nullptr;
   }
 
-  auto pass =
-      std::make_shared<BlitPassVK>(context_, device_, fenced_command_buffer_);
+  auto pass = std::make_shared<BlitPassVK>(fenced_command_buffer_);
   if (!pass->IsValid()) {
     return nullptr;
   }

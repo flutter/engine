@@ -21,17 +21,14 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
 }
 
 [[nodiscard]] bool BlitCopyTextureToTextureCommandVK::Encode(
-    const BlitCommandEncoderArgsVK& args) const {
+    FencedCommandBufferVK* fenced_command_buffer) const {
   // cast source and destination to TextureVK
   auto& source_tex_vk = TextureVK::Cast(*source);
   auto& dest_tex_vk = TextureVK::Cast(*destination);
 
   // get the vulkan image and image view
   auto source_image = source_tex_vk.GetImage();
-  auto source_image_view = source_tex_vk.GetImageView();
-
   auto dest_image = dest_tex_vk.GetImage();
-  auto dest_image_view = dest_tex_vk.GetImageView();
 
   // copy the source image to the destination image, from source_region to
   // destination_origin.
@@ -49,7 +46,7 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
       vk::Extent3D(source_region.size.width, source_region.size.height, 1);
 
   // get single use command buffer
-  auto copy_cmd = args.command_buffer->GetSingleUseChild();
+  auto copy_cmd = fenced_command_buffer->GetSingleUseChild();
 
   vk::CommandBufferBeginInfo begin_info;
   begin_info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -64,7 +61,7 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
   TransitionImageLayoutCommandVK transition_source_cmd =
       TransitionImageLayoutCommandVK(source_image, vk::ImageLayout::eUndefined,
                                      vk::ImageLayout::eTransferSrcOptimal);
-  bool success = transition_source_cmd.Submit(args.command_buffer.get());
+  bool success = transition_source_cmd.Submit(fenced_command_buffer);
   if (!success) {
     return false;
   }
@@ -73,7 +70,7 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
   TransitionImageLayoutCommandVK transition_dest_cmd =
       TransitionImageLayoutCommandVK(dest_image, vk::ImageLayout::eUndefined,
                                      vk::ImageLayout::eTransferDstOptimal);
-  success = transition_dest_cmd.Submit(args.command_buffer.get());
+  success = transition_dest_cmd.Submit(fenced_command_buffer);
   if (!success) {
     return false;
   }
@@ -102,14 +99,13 @@ std::string BlitCopyTextureToBufferCommandVK::GetLabel() const {
 }
 
 [[nodiscard]] bool BlitCopyTextureToBufferCommandVK::Encode(
-    const BlitCommandEncoderArgsVK& args) const {
+    FencedCommandBufferVK* fenced_command_buffer) const {
   // cast source and destination to TextureVK
   auto& source_tex_vk = TextureVK::Cast(*source);
   auto& dest_buf_vk = DeviceBufferVK::Cast(*destination);
 
   // get the vulkan image and image view
   auto source_image = source_tex_vk.GetImage();
-  auto source_image_view = source_tex_vk.GetImageView();
 
   // get buffer image handle
   auto dest_buffer = dest_buf_vk.GetVKBufferHandle();
@@ -131,13 +127,13 @@ std::string BlitCopyTextureToBufferCommandVK::GetLabel() const {
   TransitionImageLayoutCommandVK transition_source_cmd =
       TransitionImageLayoutCommandVK(source_image, vk::ImageLayout::eUndefined,
                                      vk::ImageLayout::eTransferSrcOptimal);
-  bool success = transition_source_cmd.Submit(args.command_buffer.get());
+  bool success = transition_source_cmd.Submit(fenced_command_buffer);
   if (!success) {
     return false;
   }
 
   // get single use command buffer
-  auto copy_cmd = args.command_buffer->GetSingleUseChild();
+  auto copy_cmd = fenced_command_buffer->GetSingleUseChild();
 
   vk::CommandBufferBeginInfo begin_info;
   begin_info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -170,7 +166,7 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
 }
 
 [[nodiscard]] bool BlitGenerateMipmapCommandVK::Encode(
-    const BlitCommandEncoderArgsVK& args) const {
+    FencedCommandBufferVK* fenced_command_buffer) const {
   // TODO(https://github.com/flutter/flutter/issues/120134): Support generating
   // mipmaps on Vulkan.
   FML_LOG(ERROR) << "Generating mipmaps is not yet supported on Vulkan";

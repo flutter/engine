@@ -13,9 +13,7 @@ namespace impeller {
 
 class BlitPassVK final : public BlitPass {
  public:
-  BlitPassVK(std::weak_ptr<const Context> context,
-             vk::Device device,
-             std::shared_ptr<FencedCommandBufferVK> command_buffer);
+  explicit BlitPassVK(std::shared_ptr<FencedCommandBufferVK> command_buffer);
 
   // |BlitPass|
   ~BlitPassVK() override;
@@ -23,8 +21,6 @@ class BlitPassVK final : public BlitPass {
  private:
   friend class CommandBufferVK;
 
-  std::weak_ptr<const Context> context_;
-  vk::Device device_;
   std::shared_ptr<FencedCommandBufferVK> command_buffer_;
   std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
   std::string label_;

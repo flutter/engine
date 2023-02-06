@@ -9,12 +9,8 @@
 
 namespace impeller {
 
-BlitPassVK::BlitPassVK(std::weak_ptr<const Context> context,
-                       vk::Device device,
-                       std::shared_ptr<FencedCommandBufferVK> command_buffer)
-    : context_(std::move(context)),
-      device_(device),
-      command_buffer_(std::move(command_buffer)) {}
+BlitPassVK::BlitPassVK(std::shared_ptr<FencedCommandBufferVK> command_buffer)
+    : command_buffer_(std::move(command_buffer)) {}
 
 BlitPassVK::~BlitPassVK() = default;
 
@@ -27,7 +23,7 @@ void BlitPassVK::OnSetLabel(std::string label) {
 
 // |BlitPass|
 bool BlitPassVK::IsValid() const {
-  return !context_.expired() && command_buffer_;
+  return command_buffer_ != nullptr;
 }
 
 // |BlitPass|
@@ -39,14 +35,8 @@ bool BlitPassVK::EncodeCommands(
     return false;
   }
 
-  BlitCommandEncoderArgsVK args = {
-      .context = context_,
-      .device = device_,
-      .command_buffer = command_buffer_,
-  };
-
   for (auto& command : commands_) {
-    bool encode_res = command->Encode(args);
+    bool encode_res = command->Encode(command_buffer_.get());
     if (!encode_res) {
       return false;
     }

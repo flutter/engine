@@ -13,20 +13,14 @@
 
 namespace impeller {
 
-struct BlitCommandEncoderArgsVK {
-  std::weak_ptr<const impeller::Context> context;
-  vk::Device device;
-  std::shared_ptr<FencedCommandBufferVK> command_buffer;
-};
-
-/// Mixin for dispatching Metal commands.
+/// Mixin for dispatching Vulkan commands.
 struct BlitEncodeVK : BackendCast<BlitEncodeVK, BlitCommand> {
   virtual ~BlitEncodeVK();
 
   virtual std::string GetLabel() const = 0;
 
   [[nodiscard]] virtual bool Encode(
-      const BlitCommandEncoderArgsVK& args) const = 0;
+      FencedCommandBufferVK* fenced_command_buffer) const = 0;
 };
 
 struct BlitCopyTextureToTextureCommandVK
@@ -37,7 +31,7 @@ struct BlitCopyTextureToTextureCommandVK
   std::string GetLabel() const override;
 
   [[nodiscard]] bool Encode(
-      const BlitCommandEncoderArgsVK& args) const override;
+      FencedCommandBufferVK* fenced_command_buffer) const override;
 };
 
 struct BlitCopyTextureToBufferCommandVK : public BlitCopyTextureToBufferCommand,
@@ -47,7 +41,7 @@ struct BlitCopyTextureToBufferCommandVK : public BlitCopyTextureToBufferCommand,
   std::string GetLabel() const override;
 
   [[nodiscard]] bool Encode(
-      const BlitCommandEncoderArgsVK& args) const override;
+      FencedCommandBufferVK* fenced_command_buffer) const override;
 };
 
 struct BlitGenerateMipmapCommandVK : public BlitGenerateMipmapCommand,
@@ -57,7 +51,7 @@ struct BlitGenerateMipmapCommandVK : public BlitGenerateMipmapCommand,
   std::string GetLabel() const override;
 
   [[nodiscard]] bool Encode(
-      const BlitCommandEncoderArgsVK& args) const override;
+      FencedCommandBufferVK* fenced_command_buffer) const override;
 };
 
 }  // namespace impeller
