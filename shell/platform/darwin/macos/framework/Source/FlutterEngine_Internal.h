@@ -78,7 +78,7 @@
 - (void)removeViewController:(nonnull FlutterViewController*)viewController;
 
 /**
- * Informs the engine that the specified view controller's view size has changed.
+ * Informs the engine that the specified view controller's window metrics have changed.
  */
 - (void)updateWindowMetricsForViewController:(nonnull FlutterViewController*)viewController;
 

@@ -85,7 +85,7 @@ constexpr char kTextPlainFormat[] = "text/plain";
 - (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
 /**
- * An internal method that adds view controller with the given ID.
+ * An internal method that adds the view controller with the given ID.
  *
  * This method assigns the controller with the ID, puts the controller into the
  * map, and does assertions related to the default view ID.
