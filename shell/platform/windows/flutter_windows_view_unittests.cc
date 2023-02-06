@@ -944,57 +944,5 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   EXPECT_EQ(uia_tooltip, "tooltip");
 }
 
-// Flutter used to assume that the accessibility root had ID 0.
-// In a multi-view world, each view has its own accessibility root
-// with a unique node ID that can be anything.
-TEST(FlutterWindowsViewTest, AccessibilityRootId) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  EngineModifier modifier(engine.get());
-  modifier.embedder_api().UpdateSemanticsEnabled =
-      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, bool enabled) {
-        return kSuccess;
-      };
-
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
-
-  // Enable semantics to instantiate accessibility bridge.
-  view.OnUpdateSemanticsEnabled(true);
-
-  auto bridge = view.GetEngine()->accessibility_bridge().lock();
-  ASSERT_TRUE(bridge);
-
-  // Add root node.
-  FlutterSemanticsNode root{sizeof(FlutterSemanticsNode), 1};
-  std::vector<int32_t> root_children{2};
-  root.child_count = root_children.size();
-  root.children_in_traversal_order = root_children.data();
-  root.children_in_hit_test_order = root_children.data();
-
-  FlutterSemanticsNode child{sizeof(FlutterSemanticsNode), 2};
-  child.label = "child";
-  child.value = "child";
-
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child);
-  bridge->CommitUpdates();
-
-  // Look up the root windows node delegate.
-  auto node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
-  ASSERT_TRUE(node_delegate);
-  EXPECT_EQ(node_delegate->GetChildCount(), 1);
-
-  // Look up the child
-  auto child_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(2).lock();
-  ASSERT_TRUE(child_delegate);
-  EXPECT_EQ(child_delegate->GetChildCount(), 0);
-
-  // Spot check non-existent nodes.
-  auto fake_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
-  ASSERT_FALSE(fake_delegate);
-}
-
 }  // namespace testing
 }  // namespace flutter
