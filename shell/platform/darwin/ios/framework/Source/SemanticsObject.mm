@@ -536,32 +536,19 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   if ([self children].count == 0) {
     // Check if the current semantic object should be returned.
     if ([self containsPoint:point] && [self isFocusable]) {
-      return self;
+      return self.nativeAccessibility;
     }
     return nil;
   }
 
-  SemanticsObject* smallestObject = nil;
-  // Traverse all semantics children to find an eligible and smallest one.
-  for (SemanticsObject* child in [self children]) {
+  // Traverse all semantics children to find an eligible one.
+  for (SemanticsObject* child in [self childrenInHitTestOrder]) {
     // Continue searching the child semantic tree if it contains the point.
     if ([child containsPoint:point]) {
-      SemanticsObject* childSearchResult = [child search:point];
-      if (childSearchResult != nil &&
-          (smallestObject == nil || [childSearchResult size] < [smallestObject size])) {
-        smallestObject = childSearchResult;
-      }
+      return [child search:point];
     }
   }
 
-  if (smallestObject != nil) {
-    return smallestObject;
-  }
-
-  // Check if the current semantic object should be returned.
-  if ([self containsPoint:point] && [self isFocusable]) {
-    return self;
-  }
   return nil;
 }
 
