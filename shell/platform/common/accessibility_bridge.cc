@@ -98,7 +98,7 @@ void AccessibilityBridge::CommitUpdates() {
 
   // Set the tree's root if necessary. The new root is the last list's first
   // node.
-  if (!results.empty() && tree_->root()->id() == ui::AXNode::kInvalidAXID) {
+  if (!results.empty() && GetRootAsAXNode()->id() == ui::AXNode::kInvalidAXID) {
     FML_DCHECK(!results.back().empty());
 
     update.root_id = results.back().front().id;
