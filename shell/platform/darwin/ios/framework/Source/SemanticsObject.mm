@@ -528,12 +528,11 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 
 // Finds the first eligiable semantics object in hit test order.
 - (SemanticsObject*)search:(CGPoint)point {
-
   // Search children in hit test order.
   for (SemanticsObject* child in [self childrenInHitTestOrder]) {
     if ([child containsPoint:point]) {
       SemanticsObject* childSearchResult = [child search:point];
-      if(childSearchResult != nil) {
+      if (childSearchResult != nil) {
         return childSearchResult;
       }
     }
