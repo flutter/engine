@@ -526,11 +526,6 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   return CGRectContainsPoint([self globalRect], point);
 }
 
-- (double)size {
-  const SkRect& rect = [self node].rect;
-  return rect.width() * rect.height();
-}
-
 // Finds the smallest eligiable semantics object for _accessibilityHitTest.
 - (SemanticsObject*)search:(CGPoint)point {
   if ([self children].count == 0) {
