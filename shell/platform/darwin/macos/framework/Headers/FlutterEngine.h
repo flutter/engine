@@ -32,6 +32,9 @@ extern const uint64_t kFlutterDefaultViewId;
 
 /**
  * Coordinates a single instance of execution of a Flutter engine.
+ *
+ * A FlutterEngine can only be attached with one controller from the native
+ * code.
  */
 FLUTTER_DARWIN_EXPORT
 @interface FlutterEngine : NSObject <FlutterTextureRegistry, FlutterPluginRegistry>
@@ -91,11 +94,6 @@ FLUTTER_DARWIN_EXPORT
  * is prohibited and will throw an assertion error.
  */
 @property(nonatomic, nullable, weak) FlutterViewController* viewController;
-
-/**
- * The `FlutterViewController` associated with the given view ID, if any.
- */
-- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
 /**
  * The `FlutterBinaryMessenger` for communicating with this engine.

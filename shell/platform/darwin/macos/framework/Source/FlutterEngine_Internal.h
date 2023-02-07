@@ -48,34 +48,34 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Attach a view controller to the engine and associate it with a newly
- * generated ID.
+ * Attach a view controller to the engine as its default controller.
  *
- * The engine holds a weak reference to each attached view controller.
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller, if successfully attached, will always have the default
+ * view ID kFlutterDefaultViewId.
  *
- * The first added view controller (either with this method or the
- * viewController property) will always have ID kFlutterDefaultViewId.
+ *  The engine holds a weak reference to the attached view controller.
  *
  * If the given view controller is already attached to an engine, this call
  * throws an assertion.
- *
- * TODO(dkwingsmt): Move this method to the public API once stable. This method
- * should be a public method but its behavior is "broken" before we implement
- * the proper embedder API. See its implementation for detail.
  */
 - (void)addViewController:(nonnull FlutterViewController*)viewController;
 
 /**
  * Dissociate the given view controller from this engine.
  *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller must be the default view controller.
+ *
  * If the view controller is not associated with this engine, this call throws an
  * assertion.
- *
- * TODO(dkwingsmt): Move this method to the public API once stable. This method
- * should be a public method but its behavior is "broken" before we implement
- * the proper embedder API. See its implementation for detail.
  */
 - (void)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * The `FlutterViewController` associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.

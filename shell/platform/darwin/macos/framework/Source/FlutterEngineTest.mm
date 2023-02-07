@@ -621,33 +621,29 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
 
   FlutterEngine* engine;
-  FlutterViewController* viewController2;
+  FlutterViewController* viewController1;
 
   @autoreleasepool {
     // Create FVC1.
-    FlutterViewController* viewController1 =
-        [[FlutterViewController alloc] initWithProject:project];
+    viewController1 = [[FlutterViewController alloc] initWithProject:project];
     EXPECT_EQ(viewController1.id, 0ull);
 
     engine = viewController1.engine;
+    engine.viewController = nil;
+
     // Create FVC2 based on the same engine.
-    viewController2 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(engine.viewController, viewController1);
-    EXPECT_EQ([engine viewControllerForId:0], viewController1);
-    EXPECT_EQ([engine viewControllerForId:1], viewController2);
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(engine.viewController, viewController2);
   }
-  // FVC1 is deallocated but FVC2 is retained.
+  // FVC2 is deallocated but FVC1 is retained.
 
   EXPECT_EQ(engine.viewController, nil);
-  EXPECT_EQ([engine viewControllerForId:0], nil);
-  EXPECT_EQ([engine viewControllerForId:1], viewController2);
 
-  // Create FVC3. The default view controller will stay nil.
-  FlutterViewController* viewController3 =
-      [[FlutterViewController alloc] initWithEngine:viewController2.engine nibName:nil bundle:nil];
-  EXPECT_EQ(engine.viewController, nil);
-  EXPECT_EQ(viewController3.id, 2ull);
-  EXPECT_EQ([engine viewControllerForId:2], viewController3);
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -657,32 +653,28 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
                                                       project:nil
                                        allowHeadlessExecution:NO];
-  FlutterViewController* viewController2;
+  FlutterViewController* viewController1;
 
   @autoreleasepool {
-    FlutterViewController* viewController1 = [[FlutterViewController alloc] initWithEngine:engine
-                                                                                   nibName:nil
-                                                                                    bundle:nil];
+    viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
     EXPECT_EQ(viewController1.id, 0ull);
     EXPECT_EQ(engine.viewController, viewController1);
 
-    viewController2 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController2.id, 1ull);
-    EXPECT_EQ([engine viewControllerForId:0], viewController1);
-    EXPECT_EQ([engine viewControllerForId:1], viewController2);
+    engine.viewController = nil;
+
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(viewController2.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController2);
   }
-  // FVC1 is deallocated but FVC2 is retained.
+  // FVC2 is deallocated but FVC1 is retained.
 
   EXPECT_EQ(engine.viewController, nil);
-  EXPECT_EQ([engine viewControllerForId:0], nil);
-  EXPECT_EQ([engine viewControllerForId:1], viewController2);
 
-  // Create FVC3. The default view controller will stay nil.
-  FlutterViewController* viewController3 =
-      [[FlutterViewController alloc] initWithEngine:viewController2.engine nibName:nil bundle:nil];
-  EXPECT_EQ(engine.viewController, nil);
-  EXPECT_EQ(viewController3.id, 2ull);
-  EXPECT_EQ([engine viewControllerForId:2], viewController3);
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
 }
 
 }  // namespace flutter::testing
