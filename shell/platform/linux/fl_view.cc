@@ -904,11 +904,10 @@ G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
   return view->engine;
 }
 
-void fl_view_set_textures(FlView* view,
+void fl_view_set_textures(FlView* self,
                           GdkGLContext* context,
                           GPtrArray* textures) {
-  g_return_if_fail(FL_IS_VIEW(view));
-  FlView* self = FL_VIEW(view);
+  g_return_if_fail(FL_IS_VIEW(self));
 
   GList* used_area_list = self->gl_area_list;
   GList* pending_children_list = nullptr;
@@ -923,9 +922,9 @@ void fl_view_set_textures(FlView* view,
       used_area_list = used_area_list->next;
     } else {
       area = FL_GL_AREA(fl_gl_area_new(context));
-      gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(view));
+      gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(self));
       gtk_widget_show(GTK_WIDGET(area));
-      view->gl_area_list = g_list_append(view->gl_area_list, area);
+      self->gl_area_list = g_list_append(self->gl_area_list, area);
     }
 
     pending_children_list =
@@ -933,7 +932,7 @@ void fl_view_set_textures(FlView* view,
     fl_gl_area_queue_render(area, texture);
   }
 
-  for (GList* child = view->children_list; child; child = child->next) {
+  for (GList* child = self->children_list; child; child = child->next) {
     GtkWidget* w = reinterpret_cast<GtkWidget*>(child->data);
     GList* pending_child = find_child(pending_children_list, w);
 
@@ -944,15 +943,15 @@ void fl_view_set_textures(FlView* view,
     }
   }
 
-  g_list_free(view->children_list);
-  view->children_list = pending_children_list;
+  g_list_free(self->children_list);
+  self->children_list = pending_children_list;
 
   struct _ReorderData data = {
-      .parent_window = gtk_widget_get_window(GTK_WIDGET(view)),
+      .parent_window = gtk_widget_get_window(GTK_WIDGET(self)),
       .last_window = nullptr,
   };
 
-  gtk_container_forall(GTK_CONTAINER(view), fl_view_reorder_forall, &data);
+  gtk_container_forall(GTK_CONTAINER(self), fl_view_reorder_forall, &data);
 
-  gtk_widget_queue_draw(GTK_WIDGET(view));
+  gtk_widget_queue_draw(GTK_WIDGET(self));
 }
