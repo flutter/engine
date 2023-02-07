@@ -56,7 +56,6 @@ struct _FlView {
   GtkWidget* event_box;
 
   GList* children_list;
-  GList* pending_children_list;
 
   // Tracks whether mouse pointer is inside the view.
   gboolean pointer_inside;
@@ -211,22 +210,6 @@ static void handle_geometry_changed(FlView* self) {
     fl_renderer_wait_for_frame(self->renderer, allocation.width * scale_factor,
                                allocation.height * scale_factor);
   }
-}
-
-// Adds a widget to render in this view.
-static void add_pending_child(FlView* self,
-                              GtkWidget* widget,
-                              GdkRectangle* geometry) {
-  FlViewChild* child = g_new(FlViewChild, 1);
-  child->widget = widget;
-  if (geometry) {
-    child->geometry = *geometry;
-  } else {
-    child->geometry = {0, 0, 0, 0};
-  }
-
-  self->pending_children_list =
-      g_list_append(self->pending_children_list, child);
 }
 
 // Finds the node with the specified widget in a list of FlViewChild.
@@ -949,8 +932,7 @@ void fl_view_set_textures(FlView* view,
   FlView* self = FL_VIEW(view);
 
   self->used_area_list = self->gl_area_list;
-  g_list_free_full(self->pending_children_list, g_free);
-  self->pending_children_list = nullptr;
+  GList* pending_children_list = nullptr;
 
   for (size_t i = 0; i < textures->len; i++) {
     FlBackingStoreProvider* texture =
@@ -966,11 +948,14 @@ void fl_view_set_textures(FlView* view,
     }
 
     gtk_widget_show(GTK_WIDGET(area));
-    add_pending_child(view, GTK_WIDGET(area), nullptr);
+    FlViewChild* child = g_new(FlViewChild, 1);
+    child->widget = GTK_WIDGET(area);
+    child->geometry = {0, 0, 0, 0};
+    pending_children_list = g_list_append(pending_children_list, child);
     fl_gl_area_queue_render(area, texture);
   }
 
-  for (GList* pending_child = view->pending_children_list; pending_child;
+  for (GList* pending_child = pending_children_list; pending_child;
        pending_child = pending_child->next) {
     FlViewChild* pending_view_child =
         reinterpret_cast<FlViewChild*>(pending_child->data);
@@ -998,8 +983,7 @@ void fl_view_set_textures(FlView* view,
   }
 
   g_list_free(view->children_list);
-  view->children_list = view->pending_children_list;
-  view->pending_children_list = nullptr;
+  view->children_list = pending_children_list;
 
   struct _ReorderData data = {
       .parent_window = gtk_widget_get_window(GTK_WIDGET(view)),
