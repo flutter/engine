@@ -794,26 +794,16 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
                                   reinterpret_cast<GdkEvent*>(event))));
 }
 
-static void put_widget(FlView* self,
-                       GtkWidget* widget,
-                       GdkRectangle* geometry) {
+// Implements GtkContainer::add
+static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
+  FlView* self = FL_VIEW(container);
+
   FlViewChild* child = g_new(FlViewChild, 1);
   child->widget = widget;
-  child->geometry = *geometry;
+  child->geometry = {0, 0, 0, 0};
 
   gtk_widget_set_parent(widget, GTK_WIDGET(self));
   self->children_list = g_list_append(self->children_list, child);
-}
-
-// Implements GtkContainer::add
-static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
-  GdkRectangle geometry = {
-      .x = 0,
-      .y = 0,
-      .width = 0,
-      .height = 0,
-  };
-  put_widget(FL_VIEW(container), widget, &geometry);
 }
 
 // Implements GtkContainer::remove
