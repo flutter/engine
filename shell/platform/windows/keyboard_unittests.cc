@@ -363,11 +363,14 @@ class KeyboardTester {
   explicit KeyboardTester(WindowsTestContext& context)
       : callback_handler_(RespondValue(false)),
         map_virtual_key_layout_(LayoutDefault) {
+    std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine(context);
+
+    engine_ = engine.get();
     view_ = std::make_unique<TestFlutterWindowsView>(
         // The WindowBindingHandler is used for window size and such, and
         // doesn't affect keyboard.
         std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
-    view_->SetEngine(GetTestEngine(context));
+    view_->SetEngine(std::move(engine));
     window_ = std::make_unique<MockKeyboardManagerDelegate>(
         view_.get(), [this](UINT virtual_key) -> SHORT {
           return map_virtual_key_layout_(virtual_key, MAPVK_VK_TO_CHAR);
@@ -376,6 +379,9 @@ class KeyboardTester {
 
   TestFlutterWindowsView& GetView() { return *view_; }
   MockKeyboardManagerDelegate& GetWindow() { return *window_; }
+
+  // Reset the keyboard by invoking the engine restart handler.
+  void ResetKeyboard() { EngineModifier{engine_}.Restart(); }
 
   // Set all events to be handled (true) or unhandled (false).
   void Responding(bool response) { callback_handler_ = RespondValue(response); }
@@ -441,6 +447,7 @@ class KeyboardTester {
   }
 
  private:
+  FlutterWindowsEngine* engine_;
   std::unique_ptr<TestFlutterWindowsView> view_;
   std::unique_ptr<MockKeyboardManagerDelegate> window_;
   MockKeyResponseController::EmbedderCallbackHandler callback_handler_;
@@ -968,7 +975,7 @@ TEST_F(KeyboardTest, RestartClearsKeyboardState) {
 
   // Send the "hot restart" signal. This should reset the keyboard's state.
   // TODO:
-  //tester.GetView().OnPreEngineRestart();
+  tester.ResetKeyboard();
 
   // Hold A. Notice the message declares the key is already down, however, the
   // the keyboard does not send a repeat event as its state was reset.

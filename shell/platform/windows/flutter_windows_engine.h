@@ -281,6 +281,12 @@ class FlutterWindowsEngine {
       FlutterWindowsEngine* engine,
       FlutterWindowsView* view);
 
+  // Invoked by the engine right before the engine is restarted.
+  //
+  // This should reset necessary states to as if the engine has just been
+  // created. This is typically caused by a hot restart (Shift-R in CLI.)
+  void OnPreEngineRestart();
+
  private:
   // Allows swapping out embedder_api_ calls in tests.
   friend class EngineModifier;

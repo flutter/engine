@@ -324,10 +324,8 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     host->OnVsync(baton);
   };
   args.on_pre_engine_restart_callback = [](void* user_data) {
-    // Reset the keyboard's state on hot restart.
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
-    // TODO: no-op if no view.
-    host->InitializeKeyboard();
+    host->OnPreEngineRestart();
   };
   args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
                                       void* user_data) {
@@ -670,6 +668,13 @@ std::shared_ptr<AccessibilityBridgeWindows>
 FlutterWindowsEngine::CreateAccessibilityBridge(FlutterWindowsEngine* engine,
                                                 FlutterWindowsView* view) {
   return std::make_shared<AccessibilityBridgeWindows>(engine, view);
+}
+
+void FlutterWindowsEngine::OnPreEngineRestart() {
+  // Reset the keyboard's state on hot restart.
+  if (view_) {
+    InitializeKeyboard();
+  }
 }
 
 gfx::NativeViewAccessible FlutterWindowsEngine::GetNativeAccessibleFromId(
