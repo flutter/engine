@@ -307,12 +307,8 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     [child privateSetParent:nil];
   }
   [_children removeAllObjects];
-  [_children release];
-
-  for (SemanticsObject* child in _childrenInHitTestOrder) {
-    [child privateSetParent:nil];
-  }
   [_childrenInHitTestOrder removeAllObjects];
+  [_children release];
   [_childrenInHitTestOrder release];
 
   _parent = nil;
@@ -330,6 +326,17 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   [_children release];
   _children = [[NSMutableArray alloc] initWithArray:children];
   for (SemanticsObject* child in _children) {
+    [child privateSetParent:self];
+  }
+}
+
+- (void)setChildrenInHitTestOrder:(NSArray<SemanticsObject*>*)childrenInHitTestOrder {
+  for (SemanticsObject* child in _childrenInHitTestOrder) {
+    [child privateSetParent:nil];
+  }
+  [_childrenInHitTestOrder release];
+  _childrenInHitTestOrder = [[NSMutableArray alloc] initWithArray:childrenInHitTestOrder];
+  for (SemanticsObject* child in _childrenInHitTestOrder) {
     [child privateSetParent:self];
   }
 }
