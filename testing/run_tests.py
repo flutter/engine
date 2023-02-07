@@ -32,7 +32,8 @@ fonts_dir = os.path.join(
 roboto_font_path = os.path.join(fonts_dir, 'Roboto-Regular.ttf')
 font_subset_dir = os.path.join(buildroot_dir, 'flutter', 'tools', 'font-subset')
 
-fml_unittests_filter = '--gtest_filter=-*TimeSensitiveTest*'
+FML_UNITTESTS_FILTER = '--gtest_filter=-*TimeSensitiveTest*'
+ENCODING = 'UTF-8'
 
 
 def PrintDivider(char='='):
@@ -341,7 +342,7 @@ def RunCCTests(build_dir, filter, coverage, capture_core_dump):
       make_test('embedder_a11y_unittests'),
       make_test('embedder_proctable_unittests'),
       make_test('embedder_unittests'),
-      make_test('fml_unittests', flags=[fml_unittests_filter] + repeat_flags),
+      make_test('fml_unittests', flags=[FML_UNITTESTS_FILTER] + repeat_flags),
       make_test('no_dart_plugin_registrant_unittests'),
       make_test('runtime_unittests'),
       make_test('testing_unittests'),
@@ -569,8 +570,13 @@ def EnsureIosTestsAreBuilt(ios_out_dir):
 def AssertExpectedXcodeVersion():
   """Checks that the user has a version of Xcode installed"""
   version_output = subprocess.check_output(['xcodebuild', '-version'])
-  match = re.match(b"Xcode (\d+)", version_output)
-  message = "Xcode must be installed to run the iOS embedding unit tests"
+  # TODO ricardoamador: remove this check when python 2 is deprecated.
+  version_output = version_output if isinstance(
+      version_output, str
+  ) else version_output.decode(ENCODING)
+  version_output = version_output.strip()
+  match = re.match(r'Xcode (\d+)', version_output)
+  message = 'Xcode must be installed to run the iOS embedding unit tests'
   assert match, message
 
 
