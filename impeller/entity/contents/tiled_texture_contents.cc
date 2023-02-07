@@ -35,7 +35,7 @@ void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
 
 void TiledTextureContents::SetColorFilter(
     std::optional<ColorFilterProc> color_filter) {
-  color_filter_ = color_filter;
+  color_filter_ = std::move(color_filter);
 }
 
 std::optional<std::shared_ptr<Texture>>
