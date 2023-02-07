@@ -973,8 +973,7 @@ TEST_F(KeyboardTest, RestartClearsKeyboardState) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
-  // Send the "hot restart" signal. This should reset the keyboard's state.
-  // TODO:
+  // Reset the keyboard's state.
   tester.ResetKeyboard();
 
   // Hold A. Notice the message declares the key is already down, however, the
