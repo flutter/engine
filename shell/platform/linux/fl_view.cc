@@ -67,7 +67,6 @@ struct _FlView {
 
 typedef struct _FlViewChild {
   GtkWidget* widget;
-  GdkRectangle geometry;
 } FlViewChild;
 
 enum { kPropFlutterProject = 1, kPropLast };
@@ -676,8 +675,8 @@ static void fl_view_get_preferred_width(GtkWidget* widget,
 
     gtk_widget_get_preferred_width(child->widget, &child_min, &child_nat);
 
-    *minimum = MAX(*minimum, child->geometry.x + child_min);
-    *natural = MAX(*natural, child->geometry.x + child_nat);
+    *minimum = MAX(*minimum, child_min);
+    *natural = MAX(*natural, child_nat);
   }
 }
 
@@ -701,8 +700,8 @@ static void fl_view_get_preferred_height(GtkWidget* widget,
 
     gtk_widget_get_preferred_height(child->widget, &child_min, &child_nat);
 
-    *minimum = MAX(*minimum, child->geometry.y + child_min);
-    *natural = MAX(*natural, child->geometry.y + child_nat);
+    *minimum = MAX(*minimum, child_min);
+    *natural = MAX(*natural, child_nat);
   }
 }
 
@@ -728,7 +727,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
       continue;
     }
 
-    GtkAllocation child_allocation = child->geometry;
+    GtkAllocation child_allocation = {0, 0, 0, 0};
     GtkRequisition child_requisition;
     gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
 
@@ -800,7 +799,6 @@ static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
 
   FlViewChild* child = g_new(FlViewChild, 1);
   child->widget = widget;
-  child->geometry = {0, 0, 0, 0};
 
   gtk_widget_set_parent(widget, GTK_WIDGET(self));
   self->children_list = g_list_append(self->children_list, child);
@@ -939,7 +937,6 @@ void fl_view_set_textures(FlView* view,
     gtk_widget_show(GTK_WIDGET(area));
     FlViewChild* child = g_new(FlViewChild, 1);
     child->widget = GTK_WIDGET(area);
-    child->geometry = {0, 0, 0, 0};
     pending_children_list = g_list_append(pending_children_list, child);
     fl_gl_area_queue_render(area, texture);
   }
