@@ -88,6 +88,8 @@ TEST(AccessibilityBridgeTest, AccessibilityRootId) {
   auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(789).lock();
   auto fake_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
 
+  EXPECT_EQ(bridge->GetRootAsAXNode()->id(), 123);
+
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 456);
   EXPECT_EQ(root_node->GetData().child_ids[1], 789);
@@ -128,6 +130,8 @@ TEST(AccessibilityBridgeTest, AddOrder) {
   auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(56).lock();
   auto child3_node = bridge->GetFlutterPlatformNodeDelegateFromID(78).lock();
   auto child4_node = bridge->GetFlutterPlatformNodeDelegateFromID(90).lock();
+
+  EXPECT_EQ(bridge->GetRootAsAXNode()->id(), 12);
 
   EXPECT_EQ(root_node->GetChildCount(), 2);
   EXPECT_EQ(root_node->GetData().child_ids[0], 34);
