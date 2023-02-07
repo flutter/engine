@@ -21,7 +21,7 @@ void fl_view_begin_frame(FlView* view);
 /**
  * fl_view_add_gl_area:
  * @view: an #FlView.
- * @context: (transfer full): a #GdkGLContext, for #FlGLArea to render.
+ * @context: a #GdkGLContext, for #FlGLArea to render.
  * @texture: (transfer full): texture for OpenGL area to render.
  *
  * Append an #FlGLArea at top of stacked children of #FlView.
