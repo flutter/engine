@@ -942,35 +942,34 @@ G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
   return view->engine;
 }
 
-void fl_view_begin_frame(FlView* view) {
+void fl_view_set_textures(FlView* view,
+                          GdkGLContext* context,
+                          GPtrArray* textures) {
   g_return_if_fail(FL_IS_VIEW(view));
   FlView* self = FL_VIEW(view);
 
   self->used_area_list = self->gl_area_list;
   g_list_free_full(self->pending_children_list, g_free);
   self->pending_children_list = nullptr;
-}
 
-void fl_view_add_gl_area(FlView* view,
-                         GdkGLContext* context,
-                         FlBackingStoreProvider* texture) {
-  g_return_if_fail(FL_IS_VIEW(view));
+  for (size_t i = 0; i < textures->len; i++) {
+    FlBackingStoreProvider* texture =
+        FL_BACKING_STORE_PROVIDER(g_ptr_array_index(textures, i));
+    FlGLArea* area;
 
-  FlGLArea* area;
-  if (view->used_area_list) {
-    area = reinterpret_cast<FlGLArea*>(view->used_area_list->data);
-    view->used_area_list = view->used_area_list->next;
-  } else {
-    area = FL_GL_AREA(fl_gl_area_new(context));
-    view->gl_area_list = g_list_append(view->gl_area_list, area);
+    if (view->used_area_list) {
+      area = reinterpret_cast<FlGLArea*>(view->used_area_list->data);
+      view->used_area_list = view->used_area_list->next;
+    } else {
+      area = FL_GL_AREA(fl_gl_area_new(context));
+      view->gl_area_list = g_list_append(view->gl_area_list, area);
+    }
+
+    gtk_widget_show(GTK_WIDGET(area));
+    add_pending_child(view, GTK_WIDGET(area), nullptr);
+    fl_gl_area_queue_render(area, texture);
   }
 
-  gtk_widget_show(GTK_WIDGET(area));
-  add_pending_child(view, GTK_WIDGET(area), nullptr);
-  fl_gl_area_queue_render(area, texture);
-}
-
-void fl_view_end_frame(FlView* view) {
   for (GList* pending_child = view->pending_children_list; pending_child;
        pending_child = pending_child->next) {
     FlViewChild* pending_view_child =
