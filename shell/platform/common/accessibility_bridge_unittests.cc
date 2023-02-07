@@ -115,8 +115,10 @@ TEST(AccessibilityBridgeTest, AddOrder) {
   std::vector<int32_t> child3_children{90};
   FlutterSemanticsNode root = CreateSemanticsNode(12, "root", &root_children);
   FlutterSemanticsNode child1 = CreateSemanticsNode(34, "child 1");
-  FlutterSemanticsNode child2 = CreateSemanticsNode(56, "child 2", &child2_children);
-  FlutterSemanticsNode child3 = CreateSemanticsNode(78, "child 3", &child3_children);
+  FlutterSemanticsNode child2 =
+      CreateSemanticsNode(56, "child 2", &child2_children);
+  FlutterSemanticsNode child3 =
+      CreateSemanticsNode(78, "child 3", &child3_children);
   FlutterSemanticsNode child4 = CreateSemanticsNode(90, "child 4");
 
   bridge->AddFlutterSemanticsNodeUpdate(&child3);
