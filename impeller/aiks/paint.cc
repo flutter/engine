@@ -99,6 +99,9 @@ std::shared_ptr<Contents> Paint::WithImageFilter(
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
     bool absorb_opacity) const {
+  if (color_source_type == ColorSourceType::kImage) {
+    return input;
+  }
   if (color_filter.has_value()) {
     const ColorFilterProc& filter = color_filter.value();
     auto color_filter_contents = filter(FilterInput::Make(input));
