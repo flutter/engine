@@ -923,10 +923,10 @@ void fl_view_set_textures(FlView* view,
       used_area_list = used_area_list->next;
     } else {
       area = FL_GL_AREA(fl_gl_area_new(context));
+      gtk_widget_show(GTK_WIDGET(area));
       view->gl_area_list = g_list_append(view->gl_area_list, area);
     }
 
-    gtk_widget_show(GTK_WIDGET(area));
     pending_children_list =
         g_list_append(pending_children_list, GTK_WIDGET(area));
     fl_gl_area_queue_render(area, texture);
