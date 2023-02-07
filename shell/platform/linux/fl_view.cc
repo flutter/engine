@@ -50,8 +50,6 @@ struct _FlView {
   FlMouseCursorPlugin* mouse_cursor_plugin;
   FlPlatformPlugin* platform_plugin;
 
-  GList* gl_area_list;
-
   GtkWidget* event_box;
 
   GList* children_list;
@@ -204,17 +202,6 @@ static void handle_geometry_changed(FlView* self) {
     fl_renderer_wait_for_frame(self->renderer, allocation.width * scale_factor,
                                allocation.height * scale_factor);
   }
-}
-
-// Finds the node with the specified widget.
-static GList* find_child(GList* list, GtkWidget* widget) {
-  for (GList* i = list; i; i = i->next) {
-    GtkWidget* w = reinterpret_cast<GtkWidget*>(i->data);
-    if (w == widget) {
-      return i;
-    }
-  }
-  return nullptr;
 }
 
 // Called when the engine updates accessibility nodes.
@@ -604,8 +591,8 @@ static void fl_view_dispose(GObject* object) {
   }
   g_clear_object(&self->mouse_cursor_plugin);
   g_clear_object(&self->platform_plugin);
-  g_list_free_full(self->gl_area_list, g_object_unref);
-  self->gl_area_list = nullptr;
+  g_list_free_full(self->children_list, g_object_unref);
+  self->children_list = nullptr;
 
   G_OBJECT_CLASS(fl_view_parent_class)->dispose(object);
 }
@@ -899,9 +886,9 @@ G_MODULE_EXPORT FlView* fl_view_new(FlDartProject* project) {
       g_object_new(fl_view_get_type(), "flutter-project", project, nullptr));
 }
 
-G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* view) {
-  g_return_val_if_fail(FL_IS_VIEW(view), nullptr);
-  return view->engine;
+G_MODULE_EXPORT FlEngine* fl_view_get_engine(FlView* self) {
+  g_return_val_if_fail(FL_IS_VIEW(self), nullptr);
+  return self->engine;
 }
 
 void fl_view_set_textures(FlView* self,
@@ -909,42 +896,31 @@ void fl_view_set_textures(FlView* self,
                           GPtrArray* textures) {
   g_return_if_fail(FL_IS_VIEW(self));
 
-  GList* used_area_list = self->gl_area_list;
-  GList* pending_children_list = nullptr;
+  guint children_length = g_list_length(self->children_list);
 
-  for (size_t i = 0; i < textures->len; i++) {
+  // Add more GL areas if we need them.
+  for (guint i = children_length; i < textures->len; i++) {
+    FlGLArea* area = FL_GL_AREA(fl_gl_area_new(context));
+    gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(self));
+    gtk_widget_show(GTK_WIDGET(area));
+    self->children_list = g_list_append(self->children_list, area);
+  }
+
+  // Remove unused GL areas.
+  for (guint i = textures->len; i < children_length; i++) {
+    FlGLArea* area = FL_GL_AREA(g_list_first(self->children_list)->data);
+    gtk_widget_unparent(GTK_WIDGET(area));
+    g_object_unref(area);
+    self->children_list =
+        g_list_remove_link(self->children_list, self->children_list);
+  }
+
+  GList* area_link = self->children_list;
+  for (guint i = 0; i < textures->len; i++, area_link = area_link->next) {
     FlBackingStoreProvider* texture =
         FL_BACKING_STORE_PROVIDER(g_ptr_array_index(textures, i));
-    FlGLArea* area;
-
-    if (used_area_list) {
-      area = reinterpret_cast<FlGLArea*>(used_area_list->data);
-      used_area_list = used_area_list->next;
-    } else {
-      area = FL_GL_AREA(fl_gl_area_new(context));
-      gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(self));
-      gtk_widget_show(GTK_WIDGET(area));
-      self->gl_area_list = g_list_append(self->gl_area_list, area);
-    }
-
-    pending_children_list =
-        g_list_append(pending_children_list, GTK_WIDGET(area));
-    fl_gl_area_queue_render(area, texture);
+    fl_gl_area_queue_render(FL_GL_AREA(area_link->data), texture);
   }
-
-  for (GList* child = self->children_list; child; child = child->next) {
-    GtkWidget* w = reinterpret_cast<GtkWidget*>(child->data);
-    GList* pending_child = find_child(pending_children_list, w);
-
-    if (!pending_child) {
-      // removed child
-      g_object_ref(w);
-      gtk_widget_unparent(w);
-    }
-  }
-
-  g_list_free(self->children_list);
-  self->children_list = pending_children_list;
 
   struct _ReorderData data = {
       .parent_window = gtk_widget_get_window(GTK_WIDGET(self)),
