@@ -1460,19 +1460,22 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
 
+  OCMStub([mockPencilInteraction preferredTapAction]).andReturn(UIPencilPreferredActionShowColorPalette);
+
   [vc pencilInteractionDidTap:mockPencilInteraction];
 
   flutter::PointerData pointer_data;
-
+  pointer_data.Clear();
   pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
   pointer_data.preferred_auxiliary_stylus_action =
-      flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
+      flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
 
   auto packet = std::make_unique<flutter::PointerDataPacket>(1);
   packet->SetPointerData(/*index=*/0, pointer_data);
 
   [[[self.mockEngine verify] ignoringNonObjectArgs] dispatchPointerDataPacket:std::move(packet)];
+  [mockPencilInteraction stopMocking];
 }
 
 - (void)testFakeEventTimeStamp {
