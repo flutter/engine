@@ -78,8 +78,8 @@ void AccessibilityBridge::CommitUpdates() {
   // entire subtree into a list. We pick another node from the remaining update,
   // and keep doing so until the update map is empty. We then concatenate the
   // lists in the reversed order, this guarantees parent updates always come
-  // before child updates. Furthermore, the root is guaranteed to be the
-  // first node of the last list.
+  // before child updates. If the root is in the update, it is guaranteed to
+  // be the first node of the last list.
   std::vector<std::vector<SemanticsNode>> results;
   while (!pending_semantics_node_updates_.empty()) {
     auto begin = pending_semantics_node_updates_.begin();
@@ -96,8 +96,9 @@ void AccessibilityBridge::CommitUpdates() {
     }
   }
 
-  // Set the tree's root if necessary. The new root is the last list's first
-  // node.
+  // The first update must set the tree's root, which is guaranteed to be the
+  // last list's first node. A tree's root node never changes, though it can be
+  // modified.
   if (!results.empty() && GetRootAsAXNode()->id() == ui::AXNode::kInvalidAXID) {
     FML_DCHECK(!results.back().empty());
 
