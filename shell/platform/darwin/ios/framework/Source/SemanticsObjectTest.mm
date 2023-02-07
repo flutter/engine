@@ -128,7 +128,9 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   SemanticsObject* object2 = [[SemanticsObject alloc] initWithBridge:bridge uid:2];
   SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
   object0.children = @[ object1 ];
+  object0.childrenInHitTestOrder = @[ object1 ];
   object1.children = @[ object2, object3 ];
+  object1.childrenInHitTestOrder = @[ object2, object3 ];
 
   flutter::SemanticsNode node0;
   node0.id = 0;
@@ -157,7 +159,7 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   CGPoint point = CGPointMake(10, 10);
   id hitTestResult = [object0 _accessibilityHitTest:point withEvent:nil];
 
-  // Focus to object2 because it's the smallest object
+  // Focus to object2 because it's the first object in hit test order
   XCTAssertEqual(hitTestResult, object2);
 }
 
@@ -170,7 +172,9 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   SemanticsObject* object2 = [[SemanticsObject alloc] initWithBridge:bridge uid:2];
   SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
   object0.children = @[ object1 ];
+  object0.childrenInHitTestOrder = @[ object1 ];
   object1.children = @[ object2, object3 ];
+  object1.childrenInHitTestOrder = @[ object2, object3 ];
 
   flutter::SemanticsNode node0;
   node0.id = 0;
@@ -207,7 +211,9 @@ class MockAccessibilityBridgeNoWindow : public AccessibilityBridgeIos {
   SemanticsObject* object2 = [[SemanticsObject alloc] initWithBridge:bridge uid:2];
   SemanticsObject* object3 = [[SemanticsObject alloc] initWithBridge:bridge uid:3];
   object0.children = @[ object1 ];
+  object0.childrenInHitTestOrder = @[ object1 ];
   object1.children = @[ object2, object3 ];
+  object1.childrenInHitTestOrder = @[ object2, object3 ];
 
   flutter::SemanticsNode node0;
   node0.id = 0;
