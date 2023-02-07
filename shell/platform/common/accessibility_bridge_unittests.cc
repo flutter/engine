@@ -102,35 +102,51 @@ TEST(AccessibilityBridgeTest, AccessibilityRootId) {
   ASSERT_FALSE(fake_delegate);
 }
 
-// Semantic nodes can be added out of tree order.
+// Semantic nodes can be added in any order.
 TEST(AccessibilityBridgeTest, AddOrder) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
 
-  std::vector<int32_t> children{456, 789};
-  FlutterSemanticsNode root = CreateSemanticsNode(123, "root", &children);
-  FlutterSemanticsNode child1 = CreateSemanticsNode(456, "child 1");
-  FlutterSemanticsNode child2 = CreateSemanticsNode(789, "child 2");
+  std::vector<int32_t> root_children{34, 56};
+  std::vector<int32_t> child2_children{78};
+  std::vector<int32_t> child3_children{90};
+  FlutterSemanticsNode root = CreateSemanticsNode(12, "root", &root_children);
+  FlutterSemanticsNode child1 = CreateSemanticsNode(34, "child 1");
+  FlutterSemanticsNode child2 = CreateSemanticsNode(56, "child 2", &child2_children);
+  FlutterSemanticsNode child3 = CreateSemanticsNode(78, "child 3", &child3_children);
+  FlutterSemanticsNode child4 = CreateSemanticsNode(90, "child 4");
 
+  bridge->AddFlutterSemanticsNodeUpdate(&child3);
   bridge->AddFlutterSemanticsNodeUpdate(&child2);
   bridge->AddFlutterSemanticsNodeUpdate(&root);
   bridge->AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(&child4);
   bridge->CommitUpdates();
 
-  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(123).lock();
-  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(456).lock();
-  auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(789).lock();
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(12).lock();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(34).lock();
+  auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(56).lock();
+  auto child3_node = bridge->GetFlutterPlatformNodeDelegateFromID(78).lock();
+  auto child4_node = bridge->GetFlutterPlatformNodeDelegateFromID(90).lock();
 
   EXPECT_EQ(root_node->GetChildCount(), 2);
-  EXPECT_EQ(root_node->GetData().child_ids[0], 456);
-  EXPECT_EQ(root_node->GetData().child_ids[1], 789);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 34);
+  EXPECT_EQ(root_node->GetData().child_ids[1], 56);
   EXPECT_EQ(root_node->GetName(), "root");
 
   EXPECT_EQ(child1_node->GetChildCount(), 0);
   EXPECT_EQ(child1_node->GetName(), "child 1");
 
-  EXPECT_EQ(child2_node->GetChildCount(), 0);
+  EXPECT_EQ(child2_node->GetChildCount(), 1);
+  EXPECT_EQ(child2_node->GetData().child_ids[0], 78);
   EXPECT_EQ(child2_node->GetName(), "child 2");
+
+  EXPECT_EQ(child3_node->GetChildCount(), 1);
+  EXPECT_EQ(child3_node->GetData().child_ids[0], 90);
+  EXPECT_EQ(child3_node->GetName(), "child 3");
+
+  EXPECT_EQ(child4_node->GetChildCount(), 0);
+  EXPECT_EQ(child4_node->GetName(), "child 4");
 }
 
 TEST(AccessibilityBridgeTest, CanFireChildrenChangedCorrectly) {
