@@ -1460,7 +1460,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
 
-  OCMStub([mockPencilInteraction preferredTapAction]).andReturn(UIPencilPreferredActionShowColorPalette);
+  OCMStub([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionShowColorPalette);
 
   [vc pencilInteractionDidTap:mockPencilInteraction];
 
