@@ -923,6 +923,7 @@ void fl_view_set_textures(FlView* view,
       used_area_list = used_area_list->next;
     } else {
       area = FL_GL_AREA(fl_gl_area_new(context));
+      gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(view));
       gtk_widget_show(GTK_WIDGET(area));
       view->gl_area_list = g_list_append(view->gl_area_list, area);
     }
@@ -930,17 +931,6 @@ void fl_view_set_textures(FlView* view,
     pending_children_list =
         g_list_append(pending_children_list, GTK_WIDGET(area));
     fl_gl_area_queue_render(area, texture);
-  }
-
-  for (GList* pending_child = pending_children_list; pending_child;
-       pending_child = pending_child->next) {
-    GtkWidget* w = reinterpret_cast<GtkWidget*>(pending_child->data);
-    GList* child = find_child(view->children_list, w);
-
-    if (!child) {
-      // newly added child
-      gtk_widget_set_parent(w, GTK_WIDGET(view));
-    }
   }
 
   for (GList* child = view->children_list; child; child = child->next) {
