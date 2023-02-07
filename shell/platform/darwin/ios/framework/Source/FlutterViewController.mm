@@ -1221,10 +1221,10 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Stylus Events
 
-#pragma clang diagnostic push
-
 - (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction API_AVAILABLE(ios(13.4)) {
-  flutter::PointerData pointer_data = [self generatePointerDataAtLastMouseLocation];
+  flutter::PointerData pointer_data;
+  pointer_data.Clear();
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
 
   switch (UIPencilInteraction.preferredTapAction) {
     case UIPencilPreferredActionIgnore:
@@ -1256,8 +1256,6 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   packet->SetPointerData(/*index=*/0, pointer_data);
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
-
-#pragma clang diagnostic pop
 
 #pragma mark - Handle view resizing
 

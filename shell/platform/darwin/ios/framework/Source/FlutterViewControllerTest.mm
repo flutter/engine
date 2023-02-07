@@ -1324,11 +1324,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testValidKeyUpEvent API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
@@ -1359,12 +1354,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testValidKeyDownEvent API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
@@ -1396,11 +1385,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testIgnoredKeyEvents API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
   id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
       .andCall(self, @selector(sendMessage:reply:));
@@ -1434,12 +1418,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testPanGestureRecognizer API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
@@ -1460,12 +1438,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testMouseSupport API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
@@ -1481,19 +1453,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testPencilSupport API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
   XCTAssertNotNil(vc);
 
   id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
-  XCTAssertNotNil(mockPencilInteraction);
 
   [vc pencilInteractionDidTap:mockPencilInteraction];
 
