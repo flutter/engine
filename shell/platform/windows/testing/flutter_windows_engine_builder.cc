@@ -87,7 +87,8 @@ std::unique_ptr<FlutterWindowsEngine> FlutterWindowsEngineBuilder::Build() {
 
   FlutterProjectBundle project(properties_);
 
-  return std::make_unique<TestFlutterWindowsEngine>(project, get_key_state_, map_vk_to_scan_);
+  return std::make_unique<TestFlutterWindowsEngine>(project, get_key_state_,
+                                                    map_vk_to_scan_);
 }
 
 }  // namespace testing
