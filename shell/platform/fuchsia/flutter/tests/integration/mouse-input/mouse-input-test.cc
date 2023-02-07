@@ -507,7 +507,9 @@ TEST_P(MouseInputTest, FlutterMouseDownMoveUp) {
 // - Scroll - Scroll.
 // 2. the first event flutter app received has random value in buttons field
 // Disabled until flutter rolls, since it changes the behavior of this issue.
-TEST_P(MouseInputTest, DISABLED_FlutterMouseWheelIssue103098) {
+// TODO(fxbug.dev/121501): Disabling the tests for now. Will look to re-enable
+// once more investigation happens on the Fuchsia Workstation side.
+TEST_P(DISABLED_MouseInputTest, DISABLED_FlutterMouseWheelIssue103098) {
   LaunchClient();
 
   SimulateMouseScroll(/* pressed_buttons = */ {}, /* scroll_x = */ 1,
