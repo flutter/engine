@@ -267,6 +267,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
 @implementation SemanticsObject {
   fml::scoped_nsobject<SemanticsObjectContainer> _container;
   NSMutableArray<SemanticsObject*>* _children;
+  NSMutableArray<SemanticsObject*>* _childrenInHitTestOrder;
   BOOL _inDealloc;
 }
 
@@ -295,6 +296,7 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
     _bridge = bridge;
     _uid = uid;
     _children = [[NSMutableArray alloc] init];
+    _childrenInHitTestOrder = [[NSMutableArray alloc] init];
   }
 
   return self;
@@ -306,6 +308,13 @@ CGRect ConvertRectToGlobal(SemanticsObject* reference, CGRect local_rect) {
   }
   [_children removeAllObjects];
   [_children release];
+
+  for (SemanticsObject* child in _childrenInHitTestOrder) {
+    [child privateSetParent:nil];
+  }
+  [_childrenInHitTestOrder removeAllObjects];
+  [_childrenInHitTestOrder release];
+
   _parent = nil;
   _container.get().semanticsObject = nil;
   _inDealloc = YES;
