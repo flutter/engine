@@ -970,13 +970,6 @@ void fl_view_add_gl_area(FlView* view,
   fl_gl_area_queue_render(area, texture);
 }
 
-void fl_view_add_widget(FlView* view,
-                        GtkWidget* widget,
-                        GdkRectangle* geometry) {
-  gtk_widget_show(widget);
-  add_pending_child(view, widget, geometry);
-}
-
 void fl_view_end_frame(FlView* view) {
   for (GList* pending_child = view->pending_children_list; pending_child;
        pending_child = pending_child->next) {

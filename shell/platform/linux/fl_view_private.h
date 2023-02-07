@@ -33,18 +33,6 @@ void fl_view_add_gl_area(FlView* view,
                          FlBackingStoreProvider* texture);
 
 /**
- * fl_view_add_widget:
- * @view: an #FlView.
- * @widget: a #GtkWidget.
- * @geometry: geometry of the widget.
- *
- * Append a #GtkWidget at top of stacked children of #FlView.
- */
-void fl_view_add_widget(FlView* view,
-                        GtkWidget* widget,
-                        GdkRectangle* geometry);
-
-/**
  * fl_view_end_frame:
  * @view: an #FlView.
  *
