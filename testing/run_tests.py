@@ -654,6 +654,7 @@ def run_java_tests(executable_filter, android_variant='android_debug_unopt'):
       'testDebugUnitTest',
       '--tests=%s' % test_class,
       '--rerun-tasks',
+      '--offline',
       '--no-daemon',
       '--project-cache-dir=%s' % gradle_cache_dir,
       '--gradle-user-home=%s' % gradle_cache_dir,
