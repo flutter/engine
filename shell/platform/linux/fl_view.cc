@@ -65,10 +65,6 @@ struct _FlView {
   gulong keymap_keys_changed_cb_id;  // Signal connection ID.
 };
 
-typedef struct _FlViewChild {
-  GtkWidget* widget;
-} FlViewChild;
-
 enum { kPropFlutterProject = 1, kPropLast };
 
 static void fl_view_plugin_registry_iface_init(
@@ -210,11 +206,11 @@ static void handle_geometry_changed(FlView* self) {
   }
 }
 
-// Finds the node with the specified widget in a list of FlViewChild.
+// Finds the node with the specified widget.
 static GList* find_child(GList* list, GtkWidget* widget) {
   for (GList* i = list; i; i = i->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(i->data);
-    if (child && child->widget == widget) {
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(i->data);
+    if (w == widget) {
       return i;
     }
   }
@@ -667,13 +663,13 @@ static void fl_view_get_preferred_width(GtkWidget* widget,
 
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(iterator->data);
 
-    if (!gtk_widget_get_visible(child->widget)) {
+    if (!gtk_widget_get_visible(w)) {
       continue;
     }
 
-    gtk_widget_get_preferred_width(child->widget, &child_min, &child_nat);
+    gtk_widget_get_preferred_width(w, &child_min, &child_nat);
 
     *minimum = MAX(*minimum, child_min);
     *natural = MAX(*natural, child_nat);
@@ -692,13 +688,13 @@ static void fl_view_get_preferred_height(GtkWidget* widget,
 
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(iterator->data);
 
-    if (!gtk_widget_get_visible(child->widget)) {
+    if (!gtk_widget_get_visible(w)) {
       continue;
     }
 
-    gtk_widget_get_preferred_height(child->widget, &child_min, &child_nat);
+    gtk_widget_get_preferred_height(w, &child_min, &child_nat);
 
     *minimum = MAX(*minimum, child_min);
     *natural = MAX(*natural, child_nat);
@@ -722,14 +718,14 @@ static void fl_view_size_allocate(GtkWidget* widget,
 
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    if (!gtk_widget_get_visible(child->widget)) {
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(iterator->data);
+    if (!gtk_widget_get_visible(w)) {
       continue;
     }
 
     GtkAllocation child_allocation = {0, 0, 0, 0};
     GtkRequisition child_requisition;
-    gtk_widget_get_preferred_size(child->widget, &child_requisition, NULL);
+    gtk_widget_get_preferred_size(w, &child_requisition, NULL);
 
     if (!gtk_widget_get_has_window(widget)) {
       child_allocation.x += allocation->x;
@@ -741,7 +737,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
       child_allocation.height = allocation->height;
     }
 
-    gtk_widget_size_allocate(child->widget, &child_allocation);
+    gtk_widget_size_allocate(w, &child_allocation);
   }
 
   GtkAllocation event_box_allocation = {
@@ -797,11 +793,8 @@ static gboolean fl_view_key_release_event(GtkWidget* widget,
 static void fl_view_add(GtkContainer* container, GtkWidget* widget) {
   FlView* self = FL_VIEW(container);
 
-  FlViewChild* child = g_new(FlViewChild, 1);
-  child->widget = widget;
-
   gtk_widget_set_parent(widget, GTK_WIDGET(self));
-  self->children_list = g_list_append(self->children_list, child);
+  self->children_list = g_list_append(self->children_list, widget);
 }
 
 // Implements GtkContainer::remove
@@ -809,13 +802,12 @@ static void fl_view_remove(GtkContainer* container, GtkWidget* widget) {
   FlView* self = FL_VIEW(container);
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    if (child->widget == widget) {
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(iterator->data);
+    if (w == widget) {
       g_object_ref(widget);
       gtk_widget_unparent(widget);
       self->children_list = g_list_remove_link(self->children_list, iterator);
       g_list_free(iterator);
-      g_free(child);
 
       break;
     }
@@ -834,8 +826,8 @@ static void fl_view_forall(GtkContainer* container,
   FlView* self = FL_VIEW(container);
   for (GList* iterator = self->children_list; iterator;
        iterator = iterator->next) {
-    FlViewChild* child = reinterpret_cast<FlViewChild*>(iterator->data);
-    (*callback)(child->widget, callback_data);
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(iterator->data);
+    (*callback)(w, callback_data);
   }
 
   if (include_internals) {
@@ -935,36 +927,30 @@ void fl_view_set_textures(FlView* view,
     }
 
     gtk_widget_show(GTK_WIDGET(area));
-    FlViewChild* child = g_new(FlViewChild, 1);
-    child->widget = GTK_WIDGET(area);
-    pending_children_list = g_list_append(pending_children_list, child);
+    pending_children_list =
+        g_list_append(pending_children_list, GTK_WIDGET(area));
     fl_gl_area_queue_render(area, texture);
   }
 
   for (GList* pending_child = pending_children_list; pending_child;
        pending_child = pending_child->next) {
-    FlViewChild* pending_view_child =
-        reinterpret_cast<FlViewChild*>(pending_child->data);
-    GList* child = find_child(view->children_list, pending_view_child->widget);
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(pending_child->data);
+    GList* child = find_child(view->children_list, w);
 
-    if (child) {
-      // existing child
-      g_free(child->data);
-      child->data = nullptr;
-    } else {
+    if (!child) {
       // newly added child
-      gtk_widget_set_parent(pending_view_child->widget, GTK_WIDGET(view));
+      gtk_widget_set_parent(w, GTK_WIDGET(view));
     }
   }
 
   for (GList* child = view->children_list; child; child = child->next) {
-    FlViewChild* view_child = reinterpret_cast<FlViewChild*>(child->data);
-    if (view_child) {
+    GtkWidget* w = reinterpret_cast<GtkWidget*>(child->data);
+    GList* pending_child = find_child(pending_children_list, w);
+
+    if (!pending_child) {
       // removed child
-      g_object_ref(view_child->widget);
-      gtk_widget_unparent(view_child->widget);
-      g_free(view_child);
-      child->data = nullptr;
+      g_object_ref(w);
+      gtk_widget_unparent(w);
     }
   }
 
