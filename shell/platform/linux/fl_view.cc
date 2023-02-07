@@ -51,7 +51,6 @@ struct _FlView {
   FlPlatformPlugin* platform_plugin;
 
   GList* gl_area_list;
-  GList* used_area_list;
 
   GtkWidget* event_box;
 
@@ -931,7 +930,7 @@ void fl_view_set_textures(FlView* view,
   g_return_if_fail(FL_IS_VIEW(view));
   FlView* self = FL_VIEW(view);
 
-  self->used_area_list = self->gl_area_list;
+  GList* used_area_list = self->gl_area_list;
   GList* pending_children_list = nullptr;
 
   for (size_t i = 0; i < textures->len; i++) {
@@ -939,9 +938,9 @@ void fl_view_set_textures(FlView* view,
         FL_BACKING_STORE_PROVIDER(g_ptr_array_index(textures, i));
     FlGLArea* area;
 
-    if (view->used_area_list) {
-      area = reinterpret_cast<FlGLArea*>(view->used_area_list->data);
-      view->used_area_list = view->used_area_list->next;
+    if (used_area_list) {
+      area = reinterpret_cast<FlGLArea*>(used_area_list->data);
+      used_area_list = used_area_list->next;
     } else {
       area = FL_GL_AREA(fl_gl_area_new(context));
       view->gl_area_list = g_list_append(view->gl_area_list, area);
