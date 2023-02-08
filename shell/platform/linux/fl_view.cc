@@ -742,22 +742,6 @@ static void fl_view_size_allocate(GtkWidget* widget,
   handle_geometry_changed(self);
 }
 
-struct _ReorderData {
-  GdkWindow* parent_window;
-  GdkWindow* last_window;
-};
-
-static void fl_view_reorder_forall(GtkWidget* widget, gpointer user_data) {
-  _ReorderData* data = reinterpret_cast<_ReorderData*>(user_data);
-  GdkWindow* window = gtk_widget_get_window(widget);
-  if (window && window != data->parent_window) {
-    if (data->last_window) {
-      gdk_window_restack(window, data->last_window, TRUE);
-    }
-    data->last_window = window;
-  }
-}
-
 // Implements GtkWidget::key_press_event.
 static gboolean fl_view_key_press_event(GtkWidget* widget, GdkEventKey* event) {
   FlView* self = FL_VIEW(widget);
@@ -901,8 +885,14 @@ void fl_view_set_textures(FlView* self,
   // Add more GL areas if we need them.
   for (guint i = children_length; i < textures->len; i++) {
     FlGLArea* area = FL_GL_AREA(fl_gl_area_new(context));
+
     gtk_widget_set_parent(GTK_WIDGET(area), GTK_WIDGET(self));
     gtk_widget_show(GTK_WIDGET(area));
+
+    // Stack above previous areas but below the event box.
+    gdk_window_restack(gtk_widget_get_window(GTK_WIDGET(area)),
+                       gtk_widget_get_window(self->event_box), FALSE);
+
     self->children_list = g_list_append(self->children_list, area);
   }
 
@@ -921,13 +911,6 @@ void fl_view_set_textures(FlView* self,
         FL_BACKING_STORE_PROVIDER(g_ptr_array_index(textures, i));
     fl_gl_area_queue_render(FL_GL_AREA(area_link->data), texture);
   }
-
-  struct _ReorderData data = {
-      .parent_window = gtk_widget_get_window(GTK_WIDGET(self)),
-      .last_window = nullptr,
-  };
-
-  gtk_container_forall(GTK_CONTAINER(self), fl_view_reorder_forall, &data);
 
   gtk_widget_queue_draw(GTK_WIDGET(self));
 }
