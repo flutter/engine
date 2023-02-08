@@ -136,8 +136,7 @@ class HtmlViewEmbedder {
     // We need an overlay for the first platform view no matter what. The first
     // visible platform view doesn't need to create a new one if we already
     // created one.
-    final bool needNewOverlay = (platformViewManager.isVisible(viewId) &&
-            _context.seenFirstVisibleViewInPreroll) ||
+    final bool needNewOverlay = platformViewManager.isVisible(viewId) ||
         _context.pictureRecordersCreatedDuringPreroll.isEmpty;
     if (platformViewManager.isVisible(viewId)) {
       _context.seenFirstVisibleViewInPreroll = true;
@@ -174,8 +173,7 @@ class HtmlViewEmbedder {
       _context.visibleViewCount++;
     }
     // We need a new overlay if this is a visible view or if we don't have one yet.
-    final bool needNewOverlay = (platformViewManager.isVisible(viewId) &&
-            _context.seenFirstVisibleView) ||
+    final bool needNewOverlay = platformViewManager.isVisible(viewId) ||
         _context.pictureRecorders.isEmpty;
     if (platformViewManager.isVisible(viewId)) {
       _context.seenFirstVisibleView = true;
@@ -669,10 +667,24 @@ class HtmlViewEmbedder {
           } else {
             currentGroup = <int>[view];
           }
-        } else {
-          // We hit this case if this is the first visible view.
+        }
+        if (!foundFirstVisibleView) {
+          // First visible view found...
           foundFirstVisibleView = true;
-          currentGroup.add(view);
+          if (currentGroup.isNotEmpty) {
+            // If we've seen invisible views earlier, split them off...
+            result.add(currentGroup);
+            // If we are out of overlays, then break let the rest of the views be
+            // added to an extra group that will be rendered on top of the scene.
+            if (result.length == maxOverlays) {
+              currentGroup = <int>[];
+              break;
+            } else {
+              currentGroup = <int>[view];
+            }
+          } else {
+            currentGroup.add(view);
+          }
         }
       }
     }
