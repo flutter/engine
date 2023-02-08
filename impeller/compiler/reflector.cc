@@ -544,6 +544,11 @@ static std::optional<KnownType> ReadKnownScalarType(
           .name = "int32_t",
           .byte_size = sizeof(int32_t),
       };
+    case spirv_cross::SPIRType::BaseType::Half:
+      return KnownType{
+          .name = "short",
+          .byte_size = sizeof(short),
+      };
     default:
       break;
   }

@@ -92,9 +92,11 @@ std::vector<KernelData> DirectionalGaussianBlurFilterContents::ComputeKernel(
   std::vector<KernelData> data = {};
   for (float i = -radius.radius; i <= radius.radius; i++) {
     auto variance = sigma * sigma;
-    Scalar gaussian = std::exp(-0.5 * i * i / variance) / (kSqrtTwoPi * sigma);
-    data.push_back(
-        {.texture_coord_offset = blur_uv_offset * i, .gaussian = gaussian});
+    short gaussian = std::exp(-0.5 * i * i / variance) / (kSqrtTwoPi * sigma);
+    Point offset = blur_uv_offset * i;
+    data.push_back({.texture_coord_offset_x = (short)offset.x,
+                    .texture_coord_offset_y = (short)offset.y,
+                    .gaussian = gaussian});
   }
   return data;
 }
@@ -217,10 +219,10 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
       for (auto& data : kernel_data) {
         gaussian_integral += data.gaussian;
       }
-      frag_info.gaussian_integral = gaussian_integral;
-      frag_info.src_factor = src_color_factor_;
-      frag_info.inner_blur_factor = inner_blur_factor_;
-      frag_info.outer_blur_factor = outer_blur_factor_;
+      frag_info.gaussian_integral = (short)gaussian_integral;
+      frag_info.src_factor = (short)src_color_factor_;
+      frag_info.inner_blur_factor = (short)inner_blur_factor_;
+      frag_info.outer_blur_factor = (short)outer_blur_factor_;
 
       Command cmd;
       cmd.label = SPrintF("Gaussian SSBO Blur Filter (Radius=%.2f)",

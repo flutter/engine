@@ -13,9 +13,10 @@
 namespace impeller {
 
 struct KernelData {
-  Point texture_coord_offset;
-  Scalar gaussian;
-  Padding<4> _padding_;
+  short texture_coord_offset_x;
+  short texture_coord_offset_y;
+  short gaussian;
+  Padding<10> _padding_;
 };
 
 class DirectionalGaussianBlurFilterContents final : public FilterContents {

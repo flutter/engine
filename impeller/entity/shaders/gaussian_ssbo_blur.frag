@@ -2,10 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <impeller/types.glsl>
 #include <impeller/texture.glsl>
 
-vec4 Sample(sampler2D tex, vec2 coords) {
-  return texture(tex, coords);
+f16vec4 Sample(sampler2D tex, f16vec2 coords) {
+  return f16vec4(texture(tex, coords));
 }
 
 #include "gaussian_ssbo_blur.glsl"
