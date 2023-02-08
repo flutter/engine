@@ -106,10 +106,13 @@ static std::optional<Snapshot> AdvancedBlend(
     cmd.pipeline = std::move(pipeline);
 
     typename FS::BlendInfo blend_info;
+    typename VS::FrameInfo frame_info;
+
+    frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
+    frame_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
     FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, sampler);
-    blend_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
     blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity : 1.0;
 
     if (foreground_color.has_value()) {
@@ -122,12 +125,10 @@ static std::optional<Snapshot> AdvancedBlend(
     } else {
       blend_info.color_factor = 0;
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, sampler);
-      blend_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
-    typename VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(size);
 
     auto uniform_view = host_buffer.EmplaceUniform(frame_info);
