@@ -144,6 +144,9 @@ TEST_P(DisplayListTest, CanDrawArc) {
       case 2:
         cap = flutter::DlStrokeCap::kSquare;
         break;
+      default:
+        cap = flutter::DlStrokeCap::kButt;
+        break;
     }
 
     auto [p1, p2] = IMPELLER_PLAYGROUND_LINE(
