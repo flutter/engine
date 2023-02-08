@@ -41,7 +41,7 @@ public final class TextPlatformViewFactory extends PlatformViewFactory {
   @SuppressWarnings("unchecked")
   @Override
   @NonNull
-  public PlatformView create(@NonNull Context context, int id, @Nullable Object args) {
+  public PlatformView create(@NonNull Context context, long id, @Nullable Object args) {
     String params = (String) args;
     return new TextPlatformView(context, id, params);
   }
@@ -50,7 +50,7 @@ public final class TextPlatformViewFactory extends PlatformViewFactory {
     final TextView textView;
 
     @SuppressWarnings("unchecked")
-    TextPlatformView(@NonNull final Context context, int id, @Nullable String params) {
+    TextPlatformView(@NonNull final Context context, long id, @Nullable String params) {
       textView = new TextView(context);
       textView.setTextSize(72);
       textView.setBackgroundColor(Color.WHITE);

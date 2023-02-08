@@ -31,7 +31,7 @@ class MockPlatformViewAndroidJNI : public PlatformViewAndroidJNI {
   MOCK_METHOD1(SurfaceTextureDetachFromGLContext,
                void(JavaLocalRef surface_texture));
   MOCK_METHOD8(FlutterViewOnDisplayPlatformView,
-               void(int view_id,
+               void(int64_t view_id,
                     int x,
                     int y,
                     int width,

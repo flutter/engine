@@ -1026,7 +1026,7 @@ bool PlatformViewAndroid::Register(JNIEnv* env) {
 
   g_on_display_platform_view_method =
       env->GetMethodID(g_flutter_jni_class->obj(), "onDisplayPlatformView",
-                       "(IIIIIIILio/flutter/embedding/engine/mutatorsstack/"
+                       "(JIIIIIILio/flutter/embedding/engine/mutatorsstack/"
                        "FlutterMutatorsStack;)V");
 
   if (g_on_display_platform_view_method == nullptr) {
@@ -1406,7 +1406,7 @@ void PlatformViewAndroidJNIImpl::SurfaceTextureDetachFromGLContext(
 }
 
 void PlatformViewAndroidJNIImpl::FlutterViewOnDisplayPlatformView(
-    int view_id,
+    int64_t view_id,
     int x,
     int y,
     int width,

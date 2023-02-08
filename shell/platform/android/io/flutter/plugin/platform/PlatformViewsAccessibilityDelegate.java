@@ -16,10 +16,10 @@ public interface PlatformViewsAccessibilityDelegate {
    * there is no corresponding view.
    */
   @Nullable
-  View getPlatformViewById(int viewId);
+  View getPlatformViewById(long viewId);
 
   /** Returns true if the platform view uses virtual displays. */
-  boolean usesVirtualDisplay(int id);
+  boolean usesVirtualDisplay(long viewId);
 
   /**
    * Attaches an accessibility bridge for this platform views accessibility delegate.

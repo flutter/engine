@@ -52,7 +52,7 @@ class PlatformViewAndroidJNIImpl final : public PlatformViewAndroidJNI {
 
   void SurfaceTextureDetachFromGLContext(JavaLocalRef surface_texture) override;
 
-  void FlutterViewOnDisplayPlatformView(int view_id,
+  void FlutterViewOnDisplayPlatformView(int64_t view_id,
                                         int x,
                                         int y,
                                         int width,

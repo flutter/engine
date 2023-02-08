@@ -66,7 +66,7 @@ class JNIMock final : public PlatformViewAndroidJNI {
 
   MOCK_METHOD(void,
               FlutterViewOnDisplayPlatformView,
-              (int view_id,
+              (int64_t view_id,
                int x,
                int y,
                int width,

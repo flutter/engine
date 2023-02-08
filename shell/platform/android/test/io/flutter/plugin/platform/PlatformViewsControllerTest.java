@@ -129,7 +129,7 @@ public class PlatformViewsControllerTest {
   @Test
   @Config(shadows = {ShadowFlutterJNI.class, ShadowPlatformTaskQueue.class})
   public void virtualDisplay_handlesResizeResponseWithoutContext() {
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     FlutterView fakeFlutterView = new FlutterView(ApplicationProvider.getApplicationContext());
     VirtualDisplayController fakeVdController = mock(VirtualDisplayController.class);
     PlatformViewsController platformViewsController = new PlatformViewsController();
@@ -295,7 +295,7 @@ public class PlatformViewsControllerTest {
   public void getPlatformViewById_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -323,7 +323,7 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_initializesAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -345,7 +345,7 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_wrapsContextForVirtualDisplay() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -370,7 +370,7 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_doesNotWrapContextForHybrid() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -395,7 +395,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -421,7 +421,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -454,7 +454,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -480,7 +480,7 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -509,7 +509,7 @@ public class PlatformViewsControllerTest {
   public void createHybridPlatformViewMessage_throwsIfViewIsNull() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -537,7 +537,7 @@ public class PlatformViewsControllerTest {
   public void onDetachedFromJNI_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -568,7 +568,7 @@ public class PlatformViewsControllerTest {
   public void onPreEngineRestart_clearsPlatformViewContext() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -599,7 +599,7 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -630,7 +630,7 @@ public class PlatformViewsControllerTest {
   public void createHybridPlatformViewMessage_throwsIfViewHasParent() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -660,7 +660,7 @@ public class PlatformViewsControllerTest {
   public void setPlatformViewDirection_throwIfPlatformViewNotFound() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -695,7 +695,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -731,7 +731,7 @@ public class PlatformViewsControllerTest {
   public void disposeAndroidView_hybridComposition() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -772,7 +772,7 @@ public class PlatformViewsControllerTest {
   public void disposeNullAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -809,7 +809,7 @@ public class PlatformViewsControllerTest {
   public void onEndFrame_destroysOverlaySurfaceAfterFrameOnFlutterSurfaceView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -868,7 +868,7 @@ public class PlatformViewsControllerTest {
   public void onEndFrame_removesPlatformView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -909,7 +909,7 @@ public class PlatformViewsControllerTest {
   public void onEndFrame_removesPlatformViewParent() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -952,7 +952,7 @@ public class PlatformViewsControllerTest {
   public void detach_destroysOverlaySurfaces() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1003,7 +1003,7 @@ public class PlatformViewsControllerTest {
   public void detachFromView_removesAndDestroysOverlayViews() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1041,7 +1041,7 @@ public class PlatformViewsControllerTest {
   public void destroyOverlaySurfaces_doesNotThrowIfFlutterViewIsDetached() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1079,7 +1079,7 @@ public class PlatformViewsControllerTest {
   public void destroyOverlaySurfaces_doesNotRemoveOverlayView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1121,7 +1121,7 @@ public class PlatformViewsControllerTest {
   public void convertPlatformViewRenderSurfaceAsDefault() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1167,7 +1167,7 @@ public class PlatformViewsControllerTest {
   public void dontConverRenderSurfaceWhenFlagIsTrue() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1216,7 +1216,7 @@ public class PlatformViewsControllerTest {
     PlatformViewsController platformViewsController = new PlatformViewsController();
     platformViewsController.setSoftwareRendering(true);
 
-    int platformViewId = 100;
+    final long platformViewId = 0x80000000L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1251,7 +1251,7 @@ public class PlatformViewsControllerTest {
   public void revertImageViewAndRemoveImageView() {
     final PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final int platformViewId = 0;
+    final long platformViewId = 0L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     final PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
@@ -1274,8 +1274,9 @@ public class PlatformViewsControllerTest {
 
     // The simulation creates an Overlay on top of the PlatformView
     // This is going to be called `flutterView.convertToImageView`
+    final int overlaySurfaceId = 0;
     platformViewsController.createOverlaySurface();
-    platformViewsController.onDisplayOverlaySurface(platformViewId, 0, 0, 10, 10);
+    platformViewsController.onDisplayOverlaySurface(overlaySurfaceId, 0, 0, 10, 10);
 
     // This will contain three views: Background ImageView、PlatformView、Overlay ImageView
     assertEquals(flutterView.getChildCount(), 3);
@@ -1319,7 +1320,7 @@ public class PlatformViewsControllerTest {
   private static void createPlatformView(
       FlutterJNI jni,
       PlatformViewsController platformViewsController,
-      int platformViewId,
+      long platformViewId,
       String viewType,
       boolean hybrid) {
     final Map<String, Object> args = new HashMap<>();
@@ -1342,7 +1343,7 @@ public class PlatformViewsControllerTest {
   private static void setLayoutDirection(
       FlutterJNI jni,
       PlatformViewsController platformViewsController,
-      int platformViewId,
+      long platformViewId,
       int direction) {
     final Map<String, Object> args = new HashMap<>();
     args.put("id", platformViewId);
@@ -1360,7 +1361,7 @@ public class PlatformViewsControllerTest {
   private static void resize(
       FlutterJNI jni,
       PlatformViewsController platformViewsController,
-      int platformViewId,
+      long platformViewId,
       double width,
       double height) {
     final Map<String, Object> args = new HashMap<>();
@@ -1378,7 +1379,7 @@ public class PlatformViewsControllerTest {
   }
 
   private static void disposePlatformView(
-      FlutterJNI jni, PlatformViewsController platformViewsController, int platformViewId) {
+      FlutterJNI jni, PlatformViewsController platformViewsController, long platformViewId) {
 
     final Map<String, Object> args = new HashMap<>();
     args.put("hybrid", true);

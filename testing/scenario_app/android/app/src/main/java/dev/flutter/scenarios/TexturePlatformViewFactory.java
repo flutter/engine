@@ -47,7 +47,7 @@ public final class TexturePlatformViewFactory extends PlatformViewFactory {
   @SuppressWarnings("unchecked")
   @Override
   @NonNull
-  public PlatformView create(@NonNull Context context, int id, @Nullable Object args) {
+  public PlatformView create(@NonNull Context context, long id, @Nullable Object args) {
     return new TexturePlatformView(context);
   }
 

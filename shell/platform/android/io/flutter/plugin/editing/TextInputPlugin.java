@@ -369,7 +369,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
    * <p>This is called when a platform view is disposed to make sure we're not hanging to a stale
    * input connection.
    */
-  public void clearPlatformViewClient(int platformViewId) {
+  public void clearPlatformViewClient(long platformViewId) {
     if ((inputTarget.type == InputTarget.Type.VIRTUAL_DISPLAY_PLATFORM_VIEW
             || inputTarget.type == InputTarget.Type.PHYSICAL_DISPLAY_PLATFORM_VIEW)
         && inputTarget.id == platformViewId) {

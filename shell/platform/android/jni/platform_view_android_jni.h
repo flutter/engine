@@ -116,7 +116,7 @@ class PlatformViewAndroidJNI {
   /// @note       Must be called from the platform thread.
   ///
   virtual void FlutterViewOnDisplayPlatformView(
-      int view_id,
+      int64_t view_id,
       int x,
       int y,
       int width,

@@ -1382,7 +1382,7 @@ public class FlutterJNI {
   // @SuppressWarnings("unused")
   @UiThread
   public void onDisplayPlatformView(
-      int viewId,
+      long viewId,
       int x,
       int y,
       int width,

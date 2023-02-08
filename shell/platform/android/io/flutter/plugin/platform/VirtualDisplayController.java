@@ -30,7 +30,7 @@ class VirtualDisplayController {
       TextureRegistry.SurfaceTextureEntry textureEntry,
       int width,
       int height,
-      int viewId,
+      long viewId,
       Object createParams,
       OnFocusChangeListener focusChangeListener) {
 
@@ -98,7 +98,7 @@ class VirtualDisplayController {
       Surface surface,
       TextureRegistry.SurfaceTextureEntry textureEntry,
       OnFocusChangeListener focusChangeListener,
-      int viewId,
+      long viewId,
       Object createParams) {
     this.context = context;
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;

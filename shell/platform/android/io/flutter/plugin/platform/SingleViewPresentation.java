@@ -82,7 +82,7 @@ class SingleViewPresentation extends Presentation {
 
   // This is the view id assigned by the Flutter framework to the embedded view, we keep it here
   // so when we create the platform view we can tell it its view id.
-  private int viewId;
+  private long viewId;
 
   // The root view for the presentation, it has 2 childs: container which contains the embedded
   // view, and
@@ -110,7 +110,7 @@ class SingleViewPresentation extends Presentation {
       Display display,
       PlatformView view,
       AccessibilityEventsDelegate accessibilityEventsDelegate,
-      int viewId,
+      long viewId,
       OnFocusChangeListener focusChangeListener) {
     super(new ImmContext(outerContext), display);
     this.accessibilityEventsDelegate = accessibilityEventsDelegate;

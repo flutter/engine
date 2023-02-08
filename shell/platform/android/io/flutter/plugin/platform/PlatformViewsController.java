@@ -11,6 +11,7 @@ import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.MutableContextWrapper;
 import android.os.Build;
+import android.util.LongSparseArray;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
@@ -87,7 +88,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // TODO(mattcarroll): Refactor overall platform views to facilitate testing and then make
   // this private. This is visible as a hack to facilitate testing. This was deemed the least
   // bad option at the time of writing.
-  @VisibleForTesting /* package */ final HashMap<Integer, VirtualDisplayController> vdControllers;
+  @VisibleForTesting /* package */ final LongSparseArray<VirtualDisplayController> vdControllers;
 
   // Maps a virtual display's context to the embedded view hosted in this virtual display.
   // Since each virtual display has it's unique context this allows associating any view with the
@@ -96,7 +97,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   @VisibleForTesting /* package */ final HashMap<Context, View> contextToEmbeddedView;
 
   // The platform views.
-  private final SparseArray<PlatformView> platformViews;
+  private final LongSparseArray<PlatformView> platformViews;
 
   // The platform view wrappers that are appended to FlutterView.
   //
@@ -111,7 +112,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   //
   // This view provides a wrapper that applies scene builder operations to the platform view.
   // For example, a transform matrix, or setting opacity on the platform view layer.
-  private final SparseArray<FlutterMutatorView> platformViewParent;
+  private final LongSparseArray<FlutterMutatorView> platformViewParent;
 
   // Map of unique IDs to views that render overlay layers.
   private final SparseArray<PlatformOverlayView> overlayLayerViews;
@@ -122,7 +123,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   // the platform views that use a PlatformViewLayer.
   //
   // This is the default mode, and recommended for better performance.
-  private final SparseArray<PlatformViewWrapper> viewWrappers;
+  private final LongSparseArray<PlatformViewWrapper> viewWrappers;
 
   // Next available unique ID for use in overlayLayerViews.
   private int nextOverlayLayerId = 0;
@@ -139,7 +140,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   private final HashSet<Integer> currentFrameUsedOverlayLayerIds;
 
   // Platform view IDs that were displayed since the start of the current frame.
-  private final HashSet<Integer> currentFrameUsedPlatformViewIds;
+  private final HashSet<Long> currentFrameUsedPlatformViewIds;
 
   // Used to acquire the original motion events using the motionEventIds.
   private final MotionEventTracker motionEventTracker;
@@ -172,7 +173,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         public long createForTextureLayer(
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
           ensureValidRequest(request);
-          final int viewId = request.viewId;
+          final long viewId = request.viewId;
           if (viewWrappers.get(viewId) != null) {
             throw new IllegalStateException(
                 "Trying to create an already created platform view, view id: " + viewId);
@@ -226,7 +227,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void dispose(int viewId) {
+        public void dispose(long viewId) {
           final PlatformView platformView = platformViews.get(viewId);
           if (platformView == null) {
             Log.e(TAG, "Disposing unknown platform view with id: " + viewId);
@@ -279,7 +280,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void offset(int viewId, double top, double left) {
+        public void offset(long viewId, double top, double left) {
           if (usesVirtualDisplay(viewId)) {
             // Virtual displays don't need an accessibility offset.
             return;
@@ -311,7 +312,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
             @NonNull PlatformViewsChannel.PlatformViewBufferResized onComplete) {
           final int physicalWidth = toPhysicalPixels(request.newLogicalWidth);
           final int physicalHeight = toPhysicalPixels(request.newLogicalHeight);
-          final int viewId = request.viewId;
+          final long viewId = request.viewId;
 
           if (usesVirtualDisplay(viewId)) {
             final float originalDisplayDensity = getDisplayDensity();
@@ -378,7 +379,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @Override
         public void onTouch(@NonNull PlatformViewsChannel.PlatformViewTouch touch) {
-          final int viewId = touch.viewId;
+          final long viewId = touch.viewId;
           final float density = context.getResources().getDisplayMetrics().density;
 
           if (usesVirtualDisplay(viewId)) {
@@ -404,7 +405,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
         @TargetApi(17)
         @Override
-        public void setDirection(int viewId, int direction) {
+        public void setDirection(long viewId, int direction) {
           if (!validateDirection(direction)) {
             throw new IllegalStateException(
                 "Trying to set unknown direction value: "
@@ -435,7 +436,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
 
         @Override
-        public void clearFocus(int viewId) {
+        public void clearFocus(long viewId) {
           View embeddedView;
 
           if (usesVirtualDisplay(viewId)) {
@@ -712,15 +713,15 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   public PlatformViewsController() {
     registry = new PlatformViewRegistryImpl();
-    vdControllers = new HashMap<>();
+    vdControllers = new LongSparseArray<>();
     accessibilityEventsDelegate = new AccessibilityEventsDelegate();
     contextToEmbeddedView = new HashMap<>();
     overlayLayerViews = new SparseArray<>();
     currentFrameUsedOverlayLayerIds = new HashSet<>();
     currentFrameUsedPlatformViewIds = new HashSet<>();
-    viewWrappers = new SparseArray<>();
-    platformViews = new SparseArray<>();
-    platformViewParent = new SparseArray<>();
+    viewWrappers = new LongSparseArray<>();
+    platformViews = new LongSparseArray<>();
+    platformViewParent = new LongSparseArray<>();
 
     motionEventTracker = MotionEventTracker.getInstance();
   }
@@ -917,7 +918,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   @Override
   @Nullable
-  public View getPlatformViewById(int viewId) {
+  public View getPlatformViewById(long viewId) {
     if (usesVirtualDisplay(viewId)) {
       final VirtualDisplayController controller = vdControllers.get(viewId);
       return controller.getView();
@@ -931,8 +932,8 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
   }
 
   @Override
-  public boolean usesVirtualDisplay(int id) {
-    return vdControllers.containsKey(id);
+  public boolean usesVirtualDisplay(long viewId) {
+    return vdControllers.get(viewId) != null;
   }
 
   private void lockInputConnection(@NonNull VirtualDisplayController controller) {
@@ -1018,7 +1019,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
 
   private void diposeAllViews() {
     while (platformViews.size() > 0) {
-      final int viewId = platformViews.keyAt(0);
+      final long viewId = platformViews.keyAt(0);
       // Dispose deletes the entry from platformViews and clears associated resources.
       channelHandler.dispose(viewId);
     }
@@ -1039,7 +1040,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    */
   @VisibleForTesting
   @TargetApi(Build.VERSION_CODES.KITKAT)
-  void initializePlatformViewIfNeeded(int viewId) {
+  void initializePlatformViewIfNeeded(long viewId) {
     final PlatformView platformView = platformViews.get(viewId);
     if (platformView == null) {
       throw new IllegalStateException(
@@ -1103,7 +1104,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
    *     visible for testing.
    */
   public void onDisplayPlatformView(
-      int viewId,
+      long viewId,
       int x,
       int y,
       int width,
@@ -1220,7 +1221,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
     }
 
     for (int i = 0; i < platformViewParent.size(); i++) {
-      final int viewId = platformViewParent.keyAt(i);
+      final long viewId = platformViewParent.keyAt(i);
       final View parentView = platformViewParent.get(viewId);
 
       // This should only show platform views that are rendered in this frame and either:

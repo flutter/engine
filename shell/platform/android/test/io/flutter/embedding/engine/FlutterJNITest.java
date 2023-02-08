@@ -158,7 +158,7 @@ public class FlutterJNITest {
     FlutterMutatorsStack stack = new FlutterMutatorsStack();
     // --- Execute Test ---
     flutterJNI.onDisplayPlatformView(
-        /*viewId=*/ 1,
+        /*viewId=*/ 1L,
         /*x=*/ 10,
         /*y=*/ 20,
         /*width=*/ 100,
@@ -170,7 +170,7 @@ public class FlutterJNITest {
     // --- Verify Results ---
     verify(platformViewsController, times(1))
         .onDisplayPlatformView(
-            /*viewId=*/ 1,
+            /*viewId=*/ 1L,
             /*x=*/ 10,
             /*y=*/ 20,
             /*width=*/ 100,

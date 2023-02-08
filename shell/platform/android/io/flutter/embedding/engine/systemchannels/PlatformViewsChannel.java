@@ -28,7 +28,7 @@ public class PlatformViewsChannel {
   private final MethodChannel channel;
   private PlatformViewsHandler handler;
 
-  public void invokeViewFocused(int viewId) {
+  public void invokeViewFocused(long viewId) {
     if (channel == null) {
       return;
     }
@@ -93,7 +93,7 @@ public class PlatformViewsChannel {
             if (usesPlatformViewLayer) {
               final PlatformViewCreationRequest request =
                   new PlatformViewCreationRequest(
-                      (int) createArgs.get("id"),
+                      ((Number) createArgs.get("id")).longValue(),
                       (String) createArgs.get("viewType"),
                       0,
                       0,
@@ -116,7 +116,7 @@ public class PlatformViewsChannel {
                           .TEXTURE_WITH_VIRTUAL_FALLBACK;
               final PlatformViewCreationRequest request =
                   new PlatformViewCreationRequest(
-                      (int) createArgs.get("id"),
+                      ((Number) createArgs.get("id")).longValue(),
                       (String) createArgs.get("viewType"),
                       createArgs.containsKey("top") ? (double) createArgs.get("top") : 0.0,
                       createArgs.containsKey("left") ? (double) createArgs.get("left") : 0.0,
@@ -144,7 +144,7 @@ public class PlatformViewsChannel {
 
         private void dispose(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           Map<String, Object> disposeArgs = call.arguments();
-          int viewId = (int) disposeArgs.get("id");
+          long viewId = ((Number) disposeArgs.get("id")).longValue();
 
           try {
             handler.dispose(viewId);
@@ -158,7 +158,7 @@ public class PlatformViewsChannel {
           Map<String, Object> resizeArgs = call.arguments();
           PlatformViewResizeRequest resizeRequest =
               new PlatformViewResizeRequest(
-                  (int) resizeArgs.get("id"),
+                  ((Number) resizeArgs.get("id")).longValue(),
                   (double) resizeArgs.get("width"),
                   (double) resizeArgs.get("height"));
           try {
@@ -183,7 +183,7 @@ public class PlatformViewsChannel {
           Map<String, Object> offsetArgs = call.arguments();
           try {
             handler.offset(
-                (int) offsetArgs.get("id"),
+                ((Number) offsetArgs.get("id")).longValue(),
                 (double) offsetArgs.get("top"),
                 (double) offsetArgs.get("left"));
             result.success(null);
@@ -223,7 +223,7 @@ public class PlatformViewsChannel {
 
         private void setDirection(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
           Map<String, Object> setDirectionArgs = call.arguments();
-          int newDirectionViewId = (int) setDirectionArgs.get("id");
+          long newDirectionViewId = ((Number) setDirectionArgs.get("id")).longValue();
           int direction = (int) setDirectionArgs.get("direction");
 
           try {
@@ -235,7 +235,7 @@ public class PlatformViewsChannel {
         }
 
         private void clearFocus(@NonNull MethodCall call, @NonNull MethodChannel.Result result) {
-          int viewId = call.arguments();
+          long viewId = call.arguments();
           try {
             handler.clearFocus(viewId);
             result.success(null);
@@ -319,7 +319,7 @@ public class PlatformViewsChannel {
     long createForTextureLayer(@NonNull PlatformViewCreationRequest request);
 
     /** The Flutter application would like to dispose of an existing Android {@code View}. */
-    void dispose(int viewId);
+    void dispose(long viewId);
 
     /**
      * The Flutter application would like to resize an existing Android {@code View}.
@@ -334,7 +334,7 @@ public class PlatformViewsChannel {
     /**
      * The Flutter application would like to change the offset of an existing Android {@code View}.
      */
-    void offset(int viewId, double top, double left);
+    void offset(long viewId, double top, double left);
 
     /**
      * The user touched a platform view within Flutter.
@@ -348,10 +348,10 @@ public class PlatformViewsChannel {
      * {@code View}, i.e., platform view.
      */
     // TODO(mattcarroll): Introduce an annotation for @TextureId
-    void setDirection(int viewId, int direction);
+    void setDirection(long viewId, int direction);
 
     /** Clears the focus from the platform view with a give id if it is currently focused. */
-    void clearFocus(int viewId);
+    void clearFocus(long viewId);
 
     /**
      * Whether the render surface of {@code FlutterView} should be converted to a {@code
@@ -376,7 +376,7 @@ public class PlatformViewsChannel {
     }
 
     /** The ID of the platform view as seen by the Flutter side. */
-    public final int viewId;
+    public final long viewId;
 
     /** The type of Android {@code View} to create for this platform view. */
     @NonNull public final String viewType;
@@ -408,7 +408,7 @@ public class PlatformViewsChannel {
 
     /** Creates a request to construct a platform view. */
     public PlatformViewCreationRequest(
-        int viewId,
+        long viewId,
         @NonNull String viewType,
         double logicalTop,
         double logicalLeft,
@@ -430,7 +430,7 @@ public class PlatformViewsChannel {
 
     /** Creates a request to construct a platform view with the given display mode. */
     public PlatformViewCreationRequest(
-        int viewId,
+        long viewId,
         @NonNull String viewType,
         double logicalTop,
         double logicalLeft,
@@ -454,7 +454,7 @@ public class PlatformViewsChannel {
   /** Request sent from Flutter to resize a platform view. */
   public static class PlatformViewResizeRequest {
     /** The ID of the platform view as seen by the Flutter side. */
-    public final int viewId;
+    public final long viewId;
 
     /** The new density independent width to display the platform view. */
     public final double newLogicalWidth;
@@ -462,7 +462,7 @@ public class PlatformViewsChannel {
     /** The new density independent height to display the platform view. */
     public final double newLogicalHeight;
 
-    public PlatformViewResizeRequest(int viewId, double newLogicalWidth, double newLogicalHeight) {
+    public PlatformViewResizeRequest(long viewId, double newLogicalWidth, double newLogicalHeight) {
       this.viewId = viewId;
       this.newLogicalWidth = newLogicalWidth;
       this.newLogicalHeight = newLogicalHeight;
@@ -491,7 +491,7 @@ public class PlatformViewsChannel {
   /** The state of a touch event in Flutter within a platform view. */
   public static class PlatformViewTouch {
     /** The ID of the platform view as seen by the Flutter side. */
-    public final int viewId;
+    public final long viewId;
 
     /** The amount of time that the touch has been pressed. */
     @NonNull public final Number downTime;
@@ -525,7 +525,7 @@ public class PlatformViewsChannel {
     public final long motionEventId;
 
     public PlatformViewTouch(
-        int viewId,
+        long viewId,
         @NonNull Number downTime,
         @NonNull Number eventTime,
         int action,
