@@ -37,6 +37,8 @@
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
 #include "impeller/entity/gaussian_blur_decal.frag.h"
+#include "impeller/entity/gaussian_ssbo_blur.frag.h"
+#include "impeller/entity/gaussian_ssbo_blur_decal.frag.h"
 #include "impeller/entity/glyph_atlas.frag.h"
 #include "impeller/entity/glyph_atlas.vert.h"
 #include "impeller/entity/glyph_atlas_sdf.frag.h"
@@ -149,6 +151,13 @@ using GaussianBlurPipeline =
     RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
 using GaussianBlurDecalPipeline =
     RenderPipelineT<GaussianBlurVertexShader, GaussianBlurDecalFragmentShader>;
+
+using GaussianSSBOBlurPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, GaussianSsboBlurFragmentShader>;
+using GaussianSSBOBlurDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader,
+                    GaussianSsboBlurDecalFragmentShader>;
+
 using BorderMaskBlurPipeline =
     RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
 using MorphologyFilterPipeline =
@@ -287,6 +296,16 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianBlurDecalPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(gaussian_blur_decal_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGaussianSSBOBlurPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(gaussian_ssbo_blur_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetGaussianSSBOBlurDecalPipeline(ContentContextOptions opts) const {
+    return GetPipeline(gaussian_ssbo_blur_decal_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetBorderMaskBlurPipeline(
@@ -464,6 +483,9 @@ class ContentContext {
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<GaussianBlurDecalPipeline> gaussian_blur_decal_pipelines_;
+  mutable Variants<GaussianSSBOBlurPipeline> gaussian_ssbo_blur_pipelines_;
+  mutable Variants<GaussianSSBOBlurDecalPipeline>
+      gaussian_ssbo_blur_decal_pipelines_;
   mutable Variants<BorderMaskBlurPipeline> border_mask_blur_pipelines_;
   mutable Variants<MorphologyFilterPipeline> morphology_filter_pipelines_;
   mutable Variants<ColorMatrixColorFilterPipeline>

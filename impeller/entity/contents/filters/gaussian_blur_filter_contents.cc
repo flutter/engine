@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/gaussian_blur_filter_contents.h"
 
 #include <cmath>
+#include <iostream>
 #include <utility>
 #include <valarray>
 
@@ -81,15 +82,29 @@ void DirectionalGaussianBlurFilterContents::SetSourceOverride(
   source_override_ = std::move(source_override);
 }
 
+std::vector<KernelData> DirectionalGaussianBlurFilterContents::ComputeKernel(
+    Radius radius,
+    Point blur_direction,
+    Point texture_size) const {
+  constexpr float kSqrtTwoPi = 2.50662827463;
+  auto sigma = Sigma{radius}.sigma;
+  Point blur_uv_offset = blur_direction / texture_size;
+  std::vector<KernelData> data = {};
+  for (float i = -radius.radius; i <= radius.radius; i++) {
+    auto variance = sigma * sigma;
+    Scalar gaussian = std::exp(-0.5 * i * i / variance) / (kSqrtTwoPi * sigma);
+    data.push_back(
+        {.texture_coord_offset = blur_uv_offset * i, .gaussian = gaussian});
+  }
+  return data;
+}
+
 std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  using VS = GaussianBlurPipeline::VertexShader;
-  using FS = GaussianBlurPipeline::FragmentShader;
-
   //----------------------------------------------------------------------------
   /// Handle inputs.
   ///
@@ -165,93 +180,200 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   //----------------------------------------------------------------------------
   /// Render to texture.
   ///
+  ContentContext::SubpassCallback callback;
 
-  ContentContext::SubpassCallback callback = [&](const ContentContext& renderer,
-                                                 RenderPass& pass) {
-    auto& host_buffer = pass.GetTransientsBuffer();
+  if (renderer.GetBackendFeatures().ssbo_support) {
+    using VS = GaussianSSBOBlurPipeline::VertexShader;
+    using FS = GaussianSSBOBlurPipeline::FragmentShader;
 
-    VertexBufferBuilder<VS::PerVertexData> vtx_builder;
-    vtx_builder.AddVertices({
-        {Point(0, 0), input_uvs[0], source_uvs[0]},
-        {Point(1, 0), input_uvs[1], source_uvs[1]},
-        {Point(1, 1), input_uvs[3], source_uvs[3]},
-        {Point(0, 0), input_uvs[0], source_uvs[0]},
-        {Point(1, 1), input_uvs[3], source_uvs[3]},
-        {Point(0, 1), input_uvs[2], source_uvs[2]},
-    });
-    auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+    callback = [&](const ContentContext& renderer, RenderPass& pass) {
+      auto& host_buffer = pass.GetTransientsBuffer();
 
-    VS::FrameInfo frame_info;
-    frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
-    frame_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
-    frame_info.alpha_mask_sampler_y_coord_scale =
-        source_snapshot->texture->GetYCoordScale();
+      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+      vtx_builder.AddVertices({
+          {Point(0, 0), input_uvs[0], source_uvs[0]},
+          {Point(1, 0), input_uvs[1], source_uvs[1]},
+          {Point(1, 1), input_uvs[3], source_uvs[3]},
+          {Point(0, 0), input_uvs[0], source_uvs[0]},
+          {Point(1, 1), input_uvs[3], source_uvs[3]},
+          {Point(0, 1), input_uvs[2], source_uvs[2]},
+      });
+      auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+      auto kernel_data = ComputeKernel(
+          Radius{transformed_blur_radius_length},
+          pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize(),
+          Point(input_snapshot->GetCoverage().value().size));
 
-    FS::FragInfo frag_info;
-    auto r = Radius{transformed_blur_radius_length};
-    frag_info.blur_sigma = Sigma{r}.sigma;
-    frag_info.blur_radius = r.radius;
+      VS::FrameInfo frame_info;
+      frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+      frame_info.texture_sampler_y_coord_scale =
+          input_snapshot->texture->GetYCoordScale();
+      frame_info.alpha_mask_sampler_y_coord_scale =
+          source_snapshot->texture->GetYCoordScale();
 
-    // The blur direction is in input UV space.
-    frag_info.blur_direction =
-        pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
+      FS::FragInfo frag_info;
+      frag_info.sample_count = kernel_data.size();
+      Scalar gaussian_integral = 0.0;
+      for (auto& data : kernel_data) {
+        gaussian_integral += data.gaussian;
+      }
+      frag_info.gaussian_integral = gaussian_integral;
+      frag_info.src_factor = src_color_factor_;
+      frag_info.inner_blur_factor = inner_blur_factor_;
+      frag_info.outer_blur_factor = outer_blur_factor_;
 
-    frag_info.src_factor = src_color_factor_;
-    frag_info.inner_blur_factor = inner_blur_factor_;
-    frag_info.outer_blur_factor = outer_blur_factor_;
-    frag_info.texture_size = Point(input_snapshot->GetCoverage().value().size);
+      Command cmd;
+      cmd.label = SPrintF("Gaussian SSBO Blur Filter (Radius=%.2f)",
+                          transformed_blur_radius_length);
+      cmd.BindVertices(vtx_buffer);
 
-    Command cmd;
-    cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
-                        transformed_blur_radius_length);
-    cmd.BindVertices(vtx_buffer);
+      auto options = OptionsFromPass(pass);
+      options.blend_mode = BlendMode::kSource;
+      auto input_descriptor = input_snapshot->sampler_descriptor;
+      auto source_descriptor = source_snapshot->sampler_descriptor;
+      switch (tile_mode_) {
+        case Entity::TileMode::kDecal:
+          cmd.pipeline = renderer.GetGaussianSSBOBlurDecalPipeline(options);
+          break;
+        case Entity::TileMode::kClamp:
+          cmd.pipeline = renderer.GetGaussianSSBOBlurPipeline(options);
+          input_descriptor.width_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          input_descriptor.height_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          source_descriptor.width_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          source_descriptor.height_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          break;
+        case Entity::TileMode::kMirror:
+          cmd.pipeline = renderer.GetGaussianSSBOBlurPipeline(options);
+          input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+          input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+          source_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+          source_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+          break;
+        case Entity::TileMode::kRepeat:
+          cmd.pipeline = renderer.GetGaussianSSBOBlurPipeline(options);
+          input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+          input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+          source_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+          source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+          break;
+      }
 
-    auto options = OptionsFromPass(pass);
-    options.blend_mode = BlendMode::kSource;
-    auto input_descriptor = input_snapshot->sampler_descriptor;
-    auto source_descriptor = source_snapshot->sampler_descriptor;
-    switch (tile_mode_) {
-      case Entity::TileMode::kDecal:
-        cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
-        break;
-      case Entity::TileMode::kClamp:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-        input_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
-        input_descriptor.height_address_mode = SamplerAddressMode::kClampToEdge;
-        source_descriptor.width_address_mode = SamplerAddressMode::kClampToEdge;
-        source_descriptor.height_address_mode =
-            SamplerAddressMode::kClampToEdge;
-        break;
-      case Entity::TileMode::kMirror:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-        input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
-        input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
-        source_descriptor.width_address_mode = SamplerAddressMode::kMirror;
-        source_descriptor.height_address_mode = SamplerAddressMode::kMirror;
-        break;
-      case Entity::TileMode::kRepeat:
-        cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
-        input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
-        input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
-        source_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
-        source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
-        break;
-    }
+      auto kernel_data_buffer = host_buffer.Emplace(
+          kernel_data.data(), kernel_data.size() * sizeof(KernelData),
+          alignof(KernelData));
+      FS::BindGaussianKernel(cmd, kernel_data_buffer);
 
-    FS::BindTextureSampler(
-        cmd, input_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            input_descriptor));
-    FS::BindAlphaMaskSampler(
-        cmd, source_snapshot->texture,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            source_descriptor));
-    VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+      FS::BindTextureSampler(
+          cmd, input_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              input_descriptor));
+      FS::BindAlphaMaskSampler(
+          cmd, source_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              source_descriptor));
+      VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+      FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-    return pass.AddCommand(cmd);
-  };
+      return pass.AddCommand(cmd);
+    };
+  } else {
+    using VS = GaussianBlurPipeline::VertexShader;
+    using FS = GaussianBlurPipeline::FragmentShader;
+
+    callback = [&](const ContentContext& renderer, RenderPass& pass) {
+      auto& host_buffer = pass.GetTransientsBuffer();
+
+      VertexBufferBuilder<VS::PerVertexData> vtx_builder;
+      vtx_builder.AddVertices({
+          {Point(0, 0), input_uvs[0], source_uvs[0]},
+          {Point(1, 0), input_uvs[1], source_uvs[1]},
+          {Point(1, 1), input_uvs[3], source_uvs[3]},
+          {Point(0, 0), input_uvs[0], source_uvs[0]},
+          {Point(1, 1), input_uvs[3], source_uvs[3]},
+          {Point(0, 1), input_uvs[2], source_uvs[2]},
+      });
+      auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
+
+      VS::FrameInfo frame_info;
+      frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+      frame_info.texture_sampler_y_coord_scale =
+          input_snapshot->texture->GetYCoordScale();
+      frame_info.alpha_mask_sampler_y_coord_scale =
+          source_snapshot->texture->GetYCoordScale();
+
+      FS::FragInfo frag_info;
+      auto r = Radius{transformed_blur_radius_length};
+      frag_info.blur_sigma = Sigma{r}.sigma;
+      frag_info.blur_radius = r.radius;
+
+      // The blur direction is in input UV space.
+      frag_info.blur_direction =
+          pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize();
+
+      frag_info.src_factor = src_color_factor_;
+      frag_info.inner_blur_factor = inner_blur_factor_;
+      frag_info.outer_blur_factor = outer_blur_factor_;
+      frag_info.texture_size =
+          Point(input_snapshot->GetCoverage().value().size);
+
+      Command cmd;
+      cmd.label = SPrintF("Gaussian Blur Filter (Radius=%.2f)",
+                          transformed_blur_radius_length);
+      cmd.BindVertices(vtx_buffer);
+
+      auto options = OptionsFromPass(pass);
+      options.blend_mode = BlendMode::kSource;
+      auto input_descriptor = input_snapshot->sampler_descriptor;
+      auto source_descriptor = source_snapshot->sampler_descriptor;
+      switch (tile_mode_) {
+        case Entity::TileMode::kDecal:
+          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+          break;
+        case Entity::TileMode::kClamp:
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          input_descriptor.width_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          input_descriptor.height_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          source_descriptor.width_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          source_descriptor.height_address_mode =
+              SamplerAddressMode::kClampToEdge;
+          break;
+        case Entity::TileMode::kMirror:
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          input_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+          input_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+          source_descriptor.width_address_mode = SamplerAddressMode::kMirror;
+          source_descriptor.height_address_mode = SamplerAddressMode::kMirror;
+          break;
+        case Entity::TileMode::kRepeat:
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          input_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+          input_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+          source_descriptor.width_address_mode = SamplerAddressMode::kRepeat;
+          source_descriptor.height_address_mode = SamplerAddressMode::kRepeat;
+          break;
+      }
+
+      FS::BindTextureSampler(
+          cmd, input_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              input_descriptor));
+      FS::BindAlphaMaskSampler(
+          cmd, source_snapshot->texture,
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+              source_descriptor));
+      VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+      FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+      return pass.AddCommand(cmd);
+    };
+  }
 
   Vector2 scale;
   auto scale_curve = [](Scalar radius) {

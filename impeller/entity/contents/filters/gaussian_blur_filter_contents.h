@@ -8,8 +8,15 @@
 #include <optional>
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
+#include "impeller/renderer/shader_types.h"
 
 namespace impeller {
+
+struct KernelData {
+  Point texture_coord_offset;
+  Scalar gaussian;
+  Padding<4> _padding_;
+};
 
 class DirectionalGaussianBlurFilterContents final : public FilterContents {
  public:
@@ -43,6 +50,11 @@ class DirectionalGaussianBlurFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform,
       const Rect& coverage) const override;
+
+  std::vector<KernelData> ComputeKernel(Radius radius,
+                                        Point blur_direction,
+                                        Point texture_size) const;
+
   Sigma blur_sigma_;
   Sigma secondary_blur_sigma_;
   Vector2 blur_direction_;

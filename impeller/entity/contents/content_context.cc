@@ -166,6 +166,10 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
         CreateDefaultPipeline<RadialGradientSSBOFillPipeline>(*context_);
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
+    gaussian_ssbo_blur_pipelines_[{}] =
+        CreateDefaultPipeline<GaussianSSBOBlurPipeline>(*context_);
+    gaussian_ssbo_blur_decal_pipelines_[{}] =
+        CreateDefaultPipeline<GaussianSSBOBlurDecalPipeline>(*context_);
   }
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
