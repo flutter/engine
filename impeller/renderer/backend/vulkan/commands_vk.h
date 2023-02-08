@@ -24,6 +24,8 @@ class TransitionImageLayoutCommandVK {
   vk::Image image_;
   vk::ImageLayout old_layout_;
   vk::ImageLayout new_layout_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TransitionImageLayoutCommandVK);
 };
 
 }  // namespace impeller

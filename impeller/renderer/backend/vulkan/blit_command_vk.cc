@@ -11,7 +11,9 @@ namespace impeller {
 
 BlitEncodeVK::~BlitEncodeVK() = default;
 
-// BEGIN: BlitCopyTextureToTextureCommandVK
+//------------------------------------------------------------------------------
+/// BlitCopyTextureToTextureCommandVK
+///
 
 BlitCopyTextureToTextureCommandVK::~BlitCopyTextureToTextureCommandVK() =
     default;
@@ -23,16 +25,16 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
 [[nodiscard]] bool BlitCopyTextureToTextureCommandVK::Encode(
     FencedCommandBufferVK* fenced_command_buffer) const {
   // cast source and destination to TextureVK
-  auto& source_tex_vk = TextureVK::Cast(*source);
-  auto& dest_tex_vk = TextureVK::Cast(*destination);
+  const auto& source_tex_vk = TextureVK::Cast(*source);
+  const auto& dest_tex_vk = TextureVK::Cast(*destination);
 
   // get the vulkan image and image view
-  auto source_image = source_tex_vk.GetImage();
-  auto dest_image = dest_tex_vk.GetImage();
+  const auto source_image = source_tex_vk.GetImage();
+  const auto dest_image = dest_tex_vk.GetImage();
 
   // copy the source image to the destination image, from source_region to
   // destination_origin.
-  vk::ImageCopy image_copy{};
+  vk::ImageCopy image_copy;
   image_copy.setSrcSubresource(
       vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1));
   image_copy.setDstSubresource(
@@ -63,6 +65,7 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
                                      vk::ImageLayout::eTransferSrcOptimal);
   bool success = transition_source_cmd.Submit(fenced_command_buffer);
   if (!success) {
+    VALIDATION_LOG << "Failed to transition source image layout";
     return false;
   }
 
@@ -72,6 +75,7 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
                                      vk::ImageLayout::eTransferDstOptimal);
   success = transition_dest_cmd.Submit(fenced_command_buffer);
   if (!success) {
+    VALIDATION_LOG << "Failed to transition destination image layout";
     return false;
   }
 
@@ -88,9 +92,9 @@ std::string BlitCopyTextureToTextureCommandVK::GetLabel() const {
   return true;
 }
 
-// END: BlitCopyTextureToTextureCommandVK
-
-// BEGIN: BlitCopyTextureToBufferCommandVK
+//------------------------------------------------------------------------------
+/// BlitCopyTextureToBufferCommandVK
+///
 
 BlitCopyTextureToBufferCommandVK::~BlitCopyTextureToBufferCommandVK() = default;
 
@@ -101,14 +105,14 @@ std::string BlitCopyTextureToBufferCommandVK::GetLabel() const {
 [[nodiscard]] bool BlitCopyTextureToBufferCommandVK::Encode(
     FencedCommandBufferVK* fenced_command_buffer) const {
   // cast source and destination to TextureVK
-  auto& source_tex_vk = TextureVK::Cast(*source);
-  auto& dest_buf_vk = DeviceBufferVK::Cast(*destination);
+  const auto& source_tex_vk = TextureVK::Cast(*source);
+  const auto& dest_buf_vk = DeviceBufferVK::Cast(*destination);
 
   // get the vulkan image and image view
-  auto source_image = source_tex_vk.GetImage();
+  const auto source_image = source_tex_vk.GetImage();
 
   // get buffer image handle
-  auto dest_buffer = dest_buf_vk.GetVKBufferHandle();
+  const auto dest_buffer = dest_buf_vk.GetVKBufferHandle();
 
   // copy the source image to the destination buffer, from source_region to
   // destination_origin.
@@ -155,9 +159,9 @@ std::string BlitCopyTextureToBufferCommandVK::GetLabel() const {
   return true;
 }
 
-// END: BlitCopyTextureToBufferCommandVK
-
-// BEGIN: BlitGenerateMipmapCommandVK
+//------------------------------------------------------------------------------
+/// BlitGenerateMipmapCommandVK
+///
 
 BlitGenerateMipmapCommandVK::~BlitGenerateMipmapCommandVK() = default;
 
@@ -169,7 +173,7 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
     FencedCommandBufferVK* fenced_command_buffer) const {
   // TODO(https://github.com/flutter/flutter/issues/120134): Support generating
   // mipmaps on Vulkan.
-  FML_LOG(ERROR) << "Generating mipmaps is not yet supported on Vulkan";
+  IMPELLER_UNIMPLEMENTED;
   return true;
 }
 
