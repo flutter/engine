@@ -3501,6 +3501,10 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
 ///  * [SceneBuilder.pushImageFilter], which is the low-level API for using
 ///    this class as a child layer filter.
 abstract class ImageFilter {
+  // This class is not meant to be instantiated or extended outside of dart:ui;
+  // this constructor prevents instantiation and extension.
+  ImageFilter._();
+
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp }) {
     return _GaussianBlurImageFilter(sigmaX: sigmaX, sigmaY: sigmaY, tileMode: tileMode);
