@@ -165,7 +165,7 @@ class PointerData {
            'panDeltaX: $panDeltaX, '
            'panDeltaY: $panDeltaY, '
            'scale: $scale, '
-           'rotation: $rotation'
+           'rotation: $rotation, '
            'preferredStylusAuxiliaryAction: $preferredStylusAuxiliaryAction'
            ')';
   }
