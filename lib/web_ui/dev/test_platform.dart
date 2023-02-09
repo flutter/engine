@@ -439,7 +439,7 @@ class BrowserPlatform extends PlatformPlugin {
       fileInBuild.readAsBytesSync(),
       headers: <String, Object>{
         HttpHeaders.contentTypeHeader: contentType,
-        if (needsCoopCoep)
+        if (needsCoopCoep && isWasm && renderer == Renderer.skwasm)
           ...coopCoepHeaders,
       },
     );
@@ -475,7 +475,8 @@ class BrowserPlatform extends PlatformPlugin {
         </html>
       ''', headers: <String, String>{
         'Content-Type': 'text/html',
-        ...coopCoepHeaders
+        if (isWasm && renderer == Renderer.skwasm)
+          ...coopCoepHeaders
       });
     }
 
