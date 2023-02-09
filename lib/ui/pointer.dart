@@ -441,7 +441,7 @@ class PointerData {
              'panDeltaY: $panDeltaY, '
              'scale: $scale, '
              'rotation: $rotation'
-             'preferredStylusAuxiliaryAction: $preferredStylusAuxiliaryAction, '
+             'preferredStylusAuxiliaryAction: $preferredStylusAuxiliaryAction'
            ')';
   }
 }
