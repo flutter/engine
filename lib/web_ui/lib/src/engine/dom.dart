@@ -583,7 +583,7 @@ class DomPerformanceMeasure extends DomPerformanceEntry {}
 
 @JS()
 @staticInterop
-class DomCanvasElement extends DomHTMLElement {}
+class DomCanvasElement extends DomHTMLElement implements DomCanvasImageSource {}
 
 @visibleForTesting
 int debugCanvasCount = 0;

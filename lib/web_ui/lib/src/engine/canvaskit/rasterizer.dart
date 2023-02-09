@@ -6,9 +6,9 @@ import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../frame_reference.dart';
-import 'canvas.dart';
 import 'embedded_views.dart';
 import 'layer_tree.dart';
+import 'picture_recorder.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
 
@@ -31,15 +31,23 @@ class Rasterizer {
 
       final SurfaceFrame frame =
           SurfaceFactory.instance.baseSurface.acquireFrame(layerTree.frameSize);
+
+      final CkPictureRecorder baseRecorder = CkPictureRecorder();
+
       HtmlViewEmbedder.instance.frameSize = layerTree.frameSize;
-      final CkCanvas canvas = frame.skiaCanvas;
-      final Frame compositorFrame =
-          context.acquireFrame(canvas, HtmlViewEmbedder.instance);
+
+      final Frame compositorFrame = context.acquireFrame(
+        baseRecorder.beginRecording(ui.Offset.zero & layerTree.frameSize),
+        HtmlViewEmbedder.instance,
+      );
 
       compositorFrame.raster(layerTree, ignoreRasterCache: true);
       SurfaceFactory.instance.baseSurface.addToScene();
+
+      HtmlViewEmbedder.instance.submitFrame(frame);
+
+      frame.skiaCanvas.drawPicture(baseRecorder.endRecording());
       frame.submit();
-      HtmlViewEmbedder.instance.submitFrame();
     } finally {
       _runPostFrameCallbacks();
     }

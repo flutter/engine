@@ -18,6 +18,8 @@ import 'embedded_views_diff.dart';
 import 'path.dart';
 import 'picture_recorder.dart';
 import 'renderer.dart';
+import 'snapshot_surface.dart';
+import 'snapshot_surface_factory.dart';
 import 'surface.dart';
 import 'surface_factory.dart';
 
@@ -39,23 +41,25 @@ class HtmlViewEmbedder {
       return;
     }
     _debugOverlaysDisabled = disable;
-    final SurfaceFactory? instance = SurfaceFactory.debugUninitializedInstance;
+    final SnapshotSurfaceFactory? instance =
+        SnapshotSurfaceFactory.debugUninitializedInstance;
     if (instance != null) {
       instance.releaseSurfaces();
       instance.removeSurfacesFromDom();
       instance.debugClear();
     }
     if (disable) {
-      // If we are disabling overlays then get the current [SurfaceFactory]
+      // If we are disabling overlays then get the current [SnapshotSurfaceFactory]
       // instance, clear it, and overwrite it with a new instance with only
       // one surface for the base surface.
-      SurfaceFactory.debugSetInstance(SurfaceFactory(1));
+      SnapshotSurfaceFactory.debugSetInstance(SnapshotSurfaceFactory(1));
     } else {
       // If we are re-enabling overlays then replace the current
-      // [SurfaceFactory]instance with one with
+      // [SnapshotSurfaceFactory]instance with one with
       // [configuration.canvasKitMaximumSurfaces] overlays.
-      SurfaceFactory.debugSetInstance(
-          SurfaceFactory(configuration.canvasKitMaximumSurfaces));
+      SnapshotSurfaceFactory.debugSetInstance(
+        SnapshotSurfaceFactory(configuration.canvasKitMaximumSurfaces),
+      );
     }
   }
 
@@ -85,10 +89,11 @@ class HtmlViewEmbedder {
   /// * The number of clipping elements used last time the view was composited.
   final Map<int, ViewClipChain> _viewClipChains = <int, ViewClipChain>{};
 
-  /// Surfaces used to draw on top of platform views, keyed by platform view ID.
+  /// SnapshotSurfaces used to draw on top of platform views, keyed by platform
+  /// view ID.
   ///
-  /// These surfaces are cached in the [OverlayCache] and reused.
-  final Map<int, Surface> _overlays = <int, Surface>{};
+  /// These surfaces are cached in the [SnapshotSurfaceFactory] and reused.
+  final Map<int, SnapshotSurface> _overlays = <int, SnapshotSurface>{};
 
   /// The views that need to be recomposited into the scene on the next frame.
   final Set<int> _viewsToRecomposite = <int>{};
@@ -125,7 +130,7 @@ class HtmlViewEmbedder {
   void prerollCompositeEmbeddedView(int viewId, EmbeddedViewParams params) {
     final bool hasAvailableOverlay =
         _context.pictureRecordersCreatedDuringPreroll.length <
-            SurfaceFactory.instance.maximumOverlays;
+            SnapshotSurfaceFactory.instance.maximumOverlays;
     if (!hasAvailableOverlay && !_warnedAboutTooManySurfaces) {
       _warnedAboutTooManySurfaces = true;
       printWarning('Flutter was unable to create enough overlay surfaces. '
@@ -142,7 +147,7 @@ class HtmlViewEmbedder {
     if (platformViewManager.isVisible(viewId)) {
       _context.seenFirstVisibleViewInPreroll = true;
     }
-    if (needNewOverlay && hasAvailableOverlay) {
+    if (needNewOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
       pictureRecorder.recordingCanvas!.clear(const ui.Color(0x00000000));
@@ -418,7 +423,7 @@ class HtmlViewEmbedder {
     skiaSceneHost.append(_svgPathDefs!);
   }
 
-  void submitFrame() {
+  void submitFrame(SurfaceFrame baseFrame) {
     final ViewListDiffResult? diffResult =
         (_activeCompositionOrder.isEmpty || _compositionOrder.isEmpty)
             ? null
@@ -430,13 +435,16 @@ class HtmlViewEmbedder {
     for (int i = 0; i < _compositionOrder.length; i++) {
       final int viewId = _compositionOrder[i];
       if (_overlays[viewId] != null) {
-        final SurfaceFrame frame = _overlays[viewId]!.acquireFrame(_frameSize);
-        final CkCanvas canvas = frame.skiaCanvas;
+        final CkCanvas canvas = baseFrame.skiaCanvas;
         canvas.drawPicture(
           _context.pictureRecorders[pictureRecorderIndex].endRecording(),
         );
         pictureRecorderIndex++;
-        frame.submit();
+        baseFrame.submit();
+
+        final SnapshotSurface overlay = _overlays[viewId]!;
+        overlay.createOrUpdateSurface(_frameSize);
+        SurfaceFactory.instance.baseSurface.saveTo(overlay);
       }
     }
     for (final CkPictureRecorder recorder
@@ -484,7 +492,7 @@ class HtmlViewEmbedder {
         if (diffResult.addToBeginning) {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost.insertBefore(platformViewRoot, elementToInsertBefore);
-          final Surface? overlay = _overlays[viewId];
+          final SnapshotSurface? overlay = _overlays[viewId];
           if (overlay != null) {
             skiaSceneHost.insertBefore(
                 overlay.htmlElement, elementToInsertBefore);
@@ -492,7 +500,7 @@ class HtmlViewEmbedder {
         } else {
           final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
           skiaSceneHost.append(platformViewRoot);
-          final Surface? overlay = _overlays[viewId];
+          final SnapshotSurface? overlay = _overlays[viewId];
           if (overlay != null) {
             skiaSceneHost.append(overlay.htmlElement);
           }
@@ -517,7 +525,7 @@ class HtmlViewEmbedder {
         }
       }
     } else {
-      SurfaceFactory.instance.removeSurfacesFromDom();
+      SnapshotSurfaceFactory.instance.removeSurfacesFromDom();
       for (int i = 0; i < _compositionOrder.length; i++) {
         final int viewId = _compositionOrder[i];
 
@@ -530,7 +538,7 @@ class HtmlViewEmbedder {
         }
 
         final DomElement platformViewRoot = _viewClipChains[viewId]!.root;
-        final Surface? overlay = _overlays[viewId];
+        final SnapshotSurface? overlay = _overlays[viewId];
         skiaSceneHost.append(platformViewRoot);
         if (overlay != null) {
           skiaSceneHost.append(overlay.htmlElement);
@@ -569,8 +577,8 @@ class HtmlViewEmbedder {
 
   void _releaseOverlay(int viewId) {
     if (_overlays[viewId] != null) {
-      final Surface overlay = _overlays[viewId]!;
-      SurfaceFactory.instance.releaseSurface(overlay);
+      final SnapshotSurface overlay = _overlays[viewId]!;
+      SnapshotSurfaceFactory.instance.releaseSurface(overlay);
       _overlays.remove(viewId);
     }
   }
@@ -605,15 +613,16 @@ class HtmlViewEmbedder {
         overlayGroups.map((List<int> group) => group.last).toList();
     // If there were more visible views than overlays, then the last group
     // doesn't have an overlay.
-    if (viewsNeedingOverlays.length > SurfaceFactory.instance.maximumOverlays) {
+    if (viewsNeedingOverlays.length >
+        SnapshotSurfaceFactory.instance.maximumOverlays) {
       assert(viewsNeedingOverlays.length ==
-          SurfaceFactory.instance.maximumOverlays + 1);
+          SnapshotSurfaceFactory.instance.maximumOverlays + 1);
       viewsNeedingOverlays.removeLast();
     }
     if (diffResult == null) {
       // Everything is going to be explicitly recomposited anyway. Release all
       // the surfaces and assign an overlay to all the surfaces needing one.
-      SurfaceFactory.instance.releaseSurfaces();
+      SnapshotSurfaceFactory.instance.releaseSurfaces();
       _overlays.clear();
       viewsNeedingOverlays.forEach(_initializeOverlay);
     } else {
@@ -646,7 +655,7 @@ class HtmlViewEmbedder {
     // Visibility groups are typically a visible view followed by zero or more
     // invisible views. However, if the view list begins with one or more
     // invisible views, we can group them with the first visible view.
-    final int maxOverlays = SurfaceFactory.instance.maximumOverlays;
+    final int maxOverlays = SnapshotSurfaceFactory.instance.maximumOverlays;
     if (maxOverlays == 0) {
       return const <List<int>>[];
     }
@@ -689,7 +698,8 @@ class HtmlViewEmbedder {
     assert(!_overlays.containsKey(viewId));
 
     // Try reusing a cached overlay created for another platform view.
-    final Surface overlay = SurfaceFactory.instance.getSurface()!;
+    final SnapshotSurface overlay =
+        SnapshotSurfaceFactory.instance.getSurface()!;
     overlay.createOrUpdateSurface(_frameSize);
     _overlays[viewId] = overlay;
   }

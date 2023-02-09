@@ -14,7 +14,7 @@ import '../window.dart';
 import 'canvas.dart';
 import 'canvaskit_api.dart';
 import 'renderer.dart';
-import 'surface_factory.dart';
+import 'snapshot_surface.dart';
 import 'util.dart';
 
 // Only supported in profile/release mode. Allows Flutter to use MSAA but
@@ -25,8 +25,7 @@ typedef SubmitCallback = bool Function(SurfaceFrame, CkCanvas);
 
 /// A frame which contains a canvas to be drawn into.
 class SurfaceFrame {
-  SurfaceFrame(this.skiaSurface, this.submitCallback)
-      : _submitted = false;
+  SurfaceFrame(this.skiaSurface, this.submitCallback) : _submitted = false;
 
   final CkSurface skiaSurface;
   final SubmitCallback submitCallback;
@@ -141,8 +140,11 @@ class Surface {
 
   /// This is only valid after the first frame or if [ensureSurface] has been
   /// called
-  bool get usingSoftwareBackend => _glContext == null ||
-      _grContext == null || webGLVersion == -1 || configuration.canvasKitForceCpuOnly;
+  bool get usingSoftwareBackend =>
+      _glContext == null ||
+      _grContext == null ||
+      webGLVersion == -1 ||
+      configuration.canvasKitForceCpuOnly;
 
   /// Ensure that the initial surface exists and has a size of at least [size].
   ///
@@ -283,14 +285,9 @@ class Surface {
   void _contextLostListener(DomEvent event) {
     assert(event.target == htmlCanvas,
         'Received a context lost event for a disposed canvas');
-    final SurfaceFactory factory = SurfaceFactory.instance;
     _contextLost = true;
-    if (factory.isLive(this)) {
-      _forceNewContext = true;
-      event.preventDefault();
-    } else {
-      dispose();
-    }
+    _forceNewContext = true;
+    event.preventDefault();
   }
 
   /// This function is expensive.
@@ -409,13 +406,12 @@ class Surface {
           htmlCanvas!, 'Failed to initialize WebGL context');
     } else {
       final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
-        _grContext!,
-        size.width.roundToDouble(),
-        size.height.roundToDouble(),
-        SkColorSpaceSRGB,
-        _sampleCount,
-        _stencilBits
-      );
+          _grContext!,
+          size.width.roundToDouble(),
+          size.height.roundToDouble(),
+          SkColorSpaceSRGB,
+          _sampleCount,
+          _stencilBits);
 
       if (skSurface == null) {
         return _makeSoftwareCanvasSurface(
@@ -443,6 +439,16 @@ class Surface {
   bool _presentSurface() {
     _surface!.flush();
     return true;
+  }
+
+  void saveTo(SnapshotSurface target) {
+    final int surfaceHeight = _currentSurfaceSize!.height.ceil();
+
+    target.canvasContext?.drawImage(
+      htmlCanvas!,
+      0,
+      -(surfaceHeight - target.physicalSize.height),
+    );
   }
 
   void dispose() {
