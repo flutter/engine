@@ -136,11 +136,7 @@ class HtmlViewEmbedder {
     // We need an overlay for the first platform view no matter what. The first
     // visible platform view doesn't need to create a new one if we already
     // created one.
-    final bool needNewOverlay = platformViewManager.isVisible(viewId) ||
-        _context.pictureRecordersCreatedDuringPreroll.isEmpty;
-    if (platformViewManager.isVisible(viewId)) {
-      _context.seenFirstVisibleViewInPreroll = true;
-    }
+    final bool needNewOverlay = platformViewManager.isVisible(viewId);
     if (needNewOverlay && hasAvailableOverlay) {
       final CkPictureRecorder pictureRecorder = CkPictureRecorder();
       pictureRecorder.beginRecording(ui.Offset.zero & _frameSize);
@@ -168,16 +164,11 @@ class HtmlViewEmbedder {
   CkCanvas? compositeEmbeddedView(int viewId) {
     final int overlayIndex = _context.visibleViewCount;
     _compositionOrder.add(viewId);
-    if (platformViewManager.isVisible(viewId) ||
-        _context.pictureRecorders.isEmpty) {
+    if (platformViewManager.isVisible(viewId)) {
       _context.visibleViewCount++;
     }
     // We need a new overlay if this is a visible view or if we don't have one yet.
-    final bool needNewOverlay = platformViewManager.isVisible(viewId) ||
-        _context.pictureRecorders.isEmpty;
-    if (platformViewManager.isVisible(viewId)) {
-      _context.seenFirstVisibleView = true;
-    }
+    final bool needNewOverlay = platformViewManager.isVisible(viewId);
     CkPictureRecorder? recorderToUseForRendering;
     if (needNewOverlay) {
       if (overlayIndex < _context.pictureRecordersCreatedDuringPreroll.length) {
@@ -422,7 +413,11 @@ class HtmlViewEmbedder {
             ? null
             : diffViewList(_activeCompositionOrder, _compositionOrder);
     _updateOverlays(diffResult);
-    assert(_context.pictureRecorders.length == _overlays.length);
+    assert(
+      _context.pictureRecorders.length == _overlays.length,
+      'There should be the same picture recorders (${_context.pictureRecorders.length}) '
+      'than overlays (${_overlays.length}).',
+    );
     int pictureRecorderIndex = 0;
 
     for (int i = 0; i < _compositionOrder.length; i++) {
@@ -667,24 +662,10 @@ class HtmlViewEmbedder {
           } else {
             currentGroup = <int>[view];
           }
-        }
-        if (!foundFirstVisibleView) {
-          // First visible view found...
+        } else {
+          // We hit this case if this is the first visible view.
           foundFirstVisibleView = true;
-          if (currentGroup.isNotEmpty) {
-            // If we've seen invisible views earlier, split them off...
-            result.add(currentGroup);
-            // If we are out of overlays, then break let the rest of the views be
-            // added to an extra group that will be rendered on top of the scene.
-            if (result.length == maxOverlays) {
-              currentGroup = <int>[];
-              break;
-            } else {
-              currentGroup = <int>[view];
-            }
-          } else {
-            currentGroup.add(view);
-          }
+          currentGroup.add(view);
         }
       }
     }
@@ -917,12 +898,6 @@ class MutatorsStack extends Iterable<Mutator> {
 
 /// The state for the current frame.
 class EmbedderFrameContext {
-  /// Whether or not we have seen a visible platform view in this frame yet.
-  bool seenFirstVisibleViewInPreroll = false;
-
-  /// Whether or not we have seen a visible platform view in this frame yet.
-  bool seenFirstVisibleView = false;
-
   /// Picture recorders which were created during the preroll phase.
   ///
   /// These picture recorders will be "claimed" in the paint phase by platform
