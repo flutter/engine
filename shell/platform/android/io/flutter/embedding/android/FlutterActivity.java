@@ -665,29 +665,10 @@ public class FlutterActivity extends Activity
   @VisibleForTesting
   public void registerOnBackInvokedCallback() {
     if (Build.VERSION.SDK_INT >= 33) {
-      // TODO(justinmc): This is really the one and only thing that stops root
-      // pback for me. There are probably other places you need to mess with
-      // this for other embedding strategies!
-      Log.e("justin", "registerOnBackInvokedCallback");
       getOnBackInvokedDispatcher()
           .registerOnBackInvokedCallback(
               OnBackInvokedDispatcher.PRIORITY_DEFAULT, onBackInvokedCallback);
       hasRegisteredCallback = true;
-    }
-  }
-
-  @Override
-  public void updateNavigationStackStatus(boolean hasMultiple) {
-    Log.e(
-        "justin",
-        "updateNavigationStackStatus in embedding FlutterActivity. hasMultiple: "
-            + Boolean.toString(hasMultiple)
-            + " hasRegisteredCallback: "
-            + Boolean.toString(hasRegisteredCallback));
-    if (hasMultiple && !hasRegisteredCallback) {
-      registerOnBackInvokedCallback();
-    } else if (!hasMultiple && hasRegisteredCallback) {
-      unregisterOnBackInvokedCallback();
     }
   }
 
@@ -721,6 +702,23 @@ public class FlutterActivity extends Activity
             }
           }
           : null;
+
+  // TODO(justinmc): Do the same thing in other embedding strategies (justin FlutterFragment?
+  // FlutterFragmentActivity?).
+  @Override
+  public void updateNavigationStackStatus(boolean hasMultiple) {
+    Log.e(
+        "justin",
+        "updateNavigationStackStatus in embedding FlutterActivity. hasMultiple: "
+            + Boolean.toString(hasMultiple)
+            + " hasRegisteredCallback: "
+            + Boolean.toString(hasRegisteredCallback));
+    if (hasMultiple && !hasRegisteredCallback) {
+      registerOnBackInvokedCallback();
+    } else if (!hasMultiple && hasRegisteredCallback) {
+      unregisterOnBackInvokedCallback();
+    }
+  }
 
   /**
    * Switches themes for this {@code Activity} from the theme used to launch this {@code Activity}
@@ -951,11 +949,8 @@ public class FlutterActivity extends Activity
     }
   }
 
-  // TODO(justinmc): Do I need to get rid of this? Or use it for old Android
-  // versions? Or it's just written by us and doesn't affect pback?
   @Override
   public void onBackPressed() {
-    Log.e("justin", "onBackPressed in FlutterActivity (embedder)");
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
     }

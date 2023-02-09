@@ -113,7 +113,6 @@ public class PlatformPlugin {
 
         @Override
         public void updateNavigationStackStatus(boolean hasMultiple) {
-          Log.e("justin", "updateNavigationStackStatus in PlatformHandler.PlatformMessageChannel.");
           PlatformPlugin.this.updateNavigationStackStatus(hasMultiple);
         }
 
@@ -484,7 +483,6 @@ public class PlatformPlugin {
   }
 
   private void updateNavigationStackStatus(boolean hasMultiple) {
-    Log.e("justin", "updateNavigationStackStatus in PlatformPlugin");
     platformPluginDelegate.updateNavigationStackStatus(hasMultiple);
   }
 
@@ -494,16 +492,10 @@ public class PlatformPlugin {
       return;
     }
 
-    // TODO(justinmc): This is another use of backpresseddispatcher that is not
-    // blocking the pback gesture for me. It seems like this if is false, so the
-    // app exits here.
+    // TODO(justinmc): Will this ever interfer with predictive back?
     if (activity instanceof OnBackPressedDispatcherOwner) {
-      Log.e("justin", "calling onBackPressed in popSystemNavigator in PlatformPlugin");
       ((OnBackPressedDispatcherOwner) activity).getOnBackPressedDispatcher().onBackPressed();
     } else {
-      Log.e(
-          "justin",
-          "popSystemNavigator in PlatformPlugin finishing the activity because it's not an OnBackPressedDispatcherOwner");
       activity.finish();
     }
   }

@@ -1003,9 +1003,6 @@ public class FlutterFragment extends Fragment
       new OnBackPressedCallback(true) {
         @Override
         public void handleOnBackPressed() {
-          Log.e(
-              "justin",
-              "calling onBackPressed in onBackPressedCallback in FlutterFragment (embedder)");
           onBackPressed();
         }
       };
@@ -1047,10 +1044,11 @@ public class FlutterFragment extends Fragment
     super.onAttach(context);
     delegate = delegateFactory.createDelegate(this);
     delegate.onAttach(context);
+    // TODO(justinmc): What is ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED?
+    // In order to follow what this PR did in FlutterActivity, this should
+    // be removed and only add a callback when the framework sends the message.
+    static void intercept(args) {  }
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
-      // TODO(justinmc): This is highly suspicious, but it's not blocking the
-      // pback gesture. Maybe it's only in some cases.
-      Log.e("justin", "onAttach in FlutterFragment (embedding) adding a callback");
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }
     context.registerComponentCallbacks(this);
@@ -1206,7 +1204,6 @@ public class FlutterFragment extends Fragment
    */
   @ActivityCallThrough
   public void onBackPressed() {
-    Log.e("justin", "onBackPressed in FlutterFragment (embedder)");
     if (stillAttachedForEvent("onBackPressed")) {
       delegate.onBackPressed();
     }
@@ -1650,7 +1647,6 @@ public class FlutterFragment extends Fragment
         // Unless we disable the callback, the dispatcher call will trigger it. This will then
         // trigger the fragment's onBackPressed() implementation, which will call through to the
         // dart side and likely call back through to this method, creating an infinite call loop.
-        Log.e("justin", "changine enabled on onBackPressedCallback");
         onBackPressedCallback.setEnabled(false);
         activity.getOnBackPressedDispatcher().onBackPressed();
         onBackPressedCallback.setEnabled(true);
@@ -1665,7 +1661,6 @@ public class FlutterFragment extends Fragment
   public void updateNavigationStackStatus(boolean hasMultiple) {
     // TODO(justinmc): Implement. Implementing in FlutterActivity first.
     // unregisterOnBackInvokedCallback();
-    Log.e("justin", "updateNavigationStackStatus in embedding FlutterFragment");
   }
 
   @VisibleForTesting

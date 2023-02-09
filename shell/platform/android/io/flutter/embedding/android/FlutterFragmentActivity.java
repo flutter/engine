@@ -663,7 +663,6 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   @Override
   public void onBackPressed() {
-    Log.e("justin", "onBackPressed in FlutterFragmentActivity (embedder)");
     flutterFragment.onBackPressed();
   }
 

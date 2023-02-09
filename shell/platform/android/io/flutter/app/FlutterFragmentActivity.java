@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import androidx.fragment.app.FragmentActivity;
-import io.flutter.Log;
 import io.flutter.app.FlutterActivityDelegate.ViewFactory;
 import io.flutter.plugin.common.PluginRegistry;
 import io.flutter.view.FlutterNativeView;
@@ -102,7 +101,6 @@ public class FlutterFragmentActivity extends FragmentActivity
 
   @Override
   public void onBackPressed() {
-    Log.e("justin", "onBackPressed ok in FlutterFragmentActivity");
     if (!eventDelegate.onBackPressed()) {
       super.onBackPressed();
     }

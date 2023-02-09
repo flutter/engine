@@ -778,7 +778,6 @@ import java.util.List;
    * <p>This method instructs Flutter's navigation system to "pop route".
    */
   void onBackPressed() {
-    Log.e("justin", "onBackPressed in FlutterFragmentAndFragmentDelegate");
     ensureAlive();
     if (flutterEngine != null) {
       Log.v(TAG, "Forwarding onBackPressed() to FlutterEngine.");

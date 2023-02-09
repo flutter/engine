@@ -136,6 +136,7 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
+                // TODO(justinmc): Potentially rename this.
               case "SystemNavigator.updateNavigationStackStatus":
                 {
                   boolean hasMultiple = (boolean) arguments;
