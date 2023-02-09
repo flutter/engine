@@ -1222,9 +1222,16 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Stylus Events
 
 - (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction API_AVAILABLE(ios(13.4)) {
+  flutter::PointerData pointer_data = [self createAuxillaryStylusActionData];
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+- (flutter::PointerData)createAuxillaryStylusActionData API_AVAILABLE(ios(13.4)){
   flutter::PointerData pointer_data;
   pointer_data.Clear();
-  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
 
   switch (UIPencilInteraction.preferredTapAction) {
     case UIPencilPreferredActionIgnore:
@@ -1249,12 +1256,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       break;
   }
 
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
   pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
   pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
 
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
-  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+  return pointer_data;
 }
 
 #pragma mark - Handle view resizing

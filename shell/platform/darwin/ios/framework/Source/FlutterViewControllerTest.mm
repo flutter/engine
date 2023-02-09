@@ -122,6 +122,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction;
+- (flutter::PointerData)createAuxillaryStylusActionData;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
@@ -1463,19 +1464,20 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMStub([mockPencilInteraction preferredTapAction])
       .andReturn(UIPencilPreferredActionShowColorPalette);
 
-  [vc pencilInteractionDidTap:mockPencilInteraction];
+  // Check that the helper function is being called
+  FlutterViewController* viewControllerMock = OCMPartialMock(vc);
+  [viewControllerMock pencilInteractionDidTap:mockPencilInteraction];
+  OCMVerify([viewControllerMock createAuxillaryStylusActionData]);
+  
+  // Check the return value of the helper function
+  flutter::PointerData pointer_data = [vc createAuxillaryStylusActionData];
+  
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette);
 
-  flutter::PointerData pointer_data;
-  pointer_data.Clear();
-  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
-  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
-  pointer_data.preferred_auxiliary_stylus_action =
-      flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
-
-  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
-  packet->SetPointerData(/*index=*/0, pointer_data);
-
-  [[[self.mockEngine verify] ignoringNonObjectArgs] dispatchPointerDataPacket:std::move(packet)];
   [mockPencilInteraction stopMocking];
 }
 
