@@ -594,8 +594,14 @@ class HtmlViewEmbedder {
       return;
     }
     final List<List<int>> overlayGroups = getOverlayGroups(_compositionOrder);
-    final List<int> viewsNeedingOverlays =
-        overlayGroups.map((List<int> group) => group.last).toList();
+    final List<int> viewsNeedingOverlays = overlayGroups
+        .where(
+          (List<int> group) => group.any(
+            (int viewId) => platformViewManager.isVisible(viewId)
+          )
+        )
+        .map((List<int> group) => group.last)
+        .toList();
     // If there were more visible views than overlays, then the last group
     // doesn't have an overlay.
     if (viewsNeedingOverlays.length > SurfaceFactory.instance.maximumOverlays) {
