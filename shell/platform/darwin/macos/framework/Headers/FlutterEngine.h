@@ -79,10 +79,9 @@ FLUTTER_DARWIN_EXPORT
 - (BOOL)runWithEntrypoint:(nullable NSString*)entrypoint;
 
 /**
- * The default `FlutterViewController` of this engine, if any.
+ * The `FlutterViewController` of this engine, if any.
  *
- * The default view is the first view added to the engine, always has ID
- * kFlutterDefaultViewId, and is used by legacy APIs that assume a single view.
+ * This view is used by legacy APIs that assume a single view.
  *
  * Setting this field from nil to a non-nil view controller also updates
  * the view controller's engine and ID.
