@@ -16,7 +16,6 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * TODO(stuartmorgan): Align API with iOS DartProject, and combine.
  */
-// FLUTTER_DARWIN_EXPORT
 @interface FlutterBaseDartProject : NSObject
 
 /**
