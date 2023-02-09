@@ -21,6 +21,7 @@
 #include "impeller/renderer/render_target.h"
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/sampler_library.h"
+#include "impeller/entity/gaussian_ssbo_blur.frag.h"
 
 namespace impeller {
 
@@ -82,22 +83,26 @@ void DirectionalGaussianBlurFilterContents::SetSourceOverride(
   source_override_ = std::move(source_override);
 }
 
-std::vector<KernelData> DirectionalGaussianBlurFilterContents::ComputeKernel(
+static std::vector<GaussianSsboBlurFragmentShader::KernelData> ComputeKernel(
     Radius radius,
     Point blur_direction,
-    Point texture_size) const {
+    Point texture_size) {
   constexpr float kSqrtTwoPi = 2.50662827463;
   auto sigma = Sigma{radius}.sigma;
   Point blur_uv_offset = blur_direction / texture_size;
-  std::vector<KernelData> data = {};
+  std::vector<GaussianSsboBlurFragmentShader::KernelData> data = {};
+  Scalar total = 0.0;
   for (float i = -radius.radius; i <= radius.radius; i++) {
     auto variance = sigma * sigma;
-    short gaussian = std::exp(-0.5 * i * i / variance) / (kSqrtTwoPi * sigma);
+    Scalar gaussian = std::exp(-0.5 * i * i / variance) / (kSqrtTwoPi * sigma);
     Point offset = blur_uv_offset * i;
-    data.push_back({.texture_coord_offset_x = (short)offset.x,
-                    .texture_coord_offset_y = (short)offset.y,
-                    .gaussian = gaussian});
+    total += gaussian;
+    data.push_back({.texture_coord_offset = offset, .gaussian = gaussian});
   }
+  for (auto i = 0u; i < data.size(); i++) {
+    data[i].gaussian = data[i].gaussian / total;
+  }
+
   return data;
 }
 
@@ -184,7 +189,14 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
   ///
   ContentContext::SubpassCallback callback;
 
-  if (renderer.GetBackendFeatures().ssbo_support) {
+  auto kernel_data = ComputeKernel(
+      Radius{transformed_blur_radius_length},
+      pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize(),
+      Point(input_snapshot->GetCoverage().value().size));
+
+  if (renderer.GetBackendFeatures().ssbo_support &&
+      blur_style_ == FilterContents::BlurStyle::kNormal &&
+      kernel_data.size() <= 16) {
     using VS = GaussianSSBOBlurPipeline::VertexShader;
     using FS = GaussianSSBOBlurPipeline::FragmentShader;
 
@@ -201,10 +213,6 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
           {Point(0, 1), input_uvs[2], source_uvs[2]},
       });
       auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
-      auto kernel_data = ComputeKernel(
-          Radius{transformed_blur_radius_length},
-          pass_transform.Invert().TransformDirection(Vector2(1, 0)).Normalize(),
-          Point(input_snapshot->GetCoverage().value().size));
 
       VS::FrameInfo frame_info;
       frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
@@ -215,17 +223,13 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
 
       FS::FragInfo frag_info;
       frag_info.sample_count = kernel_data.size();
-      Scalar gaussian_integral = 0.0;
-      for (auto& data : kernel_data) {
-        gaussian_integral += data.gaussian;
+
+      for (auto i = 0u; i < kernel_data.size(); i++) {
+        frag_info.data[i] = kernel_data[i];
       }
-      frag_info.gaussian_integral = (short)gaussian_integral;
-      frag_info.src_factor = (short)src_color_factor_;
-      frag_info.inner_blur_factor = (short)inner_blur_factor_;
-      frag_info.outer_blur_factor = (short)outer_blur_factor_;
 
       Command cmd;
-      cmd.label = SPrintF("Gaussian SSBO Blur Filter (Radius=%.2f)",
+      cmd.label = SPrintF("Gaussian SSBO Normal Blur Filter (Radius=%.2f)",
                           transformed_blur_radius_length);
       cmd.BindVertices(vtx_buffer);
 
@@ -264,19 +268,10 @@ std::optional<Snapshot> DirectionalGaussianBlurFilterContents::RenderFilter(
           break;
       }
 
-      auto kernel_data_buffer = host_buffer.Emplace(
-          kernel_data.data(), kernel_data.size() * sizeof(KernelData),
-          alignof(KernelData));
-      FS::BindGaussianKernel(cmd, kernel_data_buffer);
-
       FS::BindTextureSampler(
           cmd, input_snapshot->texture,
           renderer.GetContext()->GetSamplerLibrary()->GetSampler(
               input_descriptor));
-      FS::BindAlphaMaskSampler(
-          cmd, source_snapshot->texture,
-          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-              source_descriptor));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 

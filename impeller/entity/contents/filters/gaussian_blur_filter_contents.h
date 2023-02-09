@@ -12,13 +12,6 @@
 
 namespace impeller {
 
-struct KernelData {
-  short texture_coord_offset_x;
-  short texture_coord_offset_y;
-  short gaussian;
-  Padding<10> _padding_;
-};
-
 class DirectionalGaussianBlurFilterContents final : public FilterContents {
  public:
   DirectionalGaussianBlurFilterContents();
@@ -51,10 +44,6 @@ class DirectionalGaussianBlurFilterContents final : public FilterContents {
       const Entity& entity,
       const Matrix& effect_transform,
       const Rect& coverage) const override;
-
-  std::vector<KernelData> ComputeKernel(Radius radius,
-                                        Point blur_direction,
-                                        Point texture_size) const;
 
   Sigma blur_sigma_;
   Sigma secondary_blur_sigma_;

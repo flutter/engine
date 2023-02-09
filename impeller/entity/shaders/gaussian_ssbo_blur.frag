@@ -5,8 +5,8 @@
 #include <impeller/types.glsl>
 #include <impeller/texture.glsl>
 
-f16vec4 Sample(sampler2D tex, f16vec2 coords) {
-  return f16vec4(texture(tex, coords));
+vec4 Sample(sampler2D tex, vec2 coords) {
+  return texture(tex, coords);
 }
 
 #include "gaussian_ssbo_blur.glsl"
