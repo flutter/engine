@@ -94,13 +94,13 @@ constexpr char kTextPlainFormat[] = "text/plain";
  */
 // - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 
-/**
- * Invoked right before the engine is restarted.
- *
- * This should reset states to as if the application has just started.  It
- * usually indicates a hot restart (Shift-R in Flutter CLI.)
- */
-- (void)engineCallbackOnPreEngineRestart;
+// /**
+//  * Invoked right before the engine is restarted.
+//  *
+//  * This should reset states to as if the application has just started.  It
+//  * usually indicates a hot restart (Shift-R in Flutter CLI.)
+//  */
+// - (void)engineCallbackOnPreEngineRestart;
 
 // /**
 //  * Requests that the task be posted back the to the Flutter engine at the target time. The target
@@ -571,11 +571,11 @@ constexpr char kTextPlainFormat[] = "text/plain";
 //   }
 // }
 
-- (void)engineCallbackOnPreEngineRestart {
-  if (_viewController) {
-    [_viewController onPreEngineRestart];
-  }
-}
+// - (void)engineCallbackOnPreEngineRestart {
+//   if (_viewController) {
+//     [_viewController onPreEngineRestart];
+//   }
+// }
 
 /**
  * Note: Called from dealloc. Should not use accessors or other methods.
@@ -844,6 +844,16 @@ constexpr char kTextPlainFormat[] = "text/plain";
                    layers:(const FlutterLayer* _Nullable* _Nullable)layers
               layersCount:(size_t)layersCount {
   return _macOSCompositor->Present(kFlutterDefaultViewId, layers, layersCount);
+}
+
+- (void)updateSemantics:(const FlutterSemanticsUpdate*)update {
+  [_viewController updateSemantics:update];
+}
+
+- (void)engineCallbackOnPreEngineRestart {
+  if (_viewController) {
+    [_viewController onPreEngineRestart];
+  }
 }
 
 @end

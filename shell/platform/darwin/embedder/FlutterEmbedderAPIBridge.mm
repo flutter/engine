@@ -164,7 +164,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message,
   flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
                                                   void* user_data) {
     FlutterEmbedderAPIBridge* bridge = (__bridge FlutterEmbedderAPIBridge*)user_data;
-    [bridge updateSemantics:update];
+    [bridge.delegate updateSemantics:update];
   };
   flutterArguments.custom_dart_entrypoint = entrypoint.UTF8String;
   flutterArguments.shutdown_dart_vm_when_done = true;
@@ -208,7 +208,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message,
 
   flutterArguments.on_pre_engine_restart_callback = [](void* user_data) {
     FlutterEmbedderAPIBridge* bridge = (__bridge FlutterEmbedderAPIBridge*)user_data;
-    [bridge engineCallbackOnPreEngineRestart];
+    [bridge.delegate engineCallbackOnPreEngineRestart];
   };
 
   FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];

@@ -21,6 +21,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (bool)compositorPresent:(uint64_t)view_id
                    layers:(const FlutterLayer* _Nullable* _Nullable)layers
               layersCount:(size_t)layersCount;
+- (void)updateSemantics:(const FlutterSemanticsUpdate*)update;
+- (void)engineCallbackOnPreEngineRestart;
 
 @end
 
