@@ -82,10 +82,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         'use-local-canvaskit',
         help: 'Optional. Whether or not to use the locally built version of '
               'CanvasKit in the tests.',
-      )
-      ..addFlag(
-        'skwasm',
-        help: 'Run unit tests for skwasm renderer.'
       );
   }
 
@@ -100,8 +96,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get failEarly => boolArg('fail-early');
 
   bool get isWasm => boolArg('wasm');
-
-  bool get isSkwasm => boolArg('skwasm');
 
   /// Whether to start the browser in debug mode.
   ///
@@ -146,7 +140,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       CompileTestsStep(
         testFiles: testFiles,
         useLocalCanvasKit: useLocalCanvasKit,
-        useSkwasm: isSkwasm,
         isWasm: isWasm
       ),
       RunTestsStep(

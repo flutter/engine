@@ -26,12 +26,11 @@ class CompileTestsStep implements PipelineStep {
   CompileTestsStep({
     this.testFiles,
     this.useLocalCanvasKit = false,
-    this.useSkwasm = false,
-    this.isWasm = false});
+    this.isWasm = false
+  });
 
   final List<FilePath>? testFiles;
   final bool isWasm;
-  final bool useSkwasm;
 
   final bool useLocalCanvasKit;
 
@@ -51,11 +50,9 @@ class CompileTestsStep implements PipelineStep {
     await environment.webUiBuildDir.create();
     if (isWasm) {
       await copyDart2WasmTestScript();
-    }
-    await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
-    if (useSkwasm) {
       await copySkwasm();
     }
+    await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
