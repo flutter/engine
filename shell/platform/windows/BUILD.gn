@@ -244,7 +244,7 @@ executable("flutter_windows_unittests") {
     "//third_party/rapidjson",
   ]
   
-  defines = [ "FLUTTER_ENGINE_USE_UIA "]
+  defines = [ "FLUTTER_ENGINE_USE_UIA" ]
 }
 
 shared_library("flutter_windows_glfw") {
