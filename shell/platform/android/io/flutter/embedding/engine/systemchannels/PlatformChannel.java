@@ -136,10 +136,13 @@ public class PlatformChannel {
                   result.error("error", exception.getMessage(), null);
                 }
                 break;
-              case "SystemNavigator.isEmpty":
-                platformMessageHandler.navigatorIsEmpty();
-                result.success(null);
-                break;
+              case "SystemNavigator.updateNavigationStackStatus":
+                {
+                  boolean hasMultiple = (boolean) arguments;
+                  platformMessageHandler.updateNavigationStackStatus(hasMultiple);
+                  result.success(null);
+                  break;
+                }
               case "SystemNavigator.pop":
                 platformMessageHandler.popSystemNavigator();
                 result.success(null);
@@ -513,7 +516,7 @@ public class PlatformChannel {
      */
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
 
-    void navigatorIsEmpty();
+    void updateNavigationStackStatus(boolean hasMultiple);
 
     /**
      * The Flutter application would like to pop the top item off of the Android app's navigation

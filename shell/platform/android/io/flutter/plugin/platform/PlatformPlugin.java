@@ -57,7 +57,7 @@ public class PlatformPlugin {
      */
     boolean popSystemNavigator();
 
-    void navigatorIsEmpty();
+    void updateNavigationStackStatus(boolean hasMultiple);
   }
 
   @VisibleForTesting
@@ -112,9 +112,9 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void navigatorIsEmpty() {
-          Log.e("justin", "navigatorIsEmpty in PlatformHandler.PlatformMessageChannel.");
-          PlatformPlugin.this.navigatorIsEmpty();
+        public void updateNavigationStackStatus(boolean hasMultiple) {
+          Log.e("justin", "updateNavigationStackStatus in PlatformHandler.PlatformMessageChannel.");
+          PlatformPlugin.this.updateNavigationStackStatus(hasMultiple);
         }
 
         @Override
@@ -483,9 +483,9 @@ public class PlatformPlugin {
     currentTheme = systemChromeStyle;
   }
 
-  private void navigatorIsEmpty() {
-    Log.e("justin", "navigatorIsEmpty in PlatformPlugin");
-    platformPluginDelegate.navigatorIsEmpty();
+  private void updateNavigationStackStatus(boolean hasMultiple) {
+    Log.e("justin", "updateNavigationStackStatus in PlatformPlugin");
+    platformPluginDelegate.updateNavigationStackStatus(hasMultiple);
   }
 
   private void popSystemNavigator() {

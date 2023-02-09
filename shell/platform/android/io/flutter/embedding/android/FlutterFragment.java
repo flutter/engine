@@ -1662,10 +1662,10 @@ public class FlutterFragment extends Fragment
   }
 
   @Override
-  public void navigatorIsEmpty() {
+  public void updateNavigationStackStatus(boolean hasMultiple) {
     // TODO(justinmc): Implement. Implementing in FlutterActivity first.
     // unregisterOnBackInvokedCallback();
-    Log.e("justin", "navigatorIsEmpty in embedding FlutterFragment");
+    Log.e("justin", "updateNavigationStackStatus in embedding FlutterFragment");
   }
 
   @VisibleForTesting
