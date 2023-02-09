@@ -3503,7 +3503,7 @@ class _ColorFilter extends NativeFieldWrapperClass1 {
 abstract class ImageFilter {
   // This class is not meant to be instantiated or extended outside of dart:ui;
   // this constructor prevents instantiation and extension.
-  ImageFilter._();
+  ImageFilter._(); // ignore: unused_element
 
   /// Creates an image filter that applies a Gaussian blur.
   factory ImageFilter.blur({ double sigmaX = 0.0, double sigmaY = 0.0, TileMode tileMode = TileMode.clamp }) {
