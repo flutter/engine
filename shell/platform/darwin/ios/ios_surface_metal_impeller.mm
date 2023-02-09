@@ -8,62 +8,56 @@
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 
+namespace impeller {
 namespace {
 using std::shared_ptr;
-using namespace impeller;
 
 // This appears to be the only safe way to override the
 // GetColorAttachmentPixelFormat method.  It is assumed in the Context that
 // there will be one pixel format for the whole app which is not true.  So, it
 // is unsafe to mutate the Context and you cannot clone the Context at this
 // level since the Context does not safely manage the MTLDevice.
-class CustomColorAttachmentPixelFormatContext : public Context {
+class CustomColorAttachmentPixelFormatContext final : public Context {
  public:
   CustomColorAttachmentPixelFormatContext(const shared_ptr<Context>& context,
                                           PixelFormat color_attachment_pixel_format)
       : context_(context), color_attachment_pixel_format_(color_attachment_pixel_format) {}
 
-  virtual bool IsValid() const override { return context_->IsValid(); }
+  bool IsValid() const override { return context_->IsValid(); }
 
-  virtual std::shared_ptr<Allocator> GetResourceAllocator() const override {
+  std::shared_ptr<Allocator> GetResourceAllocator() const override {
     return context_->GetResourceAllocator();
   }
 
-  virtual std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override {
+  std::shared_ptr<ShaderLibrary> GetShaderLibrary() const override {
     return context_->GetShaderLibrary();
   }
 
-  virtual std::shared_ptr<SamplerLibrary> GetSamplerLibrary() const override {
+  std::shared_ptr<SamplerLibrary> GetSamplerLibrary() const override {
     return context_->GetSamplerLibrary();
   }
 
-  virtual std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
+  std::shared_ptr<PipelineLibrary> GetPipelineLibrary() const override {
     return context_->GetPipelineLibrary();
   }
 
-  virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
+  std::shared_ptr<CommandBuffer> CreateCommandBuffer() const override {
     return context_->CreateCommandBuffer();
   }
 
-  virtual std::shared_ptr<WorkQueue> GetWorkQueue() const override {
-    return context_->GetWorkQueue();
-  }
+  std::shared_ptr<WorkQueue> GetWorkQueue() const override { return context_->GetWorkQueue(); }
 
-  virtual std::shared_ptr<GPUTracer> GetGPUTracer() const override {
-    return context_->GetGPUTracer();
-  }
+  std::shared_ptr<GPUTracer> GetGPUTracer() const override { return context_->GetGPUTracer(); }
 
-  virtual PixelFormat GetColorAttachmentPixelFormat() const override {
+  PixelFormat GetColorAttachmentPixelFormat() const override {
     return color_attachment_pixel_format_;
   }
 
-  virtual bool HasThreadingRestrictions() const override {
-    return context_->HasThreadingRestrictions();
-  }
+  bool HasThreadingRestrictions() const override { return context_->HasThreadingRestrictions(); }
 
-  virtual bool SupportsOffscreenMSAA() const override { return context_->SupportsOffscreenMSAA(); }
+  bool SupportsOffscreenMSAA() const override { return context_->SupportsOffscreenMSAA(); }
 
-  virtual const BackendFeatures& GetBackendFeatures() const override {
+  const BackendFeatures& GetBackendFeatures() const override {
     return context_->GetBackendFeatures();
   }
 
@@ -72,8 +66,12 @@ class CustomColorAttachmentPixelFormatContext : public Context {
   PixelFormat color_attachment_pixel_format_;
 };
 }  // namespace
+}  // namespace impeller
 
 namespace flutter {
+
+using impeller::CustomColorAttachmentPixelFormatContext;
+using impeller::FromMTLPixelFormat;
 
 IOSSurfaceMetalImpeller::IOSSurfaceMetalImpeller(const fml::scoped_nsobject<CAMetalLayer>& layer,
                                                  const std::shared_ptr<IOSContext>& context)
