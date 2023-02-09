@@ -1468,10 +1468,10 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   FlutterViewController* viewControllerMock = OCMPartialMock(vc);
   [viewControllerMock pencilInteractionDidTap:mockPencilInteraction];
   OCMVerify([viewControllerMock createAuxillaryStylusActionData]);
-  
+
   // Check the return value of the helper function
   flutter::PointerData pointer_data = [vc createAuxillaryStylusActionData];
-  
+
   XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
   XCTAssertEqual(pointer_data.signal_kind,
                  flutter::PointerData::SignalKind::kStylusAuxiliaryAction);

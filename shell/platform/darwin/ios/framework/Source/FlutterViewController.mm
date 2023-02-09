@@ -1229,7 +1229,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   [_engine.get() dispatchPointerDataPacket:std::move(packet)];
 }
 
-- (flutter::PointerData)createAuxillaryStylusActionData API_AVAILABLE(ios(13.4)){
+- (flutter::PointerData)createAuxillaryStylusActionData API_AVAILABLE(ios(13.4)) {
   flutter::PointerData pointer_data;
   pointer_data.Clear();
 
