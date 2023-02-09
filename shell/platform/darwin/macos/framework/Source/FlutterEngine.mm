@@ -9,8 +9,9 @@
 #include <iostream>
 #include <vector>
 
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterBaseDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"

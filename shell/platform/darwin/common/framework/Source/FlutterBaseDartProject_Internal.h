@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERDARTPROJECT_INTERNAL_H_
-#define SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERDARTPROJECT_INTERNAL_H_
+#ifndef SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERBASEDARTPROJECT_INTERNAL_H_
+#define SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERBASEDARTPROJECT_INTERNAL_H_
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBaseDartProject.h"
 
 #include <string>
 #include <vector>
@@ -13,7 +13,7 @@
 /**
  * Provides access to data needed to construct a FlutterProjectArgs for the project.
  */
-@interface FlutterDartProject ()
+@interface FlutterBaseDartProject ()
 
 /**
  * The path to the Flutter assets directory.
@@ -44,4 +44,4 @@
 
 @end
 
-#endif  // SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERDARTPROJECT_INTERNAL_H_
+#endif  // SHELL_PLATFORM_DARWIN_MACOS_FRAMEWORK_SOURCE_FLUTTERBASEDARTPROJECT_INTERNAL_H_
