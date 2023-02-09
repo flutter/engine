@@ -243,6 +243,8 @@ executable("flutter_windows_unittests") {
     "//flutter/third_party/tonic",
     "//third_party/rapidjson",
   ]
+  
+  defines = [ "FLUTTER_ENGINE_USE_UIA "]
 }
 
 shared_library("flutter_windows_glfw") {
