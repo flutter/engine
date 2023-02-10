@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -2168,15 +2169,26 @@ TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  GetContext()->GetResourceAllocator()->ResetAllocatedSize();
+  GetContext()->GetResourceAllocator()->ResetAllocatedSizes();
 
   ASSERT_TRUE(PumpSingleFrame(entity));
 
   auto size = kalimba->GetSize();
 
-  uint64_t allocated_size = (size.width * size.height * 3u) + 10u;
-  ASSERT_EQ(GetContext()->GetResourceAllocator()->GetAllocatedSize(),
-            allocated_size);
+  std::vector<ISize> sizes = {
+      // Unclear what these first sizes are.
+      ISize(1, 1),
+      ISize(2, 2),
+      ISize(2, 2),
+      // These are the subpass for the texture and its various attachments.
+      // Without the color filter there is no subpass.
+      size,
+      size,
+      size,
+  };
+
+  ASSERT_TEXTURE_ALLOCATION_EQ(
+      GetContext()->GetResourceAllocator()->GetAllocatedSizes(), sizes);
 }
 
 }  // namespace testing

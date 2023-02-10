@@ -45,12 +45,12 @@ std::shared_ptr<DeviceBuffer> Allocator::CreateBuffer(
   return OnCreateBuffer(desc);
 }
 
-uint64_t Allocator::GetAllocatedSize() const {
-  return allocated_size_;
+const std::vector<ISize>& Allocator::GetAllocatedSizes() const {
+  return allocated_sizes_;
 }
 
-void Allocator::ResetAllocatedSize() {
-  allocated_size_ = 0;
+void Allocator::ResetAllocatedSizes() {
+  allocated_sizes_.clear();
 }
 
 std::shared_ptr<Texture> Allocator::CreateTexture(
@@ -62,7 +62,7 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
         << desc.size;
     return nullptr;
   }
-  allocated_size_ += (desc.size.width * desc.size.height);
+  allocated_sizes_.push_back(desc.size);
 
   return OnCreateTexture(desc);
 }
