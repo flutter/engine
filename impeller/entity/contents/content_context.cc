@@ -121,6 +121,11 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
   desc.SetColorAttachmentDescriptor(0u, color0);
 
+  if (!has_stencil_attachment) {
+    desc.SetStencilPixelFormat(impeller::PixelFormat::kUnknown);
+    desc.SetStencilAttachmentDescriptors(std::nullopt);
+  }
+
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
         desc.GetFrontStencilAttachmentDescriptor().value();
