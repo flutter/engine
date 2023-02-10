@@ -12,7 +12,7 @@ namespace testing {
 
 class DlSoftwareSurfaceProvider : public DlSurfaceProvider {
  public:
-  DlSoftwareSurfaceProvider() : DlSurfaceProvider() {}
+  DlSoftwareSurfaceProvider() = default;
   virtual ~DlSoftwareSurfaceProvider() = default;
 
   bool InitializeSurface(size_t width,

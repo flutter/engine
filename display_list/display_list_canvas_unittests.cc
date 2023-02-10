@@ -280,69 +280,138 @@ class RenderResult {
   SkIRect clip_bounds_;
 };
 
-#define RENDER_JOB_BASE                 \
-  int width = kTestWidth;               \
-  int height = kTestHeight;             \
-  DlColor bg = DlColor::kTransparent(); \
-  SkScalar scale = SK_Scalar1;          \
-  SkMatrix setup_matrix;                \
-  SkIRect setup_clip_bounds
+struct RenderJobInfo {
+  int width = kTestWidth;
+  int height = kTestHeight;
+  DlColor bg = DlColor::kTransparent();
+  SkScalar scale = SK_Scalar1;
+  SkScalar opacity = SK_Scalar1;
+};
 
-struct CvRenderJob {
-  RENDER_JOB_BASE;
-  CvSetup& cv_setup = kEmptyCvSetup;
-  CvRenderer& cv_render = kEmptyCvRenderer;
-  CvRenderer& cv_restore = kEmptyCvRenderer;
-  sk_sp<SkPicture> picture;
-  SkPaint setup_paint;
+struct JobRenderer {
+  virtual void Render(SkCanvas* canvas,
+                      const RenderJobInfo& info,
+                      SkMatrix* setup_matrix = nullptr,
+                      SkIRect* setup_clip_bounds = nullptr) = 0;
+};
 
-  void render(SkCanvas* canvas) {
-    if (picture) {
-      picture->playback(canvas);
-    } else {
-      SkPaint paint;
-      cv_setup(canvas, paint);
-      setup_paint = paint;
-      setup_matrix = canvas->getTotalMatrix();
-      setup_clip_bounds = canvas->getDeviceClipBounds();
-      cv_render(canvas, paint);
-      cv_restore(canvas, paint);
+struct CvJobRenderer : public JobRenderer {
+  explicit CvJobRenderer(CvSetup& cv_setup = kEmptyCvSetup,
+                         CvRenderer& cv_render = kEmptyCvRenderer,
+                         CvRenderer& cv_restore = kEmptyCvRenderer)
+      : cv_setup_(cv_setup), cv_render_(cv_render), cv_restore_(cv_restore) {}
+
+  void Render(SkCanvas* canvas,
+              const RenderJobInfo& info,
+              SkMatrix* setup_matrix = nullptr,
+              SkIRect* setup_clip_bounds = nullptr) override {
+    FML_DCHECK(info.opacity == SK_Scalar1);
+    SkPaint paint;
+    cv_setup_(canvas, paint);
+    setup_paint_ = paint;
+    paint_is_setup_ = true;
+    if (setup_matrix) {
+      *setup_matrix = canvas->getTotalMatrix();
     }
+    if (setup_clip_bounds) {
+      *setup_clip_bounds = canvas->getDeviceClipBounds();
+    }
+    cv_render_(canvas, paint);
+    cv_restore_(canvas, paint);
   }
 
-  sk_sp<SkPicture> get_picture() {
+  sk_sp<SkPicture> MakePicture() {
     SkPictureRecorder recorder;
     SkRTreeFactory rtree_factory;
     SkCanvas* cv = recorder.beginRecording(kTestBounds, &rtree_factory);
-    render(cv);
+    Render(cv, {}, nullptr, nullptr);
     return recorder.finishRecordingAsPicture();
   }
+
+  SkPaint& setup_paint() {
+    FML_CHECK(paint_is_setup_);
+    return setup_paint_;
+  }
+
+ private:
+  CvSetup cv_setup_;
+  CvRenderer cv_render_;
+  CvRenderer cv_restore_;
+  bool paint_is_setup_ = false;
+  SkPaint setup_paint_;
 };
 
-struct DlRenderJob {
-  RENDER_JOB_BASE;
-  DlRenderer& dl_setup = kEmptyDlRenderer;
-  DlRenderer& dl_render = kEmptyDlRenderer;
-  DlRenderer& dl_restore = kEmptyDlRenderer;
-  SkScalar opacity = SK_Scalar1;
-  sk_sp<DisplayList> display_list;
+struct CvPictureRenderJob : public JobRenderer {
+  explicit CvPictureRenderJob(sk_sp<SkPicture> picture)
+      : picture_(std::move(picture)) {}
 
-  void render(SkCanvas* canvas) {
-    get_display_list()->RenderTo(canvas, opacity);
+  void Render(SkCanvas* canvas,
+              const RenderJobInfo& info,
+              SkMatrix* setup_matrix = nullptr,
+              SkIRect* setup_clip_bounds = nullptr) {
+    FML_DCHECK(info.opacity == SK_Scalar1);
+    picture_->playback(canvas);
   }
 
-  sk_sp<DisplayList> get_display_list() {
-    if (!display_list) {
-      DisplayListBuilder builder(SkRect::MakeWH(width, height));
-      dl_setup(builder);
-      setup_matrix = builder.getTransform();
-      setup_clip_bounds = builder.getDestinationClipBounds().roundOut();
-      dl_render(builder);
-      dl_restore(builder);
-      display_list = builder.Build();
+ private:
+  sk_sp<SkPicture> picture_;
+};
+
+struct DlRenderJob : public JobRenderer {
+  explicit DlRenderJob(DlRenderer& dl_setup = kEmptyDlRenderer,
+                       DlRenderer& dl_render = kEmptyDlRenderer,
+                       DlRenderer& dl_restore = kEmptyDlRenderer)
+      : dl_setup_(dl_setup),
+        dl_render_(dl_render),
+        dl_restore_(dl_restore),
+        is_built_(false) {}
+
+  explicit DlRenderJob(sk_sp<DisplayList> display_list)
+      : dl_setup_(kEmptyDlRenderer),
+        dl_render_(kEmptyDlRenderer),
+        dl_restore_(kEmptyDlRenderer),
+        is_built_(true),
+        display_list_(std::move(display_list)) {}
+
+  void Render(SkCanvas* canvas,
+              const RenderJobInfo& info,
+              SkMatrix* setup_matrix = nullptr,
+              SkIRect* setup_clip_bounds = nullptr) {
+    get_display_list(info, setup_matrix, setup_clip_bounds)
+        ->RenderTo(canvas, info.opacity);
+  }
+
+  sk_sp<DisplayList> display_list() {
+    FML_CHECK(is_built_);
+    return display_list_;
+  }
+
+ private:
+  sk_sp<DisplayList> get_display_list(const RenderJobInfo& info,
+                                      SkMatrix* setup_matrix,
+                                      SkIRect* setup_clip_bounds) {
+    if (!display_list_) {
+      DisplayListBuilder builder(SkRect::MakeWH(info.width, info.height));
+      dl_setup_(builder);
+      if (setup_matrix) {
+        *setup_matrix = builder.getTransform();
+      }
+      if (setup_clip_bounds) {
+        *setup_clip_bounds = builder.getDestinationClipBounds().roundOut();
+      }
+      dl_render_(builder);
+      dl_restore_(builder);
+      display_list_ = builder.Build();
+      is_built_ = true;
     }
-    return display_list;
+    return display_list_;
   }
+
+  const DlRenderer dl_setup_;
+  const DlRenderer dl_render_;
+  const DlRenderer dl_restore_;
+  bool is_built_;
+  sk_sp<DisplayList> display_list_;
 };
 
 class RenderEnvironment {
@@ -350,10 +419,10 @@ class RenderEnvironment {
   RenderEnvironment(const DlSurfaceProvider* provider, PixelFormat format)
       : provider_(provider), format_(format) {
     if (provider->supports(format)) {
-      main_surface_ =
+      surface_1x_ =
           provider->MakeOffscreenSurface(kTestWidth, kTestHeight, format);
-      alt_surface_ = provider->MakeOffscreenSurface(kTestWidth * 2,
-                                                    kTestHeight * 2, format);
+      surface_2x_ = provider->MakeOffscreenSurface(kTestWidth * 2,
+                                                   kTestHeight * 2, format);
     }
   }
 
@@ -373,38 +442,38 @@ class RenderEnvironment {
                 CvRenderer& cv_renderer,
                 DlRenderer& dl_setup,
                 DlColor bg = DlColor::kTransparent()) {
-    CvRenderJob job = {
+    CvJobRenderer job(cv_setup, cv_renderer);
+    RenderJobInfo info = {
         .bg = bg,
-        .cv_setup = cv_setup,
-        .cv_render = cv_renderer,
     };
-    ref_result_ = getResult(job);
+    ref_result_ = getResult(info, job);
     dl_setup(ref_attr_);
   }
 
-  template <typename J>
-  std::unique_ptr<RenderResult> getResult(J& job) const {
-    auto surface = getSurface(job.width, job.height);
+  std::unique_ptr<RenderResult> getResult(const RenderJobInfo& info,
+                                          JobRenderer& renderer) const {
+    auto surface = getSurface(info.width, info.height);
     FML_DCHECK(surface != nullptr);
     auto canvas = surface->getCanvas();
-    canvas->clear(job.bg);
+    canvas->clear(info.bg);
 
     int restore_count = canvas->save();
-    canvas->scale(job.scale, job.scale);
-    job.render(canvas);
+    canvas->scale(info.scale, info.scale);
+    SkMatrix setup_matrix;
+    SkIRect setup_clip_bounds;
+    renderer.Render(canvas, info, &setup_matrix, &setup_clip_bounds);
     canvas->restoreToCount(restore_count);
 
     canvas->flush();
     surface->flushAndSubmit(true);
-    return std::make_unique<RenderResult>(surface, job.setup_matrix,
-                                          job.setup_clip_bounds);
+    return std::make_unique<RenderResult>(surface, setup_matrix,
+                                          setup_clip_bounds);
   }
 
   std::unique_ptr<RenderResult> getResult(sk_sp<DisplayList> dl) const {
-    DlRenderJob job = {
-        .display_list = std::move(dl),
-    };
-    return getResult(job);
+    DlRenderJob job(std::move(dl));
+    RenderJobInfo info = {};
+    return getResult(info, job);
   }
 
   const DlSurfaceProvider* provider() const { return provider_; }
@@ -416,28 +485,26 @@ class RenderEnvironment {
   const RenderResult* ref_result() const { return ref_result_.get(); }
 
  private:
-  static bool matches(const DlSurfaceInstance* surface, int w, int h) {
-    return surface && surface->width() == w && surface->height() == h;
-  }
-
   sk_sp<SkSurface> getSurface(int width, int height) const {
     FML_DCHECK(valid());
-    FML_DCHECK(main_surface_ != nullptr);
-    FML_DCHECK(alt_surface_ != nullptr);
-    if (matches(main_surface_.get(), width, height)) {
-      return main_surface_->sk_surface();
+    FML_DCHECK(surface_1x_ != nullptr);
+    FML_DCHECK(surface_2x_ != nullptr);
+    if (width == kTestWidth && height == kTestHeight) {
+      return surface_1x_->sk_surface();
     }
-    if (matches(alt_surface_.get(), width, height)) {
-      return alt_surface_->sk_surface();
+    if (width == kTestWidth * 2 && height == kTestHeight * 2) {
+      return surface_2x_->sk_surface();
     }
+    FML_LOG(ERROR) << "Test surface size (" << width << " x " << height
+                   << ") not supported.";
     FML_DCHECK(false);
     return nullptr;
   }
 
   const DlSurfaceProvider* provider_;
   const PixelFormat format_;
-  std::shared_ptr<DlSurfaceInstance> main_surface_;
-  std::shared_ptr<DlSurfaceInstance> alt_surface_;
+  std::shared_ptr<DlSurfaceInstance> surface_1x_;
+  std::shared_ptr<DlSurfaceInstance> surface_2x_;
 
   DisplayListBuilder ref_attr_;
   std::unique_ptr<RenderResult> ref_result_;
@@ -1961,16 +2028,16 @@ class CanvasCompareTester {
     // sk_result is a direct rendering via SkCanvas to SkSurface
     // DisplayList mechanisms are not involved in this operation
     // SkPaint sk_paint;
-    CvRenderJob sk_job = {
+    CvJobRenderer sk_job(caseP.cv_setup(),     //
+                         testP.cv_renderer(),  //
+                         caseP.cv_restore());
+    RenderJobInfo base_info = {
         .bg = caseP.bg(),
-        .cv_setup = caseP.cv_setup(),
-        .cv_render = testP.cv_renderer(),
-        .cv_restore = caseP.cv_restore(),
     };
-    auto sk_result = env.getResult(sk_job);
+    auto sk_result = env.getResult(base_info, sk_job);
     const BoundsTolerance tolerance =
-        testP.adjust(tolerance_in, sk_job.setup_paint, sk_job.setup_matrix);
-    const sk_sp<SkPicture> sk_picture = sk_job.get_picture();
+        testP.adjust(tolerance_in, sk_job.setup_paint(), sk_result->matrix());
+    const sk_sp<SkPicture> sk_picture = sk_job.MakePicture();
     SkRect sk_bounds = sk_picture->cullRect();
     ASSERT_EQ(sk_result->width(), kTestWidth) << info;
     ASSERT_EQ(sk_result->height(), kTestHeight) << info;
@@ -1993,14 +2060,11 @@ class CanvasCompareTester {
       // This sequence plays the provided equivalently constructed
       // DisplayList onto the SkCanvas of the surface
       // DisplayList => direct rendering
-      DlRenderJob dl_job = {
-          .bg = caseP.bg(),
-          .dl_setup = caseP.dl_setup(),
-          .dl_render = testP.dl_renderer(),
-          .dl_restore = caseP.dl_restore(),
-      };
-      auto dl_result = env.getResult(dl_job);
-      display_list = dl_job.display_list;
+      DlRenderJob dl_job(caseP.dl_setup(),     //
+                         testP.dl_renderer(),  //
+                         caseP.dl_restore());
+      auto dl_result = env.getResult(base_info, dl_job);
+      display_list = dl_job.display_list();
       SkRect dl_bounds = display_list->bounds();
       if (!sk_bounds.roundOut().contains(dl_bounds)) {
         FML_LOG(ERROR) << "For " << info;
@@ -2053,12 +2117,9 @@ class CanvasCompareTester {
       // plays them back on SkCanvas to SkSurface
       // SkCanvas calls => DisplayList => rendering
       DisplayListCanvasRecorder dl_recorder(kTestBounds);
-      sk_job.render(&dl_recorder);
-      DlRenderJob cv_dl_job = {
-          .bg = bg,
-          .display_list = dl_recorder.Build(),
-      };
-      auto cv_dl_result = env.getResult(cv_dl_job);
+      sk_job.Render(&dl_recorder, base_info);
+      DlRenderJob cv_dl_job(dl_recorder.Build());
+      auto cv_dl_result = env.getResult(base_info, cv_dl_job);
       compareToReference(cv_dl_result.get(), sk_result.get(),
                          info + " (Skia calls -> DisplayList -> surface)",
                          nullptr, nullptr, bg,
@@ -2075,25 +2136,19 @@ class CanvasCompareTester {
       const int test_height_2 = kTestHeight * 2;
       const SkScalar test_scale = 2.0;
 
-      CvRenderJob sk_job_x2 = {
+      CvPictureRenderJob sk_job_x2(sk_picture);
+      RenderJobInfo info_2x = {
           .width = test_width_2,
           .height = test_height_2,
           .bg = bg,
           .scale = test_scale,
-          .picture = sk_picture,
       };
-      auto ref_x2_result = env.getResult(sk_job_x2);
+      auto ref_x2_result = env.getResult(info_2x, sk_job_x2);
       ASSERT_EQ(ref_x2_result->width(), test_width_2) << info;
       ASSERT_EQ(ref_x2_result->height(), test_height_2) << info;
 
-      DlRenderJob dl_job_x2 = {
-          .width = test_width_2,
-          .height = test_height_2,
-          .bg = bg,
-          .scale = test_scale,
-          .display_list = display_list,
-      };
-      auto test_x2_result = env.getResult(dl_job_x2);
+      DlRenderJob dl_job_x2(display_list);
+      auto test_x2_result = env.getResult(info_2x, dl_job_x2);
       compareToReference(test_x2_result.get(), ref_x2_result.get(),
                          info + " (Both rendered scaled 2x)", nullptr, nullptr,
                          bg, caseP.fuzzy_compare_components(),  //
@@ -2130,12 +2185,12 @@ class CanvasCompareTester {
                                 DlColor bg) {
     SkScalar opacity = 128.0 / 255.0;
 
-    DlRenderJob opacity_job = {
+    DlRenderJob opacity_job(display_list);
+    RenderJobInfo opacity_info = {
         .bg = bg,
         .opacity = opacity,
-        .display_list = display_list,
     };
-    auto group_opacity_result = env.getResult(opacity_job);
+    auto group_opacity_result = env.getResult(opacity_info, opacity_job);
 
     ASSERT_EQ(group_opacity_result->width(), kTestWidth) << info;
     ASSERT_EQ(group_opacity_result->height(), kTestHeight) << info;

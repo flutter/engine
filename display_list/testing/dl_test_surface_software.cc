@@ -16,7 +16,7 @@ bool DlSoftwareSurfaceProvider::InitializeSurface(size_t width,
                                                   size_t height,
                                                   PixelFormat format) {
   primary_ = MakeOffscreenSurface(width, height, format);
-  return true;
+  return primary_ != nullptr;
 }
 
 std::shared_ptr<DlSurfaceInstance>
