@@ -2153,6 +2153,7 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
 TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
   auto kalimba = CreateTextureForFixture("kalimba.jpg");
   auto contents = std::make_shared<TiledTextureContents>();
@@ -2190,6 +2191,7 @@ TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
   ASSERT_TEXTURE_ALLOCATION_EQ(
       GetContext()->GetResourceAllocator()->GetAllocatedSizes(), sizes);
 }
+#endif
 
 }  // namespace testing
 }  // namespace impeller
