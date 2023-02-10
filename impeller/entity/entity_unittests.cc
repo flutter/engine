@@ -2185,7 +2185,6 @@ TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
       // Without the color filter there is no subpass.
       size,
       size,
-      size,
   };
 
   ASSERT_TEXTURE_ALLOCATION_EQ(
