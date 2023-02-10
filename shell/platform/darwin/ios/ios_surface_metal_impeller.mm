@@ -10,7 +10,6 @@
 
 namespace impeller {
 namespace {
-using std::shared_ptr;
 
 // This appears to be the only safe way to override the
 // GetColorAttachmentPixelFormat method.  It is assumed in the Context that
@@ -19,7 +18,7 @@ using std::shared_ptr;
 // level since the Context does not safely manage the MTLDevice.
 class CustomColorAttachmentPixelFormatContext final : public Context {
  public:
-  CustomColorAttachmentPixelFormatContext(const shared_ptr<Context>& context,
+  CustomColorAttachmentPixelFormatContext(const std::shared_ptr<Context>& context,
                                           PixelFormat color_attachment_pixel_format)
       : context_(context), color_attachment_pixel_format_(color_attachment_pixel_format) {}
 
@@ -62,7 +61,7 @@ class CustomColorAttachmentPixelFormatContext final : public Context {
   }
 
  private:
-  shared_ptr<Context> context_;
+  std::shared_ptr<Context> context_;
   PixelFormat color_attachment_pixel_format_;
 };
 }  // namespace
