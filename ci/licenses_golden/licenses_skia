@@ -1,4 +1,4 @@
-Signature: 6d9e9ec29a5629927a937d3ce8a7360f
+Signature: d0d7f5de94934962539a8cec289aa908
 
 ====================================================================================================
 LIBRARY: etc1
@@ -7398,7 +7398,6 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/Buffer.cpp + ../../../third_p
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/Buffer.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/BufferManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/BufferManager.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/graphite/DrawBufferManager.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBlitCommandEncoder.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBuffer.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBuffer.mm + ../../../third_party/skia/LICENSE
@@ -7485,7 +7484,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/Buffer.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/Buffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/BufferManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/BufferManager.h
-FILE: ../../../third_party/skia/src/gpu/graphite/DrawBufferManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBlitCommandEncoder.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlBuffer.mm
