@@ -122,7 +122,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction;
-- (flutter::PointerDataPacket)createAuxillaryStylusActionData;
+- (std::unique_ptr<flutter::PointerDataPacket>)createAuxillaryStylusActionData;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
@@ -1470,9 +1470,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMVerify([viewControllerMock createAuxillaryStylusActionData]);
 
   // Check the return value of the helper function
-  flutter::PointerDataPacket packet = [vc createAuxillaryStylusActionData];
+  std::unique_ptr<flutter::PointerDataPacket> packet = [vc createAuxillaryStylusActionData];
 
-  flutter::PointerData pointer_data = packet.GetPointerData(0);
+  flutter::PointerData pointer_data = packet->GetPointerData(0);
 
   XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
   XCTAssertEqual(pointer_data.signal_kind,
