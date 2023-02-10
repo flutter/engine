@@ -822,16 +822,8 @@ ORIGIN: ../../../flutter/common/task_runners.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_attributes.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_attributes_testing.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_benchmarks.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_canvas_provider.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_gl.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_gl.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_metal.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_metal.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_software.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_software.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_blend_mode.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_blend_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_builder.cc + ../../../flutter/LICENSE
@@ -881,8 +873,6 @@ ORIGIN: ../../../flutter/display_list/display_list_rtree.h + ../../../flutter/LI
 ORIGIN: ../../../flutter/display_list/display_list_runtime_effect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_runtime_effect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_sampling_options.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_test_utils.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_test_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_tile_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_utils.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_utils.h + ../../../flutter/LICENSE
@@ -1506,6 +1496,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc + ../../../flutter/LICENSE
@@ -1514,6 +1506,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc +
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc + ../../../flutter/LICENSE
@@ -1795,6 +1789,8 @@ ORIGIN: ../../../flutter/lib/ui/painting/image_filter.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/lib/ui/painting/image_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_shader.cc + ../../../flutter/LICENSE
@@ -3303,16 +3299,8 @@ FILE: ../../../flutter/common/task_runners.h
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
 FILE: ../../../flutter/display_list/display_list_attributes.h
-FILE: ../../../flutter/display_list/display_list_attributes_testing.h
 FILE: ../../../flutter/display_list/display_list_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_canvas_provider.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_gl.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_gl.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_metal.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_metal.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_software.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_software.h
 FILE: ../../../flutter/display_list/display_list_blend_mode.cc
 FILE: ../../../flutter/display_list/display_list_blend_mode.h
 FILE: ../../../flutter/display_list/display_list_builder.cc
@@ -3362,8 +3350,6 @@ FILE: ../../../flutter/display_list/display_list_rtree.h
 FILE: ../../../flutter/display_list/display_list_runtime_effect.cc
 FILE: ../../../flutter/display_list/display_list_runtime_effect.h
 FILE: ../../../flutter/display_list/display_list_sampling_options.h
-FILE: ../../../flutter/display_list/display_list_test_utils.cc
-FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
 FILE: ../../../flutter/display_list/display_list_utils.cc
 FILE: ../../../flutter/display_list/display_list_utils.h
@@ -3987,6 +3973,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
@@ -3995,6 +3983,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc
@@ -4178,6 +4168,7 @@ FILE: ../../../flutter/impeller/toolkit/egl/egl.cc
 FILE: ../../../flutter/impeller/toolkit/egl/egl.h
 FILE: ../../../flutter/impeller/toolkit/egl/surface.cc
 FILE: ../../../flutter/impeller/toolkit/egl/surface.h
+FILE: ../../../flutter/impeller/tools/malioc.json
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.cc
@@ -4277,6 +4268,8 @@ FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_generator.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.h
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
