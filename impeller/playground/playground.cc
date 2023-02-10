@@ -176,6 +176,60 @@ void Playground::SetCursorPosition(Point pos) {
   cursor_position_ = pos;
 }
 
+bool Playground::PumpSingleFrame(SinglePassCallback pass_callback) {
+  return PumpSingleFrame(
+      [context = GetContext(), &pass_callback](RenderTarget& render_target) {
+        auto buffer = context->CreateCommandBuffer();
+        if (!buffer) {
+          return false;
+        }
+        buffer->SetLabel("Playground Command Buffer");
+
+        auto pass = buffer->CreateRenderPass(render_target);
+        if (!pass) {
+          return false;
+        }
+        pass->SetLabel("Playground Render Pass");
+
+        if (!pass_callback(*pass)) {
+          return false;
+        }
+
+        pass->EncodeCommands();
+        if (!buffer->SubmitCommands()) {
+          return false;
+        }
+        return true;
+      });
+}
+
+bool Playground::PumpSingleFrame(
+    const Renderer::RenderCallback& render_callback) {
+  if (!is_enabled()) {
+    return true;
+  }
+
+  if (!render_callback) {
+    return true;
+  }
+
+  if (!renderer_ || !renderer_->IsValid()) {
+    return false;
+  }
+
+  Renderer::RenderCallback wrapped_callback =
+      [render_callback](RenderTarget& render_target) -> bool {
+    return render_callback(render_target);
+  };
+
+  if (!renderer_->Render(impl_->AcquireSurfaceFrame(renderer_->GetContext()),
+                         wrapped_callback)) {
+    VALIDATION_LOG << "Could not render into the surface.";
+    return false;
+  }
+  return true;
+}
+
 bool Playground::OpenPlaygroundHere(
     const Renderer::RenderCallback& render_callback) {
   if (!is_enabled()) {

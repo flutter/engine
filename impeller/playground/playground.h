@@ -63,6 +63,10 @@ class Playground {
 
   bool OpenPlaygroundHere(SinglePassCallback pass_callback);
 
+  bool PumpSingleFrame(const Renderer::RenderCallback& render_callback);
+
+  bool PumpSingleFrame(SinglePassCallback pass_callback);
+
   std::shared_ptr<CompressedImage> LoadFixtureImageCompressed(
       std::shared_ptr<fml::Mapping> mapping) const;
 

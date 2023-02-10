@@ -24,6 +24,10 @@ class EntityPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(EntityPlaygroundCallback callback);
 
+  bool PumpSingleFrame(Entity entity);
+
+  bool PumpSingleFrame(EntityPlaygroundCallback callback);
+
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPlayground);
 };

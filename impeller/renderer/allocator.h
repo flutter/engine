@@ -37,6 +37,10 @@ class Allocator {
   ///
   virtual uint16_t MinimumBytesPerRow(PixelFormat format) const;
 
+  uint64_t GetAllocatedSize() const;
+
+  void ResetAllocatedSize();
+
   std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(const uint8_t* buffer,
                                                      size_t length);
 
@@ -55,6 +59,8 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
+  uint64_t allocated_size_ = 0;
+
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };
 

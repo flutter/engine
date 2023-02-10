@@ -45,6 +45,14 @@ std::shared_ptr<DeviceBuffer> Allocator::CreateBuffer(
   return OnCreateBuffer(desc);
 }
 
+uint64_t Allocator::GetAllocatedSize() const {
+  return allocated_size_;
+}
+
+void Allocator::ResetAllocatedSize() {
+  allocated_size_ = 0;
+}
+
 std::shared_ptr<Texture> Allocator::CreateTexture(
     const TextureDescriptor& desc) {
   const auto max_size = GetMaxTextureSizeSupported();
@@ -54,6 +62,7 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
         << desc.size;
     return nullptr;
   }
+  allocated_size_ += (desc.size.width * desc.size.height);
 
   return OnCreateTexture(desc);
 }

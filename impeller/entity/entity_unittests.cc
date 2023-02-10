@@ -26,6 +26,7 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
@@ -2149,6 +2150,33 @@ TEST_P(EntityTest, RuntimeEffect) {
     return contents->Render(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
+  auto kalimba = CreateTextureForFixture("kalimba.jpg");
+  auto contents = std::make_shared<TiledTextureContents>();
+  contents->SetTexture(kalimba);
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 1000, 1000)));
+  contents->SetTileModes(Entity::TileMode::kRepeat, Entity::TileMode::kRepeat);
+  contents->SetSamplerDescriptor({});
+  contents->SetAlpha(0.5);
+  contents->SetColorFilter([](FilterInput::Ref input) {
+    return ColorFilterContents::MakeBlend(
+        BlendMode::kScreen, {std::move(input)}, Color::Red().WithAlpha(0.5));
+  });
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  GetContext()->GetResourceAllocator()->ResetAllocatedSize();
+
+  ASSERT_TRUE(PumpSingleFrame(entity));
+
+  auto size = kalimba->GetSize();
+
+  uint64_t allocated_size = (size.width * size.height * 3u) + 10u;
+  ASSERT_EQ(GetContext()->GetResourceAllocator()->GetAllocatedSize(),
+            allocated_size);
 }
 
 }  // namespace testing
