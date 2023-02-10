@@ -442,12 +442,10 @@ class Surface {
   }
 
   void saveTo(SnapshotSurface target) {
-    final int surfaceHeight = _currentSurfaceSize!.height.ceil();
-
     target.canvasContext?.drawImage(
       htmlCanvas!,
       0,
-      -(surfaceHeight - target.physicalSize.height),
+      -(_pixelHeight - target.physicalSize.height),
     );
   }
 
