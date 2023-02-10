@@ -45,6 +45,7 @@ std::shared_ptr<DeviceBuffer> Allocator::CreateBuffer(
   return OnCreateBuffer(desc);
 }
 
+#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
 const std::vector<ISize>& Allocator::GetAllocatedSizes() const {
   return allocated_sizes_;
 }
@@ -52,6 +53,14 @@ const std::vector<ISize>& Allocator::GetAllocatedSizes() const {
 void Allocator::ResetAllocatedSizes() {
   allocated_sizes_.clear();
 }
+
+void Allocator::SetTrackAllocations(bool value) {
+  track_allocation_ = value;
+  if (!track_allocation_) {
+    ResetAllocatedSizes();
+  }
+}
+#endif
 
 std::shared_ptr<Texture> Allocator::CreateTexture(
     const TextureDescriptor& desc) {
@@ -62,7 +71,11 @@ std::shared_ptr<Texture> Allocator::CreateTexture(
         << desc.size;
     return nullptr;
   }
-  allocated_sizes_.push_back(desc.size);
+#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
+  if (track_allocation_) {
+    allocated_sizes_.push_back(desc.size);
+  }
+#endif
 
   return OnCreateTexture(desc);
 }

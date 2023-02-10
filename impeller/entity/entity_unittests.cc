@@ -2169,7 +2169,7 @@ TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(contents);
 
-  GetContext()->GetResourceAllocator()->ResetAllocatedSizes();
+  GetContext()->GetResourceAllocator()->SetTrackAllocations(true);
 
   ASSERT_TRUE(PumpSingleFrame(entity));
 
