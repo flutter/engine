@@ -10,6 +10,8 @@ import 'package:path/path.dart' as path;
 
 import 'package:watcher/src/watch_event.dart';
 
+import 'environment.dart';
+import 'felt_config.dart';
 import 'pipeline.dart';
 import 'steps/compile_tests_step.dart';
 import 'steps/run_tests_step.dart';
@@ -32,16 +34,12 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             'made.',
       )
       ..addFlag(
-        'use-system-flutter',
-        help: 'integration tests are using flutter repository for various tasks'
-            ', such as flutter drive, flutter pub get. If this flag is set, felt '
-            'will use flutter command without cloning the repository. This flag '
-            'can save internet bandwidth. However use with caution. Note that '
-            'since flutter repo is always synced to youngest commit older than '
-            'the engine commit for the tests running in CI, the tests results '
-            "won't be consistent with CIs when this flag is set. flutter "
-            'command should be set in the PATH for this flag to be useful.'
-            'This flag can also be used to test local Flutter changes.')
+        'list',
+        help:
+            'Lists the bundles that would be compiled and the suites that'
+            'will be run as part of this invocation, without actually'
+            'compiling or running them.'
+      )
       ..addFlag(
         'require-skia-gold',
         help:
@@ -93,6 +91,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get isWatchMode => boolArg('watch');
 
+  bool get isList => boolArg('list');
+
   bool get failEarly => boolArg('fail-early');
 
   bool get isWasm => boolArg('wasm');
@@ -131,6 +131,21 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   @override
   Future<bool> run() async {
+    final FeltConfig config = FeltConfig.fromFile(
+      path.join(environment.webUiTestDir.path, 'felt_config.yaml')
+    );
+    if (isList) {
+      print('Bundles:');
+      for (final TestBundle bundle in config.testBundles) {
+        print('  ${bundle.name}');
+      }
+      print('');
+      print('Suites:');
+      for (final TestSuite suite in config.testSuites) {
+        print('  ${suite.name}');
+      }
+      return true;
+    }
     final List<FilePath> testFiles = runAllTests
           ? findAllTests()
           : targetFiles;
