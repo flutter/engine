@@ -8,9 +8,9 @@ import 'dart:typed_data';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
-
 import 'package:ui/ui.dart' as ui;
 
+import '../matchers.dart';
 import 'utils.dart';
 
 void main() {
@@ -35,7 +35,7 @@ void runCanvasTests({required bool deviceClipRoundsOut}) {
       expect(value.length, equals(16));
       for (int r = 0; r < 4; r++) {
         for (int c = 0; c < 4; c++) {
-          expect(value[r*4 + c], closeTo(expected[r*4 + c], 1e-10));
+          expect(value[r*4 + c], within(from: expected[r*4 + c]));
         }
       }
     }

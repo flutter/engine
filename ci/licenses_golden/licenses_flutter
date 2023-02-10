@@ -714,9 +714,11 @@ SOFTWARE.
 
 ====================================================================================================
 LIBRARY: spring_animation
-ORIGIN: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.h + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.mm + ../../../flutter/third_party/spring_animation/LICENSE
 TYPE: LicenseType.mit
-FILE: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.h
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.mm
 ----------------------------------------------------------------------------------------------------
 Copyright (c) Meta Platforms, Inc. and affiliates.
 
@@ -791,6 +793,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: accessibility
 LIBRARY: engine
+LIBRARY: spring_animation
 LIBRARY: tonic
 LIBRARY: txt
 LIBRARY: web_unicode
@@ -1223,6 +1226,8 @@ ORIGIN: ../../../flutter/impeller/compiler/switches.cc + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/impeller/compiler/switches.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/types.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/types.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/uniform_sorter.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/uniform_sorter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.cc + ../../../flutter/LICENSE
@@ -1337,7 +1342,9 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert + ../../.
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag + ../../../flutter/LICENSE
@@ -1499,6 +1506,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc + ../../../flutter/LICENSE
@@ -1507,6 +1516,8 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc +
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc + ../../../flutter/LICENSE
@@ -1788,6 +1799,8 @@ ORIGIN: ../../../flutter/lib/ui/painting/image_filter.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/lib/ui/painting/image_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_shader.cc + ../../../flutter/LICENSE
@@ -3190,6 +3203,7 @@ ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.cc + ../../
 ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/build_config.h + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.cc + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.h + ../../../flutter/third_party/tonic/LICENSE
@@ -3725,6 +3739,8 @@ FILE: ../../../flutter/impeller/compiler/switches.cc
 FILE: ../../../flutter/impeller/compiler/switches.h
 FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
+FILE: ../../../flutter/impeller/compiler/uniform_sorter.cc
+FILE: ../../../flutter/impeller/compiler/uniform_sorter.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
@@ -3839,7 +3855,9 @@ FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
@@ -4001,6 +4019,8 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
@@ -4009,6 +4029,8 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/commands_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc
@@ -4192,6 +4214,7 @@ FILE: ../../../flutter/impeller/toolkit/egl/egl.cc
 FILE: ../../../flutter/impeller/toolkit/egl/egl.h
 FILE: ../../../flutter/impeller/toolkit/egl/surface.cc
 FILE: ../../../flutter/impeller/toolkit/egl/surface.h
+FILE: ../../../flutter/impeller/tools/malioc.json
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.cc
@@ -4291,6 +4314,8 @@ FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_generator.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.h
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
@@ -5720,6 +5745,7 @@ FILE: ../../../flutter/third_party/accessibility/base/string_utils.cc
 FILE: ../../../flutter/third_party/accessibility/base/string_utils.h
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.h
+FILE: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm
 FILE: ../../../flutter/third_party/tonic/common/build_config.h
 FILE: ../../../flutter/third_party/tonic/common/log.cc
 FILE: ../../../flutter/third_party/tonic/common/log.h
