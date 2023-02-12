@@ -164,6 +164,8 @@ constexpr char kTextPlainFormat[] = "text/plain";
   FlutterEngine* _flutterEngine;
 }
 
+@dynamic view;
+
 - (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
   self = [super init];
   if (self) {

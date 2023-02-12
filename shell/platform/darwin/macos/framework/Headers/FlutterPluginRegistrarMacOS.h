@@ -42,7 +42,7 @@ FLUTTER_DARWIN_EXPORT
  *
  * The default view is a special view operated by single-view APIs.
  */
-- (nullable NSView*)view;
+@property(nullable, readonly) NSView* view;
 
 /**
  * The `NSView` associated with the given view ID, if any.
