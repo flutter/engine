@@ -526,6 +526,7 @@ bool EntityPass::OnRender(
     /// Setup advanced blends.
     ///
 
+    // #if not iOS
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
       // End the active pass and flush the buffer before rendering "advanced"
       // blends. Advanced blends work by binding the current render target
@@ -536,20 +537,20 @@ bool EntityPass::OnRender(
       // to the render target texture so far need to execute before it's bound
       // for blending (otherwise the blend pass will end up executing before
       // all the previous commands in the active pass).
-      if (!pass_context.EndPass()) {
-        return false;
-      }
+      // if (!pass_context.EndPass()) {
+      //   return false;
+      // }
 
       // Amend an advanced blend filter to the contents, attaching the pass
       // texture.
-      auto texture = pass_context.GetTexture();
-      if (!texture) {
-        return false;
-      }
+      // auto texture = pass_context.GetTexture();
+      // if (!texture) {
+      //   return false;
+      // }
 
       FilterInput::Vector inputs = {
-          FilterInput::Make(texture,
-                            result.entity.GetTransformation().Invert()),
+          // FilterInput::Make(texture,
+          //                   result.entity.GetTransformation().Invert()),
           FilterInput::Make(result.entity.GetContents())};
       auto contents =
           ColorFilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
@@ -557,6 +558,7 @@ bool EntityPass::OnRender(
       result.entity.SetContents(std::move(contents));
       result.entity.SetBlendMode(BlendMode::kSource);
     }
+    // #endif
 
     //--------------------------------------------------------------------------
     /// Render the Element.
