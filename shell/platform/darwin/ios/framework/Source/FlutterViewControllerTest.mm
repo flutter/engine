@@ -1623,7 +1623,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [mockPencilInteraction stopMocking];
 }
 
-- (void)testPencilHelperFunction API_AVAILABLE(ios(13.4)) {
+- (void)testCreateAuxillaryStylusActionData API_AVAILABLE(ios(13.4)) {
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
