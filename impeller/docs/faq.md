@@ -17,7 +17,7 @@
   * Please also report any performance regressions.
 * What does it mean for an Impeller platform to be "in preview". How long will
   be the preview last?
-  * The team is focused on getting one platform right at the time. This includes
+  * The team is focused on getting one platform right at a time. This includes
     ensuring all fidelity issues are fixed, performance issues addressed, and
     compatibility with plugins guaranteed.
   * When the team believes that the majority of Flutter applications will
