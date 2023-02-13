@@ -1327,14 +1327,14 @@ void testMain() {
       expect(packets[3].data[0].scrollDeltaY, equals(119.0));
 
       // Because the delta is in increments of 120, and is not similar to the
-      // previous event, but occured soon after the previous event, it will be
+      // previous event, but occurred soon after the previous event, it will be
       // a trackpad event.
       expect(packets[4].data[0].change, equals(ui.PointerChange.hover));
       expect(
           packets[4].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[4].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
-      expect(packets[4].data[0].pointerIdentifier, equals(-2));
+      expect(packets[4].data[0].device, equals(-2));
       expect(packets[4].data[0].pointerIdentifier, equals(0));
       expect(packets[4].data[0].synthesized, isFalse);
       expect(packets[4].data[0].physicalX, equals(10.0 * dpi));
@@ -1344,23 +1344,39 @@ void testMain() {
       expect(packets[4].data[0].scrollDeltaX, equals(-120.0));
       expect(packets[4].data[0].scrollDeltaY, equals(-120.0));
 
-      // Because the delta is in increments of 120, and is not similar to
-      // the previous event, and occured long after the previous event, it will be a mouse event.
-      expect(packets[5].data, hasLength(1));
-      expect(packets[5].data[0].change, equals(ui.PointerChange.hover));
+      // An add will be synthesized.
+      expect(packets[5].data, hasLength(2));
+      expect(packets[5].data[0].change, equals(ui.PointerChange.add));
       expect(
-          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.none));
       expect(
           packets[5].data[0].kind, equals(ui.PointerDeviceKind.mouse));
       expect(packets[5].data[0].device, equals(-1));
       expect(packets[5].data[0].pointerIdentifier, equals(0));
-      expect(packets[5].data[0].synthesized, isFalse);
+      expect(packets[5].data[0].synthesized, isTrue);
       expect(packets[5].data[0].physicalX, equals(10.0 * dpi));
       expect(packets[5].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[5].data[0].physicalDeltaX, equals(0.0));
       expect(packets[5].data[0].physicalDeltaY, equals(0.0));
       expect(packets[5].data[0].scrollDeltaX, equals(0.0));
       expect(packets[5].data[0].scrollDeltaY, equals(-120.0));
+      // Because the delta is in increments of 120, and is not similar to
+      // the previous event, and occurred long after the previous event, it will
+      // be a mouse event.
+      expect(packets[5].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[5].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[5].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[1].device, equals(-1));
+      expect(packets[5].data[1].pointerIdentifier, equals(0));
+      expect(packets[5].data[1].synthesized, isFalse);
+      expect(packets[5].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[5].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaY, equals(-120.0));
 
       // Because the delta is not in increments of 120 and has non-matching
       // wheelDelta, it will be a mouse event.
