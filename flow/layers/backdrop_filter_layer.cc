@@ -26,11 +26,11 @@ void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   context->AddLayerBounds(paint_bounds);
 
   if (filter_) {
-    context->GetTransform().mapRect(&paint_bounds);
+    paint_bounds = context->MapRect(paint_bounds);
     auto filter_target_bounds = paint_bounds.roundOut();
     SkIRect filter_input_bounds;  // in screen coordinates
     filter_->get_input_device_bounds(
-        filter_target_bounds, context->GetTransform(), filter_input_bounds);
+        filter_target_bounds, context->GetTransform3x3(), filter_input_bounds);
     context->AddReadbackRegion(filter_input_bounds);
   }
 
@@ -44,7 +44,7 @@ void BackdropFilterLayer::Preroll(PrerollContext* context) {
       Layer::AutoPrerollSaveLayerState::Create(context, true, bool(filter_));
   if (context->view_embedder != nullptr) {
     context->view_embedder->PushFilterToVisitedPlatformViews(
-        filter_, context->state_stack.local_cull_rect());
+        filter_, context->state_stack.device_cull_rect());
   }
   SkRect child_paint_bounds = SkRect::MakeEmpty();
   PrerollChildren(context, &child_paint_bounds);

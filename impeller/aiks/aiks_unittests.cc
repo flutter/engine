@@ -1120,7 +1120,8 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
                         Canvas& canvas,
                         const std::string& text,
                         const std::string& font_fixture,
-                        Scalar font_size = 50.0) {
+                        Scalar font_size = 50.0,
+                        Scalar alpha = 1.0) {
   Scalar baseline = 200.0;
   Point text_position = {100, baseline};
 
@@ -1147,7 +1148,7 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
   auto frame = TextFrameFromTextBlob(blob);
 
   Paint text_paint;
-  text_paint.color = Color::Yellow();
+  text_paint.color = Color::Yellow().WithAlpha(alpha);
   canvas.DrawTextFrame(frame, text_position, text_paint);
   return true;
 }
@@ -1176,6 +1177,18 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
                                  "Apple Color Emoji.ttc"));
 #else
                                  "NotoColorEmoji.ttf"));
+#endif
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
+  Canvas canvas;
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+#if FML_OS_MACOSX
+                                 "Apple Color Emoji.ttc", 50, 0.5));
+#else
+                                 "NotoColorEmoji.ttf", 50, 0.5));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1840,6 +1853,38 @@ TEST_P(AiksTest, SceneColorSource) {
   };
 
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(AiksTest, PaintWithFilters) {
+  // validate that a paint with a color filter "HasFilters", no other filters
+  // impact this setting.
+  Paint paint;
+
+  ASSERT_FALSE(paint.HasColorFilter());
+
+  paint.color_filter = [](FilterInput::Ref input) {
+    return ColorFilterContents::MakeBlend(BlendMode::kSourceOver,
+                                          {std::move(input)}, Color::Blue());
+  };
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.image_filter = [](const FilterInput::Ref& input,
+                          const Matrix& effect_transform) {
+    return FilterContents::MakeGaussianBlur(
+        input, Sigma(1.0), Sigma(1.0), FilterContents::BlurStyle::kNormal,
+        Entity::TileMode::kClamp, effect_transform);
+  };
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.mask_blur_descriptor = {};
+
+  ASSERT_TRUE(paint.HasColorFilter());
+
+  paint.color_filter = std::nullopt;
+
+  ASSERT_FALSE(paint.HasColorFilter());
 }
 
 }  // namespace testing
