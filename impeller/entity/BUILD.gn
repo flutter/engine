@@ -97,8 +97,6 @@ impeller_shaders("modern_entity_shaders") {
 
 impeller_component("entity") {
   sources = [
-    "contents/framebuffer_blend_contents.h",
-    "contents/framebuffer_blend_contents.cc",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
     "contents/clip_contents.cc",
@@ -141,6 +139,8 @@ impeller_component("entity") {
     "contents/filters/srgb_to_linear_filter_contents.h",
     "contents/filters/yuv_to_rgb_filter_contents.cc",
     "contents/filters/yuv_to_rgb_filter_contents.h",
+    "contents/framebuffer_blend_contents.cc",
+    "contents/framebuffer_blend_contents.h",
     "contents/gradient_generator.cc",
     "contents/gradient_generator.h",
     "contents/linear_gradient_contents.cc",
