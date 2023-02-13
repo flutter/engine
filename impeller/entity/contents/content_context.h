@@ -95,6 +95,9 @@
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
 
+#include "impeller/entity/framebuffer_test.frag.h"
+#include "impeller/entity/framebuffer_test.vert.h"
+
 namespace impeller {
 
 using LinearGradientFillPipeline =
@@ -243,6 +246,9 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
+
+using FramebufferTestPipeline =
+    RenderPipelineT<FramebufferTestVertexShader, FramebufferTestFragmentShader>;
 
 /// Pipeline state configuration.
 ///
@@ -575,6 +581,11 @@ class ContentContext {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferTestPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_test_pipelines_, opts);
+  }
+
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
@@ -677,6 +688,7 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
+  mutable Variants<FramebufferTestPipeline> framebuffer_test_pipelines_;
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

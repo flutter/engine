@@ -83,6 +83,7 @@ def main():
       '-ffast-math',
       # Record symbols in a separate *.metallibsym file.
       '-frecord-sources=flat',
+      '-g',
       '-MF',
       args.depfile,
       '-o',
@@ -99,7 +100,7 @@ def main():
   elif args.platform == 'ios':
     command += [
         '--std=ios-metal1.2',
-        '-mios-version-min=11.0',
+        '-mios-version-min=15.0',
     ]
   elif args.platform == 'ios-simulator':
     command += [

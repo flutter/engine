@@ -203,6 +203,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
   framebuffer_blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
+  framebuffer_test_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferTestPipeline>(*context_);
   // endif
 
   sweep_gradient_fill_pipelines_[{}] =

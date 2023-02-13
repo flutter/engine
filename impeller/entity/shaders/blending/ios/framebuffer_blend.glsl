@@ -11,11 +11,11 @@
 
 #ifdef IMPELLER_TARGET_METAL_IOS
 layout(set = 0,
-       binding = 10,
+       binding = 0,
        input_attachment_index = 0) uniform subpassInput uSub;
 
 vec4 ReadDestination() {
-  return subpassLoad(uSub) + vec4(0.0, 0.0, 0.0, 1.0);
+  return subpassLoad(uSub);
 }
 #else
 
@@ -40,6 +40,9 @@ out vec4 frag_color;
 
 void main() {
   vec4 dst_sample = ReadDestination();
+  if (dst_sample == vec4(0.0)) {
+    frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+  } else {
   vec4 dst = IPUnpremultiply(dst_sample);
   vec4 src = blend_info.color_factor > 0
                  ? blend_info.color
@@ -53,4 +56,5 @@ void main() {
   vec4 blended = vec4(Blend(dst.rgb, src.rgb), 1) * dst.a;
 
   frag_color = mix(dst_sample, blended, src.a);
+  }
 }
