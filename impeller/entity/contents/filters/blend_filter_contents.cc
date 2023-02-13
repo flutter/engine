@@ -47,32 +47,40 @@ static std::optional<Entity> AdvancedBlend(
   /// Handle inputs.
   ///
 
-  // const size_t total_inputs =
-  //     inputs.size() + (foreground_color.has_value() ? 1 : 0);
-  // if (total_inputs < 2) {
-  //   return std::nullopt;
-  // }
+  const size_t total_inputs =
+      inputs.size() + (foreground_color.has_value() ? 1 : 0);
+  if (total_inputs < 2) {
+    return std::nullopt;
+  }
 
-  // auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
-  // if (!dst_snapshot.has_value()) {
-  //   return std::nullopt;
-  // }
-  // auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
-  // if (!maybe_dst_uvs.has_value()) {
-  //   return std::nullopt;
-  // }
-  // auto dst_uvs = maybe_dst_uvs.value();
+  auto dst_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  if (!dst_snapshot.has_value()) {
+    return std::nullopt;
+  }
+  auto maybe_dst_uvs = dst_snapshot->GetCoverageUVs(coverage);
+  if (!maybe_dst_uvs.has_value()) {
+    return std::nullopt;
+  }
+  auto dst_uvs = maybe_dst_uvs.value();
 
   std::optional<Snapshot> src_snapshot;
   std::array<Point, 4> src_uvs;
   if (!foreground_color.has_value()) {
-    src_snapshot = inputs[0]->GetSnapshot(renderer, entity);
+    src_snapshot = inputs[1]->GetSnapshot(renderer, entity);
     if (!src_snapshot.has_value()) {
-      return std::nullopt;
+      if (!dst_snapshot.has_value()) {
+        return std::nullopt;
+      }
+      return Contents::EntityFromSnapshot(dst_snapshot, entity.GetBlendMode(),
+                                          entity.GetStencilDepth());
     }
     auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
     if (!maybe_src_uvs.has_value()) {
-      return std::nullopt;
+      if (!dst_snapshot.has_value()) {
+        return std::nullopt;
+      }
+      return Contents::EntityFromSnapshot(dst_snapshot, entity.GetBlendMode(),
+                                          entity.GetStencilDepth());
     }
     src_uvs = maybe_src_uvs.value();
   }
@@ -88,12 +96,12 @@ static std::optional<Entity> AdvancedBlend(
     auto size = pass.GetRenderTargetSize();
     VertexBufferBuilder<typename VS::PerVertexData> vtx_builder;
     vtx_builder.AddVertices({
-        {Point(0, 0), src_uvs[0]},
-        {Point(size.width, 0), src_uvs[1]},
-        {Point(size.width, size.height), src_uvs[3]},
-        {Point(0, 0), src_uvs[0]},
-        {Point(size.width, size.height), src_uvs[3]},
-        {Point(0, size.height), src_uvs[2]},
+        {Point(0, 0), dst_uvs[0], src_uvs[0]},
+        {Point(size.width, 0), dst_uvs[1], src_uvs[1]},
+        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
+        {Point(0, 0), dst_uvs[0], src_uvs[0]},
+        {Point(size.width, size.height), dst_uvs[3], src_uvs[3]},
+        {Point(0, size.height), dst_uvs[2], src_uvs[2]},
     });
     auto vtx_buffer = vtx_builder.CreateVertexBuffer(host_buffer);
 
@@ -103,19 +111,17 @@ static std::optional<Entity> AdvancedBlend(
         std::invoke(pipeline_proc, renderer, options);
 
     Command cmd;
-    cmd.label = "Framebuffer Advanced Blend Filter";
+    cmd.label = "Advanced Blend Filter";
     cmd.BindVertices(vtx_buffer);
     cmd.pipeline = std::move(pipeline);
 
     typename FS::BlendInfo blend_info;
 
-    // auto dst_sampler =
-    // renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-    //     dst_snapshot->sampler_descriptor);
-    // FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
-    // blend_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
-    // blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity
-    // : 1.0;
+    auto dst_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+        dst_snapshot->sampler_descriptor);
+    FS::BindTextureSamplerDst(cmd, dst_snapshot->texture, dst_sampler);
+    blend_info.dst_y_coord_scale = dst_snapshot->texture->GetYCoordScale();
+    blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity : 1.0;
 
     if (foreground_color.has_value()) {
       blend_info.color_factor = 1;
@@ -123,7 +129,7 @@ static std::optional<Entity> AdvancedBlend(
       // This texture will not be sampled from due to the color factor. But
       // this is present so that validation doesn't trip on a missing
       // binding.
-      // FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
+      FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
     } else {
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           src_snapshot->sampler_descriptor);
@@ -131,7 +137,6 @@ static std::optional<Entity> AdvancedBlend(
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       blend_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
-
     auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
     FS::BindBlendInfo(cmd, blend_uniform);
 
@@ -347,8 +352,7 @@ std::optional<Entity> BlendFilterContents::RenderFilter(
     return std::nullopt;
   }
 
-  if (inputs.size() == 1 && !foreground_color_.has_value() &&
-      blend_mode_ <= Entity::kLastPipelineBlendMode) {
+  if (inputs.size() == 1 && !foreground_color_.has_value()) {
     // Nothing to blend.
     return PipelineBlend(inputs, renderer, entity, coverage, BlendMode::kSource,
                          std::nullopt, GetAbsorbOpacity(), GetAlpha());

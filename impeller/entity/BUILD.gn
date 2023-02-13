@@ -99,6 +99,8 @@ impeller_shaders("modern_entity_shaders") {
 
 impeller_component("entity") {
   sources = [
+    "contents/framebuffer_blend_contents.h",
+    "contents/framebuffer_blend_contents.cc",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
     "contents/clip_contents.cc",
