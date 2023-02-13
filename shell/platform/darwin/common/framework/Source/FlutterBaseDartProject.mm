@@ -83,9 +83,6 @@ static NSString* const kAppBundleIdentifier = @"io.flutter.flutter.app";
 
 - (std::vector<std::string>)switches {
   std::vector<std::string> arguments = flutter::GetSwitchesFromEnvironment();
-  if (self.enableMirrors) {
-    arguments.push_back("--dart-flags=--enable_mirrors=true");
-  }
   return arguments;
 }
 

@@ -17,6 +17,13 @@
 FLUTTER_DARWIN_EXPORT
 @interface FlutterDartProject : FlutterBaseDartProject
 
+/**
+ * If set, allows the Flutter project to use the dart:mirrors library.
+ *
+ * Deprecated: This function is temporary and will be removed in a future release.
+ */
+@property(nonatomic) bool enableMirrors;
+
 @end
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_
