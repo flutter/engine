@@ -1620,6 +1620,20 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [viewControllerMock pencilInteractionDidTap:mockPencilInteraction];
   OCMVerify([viewControllerMock createAuxillaryStylusActionData]);
 
+  [mockPencilInteraction stopMocking];
+}
+
+- (void)testPencilHelperFunction API_AVAILABLE(ios(13.4)) {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionShowColorPalette);
+
   // Check the return value of the helper function
   flutter::PointerData pointer_data = [vc createAuxillaryStylusActionData];
 
@@ -1628,6 +1642,38 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                  flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
   XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
                  flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionSwitchEraser);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionSwitchPrevious);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious);
+
+  OCMExpect([mockPencilInteraction preferredTapAction]).andReturn(UIPencilPreferredActionIgnore);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore);
 
   [mockPencilInteraction stopMocking];
 }

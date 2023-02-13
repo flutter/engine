@@ -73,8 +73,8 @@ public class AndroidTouchProcessor {
     int NONE = 0;
     int SCROLL = 1;
     int SCROLL_INERTIA_CANCEL = 2;
-    int STYLUS_AUXILIARY_ACTION = 3;
-    int SCALE = 4;
+    int SCALE = 3;
+    int STYLUS_AUXILIARY_ACTION = 4;
     int UNKNOWN = 5;
   }
 
