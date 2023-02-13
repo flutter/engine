@@ -4,12 +4,14 @@
 
 #include "impeller/entity/contents/filters/inputs/contents_filter_input.h"
 
+#include <optional>
 #include <utility>
 
 namespace impeller {
 
-ContentsFilterInput::ContentsFilterInput(std::shared_ptr<Contents> contents)
-    : contents_(std::move(contents)) {}
+ContentsFilterInput::ContentsFilterInput(std::shared_ptr<Contents> contents,
+                                         bool msaa_enabled)
+    : contents_(std::move(contents)), msaa_enabled_(msaa_enabled) {}
 
 ContentsFilterInput::~ContentsFilterInput() = default;
 
@@ -21,7 +23,8 @@ std::optional<Snapshot> ContentsFilterInput::GetSnapshot(
     const ContentContext& renderer,
     const Entity& entity) const {
   if (!snapshot_.has_value()) {
-    snapshot_ = contents_->RenderToSnapshot(renderer, entity);
+    snapshot_ = contents_->RenderToSnapshot(renderer, entity, std::nullopt,
+                                            msaa_enabled_);
   }
   return snapshot_;
 }

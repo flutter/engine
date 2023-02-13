@@ -4,6 +4,8 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
 
+extern const uint64_t kFlutterDefaultViewId;
+
 /**
  * An interface to query FlutterView.
  *
@@ -18,6 +20,6 @@
  *
  * Returns nil if the ID is invalid.
  */
-- (nullable FlutterView*)getView:(uint64_t)id;
+- (nullable FlutterView*)viewForId:(uint64_t)id;
 
 @end

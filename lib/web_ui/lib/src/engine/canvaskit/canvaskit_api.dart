@@ -19,7 +19,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../configuration.dart';
 import '../dom.dart';
-import '../initialization.dart';
 import '../profiler.dart';
 
 /// Entrypoint into the CanvasKit API.
@@ -88,8 +87,8 @@ extension CanvasKitExtension on CanvasKit {
   external SkTextStyle TextStyle(SkTextStyleProperties properties);
   external SkSurface MakeWebGLCanvasSurface(DomCanvasElement canvas);
   external SkSurface MakeSurface(
-    int width,
-    int height,
+    double width,
+    double height,
   );
   external Uint8List getDataBytes(
     SkData skData,
@@ -111,14 +110,19 @@ extension CanvasKitExtension on CanvasKit {
   external SkTypefaceFactory get Typeface;
   external double GetWebGLContext(
       DomCanvasElement canvas, SkWebGLContextOptions options);
-  external SkGrContext MakeGrContext(int glContext);
+  external SkGrContext MakeGrContext(double glContext);
   external SkSurface? MakeOnScreenGLSurface(
     SkGrContext grContext,
-    int width,
-    int height,
+    double width,
+    double height,
     ColorSpace colorSpace,
     int sampleCount,
     int stencil,
+  );
+  external SkSurface? MakeRenderTarget(
+    SkGrContext grContext,
+    int width,
+    int height,
   );
   external SkSurface MakeSWCanvasSurface(DomCanvasElement canvas);
 
@@ -132,7 +136,7 @@ extension CanvasKitExtension on CanvasKit {
   external SkImage? MakeImage(
     SkImageInfo info,
     Uint8List pixels,
-    int bytesPerRow,
+    double bytesPerRow,
   );
   external SkImage? MakeLazyImageFromTextureSource(
     Object src,
@@ -194,7 +198,7 @@ extension SkSurfaceExtension on SkSurface {
 class SkGrContext {}
 
 extension SkGrContextExtension on SkGrContext {
-  external void setResourceCacheLimitBytes(int limit);
+  external void setResourceCacheLimitBytes(double limit);
   external void releaseResourcesAndAbandonContext();
   external void delete();
 }
@@ -952,7 +956,7 @@ extension SkImageExtension on SkImage {
     SkMipmapMode mipmapMode,
     Float32List? matrix, // 3x3 matrix
   );
-  external Uint8List readPixels(int srcX, int srcY, SkImageInfo imageInfo);
+  external Uint8List readPixels(double srcX, double srcY, SkImageInfo imageInfo);
   external Uint8List? encodeToBytes();
   external bool isAliasOf(SkImage other);
   external bool isDeleted();
@@ -979,7 +983,7 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
-    int flags,
+    double flags,
   );
 
   external SkShader MakeTwoPointConicalGradient(
@@ -991,7 +995,7 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
-    int flags,
+    double flags,
   );
 
   external SkShader MakeSweepGradient(
@@ -1001,7 +1005,7 @@ extension SkShaderNamespaceExtension on SkShaderNamespace {
     Float32List colorStops,
     SkTileMode tileMode,
     Float32List? matrix, // 3x3 matrix
-    int flags,
+    double flags,
     double startAngle,
     double endAngle,
   );
@@ -1045,7 +1049,7 @@ extension SkPaintExtension on SkPaint {
   external void setStrokeCap(SkStrokeCap cap);
   external void setStrokeJoin(SkStrokeJoin join);
   external void setAntiAlias(bool isAntiAlias);
-  external void setColorInt(int color);
+  external void setColorInt(double color);
   external void setShader(SkShader? shader);
   external void setMaskFilter(SkMaskFilter? maskFilter);
   external void setColorFilter(SkColorFilter? colorFilter);
@@ -1272,14 +1276,14 @@ external _NativeType get _nativeFloat32ArrayType;
 external _NativeType get _nativeUint32ArrayType;
 
 @JS('window.flutterCanvasKit.Malloc')
-external Object _malloc(_NativeType nativeType, int length);
+external Object _malloc(_NativeType nativeType, double length);
 
 /// Allocates a [Float32List] of [length] elements, backed by WASM memory,
 /// managed by a [SkFloat32List].
 ///
 /// To free the allocated array use [free].
 SkFloat32List mallocFloat32List(int length) {
-  return _malloc(_nativeFloat32ArrayType, length) as SkFloat32List;
+  return _malloc(_nativeFloat32ArrayType, length.toDouble()) as SkFloat32List;
 }
 
 /// Allocates a [Uint32List] of [length] elements, backed by WASM memory,
@@ -1287,7 +1291,7 @@ SkFloat32List mallocFloat32List(int length) {
 ///
 /// To free the allocated array use [free].
 SkUint32List mallocUint32List(int length) {
-  return _malloc(_nativeUint32ArrayType, length) as SkUint32List;
+  return _malloc(_nativeUint32ArrayType, length.toDouble()) as SkUint32List;
 }
 
 /// Frees the WASM memory occupied by a [SkFloat32List] or [SkUint32List].
@@ -1313,7 +1317,7 @@ class SkFloat32List extends MallocObj {}
 
 extension SkFloat32ListExtension on SkFloat32List {
   /// The number of objects this pointer refers to.
-  external int length;
+  external double length;
 
   /// Returns the [Float32List] object backed by WASM memory.
   ///
@@ -1336,7 +1340,7 @@ class SkUint32List extends MallocObj {}
 
 extension SkUint32ListExtension on SkUint32List {
   /// The number of objects this pointer refers to.
-  external int length;
+  external double length;
 
   /// Returns the [Uint32List] object backed by WASM memory.
   ///
@@ -1408,7 +1412,7 @@ extension SkPathExtension on SkPath {
   external void addOval(
     Float32List oval,
     bool counterClockWise,
-    int startIndex,
+    double startIndex,
   );
   external void addPath(
     SkPath other,
@@ -1721,7 +1725,7 @@ extension SkCanvasExtension on SkCanvas {
     SkPaint paint,
   );
   external void drawColorInt(
-    int color,
+    double color,
     SkBlendMode blendMode,
   );
   external void drawDRRect(
@@ -1806,7 +1810,7 @@ extension SkCanvasExtension on SkCanvas {
     double lightRadius,
     Float32List ambientColor,
     Float32List spotColor,
-    int flags,
+    double flags,
   );
   external void drawVertices(
     SkVertices vertices,
@@ -1822,7 +1826,7 @@ extension SkCanvasExtension on SkCanvas {
     int? flags,
   );
   external void restore();
-  external void restoreToCount(int count);
+  external void restoreToCount(double count);
   external void rotate(
     double angleDegrees,
     double px,
@@ -2126,7 +2130,7 @@ extension SkFontExtension on SkFont {
 class SkFontMgr {}
 
 extension SkFontMgrExtension on SkFontMgr {
-  external String? getFamilyName(int fontId);
+  external String? getFamilyName(double fontId);
   external void delete();
   external SkTypeface? MakeTypefaceFromData(Uint8List font);
 }
@@ -2187,8 +2191,8 @@ extension SkParagraphExtension on SkParagraph {
   external double getMinIntrinsicWidth();
   external double getMaxWidth();
   external /* List<SkRectWithDirection> */ List<Object?> getRectsForRange(
-    int start,
-    int end,
+    double start,
+    double end,
     SkRectHeightStyle heightStyle,
     SkRectWidthStyle widthStyle,
   );
@@ -2197,7 +2201,7 @@ extension SkParagraphExtension on SkParagraph {
     double x,
     double y,
   );
-  external SkTextRange getWordBoundary(int position);
+  external SkTextRange getWordBoundary(double position);
   external void layout(double width);
   external void delete();
 }
@@ -2523,8 +2527,8 @@ extension SkDataExtension on SkData {
 @staticInterop
 class SkImageInfo {
   external factory SkImageInfo({
-    required int width,
-    required int height,
+    required double width,
+    required double height,
     required SkColorType colorType,
     required SkAlphaType alphaType,
     required ColorSpace colorSpace,
@@ -2543,7 +2547,7 @@ extension SkImageInfoExtension on SkImageInfo {
   external SkImageInfo makeAlphaType(SkAlphaType alphaType);
   external SkImageInfo makeColorSpace(ColorSpace colorSpace);
   external SkImageInfo makeColorType(SkColorType colorType);
-  external SkImageInfo makeWH(int width, int height);
+  external SkImageInfo makeWH(double width, double height);
 }
 
 @JS()
@@ -2551,8 +2555,8 @@ extension SkImageInfoExtension on SkImageInfo {
 @staticInterop
 class SkPartialImageInfo {
   external factory SkPartialImageInfo({
-    required int width,
-    required int height,
+    required double width,
+    required double height,
     required SkColorType colorType,
     required SkAlphaType alphaType,
     required ColorSpace colorSpace,
@@ -2662,8 +2666,7 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   domDocument.head!.appendChild(canvasKitScript);
 }
 
-String get canvasKitBuildUrl =>
-  configuration.canvasKitBaseUrl + (kProfileMode ? 'profiling/' : '');
+String get canvasKitBuildUrl => configuration.canvasKitBaseUrl;
 String get canvasKitJavaScriptBindingsUrl =>
     '${canvasKitBuildUrl}canvaskit.js';
 String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>

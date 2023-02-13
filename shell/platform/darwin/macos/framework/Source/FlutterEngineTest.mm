@@ -134,14 +134,11 @@ TEST_F(FlutterEngineTest, BackgroundIsBlack) {
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   latch.Wait();
 }
@@ -166,14 +163,11 @@ TEST_F(FlutterEngineTest, CanOverrideBackgroundColor) {
   EXPECT_TRUE([engine runWithEntrypoint:@"backgroundTest"]);
   EXPECT_TRUE(engine.running);
 
-  NSString* fixtures = @(flutter::testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
   viewController.flutterView.backgroundColor = [NSColor whiteColor];
 
   latch.Wait();
@@ -193,13 +187,10 @@ TEST_F(FlutterEngineTest, CanToggleAccessibility) {
       }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
   // Set up view controller.
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
-  [engine setViewController:viewController];
   // Enable the semantics.
   bool enabled_called = false;
   engine.embedderAPI.UpdateSemanticsEnabled =
@@ -337,6 +328,8 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   FlutterSemanticsNode nodes[] = {root, child1};
   update.nodes = nodes;
   update.custom_actions_count = 0;
+  // This call updates semantics for the default view, which does not exist,
+  // and therefore this call is invalid. But the engine should not crash.
   update_semantics_callback(&update, (__bridge void*)engine);
 
   // No crashes.
@@ -355,28 +348,11 @@ TEST_F(FlutterEngineTest, CanToggleAccessibilityWhenHeadless) {
   EXPECT_EQ(engine.viewController, nil);
 }
 
-TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
+TEST_F(FlutterEngineTest, ProducesAccessibilityTreeWhenAddingViews) {
   FlutterEngine* engine = GetFlutterEngine();
-  // Capture the update callbacks before the embedder API initializes.
-  auto original_init = engine.embedderAPI.Initialize;
-  std::function<void(const FlutterSemanticsUpdate*, void*)> update_semantics_callback;
-  engine.embedderAPI.Initialize = MOCK_ENGINE_PROC(
-      Initialize, ([&update_semantics_callback, &original_init](
-                       size_t version, const FlutterRendererConfig* config,
-                       const FlutterProjectArgs* args, void* user_data, auto engine_out) {
-        update_semantics_callback = args->update_semantics_callback;
-        return original_init(version, config, args, user_data, engine_out);
-      }));
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
-  // Set up view controller.
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
-  [viewController loadView];
-  [engine setViewController:viewController];
-  // Enable the semantics.
+
+  // Enable the semantics without attaching a view controller.
   bool enabled_called = false;
   engine.embedderAPI.UpdateSemanticsEnabled =
       MOCK_ENGINE_PROC(UpdateSemanticsEnabled, ([&enabled_called](auto engine, bool enabled) {
@@ -385,61 +361,16 @@ TEST_F(FlutterEngineTest, ResetsAccessibilityBridgeWhenSetsNewViewController) {
                        }));
   engine.semanticsEnabled = YES;
   EXPECT_TRUE(enabled_called);
-  // Send flutter semantics updates.
-  FlutterSemanticsNode root;
-  root.id = 0;
-  root.flags = static_cast<FlutterSemanticsFlag>(0);
-  root.actions = static_cast<FlutterSemanticsAction>(0);
-  root.text_selection_base = -1;
-  root.text_selection_extent = -1;
-  root.label = "root";
-  root.hint = "";
-  root.value = "";
-  root.increased_value = "";
-  root.decreased_value = "";
-  root.tooltip = "";
-  root.child_count = 1;
-  int32_t children[] = {1};
-  root.children_in_traversal_order = children;
-  root.custom_accessibility_actions_count = 0;
 
-  FlutterSemanticsNode child1;
-  child1.id = 1;
-  child1.flags = static_cast<FlutterSemanticsFlag>(0);
-  child1.actions = static_cast<FlutterSemanticsAction>(0);
-  child1.text_selection_base = -1;
-  child1.text_selection_extent = -1;
-  child1.label = "child 1";
-  child1.hint = "";
-  child1.value = "";
-  child1.increased_value = "";
-  child1.decreased_value = "";
-  child1.tooltip = "";
-  child1.child_count = 0;
-  child1.custom_accessibility_actions_count = 0;
+  EXPECT_EQ(engine.viewController, nil);
 
-  FlutterSemanticsUpdate update;
-  update.nodes_count = 2;
-  FlutterSemanticsNode nodes[] = {root, child1};
-  update.nodes = nodes;
-  update.custom_actions_count = 0;
-  update_semantics_callback(&update, (__bridge void*)engine);
+  // Assign the view controller after enabling semantics
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  engine.viewController = viewController;
 
-  auto native_root = engine.accessibilityBridge.lock()->GetFlutterPlatformNodeDelegateFromID(0);
-  EXPECT_FALSE(native_root.expired());
-
-  // Set up a new view controller.
-  FlutterViewController* newViewController =
-      [[FlutterViewController alloc] initWithProject:project];
-  [newViewController loadView];
-  [engine setViewController:newViewController];
-
-  auto new_native_root = engine.accessibilityBridge.lock()->GetFlutterPlatformNodeDelegateFromID(0);
-  // The tree is recreated and the old tree will be destroyed.
-  EXPECT_FALSE(new_native_root.expired());
-  EXPECT_TRUE(native_root.expired());
-
-  [engine setViewController:nil];
+  EXPECT_NE(viewController.accessibilityBridge.lock(), nullptr);
 }
 
 TEST_F(FlutterEngineTest, NativeCallbacks) {
@@ -465,10 +396,11 @@ TEST(FlutterEngine, Compositor) {
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
   FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"test" project:project];
 
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
   [viewController loadView];
   viewController.flutterView.frame = CGRectMake(0, 0, 800, 600);
-  [engine setViewController:viewController];
 
   EXPECT_TRUE([engine runWithEntrypoint:@"canCompositePlatformViews"]);
 
@@ -680,6 +612,69 @@ TEST(EngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
   });
 
   rasterThread.join();
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+
+  FlutterEngine* engine;
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    // Create FVC1.
+    viewController1 = [[FlutterViewController alloc] initWithProject:project];
+    EXPECT_EQ(viewController1.id, 0ull);
+
+    engine = viewController1.engine;
+    engine.viewController = nil;
+
+    // Create FVC2 based on the same engine.
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
+  // Don't create the engine with `CreateMockFlutterEngine`, because it adds
+  // additional references to FlutterViewControllers, which is crucial to this
+  // test case.
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:nil
+                                       allowHeadlessExecution:NO];
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController1);
+
+    engine.viewController = nil;
+
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(viewController2.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
 }
 
 }  // namespace flutter::testing

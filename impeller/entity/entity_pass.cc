@@ -12,6 +12,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
@@ -155,31 +156,39 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 
   if (context->SupportsOffscreenMSAA()) {
     return RenderTarget::CreateOffscreenMSAA(
-        *context,                          // context
-        size,                              // size
-        "EntityPass",                      // label
-        StorageMode::kDeviceTransient,     // color_storage_mode
-        StorageMode::kDevicePrivate,       // color_resolve_storage_mode
-        LoadAction::kDontCare,             // color_load_action
-        StoreAction::kMultisampleResolve,  // color_store_action
-        readable ? StorageMode::kDevicePrivate
-                 : StorageMode::kDeviceTransient,  // stencil_storage_mode
-        LoadAction::kDontCare,                     // stencil_load_action
-        StoreAction::kDontCare                     // stencil_store_action
+        *context,      // context
+        size,          // size
+        "EntityPass",  // label
+        RenderTarget::AttachmentConfigMSAA{
+            .storage_mode = StorageMode::kDeviceTransient,
+            .resolve_storage_mode = StorageMode::kDevicePrivate,
+            .load_action = LoadAction::kDontCare,
+            .store_action = StoreAction::kMultisampleResolve,
+        },  // color_attachment_config
+        RenderTarget::AttachmentConfig{
+            .storage_mode = readable ? StorageMode::kDevicePrivate
+                                     : StorageMode::kDeviceTransient,
+            .load_action = LoadAction::kDontCare,
+            .store_action = StoreAction::kDontCare,
+        }  // stencil_attachment_config
     );
   }
 
   return RenderTarget::CreateOffscreen(
-      *context,                     // context
-      size,                         // size
-      "EntityPass",                 // label
-      StorageMode::kDevicePrivate,  // color_storage_mode
-      LoadAction::kDontCare,        // color_load_action
-      StoreAction::kDontCare,       // color_store_action
-      readable ? StorageMode::kDevicePrivate
-               : StorageMode::kDeviceTransient,  // stencil_storage_mode
-      LoadAction::kDontCare,                     // stencil_load_action
-      StoreAction::kDontCare                     // stencil_store_action
+      *context,      // context
+      size,          // size
+      "EntityPass",  // label
+      RenderTarget::AttachmentConfig{
+          .storage_mode = StorageMode::kDevicePrivate,
+          .load_action = LoadAction::kDontCare,
+          .store_action = StoreAction::kDontCare,
+      },  // color_attachment_config
+      RenderTarget::AttachmentConfig{
+          .storage_mode = readable ? StorageMode::kDevicePrivate
+                                   : StorageMode::kDeviceTransient,
+          .load_action = LoadAction::kDontCare,
+          .store_action = StoreAction::kDontCare,
+      }  // stencil_attachment_config
   );
 }
 
@@ -322,14 +331,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    RenderTarget subpass_target;
-    if (subpass->reads_from_pass_texture_ > 0) {
-      subpass_target = CreateRenderTarget(
-          renderer, ISize::Ceil(subpass_coverage->size), true);
-    } else {
-      subpass_target = CreateRenderTarget(
-          renderer, ISize::Ceil(subpass_coverage->size), false);
-    }
+    auto subpass_target =
+        CreateRenderTarget(renderer,                       //
+                           ISize(subpass_coverage->size),  //
+                           subpass->reads_from_pass_texture_ > 0);
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
 
@@ -460,13 +465,24 @@ bool EntityPass::OnRender(
             element_entity.GetStencilDepth() - stencil_depth_floor;
         FML_DCHECK(restoration_depth < stencil_stack.size());
 
-        auto restored_coverage = stencil_stack.back().coverage;
+        // We only need to restore the area that covers the coverage of the
+        // stencil rect at target depth + 1.
+        std::optional<Rect> restore_coverage =
+            (restoration_depth + 1 < stencil_stack.size())
+                ? stencil_stack[restoration_depth + 1].coverage
+                : std::nullopt;
+
         stencil_stack.resize(restoration_depth + 1);
 
-        if (!restored_coverage.has_value()) {
+        if (!stencil_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
           return true;
         }
+
+        auto restore_contents = static_cast<ClipRestoreContents*>(
+            element_entity.GetContents().get());
+        restore_contents->SetRestoreCoverage(restore_coverage);
+
       } break;
     }
 
@@ -532,9 +548,9 @@ bool EntityPass::OnRender(
       }
 
       FilterInput::Vector inputs = {
-          FilterInput::Make(result.entity.GetContents()),
           FilterInput::Make(texture,
-                            result.entity.GetTransformation().Invert())};
+                            result.entity.GetTransformation().Invert()),
+          FilterInput::Make(result.entity.GetContents())};
       auto contents =
           ColorFilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
       contents->SetCoverageCrop(result.entity.GetCoverage());

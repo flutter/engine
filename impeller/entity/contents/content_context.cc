@@ -28,6 +28,7 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetSampleCount(sample_count);
 
   ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
+  color0.format = color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
@@ -121,6 +122,10 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
   desc.SetColorAttachmentDescriptor(0u, color0);
 
+  if (!has_stencil_attachment) {
+    desc.ClearStencilAttachments();
+  }
+
   if (desc.GetFrontStencilAttachmentDescriptor().has_value()) {
     StencilAttachmentDescriptor stencil =
         desc.GetFrontStencilAttachmentDescriptor().value();
@@ -207,6 +212,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
+  gaussian_blur_decal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurDecalPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
   morphology_filter_pipelines_[{}] =
@@ -225,7 +232,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
   geometry_position_pipelines_[{}] =
       CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
-  atlas_pipelines_[{}] = CreateDefaultPipeline<AtlasPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
@@ -259,11 +265,12 @@ bool ContentContext::IsValid() const {
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
     ISize texture_size,
-    const SubpassCallback& subpass_callback) const {
+    const SubpassCallback& subpass_callback,
+    bool msaa_enabled) const {
   auto context = GetContext();
 
   RenderTarget subpass_target;
-  if (context->SupportsOffscreenMSAA()) {
+  if (context->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
   } else {
     subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);

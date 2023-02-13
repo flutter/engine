@@ -679,7 +679,7 @@ TEST_P(EntityTest, BlendingModeOptions) {
   std::vector<BlendMode> blend_mode_values;
   {
     // Force an exhausiveness check with a switch. When adding blend modes,
-    // update this switch with a new name/value to to make it selectable in the
+    // update this switch with a new name/value to make it selectable in the
     // test GUI.
 
     const BlendMode b{};
@@ -856,7 +856,7 @@ TEST_P(EntityTest, Filters) {
 
     auto blend1 = ColorFilterContents::MakeBlend(
         BlendMode::kScreen,
-        {fi_bridge, FilterInput::Make(blend0), fi_bridge, fi_bridge});
+        {FilterInput::Make(blend0), fi_bridge, fi_bridge, fi_bridge});
 
     Entity entity;
     entity.SetTransformation(Matrix::MakeScale(GetContentScale()) *
@@ -1244,7 +1244,7 @@ TEST_P(EntityTest, DrawAtlasNoColor) {
   ASSERT_TRUE(OpenPlaygroundHere(e));
 }
 
-TEST_P(EntityTest, DrawAtlasWithColor) {
+TEST_P(EntityTest, DrawAtlasWithColorAdvanced) {
   // Draws the image as four squares stiched together. Because blend modes
   // aren't implented this ends up as four solid color blocks.
   auto atlas = CreateTextureForFixture("bay_bridge.jpg");
@@ -1271,7 +1271,43 @@ TEST_P(EntityTest, DrawAtlasWithColor) {
   contents->SetTextureCoordinates(std::move(texture_coordinates));
   contents->SetTexture(atlas);
   contents->SetColors(colors);
-  contents->SetBlendMode(BlendMode::kSource);
+  contents->SetBlendMode(BlendMode::kModulate);
+
+  Entity e;
+  e.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  e.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(e));
+}
+
+TEST_P(EntityTest, DrawAtlasWithColorSimple) {
+  // Draws the image as four squares stiched together. Because blend modes
+  // aren't implented this ends up as four solid color blocks.
+  auto atlas = CreateTextureForFixture("bay_bridge.jpg");
+  auto size = atlas->GetSize();
+  // Divide image into four quadrants.
+  Scalar half_width = size.width / 2;
+  Scalar half_height = size.height / 2;
+  std::vector<Rect> texture_coordinates = {
+      Rect::MakeLTRB(0, 0, half_width, half_height),
+      Rect::MakeLTRB(half_width, 0, size.width, half_height),
+      Rect::MakeLTRB(0, half_height, half_width, size.height),
+      Rect::MakeLTRB(half_width, half_height, size.width, size.height)};
+  // Position quadrants adjacent to eachother.
+  std::vector<Matrix> transforms = {
+      Matrix::MakeTranslation({0, 0, 0}),
+      Matrix::MakeTranslation({half_width, 0, 0}),
+      Matrix::MakeTranslation({0, half_height, 0}),
+      Matrix::MakeTranslation({half_width, half_height, 0})};
+  std::vector<Color> colors = {Color::Red(), Color::Green(), Color::Blue(),
+                               Color::Yellow()};
+  std::shared_ptr<AtlasContents> contents = std::make_shared<AtlasContents>();
+
+  contents->SetTransforms(std::move(transforms));
+  contents->SetTextureCoordinates(std::move(texture_coordinates));
+  contents->SetTexture(atlas);
+  contents->SetColors(colors);
+  contents->SetBlendMode(BlendMode::kSourceATop);
 
   Entity e;
   e.SetTransformation(Matrix::MakeScale(GetContentScale()));
@@ -1469,6 +1505,66 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
         restore->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     ASSERT_TRUE(
         restore->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
+  }
+}
+
+TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
+  // Intersection: No stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: No stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+  }
+
+  // Difference: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kDifference);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 100, 100));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
   }
 }
 
@@ -2097,11 +2193,11 @@ TEST_P(EntityTest, RuntimeEffect) {
     contents->SetRuntimeStage(runtime_stage);
 
     struct FragUniforms {
-      Scalar iTime;
       Vector2 iResolution;
+      Scalar iTime;
     } frag_uniforms = {
-        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
         .iResolution = Vector2(GetWindowSize().width, GetWindowSize().height),
+        .iTime = static_cast<Scalar>(GetSecondsElapsed()),
     };
     auto uniform_data = std::make_shared<std::vector<uint8_t>>();
     uniform_data->resize(sizeof(FragUniforms));
