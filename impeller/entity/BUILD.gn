@@ -92,8 +92,6 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/blending/ios/framebuffer_blend_saturation.frag",
     "shaders/blending/ios/framebuffer_blend_screen.frag",
     "shaders/blending/ios/framebuffer_blend_softlight.frag",
-    "shaders/blending/ios/framebuffer_test.frag",
-    "shaders/blending/ios/framebuffer_test.vert",
   ]
 }
 

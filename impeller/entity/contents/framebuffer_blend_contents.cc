@@ -4,6 +4,12 @@
 
 #include "framebuffer_blend_contents.h"
 
+#include "impeller/entity/contents/content_context.h"
+#include "impeller/renderer/render_pass.h"
+#include "impeller/renderer/sampler_library.h"
+
+#if FML_OS_IOS
+
 namespace impeller {
 
 FramebufferBlendContents::FramebufferBlendContents() = default;
@@ -14,13 +20,15 @@ void FramebufferBlendContents::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
-void FramebufferBlendContents::SetForegroundColor(Color color) {
-  foreground_color_ = color;
-}
-
 void FramebufferBlendContents::SetChildContents(
     std::shared_ptr<Contents> child_contents) {
   child_contents_ = std::move(child_contents);
+}
+
+// |Contents|
+std::optional<Rect> FramebufferBlendContents::GetCoverage(
+    const Entity& entity) const {
+  return Rect::MakeMaximum();
 }
 
 bool FramebufferBlendContents::Render(const ContentContext& renderer,
@@ -31,26 +39,20 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  std::optional<Snapshot> src_snapshot;
-  std::array<Point, 4> src_uvs;
-  Rect src_coverage;
-
-  if (!foreground_color_.has_value()) {
-    src_snapshot = child_contents_->RenderToSnapshot(renderer, entity);
-    if (!src_snapshot.has_value()) {
-      return std::nullopt;
-    }
-    auto maybe_src_uvs = src_snapshot->GetCoverageUVs(coverage);
-    if (!maybe_src_uvs.has_value()) {
-      return std::nullopt;
-    }
-    src_uvs = maybe_src_uvs.value();
-    auto coverage = src_snapshot->GetCoverage();
-    if (!coverage.has_value()) {
-      return std::nullopt;
-    }
-    src_coverage = coverage;
+  auto src_snapshot = child_contents_->RenderToSnapshot(renderer, entity);
+  if (!src_snapshot.has_value()) {
+    return true;
   }
+  auto coverage = src_snapshot->GetCoverage();
+  if (!coverage.has_value()) {
+    return true;
+  }
+  Rect src_coverage = coverage.value();
+  auto maybe_src_uvs = src_snapshot->GetCoverageUVs(src_coverage);
+  if (!maybe_src_uvs.has_value()) {
+    return true;
+  }
+  std::array<Point, 4> src_uvs = maybe_src_uvs.value();
 
   auto size = src_coverage.size;
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
@@ -66,8 +68,6 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   auto options = OptionsFromPass(pass);
   options.blend_mode = BlendMode::kSource;
-  std::shared_ptr<Pipeline<PipelineDescriptor>> pipeline =
-      std::invoke(pipeline_proc, renderer, options);
 
   Command cmd;
   cmd.label = "Framebuffer Advanced Blend Filter";
@@ -75,69 +75,67 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 
   switch (blend_mode_) {
     case BlendMode::kScreen:
-      cmd.pipeline = renderer.GetFramebufferBlendScreenPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendScreenPipeline(options);
       break;
     case BlendMode::kOverlay:
-      cmd.pipeline = renderer.GetFramebufferBlendOverlayPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendOverlayPipeline(options);
       break;
     case BlendMode::kDarken:
-      cmd.pipeline = renderer.GetFramebufferBlendDarkenPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendDarkenPipeline(options);
       break;
     case BlendMode::kLighten:
-      cmd.pipeline = renderer.GetFramebufferBlendLightenPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendLightenPipeline(options);
       break;
     case BlendMode::kColorDodge:
-      cmd.pipeline = renderer.GetFramebufferBlendColorDidgePipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendColorDodgePipeline(options);
       break;
     case BlendMode::kColorBurn:
-      cmd.pipeline = renderer.GetFramebufferBlendColorBurnPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendColorBurnPipeline(options);
       break;
     case BlendMode::kHardLight:
-      cmd.pipeline = renderer.GetFramebufferBlendHardlightPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendHardLightPipeline(options);
       break;
     case BlendMode::kSoftLight:
-      cmd.pipeline = renderer.GetFramebufferBlendSoftlightPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendSoftLightPipeline(options);
       break;
     case BlendMode::kDifference:
-      cmd.pipeline = renderer.GetFramebufferBlendDifferencePipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendDifferencePipeline(options);
       break;
     case BlendMode::kExclusion:
-      cmd.pipeline = renderer.GetFramebufferBlendExclusionPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendExclusionPipeline(options);
       break;
     case BlendMode::kMultiply:
-      cmd.pipeline = renderer.GetFramebufferBlendMultiplyPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendMultiplyPipeline(options);
       break;
     case BlendMode::kHue:
-      cmd.pipeline = renderer.GetFramebufferBlendHuePipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendHuePipeline(options);
       break;
     case BlendMode::kSaturation:
-      cmd.pipeline = renderer.GetFramebufferBlendSaturationPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendSaturationPipeline(options);
       break;
     case BlendMode::kColor:
-      cmd.pipeline = renderer.GetFramebufferBlendColorPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendColorPipeline(options);
       break;
     case BlendMode::kLuminosity:
-      cmd.pipeline = renderer.GetFramebufferBlendLuminosityPipeline();
+      cmd.pipeline = renderer.GetFramebufferBlendLuminosityPipeline(options);
       break;
+    default:
+      return false;
   }
 
   FS::BlendInfo blend_info;
+  VS::FrameInfo frame_info;
 
-  if (foreground_color.has_value()) {
-    blend_info.color_factor = 1;
-    blend_info.color = foreground_color.value();
-  } else {
-    auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-        src_snapshot->sampler_descriptor);
-    blend_info.color_factor = 0;
-    FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
-    blend_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
-  }
+  auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+      src_snapshot->sampler_descriptor);
+  FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
+  blend_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
 
   auto blend_uniform = host_buffer.EmplaceUniform(blend_info);
   FS::BindBlendInfo(cmd, blend_uniform);
 
-  frame_info.mvp = Matrix::MakeOrthographic(size);
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   src_snapshot->transform;
 
   auto uniform_view = host_buffer.EmplaceUniform(frame_info);
   VS::BindFrameInfo(cmd, uniform_view);
@@ -146,3 +144,5 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 }
 
 }  // namespace impeller
+
+#endif

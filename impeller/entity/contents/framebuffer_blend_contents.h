@@ -13,6 +13,8 @@
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/entity.h"
 
+#if FML_OS_IOS
+
 namespace impeller {
 
 class FramebufferBlendContents final : public ColorSourceContents {
@@ -23,21 +25,23 @@ class FramebufferBlendContents final : public ColorSourceContents {
 
   void SetBlendMode(BlendMode blend_mode);
 
-  void SetForegroundColor(Color color);
-
   void SetChildContents(std::shared_ptr<Contents> child_contents);
+
+ private:
+  // |Contents|
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
 
- private:
   BlendMode blend_mode_;
-  std::optional<Color> foreground_color_ = std::nullopt;
-  std::optional<std::shared_ptr<Contents>> child_contents_;
+  std::shared_ptr<Contents> child_contents_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FramebufferBlendContents);
 };
 
 }  // namespace impeller
+
+#endif

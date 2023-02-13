@@ -27,8 +27,6 @@ vec4 ReadDestination() {
 uniform BlendInfo {
   float dst_input_alpha;
   float src_y_coord_scale;
-  float color_factor;
-  vec4 color;  // This color input is expected to be unpremultiplied.
 }
 blend_info;
 
@@ -40,21 +38,15 @@ out vec4 frag_color;
 
 void main() {
   vec4 dst_sample = ReadDestination();
-  if (dst_sample == vec4(0.0)) {
-    frag_color = vec4(1.0, 0.0, 0.0, 1.0);
-  } else {
   vec4 dst = IPUnpremultiply(dst_sample);
-  vec4 src = blend_info.color_factor > 0
-                 ? blend_info.color
-                 : IPUnpremultiply(IPSampleWithTileMode(
-                       texture_sampler_src,           // sampler
-                       v_src_texture_coords,          // texture coordinates
-                       blend_info.src_y_coord_scale,  // y coordinate scale
-                       kTileModeDecal                 // tile mode
-                       ));
+  vec4 src = IPUnpremultiply(IPSampleWithTileMode(
+      texture_sampler_src,           // sampler
+      v_src_texture_coords,          // texture coordinates
+      blend_info.src_y_coord_scale,  // y coordinate scale
+      kTileModeDecal                 // tile mode
+      ));
 
   vec4 blended = vec4(Blend(dst.rgb, src.rgb), 1) * dst.a;
 
   frag_color = mix(dst_sample, blended, src.a);
-  }
 }

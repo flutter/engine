@@ -172,8 +172,37 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
   }
-  // #If iOS
 
+  blend_color_pipelines_[{}] =
+      CreateDefaultPipeline<BlendColorPipeline>(*context_);
+  blend_colorburn_pipelines_[{}] =
+      CreateDefaultPipeline<BlendColorBurnPipeline>(*context_);
+  blend_colordodge_pipelines_[{}] =
+      CreateDefaultPipeline<BlendColorDodgePipeline>(*context_);
+  blend_darken_pipelines_[{}] =
+      CreateDefaultPipeline<BlendDarkenPipeline>(*context_);
+  blend_difference_pipelines_[{}] =
+      CreateDefaultPipeline<BlendDifferencePipeline>(*context_);
+  blend_exclusion_pipelines_[{}] =
+      CreateDefaultPipeline<BlendExclusionPipeline>(*context_);
+  blend_hardlight_pipelines_[{}] =
+      CreateDefaultPipeline<BlendHardLightPipeline>(*context_);
+  blend_hue_pipelines_[{}] = CreateDefaultPipeline<BlendHuePipeline>(*context_);
+  blend_lighten_pipelines_[{}] =
+      CreateDefaultPipeline<BlendLightenPipeline>(*context_);
+  blend_luminosity_pipelines_[{}] =
+      CreateDefaultPipeline<BlendLuminosityPipeline>(*context_);
+  blend_multiply_pipelines_[{}] =
+      CreateDefaultPipeline<BlendMultiplyPipeline>(*context_);
+  blend_overlay_pipelines_[{}] =
+      CreateDefaultPipeline<BlendOverlayPipeline>(*context_);
+  blend_saturation_pipelines_[{}] =
+      CreateDefaultPipeline<BlendSaturationPipeline>(*context_);
+  blend_screen_pipelines_[{}] =
+      CreateDefaultPipeline<BlendScreenPipeline>(*context_);
+  blend_softlight_pipelines_[{}] =
+      CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
+#if FML_OS_IOS
   framebuffer_blend_color_pipelines_[{}] =
       CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
   framebuffer_blend_colorburn_pipelines_[{}] =
@@ -204,9 +233,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
   framebuffer_blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
-  framebuffer_test_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferTestPipeline>(*context_);
-  // endif
+#endif  // FML_OS_IOS
 
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
@@ -214,35 +241,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<RRectBlurPipeline>(*context_);
   texture_blend_pipelines_[{}] =
       CreateDefaultPipeline<BlendPipeline>(*context_);
-  blend_color_pipelines_[{}] =
-      CreateDefaultPipeline<BlendColorPipeline>(*context_);
-  blend_colorburn_pipelines_[{}] =
-      CreateDefaultPipeline<BlendColorBurnPipeline>(*context_);
-  blend_colordodge_pipelines_[{}] =
-      CreateDefaultPipeline<BlendColorDodgePipeline>(*context_);
-  blend_darken_pipelines_[{}] =
-      CreateDefaultPipeline<BlendDarkenPipeline>(*context_);
-  blend_difference_pipelines_[{}] =
-      CreateDefaultPipeline<BlendDifferencePipeline>(*context_);
-  blend_exclusion_pipelines_[{}] =
-      CreateDefaultPipeline<BlendExclusionPipeline>(*context_);
-  blend_hardlight_pipelines_[{}] =
-      CreateDefaultPipeline<BlendHardLightPipeline>(*context_);
-  blend_hue_pipelines_[{}] = CreateDefaultPipeline<BlendHuePipeline>(*context_);
-  blend_lighten_pipelines_[{}] =
-      CreateDefaultPipeline<BlendLightenPipeline>(*context_);
-  blend_luminosity_pipelines_[{}] =
-      CreateDefaultPipeline<BlendLuminosityPipeline>(*context_);
-  blend_multiply_pipelines_[{}] =
-      CreateDefaultPipeline<BlendMultiplyPipeline>(*context_);
-  blend_overlay_pipelines_[{}] =
-      CreateDefaultPipeline<BlendOverlayPipeline>(*context_);
-  blend_saturation_pipelines_[{}] =
-      CreateDefaultPipeline<BlendSaturationPipeline>(*context_);
-  blend_screen_pipelines_[{}] =
-      CreateDefaultPipeline<BlendScreenPipeline>(*context_);
-  blend_softlight_pipelines_[{}] =
-      CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
   tiled_texture_pipelines_[{}] =
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
