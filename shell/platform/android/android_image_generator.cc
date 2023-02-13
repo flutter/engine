@@ -38,7 +38,7 @@ unsigned int AndroidImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo AndroidImageGenerator::GetFrameInfo(
-    unsigned int frame_index) {
+    unsigned int frame_index) const {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
