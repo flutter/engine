@@ -41,8 +41,7 @@
 - (instancetype)initWithCoder:(NSCoder*)aDecoder NS_UNAVAILABLE;
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
-                          opaque:(BOOL)opaque
-                 enableWideGamut:(BOOL)isWideGamutEnabled NS_DESIGNATED_INITIALIZER;
+                          opaque:(BOOL)opaque NS_DESIGNATED_INITIALIZER;
 
 // Set by FlutterEngine or FlutterViewController to override software rendering.
 @property(class, nonatomic) BOOL forceSoftwareRendering;

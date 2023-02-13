@@ -374,9 +374,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
-                                                            opaque:YES
-                                                   enableWideGamut:NO];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   auto bridge = std::make_unique<flutter::AccessibilityBridge>(
@@ -466,9 +464,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
-                                                            opaque:YES
-                                                   enableWideGamut:NO];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -536,9 +532,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       /*task_runners=*/runners);
   id engine = OCMClassMock([FlutterEngine class]);
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
-  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
-                                                            opaque:YES
-                                                   enableWideGamut:NO];
+  FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine opaque:YES];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {

@@ -22,8 +22,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
   ImageDecoderImpeller(
       const TaskRunners& runners,
       std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-      const fml::WeakPtr<IOManager>& io_manager,
-      bool supports_wide_gamut);
+      const fml::WeakPtr<IOManager>& io_manager);
 
   ~ImageDecoderImpeller() override;
 
@@ -36,8 +35,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
   static std::shared_ptr<SkBitmap> DecompressTexture(
       ImageDescriptor* descriptor,
       SkISize target_size,
-      impeller::ISize max_texture_size,
-      bool supports_wide_gamut);
+      impeller::ISize max_texture_size);
 
   static sk_sp<DlImage> UploadTexture(
       const std::shared_ptr<impeller::Context>& context,
@@ -46,7 +44,6 @@ class ImageDecoderImpeller final : public ImageDecoder {
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
   FutureContext context_;
-  const bool supports_wide_gamut_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ImageDecoderImpeller);
 };

@@ -22,8 +22,8 @@ std::unique_ptr<ImageDecoder> ImageDecoder::Make(
     return std::make_unique<ImageDecoderImpeller>(
         runners,                            //
         std::move(concurrent_task_runner),  //
-        std::move(io_manager),              //
-        settings.enable_wide_gamut);
+        std::move(io_manager)               //
+    );
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING
   return std::make_unique<ImageDecoderSkia>(

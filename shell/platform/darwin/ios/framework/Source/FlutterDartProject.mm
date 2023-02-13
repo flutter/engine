@@ -157,12 +157,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   settings.domain_network_policy = "";
 
   // Whether to enable Impeller.
-  NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
-  // TODO(gaaclarke): Make this value `on` by default (pending memory audit).
-  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
-  settings.enable_wide_gamut = enableWideGamut;
-
-  // Whether to enable Impeller.
   NSNumber* enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
   // Change the default only if the option is present.
   if (enableImpeller != nil) {
@@ -371,10 +365,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 + (NSString*)defaultBundleIdentifier {
   return @"io.flutter.flutter.app";
-}
-
-- (BOOL)isWideGamutEnabled {
-  return _settings.enable_wide_gamut;
 }
 
 @end
