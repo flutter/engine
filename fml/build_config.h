@@ -100,8 +100,10 @@
 #error Please add support for your architecture in flutter/fml/build_config.h
 #endif
 
-#if defined(TARGET_OS_IPHONE) && !defined(FML_OS_IOS_SIMULATOR)
-#define FML_OS_PHYSICAL_IOS
-#endif defined(TARGET_OS_IPHONE) && !defined(FML_OS_IOS_SIMULATOR)
+#if defined(FML_OS_IOS)
+#if !defined(FML_OS_IOS_SIMULATOR)
+#define FML_OS_PHYSICAL_IOS 1
+#endif
+#endif
 
 #endif  // FLUTTER_FML_BUILD_CONFIG_H_
