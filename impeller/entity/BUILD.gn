@@ -77,7 +77,7 @@ impeller_shaders("modern_entity_shaders") {
     "shaders/radial_gradient_ssbo_fill.frag",
     "shaders/sweep_gradient_ssbo_fill.frag",
   ]
-  if (is_ios) {
+  if (is_ios && !use_ios_simulator) {
     shaders += [
       "shaders/blending/ios/framebuffer_blend.vert",
       "shaders/blending/ios/framebuffer_blend_color.frag",
@@ -179,7 +179,7 @@ impeller_component("entity") {
     "inline_pass_context.h",
   ]
 
-  if (is_ios) {
+  if (is_ios && !use_ios_simulator) {
     sources += [
       "contents/framebuffer_blend_contents.cc",
       "contents/framebuffer_blend_contents.h",
