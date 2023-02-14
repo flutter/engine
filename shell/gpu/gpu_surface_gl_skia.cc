@@ -29,45 +29,6 @@
 
 namespace flutter {
 
-// Default maximum number of bytes of GPU memory of budgeted resources in the
-// cache.
-// The shell will dynamically increase or decrease this cache based on the
-// viewport size, unless a user has specifically requested a size on the Skia
-// system channel.
-static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
-
-sk_sp<GrDirectContext> GPUSurfaceGLSkia::MakeGLContext(
-    GPUSurfaceGLDelegate* delegate) {
-  auto context_switch = delegate->GLContextMakeCurrent();
-  if (!context_switch->GetResult()) {
-    FML_LOG(ERROR)
-        << "Could not make the context current to set up the Gr context.";
-    return nullptr;
-  }
-
-  const auto options =
-      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kOpenGL);
-
-  auto context = GrDirectContext::MakeGL(delegate->GetGLInterface(), options);
-
-  if (!context) {
-    FML_LOG(ERROR) << "Failed to set up Skia Gr context.";
-    return nullptr;
-  }
-
-  context->setResourceCacheLimit(kGrCacheMaxByteSize);
-
-  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
-
-  return context;
-}
-
-GPUSurfaceGLSkia::GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate,
-                                   bool render_to_surface)
-    : GPUSurfaceGLSkia(MakeGLContext(delegate), delegate, render_to_surface) {
-  context_owner_ = true;
-}
-
 GPUSurfaceGLSkia::GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
                                    GPUSurfaceGLDelegate* delegate,
                                    bool render_to_surface)
