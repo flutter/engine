@@ -31,19 +31,20 @@ DeviceCapabilitiesBuilder::DeviceCapabilitiesBuilder() = default;
 
 DeviceCapabilitiesBuilder::~DeviceCapabilitiesBuilder() = default;
 
-DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::HasThreadingRestrictions(
-    bool value) {
+DeviceCapabilitiesBuilder&
+DeviceCapabilitiesBuilder::SetHasThreadingRestrictions(bool value) {
   threading_restrictions_ = value;
   return *this;
 }
 
-DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SupportsOffscreenMSAA(
+DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetSupportsOffscreenMSAA(
     bool value) {
   offscreen_msaa_ = value;
   return *this;
 }
 
-DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SupportsSSBO(bool value) {
+DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetSupportsSSBO(
+    bool value) {
   supports_ssbo_ = value;
   return *this;
 }

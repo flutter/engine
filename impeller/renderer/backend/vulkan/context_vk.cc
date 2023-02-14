@@ -500,9 +500,9 @@ ContextVK::ContextVK(
       device_->getQueue(transfer_queue->family, transfer_queue->index);
 
   device_capabilities_ = DeviceCapabilitiesBuilder()
-                             .HasThreadingRestrictions(false)
-                             .SupportsOffscreenMSAA(true)
-                             .SupportsSSBO(false)
+                             .SetHasThreadingRestrictions(false)
+                             .SetSupportsOffscreenMSAA(true)
+                             .SetSupportsSSBO(false)
                              .Build();
 
   is_valid_ = true;

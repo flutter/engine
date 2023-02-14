@@ -40,11 +40,11 @@ class DeviceCapabilitiesBuilder {
 
   ~DeviceCapabilitiesBuilder();
 
-  DeviceCapabilitiesBuilder& HasThreadingRestrictions(bool value);
+  DeviceCapabilitiesBuilder& SetHasThreadingRestrictions(bool value);
 
-  DeviceCapabilitiesBuilder& SupportsOffscreenMSAA(bool value);
+  DeviceCapabilitiesBuilder& SetSupportsOffscreenMSAA(bool value);
 
-  DeviceCapabilitiesBuilder& SupportsSSBO(bool value);
+  DeviceCapabilitiesBuilder& SetSupportsSSBO(bool value);
 
   std::unique_ptr<DeviceCapabilities> Build();
 

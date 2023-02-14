@@ -72,9 +72,9 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
   // Create the device capabilities.
   {
     device_capabilities_ = DeviceCapabilitiesBuilder()
-                               .HasThreadingRestrictions(true)
-                               .SupportsOffscreenMSAA(false)
-                               .SupportsSSBO(false)
+                               .SetHasThreadingRestrictions(true)
+                               .SetSupportsOffscreenMSAA(false)
+                               .SetSupportsSSBO(false)
                                .Build();
   }
 

@@ -91,9 +91,9 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
 
   {
     device_capabilities_ = DeviceCapabilitiesBuilder()
-                               .HasThreadingRestrictions(false)
-                               .SupportsOffscreenMSAA(true)
-                               .SupportsSSBO(true)
+                               .SetHasThreadingRestrictions(false)
+                               .SetSupportsOffscreenMSAA(true)
+                               .SetSupportsSSBO(true)
                                .Build();
   }
 
