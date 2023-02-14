@@ -87,7 +87,8 @@ static BOOL IsWideGamutSupported() {
       layer.colorspace = srgb;
       CFRelease(srgb);
       if (self.opaque) {
-        /// TODO(gaaclarke): Switch to MTLPixelFormatBGR10_XR to save memory.
+        // TODO(https://github.com/flutter/flutter/issues/120641): Switch to
+        // MTLPixelFormatBGR10_XR to save memory.
         layer.pixelFormat = MTLPixelFormatBGRA10_XR;
       } else {
         layer.pixelFormat = MTLPixelFormatBGRA10_XR;
