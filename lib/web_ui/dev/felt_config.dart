@@ -65,9 +65,30 @@ class ArtifactDependencies {
     required this.canvasKitChromium,
     required this.skwasm
   });
+
+  ArtifactDependencies.none() 
+    : canvasKit = false
+    , canvasKitChromium = false
+    , skwasm = false;
   final bool canvasKit;
   final bool canvasKitChromium;
   final bool skwasm;
+
+  ArtifactDependencies operator|(ArtifactDependencies other) {
+    return ArtifactDependencies(
+      canvasKit: canvasKit || other.canvasKit,
+      canvasKitChromium: canvasKitChromium || other.canvasKitChromium,
+      skwasm: skwasm || other.skwasm,
+    );
+  }
+
+  ArtifactDependencies operator&(ArtifactDependencies other) {
+    return ArtifactDependencies(
+      canvasKit: canvasKit && other.canvasKit,
+      canvasKitChromium: canvasKitChromium && other.canvasKitChromium,
+      skwasm: skwasm && other.skwasm,
+    );
+  }
 }
 
 class TestSuite {

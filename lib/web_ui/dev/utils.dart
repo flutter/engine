@@ -447,3 +447,25 @@ String getBuildDirForRenderer(Renderer renderer) {
       return 'skwasm_tests';
   }
 }
+
+extension AnsiColors on String {
+  static bool shouldEscape = io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
+
+  static const String _noColorCode = '\u001b[39m';
+
+  String _wrapText(String prefix, String suffix) => shouldEscape
+    ? '$prefix$this$suffix' : this;
+
+  String _colorText(String colorCode) => _wrapText(colorCode, _noColorCode);
+
+  String get ansiBlack => _colorText('\u001b[30m');
+  String get ansiRed => _colorText('\u001b[31m');
+  String get ansiGreen => _colorText('\u001b[32m');
+  String get ansiYellow => _colorText('\u001b[33m');
+  String get ansiBlue => _colorText('\u001b[34m');
+  String get ansiMagenta => _colorText('\u001b[35m');
+  String get ansiCyan => _colorText('\u001b[36m');
+  String get ansiWhite => _colorText('\u001b[37m');
+
+  String get ansiBold => _wrapText('\u001b[1m', '\u001b[0m');
+}

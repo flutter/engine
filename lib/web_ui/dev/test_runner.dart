@@ -14,7 +14,9 @@ import 'environment.dart';
 import 'felt_config.dart';
 import 'pipeline.dart';
 import 'steps/compile_tests_step.dart';
+import 'steps/copy_artifacts_step.dart';
 import 'steps/run_tests_step.dart';
+import 'suite_filter.dart';
 import 'utils.dart';
 
 /// Runs tests.
@@ -26,6 +28,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Pauses the browser before running a test, giving you an '
             'opportunity to add breakpoints or inspect loaded code before '
             'running the code.',
+      )
+      ..addFlag(
+        'verbose',
+        abbr: 'v',
+        help: 'Enable verbose output.'
       )
       ..addFlag(
         'watch',
@@ -103,6 +110,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// you set breakpoints or inspect the code.
   bool get isDebug => boolArg('debug');
 
+  bool get isVerbose => boolArg('verbose');
+
   /// Paths to targets to run, e.g. a single test.
   List<String> get targets => argResults!.rest;
 
@@ -129,21 +138,78 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Whether or not to use the locally built version of CanvasKit.
   bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
 
+  List<SuiteFilter> get suiteFilters {
+    return <SuiteFilter>[
+      PlatformSuiteFilter()
+      // TODO(jacksongardner): Add more filters
+      // Add browser filter from CLI
+      // Add suite filter from CLI
+      // Add compiler filter from CLI
+      // Add file filter from CLI
+      // Add renderer filter from CLI
+    ];
+  }
+
+  List<TestSuite> _filterTestSuites(List<TestSuite> suites) {
+    if (isVerbose) {
+      print('Filtering suites...');
+    }
+    final List<SuiteFilter> filters = suiteFilters;
+    final List<TestSuite> filteredSuites = suites.where((TestSuite suite) {
+      for (final SuiteFilter filter in filters) {
+        final SuiteFilterResult result = filter.filterSuite(suite);
+        if (!result.isAccepted) {
+          if (isVerbose) {
+            print('  ${suite.name.ansiCyan} rejected for reason: ${result.rejectReason}');
+          }
+          return false;
+        }
+      }
+      return true;
+    }).toList();
+    return filteredSuites;
+  }
+
+  List<TestBundle> _filterBundlesForSuites(List<TestBundle> bundles, List<TestSuite> suites) {
+    final Set<TestBundle> seenBundles = 
+      Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
+    return bundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
+  }
+
+  ArtifactDependencies _artifactsForSuites(List<TestSuite> suites) {
+    return suites.fold(ArtifactDependencies.none(), 
+      (ArtifactDependencies deps, TestSuite suite) => deps | suite.artifactDependencies);
+  }
+
   @override
   Future<bool> run() async {
     final FeltConfig config = FeltConfig.fromFile(
       path.join(environment.webUiTestDir.path, 'felt_config.yaml')
     );
-    if (isList) {
-      print('Bundles:');
-      for (final TestBundle bundle in config.testBundles) {
-        print('  ${bundle.name}');
-      }
-      print('');
+    final List<TestSuite> filteredSuites = _filterTestSuites(config.testSuites);
+    final List<TestBundle> bundles = _filterBundlesForSuites(config.testBundles, filteredSuites);
+    final ArtifactDependencies artifacts = _artifactsForSuites(config.testSuites);
+    if (isList || isVerbose) {
       print('Suites:');
-      for (final TestSuite suite in config.testSuites) {
-        print('  ${suite.name}');
+      for (final TestSuite suite in filteredSuites) {
+        print('  ${suite.name.ansiCyan}');
       }
+      print('Bundles:');
+      for (final TestBundle bundle in bundles) {
+        print('  ${bundle.name.ansiMagenta}');
+      }
+      print('Artifacts:');
+      if (artifacts.canvasKit) {
+        print('  canvaskit'.ansiYellow);
+      }
+      if (artifacts.canvasKitChromium) {
+        print('  canvaskit_chromium'.ansiYellow);
+      }
+      if (artifacts.skwasm) {
+        print('  skwasm'.ansiYellow);
+      }
+    }
+    if (isList) {
       return true;
     }
     final List<FilePath> testFiles = runAllTests
@@ -152,9 +218,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
+      CopyArtifactsStep(artifacts),
       CompileTestsStep(
         testFiles: testFiles,
-        useLocalCanvasKit: useLocalCanvasKit,
         isWasm: isWasm
       ),
       RunTestsStep(
