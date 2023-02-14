@@ -138,7 +138,7 @@ std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
 }
 
 // |Context|
-const DeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
+const IDeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
   return *device_capabilities_;
 }
 

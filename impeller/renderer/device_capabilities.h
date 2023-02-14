@@ -10,9 +10,9 @@
 
 namespace impeller {
 
-class DeviceCapabilities {
+class IDeviceCapabilities {
  public:
-  ~DeviceCapabilities();
+  ~IDeviceCapabilities();
 
   bool HasThreadingRestrictions() const;
 
@@ -21,9 +21,9 @@ class DeviceCapabilities {
   bool SupportsSSBO() const;
 
  private:
-  DeviceCapabilities(bool threading_restrictions,
-                     bool offscreen_msaa,
-                     bool supports_ssbo);
+  IDeviceCapabilities(bool threading_restrictions,
+                      bool offscreen_msaa,
+                      bool supports_ssbo);
 
   friend class DeviceCapabilitiesBuilder;
 
@@ -31,7 +31,7 @@ class DeviceCapabilities {
   bool offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
 
-  FML_DISALLOW_COPY_AND_ASSIGN(DeviceCapabilities);
+  FML_DISALLOW_COPY_AND_ASSIGN(IDeviceCapabilities);
 };
 
 class DeviceCapabilitiesBuilder {
@@ -46,7 +46,7 @@ class DeviceCapabilitiesBuilder {
 
   DeviceCapabilitiesBuilder& SetSupportsSSBO(bool value);
 
-  std::unique_ptr<DeviceCapabilities> Build();
+  std::unique_ptr<IDeviceCapabilities> Build();
 
  private:
   bool threading_restrictions_ = false;

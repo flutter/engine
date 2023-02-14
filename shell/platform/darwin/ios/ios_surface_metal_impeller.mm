@@ -52,7 +52,7 @@ class CustomColorAttachmentPixelFormatContext final : public Context {
     return color_attachment_pixel_format_;
   }
 
-  const DeviceCapabilities& GetDeviceCapabilities() const override {
+  const IDeviceCapabilities& GetDeviceCapabilities() const override {
     return context_->GetDeviceCapabilities();
   }
 

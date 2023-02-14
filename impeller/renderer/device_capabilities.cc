@@ -6,24 +6,24 @@
 
 namespace impeller {
 
-DeviceCapabilities::DeviceCapabilities(bool threading_restrictions,
-                                       bool offscreen_msaa,
-                                       bool supports_ssbo)
+IDeviceCapabilities::IDeviceCapabilities(bool threading_restrictions,
+                                         bool offscreen_msaa,
+                                         bool supports_ssbo)
     : threading_restrictions_(threading_restrictions),
       offscreen_msaa_(offscreen_msaa),
       supports_ssbo_(supports_ssbo) {}
 
-DeviceCapabilities::~DeviceCapabilities() = default;
+IDeviceCapabilities::~IDeviceCapabilities() = default;
 
-bool DeviceCapabilities::HasThreadingRestrictions() const {
+bool IDeviceCapabilities::HasThreadingRestrictions() const {
   return threading_restrictions_;
 }
 
-bool DeviceCapabilities::SupportsOffscreenMSAA() const {
+bool IDeviceCapabilities::SupportsOffscreenMSAA() const {
   return offscreen_msaa_;
 }
 
-bool DeviceCapabilities::SupportsSSBO() const {
+bool IDeviceCapabilities::SupportsSSBO() const {
   return supports_ssbo_;
 }
 
@@ -49,10 +49,10 @@ DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetSupportsSSBO(
   return *this;
 }
 
-std::unique_ptr<DeviceCapabilities> DeviceCapabilitiesBuilder::Build() {
-  DeviceCapabilities* capabilities = new DeviceCapabilities(
+std::unique_ptr<IDeviceCapabilities> DeviceCapabilitiesBuilder::Build() {
+  IDeviceCapabilities* capabilities = new IDeviceCapabilities(
       threading_restrictions_, offscreen_msaa_, supports_ssbo_);
-  return std::unique_ptr<DeviceCapabilities>(capabilities);
+  return std::unique_ptr<IDeviceCapabilities>(capabilities);
 }
 
 }  // namespace impeller

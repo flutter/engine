@@ -603,7 +603,7 @@ PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
   return ToPixelFormat(surface_format_);
 }
 
-const DeviceCapabilities& ContextVK::GetDeviceCapabilities() const {
+const IDeviceCapabilities& ContextVK::GetDeviceCapabilities() const {
   return *device_capabilities_;
 }
 

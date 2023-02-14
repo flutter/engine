@@ -254,7 +254,7 @@ id<MTLDevice> ContextMTL::GetMTLDevice() const {
   return device_;
 }
 
-const DeviceCapabilities& ContextMTL::GetDeviceCapabilities() const {
+const IDeviceCapabilities& ContextMTL::GetDeviceCapabilities() const {
   return *device_capabilities_;
 }
 

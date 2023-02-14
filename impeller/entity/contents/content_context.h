@@ -443,7 +443,7 @@ class ContentContext {
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
 
-  const DeviceCapabilities& GetDeviceCapabilities() const;
+  const IDeviceCapabilities& GetDeviceCapabilities() const;
 
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;

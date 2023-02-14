@@ -49,7 +49,7 @@ class Context : public std::enable_shared_from_this<Context> {
 
   virtual PixelFormat GetColorAttachmentPixelFormat() const;
 
-  virtual const DeviceCapabilities& GetDeviceCapabilities() const = 0;
+  virtual const IDeviceCapabilities& GetDeviceCapabilities() const = 0;
 
  protected:
   Context();

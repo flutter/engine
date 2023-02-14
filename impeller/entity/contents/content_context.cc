@@ -325,7 +325,7 @@ std::shared_ptr<Context> ContentContext::GetContext() const {
   return context_;
 }
 
-const DeviceCapabilities& ContentContext::GetDeviceCapabilities() const {
+const IDeviceCapabilities& ContentContext::GetDeviceCapabilities() const {
   return context_->GetDeviceCapabilities();
 }
 

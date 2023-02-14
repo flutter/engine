@@ -41,7 +41,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<WorkQueue> work_queue_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
-  std::unique_ptr<DeviceCapabilities> device_capabilities_;
+  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   bool is_valid_ = false;
 
   ContextGLES(
@@ -70,7 +70,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
-  const DeviceCapabilities& GetDeviceCapabilities() const override;
+  const IDeviceCapabilities& GetDeviceCapabilities() const override;
 
   // |Context|
   PixelFormat GetColorAttachmentPixelFormat() const override;

@@ -117,7 +117,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::unique_ptr<SwapchainVK> swapchain_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
-  std::unique_ptr<DeviceCapabilities> device_capabilities_;
+  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   bool is_valid_ = false;
 
   ContextVK(
@@ -149,7 +149,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
-  const DeviceCapabilities& GetDeviceCapabilities() const override;
+  const IDeviceCapabilities& GetDeviceCapabilities() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

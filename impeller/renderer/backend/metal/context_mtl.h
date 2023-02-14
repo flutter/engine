@@ -46,7 +46,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<AllocatorMTL> resource_allocator_;
   std::shared_ptr<WorkQueue> work_queue_;
   std::shared_ptr<GPUTracerMTL> gpu_tracer_;
-  std::unique_ptr<DeviceCapabilities> device_capabilities_;
+  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   bool is_valid_ = false;
 
   ContextMTL(id<MTLDevice> device, NSArray<id<MTLLibrary>>* shader_libraries);
@@ -76,7 +76,7 @@ class ContextMTL final : public Context,
   std::shared_ptr<GPUTracer> GetGPUTracer() const override;
 
   // |Context|
-  const DeviceCapabilities& GetDeviceCapabilities() const override;
+  const IDeviceCapabilities& GetDeviceCapabilities() const override;
 
   std::shared_ptr<CommandBuffer> CreateCommandBufferInQueue(
       id<MTLCommandQueue> queue) const;
