@@ -202,7 +202,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<BlendScreenPipeline>(*context_);
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
-#if FML_OS_IOS
+#if FML_OS_PHYSICAL_IOS
   framebuffer_blend_color_pipelines_[{}] =
       CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
   framebuffer_blend_colorburn_pipelines_[{}] =
@@ -233,7 +233,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
   framebuffer_blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
-#endif  // FML_OS_IOS
+#endif  // FML_OS_PHYSICAL_IOS
 
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);

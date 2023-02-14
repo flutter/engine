@@ -16,7 +16,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#if FML_OS_IOS
+#if FML_OS_PHYSICAL_IOS
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
 #endif
 #include "impeller/entity/contents/texture_contents.h"
@@ -44,7 +44,7 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 }
 
 void EntityPass::AddEntity(Entity entity) {
-#ifndef FML_OS_IOS
+#ifndef FML_OS_PHYSICAL_IOS
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
     reads_from_pass_texture_ += 1;
   }
@@ -139,7 +139,7 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   FML_DCHECK(pass->superpass_ == nullptr);
   pass->superpass_ = this;
 
-#if FML_OS_IOS
+#if FML_OS_PHYSICAL_IOS
   if (pass->backdrop_filter_proc_.has_value()) {
     reads_from_pass_texture_ += 1;
   }
@@ -538,7 +538,7 @@ bool EntityPass::OnRender(
     ///
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-#if FML_OS_IOS
+#if FML_OS_PHYSICAL_IOS
       auto src_contents = result.entity.GetContents();
       auto contents = std::make_shared<FramebufferBlendContents>();
       contents->SetChildContents(src_contents);
@@ -577,7 +577,7 @@ bool EntityPass::OnRender(
       contents->SetCoverageCrop(result.entity.GetCoverage());
       result.entity.SetContents(std::move(contents));
       result.entity.SetBlendMode(BlendMode::kSource);
-#endif  // FML_OS_IOS
+#endif  // FML_OS_PHYSICAL_IOS
     }
 
     //--------------------------------------------------------------------------
