@@ -41,4 +41,3 @@ class FramebufferBlendContents final : public ColorSourceContents {
 };
 
 }  // namespace impeller
-
