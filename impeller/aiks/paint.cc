@@ -99,6 +99,8 @@ std::shared_ptr<Contents> Paint::WithImageFilter(
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
     bool absorb_opacity) const {
+  // Image input types will directly set their color filter,
+  // if any. See `TiledTextureContents.SetColorFilter`.
   if (color_source_type == ColorSourceType::kImage) {
     return input;
   }
