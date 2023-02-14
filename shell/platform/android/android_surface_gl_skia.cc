@@ -7,9 +7,9 @@
 #include <GLES/gl.h>
 #include <utility>
 
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/shell/common/context_options.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
