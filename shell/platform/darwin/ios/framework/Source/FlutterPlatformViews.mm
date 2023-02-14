@@ -473,9 +473,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
-
   clipView.maskView = nil;
-  CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
