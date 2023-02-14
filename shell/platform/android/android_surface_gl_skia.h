@@ -92,6 +92,8 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   ///
   AndroidContextGLSkia* GLContextPtr() const;
 
+  sk_sp<GrDirectContext> CreateMainContext();
+
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidSurfaceGLSkia);
 };
 

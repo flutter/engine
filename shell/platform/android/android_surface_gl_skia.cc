@@ -9,10 +9,44 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/shell/common/context_options.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
 namespace flutter {
+
+// Default maximum number of bytes of GPU memory of budgeted resources in the
+// cache.
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
+
+sk_sp<GrDirectContext> AndroidSurfaceGLSkia::CreateMainContext() {
+  auto context_switch = GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
+    FML_LOG(ERROR)
+        << "Could not make the context current to set up the Gr context.";
+    return nullptr;
+  }
+
+  const auto options =
+      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kOpenGL);
+
+  auto context = GrDirectContext::MakeGL(GetGLInterface(), options);
+
+  if (!context) {
+    FML_LOG(ERROR) << "Failed to set up Skia Gr context.";
+    return nullptr;
+  }
+
+  context->setResourceCacheLimit(kGrCacheMaxByteSize);
+
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
+
+  return context;
+}
 
 namespace {
 // GL renderer string prefix used by the Android emulator GLES implementation.
@@ -57,7 +91,7 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
     sk_sp<GrDirectContext> main_skia_context =
         GLContextPtr()->GetMainSkiaContext();
     if (!main_skia_context) {
-      main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+      main_skia_context = CreateMainContext();
       GLContextPtr()->SetMainSkiaContext(main_skia_context);
     }
     return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
@@ -216,7 +250,7 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
   sk_sp<GrDirectContext> main_skia_context =
       GLContextPtr()->GetMainSkiaContext();
   if (!main_skia_context) {
-    main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_skia_context = CreateMainContext();
     GLContextPtr()->SetMainSkiaContext(main_skia_context);
   }
 

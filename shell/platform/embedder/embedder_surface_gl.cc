@@ -19,7 +19,6 @@ namespace flutter {
 // system channel.
 static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
 
-// |EmbedderSurface|
 sk_sp<GrDirectContext> EmbedderSurfaceGL::CreateMainContext() {
   auto context_switch = GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
