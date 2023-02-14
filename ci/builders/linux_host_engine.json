@@ -155,6 +155,8 @@
                 "config": "host_profile",
                 "targets": [
 		    "flutter/build/dart:copy_dart_sdk",
+		    "flutter/shell/testing",
+		    "flutter/tools/path_ops",
                     "flutter/shell/platform/linux:flutter_gtk",
                     "flutter:unittests"
                 ]
