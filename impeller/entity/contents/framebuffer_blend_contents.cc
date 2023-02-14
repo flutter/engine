@@ -8,8 +8,6 @@
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
-#if FML_OS_IOS
-
 namespace impeller {
 
 FramebufferBlendContents::FramebufferBlendContents() = default;
@@ -28,7 +26,7 @@ void FramebufferBlendContents::SetChildContents(
 // |Contents|
 std::optional<Rect> FramebufferBlendContents::GetCoverage(
     const Entity& entity) const {
-  return Rect::MakeMaximum();
+  return child_contents_->GetCoverage(entity);
 }
 
 bool FramebufferBlendContents::Render(const ContentContext& renderer,
@@ -72,6 +70,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   Command cmd;
   cmd.label = "Framebuffer Advanced Blend Filter";
   cmd.BindVertices(vtx_buffer);
+  cmd.stencil_reference = entity.GetStencilDepth();
 
   switch (blend_mode_) {
     case BlendMode::kScreen:
@@ -144,5 +143,3 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
 }
 
 }  // namespace impeller
-
-#endif

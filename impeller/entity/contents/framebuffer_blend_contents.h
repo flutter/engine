@@ -13,8 +13,6 @@
 #include "impeller/entity/contents/color_source_contents.h"
 #include "impeller/entity/entity.h"
 
-#if FML_OS_IOS
-
 namespace impeller {
 
 class FramebufferBlendContents final : public ColorSourceContents {
@@ -44,4 +42,3 @@ class FramebufferBlendContents final : public ColorSourceContents {
 
 }  // namespace impeller
 
-#endif
