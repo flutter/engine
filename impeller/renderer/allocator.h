@@ -37,15 +37,6 @@ class Allocator {
   ///
   virtual uint16_t MinimumBytesPerRow(PixelFormat format) const;
 
-  // Debug/Profile only functionality for tracking the size of allocations
-#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
-  const std::vector<ISize>& GetAllocatedSizes() const;
-
-  void ResetAllocatedSizes();
-
-  void SetTrackAllocations(bool value);
-#endif
-
   std::shared_ptr<DeviceBuffer> CreateBufferWithCopy(const uint8_t* buffer,
                                                      size_t length);
 
@@ -64,11 +55,6 @@ class Allocator {
       const TextureDescriptor& desc) = 0;
 
  private:
-#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
-  bool track_allocation_ = false;
-  std::vector<ISize> allocated_sizes_ = {};
-#endif
-
   FML_DISALLOW_COPY_AND_ASSIGN(Allocator);
 };
 

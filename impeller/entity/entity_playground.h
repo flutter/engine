@@ -24,30 +24,8 @@ class EntityPlayground : public PlaygroundTest {
 
   bool OpenPlaygroundHere(EntityPlaygroundCallback callback);
 
-  bool PumpSingleFrame(Entity entity);
-
-  bool PumpSingleFrame(EntityPlaygroundCallback callback);
-
  private:
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPlayground);
 };
-
-inline ::testing::AssertionResult SizesEqual(const std::vector<ISize>& a,
-                                             const std::vector<ISize>& b) {
-  if (a.size() != b.size()) {
-    return ::testing::AssertionFailure()
-           << "Size vectors are different lengths.";
-  }
-  for (auto i = 0u; i < a.size(); i++) {
-    if (a[i] != b[i]) {
-      return ::testing::AssertionFailure()
-             << a[i] << " Is not equal to " << b[i] << ".";
-    }
-  }
-
-  return ::testing::AssertionSuccess();
-}
-
-#define ASSERT_TEXTURE_ALLOCATION_EQ(a, b) ASSERT_PRED2(&SizesEqual, a, b)
 
 }  // namespace impeller

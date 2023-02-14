@@ -4,7 +4,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <iostream>
 #include <memory>
 #include <optional>
 #include <unordered_map>
@@ -27,7 +26,6 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
-#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
@@ -2152,45 +2150,6 @@ TEST_P(EntityTest, RuntimeEffect) {
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
-
-#if (FLUTTER_RUNTIME_MODE != FLUTTER_RUNTIME_MODE_RELEASE)
-TEST_P(EntityTest, TiledTextureAppliesColorFilterBeforeTiling) {
-  auto kalimba = CreateTextureForFixture("kalimba.jpg");
-  auto contents = std::make_shared<TiledTextureContents>();
-  contents->SetTexture(kalimba);
-  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(0, 0, 1000, 1000)));
-  contents->SetTileModes(Entity::TileMode::kRepeat, Entity::TileMode::kRepeat);
-  contents->SetSamplerDescriptor({});
-  contents->SetAlpha(0.5);
-  contents->SetColorFilter([](FilterInput::Ref input) {
-    return ColorFilterContents::MakeBlend(
-        BlendMode::kScreen, {std::move(input)}, Color::Red().WithAlpha(0.5));
-  });
-  Entity entity;
-  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
-  entity.SetContents(contents);
-
-  GetContext()->GetResourceAllocator()->SetTrackAllocations(true);
-
-  ASSERT_TRUE(PumpSingleFrame(entity));
-
-  auto size = kalimba->GetSize();
-
-  std::vector<ISize> sizes = {
-      // Unclear what these first sizes are.
-      ISize(1, 1),
-      ISize(2, 2),
-      ISize(2, 2),
-      // These are the subpass for the texture and its various attachments.
-      // Without the color filter there is no subpass.
-      size,
-      size,
-  };
-
-  ASSERT_TEXTURE_ALLOCATION_EQ(
-      GetContext()->GetResourceAllocator()->GetAllocatedSizes(), sizes);
-}
-#endif
 
 }  // namespace testing
 }  // namespace impeller

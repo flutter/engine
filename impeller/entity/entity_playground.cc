@@ -42,34 +42,4 @@ bool EntityPlayground::OpenPlaygroundHere(EntityPlaygroundCallback callback) {
   return Playground::OpenPlaygroundHere(pass_callback);
 }
 
-bool EntityPlayground::PumpSingleFrame(Entity entity) {
-  if (!Playground::is_enabled()) {
-    return true;
-  }
-
-  ContentContext content_context(GetContext());
-  if (!content_context.IsValid()) {
-    return false;
-  }
-  SinglePassCallback callback = [&](RenderPass& pass) -> bool {
-    return entity.Render(content_context, pass);
-  };
-  return Playground::PumpSingleFrame(callback);
-}
-
-bool EntityPlayground::PumpSingleFrame(EntityPlaygroundCallback callback) {
-  if (!Playground::is_enabled()) {
-    return true;
-  }
-
-  ContentContext content_context(GetContext());
-  if (!content_context.IsValid()) {
-    return false;
-  }
-  SinglePassCallback pass_callback = [&](RenderPass& pass) -> bool {
-    return callback(content_context, pass);
-  };
-  return Playground::PumpSingleFrame(pass_callback);
-}
-
 }  // namespace impeller
