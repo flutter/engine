@@ -752,7 +752,7 @@ def gather_dart_tests(build_dir, test_filter):
   # This one is a bit messy. The pubspec.yaml at flutter/testing/dart/pubspec.yaml
   # has dependencies that are hardcoded to point to the sky packages at host_debug_unopt/
   # Before running Dart tests, make sure to run just that target (NOT the whole engine)
-  ensure_debug_unopt_sky_packages()
+  #ensure_debug_unopt_sky_packages()
 
   # Now that we have the Sky packages at the hardcoded location, run `dart pub get`.
   run_engine_executable(
