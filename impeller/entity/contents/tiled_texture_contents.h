@@ -37,6 +37,16 @@ class TiledTextureContents final : public ColorSourceContents {
 
   void SetSamplerDescriptor(SamplerDescriptor desc);
 
+  /// @brief Set a color filter to apply directly to this tiled texture
+  /// @param color_filter
+  ///
+  /// When applying a color filter to a tiled texture, we can reduce the
+  /// size and number of the subpasses required and the shader workloadby
+  /// applying the filter to the untiled image and absorbing the opacity before
+  /// tiling it into the final location.
+  ///
+  /// This may not be a performance improvement if the image is tiled into a
+  /// much smaller size that its original texture size.
   void SetColorFilter(std::optional<ColorFilterProc> color_filter);
 
  private:
