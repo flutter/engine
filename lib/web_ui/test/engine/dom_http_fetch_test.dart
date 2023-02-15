@@ -217,10 +217,13 @@ Future<void> _testNetworkErrors() async {
         expect(error.url, badUrl);
         expect(
           error.toString(),
-          'Flutter Web engine failed to complete HTTP request to fetch '
-          '"https://user:password@example.com/": TypeError: Failed to execute '
-          "'fetch' on 'Window': Request cannot be constructed from a URL "
-          'that includes credentials: https://user:password@example.com/',
+          // Browsers agree on throwing a TypeError, but they disagree on the
+          // error message. So this only checks for the common error prefix, but
+          // not the entire error message.
+          startsWith(
+            'Flutter Web engine failed to complete HTTP request to fetch '
+            '"https://user:password@example.com/": TypeError: '
+          ),
         );
       }
     }

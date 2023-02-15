@@ -329,7 +329,7 @@ class BrowserPlatform extends PlatformPlugin {
   Future<shelf.Response> _testPayloadGenerator(shelf.Request request) async {
     if (!request.requestedUri.path.endsWith('/long_test_payload')) {
       return shelf.Response.notFound(
-          'This request is not handled by the screenshot handler');
+          'This request is not handled by the test payload generator');
     }
 
     final int payloadLength = int.parse(request.requestedUri.queryParameters['length']!);
