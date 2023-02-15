@@ -135,7 +135,7 @@ bool LinearGradientContents::RenderSSBO(const ContentContext& renderer,
 
   gradient_info.colors_length = colors.size();
   auto color_buffer = host_buffer.Emplace(
-      colors.data(), colors.size() * sizeof(StopData), alignof(StopData));
+      colors.data(), colors.size() * sizeof(StopData), kSSBOAlignOf);
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
