@@ -207,6 +207,7 @@
                 "config": "host_release",
                 "targets": [
 		    "flutter/build/dart:copy_dart_sdk",
+		    "flutter/shell/testing",
                     "flutter/build/archives:flutter_patched_sdk",
                     "flutter/shell/platform/linux:flutter_gtk",
                     "flutter:unittests"
