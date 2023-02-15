@@ -7,7 +7,7 @@
 
 uniform FrameInfo {
   mat4 mvp;
-  float src_y_coord_scale
+  float src_y_coord_scale;
 }
 frame_info;
 
