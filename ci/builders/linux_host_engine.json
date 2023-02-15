@@ -208,6 +208,7 @@
                 "targets": [
 		    "flutter/build/dart:copy_dart_sdk",
 		    "flutter/fml:fml_benchmarks",
+		    "flutter/lib/ui:ui_benchmarks",
 		    "flutter/shell/common:shell_benchmarks",
 		    "flutter/shell/testing",
 		    "flutter/tools/path_ops",
