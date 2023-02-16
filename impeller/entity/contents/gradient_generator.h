@@ -20,10 +20,6 @@ namespace impeller {
 
 class Context;
 
-/// Lower iOS version require alignment to be a multiple of 16, so the alignof
-/// operator will not give correct results for most structs.
-constexpr size_t kSSBOAlignOf = 16u;
-
 /**
  * @brief Create a host visible texture that contains the gradient defined
  * by the provided gradient data.
