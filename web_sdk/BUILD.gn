@@ -533,6 +533,30 @@ group("flutter_ddc_modules") {
   ]
 }
 
+if (build_canvaskit) {
+  copy("canvaskit") {
+    sources = [
+      "$root_out_dir/canvaskit/canvaskit.js",
+      "$root_out_dir/canvaskit/canvaskit.wasm",
+    ]
+    outputs = [ "$root_out_dir/flutter_web_sdk/canvaskit/{{source_file_part}}" ]
+    deps = [ "//flutter/third_party/canvaskit:canvaskit_group" ]
+  }
+}
+
+if (build_canvaskit_chromium) {
+  copy("canvaskit_chromium") {
+    sources = [
+      "$root_out_dir/canvaskit_chromium/canvaskit.js",
+      "$root_out_dir/canvaskit_chromium/canvaskit.wasm",
+    ]
+    outputs = [
+      "$root_out_dir/flutter_web_sdk/canvaskit/chromium/{{source_file_part}}",
+    ]
+    deps = [ "//flutter/third_party/canvaskit:canvaskit_chromium_group" ]
+  }
+}
+
 # Archives Flutter Web SDK
 if (!is_fuchsia) {
   zip_bundle_from_file("flutter_web_sdk_archive") {
@@ -580,6 +604,15 @@ if (!is_fuchsia) {
 
     foreach(web_engine_library, web_engine_libraries) {
       sources += get_target_outputs(web_engine_library)
+    }
+
+    if (build_canvaskit) {
+      deps += [ ":canvaskit" ]
+      sources += get_target_outputs(":canvaskit")
+    }
+    if (build_canvaskit_chromium) {
+      deps += [ ":canvaskit_chromium" ]
+      sources += get_target_outputs(":canvaskit_chromium")
     }
 
     tmp_files = []

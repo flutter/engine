@@ -172,6 +172,7 @@ Future<void> copySkwasm() async {
 
 final io.Directory _localCanvasKitDir = io.Directory(pathlib.join(
   environment.wasmReleaseOutDir.path,
+  'flutter_web_sdk',
   'canvaskit',
 ));
 final io.File _localCanvasKitWasm = io.File(pathlib.join(
