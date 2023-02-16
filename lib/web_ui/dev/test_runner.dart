@@ -13,6 +13,7 @@ import 'package:watcher/src/watch_event.dart';
 import 'environment.dart';
 import 'felt_config.dart';
 import 'pipeline.dart';
+import 'steps/compile_bundle_step.dart';
 import 'steps/compile_tests_step.dart';
 import 'steps/copy_artifacts_step.dart';
 import 'steps/run_tests_step.dart';
@@ -219,6 +220,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
       CopyArtifactsStep(artifacts),
+      for (final TestBundle bundle in bundles)
+        CompileBundleStep(bundle: bundle),
       CompileTestsStep(
         testFiles: testFiles,
         isWasm: isWasm
