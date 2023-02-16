@@ -385,8 +385,8 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     }
 
     // Generate contour geometry.
-    for (size_t point_i = contour_start_point_i + 1; point_i < contour_end_point_i;
-         point_i++) {
+    for (size_t point_i = contour_start_point_i + 1;
+         point_i < contour_end_point_i; point_i++) {
       // Generate line rect.
       vtx.position = polyline.points[point_i - 1] + offset;
       vtx_builder.AppendVertex(vtx);
