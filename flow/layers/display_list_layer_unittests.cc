@@ -540,7 +540,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
         offset, SkiaGPUObject(display_list, unref_queue()), true, false);
     opacity_layer->Add(layers[i]);
   }
-  for (int j = 0; j < context->raster_cache->access_threshold(); j++) {
+  for (size_t j = 0; j < context->raster_cache->access_threshold(); j++) {
     context->raster_cache->BeginFrame();
     for (int i = 0; i < layer_count; i++) {
       context->renderable_state_flags = 0;
