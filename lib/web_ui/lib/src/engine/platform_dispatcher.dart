@@ -567,7 +567,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
-            flutterViewEmbedder.glassPaneElement!.append(content);
+            flutterViewEmbedder.glassPaneElement.append(content);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
