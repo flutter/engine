@@ -201,11 +201,34 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
   barrier.setDstQueueFamilyIndex(VK_QUEUE_FAMILY_IGNORED);
   barrier.setSubresourceRange(subresource_range);
 
-  auto gen_mip_cmd = fenced_command_buffer->GetSingleUseChild();
+  auto gen_mip_cmd = fenced_command_buffer->Get();
+
+  vk::CommandBufferBeginInfo begin_info;
+  begin_info.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+  auto begin_res = gen_mip_cmd.begin(begin_info);
+
+  if (begin_res != vk::Result::eSuccess) {
+    VALIDATION_LOG << "Failed to begin command buffer: "
+                   << vk::to_string(begin_res);
+    return false;
+  }
+
+  // transition all layers to transfer dst optimal
+  for (uint32_t i = 0; i < mip_count; i++) {
+    barrier.subresourceRange.baseMipLevel = i;
+    barrier.oldLayout = vk::ImageLayout::eUndefined;
+    barrier.newLayout = vk::ImageLayout::eTransferDstOptimal;
+    barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+    barrier.dstAccessMask = vk::AccessFlagBits::eTransferWrite;
+
+    gen_mip_cmd.pipelineBarrier(vk::PipelineStageFlagBits::eTransfer,
+                                vk::PipelineStageFlagBits::eTransfer, {},
+                                nullptr, nullptr, barrier);
+  }
 
   for (uint32_t i = 1; i < mip_count; i++) {
     barrier.subresourceRange.baseMipLevel = i - 1;
-    barrier.oldLayout = vk::ImageLayout::eUndefined;
+    barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
     barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
     barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
     barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
@@ -238,7 +261,7 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
                           blit, vk::Filter::eLinear);
 
     // transition the previous mip level to shader read only optimal
-    barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+    barrier.oldLayout = vk::ImageLayout::eUndefined;
     barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
     barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
     barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
@@ -258,7 +281,7 @@ std::string BlitGenerateMipmapCommandVK::GetLabel() const {
 
   // transition the last mip level to shader read only optimal
   barrier.subresourceRange.baseMipLevel = mip_count - 1;
-  barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+  barrier.oldLayout = vk::ImageLayout::eUndefined;
   barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
   barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
   barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;

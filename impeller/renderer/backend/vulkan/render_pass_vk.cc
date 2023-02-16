@@ -74,6 +74,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   auto& texture = TextureVK::Cast(*color0.texture);
   const auto& size = texture.GetTextureDescriptor().size;
   vk::Framebuffer framebuffer = CreateFrameBuffer(texture);
+  uint32_t mip_count = texture.GetTextureDescriptor().mip_count;
 
   command_buffer_->GetDeletionQueue()->Push(
       [device = device_, fbo = framebuffer]() {
@@ -83,7 +84,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   // layout transition.
   if (!TransitionImageLayout(texture.GetImage(), vk::ImageLayout::eUndefined,
                              vk::ImageLayout::eColorAttachmentOptimal,
-                             size.MipCount())) {
+                             mip_count)) {
     return false;
   }
 
@@ -127,7 +128,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   if (!TransitionImageLayout(texture.GetImage(), vk::ImageLayout::eUndefined,
                              vk::ImageLayout::eColorAttachmentOptimal,
-                             size.MipCount())) {
+                             mip_count)) {
     return false;
   }
 
