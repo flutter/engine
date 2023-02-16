@@ -18,8 +18,6 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
-static const NSUInteger kFlutterClippingMaskViewPoolCapacity = 5;
-
 @implementation UIView (FirstResponder)
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
@@ -382,7 +380,7 @@ void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   // All the CATransactions should be committed by the end of the last frame,
   // so catransaction_added_ must be false.
@@ -408,7 +406,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   views_to_recomposite_.insert(view_id);
 }
 
-UIView* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
+UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
   if (views_.empty()) {
     return nil;
   }
@@ -454,17 +452,6 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
   return clipCount;
 }
 
-void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
-  if (clipView.maskView) {
-    return;
-  }
-  UIView* flutterView = flutter_view_.get();
-  CGRect frame =
-      CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
-                 CGRectGetWidth(flutterView.bounds), CGRectGetHeight(flutterView.bounds));
-  clipView.maskView = [mask_view_pool_.get() getMaskViewWithFrame:frame];
-}
-
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
@@ -475,17 +462,18 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+
+  UIView* flutter_view = flutter_view_.get();
+  FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
+      initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
+                               CGRectGetWidth(flutter_view.bounds),
+                               CGRectGetHeight(flutter_view.bounds))
+        screenScale:screenScale] autorelease];
+
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
-  FML_DCHECK(!clipView.maskView ||
-             [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
-  if (mask_view_pool_.get() == nil) {
-    mask_view_pool_.reset([[FlutterClippingMaskViewPool alloc]
-        initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
-  }
-  [mask_view_pool_.get() recycleMaskViews];
   clipView.maskView = nil;
-  CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
@@ -498,9 +486,8 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                      transformMatrix)) {
           break;
         }
-        ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
-                                                       matrix:transformMatrix];
+        [maskView clipRect:(*iter)->GetRect() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
       }
       case kClipRRect: {
@@ -508,18 +495,16 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                       transformMatrix)) {
           break;
         }
-        ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
-                                                        matrix:transformMatrix];
+        [maskView clipRRect:(*iter)->GetRRect() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
       }
       case kClipPath: {
         // TODO(cyanglaz): Find a way to pre-determine if path contains the PlatformView boudning
         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
         // https://github.com/flutter/flutter/issues/118650
-        ClipViewSetMaskView(clipView);
-        [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
-                                                       matrix:transformMatrix];
+        [maskView clipPath:(*iter)->GetPath() matrix:transformMatrix];
+        clipView.maskView = maskView;
         break;
       }
       case kOpacity:
@@ -588,7 +573,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
-void FlutterPlatformViewsController::CompositeWithParams(int view_id,
+void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
@@ -627,7 +612,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
-EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
+EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   // Do nothing if the view doesn't need to be composited.
@@ -657,7 +642,7 @@ void FlutterPlatformViewsController::Reset() {
   visited_platform_views_.clear();
 }
 
-SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
+SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
   UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
