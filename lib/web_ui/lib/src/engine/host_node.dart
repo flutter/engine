@@ -110,11 +110,12 @@ class ShadowDomHostNode implements HostNode {
   /// This also calls [applyGlobalCssRulesToSheet], with the [defaultFont]
   /// to be used as the default font definition.
   ShadowDomHostNode(DomElement root, String defaultFont)
-      : assert(
-          root.isConnected ?? true,
-          'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.'
-        ) {
-    _shadow = root.attachShadow(<String, dynamic>{
+      : assert(root.isConnected ?? true,
+            'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.') {
+    final DomElement element =
+        domDocument.createElement('flt-shadow-host-node');
+    root.appendChild(element);
+    _shadow = element.attachShadow(<String, dynamic>{
       'mode': 'open',
       // This needs to stay false to prevent issues like this:
       // - https://github.com/flutter/flutter/issues/85759
@@ -219,6 +220,25 @@ class ElementHostNode implements HostNode {
 
   @override
   void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
+}
+
+DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
+  const String hostTagName = 'flt-text-editing-host-node';
+  final DomElement domElement = domDocument.createElement(hostTagName);
+  final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
+
+  styleElement.id = 'flt-text-editing-stylesheet';
+  root.appendChild(styleElement);
+  applyGlobalCssRulesToSheet(
+    styleElement.sheet! as DomCSSStyleSheet,
+    hasAutofillOverlay: browserHasAutofillOverlay(),
+    cssSelectorPrefix: hostTagName,
+    defaultCssFont: defaultFont,
+  );
+
+  root.appendChild(domElement);
+
+  return domElement;
 }
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.

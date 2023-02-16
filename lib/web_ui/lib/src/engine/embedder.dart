@@ -124,6 +124,9 @@ class FlutterViewEmbedder {
   HostNode? get glassPaneShadow => _glassPaneShadow;
   HostNode? _glassPaneShadow;
 
+  DomElement? get textEditingHostNode => _textEditingHostNode;
+  DomElement? _textEditingHostNode;
+
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
   static const double defaultFontSize = 14;
@@ -170,6 +173,9 @@ class FlutterViewEmbedder {
     );
     _glassPaneShadow = glassPaneElementHostNode;
 
+    _textEditingHostNode =
+        createTextEditingHostNode(glassPaneElement, defaultCssFont);
+
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = domDocument.createElement('flt-scene-host')
       ..style.pointerEvents = 'none';
@@ -189,7 +195,6 @@ class FlutterViewEmbedder {
         .prepareAccessibilityPlaceholder();
 
     glassPaneElementHostNode.appendAll(<DomNode>[
-      accessibilityPlaceholder,
       _sceneHostElement!,
 
       // The semantic host goes last because hit-test order-wise it must be
@@ -202,9 +207,11 @@ class FlutterViewEmbedder {
       // elements transparent. This way, if a platform view appears among other
       // interactive Flutter widgets, as long as those widgets do not intersect
       // with the platform view, the platform view will be reachable.
-      semanticsHostElement,
     ]);
 
+    _textEditingHostNode?.appendChild(accessibilityPlaceholder);
+    _textEditingHostNode?.appendChild(semanticsHostElement);
+    
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
     if (configuration.debugShowSemanticsNodes) {
