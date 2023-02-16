@@ -48,7 +48,7 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
 bool RadialGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  if (renderer.GetBackendFeatures().ssbo_support) {
+  if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
     return RenderSSBO(renderer, entity, pass);
   }
   return RenderTexture(renderer, entity, pass);
@@ -67,11 +67,12 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   gradient_info.alpha = GetAlpha();
 
   auto& host_buffer = pass.GetTransientsBuffer();
-  auto colors = CreateGradientColors(colors_, stops_).value_or(colors_);
+  auto colors = CreateGradientColors(colors_, stops_);
 
   gradient_info.colors_length = colors.size();
-  auto color_buffer = host_buffer.Emplace(
-      colors.data(), colors.size() * sizeof(Color), alignof(Color));
+  auto color_buffer =
+      host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
+                          DefaultUniformAlignment());
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -103,7 +104,9 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   }
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }
@@ -166,7 +169,9 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   }
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }

@@ -71,17 +71,23 @@ class PipelineDescriptor final : public Comparable<PipelineDescriptor> {
   const ColorAttachmentDescriptor* GetLegacyCompatibleColorAttachment() const;
 
   PipelineDescriptor& SetDepthStencilAttachmentDescriptor(
-      DepthAttachmentDescriptor desc);
+      std::optional<DepthAttachmentDescriptor> desc);
 
   std::optional<DepthAttachmentDescriptor> GetDepthStencilAttachmentDescriptor()
       const;
 
   PipelineDescriptor& SetStencilAttachmentDescriptors(
-      StencilAttachmentDescriptor front_and_back);
+      std::optional<StencilAttachmentDescriptor> front_and_back);
 
   PipelineDescriptor& SetStencilAttachmentDescriptors(
-      StencilAttachmentDescriptor front,
-      StencilAttachmentDescriptor back);
+      std::optional<StencilAttachmentDescriptor> front,
+      std::optional<StencilAttachmentDescriptor> back);
+
+  void ClearStencilAttachments();
+
+  void ClearDepthAttachment();
+
+  void ClearColorAttachment(size_t index);
 
   std::optional<StencilAttachmentDescriptor>
   GetFrontStencilAttachmentDescriptor() const;

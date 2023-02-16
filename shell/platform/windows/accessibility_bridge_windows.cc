@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 
+#include "flutter/fml/logging.h"
 #include "flutter/shell/platform/windows/flutter_platform_node_delegate_windows.h"
 #include "flutter/third_party/accessibility/ax/platform/ax_platform_node_delegate_base.h"
 
@@ -13,8 +14,8 @@ AccessibilityBridgeWindows::AccessibilityBridgeWindows(
     FlutterWindowsEngine* engine,
     FlutterWindowsView* view)
     : engine_(engine), view_(view) {
-  assert(engine_);
-  assert(view_);
+  FML_DCHECK(engine_);
+  FML_DCHECK(view_);
 }
 
 void AccessibilityBridgeWindows::OnAccessibilityEvent(
@@ -24,60 +25,88 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
 
   auto node_delegate =
       GetFlutterPlatformNodeDelegateFromID(ax_node->id()).lock();
-  assert(node_delegate);
+  FML_DCHECK(node_delegate)
+      << "No FlutterPlatformNodeDelegate found for node ID " << ax_node->id();
   std::shared_ptr<FlutterPlatformNodeDelegateWindows> win_delegate =
       std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
           node_delegate);
 
   switch (event_type) {
     case ui::AXEventGenerator::Event::ALERT:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_ALERT);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kAlert);
       break;
     case ui::AXEventGenerator::Event::CHECKED_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_REORDER);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kChildrenChanged);
       break;
+    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED: {
+      // An event indicating a change in document selection should be fired
+      // only for the focused node whose selection has changed. If a valid
+      // caret and selection exist in the app tree, they must both be within
+      // the focus node.
+      ui::AXNode::AXID focus_id = GetAXTreeData().sel_focus_object_id;
+      auto focus_delegate =
+          GetFlutterPlatformNodeDelegateFromID(focus_id).lock();
+      if (!focus_delegate) {
+        win_delegate =
+            std::static_pointer_cast<FlutterPlatformNodeDelegateWindows>(
+                focus_delegate);
+      }
+      DispatchWinAccessibilityEvent(
+          win_delegate, ax::mojom::Event::kDocumentSelectionChanged);
+      break;
+    }
     case ui::AXEventGenerator::Event::FOCUS_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_FOCUS);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kFocus);
       SetFocus(win_delegate);
       break;
     case ui::AXEventGenerator::Event::IGNORED_CHANGED:
       if (ax_node->IsIgnored()) {
-        DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_HIDE);
+        DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kHide);
       }
       break;
     case ui::AXEventGenerator::Event::IMAGE_ANNOTATION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kTextChanged);
       break;
     case ui::AXEventGenerator::Event::LIVE_REGION_CHANGED:
       DispatchWinAccessibilityEvent(win_delegate,
-                                    EVENT_OBJECT_LIVEREGIONCHANGED);
+                                    ax::mojom::Event::kLiveRegionChanged);
       break;
     case ui::AXEventGenerator::Event::NAME_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_NAMECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kTextChanged);
       break;
     case ui::AXEventGenerator::Event::SCROLL_HORIZONTAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kScrollPositionChanged);
       break;
     case ui::AXEventGenerator::Event::SCROLL_VERTICAL_POSITION_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_SYSTEM_SCROLLINGEND);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kScrollPositionChanged);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::SELECTED_CHILDREN_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SELECTIONWITHIN);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kSelectedChildrenChanged);
       break;
     case ui::AXEventGenerator::Event::SUBTREE_CREATED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_SHOW);
+      DispatchWinAccessibilityEvent(win_delegate, ax::mojom::Event::kShow);
       break;
     case ui::AXEventGenerator::Event::VALUE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_VALUECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kValueChanged);
       break;
     case ui::AXEventGenerator::Event::WIN_IACCESSIBLE_STATE_CHANGED:
-      DispatchWinAccessibilityEvent(win_delegate, EVENT_OBJECT_STATECHANGE);
+      DispatchWinAccessibilityEvent(win_delegate,
+                                    ax::mojom::Event::kStateChanged);
       break;
     case ui::AXEventGenerator::Event::ACCESS_KEY_CHANGED:
     case ui::AXEventGenerator::Event::ACTIVE_DESCENDANT_CHANGED:
@@ -90,7 +119,6 @@ void AccessibilityBridgeWindows::OnAccessibilityEvent(
     case ui::AXEventGenerator::Event::CONTROLS_CHANGED:
     case ui::AXEventGenerator::Event::DESCRIBED_BY_CHANGED:
     case ui::AXEventGenerator::Event::DESCRIPTION_CHANGED:
-    case ui::AXEventGenerator::Event::DOCUMENT_SELECTION_CHANGED:
     case ui::AXEventGenerator::Event::DOCUMENT_TITLE_CHANGED:
     case ui::AXEventGenerator::Event::DROPEFFECT_CHANGED:
     case ui::AXEventGenerator::Event::ENABLED_CHANGED:
@@ -151,13 +179,27 @@ AccessibilityBridgeWindows::CreateFlutterPlatformNodeDelegate() {
 
 void AccessibilityBridgeWindows::DispatchWinAccessibilityEvent(
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate,
-    DWORD event_type) {
+    ax::mojom::Event event_type) {
   node_delegate->DispatchWinAccessibilityEvent(event_type);
 }
 
 void AccessibilityBridgeWindows::SetFocus(
     std::shared_ptr<FlutterPlatformNodeDelegateWindows> node_delegate) {
   node_delegate->SetFocus();
+}
+
+gfx::NativeViewAccessible
+AccessibilityBridgeWindows::GetChildOfAXFragmentRoot() {
+  return view_->GetNativeViewAccessible();
+}
+
+gfx::NativeViewAccessible
+AccessibilityBridgeWindows::GetParentOfAXFragmentRoot() {
+  return nullptr;
+}
+
+bool AccessibilityBridgeWindows::IsAXFragmentRootAControlElement() {
+  return true;
 }
 
 }  // namespace flutter

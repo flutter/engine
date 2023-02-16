@@ -7,6 +7,10 @@ import("//flutter/testing/testing.gni")
 
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
+
+  # Not analyzing because they are not performance critical, and mipmap uses
+  # textureLod, which uses an extension that malioc does not support.
+  analyze = false
   shaders = [
     "array.frag",
     "array.vert",
@@ -23,14 +27,28 @@ impeller_shaders("shader_fixtures") {
     "mipmaps.frag",
     "mipmaps.vert",
     "sample.comp",
+    "stage1.comp",
+    "stage2.comp",
     "simple.vert",
     "test_texture.frag",
     "test_texture.vert",
   ]
 
   if (impeller_enable_opengles) {
-    gles_exclusions = [ "sample.comp" ]
+    gles_exclusions = [
+      "sample.comp",
+      "stage1.comp",
+      "stage2.comp",
+    ]
   }
+}
+
+scenec("scene_fixtures") {
+  geometry = [
+    "flutter_logo_baked.glb",
+    "two_triangles.glb",
+  ]
+  type = "gltf"
 }
 
 impellerc("runtime_stages") {
@@ -53,6 +71,7 @@ test_fixtures("file_fixtures") {
     "blue_noise.png",
     "boston.jpg",
     "embarcadero.jpg",
+    "flutter_logo_baked.glb",
     "kalimba.jpg",
     "multiple_stages.hlsl",
     "resources_limit.vert",
@@ -64,6 +83,8 @@ test_fixtures("file_fixtures") {
     "sample_with_binding.vert",
     "simple.vert.hlsl",
     "sa%m#ple.vert",
+    "stage1.comp",
+    "stage2.comp",
     "struct_def_bug.vert",
     "table_mountain_nx.png",
     "table_mountain_ny.png",
@@ -72,14 +93,20 @@ test_fixtures("file_fixtures") {
     "table_mountain_py.png",
     "table_mountain_pz.png",
     "test_texture.frag",
+    "two_triangles.glb",
     "types.h",
+    "wtf.otf",
   ]
   if (host_os == "mac") {
     fixtures += [ "/System/Library/Fonts/Apple Color Emoji.ttc" ]
   }
   fixtures +=
-      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ])
-  deps = [ ":runtime_stages" ]
+      filter_include(get_target_outputs(":runtime_stages"), [ "*.iplr" ]) +
+      filter_include(get_target_outputs(":scene_fixtures"), [ "*.ipscene" ])
+  deps = [
+    ":runtime_stages",
+    ":scene_fixtures",
+  ]
 }
 
 group("fixtures") {
@@ -87,6 +114,7 @@ group("fixtures") {
 
   public_deps = [
     ":file_fixtures",
+    ":scene_fixtures",
     ":shader_fixtures",
   ]
 }

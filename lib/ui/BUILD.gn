@@ -53,10 +53,14 @@ source_set("ui") {
     "painting/image_encoding.cc",
     "painting/image_encoding.h",
     "painting/image_encoding_impl.h",
+    "painting/image_encoding_skia.cc",
+    "painting/image_encoding_skia.h",
     "painting/image_filter.cc",
     "painting/image_filter.h",
     "painting/image_generator.cc",
     "painting/image_generator.h",
+    "painting/image_generator_apng.cc",
+    "painting/image_generator_apng.h",
     "painting/image_generator_registry.cc",
     "painting/image_generator_registry.h",
     "painting/image_shader.cc",
@@ -159,6 +163,7 @@ source_set("ui") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/zlib:zlib",
   ]
 
   if (impeller_supports_rendering) {
@@ -167,6 +172,8 @@ source_set("ui") {
       "painting/display_list_deferred_image_gpu_impeller.h",
       "painting/image_decoder_impeller.cc",
       "painting/image_decoder_impeller.h",
+      "painting/image_encoding_impeller.cc",
+      "painting/image_encoding_impeller.h",
     ]
 
     deps += [ "//flutter/impeller" ]
@@ -175,15 +182,20 @@ source_set("ui") {
   if (!defined(defines)) {
     defines = []
   }
-  if (flutter_enable_skshaper) {
-    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
-  }
-  if (flutter_always_use_skshaper) {
-    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
-  }
   if (is_win) {
     # Required for M_PI and others.
     defines += [ "_USE_MATH_DEFINES" ]
+  }
+  if (impeller_enable_3d) {
+    defines += [ "IMPELLER_ENABLE_3D" ]
+    sources += [
+      "painting/scene/scene_node.cc",
+      "painting/scene/scene_node.h",
+      "painting/scene/scene_shader.cc",
+      "painting/scene/scene_shader.h",
+    ]
+
+    deps += [ "//flutter/impeller/scene" ]
   }
 }
 
@@ -194,6 +206,7 @@ if (enable_unittests) {
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
       "fixtures/DashInNooglerHat%20WithSpace.jpg",
+      "fixtures/DisplayP3Logo.png",
       "fixtures/Horizontal.jpg",
       "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",

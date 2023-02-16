@@ -498,6 +498,25 @@ void can_composite_platform_views_with_platform_layer_on_bottom() {
   PlatformDispatcher.instance.scheduleFrame();
 }
 
+@pragma('vm:external-name', 'SignalBeginFrame')
+external void signalBeginFrame();
+
+@pragma('vm:entry-point')
+void texture_destruction_callback_called_without_custom_compositor() async {
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    Color red = Color.fromARGB(127, 255, 0, 0);
+    Size size = Size(50.0, 150.0);
+    SceneBuilder builder = SceneBuilder();
+    builder.pushOffset(0.0, 0.0);
+    builder.addPicture(
+        Offset(10.0, 10.0), CreateColoredBox(red, size)); // red - flutter
+    builder.pop();
+    PlatformDispatcher.instance.views.first.render(builder.build());
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+
 @pragma('vm:entry-point')
 void can_render_scene_without_custom_compositor() {
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
@@ -970,6 +989,26 @@ void compositor_can_post_only_platform_views() {
 
 @pragma('vm:entry-point')
 void render_targets_are_recycled() {
+  int frame_count = 0;
+  PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
+    SceneBuilder builder = SceneBuilder();
+    for (int i = 0; i < 10; i++) {
+      builder.addPicture(Offset(0.0, 0.0), CreateGradientBox(Size(30.0, 20.0)));
+      builder.addPlatformView(42 + i, width: 30.0, height: 20.0);
+    }
+    PlatformDispatcher.instance.views.first.render(builder.build());
+    frame_count++;
+    if (frame_count == 8) {
+      signalNativeTest();
+    } else {
+      PlatformDispatcher.instance.scheduleFrame();
+    }
+  };
+  PlatformDispatcher.instance.scheduleFrame();
+}
+
+@pragma('vm:entry-point')
+void render_targets_are_in_stable_order() {
   int frame_count = 0;
   PlatformDispatcher.instance.onBeginFrame = (Duration duration) {
     SceneBuilder builder = SceneBuilder();

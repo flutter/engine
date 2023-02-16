@@ -33,6 +33,23 @@ void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
+void TiledTextureContents::SetColorFilter(
+    std::optional<ColorFilterProc> color_filter) {
+  color_filter_ = std::move(color_filter);
+}
+
+std::optional<std::shared_ptr<Texture>>
+TiledTextureContents::CreateFilterTexture(
+    const ContentContext& renderer) const {
+  const ColorFilterProc& filter = color_filter_.value();
+  auto color_filter_contents = filter(FilterInput::Make(texture_));
+  auto snapshot = color_filter_contents->RenderToSnapshot(renderer, Entity());
+  if (snapshot.has_value()) {
+    return snapshot.value().texture;
+  }
+  return std::nullopt;
+}
+
 bool TiledTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass) const {
@@ -50,14 +67,21 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
+  auto geometry = GetGeometry();
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
 
+  // TODO(bdero): The geometry should be fetched from GetPositionUVBuffer and
+  //              contain coverage-mapped UVs, and this should use
+  //              position_uv.vert.
+  //              https://github.com/flutter/flutter/issues/118553
+
   VS::VertInfo vert_info;
   vert_info.mvp = geometry_result.transform;
-  vert_info.matrix = GetInverseMatrix();
-  vert_info.texture_size = Vector2{static_cast<Scalar>(texture_size.width),
-                                   static_cast<Scalar>(texture_size.height)};
+  vert_info.effect_transform = GetInverseMatrix();
+  vert_info.bounds_origin = geometry->GetCoverage(Matrix())->origin;
+  vert_info.texture_size = Vector2(static_cast<Scalar>(texture_size.width),
+                                   static_cast<Scalar>(texture_size.height));
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
@@ -80,16 +104,30 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   cmd.BindVertices(geometry_result.vertex_buffer);
   VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  FS::BindTextureSampler(cmd, texture_,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
+  if (color_filter_.has_value()) {
+    auto filtered_texture = CreateFilterTexture(renderer);
+    if (!filtered_texture.has_value()) {
+      return false;
+    }
+    FS::BindTextureSampler(
+        cmd, filtered_texture.value(),
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  } else {
+    FS::BindTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            sampler_descriptor_));
+  }
 
   if (!pass.AddCommand(std::move(cmd))) {
     return false;
   }
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }

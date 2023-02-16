@@ -78,8 +78,18 @@ static bool CommonRender(
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   SamplerDescriptor sampler_desc;
-  sampler_desc.min_filter = MinMagFilter::kLinear;
-  sampler_desc.mag_filter = MinMagFilter::kLinear;
+  if (entity.GetTransformation().IsTranslationScaleOnly()) {
+    sampler_desc.min_filter = MinMagFilter::kNearest;
+    sampler_desc.mag_filter = MinMagFilter::kNearest;
+  } else {
+    // Currently, we only propagate the scale of the transform to the atlas
+    // renderer, so if the transform has more than just a translation, we turn
+    // on linear sampling to prevent crunchiness caused by the pixel grid not
+    // being perfectly aligned.
+    // The downside is that this slightly over-blurs rotated/skewed text.
+    sampler_desc.min_filter = MinMagFilter::kLinear;
+    sampler_desc.mag_filter = MinMagFilter::kLinear;
+  }
   sampler_desc.mip_filter = MipFilter::kNone;
 
   typename FS::FragInfo frag_info;
@@ -128,11 +138,6 @@ static bool CommonRender(
 
   for (const auto& run : frame.GetRuns()) {
     auto font = run.GetFont();
-    auto glyph_size_ = font.GetMetrics().GetBoundingBox().size;
-    auto glyph_size = Point{static_cast<Scalar>(glyph_size_.width),
-                            static_cast<Scalar>(glyph_size_.height)};
-    auto metrics_offset =
-        Point{font.GetMetrics().min_extent.x, font.GetMetrics().ascent};
 
     for (const auto& glyph_position : run.GetGlyphPositions()) {
       FontGlyphPair font_glyph_pair{font, glyph_position.glyph};
@@ -145,15 +150,16 @@ static bool CommonRender(
       auto atlas_position = atlas_glyph_pos->origin;
       auto atlas_glyph_size =
           Point{atlas_glyph_pos->size.width, atlas_glyph_pos->size.height};
-      auto offset_glyph_position = glyph_position.position + metrics_offset;
+      auto offset_glyph_position =
+          glyph_position.position + glyph_position.glyph.bounds.origin;
 
       for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
         vtx.unit_position = point;
-        vtx.destination_position = offset_glyph_position + Point(0.5, 0.5);
-        vtx.destination_size = glyph_size - Point(1.0, 1.0);
-        vtx.source_position = atlas_position + Point(0.5, 0.5);
-        vtx.source_glyph_size = atlas_glyph_size - Point(1.0, 1.0);
+        vtx.destination_position = offset_glyph_position;
+        vtx.destination_size = Point(glyph_position.glyph.bounds.size);
+        vtx.source_position = atlas_position;
+        vtx.source_glyph_size = atlas_glyph_size;
         if constexpr (std::is_same_v<TPipeline, GlyphAtlasPipeline>) {
           vtx.has_color =
               glyph_position.glyph.type == Glyph::Type::kBitmap ? 1.0 : 0.0;

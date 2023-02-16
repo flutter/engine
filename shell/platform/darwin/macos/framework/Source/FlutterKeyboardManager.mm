@@ -57,7 +57,7 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
 /**
  * The text input plugin set by initialization.
  */
-@property(nonatomic) id<FlutterKeyboardViewDelegate> viewDelegate;
+@property(nonatomic, weak) id<FlutterKeyboardViewDelegate> viewDelegate;
 
 /**
  * The primary responders added by addPrimaryResponder.
@@ -318,6 +318,14 @@ typedef _Nullable _NSResponderPtr (^NextResponderProvider)();
     const LayoutGoal& goal = mandatoryGoalIter.second;
     _layoutMap[@(goal.keyCode)] = @(goal.keyChar);
   }
+}
+
+- (void)syncModifiersIfNeeded:(NSEventModifierFlags)modifierFlags
+                    timestamp:(NSTimeInterval)timestamp {
+  // The embedder responder is the first element in _primaryResponders.
+  FlutterEmbedderKeyResponder* embedderResponder =
+      (FlutterEmbedderKeyResponder*)_primaryResponders[0];
+  [embedderResponder syncModifiersIfNeeded:modifierFlags timestamp:timestamp];
 }
 
 @end

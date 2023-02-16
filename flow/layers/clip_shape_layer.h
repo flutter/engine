@@ -33,8 +33,7 @@ class ClipShapeLayer : public CacheableContainerLayer {
       }
     }
     if (UsesSaveLayer() && context->has_raster_cache()) {
-      context->SetTransform(
-          RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+      context->WillPaintWithIntegralTransform();
     }
     if (context->PushCullRect(clip_shape_bounds())) {
       DiffChildren(context, prev);
@@ -78,9 +77,6 @@ class ClipShapeLayer : public CacheableContainerLayer {
 
     auto mutator = context.state_stack.save();
     ApplyClip(mutator);
-    if (context.state_stack.content_culled(child_paint_bounds())) {
-      return;
-    }
 
     if (!UsesSaveLayer()) {
       PaintChildren(context);

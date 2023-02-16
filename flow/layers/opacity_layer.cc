@@ -29,8 +29,7 @@ void OpacityLayer::Diff(DiffContext* context, const Layer* old_layer) {
   }
   context->PushTransform(SkMatrix::Translate(offset_.fX, offset_.fY));
   if (context->has_raster_cache()) {
-    context->SetTransform(
-        RasterCacheUtil::GetIntegralTransCTM(context->GetTransform()));
+    context->WillPaintWithIntegralTransform();
   }
   DiffChildren(context, prev);
   context->SetLayerPaintRegion(this, context->CurrentSubtreeRegion());
@@ -87,9 +86,7 @@ void OpacityLayer::Paint(PaintContext& context) const {
     }
   }
 
-  if (!context.state_stack.painting_is_nop()) {
-    PaintChildren(context);
-  }
+  PaintChildren(context);
 }
 
 }  // namespace flutter

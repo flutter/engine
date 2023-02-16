@@ -185,6 +185,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
+  // `filter_rect` is in global coordinates.
   void PushBackdropFilter(const std::shared_ptr<const DlImageFilter>& filter,
                           const SkRect& filter_rect);
 
@@ -284,6 +285,8 @@ class EmbeddedViewParams {
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   // Pushes the stored DlImageFilter object to the mutators stack.
+  //
+  // `filter_rect` is in global coordinates.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter,
                        const SkRect& filter_rect) {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
@@ -417,7 +420,7 @@ class ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   // This needs to get called after |Preroll| finishes on the layer tree.
@@ -433,7 +436,7 @@ class ExternalViewEmbedder {
   virtual std::vector<DisplayListBuilder*> GetCurrentBuilders() = 0;
 
   // Must be called on the UI thread.
-  virtual EmbedderPaintContext CompositeEmbeddedView(int view_id) = 0;
+  virtual EmbedderPaintContext CompositeEmbeddedView(int64_t view_id) = 0;
 
   // Implementers must submit the frame by calling frame.Submit().
   //
@@ -486,6 +489,8 @@ class ExternalViewEmbedder {
 
   // Pushes a DlImageFilter object to each platform view within a list of
   // visited platform views.
+  //
+  // `filter_rect` is in global coordinates.
   //
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.

@@ -20,6 +20,7 @@
 #include "impeller/renderer/backend/vulkan/swapchain_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/device_capabilities.h"
 #include "impeller/renderer/formats.h"
 
 namespace impeller {
@@ -94,6 +95,8 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::Queue GetGraphicsQueue() const;
 
+  std::unique_ptr<CommandPoolVK> CreateGraphicsCommandPool() const;
+
  private:
   std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner_;
   vk::UniqueInstance instance_;
@@ -104,6 +107,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<ShaderLibraryVK> shader_library_;
   std::shared_ptr<SamplerLibraryVK> sampler_library_;
   std::shared_ptr<PipelineLibraryVK> pipeline_library_;
+  uint32_t graphics_queue_idx_;
   vk::Queue graphics_queue_;
   vk::Queue compute_queue_;
   vk::Queue transfer_queue_;
@@ -111,9 +115,9 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   vk::UniqueSurfaceKHR surface_;
   vk::Format surface_format_;
   std::unique_ptr<SwapchainVK> swapchain_;
-  std::unique_ptr<CommandPoolVK> graphics_command_pool_;
   std::unique_ptr<SurfaceProducerVK> surface_producer_;
   std::shared_ptr<WorkQueue> work_queue_;
+  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   bool is_valid_ = false;
 
   ContextVK(
@@ -145,10 +149,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
-  bool SupportsOffscreenMSAA() const override;
-
-  // |Context|
-  const BackendFeatures& GetBackendFeatures() const override;
+  const IDeviceCapabilities& GetDeviceCapabilities() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextVK);
 };

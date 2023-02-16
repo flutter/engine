@@ -525,7 +525,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         private long configureForVirtualDisplay(
             @NonNull PlatformView platformView,
             @NonNull PlatformViewsChannel.PlatformViewCreationRequest request) {
-          // This mode adds the view to a virtual display, which is is wired up to a GL texture that
+          // This mode adds the view to a virtual display, which is wired up to a GL texture that
           // is composed by the Flutter engine.
 
           // API level 20 is required to use VirtualDisplay#setSurface.
@@ -1215,6 +1215,7 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
         }
         // Hide overlay surfaces that aren't rendered in the current frame.
         overlayView.setVisibility(View.GONE);
+        flutterView.removeView(overlayView);
       }
     }
 
@@ -1306,5 +1307,10 @@ public class PlatformViewsController implements PlatformViewsAccessibilityDelega
       flutterView.removeView(overlayLayerViews.valueAt(viewId));
     }
     overlayLayerViews.clear();
+  }
+
+  @VisibleForTesting
+  public SparseArray<PlatformOverlayView> getOverlayLayerViews() {
+    return overlayLayerViews;
   }
 }

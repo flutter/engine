@@ -995,17 +995,17 @@ void Shell::OnPlatformViewDispatchPointerDataPacket(
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewDispatchSemanticsAction(int32_t id,
+void Shell::OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                                   SemanticsAction action,
                                                   fml::MallocMapping args) {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
   task_runners_.GetUITaskRunner()->PostTask(
-      fml::MakeCopyable([engine = engine_->GetWeakPtr(), id, action,
+      fml::MakeCopyable([engine = engine_->GetWeakPtr(), node_id, action,
                          args = std::move(args)]() mutable {
         if (engine) {
-          engine->DispatchSemanticsAction(id, action, std::move(args));
+          engine->DispatchSemanticsAction(node_id, action, std::move(args));
         }
       }));
 }
@@ -1709,7 +1709,7 @@ bool Shell::OnServiceProtocolFlushUIThreadTasks(
   // It can potentially starve the service isolate if the main isolate pauses
   // at a breakpoint or is in an infinite loop.
   //
-  // It should be invoked from the VM Service and and blocks it until UI thread
+  // It should be invoked from the VM Service and blocks it until UI thread
   // tasks are processed.
   response->SetObject();
   response->AddMember("type", "Success", response->GetAllocator());

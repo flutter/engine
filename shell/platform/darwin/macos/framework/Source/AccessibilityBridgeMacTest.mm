@@ -32,17 +32,15 @@ class AccessibilityBridgeMacSpy : public AccessibilityBridgeMac {
 }  // namespace
 }  // namespace flutter::testing
 
-@interface AccessibilityBridgeTestEngine : FlutterEngine
-- (std::shared_ptr<flutter::AccessibilityBridgeMac>)
-    createAccessibilityBridge:(nonnull FlutterEngine*)engine
-               viewController:(nonnull FlutterViewController*)viewController;
+@interface AccessibilityBridgeTestViewController : FlutterViewController
+- (std::shared_ptr<flutter::AccessibilityBridgeMac>)createAccessibilityBridgeWithEngine:
+    (nonnull FlutterEngine*)engine;
 @end
 
-@implementation AccessibilityBridgeTestEngine
-- (std::shared_ptr<flutter::AccessibilityBridgeMac>)
-    createAccessibilityBridge:(nonnull FlutterEngine*)engine
-               viewController:(nonnull FlutterViewController*)viewController {
-  return std::make_shared<flutter::testing::AccessibilityBridgeMacSpy>(engine, viewController);
+@implementation AccessibilityBridgeTestViewController
+- (std::shared_ptr<flutter::AccessibilityBridgeMac>)createAccessibilityBridgeWithEngine:
+    (nonnull FlutterEngine*)engine {
+  return std::make_shared<flutter::testing::AccessibilityBridgeMacSpy>(engine, self);
 }
 @end
 
@@ -51,26 +49,19 @@ namespace flutter::testing {
 namespace {
 
 // Returns an engine configured for the text fixture resource configuration.
-FlutterEngine* CreateTestEngine() {
+FlutterViewController* CreateTestViewController() {
   NSString* fixtures = @(testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
              ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  return [[AccessibilityBridgeTestEngine alloc] initWithName:@"test"
-                                                     project:project
-                                      allowHeadlessExecution:true];
+  return [[AccessibilityBridgeTestViewController alloc] initWithProject:project];
 }
 }  // namespace
 
 TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfFlutterView) {
-  FlutterEngine* engine = CreateTestEngine();
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   [viewController loadView];
-  [engine setViewController:viewController];
 
   NSWindow* expectedTarget = [[NSWindow alloc] initWithContentRect:NSMakeRect(0, 0, 800, 600)
                                                          styleMask:NSBorderlessWindowMask
@@ -80,8 +71,8 @@ TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfF
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge =
-      std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(engine.accessibilityBridge.lock());
+  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+      viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
@@ -122,19 +113,14 @@ TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfF
 }
 
 TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenHeadless) {
-  FlutterEngine* engine = CreateTestEngine();
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   [viewController loadView];
-  [engine setViewController:viewController];
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge =
-      std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(engine.accessibilityBridge.lock());
+  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+      viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
@@ -173,21 +159,15 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenH
 }
 
 TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenNoWindow) {
-  FlutterEngine* engine = CreateTestEngine();
-  // Create a view controller without attaching it to a window.
-  NSString* fixtures = @(testing::GetFixturesPath());
-  FlutterDartProject* project = [[FlutterDartProject alloc]
-      initWithAssetsPath:fixtures
-             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
-  FlutterViewController* viewController = [[FlutterViewController alloc] initWithProject:project];
+  FlutterViewController* viewController = CreateTestViewController();
+  FlutterEngine* engine = viewController.engine;
   [viewController loadView];
-  [engine setViewController:viewController];
 
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge =
-      std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(engine.accessibilityBridge.lock());
+  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+      viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(0);
