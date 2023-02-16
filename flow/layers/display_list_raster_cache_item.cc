@@ -105,11 +105,15 @@ void DisplayListRasterCacheItem::PrerollFinalize(PrerollContext* context,
   auto* raster_cache = context->raster_cache;
   SkRect bounds = display_list_->bounds().makeOffset(offset_.x(), offset_.y());
   bool visible = !context->state_stack.content_culled(bounds);
-  int accesses = raster_cache->MarkSeen(key_id_, matrix, visible);
+  bool has_image = false;
+  int accesses = raster_cache->MarkSeen(key_id_, matrix, visible, &has_image);
   if (!visible || accesses <= raster_cache->access_threshold()) {
     cache_state_ = kNone;
   } else {
-    context->renderable_state_flags |= LayerStateStack::kCallerCanApplyOpacity;
+    if (has_image) {
+      context->renderable_state_flags |=
+          LayerStateStack::kCallerCanApplyOpacity;
+    }
     cache_state_ = kCurrent;
   }
   return;

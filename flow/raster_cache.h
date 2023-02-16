@@ -223,7 +223,8 @@ class RasterCache {
    */
   int MarkSeen(const RasterCacheKeyID& id,
                const SkMatrix& matrix,
-               bool visible) const;
+               bool visible,
+               bool* has_image = nullptr) const;
 
   /**
    * Returns the access count (i.e. accesses_since_visible) for the given

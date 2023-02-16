@@ -112,13 +112,17 @@ bool RasterCache::UpdateCacheEntry(
 
 int RasterCache::MarkSeen(const RasterCacheKeyID& id,
                           const SkMatrix& matrix,
-                          bool visible) const {
+                          bool visible,
+                          bool* has_image) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
   entry.encountered_this_frame = true;
   entry.visible_this_frame = visible;
   if (visible || entry.accesses_since_visible > 0) {
     entry.accesses_since_visible++;
+  }
+  if (has_image) {
+    *has_image = (entry.image != nullptr);
   }
   return entry.accesses_since_visible;
 }
