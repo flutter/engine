@@ -22,10 +22,3 @@
 - (void)applyFlutterLayer:(nonnull const FlutterLayer*)layer;
 
 @end
-
-@interface FlutterMutatorView (Private)
-
-@property(readonly, nonatomic, nonnull) NSMutableArray<NSView*>* pathClipViews;
-@property(readonly, nonatomic, nullable) NSView* platformViewContainer;
-
-@end

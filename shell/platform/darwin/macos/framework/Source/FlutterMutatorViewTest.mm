@@ -6,6 +6,13 @@
 
 #include "third_party/googletest/googletest/include/gtest/gtest.h"
 
+@interface FlutterMutatorView (Private)
+
+@property(readonly, nonatomic, nonnull) NSMutableArray<NSView*>* pathClipViews;
+@property(readonly, nonatomic, nullable) NSView* platformViewContainer;
+
+@end
+
 namespace {
 void ApplyFlutterLayer(FlutterMutatorView* view,
                        FlutterSize size,
