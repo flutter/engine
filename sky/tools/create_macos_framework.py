@@ -173,6 +173,7 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
   subprocess.check_call([
       'zip',
       '-r',
+      '-y',
       'FlutterMacOS.framework.zip',
       'FlutterMacOS.framework',
       'entitlements.txt',
