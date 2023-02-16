@@ -5,6 +5,7 @@
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/position_color.vert.h"
+#include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/renderer/device_buffer.h"
 #include "impeller/renderer/render_pass.h"
@@ -17,11 +18,6 @@ Geometry::Geometry() = default;
 Geometry::~Geometry() = default;
 
 // static
-std::unique_ptr<VerticesGeometry> Geometry::MakeVertices(
-    const Vertices& vertices) {
-  return std::make_unique<VerticesGeometry>(vertices);
-}
-
 std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
   return std::make_unique<FillPathGeometry>(path);
 }
@@ -47,152 +43,6 @@ std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
   return std::make_unique<RectGeometry>(rect);
 }
 
-/////// Vertices Geometry ///////
-
-VerticesGeometry::VerticesGeometry(const Vertices& vertices)
-    : vertices_(vertices) {}
-
-VerticesGeometry::~VerticesGeometry() = default;
-
-static PrimitiveType GetPrimitiveType(const Vertices& vertices) {
-  switch (vertices.GetMode()) {
-    case VertexMode::kTriangle:
-      return PrimitiveType::kTriangle;
-    case VertexMode::kTriangleStrip:
-      return PrimitiveType::kTriangleStrip;
-  }
-}
-
-GeometryResult VerticesGeometry::GetPositionBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) {
-  if (!vertices_.IsValid()) {
-    return {};
-  }
-
-  auto vertex_count = vertices_.GetPositions().size();
-  size_t total_vtx_bytes = vertex_count * sizeof(float) * 2;
-  size_t total_idx_bytes = vertices_.GetIndices().size() * sizeof(uint16_t);
-
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
-
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  const auto& positions = vertices_.GetPositions();
-  if (!buffer->CopyHostBuffer(
-          reinterpret_cast<const uint8_t*>(positions.data()),
-          Range{0, total_vtx_bytes}, 0)) {
-    return {};
-  }
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(
-                                  vertices_.GetIndices().data())),
-                              Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return {};
-  }
-
-  return GeometryResult{
-      .type = GetPrimitiveType(vertices_),
-      .vertex_buffer =
-          {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
-              .index_count = vertices_.GetIndices().size(),
-              .index_type = IndexType::k16bit,
-          },
-      .prevent_overdraw = false,
-  };
-}
-
-GeometryResult VerticesGeometry::GetPositionColorBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass,
-    Color paint_color,
-    BlendMode blend_mode) {
-  using VS = GeometryColorPipeline::VertexShader;
-
-  if (!vertices_.IsValid()) {
-    return {};
-  }
-
-  auto vertex_count = vertices_.GetPositions().size();
-  std::vector<VS::PerVertexData> vertex_data(vertex_count);
-  {
-    const auto& positions = vertices_.GetPositions();
-    const auto& colors = vertices_.GetColors();
-    for (size_t i = 0; i < vertex_count; i++) {
-      auto color = Color::BlendColor(paint_color, colors[i], blend_mode);
-      vertex_data[i] = {
-          .position = positions[i],
-          .color = color,
-      };
-    }
-  }
-
-  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = vertices_.GetIndices().size() * sizeof(uint16_t);
-
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
-
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
-
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
-    return {};
-  }
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(
-                                  vertices_.GetIndices().data())),
-                              Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return {};
-  }
-
-  return GeometryResult{
-      .type = GetPrimitiveType(vertices_),
-      .vertex_buffer =
-          {
-              .vertex_buffer = {.buffer = buffer,
-                                .range = Range{0, total_vtx_bytes}},
-              .index_buffer = {.buffer = buffer,
-                               .range =
-                                   Range{total_vtx_bytes, total_idx_bytes}},
-              .index_count = vertices_.GetIndices().size(),
-              .index_type = IndexType::k16bit,
-          },
-      .prevent_overdraw = false,
-  };
-}
-
-GeometryResult VerticesGeometry::GetPositionUVBuffer(
-    const ContentContext& renderer,
-    const Entity& entity,
-    RenderPass& pass) {
-  // TODO(jonahwilliams): support texture coordinates in vertices
-  // https://github.com/flutter/flutter/issues/109956
-  return {};
-}
-
-GeometryVertexType VerticesGeometry::GetVertexType() const {
-  if (vertices_.GetColors().size()) {
-    return GeometryVertexType::kColor;
-  }
-  return GeometryVertexType::kPosition;
-}
-
-std::optional<Rect> VerticesGeometry::GetCoverage(
-    const Matrix& transform) const {
-  return vertices_.GetTransformedBoundingBox(transform);
-}
-
 /////// Path Geometry ///////
 
 FillPathGeometry::FillPathGeometry(const Path& path) : path_(path) {}
@@ -203,10 +53,13 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
+  auto tolerance =
+      kDefaultCurveTolerance / entity.GetTransformation().GetMaxBasisLength();
+
   VertexBuffer vertex_buffer;
   auto& host_buffer = pass.GetTransientsBuffer();
   auto tesselation_result = renderer.GetTessellator()->Tessellate(
-      path_.GetFillType(), path_.CreatePolyline(),
+      path_.GetFillType(), path_.CreatePolyline(tolerance),
       [&vertex_buffer, &host_buffer](
           const float* vertices, size_t vertices_count, const uint16_t* indices,
           size_t indices_count) {
@@ -224,6 +77,8 @@ GeometryResult FillPathGeometry::GetPositionBuffer(
   return GeometryResult{
       .type = PrimitiveType::kTriangle,
       .vertex_buffer = vertex_buffer,
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
       .prevent_overdraw = false,
   };
 }
@@ -384,7 +239,13 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
     case Cap::kButt:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                     const Point& position, const Point& offset,
-                    Scalar tolerance) {};
+                    Scalar tolerance) {
+        VS::PerVertexData vtx;
+        vtx.position = position + offset;
+        vtx_builder.AppendVertex(vtx);
+        vtx.position = position - offset;
+        vtx_builder.AppendVertex(vtx);
+      };
       break;
     case Cap::kRound:
       cap_proc = [](VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
@@ -418,7 +279,6 @@ StrokePathGeometry::CapProc StrokePathGeometry::GetCapProc(Cap stroke_cap) {
                     const Point& position, const Point& offset,
                     Scalar tolerance) {
         VS::PerVertexData vtx;
-        vtx.position = position;
 
         Point forward(offset.y, -offset.x);
 
@@ -442,6 +302,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     HostBuffer& buffer,
     Scalar stroke_width,
     Scalar scaled_miter_limit,
+    Cap cap,
     const StrokePathGeometry::JoinProc& join_proc,
     const StrokePathGeometry::CapProc& cap_proc,
     Scalar tolerance) {
@@ -464,6 +325,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
   for (size_t contour_i = 0; contour_i < polyline.contours.size();
        contour_i++) {
+    auto contour = polyline.contours[contour_i];
     size_t contour_start_point_i, contour_end_point_i;
     std::tie(contour_start_point_i, contour_end_point_i) =
         polyline.GetContourPointBounds(contour_i);
@@ -509,38 +371,48 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
     // Generate start cap.
     if (!polyline.contours[contour_i].is_closed) {
-      cap_proc(vtx_builder, polyline.points[contour_start_point_i], -offset,
+      Vector2 direction;
+      if (cap == Cap::kButt) {
+        direction =
+            Vector2(contour.start_direction.y, -contour.start_direction.x);
+      } else {
+        direction =
+            Vector2(-contour.start_direction.y, contour.start_direction.x);
+      }
+      auto cap_offset = direction * stroke_width * 0.5;
+      cap_proc(vtx_builder, polyline.points[contour_start_point_i], cap_offset,
                tolerance);
     }
 
     // Generate contour geometry.
-    for (size_t point_i = contour_start_point_i; point_i < contour_end_point_i;
-         point_i++) {
-      if (point_i > contour_start_point_i) {
-        // Generate line rect.
-        vtx.position = polyline.points[point_i - 1] + offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i - 1] - offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i] + offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i] - offset;
-        vtx_builder.AppendVertex(vtx);
+    for (size_t point_i = contour_start_point_i + 1;
+         point_i < contour_end_point_i; point_i++) {
+      // Generate line rect.
+      vtx.position = polyline.points[point_i - 1] + offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i - 1] - offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i] + offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i] - offset;
+      vtx_builder.AppendVertex(vtx);
 
-        if (point_i < contour_end_point_i - 1) {
-          compute_offset(point_i + 1);
+      if (point_i < contour_end_point_i - 1) {
+        compute_offset(point_i + 1);
 
-          // Generate join from the current line to the next line.
-          join_proc(vtx_builder, polyline.points[point_i], previous_offset,
-                    offset, scaled_miter_limit, tolerance);
-        }
+        // Generate join from the current line to the next line.
+        join_proc(vtx_builder, polyline.points[point_i], previous_offset,
+                  offset, scaled_miter_limit, tolerance);
       }
     }
 
     // Generate end cap or join.
     if (!polyline.contours[contour_i].is_closed) {
-      cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1], offset,
-               tolerance);
+      auto cap_offset =
+          Vector2(-contour.end_direction.y, contour.end_direction.x) *
+          stroke_width * 0.5;
+      cap_proc(vtx_builder, polyline.points[contour_end_point_i - 1],
+               cap_offset, tolerance);
     } else {
       join_proc(vtx_builder, polyline.points[contour_start_point_i], offset,
                 contour_first_offset, scaled_miter_limit, tolerance);
@@ -572,11 +444,14 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   auto& host_buffer = pass.GetTransientsBuffer();
   auto vertex_buffer = CreateSolidStrokeVertices(
       path_, host_buffer, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), tolerance);
+      stroke_cap_, GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
+      tolerance);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
       .vertex_buffer = vertex_buffer,
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
       .prevent_overdraw = true,
   };
 }
@@ -627,14 +502,16 @@ GeometryResult CoverGeometry::GetPositionBuffer(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
-                            rect.GetPoints().data(), 8 * sizeof(float),
-                            alignof(float)),
-                        .index_buffer = host_buffer.Emplace(
-                            kRectIndicies, 4 * sizeof(uint16_t),
-                            alignof(uint16_t)),
-                        .index_count = 4,
-                        .index_type = IndexType::k16bit},
+      .vertex_buffer =
+          {
+              .vertex_buffer = host_buffer.Emplace(
+                  rect.GetPoints().data(), 8 * sizeof(float), alignof(float)),
+              .index_buffer = host_buffer.Emplace(
+                  kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
+              .index_count = 4,
+              .index_type = IndexType::k16bit,
+          },
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()),
       .prevent_overdraw = false,
   };
 }
@@ -660,14 +537,17 @@ GeometryResult RectGeometry::GetPositionBuffer(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,
-      .vertex_buffer = {.vertex_buffer = host_buffer.Emplace(
-                            rect_.GetPoints().data(), 8 * sizeof(float),
-                            alignof(float)),
-                        .index_buffer = host_buffer.Emplace(
-                            kRectIndicies, 4 * sizeof(uint16_t),
-                            alignof(uint16_t)),
-                        .index_count = 4,
-                        .index_type = IndexType::k16bit},
+      .vertex_buffer =
+          {
+              .vertex_buffer = host_buffer.Emplace(
+                  rect_.GetPoints().data(), 8 * sizeof(float), alignof(float)),
+              .index_buffer = host_buffer.Emplace(
+                  kRectIndicies, 4 * sizeof(uint16_t), alignof(uint16_t)),
+              .index_count = 4,
+              .index_type = IndexType::k16bit,
+          },
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
       .prevent_overdraw = false,
   };
 }

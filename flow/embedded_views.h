@@ -185,12 +185,15 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
+  // `filter_rect` is in global coordinates.
   void PushBackdropFilter(const std::shared_ptr<const DlImageFilter>& filter,
                           const SkRect& filter_rect);
 
   // Removes the `Mutator` on the top of the stack
   // and destroys it.
   void Pop();
+
+  void PopTo(size_t stack_count);
 
   // Returns a reverse iterator pointing to the top of the stack, which is the
   // mutator that is furtherest from the leaf node.
@@ -210,6 +213,7 @@ class MutatorsStack {
   const std::vector<std::shared_ptr<Mutator>>::const_iterator End() const;
 
   bool is_empty() const { return vector_.empty(); }
+  size_t stack_count() const { return vector_.size(); }
 
   bool operator==(const MutatorsStack& other) const {
     if (vector_.size() != other.vector_.size()) {
@@ -281,6 +285,8 @@ class EmbeddedViewParams {
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   // Pushes the stored DlImageFilter object to the mutators stack.
+  //
+  // `filter_rect` is in global coordinates.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter,
                        const SkRect& filter_rect) {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
@@ -414,7 +420,7 @@ class ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   // This needs to get called after |Preroll| finishes on the layer tree.
@@ -430,7 +436,7 @@ class ExternalViewEmbedder {
   virtual std::vector<DisplayListBuilder*> GetCurrentBuilders() = 0;
 
   // Must be called on the UI thread.
-  virtual EmbedderPaintContext CompositeEmbeddedView(int view_id) = 0;
+  virtual EmbedderPaintContext CompositeEmbeddedView(int64_t view_id) = 0;
 
   // Implementers must submit the frame by calling frame.Submit().
   //
@@ -483,6 +489,8 @@ class ExternalViewEmbedder {
 
   // Pushes a DlImageFilter object to each platform view within a list of
   // visited platform views.
+  //
+  // `filter_rect` is in global coordinates.
   //
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.

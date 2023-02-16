@@ -254,16 +254,16 @@ void Engine::BeginFrame(fml::TimePoint frame_time, uint64_t frame_number) {
 }
 
 void Engine::ReportTimings(std::vector<int64_t> timings) {
-  TRACE_EVENT0("flutter", "Engine::ReportTimings");
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
-void Engine::NotifyIdle(fml::TimePoint deadline) {
-  auto trace_event = std::to_string(deadline.ToEpochDelta().ToMicroseconds() -
-                                    Dart_TimelineGetMicros());
-  TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               trace_event.c_str());
+void Engine::NotifyIdle(fml::TimeDelta deadline) {
   runtime_controller_->NotifyIdle(deadline);
+}
+
+void Engine::NotifyDestroyed() {
+  TRACE_EVENT0("flutter", "Engine::NotifyDestroyed");
+  runtime_controller_->NotifyDestroyed();
 }
 
 std::optional<uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -416,10 +416,11 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
-void Engine::DispatchSemanticsAction(int id,
+void Engine::DispatchSemanticsAction(int node_id,
                                      SemanticsAction action,
                                      fml::MallocMapping args) {
-  runtime_controller_->DispatchSemanticsAction(id, action, std::move(args));
+  runtime_controller_->DispatchSemanticsAction(node_id, action,
+                                               std::move(args));
 }
 
 void Engine::SetSemanticsEnabled(bool enabled) {

@@ -4,6 +4,7 @@
 
 import 'package:ui/ui.dart' as ui;
 
+import '../color_filter.dart';
 import '../util.dart';
 
 /// Implementation of [ui.Paint] used by the HTML rendering backend.
@@ -149,7 +150,7 @@ class SurfacePaint implements ui.Paint {
       _paintData = _paintData.clone();
       _frozen = false;
     }
-    _paintData.colorFilter = value;
+    _paintData.colorFilter = value as EngineColorFilter?;
   }
 
   // TODO(ferhat): see https://github.com/flutter/flutter/issues/33605
@@ -160,7 +161,7 @@ class SurfacePaint implements ui.Paint {
 
   @override
   set strokeMiterLimit(double value) {
-    assert(value != null);
+
   }
 
   @override
@@ -228,7 +229,7 @@ class SurfacePaintData {
   ui.Shader? shader;
   ui.MaskFilter? maskFilter;
   ui.FilterQuality? filterQuality;
-  ui.ColorFilter? colorFilter;
+  EngineColorFilter? colorFilter;
 
   // Internal for recording canvas use.
   SurfacePaintData clone() {
@@ -267,9 +268,7 @@ class SurfacePaintData {
       if (strokeJoin != null) {
         buffer.write('strokeJoin = $strokeJoin; ');
       }
-      if (color != null) {
-        buffer.write('color = ${colorToCssString(ui.Color(color))}; ');
-      }
+      buffer.write('color = ${colorToCssString(ui.Color(color))}; ');
       if (shader != null) {
         buffer.write('shader = $shader; ');
       }
@@ -302,7 +301,7 @@ class HtmlFragmentShader implements ui.FragmentShader {
   }
 
   @override
-  void setSampler(int index, ui.ImageShader sampler) {
+  void setImageSampler(int index, ui.Image image) {
     throw UnsupportedError('FragmentShader is not supported for the HTML renderer.');
   }
 

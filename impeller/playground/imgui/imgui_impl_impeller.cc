@@ -94,12 +94,8 @@ bool ImGui_ImplImpeller_Init(
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    auto stencil = desc->GetFrontStencilAttachmentDescriptor();
-    if (stencil.has_value()) {
-      stencil->stencil_compare = impeller::CompareFunction::kAlways;
-      stencil->depth_stencil_pass = impeller::StencilOperation::kKeep;
-      desc->SetStencilAttachmentDescriptors(stencil.value());
-    }
+    desc->ClearStencilAttachments();
+    desc->ClearDepthAttachment();
 
     bd->pipeline =
         context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();

@@ -19,13 +19,19 @@
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/basic_message_channel.h"
 #include "flutter/shell/platform/common/incoming_message_dispatcher.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/windows/accessibility_bridge_windows.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
+#include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_desktop_messenger.h"
 #include "flutter/shell/platform/windows/flutter_project_bundle.h"
 #include "flutter/shell/platform/windows/flutter_windows_texture_registrar.h"
+#include "flutter/shell/platform/windows/keyboard_handler_base.h"
+#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
+#include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
 #include "flutter/shell/platform/windows/settings_plugin.h"
 #include "flutter/shell/platform/windows/task_runner.h"
+#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
 #include "flutter/shell/platform/windows/windows_registry.h"
@@ -141,7 +147,7 @@ class FlutterWindowsEngine {
   // rendering using software instead of OpenGL.
   AngleSurfaceManager* surface_manager() { return surface_manager_.get(); }
 
-  std::weak_ptr<AccessibilityBridge> accessibility_bridge() {
+  std::weak_ptr<AccessibilityBridgeWindows> accessibility_bridge() {
     return accessibility_bridge_;
   }
 
@@ -159,6 +165,11 @@ class FlutterWindowsEngine {
   void SendKeyEvent(const FlutterKeyEvent& event,
                     FlutterKeyEventCallback callback,
                     void* user_data);
+
+  KeyboardHandlerBase* keyboard_key_handler() {
+    return keyboard_key_handler_.get();
+  }
+  TextInputPlugin* text_input_plugin() { return text_input_plugin_.get(); }
 
   // Sends the given message to the engine, calling |reply| with |user_data|
   // when a response is received from the engine if they are non-null.
@@ -246,13 +257,35 @@ class FlutterWindowsEngine {
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
  protected:
+  // Creates the keyboard key handler.
+  //
+  // Exposing this method allows unit tests to override in order to
+  // capture information.
+  virtual std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
+      BinaryMessenger* messenger,
+      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
+      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan);
+
+  // Creates the text input plugin.
+  //
+  // Exposing this method allows unit tests to override in order to
+  // capture information.
+  virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
+      BinaryMessenger* messenger);
+
   // Creates an accessibility bridge with the provided parameters.
   //
   // By default this method calls AccessibilityBridge's constructor. Exposing
   // this method allows unit tests to override in order to capture information.
-  virtual std::shared_ptr<AccessibilityBridge> CreateAccessibilityBridge(
+  virtual std::shared_ptr<AccessibilityBridgeWindows> CreateAccessibilityBridge(
       FlutterWindowsEngine* engine,
       FlutterWindowsView* view);
+
+  // Invoked by the engine right before the engine is restarted.
+  //
+  // This should reset necessary states to as if the engine has just been
+  // created. This is typically caused by a hot restart (Shift-R in CLI.)
+  void OnPreEngineRestart();
 
  private:
   // Allows swapping out embedder_api_ calls in tests.
@@ -263,6 +296,12 @@ class FlutterWindowsEngine {
   // Should be called just after the engine is run, and after any relevant
   // system changes.
   void SendSystemLocales();
+
+  // Create the keyboard & text input sub-systems.
+  //
+  // This requires that a view is attached to the engine.
+  // Calling this method again resets the keyboard state.
+  void InitializeKeyboard();
 
   void HandleAccessibilityMessage(FlutterDesktopMessengerRef messenger,
                                   const FlutterDesktopMessage* message);
@@ -306,6 +345,21 @@ class FlutterWindowsEngine {
   // May be nullptr if ANGLE failed to initialize.
   std::unique_ptr<AngleSurfaceManager> surface_manager_;
 
+  // The plugin registrar managing internal plugins.
+  std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
+
+  // Handler for cursor events.
+  std::unique_ptr<CursorHandler> cursor_handler_;
+
+  // Handler for the flutter/platform channel.
+  std::unique_ptr<PlatformHandler> platform_handler_;
+
+  // Handlers for keyboard events from Windows.
+  std::unique_ptr<KeyboardHandlerBase> keyboard_key_handler_;
+
+  // Handlers for text events from Windows.
+  std::unique_ptr<TextInputPlugin> text_input_plugin_;
+
   // The settings plugin.
   std::unique_ptr<SettingsPlugin> settings_plugin_;
 
@@ -329,7 +383,7 @@ class FlutterWindowsEngine {
 
   bool high_contrast_enabled_ = false;
 
-  std::shared_ptr<AccessibilityBridge> accessibility_bridge_;
+  std::shared_ptr<AccessibilityBridgeWindows> accessibility_bridge_;
 
   // The manager for WindowProc delegate registration and callbacks.
   std::unique_ptr<WindowProcDelegateManager> window_proc_delegate_manager_;

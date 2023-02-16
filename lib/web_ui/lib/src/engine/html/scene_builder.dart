@@ -25,7 +25,6 @@ import 'picture.dart';
 import 'platform_view.dart';
 import 'scene.dart';
 import 'shader_mask.dart';
-import 'shaders/shader.dart';
 import 'surface.dart';
 import 'transform.dart';
 
@@ -137,7 +136,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipRectEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null);
     return _pushSurface<PersistedClipRect>(
         PersistedClipRect(oldLayer as PersistedClipRect?, rect, clipBehavior));
   }
@@ -168,7 +166,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipPathEngineLayer? oldLayer,
   }) {
-    assert(clipBehavior != null);
     return _pushSurface<PersistedClipPath>(
         PersistedClipPath(oldLayer as PersistedClipPath?, path, clipBehavior));
   }
@@ -206,7 +203,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
     return _pushSurface<PersistedColorFilter>(
         PersistedColorFilter(oldLayer as PersistedColorFilter?, filter));
   }
@@ -224,11 +220,11 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
   @override
   ui.ImageFilterEngineLayer pushImageFilter(
     ui.ImageFilter filter, {
+    ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer,
   }) {
-    assert(filter != null);
     return _pushSurface<PersistedImageFilter>(
-        PersistedImageFilter(oldLayer as PersistedImageFilter?, filter));
+        PersistedImageFilter(oldLayer as PersistedImageFilter?, filter, offset));
   }
 
   /// Pushes a backdrop filter operation onto the operation stack.
@@ -247,7 +243,7 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.BackdropFilterEngineLayer? oldLayer,
   }) {
     return _pushSurface<PersistedBackdropFilter>(PersistedBackdropFilter(
-        oldLayer as PersistedBackdropFilter?, filter as EngineImageFilter));
+        oldLayer as PersistedBackdropFilter?, filter));
   }
 
   /// Pushes a shader mask operation onto the operation stack.
@@ -264,7 +260,6 @@ class SurfaceSceneBuilder implements ui.SceneBuilder {
     ui.ShaderMaskEngineLayer? oldLayer,
     ui.FilterQuality filterQuality = ui.FilterQuality.low,
   }) {
-    assert(blendMode != null);
     return _pushSurface<PersistedShaderMask>(PersistedShaderMask(
         oldLayer as PersistedShaderMask?,
         shader, maskRect, blendMode, filterQuality));

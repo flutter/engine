@@ -16,6 +16,7 @@
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/logger.h"
 #include "impeller/compiler/types.h"
+#include "impeller/compiler/uniform_sorter.h"
 
 namespace impeller {
 namespace compiler {
@@ -34,7 +35,54 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   // Metal to AIR must be updated as well.
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
+
+  // Sort the float and sampler uniforms according to their declared/decorated
+  // order. For user authored fragment shaders, the API for setting uniform
+  // values uses the index of the uniform in the declared order. By default, the
+  // metal backend of spirv-cross will order uniforms according to usage. To fix
+  // this, we use the sorted order and the add_msl_resource_binding API to force
+  // the ordering to match the declared order. Note that while this code runs
+  // for all compiled shaders, it will only affect fragment shaders due to the
+  // specified stage.
+  auto floats =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::Float);
+  auto images =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::SampledImage);
+
+  uint32_t buffer_offset = 0;
+  uint32_t sampler_offset = 0;
+  for (auto& float_id : floats) {
+    sl_compiler->add_msl_resource_binding(
+        {.stage = spv::ExecutionModel::ExecutionModelFragment,
+         .basetype = spirv_cross::SPIRType::BaseType::Float,
+         .desc_set = sl_compiler->get_decoration(float_id,
+                                                 spv::DecorationDescriptorSet),
+         .binding =
+             sl_compiler->get_decoration(float_id, spv::DecorationBinding),
+         .count = 1u,
+         .msl_buffer = buffer_offset});
+    buffer_offset++;
+  }
+  for (auto& image_id : images) {
+    sl_compiler->add_msl_resource_binding({
+        .stage = spv::ExecutionModel::ExecutionModelFragment,
+        .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
+        .desc_set =
+            sl_compiler->get_decoration(image_id, spv::DecorationDescriptorSet),
+        .binding =
+            sl_compiler->get_decoration(image_id, spv::DecorationBinding),
+        .count = 1u,
+        // A sampled image is both an image and a sampler, so both
+        // offsets need to be set or depending on the partiular shader
+        // the bindings may be incorrect.
+        .msl_texture = sampler_offset,
+        .msl_sampler = sampler_offset,
+    });
+    sampler_offset++;
+  }
+
   return CompilerBackend(sl_compiler);
 }
 
@@ -44,11 +92,16 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
-  if (source_options.target_platform == TargetPlatform::kOpenGLES) {
-    sl_options.version = 100;
+  if (source_options.target_platform == TargetPlatform::kOpenGLES ||
+      source_options.target_platform == TargetPlatform::kRuntimeStageGLES) {
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 100;
     sl_options.es = true;
   } else {
-    sl_options.version = 120;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 120;
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
@@ -86,13 +139,13 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
-    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kVulkan:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kSkSL:
@@ -102,7 +155,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     return {};
   }
   auto* backend = compiler.GetCompiler();
-  if (!EntryPointMustBeNamedMain(source_options.target_platform)) {
+  if (!EntryPointMustBeNamedMain(source_options.target_platform) &&
+      source_options.source_language == SourceLanguage::kGLSL) {
     backend->rename_entry_point("main", source_options.entry_point_name,
                                 ToExecutionModel(source_options.type));
   }

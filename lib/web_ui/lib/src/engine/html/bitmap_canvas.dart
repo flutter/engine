@@ -9,8 +9,6 @@ import 'package:ui/ui.dart' as ui;
 
 import '../browser_detection.dart';
 import '../canvas_pool.dart';
-import '../canvaskit/color_filter.dart';
-import '../color_filter.dart';
 import '../dom.dart';
 import '../engine_canvas.dart';
 import '../frame_reference.dart';
@@ -28,6 +26,7 @@ import 'path/path.dart';
 import 'recording_canvas.dart';
 import 'render_vertices.dart';
 import 'shaders/image_shader.dart';
+import 'shaders/shader.dart';
 
 /// A raw HTML canvas that is directly written to.
 class BitmapCanvas extends EngineCanvas {
@@ -39,8 +38,7 @@ class BitmapCanvas extends EngineCanvas {
   /// initialize this canvas.
   BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
       {double density = 1.0})
-      : assert(_bounds != null),
-        _density = density,
+      : _density = density,
         _renderStrategy = renderStrategy,
         widthInBitmapPixels = widthToPhysical(_bounds.width),
         heightInBitmapPixels = heightToPhysical(_bounds.height),
@@ -70,7 +68,6 @@ class BitmapCanvas extends EngineCanvas {
   /// Painting outside these bounds will result in cropping.
   ui.Rect get bounds => _bounds;
   set bounds(ui.Rect newValue) {
-    assert(newValue != null);
     _bounds = newValue;
     final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
     final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
@@ -218,7 +215,6 @@ class BitmapCanvas extends EngineCanvas {
 
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds, double newDensity) {
-    assert(newBounds != null);
     return widthInBitmapPixels >= widthToPhysical(newBounds.width) &&
         heightInBitmapPixels >= heightToPhysical(newBounds.height) &&
         _density == newDensity;
@@ -539,20 +535,6 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRenderingFill(paint)) {
       final Matrix4 transform = _canvasPool.currentTransform;
       final SurfacePath surfacePath = path as SurfacePath;
-      final ui.Rect? pathAsLine = surfacePath.toStraightLine();
-      if (pathAsLine != null) {
-        ui.Rect rect = (pathAsLine.top == pathAsLine.bottom)
-            ? ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
-            : ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
-
-        rect = adjustRectForDom(rect, paint);
-        final DomHTMLElement element = buildDrawRectElement(
-            rect, paint, 'draw-rect', _canvasPool.currentTransform);
-        _drawElement(element, rect.topLeft, paint);
-        return;
-      }
 
       final ui.Rect? pathAsRect = surfacePath.toRect();
       if (pathAsRect != null) {
@@ -564,9 +546,7 @@ class BitmapCanvas extends EngineCanvas {
         drawRRect(pathAsRRect, paint);
         return;
       }
-      final ui.Rect pathBounds = surfacePath.getBounds();
-      final DomElement svgElm = pathToSvgElement(
-          surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
+      final DomElement svgElm = pathToSvgElement(surfacePath, paint);
       if (!_canvasPool.isClipped) {
         final DomCSSStyleDeclaration style = svgElm.style;
         style.position = 'absolute';
@@ -647,13 +627,12 @@ class BitmapCanvas extends EngineCanvas {
       ui.Image image, ui.Offset p, SurfacePaintData paint) {
     final HtmlImage htmlImage = image as HtmlImage;
     final ui.BlendMode? blendMode = paint.blendMode;
-    final EngineColorFilter? colorFilter =
-        paint.colorFilter as EngineColorFilter?;
+    final EngineHtmlColorFilter? colorFilter = createHtmlColorFilter(paint.colorFilter);
     DomHTMLElement imgElement;
-    if (colorFilter is CkBlendModeColorFilter) {
+    if (colorFilter is ModeHtmlColorFilter) {
       imgElement = _createImageElementWithBlend(
           image, colorFilter.color, colorFilter.blendMode, paint);
-    } else if (colorFilter is CkMatrixColorFilter) {
+    } else if (colorFilter is MatrixHtmlColorFilter) {
       imgElement = _createImageElementWithSvgColorMatrixFilter(
           image, colorFilter.matrix, paint);
     } else {
@@ -1352,7 +1331,6 @@ String? stringForStrokeCap(ui.StrokeCap? strokeCap) {
 }
 
 String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
-  assert(strokeJoin != null);
   switch (strokeJoin) {
     case ui.StrokeJoin.round:
       return 'round';

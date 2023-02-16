@@ -14,6 +14,8 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
+#include "impeller/entity/vk/modern_shaders_vk.h"
+#include "impeller/scene/shaders/vk/scene_shaders_vk.h"
 
 namespace flutter {
 
@@ -23,6 +25,10 @@ std::shared_ptr<impeller::Context> CreateImpellerContext(
   std::vector<std::shared_ptr<fml::Mapping>> shader_mappings = {
       std::make_shared<fml::NonOwnedMapping>(impeller_entity_shaders_vk_data,
                                              impeller_entity_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_vk_data,
+                                             impeller_scene_shaders_vk_length),
+      std::make_shared<fml::NonOwnedMapping>(impeller_modern_shaders_vk_data,
+                                             impeller_modern_shaders_vk_length),
   };
 
   PFN_vkGetInstanceProcAddr instance_proc_addr =
@@ -114,6 +120,11 @@ bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
 
   native_window_ = nullptr;
   return false;
+}
+
+std::shared_ptr<impeller::Context>
+AndroidSurfaceVulkanImpeller::GetImpellerContext() {
+  return impeller_context_;
 }
 
 }  // namespace flutter

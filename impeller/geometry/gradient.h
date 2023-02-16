@@ -20,8 +20,8 @@ struct GradientData {
 };
 
 /**
- * @brief Populate a vector with the interpolated colors for the linear gradient
- * described colors and stops.
+ * @brief Populate a vector with the interpolated color bytes for the linear
+ * gradient described by colors and stops.
  *
  * @param colors
  * @param stops

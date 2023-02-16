@@ -185,12 +185,12 @@ void testMain() {
     await ui.webOnlyInitializePlatform();
   });
 
-  group('FragmentProgram can be created from JSON IPLR bundle', () async {
+  test('FragmentProgram can be created from JSON IPLR bundle', () async {
     final Uint8List data = utf8.encode(kJsonIPLR) as Uint8List;
     final CkFragmentProgram program = await CkFragmentProgram.fromBytes('test', data);
 
     expect(program.effect, isNotNull);
-    expect(program.floatCount, 17);
+    expect(program.floatCount, 32);
     expect(program.textureCount, 0);
     expect(program.uniforms, hasLength(17));
     expect(program.name, 'test');

@@ -7,6 +7,7 @@
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 #include <map>
+#include <memory>
 #include <optional>
 #include <set>
 #include <string>
@@ -20,10 +21,12 @@
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
+#include "impeller/renderer/backend/vulkan/deletion_queue_vk.h"
 #include "impeller/renderer/backend/vulkan/formats_vk.h"
 #include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
 #include "impeller/renderer/backend/vulkan/swapchain_details_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
+#include "impeller/renderer/device_capabilities.h"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
@@ -36,6 +39,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
     void* pUserData) {
   const auto prefix = impeller::vk::to_string(
       impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+
+  // There isn't stable messageIdNumber for this validation failure.
+  if (strstr(pCallbackData->pMessageIdName,
+             "CoreValidation-Shader-OutputNotConsumed") != nullptr) {
+    return VK_FALSE;
+  }
 
   FML_DCHECK(false) << prefix << "[" << pCallbackData->messageIdNumber << "]["
                     << pCallbackData->pMessageIdName
@@ -50,6 +59,15 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
 }  // namespace
 
 namespace impeller {
+
+namespace vk {
+
+bool HasValidationLayers() {
+  auto capabilities = std::make_unique<CapabilitiesVK>();
+  return capabilities->HasLayer(kKhronosValidationLayerName);
+}
+
+}  // namespace vk
 
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
@@ -316,11 +334,9 @@ ContextVK::ContextVK(
   /// Enable any and all validation as well as debug toggles.
   ///
   auto has_debug_utils = false;
-  constexpr const char* kKhronosValidationLayerName =
-      "VK_LAYER_KHRONOS_validation";
-  if (capabilities->HasLayer(kKhronosValidationLayerName)) {
-    enabled_layers.push_back(kKhronosValidationLayerName);
-    if (capabilities->HasLayerExtension(kKhronosValidationLayerName,
+  if (vk::HasValidationLayers()) {
+    enabled_layers.push_back(vk::kKhronosValidationLayerName);
+    if (capabilities->HasLayerExtension(vk::kKhronosValidationLayerName,
                                         VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
       enabled_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
       has_debug_utils = true;
@@ -388,6 +404,7 @@ ContextVK::ContextVK(
 
   auto graphics_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eGraphics);
+  graphics_queue_idx_ = graphics_queue->index;
   auto transfer_queue =
       PickQueue(physical_device.value(), vk::QueueFlagBits::eTransfer);
   auto compute_queue =
@@ -481,9 +498,13 @@ ContextVK::ContextVK(
       device_->getQueue(compute_queue->family, compute_queue->index);
   transfer_queue_ =
       device_->getQueue(transfer_queue->family, transfer_queue->index);
-  graphics_command_pool_ =
-      CommandPoolVK::Create(*device_, graphics_queue->index);
-  descriptor_pool_ = std::make_shared<DescriptorPoolVK>(*device_);
+
+  device_capabilities_ = DeviceCapabilitiesBuilder()
+                             .SetHasThreadingRestrictions(false)
+                             .SetSupportsOffscreenMSAA(true)
+                             .SetSupportsSSBO(false)
+                             .Build();
+
   is_valid_ = true;
 }
 
@@ -515,9 +536,7 @@ std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {
-  return CommandBufferVK::Create(weak_from_this(), *device_,
-                                 graphics_command_pool_->Get(),
-                                 surface_producer_.get());
+  return CommandBufferVK::Create(weak_from_this(), *device_);
 }
 
 vk::Instance ContextVK::GetInstance() const {
@@ -576,16 +595,24 @@ void ContextVK::SetupSwapchain(vk::UniqueSurfaceKHR surface) {
                  });
 }
 
-bool ContextVK::SupportsOffscreenMSAA() const {
-  return true;
-}
-
-std::shared_ptr<DescriptorPoolVK> ContextVK::GetDescriptorPool() const {
-  return descriptor_pool_;
+std::unique_ptr<DescriptorPoolVK> ContextVK::CreateDescriptorPool() const {
+  return std::make_unique<DescriptorPoolVK>(*device_);
 }
 
 PixelFormat ContextVK::GetColorAttachmentPixelFormat() const {
   return ToPixelFormat(surface_format_);
+}
+
+const IDeviceCapabilities& ContextVK::GetDeviceCapabilities() const {
+  return *device_capabilities_;
+}
+
+vk::Queue ContextVK::GetGraphicsQueue() const {
+  return graphics_queue_;
+}
+
+std::unique_ptr<CommandPoolVK> ContextVK::CreateGraphicsCommandPool() const {
+  return CommandPoolVK::Create(*device_, graphics_queue_idx_);
 }
 
 }  // namespace impeller

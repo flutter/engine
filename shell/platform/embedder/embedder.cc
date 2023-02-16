@@ -19,6 +19,7 @@
 #include "flutter/fml/thread.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -463,6 +464,8 @@ InferMetalPlatformViewCreationCallback(
         embedder_texture.struct_size = sizeof(FlutterMetalTexture);
         embedder_texture.texture = texture.texture;
         embedder_texture.texture_id = texture.texture_id;
+        embedder_texture.user_data = texture.destruction_context;
+        embedder_texture.destruction_callback = texture.destruction_callback;
         return ptr(user_data, &embedder_texture);
       };
   auto metal_get_texture =
@@ -477,6 +480,8 @@ InferMetalPlatformViewCreationCallback(
     FlutterMetalTexture metal_texture = ptr(user_data, &frame_info);
     texture_info.texture_id = metal_texture.texture_id;
     texture_info.texture = metal_texture.texture;
+    texture_info.destruction_callback = metal_texture.destruction_callback;
+    texture_info.destruction_context = metal_texture.user_data;
     return texture_info;
   };
 
@@ -558,7 +563,7 @@ InferVulkanPlatformViewCreationCallback(
 
   auto vk_instance = static_cast<VkInstance>(config->vulkan.instance);
   auto proc_addr =
-      vulkan_get_instance_proc_address(vk_instance, "GetInstanceProcAddr");
+      vulkan_get_instance_proc_address(vk_instance, "vkGetInstanceProcAddr");
 
   flutter::EmbedderSurfaceVulkan::VulkanDispatchTable vulkan_dispatch_table = {
       .get_instance_proc_address =
@@ -1292,6 +1297,7 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
       node.customAccessibilityActions.size(),
       node.customAccessibilityActions.data(),
       node.platformViewId,
+      node.tooltip.c_str(),
   };
 }
 
@@ -2014,6 +2020,8 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kScrollInertiaCancel;
     case kFlutterPointerSignalKindScale:
       return flutter::PointerData::SignalKind::kScale;
+    case kFlutterPointerSignalKindStylusAuxiliaryAction:
+      return flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
   }
   return flutter::PointerData::SignalKind::kNone;
 }
@@ -2446,7 +2454,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length) {
@@ -2456,7 +2464,7 @@ FlutterEngineResult FlutterEngineDispatchSemanticsAction(
   auto engine_action = static_cast<flutter::SemanticsAction>(action);
   if (!reinterpret_cast<flutter::EmbedderEngine*>(engine)
            ->DispatchSemanticsAction(
-               id, engine_action,
+               node_id, engine_action,
                fml::MallocMapping::Copy(data, data_length))) {
     return LOG_EMBEDDER_ERROR(kInternalInconsistency,
                               "Could not dispatch semantics action.");

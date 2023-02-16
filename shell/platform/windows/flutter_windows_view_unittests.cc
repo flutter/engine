@@ -4,12 +4,12 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
 
+#include <UIAutomation.h>
 #include <comdef.h>
 #include <comutil.h>
 #include <oleacc.h>
 
 #include <future>
-#include <iostream>
 #include <vector>
 
 #include "flutter/shell/platform/common/json_message_codec.h"
@@ -116,38 +116,6 @@ TEST(FlutterWindowsViewTest, KeySequence) {
   key_event_logs.clear();
 }
 
-TEST(FlutterWindowsViewTest, RestartClearsKeyboardState) {
-  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-
-  auto window_binding_handler =
-      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  FlutterWindowsView view(std::move(window_binding_handler));
-  view.SetEngine(std::move(engine));
-
-  test_response = false;
-
-  // Receives a KeyA down. Events are dispatched and decided unhandled. Now the
-  // keyboard key handler is waiting for the redispatched event.
-  view.OnKey(kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false,
-             [](bool handled) {});
-  EXPECT_EQ(key_event_logs.size(), 2);
-  EXPECT_EQ(key_event_logs[0], kKeyEventFromEmbedder);
-  EXPECT_EQ(key_event_logs[1], kKeyEventFromChannel);
-  key_event_logs.clear();
-
-  // Resets state so that the keyboard key handler is no longer waiting.
-  view.OnPreEngineRestart();
-
-  // Receives another KeyA down. If the state had not been cleared, this event
-  // will be considered the redispatched event and ignored.
-  view.OnKey(kVirtualKeyA, kScanCodeKeyA, WM_KEYDOWN, 'a', false, false,
-             [](bool handled) {});
-  EXPECT_EQ(key_event_logs.size(), 2);
-  EXPECT_EQ(key_event_logs[0], kKeyEventFromEmbedder);
-  EXPECT_EQ(key_event_logs[1], kKeyEventFromChannel);
-  key_event_logs.clear();
-}
-
 TEST(FlutterWindowsViewTest, EnableSemantics) {
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
   EngineModifier modifier(engine.get());
@@ -198,10 +166,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
-  auto node_delegate = bridge
-                           ->GetFlutterPlatformNodeDelegateFromID(
-                               AccessibilityBridge::kRootNodeId)
-                           .lock();
+  auto node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   ASSERT_TRUE(node_delegate);
   EXPECT_EQ(node_delegate->GetChildCount(), 0);
 
@@ -231,6 +196,33 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   varrole.vt = VT_I4;
   ASSERT_EQ(native_view->get_accRole(varchild, &varrole), S_OK);
   EXPECT_EQ(varrole.lVal, ROLE_SYSTEM_STATICTEXT);
+
+  // Get the IRawElementProviderFragment object.
+  IRawElementProviderSimple* uia_view;
+  native_view->QueryInterface(IID_PPV_ARGS(&uia_view));
+  ASSERT_TRUE(uia_view != nullptr);
+
+  // Verify name property matches our label.
+  VARIANT varname{};
+  ASSERT_EQ(uia_view->GetPropertyValue(UIA_NamePropertyId, &varname), S_OK);
+  EXPECT_EQ(varname.vt, VT_BSTR);
+  name = _com_util::ConvertBSTRToString(varname.bstrVal);
+  EXPECT_EQ(name, "name");
+
+  // Verify value property matches our label.
+  VARIANT varvalue{};
+  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ValueValuePropertyId, &varvalue),
+            S_OK);
+  EXPECT_EQ(varvalue.vt, VT_BSTR);
+  value = _com_util::ConvertBSTRToString(varvalue.bstrVal);
+  EXPECT_EQ(value, "value");
+
+  // Verify node control type is text.
+  varrole = {};
+  ASSERT_EQ(uia_view->GetPropertyValue(UIA_ControlTypePropertyId, &varrole),
+            S_OK);
+  EXPECT_EQ(varrole.vt, VT_I4);
+  EXPECT_EQ(varrole.lVal, UIA_TextControlTypeId);
 }
 
 // Verify the native IAccessible COM object tree is an accurate reflection of
@@ -290,10 +282,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
-  auto node_delegate = bridge
-                           ->GetFlutterPlatformNodeDelegateFromID(
-                               AccessibilityBridge::kRootNodeId)
-                           .lock();
+  auto node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   ASSERT_TRUE(node_delegate);
   EXPECT_EQ(node_delegate->GetChildCount(), 2);
 
@@ -639,10 +628,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
@@ -660,6 +646,17 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_CHECKED);
+
+    // Perform similar tests for UIA value;
+    IRawElementProviderSimple* uia_node;
+    native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
+    EXPECT_EQ(native_state.lVal, ToggleState_On);
+
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
+    EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=true"), nullptr);
   }
 
   // Test unchecked too.
@@ -669,10 +666,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
@@ -690,6 +684,17 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_CHECKED);
+
+    // Perform similar tests for UIA value;
+    IRawElementProviderSimple* uia_node;
+    native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
+    EXPECT_EQ(native_state.lVal, ToggleState_Off);
+
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
+    EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=false"), nullptr);
   }
 
   // Now check mixed state.
@@ -700,10 +705,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kMixed);
@@ -721,6 +723,17 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_MIXED);
+
+    // Perform similar tests for UIA value;
+    IRawElementProviderSimple* uia_node;
+    native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_ToggleToggleStatePropertyId, &native_state)));
+    EXPECT_EQ(native_state.lVal, ToggleState_Indeterminate);
+
+    ASSERT_TRUE(SUCCEEDED(uia_node->GetPropertyValue(
+        UIA_AriaPropertiesPropertyId, &native_state)));
+    EXPECT_NE(std::wcsstr(native_state.bstrVal, L"checked=mixed"), nullptr);
   }
 }
 
@@ -761,10 +774,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
@@ -788,6 +798,21 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_TRUE(native_state.lVal & STATE_SYSTEM_PRESSED);
+
+    // Test similarly on UIA node.
+    IRawElementProviderSimple* uia_node;
+    native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ControlTypePropertyId, &varrole),
+              S_OK);
+    EXPECT_EQ(varrole.lVal, UIA_ButtonControlTypeId);
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId,
+                                         &native_state),
+              S_OK);
+    EXPECT_EQ(native_state.lVal, ToggleState_On);
+    ASSERT_EQ(
+        uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state),
+        S_OK);
+    EXPECT_NE(std::wcsstr(native_state.bstrVal, L"pressed=true"), nullptr);
   }
 
   // Test unpressed too.
@@ -797,10 +822,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
@@ -818,6 +840,18 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
     VARIANT native_state = {};
     ASSERT_TRUE(SUCCEEDED(native_view->get_accState(varchild, &native_state)));
     EXPECT_FALSE(native_state.lVal & STATE_SYSTEM_PRESSED);
+
+    // Test similarly on UIA node.
+    IRawElementProviderSimple* uia_node;
+    native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+    ASSERT_EQ(uia_node->GetPropertyValue(UIA_ToggleToggleStatePropertyId,
+                                         &native_state),
+              S_OK);
+    EXPECT_EQ(native_state.lVal, ToggleState_Off);
+    ASSERT_EQ(
+        uia_node->GetPropertyValue(UIA_AriaPropertiesPropertyId, &native_state),
+        S_OK);
+    EXPECT_NE(std::wcsstr(native_state.bstrVal, L"pressed=false"), nullptr);
   }
 }
 
@@ -855,13 +889,27 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   bridge->CommitUpdates();
-  auto root_node = bridge
-                       ->GetFlutterPlatformNodeDelegateFromID(
-                           AccessibilityBridge::kRootNodeId)
-                       .lock();
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   std::string tooltip = root_node->GetData().GetStringAttribute(
       ax::mojom::StringAttribute::kTooltip);
   EXPECT_EQ(tooltip, "tooltip");
+
+  // Check that MSAA name contains the tooltip.
+  IAccessible* native_view = bridge->GetFlutterPlatformNodeDelegateFromID(0)
+                                 .lock()
+                                 ->GetNativeViewAccessible();
+  VARIANT varchild = {.vt = VT_I4, .lVal = CHILDID_SELF};
+  BSTR bname;
+  ASSERT_EQ(native_view->get_accName(varchild, &bname), S_OK);
+  EXPECT_NE(std::wcsstr(bname, L"tooltip"), nullptr);
+
+  // Check that UIA help text is equal to the tooltip.
+  IRawElementProviderSimple* uia_node;
+  native_view->QueryInterface(IID_PPV_ARGS(&uia_node));
+  VARIANT varname{};
+  ASSERT_EQ(uia_node->GetPropertyValue(UIA_HelpTextPropertyId, &varname), S_OK);
+  std::string uia_tooltip = _com_util::ConvertBSTRToString(varname.bstrVal);
+  EXPECT_EQ(uia_tooltip, "tooltip");
 }
 
 }  // namespace testing

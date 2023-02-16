@@ -55,6 +55,8 @@ dependency_overrides:
     path: ../../third_party/dart/pkg/dev_compiler
   expect:
     path: ../../third_party/dart/pkg/expect
+  ffi:
+    path: ../../third_party/dart/third_party/pkg/ffi
   fixnum:
     path: ../../third_party/dart/third_party/pkg/fixnum
   front_end:
@@ -75,6 +77,8 @@ dependency_overrides:
     path: ../testing/litetest
   meta:
     path: ../../third_party/dart/pkg/meta
+  mmap:
+    path: ../../third_party/dart/pkg/mmap
   package_config:
     path: ../../third_party/dart/third_party/pkg/package_config
   path:

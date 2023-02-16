@@ -14,6 +14,7 @@
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
+#include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/platform_view_layer.h"
@@ -827,10 +828,16 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
     auto platform_view_layer = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
     root->Add(platform_view_layer);
+    auto transform_layer =
+        std::make_shared<TransformLayer>(SkMatrix::Translate(1, 1));
+    root->Add(transform_layer);
+    auto clip_rect_layer = std::make_shared<ClipRectLayer>(
+        SkRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);
+    transform_layer->Add(clip_rect_layer);
     auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
     auto backdrop_filter_layer =
         std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
-    root->Add(backdrop_filter_layer);
+    clip_rect_layer->Add(backdrop_filter_layer);
     auto platform_view_layer2 = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 75);
     backdrop_filter_layer->Add(platform_view_layer2);
@@ -846,6 +853,10 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   auto mutator = *external_view_embedder->GetStack(50).Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
   ASSERT_EQ(mutator->GetFilterMutation().GetFilter(), filter);
+  // Make sure the filterRect is in global coordinates (contains the (1,1)
+  // translation).
+  ASSERT_EQ(mutator->GetFilterMutation().GetFilterRect(),
+            SkRect::MakeLTRB(1, 1, 31, 31));
 
   DestroyShell(std::move(shell));
 }
@@ -1412,36 +1423,6 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   // Check for the immediate callback of the first frame that doesn't wait for
   // the other 9 frames to be rasterized.
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
-}
-
-TEST_F(ShellTest, ReloadSystemFonts) {
-  auto settings = CreateSettingsForFixture();
-
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                           task_runner);
-  auto shell = CreateShell(settings, task_runners);
-
-  auto fontCollection = GetFontCollection(shell.get());
-  std::vector<std::string> families(1, "Robotofake");
-  auto font =
-      fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  if (font == nullptr) {
-    // The system does not have default font. Aborts this test.
-    return;
-  }
-  unsigned int id = font->getId();
-  // The result should be cached.
-  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_EQ(font->getId(), id);
-  bool result = shell->ReloadSystemFonts();
-
-  // The cache is cleared, and FontCollection will be assigned a new id.
-  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_NE(font->getId(), id);
-  ASSERT_TRUE(result);
-  shell.reset();
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {
@@ -2238,7 +2219,7 @@ class SinglePixelImageGenerator : public ImageGenerator {
 
   unsigned int GetPlayCount() const { return 1; }
 
-  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
@@ -2434,13 +2415,13 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
         auto* compositor_context = shell->GetRasterizer()->compositor_context();
         auto& raster_cache = compositor_context->raster_cache();
 
+        LayerStateStack state_stack;
         FixedRefreshRateStopwatch raster_time;
         FixedRefreshRateStopwatch ui_time;
-        MutatorsStack mutators_stack;
         PaintContext paint_context = {
             // clang-format off
-            .internal_nodes_canvas         = nullptr,
-            .leaf_nodes_canvas             = nullptr,
+            .state_stack                   = state_stack,
+            .canvas                        = nullptr,
             .gr_context                    = nullptr,
             .dst_color_space               = nullptr,
             .view_embedder                 = nullptr,
@@ -2448,9 +2429,7 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
             .raster_cache                  = &raster_cache,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
-            .inherited_opacity             = SK_Scalar1,
             // clang-format on
         };
 
@@ -2459,14 +2438,12 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             .raster_cache                  = &raster_cache,
             .gr_context                    = nullptr,
             .view_embedder                 = nullptr,
-            .mutators_stack                = mutators_stack,
+            .state_stack                   = state_stack,
             .dst_color_space               = nullptr,
-            .cull_rect                     = kGiantRect,
             .surface_needs_readback        = false,
             .raster_time                   = raster_time,
             .ui_time                       = ui_time,
             .texture_registry              = nullptr,
-            .checkerboard_offscreen_layers = false,
             .frame_device_pixel_ratio      = 1.0f,
             .has_platform_view             = false,
             .has_texture_layer             = false,
@@ -2483,11 +2460,13 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
             display_list.get(), SkPoint(), true, false);
         for (int i = 0; i < 4; i += 1) {
           SkMatrix matrix = SkMatrix::I();
+          state_stack.set_preroll_delegate(matrix);
           display_list_raster_cache_item.PrerollSetup(&preroll_context, matrix);
           display_list_raster_cache_item.PrerollFinalize(&preroll_context,
                                                          matrix);
           picture_cache_generated =
               display_list_raster_cache_item.need_caching();
+          state_stack.set_delegate(&dummy_canvas);
           display_list_raster_cache_item.TryToPrepareRasterCache(paint_context);
           display_list_raster_cache_item.Draw(paint_context, &dummy_canvas,
                                               &paint);
@@ -2496,9 +2475,11 @@ TEST_F(ShellTest, OnServiceProtocolEstimateRasterCacheMemoryWorks) {
 
         // 2.2. Rasterize the picture layer.
         LayerRasterCacheItem layer_raster_cache_item(display_list_layer.get());
+        state_stack.set_preroll_delegate(SkMatrix::I());
         layer_raster_cache_item.PrerollSetup(&preroll_context, SkMatrix::I());
         layer_raster_cache_item.PrerollFinalize(&preroll_context,
                                                 SkMatrix::I());
+        state_stack.set_delegate(&dummy_canvas);
         layer_raster_cache_item.TryToPrepareRasterCache(paint_context);
         layer_raster_cache_item.Draw(paint_context, &dummy_canvas, &paint);
         rasterized.set_value(true);
@@ -3891,6 +3872,51 @@ TEST_F(ShellTest, PluginUtilitiesCallbackHandleErrorHandling) {
   DestroyShell(std::move(shell));
 }
 
+TEST_F(ShellTest, NotifyIdleRejectsPastAndNearFuture) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::UI |
+                             ThreadHost::IO | ThreadHost::RASTER);
+  auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  fml::AutoResetWaitableEvent latch;
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("emptyMain");
+  RunEngine(shell.get(), std::move(configuration));
+
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners.GetUITaskRunner(), [&latch, &shell]() {
+        auto runtime_controller = const_cast<RuntimeController*>(
+            shell->GetEngine()->GetRuntimeController());
+
+        auto now = fml::TimeDelta::FromMicroseconds(Dart_TimelineGetMicros());
+
+        EXPECT_FALSE(runtime_controller->NotifyIdle(
+            now - fml::TimeDelta::FromMilliseconds(10)));
+        EXPECT_FALSE(runtime_controller->NotifyIdle(now));
+        EXPECT_FALSE(runtime_controller->NotifyIdle(
+            now + fml::TimeDelta::FromNanoseconds(100)));
+
+        EXPECT_TRUE(runtime_controller->NotifyIdle(
+            now + fml::TimeDelta::FromMilliseconds(100)));
+        latch.Signal();
+      });
+
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
 TEST_F(ShellTest, NotifyIdleNotCalledInLatencyMode) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
   Settings settings = CreateSettingsForFixture();
@@ -3917,13 +3943,49 @@ TEST_F(ShellTest, NotifyIdleNotCalledInLatencyMode) {
             tonic::DartConverter<bool>::FromArguments(args, 0, exception);
         auto runtime_controller = const_cast<RuntimeController*>(
             shell->GetEngine()->GetRuntimeController());
-        bool success = runtime_controller->NotifyIdle(fml::TimePoint::Now());
+        bool success =
+            runtime_controller->NotifyIdle(fml::TimeDelta::FromMicroseconds(
+                Dart_TimelineGetMicros() + 100000));
         EXPECT_EQ(success, !is_in_latency_mode);
         latch.CountDown();
       }));
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("performanceModeImpactsNotifyIdle");
+  RunEngine(shell.get(), std::move(configuration));
+
+  latch.Wait();
+
+  DestroyShell(std::move(shell), task_runners);
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, NotifyDestroyed) {
+  ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+  Settings settings = CreateSettingsForFixture();
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform | ThreadHost::UI |
+                             ThreadHost::IO | ThreadHost::RASTER);
+  auto platform_task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", thread_host.platform_thread->GetTaskRunner(),
+                           thread_host.raster_thread->GetTaskRunner(),
+                           thread_host.ui_thread->GetTaskRunner(),
+                           thread_host.io_thread->GetTaskRunner());
+  auto shell = CreateShell(settings, task_runners);
+  ASSERT_TRUE(DartVMRef::IsInstanceRunning());
+  ASSERT_TRUE(ValidateShell(shell.get()));
+
+  fml::CountDownLatch latch(1);
+  AddNativeCallback("NotifyDestroyed", CREATE_NATIVE_ENTRY([&](auto args) {
+                      auto runtime_controller = const_cast<RuntimeController*>(
+                          shell->GetEngine()->GetRuntimeController());
+                      bool success = runtime_controller->NotifyDestroyed();
+                      EXPECT_TRUE(success);
+                      latch.CountDown();
+                    }));
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("callNotifyDestroyed");
   RunEngine(shell.get(), std::move(configuration));
 
   latch.Wait();

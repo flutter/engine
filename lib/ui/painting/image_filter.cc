@@ -74,14 +74,23 @@ void ImageFilter::initMatrix(const tonic::Float64List& matrix4,
 
 void ImageFilter::initColorFilter(ColorFilter* colorFilter) {
   FML_DCHECK(colorFilter);
-  filter_ =
-      std::make_shared<DlColorFilterImageFilter>(colorFilter->dl_filter());
+  auto dl_filter = colorFilter->dl_filter();
+  // Skia may return nullptr if the colorfilter is a no-op.
+  if (dl_filter) {
+    filter_ = std::make_shared<DlColorFilterImageFilter>(dl_filter);
+  }
 }
 
 void ImageFilter::initComposeFilter(ImageFilter* outer, ImageFilter* inner) {
   FML_DCHECK(outer && inner);
-  filter_ = std::make_shared<DlComposeImageFilter>(outer->dl_filter(),
-                                                   inner->dl_filter());
+  if (!outer->dl_filter()) {
+    filter_ = inner->filter();
+  } else if (!inner->dl_filter()) {
+    filter_ = outer->filter();
+  } else {
+    filter_ = std::make_shared<DlComposeImageFilter>(outer->dl_filter(),
+                                                     inner->dl_filter());
+  }
 }
 
 }  // namespace flutter

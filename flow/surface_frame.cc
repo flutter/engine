@@ -9,6 +9,8 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/trace_event.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
 
 namespace flutter {
@@ -35,6 +37,7 @@ SurfaceFrame::SurfaceFrame(sk_sp<SkSurface> surface,
 }
 
 bool SurfaceFrame::Submit() {
+  TRACE_EVENT0("flutter", "SurfaceFrame::Submit");
   if (submitted_) {
     return false;
   }

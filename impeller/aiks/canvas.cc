@@ -18,7 +18,6 @@
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/geometry.h"
 #include "impeller/geometry/path_builder.h"
-#include "impeller/geometry/vertices.h"
 
 namespace impeller {
 
@@ -160,11 +159,14 @@ void Canvas::DrawPaint(const Paint& paint) {
 bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
                                      Scalar corner_radius,
                                      const Paint& paint) {
-  // TODO(114184): This should return false when the paint's ColorSource is not
-  //               solid color.
-  if (!paint.mask_blur_descriptor.has_value() ||
-      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal ||
+  if (paint.color_source == nullptr ||
+      paint.color_source_type != Paint::ColorSourceType::kColor ||
       paint.style != Paint::Style::kFill) {
+    return false;
+  }
+
+  if (!paint.mask_blur_descriptor.has_value() ||
+      paint.mask_blur_descriptor->style != FilterContents::BlurStyle::kNormal) {
     return false;
   }
 
@@ -192,6 +194,11 @@ bool Canvas::AttemptDrawBlurredRRect(const Rect& rect,
 }
 
 void Canvas::DrawRect(Rect rect, const Paint& paint) {
+  if (paint.style == Paint::Style::kStroke) {
+    DrawPath(PathBuilder{}.AddRect(rect).TakePath(), paint);
+    return;
+  }
+
   if (AttemptDrawBlurredRRect(rect, 0, paint)) {
     return;
   }
@@ -299,6 +306,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetOpacity(paint.color.alpha);
+  contents->SetDeferApplyingOpacity(paint.HasColorFilter());
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
@@ -370,30 +378,31 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(const Vertices& vertices,
+void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                           BlendMode blend_mode,
-                          Paint paint) {
-  auto geometry = Geometry::MakeVertices(vertices);
-
+                          const Paint& paint) {
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  if (paint.color_source.has_value()) {
-    auto& source = paint.color_source.value();
-    auto contents = source();
-    contents->SetGeometry(std::move(geometry));
-    contents->SetAlpha(paint.color.alpha);
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
-  } else {
-    std::shared_ptr<VerticesContents> contents =
-        std::make_shared<VerticesContents>();
-    contents->SetColor(paint.color);
-    contents->SetBlendMode(blend_mode);
-    contents->SetGeometry(std::move(geometry));
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
+  if (!vertices->HasVertexColors()) {
+    auto contents = paint.CreateContentsForGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    GetCurrentPass().AddEntity(entity);
+    return;
   }
+
+  auto src_paint = paint;
+  src_paint.color = paint.color.WithAlpha(1.0);
+  auto src_contents = src_paint.CreateContentsForGeometry(vertices);
+
+  auto contents = std::make_shared<VerticesContents>();
+  contents->SetAlpha(paint.color.alpha);
+  contents->SetBlendMode(blend_mode);
+  contents->SetGeometry(vertices);
+  contents->SetSourceContents(std::move(src_contents));
+  entity.SetContents(paint.WithFilters(std::move(contents)));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -407,11 +416,6 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
                        std::optional<Rect> cull_rect,
                        const Paint& paint) {
   if (!atlas) {
-    return;
-  }
-  auto size = atlas->GetSize();
-
-  if (size.IsEmpty()) {
     return;
   }
 

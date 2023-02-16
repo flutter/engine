@@ -13,6 +13,7 @@
 #include "impeller/renderer/backend/gles/sampler_library_gles.h"
 #include "impeller/renderer/backend/gles/shader_library_gles.h"
 #include "impeller/renderer/context.h"
+#include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
 
@@ -40,6 +41,7 @@ class ContextGLES final : public Context,
   std::shared_ptr<SamplerLibraryGLES> sampler_library_;
   std::shared_ptr<WorkQueue> work_queue_;
   std::shared_ptr<AllocatorGLES> resource_allocator_;
+  std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   bool is_valid_ = false;
 
   ContextGLES(
@@ -68,10 +70,10 @@ class ContextGLES final : public Context,
   std::shared_ptr<WorkQueue> GetWorkQueue() const override;
 
   // |Context|
-  bool HasThreadingRestrictions() const override;
+  const IDeviceCapabilities& GetDeviceCapabilities() const override;
 
   // |Context|
-  bool SupportsOffscreenMSAA() const override;
+  PixelFormat GetColorAttachmentPixelFormat() const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContextGLES);
 };

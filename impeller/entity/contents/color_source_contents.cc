@@ -13,11 +13,11 @@ ColorSourceContents::ColorSourceContents() = default;
 
 ColorSourceContents::~ColorSourceContents() = default;
 
-void ColorSourceContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+void ColorSourceContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
 }
 
-const std::unique_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
+const std::shared_ptr<Geometry>& ColorSourceContents::GetGeometry() const {
   return geometry_;
 }
 
@@ -29,7 +29,7 @@ Scalar ColorSourceContents::GetAlpha() const {
   return alpha_;
 }
 
-void ColorSourceContents::SetMatrix(Matrix matrix) {
+void ColorSourceContents::SetEffectTransform(Matrix matrix) {
   inverse_matrix_ = matrix.Invert();
 }
 

@@ -299,8 +299,8 @@ typedef enum {
 ///
 ///   - all other formats are called packed formats, and the component order
 ///     as specified in the format name refers to the order in the native type.
-///     for example, for kRGB565, the R component uses the 5 least significant
-///     bits of the uint16_t pixel value.
+///     for example, for kFlutterSoftwarePixelFormatRGB565, the R component
+///     uses the 5 least significant bits of the uint16_t pixel value.
 ///
 /// Each pixel format in this list is documented with an example on how to get
 /// the color components from the pixel.
@@ -316,30 +316,31 @@ typedef enum {
   /// pixel with 8 bit grayscale value.
   /// The grayscale value is the luma value calculated from r, g, b
   /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
-  kGray8,
+  kFlutterSoftwarePixelFormatGray8,
 
   /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
   ///   r = p & 0x3F; g = (p>>5) & 0x3F; b = p>>11;
-  kRGB565,
+  kFlutterSoftwarePixelFormatRGB565,
 
   /// pixel with 4 bits for alpha, red, green, blue; in 16-bit word.
   ///   r = p & 0xF;  g = (p>>4) & 0xF;  b = (p>>8) & 0xF;   a = p>>12;
-  kRGBA4444,
+  kFlutterSoftwarePixelFormatRGBA4444,
 
   /// pixel with 8 bits for red, green, blue, alpha.
   ///   r = p[0]; g = p[1]; b = p[2]; a = p[3];
-  kRGBA8888,
+  kFlutterSoftwarePixelFormatRGBA8888,
 
   /// pixel with 8 bits for red, green and blue and 8 unused bits.
   ///   r = p[0]; g = p[1]; b = p[2];
-  kRGBX8888,
+  kFlutterSoftwarePixelFormatRGBX8888,
 
   /// pixel with 8 bits for blue, green, red and alpha.
   ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
-  kBGRA8888,
+  kFlutterSoftwarePixelFormatBGRA8888,
 
-  /// either kBGRA8888 or kRGBA8888 depending on CPU endianess and OS
-  kNative32,
+  /// either kFlutterSoftwarePixelFormatBGRA8888 or
+  /// kFlutterSoftwarePixelFormatRGBA8888 depending on CPU endianess and OS
+  kFlutterSoftwarePixelFormatNative32,
 } FlutterSoftwarePixelFormat;
 
 typedef struct {
@@ -448,7 +449,9 @@ typedef struct {
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
-/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback.
+/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback,
+/// \ref FlutterMetalRendererConfig.get_next_drawable_callback,
+/// and \ref FlutterVulkanRendererConfig.get_next_image_callback.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterFrameInfo).
   size_t struct_size;
@@ -633,6 +636,8 @@ typedef struct {
   int64_t texture_id;
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
+  ///
+  /// A NULL texture is considered invalid.
   FlutterMetalTextureHandle texture;
   /// A baton that is not interpreted by the engine in any way. It will be given
   /// back to the embedder in the destruction callback below. Embedder resources
@@ -826,7 +831,7 @@ typedef enum {
   /// any other buttons are still pressed when one button is released, that
   /// should be sent as a kMove rather than a kUp.
   kUp,
-  /// The pointer, which must have been been up, is now down.
+  /// The pointer, which must have been up, is now down.
   ///
   /// For touch, this means that the pointer has come into contact with the
   /// screen. For a mouse, it means a button is now pressed. Note that if any
@@ -884,6 +889,7 @@ typedef enum {
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
   kFlutterPointerSignalKindScale,
+  kFlutterPointerSignalKindStylusAuxiliaryAction,
 } FlutterPointerSignalKind;
 
 typedef struct {
@@ -2301,7 +2307,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 /// @brief      Dispatch a semantics action to the specified semantics node.
 ///
 /// @param[in]  engine       A running engine instance.
-/// @param[in]  identifier   The semantics action identifier.
+/// @param[in]  node_id      The semantics node identifier.
 /// @param[in]  action       The semantics action.
 /// @param[in]  data         Data associated with the action.
 /// @param[in]  data_length  The data length.
@@ -2311,7 +2317,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length);

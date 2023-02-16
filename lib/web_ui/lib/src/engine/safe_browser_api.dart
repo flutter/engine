@@ -110,13 +110,6 @@ void removeJsEventListener(Object target, String type, Function listener, Object
   );
 }
 
-/// The signature of the `parseFloat` JavaScript function.
-typedef _JsParseFloat = num? Function(String source);
-
-/// The JavaScript-side `parseFloat` function.
-@JS('parseFloat')
-external _JsParseFloat get _jsParseFloat;
-
 /// Parses a string [source] into a double.
 ///
 /// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
@@ -126,20 +119,13 @@ external _JsParseFloat get _jsParseFloat;
 num? parseFloat(String source) {
   // Using JavaScript's `parseFloat` here because it can parse values
   // like "20px", while Dart's `double.tryParse` fails.
-  final num? result = _jsParseFloat(source);
+  final num? result = js_util.callMethod(domWindow, 'parseFloat', <Object>[source]);
 
   if (result == null || result.isNaN) {
     return null;
   }
   return result;
 }
-
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(domWindow, 'FontFace');
-
-final bool supportsFontsClearApi =
-    js_util.hasProperty(domDocument, 'fonts') &&
-        js_util.hasProperty(domDocument.fonts!, 'clear');
 
 /// Used to decide if the browser tab still has the focus.
 ///
@@ -202,8 +188,8 @@ DomCanvasElement? tryCreateCanvasElement(int width, int height) {
     return null;
   }
   try {
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width.toDouble();
+    canvas.height = height.toDouble();
   } catch (e) {
     // It seems the tribal knowledge of why we anticipate an exception while
     // setting width/height on a non-null canvas and why it's OK to return null
@@ -287,8 +273,8 @@ class ImageDecoderOptions {
     required String type,
     required Uint8List data,
     required String premultiplyAlpha,
-    required int? desiredWidth,
-    required int? desiredHeight,
+    int? desiredWidth,
+    int? desiredHeight,
     required String colorSpaceConversion,
     required bool preferAnimation,
   });
@@ -319,7 +305,7 @@ extension DecodeResultExtension on DecodeResult {
 @staticInterop
 class DecodeOptions {
   external factory DecodeOptions({
-    required int frameIndex,
+    required double frameIndex,
   });
 }
 
@@ -336,14 +322,14 @@ class DecodeOptions {
 class VideoFrame implements DomCanvasImageSource {}
 
 extension VideoFrameExtension on VideoFrame {
-  external int allocationSize();
-  external JsPromise copyTo(Uint8List destination);
+  external double allocationSize();
+  external JsPromise copyTo(Object destination);
   external String? get format;
-  external int get codedWidth;
-  external int get codedHeight;
-  external int get displayWidth;
-  external int get displayHeight;
-  external int? get duration;
+  external double get codedWidth;
+  external double get codedHeight;
+  external double get displayWidth;
+  external double get displayHeight;
+  external double? get duration;
   external VideoFrame clone();
   external void close();
 }
@@ -374,8 +360,8 @@ extension ImageTrackListExtension on ImageTrackList {
 class ImageTrack {}
 
 extension ImageTrackExtension on ImageTrack {
-  external int get repetitionCount;
-  external int get frameCount;
+  external double get repetitionCount;
+  external double get frameCount;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {
@@ -460,7 +446,7 @@ class GlContext {
   Object? _kRGBA;
   Object? _kLinear;
   Object? _kTextureMinFilter;
-  int? _kTexture0;
+  double? _kTexture0;
 
   Object? _canvas;
   int? _widthInPixels;
@@ -576,7 +562,7 @@ class GlContext {
     js_util.callMethod<void>(glContext, 'bindTexture', <dynamic>[target, buffer]);
   }
 
-  void activeTexture(int textureUnit) {
+  void activeTexture(double textureUnit) {
     js_util.callMethod<void>(glContext, 'activeTexture', <dynamic>[textureUnit]);
   }
 
@@ -717,8 +703,8 @@ class GlContext {
   Object? get kTexture2D =>
       _kTexture2D ??= js_util.getProperty(glContext, 'TEXTURE_2D');
 
-  int get kTexture0 =>
-      _kTexture0 ??= js_util.getProperty<int>(glContext, 'TEXTURE0');
+  double get kTexture0 =>
+      _kTexture0 ??= js_util.getProperty<double>(glContext, 'TEXTURE0');
 
   Object? get kTextureWrapS =>
       _kTextureWrapS ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_S');
@@ -990,11 +976,11 @@ class OffScreenCanvas {
       width = requestedWidth;
       height = requestedHeight;
       if(offScreenCanvas != null) {
-        offScreenCanvas!.width = requestedWidth;
-        offScreenCanvas!.height = requestedHeight;
+        offScreenCanvas!.width = requestedWidth.toDouble();
+        offScreenCanvas!.height = requestedHeight.toDouble();
       } else if (canvasElement != null) {
-        canvasElement!.width = requestedWidth;
-        canvasElement!.height = requestedHeight;
+        canvasElement!.width = requestedWidth.toDouble();
+        canvasElement!.height = requestedHeight.toDouble();
         _updateCanvasCssSize(canvasElement!);
       }
     }
@@ -1054,7 +1040,7 @@ class OffScreenCanvas {
     }
   }
 
-  /// Draws an image to canvas for both offscreen canvas canvas context2d.
+  /// Draws an image to canvas for both offscreen canvas context2d.
   void drawImage(Object image, int x, int y, int width, int height) {
     js_util.callMethod<void>(
         getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);

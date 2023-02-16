@@ -358,7 +358,18 @@ class RuntimeController : public PlatformConfigurationClient {
   ///
   /// @return     If the idle notification was forwarded to the running isolate.
   ///
-  virtual bool NotifyIdle(fml::TimePoint deadline);
+  virtual bool NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notify the Dart VM that the attached flutter view has been
+  ///             destroyed. This gives the Dart VM to perform some cleanup
+  ///             activities e.g: perform garbage collection to free up any
+  ///             unused memory.
+  ///
+  /// NotifyDestroyed is advisory. The VM may or may not perform any clean up
+  /// activities.
+  ///
+  virtual bool NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Returns if the root isolate is running. The isolate must be
@@ -396,7 +407,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Dispatch the semantics action to the specified accessibility
   ///             node.
   ///
-  /// @param[in]  id      The identified of the accessibility node.
+  /// @param[in]  node_id The identified of the accessibility node.
   /// @param[in]  action  The semantics action to perform on the specified
   ///                     accessibility node.
   /// @param[in]  args    Optional data that applies to the specified action.
@@ -404,7 +415,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the semantics action was dispatched. This may fail if an
   ///             isolate is not running.
   ///
-  bool DispatchSemanticsAction(int32_t id,
+  bool DispatchSemanticsAction(int32_t node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -466,7 +477,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Get an identifier that represents the Dart isolate group the
   ///             root isolate is in.
   ///
-  /// @return     The root isolate isolate group identifier, zero if one can't
+  /// @return     The root isolate group identifier, zero if one can't
   ///             be established.
   uint64_t GetRootIsolateGroup() const;
 
@@ -524,7 +535,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.

@@ -15,6 +15,8 @@
 #include <lib/fidl/cpp/interface_request.h>
 #include <zircon/types.h>
 
+#include <algorithm>
+#include <cfloat>
 #include <cstdint>
 #include <optional>
 #include <unordered_map>
@@ -98,10 +100,47 @@ inline bool operator==(const fuchsia::ui::composition::ImageProperties& a,
   return size_equal;
 }
 
+inline bool operator==(const fuchsia::ui::composition::HitRegion& a,
+                       const fuchsia::ui::composition::HitRegion& b) {
+  return a.region == b.region && a.hit_test == b.hit_test;
+}
+
+inline bool operator!=(const fuchsia::ui::composition::HitRegion& a,
+                       const fuchsia::ui::composition::HitRegion& b) {
+  return !(a == b);
+}
+
+inline bool operator==(
+    const std::vector<fuchsia::ui::composition::HitRegion>& a,
+    const std::vector<fuchsia::ui::composition::HitRegion>& b) {
+  if (a.size() != b.size())
+    return false;
+
+  for (size_t i = 0; i < a.size(); ++i) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+inline bool operator==(const std::optional<fuchsia::math::Rect>& a,
+                       const std::optional<fuchsia::math::Rect>& b) {
+  if (a.has_value() != b.has_value()) {
+    return false;
+  }
+  if (!a.has_value()) {
+  }
+  return a.value() == b.value();
+}
+
 namespace flutter_runner::testing {
 
 constexpr static fuchsia::ui::composition::TransformId kInvalidTransformId{0};
 constexpr static fuchsia::ui::composition::ContentId kInvalidContentId{0};
+constexpr static fuchsia::ui::composition::HitRegion kInfiniteHitRegion = {
+    .region = {-FLT_MAX, -FLT_MAX, FLT_MAX, FLT_MAX}};
 
 // Convenience structure which allows clients to easily create a valid
 // `ViewCreationToken` / `ViewportCreationToken` pair for use with Flatland
@@ -194,7 +233,7 @@ struct FakeTransform {
 
   std::vector<std::shared_ptr<FakeTransform>> children;
   std::shared_ptr<FakeContent> content;
-  size_t num_hit_regions;
+  std::vector<fuchsia::ui::composition::HitRegion> hit_regions;
 };
 
 struct FakeGraph {

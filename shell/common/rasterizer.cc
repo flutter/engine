@@ -464,6 +464,7 @@ RasterStatus Rasterizer::DoDraw(
 RasterStatus Rasterizer::DrawToSurface(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
+  TRACE_EVENT0("flutter", "Rasterizer::DrawToSurface");
   FML_DCHECK(surface_);
 
   RasterStatus raster_status;
@@ -503,12 +504,16 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     embedder_root_canvas = external_view_embedder_->GetRootCanvas();
   }
 
+  frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
+
   // On Android, the external view embedder deletes surfaces in `BeginFrame`.
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
   auto frame = surface_->AcquireFrame(layer_tree.frame_size());
   if (frame == nullptr) {
+    frame_timings_recorder.RecordRasterEnd(
+        &compositor_context_->raster_cache());
     return RasterStatus::kFailed;
   }
 
@@ -535,7 +540,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   );
   if (compositor_frame) {
     compositor_context_->raster_cache().BeginFrame();
-    frame_timings_recorder.RecordRasterStart(fml::TimePoint::Now());
 
     std::unique_ptr<FrameDamage> damage;
     // when leaf layer tracing is enabled we wish to repaint the whole frame
@@ -707,22 +711,32 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   }
 
   sk_sp<SkData> data = nullptr;
+  std::string format;
 
   GrDirectContext* surface_context =
       surface_ ? surface_->GetContext() : nullptr;
 
   switch (type) {
     case ScreenshotType::SkiaPicture:
+      format = "ScreenshotType::SkiaPicture";
       data = ScreenshotLayerTreeAsPicture(layer_tree, *compositor_context_);
       break;
     case ScreenshotType::UncompressedImage:
+      format = "ScreenshotType::UncompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
                                         surface_context, false);
       break;
     case ScreenshotType::CompressedImage:
+      format = "ScreenshotType::CompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
                                         surface_context, true);
       break;
+    case ScreenshotType::SurfaceData: {
+      Surface::SurfaceData surface_data = surface_->GetSurfaceData();
+      format = surface_data.pixel_format;
+      data = surface_data.data;
+      break;
+    }
   }
 
   if (data == nullptr) {
@@ -734,10 +748,10 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     size_t b64_size = SkBase64::Encode(data->data(), data->size(), nullptr);
     auto b64_data = SkData::MakeUninitialized(b64_size);
     SkBase64::Encode(data->data(), data->size(), b64_data->writable_data());
-    return Rasterizer::Screenshot{b64_data, layer_tree->frame_size()};
+    return Rasterizer::Screenshot{b64_data, layer_tree->frame_size(), format};
   }
 
-  return Rasterizer::Screenshot{data, layer_tree->frame_size()};
+  return Rasterizer::Screenshot{data, layer_tree->frame_size(), format};
 }
 
 void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
@@ -806,8 +820,10 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 
 Rasterizer::Screenshot::Screenshot() {}
 
-Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data, SkISize p_size)
-    : data(std::move(p_data)), frame_size(p_size) {}
+Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data,
+                                   SkISize p_size,
+                                   const std::string& p_format)
+    : data(std::move(p_data)), frame_size(p_size), format(p_format) {}
 
 Rasterizer::Screenshot::Screenshot(const Screenshot& other) = default;
 

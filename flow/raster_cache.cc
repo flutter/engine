@@ -63,9 +63,10 @@ std::unique_ptr<RasterCacheResult> RasterCache::Rasterize(
                                  sk_ref_sp(context.dst_color_space));
 
   sk_sp<SkSurface> surface =
-      context.gr_context ? SkSurface::MakeRenderTarget(
-                               context.gr_context, SkBudgeted::kYes, image_info)
-                         : SkSurface::MakeRaster(image_info);
+      context.gr_context
+          ? SkSurface::MakeRenderTarget(context.gr_context,
+                                        skgpu::Budgeted::kYes, image_info)
+          : SkSurface::MakeRaster(image_info);
 
   if (!surface) {
     return nullptr;
@@ -92,8 +93,8 @@ bool RasterCache::UpdateCacheEntry(
   RasterCacheKey key = RasterCacheKey(id, raster_cache_context.matrix);
   Entry& entry = cache_[key];
   if (!entry.image) {
-    entry.image =
-        Rasterize(raster_cache_context, render_function, DrawCheckerboard);
+    void (*func)(SkCanvas*, const SkRect& rect) = DrawCheckerboard;
+    entry.image = Rasterize(raster_cache_context, render_function, func);
     if (entry.image != nullptr) {
       switch (id.type()) {
         case RasterCacheKeyType::kDisplayList: {

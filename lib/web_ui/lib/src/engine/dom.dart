@@ -8,6 +8,7 @@ import 'dart:typed_data';
 
 import 'package:js/js.dart';
 import 'package:js/js_util.dart' as js_util;
+import 'package:meta/meta.dart';
 
 /// This file contains static interop classes for interacting with the DOM and
 /// some helpers. All of the classes in this file are named after their
@@ -28,19 +29,27 @@ class DomWindow extends DomEventTarget {}
 
 extension DomWindowExtension on DomWindow {
   external DomConsole get console;
-  external num get devicePixelRatio;
+  external double get devicePixelRatio;
   external DomDocument get document;
   external DomHistory get history;
-  int? get innerHeight =>
-      js_util.getProperty<double?>(this, 'innerHeight')?.toInt();
-  int? get innerWidth =>
-      js_util.getProperty<double?>(this, 'innerWidth')?.toInt();
+  external double? get innerHeight;
+  external double? get innerWidth;
   external DomLocation get location;
   external DomNavigator get navigator;
   external DomVisualViewport? get visualViewport;
   external DomPerformance get performance;
-  Future<Object?> fetch(String url) =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'fetch', <String>[url]));
+
+  @visibleForTesting
+  Future<Object?> fetch(String url) {
+    // To make sure we have a consistent approach for handling and reporting
+    // network errors, all code related to making HTTP calls is consolidated
+    // into the `httpFetch` function, and a few convenience wrappers.
+    throw UnsupportedError(
+      'Do not use window.fetch directly. '
+      'Use httpFetch* family of functions instead.',
+    );
+  }
+
   // ignore: non_constant_identifier_names
   external DomURL get URL;
   external bool dispatchEvent(DomEvent event);
@@ -52,9 +61,7 @@ extension DomWindowExtension on DomWindow {
         if (pseudoElt != null) pseudoElt
       ]) as DomCSSStyleDeclaration;
   external DomScreen? get screen;
-  int requestAnimationFrame(DomRequestAnimationFrameCallback callback) =>
-      js_util.callMethod<double>(this, 'requestAnimationFrame',
-          <Object>[callback]).toInt();
+  external double requestAnimationFrame(DomRequestAnimationFrameCallback callback);
   void postMessage(Object message, String targetOrigin,
           [List<DomMessagePort>? messagePorts]) =>
       js_util.callMethod(this, 'postMessage', <Object?>[
@@ -66,9 +73,6 @@ extension DomWindowExtension on DomWindow {
   /// The Trusted Types API (when available).
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/Trusted_Types_API
   external DomTrustedTypePolicyFactory? get trustedTypes;
-
-  // ignore: non_constant_identifier_names
-  external DomIntl get Intl;
 }
 
 typedef DomRequestAnimationFrameCallback = void Function(num highResTime);
@@ -86,14 +90,16 @@ extension DomConsoleExtension on DomConsole {
 @JS('window')
 external DomWindow get domWindow;
 
+@JS('Intl')
+external DomIntl get domIntl;
+
 @JS()
 @staticInterop
 class DomNavigator {}
 
 extension DomNavigatorExtension on DomNavigator {
   external DomClipboard? get clipboard;
-  int? get maxTouchPoints =>
-      js_util.getProperty<double?>(this, 'maxTouchPoints')?.toInt();
+  external double? get maxTouchPoints;
   external String get vendor;
   external String get language;
   external String? get platform;
@@ -179,7 +185,8 @@ class DomEvent {}
 
 extension DomEventExtension on DomEvent {
   external DomEventTarget? get target;
-  external num? get timeStamp;
+  external DomEventTarget? get currentTarget;
+  external double? get timeStamp;
   external String get type;
   external void preventDefault();
   external void stopPropagation();
@@ -198,15 +205,15 @@ DomEvent createDomEvent(String type, String name) {
   return event;
 }
 
-@JS()
+@JS('ProgressEvent')
 @staticInterop
-class DomProgressEvent extends DomEvent {}
+class DomProgressEvent extends DomEvent {
+  external factory DomProgressEvent(String type);
+}
 
 extension DomProgressEventExtension on DomProgressEvent {
-  int? get loaded =>
-    js_util.getProperty<double?>(this, 'loaded')?.toInt();
-  int? get total =>
-    js_util.getProperty<double?>(this, 'total')?.toInt();
+  external double? get loaded;
+  external double? get total;
 }
 
 @JS()
@@ -217,6 +224,7 @@ extension DomNodeExtension on DomNode {
   external String? get baseUri;
   external DomNode? get firstChild;
   external String get innerText;
+  external set innerText(String text);
   external DomNode? get lastChild;
   external DomNode appendChild(DomNode node);
   DomElement? get parent => js_util.getProperty(this, 'parentElement');
@@ -257,10 +265,8 @@ DomElement createDomElement(String tag) => domDocument.createElement(tag);
 extension DomElementExtension on DomElement {
   Iterable<DomElement> get children => createDomListWrapper<DomElement>(
       js_util.getProperty<_DomList>(this, 'children'));
-  int get clientHeight =>
-      js_util.getProperty<double>(this, 'clientHeight').toInt();
-  int get clientWidth =>
-      js_util.getProperty<double>(this, 'clientWidth').toInt();
+  external double get clientHeight;
+  external double get clientWidth;
   external String get id;
   external set id(String id);
   external set innerHtml(String? html);
@@ -280,28 +286,23 @@ extension DomElementExtension on DomElement {
   external void setAttribute(String name, Object value);
   void appendText(String text) => append(createDomText(text));
   external void removeAttribute(String name);
-  set tabIndex(int? value) =>
-      js_util.setProperty<double?>(this, 'tabIndex', value?.toDouble());
-  int? get tabIndex =>
-      js_util.getProperty<double?>(this, 'tabIndex')?.toInt();
+  external set tabIndex(double? value);
+  external double? get tabIndex;
   external void focus();
-  int get scrollTop => js_util.getProperty<double>(this, 'scrollTop').toInt();
-  set scrollTop(int value) =>
-      js_util.setProperty<double>(this, 'scrollTop', value.toDouble());
-  int get scrollLeft =>
-      js_util.getProperty<double>(this, 'scrollLeft').toInt();
-  set scrollLeft(int value) =>
-      js_util.setProperty<double>(this, 'scrollLeft', value.toDouble());
+  external double get scrollTop;
+  external set scrollTop(double value);
+  external double get scrollLeft;
+  external set scrollLeft(double value);
   external DomTokenList get classList;
   external set className(String value);
   external String get className;
   external void blur();
-  List<DomNode> getElementsByTagName(String tag) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByTagName', <Object>[tag]).cast<DomNode>();
-  List<DomNode> getElementsByClassName(String className) =>
-      js_util.callMethod<List<Object?>>(
-          this, 'getElementsByClassName', <Object>[className]).cast<DomNode>();
+  Iterable<DomNode> getElementsByTagName(String tag) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByTagName', <Object>[tag]));
+  Iterable<DomNode> getElementsByClassName(String className) =>
+      createDomListWrapper(js_util.callMethod<_DomList>(
+          this, 'getElementsByClassName', <Object>[className]));
   external void click();
   external bool hasAttribute(String name);
   Iterable<DomNode> get childNodes => createDomListWrapper<DomElement>(
@@ -471,8 +472,10 @@ extension DomCSSStyleDeclarationExtension on DomCSSStyleDeclaration {
 class DomHTMLElement extends DomElement {}
 
 extension DomHTMLElementExtension on DomHTMLElement {
-  int get offsetWidth =>
-      js_util.getProperty<double>(this, 'offsetWidth').toInt();
+  external double get offsetWidth;
+  external double get offsetLeft;
+  external double get offsetTop;
+  external DomHTMLElement? get offsetParent;
 }
 
 @JS()
@@ -510,14 +513,10 @@ extension DomHTMLImageElementExtension on DomHTMLImageElement {
   external set alt(String? value);
   external String? get src;
   external set src(String? value);
-  int get naturalWidth =>
-      js_util.getProperty<double>(this, 'naturalWidth').toInt();
-  int get naturalHeight =>
-      js_util.getProperty<double>(this, 'naturalHeight').toInt();
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
+  external double get naturalWidth;
+  external double get naturalHeight;
+  external set width(double? value);
+  external set height(double? value);
   Future<dynamic> decode() =>
       js_util.promiseToFuture(js_util.callMethod(this, 'decode', <Object>[]));
 }
@@ -596,27 +595,32 @@ class DomPerformanceMeasure extends DomPerformanceEntry {}
 @staticInterop
 class DomCanvasElement extends DomHTMLElement {}
 
+@visibleForTesting
+int debugCanvasCount = 0;
+
+@visibleForTesting
+void debugResetCanvasCount() {
+  debugCanvasCount = 0;
+}
+
 DomCanvasElement createDomCanvasElement({int? width, int? height}) {
+  debugCanvasCount++;
   final DomCanvasElement canvas =
       domWindow.document.createElement('canvas') as DomCanvasElement;
   if (width != null) {
-    canvas.width = width;
+    canvas.width = width.toDouble();
   }
   if (height != null) {
-    canvas.height = height;
+    canvas.height = height.toDouble();
   }
   return canvas;
 }
 
 extension DomCanvasElementExtension on DomCanvasElement {
-  int? get width =>
-      js_util.getProperty<double?>(this, 'width')?.toInt();
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
-  int? get height =>
-      js_util.getProperty<double?>(this, 'height')?.toInt();
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
+  external double? get width;
+  external set width(double? value);
+  external double? get height;
+  external set height(double? value);
   external bool? get isConnected;
   String toDataURL([String type = 'image/png']) =>
       js_util.callMethod(this, 'toDataURL', <Object>[type]);
@@ -630,6 +634,27 @@ extension DomCanvasElementExtension on DomCanvasElement {
 
   DomCanvasRenderingContext2D get context2D =>
       getContext('2d')! as DomCanvasRenderingContext2D;
+
+  WebGLContext getGlContext(int majorVersion) {
+    if (majorVersion == 1) {
+      return getContext('webgl')! as WebGLContext;
+    }
+    return getContext('webgl2')! as WebGLContext;
+  }
+}
+
+@JS()
+@staticInterop
+class WebGLContext {}
+
+extension WebGLContextExtension on WebGLContext {
+  external int getParameter(int value);
+
+  @JS('SAMPLES')
+  external int get samples;
+
+  @JS('STENCIL_BITS')
+  external int get stencilBits;
 }
 
 @JS()
@@ -641,6 +666,7 @@ abstract class DomCanvasImageSource {}
 class DomCanvasRenderingContext2D {}
 
 extension DomCanvasRenderingContext2DExtension on DomCanvasRenderingContext2D {
+  external DomCanvasElement? get canvas;
   external Object? get fillStyle;
   external set fillStyle(Object? style);
   external String get font;
@@ -740,57 +766,400 @@ extension DomCanvasGradientExtension on DomCanvasGradient {
 @staticInterop
 class DomXMLHttpRequestEventTarget extends DomEventTarget {}
 
-@JS()
-@staticInterop
-class DomXMLHttpRequest extends DomXMLHttpRequestEventTarget {}
-
-DomXMLHttpRequest createDomXMLHttpRequest() =>
-    domCallConstructorString('XMLHttpRequest', <Object?>[])!
-        as DomXMLHttpRequest;
-
-extension DomXMLHttpRequestExtension on DomXMLHttpRequest {
-  external dynamic get response;
-  external String? get responseText;
-  external String get responseType;
-  int? get status =>
-      js_util.getProperty<double?>(this, 'status')?.toInt();
-  external set responseType(String value);
-  void open(String method, String url, [bool? async]) => js_util.callMethod(
-      this, 'open', <Object>[method, url, if (async != null) async]);
-  void send([Object? bodyOrData]) => js_util
-      .callMethod(this, 'send', <Object>[if (bodyOrData != null) bodyOrData]);
+Future<_DomResponse> _rawHttpGet(String url) {
+  return js_util.promiseToFuture<_DomResponse>(js_util.callMethod(domWindow, 'fetch', <String>[url]));
 }
 
-Future<DomXMLHttpRequest> domHttpRequest(String url,
-    {String? responseType, String method = 'GET', dynamic sendData}) {
-  final Completer<DomXMLHttpRequest> completer = Completer<DomXMLHttpRequest>();
-  final DomXMLHttpRequest xhr = createDomXMLHttpRequest();
-  xhr.open(method, url, /* async */ true);
-  if (responseType != null) {
-    xhr.responseType = responseType;
+typedef MockHttpFetchResponseFactory = Future<MockHttpFetchResponse> Function(String url);
+
+MockHttpFetchResponseFactory? mockHttpFetchResponseFactory;
+
+/// Makes an HTTP GET request to the given [url] and returns the response.
+///
+/// If the request fails, throws [HttpFetchError]. HTTP error statuses, such as
+/// 404 and 500 are not treated as request failures. In those cases the HTTP
+/// part did succeed and correctly passed the HTTP status down from the server
+/// to the client. Those statuses represent application-level errors that need
+/// extra interpretation to decide if they are "failures" or not. See
+/// [HttpFetchResponse.hasPayload] and [HttpFetchResponse.payload].
+///
+/// This function is designed to handle the most general cases. If the default
+/// payload handling, including error checking, is sufficient, consider using
+/// convenience functions [httpFetchByteBuffer], [httpFetchJson], or
+/// [httpFetchText] instead.
+Future<HttpFetchResponse> httpFetch(String url) async {
+  if (mockHttpFetchResponseFactory != null) {
+    return mockHttpFetchResponseFactory!(url);
+  }
+  try {
+    final _DomResponse domResponse = await _rawHttpGet(url);
+    return HttpFetchResponseImpl._(url, domResponse);
+  } catch (requestError) {
+    throw HttpFetchError(url, requestError: requestError);
+  }
+}
+
+Future<_DomResponse> _rawHttpPost(String url, String data) {
+  return js_util.promiseToFuture<_DomResponse>(js_util.callMethod(
+    domWindow,
+    'fetch',
+    <Object?>[
+      url,
+      js_util.jsify(<String, Object?>{
+        'method': 'POST',
+        'headers': <String, Object?>{
+          'Content-Type': 'text/plain',
+        },
+        'body': data,
+      }),
+    ],
+  ));
+}
+
+/// Sends a [data] string as HTTP POST request to [url].
+///
+/// The web engine does not make POST requests in production code because it is
+/// designed to be able to run web apps served from plain file servers, so this
+/// is meant for tests only.
+@visibleForTesting
+Future<HttpFetchResponse> testOnlyHttpPost(String url, String data) async {
+  try {
+    final _DomResponse domResponse = await _rawHttpPost(url, data);
+    return HttpFetchResponseImpl._(url, domResponse);
+  } catch (requestError) {
+    throw HttpFetchError(url, requestError: requestError);
+  }
+}
+
+/// Convenience function for making a fetch request and getting the data as a
+/// [ByteBuffer], when the default error handling mechanism is sufficient.
+Future<ByteBuffer> httpFetchByteBuffer(String url) async {
+  final HttpFetchResponse response = await httpFetch(url);
+  return response.asByteBuffer();
+}
+
+/// Convenience function for making a fetch request and getting the data as a
+/// JSON object, when the default error handling mechanism is sufficient.
+Future<Object?> httpFetchJson(String url) async {
+  final HttpFetchResponse response = await httpFetch(url);
+  return response.json();
+}
+
+/// Convenience function for making a fetch request and getting the data as a
+/// [String], when the default error handling mechanism is sufficient.
+Future<String> httpFetchText(String url) async {
+  final HttpFetchResponse response = await httpFetch(url);
+  return response.text();
+}
+
+/// Successful result of [httpFetch].
+abstract class HttpFetchResponse {
+  /// The URL passed to [httpFetch] that returns this response.
+  String get url;
+
+  /// The HTTP response status, such as 200 or 404.
+  int get status;
+
+  /// The payload length of this response parsed from the "Content-Length" HTTP
+  /// header.
+  ///
+  /// Returns null if "Content-Length" is missing.
+  int? get contentLength;
+
+  /// Return true if this response has a [payload].
+  ///
+  /// Returns false if this response does not have a payload and therefore it is
+  /// unsafe to call the [payload] getter.
+  bool get hasPayload;
+
+  /// Returns the payload of this response.
+  ///
+  /// It is only safe to call this getter if [hasPayload] is true. If
+  /// [hasPayload] is false, throws [HttpFetchNoPayloadError].
+  HttpFetchPayload get payload;
+}
+
+/// Convenience methods for simple cases when the default error checking
+/// mechanisms are sufficient.
+extension HttpFetchResponseExtension on HttpFetchResponse {
+  /// Reads the payload a chunk at a time.
+  ///
+  /// Combined with [HttpFetchResponse.contentLength], this can be used to
+  /// implement various "progress bar" functionality.
+  Future<void> read<T>(HttpFetchReader<T> reader) {
+    return payload.read(reader);
   }
 
-  xhr.addEventListener('load', allowInterop((DomEvent e) {
-    final int status = xhr.status!;
+  /// Returns the data as a [ByteBuffer].
+  Future<ByteBuffer> asByteBuffer() {
+    return payload.asByteBuffer();
+  }
+
+  /// Returns the data as a [Uint8List].
+  Future<Uint8List> asUint8List() async {
+    return (await payload.asByteBuffer()).asUint8List();
+  }
+
+  /// Returns the data parsed as JSON.
+  Future<dynamic> json() {
+    return payload.json();
+  }
+
+  /// Return the data as a string.
+  Future<String> text() {
+    return payload.text();
+  }
+}
+
+class HttpFetchResponseImpl implements HttpFetchResponse {
+  HttpFetchResponseImpl._(this.url, this._domResponse);
+
+  @override
+  final String url;
+
+  final _DomResponse _domResponse;
+
+  @override
+  int get status => _domResponse.status.toInt();
+
+  @override
+  int? get contentLength {
+    final String? header = _domResponse.headers.get('Content-Length');
+    if (header == null) {
+      return null;
+    }
+    return int.tryParse(header);
+  }
+
+  @override
+  bool get hasPayload {
     final bool accepted = status >= 200 && status < 300;
     final bool fileUri = status == 0;
     final bool notModified = status == 304;
     final bool unknownRedirect = status > 307 && status < 400;
-    if (accepted || fileUri || notModified || unknownRedirect) {
-      completer.complete(xhr);
-    } else {
-      completer.completeError(e);
-    }
-  }));
+    return accepted || fileUri || notModified || unknownRedirect;
+  }
 
-  xhr.addEventListener('error', allowInterop((DomEvent event) => completer.completeError(event)));
-  xhr.send(sendData);
-  return completer.future;
+  @override
+  HttpFetchPayload get payload {
+    if (!hasPayload) {
+      throw HttpFetchNoPayloadError(url, status: status);
+    }
+    return HttpFetchPayloadImpl._(_domResponse);
+  }
+}
+
+/// A fake implementation of [HttpFetchResponse] for testing.
+class MockHttpFetchResponse implements HttpFetchResponse {
+  MockHttpFetchResponse({
+    required this.url,
+    required this.status,
+    this.contentLength,
+    HttpFetchPayload? payload,
+  }) : _payload = payload;
+
+  final HttpFetchPayload? _payload;
+
+  @override
+  final String url;
+
+  @override
+  final int status;
+
+  @override
+  final int? contentLength;
+
+  @override
+  bool get hasPayload => _payload != null;
+
+  @override
+  HttpFetchPayload get payload => _payload!;
+}
+
+typedef HttpFetchReader<T> = void Function(T chunk);
+
+/// Data returned with a [HttpFetchResponse].
+abstract class HttpFetchPayload {
+  /// Reads the payload a chunk at a time.
+  ///
+  /// Combined with [HttpFetchResponse.contentLength], this can be used to
+  /// implement various "progress bar" functionality.
+  Future<void> read<T>(HttpFetchReader<T> reader);
+
+  /// Returns the data as a [ByteBuffer].
+  Future<ByteBuffer> asByteBuffer();
+
+  /// Returns the data parsed as JSON.
+  Future<dynamic> json();
+
+  /// Return the data as a string.
+  Future<String> text();
+}
+
+class HttpFetchPayloadImpl implements HttpFetchPayload {
+  HttpFetchPayloadImpl._(this._domResponse);
+
+  final _DomResponse _domResponse;
+
+  @override
+  Future<void> read<T>(HttpFetchReader<T> callback) async {
+    final _DomReadableStream stream = _domResponse.body;
+    final _DomStreamReader reader = stream.getReader();
+
+    while (true) {
+      final _DomStreamChunk chunk = await reader.read();
+      if (chunk.done) {
+        break;
+      }
+      callback(chunk.value as T);
+    }
+  }
+
+  /// Returns the data as a [ByteBuffer].
+  @override
+  Future<ByteBuffer> asByteBuffer() async {
+    return (await _domResponse.arrayBuffer()) as ByteBuffer;
+  }
+
+  /// Returns the data parsed as JSON.
+  @override
+  Future<dynamic> json() => _domResponse.json();
+
+  /// Return the data as a string.
+  @override
+  Future<String> text() => _domResponse.text();
+}
+
+typedef MockOnRead = Future<void> Function<T>(HttpFetchReader<T> callback);
+
+class MockHttpFetchPayload implements HttpFetchPayload {
+  MockHttpFetchPayload({
+    ByteBuffer? byteBuffer,
+    Object? json,
+    String? text,
+    MockOnRead? onRead,
+  }) : _byteBuffer = byteBuffer, _json = json, _text = text, _onRead = onRead;
+
+  final ByteBuffer? _byteBuffer;
+  final Object? _json;
+  final String? _text;
+  final MockOnRead? _onRead;
+
+  @override
+  Future<void> read<T>(HttpFetchReader<T> callback) => _onRead!(callback);
+
+  @override
+  Future<ByteBuffer> asByteBuffer() async => _byteBuffer!;
+
+  @override
+  Future<dynamic> json() async => _json!;
+
+  @override
+  Future<String> text() async => _text!;
+}
+
+/// Indicates a missing HTTP payload when one was expected, such as when
+/// [HttpFetchResponse.payload] was called.
+///
+/// Unlike [HttpFetchError], this error happens when the HTTP request/response
+/// succeeded, but the response type is not the kind that provides useful
+/// payload, such as 404, or 500.
+class HttpFetchNoPayloadError implements Exception {
+  /// Creates an exception from a successful HTTP request, but an unsuccessful
+  /// HTTP response code, such as 404 or 500.
+  HttpFetchNoPayloadError(this.url, { required this.status });
+
+  /// HTTP request URL for asset.
+  final String url;
+
+  /// If the HTTP request succeeded, the HTTP response status.
+  ///
+  /// Null if the HTTP request failed.
+  final int status;
+
+  @override
+  String toString() {
+    return 'Flutter Web engine failed to fetch "$url". HTTP request succeeded, '
+           'but the server responded with HTTP status $status.';
+  }
+}
+
+/// Indicates a failure trying to fetch a [url].
+///
+/// Unlike [HttpFetchNoPayloadError] this error indicates that there was no HTTP
+/// response and the roundtrip what interrupted by something else, like a loss
+/// of network connectivity, or request being interrupted by the OS, a browser
+/// CORS policy, etc. In particular, there's not even a HTTP status code to
+/// report, such as 200, 404, or 500.
+class HttpFetchError implements Exception {
+  /// Creates an exception from a failed HTTP request.
+  HttpFetchError(this.url, { required this.requestError });
+
+  /// HTTP request URL for asset.
+  final String url;
+
+  /// The underlying network error that prevented [httpFetch] from succeeding.
+  final Object requestError;
+
+  @override
+  String toString() {
+    return 'Flutter Web engine failed to complete HTTP request to fetch '
+           '"$url": $requestError';
+  }
 }
 
 @JS()
 @staticInterop
-class DomResponse {}
+class _DomResponse {}
+
+extension _DomResponseExtension on _DomResponse {
+  external double get status;
+
+  external _DomHeaders get headers;
+
+  external _DomReadableStream get body;
+
+  Future<dynamic> arrayBuffer() => js_util
+      .promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
+
+  Future<dynamic> json() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
+
+  Future<String> text() =>
+      js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
+}
+
+@JS()
+@staticInterop
+class _DomHeaders {}
+
+extension _DomHeadersExtension on _DomHeaders {
+  external String? get(String? headerName);
+}
+
+@JS()
+@staticInterop
+class _DomReadableStream {}
+extension _DomReadableStreamExtension on _DomReadableStream {
+  external _DomStreamReader getReader();
+}
+
+@JS()
+@staticInterop
+class _DomStreamReader {}
+extension _DomStreamReaderExtension on _DomStreamReader {
+  Future<_DomStreamChunk> read() {
+    return js_util.promiseToFuture<_DomStreamChunk>(js_util.callMethod(this, 'read', <Object>[]));
+  }
+}
+
+@JS()
+@staticInterop
+class _DomStreamChunk {}
+extension _DomStreamChunkExtension on _DomStreamChunk {
+  external Object? get value;
+  external bool get done;
+}
 
 @JS()
 @staticInterop
@@ -807,7 +1176,7 @@ DomText createDomText(String data) => domDocument.createTextNode(data);
 class DomTextMetrics {}
 
 extension DomTextMetricsExtension on DomTextMetrics {
-  external num? get width;
+  external double? get width;
 }
 
 @JS()
@@ -825,14 +1194,14 @@ extension DomExceptionExtension on DomException {
 class DomRectReadOnly {}
 
 extension DomRectReadOnlyExtension on DomRectReadOnly {
-  external num get x;
-  external num get y;
-  external num get width;
-  external num get height;
-  external num get top;
-  external num get right;
-  external num get bottom;
-  external num get left;
+  external double get x;
+  external double get y;
+  external double get width;
+  external double get height;
+  external double get top;
+  external double get right;
+  external double get bottom;
+  external double get left;
 }
 
 DomRect createDomRectFromPoints(DomPoint a, DomPoint b) {
@@ -884,8 +1253,8 @@ typedef DomFontFaceSetForEachCallback = void Function(
 class DomVisualViewport extends DomEventTarget {}
 
 extension DomVisualViewportExtension on DomVisualViewport {
-  external num? get height;
-  external num? get width;
+  external double? get height;
+  external double? get width;
 }
 
 @JS()
@@ -900,10 +1269,10 @@ extension DomHTMLTextAreaElementExtension on DomHTMLTextAreaElement {
   external void select();
   external set placeholder(String? value);
   external set name(String value);
-  external int? get selectionStart;
-  external int? get selectionEnd;
-  external set selectionStart(int? value);
-  external set selectionEnd(int? value);
+  external double? get selectionStart;
+  external double? get selectionEnd;
+  external set selectionStart(double? value);
+  external set selectionEnd(double? value);
   external String? get value;
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
@@ -925,17 +1294,6 @@ extension DomClipboardExtension on DomClipboard {
       .promiseToFuture(js_util.callMethod(this, 'writeText', <Object>[data]));
 }
 
-extension DomResponseExtension on DomResponse {
-  Future<dynamic> arrayBuffer() => js_util
-      .promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
-
-  Future<dynamic> json() =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'json', <Object>[]));
-
-  Future<String> text() =>
-      js_util.promiseToFuture(js_util.callMethod(this, 'text', <Object>[]));
-}
-
 @JS()
 @staticInterop
 class DomUIEvent extends DomEvent {}
@@ -949,15 +1307,19 @@ extension DomKeyboardEventExtension on DomKeyboardEvent {
   external String? get code;
   external bool get ctrlKey;
   external String? get key;
-  int get keyCode =>
-      js_util.getProperty<double>(this, 'keyCode').toInt();
-  int get location =>
-      js_util.getProperty<double>(this, 'location').toInt();
+  external double get keyCode;
+  external double get location;
   external bool get metaKey;
   external bool? get repeat;
   external bool get shiftKey;
+  external bool get isComposing;
   external bool getModifierState(String keyArg);
 }
+
+DomKeyboardEvent createDomKeyboardEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('KeyboardEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
 
 @JS()
 @staticInterop
@@ -965,9 +1327,9 @@ class DomHistory {}
 
 extension DomHistoryExtension on DomHistory {
   dynamic get state => js_util.dartify(js_util.getProperty(this, 'state'));
-  void go([int? delta]) =>
+  void go([double? delta]) =>
       js_util.callMethod(this, 'go',
-          <Object>[if (delta != null) delta.toDouble()]);
+          <Object>[if (delta != null) delta]);
   void pushState(dynamic data, String title, String? url) =>
       js_util.callMethod(this, 'pushState', <Object?>[
         if (data is Map || data is Iterable) js_util.jsify(data as Object) else data,
@@ -1107,16 +1469,16 @@ DomPath2D createDomPath2D([Object? path]) =>
 class DomMouseEvent extends DomUIEvent {}
 
 extension DomMouseEventExtension on DomMouseEvent {
-  external num get clientX;
-  external num get clientY;
-  external num get offsetX;
-  external num get offsetY;
+  external double get clientX;
+  external double get clientY;
+  external double get offsetX;
+  external double get offsetY;
+  external double get pageX;
+  external double get pageY;
   DomPoint get client => DomPoint(clientX, clientY);
   DomPoint get offset => DomPoint(offsetX, offsetY);
-  int get button =>
-      js_util.getProperty<double>(this, 'button').toInt();
-  int? get buttons =>
-      js_util.getProperty<double?>(this, 'buttons')?.toInt();
+  external double get button;
+  external double? get buttons;
   external bool getModifierState(String keyArg);
 }
 
@@ -1129,14 +1491,11 @@ DomMouseEvent createDomMouseEvent(String type, [Map<dynamic, dynamic>? init]) =>
 class DomPointerEvent extends DomMouseEvent {}
 
 extension DomPointerEventExtension on DomPointerEvent {
-  int? get pointerId =>
-      js_util.getProperty<double?>(this, 'pointerId')?.toInt();
+  external double? get pointerId;
   external String? get pointerType;
-  external num? get pressure;
-  int? get tiltX =>
-      js_util.getProperty<double?>(this, 'tiltX')?.toInt();
-  int? get tiltY =>
-      js_util.getProperty<double?>(this, 'tiltY')?.toInt();
+  external double? get pressure;
+  external double? get tiltX;
+  external double? get tiltY;
   List<DomPointerEvent> getCoalescedEvents() =>
       js_util.callMethod<List<Object?>>(
           this, 'getCoalescedEvents', <Object>[]).cast<DomPointerEvent>();
@@ -1152,11 +1511,17 @@ DomPointerEvent createDomPointerEvent(String type,
 class DomWheelEvent extends DomMouseEvent {}
 
 extension DomWheelEventExtension on DomWheelEvent {
-  external num get deltaX;
-  external num get deltaY;
-  int get deltaMode =>
-      js_util.getProperty<double>(this, 'deltaMode').toInt();
+  external double get deltaX;
+  external double get deltaY;
+  external double? get wheelDeltaX;
+  external double? get wheelDeltaY;
+  external double get deltaMode;
 }
+
+DomWheelEvent createDomWheelEvent(String type,
+        [Map<dynamic, dynamic>? init]) =>
+    js_util.callConstructor(domGetConstructor('WheelEvent')!,
+        <Object?>[type, if (init != null) js_util.jsify(init)]);
 
 @JS()
 @staticInterop
@@ -1167,9 +1532,9 @@ extension DomTouchEventExtension on DomTouchEvent {
   external bool get ctrlKey;
   external bool get metaKey;
   external bool get shiftKey;
-  List<DomTouch>? get changedTouches => js_util
-      .getProperty<List<Object?>?>(this, 'changedTouches')
-      ?.cast<DomTouch>();
+  Iterable<DomTouch> get changedTouches =>
+      createDomTouchListWrapper<DomTouch>(
+        js_util.getProperty<_DomTouchList>(this, 'changedTouches'));
 }
 
 @JS()
@@ -1177,10 +1542,9 @@ extension DomTouchEventExtension on DomTouchEvent {
 class DomTouch {}
 
 extension DomTouchExtension on DomTouch {
-  int? get identifier =>
-      js_util.getProperty<double?>(this, 'identifier')?.toInt();
-  external num get clientX;
-  external num get clientY;
+  external double? get identifier;
+  external double get clientX;
+  external double get clientY;
   DomPoint get client => DomPoint(clientX, clientY);
 }
 
@@ -1220,14 +1584,10 @@ extension DomHTMLInputElementExtension on DomHTMLInputElement {
   external set placeholder(String? value);
   external set name(String? value);
   external set autocomplete(String value);
-  int? get selectionStart =>
-      js_util.getProperty<double?>(this, 'selectionStart')?.toInt();
-  int? get selectionEnd =>
-      js_util.getProperty<double?>(this, 'selectionEnd')?.toInt();
-  set selectionStart(int? value) =>
-      js_util.setProperty<double?>(this, 'selectionStart', value?.toDouble());
-  set selectionEnd(int? value) =>
-      js_util.setProperty<double?>(this, 'selectionEnd', value?.toDouble());
+  external double? get selectionStart;
+  external double? get selectionEnd;
+  external set selectionStart(double? value);
+  external set selectionEnd(double? value);
   void setSelectionRange(int start, int end, [String? direction]) =>
       js_util.callMethod(this, 'setSelectionRange',
           <Object>[start.toDouble(), end.toDouble(),
@@ -1276,14 +1636,10 @@ DomHTMLLabelElement createDomHTMLLabelElement() =>
 class DomOffscreenCanvas extends DomEventTarget {}
 
 extension DomOffscreenCanvasExtension on DomOffscreenCanvas {
-  int? get height =>
-      js_util.getProperty<double?>(this, 'height')?.toInt();
-  int? get width =>
-      js_util.getProperty<double?>(this, 'width')?.toInt();
-  set height(int? value) =>
-      js_util.setProperty<double?>(this, 'height', value?.toDouble());
-  set width(int? value) =>
-      js_util.setProperty<double?>(this, 'width', value?.toDouble());
+  external double? get height;
+  external double? get width;
+  external set height(double? value);
+  external set width(double? value);
   Object? getContext(String contextType, [Map<dynamic, dynamic>? attributes]) {
     return js_util.callMethod(this, 'getContext', <Object?>[
       contextType,
@@ -1347,16 +1703,25 @@ class DomStyleSheet {}
 class DomCSSStyleSheet extends DomStyleSheet {}
 
 extension DomCSSStyleSheetExtension on DomCSSStyleSheet {
-  external DomCSSRuleList get cssRules;
-  int insertRule(String rule, [int? index]) => js_util
+  Iterable<DomCSSRule> get cssRules =>
+      createDomListWrapper<DomCSSRule>(js_util
+          .getProperty<_DomList>(this, 'cssRules'));
+
+  double insertRule(String rule, [int? index]) => js_util
       .callMethod<double>(
           this, 'insertRule',
-          <Object>[rule, if (index != null) index.toDouble()]).toInt();
+          <Object>[rule, if (index != null) index.toDouble()]);
 }
 
 @JS()
 @staticInterop
 class DomCSSRule {}
+
+@JS()
+@staticInterop
+extension DomCSSRuleExtension on DomCSSRule {
+  external String get cssText;
+}
 
 @JS()
 @staticInterop
@@ -1455,13 +1820,75 @@ extension DomMessageChannelExtension on DomMessageChannel {
   external DomMessagePort get port2;
 }
 
+/// ResizeObserver JS binding.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver
 @JS()
 @staticInterop
-class DomCSSRuleList {}
+abstract class DomResizeObserver {}
 
-extension DomCSSRuleListExtension on DomCSSRuleList {
-  int get length =>
-      js_util.getProperty<double>(this, 'length').toInt();
+/// Creates a DomResizeObserver with a callback.
+///
+/// Internally converts the `List<dynamic>` of entries into the expected
+/// `List<DomResizeObserverEntry>`
+DomResizeObserver? createDomResizeObserver(DomResizeObserverCallbackFn fn) {
+  return domCallConstructorString('ResizeObserver', <Object?>[
+    allowInterop(
+      (List<dynamic> entries, DomResizeObserver observer) {
+        fn(entries.cast<DomResizeObserverEntry>(), observer);
+      }
+    ),
+  ]) as DomResizeObserver?;
+}
+
+/// ResizeObserver instance methods.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver#instance_methods
+extension DomResizeObserverExtension on DomResizeObserver {
+  external void disconnect();
+  external void observe(DomElement target, [DomResizeObserverObserveOptions options]);
+  external void unobserve(DomElement target);
+}
+
+/// Options object passed to the `observe` method of a [DomResizeObserver].
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserver/observe#parameters
+@JS()
+@staticInterop
+@anonymous
+abstract class DomResizeObserverObserveOptions {
+  external factory DomResizeObserverObserveOptions({
+    String box,
+  });
+}
+
+/// Type of the function used to create a Resize Observer.
+typedef DomResizeObserverCallbackFn = void Function(List<DomResizeObserverEntry> entries, DomResizeObserver observer);
+
+/// The object passed to the [DomResizeObserverCallbackFn], which allows access to the new dimensions of the observed element.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry
+@JS()
+@staticInterop
+abstract class DomResizeObserverEntry {}
+
+/// ResizeObserverEntry instance properties.
+///
+/// See: https://developer.mozilla.org/en-US/docs/Web/API/ResizeObserverEntry#instance_properties
+extension DomResizeObserverEntryExtension on DomResizeObserverEntry {
+  /// A DOMRectReadOnly object containing the new size of the observed element when the callback is run.
+  ///
+  /// Note that this is better supported than the above two properties, but it
+  /// is left over from an earlier implementation of the Resize Observer API, is
+  /// still included in the spec for web compat reasons, and may be deprecated
+  /// in future versions.
+  external DomRectReadOnly get contentRect;
+  external DomElement get target;
+  // Some more future getters:
+  //
+  // borderBoxSize
+  // contentBoxSize
+  // devicePixelContentBoxSize
 }
 
 /// A factory to create `TrustedTypePolicy` objects.
@@ -1574,13 +2001,11 @@ final DomTrustedTypePolicy _ttPolicy = domWindow.trustedTypes!.createPolicy(
 Object createTrustedScriptUrl(String url) {
   if (domWindow.trustedTypes != null) {
     // Pass `url` through Flutter Engine's TrustedType policy.
-    final DomTrustedScriptURL trustedCanvasKitUrl =
-        _ttPolicy.createScriptURL(url);
+    final DomTrustedScriptURL trustedUrl = _ttPolicy.createScriptURL(url);
 
-    assert(trustedCanvasKitUrl.url != '',
-        'URL: $url rejected by TrustedTypePolicy');
+    assert(trustedUrl.url != '', 'URL: $url rejected by TrustedTypePolicy');
 
-    return trustedCanvasKitUrl;
+    return trustedUrl;
   }
   return url;
 }
@@ -1620,8 +2045,7 @@ bool domInstanceOfString(Object? element, String objectType) =>
 class _DomList {}
 
 extension DomListExtension on _DomList {
-  int get length =>
-      js_util.getProperty<double>(this, 'length').toInt();
+  external double get length;
   DomNode item(int index) =>
       js_util.callMethod<DomNode>(this, 'item', <Object>[index.toDouble()]);
 }
@@ -1655,13 +2079,59 @@ class _DomListWrapper<T> extends Iterable<T> {
 
   /// Override the length to avoid iterating through the whole collection.
   @override
-  int get length => list.length;
+  int get length => list.length.toInt();
 }
 
 /// This is a work around for a `TypeError` which can be triggered by calling
 /// `toList` on the `Iterable`.
 Iterable<T> createDomListWrapper<T>(_DomList list) =>
     _DomListWrapper<T>._(list).cast<T>();
+
+// https://developer.mozilla.org/en-US/docs/Web/API/TouchList
+@JS()
+@staticInterop
+class _DomTouchList {}
+
+extension DomTouchListExtension on _DomTouchList {
+  external double get length;
+  DomTouch item(int index) =>
+      js_util.callMethod<DomTouch>(this, 'item', <Object>[index.toDouble()]);
+}
+
+class _DomTouchListIterator<T> extends Iterator<T> {
+  _DomTouchListIterator(this.list);
+
+  final _DomTouchList list;
+  int index = -1;
+
+  @override
+  bool moveNext() {
+    index++;
+    if (index > list.length) {
+      throw StateError('Iterator out of bounds');
+    }
+    return index < list.length;
+  }
+
+  @override
+  T get current => list.item(index) as T;
+}
+
+class _DomTouchListWrapper<T> extends Iterable<T> {
+  _DomTouchListWrapper._(this.list);
+
+  final _DomTouchList list;
+
+  @override
+  Iterator<T> get iterator => _DomTouchListIterator<T>(list);
+
+  /// Override the length to avoid iterating through the whole collection.
+  @override
+  int get length => list.length.toInt();
+}
+
+Iterable<T> createDomTouchListWrapper<T>(_DomTouchList list) =>
+    _DomTouchListWrapper<T>._(list).cast<T>();
 
 @JS()
 @staticInterop
@@ -1681,14 +2151,14 @@ class DomV8BreakIterator {}
 
 extension DomV8BreakIteratorExtension on DomV8BreakIterator {
   external void adoptText(String text);
-  external int first();
-  external int next();
-  external int current();
+  external double first();
+  external double next();
+  external double current();
   external String breakType();
 }
 
 DomV8BreakIterator createV8BreakIterator() {
-  final Object? v8BreakIterator = domWindow.Intl.v8BreakIterator;
+  final Object? v8BreakIterator = domIntl.v8BreakIterator;
   if (v8BreakIterator == null) {
     throw UnimplementedError('v8BreakIterator is not supported.');
   }
@@ -1696,7 +2166,7 @@ DomV8BreakIterator createV8BreakIterator() {
   return js_util.callConstructor<DomV8BreakIterator>(
     v8BreakIterator,
     <Object?>[
-      js_util.getProperty(domWindow, 'undefined'),
+      <String>[],
       js_util.jsify(const <String, String>{'type': 'line'}),
     ],
   );

@@ -5,9 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_WINDOW_BINDING_HANDLER_H_
 
-#include <windowsx.h>
-
 #include "flutter/shell/platform/windows/window_binding_handler.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "gmock/gmock.h"
 
 namespace flutter {
@@ -31,13 +30,15 @@ class MockWindowBindingHandler : public WindowBindingHandler {
   MOCK_METHOD0(OnWindowResized, void());
   MOCK_METHOD0(GetPhysicalWindowBounds, PhysicalWindowBounds());
   MOCK_METHOD1(UpdateFlutterCursor, void(const std::string& cursor_name));
+  MOCK_METHOD1(SetFlutterCursor, void(HCURSOR cursor_name));
   MOCK_METHOD1(OnCursorRectUpdated, void(const Rect& rect));
   MOCK_METHOD0(OnResetImeComposing, void());
   MOCK_METHOD3(OnBitmapSurfaceUpdated,
                bool(const void* allocation, size_t row_bytes, size_t height));
   MOCK_METHOD0(GetPrimaryPointerLocation, PointerLocation());
   MOCK_METHOD0(SendInitialAccessibilityFeatures, void());
-  MOCK_METHOD0(GetAccessibilityRootNode, AccessibilityRootNode*());
+  MOCK_METHOD0(GetAlertDelegate, AlertPlatformNodeDelegate*());
+  MOCK_METHOD0(GetAlert, ui::AXPlatformNodeWin*());
 };
 
 }  // namespace testing

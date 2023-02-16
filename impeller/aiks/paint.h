@@ -36,6 +36,17 @@ struct Paint {
     kStroke,
   };
 
+  enum class ColorSourceType {
+    kColor,
+    kImage,
+    kLinearGradient,
+    kRadialGradient,
+    kConicalGradient,
+    kSweepGradient,
+    kRuntimeEffect,
+    kScene,
+  };
+
   struct MaskBlurDescriptor {
     FilterContents::BlurStyle style;
     Sigma sigma;
@@ -48,6 +59,7 @@ struct Paint {
 
   Color color = Color::Black();
   std::optional<ColorSourceProc> color_source;
+  ColorSourceType color_source_type = ColorSourceType::kColor;
 
   Scalar stroke_width = 0.0;
   Cap stroke_cap = Cap::kButt;
@@ -93,6 +105,12 @@ struct Paint {
 
   std::shared_ptr<Contents> CreateContentsForGeometry(
       std::unique_ptr<Geometry> geometry) const;
+
+  std::shared_ptr<Contents> CreateContentsForGeometry(
+      const std::shared_ptr<Geometry>& geometry) const;
+
+  /// @brief   Whether this paint has a color filter that can apply opacity
+  bool HasColorFilter() const;
 
  private:
   std::shared_ptr<Contents> WithMaskBlur(std::shared_ptr<Contents> input,

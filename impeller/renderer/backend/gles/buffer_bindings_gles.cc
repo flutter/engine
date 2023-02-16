@@ -6,7 +6,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <sstream>
 #include <vector>
 
 #include "impeller/base/config.h"
@@ -60,29 +59,31 @@ bool BufferBindingsGLES::RegisterVertexStageInput(
 }
 
 static std::string NormalizeUniformKey(const std::string& key) {
-  std::stringstream stream;
-  for (size_t i = 0, count = key.length(); i < count; i++) {
-    auto ch = key.data()[i];
-    if (ch == '_') {
-      continue;
+  std::string result;
+  result.reserve(key.length());
+  for (char ch : key) {
+    if (ch != '_') {
+      result.push_back(toupper(ch));
     }
-    stream << static_cast<char>(toupper(ch));
   }
-  return stream.str();
+  return result;
 }
 
-static std::string CreateUnifiormMemberKey(const std::string& struct_name,
-                                           const std::string& member,
-                                           bool is_array) {
-  std::stringstream stream;
-  stream << struct_name << "." << member;
+static std::string CreateUniformMemberKey(const std::string& struct_name,
+                                          const std::string& member,
+                                          bool is_array) {
+  std::string result;
+  result.reserve(struct_name.length() + member.length() + (is_array ? 4 : 1));
+  result += struct_name;
+  result += '.';
+  result += member;
   if (is_array) {
-    stream << "[0]";
+    result += "[0]";
   }
-  return NormalizeUniformKey(stream.str());
+  return NormalizeUniformKey(result);
 }
 
-static std::string CreateUnifiormMemberKey(
+static std::string CreateUniformMemberKey(
     const std::string& non_struct_member) {
   return NormalizeUniformKey(non_struct_member);
 }
@@ -217,7 +218,7 @@ bool BufferBindingsGLES::BindUniformBuffer(const ProcTableGLES& gl,
     size_t element_count = member.array_elements.value_or(1);
 
     const auto member_key =
-        CreateUnifiormMemberKey(metadata->name, member.name, element_count > 1);
+        CreateUniformMemberKey(metadata->name, member.name, element_count > 1);
     const auto location = uniform_locations_.find(member_key);
     if (location == uniform_locations_.end()) {
       // The list of uniform locations only contains "active" uniforms that are
@@ -319,7 +320,7 @@ bool BufferBindingsGLES::BindTextures(const ProcTableGLES& gl,
       return false;
     }
 
-    const auto uniform_key = CreateUnifiormMemberKey(texture.second.isa->name);
+    const auto uniform_key = CreateUniformMemberKey(texture.second.isa->name);
     auto uniform = uniform_locations_.find(uniform_key);
     if (uniform == uniform_locations_.end()) {
       VALIDATION_LOG << "Could not find uniform for key: " << uniform_key;
