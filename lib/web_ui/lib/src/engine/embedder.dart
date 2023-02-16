@@ -211,7 +211,6 @@ class FlutterViewEmbedder {
 
     _textEditingHostNode?.appendChild(accessibilityPlaceholder);
     _textEditingHostNode?.appendChild(semanticsHostElement);
-    
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
     if (configuration.debugShowSemanticsNodes) {
