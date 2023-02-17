@@ -18,10 +18,12 @@ import '../utils.dart' show AnsiColors, FilePath, ProcessManager, cleanup, getBu
 class CompileBundleStep implements PipelineStep {
   CompileBundleStep({
     required this.bundle,
+    required this.isVerbose,
     this.testFiles,
   });
 
   final TestBundle bundle;
+  final bool isVerbose;
   final Set<FilePath>? testFiles;
 
   // Maximum number of concurrent compile processes to use.
@@ -66,12 +68,14 @@ class CompileBundleStep implements PipelineStep {
           testSetDirectory,
           outputBundleDirectory,
           renderer: bundle.compileConfig.renderer,
+          isVerbose: isVerbose,
         );
       case Compiler.dart2wasm:
         return Dart2WasmCompiler(
           testSetDirectory,
           outputBundleDirectory,
           renderer: bundle.compileConfig.renderer,
+          isVerbose: isVerbose,
         );
     }
   }
@@ -141,12 +145,16 @@ abstract class TestCompiler {
   TestCompiler(
     this.inputTestSetDirectory,
     this.outputTestBundleDirectory,
-    {required this.renderer}
+    {
+      required this.renderer,
+      required this.isVerbose,
+    }
   );
 
   final io.Directory inputTestSetDirectory;
   final io.Directory outputTestBundleDirectory;
   final Renderer renderer;
+  final bool isVerbose;
 
   Future<bool> compileTest(FilePath input);
 }
@@ -155,7 +163,10 @@ class Dart2JSCompiler extends TestCompiler {
   Dart2JSCompiler(
     super.inputTestSetDirectory,
     super.outputTestBundleDirectory,
-    {required super.renderer}
+    {
+      required super.renderer,
+      required super.isVerbose,
+    }
   );
 
   @override
@@ -199,7 +210,7 @@ class Dart2JSCompiler extends TestCompiler {
       environment.dartExecutable,
       arguments,
       workingDirectory: inputTestSetDirectory.path,
-      evalOutput: true,
+      evalOutput: !isVerbose,
     );
     final int exitCode = await process.wait();
     if (exitCode != 0) {
@@ -216,7 +227,10 @@ class Dart2WasmCompiler extends TestCompiler {
   Dart2WasmCompiler(
     super.inputTestSetDirectory,
     super.outputTestBundleDirectory,
-    {required super.renderer}
+    {
+      required super.renderer,
+      required super.isVerbose,
+    }
   );
 
   @override

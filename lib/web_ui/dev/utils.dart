@@ -372,7 +372,7 @@ Future<void> cleanup() async {
 io.Directory getTestSetDirectory(TestSet testSet) {
   return io.Directory(
     path.join(
-      environment.webUiBuildDir.path,
+      environment.webUiTestDir.path,
       testSet.directory,
     )
   );

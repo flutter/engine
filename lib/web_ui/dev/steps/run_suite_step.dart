@@ -30,6 +30,7 @@ import '../utils.dart';
 class RunSuiteStep implements PipelineStep {
   RunSuiteStep(this.suite, {
     required this.isDebug,
+    required this.isVerbose,
     required this.doUpdateScreenshotGoldens,
     required this.requireSkiaGold,
     this.testFiles,
@@ -39,6 +40,7 @@ class RunSuiteStep implements PipelineStep {
   final TestSuite suite;
   final Set<FilePath>? testFiles;
   final bool isDebug;
+  final bool isVerbose;
   final bool doUpdateScreenshotGoldens;
   final String? overridePathToCanvasKit;
 
@@ -92,6 +94,7 @@ class RunSuiteStep implements PipelineStep {
         skiaClient: skiaClient,
         overridePathToCanvasKit: overridePathToCanvasKit,
         isWasm: isWasm,
+        isVerbose: isVerbose,
       );
     });
 

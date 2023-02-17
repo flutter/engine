@@ -237,12 +237,16 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       CopyArtifactsStep(artifacts),
       if (shouldCompile)
         for (final TestBundle bundle in bundles)
-          CompileBundleStep(bundle: bundle),
+          CompileBundleStep(
+            bundle: bundle,
+            isVerbose: isVerbose
+          ),
       if (shouldRun)
         for (final TestSuite suite in filteredSuites)
           RunSuiteStep(
             suite, 
             isDebug: isDebug,
+            isVerbose: isVerbose,
             doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
             requireSkiaGold: requireSkiaGold,
             overridePathToCanvasKit: overridePathToCanvasKit,

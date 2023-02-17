@@ -52,6 +52,7 @@ class BrowserPlatform extends PlatformPlugin {
     required this.browserEnvironment,
     required this.server,
     required this.isDebug,
+    required this.isVerbose,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
     required this.skiaClient,
@@ -123,6 +124,7 @@ class BrowserPlatform extends PlatformPlugin {
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
     required bool isWasm,
+    required bool isVerbose,
   }) async {
     final shelf_io.IOServer server =
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
@@ -131,6 +133,7 @@ class BrowserPlatform extends PlatformPlugin {
       browserEnvironment: browserEnvironment,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
+      isVerbose: isVerbose,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
       skiaClient: skiaClient,
@@ -144,6 +147,8 @@ class BrowserPlatform extends PlatformPlugin {
   /// pauses before running the tests to give the developer a chance to set
   /// breakpoints in the code.
   final bool isDebug;
+
+  final bool isVerbose;
 
   /// The underlying server.
   final shelf.Server server;
@@ -255,7 +260,9 @@ class BrowserPlatform extends PlatformPlugin {
   }
 
   Future<shelf.Response> _fileNotFoundCatcher(shelf.Request request) async {
-    print('HTTP 404: ${request.url}');
+    if (isVerbose) {
+      print('HTTP 404: ${request.url}');
+    }
     return shelf.Response.notFound('File not found');
   }
 
@@ -386,10 +393,12 @@ class BrowserPlatform extends PlatformPlugin {
     final String filename = requestData['filename'] as String;
 
     if (!(await browserManager).supportsScreenshots) {
-      print(
-        'Skipping screenshot check for $filename. Current browser/OS '
-        'combination does not support screenshots.',
-      );
+      if (isVerbose) {
+        print(
+          'Skipping screenshot check for $filename. Current browser/OS '
+          'combination does not support screenshots.',
+        );
+      }
       return shelf.Response.ok(json.encode('OK'));
     }
 
