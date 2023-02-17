@@ -109,9 +109,9 @@ bool RasterCache::UpdateCacheEntry(
   return entry.image != nullptr;
 }
 
-int RasterCache::MarkSeen(const RasterCacheKeyID& id,
-                          const SkMatrix& matrix,
-                          bool visible) const {
+RasterCache::CacheInfo RasterCache::MarkSeen(const RasterCacheKeyID& id,
+                                             const SkMatrix& matrix,
+                                             bool visible) const {
   RasterCacheKey key = RasterCacheKey(id, matrix);
   Entry& entry = cache_[key];
   entry.encountered_this_frame = true;
@@ -119,7 +119,7 @@ int RasterCache::MarkSeen(const RasterCacheKeyID& id,
   if (visible || entry.accesses_since_visible > 0) {
     entry.accesses_since_visible++;
   }
-  return entry.accesses_since_visible;
+  return {entry.accesses_since_visible, entry.image != nullptr};
 }
 
 int RasterCache::GetAccessCount(const RasterCacheKeyID& id,

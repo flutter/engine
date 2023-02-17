@@ -229,8 +229,7 @@ class DisplayList : public SkRefCnt {
     Dispatch(ctx, ptr, ptr + byte_count_);
   }
 
-  void RenderTo(DisplayListBuilder* builder,
-                SkScalar opacity = SK_Scalar1) const;
+  void RenderTo(DisplayListBuilder* builder) const;
 
   void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
 
