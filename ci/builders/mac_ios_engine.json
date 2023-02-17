@@ -119,7 +119,7 @@
     "generators": {
         "tasks": [
             {
-                "name": "Debug-FlutterMacOS.framework",
+                "name": "Debug-ios-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/debug",
@@ -134,7 +134,7 @@
                 "language": "python3"
             },
 	    {
-                "name": "Profile-FlutterMacOS.framework",
+                "name": "Profile-ios-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/profile",
@@ -156,7 +156,7 @@
                 "script": "flutter/tools/gen_objcdoc.sh"
             },
 	    {
-                "name": "release-FlutterMacOS.framework",
+                "name": "Release-ios-Flutter.xcframework",
                 "parameters": [
                     "--dst",
                     "out/release",
