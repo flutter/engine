@@ -117,12 +117,14 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
 
 /// A color matrix which inverts colors.
 // clang-format off
-constexpr Matrix kColorInversion = Matrix(
-  -1.0,    0,   0, 1.0, 0, //
-    0, -1.0,    0, 1.0, 0, //
-    0,    0, -1.0, 1.0, 0, //
-  1.0,  1.0,  1.0, 1.0, 0, //
-);
+constexpr ColorFilterContents::ColorMatrix kColorInversion = {
+  .array = {
+    -1.0,    0,    0, 1.0, 0, //
+       0, -1.0,    0, 1.0, 0, //
+       0,    0, -1.0, 1.0, 0, //
+     1.0,  1.0,  1.0, 1.0, 0  //
+  }
+};
 // clang-format on
 
 std::shared_ptr<Contents> Paint::WithInvertFilter(
@@ -131,8 +133,8 @@ std::shared_ptr<Contents> Paint::WithInvertFilter(
     return input;
   }
 
-  return ColorFilterContents::MakeColorMatrix({std::move(input)},
-                                              kColorInversion);
+  return ColorFilterContents::MakeColorMatrix(
+      {FilterInput::Make(std::move(input))}, kColorInversion);
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(

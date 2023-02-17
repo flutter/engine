@@ -125,7 +125,8 @@ struct Paint {
   std::shared_ptr<Contents> WithColorFilter(std::shared_ptr<Contents> input,
                                             bool absorb_opacity = false) const;
 
-  std::shared_ptr<Contents> Paint::WithInvertFilter(
+  std::shared_ptr<Contents> WithInvertFilter(
       std::shared_ptr<Contents> input) const;
+};
 
 }  // namespace impeller
