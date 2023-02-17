@@ -20,6 +20,7 @@
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
 ../../../flutter/AUTHORS
+../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
 ../../../flutter/DEPS
 ../../../flutter/Doxyfile
@@ -141,6 +142,7 @@
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
+../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
 ../../../flutter/impeller/scene/README.md
@@ -2660,10 +2662,8 @@
 ../../../third_party/skia/modules/canvaskit/package.json
 ../../../third_party/skia/modules/canvaskit/tests
 ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/.gitignore
+../../../third_party/skia/modules/jetski/BUILD.bazel
 ../../../third_party/skia/modules/jetski/README
-../../../third_party/skia/modules/particles/BUILD.bazel
-../../../third_party/skia/modules/particles/include/BUILD.bazel
-../../../third_party/skia/modules/particles/src/BUILD.bazel
 ../../../third_party/skia/modules/pathkit/.gitignore
 ../../../third_party/skia/modules/pathkit/CHANGELOG.md
 ../../../third_party/skia/modules/pathkit/Makefile
