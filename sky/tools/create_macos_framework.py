@@ -163,12 +163,16 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
         macos_filepath_without_entitlements
     )
     subprocess.check_call([
-        'zip', '-r', '-y', 'FlutterMacOS.framework.zip',
+        'zip',
+        '-r',
+        '-y',
+        'FlutterMacOS.framework.zip',
         'FlutterMacOS.framework',
         'entitlements.txt',
         'without_entitlements.txt',
     ],
                           cwd=dst)
+
 
 if __name__ == '__main__':
   sys.exit(main())
