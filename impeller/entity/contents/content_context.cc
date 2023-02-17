@@ -28,7 +28,13 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   desc.SetSampleCount(sample_count);
 
   ColorAttachmentDescriptor color0 = *desc.GetColorAttachmentDescriptor(0u);
-  color0.format = color_attachment_pixel_format;
+  if (!color_attachment_pixel_format.has_value()) {
+    VALIDATION_LOG << "Color attachment pixel format must be set.";
+    color0.format = PixelFormat::kB8G8R8A8UNormInt;
+  } else {
+    color0.format = *color_attachment_pixel_format;
+  }
+  color0.format = *color_attachment_pixel_format;
   color0.alpha_blend_op = BlendOperation::kAdd;
   color0.color_blend_op = BlendOperation::kAdd;
 
@@ -145,7 +151,9 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
     return nullptr;
   }
   // Apply default ContentContextOptions to the descriptor.
-  ContentContextOptions{}.ApplyToPipelineDescriptor(*desc);
+  const auto default_color_fmt = context.GetColorAttachmentPixelFormat();
+  ContentContextOptions{.color_attachment_pixel_format = default_color_fmt}
+      .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
 }
 
@@ -172,12 +180,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
   }
-  sweep_gradient_fill_pipelines_[{}] =
-      CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
-  rrect_blur_pipelines_[{}] =
-      CreateDefaultPipeline<RRectBlurPipeline>(*context_);
-  texture_blend_pipelines_[{}] =
-      CreateDefaultPipeline<BlendPipeline>(*context_);
+
   blend_color_pipelines_[{}] =
       CreateDefaultPipeline<BlendColorPipeline>(*context_);
   blend_colorburn_pipelines_[{}] =
@@ -207,6 +210,45 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<BlendScreenPipeline>(*context_);
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
+#if FML_OS_PHYSICAL_IOS
+  framebuffer_blend_color_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
+  framebuffer_blend_colorburn_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendColorBurnPipeline>(*context_);
+  framebuffer_blend_colordodge_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendColorDodgePipeline>(*context_);
+  framebuffer_blend_darken_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendDarkenPipeline>(*context_);
+  framebuffer_blend_difference_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendDifferencePipeline>(*context_);
+  framebuffer_blend_exclusion_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendExclusionPipeline>(*context_);
+  framebuffer_blend_hardlight_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendHardLightPipeline>(*context_);
+  framebuffer_blend_hue_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendHuePipeline>(*context_);
+  framebuffer_blend_lighten_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendLightenPipeline>(*context_);
+  framebuffer_blend_luminosity_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendLuminosityPipeline>(*context_);
+  framebuffer_blend_multiply_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendMultiplyPipeline>(*context_);
+  framebuffer_blend_overlay_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
+  framebuffer_blend_saturation_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
+  framebuffer_blend_screen_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
+  framebuffer_blend_softlight_pipelines_[{}] =
+      CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
+#endif  // FML_OS_PHYSICAL_IOS
+
+  sweep_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
+  rrect_blur_pipelines_[{}] =
+      CreateDefaultPipeline<RRectBlurPipeline>(*context_);
+  texture_blend_pipelines_[{}] =
+      CreateDefaultPipeline<BlendPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
   tiled_texture_pipelines_[{}] =
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
@@ -272,9 +314,13 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   RenderTarget subpass_target;
   if (context->GetDeviceCapabilities().SupportsOffscreenMSAA() &&
       msaa_enabled) {
-    subpass_target = RenderTarget::CreateOffscreenMSAA(*context, texture_size);
+    subpass_target = RenderTarget::CreateOffscreenMSAA(
+        *context, texture_size, "Contents Offscreen MSAA",
+        RenderTarget::kDefaultColorAttachmentConfigMSAA, std::nullopt);
   } else {
-    subpass_target = RenderTarget::CreateOffscreen(*context, texture_size);
+    subpass_target = RenderTarget::CreateOffscreen(
+        *context, texture_size, "Contents Offscreen",
+        RenderTarget::kDefaultColorAttachmentConfig, std::nullopt);
   }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
   if (!subpass_texture) {
