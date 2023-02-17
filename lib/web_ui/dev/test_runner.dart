@@ -228,7 +228,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       if (!bundleFound) {
         throw ToolExit('Test path not in any known test bundle: $testPath');
       }
-    };
+    }
     return FileFilter(allowList: bundleNames);
   }
 

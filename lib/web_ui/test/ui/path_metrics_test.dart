@@ -8,7 +8,7 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart';
 
-import '../matchers.dart';
+import '../common/matchers.dart';
 import 'utils.dart';
 
 const double kTolerance = 0.1;
