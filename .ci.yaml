@@ -160,6 +160,7 @@ targets:
     recipe: engine/femu_test
     bringup: true
     properties:
+      add_recipes_cq: "false"
       build_fuchsia: "true"
       fuchsia_ctl_version: version:0.0.27
       # ensure files from pre-production Fuchsia SDK tests are purged from cache
