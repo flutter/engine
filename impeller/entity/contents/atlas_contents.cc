@@ -136,14 +136,14 @@ std::shared_ptr<SubAtlasResult> AtlasContents::GenerateSubAtlas() const {
                                    key.rect.size.height);
     auto sub_transform = Matrix::MakeTranslation(Vector2(x_offset, y_offset));
 
-    x_offset += (key.rect.size.width + 1.0);
+    x_offset += std::ceil(key.rect.size.width) + 1.0;
 
     result->sub_texture_coords.push_back(key.rect);
     result->sub_colors.push_back(key.color);
     result->sub_transforms.push_back(sub_transform);
 
     x_extent = std::max(x_extent, x_offset);
-    y_extent = std::max(y_extent, y_offset + key.rect.size.height);
+    y_extent = std::max(y_extent, std::ceil(y_offset + key.rect.size.height));
 
     for (auto transform : transforms) {
       result->result_texture_coords.push_back(new_rect);
