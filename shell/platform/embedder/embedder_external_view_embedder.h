@@ -41,7 +41,7 @@ class EmbedderExternalViewEmbedder final : public ExternalViewEmbedder {
   ///             API.
   ///
   /// @param[in] avoid_backing_store_cache If set, create_render_target_callback
-  ///                                      will beinvoked every frame for every
+  ///                                      will be invoked every frame for every
   ///                                      engine composited layer. The result
   ///                                      will not cached.
   ///

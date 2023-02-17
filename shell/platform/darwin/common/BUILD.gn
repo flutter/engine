@@ -39,9 +39,13 @@ source_set("framework_shared") {
     "framework/Source/FlutterStandardCodec.mm",
     "framework/Source/FlutterStandardCodecHelper.cc",
     "framework/Source/FlutterStandardCodec_Internal.h",
+    "framework/Source/FlutterThreadSynchronizer.h",
+    "framework/Source/FlutterThreadSynchronizer.mm",
   ]
 
   public = framework_shared_headers
+
+  public += [ "framework/Source/FlutterThreadSynchronizer.h" ]
 
   defines = [ "FLUTTER_FRAMEWORK" ]
 
@@ -49,6 +53,8 @@ source_set("framework_shared") {
     "//flutter:config",
     ":framework_relative_headers",
   ]
+
+  frameworks = [ "QuartzCore.framework" ]
 
   deps = [ "//flutter/fml" ]
 }

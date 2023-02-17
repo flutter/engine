@@ -2,14 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurfaceManager.h"
 
 #import <Metal/Metal.h>
 
 #include <algorithm>
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurface.h"
 
 @implementation FlutterSurfacePresentInfo
 @end

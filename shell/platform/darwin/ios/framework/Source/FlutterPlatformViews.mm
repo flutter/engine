@@ -176,6 +176,10 @@ UIViewController* FlutterPlatformViewsController::getFlutterViewController() {
   return flutter_view_controller_.get();
 }
 
+FlutterView* FlutterPlatformViewsController::GetFlutterView() {
+  return (FlutterView*)flutter_view_.get();
+}
+
 void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, FlutterResult& result) {
   if ([[call method] isEqualToString:@"create"]) {
     OnCreate(call, result);
@@ -569,6 +573,207 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
+
+static CATransform3D ToCATransform3D(const FlutterTransformation& t) {
+  CATransform3D transform = CATransform3DIdentity;
+  transform.m11 = t.scaleX;
+  transform.m21 = t.skewX;
+  transform.m41 = t.transX;
+  transform.m14 = t.pers0;
+  transform.m12 = t.skewY;
+  transform.m22 = t.scaleY;
+  transform.m42 = t.transY;
+  transform.m24 = t.pers1;
+  return transform;
+}
+
+void FlutterPlatformViewsController::CompositeWithEmbedderPlatformViewLayer(
+    const FlutterLayer* layer) {
+  if (flutter_view_ == nullptr) {
+    return;
+  }
+
+  int64_t platform_view_id = layer->platform_view->identifier;
+  UIView* platformView = GetPlatformViewByID(platform_view_id);
+  UIView* touchInterceptor = platformView.superview;
+  ResetAnchor(touchInterceptor.layer);
+  ChildClippingView* clippingView = (ChildClippingView*)touchInterceptor.superview;
+
+  // TODO(cyanglaz)
+  // NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
+  FML_DCHECK(!clippingView.maskView ||
+             [clippingView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
+  if (mask_view_pool_.get() == nil) {
+    mask_view_pool_.reset([[FlutterClippingMaskViewPool alloc]
+        initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
+  }
+  [mask_view_pool_.get() recycleMaskViews];
+  clippingView.maskView = nil;
+  CGFloat screenScale = [UIScreen mainScreen].scale;
+
+  CGRect rect = CGRectMake(layer->offset.x, layer->offset.y, layer->size.width, layer->size.height);
+  clippingView.frame = CGRectApplyAffineTransform(
+      rect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
+  touchInterceptor.layer.transform = CATransform3DIdentity;
+  touchInterceptor.frame = clippingView.bounds;
+  touchInterceptor.alpha = 1;
+
+  CATransform3D transform = CATransform3DMakeScale(1 / screenScale, 1 / screenScale, 1);
+
+  for (size_t i = 0; i < layer->platform_view->mutations_count; ++i) {
+    auto mutation = layer->platform_view->mutations[i];
+    switch (mutation->type) {
+      case kFlutterPlatformViewMutationTypeOpacity:
+        touchInterceptor.alpha = mutation->opacity * touchInterceptor.alpha;
+        break;
+      case kFlutterPlatformViewMutationTypeClipRect:
+        break;
+      case kFlutterPlatformViewMutationTypeClipRoundedRect:
+        break;
+      case kFlutterPlatformViewMutationTypeTransformation:
+        transform = CATransform3DConcat(ToCATransform3D(mutation->transformation), transform);
+        break;
+      default:
+        break;
+    }
+  }
+  transform = CATransform3DConcat(
+      transform,
+      CATransform3DMakeTranslation(-clippingView.frame.origin.x, -clippingView.frame.origin.y, 0));
+  touchInterceptor.layer.transform = transform;
+
+  composition_order_.push_back(platform_view_id);
+
+  SkRect view_bounds =
+      SkRect::MakeSize(SkSize::Make(flutter_view_.get().bounds.size.width * screenScale,
+                                    flutter_view_.get().bounds.size.height * screenScale));
+  std::unique_ptr<EmbedderViewSlice> view;
+  view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
+
+  //   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
+
+  //   touchInterceptor.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
+}
+// if (mutation->type == kFlutterPlatformViewMutationTypeTransformation) {
+//   transform = CATransform3DConcat(ToCATransform3D(mutation->transformation), transform);
+// } else if (mutation->type == kFlutterPlatformViewMutationTypeClipRect) {
+//   CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation->clip_rect),
+//                                            CATransform3DGetAffineTransform(transform));
+//   masterClip = CGRectIntersection(rect, masterClip);
+// } else if (mutation->type == kFlutterPlatformViewMutationTypeClipRoundedRect) {
+//   CGAffineTransform affineTransform = CATransform3DGetAffineTransform(transform);
+//   roundedRects.push_back(std::make_pair(mutation->clip_rounded_rect, affineTransform));
+//   CGRect rect = CGRectApplyAffineTransform(FromFlutterRect(mutation->clip_rounded_rect.rect),
+//                                            affineTransform);
+//   masterClip = CGRectIntersection(rect, masterClip);
+// } else if (mutation->type == kFlutterPlatformViewMutationTypeOpacity) {
+//   self.layer.opacity *= mutation->opacity;
+// }
+
+//   auto iter = mutators_stack.Begin();
+//   while (iter != mutators_stack.End()) {
+//     switch ((*iter)->GetType()) {
+//       case kTransform: {
+//         transformMatrix.preConcat((*iter)->GetMatrix());
+//         break;
+//       }
+//       case kClipRect: {
+//         if (ClipRectContainsPlatformViewBoundingRect((*iter)->GetRect(), bounding_rect,
+//                                                      transformMatrix)) {
+//           break;
+//         }
+//         ClipViewSetMaskView(clipView);
+//         [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
+//                                                        matrix:transformMatrix];
+//         break;
+//       }
+//       case kClipRRect: {
+//         if (ClipRRectContainsPlatformViewBoundingRect((*iter)->GetRRect(), bounding_rect,
+//                                                       transformMatrix)) {
+//           break;
+//         }
+//         ClipViewSetMaskView(clipView);
+//         [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
+//                                                         matrix:transformMatrix];
+//         break;
+//       }
+//       case kClipPath: {
+//         // TODO(cyanglaz): Find a way to pre-determine if path contains the PlatformView boudning
+//         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
+//         // https://github.com/flutter/flutter/issues/118650
+//         ClipViewSetMaskView(clipView);
+//         [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
+//                                                        matrix:transformMatrix];
+//         break;
+//       }
+//       case kOpacity:
+//         touchInterceptor.alpha = (*iter)->GetAlphaFloat() * touchInterceptor.alpha;
+//         break;
+//       case kBackdropFilter: {
+//         // Only support DlBlurImageFilter for BackdropFilter.
+//         if (!canApplyBlurBackdrop || !(*iter)->GetFilterMutation().GetFilter().asBlur()) {
+//           break;
+//         }
+//         CGRect filterRect =
+//             flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+//         // `filterRect` is in global coordinates. We need to convert to local space.
+//         filterRect = CGRectApplyAffineTransform(
+//             filterRect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
+//         // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
+//         // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
+//         // filtered.
+//         if (CGRectIsNull(CGRectIntersection(filterRect, clipView.frame))) {
+//           break;
+//         }
+//         CGRect intersection = CGRectIntersection(filterRect, clipView.frame);
+//         CGRect frameInClipView = [flutter_view_.get() convertRect:intersection toView:clipView];
+//         // sigma_x is arbitrarily chosen as the radius value because Quartz sets
+//         // sigma_x and sigma_y equal to each other. DlBlurImageFilter's Tile Mode
+//         // is not supported in Quartz's gaussianBlur CAFilter, so it is not used
+//         // to blur the PlatformView.
+//         CGFloat blurRadius = (*iter)->GetFilterMutation().GetFilter().asBlur()->sigma_x();
+//         UIVisualEffectView* visualEffectView = [[[UIVisualEffectView alloc]
+//             initWithEffect:[UIBlurEffect effectWithStyle:UIBlurEffectStyleLight]] autorelease];
+//         PlatformViewFilter* filter =
+//             [[[PlatformViewFilter alloc] initWithFrame:frameInClipView
+//                                             blurRadius:blurRadius
+//                                       visualEffectView:visualEffectView] autorelease];
+//         if (!filter) {
+//           canApplyBlurBackdrop = NO;
+//         } else {
+//           [blurFilters addObject:filter];
+//         }
+//         break;
+//       }
+//     }
+//     ++iter;
+//   }
+
+//   if (canApplyBlurBackdrop) {
+//     [clipView applyBlurBackdropFilters:blurFilters];
+//   }
+
+//   // The UIKit frame is set based on the logical resolution (points) instead of physical.
+//   //
+//   (https://developer.apple.com/library/archive/documentation/DeviceInformation/Reference/iOSDeviceCompatibility/Displays/Displays.html).
+//   // However, flow is based on the physical resolution. For example, 1000 pixels in flow equals
+//   // 500 points in UIKit for devices that has screenScale of 2. We need to scale the
+//   transformMatrix
+//   // down to the logical resoltion before applying it to the layer of PlatformView.
+//   transformMatrix.postScale(1 / screenScale, 1 / screenScale);
+
+//   // Reverse the offset of the clipView.
+//   // The clipView's frame includes the final translate of the final transform matrix.
+//   // Thus, this translate needs to be reversed so the platform view can layout at the correct
+//   // offset.
+//   //
+//   // Note that the transforms are not applied to the clipping paths because clipping paths happen
+//   on
+//   // the mask view, whose origin is always (0,0) to the flutter_view.
+//   transformMatrix.postTranslate(-clipView.frame.origin.x, -clipView.frame.origin.y);
+
+//   touchInterceptor.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
+// }
 
 void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {

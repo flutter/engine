@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 #import <QuartzCore/QuartzCore.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurface.h"
 
 /**
  * Surface with additional properties needed for presenting.

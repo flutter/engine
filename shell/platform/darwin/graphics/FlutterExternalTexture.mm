@@ -2,9 +2,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
 
 #include "flutter/fml/platform/darwin/cf_utils.h"
+
+FLUTTER_ASSERT_ARC
 
 @implementation FlutterExternalTexture {
   FlutterDarwinContextMetalSkia* _darwinMetalContext;

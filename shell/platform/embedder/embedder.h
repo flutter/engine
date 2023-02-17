@@ -25,16 +25,12 @@
 // - Function signatures (names, argument counts, argument order, and argument
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
-// - Instead of nesting structures by value within another structure, prefer
-//   nesting by pointer. This ensures that adding members to the nested struct
-//   does not break the ABI of the parent struct.
 // - Instead of array of structures, prefer array of pointers to structures.
 //   This ensures that array indexing does not break if members are added
 //   to the structure.
 //
 // These changes are allowed:
-// - Adding new struct members at the end of a structure as long as the struct
-//   is not nested within another struct by value.
+// - Adding new struct members at the end of a structure.
 // - Adding new enum members with a new value.
 // - Renaming a struct member as long as its type, size, and intent remain the
 //   same.
@@ -258,6 +254,20 @@ typedef enum {
   /// Suitable for thread which raster data.
   kRaster = 3,
 } FlutterThreadPriority;
+
+/// Valid values for preferred stylus auxiliary action.
+typedef enum {
+  /// Unknown action, default value.
+  kUnknown = 0,
+  /// The auxiliary action on the stylus is ignored.
+  kIgnore,
+  /// The auxiliary action is to show color palette.
+  kShowColorPalette,
+  /// The auxiliary action is to switch to the eraser.
+  kSwitchEraser,
+  /// The auxiliary action is to switch to the previous selection.
+  kSwitchPrevious,
+} PreferredStylusAuxiliaryAction;
 
 typedef struct _FlutterEngine* FLUTTER_API_SYMBOL(FlutterEngine);
 
@@ -826,6 +836,14 @@ typedef struct {
   double physical_view_inset_bottom;
   /// Left inset of window.
   double physical_view_inset_left;
+  /// Top padding of the window. (Safe Area on mobile)
+  double physical_padding_top;
+  /// Right padding of the window. (Safe Area on mobile)
+  double physical_padding_right;
+  /// Bottom padding of the window. (Safe Area on mobile)
+  double physical_padding_bottom;
+  /// Left padding of the window. (Safe Area on mobile)
+  double physical_padding_left;
 } FlutterWindowMetricsEvent;
 
 /// The phase of the pointer event.
@@ -876,6 +894,7 @@ typedef enum {
   kFlutterPointerDeviceKindTouch,
   kFlutterPointerDeviceKindStylus,
   kFlutterPointerDeviceKindTrackpad,
+  kFlutterPointerDeviceKindInvertedStylus,
 } FlutterPointerDeviceKind;
 
 /// Flags for the `buttons` field of `FlutterPointerEvent` when `device_kind`
@@ -935,6 +954,30 @@ typedef struct {
   double scale;
   /// The rotation of the pan/zoom in radians, where 0.0 is the initial angle.
   double rotation;
+  /// The pressure of the touch event.
+  double pressure;
+  /// The minimum pressure of the touch event.
+  double pressure_min;
+  /// The maximum pressure of the touch event.
+  double pressure_max;
+  /// The radius of the touch.
+  /// Radius are used on platforms that calculates the size of the touch point.
+  double radius_major;
+  /// The minimum radius of the touch.
+  double radius_min;
+  /// The maximum radius of the touch.
+  double radius_max;
+  /// The angle (in radians) of the stylus, in radians in the range. Only works
+  /// in embedders that support stylus. It is ignored on the Platforms that do
+  /// not support stylus.
+  double orientation;
+  /// The angle of the stylus, in radians in the range: -pi < orientation <= pi.
+  /// It is ignored on the Platforms that do not support stylus.
+  double tilt;
+  /// The preferred stylus auxiliary action.
+  /// Only works on Platforms that supports such action(e.g. iOS). It is ignored
+  /// on other platforms.
+  PreferredStylusAuxiliaryAction preferred_auxiliary_stylus_action;
 } FlutterPointerEvent;
 
 typedef enum {
@@ -2098,6 +2141,7 @@ typedef struct {
   /// and `update_semantics_callback2` may be provided; the others must be set
   /// to null.
   FlutterUpdateSemanticsCallback2 update_semantics_callback2;
+  bool handle_platform_message_on_platform_thread;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
@@ -2791,6 +2835,31 @@ FlutterEngineResult FlutterEngineSetNextFrameCallback(
     VoidCallback callback,
     void* user_data);
 
+//----------------------------------------------------------------------------
+/// @brief      Pauses the calling thread until the first frame is presented.
+///
+/// @param[in]  engine     A running engine instance.
+/// @param[in]  wait_time_in_nanos  The duration to wait before timing out. If
+/// this
+///                                 duration would cause an overflow when added
+///                                 to std::chrono::steady_clock::now(), this
+///                                 method will wait indefinitely for the first
+///                                 frame.
+///
+/// @return     `true` when the first frame has been presented before the
+///             timeout successfully, 'false' if called from the
+///             GPU or UI thread, or if there is a timeout.
+///
+FLUTTER_EXPORT
+bool FlutterEngineWaitForFirstFrame(FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                    uint64_t wait_time_in_nanos);
+
+FLUTTER_EXPORT
+bool FlutterEngineNotifyCreated(FLUTTER_API_SYMBOL(FlutterEngine) engine);
+
+FLUTTER_EXPORT
+bool FlutterEngineNotifyDestroyed(FLUTTER_API_SYMBOL(FlutterEngine) engine);
+
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
 // Typedefs for the function pointers in FlutterEngineProcTable.
@@ -2913,6 +2982,13 @@ typedef FlutterEngineResult (*FlutterEngineSetNextFrameCallbackFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     VoidCallback callback,
     void* user_data);
+typedef bool (*FlutterEngineWaitForFirstFrameFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    uint64_t wait_time_in_nanos);
+typedef bool (*FlutterEngineNotifyCreatedFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef bool (*FlutterEngineNotifyDestroyedFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2959,6 +3035,9 @@ typedef struct {
   FlutterEngineNotifyDisplayUpdateFnPtr NotifyDisplayUpdate;
   FlutterEngineScheduleFrameFnPtr ScheduleFrame;
   FlutterEngineSetNextFrameCallbackFnPtr SetNextFrameCallback;
+  FlutterEngineWaitForFirstFrameFnPtr WaitForFirstFrame;
+  FlutterEngineNotifyCreatedFnPtr NotifyCreated;
+  FlutterEngineNotifyDestroyedFnPtr NotifyDestroyed;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------

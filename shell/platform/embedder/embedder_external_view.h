@@ -116,6 +116,7 @@ class EmbedderExternalView {
   const SkMatrix surface_transformation_;
   ViewIdentifier view_identifier_;
   std::unique_ptr<EmbeddedViewParams> embedded_view_params_;
+  std::unique_ptr<DisplayListEmbedderViewSlice> slice_;
   std::unique_ptr<SkPictureRecorder> recorder_;
   std::unique_ptr<CanvasSpy> canvas_spy_;
 

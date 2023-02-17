@@ -11,6 +11,7 @@
 
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/common/shell.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurfaceManager.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_context.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
@@ -42,10 +43,13 @@
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque
-                 enableWideGamut:(BOOL)isWideGamutEnabled NS_DESIGNATED_INITIALIZER;
+                 enableWideGamut:(BOOL)isWideGamutEnabled
+                       MTLDevice:(id<MTLDevice>)device
+                    commandQueue:(id<MTLCommandQueue>)commandQueue NS_DESIGNATED_INITIALIZER;
 
 // Set by FlutterEngine or FlutterViewController to override software rendering.
 @property(class, nonatomic) BOOL forceSoftwareRendering;
+@property(readonly, nonatomic) FlutterSurfaceManager* surfaceManager;
 @end
 
 #endif  // SHELL_PLATFORM_IOS_FRAMEWORK_SOURCE_FLUTTER_VIEW_H_

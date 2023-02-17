@@ -1818,13 +1818,17 @@ FlutterEngineResult FlutterEngineInitialize(size_t version,
                               "Compositor arguments were invalid.");
   }
 
+  bool handle_platform_message_on_platform_thread =
+      SAFE_ACCESS(args, handle_platform_message_on_platform_thread, true);
+
   flutter::PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table =
       {
-          update_semantics_callback,                  //
-          platform_message_response_callback,         //
-          vsync_callback,                             //
-          compute_platform_resolved_locale_callback,  //
-          on_pre_engine_restart_callback,             //
+          update_semantics_callback,                   //
+          platform_message_response_callback,          //
+          vsync_callback,                              //
+          compute_platform_resolved_locale_callback,   //
+          on_pre_engine_restart_callback,              //
+          handle_platform_message_on_platform_thread,  //
       };
 
   auto on_create_platform_view = InferPlatformViewCreationCallback(
@@ -2087,6 +2091,15 @@ FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
                               "be greater than physical height or width.");
   }
 
+  metrics.physical_padding_top =
+      SAFE_ACCESS(flutter_metrics, physical_padding_top, 0.0);
+  metrics.physical_padding_right =
+      SAFE_ACCESS(flutter_metrics, physical_padding_right, 0.0);
+  metrics.physical_padding_bottom =
+      SAFE_ACCESS(flutter_metrics, physical_padding_bottom, 0.0);
+  metrics.physical_padding_left =
+      SAFE_ACCESS(flutter_metrics, physical_padding_left, 0.0);
+
   return reinterpret_cast<flutter::EmbedderEngine*>(engine)->SetViewportMetrics(
              metrics)
              ? kSuccess
@@ -2135,6 +2148,8 @@ inline flutter::PointerData::DeviceKind ToPointerDataKind(
       return flutter::PointerData::DeviceKind::kStylus;
     case kFlutterPointerDeviceKindTrackpad:
       return flutter::PointerData::DeviceKind::kTrackpad;
+    case kFlutterPointerDeviceKindInvertedStylus:
+      return flutter::PointerData::DeviceKind::kInvertedStylus;
   }
   return flutter::PointerData::DeviceKind::kMouse;
 }
@@ -2156,6 +2171,29 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
   }
   return flutter::PointerData::SignalKind::kNone;
+}
+
+// Returns the flutter::PointerData:PreferredStylusAuxiliaryAction for the given
+// PreferredStylusAuxiliaryAction.
+inline flutter::PointerData::PreferredStylusAuxiliaryAction
+ToPointerDataPreferredStylusAuxiliaryAction(
+    PreferredStylusAuxiliaryAction action) {
+  switch (action) {
+    case kIgnore:
+      return flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
+    case kShowColorPalette:
+      return flutter::PointerData::PreferredStylusAuxiliaryAction::
+          kShowColorPalette;
+    case kSwitchEraser:
+      return flutter::PointerData::PreferredStylusAuxiliaryAction::
+          kSwitchEraser;
+    case kSwitchPrevious:
+      return flutter::PointerData::PreferredStylusAuxiliaryAction::
+          kSwitchPrevious;
+    case kUnknown:
+      return flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
+  }
+  return flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
 }
 
 // Returns the buttons to synthesize for a PointerData from a
@@ -2247,7 +2285,21 @@ FlutterEngineResult FlutterEngineSendPointerEvent(
     pointer_data.pan_delta_x = 0.0;
     pointer_data.pan_delta_y = 0.0;
     pointer_data.scale = SAFE_ACCESS(current, scale, 0.0);
+
     pointer_data.rotation = SAFE_ACCESS(current, rotation, 0.0);
+    pointer_data.pressure = SAFE_ACCESS(current, pressure, 0.0);
+    pointer_data.pressure_min = SAFE_ACCESS(current, pressure_min, 0.0);
+    pointer_data.pressure_max = SAFE_ACCESS(current, pressure_max, 0.0);
+    pointer_data.radius_major = SAFE_ACCESS(current, radius_major, 0.0);
+    pointer_data.radius_min = SAFE_ACCESS(current, radius_min, 0.0);
+    pointer_data.radius_max = SAFE_ACCESS(current, radius_max, 0.0);
+    pointer_data.orientation = SAFE_ACCESS(current, orientation, 0.0);
+    pointer_data.tilt = SAFE_ACCESS(current, tilt, 0.0);
+    pointer_data.preferred_auxiliary_stylus_action =
+        ToPointerDataPreferredStylusAuxiliaryAction(
+            SAFE_ACCESS(current, preferred_auxiliary_stylus_action,
+                        PreferredStylusAuxiliaryAction::kUnknown));
+
     packet->SetPointerData(i, pointer_data);
     current = reinterpret_cast<const FlutterPointerEvent*>(
         reinterpret_cast<const uint8_t*>(current) + current->struct_size);
@@ -3062,6 +3114,37 @@ FlutterEngineResult FlutterEngineSetNextFrameCallback(
   return kSuccess;
 }
 
+bool FlutterEngineWaitForFirstFrame(FLUTTER_API_SYMBOL(FlutterEngine) engine,
+                                    uint64_t wait_time_in_nanos) {
+  auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  if (embedder_engine == nullptr || !embedder_engine->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine was invalid.");
+  }
+
+  return embedder_engine->GetShell()
+             .WaitForFirstFrame(
+                 fml::TimeDelta::FromNanoseconds(wait_time_in_nanos))
+             .code() != fml::StatusCode::kDeadlineExceeded;
+}
+
+bool FlutterEngineNotifyCreated(FLUTTER_API_SYMBOL(FlutterEngine) engine) {
+  auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  if (embedder_engine == nullptr || !embedder_engine->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine was invalid.");
+  }
+
+  return embedder_engine->NotifyCreated();
+}
+
+bool FlutterEngineNotifyDestroyed(FLUTTER_API_SYMBOL(FlutterEngine) engine) {
+  auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  if (embedder_engine == nullptr || !embedder_engine->IsValid()) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine was invalid.");
+  }
+
+  return embedder_engine->NotifyDestroyed();
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -3114,6 +3197,9 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(NotifyDisplayUpdate, FlutterEngineNotifyDisplayUpdate);
   SET_PROC(ScheduleFrame, FlutterEngineScheduleFrame);
   SET_PROC(SetNextFrameCallback, FlutterEngineSetNextFrameCallback);
+  SET_PROC(WaitForFirstFrame, FlutterEngineWaitForFirstFrame);
+  SET_PROC(NotifyCreated, FlutterEngineNotifyCreated);
+  SET_PROC(NotifyDestroyed, FlutterEngineNotifyDestroyed);
 #undef SET_PROC
 
   return kSuccess;

@@ -3,9 +3,9 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterView.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterThreadSynchronizer.h"
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurfaceManager.h"
 
 #import <QuartzCore/QuartzCore.h>
 

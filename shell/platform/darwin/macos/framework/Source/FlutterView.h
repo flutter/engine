@@ -4,8 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurfaceManager.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterThreadSynchronizer.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurfaceManager.h"
 
 #include <stdint.h>
 

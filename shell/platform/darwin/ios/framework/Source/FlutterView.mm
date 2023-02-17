@@ -12,6 +12,7 @@
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/common/rasterizer.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterThreadSynchronizer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface_software.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -29,9 +30,14 @@ static BOOL IsWideGamutSupported() {
 #endif
 }
 
+@interface FlutterView () <FlutterSurfaceManagerDelegate>
+
+@end
+
 @implementation FlutterView {
   id<FlutterViewEngineDelegate> _delegate;
   BOOL _isWideGamutEnabled;
+  FlutterThreadSynchronizer* _threadSynchronizer;
 }
 
 - (instancetype)init {
@@ -51,7 +57,9 @@ static BOOL IsWideGamutSupported() {
 
 - (instancetype)initWithDelegate:(id<FlutterViewEngineDelegate>)delegate
                           opaque:(BOOL)opaque
-                 enableWideGamut:(BOOL)isWideGamutEnabled {
+                 enableWideGamut:(BOOL)isWideGamutEnabled
+                       MTLDevice:(id<MTLDevice>)device
+                    commandQueue:(id<MTLCommandQueue>)commandQueue {
   if (delegate == nil) {
     NSLog(@"FlutterView delegate was nil.");
     [self release];
@@ -74,6 +82,13 @@ static BOOL IsWideGamutSupported() {
     // it will make it take long time for us to take next CAMetalDrawable and will
     // cause constant junk during rendering.
     self.backgroundColor = UIColor.clearColor;
+    if (device) {
+      _surfaceManager = [[[FlutterSurfaceManager alloc] initWithDevice:device
+                                                          commandQueue:commandQueue
+                                                                 layer:self.layer
+                                                              delegate:self] retain];
+      _threadSynchronizer = [[[FlutterThreadSynchronizer alloc] init] retain];
+    }
   }
 
   return self;
@@ -180,6 +195,18 @@ static BOOL _forceSoftwareRendering;
   // https://github.com/flutter/flutter/issues/76808.
   [_delegate flutterViewAccessibilityDidCall];
   return NO;
+}
+
+- (void)dealloc {
+  [_threadSynchronizer release];
+  [_surfaceManager release];
+  [super dealloc];
+}
+
+#pragma mark - FlutterSurfaceManagerDelegate
+
+- (void)onPresent:(CGSize)frameSize withBlock:(nonnull dispatch_block_t)block {
+  [_threadSynchronizer performCommit:frameSize notify:block];
 }
 
 @end

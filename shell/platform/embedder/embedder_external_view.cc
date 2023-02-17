@@ -30,6 +30,8 @@ EmbedderExternalView::EmbedderExternalView(
       surface_transformation_(surface_transformation),
       view_identifier_(view_identifier),
       embedded_view_params_(std::move(params)),
+      slice_(std::make_unique<DisplayListEmbedderViewSlice>(
+          SkRect::Make(frame_size))),
       recorder_(std::make_unique<SkPictureRecorder>()),
       canvas_spy_(std::make_unique<CanvasSpy>(
           recorder_->beginRecording(frame_size.width(), frame_size.height()))) {
@@ -59,7 +61,8 @@ bool EmbedderExternalView::HasPlatformView() const {
 }
 
 bool EmbedderExternalView::HasEngineRenderedContents() const {
-  return canvas_spy_->DidDrawIntoCanvas();
+  // return canvas_spy_->DidDrawIntoCanvas();
+  return true;
 }
 
 EmbedderExternalView::ViewIdentifier EmbedderExternalView::GetViewIdentifier()

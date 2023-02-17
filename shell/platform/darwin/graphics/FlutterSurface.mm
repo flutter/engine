@@ -2,9 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterSurface.h"
 
-#import <Metal/Metal.h>
+#import <IOSurface/IOSurfaceRef.h>
+#import <QuartzCore/QuartzCore.h>
 
 @interface FlutterSurface () {
   CGSize _size;

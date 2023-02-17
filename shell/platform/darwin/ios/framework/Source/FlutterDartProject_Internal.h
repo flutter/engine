@@ -41,6 +41,31 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* _Nullable bundle = nil,
 + (NSString*)domainNetworkPolicy:(NSDictionary*)appTransportSecurity;
 + (bool)allowsArbitraryLoads:(NSDictionary*)appTransportSecurity;
 
+// Embedder API
+/**
+ * The path to the Flutter assets directory.
+ *
+ * In UTF8String format.
+ */
+@property(nonatomic, readonly, nullable) NSString* assetsPath;
+
+/**
+ * The path to the ICU data file.
+ *
+ * In UTF8String format.
+ */
+@property(nonatomic, readonly, nullable) NSString* ICUDataPath;
+
+/**
+ * The command line arguments array for the engine.
+ */
+@property(nonatomic, readonly) std::vector<std::string> switches;
+
+/**
+ * The callback invoked by the engine in root isolate scope.
+ */
+@property(nonatomic, nullable) void (*rootIsolateCreateCallback)(void* _Nullable);
+
 @end
 
 NS_ASSUME_NONNULL_END

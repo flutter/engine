@@ -22,6 +22,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
@@ -31,14 +32,11 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString* const kFlutterEngineWillDealloc;
 
-@interface FlutterEngine () <FlutterViewEngineDelegate>
+@interface FlutterEngine () <FlutterViewEngineDelegate, FlutterRendererTextureRegistryDelegate>
 
+#pragma mark - Legacy embedder methods
 - (flutter::Shell&)shell;
 
-- (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics;
-- (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
-
-- (fml::RefPtr<fml::TaskRunner>)platformTaskRunner;
 - (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner;
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView;
@@ -50,17 +48,13 @@ extern NSString* const kFlutterEngineWillDealloc;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterTextInputPlugin*)textInputPlugin;
 - (FlutterRestorationPlugin*)restorationPlugin;
-- (void)launchEngine:(nullable NSString*)entrypoint
-          libraryURI:(nullable NSString*)libraryOrNil
-      entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+
 - (BOOL)createShell:(nullable NSString*)entrypoint
          libraryURI:(nullable NSString*)libraryOrNil
        initialRoute:(nullable NSString*)initialRoute;
 - (void)attachView;
 - (void)notifyLowMemory;
 - (flutter::PlatformViewIOS*)iosPlatformView;
-
-- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
 
 /**
  * Creates one running FlutterEngine from another, sharing components between them.
@@ -81,7 +75,42 @@ extern NSString* const kFlutterEngineWillDealloc;
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
 
+// TODO(cyanglaz): embedder api, update the methods to only work with embedder after migration is
+// done.
+// https://github.com/flutter/flutter/issues/112232
+#pragma mark - Work with both legacy and embedder api.
 @property(nonatomic, readonly) FlutterDartProject* project;
+- (void)installFirstFrameCallback;
+- (void)setSemanticsEnabled:(BOOL)enabled;
+- (void)setAccessibilityFeatures:(int32_t)flags;
+- (fml::RefPtr<fml::TaskRunner>)platformTaskRunner;
+- (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics;
+- (void)launchEngine:(nullable NSString*)entrypoint
+          libraryURI:(nullable NSString*)libraryOrNil
+      entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+- (void)waitForFirstFrame:(NSTimeInterval)timeout callback:(void (^)(BOOL didTimeout))callback;
+- (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
+
+#pragma mark - Embedder API only.
+@property(nonatomic, readonly, nullable) FlutterRenderer* renderer;
+
+- (BOOL)launchEngineWithEmbedderAPI:(NSString*)entrypoint
+                         libraryURI:(nullable NSString*)libraryOrNil
+                     entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+- (void)embedderAPISendOnChannel:(NSString*)channel
+                         message:(nullable NSData*)message
+                     binaryReply:(nullable FlutterBinaryReply)callback;
+- (void)embedderAPISendWindowMetricsEvent:(flutter::ViewportMetrics)viewportMetrics;
+- (void)embedderAPIUpdateLocale:(NSArray<NSString*>*)preferredLocales;
+- (void)embedderAPIDispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
+- (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
+- (void)engineCallbackFlutterSemanticsUpdate:(const FlutterSemanticsUpdate*)update;
+- (void)engineCallbackOnPreEngineRestart;
+// Must be called on the main thread
+- (void)setNextFrameCallback:(VoidCallback)callback userData:(void*)userData;
+- (BOOL)waitForFirstFrame:(fml::TimeDelta)timeout;
+- (BOOL)notifyCreated;
+- (BOOL)notifyDestroyed;
 @end
 
 NS_ASSUME_NONNULL_END

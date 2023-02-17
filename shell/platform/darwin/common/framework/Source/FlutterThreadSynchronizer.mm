@@ -1,10 +1,10 @@
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterThreadSynchronizer.h"
 
 #import <QuartzCore/QuartzCore.h>
 
 #include <mutex>
 #include <vector>
 
+#import "FlutterThreadSynchronizer.h"
 #import "flutter/fml/logging.h"
 #import "flutter/fml/synchronization/waitable_event.h"
 

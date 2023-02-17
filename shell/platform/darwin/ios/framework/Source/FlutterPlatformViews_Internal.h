@@ -5,6 +5,8 @@
 #ifndef FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERPLATFORMVIEWS_INTERNAL_H_
 
+#include "flutter/shell/platform/embedder/embedder.h"
+
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -17,7 +19,7 @@
 #include "third_party/skia/include/core/SkPictureRecorder.h"
 
 @class FlutterTouchInterceptingView;
-
+@class FlutterView;
 // A UIView that acts as a clipping mask for the |ChildClippingView|.
 //
 // On the [UIView drawRect:] method, this view performs a series of clipping operations and sets the
@@ -211,6 +213,7 @@ class FlutterPlatformViewsController {
   void SetFlutterViewController(UIViewController* flutter_view_controller);
 
   UIViewController* getFlutterViewController();
+  FlutterView* GetFlutterView();
 
   void RegisterViewFactory(
       NSObject<FlutterPlatformViewFactory>* factory,
@@ -268,6 +271,12 @@ class FlutterPlatformViewsController {
   // Pushes the view id of a visted platform view to the list of visied platform views.
   void PushVisitedPlatformView(int64_t view_id) { visited_platform_views_.push_back(view_id); }
 
+  // For Embedder API
+  // TODO(cyanglaz) embedder api, document.
+  void CompositeWithEmbedderPlatformViewLayer(const FlutterLayer* layer);
+
+  void DisposeViews();
+
  private:
   static const size_t kMaxLayerAllocations = 2;
 
@@ -278,7 +287,6 @@ class FlutterPlatformViewsController {
   void OnAcceptGesture(FlutterMethodCall* call, FlutterResult& result);
   void OnRejectGesture(FlutterMethodCall* call, FlutterResult& result);
   // Dispose the views in `views_to_dispose_`.
-  void DisposeViews();
 
   // Returns true if there are embedded views in the scene at current frame
   // Or there will be embedded views in the next frame.

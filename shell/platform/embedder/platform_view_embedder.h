@@ -49,6 +49,7 @@ class PlatformViewEmbedder final : public PlatformView {
     ComputePlatformResolvedLocaleCallback
         compute_platform_resolved_locale_callback;
     OnPreEngineRestartCallback on_pre_engine_restart_callback;  // optional
+    bool handle_platform_message_on_platform_thread;
   };
 
   // Create a platform view that sets up a software rasterizer.
@@ -109,8 +110,11 @@ class PlatformViewEmbedder final : public PlatformView {
   class EmbedderPlatformMessageHandler;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
   std::unique_ptr<EmbedderSurface> embedder_surface_;
+  PlatformDispatchTable
+      platform_dispatch_table_;  //`platform_dispatch_table_` needs to be
+                                 // initialized before
+                                 //`platform_message_handler_`
   std::shared_ptr<EmbedderPlatformMessageHandler> platform_message_handler_;
-  PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;

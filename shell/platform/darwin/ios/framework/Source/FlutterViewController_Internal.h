@@ -14,6 +14,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUIPressProxy.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewResponder.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 namespace flutter {
 class FlutterPlatformViewsController;
 }
@@ -38,7 +40,7 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
 @property(class, nonatomic, readonly) BOOL accessibilityIsOnOffSwitchLabelsEnabled;
 @property(nonatomic, readonly) BOOL isPresentingViewController;
 @property(nonatomic, readonly) BOOL isVoiceOverRunning;
-@property(nonatomic, retain) FlutterKeyboardManager* keyboardManager;
+@property(nonatomic, retain, nullable) FlutterKeyboardManager* keyboardManager;
 - (fml::WeakPtr<FlutterViewController>)getWeakPtr;
 - (std::shared_ptr<flutter::FlutterPlatformViewsController>&)platformViewsController;
 - (FlutterRestorationPlugin*)restorationPlugin;
@@ -53,6 +55,10 @@ typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
 - (void)addInternalPlugins;
 - (void)deregisterNotifications;
 - (int32_t)accessibilityFlags;
+- (void)callViewRenderedCallback;
+- (void)removeSplashScreenView:(dispatch_block_t _Nullable)onComplete;
 @end
+
+NS_ASSUME_NONNULL_END
 
 #endif  // FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_

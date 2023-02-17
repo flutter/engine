@@ -19,6 +19,7 @@
 #include "flutter/runtime/dart_vm.h"
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
+#include "flutter/shell/platform/common/engine_switches.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 
@@ -172,7 +173,6 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
     if (assetsPath.length == 0) {
       assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
     }
-
     if (assetsPath.length == 0) {
       NSLog(@"Failed to find assets path for \"%@\"", assetsName);
     } else {
@@ -284,6 +284,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
 @implementation FlutterDartProject {
   flutter::Settings _settings;
+
+  // Embedder API
+  NSBundle* _dartBundle;
+  NSString* _assetsPath;
+  NSString* _ICUDataPath;
 }
 
 #pragma mark - Override base class designated initializers
@@ -299,6 +304,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
   if (self) {
     _settings = FLTDefaultSettingsForBundle(bundle);
+    _dartBundle = bundle;
   }
 
   return self;
@@ -312,6 +318,16 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
   }
 
   return self;
+}
+
+- (NSArray<NSString*>*)dartEntrypointArguments {
+  if (_dartEntrypointArguments) {
+    return _dartEntrypointArguments;
+  }
+  _dartEntrypointArguments = [[NSProcessInfo processInfo] arguments];
+  _dartEntrypointArguments = [_dartEntrypointArguments
+      subarrayWithRange:NSMakeRange(1, _dartEntrypointArguments.count - 1)];
+  return _dartEntrypointArguments;
 }
 
 #pragma mark - PlatformData accessors
@@ -437,6 +453,44 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
 - (BOOL)isWideGamutEnabled {
   return _settings.enable_wide_gamut;
+}
+
+// Embedder API
+- (NSString*)assetsPath {
+  if (_assetsPath) {
+    return _assetsPath;
+  }
+
+  // If there's no App.framework, fall back to checking the main bundle for assets.
+  NSBundle* assetBundle = _dartBundle ?: [NSBundle mainBundle];
+  NSString* flutterAssetsName = [FlutterDartProject flutterAssetsName:assetBundle];
+
+  _assetsPath = [assetBundle pathForResource:flutterAssetsName ofType:@""];
+  if (_assetsPath.length == 0 && _dartBundle) {
+    _assetsPath = [[NSBundle mainBundle] pathForResource:flutterAssetsName ofType:@""];
+  }
+  if (!_assetsPath) {
+    NSLog(@"Failed to find path for \"%@\"", flutterAssetsName);
+  }
+  return _assetsPath;
+}
+
+- (NSString*)ICUDataPath {
+  if (_ICUDataPath) {
+    return _ICUDataPath;
+  }
+
+  _ICUDataPath = [[NSBundle bundleForClass:[self class]] pathForResource:@"icudtl" ofType:@"dat"];
+  if (!_ICUDataPath) {
+    NSLog(@"Failed to find path for icudtl.dat");
+  }
+  return _ICUDataPath;
+}
+
+- (std::vector<std::string>)switches {
+  std::vector<std::string> arguments = flutter::GetSwitchesFromEnvironment();
+  // TODO(cyanglaz): embedder_api: add all iOS switches here. Gamut? Impeller?
+  return arguments;
 }
 
 @end

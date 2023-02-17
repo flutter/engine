@@ -140,6 +140,7 @@ TEST(PlatformViewEmbedderTest, DeletionDisabledDispatch) {
       MockDelegate delegate;
       EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
       PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
+      platform_dispatch_table.handle_platform_message_on_platform_thread = true;
       platform_dispatch_table.platform_message_response_callback =
           [&did_call](std::unique_ptr<PlatformMessage> message) {
             did_call = true;

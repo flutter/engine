@@ -376,7 +376,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
                                                             opaque:YES
-                                                   enableWideGamut:NO];
+                                                   enableWideGamut:NO
+                                                         MTLDevice:nil
+                                                      commandQueue:nil];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   auto bridge = std::make_unique<flutter::AccessibilityBridge>(
@@ -468,7 +470,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
                                                             opaque:YES
-                                                   enableWideGamut:NO];
+                                                   enableWideGamut:NO
+                                                         MTLDevice:nil
+                                                      commandQueue:nil];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {
@@ -538,7 +542,9 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   id mockFlutterViewController = OCMClassMock([FlutterViewController class]);
   FlutterView* flutterView = [[FlutterView alloc] initWithDelegate:engine
                                                             opaque:YES
-                                                   enableWideGamut:NO];
+                                                   enableWideGamut:NO
+                                                         MTLDevice:nil
+                                                      commandQueue:nil];
   OCMStub([mockFlutterViewController view]).andReturn(flutterView);
   std::string label = "some label";
   @autoreleasepool {

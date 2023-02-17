@@ -1,4 +1,4 @@
-#import <Cocoa/Cocoa.h>
+#import <Foundation/Foundation.h>
 
 /**
  * Takes care of synchronization between raster and platform thread.

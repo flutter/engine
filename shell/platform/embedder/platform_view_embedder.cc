@@ -15,11 +15,20 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
  public:
   EmbedderPlatformMessageHandler(
       fml::WeakPtr<PlatformView> parent,
-      fml::RefPtr<fml::TaskRunner> platform_task_runner)
+      fml::RefPtr<fml::TaskRunner> platform_task_runner,
+      PlatformMessageResponseCallback& platform_message_response_callback,
+      bool handle_platform_message_on_platform_thread)
       : parent_(std::move(parent)),
-        platform_task_runner_(std::move(platform_task_runner)) {}
+        platform_task_runner_(std::move(platform_task_runner)),
+        platform_message_response_callback_(platform_message_response_callback),
+        handle_platform_message_on_platform_thread_(
+            handle_platform_message_on_platform_thread) {}
 
   virtual void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
+    if (!DoesHandlePlatformMessageOnPlatformThread()) {
+      platform_message_response_callback_(std::move(message));
+      return;
+    }
     platform_task_runner_->PostTask(fml::MakeCopyable(
         [parent = parent_, message = std::move(message)]() mutable {
           if (parent) {
@@ -32,7 +41,7 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
   }
 
   virtual bool DoesHandlePlatformMessageOnPlatformThread() const {
-    return true;
+    return handle_platform_message_on_platform_thread_;
   }
 
   virtual void InvokePlatformMessageResponseCallback(
@@ -43,6 +52,8 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
  private:
   fml::WeakPtr<PlatformView> parent_;
   fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+  PlatformMessageResponseCallback& platform_message_response_callback_;
+  bool handle_platform_message_on_platform_thread_;
 };
 
 PlatformViewEmbedder::PlatformViewEmbedder(
@@ -57,10 +68,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
       embedder_surface_(
           std::make_unique<EmbedderSurfaceSoftware>(software_dispatch_table,
                                                     external_view_embedder_)),
+      platform_dispatch_table_(std::move(platform_dispatch_table)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
-          task_runners.GetPlatformTaskRunner())),
-      platform_dispatch_table_(std::move(platform_dispatch_table)) {}
+          task_runners.GetPlatformTaskRunner(),
+          platform_dispatch_table_.platform_message_response_callback,
+          platform_dispatch_table_
+              .handle_platform_message_on_platform_thread)) {}
 
 #ifdef SHELL_ENABLE_GL
 PlatformViewEmbedder::PlatformViewEmbedder(
@@ -76,10 +90,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
           std::make_unique<EmbedderSurfaceGL>(gl_dispatch_table,
                                               fbo_reset_after_present,
                                               external_view_embedder_)),
+      platform_dispatch_table_(std::move(platform_dispatch_table)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
-          task_runners.GetPlatformTaskRunner())),
-      platform_dispatch_table_(std::move(platform_dispatch_table)) {}
+          task_runners.GetPlatformTaskRunner(),
+          platform_dispatch_table_.platform_message_response_callback,
+          platform_dispatch_table_
+              .handle_platform_message_on_platform_thread)) {}
 #endif
 
 #ifdef SHELL_ENABLE_METAL
@@ -92,10 +109,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     : PlatformView(delegate, task_runners),
       external_view_embedder_(std::move(external_view_embedder)),
       embedder_surface_(std::move(embedder_surface)),
+      platform_dispatch_table_(std::move(platform_dispatch_table)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
-          task_runners.GetPlatformTaskRunner())),
-      platform_dispatch_table_(std::move(platform_dispatch_table)) {}
+          task_runners.GetPlatformTaskRunner(),
+          platform_dispatch_table_.platform_message_response_callback,
+          platform_dispatch_table_
+              .handle_platform_message_on_platform_thread)) {}
 #endif
 
 #ifdef SHELL_ENABLE_VULKAN
@@ -108,10 +128,13 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     : PlatformView(delegate, task_runners),
       external_view_embedder_(std::move(external_view_embedder)),
       embedder_surface_(std::move(embedder_surface)),
+      platform_dispatch_table_(std::move(platform_dispatch_table)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
-          task_runners.GetPlatformTaskRunner())),
-      platform_dispatch_table_(std::move(platform_dispatch_table)) {}
+          task_runners.GetPlatformTaskRunner(),
+          platform_dispatch_table_.platform_message_response_callback,
+          platform_dispatch_table_
+              .handle_platform_message_on_platform_thread)) {}
 #endif
 
 PlatformViewEmbedder::~PlatformViewEmbedder() = default;
