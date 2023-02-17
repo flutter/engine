@@ -147,7 +147,6 @@ targets:
 
   - name: Linux Fuchsia FEMU
     recipe: engine/femu_test
-    bringup: true
     properties:
       add_recipes_cq: "true"
       build_fuchsia: "true"
@@ -156,6 +155,19 @@ targets:
       clobber: "true"
       emulator_arch: "x64"
     timeout: 60
+
+  - name: Linux Fuchsia FEMU (cso)
+    recipe: engine/femu_test
+    bringup: true
+    properties:
+      add_recipes_cq: "false"
+      build_fuchsia: "true"
+      fuchsia_ctl_version: version:0.0.27
+      # ensure files from pre-production Fuchsia SDK tests are purged from cache
+      clobber: "true"
+      emulator_arch: "x64"
+      enable_cso: "true"
+    timeout: 90
 
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
@@ -217,6 +229,7 @@ targets:
       - "**.cc"
       - "**.fbs"
       - "**.frag"
+      - "**.py"
       - "**.vert"
 
   - name: Linux Android clang-tidy
@@ -504,7 +517,6 @@ targets:
       config_name: windows_host_engine
 
   - name: Windows windows_arm_host_engine
-    bringup: true
     recipe: engine_v2/engine_v2
     timeout: 60
     properties:

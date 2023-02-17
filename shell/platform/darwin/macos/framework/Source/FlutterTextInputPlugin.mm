@@ -20,7 +20,7 @@
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
 
-#pragma mark - Textinput channel method names
+#pragma mark - TextInput channel method names
 // See https://api.flutter.dev/flutter/services/SystemChannels/textInput-constant.html
 static NSString* const kSetClientMethod = @"TextInput.setClient";
 static NSString* const kShowMethod = @"TextInput.show";
@@ -62,6 +62,7 @@ static NSString* const kAutofillHints = @"hints";
 static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
 static NSString* const kTextAffinityUpstream = @"TextAffinity.upstream";
 
+#pragma mark - Enums
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
  * a line break, the cursor may be drawn either at the end of the current line (upstream)
@@ -71,6 +72,8 @@ typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
   kFlutterTextAffinityUpstream,
   kFlutterTextAffinityDownstream
 };
+
+#pragma mark - Static functions
 
 /*
  * Updates a range given base and extent fields.
@@ -88,9 +91,34 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
 }
 
 // Returns the autofill hint content type, if specified; otherwise nil.
-static NSString* GetAutofillContentType(NSDictionary* autofill) {
+static NSString* GetAutofillHint(NSDictionary* autofill) {
   NSArray<NSString*>* hints = autofill[kAutofillHints];
   return hints.count > 0 ? hints[0] : nil;
+}
+
+// Returns the text content type for the specified TextInputConfiguration.
+// NSTextContentType is only available for macOS 11.0 and later.
+static NSTextContentType GetTextContentType(NSDictionary* configuration)
+    API_AVAILABLE(macos(11.0)) {
+  // Check autofill hints.
+  NSDictionary* autofill = configuration[kAutofillProperties];
+  if (autofill) {
+    NSString* hint = GetAutofillHint(autofill);
+    if ([hint isEqualToString:@"username"]) {
+      return NSTextContentTypeUsername;
+    }
+    if ([hint isEqualToString:@"password"]) {
+      return NSTextContentTypePassword;
+    }
+    if ([hint isEqualToString:@"oneTimeCode"]) {
+      return NSTextContentTypeOneTimeCode;
+    }
+  }
+  // If no autofill hints, guess based on other attributes.
+  if ([configuration[kSecureTextEntry] boolValue]) {
+    return NSTextContentTypePassword;
+  }
+  return nil;
 }
 
 // Returns YES if configuration describes a field for which autocomplete should be enabled for
@@ -110,8 +138,8 @@ static BOOL EnableAutocompleteForTextInputConfiguration(NSDictionary* configurat
 
   // Disable if autofill properties indicate a username/password.
   // See: https://github.com/flutter/flutter/issues/119824
-  NSString* contentType = GetAutofillContentType(autofill);
-  if ([contentType isEqualToString:@"password"] || [contentType isEqualToString:@"username"]) {
+  NSString* hint = GetAutofillHint(autofill);
+  if ([hint isEqualToString:@"password"] || [hint isEqualToString:@"username"]) {
     return NO;
   }
   return YES;
@@ -134,6 +162,8 @@ static BOOL EnableAutocomplete(NSDictionary* configuration) {
   // Check the top-level TextInputConfiguration.
   return EnableAutocompleteForTextInputConfiguration(configuration);
 }
+
+#pragma mark - NSEvent (KeyEquivalentMarker) protocol
 
 @interface NSEvent (KeyEquivalentMarker)
 
@@ -163,6 +193,8 @@ static char markerKey;
 }
 
 @end
+
+#pragma mark - FlutterTextInputPlugin private interface
 
 /**
  * Private properties of FlutterTextInputPlugin.
@@ -285,6 +317,8 @@ static char markerKey;
 
 @end
 
+#pragma mark - FlutterTextInputPlugin
+
 @implementation FlutterTextInputPlugin {
   /**
    * The currently active text input model.
@@ -377,7 +411,9 @@ static char markerKey;
       _inputType = inputTypeInfo[kTextInputTypeName];
       self.textAffinity = kFlutterTextAffinityUpstream;
       self.automaticTextCompletionEnabled = EnableAutocomplete(config);
-      // TODO(cbracken): support text content types https://github.com/flutter/flutter/issues/120252
+      if (@available(macOS 11.0, *)) {
+        self.contentType = GetTextContentType(config);
+      }
 
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }

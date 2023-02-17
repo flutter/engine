@@ -91,6 +91,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 ///
 /// Used for testing deallocation.
 @interface MockEngine : NSObject
+@property(nonatomic, strong) FlutterDartProject* project;
 @end
 
 @implementation MockEngine
@@ -111,7 +112,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 @property(nonatomic, copy, readonly) FlutterSendKeyEvent sendEvent;
 @end
 
-@interface FlutterViewController (Tests)
+@interface FlutterViewController (Tests) <UIPencilInteractionDelegate>
+;
 
 @property(nonatomic, assign) double targetViewInsetBottom;
 @property(nonatomic, assign) BOOL isKeyboardInOrTransitioningFromBackground;
@@ -123,6 +125,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 - (void)handlePressEvent:(FlutterUIPressProxy*)press
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
+- (flutter::PointerData)createAuxillaryStylusActionData;
 - (void)updateViewportMetrics;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
@@ -1474,11 +1477,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testValidKeyUpEvent API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
@@ -1509,12 +1507,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testValidKeyDownEvent API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterEnginePartialMock* mockEngine = [[FlutterEnginePartialMock alloc] init];
   mockEngine.keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([mockEngine.keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
@@ -1546,11 +1538,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testIgnoredKeyEvents API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
   id keyEventChannel = OCMClassMock([FlutterBasicMessageChannel class]);
   OCMStub([keyEventChannel sendMessage:[OCMArg any] reply:[OCMArg any]])
       .andCall(self, @selector(sendMessage:reply:));
@@ -1584,12 +1571,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testPanGestureRecognizer API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
@@ -1610,12 +1591,6 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 }
 
 - (void)testMouseSupport API_AVAILABLE(ios(13.4)) {
-  if (@available(iOS 13.4, *)) {
-    // noop
-  } else {
-    return;
-  }
-
   FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
                                                                     nibName:nil
                                                                      bundle:nil];
@@ -1628,6 +1603,80 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
 
   [[[self.mockEngine verify] ignoringNonObjectArgs]
       dispatchPointerDataPacket:std::make_unique<flutter::PointerDataPacket>(0)];
+}
+
+- (void)testPencilSupport API_AVAILABLE(ios(13.4)) {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
+
+  OCMStub([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionShowColorPalette);
+
+  // Check that the helper function is being called
+  FlutterViewController* viewControllerMock = OCMPartialMock(vc);
+  [viewControllerMock pencilInteractionDidTap:mockPencilInteraction];
+  OCMVerify([viewControllerMock createAuxillaryStylusActionData]);
+
+  [mockPencilInteraction stopMocking];
+}
+
+- (void)testCreateAuxillaryStylusActionData API_AVAILABLE(ios(13.4)) {
+  FlutterViewController* vc = [[FlutterViewController alloc] initWithEngine:self.mockEngine
+                                                                    nibName:nil
+                                                                     bundle:nil];
+  XCTAssertNotNil(vc);
+
+  id mockPencilInteraction = OCMClassMock([UIPencilInteraction class]);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionShowColorPalette);
+
+  // Check the return value of the helper function
+  flutter::PointerData pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionSwitchEraser);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser);
+
+  OCMExpect([mockPencilInteraction preferredTapAction])
+      .andReturn(UIPencilPreferredActionSwitchPrevious);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious);
+
+  OCMExpect([mockPencilInteraction preferredTapAction]).andReturn(UIPencilPreferredActionIgnore);
+
+  pointer_data = [vc createAuxillaryStylusActionData];
+
+  XCTAssertEqual(pointer_data.kind, flutter::PointerData::DeviceKind::kStylus);
+  XCTAssertEqual(pointer_data.signal_kind,
+                 flutter::PointerData::SignalKind::kStylusAuxiliaryAction);
+  XCTAssertEqual(pointer_data.preferred_auxiliary_stylus_action,
+                 flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore);
+
+  [mockPencilInteraction stopMocking];
 }
 
 - (void)testFakeEventTimeStamp {

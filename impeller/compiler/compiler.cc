@@ -35,6 +35,7 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   // Metal to AIR must be updated as well.
   sl_options.msl_version =
       spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
 
   // Sort the float and sampler uniforms according to their declared/decorated
@@ -91,7 +92,8 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
-  if (source_options.target_platform == TargetPlatform::kOpenGLES) {
+  if (source_options.target_platform == TargetPlatform::kOpenGLES ||
+      source_options.target_platform == TargetPlatform::kRuntimeStageGLES) {
     sl_options.version = source_options.gles_language_version > 0
                              ? source_options.gles_language_version
                              : 100;
@@ -137,13 +139,13 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
-    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kVulkan:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kSkSL:
