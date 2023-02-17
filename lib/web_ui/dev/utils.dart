@@ -19,6 +19,8 @@ class FilePath {
       : _absolutePath = path.absolute(relativePath);
   FilePath.fromWebUi(String relativePath)
       : _absolutePath = path.join(environment.webUiRootDir.path, relativePath);
+  FilePath.fromTestSet(TestSet testSet, String relativePath)
+      : _absolutePath = path.join(getTestSetDirectory(testSet).path, relativePath);
 
   final String _absolutePath;
 

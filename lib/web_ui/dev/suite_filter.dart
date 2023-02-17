@@ -61,6 +61,15 @@ class BundleNameFilter extends AllowListSuiteFilter<String> {
   String getAttributeForSuite(TestSuite suite) => suite.testBundle.name;
 }
 
+class FileFilter extends BundleNameFilter {
+  FileFilter({required super.allowList});
+
+  @override
+  String rejectReason(TestSuite suite) {
+    return "Doesn't contain any of the indicated files.";
+  }
+}
+
 class CompilerFilter extends AllowListSuiteFilter<Compiler> {
   CompilerFilter({required super.allowList});
 

@@ -150,8 +150,14 @@ class RunSuiteStep implements PipelineStep {
     final List<String> testPaths = <String>[];
     results.forEach((dynamic k, dynamic v) {
       final String result = v as String;
+      final String testPath = k as String;
+      if (testFiles != null) {
+        if (!testFiles!.contains(FilePath.fromTestSet(suite.testBundle.testSet, testPath))) {
+          return;
+        }
+      }
       if (result == 'success') {
-        testPaths.add(k as String);
+        testPaths.add(testPath);
       }
     });
     return testPaths;

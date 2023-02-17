@@ -132,14 +132,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get isVerbose => boolArg('verbose');
 
-  /// Paths to targets to run, e.g. a single test.
-  List<String> get targets => argResults!.rest;
-
   /// The target test files to run.
-  List<FilePath> get targetFiles => targets.map((String t) => FilePath.fromCwd(t)).toList();
-
-  /// Whether all tests should run.
-  bool get runAllTests => targets.isEmpty;
+  List<FilePath> get targetFiles => argResults!.rest.map((String t) => FilePath.fromCwd(t)).toList();
 
   /// When running screenshot tests, require Skia Gold to be available and
   /// reachable.
@@ -213,12 +207,38 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     return BundleNameFilter(allowList: Set<String>.from(bundleNameArgs));
   }
 
+  FileFilter? makeFileFilter() {
+    final List<FilePath> tests = targetFiles;
+    if (tests.isEmpty) {
+      return null;
+    }
+    final Set<String> bundleNames = <String>{};
+    for (final FilePath testPath in tests) {
+      if (!io.File(testPath.absolute).existsSync()) {
+        throw ToolExit('Test path not found: $testPath');
+      }
+      bool bundleFound = false;
+      for (final TestBundle bundle in config.testBundles) {
+        final String testSetPath = getTestSetDirectory(bundle.testSet).path;
+        if (path.isWithin(testSetPath, testPath.absolute)) {
+          bundleFound = true;
+          bundleNames.add(bundle.name);
+        }
+      }
+      if (!bundleFound) {
+        throw ToolExit('Test path not in any known test bundle: $testPath');
+      }
+    };
+    return FileFilter(allowList: bundleNames);
+  }
+
   List<SuiteFilter> get suiteFilters {
     final BrowserSuiteFilter? browserFilter = makeBrowserFilter();
     final CompilerFilter? compilerFilter = makeCompilerFilter();
     final RendererFilter? rendererFilter = makeRendererFilter();
     final SuiteNameFilter? suiteNameFilter = makeSuiteNameFilter();
     final BundleNameFilter? bundleNameFilter = makeBundleNameFilter();
+    final FileFilter? fileFilter = makeFileFilter();
     return <SuiteFilter>[
       PlatformBrowserFilter(),
       if (browserFilter != null) browserFilter,
@@ -226,7 +246,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       if (rendererFilter != null) rendererFilter,
       if (suiteNameFilter != null) suiteNameFilter,
       if (bundleNameFilter != null) bundleNameFilter,
-      // Add file filter from CLI
+      if (fileFilter != null) fileFilter,
     ];
   }
 
@@ -297,6 +317,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       shouldRun = true;
       shouldCompile = true;
     }
+
+    final Set<FilePath>? testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
       CopyArtifactsStep(artifacts),
@@ -304,7 +326,8 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         for (final TestBundle bundle in bundles)
           CompileBundleStep(
             bundle: bundle,
-            isVerbose: isVerbose
+            isVerbose: isVerbose,
+            testFiles: testFiles,
           ),
       if (shouldRun)
         for (final TestSuite suite in filteredSuites)
@@ -315,6 +338,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
             requireSkiaGold: requireSkiaGold,
             overridePathToCanvasKit: overridePathToCanvasKit,
+            testFiles: testFiles,
           ),
     ]);
 
