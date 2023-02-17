@@ -151,36 +151,24 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
   # Zip FlutterMacOS.framework.
   if args.zip:
+    macos_filepath_with_entitlements = ''
+    macos_filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
+
+    embed_codesign_configuration(
+        os.path.join(dst, 'entitlements.txt'), macos_filepath_with_entitlements
+    )
+
+    embed_codesign_configuration(
+        os.path.join(dst, 'without_entitlements.txt'),
+        macos_filepath_without_entitlements
+    )
     subprocess.check_call([
         'zip', '-r', '-y', 'FlutterMacOS.framework.zip',
-        'FlutterMacOS.framework'
+        'FlutterMacOS.framework',
+        'entitlements.txt',
+        'without_entitlements.txt',
     ],
                           cwd=dst)
-
-  macos_filepath_with_entitlements = ''
-  macos_filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
-
-  embed_codesign_configuration(
-      os.path.join(dst, 'entitlements.txt'), macos_filepath_with_entitlements
-  )
-
-  embed_codesign_configuration(
-      os.path.join(dst, 'without_entitlements.txt'),
-      macos_filepath_without_entitlements
-  )
-
-  # Zip FlutterMacOS.framework.
-  subprocess.check_call([
-      'zip',
-      '-r',
-      '-y',
-      'FlutterMacOS.framework.zip',
-      'FlutterMacOS.framework',
-      'entitlements.txt',
-      'without_entitlements.txt',
-  ],
-                        cwd=dst)
-
 
 if __name__ == '__main__':
   sys.exit(main())
