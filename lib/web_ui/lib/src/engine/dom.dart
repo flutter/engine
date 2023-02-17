@@ -2160,7 +2160,7 @@ extension DomIntlExtension on DomIntl {
 
 /// Similar to [js_util.callMethod] but allows for providing a non-string method
 /// name.
-T jsCallMethod<T>(Object o, Object method, [List<Object?> args = const <Object?>[]]) {
+T _jsCallMethod<T>(Object o, Object method, [List<Object?> args = const <Object?>[]]) {
   final Object actualMethod = js_util.getProperty(o, method);
   return js_util.callMethod<T>(actualMethod, 'apply', <Object?>[o, args]);
 }
@@ -2181,7 +2181,7 @@ class DomSegments {}
 
 extension DomSegmentsExtension on DomSegments {
   DomIteratorWrapper<DomSegment> iterator() {
-    final DomIterator segmentIterator = jsCallMethod(this, domSymbol.iterator) as DomIterator;
+    final DomIterator segmentIterator = _jsCallMethod(this, domSymbol.iterator) as DomIterator;
     return DomIteratorWrapper<DomSegment>(segmentIterator);
   }
 }
