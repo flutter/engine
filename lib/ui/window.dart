@@ -314,7 +314,7 @@ class FlutterView {
 /// multiple views and eventually multiple windows.
 ///
 /// This class has been split into two classes: [FlutterView] and
-/// [PlatformDispatcher]. The [FlutterView] gives an application access to
+/// [PlatformDispatcher]. A [FlutterView] gives an application access to
 /// view-specific functionality while the [PlatformDispatcher] contains
 /// platform-specific functionality that applies to all views.
 ///
@@ -910,16 +910,23 @@ enum Brightness {
 /// This global property is deprecated to prepare for Flutter's upcoming support
 /// for multiple views and  multiple windows.
 ///
-/// It represents the main window for applications where there is only one
-/// window, such as applications designed for single-display mobile devices.
+/// It represents the main view for applications where there is only one
+/// view, such as applications designed for single-display mobile devices.
+/// If the embedder supports multiple views, it points to the first view
+/// created which is assumed to be the main view. It throws if no view has
+/// been created yet or if the first view has been removed again.
 ///
-/// Several options exist to migrate code that relies on this global singleton.
-/// They are listed below in order of preference:
+/// The following options exists to migrate code that relies on accessing
+/// this deprecated property:
 ///
-/// The current [FlutterView] can be obtained from the context via [View.of]. It
-/// gives access to the same functionality as this deprecated global [window]
-/// property. However, some functionality has moved to the [PlatformDispatcher],
-/// which is exposed via [FlutterView.platformDispatcher].
+/// If a [BuildContext] is available, consider looking up the current
+/// [FlutterView] associated with that context via [View.of]. It gives access
+/// to the same functionality as this deprecated property. However, some
+/// functionality has moved to the [PlatformDispatcher], which should be
+/// accessed from the view returned by [View.of] via
+/// [FlutterView.platformDispatcher]. Using [View.of] with a [BuildContext] is
+/// the preferred option to migrate away from this deprecated [window]
+/// property.
 ///
 /// If no context is available to look up a [FlutterView], the
 /// [PlatformDispatcher] can be consulted directly for platform-specific
@@ -939,7 +946,7 @@ enum Brightness {
 ///   platform-specific functionality.
 /// * [PlatformDispatcher.views], for a list of all availalbe views.
 @Deprecated(
-  'Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead.'
+  'Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead. '
   'Deprecated to prepare for the upcoming multi-window support. '
   'This feature was deprecated after v3.7.0-32.0.pre.'
 )
