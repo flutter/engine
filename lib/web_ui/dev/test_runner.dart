@@ -11,6 +11,7 @@ import 'package:path/path.dart' as path;
 import 'package:watcher/src/watch_event.dart';
 
 import 'environment.dart';
+import 'exceptions.dart';
 import 'felt_config.dart';
 import 'pipeline.dart';
 import 'steps/compile_bundle_step.dart';
@@ -72,11 +73,25 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             '.dart_tool/goldens. Use this option to bulk-update all screenshots, '
             'for example, when a new browser version affects pixels.',
       )
-      ..addOption(
+      ..addMultiOption(
         'browser',
-        defaultsTo: 'chrome',
-        help: 'An option to choose a browser to run the tests. By default '
-              'tests run in Chrome.',
+        help: 'Filter test suites by browser.',
+      )
+      ..addMultiOption(
+        'compiler',
+        help: 'Filter test suites by compiler.',
+      )
+      ..addMultiOption(
+        'renderer',
+        help: 'Filter test suites by renderer.',
+      )
+      ..addMultiOption(
+        'suite',
+        help: 'Filter test suites by suite name.',
+      )
+      ..addMultiOption(
+        'bundle',
+        help: 'Filter test suites by bundle name.',
       )
       ..addFlag(
         'fail-early',
@@ -94,11 +109,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addFlag(
         'wasm',
         help: 'Whether the test we are running are compiled to webassembly.'
-      )
-      ..addFlag(
-        'use-local-canvaskit',
-        help: 'Optional. Whether or not to use the locally built version of '
-              'CanvasKit in the tests.',
       );
   }
 
@@ -113,8 +123,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   bool get isList => boolArg('list');
 
   bool get failEarly => boolArg('fail-early');
-
-  bool get isWasm => boolArg('wasm');
 
   /// Whether to start the browser in debug mode.
   ///
@@ -133,9 +141,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Whether all tests should run.
   bool get runAllTests => targets.isEmpty;
 
-  /// The name of the browser to run tests in.
-  String get browserName => stringArg('browser');
-
   /// When running screenshot tests, require Skia Gold to be available and
   /// reachable.
   bool get requireSkiaGold => boolArg('require-skia-gold');
@@ -147,27 +152,90 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
   String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
-  /// Whether or not to use the locally built version of CanvasKit.
-  bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
+  final FeltConfig config = FeltConfig.fromFile(
+    path.join(environment.webUiTestDir.path, 'felt_config.yaml')
+  );
+
+  BrowserSuiteFilter? makeBrowserFilter() {
+    final List<String>? browserArgs = argResults!['browser'] as List<String>?;
+    if (browserArgs == null || browserArgs.isEmpty) {
+      return null;
+    }
+    final Set<BrowserName> browserNames = Set<BrowserName>.from(browserArgs.map((String arg) => BrowserName.values.byName(arg)));
+    return BrowserSuiteFilter(allowList: browserNames);
+  }
+
+  CompilerFilter? makeCompilerFilter() {
+    final List<String>? compilerArgs = argResults!['compiler'] as List<String>?;
+    if (compilerArgs == null || compilerArgs.isEmpty) {
+      return null;
+    }
+    final Set<Compiler> compilers = Set<Compiler>.from(compilerArgs.map((String arg) => Compiler.values.byName(arg)));
+    return CompilerFilter(allowList: compilers);
+  }
+
+  RendererFilter? makeRendererFilter() {
+    final List<String>? rendererArgs = argResults!['renderer'] as List<String>?;
+    if (rendererArgs == null || rendererArgs.isEmpty) {
+      return null;
+    }
+    final Set<Renderer> renderers = Set<Renderer>.from(rendererArgs.map((String arg) => Renderer.values.byName(arg)));
+    return RendererFilter(allowList: renderers);
+  }
+
+  SuiteNameFilter? makeSuiteNameFilter() {
+    final List<String>? suiteNameArgs = argResults!['suite'] as List<String>?;
+    if (suiteNameArgs == null || suiteNameArgs.isEmpty) {
+      return null;
+    }
+
+    final Iterable<String> allSuiteNames = config.testSuites.map((TestSuite suite) => suite.name);
+    for (final String suiteName in suiteNameArgs) {
+      if (!allSuiteNames.contains(suiteName)) {
+        throw ToolExit('No suite found named $suiteName');
+      }
+    }
+    return SuiteNameFilter(allowList: Set<String>.from(suiteNameArgs));
+  }
+
+  BundleNameFilter? makeBundleNameFilter() {
+    final List<String>? bundleNameArgs = argResults!['bundle'] as List<String>?;
+    if (bundleNameArgs == null || bundleNameArgs.isEmpty) {
+      return null;
+    }
+
+    final Iterable<String> allBundleNames = config.testSuites.map((TestSuite suite) => suite.name);
+    for (final String bundleName in bundleNameArgs) {
+      if (!allBundleNames.contains(bundleName)) {
+        throw ToolExit('No bundle found named $bundleName');
+      }
+    }
+    return BundleNameFilter(allowList: Set<String>.from(bundleNameArgs));
+  }
 
   List<SuiteFilter> get suiteFilters {
+    final BrowserSuiteFilter? browserFilter = makeBrowserFilter();
+    final CompilerFilter? compilerFilter = makeCompilerFilter();
+    final RendererFilter? rendererFilter = makeRendererFilter();
+    final SuiteNameFilter? suiteNameFilter = makeSuiteNameFilter();
+    final BundleNameFilter? bundleNameFilter = makeBundleNameFilter();
     return <SuiteFilter>[
-      PlatformSuiteFilter()
-      // TODO(jacksongardner): Add more filters
-      // Add browser filter from CLI
-      // Add suite filter from CLI
-      // Add compiler filter from CLI
+      PlatformBrowserFilter(),
+      if (browserFilter != null) browserFilter,
+      if (compilerFilter != null) compilerFilter,
+      if (rendererFilter != null) rendererFilter,
+      if (suiteNameFilter != null) suiteNameFilter,
+      if (bundleNameFilter != null) bundleNameFilter,
       // Add file filter from CLI
-      // Add renderer filter from CLI
     ];
   }
 
-  List<TestSuite> _filterTestSuites(List<TestSuite> suites) {
+  List<TestSuite> _filterTestSuites() {
     if (isVerbose) {
       print('Filtering suites...');
     }
     final List<SuiteFilter> filters = suiteFilters;
-    final List<TestSuite> filteredSuites = suites.where((TestSuite suite) {
+    final List<TestSuite> filteredSuites = config.testSuites.where((TestSuite suite) {
       for (final SuiteFilter filter in filters) {
         final SuiteFilterResult result = filter.filterSuite(suite);
         if (!result.isAccepted) {
@@ -182,10 +250,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     return filteredSuites;
   }
 
-  List<TestBundle> _filterBundlesForSuites(List<TestBundle> bundles, List<TestSuite> suites) {
+  List<TestBundle> _filterBundlesForSuites(List<TestSuite> suites) {
     final Set<TestBundle> seenBundles = 
       Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
-    return bundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
+    return config.testBundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
   }
 
   ArtifactDependencies _artifactsForSuites(List<TestSuite> suites) {
@@ -195,12 +263,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
   @override
   Future<bool> run() async {
-    final FeltConfig config = FeltConfig.fromFile(
-      path.join(environment.webUiTestDir.path, 'felt_config.yaml')
-    );
-    final List<TestSuite> filteredSuites = _filterTestSuites(config.testSuites);
-    final List<TestBundle> bundles = _filterBundlesForSuites(config.testBundles, filteredSuites);
-    final ArtifactDependencies artifacts = _artifactsForSuites(config.testSuites);
+    final List<TestSuite> filteredSuites = _filterTestSuites();
+    final List<TestBundle> bundles = _filterBundlesForSuites(filteredSuites);
+    final ArtifactDependencies artifacts = _artifactsForSuites(filteredSuites);
     if (isList || isVerbose) {
       print('Suites:');
       for (final TestSuite suite in filteredSuites) {
