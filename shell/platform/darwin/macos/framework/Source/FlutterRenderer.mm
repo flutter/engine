@@ -4,8 +4,8 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
 #include "flutter/shell/platform/embedder/embedder.h"

@@ -16,6 +16,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterEngineHandlerInfo.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
@@ -50,31 +51,6 @@ static NSString* const kEnhancedUserInterfaceKey = @"AXEnhancedUserInterface";
 
 /// Clipboard plain text format.
 constexpr char kTextPlainFormat[] = "text/plain";
-
-#pragma mark -
-
-// Records an active handler of the messenger (FlutterEngine) that listens to
-// platform messages on a given channel.
-@interface FlutterEngineHandlerInfo : NSObject
-
-- (instancetype)initWithConnection:(NSNumber*)connection
-                           handler:(FlutterBinaryMessageHandler)handler;
-
-@property(nonatomic, readonly) FlutterBinaryMessageHandler handler;
-@property(nonatomic, readonly) NSNumber* connection;
-
-@end
-
-@implementation FlutterEngineHandlerInfo
-- (instancetype)initWithConnection:(NSNumber*)connection
-                           handler:(FlutterBinaryMessageHandler)handler {
-  self = [super init];
-  NSAssert(self, @"Super init cannot be nil");
-  _connection = connection;
-  _handler = handler;
-  return self;
-}
-@end
 
 #pragma mark -
 

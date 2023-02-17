@@ -4,8 +4,8 @@
 
 #import <Cocoa/Cocoa.h>
 
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h"
 
 /*
  * Delegate methods for FlutterTextureRegistrar.

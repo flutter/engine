@@ -36,12 +36,16 @@ source_set("framework_shared") {
   sources = [
     "framework/Source/FlutterChannels.mm",
     "framework/Source/FlutterCodecs.mm",
+    "framework/Source/FlutterEngineHandlerInfo.h",
+    "framework/Source/FlutterEngineHandlerInfo.mm",
     "framework/Source/FlutterStandardCodec.mm",
     "framework/Source/FlutterStandardCodecHelper.cc",
     "framework/Source/FlutterStandardCodec_Internal.h",
   ]
 
   public = framework_shared_headers
+
+  public += [ "framework/Source/FlutterEngineHandlerInfo.h" ]
 
   defines = [ "FLUTTER_FRAMEWORK" ]
 

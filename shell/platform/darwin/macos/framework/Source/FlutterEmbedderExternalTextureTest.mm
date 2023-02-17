@@ -11,7 +11,7 @@
 #import "flutter/display_list/skia/dl_sk_canvas.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinExternalTextureMetal.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterExternalTexture.h"
+#import "flutter/shell/platform/darwin/graphics/FlutterExternalTexture.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_metal.h"
 #import "flutter/testing/testing.h"

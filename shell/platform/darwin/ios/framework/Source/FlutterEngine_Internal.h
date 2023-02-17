@@ -22,6 +22,7 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformViews_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterRestorationPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
@@ -31,7 +32,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 extern NSString* const kFlutterEngineWillDealloc;
 
-@interface FlutterEngine () <FlutterViewEngineDelegate>
+@interface FlutterEngine () <FlutterViewEngineDelegate, FlutterRendererTextureRegistryDelegate>
 
 - (flutter::Shell&)shell;
 
@@ -81,7 +82,27 @@ extern NSString* const kFlutterEngineWillDealloc;
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
 
+// Embedder API.
+- (BOOL)launchEngineWithEmbedderAPI:(NSString*)entrypoint
+                         libraryURI:(nullable NSString*)libraryOrNil
+                     entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+- (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
+- (void)engineCallbackFlutterSemanticsUpdate:(const FlutterSemanticsUpdate*)update;
+// Must be called on the main thread
+- (void)setNextFrameCallback:(VoidCallback)callback userData:(void*)userData;
+- (BOOL)waitForFirstFrame:(fml::TimeDelta)timeout;
+- (BOOL)notifyCreated;
+- (BOOL)notifyDestroyed;
+
 @property(nonatomic, readonly) FlutterDartProject* project;
+@property(nonatomic, readonly, nullable) FlutterRenderer* renderer;
+@end
+
+@interface FlutterEngine (Test)
+
+@property(readonly, nonatomic) FlutterEngineProcTable& embedderAPI;
+@property(readonly, nonatomic) BOOL enableEmbedderAPI;
+
 @end
 
 NS_ASSUME_NONNULL_END

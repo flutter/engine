@@ -6,6 +6,7 @@
 
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Internal.h"
 
+#include <iostream>
 #include <memory>
 
 #include "flutter/fml/message_loop.h"
@@ -19,6 +20,7 @@
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/common/variable_refresh_rate_display.h"
 #import "flutter/shell/platform/darwin/common/command_line.h"
+#import "flutter/shell/platform/darwin/common/framework/Source/FlutterEngineHandlerInfo.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h"
@@ -38,6 +40,137 @@
 #import "flutter/shell/platform/darwin/ios/rendering_api_selection.h"
 #include "flutter/shell/profiling/sampling_profiler.h"
 
+#include "flutter/shell/platform/embedder/embedder_engine.h"
+
+#pragma mark - Embedder API Enum conversions
+
+// Returns the FlutterPointerPhase for the given flutter::PointerData::Change.
+inline FlutterPointerPhase ToPointerPhase(flutter::PointerData::Change change) {
+  switch (change) {
+    case flutter::PointerData::Change::kCancel:
+      return FlutterPointerPhase::kCancel;
+    case flutter::PointerData::Change::kUp:
+      return FlutterPointerPhase::kUp;
+    case flutter::PointerData::Change::kDown:
+      return FlutterPointerPhase::kDown;
+    case flutter::PointerData::Change::kMove:
+      return FlutterPointerPhase::kMove;
+    case flutter::PointerData::Change::kAdd:
+      return FlutterPointerPhase::kAdd;
+    case flutter::PointerData::Change::kRemove:
+      return FlutterPointerPhase::kRemove;
+    case flutter::PointerData::Change::kHover:
+      return FlutterPointerPhase::kHover;
+    case flutter::PointerData::Change::kPanZoomStart:
+      return FlutterPointerPhase::kPanZoomStart;
+    case flutter::PointerData::Change::kPanZoomUpdate:
+      return FlutterPointerPhase::kPanZoomUpdate;
+    case flutter::PointerData::Change::kPanZoomEnd:
+      return FlutterPointerPhase::kPanZoomEnd;
+  }
+  return FlutterPointerPhase::kCancel;
+}
+
+// Returns the FlutterPointerSignaKind for the given
+// flutter::PointerData::SignalKind.
+inline FlutterPointerSignalKind ToSignalKind(flutter::PointerData::SignalKind kind) {
+  switch (kind) {
+    case flutter::PointerData::SignalKind::kNone:
+      return kFlutterPointerSignalKindNone;
+    case flutter::PointerData::SignalKind::kScroll:
+      return kFlutterPointerSignalKindScroll;
+    case flutter::PointerData::SignalKind::kScrollInertiaCancel:
+      return kFlutterPointerSignalKindScrollInertiaCancel;
+    case flutter::PointerData::SignalKind::kScale:
+      return kFlutterPointerSignalKindScale;
+    case flutter::PointerData::SignalKind::kStylusAuxiliaryAction:
+      return kFlutterPointerSignalKindStylusAuxiliaryAction;
+  }
+  return kFlutterPointerSignalKindNone;
+}
+
+// Returns the FlutterPointerDeviceKind for the given
+// flutter::PointerData::DeviceKind.
+inline FlutterPointerDeviceKind ToDeviceKind(flutter::PointerData::DeviceKind device_kind) {
+  switch (device_kind) {
+    case flutter::PointerData::DeviceKind::kMouse:
+      return kFlutterPointerDeviceKindMouse;
+    case flutter::PointerData::DeviceKind::kTouch:
+      return kFlutterPointerDeviceKindTouch;
+    case flutter::PointerData::DeviceKind::kStylus:
+      return kFlutterPointerDeviceKindStylus;
+    case flutter::PointerData::DeviceKind::kTrackpad:
+      return kFlutterPointerDeviceKindTrackpad;
+    case flutter::PointerData::DeviceKind::kInvertedStylus:
+      return kFlutterPointerDeviceKindInvertedStylus;
+  }
+  return kFlutterPointerDeviceKindMouse;
+}
+
+// Returns the PreferredStylusAuxiliaryAction for the given
+// flutter::PointerData::PreferredStylusAuxiliaryAction.
+inline PreferredStylusAuxiliaryAction ToPreferredStylusAuxiliaryAction(
+    flutter::PointerData::PreferredStylusAuxiliaryAction action) {
+  switch (action) {
+    case flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore:
+      return PreferredStylusAuxiliaryAction::kIgnore;
+    case flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette:
+      return PreferredStylusAuxiliaryAction::kShowColorPalette;
+    case flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser:
+      return PreferredStylusAuxiliaryAction::kSwitchEraser;
+    case flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious:
+      return PreferredStylusAuxiliaryAction::kSwitchPrevious;
+    case flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown:
+      return PreferredStylusAuxiliaryAction::kUnknown;
+  }
+  return PreferredStylusAuxiliaryAction::kUnknown;
+}
+
+inline FlutterLocale FlutterLocaleFromNSLocale(NSLocale* locale) {
+  FlutterLocale flutterLocale = {
+      .struct_size = sizeof(FlutterLocale),
+      .language_code = [[locale objectForKey:NSLocaleLanguageCode] UTF8String],
+      .country_code = [[locale objectForKey:NSLocaleCountryCode] UTF8String],
+      .script_code = [[locale objectForKey:NSLocaleScriptCode] UTF8String],
+      .variant_code = [[locale objectForKey:NSLocaleVariantCode] UTF8String],
+  };
+  return flutterLocale;
+}
+
+#pragma mark - Embedder API callbacks
+
+static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngine* engine) {
+  [engine engineCallbackOnPlatformMessage:message];
+}
+
+const static FlutterLocale* OnFlutterComputePlatformResolvedLocale(
+    const FlutterLocale** supported_locales,
+    size_t number_of_locales) {
+  NSMutableArray<NSString*>* supported_locale_identifiers =
+      [NSMutableArray arrayWithCapacity:number_of_locales];
+  for (size_t i = 0; i < number_of_locales; i++) {
+    const FlutterLocale* locale = supported_locales[i];
+    NSDictionary<NSString*, NSString*>* dict = @{
+      NSLocaleLanguageCode : [NSString stringWithUTF8String:locale->language_code],
+      NSLocaleCountryCode : [NSString stringWithUTF8String:locale->country_code],
+      NSLocaleScriptCode : [NSString stringWithUTF8String:locale->script_code]
+    };
+    [supported_locale_identifiers addObject:[NSLocale localeIdentifierFromComponents:dict]];
+  }
+  NSArray<NSString*>* result =
+      [NSBundle preferredLocalizationsFromArray:supported_locale_identifiers];
+
+  std::unique_ptr<std::vector<std::string>> out = std::make_unique<std::vector<std::string>>();
+  if (result != nullptr && [result count] > 0) {
+    NSLocale* locale = [NSLocale localeWithLocaleIdentifier:[result firstObject]];
+    const FlutterLocale flutter_locale = FlutterLocaleFromNSLocale(locale);
+    return std::move(&flutter_locale);
+  }
+  return nullptr;
+}
+
+// Callbacks provided to the engine. See the called methods for documentation.
+#pragma mark - Static methods provided to engine configuration
 /// Inheriting ThreadConfigurer and use iOS platform thread API to configure the thread priorities
 /// Using iOS platform thread API to configure thread priority
 static void IOSPlatformThreadConfigSetter(const fml::Thread::ThreadConfig& config) {
@@ -104,10 +237,17 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, assign) BOOL enableEmbedderAPI;
 // Function pointers for interacting with the embedder.h API.
 @property(nonatomic) FlutterEngineProcTable& embedderAPI;
+// Embedder API
+/**
+ * A mutable array that holds one bool value that determines if responses to platform messages are
+ * clear to execute. This value should be read or written only inside of a synchronized block and
+ * will return `NO` after the FlutterEngine has been dealloc'd.
+ */
+@property(nonatomic, strong) NSMutableArray<NSNumber*>* isResponseValid;
 @end
 
 @implementation FlutterEngine {
-  fml::scoped_nsobject<FlutterDartProject> _dartProject;
+  FlutterDartProject* _dartProject;
   std::shared_ptr<flutter::ThreadHost> _threadHost;
   std::unique_ptr<flutter::Shell> _shell;
   NSString* _labelPrefix;
@@ -149,6 +289,30 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   FlutterBinaryMessengerRelay* _binaryMessenger;
   FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
+
+#pragma mark - Embedder API ivars
+
+  FlutterRenderer* _renderer;
+
+  // Pointer to the Dart AOT snapshot and instruction data.
+  _FlutterEngineAOTData* _aotData;
+
+  // A self-incremental integer to assign to newly assigned channels as
+  // identification.
+  FlutterBinaryMessengerConnection _currentMessengerConnection;
+
+  // A mapping of channel names to the registered information for those channels.
+  NSMutableDictionary<NSString*, FlutterEngineHandlerInfo*>* _messengerHandlers;
+
+  // The embedding-API-level engine object.
+  FLUTTER_API_SYMBOL(FlutterEngine) _engine;
+
+  // Platform TaskRunners used by Embedder api.
+  // Embedder API usually manages its own task runners; but sometimes iOS embedder
+  // needs to access the platform task runner.
+  fml::RefPtr<fml::TaskRunner> _platformTaskRunner;
+  // std::unique_ptr<fml::Thread> _rasterThread;
+#pragma mark -
 }
 
 - (instancetype)init {
@@ -187,19 +351,34 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterEngine>>(self);
 
   if (project == nil) {
-    _dartProject.reset([[FlutterDartProject alloc] init]);
+    _dartProject = [[[FlutterDartProject alloc] init] retain];
   } else {
-    _dartProject.reset([project retain]);
+    _dartProject = [project retain];
   }
 
-  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  _enableEmbedderAPI = _dartProject.settings.enable_embedder_api;
   if (_enableEmbedderAPI) {
     NSLog(@"============== iOS: enable_embedder_api is on ==============");
+    _currentMessengerConnection = 1;
+    _messengerHandlers = [[[NSMutableDictionary alloc] init] retain];
     _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
     FlutterEngineGetProcAddresses(&_embedderAPI);
+    _renderer = [[[FlutterRenderer alloc] initWithTextureDelegate:self] retain];
+    _isResponseValid = [[[NSMutableArray alloc] initWithCapacity:1] retain];
+    [_isResponseValid addObject:@YES];
+    // TODO(cyanglaz): embedder api, can FlutterEngine be constructed on a non-main thread?
+    FML_DCHECK([NSThread isMainThread]);
+    fml::MessageLoop::EnsureInitializedForCurrentThread();
+    _platformTaskRunner = fml::MessageLoop::GetCurrent().GetTaskRunner();
+    fml::Thread::ThreadConfig config =
+        fml::Thread::ThreadConfig(flutter::ThreadHost::ThreadHostConfig::MakeThreadName(
+                                      flutter::ThreadHost::Type::RASTER,
+                                      [FlutterEngine generateThreadLabel:labelPrefix].UTF8String),
+                                  fml::Thread::ThreadPriority::RASTER);
+    // _rasterThread = std::make_unique<fml::Thread>(IOSPlatformThreadConfigSetter, config);
   }
 
-  if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
+  if (!EnableTracingIfNecessary([_dartProject settings])) {
     NSLog(
         @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
         @"Xcode.\n\nTo launch in debug mode in iOS 14+, run flutter run from Flutter tools, run "
@@ -251,6 +430,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)dealloc {
+  @synchronized(_isResponseValid) {
+    [_isResponseValid removeAllObjects];
+    [_isResponseValid addObject:@NO];
+  }
+
   /// Notify plugins of dealloc.  This should happen first in dealloc since the
   /// plugins may be talking to things like the binaryMessenger.
   [_pluginPublications enumerateKeysAndObjectsUsingBlock:^(id key, id object, BOOL* stop) {
@@ -273,7 +457,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       enumerateKeysAndObjectsUsingBlock:^(id key, FlutterEngineRegistrar* registrar, BOOL* stop) {
         registrar.flutterEngine = nil;
       }];
-
+  [_dartProject release];
   [_labelPrefix release];
   [_initialRoute release];
   [_pluginPublications release];
@@ -292,11 +476,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   }
   [center removeObserver:self];
 
+  // embedder api
+  if (_enableEmbedderAPI) {
+    // use self must be before [super dealloc] call.
+    [self shutDownEngine];
+    [_renderer release];
+    [_messengerHandlers release];
+    [_isResponseValid release];
+  }
+
   [super dealloc];
 }
 
 - (flutter::Shell&)shell {
-  FML_DCHECK(_shell);
+  FML_DCHECK(_shell && !_enableEmbedderAPI);
   return *_shell;
 }
 
@@ -305,6 +498,26 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
+  if (_enableEmbedderAPI) {
+    const FlutterWindowMetricsEvent windowMetricsEvent = {
+        .struct_size = sizeof(windowMetricsEvent),
+        .width = static_cast<size_t>(viewportMetrics.physical_width),
+        .height = static_cast<size_t>(viewportMetrics.physical_height),
+        .pixel_ratio = viewportMetrics.device_pixel_ratio,
+        .left = 0,
+        .top = 0,
+        .physical_view_inset_top = viewportMetrics.physical_view_inset_top,
+        .physical_view_inset_right = viewportMetrics.physical_view_inset_right,
+        .physical_view_inset_bottom = viewportMetrics.physical_view_inset_bottom,
+        .physical_view_inset_left = viewportMetrics.physical_view_inset_left,
+        .physical_padding_top = viewportMetrics.physical_padding_top,
+        .physical_padding_right = viewportMetrics.physical_padding_right,
+        .physical_padding_bottom = viewportMetrics.physical_padding_bottom,
+        .physical_padding_left = viewportMetrics.physical_padding_left,
+    };
+    _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
+    return;
+  }
   if (!self.platformView) {
     return;
   }
@@ -312,6 +525,55 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
+  if (_enableEmbedderAPI) {
+    // The current FlutterViewController converts the native touch events to `packet` then
+    // the `packet` is converted to `FlutterPointerEvent`.
+    // It creates an extra convertion and is slow. We should let FlutterViewController directly
+    // converts touch events to `FlutterPointerEvent`.
+    // For now, we keep the FlutterViewController implementation unchanged to work for legacy
+    // embedder logic.
+
+    // TODO(cyanglaz), embedder API: when fully migrating to embedder api, having
+    // FlutterViewController directly send `FlutterPointerEvent`.
+    const size_t events_count = packet->GetLength();
+    FlutterPointerEvent events[events_count];
+    for (size_t i = 0; i < events_count; i++) {
+      flutter::PointerData pointer_data = packet->GetPointerData(i);
+      // TDOO(cyanglaz): embedder api: safely cast convert `device` and `time_stamp`.
+      // This might not be necessary because this code is a temp version.
+      // We will eventually remove this conversio when we want to release iOS embedder API.
+      FlutterPointerEvent flutterEvent = {
+          .struct_size = sizeof(flutterEvent),
+          .phase = ToPointerPhase(pointer_data.change),
+          .timestamp = static_cast<size_t>(pointer_data.time_stamp),
+          .x = pointer_data.physical_x,
+          .y = pointer_data.physical_y,
+          .device = static_cast<int32_t>(pointer_data.device),
+          .signal_kind = ToSignalKind(pointer_data.signal_kind),
+          .scroll_delta_x = pointer_data.scroll_delta_x,
+          .scroll_delta_y = pointer_data.scroll_delta_y,
+          .device_kind = ToDeviceKind(pointer_data.kind),
+          .buttons = pointer_data.buttons,
+          .pan_x = pointer_data.pan_x,
+          .pan_y = pointer_data.pan_y,
+          .scale = pointer_data.scale,
+          .rotation = pointer_data.rotation,
+          .pressure = pointer_data.pressure,
+          .pressure_min = pointer_data.pressure_min,
+          .pressure_max = pointer_data.pressure_max,
+          .radius_major = pointer_data.radius_major,
+          .radius_min = pointer_data.radius_min,
+          .radius_max = pointer_data.radius_max,
+          .orientation = pointer_data.orientation,
+          .tilt = pointer_data.tilt,
+          .preferred_auxiliary_stylus_action =
+              ToPreferredStylusAuxiliaryAction(pointer_data.preferred_auxiliary_stylus_action),
+      };
+      events[i] = flutterEvent;
+    }
+    _embedderAPI.SendPointerEvent(_engine, events, events_count);
+    return;
+  }
   if (!self.platformView) {
     return;
   }
@@ -319,21 +581,27 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (fml::WeakPtr<flutter::PlatformView>)platformView {
-  FML_DCHECK(_shell);
+  FML_DCHECK(_shell && !_enableEmbedderAPI);
   return _shell->GetPlatformView();
 }
 
 - (flutter::PlatformViewIOS*)iosPlatformView {
-  FML_DCHECK(_shell);
+  FML_DCHECK(_shell && !_enableEmbedderAPI);
   return static_cast<flutter::PlatformViewIOS*>(_shell->GetPlatformView().get());
 }
 
 - (fml::RefPtr<fml::TaskRunner>)platformTaskRunner {
+  if (_enableEmbedderAPI) {
+    return _platformTaskRunner;
+  }
   FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetPlatformTaskRunner();
 }
 
 - (fml::RefPtr<fml::TaskRunner>)RasterTaskRunner {
+  // if (_enableEmbedderAPI) {
+  //   return _rasterThread.get()->GetTaskRunner();
+  // }
   FML_DCHECK(_shell);
   return _shell->GetTaskRunners().GetRasterTaskRunner();
 }
@@ -341,6 +609,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)sendKeyEvent:(const FlutterKeyEvent&)event
             callback:(FlutterKeyEventCallback)callback
             userData:(void*)userData API_AVAILABLE(ios(13.4)) {
+  // TODO(cyanglaz) embedder api, key events
+  if (_enableEmbedderAPI) {
+    NSLog(@"key events not impelmented for embedder API");
+  }
   if (@available(iOS 13.4, *)) {
   } else {
     return;
@@ -386,14 +658,23 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)ensureSemanticsEnabled {
+  // TODO(cyanglaz) embedder api,
+  if (_enableEmbedderAPI) {
+    NSLog(@"ensureSemanticsEnabled not implemented for embedder api");
+    return;
+  }
   self.iosPlatformView->SetSemanticsEnabled(true);
 }
 
 - (void)setViewController:(FlutterViewController*)viewController {
-  FML_DCHECK(self.iosPlatformView);
   _viewController =
       viewController ? [viewController getWeakPtr] : fml::WeakPtr<FlutterViewController>();
-  self.iosPlatformView->SetOwnerViewController(_viewController);
+  if (_enableEmbedderAPI) {
+    [_renderer setLayer:viewController.view.layer];
+  } else {
+    FML_DCHECK(self.iosPlatformView);
+    self.iosPlatformView->SetOwnerViewController(_viewController);
+  }
   [self maybeSetupPlatformViewChannels];
   _textInputPlugin.get().viewController = viewController;
   _undoManagerPlugin.get().viewController = viewController;
@@ -414,9 +695,15 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)attachView {
+  // TODO(cyanglaz) embedder api,
+  if (_enableEmbedderAPI) {
+    NSLog(@"attachView not implemented for embedder api");
+    return;
+  }
   self.iosPlatformView->attachView();
 }
 
+// TODO(cyanglaz) the below method is not used, remove it.
 - (void)setFlutterViewControllerWillDeallocObserver:(id<NSObject>)observer {
   if (observer != _flutterViewControllerWillDeallocObserver) {
     if (_flutterViewControllerWillDeallocObserver) {
@@ -429,6 +716,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)notifyViewControllerDeallocated {
+  // TODO(cyanglaz) embedder api,
+  if (_enableEmbedderAPI) {
+    NSLog(@"notifyViewControllerDeallocated not implemented for embedder api");
+    return;
+  }
   [[self lifecycleChannel] sendMessage:@"AppLifecycleState.detached"];
   _textInputPlugin.get().viewController = nil;
   _undoManagerPlugin.get().viewController = nil;
@@ -512,6 +804,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return _keyEventChannel.get();
 }
 
+// TODO(cyanglaz): below 2 methods are not used, remove.
 - (NSURL*)observatoryUrl {
   return [_publisher.get() url];
 }
@@ -680,7 +973,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)maybeSetupPlatformViewChannels {
-  if (_shell && self.shell.IsSetup()) {
+  if ((_enableEmbedderAPI && _engine) || (_shell && self.shell.IsSetup())) {
     FlutterPlatformPlugin* platformPlugin = _platformPlugin.get();
     [_platformChannel.get() setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
       [platformPlugin handleMethodCall:call result:result];
@@ -721,10 +1014,18 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (void)launchEngine:(NSString*)entrypoint
           libraryURI:(NSString*)libraryOrNil
       entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
+  if (_enableEmbedderAPI) {
+    NSLog(@"launched with embedder API. ");
+    [self launchEngineWithEmbedderAPI:entrypoint
+                           libraryURI:libraryOrNil
+                       entrypointArgs:entrypointArgs];
+    return;
+  }
+  NSLog(@"launched with shell. (legacy)");
   // Launch the Dart application with the inferred run configuration.
-  self.shell.RunEngine([_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                                            libraryOrNil:libraryOrNil
-                                                          entrypointArgs:entrypointArgs]);
+  self.shell.RunEngine([_dartProject runConfigurationForEntrypoint:entrypoint
+                                                      libraryOrNil:libraryOrNil
+                                                    entrypointArgs:entrypointArgs]);
 }
 
 - (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
@@ -804,6 +1105,18 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (BOOL)createShell:(NSString*)entrypoint
          libraryURI:(NSString*)libraryURI
        initialRoute:(NSString*)initialRoute {
+  if (_enableEmbedderAPI) {
+    self.initialRoute = initialRoute;
+    auto settings = [_dartProject settings];
+    if (initialRoute != nil) {
+      self.initialRoute = initialRoute;
+    } else if (settings.route.empty() == false) {
+      self.initialRoute = [NSString stringWithCString:settings.route.c_str()
+                                             encoding:NSUTF8StringEncoding];
+    }
+    FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
+    return NO;
+  }
   if (_shell != nullptr) {
     FML_LOG(WARNING) << "This FlutterEngine was already invoked.";
     return NO;
@@ -811,7 +1124,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   self.initialRoute = initialRoute;
 
-  auto settings = [_dartProject.get() settings];
+  auto settings = [_dartProject settings];
   if (initialRoute != nil) {
     self.initialRoute = initialRoute;
   } else if (settings.route.empty() == false) {
@@ -821,7 +1134,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
   FlutterView.forceSoftwareRendering = settings.enable_software_rendering;
 
-  auto platformData = [_dartProject.get() defaultPlatformData];
+  auto platformData = [_dartProject defaultPlatformData];
 
   SetEntryPoint(&settings, entrypoint, libraryURI);
 
@@ -1152,7 +1465,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  if (_enableEmbedderAPI) {
+    return _renderer;
+  }
   return _textureRegistry;
+}
+
+- (FlutterRenderer*)renderer {
+  return _renderer;
 }
 
 // For test only. Ideally we should create a dependency injector for all dependencies and
@@ -1174,6 +1494,57 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
               message:(NSData*)message
           binaryReply:(FlutterBinaryReply)callback {
   NSParameterAssert(channel);
+  if (_enableEmbedderAPI) {
+    FlutterPlatformMessageResponseHandle* response_handle = nullptr;
+    if (callback) {
+      struct Captures {
+        FlutterBinaryReply reply;
+      };
+      auto captures = std::make_unique<Captures>();
+      captures->reply = callback;
+      auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
+        auto captures = reinterpret_cast<Captures*>(user_data);
+        NSData* reply_data = nil;
+        if (data != nullptr && data_size > 0) {
+          reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
+        }
+        captures->reply(reply_data);
+        delete captures;
+      };
+
+      FlutterEngineResult create_result = _embedderAPI.PlatformMessageCreateResponseHandle(
+          _engine, message_reply, captures.get(), &response_handle);
+      if (create_result != kSuccess) {
+        NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
+        return;
+      }
+      captures.release();
+    }
+
+    FlutterPlatformMessage platformMessage = {
+        .struct_size = sizeof(FlutterPlatformMessage),
+        .channel = [channel UTF8String],
+        .message = static_cast<const uint8_t*>(message.bytes),
+        .message_size = message.length,
+        .response_handle = response_handle,
+    };
+
+    FlutterEngineResult message_result =
+        _embedderAPI.SendPlatformMessage(_engine, &platformMessage);
+    if (message_result != kSuccess) {
+      NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
+            message_result);
+    }
+
+    if (response_handle != nullptr) {
+      FlutterEngineResult release_result =
+          _embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
+      if (release_result != kSuccess) {
+        NSLog(@"Failed to release the response handle (%d).", release_result);
+      };
+    }
+    return;
+  }
   NSAssert(_shell && _shell->IsSetup(),
            @"Sending a message before the FlutterEngine has been run.");
   fml::RefPtr<flutter::PlatformMessageResponseDarwin> response =
@@ -1208,7 +1579,14 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           binaryMessageHandler:(FlutterBinaryMessageHandler)handler
                      taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSParameterAssert(channel);
-  if (_shell && _shell->IsSetup()) {
+  if (_enableEmbedderAPI) {
+    _currentMessengerConnection++;
+    _messengerHandlers[channel] =
+        [[[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
+                                                      handler:[handler copy]] autorelease];
+    return _currentMessengerConnection;
+  }
+  if (_enableEmbedderAPI || (_shell && _shell->IsSetup())) {
     self.iosPlatformView->GetPlatformMessageHandlerIos()->SetMessageHandler(channel.UTF8String,
                                                                             handler, taskQueue);
     return _connections->AquireConnection(channel.UTF8String);
@@ -1220,6 +1598,22 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)cleanUpConnection:(FlutterBinaryMessengerConnection)connection {
+  if (_enableEmbedderAPI) {
+    // Find the _messengerHandlers that has the required connection, and record its
+    // channel.
+    NSString* foundChannel = nil;
+    for (NSString* key in [_messengerHandlers allKeys]) {
+      FlutterEngineHandlerInfo* handlerInfo = [_messengerHandlers objectForKey:key];
+      if ([handlerInfo.connection isEqual:@(connection)]) {
+        foundChannel = key;
+        break;
+      }
+    }
+    if (foundChannel) {
+      [_messengerHandlers removeObjectForKey:foundChannel];
+    }
+    return;
+  }
   if (_shell && _shell->IsSetup()) {
     std::string channel = _connections->CleanupConnection(connection);
     if (!channel.empty()) {
@@ -1244,6 +1638,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)textureFrameAvailable:(int64_t)textureId {
   _shell->GetPlatformView()->MarkTextureFrameAvailable(textureId);
 }
+
+#pragma mark - FlutterRendererTextureRegistryDelegate
+
+- (BOOL)registerTextureWithID:(int64_t)textureId {
+  return _embedderAPI.RegisterExternalTexture(_engine, textureId) == kSuccess;
+}
+- (BOOL)markTextureFrameAvailable:(int64_t)textureID {
+  return _embedderAPI.MarkExternalTextureFrameAvailable(_engine, textureID) == kSuccess;
+}
+- (BOOL)unregisterTextureWithID:(int64_t)textureID {
+  return _embedderAPI.UnregisterExternalTexture(_engine, textureID) == kSuccess;
+}
+
+#pragma mark -
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
   return [FlutterDartProject lookupKeyForAsset:asset];
@@ -1322,6 +1730,20 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   if (localeData.count == 0) {
     return;
   }
+  if (_enableEmbedderAPI) {
+    std::vector<FlutterLocale> flutterLocales;
+    for (NSString* localeID in preferredLocales) {
+      NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+      flutterLocales.push_back(FlutterLocaleFromNSLocale(locale));
+    }
+    std::vector<const FlutterLocale*> flutterLocaleList;
+    flutterLocaleList.reserve(flutterLocales.size());
+    std::transform(flutterLocales.begin(), flutterLocales.end(),
+                   std::back_inserter(flutterLocaleList),
+                   [](const auto& arg) -> const auto* { return &arg; });
+    _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
+    return;
+  }
   [self.localizationChannel invokeMethod:@"setLocale" arguments:localeData];
 }
 
@@ -1344,12 +1766,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                        entrypointArgs:(/*nullable*/ NSArray<NSString*>*)entrypointArgs {
   NSAssert(_shell, @"Spawning from an engine without a shell (possibly not run).");
   FlutterEngine* result = [[FlutterEngine alloc] initWithName:_labelPrefix
-                                                      project:_dartProject.get()
+                                                      project:_dartProject
                                        allowHeadlessExecution:_allowHeadlessExecution];
   flutter::RunConfiguration configuration =
-      [_dartProject.get() runConfigurationForEntrypoint:entrypoint
-                                           libraryOrNil:libraryURI
-                                         entrypointArgs:entrypointArgs];
+      [_dartProject runConfigurationForEntrypoint:entrypoint
+                                     libraryOrNil:libraryURI
+                                   entrypointArgs:entrypointArgs];
 
   fml::WeakPtr<flutter::PlatformView> platform_view = _shell->GetPlatformView();
   FML_DCHECK(platform_view);
@@ -1392,7 +1814,298 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (FlutterDartProject*)project {
-  return _dartProject.get();
+  return _dartProject;
+}
+
+#pragma mark - Embedder API
+- (BOOL)running {
+  return _engine != nullptr;
+}
+
+- (nonnull NSString*)executableName {
+  return [[[NSProcessInfo processInfo] arguments] firstObject] ?: @"Flutter";
+}
+
+- (BOOL)launchEngineWithEmbedderAPI:(NSString*)entrypoint
+                         libraryURI:(NSString*)libraryOrNil
+                     entrypointArgs:(NSArray<NSString*>*)entrypointArgs {
+  // launch the Dart application using the embdder api.
+  if (self.running) {
+    return NO;
+  }
+
+  if (!_allowHeadlessExecution && !_viewController) {
+    NSLog(@"Attempted to run an engine with no view controller without headless mode enabled.");
+    return NO;
+  }
+
+  // TODO(cyanglaz): embedder api, is libraryOrNil still needed?
+
+  // The first argument of argv is required to be the executable name.
+  std::vector<const char*> argv = {[self.executableName UTF8String]};
+  std::vector<std::string> switches = _dartProject.switches;
+  std::transform(switches.begin(), switches.end(), std::back_inserter(argv),
+                 [](const std::string& arg) -> const char* { return arg.c_str(); });
+
+  std::vector<const char*> dartEntrypointArgs;
+  for (NSString* argument in [_dartProject dartEntrypointArguments]) {
+    dartEntrypointArgs.push_back([argument UTF8String]);
+  }
+
+  FlutterProjectArgs flutterArguments = {};
+  flutterArguments.struct_size = sizeof(FlutterProjectArgs);
+  flutterArguments.assets_path = !_dartProject.settings.assets_path.empty()
+                                     ? const_cast<char*>(_dartProject.settings.assets_path.c_str())
+                                     : _dartProject.assetsPath.UTF8String;
+  if (_dartProject.settings.icu_data_path.empty()) {
+    flutterArguments.icu_data_path = _dartProject.ICUDataPath.UTF8String;
+  } else {
+    flutterArguments.icu_data_path = const_cast<char*>(_dartProject.settings.icu_data_path.c_str());
+  }
+  flutterArguments.command_line_argc = static_cast<int>(argv.size());
+  flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
+  flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
+  flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
+                                                  void* user_data) {
+    FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+    [engine engineCallbackFlutterSemanticsUpdate:update];
+  };
+  flutterArguments.custom_dart_entrypoint = entrypoint ? entrypoint.UTF8String : @"main".UTF8String;
+  flutterArguments.shutdown_dart_vm_when_done = true;
+  flutterArguments.dart_entrypoint_argc = dartEntrypointArgs.size();
+  flutterArguments.dart_entrypoint_argv = dartEntrypointArgs.data();
+  flutterArguments.root_isolate_create_callback = _dartProject.rootIsolateCreateCallback;
+  flutterArguments.log_message_callback = [](const char* tag, const char* message,
+                                             void* user_data) {
+    if (tag && tag[0]) {
+      std::cout << tag << ": ";
+    }
+    std::cout << message << std::endl;
+  };
+  flutterArguments.compute_platform_resolved_locale_callback =
+      (FlutterComputePlatformResolvedLocaleCallback)OnFlutterComputePlatformResolvedLocale;
+
+  static size_t sTaskRunnerIdentifiers = 0;
+  const FlutterTaskRunnerDescription platform_task_runner_description = {
+      .struct_size = sizeof(FlutterTaskRunnerDescription),
+      .user_data = (void*)CFBridgingRetain(self),
+      .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
+        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+        return engine.platformTaskRunner.get()->RunsTasksOnCurrentThread();
+      },
+      .post_task_callback = [](FlutterTask task, uint64_t target_time_nanos,
+                               void* user_data) -> void {
+        FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+        [((__bridge FlutterEngine*)(user_data)) postTask:task
+                                            onTaskRunner:[engine platformTaskRunner]
+                                 targetTimeInNanoseconds:target_time_nanos];
+      },
+      .identifier = ++sTaskRunnerIdentifiers,
+  };
+  // const FlutterTaskRunnerDescription render_task_runner_description = {
+  //     .struct_size = sizeof(FlutterTaskRunnerDescription),
+  //     .user_data = (void*)CFBridgingRetain(self),
+  //     .runs_task_on_current_thread_callback = [](void* user_data) -> bool {
+  //       FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+  //       return engine.RasterTaskRunner.get()->RunsTasksOnCurrentThread();
+  //     },
+  //     .post_task_callback = [](FlutterTask task, uint64_t target_time_nanos,
+  //                              void* user_data) -> void {
+  //       FlutterEngine* engine = (__bridge FlutterEngine*)user_data;
+  //       [((__bridge FlutterEngine*)(user_data)) postTask:task
+  //                                          onTaskRunner:[engine RasterTaskRunner]
+  //                                          targetTimeInNanoseconds:target_time_nanos];
+  //     },
+  //     .identifier = ++sTaskRunnerIdentifiers,
+  // };
+  const FlutterCustomTaskRunners custom_task_runners = {
+      .struct_size = sizeof(FlutterCustomTaskRunners),
+      .platform_task_runner = &platform_task_runner_description,
+      // .render_task_runner = &render_task_runner_description,
+  };
+  flutterArguments.custom_task_runners = &custom_task_runners;
+
+  [self loadAOTData:_dartProject.assetsPath];
+  if (_aotData) {
+    flutterArguments.aot_data = _aotData;
+  }
+
+  FlutterRendererConfig rendererConfig = [_renderer createRendererConfig];
+  FlutterEngineResult result = _embedderAPI.Initialize(
+      FLUTTER_ENGINE_VERSION, &rendererConfig, &flutterArguments, (__bridge void*)(self), &_engine);
+  if (result != kSuccess) {
+    NSLog(@"Failed to initialize Flutter engine: error %d", result);
+    return NO;
+  }
+
+  result = _embedderAPI.RunInitialized(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Failed to run an initialized engine: error %d", result);
+    return NO;
+  }
+
+  // TODO(cyanglaz): embedder api compositor
+  // flutterArguments.compositor = [self createFlutterCompositor];
+  // TODO(cyanglaz): embedder api, Does iOS need setup channels?
+  [self setupChannels];
+  [self onLocaleUpdated:nil];
+  return YES;
+}
+
+// Note: Called from dealloc. Should not use accessors or other methods.
+- (void)shutDownEngine {
+  if (_engine == nullptr) {
+    return;
+  }
+
+  FlutterEngineResult result = _embedderAPI.Deinitialize(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Could not de-initialize the Flutter engine: error %d", result);
+  }
+
+  // Balancing release for the retain in the task runner dispatch table.
+  CFRelease((CFTypeRef)self);
+
+  result = _embedderAPI.Shutdown(_engine);
+  if (result != kSuccess) {
+    NSLog(@"Failed to shut down Flutter engine: error %d", result);
+  }
+  _engine = nullptr;
+}
+
+- (void)setNextFrameCallback:(VoidCallback)callback userData:(void*)userData {
+  _embedderAPI.SetNextFrameCallback(_engine, callback, userData);
+}
+
+- (BOOL)waitForFirstFrame:(fml::TimeDelta)timeout {
+  return _embedderAPI.WaitForFirstFrame(_engine, timeout.ToNanoseconds());
+}
+
+- (BOOL)notifyCreated {
+  // TODO (cyanglaz) embedder api,
+  if (_enableEmbedderAPI) {
+    if (_engine == nullptr) {
+      return NO;
+    }
+    auto embedder_engine = reinterpret_cast<flutter::EmbedderEngine*>(_engine);
+    if (embedder_engine == nullptr || !embedder_engine->IsValid()) {
+      // return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine was invalid.");
+      FML_DCHECK(false);
+      return NO;
+    }
+
+    return _embedderAPI.NotifyCreated(_engine);
+  }
+  self.iosPlatformView->NotifyCreated();
+  return YES;
+}
+
+- (BOOL)notifyDestroyed {
+  // TODO (cyanglaz) embedder api,
+  if (_enableEmbedderAPI) {
+    return _embedderAPI.NotifyDestroyed(_engine);
+  }
+  self.iosPlatformView->NotifyDestroyed();
+  return YES;
+}
+
+- (void)runTaskOnEmbedder:(FlutterTask)task {
+  if (_engine) {
+    auto result = _embedderAPI.RunTask(_engine, &task);
+    if (result != kSuccess) {
+      NSLog(@"Could not post a task to the Flutter engine.");
+    }
+  }
+}
+
+- (void)postTask:(FlutterTask)task
+               onTaskRunner:(fml::RefPtr<fml::TaskRunner>)taskRunner
+    targetTimeInNanoseconds:(uint64_t)targetTime {
+  // Create a local reference to avoid retain cycle.
+  FlutterEngine* flutterEngine = self;
+  auto worker = ^{
+    [flutterEngine runTaskOnEmbedder:task];
+  };
+
+  const auto engine_time = _embedderAPI.GetCurrentTime();
+  if (targetTime <= engine_time) {
+    taskRunner->PostTask(worker);
+  } else {
+    taskRunner->PostTaskForTime(
+        worker, fml::TimePoint::FromEpochDelta(fml::TimeDelta::FromNanoseconds(targetTime)));
+  }
+}
+
+- (void)loadAOTData:(NSString*)assetsDir {
+  if (!_embedderAPI.RunsAOTCompiledDartCode()) {
+    return;
+  }
+
+  BOOL isDirOut = false;  // required for NSFileManager fileExistsAtPath.
+  NSFileManager* fileManager = [NSFileManager defaultManager];
+
+  // This is the location where the test fixture places the snapshot file.
+  // For applications built by Flutter tool, this is in "App.framework".
+  NSString* elfPath = [NSString pathWithComponents:@[ assetsDir, @"app_elf_snapshot.so" ]];
+
+  if (![fileManager fileExistsAtPath:elfPath isDirectory:&isDirOut]) {
+    return;
+  }
+
+  FlutterEngineAOTDataSource source = {};
+  source.type = kFlutterEngineAOTDataSourceTypeElfPath;
+  source.elf_path = [elfPath cStringUsingEncoding:NSUTF8StringEncoding];
+
+  auto result = _embedderAPI.CreateAOTData(&source, &_aotData);
+  if (result != kSuccess) {
+    NSLog(@"Failed to load AOT data from: %@", elfPath);
+  }
+}
+
+#pragma mark - Embedder API Callbacks
+- (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
+  // TODO(cyanglaz) embedder api
+  NSData* messageData = nil;
+  if (message->message_size > 0) {
+    messageData = [NSData dataWithBytesNoCopy:(void*)message->message
+                                       length:message->message_size
+                                 freeWhenDone:NO];
+  }
+  NSString* channel = @(message->channel);
+  __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
+  __block FlutterEngine* weakSelf = self;
+  NSMutableArray* isResponseValid = self.isResponseValid;
+  FlutterEngineSendPlatformMessageResponseFnPtr sendPlatformMessageResponse =
+      _embedderAPI.SendPlatformMessageResponse;
+  FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
+    @synchronized(isResponseValid) {
+      if (![isResponseValid[0] boolValue]) {
+        // Ignore, engine was killed.
+        return;
+      }
+      if (responseHandle) {
+        sendPlatformMessageResponse(weakSelf->_engine, responseHandle,
+                                    static_cast<const uint8_t*>(response.bytes), response.length);
+        responseHandle = NULL;
+      } else {
+        NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
+               "on channel '%@'.",
+              channel);
+      }
+    }
+  };
+
+  FlutterEngineHandlerInfo* handlerInfo = _messengerHandlers[channel];
+  if (handlerInfo) {
+    handlerInfo.handler(messageData, binaryResponseHandler);
+  } else {
+    binaryResponseHandler(nil);
+  }
+}
+
+- (void)engineCallbackFlutterSemanticsUpdate:(const FlutterSemanticsUpdate*)update {
+  // TODO(cyanglaz) embedder api, make iOS AccesssibiltyBridge support FlutterSemanticsUpdate
+  // object.
 }
 
 @end

@@ -258,7 +258,7 @@ DEF_SWITCH(ResourceCacheMaxBytesThreshold,
            "resource-cache-max-bytes-threshold",
            "The max bytes threshold of resource cache, or 0 for unlimited.")
 DEF_SWITCH(EnableImpeller,
-           "enable-impeller",
+           "enable-impeller1",
            "Enable the Impeller renderer on supported platforms. Ignored if "
            "Impeller is not supported on the platform.")
 DEF_SWITCH(LeakVM,

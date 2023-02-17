@@ -77,6 +77,16 @@ FLUTTER_DARWIN_EXPORT
  */
 + (NSString*)defaultBundleIdentifier;
 
+/**
+ * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
+ *
+ * If this is not explicitly set, this will default to the contents of
+ * [NSProcessInfo arguments], without the binary name.
+ *
+ * Set this to nil to pass no arguments to the Dart entrypoint.
+ */
+@property(nonatomic, nullable, copy) NSArray<NSString*>* dartEntrypointArguments;
+
 @end
 
 NS_ASSUME_NONNULL_END
