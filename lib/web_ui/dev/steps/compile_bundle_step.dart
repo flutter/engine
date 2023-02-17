@@ -12,7 +12,7 @@ import '../environment.dart';
 import '../exceptions.dart';
 import '../felt_config.dart';
 import '../pipeline.dart';
-import '../utils.dart' show AnsiColors, FilePath, ProcessManager, cleanup, startProcess;
+import '../utils.dart' show AnsiColors, FilePath, ProcessManager, cleanup, getBundleBuildDirectory, startProcess;
 
 /// Compiles a web test bundle into web_ui/build/test_bundles/<bundle-name>.
 class CompileBundleStep implements PipelineStep {
@@ -43,13 +43,7 @@ class CompileBundleStep implements PipelineStep {
     pathlib.join(environment.webUiTestDir.path, bundle.testSet.directory)
   );
 
-  io.Directory get outputBundleDirectory => io.Directory(
-    pathlib.join(
-      environment.webUiBuildDir.path,
-      'test_bundles',
-      bundle.name,
-    )
-  );
+  io.Directory get outputBundleDirectory => getBundleBuildDirectory(bundle);
 
   List<FilePath> _findTestFiles() {
     final io.Directory testDirectory = testSetDirectory;

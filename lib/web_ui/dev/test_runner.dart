@@ -14,9 +14,8 @@ import 'environment.dart';
 import 'felt_config.dart';
 import 'pipeline.dart';
 import 'steps/compile_bundle_step.dart';
-import 'steps/compile_tests_step.dart';
 import 'steps/copy_artifacts_step.dart';
-import 'steps/run_tests_step.dart';
+import 'steps/run_suite_step.dart';
 import 'suite_filter.dart';
 import 'utils.dart';
 
@@ -44,9 +43,21 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       ..addFlag(
         'list',
         help:
-            'Lists the bundles that would be compiled and the suites that'
-            'will be run as part of this invocation, without actually'
+            'Lists the bundles that would be compiled and the suites that '
+            'will be run as part of this invocation, without actually '
             'compiling or running them.'
+      )
+      ..addFlag(
+        'compile',
+        help:
+            'Compile test bundles. If this is specified on its own, we will '
+            'only compile and not run the suites.'
+      )
+      ..addFlag(
+        'run',
+        help:
+            'Run test suites. If this is specified on its own, we will only '
+            'run the suites and not compile the bundles.'
       )
       ..addFlag(
         'require-skia-gold',
@@ -213,28 +224,29 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     if (isList) {
       return true;
     }
-    final List<FilePath> testFiles = runAllTests
-          ? findAllTests()
-          : targetFiles;
 
+    bool shouldRun = boolArg('run');
+    bool shouldCompile = boolArg('compile');
+    if (!shouldRun && !shouldCompile) {
+      // If neither is specified, we should assume we need to both compile and run.
+      shouldRun = true;
+      shouldCompile = true;
+    }
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
       CopyArtifactsStep(artifacts),
-      for (final TestBundle bundle in bundles)
-        CompileBundleStep(bundle: bundle),
-      CompileTestsStep(
-        testFiles: testFiles,
-        isWasm: isWasm
-      ),
-      RunTestsStep(
-        browserName: browserName,
-        testFiles: testFiles,
-        isDebug: isDebug,
-        isWasm: isWasm,
-        doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
-        requireSkiaGold: requireSkiaGold,
-        overridePathToCanvasKit: overridePathToCanvasKit,
-      ),
+      if (shouldCompile)
+        for (final TestBundle bundle in bundles)
+          CompileBundleStep(bundle: bundle),
+      if (shouldRun)
+        for (final TestSuite suite in filteredSuites)
+          RunSuiteStep(
+            suite, 
+            isDebug: isDebug,
+            doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
+            requireSkiaGold: requireSkiaGold,
+            overridePathToCanvasKit: overridePathToCanvasKit,
+          ),
     ]);
 
     try {

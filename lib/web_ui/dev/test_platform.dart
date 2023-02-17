@@ -38,6 +38,7 @@ import 'package:web_test_utils/image_compare.dart';
 
 import 'browser.dart';
 import 'environment.dart' as env;
+import 'felt_config.dart';
 import 'utils.dart';
 
 const Map<String, String> coopCoepHeaders = <String, String>{
@@ -47,12 +48,10 @@ const Map<String, String> coopCoepHeaders = <String, String>{
 
 /// Custom test platform that serves web engine unit tests.
 class BrowserPlatform extends PlatformPlugin {
-  BrowserPlatform._({
+  BrowserPlatform._(this.suite, {
     required this.browserEnvironment,
     required this.server,
-    required this.renderer,
     required this.isDebug,
-    required this.isWasm,
     required this.doUpdateScreenshotGoldens,
     required this.packageConfig,
     required this.skiaClient,
@@ -74,8 +73,14 @@ class BrowserPlatform extends PlatformPlugin {
         .add(_packageUrlHandler)
         .add(_canvasKitOverrideHandler)
 
+        // Serves files from the bundle's output build directory
+        .add(createSimpleDirectoryHandler(getBundleBuildDirectory(suite.testBundle)))
+
         // Serves files from the web_ui/build/ directory at the root (/) URL path.
-        .add(buildDirectoryHandler)
+        .add(createSimpleDirectoryHandler(env.environment.webUiBuildDir))
+
+        // Serves files from thes test set directory
+        .add(createSimpleDirectoryHandler(getTestSetDirectory(suite.testBundle.testSet)))
         .add(_testImageListingHandler)
 
         // Serves the initial HTML for the test.
@@ -112,9 +117,8 @@ class BrowserPlatform extends PlatformPlugin {
   ///
   /// If [doUpdateScreenshotGoldens] is true updates screenshot golden files
   /// instead of failing the test on screenshot mismatches.
-  static Future<BrowserPlatform> start({
+  static Future<BrowserPlatform> start(TestSuite suite, {
     required BrowserEnvironment browserEnvironment,
-    required Renderer renderer,
     required bool doUpdateScreenshotGoldens,
     required SkiaGoldClient? skiaClient,
     required String? overridePathToCanvasKit,
@@ -123,11 +127,10 @@ class BrowserPlatform extends PlatformPlugin {
     final shelf_io.IOServer server =
         shelf_io.IOServer(await HttpMultiServer.loopback(0));
     return BrowserPlatform._(
+      suite,
       browserEnvironment: browserEnvironment,
-      renderer: renderer,
       server: server,
       isDebug: Configuration.current.pauseAfterLoad,
-      isWasm: isWasm,
       doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,
       packageConfig: await loadPackageConfigUri((await Isolate.packageConfig)!),
       skiaClient: skiaClient,
@@ -135,12 +138,12 @@ class BrowserPlatform extends PlatformPlugin {
     );
   }
 
+  final TestSuite suite;
+
   /// If true, runs the browser with a visible windows (i.e. not headless) and
   /// pauses before running the tests to give the developer a chance to set
   /// breakpoints in the code.
   final bool isDebug;
-
-  final bool isWasm;
 
   /// The underlying server.
   final shelf.Server server;
@@ -148,11 +151,11 @@ class BrowserPlatform extends PlatformPlugin {
   /// Provides the environment for the browser running tests.
   final BrowserEnvironment browserEnvironment;
 
-  /// The renderer that tests are running under.
-  final Renderer renderer;
-
   /// The URL for this server.
   Uri get url => server.url.resolve('/');
+
+  bool get isWasm => suite.testBundle.compileConfig.compiler == Compiler.dart2wasm;
+  bool get needsCrossOriginIsolated => isWasm && suite.testBundle.compileConfig.renderer == Renderer.skwasm;
 
   /// A [OneOffHandler] for servicing WebSocket connections for
   /// [BrowserManager]s.
@@ -443,52 +446,44 @@ class BrowserPlatform extends PlatformPlugin {
     '.woff2': 'font/woff2',
   };
 
-  /// A simple file handler that serves files whose URLs and paths are
+  /// Creates a simple file handler that serves files whose URLs and paths are
   /// statically known.
   ///
   /// This is used for trivial use-cases, such as `favicon.ico`, host pages, etc.
-  shelf.Response buildDirectoryHandler(shelf.Request request) {
-    File fileInBuild = File(p.join(
-      env.environment.webUiBuildDir.path,
-      getBuildDirForRenderer(renderer),
-      request.url.path,
-    ));
-
-    // If we can't find the file in the renderer-specific `build` subdirectory,
-    // then it may be in the top-level `build` subdirectory.
-    if (!fileInBuild.existsSync()) {
-      fileInBuild = File(p.join(
-        env.environment.webUiBuildDir.path,
+  shelf.Handler createSimpleDirectoryHandler(Directory directory) {
+    return (shelf.Request request) {
+      final File fileInDirectory = File(p.join(
+        directory.path,
         request.url.path,
       ));
-    }
 
-    if (!fileInBuild.existsSync()) {
-      return shelf.Response.notFound('File not found: ${request.url.path}');
-    }
+      if (!fileInDirectory.existsSync()) {
+        return shelf.Response.notFound('File not found: ${request.url.path}');
+      }
 
-    final String extension = p.extension(fileInBuild.path);
-    final String? contentType = contentTypes[extension];
+      final String extension = p.extension(fileInDirectory.path);
+      final String? contentType = contentTypes[extension];
 
-    if (contentType == null) {
-      final String error =
-          'Failed to determine Content-Type for "${request.url.path}".';
-      stderr.writeln(error);
-      return shelf.Response.internalServerError(body: error);
-    }
+      if (contentType == null) {
+        final String error =
+            'Failed to determine Content-Type for "${request.url.path}".';
+        stderr.writeln(error);
+        return shelf.Response.internalServerError(body: error);
+      }
 
-    final bool needsCoopCoep =
-      extension == '.js' ||
-      extension == '.mjs' ||
-      extension == '.html';
-    return shelf.Response.ok(
-      fileInBuild.readAsBytesSync(),
-      headers: <String, Object>{
-        HttpHeaders.contentTypeHeader: contentType,
-        if (needsCoopCoep && isWasm && renderer == Renderer.skwasm)
-          ...coopCoepHeaders,
-      },
-    );
+      final bool isScript =
+        extension == '.js' ||
+        extension == '.mjs' ||
+        extension == '.html';
+      return shelf.Response.ok(
+        fileInDirectory.readAsBytesSync(),
+        headers: <String, Object>{
+          HttpHeaders.contentTypeHeader: contentType,
+          if (isScript && needsCrossOriginIsolated)
+            ...coopCoepHeaders,
+        },
+      );
+    };
   }
 
   /// Serves the HTML file that bootstraps the test.
@@ -498,9 +493,10 @@ class BrowserPlatform extends PlatformPlugin {
     if (path.endsWith('.html')) {
       final String test = '${p.withoutExtension(path)}.dart';
 
+      final bool linkSkwasm = suite.testBundle.compileConfig.renderer == Renderer.skwasm;
       // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase"${renderer == Renderer.skwasm ? " skwasm" : ""}>';
+      final String link = '<link rel="x-dart-test" href="$scriptBase"${linkSkwasm ? " skwasm" : ""}>';
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
@@ -521,7 +517,7 @@ class BrowserPlatform extends PlatformPlugin {
         </html>
       ''', headers: <String, String>{
         'Content-Type': 'text/html',
-        if (isWasm && renderer == Renderer.skwasm)
+        if (needsCrossOriginIsolated)
           ...coopCoepHeaders
       });
     }
@@ -554,8 +550,7 @@ class BrowserPlatform extends PlatformPlugin {
     }
     _checkNotClosed();
 
-    final Uri suiteUrl = url.resolveUri(p.toUri('${p.withoutExtension(
-            p.relative(path, from: env.environment.webUiBuildDir.path))}.html'));
+    final Uri suiteUrl = url.resolveUri(p.toUri('${p.withoutExtension(path)}.html'));
     _checkNotClosed();
 
     final BrowserManager? browserManager = await _startBrowserManager();
@@ -565,10 +560,10 @@ class BrowserPlatform extends PlatformPlugin {
     }
     _checkNotClosed();
 
-    final RunnerSuite suite =
+    final RunnerSuite runnerSuite =
         await browserManager.load(path, suiteUrl, suiteConfig, message);
     _checkNotClosed();
-    return suite;
+    return runnerSuite;
   }
 
   Future<BrowserManager?>? _browserManager;
@@ -598,9 +593,8 @@ class BrowserPlatform extends PlatformPlugin {
       url: hostUrl,
       future: completer.future,
       packageConfig: packageConfig,
-      isWasm: isWasm,
       debug: isDebug,
-      renderer: renderer,
+      sourceMapDirectory: isWasm ? null : getBundleBuildDirectory(suite.testBundle),
     );
 
     // Store null values for browsers that error out so we know not to load them
@@ -696,7 +690,7 @@ class BrowserManager {
   /// Creates a new BrowserManager that communicates with the browser over
   /// [webSocket].
   BrowserManager._(this.packageConfig, this._browser, this._browserEnvironment,
-      this._renderer, this._isWasm, WebSocketChannel webSocket) {
+      this._sourceMapDirectory, WebSocketChannel webSocket) {
     // The duration should be short enough that the debugging console is open as
     // soon as the user is done setting breakpoints, but long enough that a test
     // doing a lot of synchronous work doesn't trigger a false positive.
@@ -742,8 +736,8 @@ class BrowserManager {
   /// The browser environment for this test.
   final BrowserEnvironment _browserEnvironment;
 
-  /// The renderer for this test.
-  final Renderer _renderer;
+  /// The directory containing sourcemaps for test files
+  final Directory? _sourceMapDirectory;
 
   /// The channel used to communicate with the browser.
   ///
@@ -767,9 +761,6 @@ class BrowserManager {
 
   /// Whether the channel to the browser has closed.
   bool _closed = false;
-
-  /// Whether we are running tests that have been compiled to WebAssembly.
-  final bool _isWasm;
 
   /// The completer for [_BrowserEnvironment.displayPause].
   ///
@@ -812,8 +803,7 @@ class BrowserManager {
     required Uri url,
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
-    required Renderer renderer,
-    required bool isWasm,
+    Directory? sourceMapDirectory,
     bool debug = false,
   }) async {
     final Browser browser =
@@ -824,8 +814,7 @@ class BrowserManager {
         future: future,
         packageConfig: packageConfig,
         browser: browser,
-        renderer: renderer,
-        isWasm: isWasm,
+        sourceMapDirectory: sourceMapDirectory,
         debug: debug);
   }
 
@@ -835,8 +824,7 @@ class BrowserManager {
     required Future<WebSocketChannel> future,
     required PackageConfig packageConfig,
     required Browser browser,
-    required Renderer renderer,
-    required bool isWasm,
+    Directory? sourceMapDirectory,
     bool debug = false,
   }) {
     final Completer<BrowserManager> completer = Completer<BrowserManager>();
@@ -858,7 +846,7 @@ class BrowserManager {
         return;
       }
       completer.complete(BrowserManager._(
-          packageConfig, browser, browserEnvironment, renderer, isWasm, webSocket));
+          packageConfig, browser, browserEnvironment, sourceMapDirectory, webSocket));
     }).catchError((Object error, StackTrace stackTrace) {
       browser.close();
       if (completer.isCompleted) {
@@ -942,7 +930,7 @@ class BrowserManager {
             suiteChannel,
             message);
 
-        if (_isWasm) {
+        if (_sourceMapDirectory == null) {
           // We don't have mapping for wasm yet. But we should send a message
           // to let the host page move forward.
           controller!.channel('test.browser.mapper').sink.add(null);
@@ -951,8 +939,11 @@ class BrowserManager {
               '${p.basename(path)}.browser_test.dart.js.map';
           final String pathToTest = p.dirname(path);
 
-          final String mapPath = p.join(env.environment.webUiRootDir.path,
-              'build', getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
+          final String mapPath = p.join(
+            _sourceMapDirectory!.path,
+            pathToTest,
+            sourceMapFileName
+          );
 
           final Map<String, Uri> packageMap = <String, Uri>{
             for (Package p in packageConfig.packages) p.name: p.packageUriRoot

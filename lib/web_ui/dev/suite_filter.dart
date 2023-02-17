@@ -19,40 +19,40 @@ abstract class SuiteFilter {
   SuiteFilterResult filterSuite(TestSuite suite);
 }
 
-bool _macOSSupportsBrowser(Browser browser) {
+bool _macOSSupportsBrowser(BrowserName browser) {
   switch (browser) {
-    case Browser.chrome:
-    case Browser.firefox:
-    case Browser.safari:
+    case BrowserName.chrome:
+    case BrowserName.firefox:
+    case BrowserName.safari:
       return true;
-    case Browser.edge:
+    case BrowserName.edge:
      return false;
   }
 }
 
-bool _linuxSupportsBrowser(Browser browser) {
+bool _linuxSupportsBrowser(BrowserName browser) {
   switch (browser) {
-    case Browser.chrome:
-    case Browser.firefox:
+    case BrowserName.chrome:
+    case BrowserName.firefox:
       return true;
-    case Browser.edge:
-    case Browser.safari:
+    case BrowserName.edge:
+    case BrowserName.safari:
      return false;
   }
 }
 
-bool _windowsSupportsBrowser(Browser browser) {
+bool _windowsSupportsBrowser(BrowserName browser) {
   switch (browser) {
-    case Browser.chrome:
-    case Browser.edge:
+    case BrowserName.chrome:
+    case BrowserName.edge:
       return true;
-    case Browser.firefox:
-    case Browser.safari:
+    case BrowserName.firefox:
+    case BrowserName.safari:
      return false;
   }
 }
 
-typedef BrowserSupportCheck = bool Function(Browser browser);
+typedef BrowserSupportCheck = bool Function(BrowserName browser);
 
 BrowserSupportCheck get _platformBrowserSupportCheck {
   if (io.Platform.isLinux) {
@@ -73,7 +73,7 @@ class PlatformSuiteFilter implements SuiteFilter {
 
   @override
   SuiteFilterResult filterSuite(TestSuite suite) {
-    final Browser browser = suite.runConfig.browser;
+    final BrowserName browser = suite.runConfig.browser;
     if (_browserCheck(browser)) {
       return SuiteFilterResult.accepted();
     } else {

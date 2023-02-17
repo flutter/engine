@@ -44,7 +44,7 @@ enum CanvasKitVariant {
   chromium,
 }
 
-enum Browser {
+enum BrowserName {
   chrome,
   edge,
   firefox,
@@ -55,7 +55,7 @@ class RunConfiguration {
   RunConfiguration(this.name, this.browser, this.variant);
 
   final String name;
-  final Browser browser;
+  final BrowserName browser;
   final CanvasKitVariant? variant;
 }
 
@@ -175,7 +175,7 @@ class FeltConfig {
     for (final dynamic node in yaml['run-configs'] as YamlList) {
       final YamlMap runConfigYaml = node as YamlMap;
       final String name = runConfigYaml['name'] as String;
-      final Browser browser = Browser.values.byName(runConfigYaml['browser'] as String);
+      final BrowserName browser = BrowserName.values.byName(runConfigYaml['browser'] as String);
       final dynamic variantNode = runConfigYaml['canvaskit-variant'];
       final CanvasKitVariant? variant = variantNode == null
         ? null
