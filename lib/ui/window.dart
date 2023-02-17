@@ -944,7 +944,7 @@ enum Brightness {
 ///   functionality.
 /// * [PlatformDispatcher], which gives an application access to
 ///   platform-specific functionality.
-/// * [PlatformDispatcher.views], for a list of all availalbe views.
+/// * [PlatformDispatcher.views], for a list of all available views.
 @Deprecated(
   'Look up the current FlutterView from the context via View.of(context) or consult the PlatformDispatcher directly instead. '
   'Deprecated to prepare for the upcoming multi-window support. '
