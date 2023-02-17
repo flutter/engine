@@ -495,6 +495,24 @@ class BrowserPlatform extends PlatformPlugin {
     };
   }
 
+  String getCanvasKitBase() {
+    switch (suite.runConfig.variant) {
+      case CanvasKitVariant.full:
+        return 'canvaskit';
+      case CanvasKitVariant.chromium:
+        return 'canvaskit_chromium';
+      case null:
+        switch (suite.runConfig.browser) {
+          case BrowserName.chrome:
+          case BrowserName.edge:
+            return 'canvaskit_chromium';
+          case BrowserName.firefox:
+          case BrowserName.safari:
+            return 'canvaskit';
+        }
+    }
+  }
+
   /// Serves the HTML file that bootstraps the test.
   shelf.Response _testBootstrapHandler(shelf.Request request) {
     final String path = p.fromUri(request.url);
@@ -517,7 +535,7 @@ class BrowserPlatform extends PlatformPlugin {
           <meta name="assetBase" content="/">
           <script>
             window.flutterConfiguration = {
-              canvasKitBaseUrl: "/canvaskit/"
+              canvasKitBaseUrl: "/${getCanvasKitBase()}/"
             };
           </script>
           $link

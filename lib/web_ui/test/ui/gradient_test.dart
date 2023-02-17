@@ -13,8 +13,8 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
-  setUpUiTest();
+Future<void> testMain() async {
+  await setUpUiTest();
 
   test('Gradient.radial with no focal point', () {
     expect(

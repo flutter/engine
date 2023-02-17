@@ -8,9 +8,11 @@ import 'package:ui/src/engine/skwasm/skwasm_stub.dart' if (dart.library.ffi) 'pa
 import '../canvaskit/common.dart';
 
 /// Initializes the renderer for this test.
-void setUpUiTest() {
-  if (renderer is CanvasKitRenderer) {
+Future<void> setUpUiTest() async {
+  if (isCanvasKit) {
     setUpCanvasKitTest();
+  } else if (isHtml) {
+    await initializeEngine();
   }
 }
 

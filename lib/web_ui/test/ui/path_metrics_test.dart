@@ -17,8 +17,8 @@ void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
-void testMain() {
-  setUpUiTest();
+Future<void> testMain() async {
+  await setUpUiTest();
   group('PathMetric length', () {
     test('empty path', () {
       final Path path = Path();
