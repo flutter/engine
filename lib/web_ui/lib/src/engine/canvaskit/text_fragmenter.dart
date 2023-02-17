@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import '../dom.dart';
 import '../text/line_breaker.dart';
+import 'canvaskit_api.dart';
 
 /// The granularity at which to segment text.
 ///
@@ -34,7 +35,7 @@ Uint32List fragmentUsingIntlSegmenter(
   }
   breaks.add(text.length);
 
-  return Uint32List.fromList(breaks);
+  return mallocUint32List(breaks.length).toTypedArray()..setAll(0, breaks);
 }
 
 // These are the soft/hard line break values expected by Skia's SkParagraph.
@@ -48,7 +49,7 @@ Uint32List fragmentUsingV8LineBreaker(String text) {
       breakLinesUsingV8BreakIterator(text, _v8LineBreaker);
 
   final int size = (fragments.length + 1) * 2;
-  final Uint32List typedArray = Uint32List(size);
+  final Uint32List typedArray = mallocUint32List(size).toTypedArray();
 
   typedArray[0] = 0; // start index
   typedArray[1] = _kSoftLineBreak; // break type
