@@ -266,7 +266,7 @@ struct ContentContextOptions {
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  std::optional<PixelFormat> color_attachment_pixel_format = std::nullopt;
+  std::optional<PixelFormat> color_attachment_pixel_format;
   bool has_stencil_attachment = true;
 
   struct Hash {
