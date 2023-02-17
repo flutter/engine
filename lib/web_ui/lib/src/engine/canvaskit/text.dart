@@ -980,14 +980,12 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     if (useClientICU) {
       final String text = _paragraphBuilder.getText();
       _paragraphBuilder.setWordsUtf16(
-        CkIntlFragmenter(text, IntlSegmenterGranularity.word).fragment(),
+        fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.word),
       );
       _paragraphBuilder.setGraphemeBreaksUtf16(
-        CkIntlFragmenter(text, IntlSegmenterGranularity.grapheme).fragment(),
+        fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
       );
-      _paragraphBuilder.setLineBreaksUtf16(
-        CkLineBreakFragmenter(text).fragment(),
-      );
+      _paragraphBuilder.setLineBreaksUtf16(fragmentUsingV8LineBreaker(text));
     }
     final SkParagraph result = _paragraphBuilder.build();
     _paragraphBuilder.delete();
