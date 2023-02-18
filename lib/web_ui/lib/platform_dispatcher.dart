@@ -395,6 +395,8 @@ abstract class ViewPadding {
   }
 }
 
+typedef WindowPadding = ViewPadding;
+
 class DisplayFeature {
   const DisplayFeature({
     required this.bounds,
