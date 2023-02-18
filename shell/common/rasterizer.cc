@@ -175,6 +175,8 @@ void Rasterizer::DrawLastLayerTree(
 RasterStatus Rasterizer::Draw(
     const std::shared_ptr<LayerTreePipeline>& pipeline,
     LayerTreeDiscardCallback discard_callback) {
+  printf("Rasterizer::Draw\n");
+  fflush(stdout);
   TRACE_EVENT0("flutter", "GPURasterizer::Draw");
   if (raster_thread_merger_ &&
       !raster_thread_merger_->IsOnRasterizingThread()) {
@@ -363,6 +365,8 @@ fml::Milliseconds Rasterizer::GetFrameBudget() const {
 RasterStatus Rasterizer::DoDraw(
     std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
     std::shared_ptr<flutter::LayerTree> layer_tree) {
+  printf("Rasterizer::DoDraw\n");
+  fflush(stdout);
   TRACE_EVENT_WITH_FRAME_NUMBER(frame_timings_recorder, "flutter",
                                 "Rasterizer::DoDraw");
   FML_DCHECK(delegate_.GetTaskRunners()
@@ -370,6 +374,8 @@ RasterStatus Rasterizer::DoDraw(
                  ->RunsTasksOnCurrentThread());
 
   if (!layer_tree || !surface_) {
+    printf("Failed 1\n");
+    fflush(stdout);
     return RasterStatus::kFailed;
   }
 
@@ -384,8 +390,12 @@ RasterStatus Rasterizer::DoDraw(
     resubmitted_layer_tree_ = std::move(layer_tree);
     resubmitted_recorder_ = frame_timings_recorder->CloneUntil(
         FrameTimingsRecorder::State::kBuildEnd);
+    printf("Failed 2\n");
+    fflush(stdout);
     return raster_status;
   } else if (raster_status == RasterStatus::kDiscarded) {
+    printf("Failed 3\n");
+    fflush(stdout);
     return raster_status;
   }
 
@@ -399,6 +409,8 @@ RasterStatus Rasterizer::DoDraw(
   // TODO(liyuqian): in Fuchsia, the rasterization doesn't finish when
   // Rasterizer::DoDraw finishes. Future work is needed to adapt the timestamp
   // for Fuchsia to capture SceneUpdateContext::ExecutePaintTasks.
+  printf("delegate_.OnFrameRasterized\n");
+  fflush(stdout);
   delegate_.OnFrameRasterized(frame_timings_recorder->GetRecordedTime());
 
 // SceneDisplayLag events are disabled on Fuchsia.

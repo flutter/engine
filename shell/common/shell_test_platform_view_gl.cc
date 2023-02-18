@@ -6,6 +6,8 @@
 
 #include <utility>
 
+#include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/shell/common/context_options.h"
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 
 namespace flutter {
@@ -36,9 +38,41 @@ void ShellTestPlatformViewGL::SimulateVSync() {
   vsync_clock_->SimulateVSync();
 }
 
+// Default maximum number of bytes of GPU memory of budgeted resources in the
+// cache.
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
+
+sk_sp<GrDirectContext> ShellTestPlatformViewGL::CreateMainContext() {
+  auto context_switch = GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
+    FML_LOG(ERROR)
+        << "Could not make the context current to set up the Gr context.";
+    return nullptr;
+  }
+
+  const auto options =
+      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kOpenGL);
+
+  auto context = GrDirectContext::MakeGL(GetGLInterface(), options);
+
+  if (!context) {
+    FML_LOG(ERROR) << "Failed to set up Skia Gr context.";
+    return nullptr;
+  }
+
+  context->setResourceCacheLimit(kGrCacheMaxByteSize);
+
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
+
+  return context;
+}
+
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
-  return std::make_unique<GPUSurfaceGLSkia>(nullptr, this, true);
+  return std::make_unique<GPUSurfaceGLSkia>(CreateMainContext(), this, true);
 }
 
 // |PlatformView|

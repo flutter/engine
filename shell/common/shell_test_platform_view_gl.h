@@ -66,6 +66,8 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   // |GPUSurfaceGLDelegate|
   GLProcResolver GetGLProcResolver() const override;
 
+  sk_sp<GrDirectContext> CreateMainContext();
+
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewGL);
 };
 

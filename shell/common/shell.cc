@@ -1168,6 +1168,9 @@ void Shell::OnAnimatorDraw(std::shared_ptr<LayerTreePipeline> pipeline) {
            tree.frame_size() != expected_frame_size_;
   };
 
+  printf("Shell::OnAnimatorDraw\n");
+  fflush(stdout);
+
   task_runners_.GetRasterTaskRunner()->PostTask(fml::MakeCopyable(
       [&waiting_for_first_frame = waiting_for_first_frame_,
        &waiting_for_first_frame_condition = waiting_for_first_frame_condition_,

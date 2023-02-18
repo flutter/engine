@@ -663,7 +663,11 @@ TEST_F(ShellTest, ReportTimingsIsCalled) {
     PumpOneFrame(shell.get());
   }
 
+  printf("Before wait\n");
+  fflush(stdout);
   reportLatch.Wait();
+  printf("After wait\n");
+  fflush(stdout);
   DestroyShell(std::move(shell));
 
   fml::TimePoint finish = fml::TimePoint::Now();
