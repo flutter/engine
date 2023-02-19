@@ -69,6 +69,15 @@ typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
                                                   gpointer user_data);
 
 /**
+ * FlEngineVsyncHandler:
+ * @engine: an #FlEngine.
+ * @user_data: (closure): data provided when registering this handler.
+ *
+ * Function called when the engine requests vsync.
+ */
+typedef void (*FlEngineVsyncHandler)(FlEngine* engine, gpointer user_data);
+
+/**
  * fl_engine_new:
  * @project: an #FlDartProject.
  * @renderer: an #FlRenderer.
@@ -140,6 +149,21 @@ void fl_engine_set_on_pre_engine_restart_handler(
     FlEngineOnPreEngineRestartHandler handler,
     gpointer user_data,
     GDestroyNotify destroy_notify);
+
+/**
+ * fl_engine_set_vsync_handler:
+ * @engine: an #FlEngine.
+ * @handler: function to call when the engine is waiting for vsync.
+ * @user_data: (closure): user data to pass to @handler.
+ * @destroy_notify: (allow-none): a function which gets called to free
+ * @user_data, or %NULL.
+ *
+ * Registers the fuction called when the engine is waiting for vsync.
+ */
+void fl_engine_set_vsync_handler(FlEngine* engine,
+                                 FlEngineVsyncHandler handler,
+                                 gpointer user_data,
+                                 GDestroyNotify destroy_notify);
 
 /**
  * fl_engine_start:
@@ -288,6 +312,20 @@ FlTaskRunner* fl_engine_get_task_runner(FlEngine* engine);
  * Executes given Flutter task.
  */
 void fl_engine_execute_task(FlEngine* engine, FlutterTask* task);
+
+/**
+ * fl_engine_on_vsync:
+ * @engine: an #FlEngine.
+ * @frame_start_time_nanos: the point at which the vsync event occurred or will
+ * occur.
+ * @frame_target_time_nanos: The point at which the next vsync to occur is
+ * expected to occur.
+ *
+ * Report that vsync is available.
+ */
+void fl_engine_on_vsync(FlEngine* engine,
+                        uint64_t frame_start_time_nanos,
+                        uint64_t frame_target_time_nanos);
 
 /**
  * fl_engine_mark_texture_frame_available:

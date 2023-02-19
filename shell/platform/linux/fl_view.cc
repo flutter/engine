@@ -265,6 +265,27 @@ static void on_pre_engine_restart_cb(FlEngine* engine, gpointer user_data) {
   init_scrolling(self);
 }
 
+// Called when the engine requests vsync.
+static void vsync_cb(FlEngine* engine, gpointer user_data) {
+  FlView* self = FL_VIEW(user_data);
+
+  GdkFrameClock* frame_clock = gtk_widget_get_frame_clock(GTK_WIDGET(self));
+  GdkFrameTimings* timings = gdk_frame_clock_get_current_timings(frame_clock);
+  guint64 frame_time_msec = gdk_frame_timings_get_frame_time(timings);
+  gint64 refresh_interval, presentation_time;
+  gdk_frame_clock_get_refresh_info(frame_clock, frame_time_msec,
+                                   &refresh_interval, &presentation_time);
+  guint64 frame_start_msec;
+  if (presentation_time != 0) {
+    frame_start_msec = presentation_time;
+  } else {
+    frame_start_msec = frame_time_msec + refresh_interval;
+  }
+  guint64 frame_target_time_msec = frame_start_msec + refresh_interval;
+  fl_engine_on_vsync(self->engine, frame_start_msec * 1000,
+                     frame_target_time_msec * 1000);
+}
+
 // Implements FlPluginRegistry::get_registrar_for_plugin.
 static FlPluginRegistrar* fl_view_get_registrar_for_plugin(
     FlPluginRegistry* registry,
@@ -515,6 +536,7 @@ static void fl_view_constructed(GObject* object) {
       self->engine, update_semantics_node_cb, self, nullptr);
   fl_engine_set_on_pre_engine_restart_handler(
       self->engine, on_pre_engine_restart_cb, self, nullptr);
+  fl_engine_set_vsync_handler(self->engine, vsync_cb, self, nullptr);
 
   // Must initialize the keymap before the keyboard.
   self->keymap = gdk_keymap_get_for_display(gdk_display_get_default());

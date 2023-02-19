@@ -48,6 +48,12 @@ struct _FlEngine {
   FLUTTER_API_SYMBOL(FlutterEngine) engine;
   FlutterEngineProcTable embedder_api;
 
+  // Function to call when vsync is requested.
+  intptr_t vsync_baton;
+  FlEngineOnPreEngineRestartHandler vsync_handler;
+  gpointer vsync_handler_data;
+  GDestroyNotify vsync_handler_destroy_notify;
+
   // Function to call when a platform message is received.
   FlEnginePlatformMessageHandler platform_message_handler;
   gpointer platform_message_handler_data;
@@ -333,6 +339,18 @@ static void fl_engine_on_pre_engine_restart_cb(void* user_data) {
   }
 }
 
+// Called when the engine is waiting for a VSync event.
+static void fl_engine_vsync_cb(void* user_data, intptr_t baton) {
+  FlEngine* self = FL_ENGINE(user_data);
+
+  g_assert(self->vsync_baton == 0);
+  self->vsync_baton = baton;
+
+  if (self->vsync_handler != nullptr) {
+    self->vsync_handler(self, self->vsync_handler_data);
+  }
+}
+
 // Called when a response to a sent platform message is received from the
 // engine.
 static void fl_engine_platform_message_response_cb(const uint8_t* data,
@@ -511,6 +529,7 @@ gboolean fl_engine_start(FlEngine* self, GError** error) {
       dart_entrypoint_args != nullptr ? g_strv_length(dart_entrypoint_args) : 0;
   args.dart_entrypoint_argv =
       reinterpret_cast<const char* const*>(dart_entrypoint_args);
+  args.vsync_callback = fl_engine_vsync_cb;
 
   FlutterCompositor compositor = {};
   compositor.struct_size = sizeof(FlutterCompositor);
@@ -618,6 +637,21 @@ void fl_engine_set_on_pre_engine_restart_handler(
   self->on_pre_engine_restart_handler = handler;
   self->on_pre_engine_restart_handler_data = user_data;
   self->on_pre_engine_restart_handler_destroy_notify = destroy_notify;
+}
+
+void fl_engine_set_vsync_handler(FlEngine* self,
+                                 FlEngineVsyncHandler handler,
+                                 gpointer user_data,
+                                 GDestroyNotify destroy_notify) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  if (self->vsync_handler_destroy_notify) {
+    self->vsync_handler_destroy_notify(self->vsync_handler_data);
+  }
+
+  self->vsync_handler = handler;
+  self->vsync_handler_data = user_data;
+  self->vsync_handler_destroy_notify = destroy_notify;
 }
 
 // Note: This function can be called from any thread.
@@ -832,6 +866,23 @@ void fl_engine_dispatch_semantics_action(FlEngine* self,
 
   self->embedder_api.DispatchSemanticsAction(self->engine, id, action,
                                              action_data, action_data_length);
+}
+
+void fl_engine_on_vsync(FlEngine* self,
+                        uint64_t frame_start_time_nanos,
+                        uint64_t frame_target_time_nanos) {
+  g_return_if_fail(FL_IS_ENGINE(self));
+
+  g_assert(self->vsync_baton != 0);
+
+  FlutterEngineResult result = self->embedder_api.OnVsync(
+      self->engine, self->vsync_baton, frame_start_time_nanos,
+      frame_target_time_nanos);
+  self->vsync_baton = 0;
+
+  if (result != kSuccess) {
+    g_warning("Failed to report vsync");
+  }
 }
 
 gboolean fl_engine_mark_texture_frame_available(FlEngine* self,
