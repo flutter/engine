@@ -323,7 +323,8 @@ public class PlatformViewsControllerTest {
   public void createPlatformViewMessage_initializesAndroidView() {
     PlatformViewsController platformViewsController = new PlatformViewsController();
 
-    final long platformViewId = 0L;
+    // The value is actually large enough to require a long.
+    final long platformViewId = 0x80000000L;
     assertNull(platformViewsController.getPlatformViewById(platformViewId));
 
     PlatformViewFactory viewFactory = mock(PlatformViewFactory.class);
