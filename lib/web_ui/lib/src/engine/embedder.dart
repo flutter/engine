@@ -124,6 +124,8 @@ class FlutterViewEmbedder {
   HostNode? get glassPaneShadow => _glassPaneShadow;
   HostNode? _glassPaneShadow;
 
+  List<dynamic>? _orientations;
+
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
   static const double defaultFontSize = 14;
@@ -273,6 +275,7 @@ class FlutterViewEmbedder {
   ///
   /// See w3c screen api: https://www.w3.org/TR/screen-orientation/
   Future<bool> setPreferredOrientation(List<dynamic> orientations) {
+    _orientations = orientations;
     final DomScreen? screen = domWindow.screen;
     if (screen != null) {
       final DomScreenOrientation? screenOrientation = screen.orientation;
@@ -303,6 +306,10 @@ class FlutterViewEmbedder {
     }
     // API is not supported on this browser return false.
     return Future<bool>.value(false);
+  }
+
+  Future<List<dynamic>> getPreferredOrientation() async {
+    return _orientations ?? <dynamic>[];
   }
 
   // Converts device orientation to w3c OrientationLockType enum.

@@ -407,6 +407,140 @@ Future<void> testMain() async {
     js_util.setProperty(domWindow, 'screen', original);
   });
 
+  // Emulates the framework sending a request to get screen orientation.
+  Future<List<dynamic>> sendGetPreferredOrientations() {
+    final Completer<List<dynamic>> completer = Completer<List<dynamic>>();
+    final ByteData? inputData = const JSONMethodCodec().encodeMethodCall(
+        const MethodCall('SystemChrome.getPreferredOrientations'));
+
+    window.sendPlatformMessage(
+      'flutter/platform',
+      inputData,
+      (ByteData? outputData) {
+        const MethodCodec codec = JSONMethodCodec();
+        completer.complete(codec.decodeEnvelope(outputData!) as List<dynamic>);
+      },
+    );
+
+    return completer.future;
+  }
+
+  test('getPreferredOrientation responds', () async {
+    final DomScreen original = domWindow.screen!;
+
+    final List<String> lockCalls = <String>[];
+    int unlockCount = 0;
+    bool simulateError = false;
+
+    js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
+      'orientation': <Object?, Object?>{
+        'lock': allowInterop((String lockType) {
+          lockCalls.add(lockType);
+          return Promise<Object?>(allowInterop((PromiseResolver<Object?> resolve, PromiseRejecter reject) {
+            if (!simulateError) {
+              resolve.resolve(null);
+            } else {
+              reject.reject('Simulating error');
+            }
+          }));
+        }),
+        'unlock': allowInterop(() {
+          unlockCount += 1;
+        }),
+      },
+    }));
+
+    // Sanity-check the test setup.
+    expect(lockCalls, <String>[]);
+    expect(unlockCount, 0);
+    await domWindow.screen!.orientation!.lock('hi');
+    domWindow.screen!.orientation!.unlock();
+    expect(lockCalls, <String>['hi']);
+    expect(unlockCount, 1);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitUp']), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>['DeviceOrientation.portraitUp']);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>['DeviceOrientation.portraitDown']);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeLeft']), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>['DeviceOrientation.landscapeLeft']);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.landscapeRight']), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>['DeviceOrientation.landscapeRight']);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.landscapeRight'
+    ]), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.landscapeRight'
+    ]);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.portraitDown',
+      'DeviceOrientation.landscapeRight'
+    ]), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.portraitDown',
+      'DeviceOrientation.landscapeRight'
+    ]);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.portraitDown',
+      'DeviceOrientation.landscapeLeft',
+      'DeviceOrientation.landscapeRight'
+    ]), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>[
+      'DeviceOrientation.portraitUp',
+      'DeviceOrientation.portraitDown',
+      'DeviceOrientation.landscapeLeft',
+      'DeviceOrientation.landscapeRight'
+    ]);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    expect(await sendSetPreferredOrientations(<dynamic>[]), isTrue);
+    expect(await sendGetPreferredOrientations(), <dynamic>[]);
+    lockCalls.clear();
+    unlockCount = 0;
+
+    js_util.setProperty(domWindow, 'screen', original);
+  });
+
+  test("getPreferredOrientation responds even if browser doesn't support api", () async {
+    final DomScreen original = domWindow.screen!;
+
+    // The `orientation` property cannot be overridden, so this test overrides the entire `screen`.
+    js_util.setProperty(domWindow, 'screen', js_util.jsify(<Object?, Object?>{
+      'orientation': null,
+    }));
+    expect(domWindow.screen!.orientation, isNull);
+    expect(await sendSetPreferredOrientations(<dynamic>[]), isFalse);
+    expect(await sendGetPreferredOrientations(), <dynamic>[]);
+
+    js_util.setProperty(domWindow, 'screen', original);
+  });
+
   test('SingletonFlutterWindow implements locale, locales, and locale change notifications', () async {
     // This will count how many times we notified about locale changes.
     int localeChangedCount = 0;

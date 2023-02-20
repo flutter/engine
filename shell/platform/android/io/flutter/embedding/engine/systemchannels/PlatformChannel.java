@@ -69,7 +69,8 @@ public class PlatformChannel {
                 break;
               case "SystemChrome.setPreferredOrientations":
                 try {
-                  int androidOrientation = decodeOrientations((JSONArray) arguments);
+                  PlatformMessageHandler.AndroidOrientation androidOrientation =
+                      decodeOrientations((JSONArray) arguments);
                   platformMessageHandler.setPreferredOrientations(androidOrientation);
                   result.success(null);
                 } catch (JSONException | NoSuchFieldException exception) {
@@ -79,6 +80,13 @@ public class PlatformChannel {
                   // referenced an invalid type.
                   result.error("error", exception.getMessage(), null);
                 }
+                break;
+              case "SystemChrome.getPreferredOrientations":
+                PlatformMessageHandler.AndroidOrientation androidOrientation =
+                    platformMessageHandler.getPreferredOrientations();
+                JSONArray encodedAndroidOrientation =
+                    encodeOrientations(androidOrientation.getRawAndroidOrientation());
+                result.success(encodedAndroidOrientation);
                 break;
               case "SystemChrome.setApplicationSwitcherDescription":
                 try {
@@ -226,8 +234,8 @@ public class PlatformChannel {
    *     types.
    * @throws NoSuchFieldException if any given encoded orientation is not a valid orientation name.
    */
-  private int decodeOrientations(@NonNull JSONArray encodedOrientations)
-      throws JSONException, NoSuchFieldException {
+  private PlatformMessageHandler.AndroidOrientation decodeOrientations(
+      @NonNull JSONArray encodedOrientations) throws JSONException, NoSuchFieldException {
     int requestedOrientation = 0x00;
     int firstRequestedOrientation = 0x00;
     for (int index = 0; index < encodedOrientations.length(); index += 1) {
@@ -254,25 +262,35 @@ public class PlatformChannel {
       }
     }
 
+    int androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
     switch (requestedOrientation) {
       case 0x00:
-        return ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED;
+        break;
       case 0x01:
-        return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        break;
       case 0x02:
-        return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+        break;
       case 0x04:
-        return ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+        break;
       case 0x05:
-        return ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;
+        break;
       case 0x08:
-        return ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+        break;
       case 0x0a:
-        return ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;
+        break;
       case 0x0b:
-        return ActivityInfo.SCREEN_ORIENTATION_USER;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_USER;
+        break;
       case 0x0f:
-        return ActivityInfo.SCREEN_ORIENTATION_FULL_USER;
+        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER;
+        break;
       case 0x03: // portraitUp and landscapeLeft
       case 0x06: // portraitDown and landscapeLeft
       case 0x07: // portraitUp, portraitDown, and landscapeLeft
@@ -284,19 +302,47 @@ public class PlatformChannel {
         // specified value was.
         switch (firstRequestedOrientation) {
           case 0x01:
-            return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+            break;
           case 0x02:
-            return ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+            break;
           case 0x04:
-            return ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+            break;
           case 0x08:
-            return ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
+            break;
         }
     }
 
     // Execution should never get this far, but if it does then we default
     // to a portrait orientation.
-    return ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+    return new PlatformMessageHandler.AndroidOrientation(androidOrientation, requestedOrientation);
+  }
+
+  /** Encodes an aggregate desired orientation to a series of orientations. */
+  private JSONArray encodeOrientations(@NonNull int encodedOrientations) {
+    List<String> orientations = new ArrayList<String>();
+    for (int mask = 0x01; mask <= 0x08; mask <<= 1) {
+      int orientation = encodedOrientations & mask;
+      switch (orientation) {
+        case 0x01:
+          orientations.add(DeviceOrientation.PORTRAIT_UP.encodedName);
+          break;
+        case 0x04:
+          orientations.add(DeviceOrientation.PORTRAIT_DOWN.encodedName);
+          break;
+        case 0x02:
+          orientations.add(DeviceOrientation.LANDSCAPE_LEFT.encodedName);
+          break;
+        case 0x08:
+          orientations.add(DeviceOrientation.LANDSCAPE_RIGHT.encodedName);
+          break;
+      }
+    }
+
+    return new JSONArray(orientations);
   }
 
   @NonNull
@@ -431,6 +477,24 @@ public class PlatformChannel {
    * PlatformChannel#setPlatformMessageHandler(PlatformMessageHandler)}.
    */
   public interface PlatformMessageHandler {
+    public class AndroidOrientation {
+      private int androidOrientation;
+      private int rawAndroidOrientation;
+
+      public AndroidOrientation(int androidOrientation, int rawAndroidOrientation) {
+        this.androidOrientation = androidOrientation;
+        this.rawAndroidOrientation = rawAndroidOrientation;
+      }
+
+      public int getAndroidOrientation() {
+        return androidOrientation;
+      }
+
+      public int getRawAndroidOrientation() {
+        return rawAndroidOrientation;
+      }
+    }
+
     /** The Flutter application would like to play the given {@code soundType}. */
     void playSystemSound(@NonNull SoundType soundType);
 
@@ -439,7 +503,10 @@ public class PlatformChannel {
 
     /** The Flutter application would like to display in the given {@code androidOrientation}. */
     // TODO(mattcarroll): add @ScreenOrientation annotation
-    void setPreferredOrientations(int androidOrientation);
+    void setPreferredOrientations(AndroidOrientation androidOrientation);
+
+    /** The Flutter application would like to know preferred orientations */
+    AndroidOrientation getPreferredOrientations();
 
     /**
      * The Flutter application would like to be displayed in Android's app switcher with the visual

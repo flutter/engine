@@ -508,6 +508,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
                   callback, codec.encodeSuccessEnvelope(success));
             });
             return;
+          case 'SystemChrome.getPreferredOrientations':
+            flutterViewEmbedder.getPreferredOrientation().then((List<dynamic> orientations) {
+              replyToPlatformMessage(
+                  callback, codec.encodeSuccessEnvelope(orientations));
+            });
+            return;
           case 'SystemSound.play':
             // There are no default system sounds on web.
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));

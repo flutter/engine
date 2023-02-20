@@ -64,6 +64,8 @@ using namespace flutter;
   } else if ([method isEqualToString:@"SystemChrome.setPreferredOrientations"]) {
     [self setSystemChromePreferredOrientations:args];
     result(nil);
+  } else if ([method isEqualToString:@"SystemChrome.getPreferredOrientations"]) {
+    result([self getSystemChromePreferredOrientations]);
   } else if ([method isEqualToString:@"SystemChrome.setApplicationSwitcherDescription"]) {
     [self setSystemChromeApplicationSwitcherDescription:args];
     result(nil);
@@ -151,6 +153,37 @@ using namespace flutter;
       postNotificationName:@(kOrientationUpdateNotificationName)
                     object:nil
                   userInfo:@{@(kOrientationUpdateNotificationKey) : @(mask)}];
+}
+
+- (NSArray*)getSystemChromePreferredOrientations {
+  NSMutableArray* orientations = [[NSMutableArray alloc] init];
+  UIViewController* engineViewController = [_engine.get() viewController];
+  UIInterfaceOrientationMask supportedOrientations =
+      engineViewController.supportedInterfaceOrientations;
+  const int possibleOrientationsLength = 4;
+  UIInterfaceOrientationMask possibleOrientations[possibleOrientationsLength] = {
+      UIInterfaceOrientationMaskPortrait, UIInterfaceOrientationMaskPortraitUpsideDown,
+      UIInterfaceOrientationMaskLandscapeLeft, UIInterfaceOrientationMaskLandscapeRight};
+  for (int i = 0; i < possibleOrientationsLength; i++) {
+    unsigned long mask = possibleOrientations[i];
+    unsigned long orientation = supportedOrientations & mask;
+    switch (orientation) {
+      case UIInterfaceOrientationMaskPortrait:
+        [orientations addObject:@"DeviceOrientation.portraitUp"];
+        break;
+      case UIInterfaceOrientationMaskPortraitUpsideDown:
+        [orientations addObject:@"DeviceOrientation.portraitDown"];
+        break;
+      case UIInterfaceOrientationMaskLandscapeLeft:
+        [orientations addObject:@"DeviceOrientation.landscapeLeft"];
+        break;
+      case UIInterfaceOrientationMaskLandscapeRight:
+        [orientations addObject:@"DeviceOrientation.landscapeRight"];
+        break;
+    }
+  }
+
+  return orientations;
 }
 
 - (void)setSystemChromeApplicationSwitcherDescription:(NSDictionary*)object {

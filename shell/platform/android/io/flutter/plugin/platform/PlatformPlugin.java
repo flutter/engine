@@ -73,8 +73,15 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setPreferredOrientations(int androidOrientation) {
+        public void setPreferredOrientations(
+            PlatformChannel.PlatformMessageHandler.AndroidOrientation androidOrientation) {
           setSystemChromePreferredOrientations(androidOrientation);
+        }
+
+        @Override
+        public PlatformChannel.PlatformMessageHandler.AndroidOrientation
+            getPreferredOrientations() {
+          return getSystemChromePreferredOrientations();
         }
 
         @Override
@@ -190,8 +197,20 @@ public class PlatformPlugin {
     }
   }
 
-  private void setSystemChromePreferredOrientations(int androidOrientation) {
-    activity.setRequestedOrientation(androidOrientation);
+  private int rawAndroidOrientation = 0;
+
+  private void setSystemChromePreferredOrientations(
+      PlatformChannel.PlatformMessageHandler.AndroidOrientation androidOrientation) {
+    rawAndroidOrientation = androidOrientation.getRawAndroidOrientation();
+    activity.setRequestedOrientation(androidOrientation.getAndroidOrientation());
+  }
+
+  private PlatformChannel.PlatformMessageHandler.AndroidOrientation
+      getSystemChromePreferredOrientations() {
+    PlatformChannel.PlatformMessageHandler.AndroidOrientation orientation =
+        new PlatformChannel.PlatformMessageHandler.AndroidOrientation(
+            activity.getRequestedOrientation(), rawAndroidOrientation);
+    return orientation;
   }
 
   @SuppressWarnings("deprecation")

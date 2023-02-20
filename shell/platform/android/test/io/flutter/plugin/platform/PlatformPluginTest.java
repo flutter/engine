@@ -31,6 +31,7 @@ import androidx.test.core.app.ApplicationProvider;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
+import io.flutter.embedding.engine.systemchannels.PlatformChannel.PlatformMessageHandler.AndroidOrientation;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeStyle;
 import io.flutter.plugin.platform.PlatformPlugin.PlatformPluginDelegate;
 import java.io.IOException;
@@ -551,9 +552,32 @@ public class PlatformPluginTest {
     PlatformPlugin platformPlugin =
         new PlatformPlugin(mockFragmentActivity, mockPlatformChannel, mockPlatformPluginDelegate);
 
-    platformPlugin.mPlatformMessageHandler.setPreferredOrientations(0);
+    platformPlugin.mPlatformMessageHandler.setPreferredOrientations(new AndroidOrientation(0, 0));
 
     verify(mockFragmentActivity, times(1)).setRequestedOrientation(0);
+  }
+
+  @Test
+  public void getRequestedOrientationFlutterFragment() {
+    FragmentActivity mockFragmentActivity = mock(FragmentActivity.class);
+    PlatformChannel mockPlatformChannel = mock(PlatformChannel.class);
+    PlatformPluginDelegate mockPlatformPluginDelegate = mock(PlatformPluginDelegate.class);
+    when(mockPlatformPluginDelegate.popSystemNavigator()).thenReturn(false);
+    PlatformPlugin platformPlugin =
+        new PlatformPlugin(mockFragmentActivity, mockPlatformChannel, mockPlatformPluginDelegate);
+
+    for (int requestedAndroidOrientation = 0;
+        requestedAndroidOrientation <= 15;
+        requestedAndroidOrientation += 1) {
+      platformPlugin.mPlatformMessageHandler.setPreferredOrientations(
+          new AndroidOrientation(requestedAndroidOrientation, requestedAndroidOrientation));
+      int androidOrientation =
+          platformPlugin
+              .mPlatformMessageHandler
+              .getPreferredOrientations()
+              .getRawAndroidOrientation();
+      assertTrue(requestedAndroidOrientation == androidOrientation);
+    }
   }
 
   @Test
