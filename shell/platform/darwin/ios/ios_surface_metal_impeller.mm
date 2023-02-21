@@ -9,7 +9,7 @@
 #include "flutter/shell/gpu/gpu_surface_metal_impeller.h"
 
 namespace {
-impeller::PixelFormat InferContextPixelFormat(impeller::PixelFormat pixel_format) {
+impeller::PixelFormat InferOffscreenLayerPixelFormat(impeller::PixelFormat pixel_format) {
   switch (pixel_format) {
     case impeller::PixelFormat::kB10G10R10XR:
       return impeller::PixelFormat::kB10G10R10A10XR;
@@ -106,7 +106,8 @@ void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalImpeller::CreateGPUSurface(GrDirectContext*) {
   auto context = std::make_shared<CustomColorAttachmentPixelFormatContext>(
-      impeller_context_, InferContextPixelFormat(FromMTLPixelFormat(layer_.get().pixelFormat)));
+      impeller_context_,
+      InferOffscreenLayerPixelFormat(FromMTLPixelFormat(layer_.get().pixelFormat)));
   return std::make_unique<GPUSurfaceMetalImpeller>(this,    //
                                                    context  //
   );
