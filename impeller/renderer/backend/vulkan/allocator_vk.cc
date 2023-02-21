@@ -114,10 +114,18 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
 
   image_create_info.tiling = vk::ImageTiling::eOptimal;
   image_create_info.initialLayout = vk::ImageLayout::eUndefined;
+
+  bool is_stencil_format = desc.format == PixelFormat::kS8UInt;
+
   image_create_info.usage = vk::ImageUsageFlagBits::eSampled |
-                            vk::ImageUsageFlagBits::eColorAttachment |
                             vk::ImageUsageFlagBits::eTransferSrc |
                             vk::ImageUsageFlagBits::eTransferDst;
+
+  if (is_stencil_format) {
+    image_create_info.usage |= vk::ImageUsageFlagBits::eDepthStencilAttachment;
+  } else {
+    image_create_info.usage |= vk::ImageUsageFlagBits::eColorAttachment;
+  }
 
   VmaAllocationCreateInfo alloc_create_info = {};
   alloc_create_info.usage = VMA_MEMORY_USAGE_AUTO;
@@ -140,12 +148,16 @@ std::shared_ptr<Texture> AllocatorVK::OnCreateTexture(
     return nullptr;
   }
 
+  vk::ImageAspectFlags aspect_flags = vk::ImageAspectFlagBits::eColor;
+  if (is_stencil_format) {
+    aspect_flags = vk::ImageAspectFlagBits::eStencil;
+  }
+
   vk::ImageViewCreateInfo view_create_info = {};
   view_create_info.image = vk::Image{img};
   view_create_info.viewType = vk::ImageViewType::e2D;
   view_create_info.format = image_create_info.format;
-  view_create_info.subresourceRange.aspectMask =
-      vk::ImageAspectFlagBits::eColor;
+  view_create_info.subresourceRange.aspectMask = aspect_flags;
   view_create_info.subresourceRange.levelCount = image_create_info.mipLevels;
   view_create_info.subresourceRange.layerCount = image_create_info.arrayLayers;
 
