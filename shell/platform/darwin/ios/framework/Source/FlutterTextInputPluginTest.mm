@@ -173,11 +173,15 @@ FLUTTER_ASSERT_ARC
   XCTAssertNil(inputPlugin.viewController);
   FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
                                                                     arguments:nil];
-  [inputPlugin handleMethodCall:methodCall
-                         result:^(id _Nullable result){
+  XCTestExpectation* expectation = [[XCTestExpectation alloc] initWithDescription:@"result called"];
 
+  [inputPlugin handleMethodCall:methodCall
+                         result:^(id _Nullable result) {
+                           XCTAssertNil(result);
+                           [expectation fulfill];
                          }];
   XCTAssertNil(inputPlugin.activeView);
+  [self waitForExpectations:@[ expectation ] timeout:1.0];
 }
 
 - (void)testInvokeStartLiveTextInput {

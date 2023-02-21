@@ -2082,6 +2082,9 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if (_viewController.view == nil) {
+    // If UIViewController's view has been detached, we ignore incoming method call
+    // to avoid crash.
+    // See https://github.com/flutter/flutter/issues/106404.
     result(nil);
     return;
   }
