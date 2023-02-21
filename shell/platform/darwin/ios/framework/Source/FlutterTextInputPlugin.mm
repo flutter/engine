@@ -2081,6 +2081,11 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
+  if (_viewController.view == nil) {
+    result(nil);
+    return;
+  }
+
   NSString* method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:kShowMethod]) {

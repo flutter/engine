@@ -166,6 +166,20 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Tests
 
+- (void)testTextInputPluginWillNotHandleMethodWhenViewControllerIsNil {
+  FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
+  FlutterTextInputPlugin* inputPlugin =
+      [[FlutterTextInputPlugin alloc] initWithDelegate:(id<FlutterTextInputDelegate>)flutterEngine];
+  XCTAssertNil(inputPlugin.viewController);
+  FlutterMethodCall* methodCall = [FlutterMethodCall methodCallWithMethodName:@"TextInput.show"
+                                                                    arguments:nil];
+  [inputPlugin handleMethodCall:methodCall
+                         result:^(id _Nullable result){
+
+                         }];
+  XCTAssertNil(inputPlugin.activeView);
+}
+
 - (void)testInvokeStartLiveTextInput {
   FlutterMethodCall* methodCall =
       [FlutterMethodCall methodCallWithMethodName:@"TextInput.startLiveTextInput" arguments:nil];
