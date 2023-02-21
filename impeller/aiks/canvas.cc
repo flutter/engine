@@ -386,7 +386,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  if (!vertices->HasVertexColors()) {
+  if (!vertices->HasVertexColors() && !vertices->HasTextureCoordinates()) {
     auto contents = paint.CreateContentsForGeometry(vertices);
     entity.SetContents(paint.WithFilters(std::move(contents)));
     GetCurrentPass().AddEntity(entity);
@@ -395,7 +395,15 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   auto src_paint = paint;
   src_paint.color = paint.color.WithAlpha(1.0);
-  auto src_contents = src_paint.CreateContentsForGeometry(vertices);
+
+  std::shared_ptr<Contents> src_contents =
+      src_paint.CreateContentsForGeometry(vertices);
+  if (vertices->HasTextureCoordinates()) {
+    auto size = src_contents->ColorSourceSize().value_or(
+        vertices->GetCoverage(Matrix())->size);
+    src_contents = src_paint.CreateContentsForGeometry(
+        Geometry::MakeRect(Rect::MakeXYWH(0, 0, size.width, size.height)));
+  }
 
   auto contents = std::make_shared<VerticesContents>();
   contents->SetAlpha(paint.color.alpha);

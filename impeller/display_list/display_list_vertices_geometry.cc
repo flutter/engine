@@ -7,6 +7,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
+#include "impeller/entity/texture_fill.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/point.h"
@@ -102,6 +103,10 @@ static PrimitiveType GetPrimitiveType(const flutter::DlVertices* vertices) {
 
 bool DLVerticesGeometry::HasVertexColors() const {
   return vertices_->colors() != nullptr;
+}
+
+bool DLVerticesGeometry::HasTextureCoordinates() const {
+  return vertices_->texture_coordinates() != nullptr;
 }
 
 GeometryResult DLVerticesGeometry::GetPositionBuffer(
@@ -225,12 +230,78 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
 }
 
 GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
+    std::optional<Size> contents_size,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
-  // TODO(jonahwilliams): support texture coordinates in vertices
-  // https://github.com/flutter/flutter/issues/109956
-  return {};
+  using VS = TexturePipeline::VertexShader;
+
+  auto index_count = normalized_indices_.size() == 0
+                         ? vertices_->index_count()
+                         : normalized_indices_.size();
+  auto vertex_count = vertices_->vertex_count();
+  auto* dl_indices = normalized_indices_.size() == 0
+                         ? vertices_->indices()
+                         : normalized_indices_.data();
+  auto* dl_vertices = vertices_->vertices();
+  auto* dl_texture_coordinates = vertices_->texture_coordinates();
+
+  // Note: this is currently wrong because it is the coverage of the vertices
+  // and not of the "color source". We need to know that the gradient is from
+  // (0, 0) to (200, 200) to correctly map the texture coordinates. but this
+  // info is not retained. Unclear what we do if it has no size (i.e.
+  // RuntimeEffect);
+  auto size = contents_size.value_or(GetCoverage(Matrix()).value().size);
+  std::vector<VS::PerVertexData> vertex_data(vertex_count);
+  {
+    for (auto i = 0; i < vertex_count; i++) {
+      auto sk_point = dl_vertices[i];
+      auto texture_coord = dl_texture_coordinates[i];
+      auto uv = Point(texture_coord.x() / size.width,
+                      texture_coord.y() / size.height);
+      vertex_data[i] = {
+          .position = Point(sk_point.x(), sk_point.y()),
+          .texture_coords = uv,
+      };
+    }
+  }
+
+  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
+  size_t total_idx_bytes = index_count * sizeof(uint16_t);
+
+  DeviceBufferDescriptor buffer_desc;
+  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
+  buffer_desc.storage_mode = StorageMode::kHostVisible;
+
+  auto buffer =
+      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
+
+  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
+                              Range{0, total_vtx_bytes}, 0)) {
+    return {};
+  }
+  if (!buffer->CopyHostBuffer(
+          reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(dl_indices)),
+          Range{0, total_idx_bytes}, total_vtx_bytes)) {
+    return {};
+  }
+
+  return GeometryResult{
+      .type = GetPrimitiveType(vertices_),
+      .vertex_buffer =
+          {
+              .vertex_buffer = {.buffer = buffer,
+                                .range = Range{0, total_vtx_bytes}},
+              .index_buffer = {.buffer = buffer,
+                               .range =
+                                   Range{total_vtx_bytes, total_idx_bytes}},
+              .index_count = index_count,
+              .index_type = IndexType::k16bit,
+          },
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
 }
 
 GeometryVertexType DLVerticesGeometry::GetVertexType() const {
