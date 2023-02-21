@@ -1145,7 +1145,7 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
   @override
   void onDrawFrame() {
     _frameCount += 1;
-    // TODO: (hellohuanlin) Need further investigation - the first 2 frames are dropped for some reason.
+    // TODO:(hellohuanlin) Need further investigation - the first 2 frames are dropped for some reason.
     // Wait for 60 frames to ensure the first frame has actually been rendered
     // (Minimum required is 3 frames, but just to be safe)
     if (_nextFrame == _firstFrame && _frameCount == 60) {

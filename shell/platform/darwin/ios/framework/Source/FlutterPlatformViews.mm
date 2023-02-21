@@ -777,7 +777,6 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
-    // Simply having a higher zPosition is not enough since it does not affect touch behavior.
     // `addSubview` will automatically reorder subview if it is already added.
     [flutter_view addSubview:platform_view_root];
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
