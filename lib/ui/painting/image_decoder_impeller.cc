@@ -49,8 +49,7 @@ float CalculateArea(SkPoint abc[3]) {
                       b.fX * a.fY);
 }
 
-// Note: This is defined differently in Skia, in my testing this is the correct
-// area and was calculated from SkColorSpace::MakeSRGB().
+// Note: This was calculated from SkColorSpace::MakeSRGB().
 static constexpr float kSrgbGamutArea = 0.0982f;
 
 // Source:
