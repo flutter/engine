@@ -787,11 +787,11 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [_engine lookupKeyForAsset:asset];
+  return [FlutterDartProject lookupKeyForAsset:asset];
 }
 
 - (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [_engine lookupKeyForAsset:asset fromPackage:package];
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 #pragma mark - FlutterViewReshapeListener

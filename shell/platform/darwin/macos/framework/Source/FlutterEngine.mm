@@ -223,6 +223,14 @@ constexpr char kTextPlainFormat[] = "text/plain";
   [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
 }
 
+- (NSString*)lookupKeyForAsset:(NSString*)asset {
+  return [FlutterDartProject lookupKeyForAsset:asset];
+}
+
+- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
+  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
+}
+
 @end
 
 // Callbacks provided to the engine. See the called methods for documentation.
@@ -1086,59 +1094,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 // Getter used by test harness, only exposed through the FlutterEngine(Test) category
 - (flutter::FlutterCompositor*)macOSCompositor {
   return _macOSCompositor.get();
-}
-
-@end
-
-@implementation FlutterEngineRegistrar {
-  NSString* _pluginKey;
-  FlutterEngine* _flutterEngine;
-}
-
-- (instancetype)initWithPlugin:(NSString*)pluginKey flutterEngine:(FlutterEngine*)flutterEngine {
-  self = [super init];
-  if (self) {
-    _pluginKey = [pluginKey copy];
-    _flutterEngine = flutterEngine;
-  }
-  return self;
-}
-
-#pragma mark - FlutterPluginRegistrar
-
-- (id<FlutterBinaryMessenger>)messenger {
-  return _flutterEngine.binaryMessenger;
-}
-
-- (id<FlutterTextureRegistry>)textures {
-  return _flutterEngine.renderer;
-}
-
-- (NSView*)view {
-  if (!_flutterEngine.viewController.viewLoaded) {
-    [_flutterEngine.viewController loadView];
-  }
-  return _flutterEngine.viewController.flutterView;
-}
-
-- (void)addMethodCallDelegate:(nonnull id<FlutterPlugin>)delegate
-                      channel:(nonnull FlutterMethodChannel*)channel {
-  [channel setMethodCallHandler:^(FlutterMethodCall* call, FlutterResult result) {
-    [delegate handleMethodCall:call result:result];
-  }];
-}
-
-- (void)registerViewFactory:(nonnull NSObject<FlutterPlatformViewFactory>*)factory
-                     withId:(nonnull NSString*)factoryId {
-  [[_flutterEngine platformViewController] registerViewFactory:factory withId:factoryId];
-}
-
-- (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [FlutterDartProject lookupKeyForAsset:asset];
-}
-
-- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
 }
 
 @end
