@@ -166,7 +166,7 @@ FLUTTER_ASSERT_ARC
 
 #pragma mark - Tests
 
-- (void)testTextInputPluginWillNotHandleMethodWhenViewControllerIsNil {
+- (void)testWillNotCrashWhenViewControllerIsNil {
   FlutterEngine* flutterEngine = [[FlutterEngine alloc] init];
   FlutterTextInputPlugin* inputPlugin =
       [[FlutterTextInputPlugin alloc] initWithDelegate:(id<FlutterTextInputDelegate>)flutterEngine];

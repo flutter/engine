@@ -2081,14 +2081,6 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  if (_viewController.view == nil) {
-    // If UIViewController's view has been detached, we ignore incoming method call
-    // to avoid crash.
-    // See https://github.com/flutter/flutter/issues/106404.
-    result(nil);
-    return;
-  }
-
   NSString* method = call.method;
   id args = call.arguments;
   if ([method isEqualToString:kShowMethod]) {
@@ -2447,6 +2439,13 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
   if (![inputView isDescendantOfView:_inputHider]) {
     [_inputHider addSubview:inputView];
+  }
+
+  if (_viewController.view == nil) {
+    // If view controller's view has detached from flutter engine, we don't add _inputHider
+    // in parent view to fallback and avoid crash.
+    // https://github.com/flutter/flutter/issues/106404.
+    return;
   }
   UIView* parentView = self.hostView;
   if (_inputHider.superview != parentView) {
