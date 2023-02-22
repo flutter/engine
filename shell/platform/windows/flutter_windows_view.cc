@@ -49,6 +49,9 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  if (engine_ && engine_->running()) {
+    engine_->Stop();
+  }
   DestroyRenderSurface();
 }
 
