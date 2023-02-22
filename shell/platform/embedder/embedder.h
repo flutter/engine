@@ -26,8 +26,8 @@
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
 // - Prefer arrays of pointers to structures instead of arrays of structures.
-//   This ensures indexing elements does not break if members are added to
-//   the structure.
+//   This ensures that indexing elements does not break if members are added
+//   to the structure.
 //
 // These changes are allowed:
 // - Adding new struct members at the end of a structure.
