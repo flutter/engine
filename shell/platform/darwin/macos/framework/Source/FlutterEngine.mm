@@ -72,16 +72,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
 #pragma mark -
 
 /**
- * `FlutterPluginRegistrar` implementation handling a single plugin.
- */
-@interface FlutterEngineRegistrar : NSObject <FlutterPluginRegistrar>
-- (instancetype)initWithPlugin:(nonnull NSString*)pluginKey
-                 flutterEngine:(nonnull FlutterEngine*)flutterEngine;
-@end
-
-#pragma mark -
-
-/**
  * Private interface declaration for FlutterEngine.
  */
 @interface FlutterEngine () <FlutterBinaryMessenger>
