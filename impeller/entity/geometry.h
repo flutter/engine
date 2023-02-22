@@ -77,7 +77,7 @@ class VerticesGeometry : public Geometry {
                                                 const Entity& entity,
                                                 RenderPass& pass) = 0;
 
-  virtual GeometryResult GetPositionUVBuffer(std::optional<Size> contents_size,
+  virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                              const ContentContext& renderer,
                                              const Entity& entity,
                                              RenderPass& pass) = 0;

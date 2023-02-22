@@ -230,7 +230,7 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
 }
 
 GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
-    std::optional<Size> contents_size,
+    Rect texture_coverage,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
@@ -246,19 +246,16 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
   auto* dl_vertices = vertices_->vertices();
   auto* dl_texture_coordinates = vertices_->texture_coordinates();
 
-  // Note: this is currently wrong because it is the coverage of the vertices
-  // and not of the "color source". We need to know that the gradient is from
-  // (0, 0) to (200, 200) to correctly map the texture coordinates. but this
-  // info is not retained. Unclear what we do if it has no size (i.e.
-  // RuntimeEffect);
-  auto size = contents_size.value_or(GetCoverage(Matrix()).value().size);
+  auto size = texture_coverage.size;
+  auto origin = texture_coverage.origin;
   std::vector<VS::PerVertexData> vertex_data(vertex_count);
   {
     for (auto i = 0; i < vertex_count; i++) {
       auto sk_point = dl_vertices[i];
       auto texture_coord = dl_texture_coordinates[i];
-      auto uv = Point(texture_coord.x() / size.width,
-                      texture_coord.y() / size.height);
+      auto uv = Point((texture_coord.x() - origin.x) / size.width,
+                      (texture_coord.y() - origin.y) / size.height);
+      std::cerr << uv << std::endl;
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
           .texture_coords = uv,

@@ -66,6 +66,7 @@ bool VerticesContents::Render(const ContentContext& renderer,
     }
     src_contents = contents;
   }
+
   auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
   auto contents = ColorFilterContents::MakeBlend(
@@ -111,11 +112,16 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
   auto geometry = parent_.GetGeometry();
 
-  auto geometry_result = geometry->GetPositionUVBuffer(
-      src_contents->ColorSourceSize(), renderer, entity, pass);
+  auto coverage = src_contents->GetCoverage(Entity{});
+  if (!coverage.has_value()) {
+    return false;
+  }
+  auto geometry_result =
+      geometry->GetPositionUVBuffer(coverage.value(), renderer, entity, pass);
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetTexturePipeline(opts);
+  cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::VertInfo vert_info;
@@ -167,6 +173,7 @@ bool VerticesColorContents::Render(const ContentContext& renderer,
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
+  cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::VertInfo vert_info;

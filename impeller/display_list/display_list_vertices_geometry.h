@@ -32,7 +32,7 @@ class DLVerticesGeometry : public VerticesGeometry {
                                         RenderPass& pass) override;
 
   // |VerticesGeometry|
-  GeometryResult GetPositionUVBuffer(std::optional<Size> contents_size,
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
                                      const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) override;
