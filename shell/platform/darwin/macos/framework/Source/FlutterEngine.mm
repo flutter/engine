@@ -926,14 +926,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   return [NSPasteboard generalPasteboard];
 }
 
-- (NSString*)lookupKeyForAsset:(NSString*)asset {
-  return [FlutterDartProject lookupKeyForAsset:asset];
-}
-
-- (NSString*)lookupKeyForAsset:(NSString*)asset fromPackage:(NSString*)package {
-  return [FlutterDartProject lookupKeyForAsset:asset fromPackage:package];
-}
-
 - (std::vector<std::string>)switches {
   return flutter::GetSwitchesFromEnvironment();
 }
