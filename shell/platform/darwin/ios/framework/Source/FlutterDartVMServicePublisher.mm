@@ -100,47 +100,37 @@
                                registrationType, domain, NULL, htons(port), txtData.length,
                                txtData.bytes, RegistrationCallback, NULL);
 
-  if (err != 0) {
-    FML_LOG(ERROR) << "Failed to register Dart VM Service port with mDNS with error " << err << ".";
-    if (@available(iOS 14.0, *)) {
-      FML_LOG(ERROR) << "On iOS 14+, local network broadcast in apps need to be declared in "
-                     << "the app's Info.plist. Debug and profile Flutter apps and modules host "
-                     << "VM services on the local network to support debugging features such "
-                     << "as hot reload and DevTools. To make your Flutter app or module "
-                     << "attachable and debuggable, add a '" << registrationType << "' value "
-                     << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
-                     << "Profile configurations. "
-                     << "For more information, see "
-                     << "https://flutter.dev/docs/development/add-to-app/ios/"
-                        "project-setup#local-network-privacy-permissions";
-    }
-  } else {
+  if (err == 0) {
     DNSServiceSetDispatchQueue(_dnsServiceRef, dispatch_get_main_queue());
+    return;
   }
 
   // TODO(bkonyi): remove once flutter_tools no longer looks for the legacy registration type.
   // See https://github.com/dart-lang/sdk/issues/50233
+  //
+  // Try to fallback on the legacy registration type.
   err = DNSServiceRegister(&_legacyDnsServiceRef, flags, interfaceIndex,
                            FlutterDartVMServicePublisher.serviceName.UTF8String,
                            legacyRegistrationType, domain, NULL, htons(port), txtData.length,
                            txtData.bytes, RegistrationCallback, NULL);
 
-  if (err != 0) {
-    FML_LOG(ERROR) << "Failed to register Dart VM Service port with mDNS with error " << err << ".";
-    if (@available(iOS 14.0, *)) {
-      FML_LOG(ERROR) << "On iOS 14+, local network broadcast in apps need to be declared in "
-                     << "the app's Info.plist. Debug and profile Flutter apps and modules host "
-                     << "VM services on the local network to support debugging features such "
-                     << "as hot reload and DevTools. To make your Flutter app or module "
-                     << "attachable and debuggable, add a '" << legacyRegistrationType << "' value "
-                     << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
-                     << "Profile configurations. "
-                     << "For more information, see "
-                     << "https://flutter.dev/docs/development/add-to-app/ios/"
-                        "project-setup#local-network-privacy-permissions";
-    }
-  } else {
+  if (err == 0) {
     DNSServiceSetDispatchQueue(_legacyDnsServiceRef, dispatch_get_main_queue());
+    return;
+  }
+
+  FML_LOG(ERROR) << "Failed to register Dart VM Service port with mDNS with error " << err << ".";
+  if (@available(iOS 14.0, *)) {
+    FML_LOG(ERROR) << "On iOS 14+, local network broadcast in apps need to be declared in "
+                   << "the app's Info.plist. Debug and profile Flutter apps and modules host "
+                   << "VM services on the local network to support debugging features such "
+                   << "as hot reload and DevTools. To make your Flutter app or module "
+                   << "attachable and debuggable, add a '" << registrationType << "' value "
+                   << "to the 'NSBonjourServices' key in your Info.plist for the Debug/"
+                   << "Profile configurations. "
+                   << "For more information, see "
+                   << "https://flutter.dev/docs/development/add-to-app/ios/"
+                      "project-setup#local-network-privacy-permissions";
   }
 }
 

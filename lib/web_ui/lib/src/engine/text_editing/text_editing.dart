@@ -51,7 +51,7 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -360,7 +360,6 @@ class AutofillInfo {
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
       {TextCapitalizationConfig textCapitalization =
           const TextCapitalizationConfig.defaultCapitalization()}) {
-    assert(autofill != null);
     final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
     final List<dynamic>? hintsList = autofill.tryList('hints');
     final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
@@ -1364,7 +1363,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
         editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       } else if (eventData != null) {
-        // When event.data is not null we we will begin by considering this delta as an insertion
+        // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;

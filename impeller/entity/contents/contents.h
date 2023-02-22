@@ -9,7 +9,9 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
+#include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/snapshot.h"
 #include "impeller/renderer/texture.h"
 
@@ -39,6 +41,12 @@ class Contents {
     std::optional<Rect> coverage = std::nullopt;
   };
 
+  /// @brief  Create an entity that renders a given snapshot.
+  static std::optional<Entity> EntityFromSnapshot(
+      const std::optional<Snapshot>& snapshot,
+      BlendMode blend_mode = BlendMode::kSourceOver,
+      uint32_t stencil_depth = 0);
+
   virtual bool Render(const ContentContext& renderer,
                       const Entity& entity,
                       RenderPass& pass) const = 0;
@@ -60,7 +68,9 @@ class Contents {
   ///        `GetCoverage(entity)`.
   virtual std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
-      const Entity& entity) const;
+      const Entity& entity,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true) const;
 
   virtual bool ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const;

@@ -107,6 +107,10 @@ class FilterContents : public Contents {
   ///         filter. Note that this is in addition to the entity's transform.
   void SetEffectTransform(Matrix effect_transform);
 
+  /// @brief  Create an Entity that renders this filter's output.
+  std::optional<Entity> GetEntity(const ContentContext& renderer,
+                                  const Entity& entity) const;
+
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
@@ -116,8 +120,11 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
-                                           const Entity& entity) const override;
+  std::optional<Snapshot> RenderToSnapshot(
+      const ContentContext& renderer,
+      const Entity& entity,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true) const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
@@ -129,13 +136,12 @@ class FilterContents : public Contents {
       const Entity& entity,
       const Matrix& effect_transform) const;
 
-  /// @brief  Converts zero or more filter inputs into a new texture.
-  virtual std::optional<Snapshot> RenderFilter(
-      const FilterInput::Vector& inputs,
-      const ContentContext& renderer,
-      const Entity& entity,
-      const Matrix& effect_transform,
-      const Rect& coverage) const = 0;
+  /// @brief  Converts zero or more filter inputs into a render instruction.
+  virtual std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
+                                             const ContentContext& renderer,
+                                             const Entity& entity,
+                                             const Matrix& effect_transform,
+                                             const Rect& coverage) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 

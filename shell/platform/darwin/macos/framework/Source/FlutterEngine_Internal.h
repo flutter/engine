@@ -31,8 +31,6 @@
  */
 @property(nonatomic) FlutterEngineProcTable& embedderAPI;
 
-@property(nonatomic, readonly) std::weak_ptr<flutter::AccessibilityBridgeMac> accessibilityBridge;
-
 /**
  * True if the semantics is enabled. The Flutter framework starts sending
  * semantics update through the embedder as soon as it is set to YES.
@@ -50,9 +48,44 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Informs the engine that the associated view controller's view size has changed.
+ * The command line arguments array for the engine.
  */
-- (void)updateWindowMetrics;
+@property(nonatomic, readonly) std::vector<std::string> switches;
+
+/**
+ * Attach a view controller to the engine as its default controller.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller, if successfully attached, will always have the default
+ * view ID kFlutterDefaultViewId.
+ *
+ * The engine holds a weak reference to the attached view controller.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ */
+- (void)addViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * Dissociate the given view controller from this engine.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller must be the default view controller.
+ *
+ * If the view controller is not associated with this engine, this call throws an
+ * assertion.
+ */
+- (void)removeViewController:(nonnull FlutterViewController*)viewController;
+
+/**
+ * The `FlutterViewController` associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
+
+/**
+ * Informs the engine that the specified view controller's window metrics have changed.
+ */
+- (void)updateWindowMetricsForViewController:(nonnull FlutterViewController*)viewController;
 
 /**
  * Dispatches the given pointer event data to engine.
@@ -116,15 +149,4 @@
 - (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
                            fromPackage:(nonnull NSString*)package;
 
-@end
-
-@interface FlutterEngine (TestMethods)
-/* Creates an accessibility bridge with the provided parameters.
- *
- * By default this method calls AccessibilityBridgeMac's initializer. Exposing
- * this method allows unit tests to override in order to capture information.
- */
-- (std::shared_ptr<flutter::AccessibilityBridgeMac>)
-    createAccessibilityBridge:(nonnull FlutterEngine*)engine
-               viewController:(nonnull FlutterViewController*)viewController;
 @end

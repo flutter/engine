@@ -191,14 +191,14 @@ void FlutterPlatformViewsController::OnMethodCall(FlutterMethodCall* call, Flutt
 void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterResult& result) {
   NSDictionary<NSString*, id>* args = [call arguments];
 
-  long viewId = [args[@"id"] longValue];
+  int64_t viewId = [args[@"id"] longLongValue];
   NSString* viewTypeString = args[@"viewType"];
   std::string viewType(viewTypeString.UTF8String);
 
   if (views_.count(viewId) != 0) {
     result([FlutterError errorWithCode:@"recreating_view"
                                message:@"trying to create an already created view"
-                               details:[NSString stringWithFormat:@"view id: '%ld'", viewId]]);
+                               details:[NSString stringWithFormat:@"view id: '%lld'", viewId]]);
   }
 
   NSObject<FlutterPlatformViewFactory>* factory = factories_[viewType].get();
@@ -232,7 +232,8 @@ void FlutterPlatformViewsController::OnCreate(FlutterMethodCall* call, FlutterRe
                                                                 arguments:params];
   UIView* platform_view = [embedded_view view];
   // Set a unique view identifier, so the platform view can be identified in unit tests.
-  platform_view.accessibilityIdentifier = [NSString stringWithFormat:@"platform_view[%ld]", viewId];
+  platform_view.accessibilityIdentifier =
+      [NSString stringWithFormat:@"platform_view[%lld]", viewId];
   views_[viewId] = fml::scoped_nsobject<NSObject<FlutterPlatformView>>([embedded_view retain]);
 
   FlutterTouchInterceptingView* touch_interceptor = [[[FlutterTouchInterceptingView alloc]
@@ -379,7 +380,7 @@ void FlutterPlatformViewsController::PushFilterToVisitedPlatformViews(
 }
 
 void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   // All the CATransactions should be committed by the end of the last frame,
   // so catransaction_added_ must be false.
@@ -405,7 +406,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   views_to_recomposite_.insert(view_id);
 }
 
-UIView* FlutterPlatformViewsController::GetPlatformViewByID(int view_id) {
+UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
   if (views_.empty()) {
     return nil;
   }
@@ -472,7 +473,6 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
 
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
-
   clipView.maskView = nil;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
@@ -517,6 +517,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
         }
         CGRect filterRect =
             flutter::GetCGRectFromSkRect((*iter)->GetFilterMutation().GetFilterRect());
+        // `filterRect` is in global coordinates. We need to convert to local space.
+        filterRect = CGRectApplyAffineTransform(
+            filterRect, CGAffineTransformMakeScale(1 / screenScale, 1 / screenScale));
         // `filterRect` reprents the rect that should be filtered inside the `flutter_view_`.
         // The `PlatformViewFilter` needs the frame inside the `clipView` that needs to be
         // filtered.
@@ -570,7 +573,7 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   embedded_view.layer.transform = flutter::GetCATransform3DFromSkMatrix(transformMatrix);
 }
 
-void FlutterPlatformViewsController::CompositeWithParams(int view_id,
+void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
                                                          const EmbeddedViewParams& params) {
   CGRect frame = CGRectMake(0, 0, params.sizePoints().width(), params.sizePoints().height());
   FlutterTouchInterceptingView* touchInterceptor = touch_interceptors_[view_id].get();
@@ -609,7 +612,7 @@ void FlutterPlatformViewsController::CompositeWithParams(int view_id,
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
-EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int view_id) {
+EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   // Do nothing if the view doesn't need to be composited.
@@ -639,7 +642,7 @@ void FlutterPlatformViewsController::Reset() {
   visited_platform_views_.clear();
 }
 
-SkRect FlutterPlatformViewsController::GetPlatformViewRect(int view_id) {
+SkRect FlutterPlatformViewsController::GetPlatformViewRect(int64_t view_id) {
   UIView* platform_view = GetPlatformViewByID(view_id);
   UIScreen* screen = [UIScreen mainScreen];
   CGRect platform_view_cgrect = [platform_view convertRect:platform_view.bounds
@@ -768,29 +771,16 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   FML_DCHECK(flutter_view_);
   UIView* flutter_view = flutter_view_.get();
-  auto zIndex = 0;
   // Clear the `active_composition_order_`, which will be populated down below.
   active_composition_order_.clear();
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
-
-    if (platform_view_root.superview != flutter_view) {
-      [flutter_view addSubview:platform_view_root];
-    }
-    // Make sure the platform_view_root is higher than the last platform_view_root in
-    // composition_order_.
-    platform_view_root.layer.zPosition = zIndex++;
-
+    // `addSubview` will automatically reorder subview if it is already added.
+    [flutter_view addSubview:platform_view_root];
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
-      if ([layer->overlay_view_wrapper.get() superview] != flutter_view) {
-        [flutter_view addSubview:layer->overlay_view_wrapper];
-      }
-      // Make sure all the overlays are higher than the platform view.
-      layer->overlay_view_wrapper.get().layer.zPosition = zIndex++;
-      FML_DCHECK(layer->overlay_view_wrapper.get().layer.zPosition >
-                 platform_view_root.layer.zPosition);
+      [flutter_view addSubview:layer->overlay_view_wrapper];
     }
     active_composition_order_.push_back(platform_view_id);
   }

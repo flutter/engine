@@ -707,7 +707,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  trace_flow_id  The trace flow identifier associated with the
   ///                            pointer data packet. The engine uses this trace
   ///                            identifier to connect trace flows in the
-  ///                            timeline from the input event event to the
+  ///                            timeline from the input event to the
   ///                            frames generated due to those input events.
   ///                            These flows are tagged as "PointerEvent" in the
   ///                            timeline and allow grouping frames and input
@@ -870,7 +870,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
@@ -888,6 +888,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
+  // |RuntimeDelegate|
+  bool ImplicitViewEnabled() override;
+
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 

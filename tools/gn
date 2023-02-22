@@ -282,10 +282,7 @@ def to_gn_args(args):
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
   gn_args['skia_use_legacy_layer_bounds'
          ] = True  # Temporary: See skbug.com/12083, skbug.com/12303.
-
-  if args.enable_skshaper:
-    gn_args['skia_use_icu'] = True
-    gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
+  gn_args['skia_use_icu'] = True
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['android_full_debug'
          ] = args.target_os == 'android' and args.unoptimized
@@ -342,22 +339,21 @@ def to_gn_args(args):
     gn_args['host_cpu'] = 'x86'
     gn_args['current_cpu'] = 'x86'
 
-  if is_host_build(args) and gn_args['host_os'] == 'mac':
-    # macOS host builds (whether x64 or arm64) must currently be built under
-    # Rosetta on Apple Silicon Macs.
-    # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+  # When building binaries to run on a macOS host (like gen_snapshot), always
+  # use the clang_x64 toolchain, which will run under Rosetta. This is done for
+  # two reasons:
+  #  1. goma currently only supports the clang_x64 toolchain.
+  #  2. gen_snapshot cannot crossbuild from arm64 to x64. Its host architecture
+  #     must be x64 to target x64.
+  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+  if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
+  if is_host_build(args) and gn_args['host_os'] == 'mac':
     # macOS unit tests include Vulkan headers which reference Metal types
     # introduced in macOS 10.14.
     gn_args['mac_sdk_min'] = '10.14'
     gn_args['mac_deployment_target'] = '10.14.0'
-
-  # macOS target builds (whether x64 or arm64) must currently be built under
-  # Rosetta on Apple Silicon Macs.
-  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
-  if 'target_os' in gn_args and gn_args['target_os'] == 'mac':
-    gn_args['host_cpu'] = 'x64'
 
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
@@ -372,7 +368,6 @@ def to_gn_args(args):
     gn_args['dart_debug_optimization_level'] = '0'
 
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
-  gn_args['flutter_enable_skshaper'] = args.enable_skshaper
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.
   gn_args['embedder_for_target'] = args.embedder_for_target
@@ -391,8 +386,7 @@ def to_gn_args(args):
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
-  # flags allow preventing those those targets from being part of the build
-  # tree.
+  # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
@@ -579,6 +573,11 @@ def to_gn_args(args):
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
 
+    # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
+    # but we only need these enabled for SwiftShader.
+    gn_args['angle_use_x11'] = False
+    gn_args['angle_use_wayland'] = False
+
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
     gn_args['angle_enable_vulkan_validation_layers'] = False
@@ -620,7 +619,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_gl_standard'] = 'webgl'
   gn_args['skia_enable_gpu'] = True
   gn_args['skia_enable_sksl_tracing'] = False
-  gn_args['skia_use_icu'] = True
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -659,6 +657,7 @@ def to_gn_wasm_args(args, gn_args):
   # than forced to true, once the recipes are updated.
   # https://github.com/flutter/flutter/issues/113303
   gn_args['build_canvaskit'] = True
+  gn_args['build_canvaskit_chromium'] = args.build_canvaskit_chromium
   gn_args['flutter_build_web_sdk'] = True
 
 
@@ -724,6 +723,13 @@ def parse_args(args):
   )
   parser.add_argument(
       '--mac-cpu', type=str, choices=['x64', 'arm64'], default='x64'
+  )
+  parser.add_argument(
+      '--force-mac-arm64',
+      action='store_true',
+      default=False,
+      help='Force use of the clang_arm64 toolchain on an arm64 mac host when '
+      'building host binaries.'
   )
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument(
@@ -819,14 +825,6 @@ def parse_args(args):
       '--enable-vulkan-validation-layers', action='store_true', default=False
   )
 
-  parser.add_argument('--enable-skshaper', action='store_true', default=True)
-  parser.add_argument(
-      '--no-enable-skshaper', dest='enable_skshaper', action='store_false'
-  )
-  parser.add_argument(
-      '--always-use-skshaper', action='store_true', default=False
-  )
-
   parser.add_argument(
       '--embedder-for-target',
       dest='embedder_for_target',
@@ -877,6 +875,14 @@ def parse_args(args):
   )
   parser.add_argument(
       '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
+  )
+
+  parser.add_argument(
+      '--build-canvaskit-chromium',
+      default=False,
+      dest='build_canvaskit_chromium',
+      action='store_true',
+      help='build the Chromium variant of CanvasKit from sources'
   )
 
   parser.add_argument(
@@ -1038,6 +1044,7 @@ def main(argv):
     elif sys.platform.startswith('win'):
       # On Windows, generate a Visual Studio project.
       command.append('--ide=vs')
+      command.append('--ninja-executable=ninja')
 
   command.append('--export-compile-commands=default')
 

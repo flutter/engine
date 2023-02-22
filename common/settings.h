@@ -96,6 +96,15 @@ struct Settings {
 
   ~Settings();
 
+  /// Determines if attempts at grabbing the Surface's SurfaceData can be
+  /// attempted.
+  static constexpr bool kSurfaceDataAccessible =
+#ifdef _NDEBUG
+      false;
+#else
+      true;
+#endif
+
   // VM settings
   std::string vm_snapshot_data_path;  // deprecated
   MappingCallback vm_snapshot_data;
@@ -196,8 +205,8 @@ struct Settings {
   // manager before creating the engine.
   bool prefetched_default_font_manager = false;
 
-  // Selects the SkParagraph implementation of the text layout engine.
-  bool enable_skparagraph = false;
+  // Enable the rendering of colors outside of the sRGB gamut.
+  bool enable_wide_gamut = false;
 
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.

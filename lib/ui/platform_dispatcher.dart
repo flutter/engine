@@ -87,7 +87,7 @@ class RootIsolateToken {
     return token == 0 ? null : RootIsolateToken._(token);
   }();
 
-  @FfiNative<Int64 Function()>('PlatformConfigurationNativeApi::GetRootIsolateToken')
+  @Native<Int64 Function()>(symbol: 'PlatformConfigurationNativeApi::GetRootIsolateToken')
   external static int __getRootIsolateToken();
 }
 
@@ -168,6 +168,36 @@ class PlatformDispatcher {
   // A map of opaque platform view identifiers to view configurations.
   final Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
 
+  /// The [FlutterView] provided by the engine if the platform is unable to
+  /// create windows, or, for backwards compatibility.
+  ///
+  /// If the platform provides an implicit view, it can be used to bootstrap
+  /// the framework. This is common for platforms designed for single-view
+  /// applications like mobile devices with a single display.
+  ///
+  /// Applications and libraries must not rely on this property being set
+  /// as it may be null depending on the engine's configuration. Instead,
+  /// consider using [View.of] to lookup the [FlutterView] the current
+  /// [BuildContext] is drawing into.
+  ///
+  /// While the properties on the referenced [FlutterView] may change,
+  /// the reference itself is guaranteed to never change over the lifetime
+  /// of the application: if this property is null at startup, it will remain
+  /// so throughout the entire lifetime of the application. If it points to a
+  /// specific [FlutterView], it will continue to point to the same view until
+  /// the application is shut down (although the engine may replace or remove
+  /// the underlying backing surface of the view at its discretion).
+  ///
+  /// See also:
+  ///
+  /// * [View.of], for accessing the current view.
+  /// * [PlatformDisptacher.views] for a list of all [FlutterView]s provided
+  ///   by the platform.
+  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
+  external static bool _implicitViewEnabled();
+
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
   ///
@@ -228,25 +258,25 @@ class PlatformDispatcher {
       view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: WindowPadding._(
+      viewPadding: ViewPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,
         bottom: viewPaddingBottom,
         left: viewPaddingLeft,
       ),
-      viewInsets: WindowPadding._(
+      viewInsets: ViewPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
         left: viewInsetLeft,
       ),
-      padding: WindowPadding._(
+      padding: ViewPadding._(
         top: math.max(0.0, viewPaddingTop - viewInsetTop),
         right: math.max(0.0, viewPaddingRight - viewInsetRight),
         bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
         left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
       ),
-      systemGestureInsets: WindowPadding._(
+      systemGestureInsets: ViewPadding._(
         top: math.max(0.0, systemGestureInsetTop),
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
@@ -371,7 +401,7 @@ class PlatformDispatcher {
   //  * pointer_data.cc
   //  * pointer.dart
   //  * AndroidTouchProcessor.java
-  static const int _kPointerDataFieldCount = 35;
+  static const int _kPointerDataFieldCount = 36;
 
   static PointerDataPacket _unpackPointerDataPacket(ByteData packet) {
     const int kStride = Int64List.bytesPerElement;
@@ -417,6 +447,7 @@ class PlatformDispatcher {
         panDeltaY: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         scale: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
         rotation: packet.getFloat64(kStride * offset++, _kFakeHostEndian),
+        preferredStylusAuxiliaryAction: PointerPreferredStylusAuxiliaryAction.values[packet.getInt64(kStride * offset++, _kFakeHostEndian)],
       ));
       assert(offset == (i + 1) * _kPointerDataFieldCount);
     }
@@ -520,7 +551,7 @@ class PlatformDispatcher {
 
   void _nativeSetNeedsReportTimings(bool value) => __nativeSetNeedsReportTimings(value);
 
-  @FfiNative<Void Function(Bool)>('PlatformConfigurationNativeApi::SetNeedsReportTimings')
+  @Native<Void Function(Bool)>(symbol: 'PlatformConfigurationNativeApi::SetNeedsReportTimings')
   external static void __nativeSetNeedsReportTimings(bool value);
 
   // Called from the engine, via hooks.dart
@@ -553,7 +584,7 @@ class PlatformDispatcher {
   String? _sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data) =>
       __sendPlatformMessage(name, callback, data);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPlatformMessage')
+  @Native<Handle Function(Handle, Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::SendPlatformMessage')
   external static String? __sendPlatformMessage(String name, PlatformMessageResponseCallback? callback, ByteData? data);
 
   /// Sends a message to a platform-specific plugin via a [SendPort].
@@ -579,7 +610,7 @@ class PlatformDispatcher {
   String? _sendPortPlatformMessage(String name, int identifier, int port, ByteData? data) =>
       __sendPortPlatformMessage(name, identifier, port, data);
 
-  @FfiNative<Handle Function(Handle, Handle, Handle, Handle)>('PlatformConfigurationNativeApi::SendPortPlatformMessage')
+  @Native<Handle Function(Handle, Handle, Handle, Handle)>(symbol: 'PlatformConfigurationNativeApi::SendPortPlatformMessage')
   external static String? __sendPortPlatformMessage(String name, int identifier, int port, ByteData? data);
 
   /// Registers the current isolate with the isolate identified with by the
@@ -589,7 +620,7 @@ class PlatformDispatcher {
     DartPluginRegistrant.ensureInitialized();
     __registerBackgroundIsolate(token._token);
   }
-  @FfiNative<Void Function(Int64)>('PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
+  @Native<Void Function(Int64)>(symbol: 'PlatformConfigurationNativeApi::RegisterBackgroundIsolate')
   external static void __registerBackgroundIsolate(int rootIsolateId);
 
   /// Called whenever this platform dispatcher receives a message from a
@@ -618,7 +649,7 @@ class PlatformDispatcher {
   /// Called by [_dispatchPlatformMessage].
   void _respondToPlatformMessage(int responseId, ByteData? data) => __respondToPlatformMessage(responseId, data);
 
-  @FfiNative<Void Function(IntPtr, Handle)>('PlatformConfigurationNativeApi::RespondToPlatformMessage')
+  @Native<Void Function(IntPtr, Handle)>(symbol: 'PlatformConfigurationNativeApi::RespondToPlatformMessage')
   external static void __respondToPlatformMessage(int responseId, ByteData? data);
 
   /// Wraps the given [callback] in another callback that ensures that the
@@ -678,7 +709,7 @@ class PlatformDispatcher {
   /// Note that this does not rename any child isolates of the root.
   void setIsolateDebugName(String name) => _setIsolateDebugName(name);
 
-  @FfiNative<Void Function(Handle)>('PlatformConfigurationNativeApi::SetIsolateDebugName')
+  @Native<Void Function(Handle)>(symbol: 'PlatformConfigurationNativeApi::SetIsolateDebugName')
   external static void _setIsolateDebugName(String name);
 
   /// Requests the Dart VM to adjusts the GC heuristics based on the requested `performance_mode`.
@@ -691,7 +722,7 @@ class PlatformDispatcher {
     _requestDartPerformanceMode(mode.index);
   }
 
-  @FfiNative<Int Function(Int)>('PlatformConfigurationNativeApi::RequestDartPerformanceMode')
+  @Native<Int Function(Int)>(symbol: 'PlatformConfigurationNativeApi::RequestDartPerformanceMode')
   external static int _requestDartPerformanceMode(int mode);
 
   /// The embedder can specify data that the isolate can request synchronously
@@ -705,7 +736,7 @@ class PlatformDispatcher {
   /// platform channel may be used.
   ByteData? getPersistentIsolateData() => _getPersistentIsolateData();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::GetPersistentIsolateData')
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::GetPersistentIsolateData')
   external static ByteData? _getPersistentIsolateData();
 
   /// Requests that, at the next appropriate opportunity, the [onBeginFrame] and
@@ -717,7 +748,7 @@ class PlatformDispatcher {
   ///    scheduling of frames.
   void scheduleFrame() => _scheduleFrame();
 
-  @FfiNative<Void Function()>('PlatformConfigurationNativeApi::ScheduleFrame')
+  @Native<Void Function()>(symbol: 'PlatformConfigurationNativeApi::ScheduleFrame')
   external static void _scheduleFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
@@ -768,7 +799,7 @@ class PlatformDispatcher {
   ''')
   void updateSemantics(SemanticsUpdate update) => _updateSemantics(update);
 
-  @FfiNative<Void Function(Pointer<Void>)>('PlatformConfigurationNativeApi::UpdateSemantics')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'PlatformConfigurationNativeApi::UpdateSemantics')
   external static void _updateSemantics(SemanticsUpdate update);
 
   /// The system-reported default locale of the device.
@@ -830,7 +861,7 @@ class PlatformDispatcher {
 
   List<String> _computePlatformResolvedLocale(List<String?> supportedLocalesData) => __computePlatformResolvedLocale(supportedLocalesData);
 
-  @FfiNative<Handle Function(Handle)>('PlatformConfigurationNativeApi::ComputePlatformResolvedLocale')
+  @Native<Handle Function(Handle)>(symbol: 'PlatformConfigurationNativeApi::ComputePlatformResolvedLocale')
   external static List<String> __computePlatformResolvedLocale(List<String?> supportedLocalesData);
 
   /// A callback that is invoked whenever [locale] changes value.
@@ -1213,7 +1244,7 @@ class PlatformDispatcher {
   ///    requests from the embedder.
   String get defaultRouteName => _defaultRouteName();
 
-  @FfiNative<Handle Function()>('PlatformConfigurationNativeApi::DefaultRouteName')
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::DefaultRouteName')
   external static String _defaultRouteName();
 }
 
@@ -1304,10 +1335,10 @@ class ViewConfiguration {
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
-    this.viewInsets = WindowPadding.zero,
-    this.viewPadding = WindowPadding.zero,
-    this.systemGestureInsets = WindowPadding.zero,
-    this.padding = WindowPadding.zero,
+    this.viewInsets = ViewPadding.zero,
+    this.viewPadding = ViewPadding.zero,
+    this.systemGestureInsets = ViewPadding.zero,
+    this.padding = ViewPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
   }) : assert(window == null || view == null),
@@ -1325,10 +1356,10 @@ class ViewConfiguration {
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
-    WindowPadding? viewInsets,
-    WindowPadding? viewPadding,
-    WindowPadding? systemGestureInsets,
-    WindowPadding? padding,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
@@ -1379,53 +1410,53 @@ class ViewConfiguration {
   ///
   /// For instance, if the view doesn't overlap the
   /// [ScreenConfiguration.viewInsets] area, [viewInsets] will be
-  /// [WindowPadding.zero].
+  /// [ViewPadding.zero].
   ///
   /// The number of physical pixels on each side of this view rectangle into
   /// which the application can draw, but over which the operating system will
   /// likely place system UI, such as the keyboard or system menus, that fully
   /// obscures any content.
-  final WindowPadding viewInsets;
+  final ViewPadding viewInsets;
 
   /// The view insets, as it intersects with [ScreenConfiguration.viewPadding]
   /// for the screen it is on.
   ///
   /// For instance, if the view doesn't overlap the
   /// [ScreenConfiguration.viewPadding] area, [viewPadding] will be
-  /// [WindowPadding.zero].
+  /// [ViewPadding.zero].
   ///
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but which may be partially
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding viewPadding;
+  final ViewPadding viewPadding;
 
   /// The view insets, as it intersects with
   /// [ScreenConfiguration.systemGestureInsets] for the screen it is on.
   ///
   /// For instance, if the view doesn't overlap the
   /// [ScreenConfiguration.systemGestureInsets] area, [systemGestureInsets] will
-  /// be [WindowPadding.zero].
+  /// be [ViewPadding.zero].
   ///
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but where the operating system
   /// will consume input gestures for the sake of system navigation.
-  final WindowPadding systemGestureInsets;
+  final ViewPadding systemGestureInsets;
 
   /// The view insets, as it intersects with [ScreenConfiguration.padding] for
   /// the screen it is on.
   ///
   /// For instance, if the view doesn't overlap the
   /// [ScreenConfiguration.padding] area, [padding] will be
-  /// [WindowPadding.zero].
+  /// [ViewPadding.zero].
   ///
   /// The number of physical pixels on each side of this screen rectangle into
   /// which the application can place a view, but which may be partially
   /// obscured by system UI (such as the system notification area), or physical
   /// intrusions in the display (e.g. overscan regions on television screens or
   /// phone sensor housings).
-  final WindowPadding padding;
+  final ViewPadding padding;
 
   /// Additional configuration for touch gestures performed on this view.
   ///
@@ -1734,8 +1765,8 @@ enum AppLifecycleState {
 ///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
-class WindowPadding {
-  const WindowPadding._({ required this.left, required this.top, required this.right, required this.bottom });
+class ViewPadding {
+  const ViewPadding._({ required this.left, required this.top, required this.right, required this.bottom });
 
   /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
@@ -1749,14 +1780,20 @@ class WindowPadding {
   /// The distance from the bottom edge to the first unpadded pixel, in physical pixels.
   final double bottom;
 
-  /// A window padding that has zeros for each edge.
-  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  /// A view padding that has zeros for each edge.
+  static const ViewPadding zero = ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
-    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
 }
+
+/// Deprecated. Will be removed in a future version of Flutter.
+///
+/// Use [ViewPadding] instead.
+// TODO(goderbauer): deprecate this when framework has been migrated to ViewPadding.
+typedef WindowPadding = ViewPadding;
 
 /// Area of the display that may be obstructed by a hardware feature.
 ///
@@ -1928,7 +1965,7 @@ class Locale {
   /// [language](https://github.com/unicode-org/cldr/blob/master/common/validity/language.xml),
   /// [region](https://github.com/unicode-org/cldr/blob/master/common/validity/region.xml). The
   /// primary language subtag must be at least two and at most eight lowercase
-  /// letters, but not four letters. The region region subtag must be two
+  /// letters, but not four letters. The region subtag must be two
   /// uppercase letters or three digits. See the [Unicode Language
   /// Identifier](https://www.unicode.org/reports/tr35/#Unicode_language_identifier)
   /// specification.
@@ -1943,8 +1980,7 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ]) : assert(_languageCode != null),
-       assert(_languageCode != ''),
+  ]) : assert(_languageCode != ''),
        scriptCode = null;
 
   /// Creates a new Locale object.
@@ -1971,8 +2007,7 @@ class Locale {
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  }) : assert(languageCode != null),
-       assert(languageCode != ''),
+  }) : assert(languageCode != ''),
        _languageCode = languageCode,
        assert(scriptCode != ''),
        assert(countryCode != ''),

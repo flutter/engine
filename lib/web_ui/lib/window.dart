@@ -11,10 +11,10 @@ abstract class FlutterView {
   double get devicePixelRatio => viewConfiguration.devicePixelRatio;
   Rect get physicalGeometry => viewConfiguration.geometry;
   Size get physicalSize => viewConfiguration.geometry.size;
-  WindowPadding get viewInsets => viewConfiguration.viewInsets;
-  WindowPadding get viewPadding => viewConfiguration.viewPadding;
-  WindowPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
-  WindowPadding get padding => viewConfiguration.padding;
+  ViewPadding get viewInsets => viewConfiguration.viewInsets;
+  ViewPadding get viewPadding => viewConfiguration.viewPadding;
+  ViewPadding get systemGestureInsets => viewConfiguration.systemGestureInsets;
+  ViewPadding get padding => viewConfiguration.padding;
   List<DisplayFeature> get displayFeatures => viewConfiguration.displayFeatures;
   void render(Scene scene) => platformDispatcher.render(scene, this);
   void updateSemantics(SemanticsUpdate update) => platformDispatcher.updateSemantics(update);
@@ -158,8 +158,7 @@ enum Brightness {
 // Unimplemented classes.
 // TODO(dit): see https://github.com/flutter/flutter/issues/33614.
 class CallbackHandle {
-  CallbackHandle.fromRawHandle(this._handle)
-    : assert(_handle != null, "'_handle' must not be null.");
+  CallbackHandle.fromRawHandle(this._handle);
 
   final int _handle;
 

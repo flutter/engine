@@ -477,7 +477,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Get an identifier that represents the Dart isolate group the
   ///             root isolate is in.
   ///
-  /// @return     The root isolate isolate group identifier, zero if one can't
+  /// @return     The root isolate group identifier, zero if one can't
   ///             be established.
   uint64_t GetRootIsolateGroup() const;
 
@@ -535,7 +535,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
@@ -609,6 +609,9 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
+
+  // |PlatformConfigurationClient|
+  bool ImplicitViewEnabled() override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

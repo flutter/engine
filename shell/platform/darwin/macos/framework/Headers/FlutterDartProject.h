@@ -30,13 +30,6 @@ FLUTTER_DARWIN_EXPORT
     NS_DESIGNATED_INITIALIZER;
 
 /**
- * If set, allows the Flutter project to use the dart:mirrors library.
- *
- * Deprecated: This function is temporary and will be removed in a future release.
- */
-@property(nonatomic) bool enableMirrors;
-
-/**
  * An NSArray of NSStrings to be passed as command line arguments to the Dart entrypoint.
  *
  * If this is not explicitly set, this will default to the contents of
@@ -65,7 +58,8 @@ FLUTTER_DARWIN_EXPORT
  * @param bundle The `NSBundle` to use for looking up the asset.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset fromBundle:(nullable NSBundle*)bundle;
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                            fromBundle:(nullable NSBundle*)bundle;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -75,7 +69,8 @@ FLUTTER_DARWIN_EXPORT
  * @param package The name of the package from which the asset originates.
  * @return the file name to be used for lookup in the main bundle.
  */
-+ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset fromPackage:(nonnull NSString*)package;
++ (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
+                           fromPackage:(nonnull NSString*)package;
 
 /**
  * Returns the file name for the given asset which originates from the specified package.
@@ -87,10 +82,9 @@ FLUTTER_DARWIN_EXPORT
  * @return the file name to be used for lookup in the main bundle.
  */
 + (nonnull NSString*)lookupKeyForAsset:(nonnull NSString*)asset
-                   fromPackage:(nonnull NSString*)package
-                    fromBundle:(nullable NSBundle*)bundle;
+                           fromPackage:(nonnull NSString*)package
+                            fromBundle:(nullable NSBundle*)bundle;
 
 @end
-
 
 #endif  // FLUTTER_FLUTTERDARTPROJECT_H_

@@ -14,12 +14,14 @@
 #include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_rtree.h"
-#include "flutter/display_list/display_list_test_utils.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 namespace testing {

@@ -117,12 +117,12 @@ class FlutterViewEmbedder {
   /// which captures semantics input events. The semantics DOM tree must be a
   /// child of the glass pane element so that events bubble up to the glass pane
   /// if they are not handled by semantics.
-  DomElement? get glassPaneElement => _glassPaneElement;
-  DomElement? _glassPaneElement;
+  DomElement get glassPaneElement => _glassPaneElement;
+  late DomElement _glassPaneElement;
 
   /// The [HostNode] of the [glassPaneElement], which contains the whole Flutter app.
-  HostNode? get glassPaneShadow => _glassPaneShadow;
-  HostNode? _glassPaneShadow;
+  HostNode get glassPaneShadow => _glassPaneShadow;
+  late HostNode _glassPaneShadow;
 
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
@@ -149,9 +149,7 @@ class FlutterViewEmbedder {
     );
 
     // Create and inject the [_glassPaneElement].
-    final DomElement glassPaneElement =
-        domDocument.createElement(glassPaneTagName);
-    _glassPaneElement = glassPaneElement;
+    _glassPaneElement = domDocument.createElement(glassPaneTagName);
 
     // This must be attached to the DOM now, so the engine can create a host
     // node (ShadowDOM or a fallback) next.
@@ -340,8 +338,8 @@ class FlutterViewEmbedder {
         _embeddingStrategy.attachResourcesHost(resourcesHost,
             nextTo: glassPaneElement);
       } else {
-        glassPaneShadow!.node
-            .insertBefore(resourcesHost, glassPaneShadow!.node.firstChild);
+        glassPaneShadow.node
+            .insertBefore(resourcesHost, glassPaneShadow.node.firstChild);
       }
       _resourcesHost = resourcesHost;
     }
@@ -356,6 +354,20 @@ class FlutterViewEmbedder {
     assert(element.parentNode == _resourcesHost);
     element.remove();
   }
+
+  /// Disables the browser's context menu for this part of the DOM.
+  ///
+  /// By default, when a Flutter web app starts, the context menu is enabled.
+  ///
+  /// Can be re-enabled by calling [enableContextMenu].
+  void disableContextMenu() => _embeddingStrategy.disableContextMenu();
+
+  /// Enables the browser's context menu for this part of the DOM.
+  ///
+  /// By default, when a Flutter web app starts, the context menu is already
+  /// enabled. Typically, this method would be used after calling
+  /// [disableContextMenu] to first disable it.
+  void enableContextMenu() => _embeddingStrategy.enableContextMenu();
 }
 
 /// The embedder singleton.

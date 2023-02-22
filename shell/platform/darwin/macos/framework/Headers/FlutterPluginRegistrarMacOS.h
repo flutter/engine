@@ -16,7 +16,7 @@
 
 /**
  * The protocol for an object managing registration for a plugin. It provides access to application
- * context, as as allowing registering for callbacks for handling various conditions.
+ * context, as allowing registering for callbacks for handling various conditions.
  *
  * Currently the macOS PluginRegistrar has very limited functionality, but is expected to expand
  * over time to more closely match the functionality of FlutterPluginRegistrar.
@@ -36,12 +36,18 @@ FLUTTER_DARWIN_EXPORT
 @property(nonnull, readonly) id<FlutterTextureRegistry> textures;
 
 /**
- * The view displaying Flutter content. May return |nil|, for instance in a headless environment.
+ * The default view displaying Flutter content.
  *
- * WARNING: If/when multiple Flutter views within the same application are supported (#30701), this
- * API will change.
+ * This method may return |nil|, for instance in a headless environment.
+ *
+ * The default view is a special view operated by single-view APIs.
  */
 @property(nullable, readonly) NSView* view;
+
+/**
+ * The `NSView` associated with the given view ID, if any.
+ */
+- (nullable NSView*)viewForId:(uint64_t)viewId;
 
 /**
  * Registers |delegate| to receive handleMethodCall:result: callbacks for the given |channel|.

@@ -124,6 +124,11 @@ public class FlutterNativeView implements BinaryMessenger {
     return applicationIsRunning;
   }
 
+  @Deprecated
+  public static String getObservatoryUri() {
+    return FlutterJNI.getVMServiceUri();
+  }
+
   public static String getVMServiceUri() {
     return FlutterJNI.getVMServiceUri();
   }
