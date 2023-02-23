@@ -30,10 +30,10 @@ import 'vertices.dart';
 
 /// Whether we can use client-provided ICU information instead of CanvasKit's
 /// built-in ICU.
-const bool useClientICU = false;
+const bool browserSupportsCanvaskitChromium = false;
 // TODO(mdebbar): Uncomment this and use it to determine which flavor of
 //  CanvasKit to download.
-// final bool useClientICU = domIntl.v8BreakIterator != null;
+// final bool browserSupportsCanvaskitChromium = domIntl.v8BreakIterator != null;
 
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;

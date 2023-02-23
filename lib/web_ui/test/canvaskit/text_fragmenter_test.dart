@@ -76,7 +76,7 @@ void testMain() {
         ]),
       );
     });
-  }, skip: !useClientICU);
+  }, skip: !browserSupportsCanvaskitChromium);
 
   group('$fragmentUsingV8LineBreaker', () {
     const int kSoft = 0;
@@ -100,5 +100,5 @@ void testMain() {
         ]),
       );
     });
-  });
+  }, skip: !browserSupportsCanvaskitChromium);
 }
