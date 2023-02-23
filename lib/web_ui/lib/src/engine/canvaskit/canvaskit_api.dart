@@ -20,6 +20,7 @@ import 'package:ui/ui.dart' as ui;
 import '../configuration.dart';
 import '../dom.dart';
 import '../profiler.dart';
+import 'renderer.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
@@ -2666,9 +2667,26 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   domDocument.head!.appendChild(canvasKitScript);
 }
 
+const String _kFullCanvasKitJsFileName = 'canvaskit.js';
+const String _kChromiumCanvasKitJsFileName = 'chromium/canvaskit.js';
+
 String get _canvasKitBaseUrl => configuration.canvasKitBaseUrl;
-Iterable<String> get _canvasKitJsUrls => configuration.canvasKitJsFileNames
-    .map((String filename) => '$_canvasKitBaseUrl$filename');
+List<String> get _canvasKitJsFileNames {
+  switch (configuration.canvasKitVariant) {
+    case CanvasKitVariant.auto:
+      return <String>[
+        if (browserSupportsCanvaskitChromium) _kChromiumCanvasKitJsFileName,
+        _kFullCanvasKitJsFileName,
+      ];
+    case CanvasKitVariant.full:
+      return <String>[_kFullCanvasKitJsFileName];
+    case CanvasKitVariant.chromium:
+      return <String>[_kChromiumCanvasKitJsFileName];
+  }
+}
+Iterable<String> get _canvasKitJsUrls {
+  return _canvasKitJsFileNames.map((String filename) => '$_canvasKitBaseUrl$filename');
+}
 String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
 

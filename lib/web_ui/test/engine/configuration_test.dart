@@ -62,28 +62,34 @@ void testMain() {
   });
 
   group('CanvasKit config', () {
-    test('validates canvasKitJsFileName', () {
+    test('default canvasKitVariant', () {
       final FlutterConfiguration config = FlutterConfiguration();
 
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitJsFileName': 'foo'}) as JsFlutterConfiguration,
-      );
-      expect(() => config.canvasKitJsFileNames, throwsArgumentError);
-
-      config.setUserConfiguration(
-        js_util.jsify(<String, Object?>{'canvasKitJsFileName': 'foo.js'}) as JsFlutterConfiguration,
-      );
-      expect(config.canvasKitJsFileNames, <String>['foo.js']);
+      expect(config.canvasKitVariant, CanvasKitVariant.auto);
     });
 
-    test('default canvasKitJsFileNames', () {
+    test('validates canvasKitVariant', () {
       final FlutterConfiguration config = FlutterConfiguration();
 
-      expect(
-        config.canvasKitJsFileNames,
-        hasLength(allOf(greaterThan(0), lessThanOrEqualTo(2))),
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitVariant': 'foo'}) as JsFlutterConfiguration,
       );
-      expect(config.canvasKitJsFileNames.last, 'canvaskit.js');
+      expect(() => config.canvasKitVariant, throwsArgumentError);
+
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitVariant': 'auto'}) as JsFlutterConfiguration,
+      );
+      expect(config.canvasKitVariant, CanvasKitVariant.auto);
+
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitVariant': 'full'}) as JsFlutterConfiguration,
+      );
+      expect(config.canvasKitVariant, CanvasKitVariant.full);
+
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitVariant': 'chromium'}) as JsFlutterConfiguration,
+      );
+      expect(config.canvasKitVariant, CanvasKitVariant.chromium);
     });
   });
 }

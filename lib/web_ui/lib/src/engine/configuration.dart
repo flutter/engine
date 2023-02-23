@@ -48,7 +48,6 @@ import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
-import 'util.dart';
 
 /// The version of CanvasKit used by the web engine by default.
 // DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
@@ -186,29 +185,31 @@ class FlutterConfiguration {
     defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
   );
 
-  /// The name of the CanvasKit JS file to download.
+  /// The variant of CanvasKit to download.
   ///
-  /// This can point to a CanvasKit JS in a subfolder of the [canvasKitBaseUrl].
-  /// For example, it can be set to `profiling/canvaskit.js` to download the
-  /// profiling version of CanvasKit.
-  List<String> get canvasKitJsFileNames {
-    final String? configured = _configuration?.canvasKitJsFileName;
-    if (configured == null) {
-      return _defaultCanvasKitJsFileNames;
+  /// Available values are:
+  ///
+  /// * `auto` - the default value. The engine will automatically detect the
+  /// best variant to use based on the browser.
+  ///
+  /// * `full` - the full variant of CanvasKit that can be used in any browser.
+  ///
+  /// * `chromium` - the lite variant of CanvasKit that can be used in
+  /// Chromium-based browsers.
+  CanvasKitVariant get canvasKitVariant {
+    final String variant = _configuration?.canvasKitVariant ?? _defaultCanvasKitVariant;
+    switch (variant) {
+      case 'auto':
+        return CanvasKitVariant.auto;
+      case 'full':
+        return CanvasKitVariant.full;
+      case 'chromium':
+        return CanvasKitVariant.chromium;
+      default:
+        throw ArgumentError.value(variant, 'canvasKitVariant', 'Unknown CanvasKit variant');
     }
-    if (assertionsEnabled) {
-      if (!configured.endsWith('.js')) {
-        throw ArgumentError.value(configured, 'canvasKitJsFileName', 'Must end with ".js"');
-      }
-    }
-    return <String>[configured];
   }
-  List<String> get _defaultCanvasKitJsFileNames => <String>[
-    // TODO(mdebbar): If the base url points to unpkg, then we know for sure
-    // that the chromium build of CanvasKit is not available.
-    if (useClientICU) 'chromium/canvaskit.js',
-    'canvaskit.js',
-  ];
+  static const String _defaultCanvasKitVariant = 'auto';
 
   /// If set to true, forces CPU-only rendering in CanvasKit (i.e. the engine
   /// won't use WebGL).
@@ -276,7 +277,7 @@ class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
-  external String? get canvasKitJsFileName;
+  external String? get canvasKitVariant;
   external bool? get canvasKitForceCpuOnly;
   external double? get canvasKitMaximumSurfaces;
   external bool? get debugShowSemanticsNodes;
