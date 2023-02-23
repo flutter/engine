@@ -14,7 +14,7 @@ public class FlutterException extends RuntimeException {
   public final String code;
   public final Object details;
 
-  FlutterException(String code, String message, Object details) {
+  public FlutterException(String code, String message, Object details) {
     super(message);
     if (BuildConfig.DEBUG && code == null) {
       Log.e(TAG, "Parameter code must not be null.");
