@@ -197,9 +197,11 @@ class FlutterConfiguration {
   /// * `chromium` - the lite variant of CanvasKit that can be used in
   /// Chromium-based browsers.
   CanvasKitVariant get canvasKitVariant {
-    final String variant = _configuration?.canvasKitVariant ?? _defaultCanvasKitVariant;
+    final String? variant = _configuration?.canvasKitVariant;
     switch (variant) {
       case 'auto':
+      case null:
+        // This is the default value.
         return CanvasKitVariant.auto;
       case 'full':
         return CanvasKitVariant.full;
@@ -209,7 +211,6 @@ class FlutterConfiguration {
         throw ArgumentError.value(variant, 'canvasKitVariant', 'Unknown CanvasKit variant');
     }
   }
-  static const String _defaultCanvasKitVariant = 'auto';
 
   /// If set to true, forces CPU-only rendering in CanvasKit (i.e. the engine
   /// won't use WebGL).
