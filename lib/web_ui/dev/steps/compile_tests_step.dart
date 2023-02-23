@@ -167,7 +167,7 @@ Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
     final Iterable<io.File> canvasKitFiles =
         _localCanvasKitDir.listSync(recursive: true).whereType<io.File>();
     for (final io.File file in canvasKitFiles) {
-      if (!file.path.endsWith('.wasm') || !file.path.endsWith('.js')) {
+      if (!file.path.endsWith('.wasm') && !file.path.endsWith('.js')) {
         // We only need the .wasm and .js files.
         continue;
       }
