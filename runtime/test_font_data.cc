@@ -1596,8 +1596,8 @@ static const unsigned char kCoughFont[] = {
     0x00, 0x00, 0x00, 0x00, 0xd9, 0xe6, 0x7e, 0x49};
 
 static const unsigned int kAhemFontLength = 13884;
-static const unsigned int kFlutterTestFontLength =
-    2832 static const unsigned int kCoughFontLength = 1576;
+static const unsigned int kFlutterTestFontLength = 2832;
+static const unsigned int kCoughFontLength = 1576;
 
 #else  // EMBED_TEST_FONT_DATA
 
