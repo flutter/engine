@@ -915,18 +915,19 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
 TEST(FlutterWindowsViewTest, DestructorTest) {
   bool destroyed = false;
   std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
-  // Use this pointer to reference the view in the Destruct callback, which must be
-  // defined before the view is.
+  // Use this pointer to reference the view in the Destruct callback, which must
+  // be defined before the view is.
   FlutterWindowsView* view_ptr = nullptr;
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  ON_CALL(*window_binding_handler, Destruct).WillByDefault([&destroyed, &view_ptr](){
-    EXPECT_FALSE(destroyed);
-    destroyed = true;
-    ASSERT_NE(view_ptr, nullptr);
-    EXPECT_EQ(view_ptr->GetEngine()->view(), nullptr);
-  });
+  ON_CALL(*window_binding_handler, Destruct)
+      .WillByDefault([&destroyed, &view_ptr]() {
+        EXPECT_FALSE(destroyed);
+        destroyed = true;
+        ASSERT_NE(view_ptr, nullptr);
+        EXPECT_EQ(view_ptr->GetEngine()->view(), nullptr);
+      });
 
   {
     FlutterWindowsView view(std::move(window_binding_handler));
