@@ -50,6 +50,9 @@ FlutterWindowsView::FlutterWindowsView(
 
 FlutterWindowsView::~FlutterWindowsView() {
   DestroyRenderSurface();
+  if (engine_) {
+    engine_->SetView(nullptr);
+  }
 }
 
 void FlutterWindowsView::SetEngine(

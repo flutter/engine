@@ -912,5 +912,25 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   EXPECT_EQ(uia_tooltip, "tooltip");
 }
 
+TEST(FlutterWindowsViewTest, DestructorTest) {
+  bool destroyed = false;
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  ON_CALL(*window_binding_handler, Destruct).WillByDefault([&destroyed](){
+    EXPECT_FALSE(destroyed);
+    destroyed = true;
+  });
+
+  {
+    FlutterWindowsView view(std::move(window_binding_handler));
+    view.SetEngine(std::move(engine));
+    // Destruct view before continuing.
+  }
+
+  EXPECT_TRUE(destroyed);
+}
+
 }  // namespace testing
 }  // namespace flutter
