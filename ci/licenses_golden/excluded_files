@@ -20,6 +20,7 @@
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
 ../../../flutter/AUTHORS
+../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
 ../../../flutter/DEPS
 ../../../flutter/Doxyfile
@@ -141,6 +142,7 @@
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
+../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
 ../../../flutter/impeller/scene/README.md
@@ -1727,7 +1729,6 @@
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
-../../../third_party/dart/third_party/protobuf/src/test
 ../../../third_party/dart/third_party/requirejs
 ../../../third_party/dart/third_party/tcmalloc/.gitignore
 ../../../third_party/dart/third_party/tcmalloc/OWNERS
@@ -2040,6 +2041,7 @@
 ../../../third_party/icu/DIR_METADATA
 ../../../third_party/icu/OWNERS
 ../../../third_party/icu/README.chromium
+../../../third_party/icu/README.fuchsia
 ../../../third_party/icu/codereview.settings
 ../../../third_party/icu/filters
 ../../../third_party/icu/flutter/README.md
@@ -2660,6 +2662,7 @@
 ../../../third_party/skia/modules/canvaskit/package.json
 ../../../third_party/skia/modules/canvaskit/tests
 ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/.gitignore
+../../../third_party/skia/modules/jetski/BUILD.bazel
 ../../../third_party/skia/modules/jetski/README
 ../../../third_party/skia/modules/particles/BUILD.bazel
 ../../../third_party/skia/modules/particles/include/BUILD.bazel
