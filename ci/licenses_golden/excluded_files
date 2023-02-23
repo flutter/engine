@@ -2575,6 +2575,7 @@
 ../../../third_party/skia/docs
 ../../../third_party/skia/example
 ../../../third_party/skia/experimental
+../../../third_party/skia/findtasks.py
 ../../../third_party/skia/fuzz/README.md
 ../../../third_party/skia/gn/BUILD.bazel
 ../../../third_party/skia/gn/__init__.py
