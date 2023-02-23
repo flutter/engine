@@ -1615,19 +1615,18 @@ namespace flutter {
 
 std::vector<std::unique_ptr<SkStreamAsset>> GetTestFontData() {
   std::vector<std::unique_ptr<SkStreamAsset>> data;
-  // The default font to use if nothing is specified.
-  if (kFlutterTestFontLength == 0) {
-    data.push_back(nullptr);
-  } else {
-    data.push_back(std::make_unique<SkMemoryStream>(
-        kFlutterTestFont, kFlutterTestFontLength, false /* copy data */));
-  }
-
   if (kAhemFontLength == 0) {
     data.push_back(nullptr);
   } else {
     data.push_back(std::make_unique<SkMemoryStream>(kAhemFont, kAhemFontLength,
                                                     false /* copy data */));
+  }
+
+  if (kFlutterTestFontLength == 0) {
+    data.push_back(nullptr);
+  } else {
+    data.push_back(std::make_unique<SkMemoryStream>(
+        kFlutterTestFont, kFlutterTestFontLength, false /* copy data */));
   }
 
   if (kCoughFontLength == 0) {
@@ -1640,7 +1639,7 @@ std::vector<std::unique_ptr<SkStreamAsset>> GetTestFontData() {
 }
 
 std::vector<std::string> GetTestFontFamilyNames() {
-  std::vector<std::string> names = {"FlutterTest", "Ahem", "Cough"};
+  std::vector<std::string> names = {"Ahem", "FlutterTest", "Cough"};
   return names;
 }
 

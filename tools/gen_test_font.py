@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#
 # Copyright 2013 The Flutter Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
@@ -48,7 +49,7 @@ font.horizontalBaseline = (("hang", "ideo", "romn"),
 # metrics available to the framework, so they typically don't affect non-golden
 # tests.
 #
-# The hinting goal is:
+# The hinting goals are:
 #
 # 1. Aligning the key points on glyph outlines between glyphs, when different
 #    types of glyphs are placed side by side. E.g., for a given point size, "p"
@@ -63,9 +64,10 @@ font.horizontalBaseline = (("hang", "ideo", "romn"),
 
 # Allocate space in cvt.
 font.cvt = [0]
+# gcd is used to avoid overflowing, this works for the current ASCENT and EM value.
 gcd = math.gcd(ASCENT, EM)
-# The control value program is for computing the y-offset to round the embox's
-# top edge to grid, in pixels. The end result will be stored to CVT entry 0.
+# The control value program is for computing the y-offset (in pixels) to move
+# the embox's top edge to grid. The end result will be stored to CVT entry 0.
 # CVT[0] = (pointSize * ASCENT / EM) - ceil(pointSize * ASCENT / EM)
 prep_program = f"""
     RTG
@@ -83,8 +85,6 @@ prep_program = f"""
     SUB
     WCVTP
 """
-# gcd is used to avoid overflowing, however this may still overflow if ASCENT or
-# DESCENT is changed.
 font.setTableData("prep", fontforge.parseTTInstrs(prep_program))
 
 
@@ -110,11 +110,12 @@ def glyph_program(glyph):
         SZPS
     """
 
+  # Round To Grid every on-curve point, but ignore those who are on the ASCENT
+  # or DESCENT line. This step keeps "p" (ascent flushed) and "É" (descent
+  # flushed)'s y extents from overlapping each other.
   for index, point in enumerate(
       [p for contour in glyph.foreground for p in contour]):
     if point.y not in [ASCENT, DESCENT]:
-      # Round To Grid every on-curve point, but ignore those that are already
-      # on the ASCENT or DESCENT line.
       instructions += f"""
                 PUSHB_1
                 {index}
@@ -123,7 +124,7 @@ def glyph_program(glyph):
   return fontforge.parseTTInstrs(instructions)
 
 
-### Glyphs Outlines
+### Creating Glyphs Outlines
 
 
 def square_glyph(glyph):
@@ -260,9 +261,9 @@ for (codepoint, advance_percentage) in no_path_codepoints:
     raise ValueError(f"{hex(codepoint)} is occupied.")
   create_no_path_glyph(codepoint, advance_percentage)
 
-font.generate(sys.argv[1])
+font.generate(sys.argv[1] or "test_font.ttf")
 
-### Generating Glyph Map Stats
+### Printing Glyph Map Stats
 
 scripts = set()
 for glyph in font.glyphs():
