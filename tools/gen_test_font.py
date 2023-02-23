@@ -37,8 +37,14 @@ font.uwidth = UWIDTH
 font.hhea_linegap = 0
 font.os2_typolinegap = 0
 
-font.horizontalBaseline = (("hang", "ideo", "romn"),
-                           (("dflt", "romn", (ASCENT, DESCENT, 0), ()),))
+font.horizontalBaseline = (
+    ("hang", "ideo", "romn"),
+    (
+        ("latn", "romn", (ASCENT, DESCENT, 0), ()),
+        ("grek", "romn", (ASCENT, DESCENT, 0), ()),
+        ("hani", "ideo", (ASCENT, DESCENT, 0), ()),
+    ),
+)
 
 ### TrueType Hinting
 
