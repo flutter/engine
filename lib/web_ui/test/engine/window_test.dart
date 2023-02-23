@@ -524,6 +524,11 @@ Future<void> testMain() async {
     lockCalls.clear();
     unlockCount = 0;
 
+    simulateError = true;
+    expect(await sendSetPreferredOrientations(<dynamic>['DeviceOrientation.portraitDown']), isFalse);
+    expect(await sendGetPreferredOrientations(), <dynamic>['DeviceOrientation.portraitDown']);
+    expect(unlockCount, 0);
+
     js_util.setProperty(domWindow, 'screen', original);
   });
 

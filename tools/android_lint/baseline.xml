@@ -4,34 +4,34 @@
     <issue
         id="InlinedApi"
         message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_PORTRAIT`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT;"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="267"
-            column="16"/>
+            line="279"
+            column="30"/>
     </issue>
 
     <issue
         id="InlinedApi"
         message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_USER_LANDSCAPE`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE;"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="271"
-            column="16"/>
+            line="285"
+            column="30"/>
     </issue>
 
     <issue
         id="InlinedApi"
         message="Field requires API level 18 (current min is 16): `android.content.pm.ActivityInfo#SCREEN_ORIENTATION_FULL_USER`"
-        errorLine1="        return ActivityInfo.SCREEN_ORIENTATION_FULL_USER;"
-        errorLine2="               ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        errorLine1="        androidOrientation = ActivityInfo.SCREEN_ORIENTATION_FULL_USER;"
+        errorLine2="                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/embedding/engine/systemchannels/PlatformChannel.java"
-            line="275"
-            column="16"/>
+            line="291"
+            column="30"/>
     </issue>
 
     <issue
@@ -41,7 +41,7 @@
         errorLine2="                        ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="661"
+            line="955"
             column="25"/>
     </issue>
 
@@ -52,7 +52,7 @@
         errorLine2="                                                                  ~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="661"
+            line="955"
             column="67"/>
     </issue>
 
@@ -65,6 +65,17 @@
             file="../../../flutter/shell/platform/android/AndroidManifest.xml"
             line="8"
             column="42"/>
+    </issue>
+
+    <issue
+        id="WrongConstant"
+        message="Must be one of: ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE, ActivityInfo.SCREEN_ORIENTATION_PORTRAIT, ActivityInfo.SCREEN_ORIENTATION_USER, ActivityInfo.SCREEN_ORIENTATION_BEHIND, ActivityInfo.SCREEN_ORIENTATION_SENSOR, ActivityInfo.SCREEN_ORIENTATION_NOSENSOR, ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE, ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT, ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE, ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT, ActivityInfo.SCREEN_ORIENTATION_FULL_SENSOR, ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE, ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT, ActivityInfo.SCREEN_ORIENTATION_FULL_USER, ActivityInfo.SCREEN_ORIENTATION_LOCKED"
+        errorLine1="    activity.setRequestedOrientation(androidOrientation.getAndroidOrientation());"
+        errorLine2="                                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformPlugin.java"
+            line="203"
+            column="38"/>
     </issue>
 
     <issue
@@ -85,7 +96,7 @@
         errorLine2="                 ~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/view/FlutterView.java"
-            line="436"
+            line="445"
             column="18"/>
     </issue>
 
@@ -96,19 +107,8 @@
         errorLine2="                 ~~~~~~~~~~~~">
         <location
             file="../../../flutter/shell/platform/android/io/flutter/embedding/android/FlutterView.java"
-            line="911"
+            line="926"
             column="18"/>
     </issue>
-
-    <issue
-        id="UseSparseArrays"
-        message="Use `new SparseArray&lt;VirtualDisplayController>(...)` instead for better performance"
-        errorLine1="        vdControllers = new HashMap&lt;>();"
-        errorLine2="                        ~~~~~~~~~~~~~~~">
-        <location
-            file="../../../flutter/shell/platform/android/io/flutter/plugin/platform/PlatformViewsController.java"
-            line="61"
-            column="25"/>
-</issue>
 
 </issues>

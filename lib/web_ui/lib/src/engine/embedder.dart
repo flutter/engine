@@ -308,6 +308,9 @@ class FlutterViewEmbedder {
     return Future<bool>.value(false);
   }
 
+  /// Gets preferred screen orientation that were previously set by [setPreferredOrientation].
+  ///
+  /// Returns a list of DeviceOrientation values.
   Future<List<dynamic>> getPreferredOrientation() async {
     return _orientations ?? <dynamic>[];
   }

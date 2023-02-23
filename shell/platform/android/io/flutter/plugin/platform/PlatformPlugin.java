@@ -24,6 +24,7 @@ import androidx.annotation.VisibleForTesting;
 import androidx.core.view.WindowInsetsControllerCompat;
 import io.flutter.Log;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
+import io.flutter.embedding.engine.systemchannels.PlatformChannel.PlatformMessageHandler.AndroidOrientation;
 import java.io.FileNotFoundException;
 import java.util.List;
 
@@ -73,14 +74,12 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void setPreferredOrientations(
-            PlatformChannel.PlatformMessageHandler.AndroidOrientation androidOrientation) {
+        public void setPreferredOrientations(AndroidOrientation androidOrientation) {
           setSystemChromePreferredOrientations(androidOrientation);
         }
 
         @Override
-        public PlatformChannel.PlatformMessageHandler.AndroidOrientation
-            getPreferredOrientations() {
+        public AndroidOrientation getPreferredOrientations() {
           return getSystemChromePreferredOrientations();
         }
 
@@ -199,17 +198,14 @@ public class PlatformPlugin {
 
   private int rawAndroidOrientation = 0;
 
-  private void setSystemChromePreferredOrientations(
-      PlatformChannel.PlatformMessageHandler.AndroidOrientation androidOrientation) {
+  private void setSystemChromePreferredOrientations(AndroidOrientation androidOrientation) {
     rawAndroidOrientation = androidOrientation.getRawAndroidOrientation();
     activity.setRequestedOrientation(androidOrientation.getAndroidOrientation());
   }
 
-  private PlatformChannel.PlatformMessageHandler.AndroidOrientation
-      getSystemChromePreferredOrientations() {
-    PlatformChannel.PlatformMessageHandler.AndroidOrientation orientation =
-        new PlatformChannel.PlatformMessageHandler.AndroidOrientation(
-            activity.getRequestedOrientation(), rawAndroidOrientation);
+  private AndroidOrientation getSystemChromePreferredOrientations() {
+    AndroidOrientation orientation =
+        new AndroidOrientation(activity.getRequestedOrientation(), rawAndroidOrientation);
     return orientation;
   }
 

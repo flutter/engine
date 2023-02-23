@@ -10,6 +10,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import io.flutter.Log;
 import io.flutter.embedding.engine.dart.DartExecutor;
+import io.flutter.embedding.engine.systemchannels.PlatformChannel.PlatformMessageHandler.AndroidOrientation;
 import io.flutter.plugin.common.JSONMethodCodec;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
@@ -69,8 +70,7 @@ public class PlatformChannel {
                 break;
               case "SystemChrome.setPreferredOrientations":
                 try {
-                  PlatformMessageHandler.AndroidOrientation androidOrientation =
-                      decodeOrientations((JSONArray) arguments);
+                  AndroidOrientation androidOrientation = decodeOrientations((JSONArray) arguments);
                   platformMessageHandler.setPreferredOrientations(androidOrientation);
                   result.success(null);
                 } catch (JSONException | NoSuchFieldException exception) {
@@ -82,7 +82,7 @@ public class PlatformChannel {
                 }
                 break;
               case "SystemChrome.getPreferredOrientations":
-                PlatformMessageHandler.AndroidOrientation androidOrientation =
+                AndroidOrientation androidOrientation =
                     platformMessageHandler.getPreferredOrientations();
                 JSONArray encodedAndroidOrientation =
                     encodeOrientations(androidOrientation.getRawAndroidOrientation());
@@ -234,8 +234,8 @@ public class PlatformChannel {
    *     types.
    * @throws NoSuchFieldException if any given encoded orientation is not a valid orientation name.
    */
-  private PlatformMessageHandler.AndroidOrientation decodeOrientations(
-      @NonNull JSONArray encodedOrientations) throws JSONException, NoSuchFieldException {
+  private AndroidOrientation decodeOrientations(@NonNull JSONArray encodedOrientations)
+      throws JSONException, NoSuchFieldException {
     int requestedOrientation = 0x00;
     int firstRequestedOrientation = 0x00;
     for (int index = 0; index < encodedOrientations.length(); index += 1) {
@@ -262,6 +262,8 @@ public class PlatformChannel {
       }
     }
 
+    // In general, this value will be overriden, but if it does then we default
+    // to a portrait orientation.
     int androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
     switch (requestedOrientation) {
       case 0x00:
@@ -316,9 +318,7 @@ public class PlatformChannel {
         }
     }
 
-    // Execution should never get this far, but if it does then we default
-    // to a portrait orientation.
-    return new PlatformMessageHandler.AndroidOrientation(androidOrientation, requestedOrientation);
+    return new AndroidOrientation(androidOrientation, requestedOrientation);
   }
 
   /** Encodes an aggregate desired orientation to a series of orientations. */
@@ -477,19 +477,32 @@ public class PlatformChannel {
    * PlatformChannel#setPlatformMessageHandler(PlatformMessageHandler)}.
    */
   public interface PlatformMessageHandler {
+    /**
+     * A data class for [PlatformMessageHandler.setPreferredOrientations] and
+     * [PlatformMessageHandler.getPreferredOrientations].
+     */
     public class AndroidOrientation {
+      /** Holds a value from ActivityInfo.SCREEN_ORIENTATION constnats. */
       private int androidOrientation;
+      /**
+       * Holds a raw value that was requested by the Flutter application. It is needed due to the
+       * fact that ActivityInfo.SCREEN_ORIENTATION constnats can not describe all combinations of
+       * screen orientations that flutter application could pass.
+       */
       private int rawAndroidOrientation;
 
-      public AndroidOrientation(int androidOrientation, int rawAndroidOrientation) {
+      public AndroidOrientation(
+          @NonNull int androidOrientation, @NonNull int rawAndroidOrientation) {
         this.androidOrientation = androidOrientation;
         this.rawAndroidOrientation = rawAndroidOrientation;
       }
 
+      @NonNull
       public int getAndroidOrientation() {
         return androidOrientation;
       }
 
+      @NonNull
       public int getRawAndroidOrientation() {
         return rawAndroidOrientation;
       }
