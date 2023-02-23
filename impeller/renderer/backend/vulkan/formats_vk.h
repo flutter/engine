@@ -137,6 +137,9 @@ constexpr std::optional<vk::ShaderStageFlagBits> ToVKShaderStageFlagBits(
 constexpr vk::Format ToVKImageFormat(PixelFormat format) {
   switch (format) {
     case PixelFormat::kUnknown:
+    case PixelFormat::kB10G10R10XR:
+    case PixelFormat::kB10G10R10A10XR:
+    case PixelFormat::kB10G10R10XRSRGB:
       return vk::Format::eUndefined;
     case PixelFormat::kA8UNormInt:
       return vk::Format::eR8Unorm;
@@ -330,6 +333,16 @@ constexpr vk::IndexType ToVKIndexType(IndexType index_type) {
       return vk::IndexType::eUint32;
   }
 
+  FML_UNREACHABLE();
+}
+
+constexpr vk::PolygonMode ToVKPolygonMode(PolygonMode mode) {
+  switch (mode) {
+    case PolygonMode::kFill:
+      return vk::PolygonMode::eFill;
+    case PolygonMode::kLine:
+      return vk::PolygonMode::eLine;
+  }
   FML_UNREACHABLE();
 }
 

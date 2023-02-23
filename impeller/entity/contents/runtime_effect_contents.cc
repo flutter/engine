@@ -102,6 +102,11 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
+  const auto& device_capabilities = context->GetDeviceCapabilities();
+  const auto color_attachment_format = context->GetColorAttachmentPixelFormat();
+  const auto stencil_attachment_format =
+      device_capabilities.GetDefaultStencilFormat();
+
   using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
   desc.SetLabel("Runtime Stage");
@@ -115,9 +120,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   }
   desc.SetVertexDescriptor(std::move(vertex_descriptor));
   desc.SetColorAttachmentDescriptor(
-      0u, {.format = PixelFormat::kDefaultColor, .blending_enabled = true});
+      0u, {.format = color_attachment_format, .blending_enabled = true});
   desc.SetStencilAttachmentDescriptors({});
-  desc.SetStencilPixelFormat(PixelFormat::kDefaultStencil);
+  desc.SetStencilPixelFormat(stencil_attachment_format);
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   if (geometry_result.prevent_overdraw) {
@@ -182,7 +187,7 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
 
         ShaderUniformSlot uniform_slot;
         uniform_slot.name = uniform.name.c_str();
-        uniform_slot.ext_res_0 = buffer_index;
+        uniform_slot.ext_res_0 = uniform.location;
         cmd.BindResource(ShaderStage::kFragment, uniform_slot, metadata,
                          buffer_view);
         buffer_index++;
@@ -238,7 +243,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   pass.AddCommand(std::move(cmd));
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }

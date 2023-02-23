@@ -302,6 +302,7 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
     HostBuffer& buffer,
     Scalar stroke_width,
     Scalar scaled_miter_limit,
+    Cap cap,
     const StrokePathGeometry::JoinProc& join_proc,
     const StrokePathGeometry::CapProc& cap_proc,
     Scalar tolerance) {
@@ -370,34 +371,38 @@ VertexBuffer StrokePathGeometry::CreateSolidStrokeVertices(
 
     // Generate start cap.
     if (!polyline.contours[contour_i].is_closed) {
-      auto cap_offset =
-          Vector2(contour.start_direction.y, -contour.start_direction.x) *
-          stroke_width * 0.5;
+      Vector2 direction;
+      if (cap == Cap::kButt) {
+        direction =
+            Vector2(contour.start_direction.y, -contour.start_direction.x);
+      } else {
+        direction =
+            Vector2(-contour.start_direction.y, contour.start_direction.x);
+      }
+      auto cap_offset = direction * stroke_width * 0.5;
       cap_proc(vtx_builder, polyline.points[contour_start_point_i], cap_offset,
                tolerance);
     }
 
     // Generate contour geometry.
-    for (size_t point_i = contour_start_point_i; point_i < contour_end_point_i;
-         point_i++) {
-      if (point_i > contour_start_point_i) {
-        // Generate line rect.
-        vtx.position = polyline.points[point_i - 1] + offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i - 1] - offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i] + offset;
-        vtx_builder.AppendVertex(vtx);
-        vtx.position = polyline.points[point_i] - offset;
-        vtx_builder.AppendVertex(vtx);
+    for (size_t point_i = contour_start_point_i + 1;
+         point_i < contour_end_point_i; point_i++) {
+      // Generate line rect.
+      vtx.position = polyline.points[point_i - 1] + offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i - 1] - offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i] + offset;
+      vtx_builder.AppendVertex(vtx);
+      vtx.position = polyline.points[point_i] - offset;
+      vtx_builder.AppendVertex(vtx);
 
-        if (point_i < contour_end_point_i - 1) {
-          compute_offset(point_i + 1);
+      if (point_i < contour_end_point_i - 1) {
+        compute_offset(point_i + 1);
 
-          // Generate join from the current line to the next line.
-          join_proc(vtx_builder, polyline.points[point_i], previous_offset,
-                    offset, scaled_miter_limit, tolerance);
-        }
+        // Generate join from the current line to the next line.
+        join_proc(vtx_builder, polyline.points[point_i], previous_offset,
+                  offset, scaled_miter_limit, tolerance);
       }
     }
 
@@ -439,7 +444,8 @@ GeometryResult StrokePathGeometry::GetPositionBuffer(
   auto& host_buffer = pass.GetTransientsBuffer();
   auto vertex_buffer = CreateSolidStrokeVertices(
       path_, host_buffer, stroke_width, miter_limit_ * stroke_width_ * 0.5,
-      GetJoinProc(stroke_join_), GetCapProc(stroke_cap_), tolerance);
+      stroke_cap_, GetJoinProc(stroke_join_), GetCapProc(stroke_cap_),
+      tolerance);
 
   return GeometryResult{
       .type = PrimitiveType::kTriangleStrip,

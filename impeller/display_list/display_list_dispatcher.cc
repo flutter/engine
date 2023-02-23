@@ -136,6 +136,9 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
+    // Impeller doesn't support cubic sampling, but linear is closer to correct
+    // than nearest for this case.
+    case flutter::DlImageSampling::kCubic:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.label = "Linear Sampler";
       break;
@@ -143,8 +146,6 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.mip_filter = impeller::MipFilter::kLinear;
       desc.label = "Mipmap Linear Sampler";
-      break;
-    default:
       break;
   }
   return desc;
@@ -459,13 +460,14 @@ void DisplayListDispatcher::setColorSource(
       auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
       auto desc = ToSamplerDescriptor(image_color_source->sampling());
       auto matrix = ToMatrix(image_color_source->matrix());
-      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc,
-                             matrix]() {
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc, matrix,
+                             &paint = paint_]() {
         auto contents = std::make_shared<TiledTextureContents>();
         contents->SetTexture(texture);
         contents->SetTileModes(x_tile_mode, y_tile_mode);
         contents->SetSamplerDescriptor(desc);
         contents->SetEffectTransform(matrix);
+        contents->SetColorFilter(paint.color_filter);
         return contents;
       };
       return;
@@ -578,7 +580,7 @@ void DisplayListDispatcher::setColorFilter(
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setInvertColors(bool invert) {
-  UNIMPLEMENTED;
+  paint_.invert_colors = invert;
 }
 
 // |flutter::Dispatcher|
@@ -1040,7 +1042,6 @@ void DisplayListDispatcher::drawOval(const SkRect& bounds) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
-  auto path = PathBuilder{}.AddCircle(ToPoint(center), radius).TakePath();
   canvas_.DrawCircle(ToPoint(center), radius, paint_);
 }
 

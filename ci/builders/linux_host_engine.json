@@ -52,7 +52,7 @@
           },
           "tests": [
             {
-                "language": "python",
+                "language": "python3",
                 "name": "Host Tests for host_debug_impeller_vulkan",
                 "parameters": [
                     "--variant",
@@ -78,7 +78,6 @@
                         "out/host_debug/zip_archives/linux-x64/font-subset.zip",
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip",
-                        "out/host_debug/zip_archives/flutter-web-sdk-linux-x64.zip",
                         "out/host_debug/zip_archives/linux-x64/linux-x64-flutter-gtk.zip"
                     ]
                 }
@@ -93,7 +92,6 @@
             "gn": [
                 "--runtime-mode",
                 "debug",
-                "--full-dart-sdk",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples"
             ],
@@ -101,16 +99,31 @@
             "ninja": {
                 "config": "host_debug",
                 "targets": [
+		    "flutter:unittests",
                     "flutter/build/archives:artifacts",
+                    "flutter/build/archives:dart_sdk_archive",
                     "flutter/build/archives:embedder",
                     "flutter/build/archives:flutter_patched_sdk",
-                    "flutter/build/archives:dart_sdk_archive",
-                    "flutter/web_sdk",
-                    "flutter/tools/font-subset",
-                    "flutter/shell/platform/linux:flutter_gtk"
+                    "flutter/build/dart:copy_dart_sdk",
+                    "flutter/shell/platform/linux:flutter_gtk",
+                    "flutter/tools/font-subset"
                 ]
             },
-            "tests": []
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Host Tests for host_debug",
+                    "parameters": [
+                        "--variant",
+                        "host_debug",
+                        "--type",
+                        "dart",
+                        "--engine-capture-core-dump"
+                    ],
+                    "script": "flutter/testing/run_tests.py",
+                    "type": "local"
+                }
+	    ]
         },
         {
             "archives": [
@@ -141,19 +154,22 @@
             "ninja": {
                 "config": "host_profile",
                 "targets": [
-                    "flutter:unittests",
-                    "flutter/shell/platform/linux:flutter_gtk"
+		    "flutter/build/dart:copy_dart_sdk",
+		    "flutter/shell/testing",
+		    "flutter/tools/path_ops",
+                    "flutter/shell/platform/linux:flutter_gtk",
+                    "flutter:unittests"
                 ]
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for host_profile",
                     "parameters": [
                         "--variant",
                         "host_profile",
                         "--type",
-                        "engine",
+                        "dart,engine",
                         "--engine-capture-core-dump"
                     ],
                     "script": "flutter/testing/run_tests.py",
@@ -190,20 +206,30 @@
             "ninja": {
                 "config": "host_release",
                 "targets": [
-                    "flutter:unittests",
+		    "flutter/build/dart:copy_dart_sdk",
+		    "flutter/display_list:display_list_benchmarks",
+		    "flutter/display_list:display_list_builder_benchmarks",
+		    "flutter/fml:fml_benchmarks",
+		    "flutter/impeller/geometry:geometry_benchmarks",
+		    "flutter/lib/ui:ui_benchmarks",
+		    "flutter/shell/common:shell_benchmarks",
+		    "flutter/shell/testing",
+		    "flutter/third_party/txt:txt_benchmarks",
+		    "flutter/tools/path_ops",
                     "flutter/build/archives:flutter_patched_sdk",
-                    "flutter/shell/platform/linux:flutter_gtk"
+                    "flutter/shell/platform/linux:flutter_gtk",
+                    "flutter:unittests"
                 ]
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for host_release",
                     "parameters": [
                         "--variant",
                         "host_release",
                         "--type",
-                        "engine",
+                        "dart,engine,benchmarks",
                         "--engine-capture-core-dump"
                     ],
                     "script": "flutter/testing/run_tests.py",

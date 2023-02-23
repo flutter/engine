@@ -20,6 +20,7 @@
 
 static NSString* const kTextInputChannel = @"flutter/textinput";
 
+#pragma mark - TextInput channel method names
 // See https://api.flutter.dev/flutter/services/SystemChannels/textInput-constant.html
 static NSString* const kSetClientMethod = @"TextInput.setClient";
 static NSString* const kShowMethod = @"TextInput.show";
@@ -35,14 +36,12 @@ static NSString* const kPerformAction = @"TextInputClient.performAction";
 static NSString* const kPerformSelectors = @"TextInputClient.performSelectors";
 static NSString* const kMultilineInputType = @"TextInputType.multiline";
 
-static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
-static NSString* const kTextAffinityUpstream = @"TextAffinity.upstream";
-
+#pragma mark - TextInputConfiguration field names
+static NSString* const kSecureTextEntry = @"obscureText";
 static NSString* const kTextInputAction = @"inputAction";
 static NSString* const kEnableDeltaModel = @"enableDeltaModel";
 static NSString* const kTextInputType = @"inputType";
 static NSString* const kTextInputTypeName = @"name";
-
 static NSString* const kSelectionBaseKey = @"selectionBase";
 static NSString* const kSelectionExtentKey = @"selectionExtent";
 static NSString* const kSelectionAffinityKey = @"selectionAffinity";
@@ -51,7 +50,19 @@ static NSString* const kComposingBaseKey = @"composingBase";
 static NSString* const kComposingExtentKey = @"composingExtent";
 static NSString* const kTextKey = @"text";
 static NSString* const kTransformKey = @"transform";
+static NSString* const kAssociatedAutofillFields = @"fields";
 
+// TextInputConfiguration.autofill and sub-field names
+static NSString* const kAutofillProperties = @"autofill";
+static NSString* const kAutofillId = @"uniqueIdentifier";
+static NSString* const kAutofillEditingValue = @"editingValue";
+static NSString* const kAutofillHints = @"hints";
+
+// TextAffinity types
+static NSString* const kTextAffinityDownstream = @"TextAffinity.downstream";
+static NSString* const kTextAffinityUpstream = @"TextAffinity.upstream";
+
+#pragma mark - Enums
 /**
  * The affinity of the current cursor position. If the cursor is at a position representing
  * a line break, the cursor may be drawn either at the end of the current line (upstream)
@@ -61,6 +72,8 @@ typedef NS_ENUM(NSUInteger, FlutterTextAffinity) {
   kFlutterTextAffinityUpstream,
   kFlutterTextAffinityDownstream
 };
+
+#pragma mark - Static functions
 
 /*
  * Updates a range given base and extent fields.
@@ -76,6 +89,81 @@ static flutter::TextRange RangeFromBaseExtent(NSNumber* base,
   }
   return flutter::TextRange([base unsignedLongValue], [extent unsignedLongValue]);
 }
+
+// Returns the autofill hint content type, if specified; otherwise nil.
+static NSString* GetAutofillHint(NSDictionary* autofill) {
+  NSArray<NSString*>* hints = autofill[kAutofillHints];
+  return hints.count > 0 ? hints[0] : nil;
+}
+
+// Returns the text content type for the specified TextInputConfiguration.
+// NSTextContentType is only available for macOS 11.0 and later.
+static NSTextContentType GetTextContentType(NSDictionary* configuration)
+    API_AVAILABLE(macos(11.0)) {
+  // Check autofill hints.
+  NSDictionary* autofill = configuration[kAutofillProperties];
+  if (autofill) {
+    NSString* hint = GetAutofillHint(autofill);
+    if ([hint isEqualToString:@"username"]) {
+      return NSTextContentTypeUsername;
+    }
+    if ([hint isEqualToString:@"password"]) {
+      return NSTextContentTypePassword;
+    }
+    if ([hint isEqualToString:@"oneTimeCode"]) {
+      return NSTextContentTypeOneTimeCode;
+    }
+  }
+  // If no autofill hints, guess based on other attributes.
+  if ([configuration[kSecureTextEntry] boolValue]) {
+    return NSTextContentTypePassword;
+  }
+  return nil;
+}
+
+// Returns YES if configuration describes a field for which autocomplete should be enabled for
+// the specified TextInputConfiguration. Autocomplete is enabled by default, but will be disabled
+// if the field is password-related, or if the configuration contains no autofill settings.
+static BOOL EnableAutocompleteForTextInputConfiguration(NSDictionary* configuration) {
+  // Disable if obscureText is set.
+  if ([configuration[kSecureTextEntry] boolValue]) {
+    return NO;
+  }
+
+  // Disable if autofill properties are not set.
+  NSDictionary* autofill = configuration[kAutofillProperties];
+  if (autofill == nil) {
+    return NO;
+  }
+
+  // Disable if autofill properties indicate a username/password.
+  // See: https://github.com/flutter/flutter/issues/119824
+  NSString* hint = GetAutofillHint(autofill);
+  if ([hint isEqualToString:@"password"] || [hint isEqualToString:@"username"]) {
+    return NO;
+  }
+  return YES;
+}
+
+// Returns YES if configuration describes a field for which autocomplete should be enabled.
+// Autocomplete is enabled by default, but will be disabled if the field is password-related, or if
+// the configuration contains no autofill settings.
+//
+// In the case where the current field is part of an AutofillGroup, the configuration will have
+// a fields attribute with a list of TextInputConfigurations, one for each field. In the case where
+// any field in the group disables autocomplete, we disable it for all.
+static BOOL EnableAutocomplete(NSDictionary* configuration) {
+  for (NSDictionary* field in configuration[kAssociatedAutofillFields]) {
+    if (!EnableAutocompleteForTextInputConfiguration(field)) {
+      return NO;
+    }
+  }
+
+  // Check the top-level TextInputConfiguration.
+  return EnableAutocompleteForTextInputConfiguration(configuration);
+}
+
+#pragma mark - NSEvent (KeyEquivalentMarker) protocol
 
 @interface NSEvent (KeyEquivalentMarker)
 
@@ -105,6 +193,8 @@ static char markerKey;
 }
 
 @end
+
+#pragma mark - FlutterTextInputPlugin private interface
 
 /**
  * Private properties of FlutterTextInputPlugin.
@@ -227,6 +317,8 @@ static char markerKey;
 
 @end
 
+#pragma mark - FlutterTextInputPlugin
+
 @implementation FlutterTextInputPlugin {
   /**
    * The currently active text input model.
@@ -245,8 +337,9 @@ static char markerKey;
 }
 
 - (instancetype)initWithViewController:(FlutterViewController*)viewController {
-  // The view needs a non-zero frame.
-  self = [super initWithFrame:NSMakeRect(0, 0, 1, 1)];
+  // The view needs an empty frame otherwise it is visible on dark background.
+  // https://github.com/flutter/flutter/issues/118504
+  self = [super initWithFrame:NSZeroRect];
   if (self != nil) {
     _flutterViewController = viewController;
     _channel = [FlutterMethodChannel methodChannelWithName:kTextInputChannel
@@ -317,6 +410,10 @@ static char markerKey;
       NSDictionary* inputTypeInfo = config[kTextInputType];
       _inputType = inputTypeInfo[kTextInputTypeName];
       self.textAffinity = kFlutterTextAffinityUpstream;
+      self.automaticTextCompletionEnabled = EnableAutocomplete(config);
+      if (@available(macOS 11.0, *)) {
+        self.contentType = GetTextContentType(config);
+      }
 
       _activeModel = std::make_unique<flutter::TextInputModel>();
     }

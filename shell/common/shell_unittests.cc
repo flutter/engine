@@ -14,6 +14,7 @@
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
+#include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/platform_view_layer.h"
@@ -827,10 +828,16 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
     auto platform_view_layer = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 50);
     root->Add(platform_view_layer);
+    auto transform_layer =
+        std::make_shared<TransformLayer>(SkMatrix::Translate(1, 1));
+    root->Add(transform_layer);
+    auto clip_rect_layer = std::make_shared<ClipRectLayer>(
+        SkRect::MakeLTRB(0, 0, 30, 30), Clip::hardEdge);
+    transform_layer->Add(clip_rect_layer);
     auto filter = std::make_shared<DlBlurImageFilter>(5, 5, DlTileMode::kClamp);
     auto backdrop_filter_layer =
         std::make_shared<BackdropFilterLayer>(filter, DlBlendMode::kSrcOver);
-    root->Add(backdrop_filter_layer);
+    clip_rect_layer->Add(backdrop_filter_layer);
     auto platform_view_layer2 = std::make_shared<PlatformViewLayer>(
         SkPoint::Make(10, 10), SkSize::Make(10, 10), 75);
     backdrop_filter_layer->Add(platform_view_layer2);
@@ -843,9 +850,13 @@ TEST_F(ShellTest, PushBackdropFilterToVisitedPlatformViews) {
   ASSERT_FALSE(stack_50.is_empty());
 
   auto filter = DlBlurImageFilter(5, 5, DlTileMode::kClamp);
-  auto mutator = *external_view_embedder->GetStack(50).Begin();
+  auto mutator = *stack_50.Begin();
   ASSERT_EQ(mutator->GetType(), MutatorType::kBackdropFilter);
   ASSERT_EQ(mutator->GetFilterMutation().GetFilter(), filter);
+  // Make sure the filterRect is in global coordinates (contains the (1,1)
+  // translation).
+  ASSERT_EQ(mutator->GetFilterMutation().GetFilterRect(),
+            SkRect::MakeLTRB(1, 1, 31, 31));
 
   DestroyShell(std::move(shell));
 }
@@ -1412,36 +1423,6 @@ TEST_F(ShellTest, ReportTimingsIsCalledImmediatelyAfterTheFirstFrame) {
   // Check for the immediate callback of the first frame that doesn't wait for
   // the other 9 frames to be rasterized.
   ASSERT_EQ(timestamps.size(), FrameTiming::kCount);
-}
-
-TEST_F(ShellTest, ReloadSystemFonts) {
-  auto settings = CreateSettingsForFixture();
-
-  fml::MessageLoop::EnsureInitializedForCurrentThread();
-  auto task_runner = fml::MessageLoop::GetCurrent().GetTaskRunner();
-  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
-                           task_runner);
-  auto shell = CreateShell(settings, task_runners);
-
-  auto fontCollection = GetFontCollection(shell.get());
-  std::vector<std::string> families(1, "Robotofake");
-  auto font =
-      fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  if (font == nullptr) {
-    // The system does not have default font. Aborts this test.
-    return;
-  }
-  unsigned int id = font->getId();
-  // The result should be cached.
-  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_EQ(font->getId(), id);
-  bool result = shell->ReloadSystemFonts();
-
-  // The cache is cleared, and FontCollection will be assigned a new id.
-  font = fontCollection->GetMinikinFontCollectionForFamilies(families, "en");
-  ASSERT_NE(font->getId(), id);
-  ASSERT_TRUE(result);
-  shell.reset();
 }
 
 TEST_F(ShellTest, WaitForFirstFrame) {
@@ -2238,7 +2219,7 @@ class SinglePixelImageGenerator : public ImageGenerator {
 
   unsigned int GetPlayCount() const { return 1; }
 
-  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) const {
+  const ImageGenerator::FrameInfo GetFrameInfo(unsigned int frame_index) {
     return {std::nullopt, 0, SkCodecAnimation::DisposalMethod::kKeep};
   }
 
