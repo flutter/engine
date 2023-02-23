@@ -2666,10 +2666,10 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
   domDocument.head!.appendChild(canvasKitScript);
 }
 
-String get canvasKitBuildUrl => configuration.canvasKitBaseUrl;
-String get canvasKitJavaScriptBindingsUrl =>
-    '${canvasKitBuildUrl}canvaskit.js';
-String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+String get _canvasKitBaseUrl => configuration.canvasKitBaseUrl;
+Iterable<String> get _canvasKitJsUrls => configuration.canvasKitJsFileNames
+    .map((String filename) => '$_canvasKitBaseUrl$filename');
+String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
 
 /// Download and initialize the CanvasKit module.
@@ -2677,29 +2677,55 @@ String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
 /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
 /// and intialize the CanvasKit wasm.
 Future<CanvasKit> downloadCanvasKit() async {
-  await _downloadCanvasKitJs();
+  await _downloadOneOf(_canvasKitJsUrls);
 
   return CanvasKitInit(CanvasKitInitOptions(
-    locateFile: allowInterop((String file, String unusedBase) =>
-        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+    locateFile: allowInterop(canvasKitWasmModuleUrl),
   ));
 }
 
-/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
-Future<void> _downloadCanvasKitJs() {
-  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
-
-  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
-  canvasKitScript.src = createTrustedScriptUrl(canvasKitJavaScriptUrl);
-
-  final Completer<void> canvasKitLoadCompleter = Completer<void>();
-  late DomEventListener callback;
-  void loadEventHandler(DomEvent _) {
-    canvasKitLoadCompleter.complete();
-    canvasKitScript.removeEventListener('load', callback);
+Future<void> _downloadOneOf(Iterable<String> urls) async {
+  for (final String url in urls) {
+    if (await _downloadCanvasKitJs(url)) {
+      return;
+    }
   }
-  callback = allowInterop(loadEventHandler);
-  canvasKitScript.addEventListener('load', callback);
+
+  // Reaching this point means that all URLs failed to download.
+  throw Exception(
+    'Failed to download any of the following CanvasKit URLs: $urls',
+  );
+}
+
+/// Downloads the CanvasKit JavaScript file at [url].
+///
+/// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
+/// file was successfully downloaded, or `false` if it failed.
+Future<bool> _downloadCanvasKitJs(String url) {
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = createTrustedScriptUrl(url);
+
+  final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
+
+  late final DomEventListener loadCallback;
+  late final DomEventListener errorCallback;
+
+  void loadEventHandler(DomEvent _) {
+    canvasKitLoadCompleter.complete(true);
+    canvasKitScript.removeEventListener('load', loadCallback);
+    canvasKitScript.removeEventListener('error', errorCallback);
+  }
+  void errorEventHandler(DomEvent errorEvent) {
+    canvasKitLoadCompleter.complete(false);
+    canvasKitScript.removeEventListener('load', loadCallback);
+    canvasKitScript.removeEventListener('error', errorCallback);
+  }
+
+  loadCallback = allowInterop(loadEventHandler);
+  errorCallback = allowInterop(errorEventHandler);
+
+  canvasKitScript.addEventListener('load', loadCallback);
+  canvasKitScript.addEventListener('error', errorCallback);
 
   patchCanvasKitModule(canvasKitScript);
 

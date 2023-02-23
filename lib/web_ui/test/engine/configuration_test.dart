@@ -60,4 +60,30 @@ void testMain() {
       expect(config.canvasKitMaximumSurfaces, 16);
     });
   });
+
+  group('CanvasKit config', () {
+    test('validates canvasKitJsFileName', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitJsFileName': 'foo'}) as JsFlutterConfiguration,
+      );
+      expect(() => config.canvasKitJsFileNames, throwsArgumentError);
+
+      config.setUserConfiguration(
+        js_util.jsify(<String, Object?>{'canvasKitJsFileName': 'foo.js'}) as JsFlutterConfiguration,
+      );
+      expect(config.canvasKitJsFileNames, <String>['foo.js']);
+    });
+
+    test('default canvasKitJsFileNames', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+
+      expect(
+        config.canvasKitJsFileNames,
+        hasLength(allOf(greaterThan(0), lessThanOrEqualTo(2))),
+      );
+      expect(config.canvasKitJsFileNames.last, 'canvaskit.js');
+    });
+  });
 }

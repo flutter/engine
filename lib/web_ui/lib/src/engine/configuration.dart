@@ -46,7 +46,9 @@ library configuration;
 
 import 'package:js/js.dart';
 import 'package:meta/meta.dart';
+import 'canvaskit/renderer.dart';
 import 'dom.dart';
+import 'util.dart';
 
 /// The version of CanvasKit used by the web engine by default.
 // DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
@@ -156,7 +158,8 @@ class FlutterConfiguration {
   // runtime. Runtime-supplied values take precedence over environment
   // variables.
 
-  /// The URL to use when downloading the CanvasKit script and associated wasm.
+  /// The base URL to use when downloading the CanvasKit script and associated
+  /// wasm.
   ///
   /// The expected directory structure nested under this URL is as follows:
   ///
@@ -182,6 +185,30 @@ class FlutterConfiguration {
     'FLUTTER_WEB_CANVASKIT_URL',
     defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
   );
+
+  /// The name of the CanvasKit JS file to download.
+  ///
+  /// This can point to a CanvasKit JS in a subfolder of the [canvasKitBaseUrl].
+  /// For example, it can be set to `profiling/canvaskit.js` to download the
+  /// profiling version of CanvasKit.
+  List<String> get canvasKitJsFileNames {
+    final String? configured = _configuration?.canvasKitJsFileName;
+    if (configured == null) {
+      return _defaultCanvasKitJsFileNames;
+    }
+    if (assertionsEnabled) {
+      if (!configured.endsWith('.js')) {
+        throw ArgumentError.value(configured, 'canvasKitJsFileName', 'Must end with ".js"');
+      }
+    }
+    return <String>[configured];
+  }
+  List<String> get _defaultCanvasKitJsFileNames => <String>[
+    // TODO(mdebbar): If the base url points to unpkg, then we know for sure
+    // that the chromium build of CanvasKit is not available.
+    if (useClientICU) 'chromium/canvaskit.js',
+    'canvaskit.js',
+  ];
 
   /// If set to true, forces CPU-only rendering in CanvasKit (i.e. the engine
   /// won't use WebGL).
@@ -249,6 +276,7 @@ class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
+  external String? get canvasKitJsFileName;
   external bool? get canvasKitForceCpuOnly;
   external double? get canvasKitMaximumSurfaces;
   external bool? get debugShowSemanticsNodes;
