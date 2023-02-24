@@ -54,6 +54,9 @@ class DLVerticesGeometry : public VerticesGeometry {
   // |VerticesGeometry|
   bool HasTextureCoordinates() const override;
 
+  // |VerticesGeometry|
+  std::optional<Rect> GetTextureCoordinateCoverge() const override;
+
  private:
   void NormalizeIndices();
 

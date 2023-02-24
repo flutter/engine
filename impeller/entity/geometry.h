@@ -85,6 +85,8 @@ class VerticesGeometry : public Geometry {
   virtual bool HasVertexColors() const = 0;
 
   virtual bool HasTextureCoordinates() const = 0;
+
+  virtual std::optional<Rect> GetTextureCoordinateCoverge() const = 0;
 };
 
 /// @brief A geometry that is created from a filled path object.

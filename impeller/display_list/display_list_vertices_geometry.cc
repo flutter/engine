@@ -101,6 +101,30 @@ static PrimitiveType GetPrimitiveType(const flutter::DlVertices* vertices) {
   }
 }
 
+std::optional<Rect> DLVerticesGeometry::GetTextureCoordinateCoverge() const {
+  if (!HasTextureCoordinates()) {
+    return std::nullopt;
+  }
+  auto vertex_count = vertices_->vertex_count();
+  auto* dl_texture_coordinates = vertices_->texture_coordinates();
+  if (vertex_count == 0) {
+    return std::nullopt;
+  }
+
+  auto left = dl_texture_coordinates[0].x();
+  auto top = dl_texture_coordinates[0].y();
+  auto right = dl_texture_coordinates[0].x();
+  auto bottom = dl_texture_coordinates[0].y();
+
+  for (auto i = 0; i < vertex_count; i++) {
+    left = std::min(left, dl_texture_coordinates[i].x());
+    top = std::min(top, dl_texture_coordinates[i].y());
+    right = std::max(right, dl_texture_coordinates[i].x());
+    bottom = std::max(bottom, dl_texture_coordinates[i].y());
+  }
+  return Rect::MakeLTRB(left, top, right, bottom);
+}
+
 bool DLVerticesGeometry::HasVertexColors() const {
   return vertices_->colors() != nullptr;
 }
@@ -255,10 +279,12 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
       auto texture_coord = dl_texture_coordinates[i];
       auto uv = Point((texture_coord.x() - origin.x) / size.width,
                       (texture_coord.y() - origin.y) / size.height);
-      std::cerr << uv << std::endl;
+      // From experimentation we need to clamp these values to < 1.0 or else there
+      // can be flickering.
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
-          .texture_coords = uv,
+          .texture_coords = Point(std::clamp(uv.x, 0.0f, 0.995f),
+                                  std::clamp(uv.y, 0.0f, 0.995f)),
       };
     }
   }

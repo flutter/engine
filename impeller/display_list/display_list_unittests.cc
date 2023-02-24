@@ -1175,7 +1175,7 @@ TEST_P(DisplayListTest, DrawVerticesLinearGradientWithTextureCoordinates) {
   flutter::DlPaint paint;
 
   paint.setColorSource(linear);
-  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
@@ -1200,7 +1200,7 @@ TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
       dl_image, flutter::DlTileMode::kRepeat, flutter::DlTileMode::kRepeat);
 
   paint.setColorSource(&image_source);
-  builder.drawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
+  builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }

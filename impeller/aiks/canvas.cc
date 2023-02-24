@@ -399,10 +399,21 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   std::shared_ptr<Contents> src_contents =
       src_paint.CreateContentsForGeometry(vertices);
   if (vertices->HasTextureCoordinates()) {
-    auto size = src_contents->ColorSourceSize().value_or(
-        vertices->GetCoverage(Matrix())->size);
-    src_contents = src_paint.CreateContentsForGeometry(
-        Geometry::MakeRect(Rect::MakeXYWH(0, 0, size.width, size.height)));
+    // If the color source has an intrinsic size, then we use that to
+    // create the src contents as a simplification. Otherwise we use
+    // the extent of the texture coordinates to determine how large
+    // the src contents should be. If neither has a value we fall back
+    // to using the geometry coverage data.
+    Rect src_coverage;
+    auto size = src_contents->ColorSourceSize();
+    if (size.has_value()) {
+      src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
+    } else {
+      src_coverage = vertices->GetTextureCoordinateCoverge().value_or(
+          vertices->GetCoverage(Matrix{}).value());
+    }
+    src_contents =
+        src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
   }
 
   auto contents = std::make_shared<VerticesContents>();
