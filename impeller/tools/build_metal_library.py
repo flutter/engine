@@ -94,7 +94,7 @@ def main():
   # The Metal standard must match the specification in impellerc.
   if args.platform == 'mac':
     command += [
-        '--std=macos-metal2.1',
+        '--std=macos-metal1.2',
         '-mmacos-version-min=10.14',
     ]
   elif args.platform == 'ios':
