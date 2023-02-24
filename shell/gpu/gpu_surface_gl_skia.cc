@@ -207,9 +207,8 @@ SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
-    // uint64_t view_id,
+    uint64_t view_id,
     const SkISize& size) {
-  uint64_t view_id = 0;
   if (delegate_ == nullptr) {
     return nullptr;
   }

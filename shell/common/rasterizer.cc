@@ -488,6 +488,10 @@ RasterStatus Rasterizer::DrawToSurface(
 RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     FrameTimingsRecorder& frame_timings_recorder,
     flutter::LayerTree& layer_tree) {
+  // TODO(dkwingsmt): The painting module only supports single-view for now. As
+  // embedder APIs and the engine are converted to multi-view, this method
+  // should get the view ID when the render is queued in Animator::Render.
+  uint64_t view_id = 0;
   FML_DCHECK(surface_);
 
   compositor_context_->ui_time().SetLapTime(
@@ -509,7 +513,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
-  auto frame = surface_->AcquireFrame(layer_tree.frame_size());
+  auto frame = surface_->AcquireFrame(view_id, layer_tree.frame_size());
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());
