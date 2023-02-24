@@ -116,8 +116,8 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
   if (!coverage.has_value()) {
     return false;
   }
-  auto geometry_result =
-      geometry->GetPositionUVBuffer(coverage.value(), renderer, entity, pass);
+  auto geometry_result = geometry->GetPositionUVBuffer(
+      coverage.value(), Matrix(), renderer, entity, pass);
   auto opts = OptionsFromPassAndEntity(pass, entity);
   opts.primitive_type = geometry_result.type;
   cmd.pipeline = renderer.GetTexturePipeline(opts);

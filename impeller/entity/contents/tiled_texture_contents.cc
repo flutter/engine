@@ -152,7 +152,7 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
   auto& host_buffer = pass.GetTransientsBuffer();
 
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
-      Rect::MakeSize(texture_size), renderer, entity, pass);
+      Rect::MakeSize(texture_size), GetInverseMatrix(), renderer, entity, pass);
 
   VS::VertInfo vert_info;
   vert_info.mvp = geometry_result.transform;

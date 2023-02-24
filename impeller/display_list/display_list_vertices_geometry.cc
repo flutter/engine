@@ -255,6 +255,7 @@ GeometryResult DLVerticesGeometry::GetPositionColorBuffer(
 
 GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     Rect texture_coverage,
+    Matrix effect_transform,
     const ContentContext& renderer,
     const Entity& entity,
     RenderPass& pass) {
@@ -277,7 +278,8 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
     for (auto i = 0; i < vertex_count; i++) {
       auto sk_point = dl_vertices[i];
       auto texture_coord = dl_texture_coordinates[i];
-      auto uv = Point((texture_coord.x() - origin.x) / size.width,
+      auto uv = effect_transform *
+                Point((texture_coord.x() - origin.x) / size.width,
                       (texture_coord.y() - origin.y) / size.height);
       // From experimentation we need to clamp these values to < 1.0 or else
       // there can be flickering.

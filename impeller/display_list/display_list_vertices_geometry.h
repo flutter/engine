@@ -33,6 +33,7 @@ class DLVerticesGeometry : public VerticesGeometry {
 
   // |VerticesGeometry|
   GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
                                      const ContentContext& renderer,
                                      const Entity& entity,
                                      RenderPass& pass) override;

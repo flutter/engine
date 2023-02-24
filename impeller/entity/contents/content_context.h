@@ -54,7 +54,6 @@
 
 #include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
-#include "impeller/entity/position_uv.vert.h"
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
