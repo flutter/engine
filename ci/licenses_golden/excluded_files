@@ -445,6 +445,7 @@
 ../../../fuchsia/sdk/linux/docs
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.gesture/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.tts/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
@@ -568,7 +569,6 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/meta.json
-../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer.augment/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
