@@ -18,8 +18,7 @@
 /**
  * Allows the delegate to respond to an attempt to terminate the application.
  */
-- (void)tryToTerminateApplication:(FlutterApplication*)application
-                         exitType:(FlutterAppExitType)type;
+- (void)requestApplicationTermination:(NSApplication*)application exitType:(FlutterAppExitType)type;
 @end
 
 #endif  // FLUTTER_FLUTTERAPPDELEGATE_INTERNAL_H_

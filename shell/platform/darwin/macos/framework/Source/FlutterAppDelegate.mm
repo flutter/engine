@@ -3,10 +3,12 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
-#include <AppKit/AppKit.h>
-#import "flutter/fml/logging.h"
+
+#import <AppKit/AppKit.h>
+
+#include "flutter/fml/logging.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
-#import "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
 
@@ -60,12 +62,17 @@
   _terminationHandler = handler;
 }
 
-- (void)tryToTerminateApplication:(FlutterApplication*)application
-                         exitType:(FlutterAppExitType)type {
+- (void)requestApplicationTermination:(NSApplication*)application
+                             exitType:(FlutterAppExitType)type {
+  if (![application isKindOfClass:[FlutterApplication class]]) {
+    [application terminate:application];
+    return;
+  };
+  FlutterApplication* flutterApp = static_cast<FlutterApplication*>(application);
   if (_terminationHandler) {
-    [_terminationHandler tryToTerminateApplication:application exitType:type result:nil];
+    [_terminationHandler requestApplicationTermination:flutterApp exitType:type result:nil];
   } else {
-    [application terminateApplication:application];
+    [flutterApp terminateApplication:application];
   }
 }
 

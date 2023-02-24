@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <Foundation/Foundation.h>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <Cocoa/Cocoa.h>
@@ -68,7 +67,7 @@ NS_ASSUME_NONNULL_BEGIN
  * If the given view controller is already attached to an engine, this call
  * throws an assertion.
  */
-- (void)addViewController:(nonnull FlutterViewController*)viewController;
+- (void)addViewController:(FlutterViewController*)viewController;
 
 /**
  * Dissociate the given view controller from this engine.
@@ -79,17 +78,17 @@ NS_ASSUME_NONNULL_BEGIN
  * If the view controller is not associated with this engine, this call throws an
  * assertion.
  */
-- (void)removeViewController:(nonnull FlutterViewController*)viewController;
+- (void)removeViewController:(FlutterViewController*)viewController;
 
 /**
- * The |FlutterViewController associated with the given view ID, if any.
+ * The |FlutterViewController| associated with the given view ID, if any.
  */
 - (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
 /**
  * Informs the engine that the specified view controller's window metrics have changed.
  */
-- (void)updateWindowMetricsForViewController:(nonnull FlutterViewController*)viewController;
+- (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController;
 
 /**
  * Dispatches the given pointer event data to engine.
@@ -132,18 +131,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-#pragma mark -
-
-/**
- * An enum for defining the different responses the framework can give to an
- * application exit request from the engine.
- *
- * Must match the entries in the `AppExitResponse` enum in the Dart code.
- */
-typedef enum {
-  kFlutterAppExitResponseCancel = 0,
-  kFlutterAppExitResponseExit = 1,
-} FlutterAppExitResponse;
+#pragma mark - Enumerations
 
 /**
  * An enum for defining the different request types allowed when requesting an
@@ -151,10 +139,23 @@ typedef enum {
  *
  * Must match the entries in the `AppExitType` enum in the Dart code.
  */
-typedef enum {
+typedef NS_ENUM(NSInteger, FlutterAppExitType) {
   kFlutterAppExitTypeCancelable = 0,
   kFlutterAppExitTypeRequired = 1,
-} FlutterAppExitType;
+};
+
+/**
+ * An enum for defining the different responses the framework can give to an
+ * application exit request from the engine.
+ *
+ * Must match the entries in the `AppExitResponse` enum in the Dart code.
+ */
+typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
+  kFlutterAppExitResponseCancel = 0,
+  kFlutterAppExitResponseExit = 1,
+};
+
+#pragma mark - FlutterEngineTerminationHandler
 
 /**
  * A handler interface for handling application termination that the
@@ -164,9 +165,9 @@ typedef enum {
 @interface FlutterEngineTerminationHandler : NSObject
 - (instancetype)initWithEngine:(FlutterEngine*)engine;
 - (void)requestAppExit:(NSDictionary<NSString*, id>*)data result:(FlutterResult)result;
-- (void)tryToTerminateApplication:(FlutterApplication*)sender
-                         exitType:(FlutterAppExitType)type
-                           result:(nullable FlutterResult)result;
+- (void)requestApplicationTermination:(FlutterApplication*)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result;
 @end
 
 NS_ASSUME_NONNULL_END

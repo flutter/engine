@@ -9,8 +9,8 @@
 
 /**
  * A Flutter-specific subclass of NSApplication that overrides |terminate| and
- * provides an addition |terminateApplication| method so that Flutter can handle
- * requests for termination in an asynchronous fashion.
+ * provides an additional |terminateApplication| method so that Flutter can
+ * handle requests for termination in an asynchronous fashion.
  *
  * When a call to |terminate| comes in, either from the OS through a Quit menu
  * item, through the Quit item in the dock context menu, or from the application
@@ -36,6 +36,10 @@
  * If the |NSApp| global isn't of type |FlutterApplication|, a log message will
  * be printed once in debug mode when the application is first accessed through
  * the singleton's |sharedApplication|, describing how to fix this.
+ *
+ * Flutter applications are *not* required to inherit from this class.
+ * Developers of custom |NSApplication| subclasses should copy and paste code as
+ * necessary from FlutterApplication.mm.
  */
 @interface FlutterApplication : NSApplication
 

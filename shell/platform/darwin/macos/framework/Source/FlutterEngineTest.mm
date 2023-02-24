@@ -407,7 +407,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
   ASSERT_TRUE(latch_called);
 }
 
-TEST(FlutterEngine, Compositor) {
+TEST(FlutterEngineTest, Compositor) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -446,7 +446,7 @@ TEST(FlutterEngine, Compositor) {
   [engine shutDownEngine];
 }  // namespace flutter::testing
 
-TEST(FlutterEngine, DartEntrypointArguments) {
+TEST(FlutterEngineTest, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -541,7 +541,7 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   EXPECT_EQ(record, 21);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
+TEST(FlutterEngineTest, HasStringsWhenPasteboardEmpty) {
   id engineMock = CreateMockFlutterEngine(nil);
 
   // Call hasStrings and expect it to be false.
@@ -559,7 +559,7 @@ TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
   EXPECT_FALSE(valueAfterClear);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
+TEST(FlutterEngineTest, HasStringsWhenPasteboardFull) {
   id engineMock = CreateMockFlutterEngine(@"some string");
 
   // Call hasStrings and expect it to be true.
@@ -693,6 +693,19 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
   EXPECT_EQ(viewController1.id, 0ull);
+}
+
+TEST(FlutterEngineTerminationHandlerTest, HandlesTerminationRequest) {
+  id engineMock = CreateMockFlutterEngine(nil);
+
+  __block FlutterAppExitResponse calledAfterTerminate = kFlutterAppExitResponseCancel;
+  FlutterResult appExitResult = ^(id result) {
+    NSLog(@"Response: %@", result);
+  };
+  FlutterMethodCall* methodCallAfterClear =
+      [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication" arguments:nil];
+  [engineMock handleMethodCall:methodCallAfterClear result:appExitResult];
+  EXPECT_EQ(kFlutterAppExitResponseCancel, calledAfterTerminate);
 }
 
 }  // namespace flutter::testing

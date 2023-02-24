@@ -178,23 +178,19 @@ constexpr char kTextPlainFormat[] = "text/plain";
   // that bypasses all of the native applicationShouldExit shutdown events,
   // etc., which we don't want to skip.
 
-  FlutterAppExitType exitType;
-  if ([type isEqualTo:@"cancelable"]) {
-    exitType = kFlutterAppExitTypeCancelable;
-  } else {
-    exitType = kFlutterAppExitTypeRequired;
-  }
+  FlutterAppExitType exitType =
+      [type isEqualTo:@"cancelable"] ? kFlutterAppExitTypeCancelable : kFlutterAppExitTypeRequired;
 
-  [self tryToTerminateApplication:[FlutterApplication sharedApplication]
-                         exitType:exitType
-                           result:result];
+  [self requestApplicationTermination:[FlutterApplication sharedApplication]
+                             exitType:exitType
+                               result:result];
 }
 
 // This is called by the FlutterAppDelegate whenever any termination request is
 // received.
-- (void)tryToTerminateApplication:(id)sender
-                         exitType:(FlutterAppExitType)type
-                           result:(nullable FlutterResult)result {
+- (void)requestApplicationTermination:(id)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result {
   switch (type) {
     case kFlutterAppExitTypeCancelable: {
       [_engine
