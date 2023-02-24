@@ -68,6 +68,16 @@ void testMain() {
       expect(config.canvasKitVariant, CanvasKitVariant.auto);
     });
 
+    test('default canvasKitVariant when it is undefined', () {
+      final FlutterConfiguration config = FlutterConfiguration();
+      config.setUserConfiguration(
+        // With an empty map, the canvasKitVariant is undefined in JS.
+        js_util.jsify(<String, Object?>{}) as JsFlutterConfiguration,
+      );
+
+      expect(config.canvasKitVariant, CanvasKitVariant.auto);
+    });
+
     test('validates canvasKitVariant', () {
       final FlutterConfiguration config = FlutterConfiguration();
 

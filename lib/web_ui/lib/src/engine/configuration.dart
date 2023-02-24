@@ -198,10 +198,9 @@ class FlutterConfiguration {
   /// * `chromium` - the lite variant of CanvasKit that can be used in
   /// Chromium-based browsers.
   CanvasKitVariant get canvasKitVariant {
-    final String? variant = _configuration?.canvasKitVariant;
+    final String variant = _configuration?.canvasKitVariant ?? 'auto';
     switch (variant) {
       case 'auto':
-      case null:
         // This is the default value.
         return CanvasKitVariant.auto;
       case 'full':
@@ -279,14 +278,7 @@ class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
-  String? get canvasKitVariant {
-    // TODO(mdebbar): This workaround is necessary because `canvasKitVariant` is
-    // `undefined` when the value is not set.
-    if (js_util.hasProperty(this, 'canvasKitVariant')) {
-      return js_util.getProperty(this, 'canvasKitVariant');
-    }
-    return null;
-  }
+  external String? get canvasKitVariant;
   external bool? get canvasKitForceCpuOnly;
   external double? get canvasKitMaximumSurfaces;
   external bool? get debugShowSemanticsNodes;
