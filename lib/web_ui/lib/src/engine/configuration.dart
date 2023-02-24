@@ -45,7 +45,6 @@
 library configuration;
 
 import 'package:js/js.dart';
-import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
