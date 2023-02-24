@@ -45,6 +45,9 @@ enum CanvasKitVariant {
   full,
 
   /// The variant that is optimized for Chromium browsers.
+  ///
+  /// WARNING: In most cases, you should use [auto] instead of this variant. Using
+  /// this variant in a non-Chromium browser will result in a broken app.
   chromium,
 }
 

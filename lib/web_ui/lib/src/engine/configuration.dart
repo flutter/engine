@@ -45,6 +45,7 @@
 library configuration;
 
 import 'package:js/js.dart';
+import 'package:js/js_util.dart' as js_util;
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
@@ -278,7 +279,14 @@ class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
   external String? get canvasKitBaseUrl;
-  external String? get canvasKitVariant;
+  String? get canvasKitVariant {
+    // TODO(mdebbar): This workaround is necessary because `canvasKitVariant` is
+    // `undefined` when the value is not set.
+    if (js_util.hasProperty(this, 'canvasKitVariant')) {
+      return js_util.getProperty(this, 'canvasKitVariant');
+    }
+    return null;
+  }
   external bool? get canvasKitForceCpuOnly;
   external double? get canvasKitMaximumSurfaces;
   external bool? get debugShowSemanticsNodes;

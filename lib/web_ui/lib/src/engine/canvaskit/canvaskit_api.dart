@@ -2664,7 +2664,6 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
     js_util.callMethod(objectConstructor,
         'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
-  domDocument.head!.appendChild(canvasKitScript);
 }
 
 const String _kFullCanvasKitJsFileName = 'canvaskit.js';
@@ -2702,6 +2701,10 @@ Future<CanvasKit> downloadCanvasKit() async {
   ));
 }
 
+/// Finds the first URL in [urls] that can be downloaded successfully, and
+/// downloads it.
+///
+/// If none of the URLs can be downloaded, throws an [Exception].
 Future<void> _downloadOneOf(Iterable<String> urls) async {
   for (final String url in urls) {
     if (await _downloadCanvasKitJs(url)) {
@@ -2729,14 +2732,12 @@ Future<bool> _downloadCanvasKitJs(String url) {
   late final DomEventListener errorCallback;
 
   void loadEventHandler(DomEvent _) {
+    canvasKitScript.remove();
     canvasKitLoadCompleter.complete(true);
-    canvasKitScript.removeEventListener('load', loadCallback);
-    canvasKitScript.removeEventListener('error', errorCallback);
   }
   void errorEventHandler(DomEvent errorEvent) {
+    canvasKitScript.remove();
     canvasKitLoadCompleter.complete(false);
-    canvasKitScript.removeEventListener('load', loadCallback);
-    canvasKitScript.removeEventListener('error', errorCallback);
   }
 
   loadCallback = allowInterop(loadEventHandler);
@@ -2746,6 +2747,7 @@ Future<bool> _downloadCanvasKitJs(String url) {
   canvasKitScript.addEventListener('error', errorCallback);
 
   patchCanvasKitModule(canvasKitScript);
+  domDocument.head!.appendChild(canvasKitScript);
 
   return canvasKitLoadCompleter.future;
 }
