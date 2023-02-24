@@ -17,6 +17,13 @@ Geometry::Geometry() = default;
 
 Geometry::~Geometry() = default;
 
+GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
+                                             const ContentContext& renderer,
+                                             const Entity& entity,
+                                             RenderPass& pass) {
+  return {};
+}
+
 // static
 std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
   return std::make_unique<FillPathGeometry>(path);

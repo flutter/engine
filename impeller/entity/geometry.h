@@ -65,6 +65,11 @@ class Geometry {
                                            const Entity& entity,
                                            RenderPass& pass) = 0;
 
+  virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                             const ContentContext& renderer,
+                                             const Entity& entity,
+                                             RenderPass& pass);
+
   virtual GeometryVertexType GetVertexType() const = 0;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
@@ -76,11 +81,6 @@ class VerticesGeometry : public Geometry {
   virtual GeometryResult GetPositionColorBuffer(const ContentContext& renderer,
                                                 const Entity& entity,
                                                 RenderPass& pass) = 0;
-
-  virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
-                                             const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass) = 0;
 
   virtual bool HasVertexColors() const = 0;
 

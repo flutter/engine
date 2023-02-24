@@ -386,7 +386,12 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  if (!vertices->HasVertexColors() && !vertices->HasTextureCoordinates()) {
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates then only if the contents are an image.
+  if (!vertices->HasVertexColors() &&
+      (!vertices->HasTextureCoordinates() ||
+       (vertices->HasTextureCoordinates() &&
+        paint.color_source_type == Paint::ColorSourceType::kImage))) {
     auto contents = paint.CreateContentsForGeometry(vertices);
     entity.SetContents(paint.WithFilters(std::move(contents)));
     GetCurrentPass().AddEntity(entity);

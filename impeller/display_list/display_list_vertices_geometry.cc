@@ -279,8 +279,8 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
       auto texture_coord = dl_texture_coordinates[i];
       auto uv = Point((texture_coord.x() - origin.x) / size.width,
                       (texture_coord.y() - origin.y) / size.height);
-      // From experimentation we need to clamp these values to < 1.0 or else there
-      // can be flickering.
+      // From experimentation we need to clamp these values to < 1.0 or else
+      // there can be flickering.
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
           .texture_coords = Point(std::clamp(uv.x, 0.0f, 0.995f),
@@ -332,6 +332,11 @@ GeometryVertexType DLVerticesGeometry::GetVertexType() const {
   if (dl_colors != nullptr) {
     return GeometryVertexType::kColor;
   }
+  auto* dl_texture_coordinates = vertices_->texture_coordinates();
+  if (dl_texture_coordinates != nullptr) {
+    return GeometryVertexType::kUV;
+  }
+
   return GeometryVertexType::kPosition;
 }
 
