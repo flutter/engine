@@ -113,11 +113,13 @@ def main():
 
   # This warning gets printed when -frecord-sources=flat is used, and there does
   # not appear to be a way to silence it.
-  warning_to_ignore = "warning: '%s' architecture air64_v21 does not support a companion MetalLib; copying verbatim" % args.output
+  warning_to_ignore = "warning: '%s' architecture air64_v21 does not support a companion "
+      "MetalLib; copying verbatim" % args.output
   output = subprocess.check_output(command, text=True, stderr=subprocess.STDOUT)
   for line in output.split('\n'):
-    if line != warning_to_ignore and line != '':
+    if line not in (warning_to_ignore, ''):
       print(line)
+
 
 
 if __name__ == '__main__':
