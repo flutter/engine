@@ -13,7 +13,6 @@ typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction acti
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 // ignore: avoid_classes_with_only_static_members
@@ -110,9 +109,9 @@ abstract class PlatformDispatcher {
 
   double get textScaleFactor => configuration.textScaleFactor;
 
-  bool get nativeSpellCheckServiceDefined => configuration.nativeSpellCheckServiceDefined;
+  bool get nativeSpellCheckServiceDefined => false;
 
-  bool get brieflyShowPassword => configuration.brieflyShowPassword;
+  bool get brieflyShowPassword => true;
 
   VoidCallback? get onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback);
@@ -153,8 +152,6 @@ class PlatformConfiguration {
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
     this.textScaleFactor = 1.0,
-    this.nativeSpellCheckServiceDefined = false,
-    this.brieflyShowPassword = true,
     this.locales = const <Locale>[],
     this.defaultRouteName = '/',
     this.systemFontFamily,
@@ -166,8 +163,6 @@ class PlatformConfiguration {
     bool? semanticsEnabled,
     Brightness? platformBrightness,
     double? textScaleFactor,
-    bool? nativeSpellCheckServiceDefined,
-    bool? brieflyShowPassword,
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
@@ -178,8 +173,6 @@ class PlatformConfiguration {
       semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
       platformBrightness: platformBrightness ?? this.platformBrightness,
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
-      nativeSpellCheckServiceDefined: nativeSpellCheckServiceDefined ?? this.nativeSpellCheckServiceDefined,
-      brieflyShowPassword: brieflyShowPassword ?? this.brieflyShowPassword,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
@@ -191,8 +184,6 @@ class PlatformConfiguration {
   final bool semanticsEnabled;
   final Brightness platformBrightness;
   final double textScaleFactor;
-  final bool nativeSpellCheckServiceDefined;
-  final bool brieflyShowPassword;
   final List<Locale> locales;
   final String defaultRouteName;
   final String? systemFontFamily;

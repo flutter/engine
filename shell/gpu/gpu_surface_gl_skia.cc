@@ -228,7 +228,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
     framebuffer_info.supports_readback = true;
     return std::make_unique<SurfaceFrame>(
         nullptr, framebuffer_info,
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
         size);
@@ -247,7 +247,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
       root_surface_transformation);
   SurfaceFrame::SubmitCallback submit_callback =
       [weak = weak_factory_.GetWeakPtr(), view_id](
-          const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+          const SurfaceFrame& surface_frame, DlCanvas* canvas) {
         return weak ? weak->PresentSurface(view_id, surface_frame, canvas)
                     : false;
       };
@@ -263,7 +263,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
 
 bool GPUSurfaceGLSkia::PresentSurface(uint64_t view_id,
                                       const SurfaceFrame& frame,
-                                      SkCanvas* canvas) {
+                                      DlCanvas* canvas) {
   auto view_unit_iter = view_units_.find(view_id);
   if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr ||
       view_unit_iter == view_units_.end()) {

@@ -83,7 +83,7 @@ class GPUSurfaceGLSkia : public Surface {
 
   bool PresentSurface(uint64_t view_id,
                       const SurfaceFrame& frame,
-                      SkCanvas* canvas);
+                      DlCanvas* canvas);
 
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
