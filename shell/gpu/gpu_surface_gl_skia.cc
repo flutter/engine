@@ -99,8 +99,7 @@ GPUSurfaceGLSkia::~GPUSurfaceGLSkia() {
     return;
   }
 
-  onscreen_surface_ = nullptr;
-  fbo_id_ = 0;
+  view_units_.clear();
   if (context_owner_) {
     context_->releaseResourcesAndAbandonContext();
   }
@@ -157,10 +156,12 @@ static sk_sp<SkSurface> WrapOnscreenSurface(GrDirectContext* context,
   );
 }
 
-bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
-  if (onscreen_surface_ != nullptr &&
-      size == SkISize::Make(onscreen_surface_->width(),
-                            onscreen_surface_->height())) {
+bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(
+    std::unique_ptr<ViewUnit>& view_unit,
+    const SkISize& size) {
+  if (view_unit != nullptr &&
+      size == SkISize::Make(view_unit->onscreen_surface->width(),
+                            view_unit->onscreen_surface->height())) {
     // Surface size appears unchanged. So bail.
     return true;
   }
@@ -169,8 +170,7 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
   TRACE_EVENT0("flutter", "UpdateSurfacesSize");
 
   // Either way, we need to get rid of previous surface.
-  onscreen_surface_ = nullptr;
-  fbo_id_ = 0;
+  view_unit = nullptr;
 
   if (size.isEmpty()) {
     FML_LOG(ERROR) << "Cannot create surfaces of empty size.";
@@ -194,9 +194,8 @@ bool GPUSurfaceGLSkia::CreateOrUpdateSurfaces(const SkISize& size) {
     return false;
   }
 
-  onscreen_surface_ = std::move(onscreen_surface);
-  fbo_id_ = fbo_info.fbo_id;
-  existing_damage_ = fbo_info.existing_damage;
+  view_unit = std::make_unique<ViewUnit>(
+      std::move(onscreen_surface), fbo_info.fbo_id, fbo_info.existing_damage);
 
   return true;
 }
@@ -208,7 +207,9 @@ SkMatrix GPUSurfaceGLSkia::GetRootTransformation() const {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
+    // uint64_t view_id,
     const SkISize& size) {
+  uint64_t view_id = 0;
   if (delegate_ == nullptr) {
     return nullptr;
   }
@@ -235,44 +236,50 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceGLSkia::AcquireFrame(
 
   const auto root_surface_transformation = GetRootTransformation();
 
-  sk_sp<SkSurface> surface =
-      AcquireRenderSurface(size, root_surface_transformation);
+  ViewUnit* view_unit =
+      AcquireRenderSurface(view_id, size, root_surface_transformation);
 
-  if (surface == nullptr) {
+  if (view_unit == nullptr) {
     return nullptr;
   }
 
-  surface->getCanvas()->setMatrix(root_surface_transformation);
+  view_unit->onscreen_surface->getCanvas()->setMatrix(
+      root_surface_transformation);
   SurfaceFrame::SubmitCallback submit_callback =
-      [weak = weak_factory_.GetWeakPtr()](const SurfaceFrame& surface_frame,
-                                          SkCanvas* canvas) {
-        return weak ? weak->PresentSurface(surface_frame, canvas) : false;
+      [weak = weak_factory_.GetWeakPtr(), view_id](
+          const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        return weak ? weak->PresentSurface(view_id, surface_frame, canvas)
+                    : false;
       };
 
   framebuffer_info = delegate_->GLContextFramebufferInfo();
   if (!framebuffer_info.existing_damage.has_value()) {
-    framebuffer_info.existing_damage = existing_damage_;
+    framebuffer_info.existing_damage = view_unit->existing_damage;
   }
-  return std::make_unique<SurfaceFrame>(surface, framebuffer_info,
-                                        submit_callback, size,
+  return std::make_unique<SurfaceFrame>(view_unit->onscreen_surface,
+                                        framebuffer_info, submit_callback, size,
                                         std::move(context_switch));
 }
 
-bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
+bool GPUSurfaceGLSkia::PresentSurface(uint64_t view_id,
+                                      const SurfaceFrame& frame,
                                       SkCanvas* canvas) {
-  if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr) {
+  auto view_unit_iter = view_units_.find(view_id);
+  if (delegate_ == nullptr || canvas == nullptr || context_ == nullptr ||
+      view_unit_iter == view_units_.end()) {
     return false;
   }
+  std::unique_ptr<ViewUnit>& view_unit = view_unit_iter->second;
 
   delegate_->GLContextSetDamageRegion(frame.submit_info().buffer_damage);
 
   {
     TRACE_EVENT0("flutter", "SkCanvas::Flush");
-    onscreen_surface_->getCanvas()->flush();
+    view_unit->onscreen_surface->getCanvas()->flush();
   }
 
   GLPresentInfo present_info = {
-      .fbo_id = fbo_id_,
+      .fbo_id = view_unit->fbo_id,
       .frame_damage = frame.submit_info().frame_damage,
       .presentation_time = frame.submit_info().presentation_time,
       .buffer_damage = frame.submit_info().buffer_damage,
@@ -282,8 +289,8 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
   }
 
   if (delegate_->GLContextFBOResetAfterPresent()) {
-    auto current_size =
-        SkISize::Make(onscreen_surface_->width(), onscreen_surface_->height());
+    auto current_size = SkISize::Make(view_unit->onscreen_surface->width(),
+                                      view_unit->onscreen_surface->height());
 
     GLFrameInfo frame_info = {static_cast<uint32_t>(current_size.width()),
                               static_cast<uint32_t>(current_size.height())};
@@ -301,15 +308,16 @@ bool GPUSurfaceGLSkia::PresentSurface(const SurfaceFrame& frame,
       return false;
     }
 
-    onscreen_surface_ = std::move(new_onscreen_surface);
-    fbo_id_ = fbo_info.fbo_id;
-    existing_damage_ = fbo_info.existing_damage;
+    view_unit =
+        std::make_unique<ViewUnit>(std::move(new_onscreen_surface),
+                                   fbo_info.fbo_id, fbo_info.existing_damage);
   }
 
   return true;
 }
 
-sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
+GPUSurfaceGLSkia::ViewUnit* GPUSurfaceGLSkia::AcquireRenderSurface(
+    uint64_t view_id,
     const SkISize& untransformed_size,
     const SkMatrix& root_surface_transformation) {
   const auto transformed_rect = root_surface_transformation.mapRect(
@@ -318,11 +326,14 @@ sk_sp<SkSurface> GPUSurfaceGLSkia::AcquireRenderSurface(
   const auto transformed_size =
       SkISize::Make(transformed_rect.width(), transformed_rect.height());
 
-  if (!CreateOrUpdateSurfaces(transformed_size)) {
+  // Fetch the existing unit or create a null unit.
+  std::unique_ptr<ViewUnit>& view_unit = view_units_[view_id];
+  if (!CreateOrUpdateSurfaces(view_unit, transformed_size)) {
+    view_units_.erase(view_id);
     return nullptr;
   }
 
-  return onscreen_surface_;
+  return view_unit.get();
 }
 
 // |Surface|

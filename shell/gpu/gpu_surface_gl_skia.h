@@ -38,7 +38,8 @@ class GPUSurfaceGLSkia : public Surface {
   bool IsValid() override;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(
+      /*uint64_t view_id, */ const SkISize& size) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;
@@ -56,23 +57,37 @@ class GPUSurfaceGLSkia : public Surface {
   bool AllowsDrawingWhenGpuDisabled() const override;
 
  private:
-  bool CreateOrUpdateSurfaces(const SkISize& size);
+  struct ViewUnit {
+    ViewUnit(sk_sp<SkSurface> onscreen_surface,
+             uint32_t fbo_id,
+             std::optional<SkIRect> existing_damage)
+        : onscreen_surface(std::move(onscreen_surface)),
+          fbo_id(fbo_id),
+          existing_damage(existing_damage) {}
 
-  sk_sp<SkSurface> AcquireRenderSurface(
-      const SkISize& untransformed_size,
-      const SkMatrix& root_surface_transformation);
+    sk_sp<SkSurface> onscreen_surface;
+    /// FBO backing the current `onscreen_surface`.
+    uint32_t fbo_id = 0;
+    // The FBO's existing damage, as tracked by the GPU surface, delegates still
+    // have an option of overriding this damage with their own in
+    // `GLContextFrameBufferInfo`.
+    std::optional<SkIRect> existing_damage = std::nullopt;
+  };
 
-  bool PresentSurface(const SurfaceFrame& frame, SkCanvas* canvas);
+  bool CreateOrUpdateSurfaces(std::unique_ptr<ViewUnit>& view_unit,
+                              const SkISize& size);
+
+  ViewUnit* AcquireRenderSurface(uint64_t view_id,
+                                 const SkISize& untransformed_size,
+                                 const SkMatrix& root_surface_transformation);
+
+  bool PresentSurface(uint64_t view_id,
+                      const SurfaceFrame& frame,
+                      SkCanvas* canvas);
 
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
-  sk_sp<SkSurface> onscreen_surface_;
-  /// FBO backing the current `onscreen_surface_`.
-  uint32_t fbo_id_ = 0;
-  // The current FBO's existing damage, as tracked by the GPU surface, delegates
-  // still have an option of overriding this damage with their own in
-  // `GLContextFrameBufferInfo`.
-  std::optional<SkIRect> existing_damage_ = std::nullopt;
+  std::map<uint64_t, std::unique_ptr<ViewUnit>> view_units_;
   bool context_owner_ = false;
   // TODO(38466): Refactor GPU surface APIs take into account the fact that an
   // external view embedder may want to render to the root surface. This is a
