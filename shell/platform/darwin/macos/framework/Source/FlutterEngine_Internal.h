@@ -2,16 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include <Foundation/Foundation.h>
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 
 #import <Cocoa/Cocoa.h>
 
 #include <memory>
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+
+NS_ASSUME_NONNULL_BEGIN
 
 @interface FlutterEngine ()
 
@@ -78,7 +82,7 @@
 - (void)removeViewController:(nonnull FlutterViewController*)viewController;
 
 /**
- * The `FlutterViewController` associated with the given view ID, if any.
+ * The |FlutterViewController associated with the given view ID, if any.
  */
 - (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
 
@@ -127,3 +131,42 @@
                        withData:(fml::MallocMapping)data;
 
 @end
+
+#pragma mark -
+
+/**
+ * An enum for defining the different responses the framework can give to an
+ * application exit request from the engine.
+ *
+ * Must match the entries in the `AppExitResponse` enum in the Dart code.
+ */
+typedef enum {
+  kFlutterAppExitResponseCancel = 0,
+  kFlutterAppExitResponseExit = 1,
+} FlutterAppExitResponse;
+
+/**
+ * An enum for defining the different request types allowed when requesting an
+ * application exit.
+ *
+ * Must match the entries in the `AppExitType` enum in the Dart code.
+ */
+typedef enum {
+  kFlutterAppExitTypeCancelable = 0,
+  kFlutterAppExitTypeRequired = 1,
+} FlutterAppExitType;
+
+/**
+ * A handler interface for handling application termination that the
+ * FlutterAppDelegate can use to coordinate an application exit by sending
+ * messages through the platform channel managed by the engine.
+ */
+@interface FlutterEngineTerminationHandler : NSObject
+- (instancetype)initWithEngine:(FlutterEngine*)engine;
+- (void)requestAppExit:(NSDictionary<NSString*, id>*)data result:(FlutterResult)result;
+- (void)tryToTerminateApplication:(FlutterApplication*)sender
+                         exitType:(FlutterAppExitType)type
+                           result:(nullable FlutterResult)result;
+@end
+
+NS_ASSUME_NONNULL_END

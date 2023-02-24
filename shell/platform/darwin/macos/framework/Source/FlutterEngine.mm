@@ -10,6 +10,11 @@
 #include <vector>
 
 #include "flutter/shell/platform/common/engine_switches.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
@@ -18,9 +23,10 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
-#include "flutter/shell/platform/embedder/embedder.h"
 
 const uint64_t kFlutterDefaultViewId = 0;
+
+NSString* const kFlutterPlatformChannel = @"flutter/platform";
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -152,6 +158,73 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 #pragma mark -
 
+@implementation FlutterEngineTerminationHandler {
+  FlutterEngine* _engine;
+}
+
+- (instancetype)initWithEngine:(FlutterEngine*)engine {
+  self = [super init];
+  _engine = engine;
+  return self;
+}
+
+// This is called by the method call handler in the engine when the application
+// requests termination itself.
+- (void)requestAppExit:(NSDictionary<NSString*, id>*)arguments result:(FlutterResult)result {
+  NSString* type = arguments[@"type"];
+
+  // Ignore the "exitCode" value in the arguments because AppKit doesn't have
+  // any good way to set the process exit code other than calling exit(), and
+  // that bypasses all of the native applicationShouldExit shutdown events,
+  // etc., which we don't want to skip.
+
+  FlutterAppExitType exitType;
+  if ([type isEqualTo:@"cancelable"]) {
+    exitType = kFlutterAppExitTypeCancelable;
+  } else {
+    exitType = kFlutterAppExitTypeRequired;
+  }
+
+  [self tryToTerminateApplication:[FlutterApplication sharedApplication]
+                         exitType:exitType
+                           result:result];
+}
+
+// This is called by the FlutterAppDelegate whenever any termination request is
+// received.
+- (void)tryToTerminateApplication:(id)sender
+                         exitType:(FlutterAppExitType)type
+                           result:(nullable FlutterResult)result {
+  switch (type) {
+    case kFlutterAppExitTypeCancelable: {
+      [_engine
+          sendOnChannel:kFlutterPlatformChannel
+                message:[[FlutterJSONMethodCodec sharedInstance]
+                            encodeMethodCall:[FlutterMethodCall
+                                                 methodCallWithMethodName:@"System.requestAppExit"
+                                                                arguments:@{}]]
+            binaryReply:^(NSData* _Nullable reply) {
+              NSDictionary* replyArgs =
+                  [[FlutterJSONMethodCodec sharedInstance] decodeEnvelope:reply];
+              if ([replyArgs[@"response"] isEqual:@"exit"]) {
+                [[FlutterApplication sharedApplication] terminateApplication:sender];
+              }
+              if (result != nil) {
+                result(replyArgs);
+              }
+            }];
+      break;
+    }
+    case kFlutterAppExitTypeRequired:
+      [[FlutterApplication sharedApplication] terminateApplication:sender];
+      break;
+  }
+}
+
+@end
+
+#pragma mark -
+
 /**
  * `FlutterPluginRegistrar` implementation handling a single plugin.
  */
@@ -270,6 +343,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
+  // A delegate used to receive application termination events.
+  FlutterEngineTerminationHandler* _terminateHelper;
+
   int _nextViewId;
 }
 
@@ -290,6 +366,10 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _semanticsEnabled = NO;
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
+  _terminateHelper = [[FlutterEngineTerminationHandler alloc] initWithEngine:self];
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
+  [appDelegate setTerminationRequestHandler:_terminateHelper];
   // kFlutterDefaultViewId is reserved for the default view.
   // All IDs above it are for regular views.
   _nextViewId = kFlutterDefaultViewId + 1;
@@ -881,6 +961,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
+  } else if ([call.method isEqualToString:@"System.exitApplication"]) {
+    [_terminateHelper requestAppExit:call.arguments result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }

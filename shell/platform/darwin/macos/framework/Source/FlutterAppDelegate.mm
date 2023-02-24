@@ -3,6 +3,10 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#include <AppKit/AppKit.h>
+#import "flutter/fml/logging.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
+#import "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
 
@@ -13,10 +17,16 @@
 
 @end
 
-@implementation FlutterAppDelegate
+@implementation FlutterAppDelegate {
+  FlutterEngineTerminationHandler* _terminationHandler;
+}
 
-// TODO(stuartmorgan): Implement application lifecycle forwarding to plugins here, as is done
-// on iOS. Currently macOS plugins don't have access to lifecycle messages.
+- (instancetype)init {
+  if (self = [super init]) {
+    _terminationHandler = nil;
+  }
+  return self;
+}
 
 - (void)applicationWillFinishLaunching:(NSNotification*)notification {
   // Update UI elements to match the application name.
@@ -28,6 +38,13 @@
   }
 }
 
+// This always returns NSTerminateNow, since by the time we get here, the
+// application has already been asked if it should terminate or not, and if not,
+// then termination never gets this far.
+- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication*)sender {
+  return NSTerminateNow;
+}
+
 #pragma mark Private Methods
 
 - (NSString*)applicationName {
@@ -37,6 +54,19 @@
     applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
   }
   return applicationName;
+}
+
+- (void)setTerminationRequestHandler:(FlutterEngineTerminationHandler*)handler {
+  _terminationHandler = handler;
+}
+
+- (void)tryToTerminateApplication:(FlutterApplication*)application
+                         exitType:(FlutterAppExitType)type {
+  if (_terminationHandler) {
+    [_terminationHandler tryToTerminateApplication:application exitType:type result:nil];
+  } else {
+    [application terminateApplication:application];
+  }
 }
 
 @end
