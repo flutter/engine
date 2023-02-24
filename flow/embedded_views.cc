@@ -30,10 +30,6 @@ void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {
   canvas->DrawDisplayList(display_list_);
 }
 
-void DisplayListEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
-  builder->drawDisplayList(display_list_);
-}
-
 void ExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
                                        std::unique_ptr<SurfaceFrame> frame) {
   frame->Submit();

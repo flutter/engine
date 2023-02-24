@@ -338,7 +338,6 @@ class EmbedderViewSlice {
   virtual std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const = 0;
   virtual void render_into(DlCanvas* canvas) = 0;
-  virtual void render_into(DisplayListBuilder* builder) = 0;
 };
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
@@ -351,7 +350,6 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const override;
   void render_into(DlCanvas* canvas) override;
-  void render_into(DisplayListBuilder* builder) override;
 
  private:
   std::unique_ptr<DisplayListBuilder> builder_;

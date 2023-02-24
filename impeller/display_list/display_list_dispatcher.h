@@ -239,6 +239,7 @@ class DisplayListDispatcher final : public flutter::Dispatcher {
  private:
   Paint paint_;
   Canvas canvas_;
+  Matrix initial_matrix_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(DisplayListDispatcher);
 };

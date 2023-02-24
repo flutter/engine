@@ -117,7 +117,7 @@ void DisplayListCanvasDispatcher::transformFullPerspective(
 }
 // clang-format on
 void DisplayListCanvasDispatcher::transformReset() {
-  canvas_->resetMatrix();
+  canvas_->setMatrix(original_transform_);
 }
 
 void DisplayListCanvasDispatcher::clipRect(const SkRect& rect,

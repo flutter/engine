@@ -74,7 +74,6 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 
   std::unordered_map<int64_t, SkRect> overlay_layers;
   DlCanvas* background_canvas = frame->Canvas();
-  DisplayListBuilder* background_builder = frame->GetDisplayListBuilder().get();
   auto current_frame_view_count = composition_order_.size();
 
   // Restore the clip context after exiting this method since it's changed
@@ -134,11 +133,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
       background_canvas->ClipRect(full_joined_rect,
                                   DlCanvas::ClipOp::kDifference);
     }
-    if (background_builder) {
-      slice->render_into(background_builder);
-    } else {
-      slice->render_into(background_canvas);
-    }
+    slice->render_into(background_canvas);
   }
 
   // Manually trigger the DlAutoCanvasRestore before we submit the frame
@@ -210,11 +205,7 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
   // Offset the picture since its absolute position on the scene is determined
   // by the position of the overlay view.
   overlay_canvas->Translate(-rect.x(), -rect.y());
-  if (frame->GetDisplayListBuilder()) {
-    slice->render_into(frame->GetDisplayListBuilder().get());
-  } else {
-    slice->render_into(overlay_canvas);
-  }
+  slice->render_into(overlay_canvas);
   return frame;
 }
 

@@ -874,6 +874,7 @@ void DisplayListDispatcher::transformFullPerspective(SkScalar mxx,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::transformReset() {
   canvas_.ResetTransform();
+  canvas_.Transform(initial_matrix_);
 }
 
 static Rect ToRect(const SkRect& rect) {
@@ -1233,9 +1234,12 @@ void DisplayListDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list) {
   int saveCount = canvas_.GetSaveCount();
   Paint savePaint = paint_;
+  Matrix saveMatrix = initial_matrix_;
   paint_ = Paint();
+  initial_matrix_ = canvas_.GetCurrentTransformation();
   display_list->Dispatch(*this);
   paint_ = savePaint;
+  initial_matrix_ = saveMatrix;
   canvas_.RestoreToCount(saveCount);
 }
 
