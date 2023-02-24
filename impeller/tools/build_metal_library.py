@@ -7,6 +7,7 @@ import sys
 import argparse
 import errno
 import os
+import re
 import subprocess
 
 
@@ -93,7 +94,7 @@ def main():
   # The Metal standard must match the specification in impellerc.
   if args.platform == 'mac':
     command += [
-        '--std=macos-metal1.2',
+        '--std=macos-metal2.1',
         '-mmacos-version-min=10.14',
     ]
   elif args.platform == 'ios':
@@ -111,7 +112,13 @@ def main():
 
   command += args.source
 
-  subprocess.check_call(command)
+  # This warning gets printed when -frecord-sources=flat is used, and there does
+  # not appear to be a way to silence it.
+  warning_to_ignore = "warning: '%s' architecture air64_v21 does not support a companion MetalLib; copying verbatim" % args.output
+  output = subprocess.check_output(command, text=True, stderr=subprocess.STDOUT)
+  for line in output.split('\n'):
+    if line != warning_to_ignore and line != '':
+      print(line)
 
 
 if __name__ == '__main__':
