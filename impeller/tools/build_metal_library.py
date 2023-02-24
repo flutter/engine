@@ -7,7 +7,6 @@ import sys
 import argparse
 import errno
 import os
-import re
 import subprocess
 
 
