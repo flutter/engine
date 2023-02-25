@@ -154,8 +154,8 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
   auto geometry_result = GetGeometry()->GetPositionUVBuffer(
       Rect::MakeSize(texture_size), GetInverseMatrix(), renderer, entity, pass);
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = geometry_result.transform;
+  VS::FrameInfo frame_info;
+  frame_info.mvp = geometry_result.transform;
 
   FS::FragInfo frag_info;
   frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
@@ -176,7 +176,7 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
   cmd.pipeline = renderer.GetPositionUVPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   if (color_filter_.has_value()) {
     auto filtered_texture = CreateFilterTexture(renderer);
