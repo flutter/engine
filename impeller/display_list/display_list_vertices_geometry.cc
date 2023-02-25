@@ -285,8 +285,9 @@ GeometryResult DLVerticesGeometry::GetPositionUVBuffer(
       // there can be flickering.
       vertex_data[i] = {
           .position = Point(sk_point.x(), sk_point.y()),
-          .texture_coords = Point(std::clamp(uv.x, 0.0f, 0.995f),
-                                  std::clamp(uv.y, 0.0f, 0.995f)),
+          .texture_coords =
+              Point(std::clamp(uv.x, 0.0f, 1.0f - kEhCloseEnough),
+                    std::clamp(uv.y, 0.0f, 1.0f - kEhCloseEnough)),
       };
     }
   }
