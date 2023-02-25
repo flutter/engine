@@ -21,6 +21,21 @@
 
 namespace impeller {
 
+static bool UseColorSourceContents(
+    const std::shared_ptr<VerticesGeometry>& vertices,
+    const Paint::ColorSourceType& type) {
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates then only if the contents are an image.
+  if (vertices->HasVertexColors()) {
+    return false;
+  }
+  if (vertices->HasTextureCoordinates() &&
+      type == Paint::ColorSourceType::kImage) {
+    return true;
+  }
+  return !vertices->HasTextureCoordinates();
+}
+
 Canvas::Canvas() {
   Initialize();
 }
@@ -388,10 +403,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
 
   // If there are no vertex color or texture coordinates. Or if there
   // are vertex coordinates then only if the contents are an image.
-  if (!vertices->HasVertexColors() &&
-      (!vertices->HasTextureCoordinates() ||
-       (vertices->HasTextureCoordinates() &&
-        paint.color_source_type == Paint::ColorSourceType::kImage))) {
+  if (UseColorSourceContents(vertices, paint.color_source_type)) {
     auto contents = paint.CreateContentsForGeometry(vertices);
     entity.SetContents(paint.WithFilters(std::move(contents)));
     GetCurrentPass().AddEntity(entity);
