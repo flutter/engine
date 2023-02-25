@@ -715,8 +715,6 @@ ORIGIN: ../../../flutter/display_list/display_list_builder.h + ../../../flutter/
 ORIGIN: ../../../flutter/display_list/display_list_builder_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_canvas_dispatcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_canvas_dispatcher.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_canvas_recorder.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_canvas_recorder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color_filter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color_filter.h + ../../../flutter/LICENSE
@@ -1844,6 +1842,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.d
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart + ../../../flutter/LICENSE
@@ -3215,8 +3214,6 @@ FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/display_list_builder_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.h
-FILE: ../../../flutter/display_list/display_list_canvas_recorder.cc
-FILE: ../../../flutter/display_list/display_list_canvas_recorder.h
 FILE: ../../../flutter/display_list/display_list_color.h
 FILE: ../../../flutter/display_list/display_list_color_filter.cc
 FILE: ../../../flutter/display_list/display_list_color_filter.h
@@ -4346,6 +4343,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart

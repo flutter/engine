@@ -11,7 +11,6 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_canvas_recorder.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_utils.h"
@@ -21,6 +20,7 @@
 #include "flutter/testing/display_list_testing.h"
 #include "flutter/testing/testing.h"
 
+#include "third_party/skia/include/core/SkPictureRecorder.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -32,31 +32,13 @@ static std::vector<testing::DisplayListInvocationGroup> allGroups =
 using ClipOp = DlCanvas::ClipOp;
 using PointMode = DlCanvas::PointMode;
 
-#ifndef NDEBUG
-TEST(DisplayList, CallMethodAfterBuild) {
-  DisplayListCanvasRecorder recorder(kTestBounds);
-  recorder.drawRect(kTestBounds, SkPaint());
-  recorder.Build();
-  EXPECT_DEATH_IF_SUPPORTED(
-      recorder.drawRect(kTestBounds, SkPaint()),
-      "Calling method on DisplayListCanvasRecorder after Build\\(\\)");
-}
-#endif  // NDEBUG
-
-TEST(DisplayList, RecorderInitialClipBounds) {
-  SkRect cull_rect = SkRect::MakeWH(100, 100);
-  SkIRect clip_bounds = SkIRect::MakeWH(100, 100);
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
-}
-
-TEST(DisplayList, RecorderInitialClipBoundsNaN) {
-  SkRect cull_rect = SkRect::MakeWH(SK_ScalarNaN, SK_ScalarNaN);
-  SkIRect clip_bounds = SkIRect::MakeEmpty();
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
+TEST(DisplayList, BuilderCanBeReused) {
+  DisplayListBuilder builder(kTestBounds);
+  builder.DrawRect(kTestBounds, DlPaint());
+  auto dl = builder.Build();
+  builder.DrawRect(kTestBounds, DlPaint());
+  auto dl2 = builder.Build();
+  ASSERT_TRUE(dl->Equals(dl2));
 }
 
 TEST(DisplayList, BuilderBoundsTransformComparedToSkia) {
@@ -69,45 +51,6 @@ TEST(DisplayList, BuilderBoundsTransformComparedToSkia) {
   ASSERT_EQ(builder.GetLocalClipBounds().makeOutset(1, 1),
             canvas->getLocalClipBounds());
   ASSERT_EQ(builder.GetTransform(), canvas->getTotalMatrix());
-}
-
-TEST(DisplayList, RecorderClipBoundsAfterClipRect) {
-  SkRect cull_rect = SkRect::MakeWH(100, 100);
-  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
-  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  canvas->clipRect(clip_rect);
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
-}
-
-TEST(DisplayList, RecorderClipBoundsAfterClipRRect) {
-  SkRect cull_rect = SkRect::MakeWH(100, 100);
-  SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
-  SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2, 2);
-  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  canvas->clipRRect(clip_rrect);
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
-}
-
-TEST(DisplayList, RecorderClipBoundsAfterClipPath) {
-  SkRect cull_rect = SkRect::MakeWH(100, 100);
-  SkPath clip_path = SkPath().addRect(10, 10, 15, 15).addRect(15, 15, 20, 20);
-  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 20, 20);
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  canvas->clipPath(clip_path);
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
-}
-
-TEST(DisplayList, RecorderInitialClipBoundsNonZero) {
-  SkRect cull_rect = SkRect::MakeLTRB(10, 10, 100, 100);
-  SkIRect clip_bounds = SkIRect::MakeLTRB(10, 10, 100, 100);
-  DisplayListCanvasRecorder recorder(cull_rect);
-  SkCanvas* canvas = &recorder;
-  ASSERT_EQ(canvas->getDeviceClipBounds(), clip_bounds);
 }
 
 TEST(DisplayList, BuilderInitialClipBounds) {
@@ -147,7 +90,6 @@ TEST(DisplayList, BuilderClipBoundsAfterClipPath) {
   SkRect cull_rect = SkRect::MakeWH(100, 100);
   SkPath clip_path = SkPath().addRect(10, 10, 15, 15).addRect(15, 15, 20, 20);
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
-  DisplayListCanvasRecorder recorder(cull_rect);
   DisplayListBuilder builder(cull_rect);
   builder.clipPath(clip_path, ClipOp::kIntersect, false);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
@@ -156,7 +98,6 @@ TEST(DisplayList, BuilderClipBoundsAfterClipPath) {
 TEST(DisplayList, BuilderInitialClipBoundsNonZero) {
   SkRect cull_rect = SkRect::MakeLTRB(10, 10, 100, 100);
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 100, 100);
-  DisplayListCanvasRecorder recorder(cull_rect);
   DisplayListBuilder builder(cull_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
@@ -209,44 +150,6 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
       ASSERT_EQ(copy->bounds(), dl->bounds()) << desc;
       ASSERT_TRUE(copy->Equals(*dl)) << desc;
       ASSERT_TRUE(dl->Equals(*copy)) << desc;
-    }
-  }
-}
-
-TEST(DisplayList, SingleOpDisplayListsRecapturedViaSkCanvasAreEqual) {
-  for (auto& group : allGroups) {
-    for (size_t i = 0; i < group.variants.size(); i++) {
-      if (group.variants[i].sk_testing_invalid()) {
-        continue;
-      }
-      // Verify a DisplayList (re)built by "rendering" it to an
-      // [SkCanvas->DisplayList] recorder recaptures an equivalent
-      // sequence.
-      // Note that sometimes the rendering ops can be optimized out by
-      // SkCanvas so the transfer is not always 1:1. We control for
-      // this by having separate op counts and sizes for the sk results
-      // and changing our expectation of Equals() results accordingly.
-      sk_sp<DisplayList> dl = group.variants[i].Build();
-
-      DisplayListCanvasRecorder recorder(dl->bounds());
-      dl->RenderTo(&recorder);
-      sk_sp<DisplayList> sk_copy = recorder.Build();
-      auto desc = group.op_name + "[variant " + std::to_string(i + 1) + "]";
-      EXPECT_EQ(static_cast<int>(sk_copy->op_count(false)),
-                group.variants[i].sk_op_count())
-          << desc;
-      EXPECT_EQ(sk_copy->bytes(false), group.variants[i].sk_byte_count())
-          << desc;
-      if (group.variants[i].sk_version_matches()) {
-        EXPECT_EQ(sk_copy->bounds(), dl->bounds()) << desc;
-        EXPECT_TRUE(dl->Equals(*sk_copy)) << desc << " == sk_copy";
-        EXPECT_TRUE(sk_copy->Equals(*dl)) << "sk_copy == " << desc;
-      } else {
-        // No assertion on bounds
-        // they could be equal, hard to tell
-        EXPECT_FALSE(dl->Equals(*sk_copy)) << desc << " != sk_copy";
-        EXPECT_FALSE(sk_copy->Equals(*dl)) << "sk_copy != " << desc;
-      }
     }
   }
 }
@@ -328,7 +231,6 @@ TEST(DisplayList, FullRotationsAreNop) {
 TEST(DisplayList, AllBlendModeNops) {
   DisplayListBuilder builder;
   builder.setBlendMode(DlBlendMode::kSrcOver);
-  builder.setBlender(nullptr);
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
   ASSERT_EQ(dl->bytes(true), sizeof(DisplayList));
@@ -595,86 +497,6 @@ TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
             static_cast<int>(display_list->op_count()));
   ASSERT_EQ(picture->approximateOpCount(true),
             static_cast<int>(display_list->op_count(true)));
-
-  DisplayListCanvasRecorder dl_recorder(SkRect::MakeWH(150, 100));
-  picture->playback(&dl_recorder);
-
-  auto sk_display_list = dl_recorder.Build();
-  ASSERT_EQ(display_list->op_count(), 1u);
-  ASSERT_EQ(display_list->op_count(true), 36u);
-}
-
-class AttributeRefTester {
- public:
-  virtual void setRefToPaint(SkPaint& paint) const = 0;
-  virtual void setRefToDisplayList(DisplayListBuilder& builder) const = 0;
-  virtual bool ref_is_unique() const = 0;
-
-  void testDisplayList() {
-    {
-      DisplayListBuilder builder;
-      setRefToDisplayList(builder);
-      builder.drawRect(SkRect::MakeLTRB(50, 50, 100, 100));
-      ASSERT_FALSE(ref_is_unique());
-    }
-    ASSERT_TRUE(ref_is_unique());
-  }
-  void testPaint() {
-    {
-      SkPaint paint;
-      setRefToPaint(paint);
-      ASSERT_FALSE(ref_is_unique());
-    }
-    ASSERT_TRUE(ref_is_unique());
-  }
-  void testCanvasRecorder() {
-    {
-      sk_sp<DisplayList> display_list;
-      {
-        DisplayListCanvasRecorder recorder(SkRect::MakeLTRB(0, 0, 200, 200));
-        {
-          {
-            SkPaint paint;
-            setRefToPaint(paint);
-            recorder.drawRect(SkRect::MakeLTRB(50, 50, 100, 100), paint);
-            ASSERT_FALSE(ref_is_unique());
-          }
-          ASSERT_FALSE(ref_is_unique());
-        }
-        display_list = recorder.Build();
-        ASSERT_FALSE(ref_is_unique());
-      }
-      ASSERT_FALSE(ref_is_unique());
-    }
-    ASSERT_TRUE(ref_is_unique());
-  }
-
-  void test() {
-    testDisplayList();
-    testPaint();
-    testCanvasRecorder();
-  }
-};
-
-TEST(DisplayList, DisplayListBlenderRefHandling) {
-  class BlenderRefTester : public virtual AttributeRefTester {
-   public:
-    void setRefToPaint(SkPaint& paint) const override {
-      paint.setBlender(blender_);
-    }
-    void setRefToDisplayList(DisplayListBuilder& builder) const override {
-      builder.setBlender(blender_);
-    }
-    bool ref_is_unique() const override { return blender_->unique(); }
-
-   private:
-    sk_sp<SkBlender> blender_ =
-        SkBlenders::Arithmetic(0.25, 0.25, 0.25, 0.25, true);
-  };
-
-  BlenderRefTester tester;
-  tester.test();
-  ASSERT_TRUE(tester.ref_is_unique());
 }
 
 TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
@@ -804,15 +626,6 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
   RUN_TESTS2(builder.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
                                    DlFilterMode::kLinear, false);
              , true);
-  RUN_TESTS(builder.drawImageLattice(
-      TestImage1,
-      {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, DlFilterMode::kNearest, true););
-  RUN_TESTS2(builder.drawImageLattice(
-      TestImage1,
-      {kTestDivs1, kTestDivs1, nullptr, 3, 3, &kTestLatticeSrcRect, nullptr},
-      {10, 10, 40, 40}, DlFilterMode::kNearest, false);
-             , true);
   static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
   static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
   RUN_TESTS2(
@@ -823,8 +636,6 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
       builder.drawAtlas(TestImage1, xforms, texs, nullptr, 2,
                         DlBlendMode::kSrcIn, kNearestSampling, nullptr, false);
       , false);
-  RUN_TESTS(builder.drawPicture(TestPicture1, nullptr, true););
-  RUN_TESTS2(builder.drawPicture(TestPicture1, nullptr, false);, true);
   EXPECT_TRUE(TestDisplayList1->can_apply_group_opacity());
   RUN_TESTS2(builder.drawDisplayList(TestDisplayList1);, true);
   {
@@ -2528,11 +2339,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
   {  // Rect 1
@@ -2546,11 +2352,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
   {  // Rect 2
@@ -2564,11 +2365,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
   {  // Rect 3
@@ -2582,11 +2378,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
   {  // Rect 4
@@ -2600,11 +2391,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), expected));
   }
 
   {  // All 4 rects
@@ -2614,11 +2400,6 @@ TEST(DisplayList, RTreeRenderCulling) {
     main->RenderTo(&culling_builder);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
-
-    DisplayListCanvasRecorder culling_recorder(cull_rect);
-    main->RenderTo(&culling_recorder);
-
-    EXPECT_TRUE(DisplayListsEQ_Verbose(culling_recorder.Build(), main));
   }
 }
 
