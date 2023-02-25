@@ -25,12 +25,14 @@ static bool UseColorSourceContents(
     const std::shared_ptr<VerticesGeometry>& vertices,
     const Paint::ColorSourceType& type) {
   // If there are no vertex color or texture coordinates. Or if there
-  // are vertex coordinates then only if the contents are an image.
+  // are vertex coordinates then only if the contents are an image or
+  // a solid color.
   if (vertices->HasVertexColors()) {
     return false;
   }
   if (vertices->HasTextureCoordinates() &&
-      type == Paint::ColorSourceType::kImage) {
+      (type == Paint::ColorSourceType::kImage ||
+       type == Paint::ColorSourceType::kColor)) {
     return true;
   }
   return !vertices->HasTextureCoordinates();
