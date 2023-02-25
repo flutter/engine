@@ -199,9 +199,9 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
   VS::VertInfo vert_info;
   vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                   entity.GetTransformation();
+  vert_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frag_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
