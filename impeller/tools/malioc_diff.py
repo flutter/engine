@@ -268,7 +268,7 @@ def main(argv):
   if args.update:
     # Write the new results to the file given by --before, then exit.
     with open(args.before, 'w') as file:
-      json.dump(after_json, file, sort_keys=True)
+      json.dump(after_json, file, sort_keys=True, indent=2)
     return 0
 
   with open(args.before, 'r') as file:
