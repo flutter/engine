@@ -100,10 +100,6 @@ class WebOnlyMockAssetManager implements AssetManager {
       "fonts":[{"asset":"$robotoTestFontUrl"}]
    },
    {
-      "family":"$flutterTestFontFamily",
-      "fonts":[{"asset":"$flutterTestFontUrl"}]
-   },
-   {
       "family":"$ahemFontFamily",
       "fonts":[{"asset":"$ahemFontUrl"}]
    }

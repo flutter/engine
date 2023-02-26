@@ -467,8 +467,8 @@ class EngineTextStyle implements ui.TextStyle {
   static final List<String> _testFonts = <String>['Ahem', 'FlutterTest'];
   String get effectiveFontFamily {
     final String fontFamily = this.fontFamily.isEmpty ? FlutterViewEmbedder.defaultFontFamily : this.fontFamily;
-    // In the flutter tester environment, we use a predictable-size font
-    // "Ahem". This makes widget tests predictable and less flaky.
+    // In the flutter tester environment, we use a predictable-size test fonts.
+    // This makes widget tests predictable and less flaky.
     return assertionsEnabled && ui.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
       ? _testFonts.first
       : fontFamily;
@@ -811,7 +811,7 @@ void applyTextStyleToElement({
         style.fontStyle == ui.FontStyle.normal ? 'normal' : 'italic';
   }
   // For test environment use effectiveFontFamily since we need to
-  // consistently use Ahem font.
+  // consistently use the correct test font.
   if (ui.debugEmulateFlutterTesterEnvironment) {
     cssStyle.fontFamily = canonicalizeFontFamily(style.effectiveFontFamily)!;
   } else {

@@ -179,6 +179,9 @@ class SkiaFontCollection implements FontCollection {
     if (!_isFontFamilyDownloaded(ahemFontFamily)) {
       _downloadFont(pendingFonts, ahemFontUrl, ahemFontFamily);
     }
+    if (!_isFontFamilyDownloaded(flutterTestFontFamily)) {
+      _downloadFont(pendingFonts, flutterTestFontUrl, flutterTestFontFamily);
+    }
     if (!_isFontFamilyDownloaded(robotoFontFamily)) {
       _downloadFont(pendingFonts, robotoTestFontUrl, robotoFontFamily);
     }
