@@ -303,6 +303,7 @@ for glyph in font.glyphs():
   def describe_codepoint_range(codepoints):
     if not codepoints:
       return ""
+    codepoints.sort()
     codepoint_ranges = [
         list(map(itemgetter(1), group))
         for key, group in groupby(enumerate(codepoints), lambda x: x[0] - x[1])

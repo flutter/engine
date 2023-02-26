@@ -10,6 +10,8 @@ import 'util.dart';
 
 const String ahemFontFamily = 'Ahem';
 const String ahemFontUrl = '/assets/fonts/ahem.ttf';
+const String flutterTestFontFamily = 'FlutterTest';
+const String flutterTestFontUrl = '/assets/fonts/flutter_test.ttf';
 const String robotoFontFamily = 'Roboto';
 const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
 const String robotoVariableFontFamily = 'RobotoVariable';
@@ -96,6 +98,10 @@ class WebOnlyMockAssetManager implements AssetManager {
    {
       "family":"$robotoFontFamily",
       "fonts":[{"asset":"$robotoTestFontUrl"}]
+   },
+   {
+      "family":"$flutterTestFontFamily",
+      "fonts":[{"asset":"$flutterTestFontUrl"}]
    },
    {
       "family":"$ahemFontFamily",

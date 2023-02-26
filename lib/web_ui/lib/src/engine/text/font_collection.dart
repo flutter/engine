@@ -74,14 +74,16 @@ class HtmlFontCollection implements FontCollection {
   /// Downloads fonts that are used by tests.
   @override
   Future<void> debugDownloadTestFonts() async {
-    _testFontManager = FontManager();
-    _testFontManager!.downloadAsset(
-        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoFontFamily,
-        'url($robotoTestFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoVariableFontFamily,
-        'url($robotoVariableTestFontUrl)', const <String, String>{});
-    await _testFontManager!.downloadAllFonts();
+    final FontManager fontManager = _testFontManager = FontManager()
+      ..downloadAsset(
+        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{})
+      ..downloadAsset(
+        flutterTestFontFamily, 'url($flutterTestFontUrl)', const <String, String>{})
+      ..downloadAsset(
+        robotoFontFamily, 'url($robotoTestFontUrl)', const <String, String>{})
+      ..downloadAsset(
+        robotoVariableFontFamily, 'url($robotoVariableTestFontUrl)', const <String, String>{});
+    await fontManager.downloadAllFonts();
   }
 
   @override
