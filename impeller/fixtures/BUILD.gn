@@ -8,6 +8,7 @@ import("//flutter/testing/testing.gni")
 impeller_shaders("shader_subgroup_fixtures") {
   enable_opengles = false
   name = "subgroup_fixtures"
+
   # Only need 2.1 for desktop. Running on iOS would require 2.4
   metal_version = "2.1"
 

@@ -45,9 +45,9 @@ def main():
       help='Select the platform.'
   )
   parser.add_argument(
-    '--metal-version',
-    required=True,
-    help='The language standard version to compile for.'
+      '--metal-version',
+      required=True,
+      help='The language standard version to compile for.'
   )
 
   args = parser.parse_args()
@@ -123,7 +123,6 @@ def main():
     return e.returncode
 
   return 0
-
 
 
 if __name__ == '__main__':
