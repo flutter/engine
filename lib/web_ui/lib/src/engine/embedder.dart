@@ -4,13 +4,14 @@
 
 import 'dart:async';
 
+import 'package:ui/src/engine/safe_browser_api.dart';
 import 'package:ui/ui.dart' as ui;
 
 import '../engine.dart' show buildMode, renderer, window;
 import 'browser_detection.dart';
 import 'configuration.dart';
 import 'dom.dart';
-import 'host_node.dart';
+import 'global_styles.dart';
 import 'keyboard_binding.dart';
 import 'platform_dispatcher.dart';
 import 'pointer_binding.dart';
@@ -120,9 +121,9 @@ class FlutterViewEmbedder {
   DomElement get glassPaneElement => _glassPaneElement;
   late DomElement _glassPaneElement;
 
-  /// The [HostNode] of the [glassPaneElement], which contains the whole Flutter app.
-  HostNode get glassPaneShadow => _glassPaneShadow;
-  late HostNode _glassPaneShadow;
+  /// The shadow root of the [glassPaneElement], which contains the whole Flutter app.
+  DomShadowRoot get glassPaneShadow => _glassPaneShadow;
+  late DomShadowRoot _glassPaneShadow;
 
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';
@@ -158,13 +159,29 @@ class FlutterViewEmbedder {
     // restart.
     _embeddingStrategy.attachGlassPane(glassPaneElement);
 
+    if (getJsProperty<Object?>(glassPaneElement, 'attachShadow') == null) {
+      throw UnsupportedError('ShadowDOM is not supported in this browser.');
+    }
+
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
-    final HostNode glassPaneElementHostNode = HostNode(
-      glassPaneElement,
-      defaultCssFont,
+    final DomShadowRoot shadowRoot = glassPaneElement.attachShadow(<String, dynamic>{
+      'mode': 'open',
+      // This needs to stay false to prevent issues like this:
+      // - https://github.com/flutter/flutter/issues/85759
+      'delegatesFocus': false,
+    });
+    _glassPaneShadow = shadowRoot;
+
+    final DomHTMLStyleElement shadowRootStyleElement = createDomHTMLStyleElement();
+    shadowRootStyleElement.id = 'flt-internals-stylesheet';
+    // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
+    shadowRoot.appendChild(shadowRootStyleElement);
+    applyGlobalCssRulesToSheet(
+      shadowRootStyleElement.sheet! as DomCSSStyleSheet,
+      hasAutofillOverlay: browserHasAutofillOverlay(),
+      defaultCssFont: defaultCssFont,
     );
-    _glassPaneShadow = glassPaneElementHostNode;
 
     // Don't allow the scene to receive pointer events.
     _sceneHostElement = domDocument.createElement('flt-scene-host')
@@ -184,22 +201,20 @@ class FlutterViewEmbedder {
         .instance.semanticsHelper
         .prepareAccessibilityPlaceholder();
 
-    glassPaneElementHostNode.appendAll(<DomNode>[
-      accessibilityPlaceholder,
-      _sceneHostElement!,
+    shadowRoot.append(accessibilityPlaceholder);
+    shadowRoot.append(_sceneHostElement!);
 
-      // The semantic host goes last because hit-test order-wise it must be
-      // first. If semantics goes under the scene host, platform views will
-      // obscure semantic elements.
-      //
-      // You may be wondering: wouldn't semantics obscure platform views and
-      // make then not accessible? At least with some careful planning, that
-      // should not be the case. The semantics tree makes all of its non-leaf
-      // elements transparent. This way, if a platform view appears among other
-      // interactive Flutter widgets, as long as those widgets do not intersect
-      // with the platform view, the platform view will be reachable.
-      semanticsHostElement,
-    ]);
+    // The semantic host goes last because hit-test order-wise it must be
+    // first. If semantics goes under the scene host, platform views will
+    // obscure semantic elements.
+    //
+    // You may be wondering: wouldn't semantics obscure platform views and
+    // make then not accessible? At least with some careful planning, that
+    // should not be the case. The semantics tree makes all of its non-leaf
+    // elements transparent. This way, if a platform view appears among other
+    // interactive Flutter widgets, as long as those widgets do not intersect
+    // with the platform view, the platform view will be reachable.
+    shadowRoot.append(semanticsHostElement);
 
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
@@ -336,8 +351,7 @@ class FlutterViewEmbedder {
         _embeddingStrategy.attachResourcesHost(resourcesHost,
             nextTo: glassPaneElement);
       } else {
-        glassPaneShadow.node
-            .insertBefore(resourcesHost, glassPaneShadow.node.firstChild);
+        glassPaneShadow.insertBefore(resourcesHost, glassPaneShadow.firstChild);
       }
       _resourcesHost = resourcesHost;
     }

@@ -2016,14 +2016,13 @@ void _testPlatformView() {
 
     // This test is only relevant for shadow DOM because we only really support
     // proper platform view embedding in browsers that support shadow DOM.
-    final DomShadowRoot shadowRoot = appHostNode.node as DomShadowRoot;
 
     // Hit test child 1
-    expect(shadowRoot.elementFromPoint(10, 10), child1);
+    expect(appHostNode.elementFromPoint(10, 10), child1);
 
     // Hit test overlap between child 1 and 2
     // TODO(yjbanov): this is a known limitation, see https://github.com/flutter/flutter/issues/101439
-    expect(shadowRoot.elementFromPoint(10, 20), child1);
+    expect(appHostNode.elementFromPoint(10, 20), child1);
 
     // Hit test child 2
     // Clicking at the location of the middle semantics node should allow the
@@ -2042,10 +2041,10 @@ void _testPlatformView() {
     expect(domDocument.elementFromPoint(10, 30), platformViewElement);
 
     // Hit test overlap between child 2 and 3
-    expect(shadowRoot.elementFromPoint(10, 40), child3);
+    expect(appHostNode.elementFromPoint(10, 40), child3);
 
     // Hit test child 3
-    expect(shadowRoot.elementFromPoint(10, 50), child3);
+    expect(appHostNode.elementFromPoint(10, 50), child3);
 
     semantics().semanticsEnabled = false;
   });

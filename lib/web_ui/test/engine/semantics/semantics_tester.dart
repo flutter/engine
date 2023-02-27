@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/host_node.dart';
 import 'package:ui/src/engine/semantics.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
@@ -22,7 +21,7 @@ import '../../matchers.dart';
 /// so we don't have to hardcode domDocument across the test. (The host of a
 /// normal flutter app used to be domDocument, but now that the app is wrapped
 /// in a Shadow DOM, that's not the case anymore.)
-HostNode get appHostNode => flutterViewEmbedder.glassPaneShadow;
+DomShadowRoot get appHostNode => flutterViewEmbedder.glassPaneShadow;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].
