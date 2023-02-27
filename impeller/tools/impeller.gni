@@ -615,7 +615,7 @@ template("impeller_shaders_vk") {
 }
 
 template("impeller_shaders") {
-  not_needed(invoker, ["metal_version"])
+  not_needed(invoker, [ "metal_version" ])
   if (impeller_enable_metal) {
     mtl_shaders = "mtl_$target_name"
     metal_version = "1.2"
