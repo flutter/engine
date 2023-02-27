@@ -126,10 +126,11 @@ bool VerticesUVContents::Render(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
+  frame_info.texture_sampler_y_coord_scale =
+      snapshot->texture->GetYCoordScale();
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = snapshot->texture->GetYCoordScale();
   frag_info.alpha = alpha_ * snapshot->opacity;
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
