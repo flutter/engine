@@ -198,17 +198,7 @@ class FlutterConfiguration {
   /// Chromium-based browsers.
   CanvasKitVariant get canvasKitVariant {
     final String variant = _configuration?.canvasKitVariant ?? 'auto';
-    switch (variant) {
-      case 'auto':
-        // This is the default value.
-        return CanvasKitVariant.auto;
-      case 'full':
-        return CanvasKitVariant.full;
-      case 'chromium':
-        return CanvasKitVariant.chromium;
-      default:
-        throw ArgumentError.value(variant, 'canvasKitVariant', 'Unknown CanvasKit variant');
-    }
+    return CanvasKitVariant.values.byName(variant);
   }
 
   /// If set to true, forces CPU-only rendering in CanvasKit (i.e. the engine
