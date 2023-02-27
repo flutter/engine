@@ -5111,17 +5111,17 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   EXPECT_UIA_FIND_TEXT(range, L"some text", false, owner);
   // Some expectations like the one below are currently skipped until we can
   // implement ignoreCase in FindText.
-  // EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", false, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
   GetTextRangeProviderFromTextNode(range, root_node->children()[1]);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
-  // EXPECT_UIA_FIND_TEXT(range, L"MoRe", true, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"MoRe", true, owner);
 
   // Test searching for leaf content from ancestor.
   GetTextRangeProviderFromTextNode(range, root_node);
   EXPECT_UIA_FIND_TEXT(range, L"some text", false, owner);
-  // EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more text", false, owner);
-  // EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
   // Test finding text that crosses a node boundary.
   EXPECT_UIA_FIND_TEXT(range, L"textmore", false, owner);
