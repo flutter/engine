@@ -62,9 +62,12 @@
 // it if it is OK to terminate. When that method channel call returns with a
 // result, the application either terminates or continues running.
 - (void)terminate:(id)sender {
-  FlutterEngineTerminationHandler* terminationHandler = [static_cast<FlutterAppDelegate*>([NSApp delegate]) terminationHandler];
+  FlutterEngineTerminationHandler* terminationHandler =
+      [static_cast<FlutterAppDelegate*>([NSApp delegate]) terminationHandler];
   if (terminationHandler) {
-    [terminationHandler requestApplicationTermination:self exitType:kFlutterAppExitTypeCancelable result:nil];
+    [terminationHandler requestApplicationTermination:self
+                                             exitType:kFlutterAppExitTypeCancelable
+                                               result:nil];
   } else {
     // If there's no termination handler, then just terminate.
     [super terminate:sender];
