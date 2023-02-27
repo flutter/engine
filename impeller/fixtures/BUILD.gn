@@ -5,6 +5,19 @@
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
+impeller_shaders("shader_subgroup_fixtures") {
+  enable_opengles = false
+  name = "subgroup_fixtures"
+  # Only need 2.1 for desktop. Running on iOS would require 2.4
+  metal_version = "2.1"
+
+  shaders = [
+    "cubic_to_quads.comp",
+    "quad_polyline.comp",
+    "stroke.comp",
+  ]
+}
+
 impeller_shaders("shader_fixtures") {
   name = "fixtures"
 
@@ -18,7 +31,6 @@ impeller_shaders("shader_fixtures") {
     "box_fade.vert",
     "colors.vert",
     "colors.frag",
-    "cubic_to_quads.comp",
     "impeller.frag",
     "impeller.vert",
     "inactive_uniforms.frag",
@@ -27,24 +39,19 @@ impeller_shaders("shader_fixtures") {
     "instanced_draw.vert",
     "mipmaps.frag",
     "mipmaps.vert",
-    "quad_polyline.comp",
     "sample.comp",
     "stage1.comp",
     "stage2.comp",
     "simple.vert",
-    "stroke.comp",
     "test_texture.frag",
     "test_texture.vert",
   ]
 
   if (impeller_enable_opengles) {
     gles_exclusions = [
-      "cubic_to_quads.comp",
-      "quad_polyline.comp",
       "sample.comp",
       "stage1.comp",
       "stage2.comp",
-      "stroke.comp",
     ]
   }
 }
@@ -125,5 +132,6 @@ group("fixtures") {
     ":file_fixtures",
     ":scene_fixtures",
     ":shader_fixtures",
+    ":shader_subgroup_fixtures",
   ]
 }

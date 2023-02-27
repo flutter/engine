@@ -42,6 +42,7 @@ impeller_component("playground") {
     "../entity:entity_shaders",
     "../entity:modern_entity_shaders",
     "../fixtures:shader_fixtures",
+    "../fixtures:shader_subgroup_fixtures",
     "../renderer",
     "../scene/shaders",
     "imgui:imgui_impeller_backend",
