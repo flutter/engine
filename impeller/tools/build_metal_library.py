@@ -113,9 +113,9 @@ def main():
 
   try:
     subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
-  except subprocess.CalledProcessError as e:
-    print(e.output)
-    return e.returncode
+  except subprocess.CalledProcessError as cpe:
+    print(cpe.output)
+    return cpe.returncode
 
   return 0
 
