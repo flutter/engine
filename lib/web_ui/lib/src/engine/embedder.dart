@@ -192,7 +192,6 @@ class FlutterViewEmbedder {
     shadowRoot.appendChild(shadowRootStyleElement);
     applyGlobalCssRulesToSheet(
       shadowRootStyleElement,
-      hasAutofillOverlay: browserHasAutofillOverlay(),
       defaultCssFont: defaultCssFont,
     );
 
