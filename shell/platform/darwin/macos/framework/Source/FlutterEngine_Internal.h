@@ -54,7 +54,8 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 @interface FlutterEngineTerminationHandler : NSObject
 - (instancetype)initWithEngine:(FlutterEngine*)engine
                     terminator:(nullable FlutterTerminationCallback)terminator;
-- (void)requestAppExit:(NSDictionary<NSString*, id>*)data result:(FlutterResult)result;
+- (void)handleRequestAppExitMethodCall:(NSDictionary<NSString*, id>*)data
+                                result:(FlutterResult)result;
 - (void)requestApplicationTermination:(FlutterApplication*)sender
                              exitType:(FlutterAppExitType)type
                                result:(nullable FlutterResult)result;

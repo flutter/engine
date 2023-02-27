@@ -181,7 +181,8 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 // This is called by the method call handler in the engine when the application
 // requests termination itself.
-- (void)requestAppExit:(NSDictionary<NSString*, id>*)arguments result:(FlutterResult)result {
+- (void)handleRequestAppExitMethodCall:(NSDictionary<NSString*, id>*)arguments
+                                result:(FlutterResult)result {
   NSString* type = arguments[@"type"];
   // Ignore the "exitCode" value in the arguments because AppKit doesn't have
   // any good way to set the process exit code other than calling exit(), and
@@ -963,7 +964,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
-    [[self terminationHandler] requestAppExit:call.arguments result:result];
+    [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }
