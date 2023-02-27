@@ -119,8 +119,6 @@ def read_malioc_file(malioc_tree, json_file):
     filename = os.path.relpath(shader['filename'], build_gen_dir)
     if filename.startswith('../..'):
       filename = filename[6:]
-    elif filename.startswith('../'):
-      filename = filename[3:]
     result['filename'] = filename
     result['core'] = shader['hardware']['core']
     result['type'] = shader['shader']['type']
@@ -268,7 +266,7 @@ def main(argv):
   if args.update:
     # Write the new results to the file given by --before, then exit.
     with open(args.before, 'w') as file:
-      json.dump(after_json, file, sort_keys=True, indent=2)
+      json.dump(after_json, file, sort_keys=True)
     return 0
 
   with open(args.before, 'r') as file:
