@@ -51,9 +51,7 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow;
-
-DomElement get nonShadowTextEditingRoot =>
+DomElement get defaultTextEditingRoot =>
     flutterViewEmbedder.textEditingHostNode!;
 
 /// These style attributes are constant throughout the life time of an input
@@ -281,7 +279,7 @@ class EngineAutofillForm {
 
   void placeForm(DomHTMLElement mainTextEditingElement) {
     formElement.append(mainTextEditingElement);
-    nonShadowTextEditingRoot.append(formElement);
+    defaultTextEditingRoot.append(formElement);
   }
 
   void storeForm() {
@@ -1178,7 +1176,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
       // DOM later, when the first location information arrived.
       // Otherwise, on Blink based Desktop browsers, the autofill menu appears
       // on top left of the screen.
-      nonShadowTextEditingRoot.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement);
       _appendedToForm = false;
     }
 
@@ -1664,7 +1662,7 @@ class AndroidTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     if (hasAutofillGroup) {
       placeForm();
     } else {
-      nonShadowTextEditingRoot.append(activeDomElement);
+      defaultTextEditingRoot.append(activeDomElement);
     }
     inputConfig.textCapitalization.setAutocapitalizeAttribute(
         activeDomElement);
