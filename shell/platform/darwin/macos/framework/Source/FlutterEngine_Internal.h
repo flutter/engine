@@ -16,6 +16,50 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+#pragma mark - Typedefs
+
+typedef void (^FlutterTerminationCallback)(id _Nullable sender);
+
+#pragma mark - Enumerations
+
+/**
+ * An enum for defining the different request types allowed when requesting an
+ * application exit.
+ *
+ * Must match the entries in the `AppExitType` enum in the Dart code.
+ */
+typedef NS_ENUM(NSInteger, FlutterAppExitType) {
+  kFlutterAppExitTypeCancelable = 0,
+  kFlutterAppExitTypeRequired = 1,
+};
+
+/**
+ * An enum for defining the different responses the framework can give to an
+ * application exit request from the engine.
+ *
+ * Must match the entries in the `AppExitResponse` enum in the Dart code.
+ */
+typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
+  kFlutterAppExitResponseCancel = 0,
+  kFlutterAppExitResponseExit = 1,
+};
+
+#pragma mark - FlutterEngineTerminationHandler
+
+/**
+ * A handler interface for handling application termination that the
+ * FlutterAppDelegate can use to coordinate an application exit by sending
+ * messages through the platform channel managed by the engine.
+ */
+@interface FlutterEngineTerminationHandler : NSObject
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                    terminator:(nullable FlutterTerminationCallback)terminator;
+- (void)requestAppExit:(NSDictionary<NSString*, id>*)data result:(FlutterResult)result;
+- (void)requestApplicationTermination:(FlutterApplication*)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result;
+@end
+
 @interface FlutterEngine ()
 
 /**
@@ -54,6 +98,11 @@ NS_ASSUME_NONNULL_BEGIN
  * The command line arguments array for the engine.
  */
 @property(nonatomic, readonly) std::vector<std::string> switches;
+
+/**
+ * Provides the |FlutterEngineTerminationHandler| to be used for this engine.
+ */
+@property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
 
 /**
  * Attach a view controller to the engine as its default controller.
@@ -129,45 +178,6 @@ NS_ASSUME_NONNULL_BEGIN
                        toTarget:(uint16_t)target
                        withData:(fml::MallocMapping)data;
 
-@end
-
-#pragma mark - Enumerations
-
-/**
- * An enum for defining the different request types allowed when requesting an
- * application exit.
- *
- * Must match the entries in the `AppExitType` enum in the Dart code.
- */
-typedef NS_ENUM(NSInteger, FlutterAppExitType) {
-  kFlutterAppExitTypeCancelable = 0,
-  kFlutterAppExitTypeRequired = 1,
-};
-
-/**
- * An enum for defining the different responses the framework can give to an
- * application exit request from the engine.
- *
- * Must match the entries in the `AppExitResponse` enum in the Dart code.
- */
-typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
-  kFlutterAppExitResponseCancel = 0,
-  kFlutterAppExitResponseExit = 1,
-};
-
-#pragma mark - FlutterEngineTerminationHandler
-
-/**
- * A handler interface for handling application termination that the
- * FlutterAppDelegate can use to coordinate an application exit by sending
- * messages through the platform channel managed by the engine.
- */
-@interface FlutterEngineTerminationHandler : NSObject
-- (instancetype)initWithEngine:(FlutterEngine*)engine;
-- (void)requestAppExit:(NSDictionary<NSString*, id>*)data result:(FlutterResult)result;
-- (void)requestApplicationTermination:(FlutterApplication*)sender
-                             exitType:(FlutterAppExitType)type
-                               result:(nullable FlutterResult)result;
 @end
 
 NS_ASSUME_NONNULL_END

@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#include "FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 #include <algorithm>
@@ -14,7 +15,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
@@ -160,11 +161,21 @@ constexpr char kTextPlainFormat[] = "text/plain";
 
 @implementation FlutterEngineTerminationHandler {
   FlutterEngine* _engine;
+  FlutterTerminationCallback _terminator;
 }
 
-- (instancetype)initWithEngine:(FlutterEngine*)engine {
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                    terminator:(FlutterTerminationCallback)terminator {
   self = [super init];
   _engine = engine;
+  _terminator = terminator ? terminator : ^(id sender) {
+    // Default to actually terminating the application. The terminator exists to
+    // allow tests to override it so that an actual exit doesn't occur.
+    [[FlutterApplication sharedApplication] terminateApplication:sender];
+  };
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
+  appDelegate.terminationHandler = self;
   return self;
 }
 
@@ -172,7 +183,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
 // requests termination itself.
 - (void)requestAppExit:(NSDictionary<NSString*, id>*)arguments result:(FlutterResult)result {
   NSString* type = arguments[@"type"];
-
   // Ignore the "exitCode" value in the arguments because AppKit doesn't have
   // any good way to set the process exit code other than calling exit(), and
   // that bypasses all of the native applicationShouldExit shutdown events,
@@ -193,26 +203,26 @@ constexpr char kTextPlainFormat[] = "text/plain";
                                result:(nullable FlutterResult)result {
   switch (type) {
     case kFlutterAppExitTypeCancelable: {
-      [_engine
-          sendOnChannel:kFlutterPlatformChannel
-                message:[[FlutterJSONMethodCodec sharedInstance]
-                            encodeMethodCall:[FlutterMethodCall
-                                                 methodCallWithMethodName:@"System.requestAppExit"
-                                                                arguments:@{}]]
-            binaryReply:^(NSData* _Nullable reply) {
-              NSDictionary* replyArgs =
-                  [[FlutterJSONMethodCodec sharedInstance] decodeEnvelope:reply];
-              if ([replyArgs[@"response"] isEqual:@"exit"]) {
-                [[FlutterApplication sharedApplication] terminateApplication:sender];
-              }
-              if (result != nil) {
-                result(replyArgs);
-              }
-            }];
+      FlutterJSONMethodCodec* codec = [FlutterJSONMethodCodec sharedInstance];
+      FlutterMethodCall* methodCall =
+          [FlutterMethodCall methodCallWithMethodName:@"System.requestAppExit" arguments:nil];
+      [_engine sendOnChannel:kFlutterPlatformChannel
+                     message:[codec encodeMethodCall:methodCall]
+                 binaryReply:^(NSData* _Nullable reply) {
+                   NSDictionary* replyArgs = [codec decodeEnvelope:reply];
+                   if ([replyArgs[@"response"] isEqual:@"exit"]) {
+                     NSAssert(_terminator, @"terminator shouldn't be nil");
+                     _terminator(sender);
+                   }
+                   if (result != nil) {
+                     result(replyArgs);
+                   }
+                 }];
       break;
     }
     case kFlutterAppExitTypeRequired:
-      [[FlutterApplication sharedApplication] terminateApplication:sender];
+      NSAssert(_terminator, @"terminator shouldn't be nil");
+      _terminator(sender);
       break;
   }
 }
@@ -339,9 +349,6 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   // A method channel for miscellaneous platform functionality.
   FlutterMethodChannel* _platformChannel;
 
-  // A delegate used to receive application termination events.
-  FlutterEngineTerminationHandler* _terminateHelper;
-
   int _nextViewId;
 }
 
@@ -362,10 +369,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _semanticsEnabled = NO;
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
-  _terminateHelper = [[FlutterEngineTerminationHandler alloc] initWithEngine:self];
-  FlutterAppDelegate* appDelegate =
-      (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
-  [appDelegate setTerminationRequestHandler:_terminateHelper];
+  _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
+                                                                     terminator:nil];
   // kFlutterDefaultViewId is reserved for the default view.
   // All IDs above it are for regular views.
   _nextViewId = kFlutterDefaultViewId + 1;
@@ -958,7 +963,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
   } else if ([call.method isEqualToString:@"System.exitApplication"]) {
-    [_terminateHelper requestAppExit:call.arguments result:result];
+    [[self terminationHandler] requestAppExit:call.arguments result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }

@@ -6,7 +6,8 @@
 
 #include "flutter/shell/platform/embedder/embedder.h"
 #import "shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
-#import "shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
+#import "shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
+#import "shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 // An NSApplication subclass that implements overrides necessary for some
 // Flutter features, like application lifecycle handling.
@@ -21,18 +22,17 @@
   // +sharedApplication initializes the global NSApp, so if we're delivering
   // something other than a FlutterApplication, warn the developer once.
 #ifndef FLUTTER_RELEASE
-  static dispatch_once_t onceToken = 0;
-  dispatch_once(&onceToken, ^{
-    if (![NSApp isKindOfClass:[FlutterApplication class]]) {
-      NSLog(@"NSApp should be of type %s, not %s. "
-             "Some application lifecycle requests (e.g. ServicesBinding.exitApplication) "
-             "and notifications will be unavailable.\n"
-             "Modify the application's NSPrincipleClass to be %s"
-             "in the Info.plist to fix this.",
-            [[self className] UTF8String], [[NSApp className] UTF8String],
-            [[self className] UTF8String]);
-    }
-  });
+  static bool notified = false;
+  if (!notified && ![NSApp isKindOfClass:[FlutterApplication class]]) {
+    NSLog(@"NSApp should be of type %s, not %s. "
+           "Some application lifecycle requests (e.g. ServicesBinding.exitApplication) "
+           "and notifications will be unavailable.\n"
+           "Modify the application's NSPrincipleClass to be %s"
+           "in the Info.plist to fix this.",
+          [[self className] UTF8String], [[NSApp className] UTF8String],
+          [[self className] UTF8String]);
+    notified = true;
+  }
 #endif  // !FLUTTER_RELEASE
   return app;
 }
@@ -62,9 +62,13 @@
 // it if it is OK to terminate. When that method channel call returns with a
 // result, the application either terminates or continues running.
 - (void)terminate:(id)sender {
-  FlutterAppDelegate* appDelegate = static_cast<FlutterAppDelegate*>([NSApp delegate]);
-
-  [appDelegate requestApplicationTermination:self exitType:kFlutterAppExitTypeCancelable];
+  FlutterEngineTerminationHandler* terminationHandler = [static_cast<FlutterAppDelegate*>([NSApp delegate]) terminationHandler];
+  if (terminationHandler) {
+    [terminationHandler requestApplicationTermination:self exitType:kFlutterAppExitTypeCancelable result:nil];
+  } else {
+    // If there's no termination handler, then just terminate.
+    [super terminate:sender];
+  }
   // Return, don't exit. The application delegate is responsible for exiting on
   // its own by calling |-terminateApplication|.
 }

@@ -7,7 +7,7 @@
 #import <AppKit/AppKit.h>
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
@@ -19,9 +19,7 @@
 
 @end
 
-@implementation FlutterAppDelegate {
-  FlutterEngineTerminationHandler* _terminationHandler;
-}
+@implementation FlutterAppDelegate
 
 - (instancetype)init {
   if (self = [super init]) {
@@ -56,24 +54,6 @@
     applicationName = [NSBundle.mainBundle objectForInfoDictionaryKey:@"CFBundleName"];
   }
   return applicationName;
-}
-
-- (void)setTerminationRequestHandler:(FlutterEngineTerminationHandler*)handler {
-  _terminationHandler = handler;
-}
-
-- (void)requestApplicationTermination:(NSApplication*)application
-                             exitType:(FlutterAppExitType)type {
-  if (![application isKindOfClass:[FlutterApplication class]]) {
-    [application terminate:application];
-    return;
-  };
-  FlutterApplication* flutterApp = static_cast<FlutterApplication*>(application);
-  if (_terminationHandler) {
-    [_terminationHandler requestApplicationTermination:flutterApp exitType:type result:nil];
-  } else {
-    [flutterApp terminateApplication:application];
-  }
 }
 
 @end

@@ -10,15 +10,13 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 @interface FlutterAppDelegate ()
-/**
- * Allows the engine to add a handler for termination requests
- */
-- (void)setTerminationRequestHandler:(FlutterEngineTerminationHandler*)handler;
 
 /**
- * Allows the delegate to respond to an attempt to terminate the application.
+ * Holds a weak reference to the termination handler owned by the engine.
+ * Called by the |FlutterApplication| when termination is requested by the OS.
  */
-- (void)requestApplicationTermination:(NSApplication*)application exitType:(FlutterAppExitType)type;
+@property(readwrite, weak) FlutterEngineTerminationHandler* terminationHandler;
+
 @end
 
 #endif  // FLUTTER_FLUTTERAPPDELEGATE_INTERNAL_H_
