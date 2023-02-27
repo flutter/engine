@@ -16,6 +16,7 @@
 #include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/dl_canvas.h"
 
 namespace flutter {
 
@@ -28,6 +29,10 @@ class DisplayList;
 ///             invoked through the DisplayList::dispatch() method.
 ///
 class Dispatcher {
+ protected:
+  using ClipOp = DlCanvas::ClipOp;
+  using PointMode = DlCanvas::PointMode;
+
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
   static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
@@ -53,7 +58,6 @@ class Dispatcher {
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
   virtual void setBlendMode(DlBlendMode mode) = 0;
-  virtual void setBlender(sk_sp<SkBlender> blender) = 0;
   virtual void setPathEffect(const DlPathEffect* effect) = 0;
   virtual void setMaskFilter(const DlMaskFilter* filter) = 0;
   virtual void setImageFilter(const DlImageFilter* filter) = 0;
@@ -183,11 +187,9 @@ class Dispatcher {
   // Clears the transformation stack.
   virtual void transformReset() = 0;
 
-  virtual void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) = 0;
-  virtual void clipRRect(const SkRRect& rrect,
-                         SkClipOp clip_op,
-                         bool is_aa) = 0;
-  virtual void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRect(const SkRect& rect, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipRRect(const SkRRect& rrect, ClipOp clip_op, bool is_aa) = 0;
+  virtual void clipPath(const SkPath& path, ClipOp clip_op, bool is_aa) = 0;
 
   // The following rendering methods all take their rendering attributes
   // from the last value set by the attribute methods above (regardless
@@ -209,11 +211,9 @@ class Dispatcher {
                        SkScalar start_degrees,
                        SkScalar sweep_degrees,
                        bool use_center) = 0;
-  virtual void drawPoints(SkCanvas::PointMode mode,
+  virtual void drawPoints(PointMode mode,
                           uint32_t count,
                           const SkPoint points[]) = 0;
-  virtual void drawSkVertices(const sk_sp<SkVertices> vertices,
-                              SkBlendMode mode) = 0;
   virtual void drawVertices(const DlVertices* vertices, DlBlendMode mode) = 0;
   virtual void drawImage(const sk_sp<DlImage> image,
                          const SkPoint point,
@@ -230,11 +230,6 @@ class Dispatcher {
                              const SkRect& dst,
                              DlFilterMode filter,
                              bool render_with_attributes) = 0;
-  virtual void drawImageLattice(const sk_sp<DlImage> image,
-                                const SkCanvas::Lattice& lattice,
-                                const SkRect& dst,
-                                DlFilterMode filter,
-                                bool render_with_attributes) = 0;
   virtual void drawAtlas(const sk_sp<DlImage> atlas,
                          const SkRSXform xform[],
                          const SkRect tex[],
@@ -244,9 +239,6 @@ class Dispatcher {
                          DlImageSampling sampling,
                          const SkRect* cull_rect,
                          bool render_with_attributes) = 0;
-  virtual void drawPicture(const sk_sp<SkPicture> picture,
-                           const SkMatrix* matrix,
-                           bool render_with_attributes) = 0;
   virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,

@@ -41,6 +41,7 @@ std::size_t PipelineDescriptor::GetHash() const {
   fml::HashCombineSeed(seed, winding_order_);
   fml::HashCombineSeed(seed, cull_mode_);
   fml::HashCombineSeed(seed, primitive_type_);
+  fml::HashCombineSeed(seed, polygon_mode_);
   return seed;
 }
 
@@ -59,7 +60,8 @@ bool PipelineDescriptor::IsEqual(const PipelineDescriptor& other) const {
              other.back_stencil_attachment_descriptor_ &&
          winding_order_ == other.winding_order_ &&
          cull_mode_ == other.cull_mode_ &&
-         primitive_type_ == other.primitive_type_;
+         primitive_type_ == other.primitive_type_ &&
+         polygon_mode_ == other.polygon_mode_;
 }
 
 PipelineDescriptor& PipelineDescriptor::SetLabel(std::string label) {
@@ -153,6 +155,26 @@ PipelineDescriptor& PipelineDescriptor::SetStencilAttachmentDescriptors(
   return *this;
 }
 
+void PipelineDescriptor::ClearStencilAttachments() {
+  back_stencil_attachment_descriptor_.reset();
+  front_stencil_attachment_descriptor_.reset();
+  SetStencilPixelFormat(impeller::PixelFormat::kUnknown);
+}
+
+void PipelineDescriptor::ClearDepthAttachment() {
+  depth_attachment_descriptor_.reset();
+  SetDepthPixelFormat(impeller::PixelFormat::kUnknown);
+}
+
+void PipelineDescriptor::ClearColorAttachment(size_t index) {
+  if (color_attachment_descriptors_.find(index) ==
+      color_attachment_descriptors_.end()) {
+    return;
+  }
+
+  color_attachment_descriptors_.erase(index);
+}
+
 void PipelineDescriptor::ResetAttachments() {
   color_attachment_descriptors_.clear();
   depth_attachment_descriptor_.reset();
@@ -237,6 +259,14 @@ void PipelineDescriptor::SetPrimitiveType(PrimitiveType type) {
 
 PrimitiveType PipelineDescriptor::GetPrimitiveType() const {
   return primitive_type_;
+}
+
+void PipelineDescriptor::SetPolygonMode(PolygonMode mode) {
+  polygon_mode_ = mode;
+}
+
+PolygonMode PipelineDescriptor::GetPolygonMode() const {
+  return polygon_mode_;
 }
 
 }  // namespace impeller

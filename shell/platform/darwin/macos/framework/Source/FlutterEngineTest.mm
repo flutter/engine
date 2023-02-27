@@ -69,6 +69,24 @@ TEST_F(FlutterEngineTest, HasNonNullExecutableName) {
   latch.Wait();
 }
 
+#ifndef FLUTTER_RELEASE
+TEST_F(FlutterEngineTest, Switches) {
+  setenv("FLUTTER_ENGINE_SWITCHES", "2", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_1", "abc", 1);
+  setenv("FLUTTER_ENGINE_SWITCH_2", "foo=\"bar, baz\"", 1);
+
+  FlutterEngine* engine = GetFlutterEngine();
+  std::vector<std::string> switches = engine.switches;
+  ASSERT_EQ(switches.size(), 2UL);
+  EXPECT_EQ(switches[0], "--abc");
+  EXPECT_EQ(switches[1], "--foo=\"bar, baz\"");
+
+  unsetenv("FLUTTER_ENGINE_SWITCHES");
+  unsetenv("FLUTTER_ENGINE_SWITCH_1");
+  unsetenv("FLUTTER_ENGINE_SWITCH_2");
+}
+#endif  // !FLUTTER_RELEASE
+
 TEST_F(FlutterEngineTest, MessengerSend) {
   FlutterEngine* engine = GetFlutterEngine();
   EXPECT_TRUE([engine runWithEntrypoint:@"main"]);
@@ -612,6 +630,69 @@ TEST(EngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
   });
 
   rasterThread.join();
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
+  NSString* fixtures = @(flutter::testing::GetFixturesPath());
+  FlutterDartProject* project = [[FlutterDartProject alloc]
+      initWithAssetsPath:fixtures
+             ICUDataPath:[fixtures stringByAppendingString:@"/icudtl.dat"]];
+
+  FlutterEngine* engine;
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    // Create FVC1.
+    viewController1 = [[FlutterViewController alloc] initWithProject:project];
+    EXPECT_EQ(viewController1.id, 0ull);
+
+    engine = viewController1.engine;
+    engine.viewController = nil;
+
+    // Create FVC2 based on the same engine.
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
+}
+
+TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
+  // Don't create the engine with `CreateMockFlutterEngine`, because it adds
+  // additional references to FlutterViewControllers, which is crucial to this
+  // test case.
+  FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"io.flutter"
+                                                      project:nil
+                                       allowHeadlessExecution:NO];
+  FlutterViewController* viewController1;
+
+  @autoreleasepool {
+    viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
+    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController1);
+
+    engine.viewController = nil;
+
+    FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
+                                                                                   nibName:nil
+                                                                                    bundle:nil];
+    EXPECT_EQ(viewController2.id, 0ull);
+    EXPECT_EQ(engine.viewController, viewController2);
+  }
+  // FVC2 is deallocated but FVC1 is retained.
+
+  EXPECT_EQ(engine.viewController, nil);
+
+  engine.viewController = viewController1;
+  EXPECT_EQ(engine.viewController, viewController1);
+  EXPECT_EQ(viewController1.id, 0ull);
 }
 
 }  // namespace flutter::testing

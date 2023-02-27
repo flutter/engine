@@ -404,6 +404,52 @@ TEST_P(EntityTest, CubicCurveTest) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
+TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransformation) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    const char* input_axis[] = {"X", "Y", "Z"};
+    static int rotation_axis_index = 0;
+    static float rotation = 0;
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Rotation", &rotation, -kPi, kPi);
+    ImGui::Combo("Rotation Axis", &rotation_axis_index, input_axis,
+                 sizeof(input_axis) / sizeof(char*));
+    Matrix rotation_matrix;
+    switch (rotation_axis_index) {
+      case 0:
+        rotation_matrix = Matrix::MakeRotationX(Radians(rotation));
+        break;
+      case 1:
+        rotation_matrix = Matrix::MakeRotationY(Radians(rotation));
+        break;
+      case 2:
+        rotation_matrix = Matrix::MakeRotationZ(Radians(rotation));
+        break;
+      default:
+        rotation_matrix = Matrix{};
+        break;
+    }
+
+    if (ImGui::Button("Reset")) {
+      rotation = 0;
+    }
+    ImGui::End();
+    Matrix current_transform =
+        Matrix::MakeScale(GetContentScale())
+            .MakeTranslation(
+                Vector3(Point(pass.GetRenderTargetSize().width / 2.0,
+                              pass.GetRenderTargetSize().height / 2.0)));
+    Matrix result_transform = current_transform * rotation_matrix;
+    Path path =
+        PathBuilder{}.AddRect(Rect::MakeXYWH(-300, -400, 600, 800)).TakePath();
+
+    Entity entity;
+    entity.SetTransformation(result_transform);
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 TEST_P(EntityTest, CubicCurveAndOverlapTest) {
   // Compare with https://fiddle.skia.org/c/7a05a3e186c65a8dfb732f68020aae06
   Path path =
@@ -762,11 +808,11 @@ TEST_P(EntityTest, BlendingModeOptions) {
       cmd.BindVertices(
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-      VS::VertInfo frame_info;
+      VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
-      VS::BindVertInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindFrameInfo(cmd,
+                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
       FS::FragInfo frag_info;
       frag_info.color = color.Premultiply();
@@ -1505,6 +1551,66 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
         restore->ShouldRender(Entity{}, Rect::MakeSize(Size{100, 100})));
     ASSERT_TRUE(
         restore->ShouldRender(Entity{}, Rect::MakeLTRB(-100, -100, -50, -50)));
+  }
+}
+
+TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
+  // Intersection: No stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: No stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+  }
+
+  // Difference: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kDifference);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 100, 100));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
   }
 }
 

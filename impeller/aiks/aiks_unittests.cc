@@ -82,6 +82,16 @@ TEST_P(AiksTest, CanRenderImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderInvertedImage) {
+  Canvas canvas;
+  Paint paint;
+  auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
+  paint.color = Color::Red();
+  paint.invert_colors = true;
+  canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
                     std::string label) {
@@ -1120,7 +1130,8 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
                         Canvas& canvas,
                         const std::string& text,
                         const std::string& font_fixture,
-                        Scalar font_size = 50.0) {
+                        Scalar font_size = 50.0,
+                        Scalar alpha = 1.0) {
   Scalar baseline = 200.0;
   Point text_position = {100, baseline};
 
@@ -1147,7 +1158,7 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
   auto frame = TextFrameFromTextBlob(blob);
 
   Paint text_paint;
-  text_paint.color = Color::Yellow();
+  text_paint.color = Color::Yellow().WithAlpha(alpha);
   canvas.DrawTextFrame(frame, text_position, text_paint);
   return true;
 }
@@ -1176,6 +1187,18 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
                                  "Apple Color Emoji.ttc"));
 #else
                                  "NotoColorEmoji.ttf"));
+#endif
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
+  Canvas canvas;
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+#if FML_OS_MACOSX
+                                 "Apple Color Emoji.ttc", 50, 0.5));
+#else
+                                 "NotoColorEmoji.ttf", 50, 0.5));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
