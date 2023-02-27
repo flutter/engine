@@ -5,8 +5,8 @@
 #include "ax/platform/ax_platform_node_textrangeprovider_win.h"
 
 #include <UIAutomation.h>
-#include <string_view>
 #include <wrl/client.h>
+#include <string_view>
 
 #include "ax/ax_action_data.h"
 #include "ax/ax_range.h"
@@ -442,8 +442,9 @@ static bool StringSearch(std::u16string& search_string,
                          bool backwards) {
   if (ignore_case) {
     auto const& ct = std::use_facet<std::ctype<char16_t>>(std::locale());
-    auto tolower = [&ct](char16_t c){ return ct.tolower(c); };
-    std::transform(search_string.begin(), search_string.end(), search_string.begin(), tolower);
+    auto tolower = [&ct](char16_t c) { return ct.tolower(c); };
+    std::transform(search_string.begin(), search_string.end(),
+                   search_string.begin(), tolower);
     std::transform(find_in.begin(), find_in.end(), find_in.begin(), tolower);
   }
   size_t match_pos;
