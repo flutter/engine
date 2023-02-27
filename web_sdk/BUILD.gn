@@ -610,15 +610,15 @@ if (!is_fuchsia) {
       },
       {
         source = rebase_path("$root_out_dir/skwasm.js")
-        destination = "skwasm/skwasm.js"
+        destination = "flutter_web_sdk/canvaskit/skwasm.js"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.worker.js")
-        destination = "skwasm/skwasm.worker.js"
+        destination = "flutter_web_sdk/canvaskit/skwasm.worker.js"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.wasm")
-        destination = "skwasm/skwasm.wasm"
+        destination = "flutter_web_sdk/canvaskit/skwasm.wasm"
       },
     ]
     files = tmp_files
