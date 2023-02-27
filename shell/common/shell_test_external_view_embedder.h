@@ -55,7 +55,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
@@ -63,13 +63,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
-
-  // |ExternalViewEmbedder|
-  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
-
-  // |ExternalViewEmbedder|
-  EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   void PushVisitedPlatformView(int64_t view_id) override;
@@ -89,7 +83,7 @@ class ShellTestExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   bool SupportsDynamicThreadMerging() override;

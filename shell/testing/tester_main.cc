@@ -41,7 +41,7 @@ namespace flutter {
 
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override { return nullptr; }
+  DlCanvas* GetRootCanvas() override { return nullptr; }
 
   // |ExternalViewEmbedder|
   void CancelFrame() override {}
@@ -55,22 +55,16 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override {}
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
-
-  // |ExternalViewEmbedder|
-  std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
-
-  // |ExternalViewEmbedder|
-  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
-    return {&canvas_, nullptr};
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override {
+    return &builder_;
   }
 
  private:
-  SkCanvas canvas_;
+  DisplayListBuilder builder_;
 };
 
 class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {

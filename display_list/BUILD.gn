@@ -16,12 +16,8 @@ source_set("display_list") {
     "display_list_blend_mode.h",
     "display_list_builder.cc",
     "display_list_builder.h",
-    "display_list_builder_multiplexer.cc",
-    "display_list_builder_multiplexer.h",
     "display_list_canvas_dispatcher.cc",
     "display_list_canvas_dispatcher.h",
-    "display_list_canvas_recorder.cc",
-    "display_list_canvas_recorder.h",
     "display_list_color.h",
     "display_list_color_filter.cc",
     "display_list_color_filter.h",
@@ -63,6 +59,9 @@ source_set("display_list") {
     "display_list_utils.h",
     "display_list_vertices.cc",
     "display_list_vertices.h",
+    "dl_canvas.h",
+    "skia/dl_sk_canvas.cc",
+    "skia/dl_sk_canvas.h",
     "types.h",
   ]
 

@@ -4684,7 +4684,7 @@ class Vertices extends NativeFieldWrapperClass1 {
 /// Defines how a list of points is interpreted when drawing a set of points.
 ///
 /// Used by [Canvas.drawPoints] and [Canvas.drawRawPoints].
-// These enum values must be kept in sync with SkCanvas::PointMode.
+// These enum values must be kept in sync with DlCanvas::PointMode.
 enum PointMode {
   /// Draw each point separately.
   ///
@@ -5090,7 +5090,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// After executing both of those calls there is no area left in which to draw
   /// because the two paths have no overlapping regions. But, in this case,
-  /// [getClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
+  /// [getLocalClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
   /// only intersects the bounds of the two path objects to obtain its conservative
   /// estimate.
   ///

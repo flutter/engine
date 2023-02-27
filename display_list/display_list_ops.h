@@ -196,35 +196,6 @@ struct SetBlendModeOp final : DLOp {
 
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes
 //        (4 bytes unused)
-// Set: 4 byte header + an sk_sp (ptr) uses 16 bytes due to the
-//      alignment of the ptr.
-//      (4 bytes unused)
-#define DEFINE_SET_CLEAR_SKREF_OP(name, field)                                 \
-  struct Clear##name##Op final : DLOp {                                        \
-    static const auto kType = DisplayListOpType::kClear##name;                 \
-                                                                               \
-    Clear##name##Op() {}                                                       \
-                                                                               \
-    void dispatch(DispatchContext& ctx) const {                                \
-      ctx.dispatcher.set##name(nullptr);                                       \
-    }                                                                          \
-  };                                                                           \
-  struct Set##name##Op final : DLOp {                                          \
-    static const auto kType = DisplayListOpType::kSet##name;                   \
-                                                                               \
-    explicit Set##name##Op(sk_sp<Sk##name> field) : field(std::move(field)) {} \
-                                                                               \
-    sk_sp<Sk##name> field;                                                     \
-                                                                               \
-    void dispatch(DispatchContext& ctx) const {                                \
-      ctx.dispatcher.set##name(field);                                         \
-    }                                                                          \
-  };
-DEFINE_SET_CLEAR_SKREF_OP(Blender, blender)
-#undef DEFINE_SET_CLEAR_SKREF_OP
-
-// Clear: 4 byte header + unused 4 byte payload uses 8 bytes
-//        (4 bytes unused)
 // Set: 4 byte header + unused 4 byte struct padding + Dl<name>
 //      instance copied to the memory following the record
 //      yields a size and efficiency that has somewhere between
@@ -629,7 +600,8 @@ struct TransformResetOp final : TransformClipOpBase {
                                                                            \
     void dispatch(DispatchContext& ctx) const {                            \
       if (op_needed(ctx)) {                                                \
-        ctx.dispatcher.clip##shapetype(shape, SkClipOp::k##clipop, is_aa); \
+        ctx.dispatcher.clip##shapetype(shape, DlCanvas::ClipOp::k##clipop, \
+                                       is_aa);                             \
       }                                                                    \
     }                                                                      \
   };
@@ -639,27 +611,27 @@ DEFINE_CLIP_SHAPE_OP(Rect, Difference)
 DEFINE_CLIP_SHAPE_OP(RRect, Difference)
 #undef DEFINE_CLIP_SHAPE_OP
 
-#define DEFINE_CLIP_PATH_OP(clipop)                                      \
-  struct Clip##clipop##PathOp final : TransformClipOpBase {              \
-    static const auto kType = DisplayListOpType::kClip##clipop##Path;    \
-                                                                         \
-    Clip##clipop##PathOp(SkPath path, bool is_aa)                        \
-        : is_aa(is_aa), path(path) {}                                    \
-                                                                         \
-    const bool is_aa;                                                    \
-    const SkPath path;                                                   \
-                                                                         \
-    void dispatch(DispatchContext& ctx) const {                          \
-      if (op_needed(ctx)) {                                              \
-        ctx.dispatcher.clipPath(path, SkClipOp::k##clipop, is_aa);       \
-      }                                                                  \
-    }                                                                    \
-                                                                         \
-    DisplayListCompare equals(const Clip##clipop##PathOp* other) const { \
-      return is_aa == other->is_aa && path == other->path                \
-                 ? DisplayListCompare::kEqual                            \
-                 : DisplayListCompare::kNotEqual;                        \
-    }                                                                    \
+#define DEFINE_CLIP_PATH_OP(clipop)                                        \
+  struct Clip##clipop##PathOp final : TransformClipOpBase {                \
+    static const auto kType = DisplayListOpType::kClip##clipop##Path;      \
+                                                                           \
+    Clip##clipop##PathOp(SkPath path, bool is_aa)                          \
+        : is_aa(is_aa), path(path) {}                                      \
+                                                                           \
+    const bool is_aa;                                                      \
+    const SkPath path;                                                     \
+                                                                           \
+    void dispatch(DispatchContext& ctx) const {                            \
+      if (op_needed(ctx)) {                                                \
+        ctx.dispatcher.clipPath(path, DlCanvas::ClipOp::k##clipop, is_aa); \
+      }                                                                    \
+    }                                                                      \
+                                                                           \
+    DisplayListCompare equals(const Clip##clipop##PathOp* other) const {   \
+      return is_aa == other->is_aa && path == other->path                  \
+                 ? DisplayListCompare::kEqual                              \
+                 : DisplayListCompare::kNotEqual;                          \
+    }                                                                      \
   };
 DEFINE_CLIP_PATH_OP(Intersect)
 DEFINE_CLIP_PATH_OP(Difference)
@@ -808,13 +780,13 @@ struct DrawArcOp final : DrawOpBase {
     void dispatch(DispatchContext& ctx) const {                           \
       if (op_needed(ctx)) {                                               \
         const SkPoint* pts = reinterpret_cast<const SkPoint*>(this + 1);  \
-        ctx.dispatcher.drawPoints(SkCanvas::PointMode::mode, count, pts); \
+        ctx.dispatcher.drawPoints(DlCanvas::PointMode::mode, count, pts); \
       }                                                                   \
     }                                                                     \
   };
-DEFINE_DRAW_POINTS_OP(Points, kPoints_PointMode);
-DEFINE_DRAW_POINTS_OP(Lines, kLines_PointMode);
-DEFINE_DRAW_POINTS_OP(Polygon, kPolygon_PointMode);
+DEFINE_DRAW_POINTS_OP(Points, kPoints);
+DEFINE_DRAW_POINTS_OP(Lines, kLines);
+DEFINE_DRAW_POINTS_OP(Polygon, kPolygon);
 #undef DEFINE_DRAW_POINTS_OP
 
 // 4 byte header + 4 byte payload packs efficiently into 8 bytes
@@ -836,23 +808,6 @@ struct DrawVerticesOp final : DrawOpBase {
       const DlVertices* vertices =
           reinterpret_cast<const DlVertices*>(this + 1);
       ctx.dispatcher.drawVertices(vertices, mode);
-    }
-  }
-};
-
-// 4 byte header + 12 byte payload packs efficiently into 16 bytes
-struct DrawSkVerticesOp final : DrawOpBase {
-  static const auto kType = DisplayListOpType::kDrawSkVertices;
-
-  DrawSkVerticesOp(sk_sp<SkVertices> vertices, SkBlendMode mode)
-      : mode(mode), vertices(std::move(vertices)) {}
-
-  const SkBlendMode mode;
-  const sk_sp<SkVertices> vertices;
-
-  void dispatch(DispatchContext& ctx) const {
-    if (op_needed(ctx)) {
-      ctx.dispatcher.drawSkVertices(vertices, mode);
     }
   }
 };
@@ -941,55 +896,6 @@ struct DrawImageRectOp final : DrawOpBase {
 DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNine, false)
 DEFINE_DRAW_IMAGE_NINE_OP(DrawImageNineWithAttr, true)
 #undef DEFINE_DRAW_IMAGE_NINE_OP
-
-// 4 byte header + 60 byte payload packs evenly into 64 bytes
-struct DrawImageLatticeOp final : DrawOpBase {
-  static const auto kType = DisplayListOpType::kDrawImageLattice;
-
-  DrawImageLatticeOp(const sk_sp<DlImage> image,
-                     int x_count,
-                     int y_count,
-                     int cell_count,
-                     const SkIRect& src,
-                     const SkRect& dst,
-                     DlFilterMode filter,
-                     bool with_paint)
-      : with_paint(with_paint),
-        x_count(x_count),
-        y_count(y_count),
-        cell_count(cell_count),
-        filter(filter),
-        src(src),
-        dst(dst),
-        image(std::move(image)) {}
-
-  const bool with_paint;
-  const int x_count;
-  const int y_count;
-  const int cell_count;
-  const DlFilterMode filter;
-  const SkIRect src;
-  const SkRect dst;
-  const sk_sp<DlImage> image;
-
-  void dispatch(DispatchContext& ctx) const {
-    if (op_needed(ctx)) {
-      const int* xDivs = reinterpret_cast<const int*>(this + 1);
-      const int* yDivs = reinterpret_cast<const int*>(xDivs + x_count);
-      const SkColor* colors =
-          (cell_count == 0) ? nullptr
-                            : reinterpret_cast<const SkColor*>(yDivs + y_count);
-      const SkCanvas::Lattice::RectType* types =
-          (cell_count == 0)
-              ? nullptr
-              : reinterpret_cast<const SkCanvas::Lattice::RectType*>(
-                    colors + cell_count);
-      ctx.dispatcher.drawImageLattice(
-          image, {xDivs, yDivs, types, x_count, y_count, &src, colors}, dst,
-          filter, with_paint);
-    }
-  }
-};
 
 // 4 byte header + 40 byte payload uses 44 bytes but is rounded up to 48 bytes
 // (4 bytes unused)
@@ -1088,53 +994,6 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
   }
 };
 
-// 4 byte header + 12 byte payload packs evenly into 16 bytes
-struct DrawSkPictureOp final : DrawOpBase {
-  static const auto kType = DisplayListOpType::kDrawSkPicture;
-
-  DrawSkPictureOp(sk_sp<SkPicture> picture, bool render_with_attributes)
-      : render_with_attributes(render_with_attributes),
-        picture(std::move(picture)) {}
-
-  const bool render_with_attributes;
-  const sk_sp<SkPicture> picture;
-
-  void dispatch(DispatchContext& ctx) const {
-    if (op_needed(ctx)) {
-      ctx.dispatcher.drawPicture(picture, nullptr, render_with_attributes);
-    }
-  }
-};
-
-// 4 byte header + 52 byte payload packs evenly into 56 bytes
-struct DrawSkPictureMatrixOp final : DrawOpBase {
-  static const auto kType = DisplayListOpType::kDrawSkPictureMatrix;
-
-  DrawSkPictureMatrixOp(sk_sp<SkPicture> picture,
-                        const SkMatrix& matrix,
-                        bool render_with_attributes)
-      : render_with_attributes(render_with_attributes),
-        picture(std::move(picture)),
-        matrix(matrix) {
-    // The copy constructor might copy in an unknown or a resolved
-    // type depending on whether the source Matrix had been used
-    // since its last mutating method. Calling getType here forces
-    // the matrix object into a known state so that it can be bulk
-    // compared without having to introduce a custom equals() method.
-    this->matrix.getType();
-  }
-
-  const bool render_with_attributes;
-  const sk_sp<SkPicture> picture;
-  const SkMatrix matrix;
-
-  void dispatch(DispatchContext& ctx) const {
-    if (op_needed(ctx)) {
-      ctx.dispatcher.drawPicture(picture, &matrix, render_with_attributes);
-    }
-  }
-};
-
 // 4 byte header + ptr aligned payload uses 12 bytes round up to 16
 // (4 bytes unused)
 struct DrawDisplayListOp final : DrawOpBase {
@@ -1143,7 +1002,7 @@ struct DrawDisplayListOp final : DrawOpBase {
   explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list)
       : display_list(std::move(display_list)) {}
 
-  sk_sp<DisplayList> display_list;
+  const sk_sp<DisplayList> display_list;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
