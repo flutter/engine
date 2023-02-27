@@ -34,7 +34,7 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   // If this version specification changes, the GN rules that process the
   // Metal to AIR must be updated as well.
   sl_options.msl_version =
-      spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+      spirv_cross::CompilerMSL::Options::make_msl_version(2, 1);
   sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
 
@@ -348,7 +348,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_1);
+          shaderc_env_version::shaderc_env_version_vulkan_1_3);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
@@ -357,9 +357,9 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_0);
+          shaderc_env_version::shaderc_env_version_vulkan_1_3);
       spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+          shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kRuntimeStageMetal:
     case TargetPlatform::kRuntimeStageGLES:
@@ -383,7 +383,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_target_env::shaderc_target_env_opengl,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
       spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+          shaderc_spirv_version::shaderc_spirv_version_1_3);
       spirv_options.AddMacroDefinition("SKIA_GRAPHICS_BACKEND");
       break;
     case TargetPlatform::kUnknown:
@@ -437,9 +437,10 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
                    << ShaderCErrorToString(spv_result_->GetCompilationStatus())
                    << ". " << spv_result_->GetNumErrors() << " error(s) and "
                    << spv_result_->GetNumWarnings() << " warning(s).";
-    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0) {
-      COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
-    }
+    // if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0)
+    // {
+    COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
+    // }
     return;
   } else {
     included_file_names_ = std::move(included_file_names);

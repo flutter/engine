@@ -18,6 +18,7 @@ impeller_shaders("shader_fixtures") {
     "box_fade.vert",
     "colors.vert",
     "colors.frag",
+    "cubic_to_quads.comp",
     "impeller.frag",
     "impeller.vert",
     "inactive_uniforms.frag",
@@ -26,19 +27,24 @@ impeller_shaders("shader_fixtures") {
     "instanced_draw.vert",
     "mipmaps.frag",
     "mipmaps.vert",
+    "quad_polyline.comp",
     "sample.comp",
     "stage1.comp",
     "stage2.comp",
     "simple.vert",
+    "stroke.comp",
     "test_texture.frag",
     "test_texture.vert",
   ]
 
   if (impeller_enable_opengles) {
     gles_exclusions = [
+      "cubic_to_quads.comp",
+      "quad_polyline.comp",
       "sample.comp",
       "stage1.comp",
       "stage2.comp",
+      "stroke.comp",
     ]
   }
 }
@@ -70,10 +76,12 @@ test_fixtures("file_fixtures") {
     "bay_bridge.jpg",
     "blue_noise.png",
     "boston.jpg",
+    "cubic_to_quads.comp",
     "embarcadero.jpg",
     "flutter_logo_baked.glb",
     "kalimba.jpg",
     "multiple_stages.hlsl",
+    "quad_polyline.comp",
     "resources_limit.vert",
     "sample.comp",
     "sample.frag",
@@ -85,6 +93,7 @@ test_fixtures("file_fixtures") {
     "sa%m#ple.vert",
     "stage1.comp",
     "stage2.comp",
+    "stroke.comp",
     "struct_def_bug.vert",
     "table_mountain_nx.png",
     "table_mountain_ny.png",
