@@ -127,7 +127,7 @@ class Path {
   /// transformed.
   ///
   /// It is suitable to use the max basis length of the matrix used to transform
-  /// the path.
+  /// the path. If the provided scale is 0, curves will revert to lines.
   Polyline CreatePolyline(Scalar scale) const;
 
   std::optional<Rect> GetBoundingBox() const;
