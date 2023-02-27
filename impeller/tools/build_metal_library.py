@@ -111,10 +111,17 @@ def main():
 
   command += args.source
 
-  subprocess.check_output(command, stderr=subprocess.STDOUT)
+  try:
+    subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+  except subprocess.CalledProcessError as e:
+    print(e.output)
+    return e.returncode
+
+  return 0
+
 
 
 if __name__ == '__main__':
   if sys.platform != 'darwin':
     raise Exception('This script only runs on Mac')
-  main()
+  sys.exit(main())
