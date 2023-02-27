@@ -68,6 +68,10 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
       std::make_unique<tonic::DartPersistentValue>(dart_state, callback_handle);
   auto buffer_handle = std::make_unique<tonic::DartPersistentValue>(
       dart_state, raw_buffer_handle);
+  auto asset_manager = UIDartState::Current()
+                           ->platform_configuration()
+                           ->client()
+                           ->GetAssetManager();
 
   auto ui_task = fml::MakeCopyable(
       [buffer_callback = std::move(buffer_callback),
@@ -90,12 +94,8 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
 
   dart_state->GetConcurrentTaskRunner()->PostTask(
       [asset_name = std::move(asset_name),
+       asset_manager = std::move(asset_manager),
        ui_task_runner = std::move(ui_task_runner), ui_task] {
-        std::shared_ptr<AssetManager> asset_manager =
-            UIDartState::Current()
-                ->platform_configuration()
-                ->client()
-                ->GetAssetManager();
         std::unique_ptr<fml::Mapping> mapping =
             asset_manager->GetAsMapping(asset_name);
 
