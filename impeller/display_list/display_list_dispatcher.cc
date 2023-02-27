@@ -397,7 +397,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
 
-        auto intrinsic_size = Rect::MakePointBounds({start_point, end_point});
+        auto intrinsic_size = Rect::MakePointBounds(start_point, end_point);
         if (intrinsic_size.has_value()) {
           contents->SetColorSourceSize(intrinsic_size->size);
         }
@@ -428,7 +428,7 @@ void DisplayListDispatcher::setColorSource(
 
         auto radius_pt = Point(radius, radius);
         auto intrinsic_size =
-            Rect::MakePointBounds({center + radius_pt, center - radius_pt});
+            Rect::MakePointBounds(center + radius_pt, center - radius_pt);
         if (intrinsic_size.has_value()) {
           contents->SetColorSourceSize(intrinsic_size->size);
         }
