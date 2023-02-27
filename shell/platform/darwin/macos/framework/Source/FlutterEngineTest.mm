@@ -7,6 +7,7 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 #include "gtest/gtest.h"
+#include "shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 
 #include <functional>
 #include <thread>
@@ -734,10 +735,9 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
                                         arguments:@{@"type" : @"cancelable"}];
 
-  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
-
   triedToTerminate = FALSE;
   nextResponse = @"exit";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
   EXPECT_TRUE(triedToTerminate);
 

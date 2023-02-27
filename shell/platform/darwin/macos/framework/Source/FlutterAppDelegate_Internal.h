@@ -15,7 +15,7 @@
  * Holds a weak reference to the termination handler owned by the engine.
  * Called by the |FlutterApplication| when termination is requested by the OS.
  */
-@property(readwrite, weak) FlutterEngineTerminationHandler* terminationHandler;
+@property(readwrite, nullable, weak) FlutterEngineTerminationHandler* terminationHandler;
 
 @end
 
