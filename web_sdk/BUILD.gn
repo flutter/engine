@@ -182,9 +182,9 @@ template("_dartdevc") {
       if (is_win) {
         ext = ".exe"
       }
-      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
-      dartdevc = rebase_path(
-              "$host_prebuilt_dart_sdk/bin/snapshots/dartdevc.dart.snapshot")
+      dart = rebase_path("$prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
+      dartdevc =
+          rebase_path("$prebuilt_dart_sdk/bin/snapshots/dartdevc.dart.snapshot")
       args = [
                dart,
                dartdevc,
@@ -232,9 +232,9 @@ template("_kernel_worker") {
       if (is_win) {
         ext = ".exe"
       }
-      dart = rebase_path("$host_prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
+      dart = rebase_path("$prebuilt_dart_sdk/bin/dart$ext", root_out_dir)
       kernel_worker = rebase_path(
-              "$host_prebuilt_dart_sdk/bin/snapshots/kernel_worker.dart.snapshot")
+              "$prebuilt_dart_sdk/bin/snapshots/kernel_worker.dart.snapshot")
 
       args = [
                dart,
@@ -318,7 +318,7 @@ template("_compile_platform") {
     if (flutter_prebuilt_dart_sdk) {
       args += [
         "--multi-root",
-        "file:///" + rebase_path("$host_prebuilt_dart_sdk/.."),
+        "file:///" + rebase_path("$prebuilt_dart_sdk/.."),
       ]
     } else {
       args += [
@@ -472,7 +472,7 @@ template("_compile_ddc_modules") {
     if (flutter_prebuilt_dart_sdk) {
       args += [
         "--multi-root",
-        "file:///" + rebase_path("$host_prebuilt_dart_sdk/.."),
+        "file:///" + rebase_path("$prebuilt_dart_sdk/.."),
       ]
     } else {
       args += [

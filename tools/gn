@@ -460,23 +460,31 @@ def to_gn_args(args):
   # If we have a prebuilt for the Dart SDK for the target architecture, then
   # use it instead of building a new one.
   if args.prebuilt_dart_sdk:
-    if can_use_prebuilt_dart(args):
-      print(
-          'Using prebuilt Dart SDK binary. If you are editing Dart sources '
-          'and wish to compile the Dart SDK, set `--no-prebuilt-dart-sdk`.'
-      )
+    if args.prebuilt_dart_sdk_path is not None:
       gn_args['flutter_prebuilt_dart_sdk'] = True
-      gn_args['dart_sdk_output'] = 'built-dart-sdk'
-    elif is_host_build(args):
-      print(
-          'Tried to download prebuilt Dart SDK but an appropriate version '
-          'could not be found!'
-      )
-      print(
-          'Either retry by running '
-          'flutter/tools/download_dart_sdk.py manually or compile from '
-          'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn'
-      )
+      gn_args['prebuilt_dart_sdk'] = args.prebuilt_dart_sdk_path
+    else:
+      dart_sdk_dir = os.getenv('DART_SDK_DIR')
+      if dart_sdk_dir is not None:
+        gn_args['flutter_prebuilt_dart_sdk'] = True
+        gn_args['prebuilt_dart_sdk'] = dart_sdk_dir
+      elif can_use_prebuilt_dart(args):
+        print(
+            'Using prebuilt Dart SDK binary. If you are editing Dart sources '
+            'and wish to compile the Dart SDK, set `--no-prebuilt-dart-sdk`.'
+        )
+        gn_args['flutter_prebuilt_dart_sdk'] = True
+        gn_args['dart_sdk_output'] = 'built-dart-sdk'
+      elif is_host_build(args):
+        print(
+            'Tried to download prebuilt Dart SDK but an appropriate version '
+            'could not be found!'
+        )
+        print(
+            'Either retry by running '
+            'flutter/tools/download_dart_sdk.py manually or compile from '
+            'source by setting `--no-prebuilt-dart-sdk` flag to tools/gn'
+        )
   elif is_host_build(args):
     # dart_platform_sdk is only defined for host builds, linux arm host builds
     # specify target_os=linux.
@@ -920,7 +928,9 @@ def parse_args(args):
   parser.add_argument(
       '--no-prebuilt-dart-sdk', dest='prebuilt_dart_sdk', action='store_false'
   )
-
+  parser.add_argument(
+      '--prebuilt-dart-sdk-path', dest='prebuilt_dart_sdk_path', type=str
+  )
   parser.add_argument(
       '--fuchsia-target-api-level', dest='fuchsia_target_api_level'
   )

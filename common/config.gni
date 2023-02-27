@@ -109,12 +109,16 @@ if (flutter_prebuilt_dart_sdk) {
   # one, so even when the build is targeting Fuchsia, use the prebuilt
   # Dart SDK for the host.
   if (current_toolchain == host_toolchain || is_fuchsia || is_wasm) {
-    prebuilt_dart_sdk = host_prebuilt_dart_sdk
-    prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
+    default_prebuilt_dart_sdk = host_prebuilt_dart_sdk
+    default_prebuilt_dart_sdk_config = _host_prebuilt_dart_sdk_config
   } else {
-    prebuilt_dart_sdk = target_prebuilt_dart_sdk
-    prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
+    default_prebuilt_dart_sdk = target_prebuilt_dart_sdk
+    default_prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
   }
+}
+
+declare_args() {
+  prebuilt_dart_sdk = default_prebuilt_dart_sdk
 }
 
 # Flutter SDK artifacts should only be built when either doing host builds, or
