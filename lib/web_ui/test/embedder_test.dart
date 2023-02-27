@@ -9,6 +9,8 @@ import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
+import 'matchers.dart';
+
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
@@ -57,19 +59,13 @@ void testMain() {
     expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
   });
 
-  test('starts without shadowDom available too', () {
+  test('throws when shadowDom is not available', () {
     final dynamic oldAttachShadow = attachShadow;
     expect(oldAttachShadow, isNotNull);
 
     attachShadow = null; // Break ShadowDOM
 
-    final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final HostNode hostNode = embedder.glassPaneShadow;
-    expect(domInstanceOfString(hostNode.node, 'Element'), isTrue);
-    expect(
-      (hostNode.node as DomElement).tagName,
-      equalsIgnoringCase('flt-element-host-node'),
-    );
+    expect(() => FlutterViewEmbedder(), throwsUnsupportedError);
     attachShadow = oldAttachShadow; // Restore ShadowDOM
   });
 

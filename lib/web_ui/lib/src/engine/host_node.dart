@@ -4,116 +4,27 @@
 
 import 'browser_detection.dart';
 import 'dom.dart';
-import 'embedder.dart';
 import 'safe_browser_api.dart';
 import 'text_editing/text_editing.dart';
 
 /// The interface required to host a flutter app in the DOM, and its tests.
 ///
-/// Consider this as the intersection in functionality between [DomShadowRoot]
-/// (preferred Flutter rendering method) and [DomDocument] (fallback).
-///
-/// Not to be confused with [DomDocumentOrShadowRoot].
-///
-/// This also handles the stylesheet that is applied to the different types of
-/// HostNodes; for ShadowDOM there's not much to do, but for ElementNodes, the
-/// stylesheet is "namespaced" by the `flt-glass-pane` prefix, so it "only"
-/// affects things that Flutter web owns.
-abstract class HostNode {
-  /// Returns an appropriate HostNode for the given [root].
-  ///
-  /// If `attachShadow` is supported, this returns a [ShadowDomHostNode], else
-  /// this will fall-back to an [ElementHostNode].
-  factory HostNode.create(DomElement root, String defaultFont) {
-    if (getJsProperty<Object?>(root, 'attachShadow') != null) {
-      return ShadowDomHostNode(root, defaultFont);
-    } else {
-      // attachShadow not available, fall back to ElementHostNode.
-      return ElementHostNode(root, defaultFont);
-    }
-  }
-
-  /// Retrieves the [DomElement] that currently has focus.
-  ///
-  /// See:
-  /// * [Document.activeElement](https://developer.mozilla.org/en-US/docs/Web/API/Document/activeElement)
-  DomElement? get activeElement;
-
-  /// Adds a node to the end of the child [nodes] list of this node.
-  ///
-  /// If the node already exists in this document, it will be removed from its
-  /// current parent node, then added to this node.
-  ///
-  /// This method is more efficient than `nodes.add`, and is the preferred
-  /// way of appending a child node.
-  ///
-  /// See:
-  /// * [Node.appendChild](https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild)
-  DomNode append(DomNode node);
-
-  /// Appends all of an [Iterable<DomNode>] to this [HostNode].
-  void appendAll(Iterable<DomNode> nodes);
-
-  /// Returns true if this node contains the specified node.
-  /// See:
-  /// * [Node.contains](https://developer.mozilla.org/en-US/docs/Web/API/Node.contains)
-  bool contains(DomNode? other);
-
-  /// Returns the currently wrapped [DomNode].
-  DomNode get node;
-
-  /// Finds the first descendant element of this document that matches the
-  /// specified group of selectors.
-  ///
-  /// [selectors] should be a string using CSS selector syntax.
-  ///
-  /// ```dart
-  /// var element1 = document.querySelector('.className');
-  /// var element2 = document.querySelector('#id');
-  /// ```
-  ///
-  /// For details about CSS selector syntax, see the
-  /// [CSS selector specification](http://www.w3.org/TR/css3-selectors/).
-  ///
-  /// See:
-  /// * [Document.querySelector](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector)
-  DomElement? querySelector(String selectors);
-
-  /// Finds all descendant elements of this document that match the specified
-  /// group of selectors.
-  ///
-  /// [selectors] should be a string using CSS selector syntax.
-  ///
-  /// ```dart
-  /// var items = document.querySelectorAll('.itemClassName');
-  /// ```
-  ///
-  /// For details about CSS selector syntax, see the
-  /// [CSS selector specification](http://www.w3.org/TR/css3-selectors/).
-  ///
-  /// See:
-  /// * [Document.querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)
-  Iterable<DomElement> querySelectorAll(String selectors);
-}
-
-/// A [HostNode] implementation, backed by a [DomShadowRoot].
-///
-/// This is the preferred flutter implementation, but it might not be supported
-/// by all browsers yet.
-///
-/// The constructor might throw when calling `attachShadow`, if ShadowDOM is not
-/// supported in the current environment. In this case, a fallback [ElementHostNode]
-/// should be created instead.
-class ShadowDomHostNode implements HostNode {
+/// It is backed by a [DomShadowRoot] and handles the stylesheet that is applied
+/// to the ShadowDOM.
+class HostNode {
   /// Build a HostNode by attaching a [DomShadowRoot] to the `root` element.
   ///
   /// This also calls [applyGlobalCssRulesToSheet], with the [defaultFont]
   /// to be used as the default font definition.
-  ShadowDomHostNode(DomElement root, String defaultFont)
+  HostNode(DomElement root, String defaultFont)
       : assert(
           root.isConnected ?? true,
-          'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.'
+          'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.',
         ) {
+    if (getJsProperty<Object?>(root, 'attachShadow') == null) {
+      throw UnsupportedError('ShadowDOM is not supported in this browser.');
+    }
+
     _shadow = root.attachShadow(<String, dynamic>{
       'mode': 'open',
       // This needs to stay false to prevent issues like this:
@@ -135,90 +46,75 @@ class ShadowDomHostNode implements HostNode {
 
   late DomShadowRoot _shadow;
 
-  @override
+  /// Retrieves the [DomElement] that currently has focus.
+  ///
+  /// See:
+  /// * [Document.activeElement](https://developer.mozilla.org/en-US/docs/Web/API/Document/activeElement)
   DomElement? get activeElement => _shadow.activeElement;
 
-  @override
-  DomElement? querySelector(String selectors) {
-    return _shadow.querySelector(selectors);
-  }
-
-  @override
-  Iterable<DomElement> querySelectorAll(String selectors) {
-    return _shadow.querySelectorAll(selectors);
-  }
-
-  @override
+  /// Adds a node to the end of the child [nodes] list of this node.
+  ///
+  /// If the node already exists in this document, it will be removed from its
+  /// current parent node, then added to this node.
+  ///
+  /// This method is more efficient than `nodes.add`, and is the preferred
+  /// way of appending a child node.
+  ///
+  /// See:
+  /// * [Node.appendChild](https://developer.mozilla.org/en-US/docs/Web/API/Node/appendChild)
   DomNode append(DomNode node) {
     return _shadow.appendChild(node);
   }
 
-  @override
+  /// Appends all of an [Iterable<DomNode>] to this [HostNode].
+  void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
+
+  /// Returns true if this node contains the specified node.
+  /// See:
+  /// * [Node.contains](https://developer.mozilla.org/en-US/docs/Web/API/Node.contains)
   bool contains(DomNode? other) {
     return _shadow.contains(other);
   }
 
-  @override
+  /// Returns the currently wrapped [DomNode].
   DomNode get node => _shadow;
 
-  @override
-  void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
-}
-
-/// A [HostNode] implementation, backed by a [DomElement].
-///
-/// This is a fallback implementation, in case [ShadowDomHostNode] fails when
-/// being constructed.
-class ElementHostNode implements HostNode {
-  /// Build a HostNode by attaching a child [DomElement] to the `root` element.
-  ElementHostNode(DomElement root, String defaultFont) {
-    // Append the stylesheet here, so this class is completely symmetric to the
-    // ShadowDOM version.
-    final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
-    styleElement.id = 'flt-internals-stylesheet';
-    // The styleElement must be appended to the DOM, or its `sheet` will be null later.
-    root.appendChild(styleElement);
-    applyGlobalCssRulesToSheet(
-      styleElement.sheet! as DomCSSStyleSheet,
-      hasAutofillOverlay: browserHasAutofillOverlay(),
-      cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
-      defaultCssFont: defaultFont,
-    );
-
-    _element = domDocument.createElement('flt-element-host-node');
-    root.appendChild(_element);
-  }
-
-  late DomElement _element;
-
-  @override
-  DomElement? get activeElement => _element.ownerDocument?.activeElement;
-
-  @override
+  /// Finds the first descendant element of this document that matches the
+  /// specified group of selectors.
+  ///
+  /// [selectors] should be a string using CSS selector syntax.
+  ///
+  /// ```dart
+  /// var element1 = document.querySelector('.className');
+  /// var element2 = document.querySelector('#id');
+  /// ```
+  ///
+  /// For details about CSS selector syntax, see the
+  /// [CSS selector specification](http://www.w3.org/TR/css3-selectors/).
+  ///
+  /// See:
+  /// * [Document.querySelector](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelector)
   DomElement? querySelector(String selectors) {
-    return _element.querySelector(selectors);
+    return _shadow.querySelector(selectors);
   }
 
-  @override
+  /// Finds all descendant elements of this document that match the specified
+  /// group of selectors.
+  ///
+  /// [selectors] should be a string using CSS selector syntax.
+  ///
+  /// ```dart
+  /// var items = document.querySelectorAll('.itemClassName');
+  /// ```
+  ///
+  /// For details about CSS selector syntax, see the
+  /// [CSS selector specification](http://www.w3.org/TR/css3-selectors/).
+  ///
+  /// See:
+  /// * [Document.querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)
   Iterable<DomElement> querySelectorAll(String selectors) {
-    return _element.querySelectorAll(selectors);
+    return _shadow.querySelectorAll(selectors);
   }
-
-  @override
-  DomNode append(DomNode node) {
-    return _element.appendChild(node);
-  }
-
-  @override
-  bool contains(DomNode? other) {
-    return _element.contains(other);
-  }
-
-  @override
-  DomNode get node => _element;
-
-  @override
-  void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
 }
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.

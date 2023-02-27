@@ -14,8 +14,8 @@ void testMain() {
   final DomElement rootNode = domDocument.createElement('div');
   domDocument.body!.append(rootNode);
 
-  group('ShadowDomHostNode', () {
-    final HostNode hostNode = ShadowDomHostNode(rootNode, '14px monospace');
+  group('$HostNode', () {
+    final HostNode hostNode = HostNode(rootNode, '14px monospace');
 
     test('Initializes and attaches a shadow root', () {
       expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
@@ -137,63 +137,46 @@ void testMain() {
       expect(autofillOverlayActive, isTrue);
     }, skip: !browserHasAutofillOverlay());
 
-    _runDomTests(hostNode);
-  });
+    group('DOM operations', () {
+      final DomElement target = domDocument.createElement('div')..id = 'yep';
 
-  group('ElementHostNode', () {
-    final HostNode hostNode = ElementHostNode(rootNode, '');
+      setUp(() {
+        hostNode.appendAll(<DomNode>[
+          domDocument.createElement('div'),
+          target,
+          domDocument.createElement('flt-span'),
+          domDocument.createElement('div'),
+        ]);
+      });
 
-    test('Initializes and attaches a child element', () {
-      expect(domInstanceOfString(hostNode.node, 'Element'), isTrue);
-      expect((hostNode.node as DomElement).shadowRoot, isNull);
-      expect(hostNode.node.parentNode, rootNode);
-    });
+      tearDown(() {
+        hostNode.node.clearChildren();
+      });
 
-    _runDomTests(hostNode);
-  });
-}
+      test('querySelector', () {
+        final DomElement? found = hostNode.querySelector('#yep');
 
-// The common test suite that all types of HostNode implementations need to pass.
-void _runDomTests(HostNode hostNode) {
-  group('DOM operations', () {
-    final DomElement target = domDocument.createElement('div')..id = 'yep';
+        expect(found, target);
+      });
 
-    setUp(() {
-      hostNode.appendAll(<DomNode>[
-        domDocument.createElement('div'),
-        target,
-        domDocument.createElement('flt-span'),
-        domDocument.createElement('div'),
-      ]);
-    });
+      test('.contains and .append', () {
+        final DomElement another = domDocument.createElement('div')
+          ..id = 'another';
 
-    tearDown(() {
-      hostNode.node.clearChildren();
-    });
+        expect(hostNode.contains(target), isTrue);
+        expect(hostNode.contains(another), isFalse);
+        expect(hostNode.contains(null), isFalse);
 
-    test('querySelector', () {
-      final DomElement? found = hostNode.querySelector('#yep');
+        hostNode.append(another);
+        expect(hostNode.contains(another), isTrue);
+      });
 
-      expect(found, target);
-    });
+      test('querySelectorAll', () {
+        final List<DomNode> found = hostNode.querySelectorAll('div').toList();
 
-    test('.contains and .append', () {
-      final DomElement another = domDocument.createElement('div')
-        ..id = 'another';
-
-      expect(hostNode.contains(target), isTrue);
-      expect(hostNode.contains(another), isFalse);
-      expect(hostNode.contains(null), isFalse);
-
-      hostNode.append(another);
-      expect(hostNode.contains(another), isTrue);
-    });
-
-    test('querySelectorAll', () {
-      final List<DomNode> found = hostNode.querySelectorAll('div').toList();
-
-      expect(found.length, 3);
-      expect(found[1], target);
+        expect(found.length, 3);
+        expect(found[1], target);
+      });
     });
   });
 }

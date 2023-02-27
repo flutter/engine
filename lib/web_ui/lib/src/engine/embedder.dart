@@ -160,9 +160,7 @@ class FlutterViewEmbedder {
 
     // Create a [HostNode] under the glass pane element, and attach everything
     // there, instead of directly underneath the glass panel.
-    //
-    // TODO(dit): clean HostNode, https://github.com/flutter/flutter/issues/116204
-    final HostNode glassPaneElementHostNode = HostNode.create(
+    final HostNode glassPaneElementHostNode = HostNode(
       glassPaneElement,
       defaultCssFont,
     );
