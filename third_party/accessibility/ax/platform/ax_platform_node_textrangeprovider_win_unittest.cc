@@ -5094,7 +5094,6 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
   selection.Reset();
 }
 
-// TODO(schectman) Find text cannot ignore case yet.
 TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   Init(BuildTextDocument({"some text", "more text"},
                          false /* build_word_boundaries_offsets */,
@@ -5109,8 +5108,6 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   // Test Leaf kStaticText search.
   GetTextRangeProviderFromTextNode(range, root_node->children()[0]);
   EXPECT_UIA_FIND_TEXT(range, L"some text", false, owner);
-  // Some expectations like the one below are currently skipped until we can
-  // implement ignoreCase in FindText.
   EXPECT_UIA_FIND_TEXT(range, L"SoMe TeXt", true, owner);
   GetTextRangeProviderFromTextNode(range, root_node->children()[1]);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);

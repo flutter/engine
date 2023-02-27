@@ -440,8 +440,6 @@ static bool StringSearch(std::u16string& search_string,
                          size_t* find_length,
                          bool ignore_case,
                          bool backwards) {
-  // TODO(schectman) Respect ignore_case/i18n.
-  // https://github.com/flutter/flutter/issues/117013
   if (ignore_case) {
     auto const& ct = std::use_facet<std::ctype<char16_t>>(std::locale());
     auto tolower = [&ct](char16_t c){ return ct.tolower(c); };
