@@ -113,7 +113,7 @@ class ShadowDomHostNode implements HostNode {
       : assert(root.isConnected ?? true,
             'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.') {
     final DomElement element =
-        domDocument.createElement('flt-shadow-host-node');
+        domDocument.createElement('flt-render-host');
     root.appendChild(element);
     _shadow = element.attachShadow(<String, dynamic>{
       'mode': 'open',
@@ -223,8 +223,8 @@ class ElementHostNode implements HostNode {
 }
 
 DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
-  const String hostTagName = 'flt-text-editing-host-node';
-  final DomElement domElement = domDocument.createElement(hostTagName);
+  final DomElement domElement =
+      domDocument.createElement('flt-text-editing-host');
   final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
 
   styleElement.id = 'flt-text-editing-stylesheet';
@@ -232,7 +232,7 @@ DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
   applyGlobalCssRulesToSheet(
     styleElement.sheet! as DomCSSStyleSheet,
     hasAutofillOverlay: browserHasAutofillOverlay(),
-    cssSelectorPrefix: hostTagName,
+    cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
     defaultCssFont: defaultFont,
   );
 

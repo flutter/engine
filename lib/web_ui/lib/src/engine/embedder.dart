@@ -193,8 +193,8 @@ class FlutterViewEmbedder {
         .prepareAccessibilityPlaceholder();
 
     glassPaneElementHostNode.appendAll(<DomNode>[
+      accessibilityPlaceholder,
       _sceneHostElement!,
-
       // The semantic host goes last because hit-test order-wise it must be
       // first. If semantics goes under the scene host, platform views will
       // obscure semantic elements.
@@ -207,8 +207,7 @@ class FlutterViewEmbedder {
       // with the platform view, the platform view will be reachable.
     ]);
 
-    _textEditingHostNode?.appendChild(accessibilityPlaceholder);
-    _textEditingHostNode?.appendChild(semanticsHostElement);
+    glassPaneElement.appendChild(semanticsHostElement);
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
     if (configuration.debugShowSemanticsNodes) {
