@@ -120,7 +120,6 @@ def main():
   return 0
 
 
-
 if __name__ == '__main__':
   if sys.platform != 'darwin':
     raise Exception('This script only runs on Mac')
