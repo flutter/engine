@@ -89,7 +89,15 @@ void testMain() {
   }, skip: browserEngine != BrowserEngine.firefox);
 
   group('Shadow root and styles', () {
-    final FlutterViewEmbedder embedder = FlutterViewEmbedder();
+    late FlutterViewEmbedder embedder;
+
+    setUp(() {
+      embedder = FlutterViewEmbedder();
+    });
+
+    tearDown(() {
+      embedder.glassPaneElement.remove();
+    });
 
     test('throws when shadowDom is not available', () {
       final dynamic oldAttachShadow = attachShadow;
@@ -156,7 +164,7 @@ void testMain() {
                 selector: 'flt-scene-host', declaration: 'font-size: 14px');
       } else {
         hasFont = hasCssRule(style,
-            selector: 'flt-scene-host', declaration: 'font: 14px monospace');
+            selector: 'flt-scene-host', declaration: 'font: 14px sans-serif');
       }
 
       expect(hasColorRed, isTrue,
