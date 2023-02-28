@@ -132,8 +132,10 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
-    // unmark the usage as transient if it is used as a sampled image
-    // See: https://github.com/flutter/flutter/issues/121633
+    // Device transient images can only be used as attachments. The caller
+    // specified incorrect usage flags and is attempting to read a device
+    // transient image in a shader. Unset the transient attachment flag. See:
+    // https://github.com/flutter/flutter/issues/121633
     if (mode == StorageMode::kDeviceTransient) {
       vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
     }
@@ -141,8 +143,10 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
-    // unmark the usage as transient if it is used as a storage image
-    // See: https://github.com/flutter/flutter/issues/121633
+    // Device transient images can only be used as attachments. The caller
+    // specified incorrect usage flags and is attempting to read a device
+    // transient image in a shader. Unset the transient attachment flag. See:
+    // https://github.com/flutter/flutter/issues/121633
     if (mode == StorageMode::kDeviceTransient) {
       vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
     }
