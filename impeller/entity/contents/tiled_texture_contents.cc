@@ -67,6 +67,19 @@ TiledTextureContents::CreateFilterTexture(
   return std::nullopt;
 }
 
+SamplerDescriptor TiledTextureContents::CreateDescriptor() const {
+  SamplerDescriptor descriptor = sampler_descriptor_;
+  auto width_mode = TileModeToAddressMode(x_tile_mode_);
+  auto height_mode = TileModeToAddressMode(y_tile_mode_);
+  if (width_mode.has_value()) {
+    descriptor.width_address_mode = width_mode.value();
+  }
+  if (height_mode.has_value()) {
+    descriptor.height_address_mode = height_mode.value();
+  }
+  return descriptor;
+}
+
 bool TiledTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass) const {
@@ -128,16 +141,6 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
 
-  SamplerDescriptor descriptor = sampler_descriptor_;
-  auto width_mode = TileModeToAddressMode(x_tile_mode_);
-  auto height_mode = TileModeToAddressMode(y_tile_mode_);
-  if (width_mode.has_value()) {
-    descriptor.width_address_mode = width_mode.value();
-  }
-  if (height_mode.has_value()) {
-    descriptor.height_address_mode = height_mode.value();
-  }
-
   if (color_filter_.has_value()) {
     auto filtered_texture = CreateFilterTexture(renderer);
     if (!filtered_texture.has_value()) {
@@ -145,11 +148,13 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
     }
     FS::BindTextureSampler(
         cmd, filtered_texture.value(),
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(descriptor));
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            CreateDescriptor()));
   } else {
     FS::BindTextureSampler(
         cmd, texture_,
-        renderer.GetContext()->GetSamplerLibrary()->GetSampler(descriptor));
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            CreateDescriptor()));
   }
 
   if (!pass.AddCommand(std::move(cmd))) {
@@ -182,9 +187,9 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
+  frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
   frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
   frag_info.alpha = GetAlpha();
@@ -204,6 +209,7 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
   cmd.BindVertices(geometry_result.vertex_buffer);
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
   if (color_filter_.has_value()) {
     auto filtered_texture = CreateFilterTexture(renderer);
     if (!filtered_texture.has_value()) {
@@ -212,12 +218,12 @@ bool TiledTextureContents::RenderVertices(const ContentContext& renderer,
     FS::BindTextureSampler(
         cmd, filtered_texture.value(),
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor_));
+            CreateDescriptor()));
   } else {
     FS::BindTextureSampler(
         cmd, texture_,
         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-            sampler_descriptor_));
+            CreateDescriptor()));
   }
 
   if (!pass.AddCommand(std::move(cmd))) {
