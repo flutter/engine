@@ -196,16 +196,16 @@ public class PlatformPlugin {
     }
   }
 
-  private int rawAndroidOrientation = 0;
+  private int flutterRequestedOrientation = 0;
 
   private void setSystemChromePreferredOrientations(AndroidOrientation androidOrientation) {
-    rawAndroidOrientation = androidOrientation.getRawAndroidOrientation();
+    flutterRequestedOrientation = androidOrientation.getFlutterRequestedOrientation();
     activity.setRequestedOrientation(androidOrientation.getAndroidOrientation());
   }
 
   private AndroidOrientation getSystemChromePreferredOrientations() {
     AndroidOrientation orientation =
-        new AndroidOrientation(activity.getRequestedOrientation(), rawAndroidOrientation);
+        new AndroidOrientation(activity.getRequestedOrientation(), flutterRequestedOrientation);
     return orientation;
   }
 

@@ -31,6 +31,7 @@ import androidx.test.core.app.ApplicationProvider;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.Brightness;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.ClipboardContentFormat;
+import io.flutter.embedding.engine.systemchannels.PlatformChannel.DeviceOrientation;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.PlatformMessageHandler.AndroidOrientation;
 import io.flutter.embedding.engine.systemchannels.PlatformChannel.SystemChromeStyle;
 import io.flutter.plugin.platform.PlatformPlugin.PlatformPluginDelegate;
@@ -566,17 +567,17 @@ public class PlatformPluginTest {
     PlatformPlugin platformPlugin =
         new PlatformPlugin(mockFragmentActivity, mockPlatformChannel, mockPlatformPluginDelegate);
 
-    for (int requestedAndroidOrientation = 0;
-        requestedAndroidOrientation <= 15;
-        requestedAndroidOrientation += 1) {
+    Integer firstOrientation = 0;
+    Integer lastOrientation = DeviceOrientation.mostSignificantBit() << 1;
+    for (Integer orientation = firstOrientation; orientation < lastOrientation; orientation += 1) {
       platformPlugin.mPlatformMessageHandler.setPreferredOrientations(
-          new AndroidOrientation(requestedAndroidOrientation, requestedAndroidOrientation));
-      int androidOrientation =
+          new AndroidOrientation(orientation, orientation));
+      Integer flutterRequestedOrientation =
           platformPlugin
               .mPlatformMessageHandler
               .getPreferredOrientations()
-              .getRawAndroidOrientation();
-      assertTrue(requestedAndroidOrientation == androidOrientation);
+              .getFlutterRequestedOrientation();
+      assertTrue(orientation == flutterRequestedOrientation);
     }
   }
 

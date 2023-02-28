@@ -85,7 +85,7 @@ public class PlatformChannel {
                 AndroidOrientation androidOrientation =
                     platformMessageHandler.getPreferredOrientations();
                 JSONArray encodedAndroidOrientation =
-                    encodeOrientations(androidOrientation.getRawAndroidOrientation());
+                    encodeOrientations(androidOrientation.getFlutterRequestedOrientation());
                 result.success(encodedAndroidOrientation);
                 break;
               case "SystemChrome.setApplicationSwitcherDescription":
@@ -240,29 +240,16 @@ public class PlatformChannel {
     int firstRequestedOrientation = 0x00;
     for (int index = 0; index < encodedOrientations.length(); index += 1) {
       String encodedOrientation = encodedOrientations.getString(index);
-      DeviceOrientation orientation = DeviceOrientation.fromValue(encodedOrientation);
+      DeviceOrientation deviceOrientation = DeviceOrientation.fromValue(encodedOrientation);
 
-      switch (orientation) {
-        case PORTRAIT_UP:
-          requestedOrientation |= 0x01;
-          break;
-        case PORTRAIT_DOWN:
-          requestedOrientation |= 0x04;
-          break;
-        case LANDSCAPE_LEFT:
-          requestedOrientation |= 0x02;
-          break;
-        case LANDSCAPE_RIGHT:
-          requestedOrientation |= 0x08;
-          break;
-      }
+      requestedOrientation |= deviceOrientation.encodedBit;
 
       if (firstRequestedOrientation == 0x00) {
         firstRequestedOrientation = requestedOrientation;
       }
     }
 
-    // In general, this value will be overriden, but if it does then we default
+    // In general, this value will be overriden, but if it does not then we default
     // to a portrait orientation.
     int androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
     switch (requestedOrientation) {
@@ -302,19 +289,14 @@ public class PlatformChannel {
       case 0x0e: // portraitDown, landscapeLeft, and landscapeRight
         // Android can't describe these cases, so just default to whatever the first
         // specified value was.
-        switch (firstRequestedOrientation) {
-          case 0x01:
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
-            break;
-          case 0x02:
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
-            break;
-          case 0x04:
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
-            break;
-          case 0x08:
-            androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
-            break;
+        if (firstRequestedOrientation == DeviceOrientation.PORTRAIT_UP.encodedBit) {
+          androidOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        } else if (firstRequestedOrientation == DeviceOrientation.LANDSCAPE_LEFT.encodedBit) {
+          androidOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE;
+        } else if (firstRequestedOrientation == DeviceOrientation.PORTRAIT_DOWN.encodedBit) {
+          androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT;
+        } else if (firstRequestedOrientation == DeviceOrientation.LANDSCAPE_RIGHT.encodedBit) {
+          androidOrientation = ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE;
         }
     }
 
@@ -324,21 +306,15 @@ public class PlatformChannel {
   /** Encodes an aggregate desired orientation to a series of orientations. */
   private JSONArray encodeOrientations(@NonNull int encodedOrientations) {
     List<String> orientations = new ArrayList<String>();
-    for (int mask = 0x01; mask <= 0x08; mask <<= 1) {
+    Integer leastSignificantBit = DeviceOrientation.leastSignificantBit();
+    Integer mostSignificantBit = DeviceOrientation.mostSignificantBit();
+    for (int mask = leastSignificantBit; mask <= mostSignificantBit; mask <<= 1) {
       int orientation = encodedOrientations & mask;
-      switch (orientation) {
-        case 0x01:
-          orientations.add(DeviceOrientation.PORTRAIT_UP.encodedName);
-          break;
-        case 0x04:
-          orientations.add(DeviceOrientation.PORTRAIT_DOWN.encodedName);
-          break;
-        case 0x02:
-          orientations.add(DeviceOrientation.LANDSCAPE_LEFT.encodedName);
-          break;
-        case 0x08:
-          orientations.add(DeviceOrientation.LANDSCAPE_RIGHT.encodedName);
-          break;
+      try {
+        DeviceOrientation deviceOrientation = DeviceOrientation.fromValue(orientation);
+        orientations.add(deviceOrientation.encodedName);
+      } catch (NoSuchFieldException e) {
+        // no-op
       }
     }
 
@@ -482,19 +458,21 @@ public class PlatformChannel {
      * [PlatformMessageHandler.getPreferredOrientations].
      */
     public class AndroidOrientation {
-      /** Holds a value from ActivityInfo.SCREEN_ORIENTATION constnats. */
+      /** Holds a value from ActivityInfo.SCREEN_ORIENTATION constants. */
       private int androidOrientation;
       /**
-       * Holds a raw value that was requested by the Flutter application. It is needed due to the
-       * fact that ActivityInfo.SCREEN_ORIENTATION constnats can not describe all combinations of
-       * screen orientations that flutter application could pass.
+       * Holds a value that was requested by the Flutter application. It is needed due to the fact
+       * that ActivityInfo.SCREEN_ORIENTATION constants can not describe all combinations of screen
+       * orientations that flutter application could pass: 4 elements from the Flutter's
+       * DeviceOrientation enum give a total of 16 possible combinations and not all of them could
+       * be mapped to a ActivityInfo.SCREEN_ORIENTATION.
        */
-      private int rawAndroidOrientation;
+      private int flutterRequestedOrientation;
 
       public AndroidOrientation(
-          @NonNull int androidOrientation, @NonNull int rawAndroidOrientation) {
+          @NonNull int androidOrientation, @NonNull int flutterRequestedOrientation) {
         this.androidOrientation = androidOrientation;
-        this.rawAndroidOrientation = rawAndroidOrientation;
+        this.flutterRequestedOrientation = flutterRequestedOrientation;
       }
 
       @NonNull
@@ -503,8 +481,8 @@ public class PlatformChannel {
       }
 
       @NonNull
-      public int getRawAndroidOrientation() {
-        return rawAndroidOrientation;
+      public int getFlutterRequestedOrientation() {
+        return flutterRequestedOrientation;
       }
     }
 
@@ -665,10 +643,10 @@ public class PlatformChannel {
 
   /** The possible desired orientations of a Flutter application. */
   public enum DeviceOrientation {
-    PORTRAIT_UP("DeviceOrientation.portraitUp"),
-    PORTRAIT_DOWN("DeviceOrientation.portraitDown"),
-    LANDSCAPE_LEFT("DeviceOrientation.landscapeLeft"),
-    LANDSCAPE_RIGHT("DeviceOrientation.landscapeRight");
+    PORTRAIT_UP("DeviceOrientation.portraitUp", 0x01),
+    PORTRAIT_DOWN("DeviceOrientation.portraitDown", 0x04),
+    LANDSCAPE_LEFT("DeviceOrientation.landscapeLeft", 0x02),
+    LANDSCAPE_RIGHT("DeviceOrientation.landscapeRight", 0x08);
 
     @NonNull
     static DeviceOrientation fromValue(@NonNull String encodedName) throws NoSuchFieldException {
@@ -680,10 +658,46 @@ public class PlatformChannel {
       throw new NoSuchFieldException("No such DeviceOrientation: " + encodedName);
     }
 
-    @NonNull private String encodedName;
+    @NonNull
+    static DeviceOrientation fromValue(@NonNull Integer encodedBit) throws NoSuchFieldException {
+      for (DeviceOrientation orientation : DeviceOrientation.values()) {
+        if (orientation.encodedBit.equals(encodedBit)) {
+          return orientation;
+        }
+      }
+      throw new NoSuchFieldException("No such DeviceOrientation: " + encodedBit);
+    }
 
-    DeviceOrientation(@NonNull String encodedName) {
+    @NonNull
+    public static Integer mostSignificantBit() {
+      Integer bit = Integer.MIN_VALUE;
+      for (DeviceOrientation orientation : DeviceOrientation.values()) {
+        if (orientation.encodedBit > bit) {
+          bit = orientation.encodedBit;
+        }
+      }
+
+      return bit;
+    }
+
+    @NonNull
+    public static Integer leastSignificantBit() {
+      Integer bit = Integer.MAX_VALUE;
+      for (DeviceOrientation orientation : DeviceOrientation.values()) {
+        if (orientation.encodedBit < bit) {
+          bit = orientation.encodedBit;
+        }
+      }
+
+      return bit;
+    }
+
+    @NonNull private final String encodedName;
+    @NonNull private final Integer encodedBit;
+
+    DeviceOrientation(@NonNull String encodedName, @NonNull Integer encodedBit) {
       this.encodedName = encodedName;
+      this.encodedBit = encodedBit;
     }
   }
 
