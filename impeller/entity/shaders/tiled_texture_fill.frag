@@ -8,7 +8,6 @@
 uniform sampler2D texture_sampler;
 
 uniform FragInfo {
-  float texture_sampler_y_coord_scale;
   float x_tile_mode;
   float y_tile_mode;
   float alpha;
@@ -24,7 +23,6 @@ void main() {
       IPSampleWithTileMode(
           texture_sampler,                          // sampler
           v_texture_coords,                         // texture coordinates
-          frag_info.texture_sampler_y_coord_scale,  // y coordinate scale
           frag_info.x_tile_mode,                    // x tile mode
           frag_info.y_tile_mode                     // y tile mode
           ) *
