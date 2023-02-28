@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/lib/ui/painting/image_encoding_impeller.h"
+
 #include "flutter/lib/ui/painting/image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
@@ -52,7 +54,23 @@ sk_sp<SkImage> ConvertBufferToSkImage(
   return raster_image;
 }
 
-void ConvertDlImageImpellerToSkImage(
+void DoConvertImageToRasterImpeller(
+    const sk_sp<DlImage>& dl_image,
+    std::function<void(sk_sp<SkImage>)> encode_task,
+    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
+    const std::shared_ptr<impeller::Context>& impeller_context) {
+  is_gpu_disabled_sync_switch->Execute(
+      fml::SyncSwitch::Handlers()
+          .SetIfTrue([&encode_task] { encode_task(nullptr); })
+          .SetIfFalse([&dl_image, &encode_task, &impeller_context] {
+            ImageEncodingImpeller::ConvertDlImageToSkImage(
+                dl_image, std::move(encode_task), impeller_context);
+          }));
+}
+
+}  // namespace
+
+void ImageEncodingImpeller::ConvertDlImageToSkImage(
     const sk_sp<DlImage>& dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
     const std::shared_ptr<impeller::Context>& impeller_context) {
@@ -113,23 +131,7 @@ void ConvertDlImageImpellerToSkImage(
   }
 }
 
-void DoConvertImageToRasterImpeller(
-    const sk_sp<DlImage>& dl_image,
-    std::function<void(sk_sp<SkImage>)> encode_task,
-    const std::shared_ptr<const fml::SyncSwitch>& is_gpu_disabled_sync_switch,
-    const std::shared_ptr<impeller::Context>& impeller_context) {
-  is_gpu_disabled_sync_switch->Execute(
-      fml::SyncSwitch::Handlers()
-          .SetIfTrue([&encode_task] { encode_task(nullptr); })
-          .SetIfFalse([&dl_image, &encode_task, &impeller_context] {
-            ConvertDlImageImpellerToSkImage(dl_image, std::move(encode_task),
-                                            impeller_context);
-          }));
-}
-
-}  // namespace
-
-void ConvertImageToRasterImpeller(
+void ImageEncodingImpeller::ConvertImageToRaster(
     const sk_sp<DlImage>& dl_image,
     std::function<void(sk_sp<SkImage>)> encode_task,
     const fml::RefPtr<fml::TaskRunner>& raster_task_runner,

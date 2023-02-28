@@ -14,15 +14,150 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 
+using ::testing::_;
+using ::testing::DoAll;
+using ::testing::InvokeArgument;
+using ::testing::Return;
+
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/image_encoding_impeller.h"
+#include "impeller/renderer/allocator.h"
+#include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/context.h"
+#include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture.h"
+#endif  // IMPELLER_SUPPORTS_RENDERING
+
 // CREATE_NATIVE_ENTRY is leaky by design
 // NOLINTBEGIN(clang-analyzer-core.StackAddressEscape)
+
+namespace impeller {
+namespace {
+
+class MockDeviceBuffer : public DeviceBuffer {
+ public:
+  MockDeviceBuffer(const DeviceBufferDescriptor& desc) : DeviceBuffer(desc) {}
+  MOCK_METHOD3(CopyHostBuffer,
+               bool(const uint8_t* source, Range source_range, size_t offset));
+
+  MOCK_METHOD1(SetLabel, bool(const std::string& label));
+
+  MOCK_METHOD2(SetLabel, bool(const std::string& label, Range range));
+
+  MOCK_CONST_METHOD0(OnGetContents, uint8_t*());
+
+  MOCK_METHOD3(OnCopyHostBuffer,
+               bool(const uint8_t* source, Range source_range, size_t offset));
+};
+
+class MockAllocator : public Allocator {
+ public:
+  MOCK_CONST_METHOD0(GetMaxTextureSizeSupported, ISize());
+  MOCK_METHOD1(
+      OnCreateBuffer,
+      std::shared_ptr<DeviceBuffer>(const DeviceBufferDescriptor& desc));
+  MOCK_METHOD1(OnCreateTexture,
+               std::shared_ptr<Texture>(const TextureDescriptor& desc));
+};
+
+class MockBlitPass : public BlitPass {
+ public:
+  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_CONST_METHOD1(
+      EncodeCommands,
+      bool(const std::shared_ptr<Allocator>& transients_allocator));
+  MOCK_METHOD1(OnSetLabel, void(std::string label));
+
+  MOCK_METHOD5(OnCopyTextureToTextureCommand,
+               bool(std::shared_ptr<Texture> source,
+                    std::shared_ptr<Texture> destination,
+                    IRect source_region,
+                    IPoint destination_origin,
+                    std::string label));
+
+  MOCK_METHOD5(OnCopyTextureToBufferCommand,
+               bool(std::shared_ptr<Texture> source,
+                    std::shared_ptr<DeviceBuffer> destination,
+                    IRect source_region,
+                    size_t destination_offset,
+                    std::string label));
+
+  MOCK_METHOD2(OnGenerateMipmapCommand,
+               bool(std::shared_ptr<Texture> texture, std::string label));
+};
+
+class MockCommandBuffer : public CommandBuffer {
+ public:
+  MockCommandBuffer(std::weak_ptr<const Context> context)
+      : CommandBuffer(context) {}
+  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_CONST_METHOD1(SetLabel, void(const std::string& label));
+  MOCK_CONST_METHOD0(OnCreateBlitPass, std::shared_ptr<BlitPass>());
+  MOCK_METHOD1(OnSubmitCommands, bool(CompletionCallback callback));
+  MOCK_CONST_METHOD0(OnCreateComputePass, std::shared_ptr<ComputePass>());
+  MOCK_METHOD1(OnCreateRenderPass,
+               std::shared_ptr<RenderPass>(RenderTarget render_target));
+};
+
+class MockImpellerContext : public Context {
+ public:
+  MOCK_CONST_METHOD0(IsValid, bool());
+
+  MOCK_CONST_METHOD0(GetResourceAllocator, std::shared_ptr<Allocator>());
+
+  MOCK_CONST_METHOD0(GetShaderLibrary, std::shared_ptr<ShaderLibrary>());
+
+  MOCK_CONST_METHOD0(GetSamplerLibrary, std::shared_ptr<SamplerLibrary>());
+
+  MOCK_CONST_METHOD0(GetPipelineLibrary, std::shared_ptr<PipelineLibrary>());
+
+  MOCK_CONST_METHOD0(CreateCommandBuffer, std::shared_ptr<CommandBuffer>());
+
+  MOCK_CONST_METHOD0(GetWorkQueue, std::shared_ptr<WorkQueue>());
+
+  MOCK_CONST_METHOD0(GetGPUTracer, std::shared_ptr<GPUTracer>());
+
+  MOCK_CONST_METHOD0(GetColorAttachmentPixelFormat, PixelFormat());
+
+  MOCK_CONST_METHOD0(GetDeviceCapabilities, const IDeviceCapabilities&());
+};
+
+class MockTexture : public Texture {
+ public:
+  MockTexture(const TextureDescriptor& desc) : Texture(desc) {}
+  MOCK_METHOD1(SetLabel, void(std::string_view label));
+  MOCK_METHOD3(SetContents,
+               bool(const uint8_t* contents, size_t length, size_t slice));
+  MOCK_METHOD2(SetContents,
+               bool(std::shared_ptr<const fml::Mapping> mapping, size_t slice));
+  MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_CONST_METHOD0(GetSize, ISize());
+  MOCK_METHOD3(OnSetContents,
+               bool(const uint8_t* contents, size_t length, size_t slice));
+  MOCK_METHOD2(OnSetContents,
+               bool(std::shared_ptr<const fml::Mapping> mapping, size_t slice));
+};
+
+}  // namespace
+}  // namespace impeller
 
 namespace flutter {
 namespace testing {
 
 namespace {
 fml::AutoResetWaitableEvent message_latch;
+
+class MockDlImage : public DlImage {
+ public:
+  MOCK_CONST_METHOD0(skia_image, sk_sp<SkImage>());
+  MOCK_CONST_METHOD0(impeller_texture, std::shared_ptr<impeller::Texture>());
+  MOCK_CONST_METHOD0(isOpaque, bool());
+  MOCK_CONST_METHOD0(isTextureBacked, bool());
+  MOCK_CONST_METHOD0(dimensions, SkISize());
+  MOCK_CONST_METHOD0(GetApproximateByteSize, size_t());
 };
+
+}  // namespace
 
 class MockSyncSwitch {
  public:
@@ -164,6 +299,44 @@ TEST_F(ShellTest, EncodeImageAccessesSyncSwitch) {
 
   message_latch.Wait();
   DestroyShell(std::move(shell), task_runners);
+}
+
+TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage) {
+  sk_sp<MockDlImage> image(new MockDlImage());
+  EXPECT_CALL(*image, dimensions)
+      .WillRepeatedly(Return(SkISize::Make(100, 100)));
+  impeller::TextureDescriptor desc;
+  desc.format = impeller::PixelFormat::kR16G16B16A16Float;
+  auto texture = std::make_shared<impeller::MockTexture>(desc);
+  EXPECT_CALL(*image, impeller_texture).WillOnce(Return(texture));
+  auto context = std::make_shared<impeller::MockImpellerContext>();
+  auto command_buffer = std::make_shared<impeller::MockCommandBuffer>(context);
+  auto allocator = std::make_shared<impeller::MockAllocator>();
+  auto blit_pass = std::make_shared<impeller::MockBlitPass>();
+  impeller::DeviceBufferDescriptor device_buffer_desc;
+  auto device_buffer =
+      std::make_shared<impeller::MockDeviceBuffer>(device_buffer_desc);
+  EXPECT_CALL(*allocator, OnCreateBuffer).WillOnce(Return(device_buffer));
+  EXPECT_CALL(*blit_pass, IsValid).WillRepeatedly(Return(true));
+  EXPECT_CALL(*command_buffer, IsValid).WillRepeatedly(Return(true));
+  EXPECT_CALL(*command_buffer, OnCreateBlitPass).WillOnce(Return(blit_pass));
+  EXPECT_CALL(*command_buffer, OnSubmitCommands(_))
+      .WillOnce(
+          DoAll(InvokeArgument<0>(impeller::CommandBuffer::Status::kCompleted),
+                Return(true)));
+  EXPECT_CALL(*context, GetResourceAllocator).WillRepeatedly(Return(allocator));
+  EXPECT_CALL(*context, CreateCommandBuffer).WillOnce(Return(command_buffer));
+  bool did_call = false;
+  ImageEncodingImpeller::ConvertDlImageToSkImage(
+      image,
+      [&did_call](sk_sp<SkImage> image) {
+        did_call = true;
+        EXPECT_TRUE(image);
+        EXPECT_EQUALS(100, image->width());
+        EXPECT_EQUALS(100, image->height());
+      },
+      context);
+  EXPECT_TRUE(did_call);
 }
 
 }  // namespace testing
