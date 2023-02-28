@@ -15,12 +15,14 @@ std::optional<SkColorType> ToSkColorType(impeller::PixelFormat format) {
   switch (format) {
     case impeller::PixelFormat::kR8G8B8A8UNormInt:
       return SkColorType::kRGBA_8888_SkColorType;
+    case impeller::PixelFormat::kR16G16B16A16Float:
+      return SkColorType::kRGBA_F16_SkColorType;
     case impeller::PixelFormat::kB8G8R8A8UNormInt:
       return SkColorType::kBGRA_8888_SkColorType;
-      break;
+    case impeller::PixelFormat::kB10G10R10XR:
+      return SkColorType::kBGR_101010x_XR_SkColorType;
     default:
       return std::nullopt;
-      break;
   }
 }
 
