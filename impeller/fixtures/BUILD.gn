@@ -5,18 +5,20 @@
 import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
-impeller_shaders("shader_subgroup_fixtures") {
-  enable_opengles = false
-  name = "subgroup_fixtures"
+if (impeller_enable_vulkan || impeller_enable_metal) {
+  impeller_shaders("shader_subgroup_fixtures") {
+    enable_opengles = false
+    name = "subgroup_fixtures"
 
-  # Only need 2.1 for desktop. Running on iOS would require 2.4
-  metal_version = "2.1"
+    # Only need 2.1 for desktop. Running on iOS would require 2.4
+    metal_version = "2.1"
 
-  shaders = [
-    "cubic_to_quads.comp",
-    "quad_polyline.comp",
-    "stroke.comp",
-  ]
+    shaders = [
+      "cubic_to_quads.comp",
+      "quad_polyline.comp",
+      "stroke.comp",
+    ]
+  }
 }
 
 impeller_shaders("shader_fixtures") {
