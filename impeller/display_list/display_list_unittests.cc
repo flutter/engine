@@ -66,13 +66,9 @@ TEST_P(DisplayListTest, CanDrawTextWithSaveLayer) {
   builder.setColor(SK_ColorRED);
   builder.drawTextBlob(SkTextBlob::MakeFromString("Hello", CreateTestFont()),
                        100, 100);
-
-  flutter::DlPaint save_paint;
-  float alpha = 0.5;
-  save_paint.setAlpha(static_cast<uint8_t>(255 * alpha));
-  builder.saveLayer(nullptr, &save_paint);
-  builder.setColor(SK_ColorRED);
-  builder.drawTextBlob(SkTextBlob::MakeFromString("Hello with half alpha",
+  builder.saveLayer(nullptr, nullptr);
+  builder.setColor(SK_ColorYELLOW);
+  builder.drawTextBlob(SkTextBlob::MakeFromString("Hello after saving layer",
                                                   CreateTestFontOfSize(100)),
                        100, 300);
   builder.restore();
