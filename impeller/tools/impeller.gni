@@ -621,6 +621,16 @@ template("impeller_shaders") {
   }
   not_needed([ "metal_version" ])
 
+  enable_opengles = impeller_enable_opengles
+  if (defined(invoker.enable_opengles)) {
+    enable_opengles = invoker.enable_opengles
+    if (!enable_opengles) {
+      # This target might exclusively compute shaders which are not supported
+      # on some platforms yet.
+      not_needed(invoker, [ "*" ])
+    }
+  }
+
   if (impeller_enable_metal) {
     mtl_shaders = "mtl_$target_name"
     impeller_shaders_metal(mtl_shaders) {
@@ -630,10 +640,6 @@ template("impeller_shaders") {
     }
   }
 
-  enable_opengles = impeller_enable_opengles
-  if (defined(invoker.enable_opengles)) {
-    enable_opengles = invoker.enable_opengles
-  }
   if (enable_opengles) {
     analyze = true
     if (defined(invoker.analyze) && !invoker.analyze) {
