@@ -47,7 +47,7 @@ FLUTTER_DARWIN_EXPORT
 /**
  * The `NSView` associated with the given view ID, if any.
  */
-- (nullable NSView*)viewForId:(uint64_t)viewId;
+- (nullable NSView*)viewForId:(int64_t)viewId;
 
 /**
  * Registers |delegate| to receive handleMethodCall:result: callbacks for the given |channel|.

@@ -289,7 +289,7 @@ void OnKeyboardLayoutChanged(CFNotificationCenterRef center,
 
   std::shared_ptr<flutter::AccessibilityBridgeMac> _bridge;
 
-  uint64_t _id;
+  int64_t _id;
 }
 
 @dynamic id;
@@ -430,7 +430,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   [_flutterView setBackgroundColor:_backgroundColor];
 }
 
-- (uint64_t)id {
+- (int64_t)id {
   NSAssert([self attached], @"This view controller is not attched.");
   return _id;
 }
@@ -459,7 +459,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   return _bridge;
 }
 
-- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(uint64_t)viewId {
+- (void)attachToEngine:(nonnull FlutterEngine*)engine withId:(int64_t)viewId {
   NSAssert(_engine == nil, @"Already attached to an engine %@.", _engine);
   _engine = engine;
   _id = viewId;
