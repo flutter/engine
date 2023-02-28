@@ -106,13 +106,18 @@ impeller_component("renderer_unittests") {
   testonly = true
 
   sources = [
-    "compute_subgroup_unittests.cc",
-    "compute_unittests.cc",
     "device_buffer_unittests.cc",
     "host_buffer_unittests.cc",
     "pipeline_descriptor_unittests.cc",
     "renderer_unittests.cc",
   ]
+
+  if (impeller_enable_vulkan || impeller_enable_metal) {
+    sources += [
+      "compute_subgroup_unittests.cc",
+      "compute_unittests.cc",
+    ]
+  }
 
   deps = [
     ":renderer",
