@@ -12,6 +12,14 @@ namespace flutter {
 const SkScalar kLightHeight = 600;
 const SkScalar kLightRadius = 800;
 
+static SkClipOp ToSk(DlCanvas::ClipOp op) {
+  return static_cast<SkClipOp>(op);
+}
+
+static SkCanvas::PointMode ToSk(DlCanvas::PointMode mode) {
+  return static_cast<SkCanvas::PointMode>(mode);
+}
+
 const SkPaint* DisplayListCanvasDispatcher::safe_paint(bool use_attributes) {
   if (use_attributes) {
     // The accumulated SkPaint object will already have incorporated
@@ -109,23 +117,23 @@ void DisplayListCanvasDispatcher::transformFullPerspective(
 }
 // clang-format on
 void DisplayListCanvasDispatcher::transformReset() {
-  canvas_->resetMatrix();
+  canvas_->setMatrix(original_transform_);
 }
 
 void DisplayListCanvasDispatcher::clipRect(const SkRect& rect,
-                                           SkClipOp clip_op,
+                                           ClipOp clip_op,
                                            bool is_aa) {
-  canvas_->clipRect(rect, clip_op, is_aa);
+  canvas_->clipRect(rect, ToSk(clip_op), is_aa);
 }
 void DisplayListCanvasDispatcher::clipRRect(const SkRRect& rrect,
-                                            SkClipOp clip_op,
+                                            ClipOp clip_op,
                                             bool is_aa) {
-  canvas_->clipRRect(rrect, clip_op, is_aa);
+  canvas_->clipRRect(rrect, ToSk(clip_op), is_aa);
 }
 void DisplayListCanvasDispatcher::clipPath(const SkPath& path,
-                                           SkClipOp clip_op,
+                                           ClipOp clip_op,
                                            bool is_aa) {
-  canvas_->clipPath(path, clip_op, is_aa);
+  canvas_->clipPath(path, ToSk(clip_op), is_aa);
 }
 
 void DisplayListCanvasDispatcher::drawPaint() {
@@ -175,15 +183,10 @@ void DisplayListCanvasDispatcher::drawArc(const SkRect& bounds,
                                           bool useCenter) {
   canvas_->drawArc(bounds, start, sweep, useCenter, paint());
 }
-void DisplayListCanvasDispatcher::drawPoints(SkCanvas::PointMode mode,
+void DisplayListCanvasDispatcher::drawPoints(PointMode mode,
                                              uint32_t count,
                                              const SkPoint pts[]) {
-  canvas_->drawPoints(mode, count, pts, paint());
-}
-void DisplayListCanvasDispatcher::drawSkVertices(
-    const sk_sp<SkVertices> vertices,
-    SkBlendMode mode) {
-  canvas_->drawVertices(vertices, mode, paint());
+  canvas_->drawPoints(ToSk(mode), count, pts, paint());
 }
 void DisplayListCanvasDispatcher::drawVertices(const DlVertices* vertices,
                                                DlBlendMode mode) {
@@ -222,22 +225,6 @@ void DisplayListCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
   canvas_->drawImageNine(skia_image.get(), center, dst, ToSk(filter),
                          safe_paint(render_with_attributes));
 }
-void DisplayListCanvasDispatcher::drawImageLattice(
-    const sk_sp<DlImage> image,
-    const SkCanvas::Lattice& lattice,
-    const SkRect& dst,
-    DlFilterMode filter,
-    bool render_with_attributes) {
-  if (!image) {
-    return;
-  }
-  auto skia_image = image->skia_image();
-  if (!skia_image) {
-    return;
-  }
-  canvas_->drawImageLattice(skia_image.get(), lattice, dst, ToSk(filter),
-                            safe_paint(render_with_attributes));
-}
 void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                                             const SkRSXform xform[],
                                             const SkRect tex[],
@@ -258,18 +245,6 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
   canvas_->drawAtlas(skia_atlas.get(), xform, tex, sk_colors, count, ToSk(mode),
                      ToSk(sampling), cullRect,
                      safe_paint(render_with_attributes));
-}
-void DisplayListCanvasDispatcher::drawPicture(const sk_sp<SkPicture> picture,
-                                              const SkMatrix* matrix,
-                                              bool render_with_attributes) {
-  const SkPaint* paint = safe_paint(render_with_attributes);
-  if (paint) {
-    // drawPicture does an implicit saveLayer if an SkPaint is supplied.
-    TRACE_EVENT0("flutter", "Canvas::saveLayer");
-    canvas_->drawPicture(picture, matrix, paint);
-  } else {
-    canvas_->drawPicture(picture, matrix, nullptr);
-  }
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list) {

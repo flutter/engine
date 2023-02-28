@@ -48,9 +48,6 @@ typedef PlatformMessageCallback = void Function(String name, ByteData? data, Pla
 // Signature for _setNeedsReportTimings.
 typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
-/// Signature for [PlatformDispatcher.onConfigurationChanged].
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-
 /// Signature for [PlatformDispatcher.onError].
 ///
 /// If this method returns false, the engine may use some fallback method to
@@ -101,9 +98,8 @@ class RootIsolateToken {
 /// It exposes the core scheduler API, the input event callback, the graphics
 /// drawing API, and other such core services.
 ///
-/// It manages the list of the application's [views] and the [screens] attached
-/// to the device, as well as the [configuration] of various platform
-/// attributes.
+/// It manages the list of the application's [views] as well as the
+/// [configuration] of various platform attributes.
 ///
 /// Consider avoiding static references to this singleton through
 /// [PlatformDispatcher.instance] and instead prefer using a binding for
@@ -191,7 +187,7 @@ class PlatformDispatcher {
   /// See also:
   ///
   /// * [View.of], for accessing the current view.
-  /// * [PlatformDisptacher.views] for a list of all [FlutterView]s provided
+  /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
   ///   by the platform.
   FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
 
@@ -981,7 +977,8 @@ class PlatformDispatcher {
   /// This option is used by [EditableTextState] to define its
   /// [SpellCheckConfiguration] when a default spell check service
   /// is requested.
-  bool get nativeSpellCheckServiceDefined => configuration.nativeSpellCheckServiceDefined;
+  bool get nativeSpellCheckServiceDefined => _nativeSpellCheckServiceDefined;
+  bool _nativeSpellCheckServiceDefined = false;
 
   /// Whether briefly displaying the characters as you type in obscured text
   /// fields is enabled in system settings.
@@ -990,7 +987,8 @@ class PlatformDispatcher {
   ///
   ///  * [EditableText.obscureText], which when set to true hides the text in
   ///    the text field.
-  bool get brieflyShowPassword => configuration.brieflyShowPassword;
+  bool get brieflyShowPassword => _brieflyShowPassword;
+  bool _brieflyShowPassword = true;
 
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to
@@ -1044,8 +1042,16 @@ class PlatformDispatcher {
     final double textScaleFactor = (data['textScaleFactor']! as num).toDouble();
     final bool alwaysUse24HourFormat = data['alwaysUse24HourFormat']! as bool;
     final bool? nativeSpellCheckServiceDefined = data['nativeSpellCheckServiceDefined'] as bool?;
+    if (nativeSpellCheckServiceDefined != null) {
+      _nativeSpellCheckServiceDefined = nativeSpellCheckServiceDefined;
+    } else {
+      _nativeSpellCheckServiceDefined = false;
+    }
     // This field is optional.
     final bool? brieflyShowPassword = data['brieflyShowPassword'] as bool?;
+    if (brieflyShowPassword != null) {
+      _brieflyShowPassword = brieflyShowPassword;
+    }
     final Brightness platformBrightness =
     data['platformBrightness']! as String == 'dark' ? Brightness.dark : Brightness.light;
     final String? systemFontFamily = data['systemFontFamily'] as String?;
@@ -1062,8 +1068,6 @@ class PlatformDispatcher {
     _configuration = previousConfiguration.copyWith(
       textScaleFactor: textScaleFactor,
       alwaysUse24HourFormat: alwaysUse24HourFormat,
-      nativeSpellCheckServiceDefined: nativeSpellCheckServiceDefined ?? false,
-      brieflyShowPassword: brieflyShowPassword,
       platformBrightness: platformBrightness,
       systemFontFamily: systemFontFamily,
     );
@@ -1251,8 +1255,6 @@ class PlatformConfiguration {
     this.semanticsEnabled = false,
     this.platformBrightness = Brightness.light,
     this.textScaleFactor = 1.0,
-    this.nativeSpellCheckServiceDefined = false,
-    this.brieflyShowPassword = true,
     this.locales = const <Locale>[],
     this.defaultRouteName,
     this.systemFontFamily,
@@ -1265,8 +1267,6 @@ class PlatformConfiguration {
     bool? semanticsEnabled,
     Brightness? platformBrightness,
     double? textScaleFactor,
-    bool? nativeSpellCheckServiceDefined,
-    bool? brieflyShowPassword,
     List<Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
@@ -1277,8 +1277,6 @@ class PlatformConfiguration {
       semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
       platformBrightness: platformBrightness ?? this.platformBrightness,
       textScaleFactor: textScaleFactor ?? this.textScaleFactor,
-      nativeSpellCheckServiceDefined: nativeSpellCheckServiceDefined ?? this.nativeSpellCheckServiceDefined,
-      brieflyShowPassword: brieflyShowPassword ?? this.brieflyShowPassword,
       locales: locales ?? this.locales,
       defaultRouteName: defaultRouteName ?? this.defaultRouteName,
       systemFontFamily: systemFontFamily ?? this.systemFontFamily,
@@ -1303,22 +1301,6 @@ class PlatformConfiguration {
 
   /// The system-reported text scale.
   final double textScaleFactor;
-
-  /// Whether the spell check service is supported on the current platform.
-  ///
-  /// This option is used by [EditableTextState] to define its
-  /// [SpellCheckConfiguration] when a default spell check service
-  /// is requested.
-  final bool nativeSpellCheckServiceDefined;
-
-  /// Whether briefly displaying the characters as you type in obscured text
-  /// fields is enabled in system settings.
-  ///
-  /// See also:
-  ///
-  ///  * [EditableText.obscureText], which when set to true hides the text in
-  ///    the text field.
-  final bool brieflyShowPassword;
 
   /// The full system-reported supported locales of the device.
   final List<Locale> locales;
@@ -1805,7 +1787,7 @@ typedef WindowPadding = ViewPadding;
 /// This is populated only on Android.
 ///
 /// The [bounds] are measured in logical pixels. On devices with two screens the
-/// coordinate system starts with [0,0] in the top-left corner of the left or top screen
+/// coordinate system starts with (0,0) in the top-left corner of the left or top screen
 /// and expands to include both screens and the visual space between them.
 ///
 /// The [type] describes the behaviour and if [DisplayFeature] obstructs the display.
@@ -1839,8 +1821,8 @@ class DisplayFeature {
   ///
   /// For example, on a dual screen device in portrait mode:
   ///
-  /// * [bounds.left] gives you the size of left screen, in logical pixels.
-  /// * [bounds.right] gives you the size of the left screen + the hinge width.
+  /// * [Rect.left] gives you the size of left screen, in logical pixels.
+  /// * [Rect.right] gives you the size of the left screen + the hinge width.
   final Rect bounds;
 
   /// Type of display feature, e.g. hinge, fold, cutout.
@@ -1885,8 +1867,7 @@ class DisplayFeature {
 /// The shape formed by the screens for types [DisplayFeatureType.fold] and
 /// [DisplayFeatureType.hinge] is called the posture and is exposed in
 /// [DisplayFeature.state]. For example, the [DisplayFeatureState.postureFlat] posture
-/// means the screens form a flat surface, while [DisplayFeatureState.postureFlipped]
-/// posture means the screens are facing opposite directions.
+/// means the screens form a flat surface.
 ///
 /// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
 ///
