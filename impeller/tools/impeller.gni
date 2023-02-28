@@ -615,13 +615,14 @@ template("impeller_shaders_vk") {
 }
 
 template("impeller_shaders") {
-  not_needed(invoker, [ "metal_version" ])
+  metal_version = "1.2"
+  if (defined(invoker.metal_version)) {
+    metal_version = invoker.metal_version
+  }
+  not_needed([ "metal_version" ])
+
   if (impeller_enable_metal) {
     mtl_shaders = "mtl_$target_name"
-    metal_version = "1.2"
-    if (defined(invoker.metal_version)) {
-      metal_version = invoker.metal_version
-    }
     impeller_shaders_metal(mtl_shaders) {
       name = invoker.name
       shaders = invoker.shaders
@@ -658,6 +659,7 @@ template("impeller_shaders") {
     impeller_shaders_vk(vk_shaders) {
       name = invoker.name
       shaders = invoker.shaders
+      metal_version = metal_version
     }
   }
 
