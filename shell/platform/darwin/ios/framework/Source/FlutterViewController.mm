@@ -779,9 +779,9 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   if ([_engine.get() viewController] == self) {
     [self onUserSettingsChanged:nil];
     [self onAccessibilityStatusChanged:nil];
-//    if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
-//      [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
-//    }
+    /*if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
+      [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+    }*/
   }
   [super viewDidAppear:animated];
 }
@@ -1202,13 +1202,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (CGFloat)statusBarPadding {
-//  UIScreen* screen = self.view.window.screen;
-//  CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
-//  CGRect viewFrame = [self.view convertRect:self.view.bounds
-//                          toCoordinateSpace:screen.coordinateSpace];
-//  CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
-//  return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
-    return 0.0;
+  /*UIScreen* screen = self.view.window.screen;
+  CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
+  CGRect viewFrame = [self.view convertRect:self.view.bounds
+                          toCoordinateSpace:screen.coordinateSpace];
+  CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
+  return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;*/
+  return 0.0;
 }
 
 - (void)viewDidLayoutSubviews {
@@ -1232,7 +1232,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // the surface when inactive will cause GPU accesses from the background. Only wait for the first
   // frame to render when the application is actually active.
   bool applicationIsActive = true;
-//  [UIApplication sharedApplication].applicationState == UIApplicationStateActive;
+  // bool applicationIsActive = [UIApplication sharedApplication].applicationState ==
+  // UIApplicationStateActive;
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
@@ -1687,7 +1688,9 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (CGFloat)textScaleFactor {
-    UIContentSizeCategory category = UIContentSizeCategoryMedium;// [UIApplication sharedApplication].preferredContentSizeCategory;
+  // UIContentSizeCategory category = [UIApplication
+  // sharedApplication].preferredContentSizeCategory;
+  UIContentSizeCategory category = UIContentSizeCategoryMedium;
   // The delta is computed by approximating Apple's typography guidelines:
   // https://developer.apple.com/ios/human-interface-guidelines/visual-design/typography/
   //

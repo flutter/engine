@@ -52,12 +52,14 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   if (bundle == nil) {
     bundle = mainBundle;
   }
-    
-    if ([[bundle.bundleURL pathExtension] isEqualToString:@"appex"]) {
-        // Peel off two directory levels - MY_APP.app/PlugIns/MY_APP_EXTENSION.appex
-        bundle = [NSBundle bundleWithURL:[[bundle.bundleURL URLByDeletingLastPathComponent] URLByDeletingLastPathComponent]];
-    }
-        
+
+  // An app extension's defaultBundleIdentifier is within the `.appex` directory,
+  // but we want one level up in the main app bundle
+  if ([[bundle.bundleURL pathExtension] isEqualToString:@"appex"]) {
+    // Peel off two directory levels - MY_APP.app/PlugIns/MY_APP_EXTENSION.appex
+    bundle = [NSBundle bundleWithURL:[[bundle.bundleURL URLByDeletingLastPathComponent]
+                                         URLByDeletingLastPathComponent]];
+  }
 
   auto settings = flutter::SettingsFromCommandLine(command_line);
 

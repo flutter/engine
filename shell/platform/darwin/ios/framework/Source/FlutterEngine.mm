@@ -784,7 +784,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   );
 
   _isGpuDisabled = false;
-      // TD [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
+  // [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
       /*platform_data=*/std::move(platformData),
