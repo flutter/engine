@@ -629,13 +629,6 @@ if (!is_fuchsia) {
         },
       ]
     }
-    tmp_files += [
-      {
-        source = rebase_path(
-                "//flutter/third_party/txt/third_party/fonts/flutter_test.ttf")
-        destination = "flutter_web_sdk/assets/flutter_test.ttf"
-      },
-    ]
     files = tmp_files
   }
 }
