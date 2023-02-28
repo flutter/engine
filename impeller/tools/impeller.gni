@@ -624,11 +624,6 @@ template("impeller_shaders") {
   enable_opengles = impeller_enable_opengles
   if (defined(invoker.enable_opengles)) {
     enable_opengles = invoker.enable_opengles
-    if (!enable_opengles) {
-      # This target might exclusively compute shaders which are not supported
-      # on some platforms yet.
-      not_needed(invoker, [ "*" ])
-    }
   }
 
   if (impeller_enable_metal) {
