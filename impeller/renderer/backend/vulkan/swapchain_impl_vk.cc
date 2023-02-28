@@ -90,6 +90,13 @@ static std::optional<vk::CompositeAlphaFlagBitsKHR> ChooseAlphaCompositionMode(
   if (flags & vk::CompositeAlphaFlagBitsKHR::eOpaque) {
     return vk::CompositeAlphaFlagBitsKHR::eOpaque;
   }
+  if (flags & vk::CompositeAlphaFlagBitsKHR::eInherit) {
+    return vk::CompositeAlphaFlagBitsKHR::eInherit;
+  }
+  if (flags & vk::CompositeAlphaFlagBitsKHR::ePostMultiplied) {
+    return vk::CompositeAlphaFlagBitsKHR::ePostMultiplied;
+  }
+
   return std::nullopt;
 }
 

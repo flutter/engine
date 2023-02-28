@@ -132,11 +132,26 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderRead)) {
     vk_usage |= vk::ImageUsageFlagBits::eSampled;
+    // unmark the usage as transient if it is used as a sampled image
+    // See: https://github.com/flutter/flutter/issues/121633
+    if (mode == StorageMode::kDeviceTransient) {
+      vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
+    }
   }
 
   if (usage & static_cast<TextureUsageMask>(TextureUsage::kShaderWrite)) {
     vk_usage |= vk::ImageUsageFlagBits::eStorage;
+    // unmark the usage as transient if it is used as a storage image
+    // See: https://github.com/flutter/flutter/issues/121633
+    if (mode == StorageMode::kDeviceTransient) {
+      vk_usage &= ~vk::ImageUsageFlagBits::eTransientAttachment;
+    }
   }
+
+  // TODO (https://github.com/flutter/flutter/issues/121634):
+  // Add transfer usage flags to support blit passes
+  vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
+              vk::ImageUsageFlagBits::eTransferDst;
 
   return vk_usage;
 }
