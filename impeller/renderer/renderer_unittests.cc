@@ -396,7 +396,7 @@ TEST_P(RendererTest, CanRenderInstanced) {
                 PathBuilder{}
                     .AddRect(Rect::MakeXYWH(10, 10, 100, 100))
                     .TakePath()
-                    .CreatePolyline(),
+                    .CreatePolyline(1.0f),
                 [&builder](const float* vertices, size_t vertices_size,
                            const uint16_t* indices, size_t indices_size) {
                   for (auto i = 0u; i < vertices_size; i += 2) {
@@ -514,7 +514,9 @@ TEST_P(RendererTest, CanBlitTextureToTexture) {
       // Blit `bridge` to the top left corner of the texture.
       pass->AddCopy(bridge, texture);
 
-      pass->EncodeCommands(context->GetResourceAllocator());
+      if (!pass->EncodeCommands(context->GetResourceAllocator())) {
+        return false;
+      }
     }
 
     {
