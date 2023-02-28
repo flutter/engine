@@ -22,17 +22,19 @@
   // +sharedApplication initializes the global NSApp, so if we're delivering
   // something other than a FlutterApplication, warn the developer once.
 #ifndef FLUTTER_RELEASE
-  static bool notified = false;
-  if (!notified && ![NSApp isKindOfClass:[FlutterApplication class]]) {
-    NSLog(@"NSApp should be of type %s, not %s. "
-           "Some application lifecycle requests (e.g. ServicesBinding.exitApplication) "
-           "and notifications will be unavailable.\n"
-           "Modify the application's NSPrincipleClass to be %s"
-           "in the Info.plist to fix this.",
-          [[self className] UTF8String], [[NSApp className] UTF8String],
-          [[self className] UTF8String]);
-    notified = true;
-  }
+  static dispatch_once_t onceToken = 0;
+  dispatch_once(&onceToken, ^{
+    if (![app respondsToSelector:@selector(terminateApplication:)]) {
+      NSLog(@"NSApp should be of type %s, not %s.\n"
+             "System requests for the application to terminate will not be sent to "
+             "the Flutter framework, so the framework will be unable to cancel "
+             "those requests.\n"
+             "Modify the application's NSPrincipleClass to be %s in the "
+             "Info.plist to fix this.",
+            [[self className] UTF8String], [[NSApp className] UTF8String],
+            [[self className] UTF8String]);
+    }
+  });
 #endif  // !FLUTTER_RELEASE
   return app;
 }
@@ -62,16 +64,17 @@
 // it if it is OK to terminate. When that method channel call returns with a
 // result, the application either terminates or continues running.
 - (void)terminate:(id)sender {
-  FlutterEngineTerminationHandler* terminationHandler =
-      [static_cast<FlutterAppDelegate*>([NSApp delegate]) terminationHandler];
-  if (terminationHandler) {
-    [terminationHandler requestApplicationTermination:self
-                                             exitType:kFlutterAppExitTypeCancelable
-                                               result:nil];
-  } else {
+  FlutterAppDelegate* delegate = [self delegate];
+  if (!delegate || ![delegate respondsToSelector:@selector(terminationHandler)] ||
+      [delegate terminationHandler] == nil) {
     // If there's no termination handler, then just terminate.
     [super terminate:sender];
   }
+  FlutterEngineTerminationHandler* terminationHandler =
+      [static_cast<FlutterAppDelegate*>([self delegate]) terminationHandler];
+  [terminationHandler requestApplicationTermination:sender
+                                           exitType:kFlutterAppExitTypeCancelable
+                                             result:nil];
   // Return, don't exit. The application delegate is responsible for exiting on
   // its own by calling |-terminateApplication|.
 }

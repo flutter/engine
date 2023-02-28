@@ -171,7 +171,12 @@ constexpr char kTextPlainFormat[] = "text/plain";
   _terminator = terminator ? terminator : ^(id sender) {
     // Default to actually terminating the application. The terminator exists to
     // allow tests to override it so that an actual exit doesn't occur.
-    [[FlutterApplication sharedApplication] terminateApplication:sender];
+    FlutterApplication* flutterApp = [FlutterApplication sharedApplication];
+    if (flutterApp && [flutterApp respondsToSelector:@selector(terminateApplication:)]) {
+      [[FlutterApplication sharedApplication] terminateApplication:sender];
+    } else if (flutterApp) {
+      [flutterApp terminate:sender];
+    }
   };
   FlutterAppDelegate* appDelegate =
       (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
