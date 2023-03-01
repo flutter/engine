@@ -17,11 +17,18 @@ namespace flutter {
 
 class ImageEncodingImpeller {
  public:
+  /// Converts a DlImage to a SkImage.
+  /// This should be called from the thread that corresponds to
+  /// `dl_image->owning_context()` when gpu access is guaranteed.
+  /// See also: `ConvertImageToRaster`.
+  /// Visible for testing.
   static void ConvertDlImageToSkImage(
       const sk_sp<DlImage>& dl_image,
       std::function<void(sk_sp<SkImage>)> encode_task,
       const std::shared_ptr<impeller::Context>& impeller_context);
 
+  /// Converts a DlImage to a SkImage.
+  /// `encode_task` is executed with the resulting `SkImage`.
   static void ConvertImageToRaster(
       const sk_sp<DlImage>& dl_image,
       std::function<void(sk_sp<SkImage>)> encode_task,
