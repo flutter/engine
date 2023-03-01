@@ -208,6 +208,9 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage) {
   auto allocator = std::make_shared<MockAllocator>();
   auto blit_pass = std::make_shared<MockBlitPass>();
   impeller::DeviceBufferDescriptor device_buffer_desc;
+  device_buffer_desc.size = 100 * 100 * 8;
+  std::vector<uint8_t> data;
+  data.reserve(device_buffer_desc.size);
   auto device_buffer = std::make_shared<MockDeviceBuffer>(device_buffer_desc);
   EXPECT_CALL(*allocator, OnCreateBuffer).WillOnce(Return(device_buffer));
   EXPECT_CALL(*blit_pass, IsValid).WillRepeatedly(Return(true));
@@ -219,14 +222,17 @@ TEST(ImageEncodingImpellerTest, ConvertDlImageToSkImage) {
                 Return(true)));
   EXPECT_CALL(*context, GetResourceAllocator).WillRepeatedly(Return(allocator));
   EXPECT_CALL(*context, CreateCommandBuffer).WillOnce(Return(command_buffer));
+  EXPECT_CALL(*device_buffer, OnGetContents).WillOnce(Return(data.data()));
   bool did_call = false;
   ImageEncodingImpeller::ConvertDlImageToSkImage(
       image,
-      [&did_call](sk_sp<SkImage> image) {
+      [&did_call](const sk_sp<SkImage>& image) {
         did_call = true;
-        EXPECT_TRUE(image);
+        ASSERT_TRUE(image);
         EXPECT_EQ(100, image->width());
         EXPECT_EQ(100, image->height());
+        EXPECT_EQ(kRGBA_F16_SkColorType, image->colorType());
+        EXPECT_EQ(nullptr, image->colorSpace());
       },
       context);
   EXPECT_TRUE(did_call);
