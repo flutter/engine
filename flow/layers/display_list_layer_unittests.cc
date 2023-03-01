@@ -529,7 +529,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   auto opacity_layer = std::make_shared<OpacityLayer>(0.5f, opacity_offset);
   std::shared_ptr<DisplayListLayer> layers[layer_count];
   for (int i = 0; i < layer_count; i++) {
-    DisplayListBuilder builder(false);
+    DisplayListBuilder builder;
     builder.drawRect({0, 0, 100, 100});
     builder.drawRect({50, 50, 100, 100});
     auto display_list = builder.Build();
