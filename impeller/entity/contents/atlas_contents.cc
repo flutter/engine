@@ -69,15 +69,7 @@ void AtlasContents::SetCullRect(std::optional<Rect> cull_rect) {
 struct AtlasBlenderKey {
   Color color;
   Rect rect;
-  int32_t color_key;
-
-  static int32_t ToColorKey(Color color) {
-    return (((std::lround(color.alpha * 255) & 0xff) << 24) |
-            ((std::lround(color.red * 255) & 0xff) << 16) |
-            ((std::lround(color.green * 255) & 0xff) << 8) |
-            ((std::lround(color.blue * 255) & 0xff) << 0)) &
-           0xFFFFFFFF;
-  }
+  uint32_t color_key;
 
   struct Hash {
     std::size_t operator()(const AtlasBlenderKey& key) const {
@@ -104,10 +96,9 @@ std::shared_ptr<SubAtlasResult> AtlasContents::GenerateSubAtlas() const {
       sub_atlas = {};
 
   for (auto i = 0u; i < texture_coords_.size(); i++) {
-    AtlasBlenderKey key = {
-        .color = colors_[i],
-        .rect = texture_coords_[i],
-        .color_key = AtlasBlenderKey::ToColorKey(colors_[i])};
+    AtlasBlenderKey key = {.color = colors_[i],
+                           .rect = texture_coords_[i],
+                           .color_key = Color::ToIColor(colors_[i])};
     if (sub_atlas.find(key) == sub_atlas.end()) {
       sub_atlas[key] = {transforms_[i]};
     } else {
