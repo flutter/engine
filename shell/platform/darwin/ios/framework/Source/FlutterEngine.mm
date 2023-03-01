@@ -98,6 +98,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+
+#pragma mark - Embedder API properties
+
+// Function pointers for interacting with the embedder.h API.
+@property(nonatomic, assign) BOOL enableEmbedderAPI;
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
 @implementation FlutterEngine {
@@ -184,6 +190,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([[FlutterDartProject alloc] init]);
   } else {
     _dartProject.reset([project retain]);
+  }
+
+  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  if (_enableEmbedderAPI) {
+    NSLog(@"============== iOS: enable_embedder_api is on ==============");
+    _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
+    FlutterEngineGetProcAddresses(&_embedderAPI);
   }
 
   if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
@@ -1380,6 +1393,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (FlutterDartProject*)project {
   return _dartProject.get();
+}
+
+#pragma mark - Embedder API
+
+- (BOOL)enableEmbedderAPI {
+  return _enableEmbedderAPI;
+}
+
+- (FlutterEngineProcTable&)embedderAPI {
+  return _embedderAPI;
 }
 
 @end
