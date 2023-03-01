@@ -21,8 +21,9 @@
 
 @implementation FlutterAppDelegate
 
-// TODO(stuartmorgan): Implement application lifecycle forwarding to plugins here, as is done
+// TODO(gspencergoog): Implement application lifecycle forwarding to plugins here, as is done
 // on iOS. Currently macOS plugins don't have access to lifecycle messages.
+// https://github.com/flutter/flutter/issues/30735
 
 - (instancetype)init {
   if (self = [super init]) {

@@ -1736,9 +1736,9 @@ enum AppLifecycleState {
 /// The possible responses to a request to exit the application.
 ///
 /// The request is typically responded to by a [WidgetsBindingObserver].
-// TODO(gspencergoog): Insert references here to AppLifecycleListener and to the
-// actual function called on WidgetsBindingObserver once those have landed in
-// the framework.
+// TODO(gspencergoog): Insert doc references here to AppLifecycleListener and to
+// the actual function called on WidgetsBindingObserver once those have landed
+// in the framework. https://github.com/flutter/flutter/issues/121721
 enum AppExitResponse {
   /// Exiting the application can proceed.
   exit,
@@ -1748,13 +1748,14 @@ enum AppExitResponse {
 
 /// The type of application exit to perform when calling
 /// `ServicesBinding.exitApplication`.
-// TODO(gspencergoog): Insert references here to ServicesBinding.exitApplication
-// that has landed in the framework.
+// TODO(gspencergoog): Insert doc references here to
+// ServicesBinding.exitApplication that has landed in the framework.
+// https://github.com/flutter/flutter/issues/121721
 enum AppExitType {
   /// Requests that the application start an orderly exit, sending a request
   /// back to the framework through the [WidgetsBinding], and if that responds
   /// with [AppExitResponse.exit], then proceed with the same steps as a
-  /// [required] exit. if that responds with [AppExitResponse.cancel], then the
+  /// [required] exit. If that responds with [AppExitResponse.cancel], then the
   /// exit request is canceled and the application continues executing normally.
   cancelable,
 

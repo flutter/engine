@@ -48,7 +48,7 @@
  * application: that is left up to the engine, which will call this function if
  * it decides that termination request is granted, which will start the regular
  * Cocoa flow for terminating the application, calling
- * |applicationShouldTermnate|, etc.
+ * |applicationShouldTerminate|, etc.
  *
  * @param(sender) The id of the object requesting the termination, or nil.
  */

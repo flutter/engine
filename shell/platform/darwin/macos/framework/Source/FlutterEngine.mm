@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
-#include "FlutterCodecs.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 
 #include <algorithm>
