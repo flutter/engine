@@ -27,7 +27,6 @@ font = fontforge.font()
 font.familyname = TRICKY_NAME
 font.fullname = NAME
 font.fontname = NAME
-font.copyright = ":)"
 
 # This sets the relevant fields in the os2 table and hhea table.
 font.ascent = ASCENT
@@ -95,7 +94,7 @@ font.setTableData("prep", fontforge.parseTTInstrs(prep_program))
 
 
 def glyph_program(glyph):
-  # Shift Zone 1 by CVT[0]. In freetype SHZ actually shifts the zone zp2
+  # Shift Zone 1 by CVT[0]. In FreeType SHZ actually shifts the zone zp2
   # points to, instead of top of the stack. That's probably a bug.
   instructions = """
         SVTCA[0]
@@ -267,7 +266,7 @@ for (codepoint, advance_percentage) in no_path_codepoints:
     raise ValueError(f"{hex(codepoint)} is occupied.")
   create_no_path_glyph(codepoint, advance_percentage)
 
-font.generate(sys.argv[1] or "test_font.ttf")
+font.generate(sys.argv[1] if len(sys.argv) >= 2 else "test_font.ttf")
 
 ### Printing Glyph Map Stats
 

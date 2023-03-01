@@ -128,7 +128,9 @@ void FontCollection::RegisterTestFonts() {
   size_t index = 0;
   std::vector<std::string> names = GetTestFontFamilyNames();
   for (sk_sp<SkTypeface> typeface : test_typefaces) {
-    font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    if (typeface) {
+      font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    }
     index++;
   }
 
