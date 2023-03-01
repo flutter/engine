@@ -42,17 +42,6 @@
  * necessary from FlutterApplication.mm.
  */
 @interface FlutterApplication : NSApplication
-
-/**
- * FlutterApplication's implementation of |terminate| doesn't terminate the
- * application: that is left up to the engine, which will call this function if
- * it decides that termination request is granted, which will start the regular
- * Cocoa flow for terminating the application, calling
- * |applicationShouldTerminate|, etc.
- *
- * @param(sender) The id of the object requesting the termination, or nil.
- */
-- (void)terminateApplication:(id)sender;
 @end
 
 #endif  // FLUTTER_FLUTTERAPPLICATION_H_
