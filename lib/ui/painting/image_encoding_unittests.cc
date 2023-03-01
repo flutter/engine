@@ -17,7 +17,7 @@
 
 #if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_encoding_impeller.h"
-#include "impeller/renderer/mocks.h"
+#include "impeller/renderer/testing/mocks.h"
 #endif  // IMPELLER_SUPPORTS_RENDERING
 
 // CREATE_NATIVE_ENTRY is leaky by design

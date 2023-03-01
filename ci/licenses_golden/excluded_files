@@ -142,10 +142,10 @@
 ../../../flutter/impeller/renderer/compute_unittests.cc
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
-../../../flutter/impeller/renderer/mocks.h
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
 ../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
+../../../flutter/impeller/renderer/testing/mocks.h
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
 ../../../flutter/impeller/scene/README.md
 ../../../flutter/impeller/scene/importer/importer_unittests.cc
