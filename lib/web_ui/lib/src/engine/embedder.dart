@@ -178,7 +178,7 @@ class FlutterViewEmbedder {
     // The shadowRootStyleElement must be appended to the DOM, or its `sheet` will be null later.
     shadowRoot.appendChild(shadowRootStyleElement);
     applyGlobalCssRulesToSheet(
-      shadowRootStyleElement.sheet! as DomCSSStyleSheet,
+      shadowRootStyleElement,
       hasAutofillOverlay: browserHasAutofillOverlay(),
       defaultCssFont: defaultCssFont,
     );

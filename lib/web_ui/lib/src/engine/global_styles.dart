@@ -8,13 +8,16 @@ import 'text_editing/text_editing.dart';
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
 void applyGlobalCssRulesToSheet(
-  DomCSSStyleSheet sheet, {
+  DomHTMLStyleElement styleElement, {
   required bool hasAutofillOverlay,
   String cssSelectorPrefix = '',
   required String defaultCssFont,
 }) {
   // TODO(web): use more efficient CSS selectors; descendant selectors are slow.
   // More info: https://csswizardry.com/2011/09/writing-efficient-css-selectors
+
+  assert(styleElement.sheet != null);
+  final DomCSSStyleSheet sheet = styleElement.sheet! as DomCSSStyleSheet;
 
   // These are intentionally outrageous font parameters to make sure that the
   // apps fully specify their text styles.
