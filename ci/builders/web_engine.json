@@ -64,6 +64,8 @@
                 "os=Linux"
             ],
             "parameters": [
+                "test",
+                "--run",
                 "--suite=chrome-dart2js-html-engine",
                 "--suite=chrome-dart2js-html-html",
                 "--suite=chrome-dart2js-html-ui",
@@ -73,6 +75,7 @@
                 "--suite=chrome-full-dart2js-canvaskit-canvaskit",
                 "--suite=chrome-full-dart2js-canvaskit-ui"
             ],
+            "language": "bash",
             "script": "flutter/lib/web_ui/dev/felt"
         }
     ]
