@@ -148,6 +148,14 @@ PixelFormat RenderTarget::GetRenderTargetPixelFormat() const {
   return PixelFormat::kUnknown;
 }
 
+size_t RenderTarget::GetMaxColorAttacmentBindIndex() const {
+  size_t max = 0;
+  for (const auto& color : colors_) {
+    max = std::max(color.first, max);
+  }
+  return max;
+}
+
 RenderTarget& RenderTarget::SetColorAttachment(
     const ColorAttachment& attachment,
     size_t index) {
@@ -225,7 +233,8 @@ RenderTarget RenderTarget::CreateOffscreen(
   if (stencil_attachment_config.has_value()) {
     TextureDescriptor stencil_tex0;
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
-    stencil_tex0.format = PixelFormat::kDefaultStencil;
+    stencil_tex0.format =
+        context.GetDeviceCapabilities().GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
@@ -318,7 +327,8 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
     stencil_tex0.type = TextureType::kTexture2DMultisample;
     stencil_tex0.sample_count = SampleCount::kCount4;
-    stencil_tex0.format = PixelFormat::kDefaultStencil;
+    stencil_tex0.format =
+        context.GetDeviceCapabilities().GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
@@ -340,6 +350,25 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   }
 
   return target;
+}
+
+size_t RenderTarget::GetTotalAttachmentCount() const {
+  size_t count = 0u;
+  for (const auto& [_, color] : colors_) {
+    if (color.texture) {
+      count++;
+    }
+    if (color.resolve_texture) {
+      count++;
+    }
+  }
+  if (depth_.has_value()) {
+    count++;
+  }
+  if (stencil_.has_value()) {
+    count++;
+  }
+  return count;
 }
 
 }  // namespace impeller

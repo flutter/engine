@@ -48,9 +48,6 @@ typedef PlatformMessageCallback = void Function(String name, ByteData? data, Pla
 // Signature for _setNeedsReportTimings.
 typedef _SetNeedsReportTimingsFunc = void Function(bool value);
 
-/// Signature for [PlatformDispatcher.onConfigurationChanged].
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
-
 /// Signature for [PlatformDispatcher.onError].
 ///
 /// If this method returns false, the engine may use some fallback method to
@@ -101,9 +98,8 @@ class RootIsolateToken {
 /// It exposes the core scheduler API, the input event callback, the graphics
 /// drawing API, and other such core services.
 ///
-/// It manages the list of the application's [views] and the [screens] attached
-/// to the device, as well as the [configuration] of various platform
-/// attributes.
+/// It manages the list of the application's [views] as well as the
+/// [configuration] of various platform attributes.
 ///
 /// Consider avoiding static references to this singleton through
 /// [PlatformDispatcher.instance] and instead prefer using a binding for
@@ -168,6 +164,36 @@ class PlatformDispatcher {
   // A map of opaque platform view identifiers to view configurations.
   final Map<Object, ViewConfiguration> _viewConfigurations = <Object, ViewConfiguration>{};
 
+  /// The [FlutterView] provided by the engine if the platform is unable to
+  /// create windows, or, for backwards compatibility.
+  ///
+  /// If the platform provides an implicit view, it can be used to bootstrap
+  /// the framework. This is common for platforms designed for single-view
+  /// applications like mobile devices with a single display.
+  ///
+  /// Applications and libraries must not rely on this property being set
+  /// as it may be null depending on the engine's configuration. Instead,
+  /// consider using [View.of] to lookup the [FlutterView] the current
+  /// [BuildContext] is drawing into.
+  ///
+  /// While the properties on the referenced [FlutterView] may change,
+  /// the reference itself is guaranteed to never change over the lifetime
+  /// of the application: if this property is null at startup, it will remain
+  /// so throughout the entire lifetime of the application. If it points to a
+  /// specific [FlutterView], it will continue to point to the same view until
+  /// the application is shut down (although the engine may replace or remove
+  /// the underlying backing surface of the view at its discretion).
+  ///
+  /// See also:
+  ///
+  /// * [View.of], for accessing the current view.
+  /// * [PlatformDispatcher.views] for a list of all [FlutterView]s provided
+  ///   by the platform.
+  FlutterView? get implicitView => _implicitViewEnabled() ? _views[0] : null;
+
+  @Native<Handle Function()>(symbol: 'PlatformConfigurationNativeApi::ImplicitViewEnabled')
+  external static bool _implicitViewEnabled();
+
   /// A callback that is invoked whenever the [ViewConfiguration] of any of the
   /// [views] changes.
   ///
@@ -228,25 +254,25 @@ class PlatformDispatcher {
       view: _views[id],
       devicePixelRatio: devicePixelRatio,
       geometry: Rect.fromLTWH(0.0, 0.0, width, height),
-      viewPadding: WindowPadding._(
+      viewPadding: ViewPadding._(
         top: viewPaddingTop,
         right: viewPaddingRight,
         bottom: viewPaddingBottom,
         left: viewPaddingLeft,
       ),
-      viewInsets: WindowPadding._(
+      viewInsets: ViewPadding._(
         top: viewInsetTop,
         right: viewInsetRight,
         bottom: viewInsetBottom,
         left: viewInsetLeft,
       ),
-      padding: WindowPadding._(
+      padding: ViewPadding._(
         top: math.max(0.0, viewPaddingTop - viewInsetTop),
         right: math.max(0.0, viewPaddingRight - viewInsetRight),
         bottom: math.max(0.0, viewPaddingBottom - viewInsetBottom),
         left: math.max(0.0, viewPaddingLeft - viewInsetLeft),
       ),
-      systemGestureInsets: WindowPadding._(
+      systemGestureInsets: ViewPadding._(
         top: math.max(0.0, systemGestureInsetTop),
         right: math.max(0.0, systemGestureInsetRight),
         bottom: math.max(0.0, systemGestureInsetBottom),
@@ -1305,10 +1331,10 @@ class ViewConfiguration {
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
     this.visible = false,
-    this.viewInsets = WindowPadding.zero,
-    this.viewPadding = WindowPadding.zero,
-    this.systemGestureInsets = WindowPadding.zero,
-    this.padding = WindowPadding.zero,
+    this.viewInsets = ViewPadding.zero,
+    this.viewPadding = ViewPadding.zero,
+    this.systemGestureInsets = ViewPadding.zero,
+    this.padding = ViewPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
   }) : assert(window == null || view == null),
@@ -1326,10 +1352,10 @@ class ViewConfiguration {
     double? devicePixelRatio,
     Rect? geometry,
     bool? visible,
-    WindowPadding? viewInsets,
-    WindowPadding? viewPadding,
-    WindowPadding? systemGestureInsets,
-    WindowPadding? padding,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
   }) {
@@ -1375,58 +1401,46 @@ class ViewConfiguration {
   /// Whether or not the view is currently visible on the screen.
   final bool visible;
 
-  /// The view insets, as it intersects with [Screen.viewInsets] for the screen
-  /// it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but over which the operating system will likely
+  /// place system UI, such as the keyboard, that fully obscures any content.
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.viewInsets] area, [viewInsets] will be
-  /// [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this view rectangle into
-  /// which the application can draw, but over which the operating system will
-  /// likely place system UI, such as the keyboard or system menus, that fully
-  /// obscures any content.
-  final WindowPadding viewInsets;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding viewInsets;
 
-  /// The view insets, as it intersects with [ScreenConfiguration.viewPadding]
-  /// for the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.viewPadding] area, [viewPadding] will be
-  /// [WindowPadding.zero].
+  /// Unlike [padding], this value does not change relative to [viewInsets].
+  /// For example, on an iPhone X, it will not change in response to the soft
+  /// keyboard being visible or hidden, whereas [padding] will.
   ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but which may be partially
-  /// obscured by system UI (such as the system notification area), or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
-  final WindowPadding viewPadding;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding viewPadding;
 
-  /// The view insets, as it intersects with
-  /// [ScreenConfiguration.systemGestureInsets] for the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but where the operating system will consume
+  /// input gestures for the sake of system navigation.
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.systemGestureInsets] area, [systemGestureInsets] will
-  /// be [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but where the operating system
-  /// will consume input gestures for the sake of system navigation.
-  final WindowPadding systemGestureInsets;
+  /// For example, an operating system might use the vertical edges of the
+  /// screen, where swiping inwards from the edges takes users backward
+  /// through the history of screens they previously visited.
+  final ViewPadding systemGestureInsets;
 
-  /// The view insets, as it intersects with [ScreenConfiguration.padding] for
-  /// the screen it is on.
+  /// The number of physical pixels on each side of the display rectangle into
+  /// which the view can render, but which may be partially obscured by system
+  /// UI (such as the system notification area), or physical intrusions in
+  /// the display (e.g. overscan regions on television screens or phone sensor
+  /// housings).
   ///
-  /// For instance, if the view doesn't overlap the
-  /// [ScreenConfiguration.padding] area, [padding] will be
-  /// [WindowPadding.zero].
-  ///
-  /// The number of physical pixels on each side of this screen rectangle into
-  /// which the application can place a view, but which may be partially
-  /// obscured by system UI (such as the system notification area), or physical
-  /// intrusions in the display (e.g. overscan regions on television screens or
-  /// phone sensor housings).
-  final WindowPadding padding;
+  /// The relationship between this [viewInsets], [viewPadding], and [padding]
+  /// are described in more detail in the documentation for [FlutterView].
+  final ViewPadding padding;
 
   /// Additional configuration for touch gestures performed on this view.
   ///
@@ -1735,8 +1749,8 @@ enum AppLifecycleState {
 ///  * [MediaQuery.of], for the preferred mechanism for accessing these values.
 ///  * [Scaffold], which automatically applies the padding in material design
 ///    applications.
-class WindowPadding {
-  const WindowPadding._({ required this.left, required this.top, required this.right, required this.bottom });
+class ViewPadding {
+  const ViewPadding._({ required this.left, required this.top, required this.right, required this.bottom });
 
   /// The distance from the left edge to the first unpadded pixel, in physical pixels.
   final double left;
@@ -1750,21 +1764,30 @@ class WindowPadding {
   /// The distance from the bottom edge to the first unpadded pixel, in physical pixels.
   final double bottom;
 
-  /// A window padding that has zeros for each edge.
-  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  /// A view padding that has zeros for each edge.
+  static const ViewPadding zero = ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
-    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
 }
+
+/// Deprecated. Will be removed in a future version of Flutter.
+///
+/// Use [ViewPadding] instead.
+@Deprecated(
+  'Use ViewPadding instead. '
+  'This feature was deprecated after v3.8.0-14.0.pre.',
+)
+typedef WindowPadding = ViewPadding;
 
 /// Area of the display that may be obstructed by a hardware feature.
 ///
 /// This is populated only on Android.
 ///
 /// The [bounds] are measured in logical pixels. On devices with two screens the
-/// coordinate system starts with [0,0] in the top-left corner of the left or top screen
+/// coordinate system starts with (0,0) in the top-left corner of the left or top screen
 /// and expands to include both screens and the visual space between them.
 ///
 /// The [type] describes the behaviour and if [DisplayFeature] obstructs the display.
@@ -1798,8 +1821,8 @@ class DisplayFeature {
   ///
   /// For example, on a dual screen device in portrait mode:
   ///
-  /// * [bounds.left] gives you the size of left screen, in logical pixels.
-  /// * [bounds.right] gives you the size of the left screen + the hinge width.
+  /// * [Rect.left] gives you the size of left screen, in logical pixels.
+  /// * [Rect.right] gives you the size of the left screen + the hinge width.
   final Rect bounds;
 
   /// Type of display feature, e.g. hinge, fold, cutout.
@@ -1844,8 +1867,7 @@ class DisplayFeature {
 /// The shape formed by the screens for types [DisplayFeatureType.fold] and
 /// [DisplayFeatureType.hinge] is called the posture and is exposed in
 /// [DisplayFeature.state]. For example, the [DisplayFeatureState.postureFlat] posture
-/// means the screens form a flat surface, while [DisplayFeatureState.postureFlipped]
-/// posture means the screens are facing opposite directions.
+/// means the screens form a flat surface.
 ///
 /// ![Device with a hinge display feature](https://flutter.github.io/assets-for-api-docs/assets/hardware/display_feature_hinge.png)
 ///

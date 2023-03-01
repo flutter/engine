@@ -42,10 +42,12 @@ std::shared_ptr<Texture> AtlasContents::GetTexture() const {
 
 void AtlasContents::SetTransforms(std::vector<Matrix> transforms) {
   transforms_ = std::move(transforms);
+  bounding_box_cache_.reset();
 }
 
 void AtlasContents::SetTextureCoordinates(std::vector<Rect> texture_coords) {
   texture_coords_ = std::move(texture_coords);
+  bounding_box_cache_.reset();
 }
 
 void AtlasContents::SetColors(std::vector<Color> colors) {
@@ -162,14 +164,17 @@ std::optional<Rect> AtlasContents::GetCoverage(const Entity& entity) const {
 }
 
 Rect AtlasContents::ComputeBoundingBox() const {
-  Rect bounding_box = {};
-  for (size_t i = 0; i < texture_coords_.size(); i++) {
-    auto matrix = transforms_[i];
-    auto sample_rect = texture_coords_[i];
-    auto bounds = Rect::MakeSize(sample_rect.size).TransformBounds(matrix);
-    bounding_box = bounds.Union(bounding_box);
+  if (!bounding_box_cache_.has_value()) {
+    Rect bounding_box = {};
+    for (size_t i = 0; i < texture_coords_.size(); i++) {
+      auto matrix = transforms_[i];
+      auto sample_rect = texture_coords_[i];
+      auto bounds = Rect::MakeSize(sample_rect.size).TransformBounds(matrix);
+      bounding_box = bounds.Union(bounding_box);
+    }
+    bounding_box_cache_ = bounding_box;
   }
-  return bounding_box;
+  return bounding_box_cache_.value();
 }
 
 void AtlasContents::SetSamplerDescriptor(SamplerDescriptor desc) {
@@ -323,7 +328,7 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
     transforms = parent_.GetTransforms();
   }
 
-  const auto texture_size = texture->GetSize();
+  const Size texture_size(texture->GetSize());
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   vertex_builder.Reserve(texture_coords.size() * 6);
   constexpr size_t indices[6] = {0, 1, 2, 1, 2, 3};
@@ -355,19 +360,19 @@ bool AtlasTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
+  frame_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture->GetYCoordScale();
   frag_info.alpha = alpha_;
 
   auto options = OptionsFromPassAndEntity(pass, entity);
   cmd.pipeline = renderer.GetTexturePipeline(options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(
@@ -447,9 +452,9 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
 
   FS::FragInfo frag_info;
   frag_info.alpha = alpha_;
@@ -459,7 +464,7 @@ bool AtlasColorContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   return pass.AddCommand(std::move(cmd));
 }

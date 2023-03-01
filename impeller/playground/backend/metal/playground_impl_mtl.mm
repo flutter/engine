@@ -17,6 +17,7 @@
 #include "impeller/entity/mtl/entity_shaders.h"
 #include "impeller/entity/mtl/modern_shaders.h"
 #include "impeller/fixtures/mtl/fixtures_shaders.h"
+#include "impeller/fixtures/mtl/subgroup_fixtures_shaders.h"
 #include "impeller/playground/imgui/mtl/imgui_shaders.h"
 #include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
@@ -39,6 +40,9 @@ ShaderLibraryMappingsForPlayground() {
                                              impeller_modern_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_fixtures_shaders_data,
                                              impeller_fixtures_shaders_length),
+      std::make_shared<fml::NonOwnedMapping>(
+          impeller_subgroup_fixtures_shaders_data,
+          impeller_subgroup_fixtures_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_imgui_shaders_data,
                                              impeller_imgui_shaders_length),
       std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
@@ -75,7 +79,8 @@ PlaygroundImplMTL::PlaygroundImplMTL()
   data_->metal_layer = [CAMetalLayer layer];
   data_->metal_layer.device = ContextMTL::Cast(*context).GetMTLDevice();
   // This pixel format is one of the documented supported formats.
-  data_->metal_layer.pixelFormat = ToMTLPixelFormat(PixelFormat::kDefaultColor);
+  const auto color_fmt = context->GetColorAttachmentPixelFormat();
+  data_->metal_layer.pixelFormat = ToMTLPixelFormat(color_fmt);
   data_->metal_layer.framebufferOnly = NO;
   cocoa_window.contentView.layer = data_->metal_layer;
   cocoa_window.contentView.wantsLayer = YES;
