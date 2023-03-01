@@ -712,7 +712,7 @@ static void fl_view_size_allocate(GtkWidget* widget,
 
     GtkAllocation child_allocation = {0, 0, 0, 0};
     GtkRequisition child_requisition;
-    gtk_widget_get_preferred_size(w, &child_requisition, NULL);
+    gtk_widget_get_preferred_size(w, &child_requisition, nullptr);
 
     if (!gtk_widget_get_has_window(widget)) {
       child_allocation.x += allocation->x;
