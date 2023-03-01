@@ -1481,7 +1481,6 @@ ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/host_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/host_buffer.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/mocks.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline_builder.cc + ../../../flutter/LICENSE
@@ -3979,7 +3978,6 @@ FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
 FILE: ../../../flutter/impeller/renderer/gpu_tracer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer.cc
 FILE: ../../../flutter/impeller/renderer/host_buffer.h
-FILE: ../../../flutter/impeller/renderer/mocks.h
 FILE: ../../../flutter/impeller/renderer/pipeline.cc
 FILE: ../../../flutter/impeller/renderer/pipeline.h
 FILE: ../../../flutter/impeller/renderer/pipeline_builder.cc
