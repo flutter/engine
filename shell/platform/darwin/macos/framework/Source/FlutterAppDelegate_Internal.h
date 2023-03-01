@@ -5,7 +5,6 @@
 #ifndef FLUTTER_FLUTTERAPPDELEGATE_INTERNAL_H_
 #define FLUTTER_FLUTTERAPPDELEGATE_INTERNAL_H_
 
-#include "embedder.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
 

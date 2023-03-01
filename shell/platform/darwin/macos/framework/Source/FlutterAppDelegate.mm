@@ -3,11 +3,11 @@
 // found in the LICENSE file.
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 
 #import <AppKit/AppKit.h>
 
 #include "flutter/fml/logging.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
 @interface FlutterAppDelegate ()
