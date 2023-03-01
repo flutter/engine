@@ -62,7 +62,7 @@ class RunSuiteStep implements PipelineStep {
   Future<void> run() async {
     _prepareTestResultsDirectory();
     final BrowserEnvironment browserEnvironment = getBrowserEnvironment(
-      suite.runConfig.browser, 
+      suite.runConfig.browser,
       enableWasmGC: isWasm);
     await browserEnvironment.prepare();
 
@@ -146,7 +146,7 @@ class RunSuiteStep implements PipelineStep {
     }
     final String jsonString = resultsJsonFile.readAsStringSync();
     final dynamic jsonContents = const JsonDecoder().convert(jsonString);
-    final dynamic results = jsonContents['results']; 
+    final dynamic results = jsonContents['results'];
     final List<String> testPaths = <String>[];
     results.forEach((dynamic k, dynamic v) {
       final String result = v as String;
@@ -164,11 +164,15 @@ class RunSuiteStep implements PipelineStep {
   }
 
   Future<SkiaGoldClient?> _createSkiaClient() async {
+    final Renderer renderer = suite.testBundle.compileConfig.renderer;
+    final CanvasKitVariant? variant = suite.runConfig.variant;
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       environment.webUiSkiaGoldDirectory,
       dimensions: <String, String> {
         'Browser': suite.runConfig.browser.name,
         if (isWasm) 'Wasm': 'true',
+        'Renderer': renderer.name,
+        if (variant != null) 'CanvasKitVariant': variant.name,
       },
     );
 

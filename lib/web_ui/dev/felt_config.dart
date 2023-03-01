@@ -66,7 +66,7 @@ class ArtifactDependencies {
     required this.skwasm
   });
 
-  ArtifactDependencies.none() 
+  ArtifactDependencies.none()
     : canvasKit = false
     , canvasKitChromium = false
     , skwasm = false;

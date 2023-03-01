@@ -276,20 +276,10 @@ targets:
       release_build: "true"
       config_name: linux_android_debug_engine
 
-  - name: Linux Web Engine
-    recipe: engine/web_engine
+  - name: Linux Web Engine (V2)
+    recipe: engine_v2/engine_v2
     properties:
-      add_recipes_cq: "true"
-      cores: "32"
-      gcs_goldens_bucket: flutter_logs
-      gclient_variables: >-
-        {"download_emsdk": true}
-      dependencies: >-
-        [
-          {"dependency": "chrome_and_driver", "version": "version:111.0"},
-          {"dependency": "firefox", "version": "version:106.0"},
-          {"dependency": "goldctl", "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"}
-        ]
+      config_name: web_engine
     timeout: 60
     runIf:
       - DEPS

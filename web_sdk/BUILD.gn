@@ -604,11 +604,11 @@ if (!is_fuchsia) {
       },
       {
         source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
-        destination = "canvaskit/chromium/canvaskit.js"
+        destination = "flutter_web_sdk/canvaskit/chromium/canvaskit.js"
       },
       {
         source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
-        destination = "canvaskit/chromium/canvaskit.wasm"
+        destination = "flutter_web_sdk/canvaskit/chromium/canvaskit.wasm"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.js")

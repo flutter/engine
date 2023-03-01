@@ -104,7 +104,7 @@ class CompileBundleStep implements PipelineStep {
         }
         final bool success = await compiler.compileTest(testFile);
         const int maxTestNameLength = 80;
-        final String truncatedPath = relativePath.length > maxTestNameLength 
+        final String truncatedPath = relativePath.length > maxTestNameLength
           ? relativePath.replaceRange(maxTestNameLength - 3, relativePath.length, '...')
           : relativePath;
         final String expandedPath = truncatedPath.padRight(maxTestNameLength);

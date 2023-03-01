@@ -37,10 +37,10 @@ class CopyArtifactsStep implements PipelineStep {
     await copyTestFonts();
     await copySkiaTestImages();
     if (artifactDeps.canvasKit) {
-      await copyCanvasKitFiles('canvaskit');
+      await copyCanvasKitFiles('canvaskit', 'canvaskit');
     }
     if (artifactDeps.canvasKitChromium) {
-      await copyCanvasKitFiles('canvaskit_chromium');
+      await copyCanvasKitFiles('canvaskit_chromium', 'canvaskit/chromium');
     }
     if (artifactDeps.skwasm) {
       await copySkwasm();
@@ -133,15 +133,15 @@ Future<void> copySkiaTestImages() async {
   }
 }
 
-Future<void> copyCanvasKitFiles(String subdirectory) async {
+Future<void> copyCanvasKitFiles(String sourcePath, String destinationPath) async {
   final String sourceDirectoryPath = pathlib.join(
     environment.wasmReleaseOutDir.path,
-    subdirectory,
+    sourcePath,
   );
 
   final String targetDirectoryPath = pathlib.join(
     environment.webUiBuildDir.path,
-    subdirectory,
+    destinationPath,
   );
 
   for (final String filename in <String>[
@@ -167,7 +167,7 @@ Future<void> copyCanvasKitFiles(String subdirectory) async {
 Future<void> copySkwasm() async {
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
-    'skwasm',
+    'canvaskit',
   ));
 
   await targetDir.create(recursive: true);

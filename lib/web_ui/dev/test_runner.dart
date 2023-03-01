@@ -271,13 +271,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   }
 
   List<TestBundle> _filterBundlesForSuites(List<TestSuite> suites) {
-    final Set<TestBundle> seenBundles = 
+    final Set<TestBundle> seenBundles =
       Set<TestBundle>.from(suites.map((TestSuite suite) => suite.testBundle));
     return config.testBundles.where((TestBundle bundle) => seenBundles.contains(bundle)).toList();
   }
 
   ArtifactDependencies _artifactsForSuites(List<TestSuite> suites) {
-    return suites.fold(ArtifactDependencies.none(), 
+    return suites.fold(ArtifactDependencies.none(),
       (ArtifactDependencies deps, TestSuite suite) => deps | suite.artifactDependencies);
   }
 
@@ -332,7 +332,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       if (shouldRun)
         for (final TestSuite suite in filteredSuites)
           RunSuiteStep(
-            suite, 
+            suite,
             isDebug: isDebug,
             isVerbose: isVerbose,
             doUpdateScreenshotGoldens: doUpdateScreenshotGoldens,

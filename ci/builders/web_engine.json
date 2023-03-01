@@ -1,41 +1,79 @@
 {
-    "generators": {
-        "pub_dirs": [
-            "flutter/lib/web_ui/",
-            "flutter/web_sdk/web_engine_tester/"
-        ],
-        "tasks": [
-            {
-                "name": "compile web_tests",
-                "parameters": [
-                    "run",
-                    "compile_tests"
-                ],
-                "scripts": [
-                    "out/host_debug_unopt/dart-sdk/bin/dart",
-                    "flutter/lib/web_ui/dev/felt.dart"
+    "builds": [
+        {
+            "archives": [],
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "gclient_variables": {
+                "download_android_deps": false,
+                "download_emsdk": true
+            },
+            "gn": [
+                "--web",
+                "--runtime-mode=release"
+            ],
+            "name": "wasm_release",
+            "ninja": {
+                "config": "wasm_release",
+                "targets": [
+                    "flutter/web_sdk:flutter_web_sdk_archive"
                 ]
             },
-            {
-                "name": "check licenses",
-                "parameters": [
-                    "check-licenses"
-                ],
-                "scripts": [
-                    "out/host_debug_unopt/dart-sdk/bin/dart",
-                    "flutter/lib/web_ui/dev/felt.dart"
+            "generators": {
+                "tasks": [
+                    {
+                        "name": "analyze web_ui",
+                        "parameters": [
+                            "analyze"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    },
+                    {
+                        "name": "check licenses",
+                        "parameters": [
+                            "check-licenses"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    },
+                    {
+                        "name": "compile web_tests",
+                        "parameters": [
+                            "test",
+                            "--compile"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    }
                 ]
             },
-            {
-                "name": "web engine analysis",
-                "parameters": [
-                    "analyze"
-                ],
-                "scripts": [
-                    "out/host_debug_unopt/dart-sdk/bin/dart",
-                    "flutter/lib/web_ui/dev/felt.dart"
-                ]
-            }
-        ]
-    }
+            "tests": []
+        }
+    ],
+    "tests": [
+        {
+            "name": "linux chrome dart2js web tests",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "parameters": [
+                "--suite=chrome-dart2js-html-engine",
+                "--suite=chrome-dart2js-html-html",
+                "--suite=chrome-dart2js-html-ui",
+                "--suite=chrome-dart2js-canvaskit-canvaskit",
+                "--suite=chrome-dart2js-canvaskit-ui",
+                "--suite=chrome-dart2js-skwasm-skwasm_stub",
+                "--suite=chrome-full-dart2js-canvaskit-canvaskit",
+                "--suite=chrome-full-dart2js-canvaskit-ui"
+            ],
+            "script": "flutter/lib/web_ui/dev/felt"
+        }
+    ]
 }

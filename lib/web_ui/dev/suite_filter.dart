@@ -75,7 +75,7 @@ class CompilerFilter extends AllowListSuiteFilter<Compiler> {
 
   @override
   Compiler getAttributeForSuite(TestSuite suite) => suite.testBundle.compileConfig.compiler;
-} 
+}
 
 class RendererFilter extends AllowListSuiteFilter<Renderer> {
   RendererFilter({required super.allowList});
