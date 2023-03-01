@@ -176,19 +176,11 @@ class SkiaFontCollection implements FontCollection {
   @override
   Future<void> debugDownloadTestFonts() async {
     final List<Future<UnregisteredFont?>> pendingFonts = <Future<UnregisteredFont?>>[];
-    if (!_isFontFamilyDownloaded(ahemFontFamily)) {
-      _downloadFont(pendingFonts, ahemFontUrl, ahemFontFamily);
+    for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
+      if (!_isFontFamilyDownloaded(fontEntry.key)) {
+        _downloadFont(pendingFonts, fontEntry.value, fontEntry.key);
+      }
     }
-    if (!_isFontFamilyDownloaded(flutterTestFontFamily)) {
-      _downloadFont(pendingFonts, flutterTestFontUrl, flutterTestFontFamily);
-    }
-    if (!_isFontFamilyDownloaded(robotoFontFamily)) {
-      _downloadFont(pendingFonts, robotoTestFontUrl, robotoFontFamily);
-    }
-    if (!_isFontFamilyDownloaded(robotoVariableFontFamily)) {
-      _downloadFont(pendingFonts, robotoVariableTestFontUrl, robotoVariableFontFamily);
-    }
-
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
     _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
 

@@ -10,12 +10,16 @@ import 'util.dart';
 
 const String ahemFontFamily = 'Ahem';
 const String ahemFontUrl = '/assets/fonts/ahem.ttf';
-const String flutterTestFontFamily = 'FlutterTest';
-const String flutterTestFontUrl = '/assets/fonts/flutter_test.ttf';
 const String robotoFontFamily = 'Roboto';
 const String robotoTestFontUrl = '/assets/fonts/Roboto-Regular.ttf';
-const String robotoVariableFontFamily = 'RobotoVariable';
-const String robotoVariableTestFontUrl = '/assets/fonts/RobotoSlab-VariableFont_wght.ttf';
+
+/// The list of test fonts, in the form of font family name - font file url pairs.
+const Map<String, String> testFontUrls = <String, String>{
+  ahemFontFamily: ahemFontUrl,
+  robotoFontFamily: robotoTestFontUrl,
+  'FlutterTest': '/assets/fonts/flutter_test.ttf',
+  'RobotoVariable': '/assets/fonts/RobotoSlab-VariableFont_wght.ttf',
+};
 
 /// This class downloads assets over the network.
 ///
