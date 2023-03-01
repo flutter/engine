@@ -4,12 +4,17 @@
 
 #import <Cocoa/Cocoa.h>
 
+#include <stdint.h>
+
 #import "FlutterBinaryMessenger.h"
 #import "FlutterChannels.h"
 #import "FlutterMacros.h"
 #import "FlutterPlatformViews.h"
 #import "FlutterPluginMacOS.h"
 #import "FlutterTexture.h"
+
+typedef int64_t FlutterViewId;
+constexpr int64_t kFlutterDefaultViewId = 0;
 
 // TODO: Merge this file and FlutterPluginMacOS.h with the iOS FlutterPlugin.h, sharing all but
 // the platform-specific methods.
