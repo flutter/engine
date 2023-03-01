@@ -269,7 +269,7 @@ class DisplayList : public SkRefCnt {
     return Equals(other.get());
   }
 
-  bool can_apply_group_opacity() { return can_apply_group_opacity_; }
+  bool can_apply_group_opacity() const { return can_apply_group_opacity_; }
 
   static void DisposeOps(uint8_t* ptr, uint8_t* end);
 
