@@ -18,8 +18,6 @@ import '../../renderer.dart';
 class SkwasmRenderer implements Renderer {
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
-    assert(path1 is SkwasmPath);
-    assert(path2 is SkwasmPath);
     return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
   }
 
@@ -30,7 +28,6 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.Path copyPath(ui.Path src) {
-    assert(src is SkwasmPath);
     return SkwasmPath.from(src as SkwasmPath);
   }
 
@@ -41,7 +38,6 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.Canvas createCanvas(ui.PictureRecorder recorder, [ui.Rect? cullRect]) {
-    assert(recorder is SkwasmPictureRecorder);
     return SkwasmCanvas(recorder as SkwasmPictureRecorder, cullRect ?? ui.Rect.largest);
   }
 

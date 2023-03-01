@@ -37,7 +37,7 @@ class SkwasmImage implements ui.Image {
   SkwasmImage clone() => this;
 
   @override
-  bool isCloneOf(ui.Image other) => other == this;
+  bool isCloneOf(ui.Image other) => identical(this, other);
 
   @override
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;

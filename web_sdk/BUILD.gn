@@ -587,38 +587,38 @@ if (!is_fuchsia) {
       tmp_files += [
         {
           source = rebase_path(source)
-          destination = rebase_path(source, "$root_build_dir")
+          destination = rebase_path(source, "$root_build_dir/flutter_web_sdk")
         },
       ]
     }
     tmp_files += [
       {
         source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
-        destination = "flutter_web_sdk/canvaskit/canvaskit.js"
+        destination = "canvaskit/canvaskit.js"
       },
       {
         source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
-        destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
+        destination = "canvaskit/canvaskit.wasm"
       },
       {
         source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
-        destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.js"
+        destination = "canvaskit/chromium/canvaskit.js"
       },
       {
         source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
-        destination = "flutter_web_sdk/canvaskit_chromium/canvaskit.wasm"
+        destination = "canvaskit/chromium/canvaskit.wasm"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.js")
-        destination = "flutter_web_sdk/canvaskit/skwasm.js"
+        destination = "canvaskit/skwasm.js"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.worker.js")
-        destination = "flutter_web_sdk/canvaskit/skwasm.worker.js"
+        destination = "canvaskit/skwasm.worker.js"
       },
       {
         source = rebase_path("$root_out_dir/skwasm.wasm")
-        destination = "flutter_web_sdk/canvaskit/skwasm.wasm"
+        destination = "canvaskit/skwasm.wasm"
       },
     ]
     files = tmp_files

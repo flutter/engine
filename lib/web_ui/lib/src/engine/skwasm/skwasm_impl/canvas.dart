@@ -29,7 +29,6 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void saveLayer(ui.Rect? bounds, ui.Paint uiPaint) {
-    assert(uiPaint is SkwasmPaint);
     final SkwasmPaint paint = uiPaint as SkwasmPaint;
     if (bounds != null) {
       withStackScope((StackScope s) {
@@ -89,7 +88,6 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void clipPath(ui.Path uiPath, {bool doAntiAlias = true}) {
-    assert(uiPath is SkwasmPath);
     final SkwasmPath path = uiPath as SkwasmPath;
     canvasClipPath(_handle, path.handle, doAntiAlias);
   }
