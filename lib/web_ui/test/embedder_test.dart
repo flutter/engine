@@ -130,6 +130,7 @@ void testMain() {
 
       expect(style, isNotNull);
       expect(style!.tagName, equalsIgnoringCase('style'));
+      expect(style.parentNode, embedder.glassPaneShadow);
     });
   });
 }
