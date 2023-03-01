@@ -414,7 +414,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawArc(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
-    SkCanvas::PointMode mode,
+    DlCanvas::PointMode mode,
     uint32_t count,
     const SkPoint points[]) {
   if (IsComplex()) {
@@ -423,7 +423,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
   unsigned int complexity;
 
   if (IsAntiAliased()) {
-    if (mode == SkCanvas::kPoints_PointMode) {
+    if (mode == DlCanvas::PointMode::kPoints) {
       if (IsHairline()) {
         // This is a special case, it triggers an extremely fast path.
         // m = 1/4500
@@ -434,7 +434,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
         // c = 0
         complexity = count * 400;
       }
-    } else if (mode == SkCanvas::kLines_PointMode) {
+    } else if (mode == DlCanvas::PointMode::kLines) {
       if (IsHairline()) {
         // m = 1/750
         // c = 0
@@ -456,12 +456,12 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
       }
     }
   } else {
-    if (mode == SkCanvas::kPoints_PointMode) {
+    if (mode == DlCanvas::PointMode::kPoints) {
       // Hairline vs non hairline makes no difference for points without AA.
       // m = 1/18000
       // c = 0.25
       complexity = (count + 4500) * 100 / 9;
-    } else if (mode == SkCanvas::kLines_PointMode) {
+    } else if (mode == DlCanvas::PointMode::kLines) {
       if (IsHairline()) {
         // m = 1/8500
         // c = 0.25
@@ -479,34 +479,6 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
       complexity = (count + 1875) * 80 / 3;
     }
   }
-
-  AccumulateComplexity(complexity);
-}
-
-void DisplayListGLComplexityCalculator::GLHelper::drawSkVertices(
-    const sk_sp<SkVertices> vertices,
-    SkBlendMode mode) {
-  // There is currently no way for us to get the VertexMode from the SkVertices
-  // object, but for future reference:
-  //
-  // TriangleStrip is roughly 25% more expensive than TriangleFan.
-  // TriangleFan is roughly 5% more expensive than Triangles.
-
-  // There is currently no way for us to get the vertex count from an SkVertices
-  // object, so we have to estimate it from the approximate size.
-  //
-  // Approximate size returns the sum of the sizes of the positions (SkPoint),
-  // texs (SkPoint), colors (SkColor) and indices (uint16_t) arrays multiplied
-  // by sizeof(type). As a very, very rough estimate, divide that by 20 to get
-  // an idea of the vertex count.
-  unsigned int approximate_vertex_count = vertices->approximateSize() / 20;
-
-  // For the baseline, it's hard to identify the trend. It might be O(n^1/2)
-  // For now, treat it as linear as an approximation.
-  //
-  // m = 1/1600
-  // c = 1
-  unsigned int complexity = (approximate_vertex_count + 1600) * 250 / 2;
 
   AccumulateComplexity(complexity);
 }

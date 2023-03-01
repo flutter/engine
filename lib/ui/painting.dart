@@ -3278,13 +3278,13 @@ class ColorFilter implements ImageFilter {
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
   ///
-  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
   ///     | R' |   | a00 a01 a02 a03 a04 |   | R |
-  ///     | G' |   | a10 a11 a22 a33 a44 |   | G |
-  ///     | B' | = | a20 a21 a22 a33 a44 | * | B |
-  ///     | A' |   | a30 a31 a22 a33 a44 |   | A |
+  ///     | G' |   | a10 a11 a12 a13 a14 |   | G |
+  ///     | B' | = | a20 a21 a22 a23 a24 | * | B |
+  ///     | A' |   | a30 a31 a32 a33 a34 |   | A |
   ///     | 1  |   |  0   0   0   0   1  |   | 1 |
   ///
   /// The matrix is in row-major order and the translation column is specified
@@ -4252,8 +4252,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// Creates a fragment program from the asset with key [assetKey].
   ///
   /// The asset must be a file produced as the output of the `impellerc`
-  /// compiler. The constructed object should then be reused via the [shader]
-  /// method to create [Shader] objects that can be used by [Shader.paint].
+  /// compiler. The constructed object should then be reused via the
+  /// [fragmentShader] method to create [Shader] objects that can be used by
+  /// [Paint.shader].
   static Future<FragmentProgram> fromAsset(String assetKey) {
     // The flutter tool converts all asset keys with spaces into URI
     // encoded paths (replacing ' ' with '%20', for example). We perform
@@ -4684,7 +4685,7 @@ class Vertices extends NativeFieldWrapperClass1 {
 /// Defines how a list of points is interpreted when drawing a set of points.
 ///
 /// Used by [Canvas.drawPoints] and [Canvas.drawRawPoints].
-// These enum values must be kept in sync with SkCanvas::PointMode.
+// These enum values must be kept in sync with DlCanvas::PointMode.
 enum PointMode {
   /// Draw each point separately.
   ///
@@ -5090,7 +5091,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// After executing both of those calls there is no area left in which to draw
   /// because the two paths have no overlapping regions. But, in this case,
-  /// [getClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
+  /// [getLocalClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
   /// only intersects the bounds of the two path objects to obtain its conservative
   /// estimate.
   ///
