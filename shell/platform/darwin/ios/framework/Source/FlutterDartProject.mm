@@ -32,6 +32,37 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
+// Finds a bundle with the named `bundleID`.
+//
+// `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
+// tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
+// in a medium sized Flutter app. It is likely that the slowness comes from
+// having to traverse and load all bundles known to the process. Using
+// `+[NSBundle allframeworks]` and filtering also suffers from the same problem.
+//
+// This implementation is an optimization to limit the search space with a hint.
+// Callers can provide a `hintURL` for where the bundle is expected to be
+// located in. If the desired bundle cannot be found here, the implementation
+// falls back to `+[NSBundle bundleWithIdentifier:]`.
+static NSBundle* FLTBundleWithIdentifier(NSString* bundleID, NSURL* hintURL) {
+  NSArray<NSURL*>* candidates = [[NSFileManager defaultManager]
+        contentsOfDirectoryAtURL:hintURL
+      includingPropertiesForKeys:@[]
+                         options:0
+                           // Not interested in the error as there is a fallback.
+                           error:nil];
+
+  for (NSURL* candidate in candidates) {
+    NSBundle* bundle = [NSBundle bundleWithURL:candidate];
+    if ([bundle.bundleIdentifier isEqualToString:bundleID]) {
+      return bundle;
+    }
+  }
+
+  // Fallback to slow implementation.
+  return [NSBundle bundleWithIdentifier:bundleID];
+}
+
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   auto command_line = flutter::CommandLineFromNSProcessInfo();
 
@@ -46,7 +77,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
-    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+    // The default build system for Flutter places the default bundle in the
+    // same directory as the engine bundle (as they are both frameworks).
+    NSURL* defaultBundleHintURL = [engineBundle.bundleURL URLByDeletingLastPathComponent];
+    bundle =
+        FLTBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier], defaultBundleHintURL);
   }
   if (bundle == nil) {
     bundle = mainBundle;
