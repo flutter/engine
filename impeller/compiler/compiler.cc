@@ -7,7 +7,9 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
 #include <utility>
 
 #include "flutter/fml/paths.h"
@@ -25,16 +27,37 @@ const uint32_t kFragBindingBase = 128;
 const size_t kNumUniformKinds =
     static_cast<int>(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
 
+static uint32_t ParseMSLVersion(const std::string& msl_version) {
+  std::stringstream sstream(msl_version);
+  std::string version_part;
+  uint32_t major = 1;
+  uint32_t minor = 2;
+  uint32_t patch = 0;
+  if (std::getline(sstream, version_part, '.')) {
+    major = std::stoi(version_part);
+    if (std::getline(sstream, version_part, '.')) {
+      minor = std::stoi(version_part);
+      if (std::getline(sstream, version_part, '.')) {
+        patch = std::stoi(version_part);
+      }
+    }
+  }
+  if (major < 1 || minor < 2) {
+    std::cerr << "--metal-version version must be at least 1.2. Have "
+              << msl_version << std::endl;
+  }
+  return spirv_cross::CompilerMSL::Options::make_msl_version(major, minor,
+                                                             patch);
+}
+
 static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
                                          const SourceOptions& source_options) {
   auto sl_compiler = std::make_shared<spirv_cross::CompilerMSL>(ir);
   spirv_cross::CompilerMSL::Options sl_options;
   sl_options.platform =
       TargetPlatformToMSLPlatform(source_options.target_platform);
-  // If this version specification changes, the GN rules that process the
-  // Metal to AIR must be updated as well.
-  sl_options.msl_version =
-      spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.msl_version = ParseMSLVersion(source_options.metal_version);
+  sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
 
   // Sort the float and sampler uniforms according to their declared/decorated
@@ -91,7 +114,8 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
-  if (source_options.target_platform == TargetPlatform::kOpenGLES) {
+  if (source_options.target_platform == TargetPlatform::kOpenGLES ||
+      source_options.target_platform == TargetPlatform::kRuntimeStageGLES) {
     sl_options.version = source_options.gles_language_version > 0
                              ? source_options.gles_language_version
                              : 100;
@@ -137,13 +161,13 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
-    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kVulkan:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kSkSL:
@@ -355,9 +379,9 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_0);
+          shaderc_env_version::shaderc_env_version_vulkan_1_1);
       spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+          shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kRuntimeStageMetal:
     case TargetPlatform::kRuntimeStageGLES:
@@ -435,7 +459,11 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
                    << ShaderCErrorToString(spv_result_->GetCompilationStatus())
                    << ". " << spv_result_->GetNumErrors() << " error(s) and "
                    << spv_result_->GetNumWarnings() << " warning(s).";
-    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0) {
+    // It should normally be enough to check that there are errors or warnings,
+    // but some cases result in no errors or warnings and still have an error
+    // message. If there's a message we should print it.
+    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0 ||
+        !spv_result_->GetErrorMessage().empty()) {
       COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
     }
     return;

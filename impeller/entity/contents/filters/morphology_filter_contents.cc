@@ -34,7 +34,7 @@ void DirectionalMorphologyFilterContents::SetMorphType(MorphType morph_type) {
   morph_type_ = morph_type;
 }
 
-std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
+std::optional<Entity> DirectionalMorphologyFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -57,7 +57,9 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
   }
 
   if (radius_.radius < kEhCloseEnough) {
-    return input_snapshot.value();
+    return Contents::EntityFromSnapshot(input_snapshot.value(),
+                                        entity.GetBlendMode(),
+                                        entity.GetStencilDepth());
   }
 
   auto maybe_input_uvs = input_snapshot->GetCoverageUVs(coverage);
@@ -88,6 +90,9 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
+
     auto transform = entity.GetTransformation() * effect_transform;
     auto transformed_radius =
         transform.TransformDirection(direction_ * radius_.radius);
@@ -102,8 +107,6 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
             transformed_texture_vertices[2]);
 
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
     frag_info.radius = std::round(transformed_radius.GetLength());
     frag_info.direction = input_snapshot->transform.Invert()
                               .TransformDirection(transformed_radius)
@@ -139,10 +142,12 @@ std::optional<Snapshot> DirectionalMorphologyFilterContents::RenderFilter(
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-  return Snapshot{.texture = out_texture,
-                  .transform = Matrix::MakeTranslation(coverage.origin),
-                  .sampler_descriptor = sampler_desc,
-                  .opacity = input_snapshot->opacity};
+  return Contents::EntityFromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = Matrix::MakeTranslation(coverage.origin),
+               .sampler_descriptor = sampler_desc,
+               .opacity = input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 std::optional<Rect> DirectionalMorphologyFilterContents::GetFilterCoverage(

@@ -7,6 +7,7 @@
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
 #include "impeller/base/work_queue_common.h"
+#include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
 
@@ -66,6 +67,20 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
       VALIDATION_LOG << "Could not create work queue.";
       return;
     }
+  }
+
+  // Create the device capabilities.
+  {
+    device_capabilities_ =
+        DeviceCapabilitiesBuilder()
+            .SetHasThreadingRestrictions(true)
+            .SetSupportsOffscreenMSAA(false)
+            .SetSupportsSSBO(false)
+            .SetSupportsTextureToTextureBlits(
+                reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
+            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
+            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .Build();
   }
 
   is_valid_ = true;
@@ -128,18 +143,8 @@ std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
 }
 
 // |Context|
-bool ContextGLES::HasThreadingRestrictions() const {
-  return true;
-}
-
-// |Context|
-bool ContextGLES::SupportsOffscreenMSAA() const {
-  return false;
-}
-
-// |Context|
-const BackendFeatures& ContextGLES::GetBackendFeatures() const {
-  return kLegacyBackendFeatures;
+const IDeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
+  return *device_capabilities_;
 }
 
 // |Context|

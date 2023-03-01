@@ -115,6 +115,8 @@ class TestKeyboardManager : public KeyboardManager {
 
  private:
   bool during_redispatch_ = false;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(TestKeyboardManager);
 };
 
 // Injecting this kind of keyboard change means that a key state (the true
@@ -314,76 +316,8 @@ class MockKeyboardManagerDelegate : public KeyboardManager::WindowDelegate,
   MapVirtualKeyToChar map_vk_to_char_;
   TestKeystate key_state_;
   std::list<Win32Message> redispatched_messages_;
-};
 
-// A FlutterWindowsView that overrides the RegisterKeyboardHandlers function
-// to register the keyboard hook handlers that can be spied upon.
-class TestFlutterWindowsView : public FlutterWindowsView {
- public:
-  typedef std::function<void(const std::u16string& text)> U16StringHandler;
-
-  TestFlutterWindowsView(
-      U16StringHandler on_text,
-      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state,
-      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan)
-      // The WindowBindingHandler is used for window size and such, and doesn't
-      // affect keyboard.
-      : FlutterWindowsView(
-            std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>()),
-        get_keyboard_state_(std::move(get_keyboard_state)),
-        map_vk_to_scan_(std::move(map_vk_to_scan)),
-        on_text_(std::move(on_text)) {}
-
-  void OnText(const std::u16string& text) override { on_text_(text); }
-
-  void HandleMessage(const char* channel,
-                     const char* method,
-                     const char* args) {
-    rapidjson::Document args_doc;
-    args_doc.Parse(args);
-    FML_DCHECK(!args_doc.HasParseError());
-
-    rapidjson::Document message_doc(rapidjson::kObjectType);
-    auto& allocator = message_doc.GetAllocator();
-    message_doc.AddMember("method", rapidjson::Value(method, allocator),
-                          allocator);
-    message_doc.AddMember("args", args_doc, allocator);
-
-    rapidjson::StringBuffer buffer;
-    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-    message_doc.Accept(writer);
-
-    std::unique_ptr<std::vector<uint8_t>> data =
-        JsonMessageCodec::GetInstance().EncodeMessage(message_doc);
-    FlutterPlatformMessageResponseHandle response_handle;
-    const FlutterPlatformMessage message = {
-        sizeof(FlutterPlatformMessage),  // struct_size
-        channel,                         // channel
-        data->data(),                    // message
-        data->size(),                    // message_size
-        &response_handle,                // response_handle
-    };
-    GetEngine()->HandlePlatformMessage(&message);
-  }
-
- protected:
-  std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
-      BinaryMessenger* messenger,
-      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
-      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan)
-      override {
-    return FlutterWindowsView::CreateKeyboardKeyHandler(
-        messenger,
-        [this](int virtual_key) { return get_keyboard_state_(virtual_key); },
-        [this](int virtual_key, bool extended) {
-          return map_vk_to_scan_(virtual_key, extended);
-        });
-  }
-
- private:
-  U16StringHandler on_text_;
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_keyboard_state_;
-  KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan_;
+  FML_DISALLOW_COPY_AND_ASSIGN(MockKeyboardManagerDelegate);
 };
 
 typedef struct {
@@ -411,6 +345,23 @@ void clear_key_calls() {
   key_calls.clear();
 }
 
+// A FlutterWindowsView that spies on text.
+class TestFlutterWindowsView : public FlutterWindowsView {
+ public:
+  TestFlutterWindowsView(std::unique_ptr<WindowBindingHandler> window)
+      : FlutterWindowsView(std::move(window)) {}
+
+  void OnText(const std::u16string& text) override {
+    key_calls.push_back(KeyCall{
+        .type = KeyCall::kKeyCallOnText,
+        .text = text,
+    });
+  }
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(TestFlutterWindowsView);
+};
+
 class KeyboardTester {
  public:
   using ResponseHandler =
@@ -419,36 +370,14 @@ class KeyboardTester {
   explicit KeyboardTester(WindowsTestContext& context)
       : callback_handler_(RespondValue(false)),
         map_virtual_key_layout_(LayoutDefault) {
+    std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine(context);
+
+    engine_ = engine.get();
     view_ = std::make_unique<TestFlutterWindowsView>(
-        [](const std::u16string& text) {
-          key_calls.push_back(KeyCall{
-              .type = KeyCall::kKeyCallOnText,
-              .text = text,
-          });
-        },
-        [this](int virtual_key) -> SHORT {
-          // `window_` is not initialized yet when this callback is first
-          // called.
-          return window_ ? window_->GetKeyState(virtual_key) : 0;
-        },
-        [this](UINT virtual_key, bool extended) -> SHORT {
-          return map_virtual_key_layout_(
-              virtual_key, extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
-        });
-    view_->SetEngine(GetTestEngine(
-        context, [&callback_handler = callback_handler_](
-                     const FlutterKeyEvent* event,
-                     MockKeyResponseController::ResponseCallback callback) {
-          FlutterKeyEvent clone_event = *event;
-          clone_event.character = event->character == nullptr
-                                      ? nullptr
-                                      : clone_string(event->character);
-          key_calls.push_back(KeyCall{
-              .type = KeyCall::kKeyCallOnKey,
-              .key_event = clone_event,
-          });
-          callback_handler(event, callback);
-        }));
+        // The WindowBindingHandler is used for window size and such, and
+        // doesn't affect keyboard.
+        std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>());
+    view_->SetEngine(std::move(engine));
     window_ = std::make_unique<MockKeyboardManagerDelegate>(
         view_.get(), [this](UINT virtual_key) -> SHORT {
           return map_virtual_key_layout_(virtual_key, MAPVK_VK_TO_CHAR);
@@ -457,6 +386,9 @@ class KeyboardTester {
 
   TestFlutterWindowsView& GetView() { return *view_; }
   MockKeyboardManagerDelegate& GetWindow() { return *window_; }
+
+  // Reset the keyboard by invoking the engine restart handler.
+  void ResetKeyboard() { EngineModifier{engine_}.Restart(); }
 
   // Set all events to be handled (true) or unhandled (false).
   void Responding(bool response) { callback_handler_ = RespondValue(response); }
@@ -481,6 +413,37 @@ class KeyboardTester {
     window_->InjectKeyboardChanges(changes);
   }
 
+  // Simulates receiving a platform message from the framework.
+  void InjectPlatformMessage(const char* channel,
+                             const char* method,
+                             const char* args) {
+    rapidjson::Document args_doc;
+    args_doc.Parse(args);
+    FML_DCHECK(!args_doc.HasParseError());
+
+    rapidjson::Document message_doc(rapidjson::kObjectType);
+    auto& allocator = message_doc.GetAllocator();
+    message_doc.AddMember("method", rapidjson::Value(method, allocator),
+                          allocator);
+    message_doc.AddMember("args", args_doc, allocator);
+
+    rapidjson::StringBuffer buffer;
+    rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+    message_doc.Accept(writer);
+
+    std::unique_ptr<std::vector<uint8_t>> data =
+        JsonMessageCodec::GetInstance().EncodeMessage(message_doc);
+    FlutterPlatformMessageResponseHandle response_handle;
+    const FlutterPlatformMessage message = {
+        sizeof(FlutterPlatformMessage),  // struct_size
+        channel,                         // channel
+        data->data(),                    // message
+        data->size(),                    // message_size
+        &response_handle,                // response_handle
+    };
+    view_->GetEngine()->HandlePlatformMessage(&message);
+  }
+
   // Get the number of redispatched messages since the last clear, then clear
   // the counter.
   size_t RedispatchedMessageCountAndClear() {
@@ -491,6 +454,7 @@ class KeyboardTester {
   }
 
  private:
+  FlutterWindowsEngine* engine_;
   std::unique_ptr<TestFlutterWindowsView> view_;
   std::unique_ptr<MockKeyboardManagerDelegate> window_;
   MockKeyResponseController::EmbedderCallbackHandler callback_handler_;
@@ -500,10 +464,20 @@ class KeyboardTester {
   // overridden methods for sending platform messages, so that the engine can
   // respond as if the framework were connected.
   std::unique_ptr<FlutterWindowsEngine> GetTestEngine(
-      WindowsTestContext& context,
-      MockKeyResponseController::EmbedderCallbackHandler
-          embedder_callback_handler) {
+      WindowsTestContext& context) {
     FlutterWindowsEngineBuilder builder{context};
+
+    builder.SetCreateKeyboardHandlerCallbacks(
+        [this](int virtual_key) -> SHORT {
+          // `window_` is not initialized yet when this callback is first
+          // called.
+          return window_ ? window_->GetKeyState(virtual_key) : 0;
+        },
+        [this](UINT virtual_key, bool extended) -> SHORT {
+          return map_virtual_key_layout_(
+              virtual_key, extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
+        });
+
     auto engine = builder.Build();
 
     EngineModifier modifier(engine.get());
@@ -511,7 +485,19 @@ class KeyboardTester {
     auto key_response_controller =
         std::make_shared<MockKeyResponseController>();
     key_response_controller->SetEmbedderResponse(
-        std::move(embedder_callback_handler));
+        [&callback_handler = callback_handler_](
+            const FlutterKeyEvent* event,
+            MockKeyResponseController::ResponseCallback callback) {
+          FlutterKeyEvent clone_event = *event;
+          clone_event.character = event->character == nullptr
+                                      ? nullptr
+                                      : clone_string(event->character);
+          key_calls.push_back(KeyCall{
+              .type = KeyCall::kKeyCallOnKey,
+              .key_event = clone_event,
+          });
+          callback_handler(event, callback);
+        });
     key_response_controller->SetTextInputResponse(
         [](std::unique_ptr<rapidjson::Document> document) {
           rapidjson::StringBuffer buffer;
@@ -522,10 +508,10 @@ class KeyboardTester {
               .text_method_call = buffer.GetString(),
           });
         });
-
     MockEmbedderApiForKeyboard(modifier, key_response_controller);
 
     engine->Run();
+
     return engine;
   }
 
@@ -536,9 +522,19 @@ class KeyboardTester {
       callback(value);
     };
   }
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyboardTester);
 };
 
-class KeyboardTest : public WindowsTest {};
+class KeyboardTest : public WindowsTest {
+ public:
+  KeyboardTest() = default;
+  virtual ~KeyboardTest() = default;
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(KeyboardTest);
+};
 
 }  // namespace
 
@@ -994,8 +990,8 @@ TEST_F(KeyboardTest, RestartClearsKeyboardState) {
       WmCharInfo{'a', kScanCodeKeyA, kNotExtended, kWasUp}.Build(
           kWmResultZero)});
 
-  // Send the "hot restart" signal. This should reset the keyboard's state.
-  tester.GetView().OnPreEngineRestart();
+  // Reset the keyboard's state.
+  tester.ResetKeyboard();
 
   // Hold A. Notice the message declares the key is already down, however, the
   // the keyboard does not send a repeat event as its state was reset.
@@ -2179,7 +2175,7 @@ TEST_F(KeyboardTest, TextInputSubmit) {
 
   // US Keyboard layout
 
-  tester.GetView().HandleMessage(
+  tester.InjectPlatformMessage(
       "flutter/textinput", "TextInput.setClient",
       R"|([108, {"inputAction": "TextInputAction.none"}])|");
 

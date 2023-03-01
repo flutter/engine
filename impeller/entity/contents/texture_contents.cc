@@ -67,6 +67,7 @@ std::optional<Rect> TextureContents::GetCoverage(const Entity& entity) const {
 std::optional<Snapshot> TextureContents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
+    const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled) const {
   auto bounds = path_.GetBoundingBox();
   if (!bounds.has_value()) {
@@ -78,14 +79,16 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
   if (is_rect_ && source_rect_ == Rect::MakeSize(texture_->GetSize()) &&
       (opacity_ >= 1 - kEhCloseEnough || defer_applying_opacity_)) {
     auto scale = Vector2(bounds->size / Size(texture_->GetSize()));
-    return Snapshot{.texture = texture_,
-                    .transform = entity.GetTransformation() *
-                                 Matrix::MakeTranslation(bounds->origin) *
-                                 Matrix::MakeScale(scale),
-                    .sampler_descriptor = sampler_descriptor_,
-                    .opacity = opacity_};
+    return Snapshot{
+        .texture = texture_,
+        .transform = entity.GetTransformation() *
+                     Matrix::MakeTranslation(bounds->origin) *
+                     Matrix::MakeScale(scale),
+        .sampler_descriptor = sampler_descriptor.value_or(sampler_descriptor_),
+        .opacity = opacity_};
   }
-  return Contents::RenderToSnapshot(renderer, entity);
+  return Contents::RenderToSnapshot(
+      renderer, entity, sampler_descriptor.value_or(sampler_descriptor_));
 }
 
 bool TextureContents::Render(const ContentContext& renderer,
@@ -120,7 +123,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   VertexBufferBuilder<VS::PerVertexData> vertex_builder;
   {
     const auto tess_result = renderer.GetTessellator()->Tessellate(
-        path_.GetFillType(), path_.CreatePolyline(),
+        path_.GetFillType(), path_.CreatePolyline(1.0f),
         [this, &vertex_builder, &coverage_rect, &texture_size](
             const float* vertices, size_t vertices_size,
             const uint16_t* indices, size_t indices_size) {
@@ -156,12 +159,12 @@ bool TextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation();
+  frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.alpha = opacity_;
 
   Command cmd;
@@ -177,7 +180,7 @@ bool TextureContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
   cmd.stencil_reference = entity.GetStencilDepth();
   cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,
                          renderer.GetContext()->GetSamplerLibrary()->GetSampler(

@@ -20,6 +20,7 @@
 ../../../flutter/.gitignore
 ../../../flutter/.style.yapf
 ../../../flutter/AUTHORS
+../../../flutter/CODEOWNERS
 ../../../flutter/CONTRIBUTING.md
 ../../../flutter/DEPS
 ../../../flutter/Doxyfile
@@ -43,6 +44,7 @@
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/display_list_utils_unittests.cc
 ../../../flutter/display_list/display_list_vertices_unittests.cc
+../../../flutter/display_list/testing
 ../../../flutter/docs
 ../../../flutter/examples
 ../../../flutter/flow/README.md
@@ -136,10 +138,12 @@
 ../../../flutter/impeller/geometry/geometry_unittests.h
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
+../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
 ../../../flutter/impeller/renderer/compute_unittests.cc
 ../../../flutter/impeller/renderer/device_buffer_unittests.cc
 ../../../flutter/impeller/renderer/host_buffer_unittests.cc
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
+../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
 ../../../flutter/impeller/scene/README.md
@@ -397,7 +401,6 @@
 ../../../flutter/third_party/txt/.clang-format
 ../../../flutter/third_party/txt/.gitattributes
 ../../../flutter/third_party/txt/.gitignore
-../../../flutter/third_party/txt/PATENTS
 ../../../flutter/third_party/txt/tests
 ../../../flutter/third_party/txt/third_party/fonts
 ../../../flutter/third_party/web_locale_keymap/CHANGELOG.md
@@ -617,6 +620,7 @@
 ../../../fuchsia/sdk/linux/pkg/fit-promise/meta.json
 ../../../fuchsia/sdk/linux/pkg/fit/meta.json
 ../../../fuchsia/sdk/linux/pkg/images_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/input_report_reader/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect/meta.json
 ../../../fuchsia/sdk/linux/pkg/inspect_service_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/media_cpp/meta.json
@@ -1550,16 +1554,11 @@
 ../../../third_party/dart/runtime/tools/heapsnapshot/test
 ../../../third_party/dart/runtime/tools/utils.py
 ../../../third_party/dart/runtime/tools/valgrind.py
-../../../third_party/dart/runtime/tools/wiki/CustomShellSessionPygmentsLexer/custom_shell_session/__init__.py
-../../../third_party/dart/runtime/tools/wiki/CustomShellSessionPygmentsLexer/custom_shell_session/lexer.py
-../../../third_party/dart/runtime/tools/wiki/CustomShellSessionPygmentsLexer/setup.py
 ../../../third_party/dart/runtime/tools/wiki/README.md
+../../../third_party/dart/runtime/tools/wiki/build/admonitions.py
 ../../../third_party/dart/runtime/tools/wiki/build/build.py
+../../../third_party/dart/runtime/tools/wiki/build/cpp_indexer.py
 ../../../third_party/dart/runtime/tools/wiki/build/xrefs.py
-../../../third_party/dart/runtime/tools/wiki/xref_extractor/.gitignore
-../../../third_party/dart/runtime/tools/wiki/xref_extractor/README.md
-../../../third_party/dart/runtime/tools/wiki/xref_extractor/analysis_options.yaml
-../../../third_party/dart/runtime/tools/wiki/xref_extractor/pubspec.yaml
 ../../../third_party/dart/runtime/vm/allocation_test.cc
 ../../../third_party/dart/runtime/vm/assert_test.cc
 ../../../third_party/dart/runtime/vm/atomic_test.cc
@@ -1731,7 +1730,6 @@
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
-../../../third_party/dart/third_party/protobuf/src/test
 ../../../third_party/dart/third_party/requirejs
 ../../../third_party/dart/third_party/tcmalloc/.gitignore
 ../../../third_party/dart/third_party/tcmalloc/OWNERS
@@ -2044,6 +2042,7 @@
 ../../../third_party/icu/DIR_METADATA
 ../../../third_party/icu/OWNERS
 ../../../third_party/icu/README.chromium
+../../../third_party/icu/README.fuchsia
 ../../../third_party/icu/codereview.settings
 ../../../third_party/icu/filters
 ../../../third_party/icu/flutter/README.md
@@ -2664,10 +2663,8 @@
 ../../../third_party/skia/modules/canvaskit/package.json
 ../../../third_party/skia/modules/canvaskit/tests
 ../../../third_party/skia/modules/canvaskit/wasm_tools/SIMD/.gitignore
+../../../third_party/skia/modules/jetski/BUILD.bazel
 ../../../third_party/skia/modules/jetski/README
-../../../third_party/skia/modules/particles/BUILD.bazel
-../../../third_party/skia/modules/particles/include/BUILD.bazel
-../../../third_party/skia/modules/particles/src/BUILD.bazel
 ../../../third_party/skia/modules/pathkit/.gitignore
 ../../../third_party/skia/modules/pathkit/CHANGELOG.md
 ../../../third_party/skia/modules/pathkit/Makefile
@@ -2743,6 +2740,7 @@
 ../../../third_party/skia/src/core/BUILD.bazel
 ../../../third_party/skia/src/effects/BUILD.bazel
 ../../../third_party/skia/src/effects/imagefilters/BUILD.bazel
+../../../third_party/skia/src/encode/BUILD.bazel
 ../../../third_party/skia/src/fonts/BUILD.bazel
 ../../../third_party/skia/src/gpu/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/BUILD.bazel
@@ -2775,7 +2773,6 @@
 ../../../third_party/skia/src/gpu/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/vk/BUILD.bazel
 ../../../third_party/skia/src/image/BUILD.bazel
-../../../third_party/skia/src/images/BUILD.bazel
 ../../../third_party/skia/src/lazy/BUILD.bazel
 ../../../third_party/skia/src/opts/BUILD.bazel
 ../../../third_party/skia/src/pathops/BUILD.bazel

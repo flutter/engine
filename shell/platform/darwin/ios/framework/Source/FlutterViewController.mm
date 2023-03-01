@@ -56,7 +56,9 @@ typedef struct MouseState {
 // This is left a FlutterBinaryMessenger privately for now to give people a chance to notice the
 // change. Unfortunately unless you have Werror turned on, incompatible pointers as arguments are
 // just a warning.
-@interface FlutterViewController () <FlutterBinaryMessenger, UIScrollViewDelegate>
+@interface FlutterViewController () <FlutterBinaryMessenger,
+                                     UIScrollViewDelegate,
+                                     UIPencilInteractionDelegate>
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
@@ -97,7 +99,7 @@ typedef struct MouseState {
 // Trackpad rotating
 @property(nonatomic, retain)
     UIRotationGestureRecognizer* rotationGestureRecognizer API_AVAILABLE(ios(13.4));
-
+@property(nonatomic, retain) UIPencilInteraction* pencilInteraction API_AVAILABLE(ios(13.4));
 /**
  * Creates and registers plugins used by this view controller.
  */
@@ -161,7 +163,9 @@ typedef struct MouseState {
     }
     _engine.reset([engine retain]);
     _engineNeedsLaunch = NO;
-    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+    _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
+                                                      opaque:self.isViewOpaque
+                                             enableWideGamut:engine.project.isWideGamutEnabled]);
     _weakFactory = std::make_unique<fml::WeakPtrFactory<FlutterViewController>>(self);
     _ongoingTouches.reset([[NSMutableSet alloc] init]);
 
@@ -236,7 +240,9 @@ typedef struct MouseState {
 
   _viewOpaque = YES;
   _engine = engine;
-  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine opaque:self.isViewOpaque]);
+  _flutterView.reset([[FlutterView alloc] initWithDelegate:_engine
+                                                    opaque:self.isViewOpaque
+                                           enableWideGamut:project.isWideGamutEnabled]);
   [_engine.get() createShell:nil libraryURI:nil initialRoute:initialRoute];
   _engineNeedsLaunch = YES;
   _ongoingTouches.reset([[NSMutableSet alloc] init]);
@@ -718,6 +724,10 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [self createTouchRateCorrectionVSyncClientIfNeeded];
 
   if (@available(iOS 13.4, *)) {
+    _pencilInteraction = [[UIPencilInteraction alloc] init];
+    _pencilInteraction.delegate = self;
+    [_flutterView addInteraction:_pencilInteraction];
+
     _hoverGestureRecognizer =
         [[UIHoverGestureRecognizer alloc] initWithTarget:self action:@selector(hoverEvent:)];
     _hoverGestureRecognizer.delegate = self;
@@ -891,6 +901,8 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [_pinchGestureRecognizer release];
   _rotationGestureRecognizer.delegate = nil;
   [_rotationGestureRecognizer release];
+  _pencilInteraction.delegate = nil;
+  [_pencilInteraction release];
   [super dealloc];
 }
 
@@ -965,7 +977,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
     case UITouchTypeDirect:
     case UITouchTypeIndirect:
       return flutter::PointerData::DeviceKind::kTouch;
-    case UITouchTypeStylus:
+    case UITouchTypePencil:
       return flutter::PointerData::DeviceKind::kStylus;
     case UITouchTypeIndirectPointer:
       return flutter::PointerData::DeviceKind::kMouse;
@@ -1220,21 +1232,56 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _touchRateCorrectionVSyncClient = nil;
 }
 
+#pragma mark - Stylus Events
+
+- (void)pencilInteractionDidTap:(UIPencilInteraction*)interaction API_AVAILABLE(ios(13.4)) {
+  flutter::PointerData pointer_data = [self createAuxillaryStylusActionData];
+
+  auto packet = std::make_unique<flutter::PointerDataPacket>(1);
+  packet->SetPointerData(/*index=*/0, pointer_data);
+  [_engine.get() dispatchPointerDataPacket:std::move(packet)];
+}
+
+- (flutter::PointerData)createAuxillaryStylusActionData API_AVAILABLE(ios(13.4)) {
+  flutter::PointerData pointer_data;
+  pointer_data.Clear();
+
+  switch (UIPencilInteraction.preferredTapAction) {
+    case UIPencilPreferredActionIgnore:
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kIgnore;
+      break;
+    case UIPencilPreferredActionShowColorPalette:
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kShowColorPalette;
+      break;
+    case UIPencilPreferredActionSwitchEraser:
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchEraser;
+      break;
+    case UIPencilPreferredActionSwitchPrevious:
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kSwitchPrevious;
+      break;
+    default:
+      pointer_data.preferred_auxiliary_stylus_action =
+          flutter::PointerData::PreferredStylusAuxiliaryAction::kUnknown;
+      break;
+  }
+
+  pointer_data.time_stamp = [[NSProcessInfo processInfo] systemUptime] * kMicrosecondsPerSecond;
+  pointer_data.kind = flutter::PointerData::DeviceKind::kStylus;
+  pointer_data.signal_kind = flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
+
+  return pointer_data;
+}
+
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetrics {
   if ([_engine.get() viewController] == self) {
     [_engine.get() updateViewportMetrics:_viewportMetrics];
   }
-}
-
-- (CGFloat)statusBarPadding {
-  UIScreen* screen = self.view.window.screen;
-  CGRect statusFrame = [UIApplication sharedApplication].statusBarFrame;
-  CGRect viewFrame = [self.view convertRect:self.view.bounds
-                          toCoordinateSpace:screen.coordinateSpace];
-  CGRect intersection = CGRectIntersection(statusFrame, viewFrame);
-  return CGRectIsNull(intersection) ? 0.0 : intersection.size.height;
 }
 
 - (void)viewDidLayoutSubviews {

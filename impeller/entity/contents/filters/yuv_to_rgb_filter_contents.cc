@@ -36,7 +36,7 @@ void YUVToRGBFilterContents::SetYUVColorSpace(YUVColorSpace yuv_color_space) {
   yuv_color_space_ = yuv_color_space;
 }
 
-std::optional<Snapshot> YUVToRGBFilterContents::RenderFilter(
+std::optional<Entity> YUVToRGBFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -87,10 +87,10 @@ std::optional<Snapshot> YUVToRGBFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        y_input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        y_input_snapshot->texture->GetYCoordScale();
     frag_info.yuv_color_space = static_cast<Scalar>(yuv_color_space_);
     switch (yuv_color_space_) {
       case YUVColorSpace::kBT601LimitedRange:
@@ -118,7 +118,9 @@ std::optional<Snapshot> YUVToRGBFilterContents::RenderFilter(
   }
   out_texture->SetLabel("YUVToRGB Texture");
 
-  return Snapshot{.texture = out_texture};
+  return Contents::EntityFromSnapshot(Snapshot{.texture = out_texture},
+                                      entity.GetBlendMode(),
+                                      entity.GetStencilDepth());
 }
 
 }  // namespace impeller

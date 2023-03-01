@@ -23,11 +23,54 @@
 
 namespace flutter {
 
+namespace {
+/**
+ *  Loads the gamut as a set of three points (triangle).
+ */
+void LoadGamut(SkPoint abc[3], const skcms_Matrix3x3& xyz) {
+  // rx = rX / (rX + rY + rZ)
+  // ry = rY / (rX + rY + rZ)
+  // gx, gy, bx, and gy are calculated similarly.
+  for (int index = 0; index < 3; index++) {
+    float sum = xyz.vals[index][0] + xyz.vals[index][1] + xyz.vals[index][2];
+    abc[index].fX = xyz.vals[index][0] / sum;
+    abc[index].fY = xyz.vals[index][1] / sum;
+  }
+}
+
+/**
+ *  Calculates the area of the triangular gamut.
+ */
+float CalculateArea(SkPoint abc[3]) {
+  const SkPoint& a = abc[0];
+  const SkPoint& b = abc[1];
+  const SkPoint& c = abc[2];
+  return 0.5f * fabsf(a.fX * b.fY + b.fX * c.fY - a.fX * c.fY - c.fX * b.fY -
+                      b.fX * a.fY);
+}
+
+// Note: This was calculated from SkColorSpace::MakeSRGB().
+static constexpr float kSrgbGamutArea = 0.0982f;
+
+// Source:
+// https://source.chromium.org/chromium/_/skia/skia.git/+/393fb1ec80f41d8ad7d104921b6920e69749fda1:src/codec/SkAndroidCodec.cpp;l=67;drc=46572b4d445f41943059d0e377afc6d6748cd5ca;bpv=1;bpt=0
+bool IsWideGamut(const SkColorSpace& color_space) {
+  skcms_Matrix3x3 xyzd50;
+  color_space.toXYZD50(&xyzd50);
+  SkPoint rgb[3];
+  LoadGamut(rgb, xyzd50);
+  float area = CalculateArea(rgb);
+  return area > kSrgbGamutArea;
+}
+}  // namespace
+
 ImageDecoderImpeller::ImageDecoderImpeller(
     const TaskRunners& runners,
     std::shared_ptr<fml::ConcurrentTaskRunner> concurrent_task_runner,
-    const fml::WeakPtr<IOManager>& io_manager)
-    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager) {
+    const fml::WeakPtr<IOManager>& io_manager,
+    bool supports_wide_gamut)
+    : ImageDecoder(runners, std::move(concurrent_task_runner), io_manager),
+      supports_wide_gamut_(supports_wide_gamut) {
   std::promise<std::shared_ptr<impeller::Context>> context_promise;
   context_ = context_promise.get_future();
   runners_.GetIOTaskRunner()->PostTask(fml::MakeCopyable(
@@ -51,6 +94,10 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
   switch (type) {
     case kRGBA_8888_SkColorType:
       return impeller::PixelFormat::kR8G8B8A8UNormInt;
+    case kRGBA_F16_SkColorType:
+      return impeller::PixelFormat::kR16G16B16A16Float;
+    case kBGR_101010x_XR_SkColorType:
+      return impeller::PixelFormat::kB10G10R10XR;
     default:
       return std::nullopt;
   }
@@ -60,7 +107,8 @@ static std::optional<impeller::PixelFormat> ToPixelFormat(SkColorType type) {
 std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
     ImageDescriptor* descriptor,
     SkISize target_size,
-    impeller::ISize max_texture_size) {
+    impeller::ISize max_texture_size,
+    bool supports_wide_gamut) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -85,11 +133,27 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
   ///
 
   const auto base_image_info = descriptor->image_info();
-  const auto image_info =
-      base_image_info.makeWH(decode_size.width(), decode_size.height())
-          .makeColorType(ChooseCompatibleColorType(base_image_info.colorType()))
-          .makeAlphaType(
-              ChooseCompatibleAlphaType(base_image_info.alphaType()));
+  const bool is_wide_gamut =
+      supports_wide_gamut ? IsWideGamut(*base_image_info.colorSpace()) : false;
+  SkAlphaType alpha_type =
+      ChooseCompatibleAlphaType(base_image_info.alphaType());
+  SkImageInfo image_info;
+  if (is_wide_gamut) {
+    SkColorType color_type = alpha_type == SkAlphaType::kOpaque_SkAlphaType
+                                 ? kBGR_101010x_XR_SkColorType
+                                 : kRGBA_F16_SkColorType;
+    image_info =
+        base_image_info.makeWH(decode_size.width(), decode_size.height())
+            .makeColorType(color_type)
+            .makeAlphaType(alpha_type)
+            .makeColorSpace(SkColorSpace::MakeSRGB());
+  } else {
+    image_info =
+        base_image_info.makeWH(decode_size.width(), decode_size.height())
+            .makeColorType(
+                ChooseCompatibleColorType(base_image_info.colorType()))
+            .makeAlphaType(alpha_type);
+  }
 
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format.has_value()) {
@@ -184,7 +248,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
 
-  {
+  if (texture_descriptor.mip_count > 1u) {
     auto command_buffer = context->CreateCommandBuffer();
     if (!command_buffer) {
       FML_DLOG(ERROR)
@@ -237,7 +301,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
        context = context_.get(),                                  //
        target_size = SkISize::Make(target_width, target_height),  //
        io_runner = runners_.GetIOTaskRunner(),                    //
-       result                                                     //
+       result,
+       supports_wide_gamut = supports_wide_gamut_  //
   ]() {
         FML_CHECK(context) << "No valid impeller context";
         auto max_size_supported =
@@ -245,7 +310,8 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
 
         // Always decompress on the concurrent runner.
         auto bitmap =
-            DecompressTexture(raw_descriptor, target_size, max_size_supported);
+            DecompressTexture(raw_descriptor, target_size, max_size_supported,
+                              supports_wide_gamut);
         if (!bitmap) {
           result(nullptr);
           return;
@@ -256,7 +322,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
         // Depending on whether the context has threading restrictions, stay on
         // the concurrent runner to perform texture upload or move to an IO
         // runner.
-        if (context->HasThreadingRestrictions()) {
+        if (context->GetDeviceCapabilities().HasThreadingRestrictions()) {
           io_runner->PostTask(upload_texture_and_invoke_result);
         } else {
           upload_texture_and_invoke_result();

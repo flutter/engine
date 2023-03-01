@@ -41,7 +41,7 @@ void testMain() {
       // The platform view is now split in two parts. The contents live
       // as a child of the glassPane, and the slot lives in the glassPane
       // shadow root. The slot is the one that has pointer events auto.
-      final DomElement contents = flutterViewEmbedder.glassPaneElement!
+      final DomElement contents = flutterViewEmbedder.glassPaneElement
           .querySelector('#view-0')!;
       final DomElement slot = flutterViewEmbedder.sceneElement!
           .querySelector('slot')!;
@@ -598,7 +598,7 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement!
+        flutterViewEmbedder.glassPaneElement
             .querySelector('flt-platform-view'),
         isNotNull,
       );
@@ -614,7 +614,7 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement!
+        flutterViewEmbedder.glassPaneElement
             .querySelector('flt-platform-view'),
         isNull,
       );
@@ -685,7 +685,7 @@ void testMain() {
       ]);
 
       expect(
-        flutterViewEmbedder.glassPaneElement!
+        flutterViewEmbedder.glassPaneElement
             .querySelector('flt-platform-view'),
         isNotNull,
       );
@@ -703,7 +703,7 @@ void testMain() {
       ]);
 
       expect(
-          flutterViewEmbedder.glassPaneElement!
+          flutterViewEmbedder.glassPaneElement
               .querySelectorAll('flt-platform-view'),
           hasLength(2));
 
@@ -719,7 +719,7 @@ void testMain() {
       // The actual contents of the platform view are kept in the dom, until
       // it's actually disposed of!
       expect(
-          flutterViewEmbedder.glassPaneElement!
+          flutterViewEmbedder.glassPaneElement
               .querySelectorAll('flt-platform-view'),
           hasLength(2));
     });
@@ -926,8 +926,7 @@ void testMain() {
       _expectSceneMatches(<_EmbeddedViewMarker>[
         _overlay,
         _platformView,
-        _overlay,
-      ]);
+      ], reason: 'Invisible view alone renders on top of base overlay.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -940,30 +939,13 @@ void testMain() {
         _platformView,
         _platformView,
         _overlay,
-      ]);
-
-      sb = LayerSceneBuilder();
-      sb.pushOffset(0, 0);
-      sb.addPlatformView(0, width: 10, height: 10);
-      sb.addPlatformView(1, width: 10, height: 10);
-      sb.addPlatformView(2, width: 10, height: 10);
-      sb.pop();
-      rasterizer.draw(sb.build().layerTree);
-      _expectSceneMatches(<_EmbeddedViewMarker>[
-        _overlay,
-        _platformView,
-        _platformView,
-        _overlay,
-        _platformView,
-        _overlay,
-      ]);
+      ], reason: 'Overlay created after a group containing a visible view.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
       sb.addPlatformView(0, width: 10, height: 10);
       sb.addPlatformView(1, width: 10, height: 10);
       sb.addPlatformView(2, width: 10, height: 10);
-      sb.addPlatformView(3, width: 10, height: 10);
       sb.pop();
       rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -972,9 +954,8 @@ void testMain() {
         _platformView,
         _overlay,
         _platformView,
-        _platformView,
         _overlay,
-      ]);
+      ], reason: 'Overlays created after each group containing a visible view.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -982,7 +963,6 @@ void testMain() {
       sb.addPlatformView(1, width: 10, height: 10);
       sb.addPlatformView(2, width: 10, height: 10);
       sb.addPlatformView(3, width: 10, height: 10);
-      sb.addPlatformView(4, width: 10, height: 10);
       sb.pop();
       rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -992,9 +972,8 @@ void testMain() {
         _overlay,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
-      ]);
+      ], reason: 'Invisible views grouped in with visible views.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1003,7 +982,6 @@ void testMain() {
       sb.addPlatformView(2, width: 10, height: 10);
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
-      sb.addPlatformView(5, width: 10, height: 10);
       sb.pop();
       rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -1011,7 +989,6 @@ void testMain() {
         _platformView,
         _platformView,
         _overlay,
-        _platformView,
         _platformView,
         _platformView,
         _platformView,
@@ -1026,7 +1003,6 @@ void testMain() {
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.addPlatformView(5, width: 10, height: 10);
-      sb.addPlatformView(6, width: 10, height: 10);
       sb.pop();
       rasterizer.draw(sb.build().layerTree);
       _expectSceneMatches(<_EmbeddedViewMarker>[
@@ -1038,13 +1014,14 @@ void testMain() {
         _platformView,
         _platformView,
         _platformView,
-        _platformView,
         _overlay,
       ]);
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
+      sb.addPlatformView(0, width: 10, height: 10);
       sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPlatformView(2, width: 10, height: 10);
       sb.addPlatformView(3, width: 10, height: 10);
       sb.addPlatformView(4, width: 10, height: 10);
       sb.addPlatformView(5, width: 10, height: 10);
@@ -1055,11 +1032,32 @@ void testMain() {
         _overlay,
         _platformView,
         _platformView,
+        _overlay,
+        _platformView,
+        _platformView,
         _platformView,
         _platformView,
         _platformView,
         _overlay,
       ]);
+
+      sb = LayerSceneBuilder();
+      sb.pushOffset(0, 0);
+      sb.addPlatformView(1, width: 10, height: 10);
+      sb.addPlatformView(3, width: 10, height: 10);
+      sb.addPlatformView(4, width: 10, height: 10);
+      sb.addPlatformView(5, width: 10, height: 10);
+      sb.addPlatformView(6, width: 10, height: 10);
+      sb.pop();
+      rasterizer.draw(sb.build().layerTree);
+      _expectSceneMatches(<_EmbeddedViewMarker>[
+        _overlay,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+        _platformView,
+      ], reason: 'Many invisible views can be rendered on top of the base overlay.');
 
       sb = LayerSceneBuilder();
       sb.pushOffset(0, 0);
@@ -1108,20 +1106,20 @@ enum _EmbeddedViewMarker {
 _EmbeddedViewMarker get _overlay => _EmbeddedViewMarker.overlay;
 _EmbeddedViewMarker get _platformView => _EmbeddedViewMarker.platformView;
 
-void _expectSceneMatches(List<_EmbeddedViewMarker> markers) {
-  final List<DomElement> sceneElements = flutterViewEmbedder
+const Map<String, _EmbeddedViewMarker> _tagToViewMarker = <String, _EmbeddedViewMarker>{
+  'flt-canvas-container': _EmbeddedViewMarker.overlay,
+  'flt-platform-view-slot': _EmbeddedViewMarker.platformView,
+};
+
+void _expectSceneMatches(List<_EmbeddedViewMarker> expectedMarkers, {
+  String? reason,
+}) {
+  // Convert the scene elements to its corresponding array of _EmbeddedViewMarker
+  final List<_EmbeddedViewMarker> sceneElements = flutterViewEmbedder
       .sceneElement!.children
       .where((DomElement element) => element.tagName != 'svg')
+      .map((DomElement element) => _tagToViewMarker[element.tagName.toLowerCase()]!)
       .toList();
-  expect(markers, hasLength(sceneElements.length));
-  for (int i = 0; i < markers.length; i++) {
-    switch (markers[i]) {
-      case _EmbeddedViewMarker.overlay:
-        expect(sceneElements[i].tagName, 'FLT-CANVAS-CONTAINER');
-        break;
-      case _EmbeddedViewMarker.platformView:
-        expect(sceneElements[i].tagName, 'FLT-PLATFORM-VIEW-SLOT');
-        break;
-    }
-  }
+
+  expect(sceneElements, expectedMarkers, reason: reason);
 }

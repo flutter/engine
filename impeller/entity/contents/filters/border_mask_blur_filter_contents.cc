@@ -47,7 +47,7 @@ void BorderMaskBlurFilterContents::SetBlurStyle(BlurStyle blur_style) {
   }
 }
 
-std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
+std::optional<Entity> BorderMaskBlurFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -102,15 +102,17 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
 
     auto sigma = effect_transform * Vector2(sigma_x_.sigma, sigma_y_.sigma);
-    frame_info.sigma_uv = sigma.Abs() / input_snapshot->texture->GetSize();
-    frame_info.src_factor = src_color_factor_;
-    frame_info.inner_blur_factor = inner_blur_factor_;
-    frame_info.outer_blur_factor = outer_blur_factor_;
+
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
+    frag_info.sigma_uv = sigma.Abs() / input_snapshot->texture->GetSize();
+    frag_info.src_factor = src_color_factor_;
+    frag_info.inner_blur_factor = inner_blur_factor_;
+    frag_info.outer_blur_factor = outer_blur_factor_;
+
     FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
     VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
 
@@ -126,9 +128,11 @@ std::optional<Snapshot> BorderMaskBlurFilterContents::RenderFilter(
   }
   out_texture->SetLabel("BorderMaskBlurFilter Texture");
 
-  return Snapshot{.texture = out_texture,
-                  .transform = Matrix::MakeTranslation(coverage.origin),
-                  .opacity = input_snapshot->opacity};
+  return Contents::EntityFromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = Matrix::MakeTranslation(coverage.origin),
+               .opacity = input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 std::optional<Rect> BorderMaskBlurFilterContents::GetFilterCoverage(

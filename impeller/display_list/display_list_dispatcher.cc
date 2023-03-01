@@ -136,6 +136,9 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
+    // Impeller doesn't support cubic sampling, but linear is closer to correct
+    // than nearest for this case.
+    case flutter::DlImageSampling::kCubic:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.label = "Linear Sampler";
       break;
@@ -143,8 +146,6 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.mip_filter = impeller::MipFilter::kLinear;
       desc.label = "Mipmap Linear Sampler";
-      break;
-    default:
       break;
   }
   return desc;
@@ -395,6 +396,13 @@ void DisplayListDispatcher::setColorSource(
         contents->SetEndPoints(start_point, end_point);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
+        std::vector<Point> bounds{start_point, end_point};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
         return contents;
       };
       return;
@@ -419,6 +427,14 @@ void DisplayListDispatcher::setColorSource(
         contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
+        auto radius_pt = Point(radius, radius);
+        std::vector<Point> bounds{center + radius_pt, center - radius_pt};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
         return contents;
       };
       return;
@@ -446,6 +462,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetStops(stops);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
         return contents;
       };
       return;
@@ -459,13 +476,15 @@ void DisplayListDispatcher::setColorSource(
       auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
       auto desc = ToSamplerDescriptor(image_color_source->sampling());
       auto matrix = ToMatrix(image_color_source->matrix());
-      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc,
-                             matrix]() {
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc, matrix,
+                             &paint = paint_]() {
         auto contents = std::make_shared<TiledTextureContents>();
         contents->SetTexture(texture);
         contents->SetTileModes(x_tile_mode, y_tile_mode);
         contents->SetSamplerDescriptor(desc);
         contents->SetEffectTransform(matrix);
+        contents->SetColorFilter(paint.color_filter);
+        contents->SetColorSourceSize(Size::Ceil(texture->GetSize()));
         return contents;
       };
       return;
@@ -578,18 +597,12 @@ void DisplayListDispatcher::setColorFilter(
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setInvertColors(bool invert) {
-  UNIMPLEMENTED;
+  paint_.invert_colors = invert;
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setBlendMode(flutter::DlBlendMode dl_mode) {
   paint_.blend_mode = ToBlendMode(dl_mode);
-}
-
-// |flutter::Dispatcher|
-void DisplayListDispatcher::setBlender(sk_sp<SkBlender> blender) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
@@ -872,24 +885,26 @@ void DisplayListDispatcher::transformFullPerspective(SkScalar mxx,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::transformReset() {
   canvas_.ResetTransform();
+  canvas_.Transform(initial_matrix_);
 }
 
 static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-static Entity::ClipOperation ToClipOperation(SkClipOp clip_op) {
+static Entity::ClipOperation ToClipOperation(
+    flutter::DlCanvas::ClipOp clip_op) {
   switch (clip_op) {
-    case SkClipOp::kDifference:
+    case flutter::DlCanvas::ClipOp::kDifference:
       return Entity::ClipOperation::kDifference;
-    case SkClipOp::kIntersect:
+    case flutter::DlCanvas::ClipOp::kIntersect:
       return Entity::ClipOperation::kIntersect;
   }
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipRect(const SkRect& rect,
-                                     SkClipOp clip_op,
+                                     ClipOp clip_op,
                                      bool is_aa) {
   auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
   canvas_.ClipPath(path, ToClipOperation(clip_op));
@@ -989,14 +1004,14 @@ static Path ToPath(const SkRRect& rrect) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
-                                      SkClipOp clip_op,
+                                      ClipOp clip_op,
                                       bool is_aa) {
   canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipPath(const SkPath& path,
-                                     SkClipOp clip_op,
+                                     ClipOp clip_op,
                                      bool is_aa) {
   canvas_.ClipPath(ToPath(path), ToClipOperation(clip_op));
 }
@@ -1078,13 +1093,13 @@ void DisplayListDispatcher::drawArc(const SkRect& oval_bounds,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
+void DisplayListDispatcher::drawPoints(PointMode mode,
                                        uint32_t count,
                                        const SkPoint points[]) {
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
-    case SkCanvas::kPoints_PointMode:
+    case flutter::DlCanvas::PointMode::kPoints:
       if (paint.stroke_cap == Cap::kButt) {
         paint.stroke_cap = Cap::kSquare;
       }
@@ -1094,7 +1109,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
         canvas_.DrawPath(path, paint);
       }
       break;
-    case SkCanvas::kLines_PointMode:
+    case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = ToPoint(points[i - 1]);
         Point p1 = ToPoint(points[i]);
@@ -1102,7 +1117,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
         canvas_.DrawPath(path, paint);
       }
       break;
-    case SkCanvas::kPolygon_PointMode:
+    case flutter::DlCanvas::PointMode::kPolygon:
       if (count > 1) {
         Point p0 = ToPoint(points[0]);
         for (uint32_t i = 1; i < count; i++) {
@@ -1114,13 +1129,6 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
       }
       break;
   }
-}
-
-// |flutter::Dispatcher|
-void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
-                                           SkBlendMode mode) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
@@ -1190,18 +1198,6 @@ void DisplayListDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawImageLattice(
-    const sk_sp<flutter::DlImage> image,
-    const SkCanvas::Lattice& lattice,
-    const SkRect& dst,
-    flutter::DlFilterMode filter,
-    bool render_with_attributes) {
-  // Don't implement this one since it is not exposed by flutter,
-  // Skia internally converts calls to drawImageNine into this method,
-  // which is then converted back to drawImageNine by display list.
-}
-
-// |flutter::Dispatcher|
 void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       const SkRSXform xform[],
                                       const SkRect tex[],
@@ -1218,21 +1214,16 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawPicture(const sk_sp<SkPicture> picture,
-                                        const SkMatrix* matrix,
-                                        bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
-}
-
-// |flutter::Dispatcher|
 void DisplayListDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list) {
   int saveCount = canvas_.GetSaveCount();
   Paint savePaint = paint_;
+  Matrix saveMatrix = initial_matrix_;
   paint_ = Paint();
+  initial_matrix_ = canvas_.GetCurrentTransformation();
   display_list->Dispatch(*this);
   paint_ = savePaint;
+  initial_matrix_ = saveMatrix;
   canvas_.RestoreToCount(saveCount);
 }
 

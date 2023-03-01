@@ -23,7 +23,7 @@ void ColorMatrixFilterContents::SetMatrix(const ColorMatrix& matrix) {
   matrix_ = matrix;
 }
 
-std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
+std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -73,12 +73,12 @@ std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
     const float* matrix = matrix_.array;
     frag_info.color_v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
     // clang-format off
     frag_info.color_m = Matrix(
         matrix[0], matrix[5], matrix[10], matrix[15],
@@ -104,11 +104,12 @@ std::optional<Snapshot> ColorMatrixFilterContents::RenderFilter(
   }
   out_texture->SetLabel("ColorMatrixFilter Texture");
 
-  return Snapshot{
-      .texture = out_texture,
-      .transform = input_snapshot->transform,
-      .sampler_descriptor = input_snapshot->sampler_descriptor,
-      .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
+  return Contents::EntityFromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = input_snapshot->transform,
+               .sampler_descriptor = input_snapshot->sampler_descriptor,
+               .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 }  // namespace impeller

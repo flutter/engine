@@ -166,10 +166,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
-  auto node_delegate = bridge
-                           ->GetFlutterPlatformNodeDelegateFromID(
-                               AccessibilityBridge::kRootNodeId)
-                           .lock();
+  auto node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   ASSERT_TRUE(node_delegate);
   EXPECT_EQ(node_delegate->GetChildCount(), 0);
 
@@ -285,10 +282,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
-  auto node_delegate = bridge
-                           ->GetFlutterPlatformNodeDelegateFromID(
-                               AccessibilityBridge::kRootNodeId)
-                           .lock();
+  auto node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   ASSERT_TRUE(node_delegate);
   EXPECT_EQ(node_delegate->GetChildCount(), 2);
 
@@ -634,10 +628,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
@@ -675,10 +666,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
@@ -717,10 +705,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kCheckBox);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kMixed);
@@ -789,10 +774,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kTrue);
@@ -840,10 +822,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   bridge->CommitUpdates();
 
   {
-    auto root_node = bridge
-                         ->GetFlutterPlatformNodeDelegateFromID(
-                             AccessibilityBridge::kRootNodeId)
-                         .lock();
+    auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
     EXPECT_EQ(root_node->GetData().role, ax::mojom::Role::kToggleButton);
     EXPECT_EQ(root_node->GetData().GetCheckedState(),
               ax::mojom::CheckedState::kFalse);
@@ -910,18 +889,13 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   bridge->AddFlutterSemanticsNodeUpdate(&root);
 
   bridge->CommitUpdates();
-  auto root_node = bridge
-                       ->GetFlutterPlatformNodeDelegateFromID(
-                           AccessibilityBridge::kRootNodeId)
-                       .lock();
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
   std::string tooltip = root_node->GetData().GetStringAttribute(
       ax::mojom::StringAttribute::kTooltip);
   EXPECT_EQ(tooltip, "tooltip");
 
   // Check that MSAA name contains the tooltip.
-  IAccessible* native_view = bridge
-                                 ->GetFlutterPlatformNodeDelegateFromID(
-                                     AccessibilityBridge::kRootNodeId)
+  IAccessible* native_view = bridge->GetFlutterPlatformNodeDelegateFromID(0)
                                  .lock()
                                  ->GetNativeViewAccessible();
   VARIANT varchild = {.vt = VT_I4, .lVal = CHILDID_SELF};
@@ -936,6 +910,33 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   ASSERT_EQ(uia_node->GetPropertyValue(UIA_HelpTextPropertyId, &varname), S_OK);
   std::string uia_tooltip = _com_util::ConvertBSTRToString(varname.bstrVal);
   EXPECT_EQ(uia_tooltip, "tooltip");
+}
+
+TEST(FlutterWindowsViewTest, DestructorTest) {
+  bool destroyed = false;
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  // Use this pointer to reference the view in the Destruct callback, which must
+  // be defined before the view is.
+  FlutterWindowsView* view_ptr = nullptr;
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  ON_CALL(*window_binding_handler, Destruct)
+      .WillByDefault([&destroyed, &view_ptr]() {
+        EXPECT_FALSE(destroyed);
+        destroyed = true;
+        ASSERT_NE(view_ptr, nullptr);
+        EXPECT_EQ(view_ptr->GetEngine()->view(), nullptr);
+      });
+
+  {
+    FlutterWindowsView view(std::move(window_binding_handler));
+    view_ptr = &view;
+    view.SetEngine(std::move(engine));
+    // Destruct view before continuing.
+  }
+
+  EXPECT_TRUE(destroyed);
 }
 
 }  // namespace testing

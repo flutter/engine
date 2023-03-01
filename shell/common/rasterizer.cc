@@ -221,8 +221,7 @@ RasterStatus Rasterizer::Draw(
   }
 
   // EndFrame should perform cleanups for the external_view_embedder.
-  if (surface_ && external_view_embedder_ &&
-      external_view_embedder_->GetUsedThisFrame()) {
+  if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
@@ -494,7 +493,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   compositor_context_->ui_time().SetLapTime(
       frame_timings_recorder.GetBuildDuration());
 
-  SkCanvas* embedder_root_canvas = nullptr;
+  DlCanvas* embedder_root_canvas = nullptr;
   if (external_view_embedder_) {
     FML_DCHECK(!external_view_embedder_->GetUsedThisFrame());
     external_view_embedder_->SetUsedThisFrame(true);
@@ -524,7 +523,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
       embedder_root_canvas ? SkMatrix{} : surface_->GetRootTransformation();
 
   auto root_surface_canvas =
-      embedder_root_canvas ? embedder_root_canvas : frame->SkiaCanvas();
+      embedder_root_canvas ? embedder_root_canvas : frame->Canvas();
 
   auto compositor_frame = compositor_context_->AcquireFrame(
       surface_->GetContext(),         // skia GrContext
@@ -630,12 +629,13 @@ static sk_sp<SkData> ScreenshotLayerTreeAsPicture(
 
   SkMatrix root_surface_transformation;
   root_surface_transformation.reset();
+  DlSkCanvasAdapter canvas(recorder.getRecordingCanvas());
 
   // TODO(amirh): figure out how to take a screenshot with embedded UIView.
   // https://github.com/flutter/flutter/issues/23435
   auto frame = compositor_context.AcquireFrame(
-      nullptr, recorder.getRecordingCanvas(), nullptr,
-      root_surface_transformation, false, true, nullptr, nullptr, nullptr);
+      nullptr, &canvas, nullptr, root_surface_transformation, false, true,
+      nullptr, nullptr, nullptr);
   frame->Raster(*tree, true, nullptr);
 
 #if defined(OS_FUCHSIA)
@@ -694,9 +694,9 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
       nullptr,                      // display list builder
       nullptr                       // aiks context
   );
-  canvas->clear(SK_ColorTRANSPARENT);
+  canvas->Clear(DlColor::kTransparent());
   frame->Raster(*tree, true, nullptr);
-  canvas->flush();
+  canvas->Flush();
 
   return snapshot_surface->GetRasterData(compressed);
 }
@@ -711,22 +711,32 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
   }
 
   sk_sp<SkData> data = nullptr;
+  std::string format;
 
   GrDirectContext* surface_context =
       surface_ ? surface_->GetContext() : nullptr;
 
   switch (type) {
     case ScreenshotType::SkiaPicture:
+      format = "ScreenshotType::SkiaPicture";
       data = ScreenshotLayerTreeAsPicture(layer_tree, *compositor_context_);
       break;
     case ScreenshotType::UncompressedImage:
+      format = "ScreenshotType::UncompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
                                         surface_context, false);
       break;
     case ScreenshotType::CompressedImage:
+      format = "ScreenshotType::CompressedImage";
       data = ScreenshotLayerTreeAsImage(layer_tree, *compositor_context_,
                                         surface_context, true);
       break;
+    case ScreenshotType::SurfaceData: {
+      Surface::SurfaceData surface_data = surface_->GetSurfaceData();
+      format = surface_data.pixel_format;
+      data = surface_data.data;
+      break;
+    }
   }
 
   if (data == nullptr) {
@@ -738,10 +748,10 @@ Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     size_t b64_size = SkBase64::Encode(data->data(), data->size(), nullptr);
     auto b64_data = SkData::MakeUninitialized(b64_size);
     SkBase64::Encode(data->data(), data->size(), b64_data->writable_data());
-    return Rasterizer::Screenshot{b64_data, layer_tree->frame_size()};
+    return Rasterizer::Screenshot{b64_data, layer_tree->frame_size(), format};
   }
 
-  return Rasterizer::Screenshot{data, layer_tree->frame_size()};
+  return Rasterizer::Screenshot{data, layer_tree->frame_size(), format};
 }
 
 void Rasterizer::SetNextFrameCallback(const fml::closure& callback) {
@@ -810,8 +820,10 @@ std::optional<size_t> Rasterizer::GetResourceCacheMaxBytes() const {
 
 Rasterizer::Screenshot::Screenshot() {}
 
-Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data, SkISize p_size)
-    : data(std::move(p_data)), frame_size(p_size) {}
+Rasterizer::Screenshot::Screenshot(sk_sp<SkData> p_data,
+                                   SkISize p_size,
+                                   const std::string& p_format)
+    : data(std::move(p_data)), frame_size(p_size), format(p_format) {}
 
 Rasterizer::Screenshot::Screenshot(const Screenshot& other) = default;
 
