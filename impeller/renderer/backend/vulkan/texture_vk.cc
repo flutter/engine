@@ -56,11 +56,11 @@ ISize TextureVK::GetSize() const {
 }
 
 vk::Image TextureVK::GetImage() const {
-  return source_->GetVKImage();
+  return source_->GetImage();
 }
 
 vk::ImageView TextureVK::GetImageView() const {
-  return source_->GetVKImageView();
+  return source_->GetImageView();
 }
 
 static constexpr vk::ImageAspectFlags ToImageAspectFlags(

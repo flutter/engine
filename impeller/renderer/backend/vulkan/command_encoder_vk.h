@@ -4,9 +4,11 @@
 
 #pragma once
 
-#include <vector>
+#include <optional>
+#include <set>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/descriptor_pool_vk.h"
 #include "impeller/renderer/backend/vulkan/shared_object_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
@@ -36,15 +38,19 @@ class CommandEncoderVK {
 
   void PopDebugGroup() const;
 
+  std::optional<vk::DescriptorSet> AllocateDescriptorSet(
+      const vk::DescriptorSetLayout& layout);
+
  private:
   friend class ContextVK;
 
   vk::Device device_ = {};
   vk::Queue queue_ = {};
   vk::UniqueCommandBuffer command_buffer_;
-  std::vector<std::shared_ptr<SharedObjectVK>> tracked_objects_;
-  std::vector<std::shared_ptr<const DeviceBuffer>> tracked_buffers_;
-  std::vector<std::shared_ptr<const Texture>> tracked_textures_;
+  DescriptorPoolVK desc_pool_;
+  std::set<std::shared_ptr<SharedObjectVK>> tracked_objects_;
+  std::set<std::shared_ptr<const DeviceBuffer>> tracked_buffers_;
+  std::set<std::shared_ptr<const Texture>> tracked_textures_;
   bool is_valid_ = false;
 
   CommandEncoderVK(vk::Device device, vk::Queue queue, vk::CommandPool pool);

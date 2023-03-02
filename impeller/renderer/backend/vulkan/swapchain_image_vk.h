@@ -29,10 +29,10 @@ class SwapchainImageVK final : public TextureSourceVK {
   ISize GetSize() const;
 
   // |TextureSourceVK|
-  vk::Image GetVKImage() const override;
+  vk::Image GetImage() const override;
 
   // |TextureSourceVK|
-  vk::ImageView GetVKImageView() const override;
+  vk::ImageView GetImageView() const override;
 
  private:
   vk::Image image_ = VK_NULL_HANDLE;

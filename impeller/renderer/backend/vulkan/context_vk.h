@@ -121,8 +121,6 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
 
   vk::CommandPool GetGraphicsCommandPool() const;
 
-  vk::DescriptorPool GetDescriptorPool() const;
-
   vk::PhysicalDevice GetPhysicalDevice() const;
 
  private:
@@ -142,7 +140,6 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
   std::shared_ptr<WorkQueue> work_queue_;
   std::unique_ptr<IDeviceCapabilities> device_capabilities_;
   vk::UniqueCommandPool graphics_command_pool_;
-  vk::UniqueDescriptorPool descriptor_pool_;
   bool is_valid_ = false;
 
   ContextVK(

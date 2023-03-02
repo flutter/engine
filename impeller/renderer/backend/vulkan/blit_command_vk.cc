@@ -99,7 +99,7 @@ bool BlitCopyTextureToBufferCommandVK::Encode(CommandEncoderVK& encoder) const {
 
   cmd_buffer.copyImageToBuffer(src.GetImage(),                        //
                                vk::ImageLayout::eTransferSrcOptimal,  //
-                               dst.GetVKBufferHandle(),               //
+                               dst.GetBuffer(),                       //
                                image_copy                             //
   );
 

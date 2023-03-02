@@ -19,9 +19,9 @@ class TextureSourceVK {
                            size_t length,
                            size_t slice);
 
-  virtual vk::Image GetVKImage() const = 0;
+  virtual vk::Image GetImage() const = 0;
 
-  virtual vk::ImageView GetVKImageView() const = 0;
+  virtual vk::ImageView GetImageView() const = 0;
 };
 
 }  // namespace impeller

@@ -500,38 +500,6 @@ ContextVK::ContextVK(
   }
 
   //----------------------------------------------------------------------------
-  /// Setup the descriptor pool. This needs to be dynamic but we just allocate a
-  /// jumbo pool and hope for the best.
-  ///
-  constexpr size_t kPoolSize = 1024 * 3;
-
-  std::vector<vk::DescriptorPoolSize> pool_sizes = {
-      {vk::DescriptorType::eSampler, kPoolSize},
-      {vk::DescriptorType::eCombinedImageSampler, kPoolSize},
-      {vk::DescriptorType::eSampledImage, kPoolSize},
-      {vk::DescriptorType::eStorageImage, kPoolSize},
-      {vk::DescriptorType::eUniformTexelBuffer, kPoolSize},
-      {vk::DescriptorType::eStorageTexelBuffer, kPoolSize},
-      {vk::DescriptorType::eUniformBuffer, kPoolSize},
-      {vk::DescriptorType::eStorageBuffer, kPoolSize},
-      {vk::DescriptorType::eUniformBufferDynamic, kPoolSize},
-      {vk::DescriptorType::eStorageBufferDynamic, kPoolSize},
-      {vk::DescriptorType::eInputAttachment, kPoolSize},
-  };
-  vk::DescriptorPoolCreateInfo pool_info = {
-      vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,  // flags
-      static_cast<uint32_t>(pool_sizes.size() * kPoolSize),  // max sets
-      static_cast<uint32_t>(pool_sizes.size()),              // pool sizes count
-      pool_sizes.data()                                      // pool sizes
-  };
-
-  auto descriptor_pool = device.value->createDescriptorPoolUnique(pool_info);
-  if (descriptor_pool.result != vk::Result::eSuccess) {
-    VALIDATION_LOG << "Unable to create a descriptor pool";
-    return;
-  }
-
-  //----------------------------------------------------------------------------
   /// All done!
   ///
   instance_ = std::move(instance.value);
@@ -558,7 +526,6 @@ ContextVK::ContextVK(
           .SetDefaultStencilFormat(PixelFormat::kS8UInt)
           .Build();
   graphics_command_pool_ = std::move(graphics_command_pool.value);
-  descriptor_pool_ = std::move(descriptor_pool.value);
   is_valid_ = true;
 }
 
@@ -658,10 +625,6 @@ vk::Queue ContextVK::GetGraphicsQueue() const {
 
 vk::CommandPool ContextVK::GetGraphicsCommandPool() const {
   return *graphics_command_pool_;
-}
-
-vk::DescriptorPool ContextVK::GetDescriptorPool() const {
-  return *descriptor_pool_;
 }
 
 vk::PhysicalDevice ContextVK::GetPhysicalDevice() const {

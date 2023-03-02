@@ -152,10 +152,12 @@ static constexpr vk::ImageUsageFlags ToVKImageUsageFlags(PixelFormat format,
     }
   }
 
-  // TODO (https://github.com/flutter/flutter/issues/121634):
-  // Add transfer usage flags to support blit passes
-  vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
-              vk::ImageUsageFlagBits::eTransferDst;
+  if (mode != StorageMode::kDeviceTransient) {
+    // TODO (https://github.com/flutter/flutter/issues/121634):
+    // Add transfer usage flags to support blit passes
+    vk_usage |= vk::ImageUsageFlagBits::eTransferSrc |
+                vk::ImageUsageFlagBits::eTransferDst;
+  }
 
   return vk_usage;
 }
@@ -335,9 +337,9 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
 
   bool IsValid() const { return is_valid_; }
 
-  vk::Image GetVKImage() const override { return image_; }
+  vk::Image GetImage() const override { return image_; }
 
-  vk::ImageView GetVKImageView() const override { return image_view_.get(); }
+  vk::ImageView GetImageView() const override { return image_view_.get(); }
 
  private:
   vk::Image image_ = {};

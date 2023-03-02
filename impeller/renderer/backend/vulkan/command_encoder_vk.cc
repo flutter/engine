@@ -11,7 +11,8 @@ namespace impeller {
 
 CommandEncoderVK::CommandEncoderVK(vk::Device device,
                                    vk::Queue queue,
-                                   vk::CommandPool pool) {
+                                   vk::CommandPool pool)
+    : desc_pool_(device) {
   vk::CommandBufferAllocateInfo alloc_info;
   alloc_info.commandPool = pool;
   alloc_info.commandBufferCount = 1u;
@@ -87,17 +88,17 @@ void CommandEncoderVK::Reset() {
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<SharedObjectVK> object) {
-  tracked_objects_.push_back(std::move(object));
+  tracked_objects_.insert(std::move(object));
   return true;
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<const DeviceBuffer> buffer) {
-  tracked_buffers_.emplace_back(std::move(buffer));
+  tracked_buffers_.insert(std::move(buffer));
   return true;
 }
 
 bool CommandEncoderVK::Track(std::shared_ptr<const Texture> texture) {
-  tracked_textures_.emplace_back(std::move(texture));
+  tracked_textures_.insert(std::move(texture));
   return true;
 }
 
@@ -115,6 +116,11 @@ void CommandEncoderVK::PopDebugGroup() const {
     return;
   }
   command_buffer_->endDebugUtilsLabelEXT();
+}
+
+std::optional<vk::DescriptorSet> CommandEncoderVK::AllocateDescriptorSet(
+    const vk::DescriptorSetLayout& layout) {
+  return desc_pool_.AllocateDescriptorSet(layout);
 }
 
 }  // namespace impeller

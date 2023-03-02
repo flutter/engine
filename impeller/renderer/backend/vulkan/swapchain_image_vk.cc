@@ -47,12 +47,12 @@ ISize SwapchainImageVK::GetSize() const {
 }
 
 // |TextureSourceVK|
-vk::Image SwapchainImageVK::GetVKImage() const {
+vk::Image SwapchainImageVK::GetImage() const {
   return image_;
 }
 
 // |TextureSourceVK|
-vk::ImageView SwapchainImageVK::GetVKImageView() const {
+vk::ImageView SwapchainImageVK::GetImageView() const {
   return image_view_.get();
 }
 

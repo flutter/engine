@@ -6,7 +6,6 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
-#include "impeller/renderer/descriptor_set_layout.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/shader_types.h"
 #include "vulkan/vulkan_enums.hpp"
@@ -269,7 +268,7 @@ constexpr vk::DescriptorSetLayoutBinding ToVKDescriptorSetLayoutBinding(
     const DescriptorSetLayout& layout) {
   vk::DescriptorSetLayoutBinding binding;
   binding.binding = layout.binding;
-  binding.descriptorCount = layout.descriptor_count;
+  binding.descriptorCount = 1u;
   vk::DescriptorType desc_type = vk::DescriptorType();
   switch (layout.descriptor_type) {
     case DescriptorType::kSampledImage:

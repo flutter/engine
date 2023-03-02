@@ -30,7 +30,6 @@ impeller_component("renderer") {
     "compute_pipeline_descriptor.h",
     "context.cc",
     "context.h",
-    "descriptor_set_layout.h",
     "device_buffer.cc",
     "device_buffer.h",
     "device_buffer_descriptor.cc",

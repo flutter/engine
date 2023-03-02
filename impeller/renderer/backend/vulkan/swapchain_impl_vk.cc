@@ -369,7 +369,7 @@ bool SwapchainImplVK::Present(const std::shared_ptr<SwapchainImageVK>& image,
     vk::ImageMemoryBarrier image_barrier;
     image_barrier.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite;
     image_barrier.dstAccessMask = vk::AccessFlagBits::eColorAttachmentRead;
-    image_barrier.image = image->GetVKImage();
+    image_barrier.image = image->GetImage();
     image_barrier.oldLayout = vk::ImageLayout::eColorAttachmentOptimal;
     image_barrier.newLayout = vk::ImageLayout::ePresentSrcKHR;
     image_barrier.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
