@@ -743,7 +743,7 @@ class PlatformDispatcher {
   external static void _scheduleFrame();
 
   /// Additional accessibility features that may be enabled by the platform.
-  AccessibilityFeatures get accessibilityFeatures => configuration.accessibilityFeatures;
+  AccessibilityFeatures get accessibilityFeatures => _configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures]
   /// changes.
@@ -1308,7 +1308,7 @@ class _PlatformConfiguration {
 
 /// An immutable view configuration.
 class _ViewConfiguration {
-  const ViewConfiguration({
+  const _ViewConfiguration({
     this.view,
     this.devicePixelRatio = 1.0,
     this.geometry = Rect.zero,
@@ -1335,7 +1335,7 @@ class _ViewConfiguration {
     List<DisplayFeature>? displayFeatures,
   }) {
     return _ViewConfiguration(
-      view: view ?? _view,
+      view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1348,9 +1348,7 @@ class _ViewConfiguration {
     );
   }
 
-  FlutterView? get view => _view;
-
-  final FlutterView?  _view;
+  final FlutterView?  view;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;
