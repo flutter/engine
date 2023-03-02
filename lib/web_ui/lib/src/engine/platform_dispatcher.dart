@@ -91,9 +91,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   static EnginePlatformDispatcher get instance => _instance;
   static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
 
-  /// The current platform configuration.
-  @override
-  ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
+  PlatformConfiguration _configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
     accessibilityFeatures: computeAccessibilityFeatures(),
@@ -144,9 +142,9 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
-  Map<Object, ui.ViewConfiguration> get windowConfigurations => _windowConfigurations;
-  final Map<Object, ui.ViewConfiguration> _windowConfigurations =
-      <Object, ui.ViewConfiguration>{};
+  Map<Object, ViewConfiguration> get windowConfigurations => _windowConfigurations;
+  final Map<Object, ViewConfiguration> _windowConfigurations =
+      <Object, ViewConfiguration>{};
 
   /// The [FlutterView] provided by the engine if the platform is unable to
   /// create windows, or, for backwards compatibility.
@@ -715,7 +713,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Additional accessibility features that may be enabled by the platform.
   @override
   ui.AccessibilityFeatures get accessibilityFeatures =>
-      configuration.accessibilityFeatures;
+      _configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
@@ -790,7 +788,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   @override
-  List<ui.Locale> get locales => configuration.locales;
+  List<ui.Locale> get locales => _configuration.locales;
 
   // A subscription to the 'languagechange' event of 'window'.
   DomSubscription? _onLocaleChangedSubscription;
@@ -856,12 +854,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The empty list is not a valid value for locales. This is only used for
   /// testing locale update logic.
   void debugResetLocales() {
-    configuration = configuration.copyWith(locales: const <ui.Locale>[]);
+    _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
   // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
-    configuration = configuration.copyWith(locales: parseBrowserLanguages());
+    _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
@@ -906,20 +904,20 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   @override
-  double get textScaleFactor => configuration.textScaleFactor;
+  double get textScaleFactor => _configuration.textScaleFactor;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
   /// This option is used by [showTimePicker].
   @override
-  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool get alwaysUse24HourFormat => _configuration.alwaysUse24HourFormat;
 
   /// Updates [textScaleFactor] and invokes [onTextScaleFactorChanged] and
   /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
-    if (configuration.textScaleFactor != value) {
-      configuration = configuration.copyWith(textScaleFactor: value);
+    if (_configuration.textScaleFactor != value) {
+      _configuration = _configuration.copyWith(textScaleFactor: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnTextScaleFactorChanged();
     }
@@ -987,7 +985,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      configuration = configuration.copyWith(semanticsEnabled: semanticsEnabled);
+      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled, accessibleNavigation: semanticsEnabled);
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -997,13 +995,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
   @override
-  ui.Brightness get platformBrightness => configuration.platformBrightness;
+  ui.Brightness get platformBrightness => _configuration.platformBrightness;
 
   /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
   /// callback if [_platformBrightness] changed.
   void _updatePlatformBrightness(ui.Brightness value) {
-    if (configuration.platformBrightness != value) {
-      configuration = configuration.copyWith(platformBrightness: value);
+    if (_configuration.platformBrightness != value) {
+      _configuration = _configuration.copyWith(platformBrightness: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnPlatformBrightnessChanged();
     }
@@ -1011,15 +1009,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The setting indicating the current system font of the host platform.
   @override
-  String? get systemFontFamily => configuration.systemFontFamily;
+  String? get systemFontFamily => _configuration.systemFontFamily;
 
   /// Updates [_highContrast] and invokes [onHighContrastModeChanged]
   /// callback if [_highContrast] changed.
   void _updateHighContrast(bool value) {
-    if (configuration.accessibilityFeatures.highContrast != value) {
+    if (_configuration.accessibilityFeatures.highContrast != value) {
       final EngineAccessibilityFeatures original =
-          configuration.accessibilityFeatures as EngineAccessibilityFeatures;
-      configuration = configuration.copyWith(
+          _configuration.accessibilityFeatures as EngineAccessibilityFeatures;
+      _configuration = _configuration.copyWith(
           accessibilityFeatures: original.copyWith(highContrast: value));
       invokeOnPlatformConfigurationChanged();
     }
@@ -1113,7 +1111,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
   @override
-  bool get semanticsEnabled => configuration.semanticsEnabled;
+  bool get semanticsEnabled => _configuration.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///
@@ -1319,4 +1317,105 @@ const double _defaultRootFontSize = 16.0;
 double findBrowserTextScaleFactor() {
   final num fontSize = parseFontSize(domDocument.documentElement!) ?? _defaultRootFontSize;
   return fontSize / _defaultRootFontSize;
+}
+
+class ViewConfiguration {
+  const ViewConfiguration({
+    this.view,
+    this.devicePixelRatio = 1.0,
+    this.geometry = Rect.zero,
+    this.visible = false,
+    this.viewInsets = ViewPadding.zero,
+    this.viewPadding = ViewPadding.zero,
+    this.systemGestureInsets = ViewPadding.zero,
+    this.padding = ViewPadding.zero,
+    this.gestureSettings = const GestureSettings(),
+    this.displayFeatures = const <DisplayFeature>[],
+  });
+
+  ViewConfiguration copyWith({
+    FlutterView? view,
+    double? devicePixelRatio,
+    Rect? geometry,
+    bool? visible,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
+    GestureSettings? gestureSettings,
+    List<DisplayFeature>? displayFeatures,
+  }) {
+    return ViewConfiguration(
+      view: view ?? _view,
+      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
+      geometry: geometry ?? this.geometry,
+      visible: visible ?? this.visible,
+      viewInsets: viewInsets ?? this.viewInsets,
+      viewPadding: viewPadding ?? this.viewPadding,
+      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
+      padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
+    );
+  }
+
+  final FlutterView? view;
+  final double devicePixelRatio;
+  final Rect geometry;
+  final bool visible;
+  final ViewPadding viewInsets;
+  final ViewPadding viewPadding;
+  final ViewPadding systemGestureInsets;
+  final ViewPadding padding;
+  final GestureSettings gestureSettings;
+  final List<DisplayFeature> displayFeatures;
+
+  @override
+  String toString() {
+    return '$runtimeType[view: $view, geometry: $geometry]';
+  }
+}
+
+class PlatformConfiguration {
+  const PlatformConfiguration({
+    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
+    this.alwaysUse24HourFormat = false,
+    this.semanticsEnabled = false,
+    this.platformBrightness = Brightness.light,
+    this.textScaleFactor = 1.0,
+    this.locales = const <Locale>[],
+    this.defaultRouteName = '/',
+    this.systemFontFamily,
+  });
+
+  PlatformConfiguration copyWith({
+    AccessibilityFeatures? accessibilityFeatures,
+    bool? alwaysUse24HourFormat,
+    bool? semanticsEnabled,
+    Brightness? platformBrightness,
+    double? textScaleFactor,
+    List<Locale>? locales,
+    String? defaultRouteName,
+    String? systemFontFamily,
+  }) {
+    return PlatformConfiguration(
+      accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
+      alwaysUse24HourFormat: alwaysUse24HourFormat ?? this.alwaysUse24HourFormat,
+      semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
+      platformBrightness: platformBrightness ?? this.platformBrightness,
+      textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+      locales: locales ?? this.locales,
+      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
+      systemFontFamily: systemFontFamily ?? this.systemFontFamily,
+    );
+  }
+
+  final AccessibilityFeatures accessibilityFeatures;
+  final bool alwaysUse24HourFormat;
+  final bool semanticsEnabled;
+  final Brightness platformBrightness;
+  final double textScaleFactor;
+  final List<Locale> locales;
+  final String defaultRouteName;
+  final String? systemFontFamily;
 }
