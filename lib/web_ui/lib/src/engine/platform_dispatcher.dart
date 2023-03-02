@@ -91,7 +91,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   static EnginePlatformDispatcher get instance => _instance;
   static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
 
-  PlatformConfiguration _configuration = PlatformConfiguration(
+  PlatformConfiguration configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
     accessibilityFeatures: computeAccessibilityFeatures(),
@@ -713,7 +713,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// Additional accessibility features that may be enabled by the platform.
   @override
   ui.AccessibilityFeatures get accessibilityFeatures =>
-      _configuration.accessibilityFeatures;
+      configuration.accessibilityFeatures;
 
   /// A callback that is invoked when the value of [accessibilityFeatures] changes.
   ///
@@ -788,7 +788,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   @override
-  List<ui.Locale> get locales => _configuration.locales;
+  List<ui.Locale> get locales => configuration.locales;
 
   // A subscription to the 'languagechange' event of 'window'.
   DomSubscription? _onLocaleChangedSubscription;
@@ -854,12 +854,12 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The empty list is not a valid value for locales. This is only used for
   /// testing locale update logic.
   void debugResetLocales() {
-    _configuration = _configuration.copyWith(locales: const <ui.Locale>[]);
+    configuration = configuration.copyWith(locales: const <ui.Locale>[]);
   }
 
   // Called by FlutterViewEmbedder when browser languages change.
   void updateLocales() {
-    _configuration = _configuration.copyWith(locales: parseBrowserLanguages());
+    configuration = configuration.copyWith(locales: parseBrowserLanguages());
   }
 
   static List<ui.Locale> parseBrowserLanguages() {
@@ -904,20 +904,20 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///  * [WidgetsBindingObserver], for a mechanism at the widgets layer to
   ///    observe when this value changes.
   @override
-  double get textScaleFactor => _configuration.textScaleFactor;
+  double get textScaleFactor => configuration.textScaleFactor;
 
   /// The setting indicating whether time should always be shown in the 24-hour
   /// format.
   ///
   /// This option is used by [showTimePicker].
   @override
-  bool get alwaysUse24HourFormat => _configuration.alwaysUse24HourFormat;
+  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
 
   /// Updates [textScaleFactor] and invokes [onTextScaleFactorChanged] and
   /// [onPlatformConfigurationChanged] callbacks if [textScaleFactor] changed.
   void _updateTextScaleFactor(double value) {
-    if (_configuration.textScaleFactor != value) {
-      _configuration = _configuration.copyWith(textScaleFactor: value);
+    if (configuration.textScaleFactor != value) {
+      configuration = configuration.copyWith(textScaleFactor: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnTextScaleFactorChanged();
     }
@@ -985,8 +985,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      final EngineAccessibilityFeatures original = _configuration.accessibilityFeatures as EngineAccessibilityFeatures;
-      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled, accessibilityFeatures: original.copyWith(accessibleNavigation: semanticsEnabled));
+      configuration = configuration.copyWith(semanticsEnabled: semanticsEnabled);
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -996,13 +995,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The setting indicating the current brightness mode of the host platform.
   /// If the platform has no preference, [platformBrightness] defaults to [Brightness.light].
   @override
-  ui.Brightness get platformBrightness => _configuration.platformBrightness;
+  ui.Brightness get platformBrightness => configuration.platformBrightness;
 
   /// Updates [_platformBrightness] and invokes [onPlatformBrightnessChanged]
   /// callback if [_platformBrightness] changed.
   void _updatePlatformBrightness(ui.Brightness value) {
-    if (_configuration.platformBrightness != value) {
-      _configuration = _configuration.copyWith(platformBrightness: value);
+    if (configuration.platformBrightness != value) {
+      configuration = configuration.copyWith(platformBrightness: value);
       invokeOnPlatformConfigurationChanged();
       invokeOnPlatformBrightnessChanged();
     }
@@ -1010,15 +1009,15 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   /// The setting indicating the current system font of the host platform.
   @override
-  String? get systemFontFamily => _configuration.systemFontFamily;
+  String? get systemFontFamily => configuration.systemFontFamily;
 
   /// Updates [_highContrast] and invokes [onHighContrastModeChanged]
   /// callback if [_highContrast] changed.
   void _updateHighContrast(bool value) {
-    if (_configuration.accessibilityFeatures.highContrast != value) {
+    if (configuration.accessibilityFeatures.highContrast != value) {
       final EngineAccessibilityFeatures original =
-          _configuration.accessibilityFeatures as EngineAccessibilityFeatures;
-      _configuration = _configuration.copyWith(
+          configuration.accessibilityFeatures as EngineAccessibilityFeatures;
+      configuration = configuration.copyWith(
           accessibilityFeatures: original.copyWith(highContrast: value));
       invokeOnPlatformConfigurationChanged();
     }
@@ -1112,7 +1111,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   /// The [onSemanticsEnabledChanged] callback is called whenever this value
   /// changes.
   @override
-  bool get semanticsEnabled => _configuration.semanticsEnabled;
+  bool get semanticsEnabled => configuration.semanticsEnabled;
 
   /// A callback that is invoked when the value of [semanticsEnabled] changes.
   ///

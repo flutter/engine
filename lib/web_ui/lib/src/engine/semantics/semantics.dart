@@ -1576,6 +1576,14 @@ class EngineSemanticsOwner {
     if (value == _semanticsEnabled) {
       return;
     }
+    final EngineAccessibilityFeatures original =
+        EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
+        as EngineAccessibilityFeatures;
+    final PlatformConfiguration newConfiguration =
+        EnginePlatformDispatcher.instance.configuration.copyWith(
+            accessibilityFeatures:
+                original.copyWith(accessibleNavigation: value));
+    EnginePlatformDispatcher.instance.configuration = newConfiguration;
 
     _semanticsEnabled = value;
 
