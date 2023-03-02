@@ -1568,6 +1568,15 @@ class Paint {
   }
 }
 
+/// The color space that an [Image] uses.
+enum ColorSpace {
+  /// The sRGB color gamut.
+  sRGB,
+  /// A color space that is backwards compatible with sRGB but can represent
+  /// colors outside of that gamut with values outside of [0..1];
+  extendedSRGB,
+}
+
 /// The format in which image bytes should be returned when using
 /// [Image.toByteData].
 // We do not expect to add more encoding formats to the ImageByteFormat enum,
@@ -1590,6 +1599,11 @@ enum ImageByteFormat {
   /// Unencoded bytes, in the image's existing format. For example, a grayscale
   /// image may use a single 8-bit channel for each pixel.
   rawUnmodified,
+
+  /// Raw extended range RGBA format.
+  ///
+  /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit float per channel.
+  rawExtendedRgba128,
 
   /// PNG format.
   ///
@@ -1735,6 +1749,19 @@ class Image {
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     assert(!_disposed && !_image._disposed);
     return _image.toByteData(format: format);
+  }
+
+  /// The color space that used by the [Image]'s colors.
+  ColorSpace get colorSpace {
+    final int colorSpaceValue = _image.colorSpace;
+    switch (colorSpaceValue) {
+      case 0:
+        return ColorSpace.sRGB;
+      case 1:
+        return ColorSpace.extendedSRGB;
+      default:
+        throw StateError('Unrecognized color space: $colorSpaceValue');
+    }
   }
 
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
@@ -1902,6 +1929,9 @@ class _Image extends NativeFieldWrapperClass1 {
   external void _dispose();
 
   final Set<Image> _handles = <Image>{};
+
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::colorSpace')
+  external int get colorSpace;
 
   @override
   String toString() => '[$width\u00D7$height]';

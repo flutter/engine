@@ -37,6 +37,8 @@ class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
 
   void set_image(sk_sp<DlImage> image) { image_ = image; }
 
+  int colorSpace();
+
  private:
   CanvasImage();
 

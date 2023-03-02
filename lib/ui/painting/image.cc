@@ -7,11 +7,18 @@
 #include <algorithm>
 #include <limits>
 
+#include "flutter/impeller/renderer/texture.h"
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/dart_binding_macros.h"
 #include "third_party/tonic/dart_library_natives.h"
+
+// Must be kept in sync with painting.dart.
+enum ColorSpace {
+  kSRGB,
+  kExtendedSRGB,
+};
 
 namespace flutter {
 
@@ -33,6 +40,24 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 void CanvasImage::dispose() {
   image_.reset();
   ClearDartWrapper();
+}
+
+int CanvasImage::colorSpace() {
+  if (image_->skia_image()) {
+    return ColorSpace::kSRGB;
+  } else if (image_->impeller_texture()) {
+    const impeller::TextureDescriptor& desc =
+        image_->impeller_texture()->GetTextureDescriptor();
+    switch (desc.format) {
+      case impeller::PixelFormat::kB10G10R10XR:  // intentional_fallthrough
+      case impeller::PixelFormat::kR16G16B16A16Float:
+        return ColorSpace::kExtendedSRGB;
+      default:
+        return ColorSpace::kSRGB;
+    }
+  } else {
+    return -1;
+  }
 }
 
 }  // namespace flutter
