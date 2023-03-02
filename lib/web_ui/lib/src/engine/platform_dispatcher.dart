@@ -1339,10 +1339,10 @@ class ViewConfiguration {
     double? devicePixelRatio,
     ui.Rect? geometry,
     bool? visible,
-    ui.ViewPadding? viewInsets,
-    ui.ViewPadding? viewPadding,
-    ui.ViewPadding? systemGestureInsets,
-    ui.ViewPadding? padding,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
     ui.GestureSettings? gestureSettings,
     List<ui.DisplayFeature>? displayFeatures,
   }) {
@@ -1364,10 +1364,10 @@ class ViewConfiguration {
   final double devicePixelRatio;
   final ui.Rect geometry;
   final bool visible;
-  final ui.ViewPadding viewInsets;
-  final ui.ViewPadding viewPadding;
-  final ui.ViewPadding systemGestureInsets;
-  final ui.ViewPadding padding;
+  final ViewPadding viewInsets;
+  final ViewPadding viewPadding;
+  final ViewPadding systemGestureInsets;
+  final ViewPadding padding;
   final ui.GestureSettings gestureSettings;
   final List<ui.DisplayFeature> displayFeatures;
 
