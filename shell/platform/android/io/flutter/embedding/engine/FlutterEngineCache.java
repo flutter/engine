@@ -96,4 +96,12 @@ public class FlutterEngineCache {
   public void clear() {
     cachedEngines.clear();
   }
+  
+  /**
+   * Get all {@link io.flutter.embedding.engine.FlutterEngine}'s that are currently in the 
+   * cache.
+   */
+  public int count() {
+    return cachedEngines.size();
+  }
 }
