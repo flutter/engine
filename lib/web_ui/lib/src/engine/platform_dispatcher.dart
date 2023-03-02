@@ -985,7 +985,8 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
   void updateSemanticsEnabled(bool semanticsEnabled) {
     if (semanticsEnabled != this.semanticsEnabled) {
-      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled, accessibleNavigation: semanticsEnabled);
+      final EngineAccessibilityFeatures original = _configuration.accessibilityFeatures as EngineAccessibilityFeatures;
+      _configuration = _configuration.copyWith(semanticsEnabled: semanticsEnabled, accessibilityFeatures: original.copyWith(accessibleNavigation: semanticsEnabled));
       if (_onSemanticsEnabledChanged != null) {
         invokeOnSemanticsEnabledChanged();
       }
@@ -1323,14 +1324,14 @@ class ViewConfiguration {
   const ViewConfiguration({
     this.view,
     this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
+    this.geometry = ui.Rect.zero,
     this.visible = false,
-    this.viewInsets = ViewPadding.zero,
-    this.viewPadding = ViewPadding.zero,
-    this.systemGestureInsets = ViewPadding.zero,
-    this.padding = ViewPadding.zero,
-    this.gestureSettings = const GestureSettings(),
-    this.displayFeatures = const <DisplayFeature>[],
+    this.viewInsets = ui.ViewPadding.zero,
+    this.viewPadding = ui.ViewPadding.zero,
+    this.systemGestureInsets = ui.ViewPadding.zero,
+    this.padding = ui.ViewPadding.zero,
+    this.gestureSettings = const ui.GestureSettings(),
+    this.displayFeatures = const <ui.DisplayFeature>[],
   });
 
   ViewConfiguration copyWith({
@@ -1338,10 +1339,10 @@ class ViewConfiguration {
     double? devicePixelRatio,
     ui.Rect? geometry,
     bool? visible,
-    ViewPadding? viewInsets,
-    ViewPadding? viewPadding,
-    ViewPadding? systemGestureInsets,
-    ViewPadding? padding,
+    ui.ViewPadding? viewInsets,
+    ui.ViewPadding? viewPadding,
+    ui.ViewPadding? systemGestureInsets,
+    ui.ViewPadding? padding,
     ui.GestureSettings? gestureSettings,
     List<ui.DisplayFeature>? displayFeatures,
   }) {
@@ -1363,10 +1364,10 @@ class ViewConfiguration {
   final double devicePixelRatio;
   final ui.Rect geometry;
   final bool visible;
-  final ViewPadding viewInsets;
-  final ViewPadding viewPadding;
-  final ViewPadding systemGestureInsets;
-  final ViewPadding padding;
+  final ui.ViewPadding viewInsets;
+  final ui.ViewPadding viewPadding;
+  final ui.ViewPadding systemGestureInsets;
+  final ui.ViewPadding padding;
   final ui.GestureSettings gestureSettings;
   final List<ui.DisplayFeature> displayFeatures;
 
@@ -1378,12 +1379,12 @@ class ViewConfiguration {
 
 class PlatformConfiguration {
   const PlatformConfiguration({
-    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
+    this.accessibilityFeatures = const EngineAccessibilityFeatures(0),
     this.alwaysUse24HourFormat = false,
     this.semanticsEnabled = false,
-    this.platformBrightness = Brightness.light,
+    this.platformBrightness = ui.Brightness.light,
     this.textScaleFactor = 1.0,
-    this.locales = const <Locale>[],
+    this.locales = const <ui.Locale>[],
     this.defaultRouteName = '/',
     this.systemFontFamily,
   });
