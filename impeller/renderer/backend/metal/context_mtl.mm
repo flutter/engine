@@ -11,10 +11,29 @@
 #include "flutter/fml/paths.h"
 #include "impeller/base/platform/darwin/work_queue_darwin.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
-#include "impeller/renderer/device_capabilities.h"
+#include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
+
+static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
+  // The iOS simulator lies about supporting framebuffer fetch.
+#if FML_OS_IOS_SIMULATOR
+  return false;
+#endif  // FML_OS_IOS_SIMULATOR
+
+  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+    return [device supportsFamily:MTLGPUFamilyApple2];
+  }
+  // According to
+  // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf , Apple2
+  // corresponds to iOS GPU family 2, which supports A8 devices.
+#if FML_OS_IOS
+  return [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
+#else
+  return false;
+#endif  // FML_OS_IOS
+}
 
 ContextMTL::ContextMTL(id<MTLDevice> device,
                        NSArray<id<MTLLibrary>>* shader_libraries)
@@ -99,12 +118,13 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
 
     device_capabilities_ =
-        DeviceCapabilitiesBuilder()
+        CapabilitiesBuilder()
             .SetHasThreadingRestrictions(false)
             .SetSupportsOffscreenMSAA(true)
             .SetSupportsSSBO(true)
             .SetSupportsTextureToTextureBlits(true)
-            .SetSupportsFramebufferFetch(SupportsFramebufferFetch())
+            .SetSupportsFramebufferFetch(
+                DeviceSupportsFramebufferFetch(device_))
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
             .SetSupportsCompute(true, supports_subgroups)
@@ -112,25 +132,6 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
   }
 
   is_valid_ = true;
-}
-
-bool ContextMTL::SupportsFramebufferFetch() const {
-  // The iOS simulator lies about supporting framebuffer fetch.
-#if FML_OS_IOS_SIMULATOR
-  return false;
-#endif  // FML_OS_IOS_SIMULATOR
-
-  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
-    return [device_ supportsFamily:MTLGPUFamilyApple2];
-  }
-  // According to
-  // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf , Apple2
-  // corresponds to iOS GPU family 2, which supports A8 devices.
-#if FML_OS_IOS
-  return [device_ supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
-#else
-  return false;
-#endif  // FML_OS_IOS
 }
 
 static NSArray<id<MTLLibrary>>* MTLShaderLibraryFromFilePaths(
@@ -287,8 +288,8 @@ id<MTLDevice> ContextMTL::GetMTLDevice() const {
   return device_;
 }
 
-const IDeviceCapabilities& ContextMTL::GetDeviceCapabilities() const {
-  return *device_capabilities_;
+const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
+  return device_capabilities_;
 }
 
 }  // namespace impeller
