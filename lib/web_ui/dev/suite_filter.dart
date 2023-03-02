@@ -84,6 +84,14 @@ class RendererFilter extends AllowListSuiteFilter<Renderer> {
   Renderer getAttributeForSuite(TestSuite suite) => suite.testBundle.compileConfig.renderer;
 }
 
+class CanvasKitVariantFilter extends AllowListSuiteFilter<CanvasKitVariant> {
+  CanvasKitVariantFilter({required super.allowList});
+
+  @override
+  // TODO(jackson): Is this the right default?
+  CanvasKitVariant getAttributeForSuite(TestSuite suite) => suite.runConfig.variant ?? CanvasKitVariant.full;
+}
+
 Set<BrowserName> get _supportedPlatformBrowsers {
   if (io.Platform.isLinux) {
     return <BrowserName>{

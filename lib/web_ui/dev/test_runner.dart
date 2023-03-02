@@ -86,6 +86,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
         help: 'Filter test suites by renderer.',
       )
       ..addMultiOption(
+        'canvaskit-variant',
+        help: 'Filter test suites by CanvasKit variant.',
+      )
+      ..addMultiOption(
         'suite',
         help: 'Filter test suites by suite name.',
       )
@@ -177,6 +181,15 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     return RendererFilter(allowList: renderers);
   }
 
+  CanvasKitVariantFilter? makeCanvasKitVariantFilter() {
+    final List<String>? variantArgs = argResults!['canvaskit-variant'] as List<String>?;
+    if (variantArgs == null || variantArgs.isEmpty) {
+      return null;
+    }
+    final Set<CanvasKitVariant> variants = Set<CanvasKitVariant>.from(variantArgs.map((String arg) => CanvasKitVariant.values.byName(arg)));
+    return CanvasKitVariantFilter(allowList: variants);
+  }
+
   SuiteNameFilter? makeSuiteNameFilter() {
     final List<String>? suiteNameArgs = argResults!['suite'] as List<String>?;
     if (suiteNameArgs == null || suiteNameArgs.isEmpty) {
@@ -236,6 +249,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final BrowserSuiteFilter? browserFilter = makeBrowserFilter();
     final CompilerFilter? compilerFilter = makeCompilerFilter();
     final RendererFilter? rendererFilter = makeRendererFilter();
+    final CanvasKitVariantFilter? canvaskitVariantFilter = makeCanvasKitVariantFilter();
     final SuiteNameFilter? suiteNameFilter = makeSuiteNameFilter();
     final BundleNameFilter? bundleNameFilter = makeBundleNameFilter();
     final FileFilter? fileFilter = makeFileFilter();
@@ -244,6 +258,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       if (browserFilter != null) browserFilter,
       if (compilerFilter != null) compilerFilter,
       if (rendererFilter != null) rendererFilter,
+      if (canvaskitVariantFilter != null) canvaskitVariantFilter,
       if (suiteNameFilter != null) suiteNameFilter,
       if (bundleNameFilter != null) bundleNameFilter,
       if (fileFilter != null) fileFilter,
