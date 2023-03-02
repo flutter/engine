@@ -780,6 +780,9 @@ class TestImage implements Image {
 
   @override
   List<StackTrace>/*?*/ debugGetOpenHandleStackTraces() => <StackTrace>[];
+
+  @override
+  ColorSpace get colorSpace => ColorSpace.sRGB;
 }
 
 Paragraph createTestParagraph() {
