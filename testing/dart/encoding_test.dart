@@ -74,7 +74,13 @@ void main() {
     expect(image.width, _kWidth);
     expect(image.height, _kWidth);
     expect(data.lengthInBytes, _kWidth * _kWidth * 4 * 4);
-    expect(true, false);
+    // Top-left pixel should be black.
+    final Float32List floats = Float32List.view(data.buffer);
+    expect(floats[0], 0.0);
+    expect(floats[1], 0.0);
+    expect(floats[2], 0.0);
+    expect(floats[3], 1.0);
+    expect(image.colorSpace, ColorSpace.sRGB);
   });
 }
 
