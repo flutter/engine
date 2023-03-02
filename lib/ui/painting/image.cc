@@ -7,7 +7,9 @@
 #include <algorithm>
 #include <limits>
 
+#if IMPELLER_SUPPORTS_RENDERING
 #include "flutter/impeller/renderer/texture.h"
+#endif
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -46,6 +48,7 @@ int CanvasImage::colorSpace() {
   if (image_->skia_image()) {
     return ColorSpace::kSRGB;
   } else if (image_->impeller_texture()) {
+#if IMPELLER_SUPPORTS_RENDERING
     const impeller::TextureDescriptor& desc =
         image_->impeller_texture()->GetTextureDescriptor();
     switch (desc.format) {
@@ -55,9 +58,10 @@ int CanvasImage::colorSpace() {
       default:
         return ColorSpace::kSRGB;
     }
-  } else {
-    return -1;
+#endif  // IMPELLER_SUPPORTS_RENDERING
   }
+
+  return -1;
 }
 
 }  // namespace flutter
