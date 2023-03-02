@@ -77,4 +77,17 @@ public class FlutterEngineCacheTest {
     assertNull(cache.get("my_flutter_engine"));
     assertNull(cache.get("my_flutter_engine_2"));
   }
+  
+  @Test
+  public void itGetCountFlutterEngines() {
+    // --- Test Setup ---
+    FlutterEngine flutterEngine = mock(FlutterEngine.class);
+    FlutterEngineCache cache = new FlutterEngineCache();
+
+    // --- Execute Test ---
+    cache.put("my_flutter_engine", flutterEngine);
+
+    // --- Verify Results ---
+    assertEquals(cache.count("my_flutter_engine"), 1);
+  }
 }
