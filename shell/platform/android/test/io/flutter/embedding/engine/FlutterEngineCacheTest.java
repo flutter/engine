@@ -88,6 +88,6 @@ public class FlutterEngineCacheTest {
     cache.put("my_flutter_engine", flutterEngine);
 
     // --- Verify Results ---
-    assertEquals(cache.count("my_flutter_engine"), 1);
+    assertEquals(cache.count(), 1);
   }
 }
