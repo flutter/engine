@@ -155,12 +155,12 @@ class FeltConfig {
       final String testSetName = testBundleYaml['test-set'] as String;
       final TestSet? testSet = testSetsByName[testSetName];
       if (testSet == null) {
-        throw AssertionError('Test set not found with name: $testSetName');
+        throw AssertionError('Test set not found with name: `$testSetName` (referenced by test bundle: `$name`)');
       }
       final String compileConfigName = testBundleYaml['compile-config'] as String;
       final CompileConfiguration? compileConfig = compileConfigsByName[compileConfigName];
       if (compileConfig == null) {
-        throw AssertionError('Compile config not found with name: $compileConfigName');
+        throw AssertionError('Compile config not found with name: `$compileConfigName` (referenced by test bundle: `$name`)');
       }
       final TestBundle bundle = TestBundle(name, testSet, compileConfig);
       testBundles.add(bundle);
@@ -195,12 +195,12 @@ class FeltConfig {
       final String testBundleName = testSuiteYaml['test-bundle'] as String;
       final TestBundle? bundle = testBundlesByName[testBundleName];
       if (bundle == null) {
-        throw AssertionError('Test bundle not found with name: $testBundleName');
+        throw AssertionError('Test bundle not found with name: `$testBundleName` (referenced by test suite: `$name`)');
       }
       final String runConfigName = testSuiteYaml['run-config'] as String;
       final RunConfiguration? runConfig = runConfigsByName[runConfigName];
       if (runConfig == null) {
-        throw AssertionError('Run config not found with name: $testBundleName');
+        throw AssertionError('Run config not found with name: `$runConfigName` (referenced by test suite: `$name`)');
       }
       bool canvasKit = false;
       bool canvasKitChromium = false;
