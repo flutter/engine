@@ -98,7 +98,7 @@ public class FlutterEngineCache {
   }
   
   /**
-   * Get all {@link io.flutter.embedding.engine.FlutterEngine}'s that are currently in the 
+   * Get count {@link io.flutter.embedding.engine.FlutterEngine}'s that are currently in the
    * cache.
    */
   public int count() {
