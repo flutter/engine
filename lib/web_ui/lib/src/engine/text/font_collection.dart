@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/fonts.dart';
+import 'package:web_test_fonts/web_test_fonts.dart';
 
 import '../assets.dart';
 import '../dom.dart';
@@ -78,6 +79,10 @@ class HtmlFontCollection implements FontCollection {
     for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
       fontManager.downloadAsset(fontEntry.key, 'url(${fontEntry.value})', const <String, String>{});
     }
+    fontManager._downloadedFonts.add(createDomFontFace(
+      EmbeddedTestFont.flutterTest.fontFamily,
+      EmbeddedTestFont.flutterTest.data,
+    ));
     await fontManager.downloadAllFonts();
   }
 
