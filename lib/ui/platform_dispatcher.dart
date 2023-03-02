@@ -1753,7 +1753,7 @@ enum AppExitResponse {
 // https://github.com/flutter/flutter/issues/121721
 enum AppExitType {
   /// Requests that the application start an orderly exit, sending a request
-  /// back to the framework through the [WidgetsBinding], and if that responds
+  /// back to the framework through the [WidgetsBinding]. If that responds
   /// with [AppExitResponse.exit], then proceed with the same steps as a
   /// [required] exit. If that responds with [AppExitResponse.cancel], then the
   /// exit request is canceled and the application continues executing normally.

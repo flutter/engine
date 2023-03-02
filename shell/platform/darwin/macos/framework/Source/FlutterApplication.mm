@@ -14,7 +14,7 @@
 // Flutter features, like application lifecycle handling.
 @implementation FlutterApplication
 
-// Initialize NSApplication using the custom subclass.  Check whether NSApp was
+// Initialize NSApplication using the custom subclass. Check whether NSApp was
 // already initialized using another class, because that would break some
 // things. Warn about the mismatch only once, and only in debug builds.
 + (NSApplication*)sharedApplication {
@@ -47,7 +47,7 @@
 // and shutdown.
 //
 // We override the normal |terminate| implementation. Our implementation, which
-// is specific to the asyncronous nature of Flutter, works by asking the
+// is specific to the asynchronous nature of Flutter, works by asking the
 // application delegate to terminate using its |requestApplicationTermination|
 // method instead of going through |applicationShouldTerminate|.
 //
@@ -77,7 +77,7 @@
                                            exitType:kFlutterAppExitTypeCancelable
                                              result:nil];
   // Return, don't exit. The application delegate is responsible for exiting on
-  // its own by calling |-terminateApplication|.
+  // its own by calling |terminateApplication|.
 }
 
 // Starts the regular Cocoa application termination flow, so that plugins will
