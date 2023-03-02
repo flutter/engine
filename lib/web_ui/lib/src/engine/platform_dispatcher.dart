@@ -1334,19 +1334,19 @@ class ViewConfiguration {
   });
 
   ViewConfiguration copyWith({
-    FlutterView? view,
+    ui.FlutterView? view,
     double? devicePixelRatio,
-    Rect? geometry,
+    ui.Rect? geometry,
     bool? visible,
     ViewPadding? viewInsets,
     ViewPadding? viewPadding,
     ViewPadding? systemGestureInsets,
     ViewPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
+    ui.GestureSettings? gestureSettings,
+    List<ui.DisplayFeature>? displayFeatures,
   }) {
     return ViewConfiguration(
-      view: view ?? _view,
+      view: view ?? this.view,
       devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
       geometry: geometry ?? this.geometry,
       visible: visible ?? this.visible,
@@ -1359,16 +1359,16 @@ class ViewConfiguration {
     );
   }
 
-  final FlutterView? view;
+  final ui.FlutterView? view;
   final double devicePixelRatio;
-  final Rect geometry;
+  final ui.Rect geometry;
   final bool visible;
   final ViewPadding viewInsets;
   final ViewPadding viewPadding;
   final ViewPadding systemGestureInsets;
   final ViewPadding padding;
-  final GestureSettings gestureSettings;
-  final List<DisplayFeature> displayFeatures;
+  final ui.GestureSettings gestureSettings;
+  final List<ui.DisplayFeature> displayFeatures;
 
   @override
   String toString() {
@@ -1389,12 +1389,12 @@ class PlatformConfiguration {
   });
 
   PlatformConfiguration copyWith({
-    AccessibilityFeatures? accessibilityFeatures,
+    ui.AccessibilityFeatures? accessibilityFeatures,
     bool? alwaysUse24HourFormat,
     bool? semanticsEnabled,
-    Brightness? platformBrightness,
+    ui.Brightness? platformBrightness,
     double? textScaleFactor,
-    List<Locale>? locales,
+    List<ui.Locale>? locales,
     String? defaultRouteName,
     String? systemFontFamily,
   }) {
@@ -1410,12 +1410,12 @@ class PlatformConfiguration {
     );
   }
 
-  final AccessibilityFeatures accessibilityFeatures;
+  final ui.AccessibilityFeatures accessibilityFeatures;
   final bool alwaysUse24HourFormat;
   final bool semanticsEnabled;
-  final Brightness platformBrightness;
+  final ui.Brightness platformBrightness;
   final double textScaleFactor;
-  final List<Locale> locales;
+  final List<ui.Locale> locales;
   final String defaultRouteName;
   final String? systemFontFamily;
 }

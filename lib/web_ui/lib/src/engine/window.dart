@@ -211,7 +211,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   @override
-  Rect get physicalGeometry => _viewConfiguration.geometry;
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
 
   @override
   ViewPadding get viewPadding => _viewConfiguration.viewPadding;
@@ -223,10 +223,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   ViewPadding get padding => _viewConfiguration.padding;
 
   @override
-  GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
 
   @override
-  List<DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
 
   late DimensionsProvider _dimensionsProvider;
   void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
