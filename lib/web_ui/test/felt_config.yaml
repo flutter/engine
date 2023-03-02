@@ -97,6 +97,7 @@ test-bundles:
 run-configs:
   - name: chrome
     browser: chrome
+    canvaskit-variant: chromium
 
   - name: chrome-full
     browser: chrome
@@ -104,6 +105,7 @@ run-configs:
 
   - name: edge
     browser: edge
+    canvaskit-variant: chromium
 
   - name: edge-full
     browser: edge

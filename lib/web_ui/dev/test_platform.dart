@@ -502,19 +502,7 @@ class BrowserPlatform extends PlatformPlugin {
       case CanvasKitVariant.chromium:
         return 'chromium';
       case null:
-        // TODO(jacksongardner): Once the engine automatically uses the
-        // chromium build in chromium browsers, we should just return 'auto'
-        // here. For now, though, 'auto' will always select the full canvaskit
-        // variant, so we're simulating future behavior here by selecting the
-        // chromium build in our chromium browsers in the unit tests.
-        switch (suite.runConfig.browser) {
-          case BrowserName.chrome:
-          case BrowserName.edge:
-            return 'chromium';
-          case BrowserName.firefox:
-          case BrowserName.safari:
-            return 'full';
-        }
+        return 'auto';
     }
   }
 
