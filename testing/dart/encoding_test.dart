@@ -67,6 +67,15 @@ void main() {
     final List<int> expected = await readFile('square.png');
     expect(Uint8List.view(data.buffer), expected);
   });
+
+  test('Image.toByteData ExtendedRGBA128', () async {
+    final Image image = await Square4x4Image.image;
+    final ByteData data = (await image.toByteData(format: ImageByteFormat.rawExtendedRgba128))!;
+    expect(image.width, _kWidth);
+    expect(image.height, _kWidth);
+    expect(data.lengthInBytes, _kWidth * _kWidth * 4 * 4);
+    expect(true, false);
+  });
 }
 
 class Square4x4Image {
