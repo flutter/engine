@@ -41,25 +41,57 @@ fi
 # Can also be set via Simulator app Device > Rotate Device Automatically
 defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
-cd $SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+SCENARIO_PATH=$SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+cd $SCENARIO_PATH
+
+RESULT_BUNDLE_FOLDER="ios_scenario_xcresult"
+RESULT_BUNDLE_PATH="${SCENARIO_PATH}/${RESULT_BUNDLE_FOLDER}"
+
+# Zip and upload xcresult to luci.
+# First parameter ($1) is the zip output name.
+ZIP_AND_UPLOAD_XCRESULT_TO_LUCI () {
+  # Using RESULT_BUNDLE_PATH causes the zip containing all the sub directories.
+  # So use relative directory instead.
+  echo $1
+  zip -q -r $1 "./$RESULT_BUNDLE_FOLDER"
+  if ( -z "$FLUTTER_TEST_OUTPUTS_DIR") then
+    mv -f $1 $FLUTTER_TEST_OUTPUTS_DIR
+  fi
+  exit 1
+}
 
 echo "Running simulator tests with Skia"
 echo ""
 
-set -o pipefail && xcodebuild -sdk iphonesimulator \
+mktemp -d $RESULT_BUNDLE_PATH
+trap 'rm -rf $RESULT_BUNDLE_PATH' EXIT
+
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
-  FLUTTER_ENGINE="$FLUTTER_ENGINE"
+  FLUTTER_ENGINE="$FLUTTER_ENGINE"; then
+  echo "test success."
+else
+  echo "test failed."
+  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_xcresult.zip"
+fi
 
 echo "Running simulator tests with Impeller"
 echo ""
 
 # Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
-set -o pipefail && xcodebuild -sdk iphonesimulator \
+if set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
+  -resultBundlePath "$RESULT_BUNDLE_PATH/ios_scenario.xcresult" \
   -destination 'platform=iOS Simulator,OS=16.2,name=iPhone SE (3rd generation)' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE" \
   -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
-  INFOPLIST_FILE="Scenarios/Info_Impeller.plist" # Plist with FLTEnableImpeller=YES
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist"; then # Plist with FLTEnableImpeller=YES
+  echo "test success."
+else
+  echo "test failed."
+  ZIP_AND_UPLOAD_XCRESULT_TO_LUCI "ios_scenario_impeller_xcresult.zip"
+fi
