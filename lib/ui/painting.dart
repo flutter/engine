@@ -1753,7 +1753,9 @@ class Image {
     return _image.toByteData(format: format);
   }
 
-  /// The color space that used by the [Image]'s colors.
+  /// The color space that used by the [Image]'s colors. Note that on certain
+  /// platforms/rendering backends, wide gamut images will still report
+  /// [ColorSpace.sRGB] if rendering wide gamut colors isn't supported.
   ColorSpace get colorSpace {
     final int colorSpaceValue = _image.colorSpace;
     switch (colorSpaceValue) {
