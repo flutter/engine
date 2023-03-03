@@ -1762,7 +1762,7 @@ class Image {
       case 1:
         return ColorSpace.extendedSRGB;
       default:
-        throw StateError('Unrecognized color space: $colorSpaceValue');
+        throw Exception('Unrecognized color space: $colorSpaceValue');
     }
   }
 
