@@ -238,8 +238,6 @@ class DisplayList : public SkRefCnt {
   void Dispatch(DlOpReceiver& ctx) const;
   void Dispatch(DlOpReceiver& ctx, const SkRect& cull_rect) const;
 
-  void RenderTo(SkCanvas* canvas, SkScalar opacity = SK_Scalar1) const;
-
   // From historical behavior, SkPicture always included nested bytes,
   // but nested ops are only included if requested. The defaults used
   // here for these accessors follow that pattern.

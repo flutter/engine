@@ -249,9 +249,32 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
 void DisplayListCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list,
     SkScalar opacity) {
-  int save_count = canvas_->save();
-  display_list->RenderTo(canvas_, opacity * this->opacity());
-  canvas_->restoreToCount(save_count);
+  int restore_count;
+
+  // Compute combined opacity and figure out whether we can apply it
+  // during dispatch or if we need a saveLayer.
+  SkScalar combined_opacity = opacity * this->opacity();
+  if (combined_opacity < SK_Scalar1 &&
+      !display_list->can_apply_group_opacity()) {
+    SkPaint save_paint;
+    save_paint.setAlphaf(combined_opacity);
+    restore_count = canvas_->saveLayer(display_list->bounds(), &save_paint);
+    combined_opacity = SK_Scalar1;
+  } else {
+    restore_count = canvas_->save();
+  }
+
+  // Create a new CanvasDispatcher to isolate the actions of the
+  // display_list from the current environment.
+  DisplayListCanvasDispatcher dispatcher(canvas_, combined_opacity);
+  if (display_list->rtree()) {
+    display_list->Dispatch(dispatcher, canvas_->getLocalClipBounds());
+  } else {
+    display_list->Dispatch(dispatcher);
+  }
+
+  // Restore canvas state to what it was before dispatching.
+  canvas_->restoreToCount(restore_count);
 }
 void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,

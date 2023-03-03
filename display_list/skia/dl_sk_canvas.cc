@@ -363,7 +363,26 @@ void DlSkCanvasAdapter::DrawAtlas(const sk_sp<DlImage>& atlas,
 
 void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                         SkScalar opacity) {
-  display_list->RenderTo(delegate_, opacity);
+  int restore_count = delegate_->getSaveCount();
+
+  // Figure out whether we can apply the opacity during dispatch or
+  // if we need a saveLayer.
+  if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
+    DlPaint save_paint = DlPaint().setOpacity(opacity);
+    SaveLayer(&display_list->bounds(), &save_paint);
+    opacity = SK_Scalar1;
+  } else {
+    Save();
+  }
+
+  DisplayListCanvasDispatcher dispatcher(delegate_, opacity);
+  if (display_list->has_rtree()) {
+    display_list->Dispatch(dispatcher, delegate_->getLocalClipBounds());
+  } else {
+    display_list->Dispatch(dispatcher);
+  }
+
+  delegate_->restoreToCount(restore_count);
 }
 
 void DlSkCanvasAdapter::DrawTextBlob(const sk_sp<SkTextBlob>& blob,

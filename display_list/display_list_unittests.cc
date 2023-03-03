@@ -11,6 +11,7 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_utils.h"
@@ -566,7 +567,10 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
     sk_sp<DisplayList> display_list = builder.Build();
     sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
     SkCanvas* canvas = surface->getCanvas();
-    display_list->RenderTo(canvas);
+    // We can't use DlSkCanvas.DrawDisplayList as that method protects
+    // the canvas against mutations from the display list being drawn.
+    auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+    display_list->Dispatch(dispatcher);
     SkM44 dl_matrix = canvas->getLocalToDevice();
     ASSERT_EQ(sk_matrix, dl_matrix);
   }
@@ -585,7 +589,10 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
     sk_sp<DisplayList> display_list = builder.Build();
     sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
     SkCanvas* canvas = surface->getCanvas();
-    display_list->RenderTo(canvas);
+    // We can't use DlSkCanvas.DrawDisplayList as that method protects
+    // the canvas against mutations from the display list being drawn.
+    auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+    display_list->Dispatch(dispatcher);
     SkM44 dl_matrix = canvas->getLocalToDevice();
     ASSERT_NE(sk_matrix, dl_matrix);
   }
@@ -596,11 +603,14 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.scale(20.0, 20.0);
   receiver.transformReset();
-  auto list = builder.Build();
-  ASSERT_NE(list, nullptr);
+  auto display_list = builder.Build();
+  ASSERT_NE(display_list, nullptr);
   sk_sp<SkSurface> surface = SkSurface::MakeRasterN32Premul(10, 10);
   SkCanvas* canvas = surface->getCanvas();
-  list->RenderTo(canvas);
+  // We can't use DlSkCanvas.DrawDisplayList as that method protects
+  // the canvas against mutations from the display list being drawn.
+  auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+  display_list->Dispatch(dispatcher);
   ASSERT_TRUE(canvas->getTotalMatrix().isIdentity());
 }
 

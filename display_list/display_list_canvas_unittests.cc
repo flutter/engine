@@ -409,7 +409,7 @@ struct DisplayListJobRenderer : public JobRenderer {
       : display_list_(std::move(display_list)) {}
 
   void Render(SkCanvas* canvas, const RenderJobInfo& info) {
-    display_list_->RenderTo(canvas, info.opacity);
+    DlSkCanvasAdapter(canvas).DrawDisplayList(display_list_, info.opacity);
   }
 
  private:
@@ -3255,7 +3255,7 @@ TEST_F(DisplayListCanvas, DrawDisplayList) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            display_list->RenderTo(canvas);
+            DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawDisplayList(display_list);

@@ -5,6 +5,7 @@
 #include "flutter/display_list/display_list_benchmarks.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_flags.h"
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -84,7 +85,7 @@ void BM_DrawLine(benchmark::State& state,
 
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   state.counters["DrawCallCount"] = kLinesToDraw;
   for (size_t i = 0; i < kLinesToDraw; i++) {
@@ -96,7 +97,7 @@ void BM_DrawLine(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -122,7 +123,7 @@ void BM_DrawRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   // As rects have SkScalar dimensions, we want to ensure that we also
   // draw rects with non-integer position and size
@@ -145,7 +146,7 @@ void BM_DrawRect(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -171,7 +172,7 @@ void BM_DrawOval(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkRect rect = SkRect::MakeXYWH(0, 0, length * 1.5f, length);
   const SkScalar offset = 0.5f;
@@ -191,7 +192,7 @@ void BM_DrawOval(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -217,7 +218,7 @@ void BM_DrawCircle(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkScalar radius = length / 2.0f;
   const SkScalar offset = 0.5f;
@@ -239,7 +240,7 @@ void BM_DrawCircle(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -266,7 +267,7 @@ void BM_DrawRRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkVector radii[4] = {};
   switch (type) {
@@ -317,7 +318,7 @@ void BM_DrawRRect(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -347,7 +348,7 @@ void BM_DrawDRRect(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkVector radii[4] = {};
   switch (type) {
@@ -399,7 +400,7 @@ void BM_DrawDRRect(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -422,7 +423,7 @@ void BM_DrawArc(benchmark::State& state,
   size_t canvas_size = length * 2;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkScalar starting_angle = 0.0f;
   SkScalar offset = 0.5f;
@@ -452,7 +453,7 @@ void BM_DrawArc(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -636,7 +637,7 @@ void BM_DrawPath(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkPath path;
 
@@ -655,7 +656,7 @@ void BM_DrawPath(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -774,7 +775,7 @@ void BM_DrawVertices(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkPoint center = SkPoint::Make(length / 2.0f, length / 2.0f);
 
@@ -801,7 +802,7 @@ void BM_DrawVertices(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -883,7 +884,7 @@ void BM_DrawPoints(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   size_t point_count = state.range(0);
   state.SetComplexityN(point_count);
@@ -897,7 +898,7 @@ void BM_DrawPoints(benchmark::State& state,
   auto display_list = builder.Build();
 
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -934,7 +935,7 @@ void BM_DrawImage(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;
@@ -975,7 +976,7 @@ void BM_DrawImage(benchmark::State& state,
   auto display_list = builder.Build();
 
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -1017,7 +1018,7 @@ void BM_DrawImageRect(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   sk_sp<SkImage> image;
   std::shared_ptr<DlSurfaceInstance> offscreen_instance;
@@ -1061,7 +1062,7 @@ void BM_DrawImageRect(benchmark::State& state,
   auto display_list = builder.Build();
 
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -1104,7 +1105,7 @@ void BM_DrawImageNine(benchmark::State& state,
   size_t canvas_size = 2 * bitmap_size;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkIRect center = SkIRect::MakeXYWH(bitmap_size / 4, bitmap_size / 4,
                                      bitmap_size / 2, bitmap_size / 2);
@@ -1148,7 +1149,7 @@ void BM_DrawImageNine(benchmark::State& state,
   auto display_list = builder.Build();
 
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -1179,7 +1180,7 @@ void BM_DrawTextBlob(benchmark::State& state,
   size_t canvas_size = kFixedCanvasSize;
   surface_provider->InitializeSurface(canvas_size, canvas_size);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   state.counters["DrawCallCount_Varies"] = draw_calls;
   state.counters["GlyphCount"] = draw_calls;
@@ -1194,7 +1195,7 @@ void BM_DrawTextBlob(benchmark::State& state,
   auto display_list = builder.Build();
 
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -1225,7 +1226,7 @@ void BM_DrawShadow(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   SkPath path;
 
@@ -1259,7 +1260,7 @@ void BM_DrawShadow(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 
@@ -1289,7 +1290,7 @@ void BM_SaveLayer(benchmark::State& state,
   size_t length = kFixedCanvasSize;
   surface_provider->InitializeSurface(length, length);
   auto surface = surface_provider->GetPrimarySurface()->sk_surface();
-  auto canvas = surface->getCanvas();
+  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
 
   size_t save_layer_calls = state.range(0);
 
@@ -1313,7 +1314,7 @@ void BM_SaveLayer(benchmark::State& state,
 
   // We only want to time the actual rasterization.
   for ([[maybe_unused]] auto _ : state) {
-    display_list->RenderTo(canvas);
+    canvas.DrawDisplayList(display_list);
     surface->flushAndSubmit(true);
   }
 

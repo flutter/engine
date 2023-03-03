@@ -296,16 +296,6 @@ static bool CompareOps(uint8_t* ptrA,
   return true;
 }
 
-void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
-  FML_DCHECK(can_apply_group_opacity() || opacity >= SK_Scalar1);
-  DisplayListCanvasDispatcher dispatcher(canvas, opacity);
-  if (has_rtree()) {
-    Dispatch(dispatcher, canvas->getLocalClipBounds());
-  } else {
-    Dispatch(dispatcher);
-  }
-}
-
 bool DisplayList::Equals(const DisplayList* other) const {
   if (this == other) {
     return true;
