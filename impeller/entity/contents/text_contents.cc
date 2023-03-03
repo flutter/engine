@@ -61,9 +61,7 @@ std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
 static Vector4 PositionForGlyphPosition(const Matrix& translation,
                                         Point unit_position,
                                         Size destination_size) {
-  return translation * Vector4(unit_position.x * destination_size.width,
-                               unit_position.y * destination_size.height, 0.0,
-                               1.0);
+  return translation * (unit_position * destination_size);
 }
 
 template <class TPipeline>
@@ -161,11 +159,8 @@ static bool CommonRender(
 
       auto uv_scaler_a = atlas_glyph_pos->size / atlas_size;
       auto uv_scaler_b = (Point::Round(atlas_glyph_pos->origin) / atlas_size);
-      auto translation =
-          Matrix(1, 0, 0, 0,  //
-                 0, 1, 0, 0,  //
-                 0, 0, 1, 0,  //
-                 offset_glyph_position.x, offset_glyph_position.y, 0, 1);
+      auto translation = Matrix::MakeTranslation(
+          Vector3(offset_glyph_position.x, offset_glyph_position.y, 0));
 
       for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
