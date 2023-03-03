@@ -102,7 +102,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 #pragma mark - Embedder API properties
 
 // Function pointers for interacting with the embedder.h API.
-@property(nonatomic, assign) BOOL enableEmbedderAPI;
+@property(nonatomic, assign, readonly) BOOL enableEmbedderAPI;
 @property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
@@ -1393,16 +1393,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (FlutterDartProject*)project {
   return _dartProject.get();
-}
-
-#pragma mark - Embedder API
-
-- (BOOL)enableEmbedderAPI {
-  return _enableEmbedderAPI;
-}
-
-- (FlutterEngineProcTable&)embedderAPI {
-  return _embedderAPI;
 }
 
 @end
