@@ -101,8 +101,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 #pragma mark - Embedder API properties
 
+@property(nonatomic, assign) BOOL enableEmbedderAPI;
 // Function pointers for interacting with the embedder.h API.
-@property(nonatomic, assign, readonly) BOOL enableEmbedderAPI;
 @property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
