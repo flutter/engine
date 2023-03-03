@@ -11,7 +11,7 @@
             },
             "gn": [
                 "--build-canvaskit",
-                " --web",
+                "--web",
                 "--runtime-mode=release"
             ],
             "name": "wasm_release",
