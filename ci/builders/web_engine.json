@@ -33,7 +33,7 @@
                             "compile_tests"
                         ],
                         "scripts": [
-                            "out/host_debug_unopt/dart-sdk/bin/dart",
+                            "dart",
                             "flutter/lib/web_ui/dev/felt.dart"
                         ]
                     },
@@ -43,7 +43,7 @@
                             "check-licenses"
                         ],
                         "scripts": [
-                            "out/host_debug_unopt/dart-sdk/bin/dart",
+                            "dart",
                             "flutter/lib/web_ui/dev/felt.dart"
                         ]
                     },
@@ -53,7 +53,7 @@
                             "analyze"
                         ],
                         "scripts": [
-                            "out/host_debug_unopt/dart-sdk/bin/dart",
+                            "dart",
                             "flutter/lib/web_ui/dev/felt.dart"
                         ]
                     }
