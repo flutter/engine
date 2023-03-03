@@ -9,21 +9,21 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_rtree.h"
+#include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkMaskFilter.h"
 
 // This file contains various utility classes to ease implementing
-// a Flutter DisplayList Dispatcher, including:
+// a Flutter DisplayList DlOpReceiver, including:
 //
 // IgnoreAttributeDispatchHelper:
 // IgnoreClipDispatchHelper:
 // IgnoreTransformDispatchHelper
-//     Empty overrides of all of the associated methods of Dispatcher
-//     for dispatchers that only track some of the rendering operations
+//     Empty overrides of all of the associated methods of DlOpReceiver
+//     for receivers that only track some of the rendering operations
 //
 // SkPaintAttributeDispatchHelper:
 //     Tracks the attribute methods and maintains their state in an
@@ -31,9 +31,9 @@
 
 namespace flutter {
 
-// A utility class that will ignore all Dispatcher methods relating
+// A utility class that will ignore all DlOpReceiver methods relating
 // to the setting of attributes.
-class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
+class IgnoreAttributeDispatchHelper : public virtual DlOpReceiver {
  public:
   void setAntiAlias(bool aa) override {}
   void setDither(bool dither) override {}
@@ -52,9 +52,9 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setMaskFilter(const DlMaskFilter* filter) override {}
 };
 
-// A utility class that will ignore all Dispatcher methods relating
+// A utility class that will ignore all DlOpReceiver methods relating
 // to setting a clip.
-class IgnoreClipDispatchHelper : public virtual Dispatcher {
+class IgnoreClipDispatchHelper : public virtual DlOpReceiver {
   void clipRect(const SkRect& rect,
                 DlCanvas::ClipOp clip_op,
                 bool is_aa) override {}
@@ -66,9 +66,9 @@ class IgnoreClipDispatchHelper : public virtual Dispatcher {
                 bool is_aa) override {}
 };
 
-// A utility class that will ignore all Dispatcher methods relating
+// A utility class that will ignore all DlOpReceiver methods relating
 // to modifying the transform.
-class IgnoreTransformDispatchHelper : public virtual Dispatcher {
+class IgnoreTransformDispatchHelper : public virtual DlOpReceiver {
  public:
   void translate(SkScalar tx, SkScalar ty) override {}
   void scale(SkScalar sx, SkScalar sy) override {}
@@ -88,7 +88,7 @@ class IgnoreTransformDispatchHelper : public virtual Dispatcher {
   void transformReset() override {}
 };
 
-class IgnoreDrawDispatchHelper : public virtual Dispatcher {
+class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
  public:
   void save() override {}
   void saveLayer(const SkRect* bounds,
@@ -147,10 +147,10 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                   SkScalar dpr) override {}
 };
 
-// A utility class that will monitor the Dispatcher methods relating
+// A utility class that will monitor the DlOpReceiver methods relating
 // to the rendering attributes and accumulate them into an SkPaint
 // which can be accessed at any time via paint().
-class SkPaintDispatchHelper : public virtual Dispatcher {
+class SkPaintDispatchHelper : public virtual DlOpReceiver {
  public:
   SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
       : current_color_(SK_ColorBLACK), opacity_(opacity) {

@@ -28,7 +28,7 @@ class DisplayList;
 ///             through the DisplayListBuilder and also the methods that will be
 ///             invoked through the DisplayList::dispatch() method.
 ///
-class Dispatcher {
+class DlOpReceiver {
  protected:
   using ClipOp = DlCanvas::ClipOp;
   using PointMode = DlCanvas::PointMode;

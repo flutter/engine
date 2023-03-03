@@ -7,8 +7,8 @@
 
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_complexity.h"
-#include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_op_receiver.h"
 
 namespace flutter {
 
@@ -92,7 +92,7 @@ namespace flutter {
 //   y = 4x
 
 class ComplexityCalculatorHelper
-    : public virtual Dispatcher,
+    : public virtual DlOpReceiver,
       public virtual IgnoreClipDispatchHelper,
       public virtual IgnoreTransformDispatchHelper {
  public:

@@ -190,10 +190,10 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
   return &paint;
 }
 
-bool Paint::sync_to(DisplayListBuilder* builder,
-                    const DisplayListAttributeFlags& flags) const {
+const DlPaint* Paint::paint(DlPaint& paint,
+                            const DisplayListAttributeFlags& flags) const {
   if (isNull()) {
-    return false;
+    return nullptr;
   }
   tonic::DartByteData byte_data(paint_data_);
   FML_CHECK(byte_data.length_in_bytes() == kDataByteCount);
@@ -204,13 +204,13 @@ bool Paint::sync_to(DisplayListBuilder* builder,
   Dart_Handle values[kObjectCount];
   if (Dart_IsNull(paint_objects_)) {
     if (flags.applies_shader()) {
-      builder->setColorSource(nullptr);
+      paint.setColorSource(nullptr);
     }
     if (flags.applies_color_filter()) {
-      builder->setColorFilter(nullptr);
+      paint.setColorFilter(nullptr);
     }
     if (flags.applies_image_filter()) {
-      builder->setImageFilter(nullptr);
+      paint.setImageFilter(nullptr);
     }
   } else {
     FML_DCHECK(Dart_IsList(paint_objects_));
@@ -220,20 +220,20 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     FML_CHECK(length == kObjectCount);
     if (Dart_IsError(
             Dart_ListGetRange(paint_objects_, 0, kObjectCount, values))) {
-      return false;
+      return nullptr;
     }
 
     if (flags.applies_shader()) {
       Dart_Handle shader = values[kShaderIndex];
       if (Dart_IsNull(shader)) {
-        builder->setColorSource(nullptr);
+        paint.setColorSource(nullptr);
       } else {
         if (Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader)) {
           auto sampling =
               ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-          builder->setColorSource(decoded->shader(sampling).get());
+          paint.setColorSource(decoded->shader(sampling).get());
         } else {
-          builder->setColorSource(nullptr);
+          paint.setColorSource(nullptr);
         }
       }
     }
@@ -241,78 +241,78 @@ bool Paint::sync_to(DisplayListBuilder* builder,
     if (flags.applies_color_filter()) {
       Dart_Handle color_filter = values[kColorFilterIndex];
       if (Dart_IsNull(color_filter)) {
-        builder->setColorFilter(nullptr);
+        paint.setColorFilter(nullptr);
       } else {
         ColorFilter* decoded =
             tonic::DartConverter<ColorFilter*>::FromDart(color_filter);
-        builder->setColorFilter(decoded->dl_filter());
+        paint.setColorFilter(decoded->dl_filter());
       }
     }
 
     if (flags.applies_image_filter()) {
       Dart_Handle image_filter = values[kImageFilterIndex];
       if (Dart_IsNull(image_filter)) {
-        builder->setImageFilter(nullptr);
+        paint.setImageFilter(nullptr);
       } else {
         ImageFilter* decoded =
             tonic::DartConverter<ImageFilter*>::FromDart(image_filter);
-        builder->setImageFilter(decoded->dl_filter());
+        paint.setImageFilter(decoded->dl_filter());
       }
     }
   }
 
   if (flags.applies_anti_alias()) {
-    builder->setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
+    paint.setAntiAlias(uint_data[kIsAntiAliasIndex] == 0);
   }
 
   if (flags.applies_alpha_or_color()) {
     uint32_t encoded_color = uint_data[kColorIndex];
-    builder->setColor(encoded_color ^ kColorDefault);
+    paint.setColor(encoded_color ^ kColorDefault);
   }
 
   if (flags.applies_blend()) {
     uint32_t encoded_blend_mode = uint_data[kBlendModeIndex];
     uint32_t blend_mode = encoded_blend_mode ^ kBlendModeDefault;
-    builder->setBlendMode(static_cast<DlBlendMode>(blend_mode));
+    paint.setBlendMode(static_cast<DlBlendMode>(blend_mode));
   }
 
   if (flags.applies_style()) {
     uint32_t style = uint_data[kStyleIndex];
-    builder->setStyle(static_cast<DlDrawStyle>(style));
+    paint.setDrawStyle(static_cast<DlDrawStyle>(style));
   }
 
-  if (flags.is_stroked(builder->getStyle())) {
+  if (flags.is_stroked(paint.getDrawStyle())) {
     float stroke_width = float_data[kStrokeWidthIndex];
-    builder->setStrokeWidth(stroke_width);
+    paint.setStrokeWidth(stroke_width);
 
     float stroke_miter_limit = float_data[kStrokeMiterLimitIndex];
-    builder->setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
+    paint.setStrokeMiter(stroke_miter_limit + kStrokeMiterLimitDefault);
 
     uint32_t stroke_cap = uint_data[kStrokeCapIndex];
-    builder->setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
+    paint.setStrokeCap(static_cast<DlStrokeCap>(stroke_cap));
 
     uint32_t stroke_join = uint_data[kStrokeJoinIndex];
-    builder->setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
+    paint.setStrokeJoin(static_cast<DlStrokeJoin>(stroke_join));
   }
 
   if (flags.applies_color_filter()) {
-    builder->setInvertColors(uint_data[kInvertColorIndex] != 0);
+    paint.setInvertColors(uint_data[kInvertColorIndex] != 0);
   }
 
   if (flags.applies_dither()) {
-    builder->setDither(uint_data[kDitherIndex] != 0);
+    paint.setDither(uint_data[kDitherIndex] != 0);
   }
 
   if (flags.applies_path_effect()) {
     // The paint API exposed to Dart does not support path effects.  But other
     // operations such as text may set a path effect, which must be cleared.
-    builder->setPathEffect(nullptr);
+    paint.setPathEffect(nullptr);
   }
 
   if (flags.applies_mask_filter()) {
     switch (uint_data[kMaskFilterIndex]) {
       case kNull:
-        builder->setMaskFilter(nullptr);
+        paint.setMaskFilter(nullptr);
         break;
       case kBlur:
         SkBlurStyle blur_style =
@@ -320,15 +320,15 @@ bool Paint::sync_to(DisplayListBuilder* builder,
         double sigma = float_data[kMaskFilterSigmaIndex];
         DlBlurMaskFilter dl_filter(blur_style, sigma);
         if (dl_filter.skia_object()) {
-          builder->setMaskFilter(&dl_filter);
+          paint.setMaskFilter(&dl_filter);
         } else {
-          builder->setMaskFilter(nullptr);
+          paint.setMaskFilter(nullptr);
         }
         break;
     }
   }
 
-  return true;
+  return &paint;
 }
 
 void Paint::toDlPaint(DlPaint& paint) const {

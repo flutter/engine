@@ -17,21 +17,6 @@
 namespace flutter {
 namespace testing {
 
-TEST(DisplayListImageFilter, BuilderSetGet) {
-  DlBlurImageFilter filter(5.0, 5.0, DlTileMode::kDecal);
-  DisplayListBuilder builder;
-
-  ASSERT_EQ(builder.getImageFilter(), nullptr);
-
-  builder.setImageFilter(&filter);
-  ASSERT_NE(builder.getImageFilter(), nullptr);
-  ASSERT_TRUE(
-      Equals(builder.getImageFilter(), static_cast<DlImageFilter*>(&filter)));
-
-  builder.setImageFilter(nullptr);
-  ASSERT_EQ(builder.getImageFilter(), nullptr);
-}
-
 // SkRect::contains treats the rect as a half-open interval which is
 // appropriate for so many operations. Unfortunately, we are using
 // it here to test containment of the corners of a transformed quad

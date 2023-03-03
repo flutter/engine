@@ -8,8 +8,8 @@
 #include <ostream>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_path_effect.h"
+#include "flutter/display_list/dl_op_receiver.h"
 
 namespace flutter {
 namespace testing {
@@ -47,7 +47,7 @@ extern std::ostream& operator<<(std::ostream& os, const DlVertexMode& mode);
 extern std::ostream& operator<<(std::ostream& os, const DlTileMode& mode);
 extern std::ostream& operator<<(std::ostream& os, const DlImage* image);
 
-class DisplayListStreamDispatcher final : public Dispatcher {
+class DisplayListStreamDispatcher final : public DlOpReceiver {
  public:
   DisplayListStreamDispatcher(std::ostream& os,
                               int cur_indent = 2,

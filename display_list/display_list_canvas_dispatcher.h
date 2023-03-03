@@ -7,8 +7,8 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/fml/macros.h"
 
 namespace flutter {
@@ -19,7 +19,7 @@ namespace flutter {
 ///
 /// Receives all methods on Dispatcher and sends them to an SkCanvas
 ///
-class DisplayListCanvasDispatcher : public virtual Dispatcher,
+class DisplayListCanvasDispatcher : public virtual DlOpReceiver,
                                     public SkPaintDispatchHelper {
  public:
   explicit DisplayListCanvasDispatcher(SkCanvas* canvas,

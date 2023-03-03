@@ -3233,17 +3233,20 @@ TEST_F(DisplayListCanvas, DrawAtlasLinear) {
 
 sk_sp<DisplayList> makeTestDisplayList() {
   DisplayListBuilder builder;
-  builder.setStyle(DlDrawStyle::kFill);
-  builder.setColor(SK_ColorRED);
-  builder.drawRect({kRenderLeft, kRenderTop, kRenderCenterX, kRenderCenterY});
-  builder.setColor(SK_ColorBLUE);
-  builder.drawRect({kRenderCenterX, kRenderTop, kRenderRight, kRenderCenterY});
-  builder.setColor(SK_ColorGREEN);
-  builder.drawRect(
-      {kRenderLeft, kRenderCenterY, kRenderCenterX, kRenderBottom});
-  builder.setColor(SK_ColorYELLOW);
-  builder.drawRect(
-      {kRenderCenterX, kRenderCenterY, kRenderRight, kRenderBottom});
+  DlPaint paint;
+  paint.setDrawStyle(DlDrawStyle::kFill);
+  paint.setColor(SK_ColorRED);
+  builder.DrawRect({kRenderLeft, kRenderTop, kRenderCenterX, kRenderCenterY},
+                   paint);
+  paint.setColor(SK_ColorBLUE);
+  builder.DrawRect({kRenderCenterX, kRenderTop, kRenderRight, kRenderCenterY},
+                   paint);
+  paint.setColor(SK_ColorGREEN);
+  builder.DrawRect({kRenderLeft, kRenderCenterY, kRenderCenterX, kRenderBottom},
+                   paint);
+  paint.setColor(SK_ColorYELLOW);
+  builder.DrawRect(
+      {kRenderCenterX, kRenderCenterY, kRenderRight, kRenderBottom}, paint);
   return builder.Build();
 }
 

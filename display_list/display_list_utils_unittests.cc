@@ -8,7 +8,7 @@
 namespace flutter {
 namespace testing {
 
-class MockDispatchHelper final : public virtual Dispatcher,
+class MockDispatchHelper final : public virtual DlOpReceiver,
                                  public SkPaintDispatchHelper,
                                  public IgnoreClipDispatchHelper,
                                  public IgnoreTransformDispatchHelper,

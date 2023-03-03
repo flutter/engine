@@ -843,7 +843,7 @@ void DisplayListBuilder::drawPoints(PointMode mode,
   }
 
   void* data_ptr;
-  FML_DCHECK(count < Dispatcher::kMaxDrawPointsCount);
+  FML_DCHECK(count < DlOpReceiver::kMaxDrawPointsCount);
   int bytes = count * sizeof(SkPoint);
   RectBoundsAccumulator ptBounds;
   for (size_t i = 0; i < count; i++) {
@@ -1190,7 +1190,7 @@ bool DisplayListBuilder::AdjustBoundsForPaint(SkRect& bounds,
         pad = std::max(pad, SK_ScalarSqrt2);
       }
       SkScalar min_stroke_width = 0.01;
-      pad *= std::max(getStrokeWidth() * 0.5f, min_stroke_width);
+      pad *= std::max(current_.getStrokeWidth() * 0.5f, min_stroke_width);
       bounds.outset(pad, pad);
     }
   }
@@ -1259,7 +1259,7 @@ bool DisplayListBuilder::paint_nops_on_transparency() {
   // For example, DstIn is used by masking layers.
   // https://code.google.com/p/skia/issues/detail?id=1291
   // https://crbug.com/401593
-  switch (getBlendMode()) {
+  switch (current_.getBlendMode()) {
     // For each of the following transfer modes, if the source
     // alpha is zero (our transparent black), the resulting
     // blended pixel is not necessarily equal to the original

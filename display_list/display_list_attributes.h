@@ -56,7 +56,7 @@ namespace flutter {
 //     compared using a |memcmp| when performing a |DisplayList::Equals|.
 //
 // - Passed by Pointer:
-//     The data shared via the |Dispatcher::set<Attribute>| calls are stored
+//     The data shared via the |DlOpReceiver::set<Attribute>| calls are stored
 //     in the buffer itself and so their lifetime is controlled by the
 //     DisplayList. That memory cannot be shared as by a |shared_ptr|
 //     because the memory may be freed outside the control of the shared
@@ -70,7 +70,7 @@ namespace flutter {
 // - Shared_Ptr-able:
 //     The classes support a method to return a |std::shared_ptr| version of
 //     themselves, safely instantiating a new copy of the object into a
-//     shared_ptr using |std::make_shared|. For those dispatcher objects
+//     shared_ptr using |std::make_shared|. For those receiver objects
 //     that may want to hold on to the contents of the object (typically
 //     in a |current_attribute_| field), they can obtain a shared_ptr
 //     copy safely and easily using the |shared| method.

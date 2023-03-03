@@ -86,19 +86,6 @@ static constexpr SkPoint kTestPoints2[2] = {
     SkPoint::Make(107, 118),
 };
 
-TEST(DisplayListColorSource, BuilderSetGet) {
-  DlImageColorSource source(kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
-                            DlImageSampling::kLinear, &kTestMatrix1);
-  DisplayListBuilder builder;
-  ASSERT_EQ(builder.getColorSource(), nullptr);
-  builder.setColorSource(&source);
-  ASSERT_NE(builder.getColorSource(), nullptr);
-  ASSERT_TRUE(
-      Equals(builder.getColorSource(), static_cast<DlColorSource*>(&source)));
-  builder.setColorSource(nullptr);
-  ASSERT_EQ(builder.getColorSource(), nullptr);
-}
-
 TEST(DisplayListColorSource, ColorConstructor) {
   DlColorColorSource source(SK_ColorRED);
 }

@@ -134,38 +134,39 @@ class VectorCuller final : public Culler {
   std::vector<int>::const_iterator end_;
 };
 
-void DisplayList::Dispatch(Dispatcher& ctx) const {
+void DisplayList::Dispatch(DlOpReceiver& receiver) const {
   uint8_t* ptr = storage_.get();
-  Dispatch(ctx, ptr, ptr + byte_count_, NopCuller::instance);
+  Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
 }
-void DisplayList::Dispatch(Dispatcher& ctx, const SkRect& cull_rect) const {
+void DisplayList::Dispatch(DlOpReceiver& receiver,
+                           const SkRect& cull_rect) const {
   if (cull_rect.isEmpty()) {
     return;
   }
   if (cull_rect.contains(bounds())) {
-    Dispatch(ctx);
+    Dispatch(receiver);
     return;
   }
   const DlRTree* rtree = this->rtree().get();
   FML_DCHECK(rtree != nullptr);
   if (rtree == nullptr) {
     FML_LOG(ERROR) << "dispatched with culling rect on DL with no rtree";
-    Dispatch(ctx);
+    Dispatch(receiver);
     return;
   }
   uint8_t* ptr = storage_.get();
   std::vector<int> rect_indices;
   rtree->search(cull_rect, &rect_indices);
   VectorCuller culler(rtree, rect_indices);
-  Dispatch(ctx, ptr, ptr + byte_count_, culler);
+  Dispatch(receiver, ptr, ptr + byte_count_, culler);
 }
 
-void DisplayList::Dispatch(Dispatcher& dispatcher,
+void DisplayList::Dispatch(DlOpReceiver& receiver,
                            uint8_t* ptr,
                            uint8_t* end,
                            Culler& culler) const {
   DispatchContext context = {
-      .dispatcher = dispatcher,
+      .receiver = receiver,
       .cur_index = 0,
       // next_render_index will be initialized by culler.init()
       .next_restore_index = std::numeric_limits<int>::max(),
@@ -299,9 +300,9 @@ void DisplayList::RenderTo(DisplayListBuilder* builder) const {
     return;
   }
   if (has_rtree()) {
-    Dispatch(builder->asDispatcher(), builder->GetLocalClipBounds());
+    Dispatch(builder->asReceiver(), builder->GetLocalClipBounds());
   } else {
-    Dispatch(builder->asDispatcher());
+    Dispatch(builder->asReceiver());
   }
 }
 

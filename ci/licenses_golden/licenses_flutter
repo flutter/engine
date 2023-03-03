@@ -729,8 +729,6 @@ ORIGIN: ../../../flutter/display_list/display_list_complexity_gl.h + ../../../fl
 ORIGIN: ../../../flutter/display_list/display_list_complexity_helper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_complexity_metal.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_complexity_metal.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_dispatcher.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_dispatcher.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_flags.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_flags.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_image.cc + ../../../flutter/LICENSE
@@ -760,6 +758,8 @@ ORIGIN: ../../../flutter/display_list/display_list_utils.h + ../../../flutter/LI
 ORIGIN: ../../../flutter/display_list/display_list_vertices.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_vertices.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/dl_canvas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_receiver.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_op_receiver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/types.h + ../../../flutter/LICENSE
@@ -3256,8 +3256,6 @@ FILE: ../../../flutter/display_list/display_list_complexity_gl.h
 FILE: ../../../flutter/display_list/display_list_complexity_helper.h
 FILE: ../../../flutter/display_list/display_list_complexity_metal.cc
 FILE: ../../../flutter/display_list/display_list_complexity_metal.h
-FILE: ../../../flutter/display_list/display_list_dispatcher.cc
-FILE: ../../../flutter/display_list/display_list_dispatcher.h
 FILE: ../../../flutter/display_list/display_list_flags.cc
 FILE: ../../../flutter/display_list/display_list_flags.h
 FILE: ../../../flutter/display_list/display_list_image.cc
@@ -3287,6 +3285,8 @@ FILE: ../../../flutter/display_list/display_list_utils.h
 FILE: ../../../flutter/display_list/display_list_vertices.cc
 FILE: ../../../flutter/display_list/display_list_vertices.h
 FILE: ../../../flutter/display_list/dl_canvas.h
+FILE: ../../../flutter/display_list/dl_op_receiver.cc
+FILE: ../../../flutter/display_list/dl_op_receiver.h
 FILE: ../../../flutter/display_list/skia/dl_sk_canvas.cc
 FILE: ../../../flutter/display_list/skia/dl_sk_canvas.h
 FILE: ../../../flutter/display_list/types.h
