@@ -849,8 +849,12 @@ void DisplayListStreamDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
-  startl() << "drawDisplayList(ID: " << display_list->unique_id() << ", bounds: " << display_list->bounds() << ");" << std::endl;
+    const sk_sp<DisplayList> display_list, SkScalar opacity) {
+  startl() << "drawDisplayList("
+           << "ID: " << display_list->unique_id() << ", "
+           << "bounds: " << display_list->bounds() << ", "
+           << "opacity: " << opacity
+           << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,
                                                SkScalar x,

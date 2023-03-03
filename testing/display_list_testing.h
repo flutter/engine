@@ -136,7 +136,8 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override;
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override;
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
                     SkScalar y) override;

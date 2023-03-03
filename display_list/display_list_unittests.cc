@@ -24,6 +24,11 @@
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
+
+DlOpReceiver& DisplayListBuilderTestingAccessor(DisplayListBuilder& builder) {
+  return builder.asReceiver();
+}
+
 namespace testing {
 
 static std::vector<testing::DisplayListInvocationGroup> allGroups =
@@ -32,7 +37,61 @@ static std::vector<testing::DisplayListInvocationGroup> allGroups =
 using ClipOp = DlCanvas::ClipOp;
 using PointMode = DlCanvas::PointMode;
 
-TEST(DisplayList, BuilderCanBeReused) {
+template <typename BaseT>
+class DisplayListTestBase : public BaseT {
+ public:
+  DisplayListTestBase() = default;
+
+  static DlOpReceiver& ToReceiver(DisplayListBuilder& builder) {
+    return DisplayListBuilderTestingAccessor(builder);
+  }
+
+  static sk_sp<DisplayList> Build(DisplayListInvocation& invocation) {
+    DisplayListBuilder builder;
+    invocation.Invoke(ToReceiver(builder));
+    return builder.Build();
+  }
+
+  static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
+    DisplayListBuilder builder;
+    DlOpReceiver& receiver =
+        DisplayListTestBase<::testing::Test>::ToReceiver(builder);
+    unsigned int op_count = 0;
+    size_t byte_count = 0;
+    for (size_t i = 0; i < allGroups.size(); i++) {
+      DisplayListInvocationGroup& group = allGroups[i];
+      size_t j = (i == g_index ? v_index : 0);
+      if (j >= group.variants.size()) {
+        continue;
+      }
+      DisplayListInvocation& invocation = group.variants[j];
+      op_count += invocation.op_count();
+      byte_count += invocation.raw_byte_count();
+      invocation.invoker(receiver);
+    }
+    sk_sp<DisplayList> dl = builder.Build();
+    std::string name;
+    if (g_index >= allGroups.size()) {
+      name = "Default";
+    } else {
+      name = allGroups[g_index].op_name;
+      if (v_index >= allGroups[g_index].variants.size()) {
+        name += " skipped";
+      } else {
+        name += " variant " + std::to_string(v_index + 1);
+      }
+    }
+    EXPECT_EQ(dl->op_count(false), op_count) << name;
+    EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
+    return dl;
+  }
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(DisplayListTestBase);
+};
+using DisplayListTest = DisplayListTestBase<::testing::Test>;
+
+TEST_F(DisplayListTest, BuilderCanBeReused) {
   DisplayListBuilder builder(kTestBounds);
   builder.DrawRect(kTestBounds, DlPaint());
   auto dl = builder.Build();
@@ -41,7 +100,7 @@ TEST(DisplayList, BuilderCanBeReused) {
   ASSERT_TRUE(dl->Equals(dl2));
 }
 
-TEST(DisplayList, BuilderBoundsTransformComparedToSkia) {
+TEST_F(DisplayListTest, BuilderBoundsTransformComparedToSkia) {
   const SkRect frame_rect = SkRect::MakeLTRB(10, 10, 100, 100);
   DisplayListBuilder builder(frame_rect);
   SkPictureRecorder recorder;
@@ -53,21 +112,21 @@ TEST(DisplayList, BuilderBoundsTransformComparedToSkia) {
   ASSERT_EQ(builder.GetTransform(), canvas->getTotalMatrix());
 }
 
-TEST(DisplayList, BuilderInitialClipBounds) {
+TEST_F(DisplayListTest, BuilderInitialClipBounds) {
   SkRect cull_rect = SkRect::MakeWH(100, 100);
   SkRect clip_bounds = SkRect::MakeWH(100, 100);
   DisplayListBuilder builder(cull_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, BuilderInitialClipBoundsNaN) {
+TEST_F(DisplayListTest, BuilderInitialClipBoundsNaN) {
   SkRect cull_rect = SkRect::MakeWH(SK_ScalarNaN, SK_ScalarNaN);
   SkRect clip_bounds = SkRect::MakeEmpty();
   DisplayListBuilder builder(cull_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, BuilderClipBoundsAfterClipRect) {
+TEST_F(DisplayListTest, BuilderClipBoundsAfterClipRect) {
   SkRect cull_rect = SkRect::MakeWH(100, 100);
   SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
@@ -76,7 +135,7 @@ TEST(DisplayList, BuilderClipBoundsAfterClipRect) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, BuilderClipBoundsAfterClipRRect) {
+TEST_F(DisplayListTest, BuilderClipBoundsAfterClipRRect) {
   SkRect cull_rect = SkRect::MakeWH(100, 100);
   SkRect clip_rect = SkRect::MakeLTRB(10, 10, 20, 20);
   SkRRect clip_rrect = SkRRect::MakeRectXY(clip_rect, 2, 2);
@@ -86,7 +145,7 @@ TEST(DisplayList, BuilderClipBoundsAfterClipRRect) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, BuilderClipBoundsAfterClipPath) {
+TEST_F(DisplayListTest, BuilderClipBoundsAfterClipPath) {
   SkRect cull_rect = SkRect::MakeWH(100, 100);
   SkPath clip_path = SkPath().addRect(10, 10, 15, 15).addRect(15, 15, 20, 20);
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 20, 20);
@@ -95,18 +154,18 @@ TEST(DisplayList, BuilderClipBoundsAfterClipPath) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, BuilderInitialClipBoundsNonZero) {
+TEST_F(DisplayListTest, BuilderInitialClipBoundsNonZero) {
   SkRect cull_rect = SkRect::MakeLTRB(10, 10, 100, 100);
   SkRect clip_bounds = SkRect::MakeLTRB(10, 10, 100, 100);
   DisplayListBuilder builder(cull_rect);
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, SingleOpSizes) {
+TEST_F(DisplayListTest, SingleOpSizes) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
       auto& invocation = group.variants[i];
-      sk_sp<DisplayList> dl = invocation.Build();
+      sk_sp<DisplayList> dl = Build(invocation);
       auto desc = group.op_name + "(variant " + std::to_string(i + 1) + ")";
       ASSERT_EQ(dl->op_count(false), invocation.op_count()) << desc;
       ASSERT_EQ(dl->bytes(false), invocation.byte_count()) << desc;
@@ -114,11 +173,11 @@ TEST(DisplayList, SingleOpSizes) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsNotEqualEmpty) {
+TEST_F(DisplayListTest, SingleOpDisplayListsNotEqualEmpty) {
   sk_sp<DisplayList> empty = DisplayListBuilder().Build();
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      sk_sp<DisplayList> dl = group.variants[i].Build();
+      sk_sp<DisplayList> dl = Build(group.variants[i]);
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " != empty)";
       if (group.variants[i].is_empty()) {
@@ -132,15 +191,16 @@ TEST(DisplayList, SingleOpDisplayListsNotEqualEmpty) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
+TEST_F(DisplayListTest, SingleOpDisplayListsRecapturedAreEqual) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
-      sk_sp<DisplayList> dl = group.variants[i].Build();
+      sk_sp<DisplayList> dl = Build(group.variants[i]);
       // Verify recapturing the replay of the display list is Equals()
       // when dispatching directly from the DL to another builder
-      DisplayListBuilder builder;
-      dl->Dispatch(builder.asReceiver());
-      sk_sp<DisplayList> copy = builder.Build();
+      DisplayListBuilder copy_builder;
+      DlOpReceiver& r = ToReceiver(copy_builder);
+      dl->Dispatch(r);
+      sk_sp<DisplayList> copy = copy_builder.Build();
       auto desc =
           group.op_name + "(variant " + std::to_string(i + 1) + " == copy)";
       ASSERT_EQ(copy->op_count(false), dl->op_count(false)) << desc;
@@ -154,13 +214,13 @@ TEST(DisplayList, SingleOpDisplayListsRecapturedAreEqual) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
+TEST_F(DisplayListTest, SingleOpDisplayListsCompareToEachOther) {
   for (auto& group : allGroups) {
     std::vector<sk_sp<DisplayList>> lists_a;
     std::vector<sk_sp<DisplayList>> lists_b;
     for (size_t i = 0; i < group.variants.size(); i++) {
-      lists_a.push_back(group.variants[i].Build());
-      lists_b.push_back(group.variants[i].Build());
+      lists_a.push_back(Build(group.variants[i]));
+      lists_b.push_back(Build(group.variants[i]));
     }
 
     for (size_t i = 0; i < lists_a.size(); i++) {
@@ -190,13 +250,13 @@ TEST(DisplayList, SingleOpDisplayListsCompareToEachOther) {
   }
 }
 
-TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
+TEST_F(DisplayListTest, SingleOpDisplayListsAreEqualWithOrWithoutRtree) {
   for (auto& group : allGroups) {
     for (size_t i = 0; i < group.variants.size(); i++) {
       DisplayListBuilder builder1(/*prepare_rtree=*/false);
       DisplayListBuilder builder2(/*prepare_rtree=*/true);
-      group.variants[i].invoker(builder1.asReceiver());
-      group.variants[i].invoker(builder2.asReceiver());
+      group.variants[i].invoker(ToReceiver(builder1));
+      group.variants[i].invoker(ToReceiver(builder2));
       sk_sp<DisplayList> dl1 = builder1.Build();
       sk_sp<DisplayList> dl2 = builder2.Build();
 
@@ -214,9 +274,9 @@ TEST(DisplayList, SingleOpDisplayListsAreEqualWhetherOrNotToPrepareRtree) {
   }
 }
 
-TEST(DisplayList, FullRotationsAreNop) {
+TEST_F(DisplayListTest, FullRotationsAreNop) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.rotate(0);
   receiver.rotate(360);
   receiver.rotate(720);
@@ -229,9 +289,9 @@ TEST(DisplayList, FullRotationsAreNop) {
   ASSERT_EQ(dl->op_count(true), 0u);
 }
 
-TEST(DisplayList, AllBlendModeNops) {
+TEST_F(DisplayListTest, AllBlendModeNops) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setBlendMode(DlBlendMode::kSrcOver);
   sk_sp<DisplayList> dl = builder.Build();
   ASSERT_EQ(dl->bytes(false), sizeof(DisplayList));
@@ -240,40 +300,7 @@ TEST(DisplayList, AllBlendModeNops) {
   ASSERT_EQ(dl->op_count(true), 0u);
 }
 
-static sk_sp<DisplayList> Build(size_t g_index, size_t v_index) {
-  DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
-  unsigned int op_count = 0;
-  size_t byte_count = 0;
-  for (size_t i = 0; i < allGroups.size(); i++) {
-    DisplayListInvocationGroup& group = allGroups[i];
-    size_t j = (i == g_index ? v_index : 0);
-    if (j >= group.variants.size()) {
-      continue;
-    }
-    DisplayListInvocation& invocation = group.variants[j];
-    op_count += invocation.op_count();
-    byte_count += invocation.raw_byte_count();
-    invocation.invoker(receiver);
-  }
-  sk_sp<DisplayList> dl = builder.Build();
-  std::string name;
-  if (g_index >= allGroups.size()) {
-    name = "Default";
-  } else {
-    name = allGroups[g_index].op_name;
-    if (v_index >= allGroups[g_index].variants.size()) {
-      name += " skipped";
-    } else {
-      name += " variant " + std::to_string(v_index + 1);
-    }
-  }
-  EXPECT_EQ(dl->op_count(false), op_count) << name;
-  EXPECT_EQ(dl->bytes(false), byte_count + sizeof(DisplayList)) << name;
-  return dl;
-}
-
-TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
+TEST_F(DisplayListTest, DisplayListsWithVaryingOpComparisons) {
   sk_sp<DisplayList> default_dl = Build(allGroups.size(), 0);
   ASSERT_TRUE(default_dl->Equals(*default_dl)) << "Default == itself";
   for (size_t gi = 0; gi < allGroups.size(); gi++) {
@@ -306,7 +333,7 @@ TEST(DisplayList, DisplayListsWithVaryingOpComparisons) {
   }
 }
 
-TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
+TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
   SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
   SkRect save_bounds = SkRect::MakeWH(100, 100);
   SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
@@ -332,7 +359,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // No tricky stuff, just verifying drawing a rect produces rect bounds
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.drawRect(rect);
     receiver.restore();
@@ -343,7 +370,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Now checking that a normal color filter still produces rect bounds
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setColorFilter(&base_color_filter);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
@@ -376,7 +403,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // cull rect of the DisplayListBuilder when it encounters a
     // save layer that modifies an unbounded region
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setColorFilter(&alpha_color_filter);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
@@ -390,7 +417,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Verifying that the save layer bounds are not relevant
     // to the behavior in the previous example
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setColorFilter(&alpha_color_filter);
     receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
@@ -404,7 +431,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Making sure hiding a ColorFilter as an ImageFilter will
     // generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     DlColorFilterImageFilter color_filter_image_filter(base_color_filter);
     receiver.setImageFilter(&color_filter_image_filter);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
@@ -419,7 +446,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Making sure hiding a problematic ColorFilter as an ImageFilter
     // will generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
     receiver.setImageFilter(&color_filter_image_filter);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
@@ -433,7 +460,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Same as above (ImageFilter hiding ColorFilter) with no save bounds
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
     receiver.setImageFilter(&color_filter_image_filter);
     receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
@@ -447,7 +474,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Testing behavior with an unboundable blend mode
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setBlendMode(DlBlendMode::kClear);
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setBlendMode(DlBlendMode::kSrcOver);
@@ -460,7 +487,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   {
     // Same as previous with no save bounds
     DisplayListBuilder builder(build_bounds);
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setBlendMode(DlBlendMode::kClear);
     receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
     receiver.setBlendMode(DlBlendMode::kSrcOver);
@@ -471,7 +498,7 @@ TEST(DisplayList, DisplayListSaveLayerBoundsWithAlphaFilter) {
   }
 }
 
-TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
+TEST_F(DisplayListTest, NestedOpCountMetricsSameAsSkPicture) {
   SkPictureRecorder recorder;
   recorder.beginRecording(SkRect::MakeWH(150, 100));
   SkCanvas* canvas = recorder.getRecordingCanvas();
@@ -492,7 +519,7 @@ TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
   ASSERT_EQ(picture->approximateOpCount(true), 36);
 
   DisplayListBuilder builder(SkRect::MakeWH(150, 100));
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   for (int y = 10; y <= 60; y += 10) {
     for (int x = 10; x <= 60; x += 10) {
       receiver.setColor(((x + y) % 20) == 10 ? SK_ColorRED : SK_ColorBLUE);
@@ -500,7 +527,7 @@ TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
     }
   }
   DisplayListBuilder outer_builder(SkRect::MakeWH(150, 100));
-  DlOpReceiver& outer_receiver = outer_builder.asReceiver();
+  DlOpReceiver& outer_receiver = ToReceiver(outer_builder);
   outer_receiver.drawDisplayList(builder.Build());
 
   auto display_list = outer_builder.Build();
@@ -513,7 +540,7 @@ TEST(DisplayList, NestedOpCountMetricsSameAsSkPicture) {
             static_cast<int>(display_list->op_count(true)));
 }
 
-TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
+TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
   // SkM44 constructor takes row-major order
   SkM44 sk_matrix = SkM44(
       // clang-format off
@@ -526,7 +553,7 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
 
   {  // First test ==
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     // receiver.transformFullPerspective takes row-major order
     receiver.transformFullPerspective(
         // clang-format off
@@ -545,7 +572,7 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
   }
   {  // Next test !=
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     // receiver.transformFullPerspective takes row-major order
     receiver.transformFullPerspective(
         // clang-format off
@@ -564,9 +591,9 @@ TEST(DisplayList, DisplayListFullPerspectiveTransformHandling) {
   }
 }
 
-TEST(DisplayList, DisplayListTransformResetHandling) {
+TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.scale(20.0, 20.0);
   receiver.transformReset();
   auto list = builder.Build();
@@ -577,7 +604,7 @@ TEST(DisplayList, DisplayListTransformResetHandling) {
   ASSERT_TRUE(canvas->getTotalMatrix().isIdentity());
 }
 
-TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
+TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
   auto run_tests = [](const std::string& name,
                       void build(DlOpReceiver & receiver), bool expect_for_op,
                       bool expect_with_kSrc) {
@@ -585,7 +612,7 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
       // First test is the draw op, by itself
       // (usually supports group opacity)
       DisplayListBuilder builder;
-      DlOpReceiver& receiver = builder.asReceiver();
+      DlOpReceiver& receiver = ToReceiver(builder);
       build(receiver);
       auto display_list = builder.Build();
       EXPECT_EQ(display_list->can_apply_group_opacity(), expect_for_op)
@@ -597,7 +624,7 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
       // Second test i the draw op with kSrc,
       // (usually fails group opacity)
       DisplayListBuilder builder;
-      DlOpReceiver& receiver = builder.asReceiver();
+      DlOpReceiver& receiver = ToReceiver(builder);
       receiver.setBlendMode(DlBlendMode::kSrc);
       build(receiver);
       auto display_list = builder.Build();
@@ -677,9 +704,9 @@ TEST(DisplayList, SingleOpsMightSupportGroupOpacityWithOrWithoutBlendMode) {
 #undef RUN_TESTS
 }
 
-TEST(DisplayList, OverlappingOpsDoNotSupportGroupOpacity) {
+TEST_F(DisplayListTest, OverlappingOpsDoNotSupportGroupOpacity) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   for (int i = 0; i < 10; i++) {
     receiver.drawRect(SkRect::MakeXYWH(i * 10, 0, 30, 30));
   }
@@ -687,9 +714,9 @@ TEST(DisplayList, OverlappingOpsDoNotSupportGroupOpacity) {
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithOverlappingChidren) {
+TEST_F(DisplayListTest, SaveLayerFalseSupportsGroupOpacityOverlappingChidren) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   for (int i = 0; i < 10; i++) {
     receiver.drawRect(SkRect::MakeXYWH(i * 10, 0, 30, 30));
@@ -699,9 +726,9 @@ TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithOverlappingChidren) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithOverlappingChidren) {
+TEST_F(DisplayListTest, SaveLayerTrueSupportsGroupOpacityOverlappingChidren) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   for (int i = 0; i < 10; i++) {
     receiver.drawRect(SkRect::MakeXYWH(i * 10, 0, 30, 30));
@@ -711,9 +738,9 @@ TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithOverlappingChidren) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
+TEST_F(DisplayListTest, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setBlendMode(DlBlendMode::kSrc);
   receiver.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   receiver.drawRect({0, 0, 10, 10});
@@ -722,9 +749,9 @@ TEST(DisplayList, SaveLayerFalseWithSrcBlendSupportsGroupOpacity) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
+TEST_F(DisplayListTest, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setBlendMode(DlBlendMode::kSrc);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.drawRect({0, 0, 10, 10});
@@ -733,9 +760,9 @@ TEST(DisplayList, SaveLayerTrueWithSrcBlendDoesNotSupportGroupOpacity) {
   EXPECT_FALSE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
+TEST_F(DisplayListTest, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   receiver.setBlendMode(DlBlendMode::kSrc);
   receiver.drawRect({0, 0, 10, 10});
@@ -744,9 +771,9 @@ TEST(DisplayList, SaveLayerFalseSupportsGroupOpacityWithChildSrcBlend) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
+TEST_F(DisplayListTest, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setBlendMode(DlBlendMode::kSrc);
   receiver.drawRect({0, 0, 10, 10});
@@ -755,9 +782,9 @@ TEST(DisplayList, SaveLayerTrueSupportsGroupOpacityWithChildSrcBlend) {
   EXPECT_TRUE(display_list->can_apply_group_opacity());
 }
 
-TEST(DisplayList, SaveLayerBoundsSnapshotsImageFilter) {
+TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.drawRect({50, 50, 100, 100});
   // This image filter should be ignored since it was not set before saveLayer
@@ -794,13 +821,13 @@ class SaveLayerOptionsExpector : public virtual DlOpReceiver,
   int save_layer_count_ = 0;
 };
 
-TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerOneSimpleOpInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.drawRect({10, 10, 20, 20});
@@ -810,13 +837,13 @@ TEST(DisplayList, SaveLayerOneSimpleOpSupportsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerNoAttributesSupportsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerNoAttributesInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kNoAttributes.with_can_distribute_opacity();
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   receiver.drawRect({10, 10, 20, 20});
   receiver.restore();
@@ -825,12 +852,12 @@ TEST(DisplayList, SaveLayerNoAttributesSupportsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerTwoOverlappingOpsDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.drawRect({10, 10, 20, 20});
@@ -841,7 +868,7 @@ TEST(DisplayList, SaveLayerTwoOverlappingOpsPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
+TEST_F(DisplayListTest, NestedSaveLayersMightInheritOpacity) {
   SaveLayerOptions expected1 =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptions expected2 = SaveLayerOptions::kWithAttributes;
@@ -850,7 +877,7 @@ TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
   SaveLayerOptionsExpector expector({expected1, expected2, expected3});
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
@@ -865,7 +892,7 @@ TEST(DisplayList, NestedSaveLayersMightSupportOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 3);
 }
 
-TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
+TEST_F(DisplayListTest, NestedSaveLayersCanBothSupportOpacityOptimization) {
   SaveLayerOptions expected1 =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptions expected2 =
@@ -873,7 +900,7 @@ TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
   SaveLayerOptionsExpector expector({expected1, expected2});
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
@@ -885,12 +912,12 @@ TEST(DisplayList, NestedSaveLayersCanBothSupportOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 2);
 }
 
-TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.setImageFilter(&kTestBlurImageFilter1);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
@@ -902,12 +929,12 @@ TEST(DisplayList, SaveLayerImageFilterPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.setColorFilter(&kTestMatrixColorFilter1);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
@@ -919,12 +946,12 @@ TEST(DisplayList, SaveLayerColorFilterPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerSrcBlendDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.setBlendMode(DlBlendMode::kSrc);
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
@@ -936,13 +963,13 @@ TEST(DisplayList, SaveLayerSrcBlendPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   SaveLayerOptions expected =
       SaveLayerOptions::kWithAttributes.with_can_distribute_opacity();
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setImageFilter(&kTestBlurImageFilter1);
@@ -953,12 +980,12 @@ TEST(DisplayList, SaveLayerImageFilterOnChildSupportsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setColorFilter(&kTestMatrixColorFilter1);
@@ -969,12 +996,12 @@ TEST(DisplayList, SaveLayerColorFilterOnChildPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
+TEST_F(DisplayListTest, SaveLayerSrcBlendOnChildDoesNotInheritOpacity) {
   SaveLayerOptions expected = SaveLayerOptions::kWithAttributes;
   SaveLayerOptionsExpector expector(expected);
 
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setBlendMode(DlBlendMode::kSrc);
@@ -985,7 +1012,7 @@ TEST(DisplayList, SaveLayerSrcBlendOnChildPreventsOpacityOptimization) {
   EXPECT_EQ(expector.save_layer_count(), 1);
 }
 
-TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
+TEST_F(DisplayListTest, FlutterSvgIssue661BoundsWereEmpty) {
   // See https://github.com/dnfield/flutter_svg/issues/661
 
   SkPath path1;
@@ -1111,9 +1138,9 @@ TEST(DisplayList, FlutterSvgIssue661BoundsWereEmpty) {
   EXPECT_EQ(display_list->bytes(), sizeof(DisplayList) + 352u);
 }
 
-TEST(DisplayList, TranslateAffectsCurrentTransform) {
+TEST_F(DisplayListTest, TranslateAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.translate(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Translate(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
@@ -1130,9 +1157,9 @@ TEST(DisplayList, TranslateAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, ScaleAffectsCurrentTransform) {
+TEST_F(DisplayListTest, ScaleAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.scale(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Scale(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
@@ -1149,9 +1176,9 @@ TEST(DisplayList, ScaleAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, RotateAffectsCurrentTransform) {
+TEST_F(DisplayListTest, RotateAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.rotate(12.3);
   SkMatrix matrix = SkMatrix::RotateDeg(12.3);
   SkM44 m44 = SkM44(matrix);
@@ -1168,9 +1195,9 @@ TEST(DisplayList, RotateAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, SkewAffectsCurrentTransform) {
+TEST_F(DisplayListTest, SkewAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.skew(12.3, 14.5);
   SkMatrix matrix = SkMatrix::Skew(12.3, 14.5);
   SkM44 m44 = SkM44(matrix);
@@ -1187,9 +1214,9 @@ TEST(DisplayList, SkewAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, TransformAffectsCurrentTransform) {
+TEST_F(DisplayListTest, TransformAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.transform2DAffine(3, 0, 12.3,  //
                              1, 5, 14.5);
   SkMatrix matrix = SkMatrix::MakeAll(3, 0, 12.3,  //
@@ -1209,9 +1236,9 @@ TEST(DisplayList, TransformAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, FullTransformAffectsCurrentTransform) {
+TEST_F(DisplayListTest, FullTransformAffectsCurrentTransform) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.transformFullPerspective(3, 0, 4, 12.3,  //
                                     1, 5, 3, 14.5,  //
                                     0, 0, 7, 16.2,  //
@@ -1236,9 +1263,9 @@ TEST(DisplayList, FullTransformAffectsCurrentTransform) {
   ASSERT_EQ(cur_matrix, matrix);
 }
 
-TEST(DisplayList, ClipRectAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipRectAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   receiver.clipRect(clip_bounds, ClipOp::kIntersect, false);
 
@@ -1275,9 +1302,9 @@ TEST(DisplayList, ClipRectAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipRectDoAAAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipRectDoAAAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
   receiver.clipRect(clip_bounds, ClipOp::kIntersect, true);
@@ -1315,9 +1342,9 @@ TEST(DisplayList, ClipRectDoAAAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
+TEST_F(DisplayListTest, ClipRectAffectsClipBoundsWithMatrix) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds_1 = SkRect::MakeLTRB(0, 0, 10, 10);
   SkRect clip_bounds_2 = SkRect::MakeLTRB(10, 10, 20, 20);
   receiver.save();
@@ -1335,9 +1362,9 @@ TEST(DisplayList, ClipRectAffectsClipBoundsWithMatrix) {
   receiver.restore();
 }
 
-TEST(DisplayList, ClipRRectAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipRRectAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   SkRRect clip = SkRRect::MakeRectXY(clip_bounds, 3, 2);
   receiver.clipRRect(clip, ClipOp::kIntersect, false);
@@ -1375,9 +1402,9 @@ TEST(DisplayList, ClipRRectAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipRRectDoAAAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipRRectDoAAAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   SkRect clip_expanded_bounds = SkRect::MakeLTRB(10, 11, 21, 26);
   SkRRect clip = SkRRect::MakeRectXY(clip_bounds, 3, 2);
@@ -1416,9 +1443,9 @@ TEST(DisplayList, ClipRRectDoAAAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
+TEST_F(DisplayListTest, ClipRRectAffectsClipBoundsWithMatrix) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds_1 = SkRect::MakeLTRB(0, 0, 10, 10);
   SkRect clip_bounds_2 = SkRect::MakeLTRB(10, 10, 20, 20);
   SkRRect clip1 = SkRRect::MakeRectXY(clip_bounds_1, 3, 2);
@@ -1439,9 +1466,9 @@ TEST(DisplayList, ClipRRectAffectsClipBoundsWithMatrix) {
   receiver.restore();
 }
 
-TEST(DisplayList, ClipPathAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipPathAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
   receiver.clipPath(clip, ClipOp::kIntersect, false);
@@ -1479,9 +1506,9 @@ TEST(DisplayList, ClipPathAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipPathDoAAAffectsClipBounds) {
+TEST_F(DisplayListTest, ClipPathDoAAAffectsClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   SkRect clip_expanded_bounds = SkRect::MakeLTRB(8, 9, 23, 28);
   receiver.clipPath(clip, ClipOp::kIntersect, true);
@@ -1519,9 +1546,9 @@ TEST(DisplayList, ClipPathDoAAAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
+TEST_F(DisplayListTest, ClipPathAffectsClipBoundsWithMatrix) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect clip_bounds = SkRect::MakeLTRB(0, 0, 10, 10);
   SkPath clip1 = SkPath().addCircle(2.5, 2.5, 2.5).addCircle(7.5, 7.5, 2.5);
   SkPath clip2 = SkPath().addCircle(12.5, 12.5, 2.5).addCircle(17.5, 17.5, 2.5);
@@ -1541,9 +1568,9 @@ TEST(DisplayList, ClipPathAffectsClipBoundsWithMatrix) {
   receiver.restore();
 }
 
-TEST(DisplayList, DiffClipRectDoesNotAffectClipBounds) {
+TEST_F(DisplayListTest, DiffClipRectDoesNotAffectClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRect diff_clip = SkRect::MakeLTRB(0, 0, 15, 15);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   receiver.clipRect(clip_bounds, ClipOp::kIntersect, false);
@@ -1559,9 +1586,9 @@ TEST(DisplayList, DiffClipRectDoesNotAffectClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, DiffClipRRectDoesNotAffectClipBounds) {
+TEST_F(DisplayListTest, DiffClipRRectDoesNotAffectClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkRRect diff_clip = SkRRect::MakeRectXY({0, 0, 15, 15}, 1, 1);
   SkRect clip_bounds = SkRect::MakeLTRB(10.2, 11.3, 20.4, 25.7);
   SkRRect clip = SkRRect::MakeRectXY({10.2, 11.3, 20.4, 25.7}, 3, 2);
@@ -1578,9 +1605,9 @@ TEST(DisplayList, DiffClipRRectDoesNotAffectClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, DiffClipPathDoesNotAffectClipBounds) {
+TEST_F(DisplayListTest, DiffClipPathDoesNotAffectClipBounds) {
   DisplayListBuilder builder;
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkPath diff_clip = SkPath().addRect({0, 0, 15, 15});
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
@@ -1597,10 +1624,10 @@ TEST(DisplayList, DiffClipPathDoesNotAffectClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), initial_destination_bounds);
 }
 
-TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
+TEST_F(DisplayListTest, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
   SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
   DisplayListBuilder builder(cull_rect);
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   clip.setFillType(SkPathFillType::kInverseWinding);
   receiver.clipPath(clip, ClipOp::kIntersect, false);
@@ -1609,10 +1636,10 @@ TEST(DisplayList, ClipPathWithInvertFillTypeDoesNotAffectClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), cull_rect);
 }
 
-TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
+TEST_F(DisplayListTest, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
   SkRect cull_rect = SkRect::MakeLTRB(0, 0, 100.0, 100.0);
   DisplayListBuilder builder(cull_rect);
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   SkPath clip = SkPath().addCircle(10.2, 11.3, 2).addCircle(20.4, 25.7, 2);
   clip.setFillType(SkPathFillType::kInverseWinding);
   SkRect clip_bounds = SkRect::MakeLTRB(8.2, 9.3, 22.4, 27.7);
@@ -1622,12 +1649,12 @@ TEST(DisplayList, DiffClipPathWithInvertFillTypeAffectsClipBounds) {
   ASSERT_EQ(builder.GetDestinationClipBounds(), clip_bounds);
 }
 
-TEST(DisplayList, FlatDrawPointsProducesBounds) {
+TEST_F(DisplayListTest, FlatDrawPointsProducesBounds) {
   SkPoint horizontal_points[2] = {{10, 10}, {20, 10}};
   SkPoint vertical_points[2] = {{10, 10}, {10, 20}};
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.drawPoints(PointMode::kPolygon, 2, horizontal_points);
     SkRect bounds = builder.Build()->bounds();
     EXPECT_TRUE(bounds.contains(10, 10));
@@ -1636,7 +1663,7 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
   }
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.drawPoints(PointMode::kPolygon, 2, vertical_points);
     SkRect bounds = builder.Build()->bounds();
     EXPECT_TRUE(bounds.contains(10, 10));
@@ -1645,14 +1672,14 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
   }
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.drawPoints(PointMode::kPoints, 1, horizontal_points);
     SkRect bounds = builder.Build()->bounds();
     EXPECT_TRUE(bounds.contains(10, 10));
   }
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setStrokeWidth(2);
     receiver.drawPoints(PointMode::kPolygon, 2, horizontal_points);
     SkRect bounds = builder.Build()->bounds();
@@ -1662,7 +1689,7 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
   }
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setStrokeWidth(2);
     receiver.drawPoints(PointMode::kPolygon, 2, vertical_points);
     SkRect bounds = builder.Build()->bounds();
@@ -1672,7 +1699,7 @@ TEST(DisplayList, FlatDrawPointsProducesBounds) {
   }
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.setStrokeWidth(2);
     receiver.drawPoints(PointMode::kPoints, 1, horizontal_points);
     SkRect bounds = builder.Build()->bounds();
@@ -1698,9 +1725,9 @@ static void test_rtree(const sk_sp<const DlRTree>& rtree,
   }
 }
 
-TEST(DisplayList, RTreeOfSimpleScene) {
+TEST_F(DisplayListTest, RTreeOfSimpleScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.drawRect({10, 10, 20, 20});
   receiver.drawRect({50, 50, 60, 60});
   auto display_list = builder.Build();
@@ -1726,9 +1753,9 @@ TEST(DisplayList, RTreeOfSimpleScene) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
-TEST(DisplayList, RTreeOfSaveRestoreScene) {
+TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.drawRect({10, 10, 20, 20});
   receiver.save();
   receiver.drawRect({50, 50, 60, 60});
@@ -1756,7 +1783,7 @@ TEST(DisplayList, RTreeOfSaveRestoreScene) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
-TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
+TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
   auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
@@ -1791,15 +1818,15 @@ TEST(DisplayList, RTreeOfSaveLayerFilterScene) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
-TEST(DisplayList, NestedDisplayListRTreesAreSparse) {
+TEST_F(DisplayListTest, NestedDisplayListRTreesAreSparse) {
   DisplayListBuilder nested_dl_builder(/**prepare_rtree=*/true);
-  DlOpReceiver& nested_dl_receiver = nested_dl_builder.asReceiver();
+  DlOpReceiver& nested_dl_receiver = ToReceiver(nested_dl_builder);
   nested_dl_receiver.drawRect({10, 10, 20, 20});
   nested_dl_receiver.drawRect({50, 50, 60, 60});
   auto nested_display_list = nested_dl_builder.Build();
 
   DisplayListBuilder builder(/**prepare_rtree=*/true);
-  DlOpReceiver& receiver = builder.asReceiver();
+  DlOpReceiver& receiver = ToReceiver(builder);
   receiver.drawDisplayList(nested_display_list);
   auto display_list = builder.Build();
 
@@ -1813,17 +1840,17 @@ TEST(DisplayList, NestedDisplayListRTreesAreSparse) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
-TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
+TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairs) {
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.drawRect({10, 10, 20, 20});
     receiver.save();  // This save op is unnecessary
     receiver.drawRect({50, 50, 60, 60});
     receiver.restore();
 
     DisplayListBuilder builder2;
-    DlOpReceiver& receiver2 = builder2.asReceiver();
+    DlOpReceiver& receiver2 = ToReceiver(builder2);
     receiver2.drawRect({10, 10, 20, 20});
     receiver2.drawRect({50, 50, 60, 60});
     ASSERT_TRUE(DisplayListsEQ_Verbose(builder.Build(), builder2.Build()));
@@ -1831,7 +1858,7 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
 
   {
     DisplayListBuilder builder;
-    DlOpReceiver& receiver = builder.asReceiver();
+    DlOpReceiver& receiver = ToReceiver(builder);
     receiver.drawRect({10, 10, 20, 20});
     receiver.save();
     receiver.translate(1.0, 1.0);
@@ -1844,7 +1871,7 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
     receiver.restore();
 
     DisplayListBuilder builder2;
-    DlOpReceiver& receiver2 = builder2.asReceiver();
+    DlOpReceiver& receiver2 = ToReceiver(builder2);
     receiver2.drawRect({10, 10, 20, 20});
     receiver2.save();
     receiver2.translate(1.0, 1.0);
@@ -1854,9 +1881,9 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairs) {
   }
 }
 
-TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
+TEST_F(DisplayListTest, CollapseMultipleNestedSaveRestore) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.save();
@@ -1870,7 +1897,7 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.translate(10, 10);
   receiver2.scale(2, 2);
@@ -1882,9 +1909,9 @@ TEST(DisplayList, CollapseMultipleNestedSaveRestore) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
+TEST_F(DisplayListTest, CollapseNestedSaveAndSaveLayerRestore) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   receiver1.drawRect({0, 0, 100, 100});
@@ -1894,7 +1921,7 @@ TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.saveLayer(nullptr, SaveLayerOptions::kNoAttributes);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.scale(2, 2);
@@ -1904,7 +1931,7 @@ TEST(DisplayList, CollapseNestedSaveAndSaveLayerRestore) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
+TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   SkRect build_bounds = SkRect::MakeLTRB(-100, -100, 200, 200);
   SkRect rect = SkRect::MakeLTRB(30, 30, 70, 70);
   // clang-format off
@@ -1959,9 +1986,9 @@ TEST(DisplayList, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   }
 }
 
-TEST(DisplayList, TransformTriggersDeferredSave) {
+TEST_F(DisplayListTest, TransformTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transformFullPerspective(1, 0, 0, 10,   //
@@ -1979,7 +2006,7 @@ TEST(DisplayList, TransformTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.transformFullPerspective(1, 0, 0, 10,   //
                                      0, 1, 0, 100,  //
@@ -1999,9 +2026,9 @@ TEST(DisplayList, TransformTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, Transform2DTriggersDeferredSave) {
+TEST_F(DisplayListTest, Transform2DTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transform2DAffine(0, 1, 12, 1, 0, 33);
@@ -2011,7 +2038,7 @@ TEST(DisplayList, Transform2DTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.transform2DAffine(0, 1, 12, 1, 0, 33);
   receiver2.drawRect({0, 0, 100, 100});
@@ -2021,9 +2048,9 @@ TEST(DisplayList, Transform2DTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, TransformPerspectiveTriggersDeferredSave) {
+TEST_F(DisplayListTest, TransformPerspectiveTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transformFullPerspective(0, 1, 0, 12,  //
@@ -2036,7 +2063,7 @@ TEST(DisplayList, TransformPerspectiveTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.transformFullPerspective(0, 1, 0, 12,  //
                                      1, 0, 0, 33,  //
@@ -2049,9 +2076,9 @@ TEST(DisplayList, TransformPerspectiveTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, ResetTransformTriggersDeferredSave) {
+TEST_F(DisplayListTest, ResetTransformTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transformReset();
@@ -2061,7 +2088,7 @@ TEST(DisplayList, ResetTransformTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.transformReset();
   receiver2.drawRect({0, 0, 100, 100});
@@ -2071,9 +2098,9 @@ TEST(DisplayList, ResetTransformTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, SkewTriggersDeferredSave) {
+TEST_F(DisplayListTest, SkewTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.skew(10, 10);
@@ -2083,7 +2110,7 @@ TEST(DisplayList, SkewTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.skew(10, 10);
   receiver2.drawRect({0, 0, 100, 100});
@@ -2093,9 +2120,9 @@ TEST(DisplayList, SkewTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, TranslateTriggersDeferredSave) {
+TEST_F(DisplayListTest, TranslateTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.translate(10, 10);
@@ -2105,7 +2132,7 @@ TEST(DisplayList, TranslateTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.translate(10, 10);
   receiver2.drawRect({0, 0, 100, 100});
@@ -2115,9 +2142,9 @@ TEST(DisplayList, TranslateTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, ScaleTriggersDeferredSave) {
+TEST_F(DisplayListTest, ScaleTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.scale(0.5, 0.5);
@@ -2127,7 +2154,7 @@ TEST(DisplayList, ScaleTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.scale(0.5, 0.5);
   receiver2.drawRect({0, 0, 100, 100});
@@ -2137,9 +2164,9 @@ TEST(DisplayList, ScaleTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, ClipRectTriggersDeferredSave) {
+TEST_F(DisplayListTest, ClipRectTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), ClipOp::kIntersect,
@@ -2155,7 +2182,7 @@ TEST(DisplayList, ClipRectTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.clipRect(SkRect::MakeLTRB(0, 0, 100, 100), ClipOp::kIntersect,
                      true);
@@ -2171,9 +2198,9 @@ TEST(DisplayList, ClipRectTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, ClipRRectTriggersDeferredSave) {
+TEST_F(DisplayListTest, ClipRRectTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.clipRRect(kTestRRect, ClipOp::kIntersect, true);
@@ -2189,7 +2216,7 @@ TEST(DisplayList, ClipRRectTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.clipRRect(kTestRRect, ClipOp::kIntersect, true);
 
@@ -2205,9 +2232,9 @@ TEST(DisplayList, ClipRRectTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, ClipPathTriggersDeferredSave) {
+TEST_F(DisplayListTest, ClipPathTriggersDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.clipPath(kTestPath1, ClipOp::kIntersect, true);
@@ -2222,7 +2249,7 @@ TEST(DisplayList, ClipPathTriggersDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.save();
   receiver2.clipPath(kTestPath1, ClipOp::kIntersect, true);
   receiver2.drawRect({0, 0, 100, 100});
@@ -2237,9 +2264,9 @@ TEST(DisplayList, ClipPathTriggersDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPTranslateDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPTranslateDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.translate(0, 0);
@@ -2250,7 +2277,7 @@ TEST(DisplayList, NOPTranslateDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2258,9 +2285,9 @@ TEST(DisplayList, NOPTranslateDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPScaleDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPScaleDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.scale(1.0, 1.0);
@@ -2271,7 +2298,7 @@ TEST(DisplayList, NOPScaleDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2279,9 +2306,9 @@ TEST(DisplayList, NOPScaleDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPRotationDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPRotationDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.rotate(360);
@@ -2292,7 +2319,7 @@ TEST(DisplayList, NOPRotationDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2300,9 +2327,9 @@ TEST(DisplayList, NOPRotationDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPSkewDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPSkewDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.skew(0, 0);
@@ -2313,7 +2340,7 @@ TEST(DisplayList, NOPSkewDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2321,9 +2348,9 @@ TEST(DisplayList, NOPSkewDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPTransformDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPTransformDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transformFullPerspective(1, 0, 0, 0,  //
@@ -2341,7 +2368,7 @@ TEST(DisplayList, NOPTransformDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2349,9 +2376,9 @@ TEST(DisplayList, NOPTransformDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPTransform2DDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPTransform2DDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.transform2DAffine(1, 0, 0, 0, 1, 0);
@@ -2362,7 +2389,7 @@ TEST(DisplayList, NOPTransform2DDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2370,10 +2397,10 @@ TEST(DisplayList, NOPTransform2DDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
   {
     DisplayListBuilder builder1;
-    DlOpReceiver& receiver1 = builder1.asReceiver();
+    DlOpReceiver& receiver1 = ToReceiver(builder1);
     receiver1.save();
     receiver1.save();
     receiver1.transformFullPerspective(1, 0, 0, 0,  //
@@ -2387,7 +2414,7 @@ TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    DlOpReceiver& receiver2 = builder2.asReceiver();
+    DlOpReceiver& receiver2 = ToReceiver(builder2);
     receiver2.drawRect({0, 0, 100, 100});
     receiver2.drawRect({0, 0, 100, 100});
     auto display_list2 = builder2.Build();
@@ -2397,7 +2424,7 @@ TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
 
   {
     DisplayListBuilder builder1;
-    DlOpReceiver& receiver1 = builder1.asReceiver();
+    DlOpReceiver& receiver1 = ToReceiver(builder1);
     receiver1.save();
     receiver1.save();
     receiver1.transformFullPerspective(1, 0, 0, 0,  //
@@ -2412,7 +2439,7 @@ TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
     auto display_list1 = builder1.Build();
 
     DisplayListBuilder builder2;
-    DlOpReceiver& receiver2 = builder2.asReceiver();
+    DlOpReceiver& receiver2 = ToReceiver(builder2);
     receiver2.save();
     receiver2.transformReset();
     receiver2.drawRect({0, 0, 100, 100});
@@ -2425,9 +2452,9 @@ TEST(DisplayList, NOPTransformFullPerspectiveDoesNotTriggerDeferredSave) {
   }
 }
 
-TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
+TEST_F(DisplayListTest, NOPClipDoesNotTriggerDeferredSave) {
   DisplayListBuilder builder1;
-  DlOpReceiver& receiver1 = builder1.asReceiver();
+  DlOpReceiver& receiver1 = ToReceiver(builder1);
   receiver1.save();
   receiver1.save();
   receiver1.clipRect(SkRect::MakeLTRB(0, SK_ScalarNaN, SK_ScalarNaN, 0),
@@ -2439,7 +2466,7 @@ TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
   auto display_list1 = builder1.Build();
 
   DisplayListBuilder builder2;
-  DlOpReceiver& receiver2 = builder2.asReceiver();
+  DlOpReceiver& receiver2 = ToReceiver(builder2);
   receiver2.drawRect({0, 0, 100, 100});
   receiver2.drawRect({0, 0, 100, 100});
   auto display_list2 = builder2.Build();
@@ -2447,7 +2474,7 @@ TEST(DisplayList, NOPClipDoesNotTriggerDeferredSave) {
   ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
 }
 
-TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
+TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
   auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
@@ -2484,9 +2511,9 @@ TEST(DisplayList, RTreeOfClippedSaveLayerFilterScene) {
   test_rtree(rtree, {19, 19, 51, 51}, rects, {0, 1});
 }
 
-TEST(DisplayList, RTreeRenderCulling) {
+TEST_F(DisplayListTest, RTreeRenderCulling) {
   DisplayListBuilder main_builder(true);
-  DlOpReceiver& main_receiver = main_builder.asReceiver();
+  DlOpReceiver& main_receiver = ToReceiver(main_builder);
   main_receiver.drawRect({0, 0, 10, 10});
   main_receiver.drawRect({20, 0, 30, 10});
   main_receiver.drawRect({0, 20, 10, 30});
@@ -2500,7 +2527,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     auto expected = expected_builder.Build();
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
   }
@@ -2509,12 +2536,12 @@ TEST(DisplayList, RTreeRenderCulling) {
     SkRect cull_rect = {9, 9, 19, 19};
 
     DisplayListBuilder expected_builder;
-    DlOpReceiver& expected_receiver = expected_builder.asReceiver();
+    DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 0, 10, 10});
     auto expected = expected_builder.Build();
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
   }
@@ -2523,12 +2550,12 @@ TEST(DisplayList, RTreeRenderCulling) {
     SkRect cull_rect = {11, 9, 21, 19};
 
     DisplayListBuilder expected_builder;
-    DlOpReceiver& expected_receiver = expected_builder.asReceiver();
+    DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 0, 30, 10});
     auto expected = expected_builder.Build();
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
   }
@@ -2537,12 +2564,12 @@ TEST(DisplayList, RTreeRenderCulling) {
     SkRect cull_rect = {9, 11, 19, 21};
 
     DisplayListBuilder expected_builder;
-    DlOpReceiver& expected_receiver = expected_builder.asReceiver();
+    DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({0, 20, 10, 30});
     auto expected = expected_builder.Build();
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
   }
@@ -2551,12 +2578,12 @@ TEST(DisplayList, RTreeRenderCulling) {
     SkRect cull_rect = {11, 11, 21, 21};
 
     DisplayListBuilder expected_builder;
-    DlOpReceiver& expected_receiver = expected_builder.asReceiver();
+    DlOpReceiver& expected_receiver = ToReceiver(expected_builder);
     expected_receiver.drawRect({20, 20, 30, 30});
     auto expected = expected_builder.Build();
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), expected));
   }
@@ -2565,7 +2592,7 @@ TEST(DisplayList, RTreeRenderCulling) {
     SkRect cull_rect = {9, 9, 21, 21};
 
     DisplayListBuilder culling_builder(cull_rect);
-    main->RenderTo(&culling_builder);
+    main->Dispatch(ToReceiver(culling_builder), cull_rect);
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
   }

@@ -130,6 +130,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
             LayerStateStack::kCallerCanApplyOpacity);
 
   int opacity_alpha = 0x7F;
+  SkScalar opacity = opacity_alpha / 255.0;
   SkPoint opacity_offset = SkPoint::Make(10, 10);
   auto opacity_layer =
       std::make_shared<OpacityLayer>(opacity_alpha, opacity_offset);
@@ -150,19 +151,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
         expected_builder.Save();
         {
           expected_builder.Translate(layer_offset.fX, layer_offset.fY);
-          expected_builder.SaveLayer(&picture_bounds,
-                                     &DlPaint().setAlpha(opacity_alpha));
-          /* display_list contents */ {  //
-            expected_builder.DrawDisplayList(child_display_list);
-          }
-          expected_builder.Restore();
-          // When the Builder stores a DrawDisplayList operation with
-          // an opacity < 1.0, it pushes a SaveLayer/Restore around the
-          // DrawDisplayList op, and then synchronizes the attributes
-          // back to their previous values so as not to confuse anyone
-          // using the stateful methods.
-          // Thus, this out-of-the-blue setColor back to black...
-          expected_builder.asReceiver().setColor(DlColor::kBlack());
+          expected_builder.DrawDisplayList(child_display_list, opacity);
         }
         expected_builder.Restore();
       }

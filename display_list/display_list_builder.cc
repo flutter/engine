@@ -1077,18 +1077,12 @@ void DisplayListBuilder::DrawAtlas(const sk_sp<DlImage>& atlas,
 void DisplayListBuilder::DrawDisplayList(const sk_sp<DisplayList> display_list,
                                          SkScalar opacity) {
   DlPaint current_paint = current_;
-  if (opacity < SK_Scalar1) {
-    SaveLayer(&display_list->bounds(), &DlPaint().setOpacity(opacity));
-  }
-  Push<DrawDisplayListOp>(0, 1, display_list);
-  if (opacity < SK_Scalar1) {
-    Restore();
-    // Not really necessary if the developer is interacting with us via
-    // our attribute-state-less DlCanvas methods, but this avoids surprises
-    // for those who may have been using the stateful Dispatcher methods.
-    SetAttributesFromPaint(current_paint,
-                           DisplayListOpFlags::kSaveLayerWithPaintFlags);
-  }
+  Push<DrawDisplayListOp>(0, 1, display_list, opacity);
+  // Not really necessary if the developer is interacting with us via
+  // our attribute-state-less DlCanvas methods, but this avoids surprises
+  // for those who may have been using the stateful Dispatcher methods.
+  SetAttributesFromPaint(current_paint,
+                         DisplayListOpFlags::kSaveLayerWithPaintFlags);
 
   const SkRect bounds = display_list->bounds();
   switch (accumulator()->type()) {

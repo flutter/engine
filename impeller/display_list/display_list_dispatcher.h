@@ -203,7 +203,8 @@ class DisplayListDispatcher final : public flutter::DlOpReceiver {
                  bool render_with_attributes) override;
 
   // |flutter::DlOpReceiver|
-  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list) override;
+  void drawDisplayList(const sk_sp<flutter::DisplayList> display_list,
+                       SkScalar opacity) override;
 
   // |flutter::DlOpReceiver|
   void drawTextBlob(const sk_sp<SkTextBlob> blob,

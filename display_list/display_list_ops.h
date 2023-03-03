@@ -1041,19 +1041,22 @@ struct DrawAtlasCulledOp final : DrawAtlasBaseOp {
 struct DrawDisplayListOp final : DrawOpBase {
   static const auto kType = DisplayListOpType::kDrawDisplayList;
 
-  explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list)
-      : display_list(std::move(display_list)) {}
+  explicit DrawDisplayListOp(const sk_sp<DisplayList> display_list,
+                             SkScalar opacity)
+      : opacity(opacity), display_list(std::move(display_list)) {}
 
+  SkScalar opacity;
   const sk_sp<DisplayList> display_list;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
-      ctx.receiver.drawDisplayList(display_list);
+      ctx.receiver.drawDisplayList(display_list, opacity);
     }
   }
 
   DisplayListCompare equals(const DrawDisplayListOp* other) const {
-    return display_list->Equals(other->display_list)
+    return (opacity == other->opacity &&
+            display_list->Equals(other->display_list))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
   }

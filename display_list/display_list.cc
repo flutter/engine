@@ -138,6 +138,7 @@ void DisplayList::Dispatch(DlOpReceiver& receiver) const {
   uint8_t* ptr = storage_.get();
   Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
 }
+
 void DisplayList::Dispatch(DlOpReceiver& receiver,
                            const SkRect& cull_rect) const {
   if (cull_rect.isEmpty()) {
@@ -293,17 +294,6 @@ static bool CompareOps(uint8_t* ptrA,
     }
   }
   return true;
-}
-
-void DisplayList::RenderTo(DisplayListBuilder* builder) const {
-  if (!builder) {
-    return;
-  }
-  if (has_rtree()) {
-    Dispatch(builder->asReceiver(), builder->GetLocalClipBounds());
-  } else {
-    Dispatch(builder->asReceiver());
-  }
 }
 
 void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {

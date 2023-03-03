@@ -272,11 +272,11 @@ struct DisplayListInvocation {
 
   void Invoke(DlOpReceiver& builder) { invoker(builder); }
 
-  sk_sp<DisplayList> Build() {
-    DisplayListBuilder builder;
-    invoker(builder.asReceiver());
-    return builder.Build();
-  }
+  // sk_sp<DisplayList> Build() {
+  //   DisplayListBuilder builder;
+  //   invoker(builder.asReceiver());
+  //   return builder.Build();
+  // }
 };
 
 struct DisplayListInvocationGroup {

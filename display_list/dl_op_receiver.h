@@ -239,7 +239,8 @@ class DlOpReceiver {
                          DlImageSampling sampling,
                          const SkRect* cull_rect,
                          bool render_with_attributes) = 0;
-  virtual void drawDisplayList(const sk_sp<DisplayList> display_list) = 0;
+  virtual void drawDisplayList(const sk_sp<DisplayList> display_list,
+                               SkScalar opacity = SK_Scalar1) = 0;
   virtual void drawTextBlob(const sk_sp<SkTextBlob> blob,
                             SkScalar x,
                             SkScalar y) = 0;

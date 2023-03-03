@@ -247,9 +247,10 @@ void DisplayListCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
                      safe_paint(render_with_attributes));
 }
 void DisplayListCanvasDispatcher::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   int save_count = canvas_->save();
-  display_list->RenderTo(canvas_, opacity());
+  display_list->RenderTo(canvas_, opacity * this->opacity());
   canvas_->restoreToCount(save_count);
 }
 void DisplayListCanvasDispatcher::drawTextBlob(const sk_sp<SkTextBlob> blob,

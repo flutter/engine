@@ -610,11 +610,15 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   if (IsComplex()) {
     return;
   }
   GLHelper helper(Ceiling() - CurrentComplexityScore());
+  if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
+    helper.saveLayer(nullptr, SaveLayerOptions::kWithAttributes, nullptr);
+  }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());
 }

@@ -41,11 +41,6 @@ class DisplayListBuilder final : public virtual DlCanvas,
 
   ~DisplayListBuilder();
 
-  // This method exposes the internal stateful DlOpReceiver implementation
-  // of the DisplayListBuilder, primarily for testing purposes. Its use
-  // is discouraged in nearly every other case.
-  DlOpReceiver& asReceiver() { return *this; }
-
   // |DlCanvas|
   SkISize GetBaseLayerSize() const override;
   // |DlCanvas|
@@ -235,6 +230,17 @@ class DisplayListBuilder final : public virtual DlCanvas,
   sk_sp<DisplayList> Build();
 
  private:
+  // This method exposes the internal stateful DlOpReceiver implementation
+  // of the DisplayListBuilder, primarily for testing purposes. Its use
+  // is obsolete and forbidden in every other case and is only shared to a
+  // pair of "friend" accessors in the benchmark/unittest files.
+  DlOpReceiver& asReceiver() { return *this; }
+
+  friend DlOpReceiver& DisplayListBuilderBenchmarkAccessor(
+      DisplayListBuilder& builder);
+  friend DlOpReceiver& DisplayListBuilderTestingAccessor(
+      DisplayListBuilder& builder);
+
   void SetAttributesFromPaint(const DlPaint& paint,
                               const DisplayListAttributeFlags flags);
 
@@ -446,8 +452,9 @@ class DisplayListBuilder final : public virtual DlCanvas,
                  bool render_with_attributes) override;
 
   // |DlOpReceiver|
-  void drawDisplayList(const sk_sp<DisplayList> display_list) override {
-    DrawDisplayList(display_list, SK_Scalar1);
+  void drawDisplayList(const sk_sp<DisplayList> display_list,
+                       SkScalar opacity) override {
+    DrawDisplayList(display_list, opacity);
   }
   // |DlOpReceiver|
   void drawTextBlob(const sk_sp<SkTextBlob> blob,

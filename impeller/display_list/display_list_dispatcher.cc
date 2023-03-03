@@ -1205,16 +1205,38 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
 
 // |flutter::DlOpReceiver|
 void DisplayListDispatcher::drawDisplayList(
-    const sk_sp<flutter::DisplayList> display_list) {
-  int saveCount = canvas_.GetSaveCount();
-  Paint savePaint = paint_;
-  Matrix saveMatrix = initial_matrix_;
-  paint_ = Paint();
+    const sk_sp<flutter::DisplayList> display_list,
+    SkScalar opacity) {
+  // Save all values that must remain untouched after the operation.
+  Paint saved_paint = paint_;
+  Matrix saved_initial_matrix = initial_matrix_;
+  int restore_count = canvas_.GetSaveCount();
+
+  // Establish a new baseline for interpreting the new DL.
+  // Matrix and clip are left untouched, the current
+  // transform is saved as the new base matrix, and paint
+  // values are reset to defaults.
   initial_matrix_ = canvas_.GetCurrentTransformation();
+  paint_ = Paint();
+
+  // Handle passed opacity in the most brute-force way by using
+  // a SaveLayer. If the display_list is able to inherit the
+  // opacity, this could also be handled by modulating all of its
+  // attribute settings (for example, color), by the indicated
+  // opacity.
+  if (opacity < SK_Scalar1) {
+    Paint save_paint;
+    save_paint.color = Color(0, 0, 0, opacity);
+    canvas_.SaveLayer(save_paint);
+  }
+
   display_list->Dispatch(*this);
-  paint_ = savePaint;
-  initial_matrix_ = saveMatrix;
-  canvas_.RestoreToCount(saveCount);
+
+  // Restore all saved state back to what it was before we interpreted
+  // the display_list
+  canvas_.RestoreToCount(restore_count);
+  initial_matrix_ = saved_initial_matrix;
+  paint_ = saved_paint;
 }
 
 // |flutter::DlOpReceiver|
