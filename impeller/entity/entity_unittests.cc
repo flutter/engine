@@ -85,7 +85,7 @@ class TestPassDelegate final : public EntityPassDelegate {
 
  private:
   const std::optional<Rect> coverage_;
-  bool collapse_;
+  const bool collapse_;
 };
 
 auto CreatePassWithRectPath(Rect rect,
