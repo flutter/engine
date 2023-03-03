@@ -6,7 +6,6 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_color_source.h"
 #include "flutter/display_list/display_list_ops.h"
 #include "fml/logging.h"
@@ -1136,8 +1135,8 @@ void DisplayListBuilder::DrawShadow(const SkPath& path,
       ? Push<DrawShadowTransparentOccluderOp>(0, 1, path, color, elevation, dpr)
       : Push<DrawShadowOp>(0, 1, path, color, elevation, dpr);
 
-  SkRect shadow_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
-      path, elevation, dpr, GetTransform());
+  SkRect shadow_bounds =
+      DlCanvas::ComputeShadowBounds(path, elevation, dpr, GetTransform());
   AccumulateOpBounds(shadow_bounds, kDrawShadowFlags);
   UpdateLayerOpacityCompatibility(false);
 }

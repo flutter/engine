@@ -6,11 +6,11 @@
 
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
+#include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_surface_provider.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
@@ -3313,8 +3313,8 @@ TEST_F(DisplayListCanvas, DrawShadow) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
-                                                    elevation, false, 1.0);
+            DlSkCanvasDispatcher::DrawShadow(canvas, path, color, elevation,
+                                             false, 1.0);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawShadow(path, color, elevation, false, 1.0);
@@ -3339,8 +3339,8 @@ TEST_F(DisplayListCanvas, DrawShadowTransparentOccluder) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
-                                                    elevation, true, 1.0);
+            DlSkCanvasDispatcher::DrawShadow(canvas, path, color, elevation,
+                                             true, 1.0);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawShadow(path, color, elevation, true, 1.0);
@@ -3365,8 +3365,8 @@ TEST_F(DisplayListCanvas, DrawShadowDpr) {
   CanvasCompareTester::RenderAll(  //
       TestParameters(
           [=](SkCanvas* canvas, const SkPaint& paint) {  //
-            DisplayListCanvasDispatcher::DrawShadow(canvas, path, color,
-                                                    elevation, false, 1.5);
+            DlSkCanvasDispatcher::DrawShadow(canvas, path, color, elevation,
+                                             false, 1.5);
           },
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawShadow(path, color, elevation, false, 1.5);

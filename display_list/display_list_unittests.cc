@@ -11,10 +11,10 @@
 #include "flutter/display_list/display_list.h"
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/display_list/display_list_paint.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
@@ -569,7 +569,7 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
-    auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+    auto dispatcher = DlSkCanvasDispatcher(surface->getCanvas());
     display_list->Dispatch(dispatcher);
     SkM44 dl_matrix = canvas->getLocalToDevice();
     ASSERT_EQ(sk_matrix, dl_matrix);
@@ -591,7 +591,7 @@ TEST_F(DisplayListTest, DisplayListFullPerspectiveTransformHandling) {
     SkCanvas* canvas = surface->getCanvas();
     // We can't use DlSkCanvas.DrawDisplayList as that method protects
     // the canvas against mutations from the display list being drawn.
-    auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+    auto dispatcher = DlSkCanvasDispatcher(surface->getCanvas());
     display_list->Dispatch(dispatcher);
     SkM44 dl_matrix = canvas->getLocalToDevice();
     ASSERT_NE(sk_matrix, dl_matrix);
@@ -609,7 +609,7 @@ TEST_F(DisplayListTest, DisplayListTransformResetHandling) {
   SkCanvas* canvas = surface->getCanvas();
   // We can't use DlSkCanvas.DrawDisplayList as that method protects
   // the canvas against mutations from the display list being drawn.
-  auto dispatcher = DisplayListCanvasDispatcher(surface->getCanvas());
+  auto dispatcher = DlSkCanvasDispatcher(surface->getCanvas());
   display_list->Dispatch(dispatcher);
   ASSERT_TRUE(canvas->getTotalMatrix().isIdentity());
 }

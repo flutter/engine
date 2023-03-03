@@ -29,7 +29,6 @@
 ../../../flutter/build
 ../../../flutter/ci
 ../../../flutter/common/README.md
-../../../flutter/display_list/display_list_canvas_unittests.cc
 ../../../flutter/display_list/display_list_color_filter_unittests.cc
 ../../../flutter/display_list/display_list_color_source_unittests.cc
 ../../../flutter/display_list/display_list_color_unittests.cc
@@ -44,6 +43,7 @@
 ../../../flutter/display_list/display_list_unittests.cc
 ../../../flutter/display_list/display_list_utils_unittests.cc
 ../../../flutter/display_list/display_list_vertices_unittests.cc
+../../../flutter/display_list/dl_rendering_unittests.cc
 ../../../flutter/display_list/testing
 ../../../flutter/docs
 ../../../flutter/examples

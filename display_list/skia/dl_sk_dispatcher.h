@@ -19,11 +19,10 @@ namespace flutter {
 ///
 /// Receives all methods on Dispatcher and sends them to an SkCanvas
 ///
-class DisplayListCanvasDispatcher : public virtual DlOpReceiver,
-                                    public SkPaintDispatchHelper {
+class DlSkCanvasDispatcher : public virtual DlOpReceiver,
+                             public SkPaintDispatchHelper {
  public:
-  explicit DisplayListCanvasDispatcher(SkCanvas* canvas,
-                                       SkScalar opacity = SK_Scalar1)
+  explicit DlSkCanvasDispatcher(SkCanvas* canvas, SkScalar opacity = SK_Scalar1)
       : SkPaintDispatchHelper(opacity),
         canvas_(canvas),
         original_transform_(canvas->getLocalToDevice()) {}
@@ -106,11 +105,6 @@ class DisplayListCanvasDispatcher : public virtual DlOpReceiver,
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override;
-
-  static SkRect ComputeShadowBounds(const SkPath& path,
-                                    float elevation,
-                                    SkScalar dpr,
-                                    const SkMatrix& ctm);
 
   static void DrawShadow(SkCanvas* canvas,
                          const SkPath& path,

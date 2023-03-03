@@ -16,8 +16,6 @@ source_set("display_list") {
     "display_list_blend_mode.h",
     "display_list_builder.cc",
     "display_list_builder.h",
-    "display_list_canvas_dispatcher.cc",
-    "display_list_canvas_dispatcher.h",
     "display_list_color.h",
     "display_list_color_filter.cc",
     "display_list_color_filter.h",
@@ -57,11 +55,14 @@ source_set("display_list") {
     "display_list_utils.h",
     "display_list_vertices.cc",
     "display_list_vertices.h",
+    "dl_canvas.cc",
     "dl_canvas.h",
     "dl_op_receiver.cc",
     "dl_op_receiver.h",
     "skia/dl_sk_canvas.cc",
     "skia/dl_sk_canvas.h",
+    "skia/dl_sk_dispatcher.cc",
+    "skia/dl_sk_dispatcher.h",
     "types.h",
   ]
 
@@ -130,7 +131,7 @@ if (enable_unittests) {
   executable("display_list_rendertests") {
     testonly = true
 
-    sources = [ "display_list_canvas_unittests.cc" ]
+    sources = [ "dl_rendering_unittests.cc" ]
 
     deps = [
       ":display_list",

@@ -121,7 +121,7 @@ class ComplexityCalculatorHelper
   void setAntiAlias(bool aa) override { current_paint_.setAntiAlias(aa); }
 
   void setStyle(DlDrawStyle style) override {
-    current_paint_.setStyle(ToSk(style));
+    current_paint_.setDrawStyle(style);
   }
 
   void setStrokeWidth(SkScalar width) override {
@@ -211,7 +211,7 @@ class ComplexityCalculatorHelper
 
   inline bool IsAntiAliased() { return current_paint_.isAntiAlias(); }
   inline bool IsHairline() { return current_paint_.getStrokeWidth() == 0.0f; }
-  inline SkPaint::Style Style() { return current_paint_.getStyle(); }
+  inline DlDrawStyle DrawStyle() { return current_paint_.getDrawStyle(); }
   inline bool IsComplex() { return is_complex_; }
   inline unsigned int Ceiling() { return ceiling_; }
   inline unsigned int CurrentComplexityScore() { return complexity_score_; }
@@ -256,7 +256,7 @@ class ComplexityCalculatorHelper
   virtual unsigned int BatchedComplexity() = 0;
 
  private:
-  SkPaint current_paint_;
+  DlPaint current_paint_;
 
   // If we exceed the ceiling (defaults to the largest number representable
   // by unsigned int), then set the is_complex_ bool and we no longer

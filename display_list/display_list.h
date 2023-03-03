@@ -27,8 +27,8 @@
 //
 // Other files include various class definitions for dealing with display
 // lists, such as:
-// display_list_canvas.h: classes to interact between SkCanvas and DisplayList
-//                        (SkCanvas->DisplayList adapter and vice versa)
+// skia/dl_sk_*.h: classes to interact between SkCanvas and DisplayList
+//                 (SkCanvas->DisplayList adapter and vice versa)
 //
 // display_list_utils.h: various utility classes to ease implementing
 //                       a DlOpReceiver, including NOP implementations of
@@ -47,8 +47,7 @@
 // A DisplayList can be read back by implementing the DlOpReceiver virtual
 // methods (with help from some of the classes in the utils file) and
 // passing an instance to the Dispatch() method, or it can be rendered
-// to Skia using a DisplayListCanvasDispatcher or simply by passing an
-// SkCanvas pointer to its renderTo() method.
+// to Skia using a DlSkCanvasDispatcher.
 //
 // The mechanism is inspired by the SkLiteDL class that is not directly
 // supported by Skia, but has been recommended as a basis for custom

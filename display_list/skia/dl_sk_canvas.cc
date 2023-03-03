@@ -4,7 +4,7 @@
 
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
+#include "flutter/display_list/skia/dl_sk_dispatcher.h"
 
 namespace flutter {
 
@@ -375,7 +375,7 @@ void DlSkCanvasAdapter::DrawDisplayList(const sk_sp<DisplayList> display_list,
     Save();
   }
 
-  DisplayListCanvasDispatcher dispatcher(delegate_, opacity);
+  DlSkCanvasDispatcher dispatcher(delegate_, opacity);
   if (display_list->has_rtree()) {
     display_list->Dispatch(dispatcher, delegate_->getLocalClipBounds());
   } else {
@@ -397,8 +397,8 @@ void DlSkCanvasAdapter::DrawShadow(const SkPath& path,
                                    const SkScalar elevation,
                                    bool transparent_occluder,
                                    SkScalar dpr) {
-  DisplayListCanvasDispatcher::DrawShadow(delegate_, path, color, elevation,
-                                          transparent_occluder, dpr);
+  DlSkCanvasDispatcher::DrawShadow(delegate_, path, color, elevation,
+                                   transparent_occluder, dpr);
 }
 
 void DlSkCanvasAdapter::Flush() {

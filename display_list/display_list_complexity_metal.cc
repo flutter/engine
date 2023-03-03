@@ -128,7 +128,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRect(
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // No real difference for AA with filled styles.
     unsigned int area = rect.width() * rect.height();
 
@@ -170,7 +170,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawOval(
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // With filled styles, there is no significant AA penalty.
     // m = 1/16000
     // c = 0
@@ -204,7 +204,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawCircle(
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // We can ignore pi here.
     unsigned int area = radius * radius;
     // m = 1/1300
@@ -244,7 +244,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawRRect(
   //
   // Expensive: All filled style, symmetric w/AA.
   bool expensive =
-      (Style() == SkPaint::Style::kFill_Style) ||
+      (DrawStyle() == DlDrawStyle::kFill) ||
       ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased());
 
   unsigned int complexity;
@@ -292,7 +292,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawDRRect(
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     unsigned int area = outer.width() * outer.height();
     if (outer.getType() == SkRRect::Type::kComplex_Type) {
       // m = 1/1000
@@ -374,7 +374,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::drawArc(
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kStroke_Style) {
+  if (DrawStyle() == DlDrawStyle::kStroke) {
     if (IsAntiAliased()) {
       // m = 1/8500
       // c = 16
