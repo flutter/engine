@@ -297,11 +297,10 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     if (!subpass->backdrop_filter_proc_.has_value() &&
         subpass->delegate_->CanCollapseIntoParentPass()) {
       // Directly render into the parent target and move on.
-      auto render_pass_result = pass_context.GetRenderPass(pass_depth);
       if (!subpass->OnRender(renderer, root_pass_size,
                              pass_context.GetRenderTarget(), position, position,
                              pass_depth, stencil_depth_, nullptr,
-                             render_pass_result)) {
+                             pass_context.GetRenderPass(pass_depth))) {
         return EntityPass::EntityResult::Failure();
       }
       return EntityPass::EntityResult::Skip();
