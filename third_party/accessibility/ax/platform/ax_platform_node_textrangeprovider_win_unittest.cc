@@ -17,6 +17,7 @@
 #include "base/win/scoped_bstr.h"
 #include "base/win/scoped_safearray.h"
 #include "base/win/scoped_variant.h"
+#include "third_party/icu/source/common/unicode/putil.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -159,7 +160,7 @@ namespace ui {
       EXPECT_HRESULT_SUCCEEDED(                                              \
           text_range_provider_found->GetText(-1, found_content.Receive()));  \
       if (ignore_case)                                                       \
-        EXPECT_EQ(0, _wcsicmp(found_content.Get(), find_string.Get()));      \
+        EXPECT_TRUE(StringCompareICU(found_content.Get(), find_string.Get()));           \
       else                                                                   \
         EXPECT_EQ(0, wcscmp(found_content.Get(), find_string.Get()));        \
     }                                                                        \
@@ -208,6 +209,14 @@ namespace ui {
   }
 
 #define DCHECK_EQ(a, b) BASE_DCHECK((a) == (b))
+
+static bool StringCompareICU(BSTR left, BSTR right) {
+  size_t start, length;
+  if (!StringSearch(reinterpret_cast<char16_t*>(left), reinterpret_cast<char16_t*>(right), &start, &length, true, false)) {
+    return false;
+  }
+  return start == 0 && length == wcslen(left);
+}
 
 static AXNodePosition::AXPositionInstance CreateTextPosition(
     const AXNode& anchor,
@@ -5095,7 +5104,9 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
-  Init(BuildTextDocument({"some text", "more text"},
+  // TODO (schectman): Figure out exactly where this should point to
+  u_setDataDirectory("C:/src/flutter/engine/src/out/host_debug_unopt");
+  Init(BuildTextDocument({"some text", "more text", "resum\xC3\xA9"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
 
@@ -5120,10 +5131,15 @@ TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
   EXPECT_UIA_FIND_TEXT(range, L"more text", false, owner);
   EXPECT_UIA_FIND_TEXT(range, L"MoRe TeXt", true, owner);
   EXPECT_UIA_FIND_TEXT(range, L"more", false, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"resum\xE9", false, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"resum\xC9", true, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"resume", true, owner);
+  EXPECT_UIA_FIND_TEXT(range, L"resumE", true, owner);
   // Test finding text that crosses a node boundary.
   EXPECT_UIA_FIND_TEXT(range, L"textmore", false, owner);
   // Test no match.
   EXPECT_UIA_FIND_TEXT_NO_MATCH(range, L"no match", false, owner);
+  EXPECT_UIA_FIND_TEXT_NO_MATCH(range, L"resume", false, owner);
 
   // Test if range returned is in expected anchor node.
   GetTextRangeProviderFromTextNode(range, root_node->children()[1]);

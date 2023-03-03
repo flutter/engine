@@ -15,6 +15,10 @@
 #include "ax/platform/ax_platform_tree_manager.h"
 #include "base/win/variant_vector.h"
 #include "flutter/fml/platform/win/wstring_conversion.h"
+#include "third_party/icu/source/i18n/unicode/usearch.h"
+
+// TODO(schectman)
+#include "flutter/fml/logging.h"
 
 #define UIA_VALIDATE_TEXTRANGEPROVIDER_CALL()                  \
   if (!GetOwner() || !GetOwner()->GetDelegate() || !start() || \
@@ -434,31 +438,53 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindAttributeRange(
   return S_OK;
 }
 
-static bool StringSearch(std::u16string& search_string,
-                         std::u16string& find_in,
+static bool StringSearchBasic(const std::u16string_view search_string, const std::u16string_view find_in, size_t* find_start, size_t* find_length, bool backwards) {
+  size_t index = backwards ? find_in.find_last_of(search_string) : find_in.find_first_of(search_string);
+  if (index == std::u16string::npos) {
+    return false;
+  }
+  *find_start = index;
+  *find_length = search_string.size();
+  return true;
+}
+
+bool StringSearch(std::u16string_view search_string,
+                         std::u16string_view find_in,
                          size_t* find_start,
                          size_t* find_length,
                          bool ignore_case,
                          bool backwards) {
-  if (ignore_case) {
-    auto const& ct = std::use_facet<std::ctype<char16_t>>(std::locale());
-    auto tolower = [&ct](char16_t c) { return ct.tolower(c); };
-    std::transform(search_string.begin(), search_string.end(),
-                   search_string.begin(), tolower);
-    std::transform(find_in.begin(), find_in.end(), find_in.begin(), tolower);
+  UErrorCode status = U_ZERO_ERROR;
+  FML_LOG(ERROR) << "Locale = " << uloc_getDefault();
+  UCollator* col = ucol_open(uloc_getDefault(), &status);
+  FML_LOG(ERROR) << "col = " << static_cast<void*>(col);
+  UStringSearch* search = usearch_openFromCollator(search_string.data(), search_string.size(), find_in.data(), find_in.size(), col, nullptr, &status);
+  if (!U_SUCCESS(status)) {
+    if (search) {
+      usearch_close(search);
+    }
+    return StringSearchBasic(search_string, find_in, find_start, find_length, backwards);
   }
-  size_t match_pos;
-  if (backwards) {
-    match_pos = find_in.rfind(search_string);
-  } else {
-    match_pos = find_in.find(search_string);
+  UCollator* collator = usearch_getCollator(search);
+  ucol_setStrength(collator, ignore_case ? UCOL_PRIMARY : UCOL_TERTIARY);
+  usearch_reset(search);
+  status = U_ZERO_ERROR;
+  usearch_setText(search, find_in.data(), find_in.size(), &status);
+  if (!U_SUCCESS(status)) {
+    if (search) {
+      usearch_close(search);
+    }
+    return StringSearchBasic(search_string, find_in, find_start, find_length, backwards);
   }
-  if (match_pos == std::u16string::npos) {
-    return false;
+  int32_t index = backwards ? usearch_last(search, &status) : usearch_first(search, &status);
+  bool match = false;
+  if (U_SUCCESS(status) && index != USEARCH_DONE) {
+    match = true;
+    *find_start = static_cast<size_t>(index);
+    *find_length = static_cast<size_t>(usearch_getMatchedLength(search));
   }
-  *find_start = match_pos;
-  *find_length = search_string.length();
-  return true;
+  usearch_close(search);
+  return match;
 }
 
 HRESULT AXPlatformNodeTextRangeProviderWin::FindText(
