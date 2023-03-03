@@ -1573,7 +1573,9 @@ enum ColorSpace {
   /// The sRGB color gamut.
   sRGB,
   /// A color space that is backwards compatible with sRGB but can represent
-  /// colors outside of that gamut with values outside of [0..1];
+  /// colors outside of that gamut with values outside of [0..1]. In order to
+  /// see the extended values a [ImageByteFormat] like
+  /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
 }
 
