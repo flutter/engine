@@ -249,7 +249,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
     final DomElement placeholder = flutterViewEmbedder.glassPaneShadow
@@ -265,7 +265,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isTrue);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isTrue);
 
     // The placeholder should be removed
