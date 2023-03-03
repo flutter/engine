@@ -124,8 +124,8 @@ class FlutterViewEmbedder {
   HostNode get glassPaneShadow => _glassPaneShadow;
   late HostNode _glassPaneShadow;
 
-  DomElement? get textEditingHostNode => _textEditingHostNode;
-  DomElement? _textEditingHostNode;
+  DomElement get textEditingHostNode => _textEditingHostNode;
+  late DomElement _textEditingHostNode;
 
   static const String defaultFontStyle = 'normal';
   static const String defaultFontWeight = 'normal';

@@ -468,8 +468,7 @@ void testMain() {
     });
 
     test('Syncs semantic state from framework', () {
-      expect(domDocument.activeElement, domDocument.body);
-      expect(appHostNode.ownerDocument?.activeElement, null);
+      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
 
       int changeCount = 0;
       int actionCount = 0;
@@ -493,7 +492,6 @@ void testMain() {
       final TextField textField =
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
 
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
       expect(textField.editableElement, strategy.domElement);
       expect(textField.activeEditableElement.getAttribute('aria-label'), 'greeting');
@@ -510,7 +508,6 @@ void testMain() {
           appHostNode.querySelector('flt-semantics[role="textbox"]')!;
 
       expect(strategy.domElement, null);
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, textBox);
       expect(textBox.getAttribute('aria-label'), 'farewell');
 
@@ -554,8 +551,7 @@ void testMain() {
     test(
         'Updates editing state when receiving framework messages from the text input channel',
         () {
-      expect(domDocument.activeElement, domDocument.body);
-      expect(appHostNode.ownerDocument?.activeElement, null);
+      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -599,8 +595,7 @@ void testMain() {
     });
 
     test('Gives up focus after DOM blur', () {
-      expect(domDocument.activeElement, domDocument.body);
-      expect(appHostNode.ownerDocument?.activeElement, null);
+      expect(appHostNode.ownerDocument?.activeElement, domDocument.body);
 
       strategy.enable(
         singlelineConfig,
@@ -615,14 +610,12 @@ void testMain() {
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
 
       expect(textField.editableElement, strategy.domElement);
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
       // The input should not refocus after blur.
       textField.activeEditableElement.blur();
       final DomElement textBox =
           appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, textBox);
 
       strategy.disable();
@@ -644,7 +637,6 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
@@ -658,7 +650,6 @@ void testMain() {
       // Focus is on the semantic object
       final DomElement textBox =
           appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, textBox);
     });
 
@@ -674,14 +665,12 @@ void testMain() {
         isFocused: true,
       );
       expect(strategy.domElement, isNotNull);
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
       // Blur the element without telling the framework.
       strategy.activeDomElement.blur();
       final DomElement textBox =
           appHostNode.querySelector('flt-semantics[role="textbox"]')!;
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, textBox);
 
       // The input will have focus after editing state is set and semantics updated.
@@ -700,7 +689,6 @@ void testMain() {
         value: 'hello',
         isFocused: true,
       );
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.disable();
@@ -718,8 +706,8 @@ void testMain() {
         isMultiline: true,
       );
 
-      final DomHTMLTextAreaElement textArea = strategy.domElement! as DomHTMLTextAreaElement;
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
+      final DomHTMLTextAreaElement textArea =
+          strategy.domElement! as DomHTMLTextAreaElement;
       expect(appHostNode.ownerDocument?.activeElement, strategy.domElement);
 
       strategy.enable(
@@ -734,7 +722,6 @@ void testMain() {
       final DomElement textBox =
           appHostNode.querySelector('flt-semantics[role="textbox"]')!;
 
-      expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
       expect(appHostNode.ownerDocument?.activeElement, textBox);
 
       strategy.disable();
@@ -798,7 +785,6 @@ void testMain() {
         createTwoFieldSemanticsForIos(tester, focusFieldId: 1);
 
         expect(tester.apply().length, 3);
-        expect(domDocument.activeElement, flutterViewEmbedder.glassPaneElement);
         expect(appHostNode.ownerDocument?.activeElement,
             tester.getTextField(1).editableElement);
         expect(strategy.domElement, tester.getTextField(1).editableElement);
