@@ -398,3 +398,24 @@ FlutterViewEmbedder? _flutterViewEmbedder;
 FlutterViewEmbedder ensureFlutterViewEmbedderInitialized() =>
     _flutterViewEmbedder ??=
         FlutterViewEmbedder(hostElement: configuration.hostElement);
+
+/// Creates a node to host text editing elements and applies a stylesheet
+/// to Flutter nodes that exist outside of the shadowDOM.
+DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
+  final DomElement domElement =
+      domDocument.createElement('flt-text-editing-host');
+  final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
+
+  styleElement.id = 'flt-text-editing-stylesheet';
+  root.appendChild(styleElement);
+  applyGlobalCssRulesToSheet(
+    styleElement.sheet! as DomCSSStyleSheet,
+    hasAutofillOverlay: browserHasAutofillOverlay(),
+    cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
+    defaultCssFont: defaultFont,
+  );
+
+  root.appendChild(domElement);
+
+  return domElement;
+}

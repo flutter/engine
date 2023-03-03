@@ -424,14 +424,14 @@ class TextField extends RoleManager {
         ..height = '${semanticsObject.rect!.height}px';
 
       if (semanticsObject.hasFocus) {
-        if (flutterViewEmbedder.glassPaneShadow.activeElement !=
+        if (domDocument.activeElement !=
             activeEditableElement) {
           semanticsObject.owner.addOneTimePostUpdateCallback(() {
             activeEditableElement.focus();
           });
         }
         SemanticsTextEditingStrategy.instance.activate(this);
-      } else if (flutterViewEmbedder.glassPaneShadow.activeElement ==
+      } else if (domDocument.activeElement ==
           activeEditableElement) {
         if (!isIosSafari) {
           SemanticsTextEditingStrategy.instance.deactivate(this);

@@ -19,10 +19,11 @@ import '../../matchers.dart';
 /// Gets the DOM host where the Flutter app is being rendered.
 ///
 /// This function returns the correct host for the flutter app under testing,
-/// so we don't have to hardcode domDocument across the test. (The host of a
-/// normal flutter app used to be domDocument, but now that the app is wrapped
-/// in a Shadow DOM, that's not the case anymore.)
-HostNode get appHostNode => flutterViewEmbedder.glassPaneShadow;
+/// so we don't have to hardcode domDocument across the test. The semantics
+/// tree has moved outside of the shadowDOM as a workaround for a password
+/// autofill bug on Chrome.
+/// Ref: https://github.com/flutter/flutter/issues/87735
+DomElement get appHostNode => flutterViewEmbedder.glassPaneElement;
 
 /// CSS style applied to the root of the semantics tree.
 // TODO(yjbanov): this should be handled internally by [expectSemanticsTree].

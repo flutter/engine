@@ -94,6 +94,8 @@ abstract class HostNode {
   /// See:
   /// * [Document.querySelectorAll](https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll)
   Iterable<DomElement> querySelectorAll(String selectors);
+
+  DomElement get renderHost;
 }
 
 /// A [HostNode] implementation, backed by a [DomShadowRoot].
@@ -112,10 +114,8 @@ class ShadowDomHostNode implements HostNode {
   ShadowDomHostNode(DomElement root, String defaultFont)
       : assert(root.isConnected ?? true,
             'The `root` of a ShadowDomHostNode must be connected to the Document object or a ShadowRoot.') {
-    final DomElement element =
-        domDocument.createElement('flt-render-host');
-    root.appendChild(element);
-    _shadow = element.attachShadow(<String, dynamic>{
+    root.appendChild(renderHost);
+    _shadow = renderHost.attachShadow(<String, dynamic>{
       'mode': 'open',
       // This needs to stay false to prevent issues like this:
       // - https://github.com/flutter/flutter/issues/85759
@@ -135,6 +135,9 @@ class ShadowDomHostNode implements HostNode {
   }
 
   late DomShadowRoot _shadow;
+
+  @override
+  final DomElement renderHost = domDocument.createElement('flt-render-host');
 
   @override
   DomElement? get activeElement => _shadow.activeElement;
@@ -193,6 +196,9 @@ class ElementHostNode implements HostNode {
   late DomElement _element;
 
   @override
+  final DomElement renderHost = domDocument.createElement('flt-render-host');
+
+  @override
   DomElement? get activeElement => _element.ownerDocument?.activeElement;
 
   @override
@@ -220,25 +226,6 @@ class ElementHostNode implements HostNode {
 
   @override
   void appendAll(Iterable<DomNode> nodes) => nodes.forEach(append);
-}
-
-DomElement createTextEditingHostNode(DomElement root, String defaultFont) {
-  final DomElement domElement =
-      domDocument.createElement('flt-text-editing-host');
-  final DomHTMLStyleElement styleElement = createDomHTMLStyleElement();
-
-  styleElement.id = 'flt-text-editing-stylesheet';
-  root.appendChild(styleElement);
-  applyGlobalCssRulesToSheet(
-    styleElement.sheet! as DomCSSStyleSheet,
-    hasAutofillOverlay: browserHasAutofillOverlay(),
-    cssSelectorPrefix: FlutterViewEmbedder.glassPaneTagName,
-    defaultCssFont: defaultFont,
-  );
-
-  root.appendChild(domElement);
-
-  return domElement;
 }
 
 // Applies the required global CSS to an incoming [DomCSSStyleSheet] `sheet`.
