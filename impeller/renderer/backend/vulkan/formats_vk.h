@@ -204,6 +204,8 @@ constexpr vk::SampleCountFlagBits ToVKSampleCount(SampleCount sample_count) {
     case SampleCount::kCount4:
       return vk::SampleCountFlagBits::e4;
   }
+
+  FML_UNREACHABLE();
 }
 
 constexpr vk::Filter ToVKSamplerMinMagFilter(MinMagFilter filter) {
@@ -541,6 +543,28 @@ constexpr uint32_t ToArrayLayerCount(TextureType type) {
       return 1u;
     case TextureType::kTextureCube:
       return 6u;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr vk::ImageViewType ToVKImageViewType(TextureType type) {
+  switch (type) {
+    case TextureType::kTexture2D:
+    case TextureType::kTexture2DMultisample:
+      return vk::ImageViewType::e2D;
+    case TextureType::kTextureCube:
+      return vk::ImageViewType::eCube;
+  }
+  FML_UNREACHABLE();
+}
+
+constexpr vk::ImageCreateFlags ToVKImageCreateFlags(TextureType type) {
+  switch (type) {
+    case TextureType::kTexture2D:
+    case TextureType::kTexture2DMultisample:
+      return {};
+    case TextureType::kTextureCube:
+      return vk::ImageCreateFlagBits::eCubeCompatible;
   }
   FML_UNREACHABLE();
 }

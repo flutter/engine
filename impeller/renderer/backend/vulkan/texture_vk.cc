@@ -4,6 +4,8 @@
 
 #include "impeller/renderer/backend/vulkan/texture_vk.h"
 
+#include "impeller/renderer/backend/vulkan/formats_vk.h"
+
 namespace impeller {
 
 TextureVK::TextureVK(TextureDescriptor desc,
@@ -114,7 +116,8 @@ bool TextureVK::SetLayout(vk::ImageLayout new_layout,
   image_barrier.subresourceRange.baseMipLevel = 0u;
   image_barrier.subresourceRange.levelCount = GetTextureDescriptor().mip_count;
   image_barrier.subresourceRange.baseArrayLayer = 0u;
-  image_barrier.subresourceRange.layerCount = 1u;
+  image_barrier.subresourceRange.layerCount =
+      ToArrayLayerCount(GetTextureDescriptor().type);
 
   buffer.pipelineBarrier(vk::PipelineStageFlagBits::eAllGraphics,  // src stage
                          vk::PipelineStageFlagBits::eAllGraphics,  // dst stage

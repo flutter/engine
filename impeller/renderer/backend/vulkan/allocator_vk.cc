@@ -215,6 +215,7 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
                            VmaAllocator allocator,
                            vk::Device device) {
     vk::ImageCreateInfo image_info;
+    image_info.flags = ToVKImageCreateFlags(desc.type);
     image_info.imageType = vk::ImageType::e2D;
     image_info.format = ToVKImageFormat(desc.format);
     image_info.extent = VkExtent3D{
@@ -266,12 +267,12 @@ class AllocatedTextureSourceVK final : public TextureSourceVK {
 
     vk::ImageViewCreateInfo view_create_info = {};
     view_create_info.image = image_;
-    view_create_info.viewType = vk::ImageViewType::e2D;
+    view_create_info.viewType = ToVKImageViewType(desc.type);
     view_create_info.format = image_info.format;
     view_create_info.subresourceRange.aspectMask =
         ToVKImageAspectFlags(desc.format);
     view_create_info.subresourceRange.levelCount = image_info.mipLevels;
-    view_create_info.subresourceRange.layerCount = 1u;
+    view_create_info.subresourceRange.layerCount = ToArrayLayerCount(desc.type);
 
     // Vulkan does not have an image format that is equivalent to
     // `MTLPixelFormatA8Unorm`, so we use `R8Unorm` instead. Given that the
