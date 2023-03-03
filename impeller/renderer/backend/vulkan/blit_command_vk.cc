@@ -204,10 +204,12 @@ bool BlitGenerateMipmapCommandVK::Encode(CommandEncoderVK& encoder) const {
     // offsets[0] is origin.
     blit.srcOffsets[1].x = size.width;
     blit.srcOffsets[1].y = size.height;
+    blit.srcOffsets[1].z = 1u;
 
     // offsets[0] is origin.
-    blit.dstOffsets[1].x = size.width >> mip_level;
-    blit.dstOffsets[1].y = size.height >> mip_level;
+    blit.dstOffsets[1].x = std::max<int32_t>(size.width >> mip_level, 1u);
+    blit.dstOffsets[1].y = std::max<int32_t>(size.height >> mip_level, 1u);
+    blit.dstOffsets[1].z = 1u;
 
     cmd.blitImage(image,                                 // src image
                   vk::ImageLayout::eTransferSrcOptimal,  // src layout
