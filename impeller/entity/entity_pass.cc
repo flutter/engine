@@ -419,8 +419,9 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(
-      context, render_target, reads_from_pass_texture_, collapsed_parent_pass);
+  InlinePassContext pass_context(context, render_target,
+                                 reads_from_pass_texture_,
+                                 std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
     return false;
   }
