@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:test/test.dart';
 import 'package:ui/src/engine/dom.dart';
 import 'package:ui/src/engine/embedder.dart';
-import 'package:ui/src/engine/host_node.dart';
 import 'package:ui/src/engine/semantics.dart';
 import 'package:ui/src/engine/util.dart';
 import 'package:ui/src/engine/vector_math.dart';
