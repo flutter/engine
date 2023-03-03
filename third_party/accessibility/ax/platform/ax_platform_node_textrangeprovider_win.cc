@@ -17,9 +17,6 @@
 #include "flutter/fml/platform/win/wstring_conversion.h"
 #include "third_party/icu/source/i18n/unicode/usearch.h"
 
-// TODO(schectman)
-#include "flutter/fml/logging.h"
-
 #define UIA_VALIDATE_TEXTRANGEPROVIDER_CALL()                  \
   if (!GetOwner() || !GetOwner()->GetDelegate() || !start() || \
       !start()->GetAnchor() || !end() || !end()->GetAnchor())  \
@@ -439,7 +436,7 @@ HRESULT AXPlatformNodeTextRangeProviderWin::FindAttributeRange(
 }
 
 static bool StringSearchBasic(const std::u16string_view search_string, const std::u16string_view find_in, size_t* find_start, size_t* find_length, bool backwards) {
-  size_t index = backwards ? find_in.find_last_of(search_string) : find_in.find_first_of(search_string);
+  size_t index = backwards ? find_in.rfind(search_string) : find_in.find(search_string);
   if (index == std::u16string::npos) {
     return false;
   }
@@ -455,9 +452,7 @@ bool StringSearch(std::u16string_view search_string,
                          bool ignore_case,
                          bool backwards) {
   UErrorCode status = U_ZERO_ERROR;
-  FML_LOG(ERROR) << "Locale = " << uloc_getDefault();
   UCollator* col = ucol_open(uloc_getDefault(), &status);
-  FML_LOG(ERROR) << "col = " << static_cast<void*>(col);
   UStringSearch* search = usearch_openFromCollator(search_string.data(), search_string.size(), find_in.data(), find_in.size(), col, nullptr, &status);
   if (!U_SUCCESS(status)) {
     if (search) {

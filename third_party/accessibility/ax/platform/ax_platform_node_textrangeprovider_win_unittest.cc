@@ -5104,8 +5104,7 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
-  // TODO (schectman): Figure out exactly where this should point to
-  u_setDataDirectory("C:/src/flutter/engine/src/out/host_debug_unopt");
+  u_setDataDirectory("./src/out/host_debug_unopt");
   Init(BuildTextDocument({"some text", "more text", "resum\xC3\xA9"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
