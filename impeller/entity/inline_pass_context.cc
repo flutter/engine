@@ -21,14 +21,14 @@ InlinePassContext::InlinePassContext(
     : context_(std::move(context)),
       render_target_(render_target),
       total_pass_reads_(pass_texture_reads),
-      collapsed_parent_pass_(collapsed_parent_pass.has_value()) {
+      is_collapsed_(collapsed_parent_pass.has_value()) {
   if (collapsed_parent_pass.has_value()) {
     pass_ = collapsed_parent_pass.value().pass;
   }
 }
 
 InlinePassContext::~InlinePassContext() {
-  if (!collapsed_parent_pass_) {
+  if (!is_collapsed_) {
     EndPass();
   }
 }

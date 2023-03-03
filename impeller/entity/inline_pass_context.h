@@ -40,7 +40,8 @@ class InlinePassContext {
   std::shared_ptr<RenderPass> pass_;
   uint32_t pass_count_ = 0;
   uint32_t total_pass_reads_ = 0;
-  bool collapsed_parent_pass_ = false;
+  // Whether this context is collapsed into a parent entity pass.
+  bool is_collapsed_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(InlinePassContext);
 };
