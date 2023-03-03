@@ -16,9 +16,6 @@ in vec2 v_uv;
 out vec4 frag_color;
 
 void main() {
-  // vec2 scale_perspective = v_source_glyph_size / frag_info.atlas_size;
-  // vec2 offset = v_source_position / frag_info.atlas_size;
-
   // Inspired by Metal by Example's SDF text rendering shader:
   // https://github.com/metal-by-example/sample-code/blob/master/objc/12-TextRendering/TextRendering/Shaders.metal
 
