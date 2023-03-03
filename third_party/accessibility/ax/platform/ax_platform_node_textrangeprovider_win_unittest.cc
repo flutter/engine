@@ -7,6 +7,7 @@
 #include <UIAutomationClient.h>
 #include <UIAutomationCoreApi.h>
 
+#include <filesystem>
 #include <memory>
 #include <utility>
 
@@ -17,6 +18,7 @@
 #include "base/win/scoped_bstr.h"
 #include "base/win/scoped_safearray.h"
 #include "base/win/scoped_variant.h"
+#include "flutter/fml/icu_util.h"
 #include "third_party/icu/source/common/unicode/putil.h"
 
 using Microsoft::WRL::ComPtr;
@@ -5104,7 +5106,17 @@ TEST_F(AXPlatformNodeTextRangeProviderTest,
 }
 
 TEST_F(AXPlatformNodeTextRangeProviderTest, TestITextRangeProviderFindText) {
-  u_setDataDirectory("./src/out/host_debug_unopt");
+  // Initialize the ICU data from the icudtl.dat file, if it exists.
+  wchar_t buffer[MAX_PATH];
+  GetModuleFileName(nullptr, buffer, MAX_PATH);
+  std::filesystem::path exec_path(buffer);
+  exec_path.remove_filename();
+  exec_path.append("icudtl.dat");
+  const std::string icudtl_path = exec_path.string();
+  if (std::filesystem::exists(icudtl_path)) {
+    fml::icu::InitializeICU(icudtl_path);
+  }
+
   Init(BuildTextDocument({"some text", "more text", "resum\xC3\xA9"},
                          false /* build_word_boundaries_offsets */,
                          true /* place_text_on_one_line */));
