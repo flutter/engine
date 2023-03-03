@@ -14,6 +14,12 @@
 
 namespace flutter {
 
+// Must be kept in sync with painting.dart.
+enum ColorSpace {
+  kSRGB,
+  kExtendedSRGB,
+};
+
 class CanvasImage final : public RefCountedDartWrappable<CanvasImage> {
   DEFINE_WRAPPERTYPEINFO();
   FML_FRIEND_MAKE_REF_COUNTED(CanvasImage);
