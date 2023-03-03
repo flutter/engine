@@ -319,7 +319,7 @@ struct Settings {
 
   /// Enable embedder api on the embedder.
   ///
-  /// This is ignored on the platforms that use the embedder_api by default.
+  /// This is currently only used by iOS.
   bool enable_embedder_api = false;
 };
 
