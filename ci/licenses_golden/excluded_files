@@ -145,6 +145,7 @@
 ../../../flutter/impeller/renderer/pipeline_descriptor_unittests.cc
 ../../../flutter/impeller/renderer/renderer_dart_unittests.cc
 ../../../flutter/impeller/renderer/renderer_unittests.cc
+../../../flutter/impeller/renderer/testing
 ../../../flutter/impeller/runtime_stage/runtime_stage_unittests.cc
 ../../../flutter/impeller/scene/README.md
 ../../../flutter/impeller/scene/importer/importer_unittests.cc
@@ -249,6 +250,7 @@
 ../../../flutter/shell/platform/darwin/Doxyfile
 ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_codecs_unittest.mm
 ../../../flutter/shell/platform/darwin/common/framework/Source/flutter_standard_codec_unittest.mm
+../../../flutter/shell/platform/darwin/macos/README.md
 ../../../flutter/shell/platform/darwin/macos/framework/Source/fixtures
 ../../../flutter/shell/platform/embedder/fixtures
 ../../../flutter/shell/platform/embedder/platform_view_embedder_unittests.cc
@@ -273,7 +275,6 @@
 ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/build/asset_package.py
 ../../../flutter/shell/platform/fuchsia/flutter/build/gen_debug_wrapper_main.py
-../../../flutter/shell/platform/fuchsia/flutter/component_v1_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/component_v2_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/focus_delegate_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
@@ -446,6 +447,7 @@
 ../../../fuchsia/sdk/linux/docs
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.gesture/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.semantics/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.tts/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.accessibility.virtualkeyboard/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.audio.effects/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.auth.oldtokens/meta.json
@@ -496,8 +498,10 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.i2c/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.light/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.network/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.sensor/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.power.statecontrol/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.radar/meta.json
+../../../fuchsia/sdk/linux/fidl/fuchsia.hardware.temperature/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.hwinfo/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.images/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.input.report/meta.json
@@ -569,7 +573,6 @@
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.input3/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.observation.geometry/meta.json
-../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer.augment/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointer/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.pointerinjector/meta.json
 ../../../fuchsia/sdk/linux/fidl/fuchsia.ui.policy/meta.json
@@ -606,6 +609,7 @@
 ../../../fuchsia/sdk/linux/pkg/async-testing/meta.json
 ../../../fuchsia/sdk/linux/pkg/async/meta.json
 ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/meta.json
+../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/meta.json
 ../../../fuchsia/sdk/linux/pkg/fdio/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl/meta.json
 ../../../fuchsia/sdk/linux/pkg/fidl_base/meta.json

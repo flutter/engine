@@ -168,7 +168,8 @@ class DisplayListSpecialGeometryFlags : DisplayListFlagsBase {
 class DisplayListAttributeFlags : DisplayListFlagsBase {
  public:
   const DisplayListSpecialGeometryFlags WithPathEffect(
-      const DlPathEffect* effect) const;
+      const DlPathEffect* effect,
+      bool is_stroked) const;
 
   constexpr bool ignores_paint() const { return has_any(kIgnoresPaint_); }
 
@@ -221,6 +222,10 @@ class DisplayListAttributeFlags : DisplayListFlagsBase {
   }
 
   constexpr bool is_flood() const { return has_any(kFloodsSurface_); }
+
+  constexpr bool operator==(DisplayListAttributeFlags const& other) const {
+    return flags_ == other.flags_;
+  }
 
  private:
   explicit constexpr DisplayListAttributeFlags(int flags)

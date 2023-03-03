@@ -78,7 +78,7 @@
                         "out/host_debug/zip_archives/linux-x64/font-subset.zip",
                         "out/host_debug/zip_archives/flutter_patched_sdk.zip",
                         "out/host_debug/zip_archives/dart-sdk-linux-x64.zip",
-                        "out/host_debug/zip_archives/linux-x64/linux-x64-flutter-gtk.zip"
+                        "out/host_debug/zip_archives/linux-x64-debug/linux-x64-flutter-gtk.zip"
                     ]
                 }
             ],
@@ -259,14 +259,13 @@
             "gn": [
                 "--runtime-mode",
                 "release",
-                "--web",
-                "--build-canvaskit"
+                "--web"
             ],
             "name": "wasm_release",
             "ninja": {
                 "config": "wasm_release",
                 "targets": [
-                    "flutter/web_sdk"
+                    "flutter/web_sdk:flutter_web_sdk_archive"
                 ]
             },
             "tests": []
