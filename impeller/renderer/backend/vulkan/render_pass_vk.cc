@@ -41,8 +41,9 @@ static vk::AttachmentDescription CreateAttachmentDescription(
   );
 }
 
-static vk::UniqueRenderPass CreateVKRenderPass(const vk::Device& device,
-                                               const RenderTarget& target) {
+static SharedHandleVK<vk::RenderPass> CreateVKRenderPass(
+    const vk::Device& device,
+    const RenderTarget& target) {
   std::vector<vk::AttachmentDescription> attachments;
 
   std::vector<vk::AttachmentReference> color_refs;
@@ -109,7 +110,7 @@ static vk::UniqueRenderPass CreateVKRenderPass(const vk::Device& device,
     return {};
   }
 
-  return std::move(pass);
+  return MakeSharedVK(std::move(pass));
 }
 
 RenderPassVK::RenderPassVK(const std::shared_ptr<const Context>& context,
@@ -136,7 +137,7 @@ void RenderPassVK::OnSetLabel(std::string label) {
   if (!context) {
     return;
   }
-  ContextVK::Cast(*context).SetDebugName(*render_pass_, label.c_str());
+  ContextVK::Cast(*context).SetDebugName(render_pass_->Get(), label.c_str());
   debug_label_ = std::move(label);
 }
 
@@ -564,7 +565,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
 
   auto framebuffer = MakeSharedVK(
       CreateFramebuffer(vk_context.GetDevice(), render_target_, *render_pass_));
-  if (!encoder->Track(framebuffer)) {
+  if (!encoder->Track(framebuffer) || !encoder->Track(render_pass_)) {
     return false;
   }
 
