@@ -73,7 +73,7 @@ static MockPlatformView* gMockPlatformView = nil;
 namespace flutter {
 namespace {
 class MockDelegate : public PlatformView::Delegate {
-  void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
+  void OnPlatformViewCreated() override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}

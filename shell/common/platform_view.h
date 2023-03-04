@@ -60,6 +60,17 @@ class PlatformView {
    public:
     using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
+    /// @brief      Notifies the delegate that the platform view was created
+    ///             with the given render surface. This surface is platform
+    ///             (iOS, Android) and client-rendering API (OpenGL, Software,
+    ///             Metal, Vulkan) specific. This is usually a sign to the
+    ///             rasterizer to set up and begin rendering to that surface.
+    ///
+    /// @param[in]  surface           The surface
+    ///
+    virtual void OnPlatformViewCreated() = 0;
+
+    //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was destroyed.
     ///             This is usually a sign to the rasterizer to suspend
     ///             rendering a previously configured surface and collect any

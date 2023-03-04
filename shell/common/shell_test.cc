@@ -45,7 +45,7 @@ void ShellTest::PlatformViewNotifyCreated(Shell* shell) {
   fml::AutoResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetPlatformTaskRunner(), [shell, &latch]() {
-        shell->OnEngineCreated();
+        shell->GetPlatformView()->NotifyCreated();
         latch.Signal();
       });
   latch.Wait();

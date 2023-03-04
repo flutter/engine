@@ -75,7 +75,7 @@ TEST_F(ImageDisposeTest, ImageReleasedAfterFrameAndDisposePictureAndLayer) {
 
   SetViewportMetrics(shell.get(), 800, 600);
 
-  shell->OnEngineCreated();
+  shell->GetPlatformView()->NotifyCreated();
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("pumpImage");
