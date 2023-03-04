@@ -1569,12 +1569,15 @@ class Paint {
 }
 
 /// The color space that an [Image] uses.
+///
+/// This value can help you decide which [ImageByteFormat] to use with
+/// [Image.toByteData];
 enum ColorSpace {
-  /// The sRGB color gamut.
+  /// The sRGB color gamut, the defined standard color gamut for the web.
   sRGB,
   /// A color space that is backwards compatible with sRGB but can represent
   /// colors outside of that gamut with values outside of [0..1]. In order to
-  /// see the extended values a [ImageByteFormat] like
+  /// see the extended values an [ImageByteFormat] like
   /// [ImageByteFormat.rawExtendedRgba128] must be used.
   extendedSRGB,
 }
@@ -1604,7 +1607,17 @@ enum ImageByteFormat {
 
   /// Raw extended range RGBA format.
   ///
-  /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit float per channel.
+  /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit
+  /// float (IEEE 754) per channel.
+  ///
+  /// Example usage:
+  ///
+  /// ```dart
+  /// final ByteData data =
+  ///     (await image.toByteData(format: ImageByteFormat.rawExtendedRgba128))!;
+  /// final Float32List floats = Float32List.view(data.buffer);
+  /// print('${floats[0]} ${floats[1]} ${floats[2]} ${floats[3]}');
+  /// ```
   rawExtendedRgba128,
 
   /// PNG format.
@@ -1753,9 +1766,9 @@ class Image {
     return _image.toByteData(format: format);
   }
 
-  /// The color space that used by the [Image]'s colors. Note that on certain
-  /// platforms/rendering backends, wide gamut images will still report
-  /// [ColorSpace.sRGB] if rendering wide gamut colors isn't supported.
+  /// The color space that used by the [Image]'s colors.
+  /// On certain platforms/rendering backends, wide gamut images will still
+  /// report [ColorSpace.sRGB] if rendering wide gamut colors isn't supported.
   ColorSpace get colorSpace {
     final int colorSpaceValue = _image.colorSpace;
     switch (colorSpaceValue) {
