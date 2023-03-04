@@ -27,8 +27,8 @@ typedef _HandleMessageCallBack = Future<bool> Function();
 /// When set to true, all platform messages will be printed to the console.
 const bool debugPrintPlatformMessages = false;
 
-/// The view ID for a singleton flutter window.
-const int kSingletonViewId = 0;
+/// The view ID for the implicit flutter view provided by the platform.
+const int kImplicitViewId = 0;
 
 /// Whether [_customUrlStrategy] has been set or not.
 ///
@@ -50,7 +50,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     engineDispatcher.viewData[viewId] = this;
-    engineDispatcher.windowConfigurations[viewId] = const ui.ViewConfiguration();
+    engineDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
@@ -202,14 +202,31 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     });
   }
 
-  @override
-  ui.ViewConfiguration get viewConfiguration {
+  ViewConfiguration get _viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
     assert(engineDispatcher.windowConfigurations.containsKey(viewId));
     return engineDispatcher.windowConfigurations[viewId] ??
-        const ui.ViewConfiguration();
+        const ViewConfiguration();
   }
+
+  @override
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
+
+  @override
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
+
+  @override
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
+
+  @override
+  ViewPadding get padding => _viewConfiguration.padding;
+
+  @override
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
 
   late DimensionsProvider _dimensionsProvider;
   void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
@@ -296,8 +313,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   @override
-  WindowPadding get viewInsets => _viewInsets;
-  WindowPadding _viewInsets = ui.WindowPadding.zero as WindowPadding;
+  ViewPadding get viewInsets => _viewInsets;
+  ViewPadding _viewInsets = ui.ViewPadding.zero as ViewPadding;
 
   /// Lazily populated and cleared at the end of the frame.
   ui.Size? _physicalSize;
@@ -349,11 +366,11 @@ class EngineSingletonFlutterWindow extends EngineFlutterWindow {
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
 final EngineSingletonFlutterWindow window =
-    EngineSingletonFlutterWindow(kSingletonViewId, EnginePlatformDispatcher.instance);
+    EngineSingletonFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
 
-/// The Web implementation of [ui.WindowPadding].
-class WindowPadding implements ui.WindowPadding {
-  const WindowPadding({
+/// The Web implementation of [ui.ViewPadding].
+class ViewPadding implements ui.ViewPadding {
+  const ViewPadding({
     required this.left,
     required this.top,
     required this.right,

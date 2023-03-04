@@ -250,7 +250,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
     final DomElement placeholder =
@@ -266,7 +266,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isTrue);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isTrue);
 
     // The placeholder should be removed
@@ -1646,7 +1646,7 @@ void _testTappable() {
     );
     tester.apply();
 
-    expect(flutterViewEmbedder.glassPaneShadow!.activeElement, tester.getSemanticsObject(0).element);
+    expect(flutterViewEmbedder.glassPaneShadow.activeElement, tester.getSemanticsObject(0).element);
     semantics().semanticsEnabled = false;
   });
 }
@@ -2007,7 +2007,7 @@ void _testPlatformView() {
     expect(child3Rect.bottom, 60);
 
     final DomElement platformViewElement =
-        flutterViewEmbedder.glassPaneElement!.querySelector('#view-0')!;
+        flutterViewEmbedder.glassPaneElement.querySelector('#view-0')!;
     final DomRect platformViewRect = platformViewElement.getBoundingClientRect();
     expect(platformViewRect.left, 0);
     expect(platformViewRect.top, 15);

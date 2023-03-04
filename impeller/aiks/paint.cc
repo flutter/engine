@@ -61,6 +61,7 @@ std::shared_ptr<Contents> Paint::WithFilters(
     const Matrix& effect_transform) const {
   bool is_solid_color_val = is_solid_color.value_or(!color_source);
   input = WithColorFilter(input);
+  input = WithInvertFilter(input);
   input = WithMaskBlur(input, is_solid_color_val, effect_transform);
   input = WithImageFilter(input, effect_transform);
   return input;
@@ -69,7 +70,6 @@ std::shared_ptr<Contents> Paint::WithFilters(
 std::shared_ptr<Contents> Paint::WithFiltersForSubpassTarget(
     std::shared_ptr<Contents> input,
     const Matrix& effect_transform) const {
-  input = WithMaskBlur(input, false, effect_transform);
   input = WithImageFilter(input, effect_transform);
   input = WithColorFilter(input, /**absorb_opacity=*/true);
   return input;
@@ -99,6 +99,11 @@ std::shared_ptr<Contents> Paint::WithImageFilter(
 std::shared_ptr<Contents> Paint::WithColorFilter(
     std::shared_ptr<Contents> input,
     bool absorb_opacity) const {
+  // Image input types will directly set their color filter,
+  // if any. See `TiledTextureContents.SetColorFilter`.
+  if (color_source_type == ColorSourceType::kImage) {
+    return input;
+  }
   if (color_filter.has_value()) {
     const ColorFilterProc& filter = color_filter.value();
     auto color_filter_contents = filter(FilterInput::Make(input));
@@ -108,6 +113,28 @@ std::shared_ptr<Contents> Paint::WithColorFilter(
     input = color_filter_contents;
   }
   return input;
+}
+
+/// A color matrix which inverts colors.
+// clang-format off
+constexpr ColorFilterContents::ColorMatrix kColorInversion = {
+  .array = {
+    -1.0,    0,    0, 1.0, 0, //
+       0, -1.0,    0, 1.0, 0, //
+       0,    0, -1.0, 1.0, 0, //
+     1.0,  1.0,  1.0, 1.0, 0  //
+  }
+};
+// clang-format on
+
+std::shared_ptr<Contents> Paint::WithInvertFilter(
+    std::shared_ptr<Contents> input) const {
+  if (!invert_colors) {
+    return input;
+  }
+
+  return ColorFilterContents::MakeColorMatrix(
+      {FilterInput::Make(std::move(input))}, kColorInversion);
 }
 
 std::shared_ptr<FilterContents> Paint::MaskBlurDescriptor::CreateMaskBlur(

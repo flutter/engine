@@ -257,9 +257,6 @@ DEF_SWITCH(OldGenHeapSize,
 DEF_SWITCH(ResourceCacheMaxBytesThreshold,
            "resource-cache-max-bytes-threshold",
            "The max bytes threshold of resource cache, or 0 for unlimited.")
-DEF_SWITCH(EnableSkParagraph,
-           "enable-skparagraph",
-           "Selects the SkParagraph implementation of the text layout engine.")
 DEF_SWITCH(EnableImpeller,
            "enable-impeller",
            "Enable the Impeller renderer on supported platforms. Ignored if "
@@ -276,6 +273,9 @@ DEF_SWITCH(
     "Setting this value to 0 or 1 disables MSAA. If it is not 0 or 1, it must "
     "be one of 2, 4, 8, or 16. However, if the GPU does not support the "
     "requested sampling value, MSAA will be disabled.")
+DEF_SWITCH(EnableEmbedderAPI,
+           "enable-embedder-api",
+           "Enable the embedder api. Defaults to false. iOS only.")
 DEF_SWITCHES_END
 
 void PrintUsage(const std::string& executable_name);

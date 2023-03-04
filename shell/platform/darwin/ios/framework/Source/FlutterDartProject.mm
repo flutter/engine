@@ -156,9 +156,11 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   settings.may_insecurely_connect_to_all_domains = true;
   settings.domain_network_policy = "";
 
-  // SkParagraph text layout library
-  NSNumber* enableSkParagraph = [mainBundle objectForInfoDictionaryKey:@"FLTEnableSkParagraph"];
-  settings.enable_skparagraph = (enableSkParagraph != nil) ? enableSkParagraph.boolValue : true;
+  // Whether to enable Impeller.
+  NSNumber* nsEnableWideGamut = [mainBundle objectForInfoDictionaryKey:@"FLTEnableWideGamut"];
+  // TODO(gaaclarke): Make this value `on` by default (pending memory audit).
+  BOOL enableWideGamut = nsEnableWideGamut ? nsEnableWideGamut.boolValue : NO;
+  settings.enable_wide_gamut = enableWideGamut;
 
   // Whether to enable Impeller.
   NSNumber* enableImpeller = [mainBundle objectForInfoDictionaryKey:@"FLTEnableImpeller"];
@@ -214,6 +216,14 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width * scale;
   CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height * scale;
   settings.resource_cache_max_bytes_threshold = screenWidth * screenHeight * 12 * 4;
+
+  // Whether to enable ios embedder api.
+  NSNumber* enable_embedder_api =
+      [mainBundle objectForInfoDictionaryKey:@"FLTEnableIOSEmbedderAPI"];
+  // Change the default only if the option is present.
+  if (enable_embedder_api) {
+    settings.enable_embedder_api = enable_embedder_api.boolValue;
+  }
 
   return settings;
 }
@@ -369,6 +379,10 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 + (NSString*)defaultBundleIdentifier {
   return @"io.flutter.flutter.app";
+}
+
+- (BOOL)isWideGamutEnabled {
+  return _settings.enable_wide_gamut;
 }
 
 @end

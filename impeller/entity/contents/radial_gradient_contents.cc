@@ -48,7 +48,7 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
 bool RadialGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
-  if (renderer.GetBackendFeatures().ssbo_support) {
+  if (renderer.GetDeviceCapabilities().SupportsSSBO()) {
     return RenderSSBO(renderer, entity, pass);
   }
   return RenderTexture(renderer, entity, pass);
@@ -60,18 +60,19 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   using VS = RadialGradientSSBOFillPipeline::VertexShader;
   using FS = RadialGradientSSBOFillPipeline::FragmentShader;
 
-  FS::GradientInfo gradient_info;
-  gradient_info.center = center_;
-  gradient_info.radius = radius_;
-  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  gradient_info.alpha = GetAlpha();
+  FS::FragInfo frag_info;
+  frag_info.center = center_;
+  frag_info.radius = radius_;
+  frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  frag_info.alpha = GetAlpha();
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);
 
-  gradient_info.colors_length = colors.size();
-  auto color_buffer = host_buffer.Emplace(
-      colors.data(), colors.size() * sizeof(StopData), alignof(StopData));
+  frag_info.colors_length = colors.size();
+  auto color_buffer =
+      host_buffer.Emplace(colors.data(), colors.size() * sizeof(StopData),
+                          DefaultUniformAlignment());
 
   VS::FrameInfo frame_info;
   frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
@@ -93,8 +94,7 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   cmd.pipeline = renderer.GetRadialGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
-  FS::BindGradientInfo(
-      cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
   FS::BindColorData(cmd, color_buffer);
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
@@ -123,15 +123,14 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
     return false;
   }
 
-  FS::GradientInfo gradient_info;
-  gradient_info.center = center_;
-  gradient_info.radius = radius_;
-  gradient_info.tile_mode = static_cast<Scalar>(tile_mode_);
-  gradient_info.texture_sampler_y_coord_scale =
-      gradient_texture->GetYCoordScale();
-  gradient_info.alpha = GetAlpha();
-  gradient_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
-                                     0.5 / gradient_texture->GetSize().height);
+  FS::FragInfo frag_info;
+  frag_info.center = center_;
+  frag_info.radius = radius_;
+  frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
+  frag_info.texture_sampler_y_coord_scale = gradient_texture->GetYCoordScale();
+  frag_info.alpha = GetAlpha();
+  frag_info.half_texel = Vector2(0.5 / gradient_texture->GetSize().width,
+                                 0.5 / gradient_texture->GetSize().height);
 
   auto geometry_result =
       GetGeometry()->GetPositionBuffer(renderer, entity, pass);
@@ -153,8 +152,7 @@ bool RadialGradientContents::RenderTexture(const ContentContext& renderer,
   cmd.pipeline = renderer.GetRadialGradientFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
-  FS::BindGradientInfo(
-      cmd, pass.GetTransientsBuffer().EmplaceUniform(gradient_info));
+  FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;

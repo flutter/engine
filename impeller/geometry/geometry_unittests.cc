@@ -17,7 +17,6 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
-#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -341,7 +340,7 @@ TEST(GeometryTest, MatrixMakeOrthographic) {
     auto expect = Matrix{
         0.02, 0,     0,   0,  //
         0,    -0.01, 0,   0,  //
-        0,    0,     1,   0,  //
+        0,    0,     0,   0,  //
         -1,   1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -352,7 +351,7 @@ TEST(GeometryTest, MatrixMakeOrthographic) {
     auto expect = Matrix{
         0.005, 0,     0,   0,  //
         0,     -0.02, 0,   0,  //
-        0,     0,     1,   0,  //
+        0,     0,     0,   0,  //
         -1,    1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -577,7 +576,7 @@ TEST(GeometryTest, EmptyPath) {
   path.GetContourComponentAtIndex(0, c);
   ASSERT_POINT_NEAR(c.destination, Point());
 
-  Path::Polyline polyline = path.CreatePolyline();
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
   ASSERT_TRUE(polyline.points.empty());
   ASSERT_TRUE(polyline.contours.empty());
 }
@@ -1553,13 +1552,14 @@ TEST(GeometryTest, RectGetTransformedPoints) {
 
 TEST(GeometryTest, RectMakePointBounds) {
   {
-    Rect r =
-        Rect::MakePointBounds({Point(1, 5), Point(4, -1), Point(0, 6)}).value();
+    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
+    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
     auto expected = Rect(0, -1, 4, 7);
     ASSERT_RECT_NEAR(r, expected);
   }
   {
-    std::optional<Rect> r = Rect::MakePointBounds({});
+    std::vector<Point> points;
+    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
     ASSERT_FALSE(r.has_value());
   }
 }
@@ -1580,7 +1580,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline();
+  auto polyline = component.CreatePolyline(1.0f);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1595,7 +1595,7 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   path.AddContourComponent({40, 40});
   path.AddLinearComponent({40, 40}, {50, 50});
 
-  auto polyline = path.CreatePolyline();
+  auto polyline = path.CreatePolyline(1.0f);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -1681,7 +1681,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.points.size(), 6u);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].is_closed, false);
@@ -1698,7 +1698,7 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   size_t a1, a2, b1, b2;
   std::tie(a1, a2) = polyline.GetContourPointBounds(0);
   std::tie(b1, b2) = polyline.GetContourPointBounds(1);
@@ -1712,7 +1712,7 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
   Path::Polyline polyline = PathBuilder{}
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
@@ -1737,7 +1737,7 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
-          .CreatePolyline();
+          .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
@@ -1842,6 +1842,12 @@ TEST(GeometryTest, ColorPrinting) {
     stream << m;
     ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
   }
+}
+
+TEST(GeometryTest, ToIColor) {
+  ASSERT_EQ(Color::ToIColor(Color(0, 0, 0, 0)), 0u);
+  ASSERT_EQ(Color::ToIColor(Color(1.0, 1.0, 1.0, 1.0)), 0xFFFFFFFF);
+  ASSERT_EQ(Color::ToIColor(Color(0.5, 0.5, 1.0, 1.0)), 0xFF8080FF);
 }
 
 TEST(GeometryTest, Gradient) {

@@ -61,9 +61,9 @@ typedef void (*FlEngineUpdateSemanticsNodeHandler)(
 /**
  * FlEngineOnPreEngineRestartHandler:
  * @engine: an #FlEngine.
- * @user_data: semantic node information.
- *
  * @user_data: (closure): data provided when registering this handler.
+ *
+ * Function called right before the engine is restarted.
  */
 typedef void (*FlEngineOnPreEngineRestartHandler)(FlEngine* engine,
                                                   gpointer user_data);
@@ -335,6 +335,16 @@ gboolean fl_engine_unregister_external_texture(FlEngine* engine,
  * Tells the Flutter engine to update the flags on the accessibility tree.
  */
 void fl_engine_update_accessibility_features(FlEngine* engine, int32_t flags);
+
+/**
+ * fl_engine_get_switches:
+ * @project: an #FlEngine.
+ *
+ * Determines the switches that should be passed to the Flutter engine.
+ *
+ * Returns: an array of switches to pass to the Flutter engine.
+ */
+GPtrArray* fl_engine_get_switches(FlEngine* engine);
 
 G_END_DECLS
 

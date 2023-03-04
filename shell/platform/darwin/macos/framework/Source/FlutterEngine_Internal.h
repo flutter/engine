@@ -8,10 +8,58 @@
 
 #include <memory>
 
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformViewController.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
+
+NS_ASSUME_NONNULL_BEGIN
+
+#pragma mark - Typedefs
+
+typedef void (^FlutterTerminationCallback)(id _Nullable sender);
+
+#pragma mark - Enumerations
+
+/**
+ * An enum for defining the different request types allowed when requesting an
+ * application exit.
+ *
+ * Must match the entries in the `AppExitType` enum in the Dart code.
+ */
+typedef NS_ENUM(NSInteger, FlutterAppExitType) {
+  kFlutterAppExitTypeCancelable = 0,
+  kFlutterAppExitTypeRequired = 1,
+};
+
+/**
+ * An enum for defining the different responses the framework can give to an
+ * application exit request from the engine.
+ *
+ * Must match the entries in the `AppExitResponse` enum in the Dart code.
+ */
+typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
+  kFlutterAppExitResponseCancel = 0,
+  kFlutterAppExitResponseExit = 1,
+};
+
+#pragma mark - FlutterEngineTerminationHandler
+
+/**
+ * A handler interface for handling application termination that the
+ * FlutterAppDelegate can use to coordinate an application exit by sending
+ * messages through the platform channel managed by the engine.
+ */
+@interface FlutterEngineTerminationHandler : NSObject
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                    terminator:(nullable FlutterTerminationCallback)terminator;
+- (void)handleRequestAppExitMethodCall:(NSDictionary<NSString*, id>*)data
+                                result:(FlutterResult)result;
+- (void)requestApplicationTermination:(FlutterApplication*)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result;
+@end
 
 @interface FlutterEngine ()
 
@@ -48,9 +96,49 @@
 @property(nonatomic, readonly, nonnull) NSPasteboard* pasteboard;
 
 /**
- * Informs the engine that the associated view controller's view size has changed.
+ * The command line arguments array for the engine.
  */
-- (void)updateWindowMetrics;
+@property(nonatomic, readonly) std::vector<std::string> switches;
+
+/**
+ * Provides the |FlutterEngineTerminationHandler| to be used for this engine.
+ */
+@property(nonatomic, readonly) FlutterEngineTerminationHandler* terminationHandler;
+
+/**
+ * Attach a view controller to the engine as its default controller.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller, if successfully attached, will always have the default
+ * view ID kFlutterDefaultViewId.
+ *
+ * The engine holds a weak reference to the attached view controller.
+ *
+ * If the given view controller is already attached to an engine, this call
+ * throws an assertion.
+ */
+- (void)addViewController:(FlutterViewController*)viewController;
+
+/**
+ * Dissociate the given view controller from this engine.
+ *
+ * Practically, since FlutterEngine can only be attached with one controller,
+ * the given controller must be the default view controller.
+ *
+ * If the view controller is not associated with this engine, this call throws an
+ * assertion.
+ */
+- (void)removeViewController:(FlutterViewController*)viewController;
+
+/**
+ * The |FlutterViewController| associated with the given view ID, if any.
+ */
+- (nullable FlutterViewController*)viewControllerForId:(uint64_t)viewId;
+
+/**
+ * Informs the engine that the specified view controller's window metrics have changed.
+ */
+- (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController;
 
 /**
  * Dispatches the given pointer event data to engine.
@@ -92,3 +180,5 @@
                        withData:(fml::MallocMapping)data;
 
 @end
+
+NS_ASSUME_NONNULL_END

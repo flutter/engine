@@ -5,28 +5,13 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <unordered_map>
 
 #include "flutter/fml/hash_combine.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 #include "impeller/base/validation.h"
-#include "impeller/entity/advanced_blend.vert.h"
-#include "impeller/entity/advanced_blend_color.frag.h"
-#include "impeller/entity/advanced_blend_colorburn.frag.h"
-#include "impeller/entity/advanced_blend_colordodge.frag.h"
-#include "impeller/entity/advanced_blend_darken.frag.h"
-#include "impeller/entity/advanced_blend_difference.frag.h"
-#include "impeller/entity/advanced_blend_exclusion.frag.h"
-#include "impeller/entity/advanced_blend_hardlight.frag.h"
-#include "impeller/entity/advanced_blend_hue.frag.h"
-#include "impeller/entity/advanced_blend_lighten.frag.h"
-#include "impeller/entity/advanced_blend_luminosity.frag.h"
-#include "impeller/entity/advanced_blend_multiply.frag.h"
-#include "impeller/entity/advanced_blend_overlay.frag.h"
-#include "impeller/entity/advanced_blend_saturation.frag.h"
-#include "impeller/entity/advanced_blend_screen.frag.h"
-#include "impeller/entity/advanced_blend_softlight.frag.h"
 #include "impeller/entity/blend.frag.h"
 #include "impeller/entity/blend.vert.h"
 #include "impeller/entity/border_mask_blur.frag.h"
@@ -62,13 +47,13 @@
 #include "impeller/entity/vertices.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.frag.h"
 #include "impeller/entity/yuv_to_rgb_filter.vert.h"
+#include "impeller/renderer/device_capabilities.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
 #include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
-#include "impeller/entity/position_uv.vert.h"
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -76,6 +61,41 @@
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/sweep_gradient_ssbo_fill.frag.h"
+
+#include "impeller/entity/advanced_blend.vert.h"
+#include "impeller/entity/advanced_blend_color.frag.h"
+#include "impeller/entity/advanced_blend_colorburn.frag.h"
+#include "impeller/entity/advanced_blend_colordodge.frag.h"
+#include "impeller/entity/advanced_blend_darken.frag.h"
+#include "impeller/entity/advanced_blend_difference.frag.h"
+#include "impeller/entity/advanced_blend_exclusion.frag.h"
+#include "impeller/entity/advanced_blend_hardlight.frag.h"
+#include "impeller/entity/advanced_blend_hue.frag.h"
+#include "impeller/entity/advanced_blend_lighten.frag.h"
+#include "impeller/entity/advanced_blend_luminosity.frag.h"
+#include "impeller/entity/advanced_blend_multiply.frag.h"
+#include "impeller/entity/advanced_blend_overlay.frag.h"
+#include "impeller/entity/advanced_blend_saturation.frag.h"
+#include "impeller/entity/advanced_blend_screen.frag.h"
+#include "impeller/entity/advanced_blend_softlight.frag.h"
+#if FML_OS_PHYSICAL_IOS
+#include "impeller/entity/framebuffer_blend.vert.h"
+#include "impeller/entity/framebuffer_blend_color.frag.h"
+#include "impeller/entity/framebuffer_blend_colorburn.frag.h"
+#include "impeller/entity/framebuffer_blend_colordodge.frag.h"
+#include "impeller/entity/framebuffer_blend_darken.frag.h"
+#include "impeller/entity/framebuffer_blend_difference.frag.h"
+#include "impeller/entity/framebuffer_blend_exclusion.frag.h"
+#include "impeller/entity/framebuffer_blend_hardlight.frag.h"
+#include "impeller/entity/framebuffer_blend_hue.frag.h"
+#include "impeller/entity/framebuffer_blend_lighten.frag.h"
+#include "impeller/entity/framebuffer_blend_luminosity.frag.h"
+#include "impeller/entity/framebuffer_blend_multiply.frag.h"
+#include "impeller/entity/framebuffer_blend_overlay.frag.h"
+#include "impeller/entity/framebuffer_blend_saturation.frag.h"
+#include "impeller/entity/framebuffer_blend_screen.frag.h"
+#include "impeller/entity/framebuffer_blend_softlight.frag.h"
+#endif  // FML_OS_PHYSICAL_IOS
 
 namespace impeller {
 
@@ -100,6 +120,47 @@ using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using RRectBlurPipeline =
     RenderPipelineT<RrectBlurVertexShader, RrectBlurFragmentShader>;
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
+using TexturePipeline =
+    RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using PositionUVPipeline =
+    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
+using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
+                                             TiledTextureFillFragmentShader>;
+using GaussianBlurPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
+using GaussianBlurDecalPipeline =
+    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurDecalFragmentShader>;
+using BorderMaskBlurPipeline =
+    RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
+using MorphologyFilterPipeline =
+    RenderPipelineT<MorphologyFilterVertexShader,
+                    MorphologyFilterFragmentShader>;
+using ColorMatrixColorFilterPipeline =
+    RenderPipelineT<ColorMatrixColorFilterVertexShader,
+                    ColorMatrixColorFilterFragmentShader>;
+using LinearToSrgbFilterPipeline =
+    RenderPipelineT<LinearToSrgbFilterVertexShader,
+                    LinearToSrgbFilterFragmentShader>;
+using SrgbToLinearFilterPipeline =
+    RenderPipelineT<SrgbToLinearFilterVertexShader,
+                    SrgbToLinearFilterFragmentShader>;
+using GlyphAtlasPipeline =
+    RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
+using GlyphAtlasSdfPipeline =
+    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
+// Instead of requiring new shaders for clips, the solid fill stages are used
+// to redirect writing to the stencil instead of color attachments.
+using ClipPipeline =
+    RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+
+using GeometryPositionPipeline =
+    RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
+using GeometryColorPipeline =
+    RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
+using YUVToRGBFilterPipeline =
+    RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
+
+// Advanced blends
 using BlendColorPipeline = RenderPipelineT<AdvancedBlendVertexShader,
                                            AdvancedBlendColorFragmentShader>;
 using BlendColorBurnPipeline =
@@ -141,55 +202,81 @@ using BlendScreenPipeline = RenderPipelineT<AdvancedBlendVertexShader,
 using BlendSoftLightPipeline =
     RenderPipelineT<AdvancedBlendVertexShader,
                     AdvancedBlendSoftlightFragmentShader>;
-using TexturePipeline =
-    RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
-using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
-                                             TiledTextureFillFragmentShader>;
-using GaussianBlurPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurFragmentShader>;
-using GaussianBlurDecalPipeline =
-    RenderPipelineT<GaussianBlurVertexShader, GaussianBlurDecalFragmentShader>;
-using BorderMaskBlurPipeline =
-    RenderPipelineT<BorderMaskBlurVertexShader, BorderMaskBlurFragmentShader>;
-using MorphologyFilterPipeline =
-    RenderPipelineT<MorphologyFilterVertexShader,
-                    MorphologyFilterFragmentShader>;
-using ColorMatrixColorFilterPipeline =
-    RenderPipelineT<ColorMatrixColorFilterVertexShader,
-                    ColorMatrixColorFilterFragmentShader>;
-using LinearToSrgbFilterPipeline =
-    RenderPipelineT<LinearToSrgbFilterVertexShader,
-                    LinearToSrgbFilterFragmentShader>;
-using SrgbToLinearFilterPipeline =
-    RenderPipelineT<SrgbToLinearFilterVertexShader,
-                    SrgbToLinearFilterFragmentShader>;
-using GlyphAtlasPipeline =
-    RenderPipelineT<GlyphAtlasVertexShader, GlyphAtlasFragmentShader>;
-using GlyphAtlasSdfPipeline =
-    RenderPipelineT<GlyphAtlasSdfVertexShader, GlyphAtlasSdfFragmentShader>;
-// Instead of requiring new shaders for clips, the solid fill stages are used
-// to redirect writing to the stencil instead of color attachments.
-using ClipPipeline =
-    RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
+#if FML_OS_PHYSICAL_IOS
+// iOS only advanced blends.
+using FramebufferBlendColorPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendColorFragmentShader>;
+using FramebufferBlendColorBurnPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendColorburnFragmentShader>;
+using FramebufferBlendColorDodgePipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendColordodgeFragmentShader>;
+using FramebufferBlendDarkenPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendDarkenFragmentShader>;
+using FramebufferBlendDifferencePipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendDifferenceFragmentShader>;
+using FramebufferBlendExclusionPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendExclusionFragmentShader>;
+using FramebufferBlendHardLightPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendHardlightFragmentShader>;
+using FramebufferBlendHuePipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendHueFragmentShader>;
+using FramebufferBlendLightenPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendLightenFragmentShader>;
+using FramebufferBlendLuminosityPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendLuminosityFragmentShader>;
+using FramebufferBlendMultiplyPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendMultiplyFragmentShader>;
+using FramebufferBlendOverlayPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendOverlayFragmentShader>;
+using FramebufferBlendSaturationPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendSaturationFragmentShader>;
+using FramebufferBlendScreenPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendScreenFragmentShader>;
+using FramebufferBlendSoftLightPipeline =
+    RenderPipelineT<FramebufferBlendVertexShader,
+                    FramebufferBlendSoftlightFragmentShader>;
+#endif  // FML_OS_PHYSICAL_IOS
 
-using GeometryPositionPipeline =
-    RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
-using GeometryColorPipeline =
-    RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
-using YUVToRGBFilterPipeline =
-    RenderPipelineT<YuvToRgbFilterVertexShader, YuvToRgbFilterFragmentShader>;
-
+/// Pipeline state configuration.
+///
+/// Each unique combination of these options requires a different pipeline state
+/// object to be built. This struct is used as a key for the per-pipeline
+/// variant cache.
+///
+/// When adding fields to this key, reliant features should take care to limit
+/// the combinatorical explosion of variations. A sufficiently complicated
+/// Flutter application may easily require building hundreds of PSOs in total,
+/// but they shouldn't require e.g. 10s of thousands.
 struct ContentContextOptions {
   SampleCount sample_count = SampleCount::kCount1;
   BlendMode blend_mode = BlendMode::kSourceOver;
   CompareFunction stencil_compare = CompareFunction::kEqual;
   StencilOperation stencil_operation = StencilOperation::kKeep;
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
+  std::optional<PixelFormat> color_attachment_pixel_format;
+  bool has_stencil_attachment = true;
+  bool wireframe = false;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
       return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
-                              o.stencil_operation, o.primitive_type);
+                              o.stencil_operation, o.primitive_type,
+                              o.color_attachment_pixel_format,
+                              o.has_stencil_attachment, o.wireframe);
     }
   };
 
@@ -200,7 +287,11 @@ struct ContentContextOptions {
              lhs.blend_mode == rhs.blend_mode &&
              lhs.stencil_compare == rhs.stencil_compare &&
              lhs.stencil_operation == rhs.stencil_operation &&
-             lhs.primitive_type == rhs.primitive_type;
+             lhs.primitive_type == rhs.primitive_type &&
+             lhs.color_attachment_pixel_format ==
+                 rhs.color_attachment_pixel_format &&
+             lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
+             lhs.wireframe == rhs.wireframe;
     }
   };
 
@@ -228,19 +319,19 @@ class ContentContext {
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetLinearGradientSSBOFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(linear_gradient_ssbo_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetRadialGradientSSBOFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(radial_gradient_ssbo_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetSweepGradientSSBOFillPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetBackendFeatures().ssbo_support);
+    FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
   }
 
@@ -272,6 +363,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(position_uv_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
@@ -420,19 +516,99 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
   }
+#if FML_OS_PHYSICAL_IOS
+  // iOS advanced blends.
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_color_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
+    return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
+  }
+#endif  // FML_OS_PHYSICAL_IOS
 
   std::shared_ptr<Context> GetContext() const;
 
   std::shared_ptr<GlyphAtlasContext> GetGlyphAtlasContext() const;
 
-  const BackendFeatures& GetBackendFeatures() const;
+  const IDeviceCapabilities& GetDeviceCapabilities() const;
+
+  void SetWireframe(bool wireframe);
 
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
+  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
+                                       ISize texture_size,
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
 
@@ -461,6 +637,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<GaussianBlurDecalPipeline> gaussian_blur_decal_pipelines_;
@@ -492,6 +669,38 @@ class ContentContext {
   mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
+#if FML_OS_PHYSICAL_IOS
+  mutable Variants<FramebufferBlendColorPipeline>
+      framebuffer_blend_color_pipelines_;
+  mutable Variants<FramebufferBlendColorBurnPipeline>
+      framebuffer_blend_colorburn_pipelines_;
+  mutable Variants<FramebufferBlendColorDodgePipeline>
+      framebuffer_blend_colordodge_pipelines_;
+  mutable Variants<FramebufferBlendDarkenPipeline>
+      framebuffer_blend_darken_pipelines_;
+  mutable Variants<FramebufferBlendDifferencePipeline>
+      framebuffer_blend_difference_pipelines_;
+  mutable Variants<FramebufferBlendExclusionPipeline>
+      framebuffer_blend_exclusion_pipelines_;
+  mutable Variants<FramebufferBlendHardLightPipeline>
+      framebuffer_blend_hardlight_pipelines_;
+  mutable Variants<FramebufferBlendHuePipeline>
+      framebuffer_blend_hue_pipelines_;
+  mutable Variants<FramebufferBlendLightenPipeline>
+      framebuffer_blend_lighten_pipelines_;
+  mutable Variants<FramebufferBlendLuminosityPipeline>
+      framebuffer_blend_luminosity_pipelines_;
+  mutable Variants<FramebufferBlendMultiplyPipeline>
+      framebuffer_blend_multiply_pipelines_;
+  mutable Variants<FramebufferBlendOverlayPipeline>
+      framebuffer_blend_overlay_pipelines_;
+  mutable Variants<FramebufferBlendSaturationPipeline>
+      framebuffer_blend_saturation_pipelines_;
+  mutable Variants<FramebufferBlendScreenPipeline>
+      framebuffer_blend_screen_pipelines_;
+  mutable Variants<FramebufferBlendSoftLightPipeline>
+      framebuffer_blend_softlight_pipelines_;
+#endif  // FML_OS_PHYSICAL_IOS
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(
@@ -499,6 +708,10 @@ class ContentContext {
       ContentContextOptions opts) const {
     if (!IsValid()) {
       return nullptr;
+    }
+
+    if (wireframe_) {
+      opts.wireframe = true;
     }
 
     if (auto found = container.find(opts); found != container.end()) {
@@ -526,6 +739,7 @@ class ContentContext {
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
+  bool wireframe_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };

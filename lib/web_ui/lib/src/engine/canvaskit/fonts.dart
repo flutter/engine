@@ -6,6 +6,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:web_test_fonts/web_test_fonts.dart';
+
 import '../assets.dart';
 import '../dom.dart';
 import '../fonts.dart';
@@ -93,21 +95,15 @@ class SkiaFontCollection implements FontCollection {
   /// Loads fonts from `FontManifest.json`.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    ByteData byteData;
+    final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json');
 
-    try {
-      byteData = await assetManager.load('FontManifest.json');
-    } on AssetManagerException catch (e) {
-      if (e.httpStatus == 404) {
-        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
-        return;
-      } else {
-        rethrow;
-      }
+    if (!response.hasPayload) {
+      printWarning('Font manifest does not exist at `${response.url}` - ignoring.');
+      return;
     }
 
-    final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
+    final Uint8List data = await response.asUint8List();
+    final List<dynamic>? fontManifest = json.decode(utf8.decode(data)) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -182,17 +178,17 @@ class SkiaFontCollection implements FontCollection {
   @override
   Future<void> debugDownloadTestFonts() async {
     final List<Future<UnregisteredFont?>> pendingFonts = <Future<UnregisteredFont?>>[];
-    if (!_isFontFamilyDownloaded(ahemFontFamily)) {
-      _downloadFont(pendingFonts, ahemFontUrl, ahemFontFamily);
+    for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
+      if (!_isFontFamilyDownloaded(fontEntry.key)) {
+        _downloadFont(pendingFonts, fontEntry.value, fontEntry.key);
+      }
     }
-    if (!_isFontFamilyDownloaded(robotoFontFamily)) {
-      _downloadFont(pendingFonts, robotoTestFontUrl, robotoFontFamily);
-    }
-    if (!_isFontFamilyDownloaded(robotoVariableFontFamily)) {
-      _downloadFont(pendingFonts, robotoVariableTestFontUrl, robotoVariableFontFamily);
-    }
-
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
+    completedPendingFonts.add(UnregisteredFont(
+        EmbeddedTestFont.flutterTest.data.buffer,
+        '<embedded>',
+        EmbeddedTestFont.flutterTest.fontFamily,
+    ));
     _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
 
     // Ahem must be added to font fallbacks list regardless of where it was
@@ -206,10 +202,11 @@ class SkiaFontCollection implements FontCollection {
     String family
   ) {
     Future<UnregisteredFont?> downloadFont() async {
-      ByteBuffer buffer;
+      // Try to get the font leniently. Do not crash the app when failing to
+      // fetch the font in the spirit of "gradual degradation of functionality".
       try {
-        buffer = await httpFetch(url).then(_getArrayBuffer);
-        return UnregisteredFont(buffer, url, family);
+        final ByteBuffer data = await httpFetchByteBuffer(url);
+        return UnregisteredFont(data, url, family);
       } catch (e) {
         printWarning('Failed to load font $family at $url');
         printWarning(e.toString());
@@ -228,12 +225,6 @@ class SkiaFontCollection implements FontCollection {
     final String? actualFamily = tmpFontMgr.getFamilyName(0);
     tmpFontMgr.delete();
     return actualFamily;
-  }
-
-  Future<ByteBuffer> _getArrayBuffer(DomResponse fetchResult) {
-    return fetchResult
-        .arrayBuffer()
-        .then<ByteBuffer>((dynamic x) => x as ByteBuffer);
   }
 
   TypefaceFontProvider? fontProvider;

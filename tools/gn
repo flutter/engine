@@ -261,10 +261,7 @@ def to_gn_args(args):
     to_gn_wasm_args(args, gn_args)
     return gn_args
 
-  gn_args['flutter_build_web_sdk'] = args.build_web_sdk
   gn_args['full_dart_sdk'] = args.full_dart_sdk
-  if args.build_web_sdk or args.full_dart_sdk:
-    gn_args['build_canvaskit'] = args.build_canvaskit
 
   if args.enable_unittests:
     gn_args['enable_unittests'] = args.enable_unittests
@@ -282,10 +279,7 @@ def to_gn_args(args):
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
   gn_args['skia_use_legacy_layer_bounds'
          ] = True  # Temporary: See skbug.com/12083, skbug.com/12303.
-
-  if args.enable_skshaper:
-    gn_args['skia_use_icu'] = True
-    gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
+  gn_args['skia_use_icu'] = True
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['android_full_debug'
          ] = args.target_os == 'android' and args.unoptimized
@@ -371,7 +365,6 @@ def to_gn_args(args):
     gn_args['dart_debug_optimization_level'] = '0'
 
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
-  gn_args['flutter_enable_skshaper'] = args.enable_skshaper
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.
   gn_args['embedder_for_target'] = args.embedder_for_target
@@ -640,7 +633,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_effects_deserialization'] = False
   gn_args['skia_canvaskit_enable_skottie'] = False
   gn_args['skia_canvaskit_include_viewer'] = False
-  gn_args['skia_canvaskit_enable_particles'] = False
   gn_args['skia_canvaskit_enable_pathops'] = True
   gn_args['skia_canvaskit_enable_rt_shader'] = True
   gn_args['skia_canvaskit_enable_matrix_helper'] = False
@@ -656,13 +648,6 @@ def to_gn_wasm_args(args, gn_args):
   is_profile_build = args.runtime_mode == 'profile' or args.runtime_mode == 'debug'
   gn_args['skia_canvaskit_profile_build'] = is_profile_build
   gn_args['flutter_prebuilt_dart_sdk'] = True
-
-  # TODO(jacksongardner): Make this based off of the input argument rather
-  # than forced to true, once the recipes are updated.
-  # https://github.com/flutter/flutter/issues/113303
-  gn_args['build_canvaskit'] = True
-  gn_args['build_canvaskit_chromium'] = args.build_canvaskit_chromium
-  gn_args['flutter_build_web_sdk'] = True
 
 
 def parse_args(args):
@@ -829,14 +814,6 @@ def parse_args(args):
       '--enable-vulkan-validation-layers', action='store_true', default=False
   )
 
-  parser.add_argument('--enable-skshaper', action='store_true', default=True)
-  parser.add_argument(
-      '--no-enable-skshaper', dest='enable_skshaper', action='store_false'
-  )
-  parser.add_argument(
-      '--always-use-skshaper', action='store_true', default=False
-  )
-
   parser.add_argument(
       '--embedder-for-target',
       dest='embedder_for_target',
@@ -870,31 +847,10 @@ def parse_args(args):
   )
 
   parser.add_argument(
-      '--build-web-sdk',
-      default=False,
-      action='store_true',
-      help='build the flutter web sdk'
-  )
-  parser.add_argument(
-      '--no-build-web-sdk', dest='build_web_sdk', action='store_false'
-  )
-
-  parser.add_argument(
       '--build-canvaskit',
       default=False,
       action='store_true',
-      help='build canvaskit from source'
-  )
-  parser.add_argument(
-      '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
-  )
-
-  parser.add_argument(
-      '--build-canvaskit-chromium',
-      default=False,
-      dest='build_canvaskit_chromium',
-      action='store_true',
-      help='build the Chromium variant of CanvasKit from sources'
+      help='build canvaskit from source (DEPRECATED: use ninja targets to select what to build)'
   )
 
   parser.add_argument(

@@ -82,6 +82,16 @@ TEST_P(AiksTest, CanRenderImage) {
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
 
+TEST_P(AiksTest, CanRenderInvertedImage) {
+  Canvas canvas;
+  Paint paint;
+  auto image = std::make_shared<Image>(CreateTextureForFixture("kalimba.jpg"));
+  paint.color = Color::Red();
+  paint.invert_colors = true;
+  canvas.DrawImage(image, Point::MakeXY(100.0, 100.0), paint);
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
 bool GenerateMipmap(const std::shared_ptr<Context>& context,
                     std::shared_ptr<Texture> texture,
                     std::string label) {
@@ -1120,7 +1130,8 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
                         Canvas& canvas,
                         const std::string& text,
                         const std::string& font_fixture,
-                        Scalar font_size = 50.0) {
+                        Scalar font_size = 50.0,
+                        Scalar alpha = 1.0) {
   Scalar baseline = 200.0;
   Point text_position = {100, baseline};
 
@@ -1147,7 +1158,7 @@ bool RenderTextInCanvas(const std::shared_ptr<Context>& context,
   auto frame = TextFrameFromTextBlob(blob);
 
   Paint text_paint;
-  text_paint.color = Color::Yellow();
+  text_paint.color = Color::Yellow().WithAlpha(alpha);
   canvas.DrawTextFrame(frame, text_position, text_paint);
   return true;
 }
@@ -1176,6 +1187,18 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
                                  "Apple Color Emoji.ttc"));
 #else
                                  "NotoColorEmoji.ttf"));
+#endif
+  ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
+}
+
+TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
+  Canvas canvas;
+  ASSERT_TRUE(RenderTextInCanvas(GetContext(), canvas,
+                                 "😀 😃 😄 😁 😆 😅 😂 🤣 🥲 😊",
+#if FML_OS_MACOSX
+                                 "Apple Color Emoji.ttc", 50, 0.5));
+#else
+                                 "NotoColorEmoji.ttf", 50, 0.5));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1369,6 +1392,7 @@ TEST_P(AiksTest, ColorWheel) {
 
   auto callback = [&](AiksContext& renderer, RenderTarget& render_target) {
     // UI state.
+    static bool cache_the_wheel = true;
     static int current_blend_index = 3;
     static float dst_alpha = 1;
     static float src_alpha = 1;
@@ -1378,6 +1402,7 @@ TEST_P(AiksTest, ColorWheel) {
 
     ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     {
+      ImGui::Checkbox("Cache the wheel", &cache_the_wheel);
       ImGui::ListBox("Blending mode", &current_blend_index,
                      blend_mode_names.data(), blend_mode_names.size());
       ImGui::SliderFloat("Source alpha", &src_alpha, 0, 1);
@@ -1391,7 +1416,7 @@ TEST_P(AiksTest, ColorWheel) {
     static Point content_scale;
     Point new_content_scale = GetContentScale();
 
-    if (new_content_scale != content_scale) {
+    if (!cache_the_wheel || new_content_scale != content_scale) {
       content_scale = new_content_scale;
 
       // Render the color wheel to an image.

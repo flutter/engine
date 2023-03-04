@@ -17,7 +17,7 @@ SrgbToLinearFilterContents::SrgbToLinearFilterContents() = default;
 
 SrgbToLinearFilterContents::~SrgbToLinearFilterContents() = default;
 
-std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
+std::optional<Entity> SrgbToLinearFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -60,10 +60,10 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
     frag_info.input_alpha = GetAbsorbOpacity() ? input_snapshot->opacity : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
@@ -74,18 +74,18 @@ std::optional<Snapshot> SrgbToLinearFilterContents::RenderFilter(
     return pass.AddCommand(std::move(cmd));
   };
 
-  auto out_texture =
-      renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
+  auto out_texture = renderer.MakeSubpass(
+      "sRGB to Linear Filter", input_snapshot->texture->GetSize(), callback);
   if (!out_texture) {
     return std::nullopt;
   }
-  out_texture->SetLabel("SrgbToLinear Texture");
 
-  return Snapshot{
-      .texture = out_texture,
-      .transform = input_snapshot->transform,
-      .sampler_descriptor = input_snapshot->sampler_descriptor,
-      .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
+  return Contents::EntityFromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = input_snapshot->transform,
+               .sampler_descriptor = input_snapshot->sampler_descriptor,
+               .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 }  // namespace impeller
