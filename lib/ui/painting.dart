@@ -1660,6 +1660,11 @@ enum PixelFormat {
   /// bits encoding green, the next 8 bits encoding red, and the lowest 8 bits
   /// encoding alpha.
   bgra8888,
+
+  /// Each pixel is 128 bits, where each color component is a 32 bit float that
+  /// is normalized across the sRGB gamut.  The first float is the red
+  /// component, followed by: green, blue and alpha.
+  rgbaFloat32,
 }
 
 /// Signature for [Image] lifecycle events.
