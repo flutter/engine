@@ -39,6 +39,9 @@ class MockDelegate : public Rasterizer::Delegate {
                      std::shared_ptr<const fml::SyncSwitch>());
   MOCK_METHOD0(CreateSnapshotSurface, std::unique_ptr<Surface>());
   MOCK_CONST_METHOD0(GetSettings, const Settings&());
+  MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
+  MOCK_CONST_METHOD0(CreateResourceContext, sk_sp<GrDirectContext>());
+  MOCK_CONST_METHOD0(ReleaseResourceContext, void());
 };
 
 class MockSurface : public Surface {

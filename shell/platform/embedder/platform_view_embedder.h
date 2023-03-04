@@ -113,13 +113,16 @@ class PlatformViewEmbedder final : public PlatformView {
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
+  sk_sp<GrDirectContext> CreateResourceContext() const override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface() override;
 
   // |PlatformView|
-  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
+  void ReleaseResourceContext() const override;
 
   // |PlatformView|
-  sk_sp<GrDirectContext> CreateResourceContext() const override;
+  std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
 
   // |PlatformView|
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;

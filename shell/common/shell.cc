@@ -749,23 +749,24 @@ void Shell::OnPlatformViewCreated() {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  FML_DCHECK(rasterizer_);
 
   std::unique_ptr<Surface> surface;
-  // Threading: Capture platform view by raw pointer and not the weak pointer.
-  // We want to use the platform view on the non-platform thread (raster now
-  // and IO later), which is not safe with a weak pointer. However, we are
-  // preventing the platform view from being collected by using a latch.
-  auto* platform_view = platform_view_.get();
+  // Threading: Capture rasterizer by raw pointer and not the weak pointer.
+  // We want to use the rasterizer on non-platform threads (raster now and IO
+  // later), which is not safe with a weak pointer. However, we are preventing
+  // the rasterizer from being collected by using a latch.
+  auto* rasterizer = rasterizer_.get();
   fml::ManualResetWaitableEvent surface_latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(),
-      [platform_view, &surface, &surface_latch]() {
-        surface = platform_view->CreateRenderingSurface();
-        if (surface && !surface->IsValid()) {
-          surface.reset();
-        }
-        surface_latch.Signal();
-      });
+  fml::TaskRunner::RunNowOrPostTask(task_runners_.GetRasterTaskRunner(),
+                                    [rasterizer, &surface, &surface_latch]() {
+                                      surface =
+                                          rasterizer->CreateRenderingSurface();
+                                      if (surface && !surface->IsValid()) {
+                                        surface.reset();
+                                      }
+                                      surface_latch.Signal();
+                                    });
   surface_latch.Wait();
   if (!surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
@@ -817,15 +818,13 @@ void Shell::OnPlatformViewCreated() {
     }
   };
 
-  FML_DCHECK(platform_view);
-
-  auto io_task = [io_manager = io_manager_->GetWeakPtr(), platform_view,
+  auto io_task = [io_manager = io_manager_->GetWeakPtr(), rasterizer,
                   ui_task_runner = task_runners_.GetUITaskRunner(), ui_task,
                   raster_task_runner = task_runners_.GetRasterTaskRunner(),
                   raster_task, should_post_raster_task, &latch] {
     if (io_manager && !io_manager->GetResourceContext()) {
       sk_sp<GrDirectContext> resource_context =
-          platform_view->CreateResourceContext();
+          rasterizer->CreateResourceContext();
       io_manager->NotifyResourceContextAvailable(resource_context);
     }
     // Step 1: Post a task on the UI thread to tell the engine that it has

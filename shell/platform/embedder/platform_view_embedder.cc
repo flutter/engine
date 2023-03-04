@@ -167,6 +167,9 @@ sk_sp<GrDirectContext> PlatformViewEmbedder::CreateResourceContext() const {
 }
 
 // |PlatformView|
+void PlatformViewEmbedder::ReleaseResourceContext() const {}
+
+// |PlatformView|
 std::unique_ptr<VsyncWaiter> PlatformViewEmbedder::CreateVSyncWaiter() {
   if (!platform_dispatch_table_.vsync_callback) {
     // Superclass implementation creates a timer based fallback.

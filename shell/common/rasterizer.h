@@ -103,6 +103,48 @@ class Rasterizer final : public SnapshotDelegate,
         const = 0;
 
     virtual const Settings& GetSettings() const = 0;
+
+    // Called on the raster task runner.
+    virtual std::unique_ptr<Surface> CreateRenderingSurface() = 0;
+
+    //----------------------------------------------------------------------------
+    /// @brief      Used by the shell to obtain a Skia GPU context that is
+    /// capable
+    ///             of operating on the IO thread. The context must be in the
+    ///             same share-group as the Skia GPU context used on the render
+    ///             thread. This context will always be used on the IO thread.
+    ///             Because it is in the same share-group as the separate render
+    ///             thread context, any GPU resources uploaded in this context
+    ///             will be visible to the render thread context
+    ///             (synchronization of GPU resources is managed by Skia).
+    ///
+    ///             If such context cannot be created on the IO thread, callers
+    ///             may return `nullptr`. This will mean that all texture
+    ///             uploads will be queued onto the render thread which will
+    ///             cause performance issues. When this context is `nullptr`, an
+    ///             error is logged to the console. It is highly recommended
+    ///             that all platforms provide a resource context.
+    ///
+    /// @attention  Unlike all other methods on the platform view, this will be
+    ///             called on IO task runner.
+    ///
+    /// @return     The Skia GPU context that is in the same share-group as the
+    ///             main render thread GPU context. May be `nullptr` in case
+    ///             such a context cannot be created.
+    ///
+    virtual sk_sp<GrDirectContext> CreateResourceContext() const = 0;
+
+    //----------------------------------------------------------------------------
+    /// @brief      Used by the shell to notify the embedder that the resource
+    ///             context previously obtained via a call to
+    ///             `CreateResourceContext()` is being collected. The embedder
+    ///             is free to collect an platform specific resources
+    ///             associated with this context.
+    ///
+    /// @attention  Unlike all other methods on the platform view, this will be
+    ///             called on IO task runner.
+    ///
+    virtual void ReleaseResourceContext() const = 0;
   };
 
   //----------------------------------------------------------------------------
@@ -481,6 +523,18 @@ class Rasterizer final : public SnapshotDelegate,
   /// @see        `ExternalViewEmbedder`
   ///
   void DisableThreadMergerIfNeeded();
+
+  std::unique_ptr<Surface> CreateRenderingSurface() {
+    return delegate_.CreateRenderingSurface();
+  }
+
+  sk_sp<GrDirectContext> CreateResourceContext() const {
+    return delegate_.CreateResourceContext();
+  }
+
+  void ReleaseResourceContext() const {
+    return delegate_.ReleaseResourceContext();
+  }
 
  private:
   // |SnapshotDelegate|

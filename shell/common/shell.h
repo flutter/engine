@@ -647,6 +647,21 @@ class Shell final : public PlatformView::Delegate,
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
 
+  // |Rasterizer::Delegate|
+  std::unique_ptr<Surface> CreateRenderingSurface() override {
+    return platform_view_->CreateRenderingSurface();
+  }
+
+  // |Rasterizer::Delegate|
+  sk_sp<GrDirectContext> CreateResourceContext() const override {
+    return platform_view_->CreateResourceContext();
+  }
+
+  // |Rasterizer::Delegate|
+  void ReleaseResourceContext() const override {
+    return platform_view_->ReleaseResourceContext();
+  }
+
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
       std::string_view method) const override;
