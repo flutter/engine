@@ -623,7 +623,8 @@ void Shell::OnEngineCreated() {
   auto* platform_view = platform_view_.get();
   fml::ManualResetWaitableEvent surface_latch;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &surface_latch]() {
+      task_runners_.GetRasterTaskRunner(),
+      [platform_view, &surface, &surface_latch]() {
         surface = platform_view->CreateRenderingSurface();
         if (surface && !surface->IsValid()) {
           surface.reset();
