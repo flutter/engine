@@ -37,7 +37,7 @@ class DescriptorPoolVK {
   friend class CommandEncoderVK;
 
   const vk::Device device_;
-  uint32_t pool_size_ = 15u;
+  uint32_t pool_size_ = 31u;
   std::queue<vk::UniqueDescriptorPool> pools_;
 
   DescriptorPoolVK(vk::Device device);

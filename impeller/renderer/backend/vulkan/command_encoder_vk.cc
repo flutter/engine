@@ -5,6 +5,7 @@
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 
 #include "flutter/fml/closure.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 
 namespace impeller {
@@ -60,12 +61,16 @@ bool CommandEncoderVK::Submit() {
   if (queue_.submit(submit_info, *fence) != vk::Result::eSuccess) {
     return false;
   }
-  if (device_.waitForFences(
-          *fence,                               // fences
-          true,                                 // wait all
-          std::numeric_limits<uint64_t>::max()  // timeout (ns)
-          ) != vk::Result::eSuccess) {
-    return false;
+
+  {
+    TRACE_EVENT0("impeller", "WaitForCompletion");
+    if (device_.waitForFences(
+            *fence,                               // fences
+            true,                                 // wait all
+            std::numeric_limits<uint64_t>::max()  // timeout (ns)
+            ) != vk::Result::eSuccess) {
+      return false;
+    }
   }
 
   return true;

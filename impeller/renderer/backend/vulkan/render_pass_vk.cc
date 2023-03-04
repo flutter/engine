@@ -9,7 +9,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "fml/logging.h"
+#include "flutter/fml/logging.h"
+#include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
 #include "impeller/renderer/backend/vulkan/command_encoder_vk.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
@@ -519,6 +520,7 @@ static bool EncodeCommand(const Context& context,
 }
 
 bool RenderPassVK::OnEncodeCommands(const Context& context) const {
+  TRACE_EVENT0("impeller", "RenderPassVK::OnEncodeCommands");
   if (!IsValid()) {
     return false;
   }
@@ -580,6 +582,7 @@ bool RenderPassVK::OnEncodeCommands(const Context& context) const {
   pass_info.setClearValues(clear_values);
 
   {
+    TRACE_EVENT0("impeller", "EncodeRenderPassCommands");
     cmd_buffer.beginRenderPass(pass_info, vk::SubpassContents::eInline);
 
     fml::ScopedCleanupClosure end_render_pass(
