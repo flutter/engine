@@ -2029,7 +2029,7 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
-  public void ime_windowInsetsSync_notLaidOutBehindNavigation_excludesSystemBars() {
+  public void ime_windowInsetsSync_notLaidOutBehindNavigation_excludesNavigationBars() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     when(testView.getWindowSystemUiVisibility()).thenReturn(View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
@@ -2052,19 +2052,19 @@ public class TextInputPluginTest {
     WindowInsets noneInsets = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets imeInsets0 = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets imeInsets1 = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 0));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
     WindowInsets deferredInsets = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets altDeferredInsets = builder.build();
 
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
@@ -2097,7 +2097,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
@@ -2105,7 +2105,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(10, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
@@ -2115,7 +2115,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
   }
@@ -2123,7 +2123,7 @@ public class TextInputPluginTest {
   @Test
   @TargetApi(30)
   @Config(sdk = 30)
-  public void ime_windowInsetsSync_laidOutBehindNavigation_includesSystemBars() {
+  public void ime_windowInsetsSync_laidOutBehindNavigation_includesNavigationBars() {
     FlutterView testView = spy(new FlutterView(Robolectric.setupActivity(Activity.class)));
     when(testView.getWindowSystemUiVisibility())
         .thenReturn(
@@ -2148,19 +2148,19 @@ public class TextInputPluginTest {
     WindowInsets noneInsets = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 25));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets imeInsets0 = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets imeInsets1 = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 100));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 0));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 0));
     WindowInsets deferredInsets = builder.build();
 
     builder.setInsets(WindowInsets.Type.ime(), Insets.of(0, 0, 0, 50));
-    builder.setInsets(WindowInsets.Type.systemBars(), Insets.of(10, 10, 10, 40));
+    builder.setInsets(WindowInsets.Type.navigationBars(), Insets.of(0, 0, 0, 40));
     WindowInsets altDeferredInsets = builder.build();
 
     ArgumentCaptor<FlutterRenderer.ViewportMetrics> viewportMetricsCaptor =
@@ -2193,7 +2193,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(25, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
@@ -2201,7 +2201,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(50, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
 
@@ -2211,7 +2211,7 @@ public class TextInputPluginTest {
 
     verify(flutterRenderer, atLeast(1)).setViewportMetrics(viewportMetricsCaptor.capture());
     assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingBottom);
-    assertEquals(10, viewportMetricsCaptor.getValue().viewPaddingTop);
+    assertEquals(0, viewportMetricsCaptor.getValue().viewPaddingTop);
     assertEquals(100, viewportMetricsCaptor.getValue().viewInsetBottom);
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
   }
