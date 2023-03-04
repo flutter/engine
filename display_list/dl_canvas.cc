@@ -9,9 +9,9 @@
 namespace flutter {
 
 SkRect DlCanvas::ComputeShadowBounds(const SkPath& path,
-                                                        float elevation,
-                                                        SkScalar dpr,
-                                                        const SkMatrix& ctm) {
+                                     float elevation,
+                                     SkScalar dpr,
+                                     const SkMatrix& ctm) {
   SkRect shadow_bounds(path.getBounds());
   SkShadowUtils::GetLocalBounds(
       ctm, path, SkPoint3::Make(0, 0, dpr * elevation),

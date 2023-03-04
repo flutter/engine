@@ -6,9 +6,8 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_CANVAS_DISPATCHER_H_
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_utils.h"
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/skia/dl_sk_utils.h"
 #include "flutter/fml/macros.h"
 
 namespace flutter {

@@ -761,8 +761,10 @@ ORIGIN: ../../../flutter/display_list/dl_op_receiver.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/display_list/dl_op_receiver.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_sk_dispatcher.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/dl_sk_dispatcher.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_dispatcher.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_dispatcher.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_utils.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.h + ../../../flutter/LICENSE
@@ -3291,6 +3293,8 @@ FILE: ../../../flutter/display_list/skia/dl_sk_canvas.cc
 FILE: ../../../flutter/display_list/skia/dl_sk_canvas.h
 FILE: ../../../flutter/display_list/skia/dl_sk_dispatcher.cc
 FILE: ../../../flutter/display_list/skia/dl_sk_dispatcher.h
+FILE: ../../../flutter/display_list/skia/dl_sk_utils.cc
+FILE: ../../../flutter/display_list/skia/dl_sk_utils.h
 FILE: ../../../flutter/display_list/types.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h

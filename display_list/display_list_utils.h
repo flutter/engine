@@ -7,14 +7,9 @@
 
 #include <optional>
 
-#include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_flags.h"
 #include "flutter/display_list/display_list_rtree.h"
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/fml/logging.h"
-#include "flutter/fml/macros.h"
-#include "third_party/skia/include/core/SkMaskFilter.h"
 
 // This file contains various utility classes to ease implementing
 // a Flutter DisplayList DlOpReceiver, including:
@@ -24,10 +19,6 @@
 // IgnoreTransformDispatchHelper
 //     Empty overrides of all of the associated methods of DlOpReceiver
 //     for receivers that only track some of the rendering operations
-//
-// SkPaintAttributeDispatchHelper:
-//     Tracks the attribute methods and maintains their state in an
-//     SkPaint object.
 
 namespace flutter {
 
@@ -146,77 +137,6 @@ class IgnoreDrawDispatchHelper : public virtual DlOpReceiver {
                   const SkScalar elevation,
                   bool transparent_occluder,
                   SkScalar dpr) override {}
-};
-
-// A utility class that will monitor the DlOpReceiver methods relating
-// to the rendering attributes and accumulate them into an SkPaint
-// which can be accessed at any time via paint().
-class SkPaintDispatchHelper : public virtual DlOpReceiver {
- public:
-  SkPaintDispatchHelper(SkScalar opacity = SK_Scalar1)
-      : current_color_(SK_ColorBLACK), opacity_(opacity) {
-    if (opacity < SK_Scalar1) {
-      paint_.setAlphaf(opacity);
-    }
-  }
-
-  void setAntiAlias(bool aa) override;
-  void setDither(bool dither) override;
-  void setStyle(DlDrawStyle style) override;
-  void setColor(DlColor color) override;
-  void setStrokeWidth(SkScalar width) override;
-  void setStrokeMiter(SkScalar limit) override;
-  void setStrokeCap(DlStrokeCap cap) override;
-  void setStrokeJoin(DlStrokeJoin join) override;
-  void setColorSource(const DlColorSource* source) override;
-  void setColorFilter(const DlColorFilter* filter) override;
-  void setInvertColors(bool invert) override;
-  void setBlendMode(DlBlendMode mode) override;
-  void setPathEffect(const DlPathEffect* effect) override;
-  void setMaskFilter(const DlMaskFilter* filter) override;
-  void setImageFilter(const DlImageFilter* filter) override;
-
-  const SkPaint& paint() { return paint_; }
-
-  /// Returns the current opacity attribute which is used to reduce
-  /// the alpha of all setColor calls encountered in the streeam
-  SkScalar opacity() { return opacity_; }
-  /// Returns the combined opacity that includes both the current
-  /// opacity attribute and the alpha of the most recent color.
-  /// The most recently set color will have combined the two and
-  /// stored the combined value in the alpha of the paint.
-  SkScalar combined_opacity() { return paint_.getAlphaf(); }
-  /// Returns true iff the current opacity attribute is not opaque,
-  /// irrespective of the alpha of the current color
-  bool has_opacity() { return opacity_ < SK_Scalar1; }
-
- protected:
-  void save_opacity(SkScalar opacity_for_children);
-  void restore_opacity();
-
- private:
-  SkPaint paint_;
-  bool invert_colors_ = false;
-  std::shared_ptr<const DlColorFilter> color_filter_;
-
-  sk_sp<SkColorFilter> makeColorFilter() const;
-
-  struct SaveInfo {
-    SaveInfo(SkScalar opacity) : opacity(opacity) {}
-
-    SkScalar opacity;
-  };
-  std::vector<SaveInfo> save_stack_;
-
-  void set_opacity(SkScalar opacity) {
-    if (opacity_ != opacity) {
-      opacity_ = opacity;
-      setColor(current_color_);
-    }
-  }
-
-  SkColor current_color_;
-  SkScalar opacity_;
 };
 
 enum class BoundsAccumulatorType {
