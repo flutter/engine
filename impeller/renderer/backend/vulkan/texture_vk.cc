@@ -70,6 +70,8 @@ static constexpr vk::ImageAspectFlags ToImageAspectFlags(
   switch (layout) {
     case vk::ImageLayout::eColorAttachmentOptimal:
     case vk::ImageLayout::eShaderReadOnlyOptimal:
+    case vk::ImageLayout::eTransferSrcOptimal:
+    case vk::ImageLayout::eTransferDstOptimal:
       return vk::ImageAspectFlagBits::eColor;
     case vk::ImageLayout::eDepthAttachmentOptimal:
       return vk::ImageAspectFlagBits::eDepth;
