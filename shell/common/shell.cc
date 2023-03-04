@@ -750,8 +750,6 @@ void Shell::OnPlatformViewCreated() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  platform_view_->NotifyCreated();
-
   std::unique_ptr<Surface> surface;
   // Threading: Capture platform view by raw pointer and not the weak pointer.
   // We want to use the platform view on the non-platform thread (raster now
