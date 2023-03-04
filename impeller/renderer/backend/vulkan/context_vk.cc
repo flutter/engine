@@ -134,7 +134,9 @@ static std::vector<std::string> HasRequiredExtensions(
 static vk::PhysicalDeviceFeatures GetRequiredPhysicalDeviceFeatures() {
   vk::PhysicalDeviceFeatures features;
 #ifndef NDEBUG
-  features.setRobustBufferAccess(true);
+  features.robustBufferAccess = true;
+  // Needed for the wireframe view in the playgrounds.
+  features.fillModeNonSolid = true;
 #endif  // NDEBUG
   return features;
 };
