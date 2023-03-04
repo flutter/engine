@@ -261,7 +261,7 @@ int RunTester(const flutter::Settings& settings,
     return EXIT_FAILURE;
   }
 
-  shell->GetPlatformView()->NotifyCreated();
+  shell->OnEngineCreated();
 
   // Initialize default testing locales. There is no platform to
   // pass locales on the tester, so to retain expected locale behavior,

@@ -213,6 +213,8 @@ class Shell final : public PlatformView::Delegate,
   void RunEngine(RunConfiguration run_configuration,
                  const std::function<void(Engine::RunStatus)>& result_callback);
 
+  void OnEngineCreated();
+
   //------------------------------------------------------------------------------
   /// @return     The settings used to launch this shell.
   ///
@@ -522,9 +524,6 @@ class Shell final : public PlatformView::Delegate,
              const std::shared_ptr<ShellIOManager>& io_manager);
 
   void ReportTimings();
-
-  // |PlatformView::Delegate|
-  void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override;
 
   // |PlatformView::Delegate|
   void OnPlatformViewDestroyed() override;

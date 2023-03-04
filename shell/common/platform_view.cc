@@ -55,29 +55,6 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
   delegate_.OnPlatformViewSetViewportMetrics(metrics);
 }
 
-void PlatformView::NotifyCreated() {
-  std::unique_ptr<Surface> surface;
-  // Threading: We want to use the platform view on the non-platform thread.
-  // Using the weak pointer is illegal. But, we are going to introduce a latch
-  // so that the platform view is not collected till the surface is obtained.
-  auto* platform_view = this;
-  fml::ManualResetWaitableEvent latch;
-  fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
-        surface = platform_view->CreateRenderingSurface();
-        if (surface && !surface->IsValid()) {
-          surface.reset();
-        }
-        latch.Signal();
-      });
-  latch.Wait();
-  if (!surface) {
-    FML_LOG(ERROR) << "Failed to create platform view rendering surface";
-    return;
-  }
-  delegate_.OnPlatformViewCreated(std::move(surface));
-}
-
 void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }

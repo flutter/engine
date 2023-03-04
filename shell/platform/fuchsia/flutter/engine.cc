@@ -582,7 +582,7 @@ void Engine::Initialize(
 
   //  This platform does not get a separate surface platform view creation
   //  notification. Fire one eagerly.
-  shell_->GetPlatformView()->NotifyCreated();
+  shell_->OnEngineCreated();
 
   // Connect to the memory pressure provider.  If the connection fails, the
   // initialization of the engine will simply proceed, printing a warning

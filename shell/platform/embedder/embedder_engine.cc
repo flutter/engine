@@ -86,7 +86,7 @@ bool EmbedderEngine::NotifyCreated() {
     return false;
   }
 
-  shell_->GetPlatformView()->NotifyCreated();
+  shell_->OnEngineCreated();
   return true;
 }
 
