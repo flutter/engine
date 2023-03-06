@@ -294,8 +294,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    if (subpass->delegate_->CanCollapseIntoParentPass() &&
-        !subpass->backdrop_filter_proc_.has_value()) {
+    if (!subpass->backdrop_filter_proc_.has_value() &&
+        subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(renderer, root_pass_size,
                              pass_context.GetRenderTarget(), position, position,
@@ -622,6 +622,28 @@ void EntityPass::IterateAllEntities(
     }
     FML_UNREACHABLE();
   }
+}
+
+bool EntityPass::IterateAllFlatEntities(
+    const std::function<bool(Entity&)>& iterator) {
+  if (!iterator) {
+    return true;
+  }
+
+  for (auto& element : elements_) {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      if (!iterator(*entity)) {
+        return false;
+      }
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+size_t EntityPass::GetEntityCount() const {
+  return elements_.size();
 }
 
 std::unique_ptr<EntityPass> EntityPass::Clone() const {

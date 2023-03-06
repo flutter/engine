@@ -12,6 +12,8 @@
 
 namespace impeller {
 
+class EntityPass;
+
 class PaintPassDelegate final : public EntityPassDelegate {
  public:
   PaintPassDelegate(Paint paint, std::optional<Rect> coverage);
@@ -26,7 +28,7 @@ class PaintPassDelegate final : public EntityPassDelegate {
   bool CanElide() override;
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override;
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override;
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
@@ -39,5 +41,34 @@ class PaintPassDelegate final : public EntityPassDelegate {
 
   FML_DISALLOW_COPY_AND_ASSIGN(PaintPassDelegate);
 };
+
+class OpacityPeepholePassDelegate final : public EntityPassDelegate {
+ public:
+  OpacityPeepholePassDelegate(Paint paint, std::optional<Rect> coverage);
+
+  // |EntityPassDelgate|
+  ~OpacityPeepholePassDelegate() override;
+
+  // |EntityPassDelegate|
+  std::optional<Rect> GetCoverageRect() override;
+
+  // |EntityPassDelgate|
+  bool CanElide() override;
+
+  // |EntityPassDelgate|
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override;
+
+  // |EntityPassDelgate|
+  std::shared_ptr<Contents> CreateContentsForSubpassTarget(
+      std::shared_ptr<Texture> target,
+      const Matrix& effect_transform) override;
+
+ private:
+  const Paint paint_;
+  const std::optional<Rect> coverage_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(OpacityPeepholePassDelegate);
+};
+
 
 }  // namespace impeller
