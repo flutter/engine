@@ -1722,8 +1722,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     return NO;
   }
 
-  // TODO(cyanglaz): embedder api, is libraryOrNil still needed?
-
   // The first argument of argv is required to be the executable name.
   std::vector<const char*> argv = {[self.executableName UTF8String]};
   std::vector<std::string> switches = _dartProject.switches;
