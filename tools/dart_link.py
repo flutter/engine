@@ -30,12 +30,12 @@ def main(argv):
   if args.init:
     if not os.path.exists(dart_dir):
       print('Linking //third_party/dart -> //third_party/dart_checkout')
-      os.symlink(dart_checkout_dir, dart_dir)
+      os.symlink(dart_checkout_dir, dart_dir, target_is_directory=True)
   elif args.unlink:
     print('Linking //third_party/dart -> //third_party/dart_checkout')
     if os.path.exists(dart_dir):
       os.remove(dart_dir)
-    os.symlink(dart_checkout_dir, dart_dir)
+    os.symlink(dart_checkout_dir, dart_dir, target_is_directory=True)
   elif args.link is not None:
     if not os.path.exists(args.link):
       raise Exception(f'Directory {args.link} does not exist')
