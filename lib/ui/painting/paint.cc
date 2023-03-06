@@ -6,6 +6,7 @@
 
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/fml/logging.h"
+#include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/color_filter.h"
 #include "flutter/lib/ui/painting/image_filter.h"
 #include "flutter/lib/ui/painting/shader.h"
@@ -51,7 +52,7 @@ constexpr uint32_t kBlendModeDefault =
 
 // Must be kept in sync with the default in painting.dart, and also with the
 // default SkPaintDefaults_MiterLimit in Skia (which is not in a public header).
-constexpr double kStrokeMiterLimitDefault = 4.0;
+constexpr float kStrokeMiterLimitDefault = 4.0f;
 
 // A color matrix which inverts colors.
 // clang-format off
@@ -183,7 +184,8 @@ const SkPaint* Paint::paint(SkPaint& paint) const {
       SkBlurStyle blur_style =
           static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
       double sigma = float_data[kMaskFilterSigmaIndex];
-      paint.setMaskFilter(SkMaskFilter::MakeBlur(blur_style, sigma));
+      paint.setMaskFilter(
+          SkMaskFilter::MakeBlur(blur_style, SafeNarrow(sigma)));
       break;
   }
 
@@ -318,7 +320,7 @@ bool Paint::sync_to(DisplayListBuilder* builder,
         SkBlurStyle blur_style =
             static_cast<SkBlurStyle>(uint_data[kMaskFilterBlurStyleIndex]);
         double sigma = float_data[kMaskFilterSigmaIndex];
-        DlBlurMaskFilter dl_filter(blur_style, sigma);
+        DlBlurMaskFilter dl_filter(blur_style, SafeNarrow(sigma));
         if (dl_filter.skia_object()) {
           builder->setMaskFilter(&dl_filter);
         } else {

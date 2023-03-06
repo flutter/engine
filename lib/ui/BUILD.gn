@@ -8,6 +8,16 @@ import("//flutter/impeller/tools/impeller.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
+  cflags = [
+    # Dart gives us doubles. Skia and Impeller work in floats.
+    # If Dart gives us a double > FLT_MAX or < -FLT_MAX, implicit conversion
+    # will convert it to either inf/-inf or FLT_MAX/-FLT_MAX (undefined
+    # behavior). This can result in surprising and difficult to debug behavior
+    # for Flutter application developers, so it should be explicitly handled
+    # via SafeNarrow.
+    "-Wimplicit-float-conversion",
+  ]
+
   sources = [
     "compositing/scene.cc",
     "compositing/scene.h",
@@ -18,6 +28,7 @@ source_set("ui") {
     "dart_ui.cc",
     "dart_ui.h",
     "dart_wrapper.h",
+    "floating_point.h",
     "io_manager.cc",
     "io_manager.h",
     "isolate_name_server/isolate_name_server.cc",
