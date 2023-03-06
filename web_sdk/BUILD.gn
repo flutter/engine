@@ -22,6 +22,7 @@ web_engine_libraries = [
   ":web_ui_library",
   ":web_ui_library_sources",
   ":web_unicode_library",
+  ":web_test_fonts_library",
   ":web_locale_keymap_library",
 ]
 
@@ -133,6 +134,13 @@ sdk_rewriter("web_unicode_library") {
   api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
   input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
+}
+
+sdk_rewriter("web_test_fonts_library") {
+  library_name = "web_test_fonts"
+  api_file = "//flutter/third_party/web_test_fonts/lib/web_test_fonts.dart"
+  input_dir = "//flutter/third_party/web_test_fonts/lib/web_test_fonts/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_test_fonts/"
 }
 
 sdk_rewriter("web_locale_keymap_library") {
@@ -603,11 +611,11 @@ if (!is_fuchsia) {
         destination = "canvaskit/canvaskit.wasm"
       },
       {
-        source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.js")
+        source = rebase_path("$root_out_dir/canvaskit/chromium/canvaskit.js")
         destination = "canvaskit/chromium/canvaskit.js"
       },
       {
-        source = rebase_path("$root_out_dir/canvaskit_chromium/canvaskit.wasm")
+        source = rebase_path("$root_out_dir/canvaskit/chromium/canvaskit.wasm")
         destination = "canvaskit/chromium/canvaskit.wasm"
       },
       {
