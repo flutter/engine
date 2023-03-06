@@ -680,6 +680,7 @@ LIBRARY: engine
 LIBRARY: spring_animation
 LIBRARY: tonic
 LIBRARY: txt
+LIBRARY: web_test_fonts
 LIBRARY: web_unicode
 ORIGIN: ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/assets/asset_manager.cc + ../../../flutter/LICENSE
@@ -2550,6 +2551,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm + ../../
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h + ../../../flutter/LICENSE
@@ -2561,6 +2563,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/Accessibil
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h + ../../../flutter/LICENSE
@@ -3162,6 +3167,8 @@ ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc + ../../../
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_linux.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_windows.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/vulkan/procs/vulkan_handle.cc + ../../../flutter/LICENSE
@@ -5083,6 +5090,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
@@ -5095,6 +5103,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/Accessibilit
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
@@ -5704,6 +5715,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
+FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart
+FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart
 FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
 FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc
