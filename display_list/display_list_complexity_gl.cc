@@ -550,7 +550,7 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
     bool render_with_attributes,
-    SkCanvas::SrcRectConstraint constraint) {
+    bool enforce_src_edges) {
   if (IsComplex()) {
     return;
   }
@@ -563,10 +563,8 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   unsigned int complexity;
-  if (!texture_backed ||
-      (texture_backed && render_with_attributes &&
-       constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-       IsAntiAliased())) {
+  if (!texture_backed || (texture_backed && render_with_attributes &&
+                          enforce_src_edges && IsAntiAliased())) {
     unsigned int area = size.width() * size.height();
     // m = 1/4000
     // c = 5

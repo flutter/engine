@@ -121,7 +121,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
                      const SkRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
-                     SkCanvas::SrcRectConstraint constraint) override;
+                     bool enforce_src_edges) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,

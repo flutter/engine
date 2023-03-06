@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/fml/logging.h"
 
 namespace flutter {
@@ -70,30 +71,30 @@ void SkPaintDispatchHelper::setBlendMode(DlBlendMode mode) {
   paint_.setBlendMode(ToSk(mode));
 }
 void SkPaintDispatchHelper::setColorSource(const DlColorSource* source) {
-  paint_.setShader(source ? source->skia_object() : nullptr);
+  paint_.setShader(ToSk(source));
 }
 void SkPaintDispatchHelper::setImageFilter(const DlImageFilter* filter) {
-  paint_.setImageFilter(filter ? filter->skia_object() : nullptr);
+  paint_.setImageFilter(ToSk(filter));
 }
 void SkPaintDispatchHelper::setColorFilter(const DlColorFilter* filter) {
-  color_filter_ = filter ? filter->shared() : nullptr;
+  sk_color_filter_ = ToSk(filter);
   paint_.setColorFilter(makeColorFilter());
 }
 void SkPaintDispatchHelper::setPathEffect(const DlPathEffect* effect) {
-  paint_.setPathEffect(effect ? effect->skia_object() : nullptr);
+  paint_.setPathEffect(ToSk(effect));
 }
 void SkPaintDispatchHelper::setMaskFilter(const DlMaskFilter* filter) {
-  paint_.setMaskFilter(filter ? filter->skia_object() : nullptr);
+  paint_.setMaskFilter(ToSk(filter));
 }
 
 sk_sp<SkColorFilter> SkPaintDispatchHelper::makeColorFilter() const {
   if (!invert_colors_) {
-    return color_filter_ ? color_filter_->skia_object() : nullptr;
+    return sk_color_filter_;
   }
   sk_sp<SkColorFilter> invert_filter =
       SkColorFilters::Matrix(kInvertColorMatrix);
-  if (color_filter_) {
-    invert_filter = invert_filter->makeComposed(color_filter_->skia_object());
+  if (sk_color_filter_) {
+    invert_filter = invert_filter->makeComposed(sk_color_filter_);
   }
   return invert_filter;
 }

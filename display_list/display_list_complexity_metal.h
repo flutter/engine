@@ -80,7 +80,7 @@ class DisplayListMetalComplexityCalculator
     void ImageRect(const SkISize& size,
                    bool texture_backed,
                    bool render_with_attributes,
-                   SkCanvas::SrcRectConstraint constraint) override;
+                   bool enforce_src_edges) override;
 
     unsigned int BatchedComplexity() override;
 

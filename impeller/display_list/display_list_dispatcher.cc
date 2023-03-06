@@ -704,7 +704,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
-    case flutter::DlImageFilterType::kComposeFilter: {
+    case flutter::DlImageFilterType::kCompose: {
       auto compose = filter->asCompose();
       FML_DCHECK(compose);
       auto outer = compose->outer();
@@ -741,7 +741,7 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       };
       break;
     }
-    case flutter::DlImageFilterType::kLocalMatrixFilter: {
+    case flutter::DlImageFilterType::kLocalMatrix: {
       auto local_matrix_filter = filter->asLocalMatrix();
       FML_DCHECK(local_matrix_filter);
       auto internal_filter = local_matrix_filter->image_filter();
@@ -1158,13 +1158,12 @@ void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
 }
 
 // |flutter::DlOpReceiver|
-void DisplayListDispatcher::drawImageRect(
-    const sk_sp<flutter::DlImage> image,
-    const SkRect& src,
-    const SkRect& dst,
-    flutter::DlImageSampling sampling,
-    bool render_with_attributes,
-    SkCanvas::SrcRectConstraint constraint) {
+void DisplayListDispatcher::drawImageRect(const sk_sp<flutter::DlImage> image,
+                                          const SkRect& src,
+                                          const SkRect& dst,
+                                          flutter::DlImageSampling sampling,
+                                          bool render_with_attributes,
+                                          bool enforce_src_edges) {
   canvas_.DrawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
       ToRect(src),                                         // source rect

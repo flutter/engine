@@ -5,18 +5,11 @@
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 
 #include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/skia/dl_sk_conversions.h"
 #include "flutter/fml/trace_event.h"
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flutter {
-
-static SkClipOp ToSk(DlCanvas::ClipOp op) {
-  return static_cast<SkClipOp>(op);
-}
-
-static SkCanvas::PointMode ToSk(DlCanvas::PointMode mode) {
-  return static_cast<SkCanvas::PointMode>(mode);
-}
 
 const SkPaint* DlSkCanvasDispatcher::safe_paint(bool use_attributes) {
   if (use_attributes) {
@@ -68,8 +61,7 @@ void DlSkCanvasDispatcher::saveLayer(const SkRect* bounds,
   } else {
     TRACE_EVENT0("flutter", "Canvas::saveLayer");
     const SkPaint* paint = safe_paint(options.renders_with_attributes());
-    const sk_sp<SkImageFilter> sk_backdrop =
-        backdrop ? backdrop->skia_object() : nullptr;
+    const sk_sp<SkImageFilter> sk_backdrop = ToSk(backdrop);
     canvas_->saveLayer(
         SkCanvas::SaveLayerRec(bounds, paint, sk_backdrop.get(), 0));
     // saveLayer will apply the current opacity on behalf of the children
@@ -186,7 +178,7 @@ void DlSkCanvasDispatcher::drawPoints(PointMode mode,
 }
 void DlSkCanvasDispatcher::drawVertices(const DlVertices* vertices,
                                         DlBlendMode mode) {
-  canvas_->drawVertices(vertices->skia_object(), ToSk(mode), paint());
+  canvas_->drawVertices(ToSk(vertices), ToSk(mode), paint());
 }
 void DlSkCanvasDispatcher::drawImage(const sk_sp<DlImage> image,
                                      const SkPoint point,
@@ -195,16 +187,15 @@ void DlSkCanvasDispatcher::drawImage(const sk_sp<DlImage> image,
   canvas_->drawImage(image ? image->skia_image() : nullptr, point.fX, point.fY,
                      ToSk(sampling), safe_paint(render_with_attributes));
 }
-void DlSkCanvasDispatcher::drawImageRect(
-    const sk_sp<DlImage> image,
-    const SkRect& src,
-    const SkRect& dst,
-    DlImageSampling sampling,
-    bool render_with_attributes,
-    SkCanvas::SrcRectConstraint constraint) {
+void DlSkCanvasDispatcher::drawImageRect(const sk_sp<DlImage> image,
+                                         const SkRect& src,
+                                         const SkRect& dst,
+                                         DlImageSampling sampling,
+                                         bool render_with_attributes,
+                                         bool enforce_src_edges) {
   canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
                          ToSk(sampling), safe_paint(render_with_attributes),
-                         constraint);
+                         ToSkConstraint(enforce_src_edges));
 }
 void DlSkCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                          const SkIRect& center,

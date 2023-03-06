@@ -493,7 +493,7 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
     bool render_with_attributes,
-    SkCanvas::SrcRectConstraint constraint) {
+    bool enforce_src_edges) {
   if (IsComplex()) {
     return;
   }
@@ -512,16 +512,12 @@ void DisplayListMetalComplexityCalculator::MetalHelper::ImageRect(
     // m = 1/23000
     // c = 2.3
     complexity = (area + 52900) * 2 / 115;
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
+    if (render_with_attributes && enforce_src_edges && IsAntiAliased()) {
       // There's about a 30% performance penalty from the baseline.
       complexity *= 1.3f;
     }
   } else {
-    if (render_with_attributes &&
-        constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-        IsAntiAliased()) {
+    if (render_with_attributes && enforce_src_edges && IsAntiAliased()) {
       // m = 1/12200
       // c = 2.75
       complexity = (area + 33550) * 2 / 61;

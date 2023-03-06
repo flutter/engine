@@ -249,8 +249,8 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
         new (pod) DlMatrixImageFilter(matrix_filter);
         break;
       }
-      case DlImageFilterType::kComposeFilter:
-      case DlImageFilterType::kLocalMatrixFilter:
+      case DlImageFilterType::kCompose:
+      case DlImageFilterType::kLocalMatrix:
       case DlImageFilterType::kColorFilter: {
         Push<SetSharedImageFilterOp>(0, 0, filter);
         break;
@@ -946,9 +946,9 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& dst,
                                        DlImageSampling sampling,
                                        bool render_with_attributes,
-                                       SkCanvas::SrcRectConstraint constraint) {
+                                       bool enforce_src_edges) {
   Push<DrawImageRectOp>(0, 1, image, src, dst, sampling, render_with_attributes,
-                        constraint);
+                        enforce_src_edges);
   CheckLayerOpacityCompatibility(render_with_attributes);
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageRectWithPaintFlags
@@ -961,15 +961,12 @@ void DisplayListBuilder::DrawImageRect(const sk_sp<DlImage>& image,
                                        DlImageSampling sampling,
                                        const DlPaint* paint,
                                        bool enforce_src_edges) {
-  SkCanvas::SrcRectConstraint constraint =
-      enforce_src_edges ? SkCanvas::kStrict_SrcRectConstraint
-                        : SkCanvas::kFast_SrcRectConstraint;
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawImageRectWithPaintFlags);
-    drawImageRect(image, src, dst, sampling, true, constraint);
+    drawImageRect(image, src, dst, sampling, true, enforce_src_edges);
   } else {
-    drawImageRect(image, src, dst, sampling, false, constraint);
+    drawImageRect(image, src, dst, sampling, false, enforce_src_edges);
   }
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,

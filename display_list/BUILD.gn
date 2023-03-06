@@ -61,6 +61,8 @@ source_set("display_list") {
     "dl_op_receiver.h",
     "skia/dl_sk_canvas.cc",
     "skia/dl_sk_canvas.h",
+    "skia/dl_sk_conversions.cc",
+    "skia/dl_sk_conversions.h",
     "skia/dl_sk_dispatcher.cc",
     "skia/dl_sk_dispatcher.h",
     "skia/dl_sk_utils.cc",
@@ -96,7 +98,6 @@ if (enable_unittests) {
       "display_list_color_source_unittests.cc",
       "display_list_color_unittests.cc",
       "display_list_complexity_unittests.cc",
-      "display_list_enum_unittests.cc",
       "display_list_image_filter_unittests.cc",
       "display_list_mask_filter_unittests.cc",
       "display_list_matrix_clip_tracker_unittests.cc",
@@ -105,6 +106,7 @@ if (enable_unittests) {
       "display_list_rtree_unittests.cc",
       "display_list_unittests.cc",
       "display_list_vertices_unittests.cc",
+      "skia/dl_sk_conversions_unittests.cc",
       "skia/dl_sk_utils_unittests.cc",
     ]
 

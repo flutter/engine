@@ -36,10 +36,6 @@ namespace flutter {
 //     wrong type of instance.
 //     (eg. DlColorFilter::asBlend() or DlMaskFilter::asBlur())
 //
-// - Skiafiable:
-//     The classes override an |skia_object| method to easily obtain a Skia
-//     version of the attribute on demand.
-//
 // - Immutable:
 //     Neither the base class or any of the subclasses specify any mutation
 //     methods. Instances are often passed around as const as a reminder,
@@ -79,11 +75,9 @@ namespace flutter {
 
 // |D| is the base type for the attribute
 //     (i.e. DlColorFilter, etc.)
-// |S| is the base type for the Skia version of the attribute
-//     (i.e. SkColorFilter, etc.)
 // |T| is the enum that describes the specific subclasses
 //     (i.e DlColorFilterType, etc.)
-template <class D, class S, typename T>
+template <class D, typename T>
 class DlAttribute {
  public:
   // Return the recognized specific type of the attribute.
@@ -97,9 +91,6 @@ class DlAttribute {
   // will reference a copy of this object so that the lifetime of the shared
   // version is not tied to the storage of this particular instance.
   virtual std::shared_ptr<D> shared() const = 0;
-
-  // Return an equivalent sk_sp<Skia> version of this object.
-  virtual sk_sp<S> skia_object() const = 0;
 
   // Perform a content aware |==| comparison of the Attribute.
   bool operator==(D const& other) const {

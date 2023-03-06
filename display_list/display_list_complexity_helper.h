@@ -150,12 +150,12 @@ class ComplexityCalculatorHelper
                      const SkRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
-                     SkCanvas::SrcRectConstraint constraint) override {
+                     bool enforce_src_edges = false) override {
     if (IsComplex()) {
       return;
     }
     ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes, constraint);
+              render_with_attributes, enforce_src_edges);
   }
 
   void drawAtlas(const sk_sp<DlImage> atlas,
@@ -174,8 +174,7 @@ class ComplexityCalculatorHelper
     // This is equivalent to calling drawImageRect lots of times
     for (int i = 0; i < count; i++) {
       ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true,
-                render_with_attributes,
-                SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
+                render_with_attributes, true);
     }
   }
 
@@ -248,7 +247,7 @@ class ComplexityCalculatorHelper
   virtual void ImageRect(const SkISize& size,
                          bool texture_backed,
                          bool render_with_attributes,
-                         SkCanvas::SrcRectConstraint constraint) = 0;
+                         bool enforce_src_edges) = 0;
 
   // This calculates and returns the cost of draw calls which are batched and
   // thus have a time cost proportional to the number of draw calls made, such

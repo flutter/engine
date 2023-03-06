@@ -17,8 +17,6 @@ class Paint {
   Paint() = default;
   Paint(Dart_Handle paint_objects, Dart_Handle paint_data);
 
-  const SkPaint* paint(SkPaint& paint) const;
-
   const DlPaint* paint(DlPaint& paint,
                        const DisplayListAttributeFlags& flags) const;
 

@@ -839,25 +839,25 @@ struct DrawImageRectOp final : DrawOpBase {
                   const SkRect& dst,
                   DlImageSampling sampling,
                   bool render_with_attributes,
-                  SkCanvas::SrcRectConstraint constraint)
+                  bool enforce_src_edges)
       : src(src),
         dst(dst),
         sampling(sampling),
         render_with_attributes(render_with_attributes),
-        constraint(constraint),
+        enforce_src_edges(enforce_src_edges),
         image(std::move(image)) {}
 
   const SkRect src;
   const SkRect dst;
   const DlImageSampling sampling;
   const bool render_with_attributes;
-  const SkCanvas::SrcRectConstraint constraint;
+  const bool enforce_src_edges;
   const sk_sp<DlImage> image;
 
   void dispatch(DispatchContext& ctx) const {
     if (op_needed(ctx)) {
       ctx.receiver.drawImageRect(image, src, dst, sampling,
-                                 render_with_attributes, constraint);
+                                 render_with_attributes, enforce_src_edges);
     }
   }
 
@@ -865,7 +865,8 @@ struct DrawImageRectOp final : DrawOpBase {
     return (src == other->src && dst == other->dst &&
             sampling == other->sampling &&
             render_with_attributes == other->render_with_attributes &&
-            constraint == other->constraint && image->Equals(other->image))
+            enforce_src_edges == other->enforce_src_edges &&
+            image->Equals(other->image))
                ? DisplayListCompare::kEqual
                : DisplayListCompare::kNotEqual;
   }

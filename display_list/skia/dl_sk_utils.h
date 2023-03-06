@@ -58,7 +58,7 @@ class SkPaintDispatchHelper : public virtual DlOpReceiver {
  private:
   SkPaint paint_;
   bool invert_colors_ = false;
-  std::shared_ptr<const DlColorFilter> color_filter_;
+  sk_sp<SkColorFilter> sk_color_filter_;
 
   sk_sp<SkColorFilter> makeColorFilter() const;
 

@@ -693,8 +693,8 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
       SkImageFilters::ColorFilter(
           SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver), nullptr),
       SkImageFilters::Dilate(5.0, 10.0, nullptr),
-      SkImageFilters::MatrixTransform(filter_matrix,
-                                      ToSk(DlImageSampling::kLinear), nullptr),
+      SkImageFilters::MatrixTransform(
+          filter_matrix, SkSamplingOptions(SkFilterMode::kLinear), nullptr),
       SkImageFilters::Compose(
           SkImageFilters::Blur(5.0, 6.0, SkTileMode::kRepeat, nullptr),
           SkImageFilters::ColorFilter(
@@ -768,16 +768,6 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
       }
     }
   }
-}
-
-TEST(DisplayListImageFilter, LocalImageSkiaNull) {
-  auto blur_filter =
-      std::make_shared<DlBlurImageFilter>(0, 0, DlTileMode::kClamp);
-  DlLocalMatrixImageFilter dl_local_matrix_filter(SkMatrix::RotateDeg(45),
-                                                  blur_filter);
-  // With sigmas set to zero on the blur filter, Skia will return a null filter.
-  // The local matrix filter should return nullptr instead of crashing.
-  ASSERT_EQ(dl_local_matrix_filter.skia_object(), nullptr);
 }
 
 }  // namespace testing

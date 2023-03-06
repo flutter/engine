@@ -356,6 +356,8 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
   };
   // clang-format on
   DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  sk_sp<SkColorFilter> sk_alpha_color_filter =
+      SkColorFilters::Matrix(alpha_matrix);
 
   {
     // No tricky stuff, just verifying drawing a rect produces rect bounds
@@ -389,7 +391,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     SkRTreeFactory rtree_factory;
     SkCanvas* canvas = recorder.beginRecording(build_bounds, &rtree_factory);
     SkPaint p1;
-    p1.setColorFilter(alpha_color_filter.skia_object());
+    p1.setColorFilter(sk_alpha_color_filter);
     canvas->saveLayer(save_bounds, &p1);
     SkPaint p2;
     canvas->drawRect(rect, p2);

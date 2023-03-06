@@ -432,8 +432,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       const SkRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
-      SkCanvas::SrcRectConstraint constraint =
-          SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint) override;
+      bool enforce_src_edges = false) override;
   // |DlOpReceiver|
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,

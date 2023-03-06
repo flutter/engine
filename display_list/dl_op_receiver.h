@@ -224,7 +224,7 @@ class DlOpReceiver {
                              const SkRect& dst,
                              DlImageSampling sampling,
                              bool render_with_attributes,
-                             SkCanvas::SrcRectConstraint constraint) = 0;
+                             bool enforce_src_edges = false) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
                              const SkIRect& center,
                              const SkRect& dst,
