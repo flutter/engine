@@ -26,7 +26,7 @@ void CanvasGradient::Create(Dart_Handle wrapper) {
 void CanvasGradient::initLinear(const tonic::Float32List& end_points,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
-                                SkTileMode tile_mode,
+                                DlTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
   FML_DCHECK(end_points.num_elements() == 4);
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
@@ -49,7 +49,7 @@ void CanvasGradient::initLinear(const tonic::Float32List& end_points,
 
   dl_shader_ = DlColorSource::MakeLinear(
       p0, p1, colors.num_elements(), colors_array, color_stops.data(),
-      ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
+      tile_mode, has_matrix ? &sk_matrix : nullptr);
 }
 
 void CanvasGradient::initRadial(double center_x,
@@ -57,7 +57,7 @@ void CanvasGradient::initRadial(double center_x,
                                 double radius,
                                 const tonic::Int32List& colors,
                                 const tonic::Float32List& color_stops,
-                                SkTileMode tile_mode,
+                                DlTileMode tile_mode,
                                 const tonic::Float64List& matrix4) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -76,14 +76,14 @@ void CanvasGradient::initRadial(double center_x,
   dl_shader_ = DlColorSource::MakeRadial(
       SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
       SafeNarrow(radius), colors.num_elements(), colors_array,
-      color_stops.data(), ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
+      color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
 }
 
 void CanvasGradient::initSweep(double center_x,
                                double center_y,
                                const tonic::Int32List& colors,
                                const tonic::Float32List& color_stops,
-                               SkTileMode tile_mode,
+                               DlTileMode tile_mode,
                                double start_angle,
                                double end_angle,
                                const tonic::Float64List& matrix4) {
@@ -105,7 +105,7 @@ void CanvasGradient::initSweep(double center_x,
       SkPoint::Make(SafeNarrow(center_x), SafeNarrow(center_y)),
       SafeNarrow(start_angle) * 180.0f / static_cast<float>(M_PI),
       SafeNarrow(end_angle) * 180.0f / static_cast<float>(M_PI),
-      colors.num_elements(), colors_array, color_stops.data(), ToDl(tile_mode),
+      colors.num_elements(), colors_array, color_stops.data(), tile_mode,
       has_matrix ? &sk_matrix : nullptr);
 }
 
@@ -117,7 +117,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
                                          double end_radius,
                                          const tonic::Int32List& colors,
                                          const tonic::Float32List& color_stops,
-                                         SkTileMode tile_mode,
+                                         DlTileMode tile_mode,
                                          const tonic::Float64List& matrix4) {
   FML_DCHECK(colors.num_elements() == color_stops.num_elements() ||
              color_stops.data() == nullptr);
@@ -138,7 +138,7 @@ void CanvasGradient::initTwoPointConical(double start_x,
       SafeNarrow(start_radius),
       SkPoint::Make(SafeNarrow(end_x), SafeNarrow(end_y)),
       SafeNarrow(end_radius), colors.num_elements(), colors_array,
-      color_stops.data(), ToDl(tile_mode), has_matrix ? &sk_matrix : nullptr);
+      color_stops.data(), tile_mode, has_matrix ? &sk_matrix : nullptr);
 }
 
 CanvasGradient::CanvasGradient() = default;
