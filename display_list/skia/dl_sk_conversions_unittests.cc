@@ -78,46 +78,82 @@ TEST(DisplayListSkConversions, ToSkSamplingOptions) {
             SkSamplingOptions(SkCubicResampler{1 / 3.0f, 1 / 3.0f}));
 }
 
-#define CHECK_TO_SKENUM(V) ASSERT_EQ(ToSk(DlBlendMode::V), SkBlendMode::V);
-
-#define FOR_EACH_ENUM(FUNC) \
-  FUNC(kSrc)                \
-  FUNC(kClear)              \
-  FUNC(kSrc)                \
-  FUNC(kDst)                \
-  FUNC(kSrcOver)            \
-  FUNC(kDstOver)            \
-  FUNC(kSrcIn)              \
-  FUNC(kDstIn)              \
-  FUNC(kSrcOut)             \
-  FUNC(kDstOut)             \
-  FUNC(kSrcATop)            \
-  FUNC(kDstATop)            \
-  FUNC(kXor)                \
-  FUNC(kPlus)               \
-  FUNC(kModulate)           \
-  FUNC(kScreen)             \
-  FUNC(kOverlay)            \
-  FUNC(kDarken)             \
-  FUNC(kLighten)            \
-  FUNC(kColorDodge)         \
-  FUNC(kColorBurn)          \
-  FUNC(kHardLight)          \
-  FUNC(kSoftLight)          \
-  FUNC(kDifference)         \
-  FUNC(kExclusion)          \
-  FUNC(kMultiply)           \
-  FUNC(kHue)                \
-  FUNC(kSaturation)         \
-  FUNC(kColor)              \
-  FUNC(kLuminosity)         \
-  FUNC(kLastCoeffMode)      \
-  FUNC(kLastSeparableMode)  \
+#define FOR_EACH_BLEND_MODE_ENUM(FUNC) \
+  FUNC(kSrc)                           \
+  FUNC(kClear)                         \
+  FUNC(kSrc)                           \
+  FUNC(kDst)                           \
+  FUNC(kSrcOver)                       \
+  FUNC(kDstOver)                       \
+  FUNC(kSrcIn)                         \
+  FUNC(kDstIn)                         \
+  FUNC(kSrcOut)                        \
+  FUNC(kDstOut)                        \
+  FUNC(kSrcATop)                       \
+  FUNC(kDstATop)                       \
+  FUNC(kXor)                           \
+  FUNC(kPlus)                          \
+  FUNC(kModulate)                      \
+  FUNC(kScreen)                        \
+  FUNC(kOverlay)                       \
+  FUNC(kDarken)                        \
+  FUNC(kLighten)                       \
+  FUNC(kColorDodge)                    \
+  FUNC(kColorBurn)                     \
+  FUNC(kHardLight)                     \
+  FUNC(kSoftLight)                     \
+  FUNC(kDifference)                    \
+  FUNC(kExclusion)                     \
+  FUNC(kMultiply)                      \
+  FUNC(kHue)                           \
+  FUNC(kSaturation)                    \
+  FUNC(kColor)                         \
+  FUNC(kLuminosity)                    \
+  FUNC(kLastCoeffMode)                 \
+  FUNC(kLastSeparableMode)             \
   FUNC(kLastMode)
 
-TEST(DisplayListSkConversions, ToSkBlendMode){FOR_EACH_ENUM(CHECK_TO_SKENUM)}
+TEST(DisplayListSkConversions, ToSkBlendMode) {
+#define CHECK_TO_SKENUM(V) ASSERT_EQ(ToSk(DlBlendMode::V), SkBlendMode::V);
+  FOR_EACH_BLEND_MODE_ENUM(CHECK_TO_SKENUM)
 #undef CHECK_TO_SKENUM
-#undef FOR_EACH_ENUM
+}
+
+TEST(DisplayListSkConversions, BlendColorFilterModifiesTransparency) {
+  auto test_mode_color = [](DlBlendMode mode, DlColor color) {
+    std::stringstream desc_str;
+    desc_str << "blend[" << static_cast<int>(mode) << ", " << color << "]";
+    std::string desc = desc_str.str();
+    DlBlendColorFilter filter(color, mode);
+    if (filter.modifies_transparent_black()) {
+      auto dl_filter = DlBlendColorFilter::Make(color, mode);
+      auto sk_filter = ToSk(filter);
+      ASSERT_NE(dl_filter, nullptr) << desc;
+      ASSERT_NE(sk_filter, nullptr) << desc;
+      ASSERT_TRUE(sk_filter->filterColor(0) != 0) << desc;
+    } else {
+      auto dl_filter = DlBlendColorFilter::Make(color, mode);
+      auto sk_filter = ToSk(filter);
+      EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr) << desc;
+      ASSERT_TRUE(sk_filter == nullptr || sk_filter->filterColor(0) == 0)
+          << desc;
+    }
+  };
+
+  auto test_mode = [&test_mode_color](DlBlendMode mode) {
+    test_mode_color(mode, DlColor::kTransparent());
+    test_mode_color(mode, DlColor::kWhite());
+    test_mode_color(mode, DlColor::kWhite().modulateOpacity(0.5));
+    test_mode_color(mode, DlColor::kBlack());
+    test_mode_color(mode, DlColor::kBlack().modulateOpacity(0.5));
+  };
+
+#define TEST_MODE(V) test_mode(DlBlendMode::V);
+  FOR_EACH_BLEND_MODE_ENUM(TEST_MODE)
+#undef TEST_MODE
+}
+
+#undef FOR_EACH_BLEND_MODE_ENUM
 
 TEST(DisplayListSkConversions, ConvertWithZeroAndNegativeVerticesAndIndices) {
   std::shared_ptr<const DlVertices> vertices1 = DlVertices::Make(
@@ -182,6 +218,42 @@ TEST(DisplayListColorSource, ConvertRuntimeEffectWithNullSampler) {
           std::make_shared<std::vector<uint8_t>>());
 
   ASSERT_EQ(ToSk(source1), nullptr);
+}
+
+TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
+  auto test_matrix = [](int element, SkScalar value) {
+    // clang-format off
+    float matrix[] = {
+        1, 0, 0, 0, 0,
+        0, 1, 0, 0, 0,
+        0, 0, 1, 0, 0,
+        0, 0, 0, 1, 0,
+    };
+    // clang-format on
+    std::string desc =
+        "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
+    matrix[element] = value;
+    DlMatrixColorFilter filter(matrix);
+    auto dl_filter = DlMatrixColorFilter::Make(matrix);
+    auto sk_filter = ToSk(filter);
+    EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr);
+    EXPECT_EQ(filter.modifies_transparent_black(),
+              sk_filter && sk_filter->filterColor(0) != 0);
+  };
+
+  // Tests identity (matrix[0] already == 1 in an identity filter)
+  test_matrix(0, 1);
+  // test_matrix(19, 1);
+  for (int i = 0; i < 20; i++) {
+    test_matrix(i, -0.25);
+    test_matrix(i, 0);
+    test_matrix(i, 0.25);
+    test_matrix(i, 1);
+    test_matrix(i, 1.25);
+    test_matrix(i, SK_ScalarNaN);
+    test_matrix(i, SK_ScalarInfinity);
+    test_matrix(i, -SK_ScalarInfinity);
+  }
 }
 
 }  // namespace testing

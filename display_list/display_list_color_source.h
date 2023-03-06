@@ -65,7 +65,7 @@ enum class DlColorSourceType {
 
 class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
  public:
-  static std::shared_ptr<DlColorSource> MakeLinear(
+  static std::shared_ptr<DlLinearGradientColorSource> MakeLinear(
       const SkPoint start_point,
       const SkPoint end_point,
       uint32_t stop_count,
@@ -74,7 +74,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlColorSource> MakeRadial(
+  static std::shared_ptr<DlRadialGradientColorSource> MakeRadial(
       SkPoint center,
       SkScalar radius,
       uint32_t stop_count,
@@ -83,7 +83,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlColorSource> MakeConical(
+  static std::shared_ptr<DlConicalGradientColorSource> MakeConical(
       SkPoint start_center,
       SkScalar start_radius,
       SkPoint end_center,
@@ -94,7 +94,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
       DlTileMode tile_mode,
       const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlColorSource> MakeSweep(
+  static std::shared_ptr<DlSweepGradientColorSource> MakeSweep(
       SkPoint center,
       SkScalar start,
       SkScalar end,

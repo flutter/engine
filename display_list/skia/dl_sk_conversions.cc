@@ -117,20 +117,21 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
     case DlImageFilterType::kBlur: {
       const DlBlurImageFilter* blur_filter = filter->asBlur();
       FML_DCHECK(blur_filter != nullptr);
-      return SkImageFilters::Blur(blur_filter->sigma_x(), blur_filter->sigma_y(),
+      return SkImageFilters::Blur(blur_filter->sigma_x(),
+                                  blur_filter->sigma_y(),
                                   ToSk(blur_filter->tile_mode()), nullptr);
     }
     case DlImageFilterType::kDilate: {
       const DlDilateImageFilter* dilate_filter = filter->asDilate();
       FML_DCHECK(dilate_filter != nullptr);
-      return SkImageFilters::Dilate(
-          dilate_filter->radius_x(), dilate_filter->radius_y(), nullptr);
+      return SkImageFilters::Dilate(dilate_filter->radius_x(),
+                                    dilate_filter->radius_y(), nullptr);
     }
     case DlImageFilterType::kErode: {
       const DlErodeImageFilter* erode_filter = filter->asErode();
       FML_DCHECK(erode_filter != nullptr);
-      return SkImageFilters::Erode(
-          erode_filter->radius_x(), erode_filter->radius_y(), nullptr);
+      return SkImageFilters::Erode(erode_filter->radius_x(),
+                                   erode_filter->radius_y(), nullptr);
     }
     case DlImageFilterType::kMatrix: {
       const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
@@ -216,8 +217,8 @@ sk_sp<SkPathEffect> ToSk(const DlPathEffect* effect) {
     case DlPathEffectType::kDash: {
       const DlDashPathEffect* dash_effect = effect->asDash();
       FML_DCHECK(dash_effect != nullptr);
-      return SkDashPathEffect::Make(
-          dash_effect->intervals(), dash_effect->count(), dash_effect->phase());
+      return SkDashPathEffect::Make(dash_effect->intervals(),
+                                    dash_effect->count(), dash_effect->phase());
     }
   }
 }
@@ -225,10 +226,10 @@ sk_sp<SkPathEffect> ToSk(const DlPathEffect* effect) {
 sk_sp<SkVertices> ToSk(const DlVertices* vertices) {
   const SkColor* sk_colors =
       reinterpret_cast<const SkColor*>(vertices->colors());
-  return SkVertices::MakeCopy(
-      ToSk(vertices->mode()), vertices->vertex_count(), vertices->vertices(),
-      vertices->texture_coordinates(), sk_colors, vertices->index_count(),
-      vertices->indices());
+  return SkVertices::MakeCopy(ToSk(vertices->mode()), vertices->vertex_count(),
+                              vertices->vertices(),
+                              vertices->texture_coordinates(), sk_colors,
+                              vertices->index_count(), vertices->indices());
 }
 
 }  // namespace flutter
