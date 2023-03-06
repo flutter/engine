@@ -17,9 +17,9 @@ static float SafeNarrow(double value) {
     return static_cast<float>(value);
   } else {
     // Avoid truncation to inf/-inf.
-    return std::max(
-        std::numeric_limits<float>::lowest(),
-        std::min(std::numeric_limits<float>::max(), static_cast<float>(value)));
+    return std::clamp(static_cast<float>(value),
+                      std::numeric_limits<float>::lowest(),
+                      std::numeric_limits<float>::max());
   }
 }
 
