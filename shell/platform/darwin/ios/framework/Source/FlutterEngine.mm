@@ -1478,7 +1478,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                                                       handler:[handler copy]] autorelease];
     return _currentMessengerConnection;
   }
-  if (_enableEmbedderAPI || (_shell && _shell->IsSetup())) {
+  if (_shell && _shell->IsSetup()) {
     self.iosPlatformView->GetPlatformMessageHandlerIos()->SetMessageHandler(channel.UTF8String,
                                                                             handler, taskQueue);
     return _connections->AquireConnection(channel.UTF8String);
