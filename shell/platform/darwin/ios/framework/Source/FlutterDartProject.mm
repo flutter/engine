@@ -32,33 +32,46 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
-// Finds a bundle with the named `bundleID`.
+// Finds a bundle with the named `bundleID` within `searchURL`.
 //
-// `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
-// tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
-// in a medium sized Flutter app. It is likely that the slowness comes from
-// having to traverse and load all bundles known to the process. Using
-// `+[NSBundle allframeworks]` and filtering also suffers from the same problem.
-//
-// This implementation is an optimization to limit the search space with a hint.
-// Callers can provide a `hintURL` for where the bundle is expected to be
-// located in. If the desired bundle cannot be found here, the implementation
-// falls back to `+[NSBundle bundleWithIdentifier:]`.
-static NSBundle* FLTBundleWithIdentifier(NSString* bundleID, NSURL* hintURL) {
-  NSArray<NSURL*>* candidates = [[NSFileManager defaultManager]
-        contentsOfDirectoryAtURL:hintURL
-      includingPropertiesForKeys:@[]
-                         options:0
-                           // Not interested in the error as there is a fallback.
-                           error:nil];
+// Returns `nil` if the bundle cannot be found or if errors are encountered.
+NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL) {
+  NSDirectoryEnumerator<NSURL*>* frameworkEnumerator = [NSFileManager.defaultManager
+                 enumeratorAtURL:searchURL
+      includingPropertiesForKeys:nil
+                         options:NSDirectoryEnumerationSkipsSubdirectoryDescendants |
+                                 NSDirectoryEnumerationSkipsHiddenFiles
+                    // Skip directories where errors are encountered.
+                    errorHandler:nil];
 
-  for (NSURL* candidate in candidates) {
+  for (NSURL* candidate in frameworkEnumerator) {
     NSBundle* bundle = [NSBundle bundleWithURL:candidate];
     if ([bundle.bundleIdentifier isEqualToString:bundleID]) {
       return bundle;
     }
   }
+  return nil;
+}
 
+// Finds a bundle with the named `bundleID`.
+//
+// `+[NSBundle bundleWithIdentifier:]` is slow, and can take in the order of
+// tens of milliseconds in a minimal flutter app, and closer to 100 milliseconds
+// in a medium sized Flutter app on an iPhone 13. It is likely that the slowness
+// comes from having to traverse and load all bundles known to the process.
+// Using `+[NSBundle allframeworks]` and filtering also suffers from the same
+// problem.
+//
+// This implementation is an optimization to first limit the search space to
+// `+[NSBundle privateFrameworksURL]` of the main bundle, which is usually where
+// frameworks used by this file are placed. If the desired bundle cannot be
+// found here, the implementation falls back to
+// `+[NSBundle bundleWithIdentifier:]`.
+NS_INLINE NSBundle* FLTFrameworkBundleWithIdentifier(NSString* bundleID) {
+  NSBundle* bundle = FLTFrameworkBundleInternal(bundleID, NSBundle.mainBundle.privateFrameworksURL);
+  if (bundle != nil) {
+    return bundle;
+  }
   // Fallback to slow implementation.
   return [NSBundle bundleWithIdentifier:bundleID];
 }
@@ -77,11 +90,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
-    // The default build system for Flutter places the default bundle in the
-    // same directory as the engine bundle (as they are both frameworks).
-    NSURL* defaultBundleHintURL = [engineBundle.bundleURL URLByDeletingLastPathComponent];
-    bundle =
-        FLTBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier], defaultBundleHintURL);
+    bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
   }
   if (bundle == nil) {
     bundle = mainBundle;
@@ -344,7 +353,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
   if (bundle == nil) {
-    bundle = [NSBundle bundleWithIdentifier:[FlutterDartProject defaultBundleIdentifier]];
+    bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
   }
   if (bundle == nil) {
     bundle = [NSBundle mainBundle];
