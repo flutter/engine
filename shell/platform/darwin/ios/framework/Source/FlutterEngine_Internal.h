@@ -82,10 +82,16 @@ extern NSString* const kFlutterEngineWillDealloc;
             callback:(nullable FlutterKeyEventCallback)callback
             userData:(nullable void*)userData;
 
-// Embedder API.
+// Methods for Embedder API begin.
 - (BOOL)launchEngineWithEmbedderAPI:(NSString*)entrypoint
                          libraryURI:(nullable NSString*)libraryOrNil
                      entrypointArgs:(nullable NSArray<NSString*>*)entrypointArgs;
+- (void)embedderAPISendOnChannel:(NSString*)channel
+                         message:(nullable NSData*)message
+                     binaryReply:(nullable FlutterBinaryReply)callback;
+- (void)embedderAPISendWindowMetricsEvent:(flutter::ViewportMetrics)viewportMetrics;
+- (void)embedderAPIUpdateLocale:(NSArray<NSString*>*)preferredLocales;
+- (void)embedderAPIDispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet;
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message;
 - (void)engineCallbackFlutterSemanticsUpdate:(const FlutterSemanticsUpdate*)update;
 // Must be called on the main thread
@@ -93,6 +99,7 @@ extern NSString* const kFlutterEngineWillDealloc;
 - (BOOL)waitForFirstFrame:(fml::TimeDelta)timeout;
 - (BOOL)notifyCreated;
 - (BOOL)notifyDestroyed;
+// Methods for Embedder API end.
 
 @property(nonatomic, readonly) FlutterDartProject* project;
 @property(nonatomic, readonly, nullable) FlutterRenderer* renderer;

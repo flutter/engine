@@ -499,23 +499,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)updateViewportMetrics:(flutter::ViewportMetrics)viewportMetrics {
   if (_enableEmbedderAPI) {
-    const FlutterWindowMetricsEvent windowMetricsEvent = {
-        .struct_size = sizeof(windowMetricsEvent),
-        .width = static_cast<size_t>(viewportMetrics.physical_width),
-        .height = static_cast<size_t>(viewportMetrics.physical_height),
-        .pixel_ratio = viewportMetrics.device_pixel_ratio,
-        .left = 0,
-        .top = 0,
-        .physical_view_inset_top = viewportMetrics.physical_view_inset_top,
-        .physical_view_inset_right = viewportMetrics.physical_view_inset_right,
-        .physical_view_inset_bottom = viewportMetrics.physical_view_inset_bottom,
-        .physical_view_inset_left = viewportMetrics.physical_view_inset_left,
-        .physical_padding_top = viewportMetrics.physical_padding_top,
-        .physical_padding_right = viewportMetrics.physical_padding_right,
-        .physical_padding_bottom = viewportMetrics.physical_padding_bottom,
-        .physical_padding_left = viewportMetrics.physical_padding_left,
-    };
-    _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
+    [self embedderAPISendWindowMetricsEvent:viewportMetrics];
     return;
   }
   if (!self.platformView) {
@@ -526,52 +510,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
   if (_enableEmbedderAPI) {
-    // The current FlutterViewController converts the native touch events to `packet` then
-    // the `packet` is converted to `FlutterPointerEvent`.
-    // It creates an extra convertion and is slow. We should let FlutterViewController directly
-    // converts touch events to `FlutterPointerEvent`.
-    // For now, we keep the FlutterViewController implementation unchanged to work for legacy
-    // embedder logic.
-
-    // TODO(cyanglaz), embedder API: when fully migrating to embedder api, having
-    // FlutterViewController directly send `FlutterPointerEvent`.
-    const size_t events_count = packet->GetLength();
-    FlutterPointerEvent events[events_count];
-    for (size_t i = 0; i < events_count; i++) {
-      flutter::PointerData pointer_data = packet->GetPointerData(i);
-      // TDOO(cyanglaz): embedder api: safely cast convert `device` and `time_stamp`.
-      // This might not be necessary because this code is a temp version.
-      // We will eventually remove this conversio when we want to release iOS embedder API.
-      FlutterPointerEvent flutterEvent = {
-          .struct_size = sizeof(flutterEvent),
-          .phase = ToPointerPhase(pointer_data.change),
-          .timestamp = static_cast<size_t>(pointer_data.time_stamp),
-          .x = pointer_data.physical_x,
-          .y = pointer_data.physical_y,
-          .device = static_cast<int32_t>(pointer_data.device),
-          .signal_kind = ToSignalKind(pointer_data.signal_kind),
-          .scroll_delta_x = pointer_data.scroll_delta_x,
-          .scroll_delta_y = pointer_data.scroll_delta_y,
-          .device_kind = ToDeviceKind(pointer_data.kind),
-          .buttons = pointer_data.buttons,
-          .pan_x = pointer_data.pan_x,
-          .pan_y = pointer_data.pan_y,
-          .scale = pointer_data.scale,
-          .rotation = pointer_data.rotation,
-          .pressure = pointer_data.pressure,
-          .pressure_min = pointer_data.pressure_min,
-          .pressure_max = pointer_data.pressure_max,
-          .radius_major = pointer_data.radius_major,
-          .radius_min = pointer_data.radius_min,
-          .radius_max = pointer_data.radius_max,
-          .orientation = pointer_data.orientation,
-          .tilt = pointer_data.tilt,
-          .preferred_auxiliary_stylus_action =
-              ToPreferredStylusAuxiliaryAction(pointer_data.preferred_auxiliary_stylus_action),
-      };
-      events[i] = flutterEvent;
-    }
-    _embedderAPI.SendPointerEvent(_engine, events, events_count);
+    [self embedderAPIDispatchPointerDataPacket:std::move(packet)];
     return;
   }
   if (!self.platformView) {
@@ -1495,54 +1434,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
           binaryReply:(FlutterBinaryReply)callback {
   NSParameterAssert(channel);
   if (_enableEmbedderAPI) {
-    FlutterPlatformMessageResponseHandle* response_handle = nullptr;
-    if (callback) {
-      struct Captures {
-        FlutterBinaryReply reply;
-      };
-      auto captures = std::make_unique<Captures>();
-      captures->reply = callback;
-      auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
-        auto captures = reinterpret_cast<Captures*>(user_data);
-        NSData* reply_data = nil;
-        if (data != nullptr && data_size > 0) {
-          reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
-        }
-        captures->reply(reply_data);
-        delete captures;
-      };
-
-      FlutterEngineResult create_result = _embedderAPI.PlatformMessageCreateResponseHandle(
-          _engine, message_reply, captures.get(), &response_handle);
-      if (create_result != kSuccess) {
-        NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
-        return;
-      }
-      captures.release();
-    }
-
-    FlutterPlatformMessage platformMessage = {
-        .struct_size = sizeof(FlutterPlatformMessage),
-        .channel = [channel UTF8String],
-        .message = static_cast<const uint8_t*>(message.bytes),
-        .message_size = message.length,
-        .response_handle = response_handle,
-    };
-
-    FlutterEngineResult message_result =
-        _embedderAPI.SendPlatformMessage(_engine, &platformMessage);
-    if (message_result != kSuccess) {
-      NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
-            message_result);
-    }
-
-    if (response_handle != nullptr) {
-      FlutterEngineResult release_result =
-          _embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
-      if (release_result != kSuccess) {
-        NSLog(@"Failed to release the response handle (%d).", release_result);
-      };
-    }
+    [self embedderAPISendOnChannel:channel message:message binaryReply:callback];
     return;
   }
   NSAssert(_shell && _shell->IsSetup(),
@@ -1711,8 +1603,12 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (void)onLocaleUpdated:(NSNotification*)notification {
   // Get and pass the user's preferred locale list to dart:ui.
-  NSMutableArray<NSString*>* localeData = [[[NSMutableArray alloc] init] autorelease];
   NSArray<NSString*>* preferredLocales = [NSLocale preferredLanguages];
+  if (_enableEmbedderAPI) {
+    [self embedderAPIUpdateLocale:preferredLocales];
+    return;
+  }
+  NSMutableArray<NSString*>* localeData = [[[NSMutableArray alloc] init] autorelease];
   for (NSString* localeID in preferredLocales) {
     NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
     NSString* languageCode = [locale objectForKey:NSLocaleLanguageCode];
@@ -1728,20 +1624,6 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
     [localeData addObject:(variantCode ? variantCode : @"")];
   }
   if (localeData.count == 0) {
-    return;
-  }
-  if (_enableEmbedderAPI) {
-    std::vector<FlutterLocale> flutterLocales;
-    for (NSString* localeID in preferredLocales) {
-      NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
-      flutterLocales.push_back(FlutterLocaleFromNSLocale(locale));
-    }
-    std::vector<const FlutterLocale*> flutterLocaleList;
-    flutterLocaleList.reserve(flutterLocales.size());
-    std::transform(flutterLocales.begin(), flutterLocales.end(),
-                   std::back_inserter(flutterLocaleList),
-                   [](const auto& arg) -> const auto* { return &arg; });
-    _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
     return;
   }
   [self.localizationChannel invokeMethod:@"setLocale" arguments:localeData];
@@ -1818,6 +1700,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 #pragma mark - Embedder API
+
 - (BOOL)running {
   return _engine != nullptr;
 }
@@ -2062,7 +1945,141 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }
 }
 
-#pragma mark - Embedder API Callbacks
+- (void)embedderAPIUpdateLocale:(NSArray<NSString*>*)preferredLocales {
+  std::vector<FlutterLocale> flutterLocales;
+  for (NSString* localeID in preferredLocales) {
+    NSLocale* locale = [[[NSLocale alloc] initWithLocaleIdentifier:localeID] autorelease];
+    flutterLocales.push_back(FlutterLocaleFromNSLocale(locale));
+  }
+  std::vector<const FlutterLocale*> flutterLocaleList;
+  flutterLocaleList.reserve(flutterLocales.size());
+  std::transform(flutterLocales.begin(), flutterLocales.end(),
+                 std::back_inserter(flutterLocaleList),
+                 [](const auto& arg) -> const auto* { return &arg; });
+  _embedderAPI.UpdateLocales(_engine, flutterLocaleList.data(), flutterLocaleList.size());
+}
+
+- (void)embedderAPISendOnChannel:(NSString*)channel
+                         message:(NSData*)message
+                     binaryReply:(FlutterBinaryReply)callback {
+  FlutterPlatformMessageResponseHandle* response_handle = nullptr;
+  if (callback) {
+    struct Captures {
+      FlutterBinaryReply reply;
+    };
+    auto captures = std::make_unique<Captures>();
+    captures->reply = callback;
+    auto message_reply = [](const uint8_t* data, size_t data_size, void* user_data) {
+      auto captures = reinterpret_cast<Captures*>(user_data);
+      NSData* reply_data = nil;
+      if (data != nullptr && data_size > 0) {
+        reply_data = [NSData dataWithBytes:static_cast<const void*>(data) length:data_size];
+      }
+      captures->reply(reply_data);
+      delete captures;
+    };
+
+    FlutterEngineResult create_result = _embedderAPI.PlatformMessageCreateResponseHandle(
+        _engine, message_reply, captures.get(), &response_handle);
+    if (create_result != kSuccess) {
+      NSLog(@"Failed to create a FlutterPlatformMessageResponseHandle (%d)", create_result);
+      return;
+    }
+    captures.release();
+  }
+
+  FlutterPlatformMessage platformMessage = {
+      .struct_size = sizeof(FlutterPlatformMessage),
+      .channel = [channel UTF8String],
+      .message = static_cast<const uint8_t*>(message.bytes),
+      .message_size = message.length,
+      .response_handle = response_handle,
+  };
+
+  FlutterEngineResult message_result = _embedderAPI.SendPlatformMessage(_engine, &platformMessage);
+  if (message_result != kSuccess) {
+    NSLog(@"Failed to send message to Flutter engine on channel '%@' (%d).", channel,
+          message_result);
+  }
+
+  if (response_handle != nullptr) {
+    FlutterEngineResult release_result =
+        _embedderAPI.PlatformMessageReleaseResponseHandle(_engine, response_handle);
+    if (release_result != kSuccess) {
+      NSLog(@"Failed to release the response handle (%d).", release_result);
+    };
+  }
+}
+
+- (void)embedderAPISendWindowMetricsEvent:(flutter::ViewportMetrics)viewportMetrics {
+  const FlutterWindowMetricsEvent windowMetricsEvent = {
+      .struct_size = sizeof(windowMetricsEvent),
+      .width = static_cast<size_t>(viewportMetrics.physical_width),
+      .height = static_cast<size_t>(viewportMetrics.physical_height),
+      .pixel_ratio = viewportMetrics.device_pixel_ratio,
+      .left = 0,
+      .top = 0,
+      .physical_view_inset_top = viewportMetrics.physical_view_inset_top,
+      .physical_view_inset_right = viewportMetrics.physical_view_inset_right,
+      .physical_view_inset_bottom = viewportMetrics.physical_view_inset_bottom,
+      .physical_view_inset_left = viewportMetrics.physical_view_inset_left,
+      .physical_padding_top = viewportMetrics.physical_padding_top,
+      .physical_padding_right = viewportMetrics.physical_padding_right,
+      .physical_padding_bottom = viewportMetrics.physical_padding_bottom,
+      .physical_padding_left = viewportMetrics.physical_padding_left,
+  };
+  _embedderAPI.SendWindowMetricsEvent(_engine, &windowMetricsEvent);
+}
+
+- (void)embedderAPIDispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
+  // The current FlutterViewController converts the native touch events to `packet` then
+  // the `packet` is converted to `FlutterPointerEvent`.
+  // It creates an extra convertion and is slow. We should let FlutterViewController directly
+  // converts touch events to `FlutterPointerEvent`.
+  // For now, we keep the FlutterViewController implementation unchanged to work for legacy
+  // embedder logic.
+
+  // TODO(cyanglaz), embedder API: when fully migrating to embedder api, having
+  // FlutterViewController directly send `FlutterPointerEvent`.
+  const size_t events_count = packet->GetLength();
+  FlutterPointerEvent events[events_count];
+  for (size_t i = 0; i < events_count; i++) {
+    flutter::PointerData pointer_data = packet->GetPointerData(i);
+    // TDOO(cyanglaz): embedder api: safely cast convert `device` and `time_stamp`.
+    // This might not be necessary because this code is a temp version.
+    // We will eventually remove this conversio when we want to release iOS embedder API.
+    FlutterPointerEvent flutterEvent = {
+        .struct_size = sizeof(flutterEvent),
+        .phase = ToPointerPhase(pointer_data.change),
+        .timestamp = static_cast<size_t>(pointer_data.time_stamp),
+        .x = pointer_data.physical_x,
+        .y = pointer_data.physical_y,
+        .device = static_cast<int32_t>(pointer_data.device),
+        .signal_kind = ToSignalKind(pointer_data.signal_kind),
+        .scroll_delta_x = pointer_data.scroll_delta_x,
+        .scroll_delta_y = pointer_data.scroll_delta_y,
+        .device_kind = ToDeviceKind(pointer_data.kind),
+        .buttons = pointer_data.buttons,
+        .pan_x = pointer_data.pan_x,
+        .pan_y = pointer_data.pan_y,
+        .scale = pointer_data.scale,
+        .rotation = pointer_data.rotation,
+        .pressure = pointer_data.pressure,
+        .pressure_min = pointer_data.pressure_min,
+        .pressure_max = pointer_data.pressure_max,
+        .radius_major = pointer_data.radius_major,
+        .radius_min = pointer_data.radius_min,
+        .radius_max = pointer_data.radius_max,
+        .orientation = pointer_data.orientation,
+        .tilt = pointer_data.tilt,
+        .preferred_auxiliary_stylus_action =
+            ToPreferredStylusAuxiliaryAction(pointer_data.preferred_auxiliary_stylus_action),
+    };
+    events[i] = flutterEvent;
+  }
+  _embedderAPI.SendPointerEvent(_engine, events, events_count);
+}
+
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
   // TODO(cyanglaz) embedder api
   NSData* messageData = nil;
