@@ -18,6 +18,11 @@ source_set("ui") {
     "-Wimplicit-float-conversion",
   ]
 
+  if (is_win) {
+    # This causes build failures in third_party dependencies on Windows.
+    cflags += [ "-Wno-implicit-int-float-conversion" ]
+  }
+
   sources = [
     "compositing/scene.cc",
     "compositing/scene.h",
