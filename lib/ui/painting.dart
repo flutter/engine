@@ -1568,12 +1568,12 @@ class Paint {
   }
 }
 
-/// The color space that an [Image] uses.
+/// The color space in which all of an [Image]'s colors exist.
 ///
 /// This value can help you decide which [ImageByteFormat] to use with
-/// [Image.toByteData];
+/// [Image.toByteData] and is the result of [Image.colorSpace].
 enum ColorSpace {
-  /// The sRGB color gamut, the defined standard color gamut for the web.
+  /// The sRGB color space, the defined standard color space for the web.
   sRGB,
   /// A color space that is backwards compatible with sRGB but can represent
   /// colors outside of that gamut with values outside of [0..1]. In order to
@@ -1766,7 +1766,12 @@ class Image {
     return _image.toByteData(format: format);
   }
 
-  /// The color space that used by the [Image]'s colors.
+  /// The color space that is used by the [Image]'s colors.
+  ///
+  /// This value is a consequence of how the [Image] has been created.  For
+  /// example, loading a PNG that is in the Display P3 color space will result
+  /// in a [ColorSpace.extendedSRGB] image.
+  ///
   /// On certain platforms/rendering backends, wide gamut images will still
   /// report [ColorSpace.sRGB] if rendering wide gamut colors isn't supported.
   ColorSpace get colorSpace {
