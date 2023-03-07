@@ -78,9 +78,10 @@ class Geometry {
   /// @brief Whether this geometry has any overlapping painting that would cause
   ///        opacity peephole to render incorrectly.
   ///
-  ///        It is always safe to return `true` from this method, and it is advisable to
-  ///        do so if computing overlap would be computationally complex.
-  virtual bool MaybeHasOverlapping() const;
+  ///        It is always safe to return `true` from this method, and it is
+  ///        advisable to do so if computing overlap would be computationally
+  ///        complex.
+  virtual bool MaybeHasOverlapping(const Entity& entity) const;
 };
 
 /// @brief A geometry that is created from a vertices object.
@@ -216,7 +217,7 @@ class CoverGeometry : public Geometry {
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
   // |Geometry|
-  bool MaybeHasOverlapping() const override;
+  bool MaybeHasOverlapping(const Entity& entity) const override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(CoverGeometry);
 };
@@ -240,7 +241,7 @@ class RectGeometry : public Geometry {
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
   // |Geometry|
-  bool MaybeHasOverlapping() const override;
+  bool MaybeHasOverlapping(const Entity& entity) const override;
 
   Rect rect_;
 

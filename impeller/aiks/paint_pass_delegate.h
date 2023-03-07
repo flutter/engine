@@ -70,5 +70,4 @@ class OpacityPeepholePassDelegate final : public EntityPassDelegate {
   FML_DISALLOW_COPY_AND_ASSIGN(OpacityPeepholePassDelegate);
 };
 
-
 }  // namespace impeller

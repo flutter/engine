@@ -32,6 +32,10 @@ class TextContents final : public Contents {
 
   void SetColor(Color color);
 
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  void InheritOpacity(Scalar opacity) override;
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 

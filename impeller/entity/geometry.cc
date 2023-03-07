@@ -4,6 +4,7 @@
 
 #include "impeller/entity/geometry.h"
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
@@ -51,7 +52,7 @@ std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
   return std::make_unique<RectGeometry>(rect);
 }
 
-bool Geometry::MaybeHasOverlapping() const {
+bool Geometry::MaybeHasOverlapping(const Entity& entity) const {
   return true;
 }
 
@@ -527,7 +528,7 @@ std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
   return Rect::MakeMaximum();
 }
 
-bool CoverGeometry::MaybeHasOverlapping() const {
+bool CoverGeometry::MaybeHasOverlapping(const Entity& entity) const {
   return false;
 }
 
@@ -567,9 +568,8 @@ std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
 }
 
-bool RectGeometry::MaybeHasOverlapping() const {
+bool RectGeometry::MaybeHasOverlapping(const Entity& entity) const {
   return false;
 }
-
 
 }  // namespace impeller

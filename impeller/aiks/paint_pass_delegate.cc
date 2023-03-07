@@ -92,8 +92,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   auto i = 0;
   auto had_subpass = entity_pass->IterateAllFlatEntities([&](Entity& entity) {
     auto contents = entity.GetContents();
-    if (!contents->CanAcceptOpacity()) {
-      std::cerr << "Cant accept opacity" << i << std::endl;
+    if (!contents->CanAcceptOpacity(entity)) {
       all_can_accept = false;
       return false;
     }

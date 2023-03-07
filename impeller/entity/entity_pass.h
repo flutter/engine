@@ -52,7 +52,8 @@ class EntityPass {
 
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
 
-  /// @brief Iterates all entities on this pass, returning if there is a subpass.
+  /// @brief Iterates all entities on this pass, returning if there is a
+  /// subpass.
   bool IterateAllFlatEntities(const std::function<bool(Entity&)>& iterator);
 
   /// @brief Return the number of entities on this pass.

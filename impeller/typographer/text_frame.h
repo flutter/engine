@@ -52,6 +52,8 @@ class TextFrame {
   ///
   const std::vector<TextRun>& GetRuns() const;
 
+  bool MaybeHasOverlapping() const;
+
   //----------------------------------------------------------------------------
   /// @brief      Whether any run in this frame has color.
   bool HasColor() const;
