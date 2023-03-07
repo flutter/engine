@@ -54,7 +54,6 @@
 
 #include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
-#include "impeller/entity/position_uv.vert.h"
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
@@ -123,6 +122,8 @@ using RRectBlurPipeline =
 using BlendPipeline = RenderPipelineT<BlendVertexShader, BlendFragmentShader>;
 using TexturePipeline =
     RenderPipelineT<TextureFillVertexShader, TextureFillFragmentShader>;
+using PositionUVPipeline =
+    RenderPipelineT<TextureFillVertexShader, TiledTextureFillFragmentShader>;
 using TiledTexturePipeline = RenderPipelineT<TiledTextureFillVertexShader,
                                              TiledTextureFillFragmentShader>;
 using GaussianBlurPipeline =
@@ -268,13 +269,14 @@ struct ContentContextOptions {
   PrimitiveType primitive_type = PrimitiveType::kTriangle;
   std::optional<PixelFormat> color_attachment_pixel_format;
   bool has_stencil_attachment = true;
+  bool wireframe = false;
 
   struct Hash {
     constexpr std::size_t operator()(const ContentContextOptions& o) const {
       return fml::HashCombine(o.sample_count, o.blend_mode, o.stencil_compare,
                               o.stencil_operation, o.primitive_type,
                               o.color_attachment_pixel_format,
-                              o.has_stencil_attachment);
+                              o.has_stencil_attachment, o.wireframe);
     }
   };
 
@@ -288,7 +290,8 @@ struct ContentContextOptions {
              lhs.primitive_type == rhs.primitive_type &&
              lhs.color_attachment_pixel_format ==
                  rhs.color_attachment_pixel_format &&
-             lhs.has_stencil_attachment == rhs.has_stencil_attachment;
+             lhs.has_stencil_attachment == rhs.has_stencil_attachment &&
+             lhs.wireframe == rhs.wireframe;
     }
   };
 
@@ -360,6 +363,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTexturePipeline(
       ContentContextOptions opts) const {
     return GetPipeline(texture_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetPositionUVPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(position_uv_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetTiledTexturePipeline(
@@ -592,12 +600,15 @@ class ContentContext {
 
   const IDeviceCapabilities& GetDeviceCapabilities() const;
 
+  void SetWireframe(bool wireframe);
+
   using SubpassCallback =
       std::function<bool(const ContentContext&, RenderPass&)>;
 
   /// @brief  Creates a new texture of size `texture_size` and calls
   ///         `subpass_callback` with a `RenderPass` for drawing to the texture.
-  std::shared_ptr<Texture> MakeSubpass(ISize texture_size,
+  std::shared_ptr<Texture> MakeSubpass(const std::string& label,
+                                       ISize texture_size,
                                        const SubpassCallback& subpass_callback,
                                        bool msaa_enabled = true) const;
 
@@ -626,6 +637,7 @@ class ContentContext {
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
   mutable Variants<BlendPipeline> texture_blend_pipelines_;
   mutable Variants<TexturePipeline> texture_pipelines_;
+  mutable Variants<PositionUVPipeline> position_uv_pipelines_;
   mutable Variants<TiledTexturePipeline> tiled_texture_pipelines_;
   mutable Variants<GaussianBlurPipeline> gaussian_blur_pipelines_;
   mutable Variants<GaussianBlurDecalPipeline> gaussian_blur_decal_pipelines_;
@@ -698,6 +710,10 @@ class ContentContext {
       return nullptr;
     }
 
+    if (wireframe_) {
+      opts.wireframe = true;
+    }
+
     if (auto found = container.find(opts); found != container.end()) {
       return found->second->WaitAndGet();
     }
@@ -723,6 +739,7 @@ class ContentContext {
   std::shared_ptr<Tessellator> tessellator_;
   std::shared_ptr<GlyphAtlasContext> glyph_atlas_context_;
   std::shared_ptr<scene::SceneContext> scene_context_;
+  bool wireframe_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ContentContext);
 };
