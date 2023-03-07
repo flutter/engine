@@ -194,6 +194,37 @@ class TestAssetResolver : public AssetResolver {
   AssetResolver::AssetResolverType type_;
 };
 
+class ThreadCheckingAssetResolver : public AssetResolver {
+ public:
+  ThreadCheckingAssetResolver(
+      std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop)
+      : concurrent_loop_(std::move(concurrent_loop)) {}
+
+  // |AssetResolver|
+  bool IsValid() const override { return true; }
+
+  // |AssetResolver|
+  bool IsValidAfterAssetManagerChange() const override { return true; }
+
+  // |AssetResolver|
+  AssetResolverType GetType() const {
+    return AssetResolverType::kApkAssetProvider;
+  }
+
+  // |AssetResolver|
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override {
+    mapping_requests.push_back(asset_name);
+    EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread());
+    return nullptr;
+  }
+
+  mutable std::vector<std::string> mapping_requests;
+
+ private:
+  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
+};
+
 static bool ValidateShell(Shell* shell) {
   if (!shell) {
     return false;
@@ -3803,6 +3834,36 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
 
   DestroyShell(std::move(shell));
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
+}
+
+TEST_F(ShellTest, ImmutableBufferLoadsAssetOnBackgroundThread) {
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  fml::CountDownLatch latch(1);
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+
+  auto asset_manager = shell->GetEngine()->GetAssetManager();
+
+  auto test_resolver = std::make_unique<ThreadCheckingAssetResolver>(
+      shell->GetDartVM()->GetConcurrentMessageLoop());
+  asset_manager->PushBack(std::move(test_resolver));
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testThatAssetLoadingHappensOnWorkerThread");
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PictureToImageSync) {
