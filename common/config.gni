@@ -115,6 +115,8 @@ if (flutter_prebuilt_dart_sdk) {
     default_prebuilt_dart_sdk = target_prebuilt_dart_sdk
     default_prebuilt_dart_sdk_config = _target_prebuilt_dart_sdk_config
   }
+} else {
+  default_prebuilt_dart_sdk = ""
 }
 
 declare_args() {
