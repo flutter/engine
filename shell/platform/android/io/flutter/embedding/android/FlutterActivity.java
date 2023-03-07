@@ -706,16 +706,10 @@ public class FlutterActivity extends Activity
   // TODO(justinmc): Do the same thing in other embedding strategies (justin FlutterFragment?
   // FlutterFragmentActivity?).
   @Override
-  public void updateNavigationStackStatus(boolean hasMultiple) {
-    Log.e(
-        "justin",
-        "updateNavigationStackStatus in embedding FlutterActivity. hasMultiple: "
-            + Boolean.toString(hasMultiple)
-            + " hasRegisteredCallback: "
-            + Boolean.toString(hasRegisteredCallback));
-    if (hasMultiple && !hasRegisteredCallback) {
+  public void updateNavigationStackStatus(boolean frameworkHandlesPop) {
+    if (frameworkHandlesPop && !hasRegisteredCallback) {
       registerOnBackInvokedCallback();
-    } else if (!hasMultiple && hasRegisteredCallback) {
+    } else if (!frameworkHandlesPop && hasRegisteredCallback) {
       unregisterOnBackInvokedCallback();
     }
   }

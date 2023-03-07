@@ -139,8 +139,8 @@ public class PlatformChannel {
                 // TODO(justinmc): Potentially rename this.
               case "SystemNavigator.updateNavigationStackStatus":
                 {
-                  boolean hasMultiple = (boolean) arguments;
-                  platformMessageHandler.updateNavigationStackStatus(hasMultiple);
+                  boolean frameworkHandlesPop = (boolean) arguments;
+                  platformMessageHandler.updateNavigationStackStatus(frameworkHandlesPop);
                   result.success(null);
                   break;
                 }
@@ -517,7 +517,11 @@ public class PlatformChannel {
      */
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
 
-    void updateNavigationStackStatus(boolean hasMultiple);
+    /**
+     * The Flutter application would or would not like to handle navigation pop
+     * events itself.
+     */
+    void updateNavigationStackStatus(boolean frameworkHandlesPop);
 
     /**
      * The Flutter application would like to pop the top item off of the Android app's navigation

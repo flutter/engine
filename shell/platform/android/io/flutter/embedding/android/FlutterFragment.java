@@ -1047,7 +1047,6 @@ public class FlutterFragment extends Fragment
     // TODO(justinmc): What is ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED?
     // In order to follow what this PR did in FlutterActivity, this should
     // be removed and only add a callback when the framework sends the message.
-    static void intercept(args) {  }
     if (getArguments().getBoolean(ARG_SHOULD_AUTOMATICALLY_HANDLE_ON_BACK_PRESSED, false)) {
       requireActivity().getOnBackPressedDispatcher().addCallback(this, onBackPressedCallback);
     }

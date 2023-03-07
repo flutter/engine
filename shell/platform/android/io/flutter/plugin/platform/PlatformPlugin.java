@@ -57,7 +57,7 @@ public class PlatformPlugin {
      */
     boolean popSystemNavigator();
 
-    void updateNavigationStackStatus(boolean hasMultiple);
+    void updateNavigationStackStatus(boolean frameworkHandlesPop);
   }
 
   @VisibleForTesting
@@ -112,8 +112,8 @@ public class PlatformPlugin {
         }
 
         @Override
-        public void updateNavigationStackStatus(boolean hasMultiple) {
-          PlatformPlugin.this.updateNavigationStackStatus(hasMultiple);
+        public void updateNavigationStackStatus(boolean frameworkHandlesPop) {
+          PlatformPlugin.this.updateNavigationStackStatus(frameworkHandlesPop);
         }
 
         @Override
@@ -482,8 +482,8 @@ public class PlatformPlugin {
     currentTheme = systemChromeStyle;
   }
 
-  private void updateNavigationStackStatus(boolean hasMultiple) {
-    platformPluginDelegate.updateNavigationStackStatus(hasMultiple);
+  private void updateNavigationStackStatus(boolean frameworkHandlesPop) {
+    platformPluginDelegate.updateNavigationStackStatus(frameworkHandlesPop);
   }
 
   private void popSystemNavigator() {
