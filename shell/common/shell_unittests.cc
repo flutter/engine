@@ -19,6 +19,7 @@
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/dart/dart_converter.h"
 #include "flutter/fml/make_copyable.h"
@@ -214,8 +215,13 @@ class ThreadCheckingAssetResolver : public AssetResolver {
   // |AssetResolver|
   std::unique_ptr<fml::Mapping> GetAsMapping(
       const std::string& asset_name) const override {
+    if (asset_name == "FontManifest.json") {
+      // This file is loaded directly by the engine.
+      return nullptr;
+    }
     mapping_requests.push_back(asset_name);
-    EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread());
+    EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread())
+        << fml::BacktraceHere();
     return nullptr;
   }
 
@@ -3847,23 +3853,26 @@ TEST_F(ShellTest, ImmutableBufferLoadsAssetOnBackgroundThread) {
   AddNativeCallback("NotifyNative",
                     CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
 
-  auto asset_manager = shell->GetEngine()->GetAssetManager();
-
-  auto test_resolver = std::make_unique<ThreadCheckingAssetResolver>(
-      shell->GetDartVM()->GetConcurrentMessageLoop());
-  asset_manager->PushBack(std::move(test_resolver));
-
   // Create the surface needed by rasterizer
   PlatformViewNotifyCreated(shell.get());
 
   auto configuration = RunConfiguration::InferFromSettings(settings);
   configuration.SetEntrypoint("testThatAssetLoadingHappensOnWorkerThread");
+  auto asset_manager = configuration.GetAssetManager();
+  auto test_resolver = std::make_unique<ThreadCheckingAssetResolver>(
+      shell->GetDartVM()->GetConcurrentMessageLoop());
+  auto leaked_resolver = test_resolver.get();
+  asset_manager->PushBack(std::move(test_resolver));
 
   RunEngine(shell.get(), std::move(configuration));
   PumpOneFrame(shell.get());
 
   latch.Wait();
-  DestroyShell(std::move(shell), task_runners);
+
+  EXPECT_EQ(leaked_resolver->mapping_requests[0], "DoesNotExist");
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell));
 }
 
 TEST_F(ShellTest, PictureToImageSync) {
