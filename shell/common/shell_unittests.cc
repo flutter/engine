@@ -197,7 +197,7 @@ class TestAssetResolver : public AssetResolver {
 
 class ThreadCheckingAssetResolver : public AssetResolver {
  public:
-  ThreadCheckingAssetResolver(
+  explicit ThreadCheckingAssetResolver(
       std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop)
       : concurrent_loop_(std::move(concurrent_loop)) {}
 
