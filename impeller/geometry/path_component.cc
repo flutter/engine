@@ -70,10 +70,16 @@ std::vector<Point> LinearPathComponent::Extrema() const {
 }
 
 std::optional<Vector2> LinearPathComponent::GetStartDirection() const {
+  if (p1 == p2) {
+    return std::nullopt;
+  }
   return (p1 - p2).Normalize();
 }
 
 std::optional<Vector2> LinearPathComponent::GetEndDirection() const {
+  if (p1 == p2) {
+    return std::nullopt;
+  }
   return (p2 - p1).Normalize();
 }
 
