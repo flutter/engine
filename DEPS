@@ -219,6 +219,11 @@ vars = {
   "upstream_zlib": "https://github.com/madler/zlib.git",
 }
 
+gclient_gn_args_file = 'src/third_party/dart_checkout/build/config/gclient_args.gni'
+gclient_gn_args = [
+  'checkout_llvm'
+]
+
 # Only these hosts are allowed for dependencies in this DEPS file.
 # If you need to add a new host, contact chrome infrastructure team.
 allowed_hosts = [
