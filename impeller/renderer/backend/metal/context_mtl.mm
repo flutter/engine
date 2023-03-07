@@ -90,13 +90,20 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
 #endif
 
   {
-    // TODO(jonahwilliams): find a way to query support for this for
-    // macOS/Simulator.
-#if FML_OS_PHYSICAL_IOS
-    bool supports_framebuffer_blend = true;
-#else
     bool supports_framebuffer_blend = false;
-#endif  // FML_OS_PHYSICAL_IOS
+    if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+      supports_framebuffer_blend = [device supportsFamily:MTLGPUFamilyApple2];
+    } else {
+      // According to
+      // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf , Apple2
+      // corresponds to iOS GPU family 2, which supports A8 devices.
+#if FML_OS_IOS
+      supports_framebuffer_blend =
+          [device supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
+#else
+      supports_framebuffer_blend = false;
+#endif  // FML_OS_IOS
+    }
 
     device_capabilities_ =
         DeviceCapabilitiesBuilder()

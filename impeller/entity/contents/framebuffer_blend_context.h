@@ -16,7 +16,6 @@
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/pipeline.h"
 
-#if FML_OS_PHYSICAL_IOS
 #include "impeller/entity/framebuffer_blend.vert.h"
 #include "impeller/entity/framebuffer_blend_color.frag.h"
 #include "impeller/entity/framebuffer_blend_colorburn.frag.h"
@@ -33,12 +32,9 @@
 #include "impeller/entity/framebuffer_blend_saturation.frag.h"
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
-#endif  // FML_OS_PHYSICAL_IOS
 
 namespace impeller {
 
-#if FML_OS_PHYSICAL_IOS
-// iOS only advanced blends.
 using FramebufferBlendColorPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendColorFragmentShader>;
@@ -84,7 +80,6 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
-#endif  // FML_OS_PHYSICAL_IOS
 
 class FramebufferBlendContext {
  public:
@@ -94,8 +89,6 @@ class FramebufferBlendContext {
 
   bool IsValid() const;
 
-#if FML_OS_PHYSICAL_IOS
-  // iOS only advanced blends.
   using FramebufferBlendColorPipeline =
       RenderPipelineT<FramebufferBlendVertexShader,
                       FramebufferBlendColorFragmentShader>;
@@ -216,82 +209,6 @@ class FramebufferBlendContext {
   GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
-#else
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
-      ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>>
-  GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
-    FML_UNREACHABLE();
-  }
-#endif  // FML_OS_PHYSICAL_IOS
 
  private:
   std::shared_ptr<Context> context_;
@@ -305,7 +222,6 @@ class FramebufferBlendContext {
   // These are mutable because while the prototypes are created eagerly, any
   // variants requested from that are lazily created and cached in the variants
   // map.
-#if FML_OS_PHYSICAL_IOS
   mutable Variants<FramebufferBlendColorPipeline>
       framebuffer_blend_color_pipelines_;
   mutable Variants<FramebufferBlendColorBurnPipeline>
@@ -336,7 +252,6 @@ class FramebufferBlendContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
-#endif  // FML_OS_PHYSICAL_IOS
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

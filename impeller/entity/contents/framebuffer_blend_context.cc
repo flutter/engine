@@ -4,8 +4,8 @@
 
 #include "impeller/entity/contents/framebuffer_blend_context.h"
 
+#include <iostream>
 #include "impeller/entity/entity.h"
-
 namespace impeller {
 
 template <typename PipelineT>
@@ -29,38 +29,38 @@ FramebufferBlendContext::FramebufferBlendContext(
     return;
   }
 
-#if FML_OS_PHYSICAL_IOS
-  framebuffer_blend_color_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
-  framebuffer_blend_colorburn_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorBurnPipeline>(*context_);
-  framebuffer_blend_colordodge_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorDodgePipeline>(*context_);
-  framebuffer_blend_darken_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendDarkenPipeline>(*context_);
-  framebuffer_blend_difference_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendDifferencePipeline>(*context_);
-  framebuffer_blend_exclusion_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendExclusionPipeline>(*context_);
-  framebuffer_blend_hardlight_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendHardLightPipeline>(*context_);
-  framebuffer_blend_hue_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendHuePipeline>(*context_);
-  framebuffer_blend_lighten_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendLightenPipeline>(*context_);
-  framebuffer_blend_luminosity_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendLuminosityPipeline>(*context_);
-  framebuffer_blend_multiply_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendMultiplyPipeline>(*context_);
-  framebuffer_blend_overlay_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
-  framebuffer_blend_saturation_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
-  framebuffer_blend_screen_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
-  framebuffer_blend_softlight_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
-#endif  // FML_OS_PHYSICAL_IOS
+  if (context_->GetDeviceCapabilities().SupportsFramebufferBlending()) {
+    framebuffer_blend_color_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
+    framebuffer_blend_colorburn_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorBurnPipeline>(*context_);
+    framebuffer_blend_colordodge_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorDodgePipeline>(*context_);
+    framebuffer_blend_darken_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendDarkenPipeline>(*context_);
+    framebuffer_blend_difference_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendDifferencePipeline>(*context_);
+    framebuffer_blend_exclusion_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendExclusionPipeline>(*context_);
+    framebuffer_blend_hardlight_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendHardLightPipeline>(*context_);
+    framebuffer_blend_hue_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendHuePipeline>(*context_);
+    framebuffer_blend_lighten_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendLightenPipeline>(*context_);
+    framebuffer_blend_luminosity_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendLuminosityPipeline>(*context_);
+    framebuffer_blend_multiply_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendMultiplyPipeline>(*context_);
+    framebuffer_blend_overlay_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
+    framebuffer_blend_saturation_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
+    framebuffer_blend_screen_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
+    framebuffer_blend_softlight_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
+  }
   is_valid_ = true;
 }
 

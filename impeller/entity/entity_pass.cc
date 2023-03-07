@@ -549,46 +549,45 @@ bool EntityPass::OnRender(ContentContext& renderer,
     ///
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-#if FML_OS_PHYSICAL_IOS
-      auto src_contents = result.entity.GetContents();
-      auto contents = std::make_shared<FramebufferBlendContents>();
-      contents->SetChildContents(src_contents);
-      contents->SetBlendMode(result.entity.GetBlendMode());
-      result.entity.SetContents(std::move(contents));
-      result.entity.SetBlendMode(BlendMode::kSource);
+      if (renderer.GetDeviceCapabilities().SupportsFramebufferBlending()) {
+        auto src_contents = result.entity.GetContents();
+        auto contents = std::make_shared<FramebufferBlendContents>();
+        contents->SetChildContents(src_contents);
+        contents->SetBlendMode(result.entity.GetBlendMode());
+        result.entity.SetContents(std::move(contents));
+        result.entity.SetBlendMode(BlendMode::kSource);
+      } else {
+        // End the active pass and flush the buffer before rendering "advanced"
+        // blends. Advanced blends work by binding the current render target
+        // texture as an input ("destination"), blending with a second texture
+        // input ("source"), writing the result to an intermediate texture, and
+        // finally copying the data from the intermediate texture back to the
+        // render target texture. And so all of the commands that have written
+        // to the render target texture so far need to execute before it's bound
+        // for blending (otherwise the blend pass will end up executing before
+        // all the previous commands in the active pass).
 
-#else
-      // End the active pass and flush the buffer before rendering "advanced"
-      // blends. Advanced blends work by binding the current render target
-      // texture as an input ("destination"), blending with a second texture
-      // input ("source"), writing the result to an intermediate texture, and
-      // finally copying the data from the intermediate texture back to the
-      // render target texture. And so all of the commands that have written
-      // to the render target texture so far need to execute before it's bound
-      // for blending (otherwise the blend pass will end up executing before
-      // all the previous commands in the active pass).
+        if (!pass_context.EndPass()) {
+          return false;
+        }
 
-      if (!pass_context.EndPass()) {
-        return false;
+        // Amend an advanced blend filter to the contents, attaching the pass
+        // texture.
+        auto texture = pass_context.GetTexture();
+        if (!texture) {
+          return false;
+        }
+
+        FilterInput::Vector inputs = {
+            FilterInput::Make(texture,
+                              result.entity.GetTransformation().Invert()),
+            FilterInput::Make(result.entity.GetContents())};
+        auto contents = ColorFilterContents::MakeBlend(
+            result.entity.GetBlendMode(), inputs);
+        contents->SetCoverageCrop(result.entity.GetCoverage());
+        result.entity.SetContents(std::move(contents));
+        result.entity.SetBlendMode(BlendMode::kSource);
       }
-
-      // Amend an advanced blend filter to the contents, attaching the pass
-      // texture.
-      auto texture = pass_context.GetTexture();
-      if (!texture) {
-        return false;
-      }
-
-      FilterInput::Vector inputs = {
-          FilterInput::Make(texture,
-                            result.entity.GetTransformation().Invert()),
-          FilterInput::Make(result.entity.GetContents())};
-      auto contents =
-          ColorFilterContents::MakeBlend(result.entity.GetBlendMode(), inputs);
-      contents->SetCoverageCrop(result.entity.GetCoverage());
-      result.entity.SetContents(std::move(contents));
-      result.entity.SetBlendMode(BlendMode::kSource);
-#endif  // FML_OS_PHYSICAL_IOS
     }
 
     //--------------------------------------------------------------------------

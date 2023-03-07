@@ -36,8 +36,7 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   if (!renderer.GetDeviceCapabilities().SupportsFramebufferBlending()) {
     return false;
   }
-  // TODO(jonahwilliams): get these shaders compiling more generally.
-#if FML_OS_PHYSICAL_IOS
+
   using VS = FramebufferBlendScreenPipeline::VertexShader;
   using FS = FramebufferBlendScreenPipeline::FragmentShader;
 
@@ -143,9 +142,6 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, uniform_view);
 
   return pass.AddCommand(cmd);
-#else
-  return false;
-#endif  // FML_OS_PHYSICAL_IOS
 }
 
 }  // namespace impeller
