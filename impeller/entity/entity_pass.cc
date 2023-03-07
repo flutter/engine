@@ -68,10 +68,6 @@ size_t EntityPass::GetSubpassesDepth() const {
   return max_subpass_depth + 1u;
 }
 
-const std::shared_ptr<LazyGlyphAtlas>& EntityPass::GetLazyGlyphAtlas() const {
-  return lazy_glyph_atlas_;
-}
-
 std::optional<Rect> EntityPass::GetElementsCoverage(
     std::optional<Rect> coverage_crop) const {
   std::optional<Rect> result;
@@ -215,24 +211,39 @@ bool EntityPass::Render(ContentContext& renderer,
 
     auto command_buffer = renderer.GetContext()->CreateCommandBuffer();
     command_buffer->SetLabel("EntityPass Root Command Buffer");
-    auto render_pass = command_buffer->CreateRenderPass(render_target);
-    render_pass->SetLabel("EntityPass Root Render Pass");
 
-    {
-      auto size_rect = Rect::MakeSize(offscreen_target.GetRenderTargetSize());
-      auto contents = TextureContents::MakeRect(size_rect);
-      contents->SetTexture(offscreen_target.GetRenderTargetTexture());
-      contents->SetSourceRect(size_rect);
+    if (renderer.GetContext()
+            ->GetDeviceCapabilities()
+            .SupportsTextureToTextureBlits()) {
+      auto blit_pass = command_buffer->CreateBlitPass();
 
-      Entity entity;
-      entity.SetContents(contents);
-      entity.SetBlendMode(BlendMode::kSource);
+      blit_pass->AddCopy(offscreen_target.GetRenderTargetTexture(),
+                         render_target.GetRenderTargetTexture());
 
-      entity.Render(renderer, *render_pass);
-    }
+      if (!blit_pass->EncodeCommands(
+              renderer.GetContext()->GetResourceAllocator())) {
+        return false;
+      }
+    } else {
+      auto render_pass = command_buffer->CreateRenderPass(render_target);
+      render_pass->SetLabel("EntityPass Root Render Pass");
 
-    if (!render_pass->EncodeCommands()) {
-      return false;
+      {
+        auto size_rect = Rect::MakeSize(offscreen_target.GetRenderTargetSize());
+        auto contents = TextureContents::MakeRect(size_rect);
+        contents->SetTexture(offscreen_target.GetRenderTargetTexture());
+        contents->SetSourceRect(size_rect);
+
+        Entity entity;
+        entity.SetContents(contents);
+        entity.SetBlendMode(BlendMode::kSource);
+
+        entity.Render(renderer, *render_pass);
+      }
+
+      if (!render_pass->EncodeCommands()) {
+        return false;
+      }
     }
     if (!command_buffer->SubmitCommands()) {
       return false;
@@ -283,12 +294,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       return EntityPass::EntityResult::Skip();
     }
 
-    if (subpass->delegate_->CanCollapseIntoParentPass() &&
-        !subpass->backdrop_filter_proc_.has_value()) {
+    if (!subpass->backdrop_filter_proc_.has_value() &&
+        subpass->delegate_->CanCollapseIntoParentPass()) {
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(renderer, root_pass_size,
                              pass_context.GetRenderTarget(), position, position,
-                             stencil_depth_floor)) {
+                             pass_depth, stencil_depth_, nullptr,
+                             pass_context.GetRenderPass(pass_depth))) {
         return EntityPass::EntityResult::Failure();
       }
       return EntityPass::EntityResult::Skip();
@@ -394,20 +406,22 @@ struct StencilLayer {
   size_t stencil_depth;
 };
 
-bool EntityPass::OnRender(
-    ContentContext& renderer,
-    ISize root_pass_size,
-    const RenderTarget& render_target,
-    Point position,
-    Point parent_position,
-    uint32_t pass_depth,
-    size_t stencil_depth_floor,
-    std::shared_ptr<Contents> backdrop_filter_contents) const {
+bool EntityPass::OnRender(ContentContext& renderer,
+                          ISize root_pass_size,
+                          const RenderTarget& render_target,
+                          Point position,
+                          Point parent_position,
+                          uint32_t pass_depth,
+                          size_t stencil_depth_floor,
+                          std::shared_ptr<Contents> backdrop_filter_contents,
+                          std::optional<InlinePassContext::RenderPassResult>
+                              collapsed_parent_pass) const {
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
   InlinePassContext pass_context(context, render_target,
-                                 reads_from_pass_texture_);
+                                 reads_from_pass_texture_,
+                                 std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
     return false;
   }

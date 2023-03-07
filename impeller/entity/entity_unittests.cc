@@ -61,8 +61,8 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage)
-      : coverage_(coverage) {}
+  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
+      : coverage_(coverage), collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
@@ -74,7 +74,7 @@ class TestPassDelegate final : public EntityPassDelegate {
   bool CanElide() override { return false; }
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override { return false; }
+  bool CanCollapseIntoParentPass() override { return collapse_; }
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
@@ -85,15 +85,19 @@ class TestPassDelegate final : public EntityPassDelegate {
 
  private:
   const std::optional<Rect> coverage_;
+  const bool collapse_;
 };
 
-auto CreatePassWithRectPath(Rect rect, std::optional<Rect> bounds_hint) {
+auto CreatePassWithRectPath(Rect rect,
+                            std::optional<Rect> bounds_hint,
+                            bool collapse = false) {
   auto subpass = std::make_unique<EntityPass>();
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
+  subpass->SetDelegate(
+      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
   return subpass;
 }
 
@@ -122,6 +126,27 @@ TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
   auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
+}
+
+TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
+  // Both a red and a blue box should appear if the pass merging has worked
+  // correctly.
+
+  EntityPass pass;
+  auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
+                                        Rect::MakeLTRB(50, 50, 150, 150), true);
+  pass.AddSubpass(std::move(subpass));
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto contents = std::make_unique<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  contents->SetColor(Color::Blue());
+  entity.SetContents(std::move(contents));
+
+  pass.AddEntity(entity);
+
+  ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
 
 TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
@@ -2113,6 +2138,69 @@ TEST_P(EntityTest, SdfText) {
     return text_contents->RenderSdf(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, AtlasContentsSubAtlas) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Red(),
+        Color::Red(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors and sample rects are the same, there should
+    // only be a single entry in the sub atlas.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
+  }
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Green(),
+        Color::Blue(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors are different, there are three entires.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
+
+    // The translations are kept but the sample rects point into
+    // different parts of the sub atlas.
+    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[1],
+              Rect::MakeXYWH(11, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[2],
+              Rect::MakeXYWH(22, 0, 10, 10));
+  }
 }
 
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {

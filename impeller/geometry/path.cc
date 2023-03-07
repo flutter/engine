@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "impeller/geometry/path_component.h"
+#include "path_component.h"
 
 namespace impeller {
 
@@ -221,7 +222,7 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(Scalar tolerance) const {
+Path::Polyline Path::CreatePolyline(Scalar scale) const {
   Polyline polyline;
 
   std::optional<Point> previous_contour_point;
@@ -285,11 +286,11 @@ Path::Polyline Path::CreatePolyline(Scalar tolerance) const {
         previous_path_component = &linears_[component.index];
         break;
       case ComponentType::kQuadratic:
-        collect_points(quads_[component.index].CreatePolyline(tolerance));
+        collect_points(quads_[component.index].CreatePolyline(scale));
         previous_path_component = &quads_[component.index];
         break;
       case ComponentType::kCubic:
-        collect_points(cubics_[component.index].CreatePolyline(tolerance));
+        collect_points(cubics_[component.index].CreatePolyline(scale));
         previous_path_component = &cubics_[component.index];
         break;
       case ComponentType::kContour:
