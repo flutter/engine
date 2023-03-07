@@ -21,8 +21,8 @@ def parse_args(args):
 
 def main(argv):
   args = parse_args(argv)
-  third_party = os.path.join(
-      os.path.dirname(__file__), '..', '..', 'third_party'
+  third_party = os.path.abspath(
+      os.path.join(os.path.dirname(__file__), '..', '..', 'third_party')
   )
   dart_dir = os.path.join(third_party, 'dart')
   dart_checkout_dir = os.path.join(third_party, 'dart_checkout')
