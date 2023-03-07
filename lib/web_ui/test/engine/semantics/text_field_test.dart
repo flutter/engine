@@ -73,11 +73,11 @@ void testMain() {
     final DomElement textField = appHostNode
         .querySelector('input[data-semantics-role="text-field"]')!;
 
-      expect(appHostNode.ownerDocument?.activeElement, isNot(textField));
+    expect(appHostNode.ownerDocument?.activeElement, isNot(textField));
 
     textField.focus();
 
-      expect(appHostNode.ownerDocument?.activeElement, textField);
+    expect(appHostNode.ownerDocument?.activeElement, textField);
     expect(await logger.idLog.first, 0);
     expect(await logger.actionLog.first, ui.SemanticsAction.tap);
     }, // TODO(yjbanov): https://github.com/flutter/flutter/issues/46638

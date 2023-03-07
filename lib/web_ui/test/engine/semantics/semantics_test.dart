@@ -2021,11 +2021,6 @@ void _testPlatformView() {
     expect(platformViewRect.right, 20);
     expect(platformViewRect.bottom, 45);
 
-    // This test is only relevant for shadow DOM because we only really support
-    // proper platform view embedding in browsers that support shadow DOM.
-    // final DomShadowRoot shadowRoot =
-    //     flutterViewEmbedder.glassPaneShadow.node as DomShadowRoot;
-
     // Hit test child 1
     expect(domDocument.elementFromPoint(10, 10), child1);
 
