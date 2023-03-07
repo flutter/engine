@@ -9,9 +9,20 @@
 #include <impeller/texture.glsl>
 #include <impeller/types.glsl>
 
+#ifdef IMPELLER_TARGET_METAL
 layout(set = 0,
        binding = 0,
        input_attachment_index = 0) uniform subpassInput uSub;
+
+vec4 ReadDestination() {
+  return subpassLoad(uSub);
+}
+#else
+
+vec4 ReadDestination() {
+  return vec4(0);
+}
+#endif
 
 uniform sampler2D texture_sampler_src;
 
@@ -20,7 +31,7 @@ in vec2 v_src_texture_coords;
 out vec4 frag_color;
 
 void main() {
-  vec4 dst_sample = subpassLoad(uSub);
+  vec4 dst_sample = ReadDestination();
   vec4 dst = IPUnpremultiply(dst_sample);
   vec4 src =
       IPUnpremultiply(IPSampleDecal(texture_sampler_src,  // sampler

@@ -88,10 +88,6 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
     metal_version = "2.3"
   }
 
-  if (impeller_enable_opengles) {
-    gles_language_version = "460"
-  }
-
   shaders = [
     "shaders/blending/ios/framebuffer_blend.vert",
     "shaders/blending/ios/framebuffer_blend_color.frag",
