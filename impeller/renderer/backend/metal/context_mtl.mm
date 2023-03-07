@@ -90,12 +90,21 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
 #endif
 
   {
+    // TODO(jonahwilliams): find a way to query support for this for
+    // macOS/Simulator.
+#if FML_OS_PHYSICAL_IOS
+    bool supports_framebuffer_blend = true;
+#else
+    bool supports_framebuffer_blend = false;
+#endif  // FML_OS_PHYSICAL_IOS
+
     device_capabilities_ =
         DeviceCapabilitiesBuilder()
             .SetHasThreadingRestrictions(false)
             .SetSupportsOffscreenMSAA(true)
             .SetSupportsSSBO(true)
             .SetSupportsTextureToTextureBlits(true)
+            .SetSupportsFramebufferBlending(supports_framebuffer_blend)
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
             .Build();

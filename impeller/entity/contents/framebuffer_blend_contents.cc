@@ -5,6 +5,7 @@
 #include "framebuffer_blend_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/framebuffer_blend_context.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -32,6 +33,11 @@ std::optional<Rect> FramebufferBlendContents::GetCoverage(
 bool FramebufferBlendContents::Render(const ContentContext& renderer,
                                       const Entity& entity,
                                       RenderPass& pass) const {
+  if (!renderer.GetDeviceCapabilities().SupportsFramebufferBlending()) {
+    return false;
+  }
+  // TODO(jonahwilliams): get these shaders compiling more generally.
+#if FML_OS_PHYSICAL_IOS
   using VS = FramebufferBlendScreenPipeline::VertexShader;
   using FS = FramebufferBlendScreenPipeline::FragmentShader;
 
@@ -72,51 +78,52 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   cmd.BindVertices(vtx_buffer);
   cmd.stencil_reference = entity.GetStencilDepth();
 
+  const auto ctx = renderer.GetFramebufferBlendContext();
   switch (blend_mode_) {
     case BlendMode::kScreen:
-      cmd.pipeline = renderer.GetFramebufferBlendScreenPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendScreenPipeline(options);
       break;
     case BlendMode::kOverlay:
-      cmd.pipeline = renderer.GetFramebufferBlendOverlayPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendOverlayPipeline(options);
       break;
     case BlendMode::kDarken:
-      cmd.pipeline = renderer.GetFramebufferBlendDarkenPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendDarkenPipeline(options);
       break;
     case BlendMode::kLighten:
-      cmd.pipeline = renderer.GetFramebufferBlendLightenPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendLightenPipeline(options);
       break;
     case BlendMode::kColorDodge:
-      cmd.pipeline = renderer.GetFramebufferBlendColorDodgePipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendColorDodgePipeline(options);
       break;
     case BlendMode::kColorBurn:
-      cmd.pipeline = renderer.GetFramebufferBlendColorBurnPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendColorBurnPipeline(options);
       break;
     case BlendMode::kHardLight:
-      cmd.pipeline = renderer.GetFramebufferBlendHardLightPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendHardLightPipeline(options);
       break;
     case BlendMode::kSoftLight:
-      cmd.pipeline = renderer.GetFramebufferBlendSoftLightPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendSoftLightPipeline(options);
       break;
     case BlendMode::kDifference:
-      cmd.pipeline = renderer.GetFramebufferBlendDifferencePipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendDifferencePipeline(options);
       break;
     case BlendMode::kExclusion:
-      cmd.pipeline = renderer.GetFramebufferBlendExclusionPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendExclusionPipeline(options);
       break;
     case BlendMode::kMultiply:
-      cmd.pipeline = renderer.GetFramebufferBlendMultiplyPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendMultiplyPipeline(options);
       break;
     case BlendMode::kHue:
-      cmd.pipeline = renderer.GetFramebufferBlendHuePipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendHuePipeline(options);
       break;
     case BlendMode::kSaturation:
-      cmd.pipeline = renderer.GetFramebufferBlendSaturationPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendSaturationPipeline(options);
       break;
     case BlendMode::kColor:
-      cmd.pipeline = renderer.GetFramebufferBlendColorPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendColorPipeline(options);
       break;
     case BlendMode::kLuminosity:
-      cmd.pipeline = renderer.GetFramebufferBlendLuminosityPipeline(options);
+      cmd.pipeline = ctx->GetFramebufferBlendLuminosityPipeline(options);
       break;
     default:
       return false;
@@ -136,6 +143,9 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, uniform_view);
 
   return pass.AddCommand(cmd);
+#else
+  return false;
+#endif  // FML_OS_PHYSICAL_IOS
 }
 
 }  // namespace impeller

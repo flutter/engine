@@ -16,9 +16,7 @@
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/filters/color_filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
-#if FML_OS_PHYSICAL_IOS
 #include "impeller/entity/contents/framebuffer_blend_contents.h"
-#endif
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/inline_pass_context.h"
@@ -44,12 +42,9 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 }
 
 void EntityPass::AddEntity(Entity entity) {
-#ifndef FML_OS_PHYSICAL_IOS
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-    reads_from_pass_texture_ += 1;
+    blend_reads_from_pass_texture_ += 1;
   }
-#endif
-
   elements_.emplace_back(std::move(entity));
 }
 
@@ -135,16 +130,12 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   FML_DCHECK(pass->superpass_ == nullptr);
   pass->superpass_ = this;
 
-#if FML_OS_PHYSICAL_IOS
   if (pass->backdrop_filter_proc_.has_value()) {
-    reads_from_pass_texture_ += 1;
+    filter_reads_from_pass_texture_ += 1;
   }
-#else
-  if (pass->blend_mode_ > Entity::kLastPipelineBlendMode ||
-      pass->backdrop_filter_proc_.has_value()) {
-    reads_from_pass_texture_ += 1;
+  if (pass->blend_mode_ > Entity::kLastPipelineBlendMode) {
+    blend_reads_from_pass_texture_ += 1;
   }
-#endif
 
   auto subpass_pointer = pass.get();
   elements_.emplace_back(std::move(pass));
@@ -199,9 +190,15 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
   );
 }
 
+uint32_t EntityPass::ComputeTotalReads(ContentContext& renderer) const {
+  return renderer.GetDeviceCapabilities().SupportsFramebufferBlending()
+             ? filter_reads_from_pass_texture_
+             : filter_reads_from_pass_texture_ + blend_reads_from_pass_texture_;
+}
+
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
-  if (reads_from_pass_texture_ > 0) {
+  if (ComputeTotalReads(renderer) > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
     if (!OnRender(renderer, offscreen_target.GetRenderTargetSize(),
@@ -357,7 +354,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     auto subpass_target =
         CreateRenderTarget(renderer,                       //
                            ISize(subpass_coverage->size),  //
-                           subpass->reads_from_pass_texture_ > 0);
+                           subpass->ComputeTotalReads(renderer) > 0);
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
 
@@ -420,7 +417,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   auto context = renderer.GetContext();
   InlinePassContext pass_context(context, render_target,
-                                 reads_from_pass_texture_,
+                                 ComputeTotalReads(renderer),
                                  std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
     return false;

@@ -554,6 +554,7 @@ ContextVK::ContextVK(
           .SetSupportsOffscreenMSAA(true)
           .SetSupportsSSBO(false)
           .SetSupportsTextureToTextureBlits(true)
+          .SetSupportsFramebufferBlending(false)
           .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
           .SetDefaultStencilFormat(PixelFormat::kS8UInt)
           .Build();
