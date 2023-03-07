@@ -20,7 +20,6 @@
                 "download_emsdk": true
             },
             "gn": [
-                "--build-canvaskit",
                 "--web",
                 "--runtime-mode=release"
             ],
@@ -40,8 +39,8 @@
                     {
                         "name": "compile web_tests",
                         "parameters": [
-                            "run",
-                            "compile_tests"
+                            "test",
+                            "--compile"
                         ],
                         "scripts": [
                             "flutter/lib/web_ui/dev/felt"
@@ -70,5 +69,27 @@
             "tests": []
         }
     ],
-    "tests": []
+    "tests": [
+        {
+            "name": "linux chrome dart2js web tests",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "parameters": [
+                "test",
+                "--run",
+                "--suite=chrome-dart2js-html-engine",
+                "--suite=chrome-dart2js-html-html",
+                "--suite=chrome-dart2js-html-ui",
+                "--suite=chrome-dart2js-canvaskit-canvaskit",
+                "--suite=chrome-dart2js-canvaskit-ui",
+                "--suite=chrome-dart2js-skwasm-skwasm_stub",
+                "--suite=chrome-full-dart2js-canvaskit-canvaskit",
+                "--suite=chrome-full-dart2js-canvaskit-ui"
+            ],
+            "language": "bash",
+            "script": "flutter/lib/web_ui/dev/felt"
+        }
+    ]
 }
