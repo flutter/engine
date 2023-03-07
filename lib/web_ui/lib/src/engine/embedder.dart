@@ -208,7 +208,7 @@ class FlutterViewEmbedder {
     // interactive Flutter widgets, as long as those widgets do not intersect
     // with the platform view, the platform view will be reachable.
     glassPaneElement.appendChild(semanticsHostElement);
-    
+
     // When debugging semantics, make the scene semi-transparent so that the
     // semantics tree is more prominent.
     if (configuration.debugShowSemanticsNodes) {
