@@ -517,10 +517,7 @@ public class PlatformChannel {
      */
     void setSystemUiOverlayStyle(@NonNull SystemChromeStyle systemUiOverlayStyle);
 
-    /**
-     * The Flutter application would or would not like to handle navigation pop
-     * events itself.
-     */
+    /** The Flutter application would or would not like to handle navigation pop events itself. */
     void updateNavigationStackStatus(boolean frameworkHandlesPop);
 
     /**
