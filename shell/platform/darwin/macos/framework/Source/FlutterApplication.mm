@@ -8,7 +8,6 @@
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
-
 #include "flutter/shell/platform/embedder/embedder.h"
 
 // An NSApplication subclass that implements overrides necessary for some
