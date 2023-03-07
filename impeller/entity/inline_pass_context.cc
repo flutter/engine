@@ -13,15 +13,24 @@
 
 namespace impeller {
 
-InlinePassContext::InlinePassContext(std::shared_ptr<Context> context,
-                                     const RenderTarget& render_target,
-                                     uint32_t pass_texture_reads)
+InlinePassContext::InlinePassContext(
+    std::shared_ptr<Context> context,
+    const RenderTarget& render_target,
+    uint32_t pass_texture_reads,
+    std::optional<RenderPassResult> collapsed_parent_pass)
     : context_(std::move(context)),
       render_target_(render_target),
-      total_pass_reads_(pass_texture_reads) {}
+      total_pass_reads_(pass_texture_reads),
+      is_collapsed_(collapsed_parent_pass.has_value()) {
+  if (collapsed_parent_pass.has_value()) {
+    pass_ = collapsed_parent_pass.value().pass;
+  }
+}
 
 InlinePassContext::~InlinePassContext() {
-  EndPass();
+  if (!is_collapsed_) {
+    EndPass();
+  }
 }
 
 bool InlinePassContext::IsValid() const {
@@ -104,7 +113,6 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
     color0.store_action = StoreAction::kStore;
   }
 
-#ifndef IMPELLER_ENABLE_VULKAN
   auto stencil = render_target_.GetStencilAttachment();
   if (!stencil.has_value()) {
     VALIDATION_LOG << "Stencil attachment unexpectedly missing from the "
@@ -122,11 +130,6 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
                               ? StoreAction::kDontCare
                               : StoreAction::kStore;
   render_target_.SetStencilAttachment(stencil.value());
-#else
-  // Touch this variable to avoid a compiler warnings.
-  // This will go away once stencil support is added for vulkan.
-  total_pass_reads_ = 1;
-#endif
 
   render_target_.SetColorAttachment(color0, 0);
 

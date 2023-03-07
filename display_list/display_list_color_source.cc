@@ -10,32 +10,6 @@
 
 namespace flutter {
 
-std::shared_ptr<DlColorSource> DlColorSource::From(SkShader* sk_shader) {
-  if (sk_shader == nullptr) {
-    return nullptr;
-  }
-  {
-    SkMatrix local_matrix;
-    SkTileMode xy[2];
-    SkImage* image = sk_shader->isAImage(&local_matrix, xy);
-    if (image) {
-      return std::make_shared<DlImageColorSource>(
-          DlImage::Make(image), ToDl(xy[0]), ToDl(xy[1]),
-          DlImageSampling::kLinear, &local_matrix);
-    }
-  }
-  // Skia provides |SkShader->asAGradient(&info)| method to access the
-  // parameters of a gradient, but the info object being filled has a number
-  // of parameters which are missing, including the local matrix in every
-  // gradient, and the sweep angles in the sweep gradients.
-  //
-  // Since we can't reproduce every Gradient, and customers rely on using
-  // gradients with matrices in text code, we have to just use an Unknown
-  // ColorSource to express all gradients.
-  // (see: https://github.com/flutter/flutter/issues/102947)
-  return std::make_shared<DlUnknownColorSource>(sk_ref_sp(sk_shader));
-}
-
 static void DlGradientDeleter(void* p) {
   // Some of our target environments would prefer a sized delete,
   // but other target environments do not have that operator.
@@ -45,7 +19,7 @@ static void DlGradientDeleter(void* p) {
   ::operator delete(p);
 }
 
-std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
+std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
     const SkPoint start_point,
     const SkPoint end_point,
     uint32_t stop_count,
@@ -63,10 +37,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeLinear(
                 DlLinearGradientColorSource(start_point, end_point, stop_count,
                                             colors, stops, tile_mode, matrix),
             DlGradientDeleter);
-  return std::move(ret);
+  return ret;
 }
 
-std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
+std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
     SkPoint center,
     SkScalar radius,
     uint32_t stop_count,
@@ -83,10 +57,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeRadial(
   ret.reset(new (storage) DlRadialGradientColorSource(
                 center, radius, stop_count, colors, stops, tile_mode, matrix),
             DlGradientDeleter);
-  return std::move(ret);
+  return ret;
 }
 
-std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
+std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
     SkPoint start_center,
     SkScalar start_radius,
     SkPoint end_center,
@@ -106,10 +80,10 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeConical(
                 start_center, start_radius, end_center, end_radius, stop_count,
                 colors, stops, tile_mode, matrix),
             DlGradientDeleter);
-  return std::move(ret);
+  return ret;
 }
 
-std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
+std::shared_ptr<DlSweepGradientColorSource> DlColorSource::MakeSweep(
     SkPoint center,
     SkScalar start,
     SkScalar end,
@@ -128,7 +102,7 @@ std::shared_ptr<DlColorSource> DlColorSource::MakeSweep(
                 DlSweepGradientColorSource(center, start, end, stop_count,
                                            colors, stops, tile_mode, matrix),
             DlGradientDeleter);
-  return std::move(ret);
+  return ret;
 }
 
 std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(

@@ -96,6 +96,15 @@ struct Settings {
 
   ~Settings();
 
+  /// Determines if attempts at grabbing the Surface's SurfaceData can be
+  /// attempted.
+  static constexpr bool kSurfaceDataAccessible =
+#ifdef _NDEBUG
+      false;
+#else
+      true;
+#endif
+
   // VM settings
   std::string vm_snapshot_data_path;  // deprecated
   MappingCallback vm_snapshot_data;
@@ -161,23 +170,23 @@ struct Settings {
   // Platform.executable from dart:io. If unknown, defaults to "Flutter".
   std::string executable_name = "Flutter";
 
-  // Observatory settings
+  // VM Service settings
 
   // Whether the Dart VM service should be enabled.
-  bool enable_observatory = false;
+  bool enable_vm_service = false;
 
-  // Whether to publish the observatory URL over mDNS.
+  // Whether to publish the VM Service URL over mDNS.
   // On iOS 14 this prompts a local network permission dialog,
   // which cannot be accepted or dismissed in a CI environment.
-  bool enable_observatory_publication = true;
+  bool enable_vm_service_publication = true;
 
   // The IP address to which the Dart VM service is bound.
-  std::string observatory_host;
+  std::string vm_service_host;
 
   // The port to which the Dart VM service is bound. When set to `0`, a free
   // port will be automatically selected by the OS. A message is logged on the
   // target indicating the URL at which the VM service can be accessed.
-  uint32_t observatory_port = 0;
+  uint32_t vm_service_port = 0;
 
   // Determines whether an authentication code is required to communicate with
   // the VM service.
@@ -196,8 +205,8 @@ struct Settings {
   // manager before creating the engine.
   bool prefetched_default_font_manager = false;
 
-  // Selects the SkParagraph implementation of the text layout engine.
-  bool enable_skparagraph = false;
+  // Enable the rendering of colors outside of the sRGB gamut.
+  bool enable_wide_gamut = false;
 
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
@@ -307,6 +316,11 @@ struct Settings {
   /// If it is not 0 or 1, it must be one of 2, 4, 8, or 16. However, if the
   /// GPU does not support the requested sampling value, MSAA will be disabled.
   uint8_t msaa_samples = 0;
+
+  /// Enable embedder api on the embedder.
+  ///
+  /// This is currently only used by iOS.
+  bool enable_embedder_api = false;
 };
 
 }  // namespace flutter

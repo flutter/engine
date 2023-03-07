@@ -17,7 +17,6 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
-#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -341,7 +340,7 @@ TEST(GeometryTest, MatrixMakeOrthographic) {
     auto expect = Matrix{
         0.02, 0,     0,   0,  //
         0,    -0.01, 0,   0,  //
-        0,    0,     1,   0,  //
+        0,    0,     0,   0,  //
         -1,   1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -352,7 +351,7 @@ TEST(GeometryTest, MatrixMakeOrthographic) {
     auto expect = Matrix{
         0.005, 0,     0,   0,  //
         0,     -0.02, 0,   0,  //
-        0,     0,     1,   0,  //
+        0,     0,     0,   0,  //
         -1,    1,     0.5, 1,  //
     };
     ASSERT_MATRIX_NEAR(m, expect);
@@ -577,7 +576,7 @@ TEST(GeometryTest, EmptyPath) {
   path.GetContourComponentAtIndex(0, c);
   ASSERT_POINT_NEAR(c.destination, Point());
 
-  Path::Polyline polyline = path.CreatePolyline();
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
   ASSERT_TRUE(polyline.points.empty());
   ASSERT_TRUE(polyline.contours.empty());
 }
@@ -666,6 +665,8 @@ TEST(GeometryTest, CanGenerateMipCounts) {
   ASSERT_EQ((Size{128, 0}.MipCount()), 1u);
   ASSERT_EQ((Size{128, -25}.MipCount()), 1u);
   ASSERT_EQ((Size{-128, 25}.MipCount()), 1u);
+  ASSERT_EQ((Size{1, 1}.MipCount()), 1u);
+  ASSERT_EQ((Size{0, 0}.MipCount()), 1u);
 }
 
 TEST(GeometryTest, CanConvertTTypesExplicitly) {
@@ -1551,13 +1552,14 @@ TEST(GeometryTest, RectGetTransformedPoints) {
 
 TEST(GeometryTest, RectMakePointBounds) {
   {
-    Rect r =
-        Rect::MakePointBounds({Point(1, 5), Point(4, -1), Point(0, 6)}).value();
+    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
+    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
     auto expected = Rect(0, -1, 4, 7);
     ASSERT_RECT_NEAR(r, expected);
   }
   {
-    std::optional<Rect> r = Rect::MakePointBounds({});
+    std::vector<Point> points;
+    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
     ASSERT_FALSE(r.has_value());
   }
 }
@@ -1578,7 +1580,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline();
+  auto polyline = component.CreatePolyline(1.0f);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1593,7 +1595,7 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   path.AddContourComponent({40, 40});
   path.AddLinearComponent({40, 40}, {50, 50});
 
-  auto polyline = path.CreatePolyline();
+  auto polyline = path.CreatePolyline(1.0f);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -1679,7 +1681,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.points.size(), 6u);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].is_closed, false);
@@ -1696,7 +1698,7 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   size_t a1, a2, b1, b2;
   std::tie(a1, a2) = polyline.GetContourPointBounds(0);
   std::tie(b1, b2) = polyline.GetContourPointBounds(1);
@@ -1710,7 +1712,7 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
   Path::Polyline polyline = PathBuilder{}
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
@@ -1735,7 +1737,7 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
-          .CreatePolyline();
+          .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
@@ -1842,6 +1844,12 @@ TEST(GeometryTest, ColorPrinting) {
   }
 }
 
+TEST(GeometryTest, ToIColor) {
+  ASSERT_EQ(Color::ToIColor(Color(0, 0, 0, 0)), 0u);
+  ASSERT_EQ(Color::ToIColor(Color(1.0, 1.0, 1.0, 1.0)), 0xFFFFFFFF);
+  ASSERT_EQ(Color::ToIColor(Color(0.5, 0.5, 1.0, 1.0)), 0xFF8080FF);
+}
+
 TEST(GeometryTest, Gradient) {
   {
     // Simple 2 color gradient produces color buffer containing exactly those
@@ -1909,74 +1917,6 @@ TEST(GeometryTest, Gradient) {
 
     ASSERT_EQ(gradient.texture_size, 1024u);
     ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
-  }
-}
-
-TEST(GeometryTest, GradientSSBO) {
-  {
-    // Simple 2 color gradient produces std::nullopt, as original
-    // color vector should be used.
-    std::vector<Color> colors = {Color::Red(), Color::Blue()};
-    std::vector<Scalar> stops = {0.0, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    ASSERT_EQ(gradient, std::nullopt);
-  }
-
-  {
-    // Gradient with duplicate stops does not create an empty texture.
-    std::vector<Color> colors = {Color::Red(), Color::Yellow(), Color::Black(),
-                                 Color::Blue()};
-    std::vector<Scalar> stops = {0.0, 0.25, 0.25, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-    ASSERT_EQ(gradient.value().size(), 5u);
-  }
-
-  {
-    // Simple N color gradient produces color buffer containing exactly those
-    // values.
-    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green(),
-                                 Color::White()};
-    std::vector<Scalar> stops = {0.0, 0.33, 0.66, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    ASSERT_EQ(gradient, std::nullopt);
-  }
-
-  {
-    // Gradient with color stops will lerp and scale buffer.
-    std::vector<Color> colors = {Color::Red(), Color::Blue(), Color::Green()};
-    std::vector<Scalar> stops = {0.0, 0.25, 1.0};
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    std::vector<Color> lerped_colors = {
-        Color::Red(),
-        Color::Blue(),
-        Color::lerp(Color::Blue(), Color::Green(), 0.3333),
-        Color::lerp(Color::Blue(), Color::Green(), 0.6666),
-        Color::Green(),
-    };
-
-    ASSERT_COLORS_NEAR(gradient.value(), lerped_colors);
-    ASSERT_EQ(gradient.value().size(), 5u);
-  }
-
-  {
-    // Gradient size is capped at 1024.
-    std::vector<Color> colors = {};
-    std::vector<Scalar> stops = {};
-    for (auto i = 0u; i < 1025; i++) {
-      colors.push_back(Color::Blue());
-      stops.push_back(i / 1025.0);
-    }
-
-    auto gradient = CreateGradientColors(colors, stops);
-
-    ASSERT_EQ(gradient.value().size(), 1024u);
   }
 }
 

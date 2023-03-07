@@ -2,10 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/display_list/display_list_attributes_testing.h"
 #include "flutter/display_list/display_list_builder.h"
 #include "flutter/display_list/display_list_comparable.h"
 #include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/testing/dl_test_equality.h"
 #include "flutter/display_list/types.h"
 #include "gtest/gtest.h"
 
@@ -22,7 +22,6 @@ TEST(DisplayListVertices, MakeWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_EQ(vertices1->colors(), nullptr);
   EXPECT_EQ(vertices1->index_count(), 0);
   EXPECT_EQ(vertices1->indices(), nullptr);
-  EXPECT_NE(vertices1->skia_object(), nullptr);
 
   std::shared_ptr<const DlVertices> vertices2 = DlVertices::Make(
       DlVertexMode::kTriangles, -1, nullptr, nullptr, nullptr, -1, nullptr);
@@ -33,7 +32,6 @@ TEST(DisplayListVertices, MakeWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_EQ(vertices2->colors(), nullptr);
   EXPECT_EQ(vertices2->index_count(), 0);
   EXPECT_EQ(vertices2->indices(), nullptr);
-  EXPECT_NE(vertices2->skia_object(), nullptr);
 
   TestEquals(*vertices1, *vertices2);
 }
@@ -425,7 +423,6 @@ TEST(DisplayListVertices, BuildWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_EQ(vertices1->colors(), nullptr);
   EXPECT_EQ(vertices1->index_count(), 0);
   EXPECT_EQ(vertices1->indices(), nullptr);
-  EXPECT_NE(vertices1->skia_object(), nullptr);
 
   Builder builder2(DlVertexMode::kTriangles, -1, Builder::kNone, -1);
   EXPECT_TRUE(builder2.is_valid());
@@ -437,7 +434,6 @@ TEST(DisplayListVertices, BuildWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_EQ(vertices2->colors(), nullptr);
   EXPECT_EQ(vertices2->index_count(), 0);
   EXPECT_EQ(vertices2->indices(), nullptr);
-  EXPECT_NE(vertices2->skia_object(), nullptr);
 
   TestEquals(*vertices1, *vertices2);
 }

@@ -7,7 +7,6 @@
 
 #include "flutter/fml/macros.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/core/SkBlender.h"
 #include "third_party/skia/include/core/SkBlurTypes.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkColorFilter.h"
@@ -29,5 +28,4 @@
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkDiscretePathEffect.h"
 #include "third_party/skia/include/gpu/GrTypes.h"
-#include "third_party/skia/include/utils/SkShadowUtils.h"
 #endif  // FLUTTER_DISPLAY_LIST_TYPES_H_

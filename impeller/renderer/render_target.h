@@ -17,30 +17,53 @@ namespace impeller {
 
 class Context;
 
-class RenderTarget {
+class RenderTarget final {
  public:
+  struct AttachmentConfig {
+    StorageMode storage_mode;
+    LoadAction load_action;
+    StoreAction store_action;
+  };
+
+  struct AttachmentConfigMSAA {
+    StorageMode storage_mode;
+    StorageMode resolve_storage_mode;
+    LoadAction load_action;
+    StoreAction store_action;
+  };
+
+  static constexpr AttachmentConfig kDefaultColorAttachmentConfig = {
+      .storage_mode = StorageMode::kDevicePrivate,
+      .load_action = LoadAction::kClear,
+      .store_action = StoreAction::kStore};
+
+  static constexpr AttachmentConfigMSAA kDefaultColorAttachmentConfigMSAA = {
+      .storage_mode = StorageMode::kDeviceTransient,
+      .resolve_storage_mode = StorageMode::kDevicePrivate,
+      .load_action = LoadAction::kClear,
+      .store_action = StoreAction::kMultisampleResolve};
+
+  static constexpr AttachmentConfig kDefaultStencilAttachmentConfig = {
+      .storage_mode = StorageMode::kDeviceTransient,
+      .load_action = LoadAction::kClear,
+      .store_action = StoreAction::kDontCare};
+
   static RenderTarget CreateOffscreen(
       const Context& context,
       ISize size,
       const std::string& label = "Offscreen",
-      StorageMode color_storage_mode = StorageMode::kDevicePrivate,
-      LoadAction color_load_action = LoadAction::kClear,
-      StoreAction color_store_action = StoreAction::kStore,
-      StorageMode stencil_storage_mode = StorageMode::kDeviceTransient,
-      LoadAction stencil_load_action = LoadAction::kClear,
-      StoreAction stencil_store_action = StoreAction::kDontCare);
+      AttachmentConfig color_attachment_config = kDefaultColorAttachmentConfig,
+      std::optional<AttachmentConfig> stencil_attachment_config =
+          kDefaultStencilAttachmentConfig);
 
   static RenderTarget CreateOffscreenMSAA(
       const Context& context,
       ISize size,
       const std::string& label = "Offscreen MSAA",
-      StorageMode color_storage_mode = StorageMode::kDeviceTransient,
-      StorageMode color_resolve_storage_mode = StorageMode::kDevicePrivate,
-      LoadAction color_load_action = LoadAction::kClear,
-      StoreAction color_store_action = StoreAction::kMultisampleResolve,
-      StorageMode stencil_storage_mode = StorageMode::kDeviceTransient,
-      LoadAction stencil_load_action = LoadAction::kClear,
-      StoreAction stencil_store_action = StoreAction::kDontCare);
+      AttachmentConfigMSAA color_attachment_config =
+          kDefaultColorAttachmentConfigMSAA,
+      std::optional<AttachmentConfig> stencil_attachment_config =
+          kDefaultStencilAttachmentConfig);
 
   RenderTarget();
 
@@ -56,6 +79,8 @@ class RenderTarget {
 
   std::shared_ptr<Texture> GetRenderTargetTexture() const;
 
+  PixelFormat GetRenderTargetPixelFormat() const;
+
   std::optional<ISize> GetColorAttachmentSize(size_t index) const;
 
   RenderTarget& SetColorAttachment(const ColorAttachment& attachment,
@@ -66,11 +91,15 @@ class RenderTarget {
   RenderTarget& SetStencilAttachment(
       std::optional<StencilAttachment> attachment);
 
+  size_t GetMaxColorAttacmentBindIndex() const;
+
   const std::map<size_t, ColorAttachment>& GetColorAttachments() const;
 
   const std::optional<DepthAttachment>& GetDepthAttachment() const;
 
   const std::optional<StencilAttachment>& GetStencilAttachment() const;
+
+  size_t GetTotalAttachmentCount() const;
 
  private:
   std::map<size_t, ColorAttachment> colors_;

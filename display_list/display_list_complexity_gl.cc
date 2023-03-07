@@ -114,7 +114,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRect(const SkRect& rect) {
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // No real difference for AA with filled styles
     unsigned int area = rect.width() * rect.height();
 
@@ -165,7 +165,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawOval(
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // With filled styles, there is no significant AA penalty.
     // m = 1/6000
     // c = 0
@@ -199,7 +199,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawCircle(
 
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     // We can ignore pi here
     unsigned int area = radius * radius;
     // m = 1/525
@@ -245,7 +245,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawRRect(
   // These values were worked out by creating a straight line graph (y=mx+c)
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
-  if (Style() == SkPaint::Style::kFill_Style ||
+  if (DrawStyle() == DlDrawStyle::kFill ||
       ((rrect.getType() == SkRRect::Type::kSimple_Type) && IsAntiAliased())) {
     unsigned int area = rrect.width() * rrect.height();
     // m = 1/3200
@@ -295,7 +295,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawDRRect(
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kFill_Style) {
+  if (DrawStyle() == DlDrawStyle::kFill) {
     unsigned int area = outer.width() * outer.height();
     if (outer.getType() == SkRRect::Type::kComplex_Type) {
       // m = 1/500
@@ -382,7 +382,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawArc(
   //
   // There is also a kStrokeAndFill_Style that Skia exposes, but we do not
   // currently use it anywhere in Flutter.
-  if (Style() == SkPaint::Style::kStroke_Style) {
+  if (DrawStyle() == DlDrawStyle::kStroke) {
     if (IsAntiAliased()) {
       // m = 1/3800
       // c = 12
@@ -414,7 +414,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawArc(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
-    SkCanvas::PointMode mode,
+    DlCanvas::PointMode mode,
     uint32_t count,
     const SkPoint points[]) {
   if (IsComplex()) {
@@ -423,7 +423,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
   unsigned int complexity;
 
   if (IsAntiAliased()) {
-    if (mode == SkCanvas::kPoints_PointMode) {
+    if (mode == DlCanvas::PointMode::kPoints) {
       if (IsHairline()) {
         // This is a special case, it triggers an extremely fast path.
         // m = 1/4500
@@ -434,7 +434,7 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
         // c = 0
         complexity = count * 400;
       }
-    } else if (mode == SkCanvas::kLines_PointMode) {
+    } else if (mode == DlCanvas::PointMode::kLines) {
       if (IsHairline()) {
         // m = 1/750
         // c = 0
@@ -456,12 +456,12 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
       }
     }
   } else {
-    if (mode == SkCanvas::kPoints_PointMode) {
+    if (mode == DlCanvas::PointMode::kPoints) {
       // Hairline vs non hairline makes no difference for points without AA.
       // m = 1/18000
       // c = 0.25
       complexity = (count + 4500) * 100 / 9;
-    } else if (mode == SkCanvas::kLines_PointMode) {
+    } else if (mode == DlCanvas::PointMode::kLines) {
       if (IsHairline()) {
         // m = 1/8500
         // c = 0.25
@@ -479,34 +479,6 @@ void DisplayListGLComplexityCalculator::GLHelper::drawPoints(
       complexity = (count + 1875) * 80 / 3;
     }
   }
-
-  AccumulateComplexity(complexity);
-}
-
-void DisplayListGLComplexityCalculator::GLHelper::drawSkVertices(
-    const sk_sp<SkVertices> vertices,
-    SkBlendMode mode) {
-  // There is currently no way for us to get the VertexMode from the SkVertices
-  // object, but for future reference:
-  //
-  // TriangleStrip is roughly 25% more expensive than TriangleFan.
-  // TriangleFan is roughly 5% more expensive than Triangles.
-
-  // There is currently no way for us to get the vertex count from an SkVertices
-  // object, so we have to estimate it from the approximate size.
-  //
-  // Approximate size returns the sum of the sizes of the positions (SkPoint),
-  // texs (SkPoint), colors (SkColor) and indices (uint16_t) arrays multiplied
-  // by sizeof(type). As a very, very rough estimate, divide that by 20 to get
-  // an idea of the vertex count.
-  unsigned int approximate_vertex_count = vertices->approximateSize() / 20;
-
-  // For the baseline, it's hard to identify the trend. It might be O(n^1/2)
-  // For now, treat it as linear as an approximation.
-  //
-  // m = 1/1600
-  // c = 1
-  unsigned int complexity = (approximate_vertex_count + 1600) * 250 / 2;
 
   AccumulateComplexity(complexity);
 }
@@ -578,7 +550,7 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
     const SkISize& size,
     bool texture_backed,
     bool render_with_attributes,
-    SkCanvas::SrcRectConstraint constraint) {
+    bool enforce_src_edges) {
   if (IsComplex()) {
     return;
   }
@@ -591,10 +563,8 @@ void DisplayListGLComplexityCalculator::GLHelper::ImageRect(
   // approximately matching the measured data, normalising the data so that
   // 0.0005ms resulted in a score of 100 then simplifying down the formula.
   unsigned int complexity;
-  if (!texture_backed ||
-      (texture_backed && render_with_attributes &&
-       constraint == SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint &&
-       IsAntiAliased())) {
+  if (!texture_backed || (texture_backed && render_with_attributes &&
+                          enforce_src_edges && IsAntiAliased())) {
     unsigned int area = size.width() * size.height();
     // m = 1/4000
     // c = 5
@@ -638,11 +608,15 @@ void DisplayListGLComplexityCalculator::GLHelper::drawImageNine(
 }
 
 void DisplayListGLComplexityCalculator::GLHelper::drawDisplayList(
-    const sk_sp<DisplayList> display_list) {
+    const sk_sp<DisplayList> display_list,
+    SkScalar opacity) {
   if (IsComplex()) {
     return;
   }
   GLHelper helper(Ceiling() - CurrentComplexityScore());
+  if (opacity < SK_Scalar1 && !display_list->can_apply_group_opacity()) {
+    helper.saveLayer(nullptr, SaveLayerOptions::kWithAttributes, nullptr);
+  }
   display_list->Dispatch(helper);
   AccumulateComplexity(helper.ComplexityScore());
 }

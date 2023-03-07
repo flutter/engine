@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/fonts.dart';
+import 'package:web_test_fonts/web_test_fonts.dart';
 
 import '../assets.dart';
 import '../dom.dart';
@@ -27,21 +28,15 @@ class HtmlFontCollection implements FontCollection {
   /// fonts declared within.
   @override
   Future<void> downloadAssetFonts(AssetManager assetManager) async {
-    ByteData byteData;
+    final HttpFetchResponse response = await assetManager.loadAsset('FontManifest.json');
 
-    try {
-      byteData = await assetManager.load('FontManifest.json');
-    } on AssetManagerException catch (e) {
-      if (e.httpStatus == 404) {
-        printWarning('Font manifest does not exist at `${e.url}` – ignoring.');
-        return;
-      } else {
-        rethrow;
-      }
+    if (!response.hasPayload) {
+      printWarning('Font manifest does not exist at `${response.url}` - ignoring.');
+      return;
     }
 
-    final List<dynamic>? fontManifest =
-        json.decode(utf8.decode(byteData.buffer.asUint8List())) as List<dynamic>?;
+    final Uint8List data = await response.asUint8List();
+    final List<dynamic>? fontManifest = json.decode(utf8.decode(data)) as List<dynamic>?;
     if (fontManifest == null) {
       throw AssertionError(
           'There was a problem trying to load FontManifest.json');
@@ -80,14 +75,15 @@ class HtmlFontCollection implements FontCollection {
   /// Downloads fonts that are used by tests.
   @override
   Future<void> debugDownloadTestFonts() async {
-    _testFontManager = FontManager();
-    _testFontManager!.downloadAsset(
-        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoFontFamily,
-        'url($robotoTestFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoVariableFontFamily,
-        'url($robotoVariableTestFontUrl)', const <String, String>{});
-    await _testFontManager!.downloadAllFonts();
+    final FontManager fontManager = _testFontManager = FontManager();
+    for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
+      fontManager.downloadAsset(fontEntry.key, 'url(${fontEntry.value})', const <String, String>{});
+    }
+    fontManager._downloadedFonts.add(createDomFontFace(
+      EmbeddedTestFont.flutterTest.fontFamily,
+      EmbeddedTestFont.flutterTest.data,
+    ));
+    await fontManager.downloadAllFonts();
   }
 
   @override

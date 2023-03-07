@@ -2,7 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/layers/clip_path_layer.h"
 #include "flutter/flow/layers/clip_rect_layer.h"
 #include "flutter/flow/layers/clip_rrect_layer.h"
@@ -17,13 +16,15 @@ namespace testing {
 
 using CheckerBoardLayerTest = LayerTest;
 
+using ClipOp = DlCanvas::ClipOp;
+
 #ifndef NDEBUG
 TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
   const SkMatrix initial_matrix = SkMatrix::Translate(0.5f, 1.0f);
   const SkRect child_bounds = SkRect::MakeXYWH(1.0, 2.0, 2.0, 2.0);
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRectLayer>(layer_bounds,
                                                Clip::antiAliasWithSaveLayer);
@@ -52,11 +53,11 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
+               1, MockCanvas::ClipRectData{layer_bounds, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
-               MockCanvas::SaveLayerData{child_bounds, SkPaint(), nullptr, 2}},
+               MockCanvas::SaveLayerData{child_bounds, DlPaint(), nullptr, 2}},
            MockCanvas::DrawCall{
                2, MockCanvas::DrawPathData{child_path, child_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
@@ -70,11 +71,11 @@ TEST_F(CheckerBoardLayerTest, ClipRectSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{layer_bounds, SkClipOp::kIntersect,
+               1, MockCanvas::ClipRectData{layer_bounds, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
-               MockCanvas::SaveLayerData{child_bounds, SkPaint(), nullptr, 2}},
+               MockCanvas::SaveLayerData{child_bounds, DlPaint(), nullptr, 2}},
            MockCanvas::DrawCall{
                2, MockCanvas::DrawPathData{child_path, child_paint}},
            // start DrawCheckerboard calls
@@ -92,8 +93,8 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkPath layer_path =
       SkPath().addRect(layer_bounds).addRect(layer_bounds);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  const SkPaint clip_paint;
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
+  const DlPaint clip_paint;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer =
       std::make_shared<ClipPathLayer>(layer_path, Clip::antiAliasWithSaveLayer);
@@ -120,7 +121,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipPathData{layer_path, SkClipOp::kIntersect,
+               1, MockCanvas::ClipPathData{layer_path, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
@@ -138,7 +139,7 @@ TEST_F(CheckerBoardLayerTest, ClipPathSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipPathData{layer_path, SkClipOp::kIntersect,
+               1, MockCanvas::ClipPathData{layer_path, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
@@ -159,8 +160,8 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
   const SkRect layer_bounds = SkRect::MakeXYWH(0.5, 1.0, 5.0, 6.0);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const SkRRect layer_rrect = SkRRect::MakeRectXY(layer_bounds, .1, .1);
-  const SkPaint child_paint = SkPaint(SkColors::kYellow);
-  const SkPaint clip_paint;
+  const DlPaint child_paint = DlPaint(DlColor::kYellow());
+  const DlPaint clip_paint;
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ClipRRectLayer>(layer_rrect,
                                                 Clip::antiAliasWithSaveLayer);
@@ -187,7 +188,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRRectData{layer_rrect, SkClipOp::kIntersect,
+               1, MockCanvas::ClipRRectData{layer_rrect, ClipOp::kIntersect,
                                             MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
@@ -205,7 +206,7 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
       std::vector(
           {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRRectData{layer_rrect, SkClipOp::kIntersect,
+               1, MockCanvas::ClipRRectData{layer_rrect, ClipOp::kIntersect,
                                             MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1,
@@ -222,8 +223,9 @@ TEST_F(CheckerBoardLayerTest, ClipRRectSaveLayerCheckBoard) {
 
 TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   constexpr float initial_elevation = 20.0f;
-  SkPath layer_path;
-  layer_path.addRect(0, 0, 8, 8).close();
+  const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
+  SkPath layer_path =
+      SkPath().addRect(paint_bounds).addOval(paint_bounds.makeInset(0.1, 0.1));
   auto layer = std::make_shared<PhysicalShapeLayer>(
       SK_ColorGREEN, SK_ColorBLACK, initial_elevation, layer_path,
       Clip::antiAliasWithSaveLayer);
@@ -232,29 +234,30 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   // The Fuchsia system compositor handles all elevated PhysicalShapeLayers and
   // their shadows , so we do not do any painting there.
   EXPECT_EQ(layer->paint_bounds(),
-            DisplayListCanvasDispatcher::ComputeShadowBounds(
-                layer_path, initial_elevation, 1.0f, SkMatrix()));
+            DlCanvas::ComputeShadowBounds(layer_path, initial_elevation, 1.0f,
+                                          SkMatrix()));
   EXPECT_TRUE(layer->needs_painting(paint_context()));
   EXPECT_EQ(layer->elevation(), initial_elevation);
 
-  const SkRect paint_bounds = SkRect::MakeXYWH(0, 0, 8, 8);
-  const SkPaint clip_paint;
-  SkPaint layer_paint;
+  const DlPaint clip_paint;
+  DlPaint layer_paint;
   layer_paint.setColor(SK_ColorGREEN);
   layer_paint.setAntiAlias(true);
   layer->Paint(paint_context());
   EXPECT_EQ(
       mock_canvas().draw_calls(),
       std::vector(
-          {MockCanvas::DrawCall{0, MockCanvas::DrawShadowData{layer_path}},
+          {MockCanvas::DrawCall{
+               0, MockCanvas::DrawShadowData{layer_path, DlColor::kBlack(),
+                                             initial_elevation, false, 1}},
            MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{paint_bounds, SkClipOp::kIntersect,
+               1, MockCanvas::ClipPathData{layer_path, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1, MockCanvas::SaveLayerData{layer->paint_bounds(), clip_paint,
                                             nullptr, 2}},
-           MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
+           MockCanvas::DrawCall{2, MockCanvas::DrawPaintData{layer_paint}},
            MockCanvas::DrawCall{2, MockCanvas::RestoreData{1}},
            MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}}));
 
@@ -264,15 +267,17 @@ TEST_F(CheckerBoardLayerTest, PhysicalSaveLayerCheckBoard) {
   EXPECT_EQ(
       mock_canvas().draw_calls(),
       std::vector(
-          {MockCanvas::DrawCall{0, MockCanvas::DrawShadowData{layer_path}},
+          {MockCanvas::DrawCall{
+               0, MockCanvas::DrawShadowData{layer_path, DlColor::kBlack(),
+                                             initial_elevation, false, 1}},
            MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
            MockCanvas::DrawCall{
-               1, MockCanvas::ClipRectData{paint_bounds, SkClipOp::kIntersect,
+               1, MockCanvas::ClipPathData{layer_path, ClipOp::kIntersect,
                                            MockCanvas::kSoft_ClipEdgeStyle}},
            MockCanvas::DrawCall{
                1, MockCanvas::SaveLayerData{layer->paint_bounds(), clip_paint,
                                             nullptr, 2}},
-           MockCanvas::DrawCall{2, MockCanvas::DrawPaint{layer_paint}},
+           MockCanvas::DrawCall{2, MockCanvas::DrawPaintData{layer_paint}},
            // start DrawCheckerboard calls
            MockCanvas::DrawCall{2,
                                 MockCanvas::DrawRectData{layer->paint_bounds(),

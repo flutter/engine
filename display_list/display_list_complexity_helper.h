@@ -7,8 +7,8 @@
 
 #include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/display_list_complexity.h"
-#include "flutter/display_list/display_list_dispatcher.h"
 #include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_op_receiver.h"
 
 namespace flutter {
 
@@ -92,7 +92,7 @@ namespace flutter {
 //   y = 4x
 
 class ComplexityCalculatorHelper
-    : public virtual Dispatcher,
+    : public virtual DlOpReceiver,
       public virtual IgnoreClipDispatchHelper,
       public virtual IgnoreTransformDispatchHelper {
  public:
@@ -108,7 +108,6 @@ class ComplexityCalculatorHelper
   void setStrokeMiter(SkScalar limit) override {}
   void setColor(DlColor color) override {}
   void setBlendMode(DlBlendMode mode) override {}
-  void setBlender(sk_sp<SkBlender> blender) override {}
   void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
@@ -122,7 +121,7 @@ class ComplexityCalculatorHelper
   void setAntiAlias(bool aa) override { current_paint_.setAntiAlias(aa); }
 
   void setStyle(DlDrawStyle style) override {
-    current_paint_.setStyle(ToSk(style));
+    current_paint_.setDrawStyle(style);
   }
 
   void setStrokeWidth(SkScalar width) override {
@@ -146,33 +145,18 @@ class ComplexityCalculatorHelper
     AccumulateComplexity(50);
   }
 
-  void drawImageRect(const sk_sp<DlImage> image,
-                     const SkRect& src,
-                     const SkRect& dst,
-                     DlImageSampling sampling,
-                     bool render_with_attributes,
-                     SkCanvas::SrcRectConstraint constraint) override {
+  void drawImageRect(
+      const sk_sp<DlImage> image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      bool render_with_attributes,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) override {
     if (IsComplex()) {
       return;
     }
     ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes, constraint);
-  }
-
-  void drawImageLattice(const sk_sp<DlImage> image,
-                        const SkCanvas::Lattice& lattice,
-                        const SkRect& dst,
-                        DlFilterMode filter,
-                        bool render_with_attributes) override {
-    if (IsComplex()) {
-      return;
-    }
-    // This is not currently called from Flutter code, and this API is likely
-    // to be removed in the future. For now, just return what drawImageNine
-    // would
-    ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes,
-              SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
+              render_with_attributes, constraint == SrcRectConstraint::kStrict);
   }
 
   void drawAtlas(const sk_sp<DlImage> atlas,
@@ -191,17 +175,8 @@ class ComplexityCalculatorHelper
     // This is equivalent to calling drawImageRect lots of times
     for (int i = 0; i < count; i++) {
       ImageRect(SkISize::Make(tex[i].width(), tex[i].height()), true,
-                render_with_attributes,
-                SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
+                render_with_attributes, true);
     }
-  }
-
-  void drawPicture(const sk_sp<SkPicture> picture,
-                   const SkMatrix* matrix,
-                   bool render_with_attributes) override {
-    // This API shouldn't be used, but for now just take the
-    // approximateOpCount() and multiply by 50 as a placeholder.
-    AccumulateComplexity(picture->approximateOpCount() * 50);
   }
 
   // This method finalizes the complexity score calculation and returns it
@@ -236,7 +211,7 @@ class ComplexityCalculatorHelper
 
   inline bool IsAntiAliased() { return current_paint_.isAntiAlias(); }
   inline bool IsHairline() { return current_paint_.getStrokeWidth() == 0.0f; }
-  inline SkPaint::Style Style() { return current_paint_.getStyle(); }
+  inline DlDrawStyle DrawStyle() { return current_paint_.getDrawStyle(); }
   inline bool IsComplex() { return is_complex_; }
   inline unsigned int Ceiling() { return ceiling_; }
   inline unsigned int CurrentComplexityScore() { return complexity_score_; }
@@ -273,7 +248,7 @@ class ComplexityCalculatorHelper
   virtual void ImageRect(const SkISize& size,
                          bool texture_backed,
                          bool render_with_attributes,
-                         SkCanvas::SrcRectConstraint constraint) = 0;
+                         bool enforce_src_edges) = 0;
 
   // This calculates and returns the cost of draw calls which are batched and
   // thus have a time cost proportional to the number of draw calls made, such
@@ -281,7 +256,7 @@ class ComplexityCalculatorHelper
   virtual unsigned int BatchedComplexity() = 0;
 
  private:
-  SkPaint current_paint_;
+  DlPaint current_paint_;
 
   // If we exceed the ceiling (defaults to the largest number representable
   // by unsigned int), then set the is_complex_ bool and we no longer

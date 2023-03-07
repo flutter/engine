@@ -61,8 +61,8 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage)
-      : coverage_(coverage) {}
+  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
+      : coverage_(coverage), collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
@@ -74,7 +74,7 @@ class TestPassDelegate final : public EntityPassDelegate {
   bool CanElide() override { return false; }
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override { return false; }
+  bool CanCollapseIntoParentPass() override { return collapse_; }
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
@@ -85,15 +85,19 @@ class TestPassDelegate final : public EntityPassDelegate {
 
  private:
   const std::optional<Rect> coverage_;
+  const bool collapse_;
 };
 
-auto CreatePassWithRectPath(Rect rect, std::optional<Rect> bounds_hint) {
+auto CreatePassWithRectPath(Rect rect,
+                            std::optional<Rect> bounds_hint,
+                            bool collapse = false) {
   auto subpass = std::make_unique<EntityPass>();
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
+  subpass->SetDelegate(
+      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
   return subpass;
 }
 
@@ -122,6 +126,27 @@ TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
   auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
+}
+
+TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
+  // Both a red and a blue box should appear if the pass merging has worked
+  // correctly.
+
+  EntityPass pass;
+  auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
+                                        Rect::MakeLTRB(50, 50, 150, 150), true);
+  pass.AddSubpass(std::move(subpass));
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto contents = std::make_unique<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  contents->SetColor(Color::Blue());
+  entity.SetContents(std::move(contents));
+
+  pass.AddEntity(entity);
+
+  ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
 
 TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
@@ -402,6 +427,52 @@ TEST_P(EntityTest, CubicCurveTest) {
   entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
   entity.SetContents(SolidColorContents::Make(path, Color::Red()));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, CanDrawCorrectlyWithRotatedTransformation) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    const char* input_axis[] = {"X", "Y", "Z"};
+    static int rotation_axis_index = 0;
+    static float rotation = 0;
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat("Rotation", &rotation, -kPi, kPi);
+    ImGui::Combo("Rotation Axis", &rotation_axis_index, input_axis,
+                 sizeof(input_axis) / sizeof(char*));
+    Matrix rotation_matrix;
+    switch (rotation_axis_index) {
+      case 0:
+        rotation_matrix = Matrix::MakeRotationX(Radians(rotation));
+        break;
+      case 1:
+        rotation_matrix = Matrix::MakeRotationY(Radians(rotation));
+        break;
+      case 2:
+        rotation_matrix = Matrix::MakeRotationZ(Radians(rotation));
+        break;
+      default:
+        rotation_matrix = Matrix{};
+        break;
+    }
+
+    if (ImGui::Button("Reset")) {
+      rotation = 0;
+    }
+    ImGui::End();
+    Matrix current_transform =
+        Matrix::MakeScale(GetContentScale())
+            .MakeTranslation(
+                Vector3(Point(pass.GetRenderTargetSize().width / 2.0,
+                              pass.GetRenderTargetSize().height / 2.0)));
+    Matrix result_transform = current_transform * rotation_matrix;
+    Path path =
+        PathBuilder{}.AddRect(Rect::MakeXYWH(-300, -400, 600, 800)).TakePath();
+
+    Entity entity;
+    entity.SetTransformation(result_transform);
+    entity.SetContents(SolidColorContents::Make(path, Color::Red()));
+    return entity.Render(context, pass);
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(EntityTest, CubicCurveAndOverlapTest) {
@@ -762,11 +833,11 @@ TEST_P(EntityTest, BlendingModeOptions) {
       cmd.BindVertices(
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-      VS::VertInfo frame_info;
+      VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
-      VS::BindVertInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindFrameInfo(cmd,
+                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
       FS::FragInfo frag_info;
       frag_info.color = color.Premultiply();
@@ -1508,6 +1579,66 @@ TEST_P(EntityTest, ClipContentsShouldRenderIsCorrect) {
   }
 }
 
+TEST_P(EntityTest, ClipContentsGetStencilCoverageIsCorrect) {
+  // Intersection: No stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: No stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 100, 100)).TakePath()));
+    auto result = clip->GetStencilCoverage(Entity{}, Rect{});
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, no geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_FALSE(result.coverage.has_value());
+  }
+
+  // Intersection: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kIntersect);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 50, 50));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+  }
+
+  // Difference: With stencil coverage, with geometry.
+  {
+    auto clip = std::make_shared<ClipContents>();
+    clip->SetClipOperation(Entity::ClipOperation::kDifference);
+    clip->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(0, 0, 50, 50)).TakePath()));
+    auto result =
+        clip->GetStencilCoverage(Entity{}, Rect::MakeLTRB(0, 0, 100, 100));
+
+    ASSERT_TRUE(result.coverage.has_value());
+    ASSERT_RECT_NEAR(result.coverage.value(), Rect::MakeLTRB(0, 0, 100, 100));
+    ASSERT_EQ(result.type, Contents::StencilCoverage::Type::kAppend);
+  }
+}
+
 TEST_P(EntityTest, RRectShadowTest) {
   auto callback = [&](ContentContext& context, RenderPass& pass) {
     static Color color = Color::Red();
@@ -2007,6 +2138,69 @@ TEST_P(EntityTest, SdfText) {
     return text_contents->RenderSdf(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, AtlasContentsSubAtlas) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Red(),
+        Color::Red(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors and sample rects are the same, there should
+    // only be a single entry in the sub atlas.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
+  }
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Green(),
+        Color::Blue(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors are different, there are three entires.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
+
+    // The translations are kept but the sample rects point into
+    // different parts of the sub atlas.
+    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[1],
+              Rect::MakeXYWH(11, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[2],
+              Rect::MakeXYWH(22, 0, 10, 10));
+  }
 }
 
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {

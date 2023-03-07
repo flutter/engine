@@ -97,7 +97,7 @@ class Canvas {
                      Point position,
                      const Paint& paint);
 
-  void DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
+  void DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                     BlendMode blend_mode,
                     const Paint& paint);
 
@@ -116,6 +116,7 @@ class Canvas {
   std::unique_ptr<EntityPass> base_pass_;
   EntityPass* current_pass_ = nullptr;
   std::deque<CanvasStackEntry> xformation_stack_;
+  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_;
 
   void Initialize();
 

@@ -11,18 +11,38 @@
 library canvaskit_api;
 
 import 'dart:async';
+import 'dart:convert';
 import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../profiler.dart';
+import 'renderer.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
+
+late CanvasKitVariant _canvasKitVariant;
+
+/// Which variant of CanvasKit we are using.
+CanvasKitVariant get canvasKitVariant => _canvasKitVariant;
+set canvasKitVariant(CanvasKitVariant value) {
+  if (value == CanvasKitVariant.auto) {
+    throw ArgumentError.value(
+      value,
+      'value',
+      'CanvasKitVariant.auto is not a valid value for canvasKitVariant',
+    );
+  }
+  _canvasKitVariant = value;
+}
+
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.
@@ -1884,6 +1904,20 @@ extension SkParagraphBuilderExtension on SkParagraphBuilder {
     SkTextBaseline baseline,
     double offset,
   );
+
+  @JS('getText')
+  external String getTextUtf8();
+  // SkParagraphBuilder.getText() returns a utf8 string, we need to decode it
+  // into a utf16 string.
+  String getText() => utf8.decode(getTextUtf8().codeUnits);
+
+  external void setWordsUtf8(Uint32List words);
+  external void setWordsUtf16(Uint32List words);
+  external void setGraphemeBreaksUtf8(Uint32List graphemes);
+  external void setGraphemeBreaksUtf16(Uint32List graphemes);
+  external void setLineBreaksUtf8(Uint32List lineBreaks);
+  external void setLineBreaksUtf16(Uint32List lineBreaks);
+
   external SkParagraph build();
   external void delete();
 }
@@ -2663,13 +2697,51 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
     js_util.callMethod(objectConstructor,
         'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
-  domDocument.head!.appendChild(canvasKitScript);
 }
 
-String get canvasKitBuildUrl => configuration.canvasKitBaseUrl;
-String get canvasKitJavaScriptBindingsUrl =>
-    '${canvasKitBuildUrl}canvaskit.js';
-String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+String get _canvasKitBaseUrl => configuration.canvasKitBaseUrl;
+
+const String _kFullCanvasKitJsFileName = 'canvaskit.js';
+const String _kChromiumCanvasKitJsFileName = 'chromium/canvaskit.js';
+
+// TODO(mdebbar): Replace this with a Record once it's supported in Dart.
+class _CanvasKitVariantUrl {
+  const _CanvasKitVariantUrl(this.url, this.variant)
+      : assert(
+          variant != CanvasKitVariant.auto,
+          'CanvasKitVariant.auto cannot have a url',
+        );
+
+  final String url;
+  final CanvasKitVariant variant;
+
+  static _CanvasKitVariantUrl chromium = _CanvasKitVariantUrl(
+    '$_canvasKitBaseUrl$_kChromiumCanvasKitJsFileName',
+    CanvasKitVariant.chromium,
+  );
+
+  static _CanvasKitVariantUrl full = _CanvasKitVariantUrl(
+    '$_canvasKitBaseUrl$_kFullCanvasKitJsFileName',
+    CanvasKitVariant.full,
+  );
+}
+
+List<_CanvasKitVariantUrl> get _canvasKitUrls {
+  switch (configuration.canvasKitVariant) {
+    case CanvasKitVariant.auto:
+      return <_CanvasKitVariantUrl>[
+        if (browserSupportsCanvaskitChromium) _CanvasKitVariantUrl.chromium,
+        _CanvasKitVariantUrl.full,
+      ];
+    case CanvasKitVariant.full:
+      return <_CanvasKitVariantUrl>[_CanvasKitVariantUrl.full];
+    case CanvasKitVariant.chromium:
+      return <_CanvasKitVariantUrl>[_CanvasKitVariantUrl.chromium];
+  }
+}
+
+@visibleForTesting
+String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
 
 /// Download and initialize the CanvasKit module.
@@ -2677,31 +2749,63 @@ String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
 /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
 /// and intialize the CanvasKit wasm.
 Future<CanvasKit> downloadCanvasKit() async {
-  await _downloadCanvasKitJs();
+  await _downloadOneOf(_canvasKitUrls);
 
   return CanvasKitInit(CanvasKitInitOptions(
-    locateFile: allowInterop((String file, String unusedBase) =>
-        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+    locateFile: allowInterop(canvasKitWasmModuleUrl),
   ));
 }
 
-/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
-Future<void> _downloadCanvasKitJs() {
-  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
-
-  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
-  canvasKitScript.src = createTrustedScriptUrl(canvasKitJavaScriptUrl);
-
-  final Completer<void> canvasKitLoadCompleter = Completer<void>();
-  late DomEventListener callback;
-  void loadEventHandler(DomEvent _) {
-    canvasKitLoadCompleter.complete();
-    canvasKitScript.removeEventListener('load', callback);
+/// Finds the first entry in [urls] that can be downloaded successfully, and
+/// downloads it.
+///
+/// If none of the URLs can be downloaded, throws an [Exception].
+///
+/// Also sets [canvasKitVariant] to the variant of CanvasKit that was downloaded.
+Future<void> _downloadOneOf(Iterable<_CanvasKitVariantUrl> urls) async {
+  for (final _CanvasKitVariantUrl entry in urls) {
+    if (await _downloadCanvasKitJs(entry.url)) {
+      canvasKitVariant = entry.variant;
+      return;
+    }
   }
-  callback = allowInterop(loadEventHandler);
-  canvasKitScript.addEventListener('load', callback);
+
+  // Reaching this point means that all URLs failed to download.
+  throw Exception(
+    'Failed to download any of the following CanvasKit URLs: $urls',
+  );
+}
+
+/// Downloads the CanvasKit JavaScript file at [url].
+///
+/// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
+/// file was successfully downloaded, or `false` if it failed.
+Future<bool> _downloadCanvasKitJs(String url) {
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = createTrustedScriptUrl(url);
+
+  final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
+
+  late final DomEventListener loadCallback;
+  late final DomEventListener errorCallback;
+
+  void loadEventHandler(DomEvent _) {
+    canvasKitScript.remove();
+    canvasKitLoadCompleter.complete(true);
+  }
+  void errorEventHandler(DomEvent errorEvent) {
+    canvasKitScript.remove();
+    canvasKitLoadCompleter.complete(false);
+  }
+
+  loadCallback = allowInterop(loadEventHandler);
+  errorCallback = allowInterop(errorEventHandler);
+
+  canvasKitScript.addEventListener('load', loadCallback);
+  canvasKitScript.addEventListener('error', errorCallback);
 
   patchCanvasKitModule(canvasKitScript);
+  domDocument.head!.appendChild(canvasKitScript);
 
   return canvasKitLoadCompleter.future;
 }

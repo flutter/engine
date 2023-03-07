@@ -18,6 +18,7 @@
 #endif  // IMPELLER_SUPPORTS_RENDERING
 #include "flutter/lib/ui/painting/image_encoding_skia.h"
 #include "third_party/skia/include/core/SkEncodedImageFormat.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/tonic/dart_persistent_value.h"
 #include "third_party/tonic/logging/dart_invoke.h"
 #include "third_party/tonic/typed_data/typed_list.h"
@@ -172,9 +173,9 @@ void EncodeImageAndInvokeDataCallback(
   FML_DCHECK(image);
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled) {
-    ConvertImageToRasterImpeller(image, encode_task, raster_task_runner,
-                                 io_task_runner, is_gpu_disabled_sync_switch,
-                                 impeller_context);
+    ImageEncodingImpeller::ConvertImageToRaster(
+        image, encode_task, raster_task_runner, io_task_runner,
+        is_gpu_disabled_sync_switch, impeller_context);
     return;
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING

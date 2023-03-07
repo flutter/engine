@@ -21,6 +21,23 @@
 
 namespace impeller {
 
+static bool UseColorSourceContents(
+    const std::shared_ptr<VerticesGeometry>& vertices,
+    const Paint::ColorSourceType& type) {
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates then only if the contents are an image or
+  // a solid color.
+  if (vertices->HasVertexColors()) {
+    return false;
+  }
+  if (vertices->HasTextureCoordinates() &&
+      (type == Paint::ColorSourceType::kImage ||
+       type == Paint::ColorSourceType::kColor)) {
+    return true;
+  }
+  return !vertices->HasTextureCoordinates();
+}
+
 Canvas::Canvas() {
   Initialize();
 }
@@ -31,6 +48,7 @@ void Canvas::Initialize() {
   base_pass_ = std::make_unique<EntityPass>();
   current_pass_ = base_pass_.get();
   xformation_stack_.emplace_back(CanvasStackEntry{});
+  lazy_glyph_atlas_ = std::make_shared<LazyGlyphAtlas>();
   FML_DCHECK(GetSaveCount() == 1u);
   FML_DCHECK(base_pass_->GetSubpassesDepth() == 1u);
 }
@@ -39,6 +57,7 @@ void Canvas::Reset() {
   base_pass_ = nullptr;
   current_pass_ = nullptr;
   xformation_stack_ = {};
+  lazy_glyph_atlas_ = nullptr;
 }
 
 void Canvas::Save() {
@@ -306,6 +325,7 @@ void Canvas::DrawImageRect(const std::shared_ptr<Image>& image,
   contents->SetSourceRect(source);
   contents->SetSamplerDescriptor(std::move(sampler));
   contents->SetOpacity(paint.color.alpha);
+  contents->SetDeferApplyingOpacity(paint.HasColorFilter());
 
   Entity entity;
   entity.SetBlendMode(paint.blend_mode);
@@ -358,13 +378,11 @@ void Canvas::SaveLayer(
 void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            Point position,
                            const Paint& paint) {
-  auto lazy_glyph_atlas = GetCurrentPass().GetLazyGlyphAtlas();
-
-  lazy_glyph_atlas->AddTextFrame(text_frame);
+  lazy_glyph_atlas_->AddTextFrame(text_frame);
 
   auto text_contents = std::make_shared<TextContents>();
   text_contents->SetTextFrame(text_frame);
-  text_contents->SetGlyphAtlas(std::move(lazy_glyph_atlas));
+  text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
   text_contents->SetColor(paint.color);
 
   Entity entity;
@@ -377,7 +395,7 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
   GetCurrentPass().AddEntity(entity);
 }
 
-void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
+void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
                           BlendMode blend_mode,
                           const Paint& paint) {
   Entity entity;
@@ -385,20 +403,45 @@ void Canvas::DrawVertices(std::unique_ptr<VerticesGeometry> vertices,
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
 
-  if (paint.color_source.has_value()) {
-    auto& source = paint.color_source.value();
-    auto contents = source();
-    contents->SetGeometry(std::move(vertices));
-    contents->SetAlpha(paint.color.alpha);
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
-  } else {
-    std::shared_ptr<VerticesContents> contents =
-        std::make_shared<VerticesContents>();
-    contents->SetColor(paint.color);
-    contents->SetBlendMode(blend_mode);
-    contents->SetGeometry(std::move(vertices));
-    entity.SetContents(paint.WithFilters(std::move(contents), true));
+  // If there are no vertex color or texture coordinates. Or if there
+  // are vertex coordinates then only if the contents are an image.
+  if (UseColorSourceContents(vertices, paint.color_source_type)) {
+    auto contents = paint.CreateContentsForGeometry(vertices);
+    entity.SetContents(paint.WithFilters(std::move(contents)));
+    GetCurrentPass().AddEntity(entity);
+    return;
   }
+
+  auto src_paint = paint;
+  src_paint.color = paint.color.WithAlpha(1.0);
+
+  std::shared_ptr<Contents> src_contents =
+      src_paint.CreateContentsForGeometry(vertices);
+  if (vertices->HasTextureCoordinates() &&
+      paint.color_source_type != Paint::ColorSourceType::kImage) {
+    // If the color source has an intrinsic size, then we use that to
+    // create the src contents as a simplification. Otherwise we use
+    // the extent of the texture coordinates to determine how large
+    // the src contents should be. If neither has a value we fall back
+    // to using the geometry coverage data.
+    Rect src_coverage;
+    auto size = src_contents->ColorSourceSize();
+    if (size.has_value()) {
+      src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
+    } else {
+      src_coverage = vertices->GetTextureCoordinateCoverge().value_or(
+          vertices->GetCoverage(Matrix{}).value());
+    }
+    src_contents =
+        src_paint.CreateContentsForGeometry(Geometry::MakeRect(src_coverage));
+  }
+
+  auto contents = std::make_shared<VerticesContents>();
+  contents->SetAlpha(paint.color.alpha);
+  contents->SetBlendMode(blend_mode);
+  contents->SetGeometry(vertices);
+  contents->SetSourceContents(std::move(src_contents));
+  entity.SetContents(paint.WithFilters(std::move(contents)));
 
   GetCurrentPass().AddEntity(entity);
 }
@@ -412,11 +455,6 @@ void Canvas::DrawAtlas(const std::shared_ptr<Image>& atlas,
                        std::optional<Rect> cull_rect,
                        const Paint& paint) {
   if (!atlas) {
-    return;
-  }
-  auto size = atlas->GetSize();
-
-  if (size.IsEmpty()) {
     return;
   }
 

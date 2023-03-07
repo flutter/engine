@@ -5,7 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BLEND_MODE_H_
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_BLEND_MODE_H_
 
-#include "include/core/SkBlender.h"
+#include "include/core/SkBlendMode.h"
 
 namespace flutter {
 
@@ -65,14 +65,6 @@ enum class DlBlendMode {
   kLastMode = kLuminosity,  //!< last valid value
   kDefaultMode = kSrcOver,
 };
-
-inline DlBlendMode ToDl(SkBlendMode mode) {
-  return static_cast<DlBlendMode>(mode);
-}
-
-inline SkBlendMode ToSk(DlBlendMode mode) {
-  return static_cast<SkBlendMode>(mode);
-}
 
 }  // namespace flutter
 

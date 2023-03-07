@@ -11,6 +11,7 @@
 #include "flutter/fml/paths.h"
 #include "impeller/base/platform/darwin/work_queue_darwin.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
+#include "impeller/renderer/device_capabilities.h"
 #include "impeller/renderer/sampler_descriptor.h"
 
 namespace impeller {
@@ -88,6 +89,18 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
   { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
 #endif
 
+  {
+    device_capabilities_ =
+        DeviceCapabilitiesBuilder()
+            .SetHasThreadingRestrictions(false)
+            .SetSupportsOffscreenMSAA(true)
+            .SetSupportsSSBO(true)
+            .SetSupportsTextureToTextureBlits(true)
+            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
+            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .Build();
+  }
+
   is_valid_ = true;
 }
 
@@ -148,6 +161,9 @@ static NSArray<id<MTLLibrary>>* MTLShaderLibraryFromFileData(
       FML_LOG(ERROR) << "Could not create shader library: "
                      << shader_library_error.localizedDescription.UTF8String;
       return nil;
+    }
+    if (!label.empty()) {
+      library.label = @(label.c_str());
     }
     [found_libraries addObject:library];
   }
@@ -242,14 +258,8 @@ id<MTLDevice> ContextMTL::GetMTLDevice() const {
   return device_;
 }
 
-// |Context|
-bool ContextMTL::SupportsOffscreenMSAA() const {
-  return true;
-}
-
-// |Context|
-const BackendFeatures& ContextMTL::GetBackendFeatures() const {
-  return kModernBackendFeatures;
+const IDeviceCapabilities& ContextMTL::GetDeviceCapabilities() const {
+  return *device_capabilities_;
 }
 
 }  // namespace impeller

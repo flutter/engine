@@ -14,7 +14,7 @@ class DisplayListGLComplexityCalculator
  public:
   static DisplayListGLComplexityCalculator* GetInstance();
 
-  unsigned int Compute(DisplayList* display_list) override {
+  unsigned int Compute(const DisplayList* display_list) override {
     GLHelper helper(ceiling_);
     display_list->Dispatch(helper);
     return helper.ComplexityScore();
@@ -52,10 +52,9 @@ class DisplayListGLComplexityCalculator
                  SkScalar start_degrees,
                  SkScalar sweep_degrees,
                  bool use_center) override;
-    void drawPoints(SkCanvas::PointMode mode,
+    void drawPoints(DlCanvas::PointMode mode,
                     uint32_t count,
                     const SkPoint points[]) override;
-    void drawSkVertices(const sk_sp<SkVertices>, SkBlendMode mode) override;
     void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
     void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,
@@ -66,7 +65,8 @@ class DisplayListGLComplexityCalculator
                        const SkRect& dst,
                        DlFilterMode filter,
                        bool render_with_attributes) override;
-    void drawDisplayList(const sk_sp<DisplayList> display_list) override;
+    void drawDisplayList(const sk_sp<DisplayList> display_list,
+                         SkScalar opacity) override;
     void drawTextBlob(const sk_sp<SkTextBlob> blob,
                       SkScalar x,
                       SkScalar y) override;
@@ -80,7 +80,7 @@ class DisplayListGLComplexityCalculator
     void ImageRect(const SkISize& size,
                    bool texture_backed,
                    bool render_with_attributes,
-                   SkCanvas::SrcRectConstraint constraint) override;
+                   bool enforce_src_edges) override;
 
     unsigned int BatchedComplexity() override;
 

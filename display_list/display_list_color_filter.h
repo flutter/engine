@@ -20,37 +20,16 @@ class DlMatrixColorFilter;
 // facilities and adheres to the design goals of the |DlAttribute| base
 // class.
 
-// An enumerated type for the recognized ColorFilter operations.
-// If a custom ColorFilter outside of the recognized types is needed
-// then a |kUnknown| type that simply defers to an SkColorFilter is
-// provided as a fallback.
+// An enumerated type for the supported ColorFilter operations.
 enum class DlColorFilterType {
   kBlend,
   kMatrix,
   kSrgbToLinearGamma,
   kLinearToSrgbGamma,
-  kUnknown
 };
 
-class DlColorFilter
-    : public DlAttribute<DlColorFilter, SkColorFilter, DlColorFilterType> {
+class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
  public:
-  // Return a shared_ptr holding a DlColorFilter representing the indicated
-  // Skia SkColorFilter pointer.
-  //
-  // This method can detect each of the 4 recognized types from an analogous
-  // SkColorFilter.
-  static std::shared_ptr<DlColorFilter> From(SkColorFilter* sk_filter);
-
-  // Return a shared_ptr holding a DlColorFilter representing the indicated
-  // Skia SkColorFilter pointer.
-  //
-  // This method can detect each of the 4 recognized types from an analogous
-  // SkColorFilter.
-  static std::shared_ptr<DlColorFilter> From(sk_sp<SkColorFilter> sk_filter) {
-    return From(sk_filter.get());
-  }
-
   // Return a boolean indicating whether the color filtering operation will
   // modify transparent black. This is typically used to determine if applying
   // the ColorFilter to a temporary saveLayer buffer will turn the surrounding
@@ -70,9 +49,8 @@ class DlColorFilter
   // type of ColorFilter, otherwise return nullptr.
   virtual const DlMatrixColorFilter* asMatrix() const { return nullptr; }
 
-  // asSrgb<->Linear and asUnknown are not needed because they
-  // have no properties to query. Their type fully specifies their
-  // operation or can be accessed via the common skia_object() method.
+  // asSrgb<->Linear is not needed because it has no properties to query.
+  // Its type fully specifies its operation.
 };
 
 // The Blend type of ColorFilter which specifies modifying the
@@ -89,21 +67,16 @@ class DlBlendColorFilter final : public DlColorFilter {
   DlBlendColorFilter(const DlBlendColorFilter* filter)
       : DlBlendColorFilter(filter->color_, filter->mode_) {}
 
+  static std::shared_ptr<DlColorFilter> Make(DlColor color, DlBlendMode mode);
+
   DlColorFilterType type() const override { return DlColorFilterType::kBlend; }
   size_t size() const override { return sizeof(*this); }
-  bool modifies_transparent_black() const override {
-    // Look at blend and color to make a faster determination?
-    sk_sp<SkColorFilter> sk_filter = skia_object();
-    return sk_filter &&
-           sk_filter->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
-  }
+
+  bool modifies_transparent_black() const override;
+  bool can_commute_with_opacity() const override;
 
   std::shared_ptr<DlColorFilter> shared() const override {
     return std::make_shared<DlBlendColorFilter>(this);
-  }
-
-  sk_sp<SkColorFilter> skia_object() const override {
-    return SkColorFilters::Blend(color_, ToSk(mode_));
   }
 
   const DlBlendColorFilter* asBlend() const override { return this; }
@@ -135,6 +108,10 @@ class DlBlendColorFilter final : public DlColorFilter {
 //
 // The resulting color [oR,oG,oB,oA] is then clamped to the range of
 // valid pixel components before storing in the output.
+//
+// The incoming and outgoing [iR,iG,iB,iA] and [oR,oG,oB,oA] are
+// considered to be non-premultiplied. When working on premultiplied
+// pixel data, the necessary pre<->non-pre conversions must be performed.
 class DlMatrixColorFilter final : public DlColorFilter {
  public:
   DlMatrixColorFilter(const float matrix[20]) {
@@ -145,28 +122,16 @@ class DlMatrixColorFilter final : public DlColorFilter {
   DlMatrixColorFilter(const DlMatrixColorFilter* filter)
       : DlMatrixColorFilter(filter->matrix_) {}
 
+  static std::shared_ptr<DlColorFilter> Make(const float matrix[20]);
+
   DlColorFilterType type() const override { return DlColorFilterType::kMatrix; }
   size_t size() const override { return sizeof(*this); }
-  bool modifies_transparent_black() const override {
-    // Look at the matrix to make a faster determination?
-    // Basically, are the translation components all 0?
-    sk_sp<SkColorFilter> sk_filter = skia_object();
-    return sk_filter &&
-           sk_filter->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
-  }
 
-  bool can_commute_with_opacity() const override {
-    return matrix_[3] == 0 && matrix_[8] == 0 && matrix_[13] == 0 &&
-           matrix_[15] == 0 && matrix_[16] == 0 && matrix_[17] == 0 &&
-           (matrix_[18] >= 0.0 && matrix_[18] <= 1.0) && matrix_[19] == 0;
-  }
+  bool modifies_transparent_black() const override;
+  bool can_commute_with_opacity() const override;
 
   std::shared_ptr<DlColorFilter> shared() const override {
     return std::make_shared<DlMatrixColorFilter>(this);
-  }
-
-  sk_sp<SkColorFilter> skia_object() const override {
-    return SkColorFilters::Matrix(matrix_);
   }
 
   const DlMatrixColorFilter* asMatrix() const override { return this; }
@@ -207,7 +172,6 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   bool can_commute_with_opacity() const override { return true; }
 
   std::shared_ptr<DlColorFilter> shared() const override { return instance; }
-  sk_sp<SkColorFilter> skia_object() const override { return sk_filter_; }
 
  protected:
   bool equals_(const DlColorFilter& other) const override {
@@ -216,7 +180,6 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   }
 
  private:
-  static const sk_sp<SkColorFilter> sk_filter_;
   friend class DlColorFilter;
 };
 
@@ -240,7 +203,6 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   bool can_commute_with_opacity() const override { return true; }
 
   std::shared_ptr<DlColorFilter> shared() const override { return instance; }
-  sk_sp<SkColorFilter> skia_object() const override { return sk_filter_; }
 
  protected:
   bool equals_(const DlColorFilter& other) const override {
@@ -249,51 +211,7 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   }
 
  private:
-  static const sk_sp<SkColorFilter> sk_filter_;
   friend class DlColorFilter;
-};
-
-// A wrapper class for a Skia ColorFilter of unknown type. The above 4 types
-// are the only types that can be constructed by Flutter using the
-// ui.ColorFilter class so this class should be rarely used. The main use
-// would come from the |DisplayListCanvasRecorder| recording Skia rendering
-// calls that originated outside of the Flutter dart code. This would
-// primarily happen in the Paragraph code that renders the text using the
-// SkCanvas interface which we capture into DisplayList data structures.
-class DlUnknownColorFilter final : public DlColorFilter {
- public:
-  DlUnknownColorFilter(sk_sp<SkColorFilter> sk_filter)
-      : sk_filter_(std::move(sk_filter)) {}
-  DlUnknownColorFilter(const DlUnknownColorFilter& filter)
-      : DlUnknownColorFilter(filter.sk_filter_) {}
-  DlUnknownColorFilter(const DlUnknownColorFilter* filter)
-      : DlUnknownColorFilter(filter->sk_filter_) {}
-
-  DlColorFilterType type() const override {
-    return DlColorFilterType::kUnknown;
-  }
-  size_t size() const override { return sizeof(*this); }
-  bool modifies_transparent_black() const override {
-    return sk_filter_->filterColor(SK_ColorTRANSPARENT) != SK_ColorTRANSPARENT;
-  }
-
-  std::shared_ptr<DlColorFilter> shared() const override {
-    return std::make_shared<DlUnknownColorFilter>(this);
-  }
-
-  sk_sp<SkColorFilter> skia_object() const override { return sk_filter_; }
-
-  virtual ~DlUnknownColorFilter() = default;
-
- protected:
-  bool equals_(const DlColorFilter& other) const override {
-    FML_DCHECK(other.type() == DlColorFilterType::kUnknown);
-    auto that = static_cast<DlUnknownColorFilter const*>(&other);
-    return sk_filter_ == that->sk_filter_;
-  }
-
- private:
-  sk_sp<SkColorFilter> sk_filter_;
 };
 
 }  // namespace flutter

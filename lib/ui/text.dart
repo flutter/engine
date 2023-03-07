@@ -176,7 +176,7 @@ class FontFeature {
   /// letters. With value 2, the lowercase "a" changes to a stemless
   /// "a", whereas the lowercase "t" changes to a vertical bar instead
   /// of having a curve. By targeting specific letters in the text
-  /// (using [Text.rich]), the desired rendering for each glyph can be
+  /// (using [widgets.Text.rich]), the desired rendering for each glyph can be
   /// achieved.
   ///
   /// ![](https://flutter.github.io/assets-for-api-docs/assets/dart-ui/font_feature_aalt.png)
@@ -340,7 +340,7 @@ class FontFeature {
   /// U+2044 FRACTION SLASH (⁄) are replaced by ligatures that
   /// represent the corresponding fraction.
   ///
-  /// This feature may imply the [FontFeature.numerator] and
+  /// This feature may imply the [FontFeature.numerators] and
   /// [FontFeature.denominator] features.
   ///
   /// {@tool sample}
@@ -2054,10 +2054,10 @@ class StrutStyle {
 ///
 /// At the higher levels (specifically starting at the widgets library), an
 /// ambient [Directionality] is introduced, which provides a default. Thus, for
-/// instance, a [Text] widget in the scope of a [MaterialApp] widget does not
-/// need to be given an explicit writing direction. The [Directionality.of]
-/// static method can be used to obtain the ambient text direction for a
-/// particular [BuildContext].
+/// instance, a [widgets.Text] widget in the scope of a [MaterialApp] widget
+/// does not need to be given an explicit writing direction. The
+/// [Directionality.of] static method can be used to obtain the ambient text
+/// direction for a particular [BuildContext].
 ///
 /// ### Known left-to-right biases in Flutter
 ///
@@ -2818,7 +2818,7 @@ class Paragraph extends NativeFieldWrapperClass1 {
   ///
   /// Characters not part of a word, such as spaces, symbols, and punctuation,
   /// have word breaks on both sides. In such cases, this method will return
-  /// [offset, offset+1]. Word boundaries are defined more precisely in Unicode
+  /// (offset, offset+1). Word boundaries are defined more precisely in Unicode
   /// Standard Annex #29 http://www.unicode.org/reports/tr29/#Word_Boundaries
   ///
   /// The [TextPosition] is treated as caret position, its [TextPosition.affinity]
