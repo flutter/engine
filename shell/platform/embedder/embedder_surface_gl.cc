@@ -95,8 +95,12 @@ SurfaceFrame::FramebufferInfo EmbedderSurfaceGL::GLContextFramebufferInfo()
 
 // |EmbedderSurface|
 std::unique_ptr<Surface> EmbedderSurfaceGL::CreateGPUSurface() {
+  if (!main_context_) {
+    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
+  }
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<GPUSurfaceGLSkia>(
+      main_context_,
       this,              // GPU surface GL delegate
       render_to_surface  // render to surface
   );

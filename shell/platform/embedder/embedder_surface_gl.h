@@ -38,6 +38,7 @@ class EmbedderSurfaceGL final : public EmbedderSurface,
   bool valid_ = false;
   GLDispatchTable gl_dispatch_table_;
   bool fbo_reset_after_present_;
+  sk_sp<GrDirectContext> main_context_;
 
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
 
