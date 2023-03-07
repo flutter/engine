@@ -115,17 +115,14 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
           << " and no required frames are cached. Using blank slate instead.";
-      return nullptr;
-    } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
-      FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
-                     << " is not cached. Using blank slate instead.";
-    }
-    // Copy the previous frame's output buffer into the current frame as the
-    // starting point.
-    if (lastRequiredFrame_->getPixels() &&
-        CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                     *lastRequiredFrame_)) {
-      prior_frame_index = requiredFrameIndex;
+    } else {
+      // Copy the previous frame's output buffer into the current frame as the
+      // starting point.
+      if (lastRequiredFrame_->getPixels() &&
+          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
+                       *lastRequiredFrame_)) {
+        prior_frame_index = requiredFrameIndex;
+      }
     }
   }
 
@@ -138,7 +135,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   }
 
   // Hold onto this if we need it to decode future frames.
-  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep) {
+  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
+      lastRequiredFrame_) {
     lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
