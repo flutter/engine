@@ -196,7 +196,7 @@ std::shared_ptr<SkBitmap> ImageDecoderImpeller::DecompressTexture(
 
     if (!bitmap->tryAllocPixels(image_info)) {
       FML_DLOG(ERROR)
-          << "Could not allocate intermediate for image decompression.";
+          << "Could not allocate intermediate for pixel conversion.";
       return nullptr;
     }
     temp_bitmap->readPixels(bitmap->pixmap());
