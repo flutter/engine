@@ -3872,7 +3872,7 @@ TEST_F(ShellTest, ImmutableBufferLoadsAssetOnBackgroundThread) {
   EXPECT_EQ(leaked_resolver->mapping_requests[0], "DoesNotExist");
 
   PlatformViewNotifyDestroyed(shell.get());
-  DestroyShell(std::move(shell));
+  DestroyShell(std::move(shell), task_runners);
 }
 
 TEST_F(ShellTest, PictureToImageSync) {
