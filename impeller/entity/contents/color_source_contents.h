@@ -37,12 +37,12 @@ class ColorSourceContents : public Contents {
   // | Contents|
   void InheritOpacity(Scalar opacity) override;
 
+  Scalar GetAlpha() const;
+
  protected:
   const std::shared_ptr<Geometry>& GetGeometry() const;
 
   const Matrix& GetInverseMatrix() const;
-
-  Scalar GetAlpha() const;
 
  private:
   std::shared_ptr<Geometry> geometry_;

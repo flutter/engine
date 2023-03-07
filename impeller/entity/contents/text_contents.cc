@@ -51,6 +51,10 @@ void TextContents::SetColor(Color color) {
   color_ = color;
 }
 
+Color TextContents::GetColor() const {
+  return color_;
+}
+
 bool TextContents::CanAcceptOpacity(const Entity& entity) const {
   return !frame_.MaybeHasOverlapping();
 }

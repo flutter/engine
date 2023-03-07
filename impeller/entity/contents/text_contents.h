@@ -32,6 +32,8 @@ class TextContents final : public Contents {
 
   void SetColor(Color color);
 
+  Color GetColor() const;
+
   bool CanAcceptOpacity(const Entity& entity) const override;
 
   void InheritOpacity(Scalar opacity) override;
