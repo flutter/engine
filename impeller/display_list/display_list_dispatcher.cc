@@ -1147,23 +1147,23 @@ void DisplayListDispatcher::drawImage(const sk_sp<flutter::DlImage> image,
   const auto dest =
       SkRect::MakeXYWH(point.fX, point.fY, size.width, size.height);
 
-  drawImageRect(
-      image,                   // image
-      src,                     // source rect
-      dest,                    // destination rect
-      sampling,                // sampling options
-      render_with_attributes,  // render with attributes
-      SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint  // constraint
+  drawImageRect(image,                      // image
+                src,                        // source rect
+                dest,                       // destination rect
+                sampling,                   // sampling options
+                render_with_attributes,     // render with attributes
+                SrcRectConstraint::kStrict  // constraint
   );
 }
 
 // |flutter::DlOpReceiver|
-void DisplayListDispatcher::drawImageRect(const sk_sp<flutter::DlImage> image,
-                                          const SkRect& src,
-                                          const SkRect& dst,
-                                          flutter::DlImageSampling sampling,
-                                          bool render_with_attributes,
-                                          bool enforce_src_edges) {
+void DisplayListDispatcher::drawImageRect(
+    const sk_sp<flutter::DlImage> image,
+    const SkRect& src,
+    const SkRect& dst,
+    flutter::DlImageSampling sampling,
+    bool render_with_attributes,
+    SrcRectConstraint constraint = SrcRectConstraint::kFast) {
   canvas_.DrawImageRect(
       std::make_shared<Image>(image->impeller_texture()),  // image
       ToRect(src),                                         // source rect

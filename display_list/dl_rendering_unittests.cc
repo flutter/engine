@@ -3065,7 +3065,8 @@ TEST_F(DisplayListCanvas, DrawImageRectNearest) {
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kNearestNeighbor, &paint, false);
+                DlImageSampling::kNearestNeighbor, &paint,
+                DlCanvas::SrcRectConstraint::kFast);
           },
           kDrawImageRectWithPaintFlags));
 }
@@ -3083,7 +3084,8 @@ TEST_F(DisplayListCanvas, DrawImageRectNearestNoPaint) {
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kNearestNeighbor, nullptr, false);
+                DlImageSampling::kNearestNeighbor, nullptr,
+                DlCanvas::SrcRectConstraint::kFast);
           },
           kDrawImageRectFlags));
 }
@@ -3101,7 +3103,8 @@ TEST_F(DisplayListCanvas, DrawImageRectLinear) {
           [=](DlCanvas* canvas, const DlPaint& paint) {  //
             canvas->DrawImageRect(
                 DlImage::Make(CanvasCompareTester::kTestImage), src, dst,
-                DlImageSampling::kLinear, &paint, false);
+                DlImageSampling::kLinear, &paint,
+                DlCanvas::SrcRectConstraint::kFast);
           },
           kDrawImageRectWithPaintFlags));
 }

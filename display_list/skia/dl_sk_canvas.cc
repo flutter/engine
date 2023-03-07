@@ -295,11 +295,11 @@ void DlSkCanvasAdapter::DrawImageRect(const sk_sp<DlImage>& image,
                                       const SkRect& dst,
                                       DlImageSampling sampling,
                                       const DlPaint* paint,
-                                      bool enforce_src_edges) {
+                                      SrcRectConstraint constraint) {
   SkOptionalPaint sk_paint(paint);
   sk_sp<SkImage> sk_image = image->skia_image();
   delegate_->drawImageRect(sk_image.get(), src, dst, ToSk(sampling), sk_paint(),
-                           ToSkConstraint(enforce_src_edges));
+                           ToSk(constraint));
 }
 
 void DlSkCanvasAdapter::DrawImageNine(const sk_sp<DlImage>& image,

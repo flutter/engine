@@ -145,17 +145,18 @@ class ComplexityCalculatorHelper
     AccumulateComplexity(50);
   }
 
-  void drawImageRect(const sk_sp<DlImage> image,
-                     const SkRect& src,
-                     const SkRect& dst,
-                     DlImageSampling sampling,
-                     bool render_with_attributes,
-                     bool enforce_src_edges = false) override {
+  void drawImageRect(
+      const sk_sp<DlImage> image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      bool render_with_attributes,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) override {
     if (IsComplex()) {
       return;
     }
     ImageRect(image->dimensions(), image->isTextureBacked(),
-              render_with_attributes, enforce_src_edges);
+              render_with_attributes, constraint == SrcRectConstraint::kStrict);
   }
 
   void drawAtlas(const sk_sp<DlImage> atlas,

@@ -192,10 +192,10 @@ void DlSkCanvasDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                          const SkRect& dst,
                                          DlImageSampling sampling,
                                          bool render_with_attributes,
-                                         bool enforce_src_edges) {
+                                         SrcRectConstraint constraint) {
   canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
                          ToSk(sampling), safe_paint(render_with_attributes),
-                         ToSkConstraint(enforce_src_edges));
+                         ToSk(constraint));
 }
 void DlSkCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                          const SkIRect& center,

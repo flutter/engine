@@ -986,11 +986,11 @@ void BM_DrawImage(benchmark::State& state,
   surface_provider->Snapshot(filename);
 }
 
-std::string ConstraintToString(SkCanvas::SrcRectConstraint constraint) {
+std::string ConstraintToString(DlCanvas::SrcRectConstraint constraint) {
   switch (constraint) {
-    case SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint:
+    case DlCanvas::SrcRectConstraint::kStrict:
       return "Strict";
-    case SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint:
+    case DlCanvas::SrcRectConstraint::kFast:
       return "Fast";
     default:
       return "Unknown";
@@ -1005,7 +1005,7 @@ void BM_DrawImageRect(benchmark::State& state,
                       BackendType backend_type,
                       unsigned attributes,
                       DlImageSampling options,
-                      SkCanvas::SrcRectConstraint constraint,
+                      DlCanvas::SrcRectConstraint constraint,
                       bool upload_bitmap) {
   auto surface_provider = DlSurfaceProvider::Create(backend_type);
   DisplayListBuilder builder;

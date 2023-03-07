@@ -429,7 +429,7 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
     const DlPaint* opt_paint =
         paint.paint(dl_paint, kDrawImageRectWithPaintFlags);
     builder()->DrawImageRect(dl_image, src, dst, sampling, opt_paint,
-                             SkCanvas::kFast_SrcRectConstraint);
+                             DlCanvas::SrcRectConstraint::kFast);
   }
   return Dart_Null();
 }

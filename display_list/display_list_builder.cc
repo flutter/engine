@@ -946,9 +946,9 @@ void DisplayListBuilder::drawImageRect(const sk_sp<DlImage> image,
                                        const SkRect& dst,
                                        DlImageSampling sampling,
                                        bool render_with_attributes,
-                                       bool enforce_src_edges) {
+                                       SrcRectConstraint constraint) {
   Push<DrawImageRectOp>(0, 1, image, src, dst, sampling, render_with_attributes,
-                        enforce_src_edges);
+                        constraint);
   CheckLayerOpacityCompatibility(render_with_attributes);
   DisplayListAttributeFlags flags = render_with_attributes
                                         ? kDrawImageRectWithPaintFlags
@@ -960,13 +960,13 @@ void DisplayListBuilder::DrawImageRect(const sk_sp<DlImage>& image,
                                        const SkRect& dst,
                                        DlImageSampling sampling,
                                        const DlPaint* paint,
-                                       bool enforce_src_edges) {
+                                       SrcRectConstraint constraint) {
   if (paint != nullptr) {
     SetAttributesFromPaint(*paint,
                            DisplayListOpFlags::kDrawImageRectWithPaintFlags);
-    drawImageRect(image, src, dst, sampling, true, enforce_src_edges);
+    drawImageRect(image, src, dst, sampling, true, constraint);
   } else {
-    drawImageRect(image, src, dst, sampling, false, enforce_src_edges);
+    drawImageRect(image, src, dst, sampling, false, constraint);
   }
 }
 void DisplayListBuilder::drawImageNine(const sk_sp<DlImage> image,

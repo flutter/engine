@@ -67,6 +67,13 @@ TEST(DisplayListSkConversions, ToSkFilterMode) {
   ASSERT_EQ(ToSk(DlFilterMode::kLast), SkFilterMode::kLast);
 }
 
+TEST(DisplayListSkConversions, ToSkSrcRectConstraint) {
+  ASSERT_EQ(ToSk(DlCanvas::SrcRectConstraint::kFast),
+            SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
+  ASSERT_EQ(ToSk(DlCanvas::SrcRectConstraint::kStrict),
+            SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
+}
+
 TEST(DisplayListSkConversions, ToSkSamplingOptions) {
   ASSERT_EQ(ToSk(DlImageSampling::kLinear),
             SkSamplingOptions(SkFilterMode::kLinear, SkMipmapMode::kNone));
