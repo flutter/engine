@@ -115,17 +115,17 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
           << "Frame " << nextFrameIndex_ << " depends on frame "
           << requiredFrameIndex
           << " and no required frames are cached. Using blank slate instead.";
+      return nullptr;
     } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
       FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
                      << " is not cached. Using blank slate instead.";
-    } else {
-      // Copy the previous frame's output buffer into the current frame as the
-      // starting point.
-      if (lastRequiredFrame_->getPixels() &&
-          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                       *lastRequiredFrame_)) {
-        prior_frame_index = requiredFrameIndex;
-      }
+    }
+    // Copy the previous frame's output buffer into the current frame as the
+    // starting point.
+    if (lastRequiredFrame_->getPixels() &&
+        CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
+                     *lastRequiredFrame_)) {
+      prior_frame_index = requiredFrameIndex;
     }
   }
 
@@ -161,9 +161,9 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   gpu_disable_sync_switch->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&skImage, &bitmap] {
-            // Defer decoding until time of draw later on the raster thread. Can
-            // happen when GL operations are currently forbidden such as in the
-            // background on iOS.
+            // Defer decoding until time of draw later on the raster thread.
+            // Can happen when GL operations are currently forbidden such as
+            // in the background on iOS.
             skImage = SkImage::MakeFromBitmap(bitmap);
           })
           .SetIfFalse([&skImage, &resourceContext, &bitmap] {
@@ -257,8 +257,8 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
       }));
 
   return Dart_Null();
-  // The static leak checker gets confused by the control flow, unique pointers
-  // and closures in this function.
+  // The static leak checker gets confused by the control flow, unique
+  // pointers and closures in this function.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 
