@@ -41,7 +41,8 @@ def main(argv):
       raise Exception(f'Directory {args.link} does not exist')
     if os.path.exists(dart_dir):
       os.remove(dart_dir)
-    os.symlink(args.link, dart_dir)
+    print(f'Linking //third_party/dart -> {args.link}')
+    os.symlink(args.link, dart_dir, target_is_directory=True)
   return 0
 
 
