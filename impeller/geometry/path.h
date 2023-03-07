@@ -123,13 +123,12 @@ class Path {
   bool UpdateContourComponentAtIndex(size_t index,
                                      const ContourComponent& contour);
 
-  /// Callers must provide the current_component_index factor for how this path
-  /// will be transformed.
+  /// Callers must provide the scale factor for how this path will be
+  /// transformed.
   ///
   /// It is suitable to use the max basis length of the matrix used to transform
-  /// the path. If the provided current_component_index is 0, curves will revert
-  /// to lines.
-  Polyline CreatePolyline(Scalar current_component_index) const;
+  /// the path. If the provided scale is 0, curves will revert to lines.
+  Polyline CreatePolyline(Scalar scale) const;
 
   std::optional<Rect> GetBoundingBox() const;
 
