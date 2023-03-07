@@ -85,6 +85,7 @@ import java.util.List;
   @VisibleForTesting @Nullable FlutterView flutterView;
   @Nullable private PlatformPlugin platformPlugin;
   @VisibleForTesting @Nullable OnPreDrawListener activePreDrawListener;
+  @VisibleForTesting boolean hasPushedRouteInformation = false;
   private boolean isFlutterEngineFromHost;
   private boolean isFlutterUiDisplayed;
   private boolean isFirstFrameRendered;
@@ -92,14 +93,25 @@ import java.util.List;
   private Integer previousVisibility;
   @Nullable private FlutterEngineGroup engineGroup;
 
-  @NonNull
-  private final FlutterUiDisplayListener flutterUiDisplayListener =
+  @NonNull @VisibleForTesting
+  final FlutterUiDisplayListener flutterUiDisplayListener =
       new FlutterUiDisplayListener() {
         @Override
         public void onFlutterUiDisplayed() {
           host.onFlutterUiDisplayed();
           isFlutterUiDisplayed = true;
           isFirstFrameRendered = true;
+
+          // Push updated route information if not pushed by onNewIntent(Intent)
+          // after the first frame has been drawn to ensure it is not ignored.
+          if (flutterEngine != null && !hasPushedRouteInformation) {
+            ensureAlive();
+            String initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+            if (initialRoute != null && !initialRoute.isEmpty()) {
+              flutterEngine.getNavigationChannel().pushRouteInformation(initialRoute);
+              hasPushedRouteInformation = true;
+            }
+          }
         }
 
         @Override
@@ -836,6 +848,7 @@ import java.util.List;
       String initialRoute = maybeGetInitialRouteFromIntent(intent);
       if (initialRoute != null && !initialRoute.isEmpty()) {
         flutterEngine.getNavigationChannel().pushRouteInformation(initialRoute);
+        hasPushedRouteInformation = true;
       }
     } else {
       Log.w(TAG, "onNewIntent() invoked before FlutterFragment was attached to an Activity.");

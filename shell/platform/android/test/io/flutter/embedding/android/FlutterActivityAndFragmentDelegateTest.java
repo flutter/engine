@@ -5,12 +5,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNotNull;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -1187,6 +1189,36 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onAttach(ctx);
     FlutterEngine engineUnderTest = delegate.getFlutterEngine();
     assertEquals(engineUnderTest, mockFlutterEngine);
+  }
+
+  @Test
+  public void pushesRouteInformationAfterFirstFrameIfApplicable() {
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+    Activity mockActivity = mock(Activity.class);
+    Intent mockIntent = mock(Intent.class);
+
+    delegate.onAttach(ctx);
+    FlutterUiDisplayListener flutterUiDisplayListener = delegate.flutterUiDisplayListener;
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    when(mockHost.getActivity()).thenReturn(mockActivity);
+    when(mockActivity.getIntent()).thenReturn(mockIntent);
+    when(mockIntent.getData()).thenReturn(Uri.parse("http://myApp/custom/route?query=test"));
+
+    // Test case where updated route information has not already been pushed.
+    flutterUiDisplayListener.onFlutterUiDisplayed();
+
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .pushRouteInformation("/custom/route?query=test");
+    assertTrue(delegate.hasPushedRouteInformation);
+
+    // Test case where updated route information has already been pushed.
+    reset(mockFlutterEngine.getNavigationChannel());
+    delegate.hasPushedRouteInformation = true;
+
+    flutterUiDisplayListener.onFlutterUiDisplayed();
+
+    verify(mockFlutterEngine.getNavigationChannel(), times(0))
+        .pushRouteInformation(any(String.class));
   }
 
   /**
