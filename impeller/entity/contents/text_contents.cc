@@ -50,6 +50,10 @@ void TextContents::SetColor(Color color) {
   color_ = color;
 }
 
+void TextContents::SetInverseMatrix(Matrix matrix) {
+  inverse_matrix_ = matrix;
+}
+
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   auto bounds = frame_.GetBounds();
   if (!bounds.has_value()) {
@@ -71,6 +75,7 @@ static bool CommonRender(
     RenderPass& pass,
     const Color& color,
     const TextFrame& frame,
+    const Matrix& inverse_matrix,
     std::shared_ptr<GlyphAtlas>
         atlas,  // NOLINT(performance-unnecessary-value-param)
     Command& cmd) {
@@ -209,8 +214,8 @@ bool TextContents::RenderSdf(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGlyphAtlasSdfPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasSdfPipeline>(renderer, entity, pass, color_,
-                                             frame_, atlas, cmd);
+  return CommonRender<GlyphAtlasSdfPipeline>(
+      renderer, entity, pass, color_, frame_, inverse_matrix_, atlas, cmd);
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -245,7 +250,7 @@ bool TextContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
 
   return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color_,
-                                          frame_, atlas, cmd);
+                                          frame_, inverse_matrix_, atlas, cmd);
 }
 
 }  // namespace impeller

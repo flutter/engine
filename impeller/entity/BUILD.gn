@@ -173,6 +173,8 @@ impeller_component("entity") {
     "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
+    "contents/color_source_text_contents.cc",
+    "contents/color_source_text_contents.h",
     "contents/sweep_gradient_contents.cc",
     "contents/sweep_gradient_contents.h",
     "contents/text_contents.cc",

@@ -12,6 +12,7 @@
 #include "impeller/aiks/paint_pass_delegate.h"
 #include "impeller/entity/contents/atlas_contents.h"
 #include "impeller/entity/contents/clip_contents.h"
+#include "impeller/entity/contents/color_source_text_contents.h"
 #include "impeller/entity/contents/rrect_shadow_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
@@ -380,16 +381,36 @@ void Canvas::DrawTextFrame(const TextFrame& text_frame,
                            const Paint& paint) {
   lazy_glyph_atlas_->AddTextFrame(text_frame);
 
-  auto text_contents = std::make_shared<TextContents>();
-  text_contents->SetTextFrame(text_frame);
-  text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
-  text_contents->SetColor(paint.color);
-
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation() *
                            Matrix::MakeTranslation(position));
   entity.SetStencilDepth(GetStencilDepth());
   entity.SetBlendMode(paint.blend_mode);
+
+  auto text_contents = std::make_shared<TextContents>();
+  text_contents->SetTextFrame(text_frame);
+  text_contents->SetGlyphAtlas(lazy_glyph_atlas_);
+
+  // if (paint.color_source_type != Paint::ColorSourceType::kColor && paint.color_source.has_value()) {
+  //   auto text_coverage = text_contents->GetCoverage(entity);
+  //   auto origin = text_coverage->origin;
+  //   text_contents->SetInverseMatrix(Matrix::MakeTranslation(Vector3(position.x + origin.x , position.y + origin.y, 0)));
+
+  //   auto& source = paint.color_source.value();
+  //   auto color_text_contents = std::make_shared<ColorSourceTextContents>();
+  //   color_text_contents->SetTextPosition(position);
+  //   color_text_contents->SetTextContents(std::move(text_contents));
+  //   color_text_contents->SetColorSourceContents(source());
+
+  //   entity.SetContents(
+  //       paint.WithFilters(std::move(color_text_contents), false));
+
+  //   GetCurrentPass().AddEntity(entity);
+  //   return;
+  // }
+
+  text_contents->SetColor(paint.color);
+
   entity.SetContents(paint.WithFilters(std::move(text_contents), true));
 
   GetCurrentPass().AddEntity(entity);
