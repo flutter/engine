@@ -263,11 +263,10 @@ class Dart2WasmCompiler extends TestCompiler {
       '-DFLUTTER_WEB_USE_SKIA=${renderer == Renderer.canvaskit}',
       '-DFLUTTER_WEB_USE_SKWASM=${renderer == Renderer.skwasm}',
 
-      if (renderer == Renderer.skwasm)
-        ...<String>[
-          '--import-shared-memory',
-          '--shared-memory-max-pages=32768',
-        ],
+      if (renderer == Renderer.skwasm) ...<String>[
+        '--import-shared-memory',
+        '--shared-memory-max-pages=32768',
+      ],
 
       relativePath, // current path.
       targetFileName, // target path.
