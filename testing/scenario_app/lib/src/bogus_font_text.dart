@@ -11,8 +11,6 @@ import 'scenario.dart';
 /// system default font.
 class BogusFontText extends Scenario {
   /// Creates the BogusFontText scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   BogusFontText(super.view);
 
   // Semi-arbitrary.

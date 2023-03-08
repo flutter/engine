@@ -9,8 +9,6 @@ import 'scenario.dart';
 /// A scenario with red on top and blue on the bottom.
 class GetBitmapScenario extends Scenario {
   /// Creates the GetBitmap scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   GetBitmapScenario(super.view);
 
   @override

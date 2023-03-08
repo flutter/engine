@@ -14,8 +14,6 @@ import 'scenario.dart';
 /// that are constantly changing.
 class AnimatedColorSquareScenario extends Scenario {
   /// Creates the AnimatedColorSquare scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   AnimatedColorSquareScenario(super.view);
 
   static const double _squareSize = 200;

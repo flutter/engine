@@ -39,8 +39,6 @@ List<int> _encodeString(String value) {
 class PlatformViewScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewScenario(
     super.view, {
     required this.id,
@@ -65,8 +63,6 @@ class PlatformViewScenario extends Scenario
 class NonFullScreenFlutterViewPlatformViewScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   NonFullScreenFlutterViewPlatformViewScenario(
     super.view, {
     required this.id,
@@ -91,8 +87,6 @@ class NonFullScreenFlutterViewPlatformViewScenario extends Scenario
 class PlatformViewNoOverlayIntersectionScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewNoOverlayIntersectionScenario(
     super.view, {
     required this.id,
@@ -125,8 +119,6 @@ class PlatformViewNoOverlayIntersectionScenario extends Scenario
 class PlatformViewLargerThanDisplaySize extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewLargerThanDisplaySize(
     super.view, {
     required this.id,
@@ -157,8 +149,6 @@ class PlatformViewLargerThanDisplaySize extends Scenario
 class PlatformViewPartialIntersectionScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewPartialIntersectionScenario(
     super.view, {
     required this.id,
@@ -188,8 +178,6 @@ class PlatformViewPartialIntersectionScenario extends Scenario
 class PlatformViewTwoIntersectingOverlaysScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewTwoIntersectingOverlaysScenario(
     super.view, {
     required this.id,
@@ -231,8 +219,6 @@ class PlatformViewTwoIntersectingOverlaysScenario extends Scenario
 class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewOneOverlayTwoIntersectingOverlaysScenario(
     super.view, {
     required this.id,
@@ -280,8 +266,6 @@ class PlatformViewOneOverlayTwoIntersectingOverlaysScenario extends Scenario
 class MultiPlatformViewWithoutOverlaysScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   MultiPlatformViewWithoutOverlaysScenario(
     super.view, {
     required this.firstId,
@@ -336,8 +320,6 @@ class MultiPlatformViewWithoutOverlaysScenario extends Scenario
 class PlatformViewMaxOverlaysScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewMaxOverlaysScenario(
     super.view, {
     required this.id,
@@ -389,8 +371,6 @@ class PlatformViewMaxOverlaysScenario extends Scenario
 class MultiPlatformViewScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   MultiPlatformViewScenario(
     super.view, {
     required this.firstId,
@@ -437,8 +417,6 @@ class MultiPlatformViewScenario extends Scenario
 class MultiPlatformViewBackgroundForegroundScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   MultiPlatformViewBackgroundForegroundScenario(
     super.view, {
     required this.firstId,
@@ -949,8 +927,6 @@ class PlatformViewOpacityScenario extends PlatformViewScenario {
 class PlatformViewForTouchIOSScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewForTouchIOSScenario(
     super.view, {
     this.id = 0,
@@ -1067,8 +1043,6 @@ class PlatformViewForOverlappingPlatformViewsScenario extends Scenario
     with _BasePlatformViewScenarioMixin {
 
   /// Creates the PlatformViewForOverlappingPlatformViewsScenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewForOverlappingPlatformViewsScenario(
       super.view, {
         required this.foregroundId,
@@ -1382,8 +1356,6 @@ class TwoPlatformViewsWithOtherBackDropFilter extends Scenario
 class PlatformViewScrollingUnderWidget extends Scenario
     with _BasePlatformViewScenarioMixin {
   /// Creates the PlatformView scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PlatformViewScrollingUnderWidget(
     super.view, {
     required int firstPlatformViewId,

@@ -12,8 +12,6 @@ import 'scenario.dart';
 /// A blank page with a button that pops the page when tapped.
 class PoppableScreenScenario extends Scenario with PlatformEchoMixin {
   /// Creates the PoppableScreenScenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   PoppableScreenScenario(super.view);
 
   // Rect for the pop button. Only defined once onMetricsChanged is called.

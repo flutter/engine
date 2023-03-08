@@ -11,8 +11,6 @@ import 'scenarios.dart';
 /// Displays a platform texture with the given width and height.
 class DisplayTexture extends Scenario {
   /// Creates the DisplayTexture scenario.
-  ///
-  /// The [dispatcher] parameter must not be null.
   DisplayTexture(super.view);
 
   int get _textureId => scenarioParams['texture_id'] as int;
