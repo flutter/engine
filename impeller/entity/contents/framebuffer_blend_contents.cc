@@ -5,7 +5,6 @@
 #include "framebuffer_blend_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/framebuffer_blend_context.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/sampler_library.h"
 
@@ -77,52 +76,51 @@ bool FramebufferBlendContents::Render(const ContentContext& renderer,
   cmd.BindVertices(vtx_buffer);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  const auto ctx = renderer.GetFramebufferBlendContext();
   switch (blend_mode_) {
     case BlendMode::kScreen:
-      cmd.pipeline = ctx->GetFramebufferBlendScreenPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendScreenPipeline(options);
       break;
     case BlendMode::kOverlay:
-      cmd.pipeline = ctx->GetFramebufferBlendOverlayPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendOverlayPipeline(options);
       break;
     case BlendMode::kDarken:
-      cmd.pipeline = ctx->GetFramebufferBlendDarkenPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendDarkenPipeline(options);
       break;
     case BlendMode::kLighten:
-      cmd.pipeline = ctx->GetFramebufferBlendLightenPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendLightenPipeline(options);
       break;
     case BlendMode::kColorDodge:
-      cmd.pipeline = ctx->GetFramebufferBlendColorDodgePipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendColorDodgePipeline(options);
       break;
     case BlendMode::kColorBurn:
-      cmd.pipeline = ctx->GetFramebufferBlendColorBurnPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendColorBurnPipeline(options);
       break;
     case BlendMode::kHardLight:
-      cmd.pipeline = ctx->GetFramebufferBlendHardLightPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendHardLightPipeline(options);
       break;
     case BlendMode::kSoftLight:
-      cmd.pipeline = ctx->GetFramebufferBlendSoftLightPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendSoftLightPipeline(options);
       break;
     case BlendMode::kDifference:
-      cmd.pipeline = ctx->GetFramebufferBlendDifferencePipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendDifferencePipeline(options);
       break;
     case BlendMode::kExclusion:
-      cmd.pipeline = ctx->GetFramebufferBlendExclusionPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendExclusionPipeline(options);
       break;
     case BlendMode::kMultiply:
-      cmd.pipeline = ctx->GetFramebufferBlendMultiplyPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendMultiplyPipeline(options);
       break;
     case BlendMode::kHue:
-      cmd.pipeline = ctx->GetFramebufferBlendHuePipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendHuePipeline(options);
       break;
     case BlendMode::kSaturation:
-      cmd.pipeline = ctx->GetFramebufferBlendSaturationPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendSaturationPipeline(options);
       break;
     case BlendMode::kColor:
-      cmd.pipeline = ctx->GetFramebufferBlendColorPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendColorPipeline(options);
       break;
     case BlendMode::kLuminosity:
-      cmd.pipeline = ctx->GetFramebufferBlendLuminosityPipeline(options);
+      cmd.pipeline = renderer.GetFramebufferBlendLuminosityPipeline(options);
       break;
     default:
       return false;
