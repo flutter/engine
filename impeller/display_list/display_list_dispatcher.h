@@ -182,7 +182,7 @@ class DisplayListDispatcher final : public flutter::DlOpReceiver {
                      const SkRect& dst,
                      flutter::DlImageSampling sampling,
                      bool render_with_attributes,
-                     bool enforce_src_edges) override;
+                     SrcRectConstraint constraint) override;
 
   // |flutter::DlOpReceiver|
   void drawImageNine(const sk_sp<flutter::DlImage> image,

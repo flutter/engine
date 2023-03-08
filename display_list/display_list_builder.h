@@ -187,12 +187,13 @@ class DisplayListBuilder final : public virtual DlCanvas,
                  DlImageSampling sampling,
                  const DlPaint* paint = nullptr) override;
   // |DlCanvas|
-  void DrawImageRect(const sk_sp<DlImage>& image,
-                     const SkRect& src,
-                     const SkRect& dst,
-                     DlImageSampling sampling,
-                     const DlPaint* paint = nullptr,
-                     bool enforce_src_edges = false) override;
+  void DrawImageRect(
+      const sk_sp<DlImage>& image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      const DlPaint* paint = nullptr,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
   // |DlCanvas|
   void DrawImageNine(const sk_sp<DlImage>& image,
                      const SkIRect& center,
@@ -432,7 +433,7 @@ class DisplayListBuilder final : public virtual DlCanvas,
       const SkRect& dst,
       DlImageSampling sampling,
       bool render_with_attributes,
-      bool enforce_src_edges = false) override;
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) override;
   // |DlOpReceiver|
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,

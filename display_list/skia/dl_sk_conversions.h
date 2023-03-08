@@ -50,9 +50,9 @@ inline SkSamplingOptions ToSk(DlImageSampling sampling) {
   }
 }
 
-inline SkCanvas::SrcRectConstraint ToSkConstraint(bool enforce_edges) {
-  return enforce_edges ? SkCanvas::kStrict_SrcRectConstraint
-                       : SkCanvas::kFast_SrcRectConstraint;
+inline SkCanvas::SrcRectConstraint ToSk(
+    DlCanvas::SrcRectConstraint constraint) {
+  return static_cast<SkCanvas::SrcRectConstraint>(constraint);
 }
 
 inline SkClipOp ToSk(DlCanvas::ClipOp op) {

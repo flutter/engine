@@ -710,50 +710,50 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                               kNearestSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                               kNearestSampling, true,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                               kNearestSampling, false,
-                              SkCanvas::kStrict_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kStrict);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 25, 20}, {10, 10, 80, 80},
                               kNearestSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 85, 80},
                               kNearestSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage1, {10, 10, 20, 20}, {10, 10, 80, 80},
                               kLinearSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               r.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
                               kNearestSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
            {1, 56, -1, 80,
             [](DlOpReceiver& r) {
               auto dl_image = DlImage::Make(TestSkImage);
               r.drawImageRect(dl_image, {10, 10, 15, 15}, {10, 10, 80, 80},
                               kNearestSampling, false,
-                              SkCanvas::kFast_SrcRectConstraint);
+                              DlCanvas::SrcRectConstraint::kFast);
             }},
        }},
       {"DrawImageNine",
