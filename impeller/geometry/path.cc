@@ -261,7 +261,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     }
   };
 
-  auto start_contour = [&get_path_component](int current_path_component_index) {
+  auto compute_contour_start_direction = [&get_path_component](
+                                             int current_path_component_index) {
     int next_component_index = current_path_component_index + 1;
     while (get_path_component(next_component_index).has_value()) {
       auto next_component = get_path_component(next_component_index).value();
@@ -327,7 +328,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         }
         end_contour();
 
-        Vector2 start_direction = start_contour(component_i);
+        Vector2 start_direction = compute_contour_start_direction(component_i);
         const auto& contour = contours_[component.index];
         polyline.contours.push_back({.start_index = polyline.points.size(),
                                      .is_closed = contour.is_closed,

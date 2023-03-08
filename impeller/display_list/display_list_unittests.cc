@@ -314,7 +314,7 @@ TEST_P(DisplayListTest, StrokedPathsDrawCorrectly) {
       builder.translate(0, 100);
       SkPath cubic_path2;
       cubic_path2.moveTo({0, 0});
-      cubic_path2.cubicTo(0, 0, 0, 0, 150, 0);
+      cubic_path2.cubicTo(0, 0, 0, 0, 150, 150);
       builder.drawPath(cubic_path2);
 
       builder.translate(0, 100);
