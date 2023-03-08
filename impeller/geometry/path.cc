@@ -244,10 +244,8 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
   };
 
   auto get_path_component =
-      [this](size_t component_i,
-             bool& isContour) -> std::optional<const PathComponent*> {
-    if (component_i >= components_.size() || component_i < 0) {
-      isContour = false;
+      [this](size_t component_i) -> std::optional<const PathComponent*> {
+    if (component_i < 0 || component_i >= components_.size()) {
       return std::nullopt;
     }
     const auto& component = components_[component_i];
@@ -259,44 +257,50 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
       case ComponentType::kCubic:
         return &cubics_[component.index];
       case ComponentType::kContour:
-        isContour = true;
         return std::nullopt;
     }
   };
 
-  //  std::optional<const PathComponent*> previous_path_component;
-  auto end_contour = [&polyline,
-                      &get_path_component](int current_component_index) {
+  auto start_contour = [&get_path_component](int current_path_component_index) {
+    int next_component_index = current_path_component_index + 1;
+    while (get_path_component(next_component_index).has_value()) {
+      auto next_component = get_path_component(next_component_index).value();
+      if (next_component->GetStartDirection().has_value()) {
+        return next_component->GetStartDirection().value();
+      } else {
+        next_component_index++;
+      }
+    }
+    return Vector2(0, -1);
+  };
+
+  std::optional<int> previous_path_component_index;
+  auto end_contour = [&polyline, &previous_path_component_index,
+                      &get_path_component]() {
     // Whenever a contour has ended, extract the exact end direction from the
     // last component.
     if (polyline.contours.empty()) {
       return;
     }
 
+    if (!previous_path_component_index.has_value()) {
+      return;
+    }
+
     auto& contour = polyline.contours.back();
     contour.end_direction = Vector2(0, 1);
-    int previous_path_component_index = current_component_index;
-    bool isContour = false;
-    while (get_path_component(previous_path_component_index, isContour)
-               .has_value() &&
-           !isContour) {
-      auto previous_path_component =
-          get_path_component(previous_path_component_index, isContour).value();
+
+    int previous_index = previous_path_component_index.value();
+    while (get_path_component(previous_index).has_value()) {
+      auto previous_path_component = get_path_component(previous_index).value();
       if (previous_path_component->GetEndDirection().has_value()) {
         contour.end_direction =
             previous_path_component->GetEndDirection().value();
         break;
       } else {
-        previous_path_component_index--;
+        previous_index--;
       }
     }
-    //    if (!previous_path_component.has_value()) {
-    //      return;
-    //    }
-    //    auto& contour = polyline.contours.back();
-    //    contour.end_direction =
-    //        previous_path_component.value()->GetEndDirection().value_or(
-    //            Vector2(0, 1));
   };
 
   for (size_t component_i = 0; component_i < components_.size();
@@ -305,15 +309,15 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     switch (component.type) {
       case ComponentType::kLinear:
         collect_points(linears_[component.index].CreatePolyline());
-        //        previous_path_component = &linears_[component.index];
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
         collect_points(quads_[component.index].CreatePolyline(scale));
-        //        previous_path_component = &quads_[component.index];
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
         collect_points(cubics_[component.index].CreatePolyline(scale));
-        //        previous_path_component = &cubics_[component.index];
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
         if (component_i == components_.size() - 1) {
@@ -321,30 +325,9 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
           // contour, so skip it.
           continue;
         }
-        end_contour(component_i);
+        end_contour();
 
-        Vector2 start_direction(0, -1);
-        int next_component_index = component_i + 1;
-        bool isContour = false;
-        while (
-            get_path_component(next_component_index, isContour).has_value()) {
-          auto next_component =
-              get_path_component(next_component_index, isContour).value();
-          if (next_component->GetStartDirection().has_value()) {
-            start_direction = next_component->GetStartDirection().value();
-            break;
-          } else {
-            next_component_index++;
-          }
-        }
-
-        //        auto first_component = get_path_component(component_i + 1);
-        //        if (first_component.has_value()) {
-        //          start_direction =
-        //              first_component.value()->GetStartDirection().value_or(
-        //                  Vector2(0, -1));
-        //        }
-
+        Vector2 start_direction = start_contour(component_i);
         const auto& contour = contours_[component.index];
         polyline.contours.push_back({.start_index = polyline.points.size(),
                                      .is_closed = contour.is_closed,
@@ -353,7 +336,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
         collect_points({contour.destination});
         break;
     }
-    end_contour(component_i);
+    end_contour();
   }
   return polyline;
 }
