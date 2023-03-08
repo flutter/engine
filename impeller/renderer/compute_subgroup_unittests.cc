@@ -191,6 +191,12 @@ TEST_P(ComputeTest, HeartCubicsToStrokeVertices) {
   }));
 
   latch.Wait();
+
+  auto* v_buf = reinterpret_cast<SS::VertexBuffer<kCubicCount * 10 * 10 * 4>*>(
+      vertex_buffer->AsBufferView().contents);
+  FML_LOG(ERROR) << v_buf->count;
+
+  OpenPlaygroundHere();
 }
 
 TEST_P(ComputeTest, QuadsToPolyline) {
@@ -259,7 +265,6 @@ TEST_P(ComputeTest, QuadsToPolyline) {
           EXPECT_LT(std::abs(p->data[i].x - golden_heart_points[i].x), 1e-3);
           EXPECT_LT(std::abs(p->data[i].y - golden_heart_points[i].y), 1e-3);
         }
-
         latch.Signal();
       }));
 
