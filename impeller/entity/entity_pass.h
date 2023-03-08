@@ -99,15 +99,16 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(
-      ContentContext& renderer,
-      ISize root_pass_size,
-      const RenderTarget& render_target,
-      Point position,
-      Point parent_position,
-      uint32_t pass_depth,
-      size_t stencil_depth_floor = 0,
-      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
+  bool OnRender(ContentContext& renderer,
+                ISize root_pass_size,
+                const RenderTarget& render_target,
+                Point position,
+                Point parent_position,
+                uint32_t pass_depth,
+                size_t stencil_depth_floor = 0,
+                std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
+                std::optional<InlinePassContext::RenderPassResult>
+                    collapsed_parent_pass = std::nullopt) const;
 
   std::vector<Element> elements_;
 
@@ -117,12 +118,18 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
 
-  /// This value is incremented whenever something is added to the pass that
+  /// These value are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
   /// the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
-  uint32_t reads_from_pass_texture_ = 0;
+  /// These are tracked as separate values because we may ignore
+  /// blend_reads_from_pass_texture_ if the device supports framebuffer based
+  /// advanced blends.
+  uint32_t filter_reads_from_pass_texture_ = 0;
+  uint32_t blend_reads_from_pass_texture_ = 0;
+
+  uint32_t ComputeTotalReads(ContentContext& renderer) const;
 
   std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
 

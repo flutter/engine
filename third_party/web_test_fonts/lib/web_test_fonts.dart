@@ -2,10 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/display_list/display_list_dispatcher.h"
+library web_test_fonts;
 
-namespace flutter {
-
-//
-
-}  // namespace flutter
+export 'web_test_fonts/web_test_fonts.dart';
