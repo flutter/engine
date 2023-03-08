@@ -9,6 +9,12 @@
     JNI_OnLoad;
     _binary_icudtl_dat_start;
     _binary_icudtl_dat_size;
+    shorebird_init;
+    shorebird_active_path;
+    shorebird_active_version;
+    shorebird_free_string;
+    shorebird_check_for_update;
+    shorebird_update;
   local:
     *;
 };
