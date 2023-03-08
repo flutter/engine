@@ -33,14 +33,14 @@ class SemanticsTextEditingStrategy extends DefaultTextEditingStrategy {
   /// This method must be called prior to accessing [instance].
   static SemanticsTextEditingStrategy ensureInitialized(
       HybridTextEditing owner) {
-    if (_instance != null && instance.owner == owner) {
-      return instance;
+    if (_instance != null && instance?.owner == owner) {
+      return instance!;
     }
     return _instance = SemanticsTextEditingStrategy(owner);
   }
 
   /// The [SemanticsTextEditingStrategy] singleton.
-  static SemanticsTextEditingStrategy get instance => _instance!;
+  static SemanticsTextEditingStrategy? get instance => _instance!;
   static SemanticsTextEditingStrategy? _instance;
 
   /// The text field whose DOM element is currently used for editing.
@@ -401,7 +401,7 @@ class TextField extends RoleManager {
         allowInterop((DomEvent event) {
       semanticsObject.element.setAttribute('role', 'textbox');
       activeEditableElement.remove();
-      SemanticsTextEditingStrategy.instance.deactivate(this);
+      SemanticsTextEditingStrategy.instance?.deactivate(this);
 
       // Focus on semantics element before removing the editable element, so that
       // the user can continue navigating the page with the assistive technology.
@@ -430,11 +430,11 @@ class TextField extends RoleManager {
             activeEditableElement.focus();
           });
         }
-        SemanticsTextEditingStrategy.instance.activate(this);
+        SemanticsTextEditingStrategy.instance?.activate(this);
       } else if (flutterViewEmbedder.glassPaneShadow.activeElement ==
           activeEditableElement) {
         if (!isIosSafari) {
-          SemanticsTextEditingStrategy.instance.deactivate(this);
+          SemanticsTextEditingStrategy.instance?.deactivate(this);
           // Only apply text, because this node is not focused.
         }
         activeEditableElement.blur();
@@ -460,6 +460,6 @@ class TextField extends RoleManager {
     if (!isIosSafari) {
       editableElement?.remove();
     }
-    SemanticsTextEditingStrategy.instance.deactivate(this);
+    SemanticsTextEditingStrategy.instance?.deactivate(this);
   }
 }
