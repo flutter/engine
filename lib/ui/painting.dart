@@ -1618,7 +1618,7 @@ enum ImageByteFormat {
   /// final ByteData data =
   ///     (await image.toByteData(format: ImageByteFormat.rawExtendedRgba128))!;
   /// final Float32List floats = Float32List.view(data.buffer);
-  /// print('${floats[0]} ${floats[1]} ${floats[2]} ${floats[3]}');
+  /// print('r:${floats[0]} g:${floats[1]} b:${floats[2]} a:${floats[3]}');
   /// ```
   rawExtendedRgba128,
 
