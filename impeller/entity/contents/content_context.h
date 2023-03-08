@@ -517,91 +517,91 @@ class ContentContext {
   // Framebuffer Advanced Blends
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
       ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
-    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferBlending());
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
 

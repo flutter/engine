@@ -222,7 +222,7 @@ bool AtlasContents::Render(const ContentContext& renderer,
   dst_contents->SetCoverage(sub_coverage);
 
   std::shared_ptr<Texture> new_texture;
-  if (renderer.GetDeviceCapabilities().SupportsFramebufferBlending()) {
+  if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
     new_texture = renderer.MakeSubpass(
         "Atlas Blend", sub_atlas->size,
         [&](const ContentContext& context, RenderPass& pass) {

@@ -183,7 +183,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
   }
-  if (context_->GetDeviceCapabilities().SupportsFramebufferBlending()) {
+  if (context_->GetDeviceCapabilities().SupportsFramebufferFetch()) {
     framebuffer_blend_color_pipelines_[{}] =
         CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
     framebuffer_blend_colorburn_pipelines_[{}] =

@@ -23,7 +23,7 @@ class IDeviceCapabilities {
 
   bool SupportsTextureToTextureBlits() const;
 
-  bool SupportsFramebufferBlending() const;
+  bool SupportsFramebufferFetch() const;
 
   PixelFormat GetDefaultColorFormat() const;
 
@@ -34,7 +34,7 @@ class IDeviceCapabilities {
                       bool supports_offscreen_msaa,
                       bool supports_ssbo,
                       bool supports_texture_to_texture_blits,
-                      bool supports_framebuffer_blending,
+                      bool supports_framebuffer_fetch,
                       PixelFormat default_color_format,
                       PixelFormat default_stencil_format);
 
@@ -44,7 +44,7 @@ class IDeviceCapabilities {
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
   bool supports_texture_to_texture_blits_ = false;
-  bool supports_framebuffer_blending_ = false;
+  bool supports_framebuffer_fetch_ = false;
   PixelFormat default_color_format_;
   PixelFormat default_stencil_format_;
 
@@ -65,7 +65,7 @@ class DeviceCapabilitiesBuilder {
 
   DeviceCapabilitiesBuilder& SetSupportsTextureToTextureBlits(bool value);
 
-  DeviceCapabilitiesBuilder& SetSupportsFramebufferBlending(bool value);
+  DeviceCapabilitiesBuilder& SetSupportsFramebufferFetch(bool value);
 
   DeviceCapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
 
@@ -78,7 +78,7 @@ class DeviceCapabilitiesBuilder {
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
   bool supports_texture_to_texture_blits_ = false;
-  bool supports_framebuffer_blending_ = false;
+  bool supports_framebuffer_fetch_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
 

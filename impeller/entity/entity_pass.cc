@@ -191,7 +191,7 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
 }
 
 uint32_t EntityPass::ComputeTotalReads(ContentContext& renderer) const {
-  return renderer.GetDeviceCapabilities().SupportsFramebufferBlending()
+  return renderer.GetDeviceCapabilities().SupportsFramebufferFetch()
              ? filter_reads_from_pass_texture_
              : filter_reads_from_pass_texture_ + blend_reads_from_pass_texture_;
 }
@@ -549,7 +549,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
     ///
 
     if (result.entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-      if (renderer.GetDeviceCapabilities().SupportsFramebufferBlending()) {
+      if (renderer.GetDeviceCapabilities().SupportsFramebufferFetch()) {
         auto src_contents = result.entity.GetContents();
         auto contents = std::make_shared<FramebufferBlendContents>();
         contents->SetChildContents(src_contents);
