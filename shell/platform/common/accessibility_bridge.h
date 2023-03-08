@@ -61,7 +61,7 @@ class AccessibilityBridge
   ///             To flush the pending updates, call the CommitUpdates().
   ///
   /// @param[in]  node           A pointer to the semantics node update.
-  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode* node);
+  void AddFlutterSemanticsNodeUpdate(const FlutterSemanticsNode& node);
 
   //------------------------------------------------------------------------------
   /// @brief      Adds a custom semantics action update to the pending semantics
@@ -72,7 +72,7 @@ class AccessibilityBridge
   /// @param[in]  action           A pointer to the custom semantics action
   ///                              update.
   void AddFlutterSemanticsCustomActionUpdate(
-      const FlutterSemanticsCustomAction* action);
+      const FlutterSemanticsCustomAction& action);
 
   //------------------------------------------------------------------------------
   /// @brief      Flushes the pending updates and applies them to this
@@ -252,9 +252,9 @@ class AccessibilityBridge
                                    const SemanticsNode& node);
   void SetTreeData(const SemanticsNode& node, ui::AXTreeUpdate& tree_update);
   SemanticsNode FromFlutterSemanticsNode(
-      const FlutterSemanticsNode* flutter_node);
+      const FlutterSemanticsNode& flutter_node);
   SemanticsCustomAction FromFlutterSemanticsCustomAction(
-      const FlutterSemanticsCustomAction* flutter_custom_action);
+      const FlutterSemanticsCustomAction& flutter_custom_action);
 
   // |AXTreeObserver|
   void OnNodeWillBeDeleted(ui::AXTree* tree, ui::AXNode* node) override;

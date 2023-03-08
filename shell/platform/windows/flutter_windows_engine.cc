@@ -332,14 +332,13 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
 
     for (size_t i = 0; i < update->nodes_count; i++) {
-      const FlutterSemanticsNode* node = &update->nodes[i];
-      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(node);
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(
+          update->nodes[i]);
     }
 
     for (size_t i = 0; i < update->custom_actions_count; i++) {
-      const FlutterSemanticsCustomAction* action = &update->custom_actions[i];
       host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-          action);
+          update->custom_actions[i]);
     }
 
     host->accessibility_bridge_->CommitUpdates();
@@ -560,9 +559,10 @@ void FlutterWindowsEngine::SendSystemLocales() {
   // Convert the locale list to the locale pointer list that must be provided.
   std::vector<const FlutterLocale*> flutter_locale_list;
   flutter_locale_list.reserve(flutter_locales.size());
-  std::transform(flutter_locales.begin(), flutter_locales.end(),
-                 std::back_inserter(flutter_locale_list),
-                 [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(
+      flutter_locales.begin(), flutter_locales.end(),
+      std::back_inserter(flutter_locale_list),
+      [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 }
