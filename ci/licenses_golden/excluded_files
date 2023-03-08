@@ -275,6 +275,7 @@
 ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/build/asset_package.py
 ../../../flutter/shell/platform/fuchsia/flutter/build/gen_debug_wrapper_main.py
+../../../flutter/shell/platform/fuchsia/flutter/component_v1_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/component_v2_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/focus_delegate_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
@@ -1655,7 +1656,6 @@
 ../../../third_party/dart/runtime/vm/libfuzzer/README.md
 ../../../third_party/dart/runtime/vm/log_test.cc
 ../../../third_party/dart/runtime/vm/longjump_test.cc
-../../../third_party/dart/runtime/vm/malloc_hooks_test.cc
 ../../../third_party/dart/runtime/vm/memory_region_test.cc
 ../../../third_party/dart/runtime/vm/message_handler_test.cc
 ../../../third_party/dart/runtime/vm/message_test.cc

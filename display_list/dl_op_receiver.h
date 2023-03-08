@@ -32,6 +32,7 @@ class DlOpReceiver {
  protected:
   using ClipOp = DlCanvas::ClipOp;
   using PointMode = DlCanvas::PointMode;
+  using SrcRectConstraint = DlCanvas::SrcRectConstraint;
 
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
@@ -219,12 +220,13 @@ class DlOpReceiver {
                          const SkPoint point,
                          DlImageSampling sampling,
                          bool render_with_attributes) = 0;
-  virtual void drawImageRect(const sk_sp<DlImage> image,
-                             const SkRect& src,
-                             const SkRect& dst,
-                             DlImageSampling sampling,
-                             bool render_with_attributes,
-                             bool enforce_src_edges = false) = 0;
+  virtual void drawImageRect(
+      const sk_sp<DlImage> image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      bool render_with_attributes,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
                              const SkIRect& center,
                              const SkRect& dst,

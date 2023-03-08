@@ -678,10 +678,10 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
              , true);
   RUN_TESTS(receiver.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
                                    kNearestSampling, true,
-                                   SkCanvas::kFast_SrcRectConstraint););
+                                   DlCanvas::SrcRectConstraint::kFast););
   RUN_TESTS2(receiver.drawImageRect(TestImage1, {10, 10, 20, 20},
                                     {0, 0, 10, 10}, kNearestSampling, false,
-                                    SkCanvas::kFast_SrcRectConstraint);
+                                    DlCanvas::SrcRectConstraint::kFast);
              , true);
   RUN_TESTS(receiver.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
                                    DlFilterMode::kLinear, true););
