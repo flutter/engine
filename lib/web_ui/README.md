@@ -39,7 +39,7 @@ Builds all web engine targets, then runs a Flutter app using it:
 ```
 felt build
 cd path/to/some/app
-flutter --local-web_sdk=wasm_release run -d chrome
+flutter --local-web-sdk=wasm_release run -d chrome
 ```
 
 Builds only the `sdk` and the `canvaskit` targets:
