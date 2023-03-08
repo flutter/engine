@@ -75,6 +75,54 @@ const flutter::Settings& FlutterMain::GetSettings() const {
   return settings_;
 }
 
+// TODO: Move this out into a separate file?
+void ConfigureShorebird(std::string android_cache_path,
+                        flutter::Settings& settings) {
+  auto cache_dir =
+      fml::paths::JoinPaths({android_cache_path, "shorebird_updater"});
+
+  fml::CreateDirectory(fml::paths::GetCachesDirectory(), {"shorebird_updater"},
+                       fml::FilePermission::kReadWrite);
+
+  AppParameters app_parameters;
+  // TODO: Read from AndroidManifest.xml
+  app_parameters.channel = "stable";
+  app_parameters.client_id = "client_id";
+  app_parameters.product_id = "com.example.product";
+  app_parameters.base_version = "1.0.0";
+  app_parameters.update_url = NULL;  // default
+
+  app_parameters.original_libapp_path =
+      settings.application_library_path[0].c_str();
+  // How do can we get the path to libflutter.so?
+  app_parameters.vm_path = "libflutter.so";
+
+  app_parameters.cache_dir = cache_dir.c_str();
+  shorebird_init(&app_parameters);
+
+  FML_LOG(INFO) << "Starting Shorebird update";
+  shorebird_update();
+
+  char* c_active_path = shorebird_active_path();
+  if (c_active_path != NULL) {
+    std::string active_path = c_active_path;
+    shorebird_free_string(c_active_path);
+    FML_LOG(INFO) << "Active path: " << active_path;
+
+    settings.application_library_path.clear();
+    settings.application_library_path.emplace_back(active_path);
+
+    char* c_version = shorebird_active_version();
+    if (c_version != NULL) {
+      std::string version = c_version;
+      shorebird_free_string(c_version);
+      FML_LOG(INFO) << "Active version: " << version;
+    }
+  } else {
+    FML_LOG(ERROR) << "Shorebird updater: no active path.";
+  }
+}
+
 void FlutterMain::Init(JNIEnv* env,
                        jclass clazz,
                        jobject context,
@@ -117,8 +165,12 @@ void FlutterMain::Init(JNIEnv* env,
   flutter::DartCallbackCache::SetCachePath(
       fml::jni::JavaStringToString(env, appStoragePath));
 
-  fml::paths::InitializeAndroidCachesPath(
-      fml::jni::JavaStringToString(env, engineCachesPath));
+  auto android_cache_path = fml::jni::JavaStringToString(env, engineCachesPath);
+  fml::paths::InitializeAndroidCachesPath(android_cache_path);
+
+#if FLUTTER_RELEASE
+  ConfigureShorebird(android_cache_path, settings);
+#endif
 
   flutter::DartCallbackCache::LoadCacheFromDisk();
 
