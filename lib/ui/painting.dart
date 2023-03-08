@@ -1568,10 +1568,12 @@ class Paint {
   }
 }
 
-/// The color space in which all of an [Image]'s colors exist.
+/// The color space describes the colors that are available to an [Image].
 ///
-/// This value can help you decide which [ImageByteFormat] to use with
-/// [Image.toByteData] and is the result of [Image.colorSpace].
+/// This value can help decide which [ImageByteFormat] to use with
+/// [Image.toByteData], where images that are in the [extendedSRGB] color space
+/// should use something like [ImageByteFormat.rawExtendedRgba128] so that
+/// colors aren't lost. This is also the result of [Image.colorSpace].
 enum ColorSpace {
   /// The sRGB color space, the defined standard color space for the web.
   sRGB,
