@@ -60,6 +60,7 @@ if (is_ios || is_mac) {
   flutter_cflags_objc = [
     "-Werror=overriding-method-mismatch",
     "-Werror=undeclared-selector",
+    "-fapplication-extension",
   ]
   if (is_mac) {
     flutter_cflags_objc += [ "-fapplication-extension" ]

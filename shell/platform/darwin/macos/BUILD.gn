@@ -131,6 +131,7 @@ source_set("flutter_framework_source") {
   defines = [
     "FLUTTER_FRAMEWORK",
     "FLUTTER_ENGINE_NO_PROTOTYPES",
+    "APPLICATION_EXTENSION_API_ONLY=1",
   ]
 
   cflags_objcc = flutter_cflags_objcc_arc
