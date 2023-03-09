@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/device_capabilities.h"
+#include "device_capabilities.h"
 
 namespace impeller {
 
@@ -11,13 +12,17 @@ IDeviceCapabilities::IDeviceCapabilities(bool has_threading_restrictions,
                                          bool supports_ssbo,
                                          bool supports_texture_to_texture_blits,
                                          PixelFormat default_color_format,
-                                         PixelFormat default_stencil_format)
+                                         PixelFormat default_stencil_format,
+                                         bool supports_compute,
+                                         bool supports_compute_subgroups)
     : has_threading_restrictions_(has_threading_restrictions),
       supports_offscreen_msaa_(supports_offscreen_msaa),
       supports_ssbo_(supports_ssbo),
       supports_texture_to_texture_blits_(supports_texture_to_texture_blits),
       default_color_format_(default_color_format),
-      default_stencil_format_(default_stencil_format) {}
+      default_stencil_format_(default_stencil_format),
+      supports_compute_(supports_compute),
+      supports_compute_subgroups_(supports_compute_subgroups) {}
 
 IDeviceCapabilities::~IDeviceCapabilities() = default;
 
@@ -43,6 +48,14 @@ PixelFormat IDeviceCapabilities::GetDefaultColorFormat() const {
 
 PixelFormat IDeviceCapabilities::GetDefaultStencilFormat() const {
   return default_stencil_format_;
+}
+
+bool IDeviceCapabilities::SupportsCompute() const {
+  return supports_compute_;
+}
+
+bool IDeviceCapabilities::SupportsComputeSubgroups() const {
+  return supports_compute_subgroups_;
 }
 
 DeviceCapabilitiesBuilder::DeviceCapabilitiesBuilder() = default;
@@ -85,6 +98,14 @@ DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetDefaultStencilFormat(
   return *this;
 }
 
+DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetSupportsCompute(
+    bool value,
+    bool subgroups) {
+  supports_compute_ = value;
+  supports_compute_subgroups_ = subgroups;
+  return *this;
+}
+
 std::unique_ptr<IDeviceCapabilities> DeviceCapabilitiesBuilder::Build() {
   FML_CHECK(default_color_format_.has_value())
       << "Default color format not set";
@@ -97,7 +118,9 @@ std::unique_ptr<IDeviceCapabilities> DeviceCapabilitiesBuilder::Build() {
       supports_ssbo_,                                           //
       supports_texture_to_texture_blits_,                       //
       *default_color_format_,                                   //
-      *default_stencil_format_                                  //
+      *default_stencil_format_,                                 //
+      supports_compute_,                                        //
+      supports_compute_subgroups_                               //
   );
   return std::unique_ptr<IDeviceCapabilities>(capabilities);
 }
