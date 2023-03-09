@@ -76,7 +76,10 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
   auto ui_task = fml::MakeCopyable(
       [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
                                                size_t buffer_size) mutable {
-        auto dart_state = buffer_callback->dart_state().lock();
+        if (!buffer_callback_ptr) {
+          return;
+        }
+        auto dart_state = buffer_callback_ptr->dart_state().lock();
         if (!dart_state) {
           return;
         }
@@ -148,7 +151,10 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
   auto ui_task = fml::MakeCopyable(
       [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
                                                size_t buffer_size) mutable {
-        auto dart_state = buffer_callback->dart_state().lock();
+        if (!buffer_callback_ptr) {
+          return;
+        }
+        auto dart_state = buffer_callback_ptr->dart_state().lock();
         if (!dart_state) {
           return;
         }
