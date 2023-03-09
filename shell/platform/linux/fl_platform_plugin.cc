@@ -207,8 +207,9 @@ static void request_app_exit_response_cb(GObject* object,
   } else {
     exit_response = get_exit_response(method_response);
   }
+  // If something went wrong, then just exit.
   if (exit_response == nullptr) {
-    exit_response = g_strdup(kExitResponseCancel);
+    exit_response = g_strdup(kExitResponseExit);
   }
 
   if (g_str_equal(exit_response, kExitResponseExit)) {
