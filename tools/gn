@@ -629,6 +629,9 @@ def to_gn_args(args):
     gn_args['angle_vulkan_tools_dir'
            ] = '//third_party/vulkan-deps/vulkan-tools/src'
 
+  if args.darwin_extension_safe:
+    gn_args['darwin_extension_safe'] = True
+
   return gn_args
 
 
@@ -1111,6 +1114,14 @@ def parse_args(args):
       action='store_true',
       help='Write a GN trace log (gn_trace.json) in the Chromium tracing '
       'format in the build directory.'
+  )
+
+  parser.add_argument(
+      '--darwin-extension-safe',
+      default=False,
+      action='store_true',
+      help='Whether the produced Flutter.framework and FlutterMacOS.framework '
+      'is app extension safe. Only for iOS and macOS.'
   )
 
   # Verbose output.

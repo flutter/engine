@@ -158,6 +158,7 @@ using namespace flutter;
 }
 
 - (void)setSystemChromeEnabledSystemUIOverlays:(NSArray*)overlays {
+#if !APPLICATION_EXTENSION_API_ONLY
   // Checks if the top status bar should be visible. This platform ignores all
   // other overlays
 
@@ -175,9 +176,11 @@ using namespace flutter;
         postNotificationName:FlutterViewControllerHideHomeIndicator
                       object:nil];
   }
+#endif
 }
 
 - (void)setSystemChromeEnabledSystemUIMode:(NSString*)mode {
+#if !APPLICATION_EXTENSION_API_ONLY
   // Checks if the top status bar should be visible, reflected by edge to edge setting. This
   // platform ignores all other system ui modes.
 
@@ -195,6 +198,7 @@ using namespace flutter;
         postNotificationName:FlutterViewControllerHideHomeIndicator
                       object:nil];
   }
+#endif
 }
 
 - (void)restoreSystemChromeSystemUIOverlays {
@@ -231,9 +235,11 @@ using namespace flutter;
                       object:nil
                     userInfo:@{@(kOverlayStyleUpdateNotificationKey) : @(statusBarStyle)}];
   } else {
+#if !APPLICATION_EXTENSION_API_ONLY
     // Note: -[UIApplication setStatusBarStyle] is deprecated in iOS9
     // in favor of delegating to the view controller
     [[UIApplication sharedApplication] setStatusBarStyle:statusBarStyle];
+#endif
   }
 }
 
@@ -249,11 +255,15 @@ using namespace flutter;
   if (navigationController) {
     [navigationController popViewControllerAnimated:isAnimated];
   } else {
+#if !APPLICATION_EXTENSION_API_ONLY
     UIViewController* rootViewController =
         [UIApplication sharedApplication].keyWindow.rootViewController;
     if (engineViewController != rootViewController) {
+#endif
       [engineViewController dismissViewControllerAnimated:isAnimated completion:nil];
+#if !APPLICATION_EXTENSION_API_ONLY
     }
+#endif
   }
 }
 

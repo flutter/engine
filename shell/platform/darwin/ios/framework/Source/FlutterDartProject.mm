@@ -32,6 +32,39 @@ extern const intptr_t kPlatformStrongDillSize;
 
 static const char* kApplicationKernelSnapshotFileName = "kernel_blob.bin";
 
+NS_INLINE NSBundle* FLTFrameworkBundle() {
+  NSBundle* mainBundle = [NSBundle mainBundle];
+  NSBundle* bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
+
+  // App extension bundle is in Runner.app/PlugIns/Extension.appex.
+  if ([mainBundle.bundleURL.pathExtension isEqualToString:@"appex"]) {
+    // Up two levels.
+    NSBundle* appBundle =
+        [NSBundle bundleWithURL:mainBundle.bundleURL.URLByDeletingLastPathComponent
+                                    .URLByDeletingLastPathComponent];
+    bundle = FLTFrameworkBundleInternal([FlutterDartProject defaultBundleIdentifier],
+                                        appBundle.privateFrameworksURL);
+  }
+
+  if (bundle == nil) {
+    bundle = mainBundle;
+  }
+
+  return bundle;
+}
+
+NS_INLINE NSURL* FLTAssetsFromBundle(NSBundle* bundle) {
+  NSString* assetsPathFromInfoPlist = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
+  NSString* flutterAssetsName =
+      assetsPathFromInfoPlist != nil ? assetsPathFromInfoPlist : @"flutter_assets";
+  NSURL* assets = [bundle URLForResource:flutterAssetsName withExtension:nil];
+
+  if ([assets checkResourceIsReachableAndReturnError:NULL]) {
+    return assets;
+  }
+  return nil;
+}
+
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* processInfoOrNil) {
   auto command_line = flutter::CommandLineFromNSProcessInfo(processInfoOrNil);
 
@@ -46,10 +79,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
   bool hasExplicitBundle = bundle != nil;
   if (bundle == nil) {
-    bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
-  }
-  if (bundle == nil) {
-    bundle = mainBundle;
+    bundle = FLTFrameworkBundle();
   }
 
   auto settings = flutter::SettingsFromCommandLine(command_line);
@@ -122,29 +152,24 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
   // Checks to see if the flutter assets directory is already present.
   if (settings.assets_path.empty()) {
-    NSString* assetsName = [FlutterDartProject flutterAssetsName:bundle];
-    NSString* assetsPath = [bundle pathForResource:assetsName ofType:@""];
+    NSURL* assetsURL = FLTAssetsFromBundle(bundle);
 
-    if (assetsPath.length == 0) {
-      assetsPath = [mainBundle pathForResource:assetsName ofType:@""];
-    }
-
-    if (assetsPath.length == 0) {
-      NSLog(@"Failed to find assets path for \"%@\"", assetsName);
+    if (assetsURL == nil) {
+      NSLog(@"Failed to find assets path for \"%@\"", bundle);
     } else {
-      settings.assets_path = assetsPath.UTF8String;
+      settings.assets_path = assetsURL.path.UTF8String;
 
       // Check if there is an application kernel snapshot in the assets directory we could
       // potentially use.  Looking for the snapshot makes sense only if we have a VM that can use
       // it.
       if (!flutter::DartVM::IsRunningPrecompiledCode()) {
         NSURL* applicationKernelSnapshotURL =
-            [NSURL URLWithString:@(kApplicationKernelSnapshotFileName)
-                   relativeToURL:[NSURL fileURLWithPath:assetsPath]];
-        if ([[NSFileManager defaultManager] fileExistsAtPath:applicationKernelSnapshotURL.path]) {
+            [assetsURL URLByAppendingPathComponent:@(kApplicationKernelSnapshotFileName)];
+        NSError* error;
+        if ([applicationKernelSnapshotURL checkResourceIsReachableAndReturnError:&error]) {
           settings.application_kernel_asset = applicationKernelSnapshotURL.path.UTF8String;
         } else {
-          NSLog(@"Failed to find snapshot: %@", applicationKernelSnapshotURL.path);
+          NSLog(@"Failed to find snapshot at %@: %@", applicationKernelSnapshotURL.path, error);
         }
       }
     }
@@ -331,11 +356,9 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle, NSProcessInfo* p
 
 + (NSString*)flutterAssetsName:(NSBundle*)bundle {
   if (bundle == nil) {
-    bundle = FLTFrameworkBundleWithIdentifier([FlutterDartProject defaultBundleIdentifier]);
+    bundle = FLTFrameworkBundle();
   }
-  if (bundle == nil) {
-    bundle = [NSBundle mainBundle];
-  }
+
   NSString* flutterAssetsName = [bundle objectForInfoDictionaryKey:@"FLTAssetsPath"];
   if (flutterAssetsName == nil) {
     flutterAssetsName = @"Frameworks/App.framework/flutter_assets";

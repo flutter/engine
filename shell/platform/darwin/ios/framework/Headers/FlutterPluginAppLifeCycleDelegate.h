@@ -13,6 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
  * Propagates `UIAppDelegate` callbacks to registered plugins.
  */
 FLUTTER_DARWIN_EXPORT
+NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in plugins used in app extensions")
 @interface FlutterPluginAppLifeCycleDelegate : NSObject <UNUserNotificationCenterDelegate>
 
 /**

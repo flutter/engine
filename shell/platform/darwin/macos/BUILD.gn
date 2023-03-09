@@ -52,6 +52,9 @@ _flutter_framework_headers_copy_dir =
 source_set("flutter_framework_source") {
   visibility = [ ":*" ]
 
+  cflags_objcc = flutter_cflags_objcc_arc
+  cflags_objcc += [ "-fapplication-extension" ]
+
   sources = [
     "framework/Source/AccessibilityBridgeMac.h",
     "framework/Source/AccessibilityBridgeMac.mm",
@@ -131,8 +134,9 @@ source_set("flutter_framework_source") {
     "FLUTTER_FRAMEWORK",
     "FLUTTER_ENGINE_NO_PROTOTYPES",
   ]
-
-  cflags_objcc = flutter_cflags_objcc_arc
+  if (darwin_extension_safe) {
+    defines += [ "APPLICATION_EXTENSION_API_ONLY=1" ]
+  }
 
   frameworks = [
     "Carbon.framework",
@@ -152,6 +156,10 @@ shared_library("flutter_framework_dylib") {
     "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath",
     "-fapplication-extension",
   ]
+
+  if (darwin_extension_safe) {
+    ldflags += [ "-fapplication-extension" ]
+  }
 
   deps = [ ":flutter_framework_source" ]
 }
@@ -351,6 +359,5 @@ shared_library("_generate_symlinks_and_verify_framework_module") {
   frameworks = [ "FlutterMacOS.framework" ]
 
   sources = [ "framework/Source/FlutterUmbrellaImportTests.m" ]
-
   deps = [ ":_generate_symlinks" ]
 }

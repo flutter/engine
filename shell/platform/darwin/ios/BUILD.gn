@@ -13,6 +13,7 @@ import("//flutter/shell/platform/darwin/common/framework_shared.gni")
 import("//flutter/testing/testing.gni")
 
 _flutter_framework_dir = "$root_out_dir/Flutter.framework"
+_flutter_xcframework_dir = "$root_out_dir/Flutter.xcframework"
 
 shell_gpu_configuration("ios_gpu_configuration") {
   enable_software = true
@@ -44,6 +45,9 @@ source_set("flutter_framework_source_arc") {
   cflags_objcc = flutter_cflags_objcc_arc
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
+  if (darwin_extension_safe) {
+    defines += [ "APPLICATION_EXTENSION_API_ONLY=1" ]
+  }
   allow_circular_includes_from = [ ":flutter_framework_source" ]
   deps = [
     ":flutter_framework_source",
@@ -153,6 +157,9 @@ source_set("flutter_framework_source") {
   sources += _flutter_framework_headers
 
   defines = [ "FLUTTER_FRAMEWORK=1" ]
+  if (darwin_extension_safe) {
+    defines += [ "APPLICATION_EXTENSION_API_ONLY=1" ]
+  }
 
   if (shell_enable_metal) {
     sources += [
@@ -321,6 +328,10 @@ shared_library("create_flutter_framework_dylib") {
 
   ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
 
+  if (darwin_extension_safe) {
+    ldflags += [ "-fapplication-extension" ]
+  }
+
   public = _flutter_framework_headers
 
   deps = [
@@ -411,10 +422,24 @@ copy("copy_license") {
 shared_library("copy_and_verify_framework_module") {
   framework_search_path = rebase_path("$root_out_dir")
   visibility = [ ":*" ]
-  cflags_objc = [ "-F$framework_search_path" ]
+  cflags_objc = [
+    "-F$framework_search_path",
+    "-fapplication-extension",
+  ]
+
+  if (darwin_extension_safe) {
+    ldflags = [
+      "-F$framework_search_path",
+      "-fapplication-extension",
+      "-Xlinker",
+      "-fatal_warnings",
+    ]
+    frameworks = [ "Flutter.framework" ]
+    deps = [ ":copy_dylib" ]
+  }
 
   sources = [ "framework/Source/FlutterUmbrellaImport.m" ]
-  deps = [
+  deps += [
     ":copy_framework_headers",
     ":copy_framework_info_plist",
     ":copy_framework_module_map",
@@ -439,7 +464,7 @@ group("universal_flutter_framework") {
 
 action("flutter_framework") {
   script = "//flutter/sky/tools/create_xcframework.py"
-  outputs = [ "$root_out_dir/Flutter.xcframework" ]
+  outputs = [ "$_flutter_xcframework_dir" ]
   args = [
     "--frameworks",
     rebase_path("$_flutter_framework_dir"),
