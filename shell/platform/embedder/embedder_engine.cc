@@ -289,6 +289,19 @@ bool EmbedderEngine::ScheduleFrame() {
   return true;
 }
 
+int64_t EmbedderEngine::SetMessageHandlerOnQueue(
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
+    void* user_data) {
+  auto platform_view = shell_->GetPlatformView();
+  auto platform_view_embedder = reinterpret_cast<PlatformViewEmbedder*>(platform_view.get());
+  if (!platform_view_embedder) {
+    return -1;
+  }
+  return platform_view_embedder->SetMessageHandlerOnQueue(channel, handler, task_queue, user_data);
+}
+
 Shell& EmbedderEngine::GetShell() {
   FML_DCHECK(shell_);
   return *shell_.get();

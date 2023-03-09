@@ -3017,6 +3017,47 @@ bool FlutterEngineNotifyDestroyed(FLUTTER_API_SYMBOL(FlutterEngine) engine) {
   return embedder_engine->NotifyDestroyed();
 }
 
+int64_t FlutterEngineSetMessageHandlerOnQueue(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    FlutterTaskQueueEmbedder* task_queue,
+    void* user_data) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid engine handle.");
+  }
+
+  if (channel == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid channel.");
+  }
+
+  if (handler == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Invalid handler.");
+  }
+
+  if (task_queue == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "task_queue was nullptr.");
+  }
+  auto dispatch_call = SAFE_ACCESS(task_queue, dispatch_call, nullptr);
+  if (dispatch_call == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "dispatch_call was nullptr.");
+  }
+  auto task_queue_user_data = SAFE_ACCESS(task_queue, user_data, nullptr);
+  if (task_queue_user_data == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "task_queue_user_data was nullptr.");
+  }
+  const flutter::PlatformMessageTaskQueue::TaskQueueCallback task_queue_call_back = [dispatch_call](fml::closure closure, void* user_data) {
+    dispatch_call(callback, user_data);
+  };
+
+  std::shared_ptr<flutter::PlatformMessageTaskQueue> queue =
+      std::make_shared<flutter::PlatformMessageTaskQueue>(
+          task_queue_call_back, task_queue_user_data);
+
+  return reinterpret_cast<flutter::EmbedderEngine*>(engine)
+      ->SetMessageHandlerOnQueue(channel, handler, queue, user_data);
+}
+
 FlutterEngineResult FlutterEngineGetProcAddresses(
     FlutterEngineProcTable* table) {
   if (!table) {
@@ -3072,6 +3113,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(WaitForFirstFrame, FlutterEngineWaitForFirstFrame);
   SET_PROC(NotifyCreated, FlutterEngineNotifyCreated);
   SET_PROC(NotifyDestroyed, FlutterEngineNotifyDestroyed);
+  SET_PROC(SetMessageHandlerOnQueue, FlutterEngineSetMessageHandlerOnQueue);
 #undef SET_PROC
 
   return kSuccess;

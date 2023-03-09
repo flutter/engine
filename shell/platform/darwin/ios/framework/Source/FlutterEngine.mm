@@ -1472,11 +1472,41 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                      taskQueue:(NSObject<FlutterTaskQueue>* _Nullable)taskQueue {
   NSParameterAssert(channel);
   if (_enableEmbedderAPI) {
-    _currentMessengerConnection++;
-    _messengerHandlers[channel] =
-        [[[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
-                                                      handler:[handler copy]] autorelease];
-    return _currentMessengerConnection;
+    // _currentMessengerConnection++;
+    // _messengerHandlers[channel] =
+    //     [[[FlutterEngineHandlerInfo alloc] initWithConnection:@(_currentMessengerConnection)
+    //                                                   handler:[handler copy]] autorelease];
+    // return _currentMessengerConnection;
+
+    FlutterTaskQueueEmbedder flutterTaskQueueStruct = {
+        .struct_size = sizeof(flutterTaskQueueStruct),
+        .dispatch_call = [](DispatchCallback dispatch_call, void* user_data) -> void {
+          id<FlutterTaskQueue> callbackTaskQueue = (id<FlutterTaskQueue>)(__bridge NSObject<FlutterTaskQueue>*)user_data;
+          dispatch_block_t block = ^{
+            dispatch_call(nullptr);
+          };
+          [callbackTaskQueue dispatch:block];
+        },
+        .user_data = (__bridge void*)taskQueue,
+    };
+    auto embedderHandler = [](const uint8_t* data, size_t size, void* user_data,
+                              FlutterDataCallback reply) -> void {
+      NSData* nsData = [NSData dataWithBytes:static_cast<const void*>(data) length:size];
+      FlutterBinaryReply binaryReply = ^void(NSData* replyNSData) {
+        if (reply) {
+          reply(static_cast<const uint8_t*>(replyNSData.bytes), replyNSData.length, nullptr);
+        }
+      };
+      FlutterBinaryMessageHandler handler =
+          (__bridge FlutterBinaryMessageHandler)user_data;
+      handler(nsData, binaryReply);
+    };
+
+    return _embedderAPI.SetMessageHandlerOnQueue(_engine, [channel UTF8String], embedderHandler,
+                                                 &flutterTaskQueueStruct,
+                                                 (__bridge void*)[handler copy]);
+    // return PlatformMessageHandlerIos::SetMessageHandler(channel.UTF8String, handler, taskQueue,
+    // self.platformTaskRunner, message_handler_, message_handlers_mutex);
   }
   if (_shell && _shell->IsSetup()) {
     self.iosPlatformView->GetPlatformMessageHandlerIos()->SetMessageHandler(channel.UTF8String,
@@ -1745,6 +1775,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   }
   flutterArguments.command_line_argc = static_cast<int>(argv.size());
   flutterArguments.command_line_argv = argv.empty() ? nullptr : argv.data();
+  flutterArguments.does_handle_platform_message_on_platform_thread = false;
   flutterArguments.platform_message_callback = (FlutterPlatformMessageCallback)OnPlatformMessage;
   flutterArguments.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
                                                   void* user_data) {
@@ -2079,43 +2110,45 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)engineCallbackOnPlatformMessage:(const FlutterPlatformMessage*)message {
-  // TODO(cyanglaz) embedder api
-  NSData* messageData = nil;
-  if (message->message_size > 0) {
-    messageData = [NSData dataWithBytesNoCopy:(void*)message->message
-                                       length:message->message_size
-                                 freeWhenDone:NO];
-  }
-  NSString* channel = @(message->channel);
-  __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
-  __block FlutterEngine* weakSelf = self;
-  NSMutableArray* isResponseValid = self.isResponseValid;
-  FlutterEngineSendPlatformMessageResponseFnPtr sendPlatformMessageResponse =
-      _embedderAPI.SendPlatformMessageResponse;
-  FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
-    @synchronized(isResponseValid) {
-      if (![isResponseValid[0] boolValue]) {
-        // Ignore, engine was killed.
-        return;
-      }
-      if (responseHandle) {
-        sendPlatformMessageResponse(weakSelf->_engine, responseHandle,
-                                    static_cast<const uint8_t*>(response.bytes), response.length);
-        responseHandle = NULL;
-      } else {
-        NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
-               "on channel '%@'.",
-              channel);
-      }
-    }
-  };
+  // // TODO(cyanglaz) embedder api
+  // NSData* messageData = nil;
+  // if (message->message_size > 0) {
+  //   messageData = [NSData dataWithBytesNoCopy:(void*)message->message
+  //                                      length:message->message_size
+  //                                freeWhenDone:NO];
+  // }
+  // NSString* channel = @(message->channel);
+  // __block const FlutterPlatformMessageResponseHandle* responseHandle = message->response_handle;
+  // __block FlutterEngine* weakSelf = self;
+  // NSMutableArray* isResponseValid = self.isResponseValid;
+  // FlutterEngineSendPlatformMessageResponseFnPtr sendPlatformMessageResponse =
+  //     _embedderAPI.SendPlatformMessageResponse;
+  // FlutterBinaryReply binaryResponseHandler = ^(NSData* response) {
+  //   @synchronized(isResponseValid) {
+  //     if (![isResponseValid[0] boolValue]) {
+  //       // Ignore, engine was killed.
+  //       return;
+  //     }
+  //     if (responseHandle) {
+  //       sendPlatformMessageResponse(weakSelf->_engine, responseHandle,
+  //                                   static_cast<const uint8_t*>(response.bytes),
+  //                                   response.length);
+  //       responseHandle = NULL;
+  //     } else {
+  //       NSLog(@"Error: Message responses can be sent only once. Ignoring duplicate response "
+  //              "on channel '%@'.",
+  //             channel);
+  //     }
+  //   }
+  // };
 
-  FlutterEngineHandlerInfo* handlerInfo = _messengerHandlers[channel];
-  if (handlerInfo) {
-    handlerInfo.handler(messageData, binaryResponseHandler);
-  } else {
-    binaryResponseHandler(nil);
-  }
+  // FlutterEngineHandlerInfo* handlerInfo = _messengerHandlers[channel];
+  // if (handlerInfo) {
+  //   handlerInfo.handler(messageData, binaryResponseHandler);
+  // } else {
+  //   binaryResponseHandler(nil);
+  // }
+  // PlatformMessageHandlerIos::HandlePlatformMessage(message_handlers_,  )
 }
 
 - (void)engineCallbackFlutterSemanticsUpdate:(const FlutterSemanticsUpdate*)update {

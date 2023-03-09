@@ -14,6 +14,8 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_texture_resolver.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
+#include "flutter/shell/platform/embedder/platform_view_embedder.h"
+
 namespace flutter {
 
 struct ShellArgs;
@@ -83,6 +85,12 @@ class EmbedderEngine {
       const std::function<void(FlutterNativeThreadType)>& closure) const;
 
   bool ScheduleFrame();
+
+  int64_t SetMessageHandlerOnQueue(
+      const char* channel,
+      FlutterEmbedderMessageHandler handler,
+      std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
+      void* user_data);
 
   Shell& GetShell();
 

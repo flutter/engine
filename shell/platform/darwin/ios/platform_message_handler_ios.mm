@@ -11,10 +11,6 @@
 
 static uint64_t platform_message_counter = 1;
 
-@protocol FlutterTaskQueue
-- (void)dispatch:(dispatch_block_t)block;
-@end
-
 @interface FLTSerialTaskQueue : NSObject <FlutterTaskQueue>
 @property(nonatomic, strong) dispatch_queue_t queue;
 @end

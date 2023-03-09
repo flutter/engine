@@ -9,6 +9,7 @@
 
 #include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
+#include "flutter/fml/closure.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
@@ -28,6 +29,19 @@
 #endif
 
 namespace flutter {
+
+class PlatformMessageTaskQueue {
+ public:
+  typedef void (*TaskQueueCallback)(fml::closure, void*);
+
+  PlatformMessageTaskQueue(const TaskQueueCallback& task_queue_call_back, void* user_data);
+
+  void CallDispatch(fml::closure callback);
+
+ private:
+  const TaskQueueCallback task_queue_call_back_;
+  void* user_data_;
+};
 
 class PlatformViewEmbedder final : public PlatformView {
  public:
@@ -105,6 +119,12 @@ class PlatformViewEmbedder final : public PlatformView {
   std::shared_ptr<PlatformMessageHandler> GetPlatformMessageHandler()
       const override;
 
+  int64_t SetMessageHandlerOnQueue(
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
+    void* user_data);
+
  private:
   class EmbedderPlatformMessageHandler;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
@@ -130,6 +150,17 @@ class PlatformViewEmbedder final : public PlatformView {
   // |PlatformView|
   std::unique_ptr<std::vector<std::string>> ComputePlatformResolvedLocales(
       const std::vector<std::string>& supported_locale_data) override;
+
+  struct HandlerInfo {
+    std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue;
+    FlutterEmbedderMessageHandler handler;
+    void* user_data;
+    int64_t connection;
+  };
+
+  std::unordered_map<std::string, HandlerInfo> message_handlers_;
+  std::mutex message_handlers_mutex_;
+  int64_t current_connection = 1;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformViewEmbedder);
 };

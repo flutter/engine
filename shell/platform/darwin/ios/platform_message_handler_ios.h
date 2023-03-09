@@ -13,7 +13,9 @@
 #include "flutter/shell/common/platform_message_handler.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 
-@protocol FlutterTaskQueue;
+@protocol FlutterTaskQueue
+- (void)dispatch:(dispatch_block_t)block;
+@end
 
 namespace flutter {
 

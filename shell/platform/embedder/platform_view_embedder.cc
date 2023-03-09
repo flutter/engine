@@ -8,6 +8,8 @@
 
 #include "flutter/fml/make_copyable.h"
 
+static uint64_t platform_message_counter = 1;
+
 namespace flutter {
 
 class PlatformViewEmbedder::EmbedderPlatformMessageHandler
@@ -20,19 +22,24 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
         platform_task_runner_(std::move(platform_task_runner)) {}
 
   virtual void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
-    platform_task_runner_->PostTask(fml::MakeCopyable(
-        [parent = parent_, message = std::move(message)]() mutable {
-          if (parent) {
-            parent->HandlePlatformMessage(std::move(message));
-          } else {
-            FML_DLOG(WARNING) << "Deleted engine dropping message on channel "
-                              << message->channel();
-          }
-        }));
+    if (!DoesHandlePlatformMessageOnPlatformThread()) {
+      parent_->HandlePlatformMessage(std::move(message));
+      return;
+    }
+
+    // platform_task_runner_->PostTask(fml::MakeCopyable(
+    //     [parent = parent_, message = std::move(message)]() mutable {
+    //       if (parent) {
+    //         parent->HandlePlatformMessage(std::move(message));
+    //       } else {
+    //         FML_DLOG(WARNING) << "Deleted engine dropping message on channel "
+    //                           << message->channel();
+    //       }
+    //     }));
   }
 
   virtual bool DoesHandlePlatformMessageOnPlatformThread() const {
-    return true;
+    return false;
   }
 
   virtual void InvokePlatformMessageResponseCallback(
@@ -125,22 +132,114 @@ void PlatformViewEmbedder::UpdateSemantics(
   }
 }
 
+  // struct HandlerInfo {
+  //   std::unique_ptr<flutter::PlatformMessageTaskQueue> task_queue;
+  //   FlutterEmbedderMessageHandler handler;
+  //   void* user_data;
+  //   int64_t connection;
+  // };
+
 void PlatformViewEmbedder::HandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) {
   if (!message) {
     return;
   }
 
-  if (platform_dispatch_table_.platform_message_response_callback == nullptr) {
-    if (message->response()) {
-      message->response()->CompleteEmpty();
+  fml::RefPtr<flutter::PlatformMessageResponse> completer = message->response();
+  HandlerInfo handler_info;
+  {
+    std::lock_guard lock(message_handlers_mutex_);
+    auto it = message_handlers_.find(message->channel());
+    if (it != message_handlers_.end()) {
+      handler_info = it->second;
     }
-    return;
+  }
+  if (handler_info.handler) {
+    FlutterEmbedderMessageHandler handler = handler_info.handler;
+    const uint8_t* data = nullptr;
+    size_t size = 0;
+    if (message->hasData()) {
+      data = message->data().GetMapping();
+      size = message->data().GetSize();
+    }
+
+    uint64_t platform_message_id = platform_message_counter++;
+    TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler", platform_message_id,
+                             "channel", message->channel().c_str());
+    fml::closure run_handler = []() {};
+      // handler(data, size, handler_info.user_data, nullptr);
+      // handler(data, size, handler_info.user_data, [&completer, &platform_message_id](const uint8_t* data,
+      //                               size_t size,
+      //                               void* user_data) {
+        // TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleHandler", platform_message_id);
+        // // Called from any thread.
+        // if (completer) {
+        //   if (size > 0) {
+        //     completer->Complete(std::make_unique<fml::NonOwnedMapping>(data, size));
+        //   } else {
+        //     completer->CompleteEmpty();
+        //   }
+        // }
+      // });
+    // };
+
+    if (handler_info.task_queue.get()) {
+      handler_info.task_queue.get()->CallDispatch(run_handler);
+    } else {
+      task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
+        [&run_handler]() mutable {
+          run_handler();
+        }));
+    }
+  }
+  else {
+    if (completer) {
+      completer->CompleteEmpty();
+    }
   }
 
-  platform_dispatch_table_.platform_message_response_callback(
-      std::move(message));
+
+
+
+  // if (platform_dispatch_table_.platform_message_response_callback == nullptr) {
+  //   if (message->response()) {
+  //     message->response()->CompleteEmpty();
+  //   }
+  //   return;
+  // }
+
+  // platform_dispatch_table_.platform_message_response_callback(
+  //     std::move(message));
 }
+
+int64_t PlatformViewEmbedder::SetMessageHandlerOnQueue(
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
+    void* user_data) {
+  FML_CHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+  std::lock_guard lock(message_handlers_mutex_);
+  message_handlers_.erase(channel);
+  if (handler) {
+    message_handlers_[channel] = {
+        .task_queue = task_queue,
+        .handler = handler,
+        .user_data = std::move(user_data),
+        .connection = ++current_connection,
+    };
+  }
+  return current_connection;
+}
+
+// bool PlatformViewEmbedder::DoesHandlePlatformMessageOnPlatformThread () {
+//   if
+//   (platform_dispatch_table_.does_handle_platform_message_on_platform_thread
+//   == nullptr) {
+//     return true;
+//   }
+//   return
+//   platform_dispatch_table_.does_handle_platform_message_on_platform_thread();
+// }
 
 // |PlatformView|
 std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
@@ -201,6 +300,15 @@ void PlatformViewEmbedder::OnPreEngineRestart() const {
 std::shared_ptr<PlatformMessageHandler>
 PlatformViewEmbedder::GetPlatformMessageHandler() const {
   return platform_message_handler_;
+}
+
+PlatformMessageTaskQueue::PlatformMessageTaskQueue(
+    const TaskQueueCallback& task_queue_call_back, void* user_data)
+    : task_queue_call_back_(task_queue_call_back),
+      user_data_(user_data) {}
+
+void PlatformMessageTaskQueue::CallDispatch(fml::closure callback) {
+  task_queue_call_back_(callback, user_data_);
 }
 
 }  // namespace flutter

@@ -1073,6 +1073,16 @@ typedef struct {
   const FlutterPlatformMessageResponseHandle* response_handle;
 } FlutterPlatformMessage;
 
+typedef void (*DispatchCallback)();
+typedef void (*TaskQueueCallback)(DispatchCallback /* dispatch_call */,
+                                  void* /* user_data */ );
+typedef struct {
+  size_t struct_size;
+
+  TaskQueueCallback dispatch_call;
+  void* user_data;
+} FlutterTaskQueueEmbedder;
+
 typedef void (*FlutterPlatformMessageCallback)(
     const FlutterPlatformMessage* /* message*/,
     void* /* user data */);
@@ -1080,6 +1090,11 @@ typedef void (*FlutterPlatformMessageCallback)(
 typedef void (*FlutterDataCallback)(const uint8_t* /* data */,
                                     size_t /* size */,
                                     void* /* user data */);
+
+typedef void (*FlutterEmbedderMessageHandler)(const uint8_t* /* data */,
+                                              size_t /* size */,
+                                              void* /* user_data */,
+                                              FlutterDataCallback /* reply */);
 
 /// The identifier of the platform view. This identifier is specified by the
 /// application when a platform view is added to the scene via the
@@ -1988,6 +2003,8 @@ typedef struct {
   /// If this callback is provided, update_semantics_node_callback and
   /// update_semantics_custom_action_callback must not be provided.
   FlutterUpdateSemanticsCallback update_semantics_callback;
+
+  bool does_handle_platform_message_on_platform_thread;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
@@ -2706,6 +2723,14 @@ bool FlutterEngineNotifyCreated(FLUTTER_API_SYMBOL(FlutterEngine) engine);
 FLUTTER_EXPORT
 bool FlutterEngineNotifyDestroyed(FLUTTER_API_SYMBOL(FlutterEngine) engine);
 
+FLUTTER_EXPORT
+int64_t FlutterEngineSetMessageHandlerOnQueue(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    FlutterTaskQueueEmbedder* task_queue,
+    void* user_data);
+
 #endif  // !FLUTTER_ENGINE_NO_PROTOTYPES
 
 // Typedefs for the function pointers in FlutterEngineProcTable.
@@ -2835,6 +2860,12 @@ typedef bool (*FlutterEngineNotifyCreatedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef bool (*FlutterEngineNotifyDestroyedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
+typedef int64_t (*FlutterEngineSetMessageHandlerOnQueueFnPtr)(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const char* channel,
+    FlutterEmbedderMessageHandler handler,
+    FlutterTaskQueueEmbedder* task_queue,
+    void* user_data);
 
 /// Function-pointer-based versions of the APIs above.
 typedef struct {
@@ -2884,6 +2915,7 @@ typedef struct {
   FlutterEngineWaitForFirstFrameFnPtr WaitForFirstFrame;
   FlutterEngineNotifyCreatedFnPtr NotifyCreated;
   FlutterEngineNotifyDestroyedFnPtr NotifyDestroyed;
+  FlutterEngineSetMessageHandlerOnQueueFnPtr SetMessageHandlerOnQueue;
 } FlutterEngineProcTable;
 
 //------------------------------------------------------------------------------
