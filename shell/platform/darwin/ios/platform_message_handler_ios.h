@@ -13,7 +13,9 @@
 #include "flutter/shell/common/platform_message_handler.h"
 #import "flutter/shell/platform/darwin/common/framework/Headers/FlutterBinaryMessenger.h"
 
-@protocol FlutterTaskQueue;
+@protocol FlutterTaskQueue
+- (void)dispatch:(dispatch_block_t)block;
+@end
 
 namespace flutter {
 
@@ -25,7 +27,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
-  bool DoesHandlePlatformMessageOnPlatformThread() const override { return false; }
+  bool DoesHandlePlatformMessageOnPlatformThread() const override;
 
   void InvokePlatformMessageResponseCallback(int response_id,
                                              std::unique_ptr<fml::Mapping> mapping) override;
