@@ -16,12 +16,12 @@ ColorSourceTextContents::~ColorSourceTextContents() = default;
 
 void ColorSourceTextContents::SetTextContents(
     std::shared_ptr<TextContents> text_contents) {
-  text_contents_ = text_contents;
+  text_contents_ = std::move(text_contents);
 }
 
 void ColorSourceTextContents::SetColorSourceContents(
     std::shared_ptr<ColorSourceContents> color_source_contents) {
-  color_source_contents_ = color_source_contents;
+  color_source_contents_ = std::move(color_source_contents);
 }
 
 std::optional<Rect> ColorSourceTextContents::GetCoverage(
