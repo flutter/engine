@@ -15,9 +15,17 @@ void main() {
 void testMain() {
   setUpCanvasKitTest();
 
+  late SkUint32List breaks;
+
+  tearDown(() {
+    if (browserSupportsCanvaskitChromium) {
+      free(breaks);
+    }
+  });
+
   group('$fragmentUsingIntlSegmenter', () {
     test('fragments text into words', () {
-      final SkUint32List breaks = fragmentUsingIntlSegmenter(
+      breaks = fragmentUsingIntlSegmenter(
         'Hello world 你好世界',
         IntlSegmenterGranularity.word,
       );
@@ -28,7 +36,7 @@ void testMain() {
     });
 
     test('fragments multi-line text into words', () {
-      final SkUint32List breaks = fragmentUsingIntlSegmenter(
+      breaks = fragmentUsingIntlSegmenter(
         'Lorem ipsum\ndolor 你好世界 sit\namet',
         IntlSegmenterGranularity.word,
       );
@@ -45,7 +53,7 @@ void testMain() {
     test('fragments text into grapheme clusters', () {
       // The smiley emoji has a length of 2.
       // The family emoji has a length of 11.
-      final SkUint32List breaks = fragmentUsingIntlSegmenter(
+      breaks = fragmentUsingIntlSegmenter(
         'Lorem🙂ipsum👨‍👩‍👧‍👦',
         IntlSegmenterGranularity.grapheme,
       );
@@ -61,7 +69,7 @@ void testMain() {
     test('fragments multi-line text into grapheme clusters', () {
       // The smiley emojis have a length of 2 each.
       // The family emoji has a length of 11.
-      final SkUint32List breaks = fragmentUsingIntlSegmenter(
+      breaks = fragmentUsingIntlSegmenter(
         'Lorem🙂\nipsum👨‍👩‍👧‍👦dolor\n😄',
         IntlSegmenterGranularity.grapheme,
       );
@@ -81,7 +89,7 @@ void testMain() {
     const int kHard = 1;
 
     test('fragments text into soft and hard line breaks', () {
-      final SkUint32List breaks = fragmentUsingV8LineBreaker(
+      breaks = fragmentUsingV8LineBreaker(
         'Lorem-ipsum 你好🙂\nDolor sit',
       );
       expect(
