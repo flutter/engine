@@ -81,7 +81,7 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
         std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
             buffer_callback_ptr);
 
-        auto dart_state = buffer_callback_ptr->dart_state().lock();
+        auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
         }
@@ -152,7 +152,7 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
             buffer_handle_ptr);
         std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
             buffer_callback_ptr);
-        auto dart_state = buffer_callback_ptr->dart_state().lock();
+        auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
         }
