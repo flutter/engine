@@ -57,12 +57,12 @@ const float kTileModeDecal = 3;
 /// When `t` is between [0 to 1), the original unchanged `t` is always returned.
 float IPFloatTile(float t, float tile_mode) {
   if (tile_mode == kTileModeClamp) {
-    t = clamp(t, 0.0, 1.0);
+    t = clamp(t, 0.0f, 1.0f);
   } else if (tile_mode == kTileModeRepeat) {
     t = fract(t);
   } else if (tile_mode == kTileModeMirror) {
-    float t1 = t - 1;
-    float t2 = t1 - 2 * floor(t1 * 0.5) - 1;
+    float t1 = t - 1.0f;
+    float t2 = t1 - 2.0f * floor(t1 * 0.5f) - 1.0f;
     t = abs(t2);
   }
   return t;
