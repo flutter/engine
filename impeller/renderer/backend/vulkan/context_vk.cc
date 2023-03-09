@@ -51,7 +51,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
   }
 
   const auto prefix = impeller::vk::to_string(
-      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT(severity));
   // Just so that the log doesn't say FML_DCHECK(false).
   constexpr bool kVulkanValidationFailure = false;
   FML_DCHECK(kVulkanValidationFailure)
@@ -79,6 +79,8 @@ bool HasValidationLayers() {
 
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+    // Used by VMA; part of Vulkan 1.1 core.
+    VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
 #endif
