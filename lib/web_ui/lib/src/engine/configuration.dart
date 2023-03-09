@@ -44,6 +44,8 @@
 @JS()
 library configuration;
 
+import 'package:web_sdk_version/web_sdk_version.dart';
+
 import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
@@ -182,7 +184,7 @@ class FlutterConfiguration {
   String get canvasKitBaseUrl => _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
-    defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
+    defaultValue: 'https://gstatic.com/flutter-canvaskit/$flutterWebSdkVersion/'
   );
 
   /// The variant of CanvasKit to download.
