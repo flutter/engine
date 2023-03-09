@@ -37,10 +37,7 @@ void main() {
 
       PlatformDispatcher.instance.implicitView!.render(scene);
       scene.dispose();
-      // window.onBeginFrame = (Duration timeStamp) {
-        completer.complete();
-      // };
-      // window.scheduleFrame();
+      completer.complete();
     };
     PlatformDispatcher.instance.scheduleFrame();
     await completer.future;
