@@ -65,13 +65,11 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
     return false;
   }
 
-  auto size = new_texture->GetSize();
-  auto bds = Rect::MakeXYWH(position_.x, position_.y, size.width, size.height)
-                 .TransformBounds(transform.Invert());
-  auto bds_2 =
-      Rect::MakeXYWH(position_.x, position_.y, bds.size.width, bds.size.height);
+  auto dest_rect = Rect::MakeSize(new_texture->GetSize())
+                       .TransformBounds(transform.Invert())
+                       .Shift(position_);
 
-  auto texture_contents = TextureContents::MakeRect(bds_2);
+  auto texture_contents = TextureContents::MakeRect(dest_rect);
   texture_contents->SetTexture(new_texture);
   texture_contents->SetSourceRect(Rect::MakeSize(new_texture->GetSize()));
   return texture_contents->Render(renderer, entity, pass);
