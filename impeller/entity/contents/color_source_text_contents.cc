@@ -40,12 +40,8 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
   if (!coverage.has_value()) {
     return true;
   }
+  auto transform = entity.GetTransformation();
 
-  std::cerr << "Coverage Origin: " << coverage->origin << std::endl;
-  std::cerr << "Text Position: " << position_ << std::endl;
-  // auto origin = coverage->origin;
-  // auto effect_transform = Matrix::MakeTranslation(Vector3(-origin.x,
-  // -origin.y, 0)); text_contents_->SetInverseMatrix(effect_transform);
   text_contents_->SetColor(Color::Black());
   color_source_contents_->SetGeometry(
       Geometry::MakeRect(Rect::MakeSize(coverage->size)));
@@ -53,21 +49,29 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
   auto new_texture = renderer.MakeSubpass(
       "Text Color Blending", ISize::Ceil(coverage.value().size),
       [&](const ContentContext& context, RenderPass& pass) {
-        Entity entity;
-        entity.SetContents(text_contents_);
-        entity.SetBlendMode(BlendMode::kSource);
-        if (!entity.Render(context, pass)) {
+        Entity sub_entity;
+        sub_entity.SetTransformation(transform);
+        sub_entity.SetContents(text_contents_);
+        sub_entity.SetBlendMode(BlendMode::kSource);
+        if (!sub_entity.Render(context, pass)) {
           return false;
         }
 
-        entity.SetContents(color_source_contents_);
-        entity.SetBlendMode(BlendMode::kSourceIn);
-        return entity.Render(context, pass);
+        sub_entity.SetContents(color_source_contents_);
+        sub_entity.SetBlendMode(BlendMode::kSourceIn);
+        return sub_entity.Render(context, pass);
       });
   if (!new_texture) {
     return false;
   }
-  auto texture_contents = TextureContents::MakeRect(coverage.value());
+
+  auto size = new_texture->GetSize();
+  auto bds = Rect::MakeXYWH(position_.x, position_.y, size.width, size.height)
+                 .TransformBounds(transform.Invert());
+  auto bds_2 =
+      Rect::MakeXYWH(position_.x, position_.y, bds.size.width, bds.size.height);
+
+  auto texture_contents = TextureContents::MakeRect(bds_2);
   texture_contents->SetTexture(new_texture);
   texture_contents->SetSourceRect(Rect::MakeSize(new_texture->GetSize()));
   return texture_contents->Render(renderer, entity, pass);

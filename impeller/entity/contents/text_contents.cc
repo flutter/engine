@@ -164,8 +164,10 @@ static bool CommonRender(
 
       auto uv_scaler_a = atlas_glyph_pos->size / atlas_size;
       auto uv_scaler_b = (Point::Round(atlas_glyph_pos->origin) / atlas_size);
-      auto translation = Matrix::MakeTranslation(
-          Vector3(offset_glyph_position.x, offset_glyph_position.y, 0));
+      auto translation =
+          Matrix::MakeTranslation(
+              Vector3(offset_glyph_position.x, offset_glyph_position.y, 0)) *
+          inverse_matrix;
 
       for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
