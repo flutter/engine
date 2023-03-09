@@ -1,4 +1,4 @@
-Signature: 3b439c79749ab1a71ef2b21c0b2018f1
+Signature: 4d5d9b798bbfe799182c26e35c73124b
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -54,6 +54,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
@@ -258,6 +259,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
@@ -1810,6 +1812,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
@@ -2014,6 +2017,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
@@ -4172,6 +4176,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/shm.h
@@ -4376,6 +4381,7 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/msg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/null.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/posix.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/reg.h
+FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/riscv64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/shm.h
