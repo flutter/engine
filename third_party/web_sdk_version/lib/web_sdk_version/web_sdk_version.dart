@@ -7,4 +7,4 @@
 // development.
 
 /// The Git SHA of the Flutter Engine.
-const String flutterWebSdkVersion = 'IF YOU SEE THIS FILE A BUG: https://github.com/flutter/flutter/issues/new?assignees=&labels=&template=2_bug.md&title=';
+const String flutterWebSdkVersion = 'IF YOU SEE THIS, FILE A BUG: https://github.com/flutter/flutter/issues/new?assignees=&labels=&template=2_bug.md&title=';
