@@ -275,6 +275,7 @@
 ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/build/asset_package.py
 ../../../flutter/shell/platform/fuchsia/flutter/build/gen_debug_wrapper_main.py
+../../../flutter/shell/platform/fuchsia/flutter/component_v1_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/component_v2_unittest.cc
 ../../../flutter/shell/platform/fuchsia/flutter/focus_delegate_unittests.cc
 ../../../flutter/shell/platform/fuchsia/flutter/fuchsia_intl_unittest.cc
@@ -1735,6 +1736,9 @@
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
 ../../../third_party/dart/third_party/requirejs
+../../../third_party/dart/third_party/tcmalloc/.gitignore
+../../../third_party/dart/third_party/tcmalloc/OWNERS
+../../../third_party/dart/third_party/tcmalloc/README.dart
 ../../../third_party/dart/tools
 ../../../third_party/dart/utils/OWNERS
 ../../../third_party/dart/utils/compiler/.gitignore
