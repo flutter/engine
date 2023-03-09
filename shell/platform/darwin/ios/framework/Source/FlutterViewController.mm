@@ -814,9 +814,14 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   if ([_engine.get() viewController] == self) {
     [self onUserSettingsChanged:nil];
     [self onAccessibilityStatusChanged:nil];
+
+#if !APPLICATION_EXTENSION_API_ONLY
     if (UIApplication.sharedApplication.applicationState == UIApplicationStateActive) {
+#endif
       [[_engine.get() lifecycleChannel] sendMessage:@"AppLifecycleState.resumed"];
+#if !APPLICATION_EXTENSION_API_ONLY
     }
+#endif
   }
   [super viewDidAppear:animated];
 }
@@ -1304,8 +1309,13 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   // There is no guarantee that UIKit will layout subviews when the application is active. Creating
   // the surface when inactive will cause GPU accesses from the background. Only wait for the first
   // frame to render when the application is actually active.
-  bool applicationIsActive =
+  BOOL applicationIsActive =
+
+#if APPLICATION_EXTENSION_API_ONLY
+      YES;
+#else
       [UIApplication sharedApplication].applicationState == UIApplicationStateActive;
+#endif
 
   // This must run after updateViewportMetrics so that the surface creation tasks are queued after
   // the viewport metrics update tasks.
@@ -1804,6 +1814,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
+#if !APPLICATION_EXTENSION_API_ONLY
   if (new_preferences != _orientationPreferences) {
     _orientationPreferences = new_preferences;
 
@@ -1850,6 +1861,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
       }
     }
   }
+#endif
 }
 
 - (void)onHideHomeIndicatorNotification:(NSNotification*)notification {
@@ -1951,7 +1963,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (CGFloat)textScaleFactor {
+#if APPLICATION_EXTENSION_API_ONLY
+  UIContentSizeCategory category =
+      self.mainScreenIfViewLoaded.traitCollection.preferredContentSizeCategory;
+#else
   UIContentSizeCategory category = [UIApplication sharedApplication].preferredContentSizeCategory;
+#endif
   // The delta is computed by approximating Apple's typography guidelines:
   // https://developer.apple.com/ios/human-interface-guidelines/visual-design/typography/
   //

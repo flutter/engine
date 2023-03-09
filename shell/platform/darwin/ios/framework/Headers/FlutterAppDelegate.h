@@ -24,6 +24,7 @@
  * code as necessary from FlutterAppDelegate.mm.
  */
 FLUTTER_DARWIN_EXPORT
+NS_EXTENSION_UNAVAILABLE_IOS("Disallowed in app extensions")
 @interface FlutterAppDelegate
     : UIResponder <UIApplicationDelegate, FlutterPluginRegistry, FlutterAppLifeCycleProvider>
 
