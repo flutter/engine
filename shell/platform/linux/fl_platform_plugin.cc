@@ -159,7 +159,7 @@ static gchar* get_exit_response(FlMethodResponse* response) {
   }
 
   g_autoptr(GError) error = nullptr;
-  g_autoptr(FlValue) result = fl_method_response_get_result(response, &error);
+  FlValue* result = fl_method_response_get_result(response, &error);
   if (result == nullptr) {
     g_warning("Error returned from System.requestAppExit: %s", error->message);
     return nullptr;
