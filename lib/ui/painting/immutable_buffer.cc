@@ -76,16 +76,17 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
   auto ui_task = fml::MakeCopyable(
       [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
                                                size_t buffer_size) mutable {
-        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
-            buffer_handle_ptr);
-        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
-            buffer_callback_ptr);
-
         auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
         }
         tonic::DartState::Scope scope(dart_state);
+
+        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
+            buffer_handle_ptr);
+        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
+            buffer_callback_ptr);
+
         if (!sk_data) {
           // -1 is used as a sentinel that the file could not be opened.
           tonic::DartInvoke(buffer_callback->Get(), {tonic::ToDart(-1)});
@@ -147,16 +148,17 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
   auto ui_task = fml::MakeCopyable(
       [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
                                                size_t buffer_size) mutable {
-        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
-            buffer_handle_ptr);
-        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
-            buffer_callback_ptr);
-
         auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
         }
         tonic::DartState::Scope scope(dart_state);
+
+        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
+            buffer_handle_ptr);
+        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
+            buffer_callback_ptr);
+
         if (!sk_data) {
           // -1 is used as a sentinel that the file could not be opened.
           tonic::DartInvoke(buffer_callback->Get(), {tonic::ToDart(-1)});
