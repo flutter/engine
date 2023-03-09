@@ -64,19 +64,23 @@ Dart_Handle ImmutableBuffer::initFromAsset(Dart_Handle raw_buffer_handle,
 
   auto* dart_state = UIDartState::Current();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto buffer_callback =
-      std::make_unique<tonic::DartPersistentValue>(dart_state, callback_handle);
-  auto buffer_handle = std::make_unique<tonic::DartPersistentValue>(
-      dart_state, raw_buffer_handle);
+  auto* buffer_callback_ptr =
+      new tonic::DartPersistentValue(dart_state, callback_handle);
+  auto* buffer_handle_ptr =
+      new tonic::DartPersistentValue(dart_state, raw_buffer_handle);
   auto asset_manager = UIDartState::Current()
                            ->platform_configuration()
                            ->client()
                            ->GetAssetManager();
 
   auto ui_task = fml::MakeCopyable(
-      [buffer_callback = std::move(buffer_callback),
-       buffer_handle = std::move(buffer_handle)](const sk_sp<SkData>& sk_data,
-                                                 size_t buffer_size) mutable {
+      [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
+                                               size_t buffer_size) mutable {
+        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
+            buffer_handle_ptr);
+        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
+            buffer_callback_ptr);
+
         auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
@@ -135,15 +139,19 @@ Dart_Handle ImmutableBuffer::initFromFile(Dart_Handle raw_buffer_handle,
 
   auto* dart_state = UIDartState::Current();
   auto ui_task_runner = dart_state->GetTaskRunners().GetUITaskRunner();
-  auto buffer_callback =
-      std::make_unique<tonic::DartPersistentValue>(dart_state, callback_handle);
-  auto buffer_handle = std::make_unique<tonic::DartPersistentValue>(
-      dart_state, raw_buffer_handle);
+  auto* buffer_callback_ptr =
+      new tonic::DartPersistentValue(dart_state, callback_handle);
+  auto* buffer_handle_ptr =
+      new tonic::DartPersistentValue(dart_state, raw_buffer_handle);
 
   auto ui_task = fml::MakeCopyable(
-      [buffer_callback = std::move(buffer_callback),
-       buffer_handle = std::move(buffer_handle)](const sk_sp<SkData>& sk_data,
-                                                 size_t buffer_size) mutable {
+      [buffer_callback_ptr, buffer_handle_ptr](const sk_sp<SkData>& sk_data,
+                                               size_t buffer_size) mutable {
+        std::unique_ptr<tonic::DartPersistentValue> buffer_handle(
+            buffer_handle_ptr);
+        std::unique_ptr<tonic::DartPersistentValue> buffer_callback(
+            buffer_callback_ptr);
+
         auto dart_state = buffer_callback->dart_state().lock();
         if (!dart_state) {
           return;
