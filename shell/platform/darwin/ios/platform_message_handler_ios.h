@@ -45,7 +45,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
  private:
   std::unordered_map<std::string, HandlerInfo> message_handlers_;
-  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
+  const fml::RefPtr<fml::TaskRunner> platform_task_runner_;
   std::mutex message_handlers_mutex_;
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageHandlerIos);
 };

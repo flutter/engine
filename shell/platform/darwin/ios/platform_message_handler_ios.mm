@@ -42,7 +42,7 @@ NSObject<FlutterTaskQueue>* PlatformMessageHandlerIos::MakeBackgroundTaskQueue()
 
 PlatformMessageHandlerIos::PlatformMessageHandlerIos(
     fml::RefPtr<fml::TaskRunner> platform_task_runner)
-    : platform_task_runner_(platform_task_runner) {}
+    : platform_task_runner_(std::move(platform_task_runner)) {}
 
 void PlatformMessageHandlerIos::HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) {
   // This can be called from any isolate's thread.
