@@ -559,10 +559,9 @@ void FlutterWindowsEngine::SendSystemLocales() {
   // Convert the locale list to the locale pointer list that must be provided.
   std::vector<const FlutterLocale*> flutter_locale_list;
   flutter_locale_list.reserve(flutter_locales.size());
-  std::transform(
-      flutter_locales.begin(), flutter_locales.end(),
-      std::back_inserter(flutter_locale_list),
-      [](const auto& arg) -> const auto* { return &arg; });
+  std::transform(flutter_locales.begin(), flutter_locales.end(),
+                 std::back_inserter(flutter_locale_list),
+                 [](const auto& arg) -> const auto* { return &arg; });
   embedder_api_.UpdateLocales(engine_, flutter_locale_list.data(),
                               flutter_locale_list.size());
 }
