@@ -1868,7 +1868,13 @@ extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
   );
-  external bool RequiresClientICU();
+
+  bool RequiresClientICU() {
+    if (!js_util.hasProperty(this, 'RequiresClientICU')) {
+      return false;
+    }
+    return js_util.callMethod(this, 'RequiresClientICU', const <Object>[],) as bool;
+  }
 }
 
 @JS()
