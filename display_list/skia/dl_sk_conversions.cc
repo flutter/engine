@@ -106,6 +106,11 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
       return runtime_effect->skia_runtime_effect()->makeShader(
           sk_uniform_data, sk_samplers.data(), sk_samplers.size());
     }
+#ifdef IMPELLER_ENABLE_3D
+    case DlColorSourceType::kScene:
+      // Impeller Scene is not supported for Skia.
+      return nullptr;
+#endif
   }
 }
 
