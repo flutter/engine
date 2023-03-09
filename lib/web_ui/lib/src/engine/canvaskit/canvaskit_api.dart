@@ -28,8 +28,8 @@ import 'renderer.dart';
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
 
-/// TODO(mdebbar): Turn this on when CanvasKit Chromium is ready.
-/// https://github.com/flutter/flutter/issues/122329
+// TODO(mdebbar): Turn this on when CanvasKit Chromium is ready.
+// https://github.com/flutter/flutter/issues/122329
 const bool _enableCanvasKitChromiumInAutoMode = false;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
