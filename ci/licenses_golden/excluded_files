@@ -177,18 +177,15 @@
 ../../../flutter/lib/ui/window/platform_message_response_dart_unittests.cc
 ../../../flutter/lib/ui/window/pointer_data_packet_converter_unittests.cc
 ../../../flutter/lib/ui/window/pointer_data_packet_unittests.cc
-../../../flutter/lib/web_ui/.dart_tool
 ../../../flutter/lib/web_ui/.gitignore
 ../../../flutter/lib/web_ui/CODE_CONVENTIONS.md
 ../../../flutter/lib/web_ui/README.md
 ../../../flutter/lib/web_ui/analysis_options.yaml
-../../../flutter/lib/web_ui/build
 ../../../flutter/lib/web_ui/dart_test_chrome.yaml
 ../../../flutter/lib/web_ui/dart_test_edge.yaml
 ../../../flutter/lib/web_ui/dart_test_firefox.yaml
 ../../../flutter/lib/web_ui/dart_test_safari.yaml
 ../../../flutter/lib/web_ui/dev
-../../../flutter/lib/web_ui/pubspec.lock
 ../../../flutter/lib/web_ui/pubspec.yaml
 ../../../flutter/lib/web_ui/test
 ../../../flutter/prebuilts
@@ -412,7 +409,6 @@
 ../../../flutter/third_party/web_locale_keymap/README.md
 ../../../flutter/third_party/web_locale_keymap/pubspec.yaml
 ../../../flutter/third_party/web_locale_keymap/test
-../../../flutter/third_party/web_sdk_version/pubspec.yaml
 ../../../flutter/third_party/web_test_fonts/pubspec.yaml
 ../../../flutter/third_party/web_unicode/README.md
 ../../../flutter/third_party/web_unicode/pubspec.yaml
@@ -1739,7 +1735,6 @@
 ../../../third_party/dart/third_party/firefox_jsshell
 ../../../third_party/dart/third_party/mdn/browser-compat-data/README.google
 ../../../third_party/dart/third_party/pkg
-../../../third_party/dart/third_party/pkg_tested
 ../../../third_party/dart/third_party/requirejs
 ../../../third_party/dart/third_party/tcmalloc/.gitignore
 ../../../third_party/dart/third_party/tcmalloc/OWNERS
