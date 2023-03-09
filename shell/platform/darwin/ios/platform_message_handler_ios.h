@@ -23,7 +23,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
  public:
   static NSObject<FlutterTaskQueue>* MakeBackgroundTaskQueue();
 
-  PlatformMessageHandlerIos(const TaskRunners& task_runners);
+  PlatformMessageHandlerIos(fml::RefPtr<fml::TaskRunner> platform_task_runner);
 
   void HandlePlatformMessage(std::unique_ptr<PlatformMessage> message) override;
 
@@ -45,7 +45,7 @@ class PlatformMessageHandlerIos : public PlatformMessageHandler {
 
  private:
   std::unordered_map<std::string, HandlerInfo> message_handlers_;
-  TaskRunners task_runners_;
+  fml::RefPtr<fml::TaskRunner> platform_task_runner_;
   std::mutex message_handlers_mutex_;
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformMessageHandlerIos);
 };
