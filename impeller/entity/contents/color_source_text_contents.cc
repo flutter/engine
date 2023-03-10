@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/contents/color_source_text_contents.h"
-#include <iostream>
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/contents/texture_contents.h"
 #include "impeller/renderer/render_pass.h"
@@ -45,6 +45,12 @@ bool ColorSourceTextContents::Render(const ContentContext& renderer,
   text_contents_->SetColor(Color::Black());
   color_source_contents_->SetGeometry(
       Geometry::MakeRect(Rect::MakeSize(coverage->size)));
+
+  // offset the color source so it behaves as if it were drawn in the original
+  // position.
+  auto effect_transform =
+      color_source_contents_->GetInverseMatrix().Invert().Translate(-position_);
+  color_source_contents_->SetEffectTransform(effect_transform);
 
   auto new_texture = renderer.MakeSubpass(
       "Text Color Blending", ISize::Ceil(coverage.value().size),
