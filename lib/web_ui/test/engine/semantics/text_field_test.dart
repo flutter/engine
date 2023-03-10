@@ -43,7 +43,7 @@ void testMain() {
     setUp(() {
       testTextEditing = HybridTextEditing();
       SemanticsTextEditingStrategy.ensureInitialized(testTextEditing);
-      strategy = SemanticsTextEditingStrategy.instance!;
+      strategy = SemanticsTextEditingStrategy.instance;
       testTextEditing.debugTextEditingStrategyOverride = strategy;
       testTextEditing.configuration = singlelineConfig;
       semantics()
@@ -446,7 +446,7 @@ void testMain() {
     setUp(() {
       testTextEditing = HybridTextEditing();
       SemanticsTextEditingStrategy.ensureInitialized(testTextEditing);
-      strategy = SemanticsTextEditingStrategy.instance!;
+      strategy = SemanticsTextEditingStrategy.instance;
       testTextEditing.debugTextEditingStrategyOverride = strategy;
       testTextEditing.configuration = singlelineConfig;
       debugBrowserEngineOverride = BrowserEngine.webkit;
