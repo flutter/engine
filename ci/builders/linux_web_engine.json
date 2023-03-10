@@ -73,20 +73,7 @@
             }
         }
     ],
-    "generators": {
-        "tasks": [
-            {
-                "name": "copy web_tests artifacts",
-                "parameters": [
-                    "test",
-                    "--copy-artifacts"
-                ],
-                "scripts": [
-                    "flutter/lib/web_ui/dev/felt"
-                ]
-            }
-        ]
-    },
+    "generators": {},
     "tests": [
         {
             "name": "linux chrome dart2js web tests",
@@ -97,6 +84,7 @@
             "parameters": [
                 "test",
                 "--run",
+                "--copy-artifacts",
                 "--suite=chrome-dart2js-html-engine",
                 "--suite=chrome-dart2js-html-html",
                 "--suite=chrome-dart2js-html-ui",
