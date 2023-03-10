@@ -3851,11 +3851,9 @@ TEST_F(ShellTest, PictureToImageSync) {
   DestroyShell(std::move(shell));
 }
 
+#if SHELL_ENABLE_GL
+// This test uses the GL backend and refers to symbols in egl.h
 TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
-#if !SHELL_ENABLE_GL
-  // This test uses the GL backend.
-  GTEST_SKIP();
-#endif  // !SHELL_ENABLE_GL
   // make it easier to trample the GL context by running on a single task
   // runner.
   ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
@@ -3903,6 +3901,7 @@ TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell), task_runners);
 }
+#endif  // SHELL_ENABLE_GL
 
 TEST_F(ShellTest, PluginUtilitiesCallbackHandleErrorHandling) {
   auto settings = CreateSettingsForFixture();
