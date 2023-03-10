@@ -31,11 +31,15 @@
                     "flutter/web_sdk:flutter_web_sdk_archive"
                 ]
             },
+            "tests": []
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "name": "web_tests",
             "generators": {
-                "pub_dirs": [
-                    "flutter/lib/web_ui/",
-                    "flutter/web_sdk/web_engine_tester/"
-                ],
                 "tasks": [
                     {
                         "name": "compile web_tests",
@@ -66,8 +70,7 @@
                         ]
                     }
                 ]
-            },
-            "tests": []
+            }
         }
     ],
     "tests": [
