@@ -293,6 +293,8 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&result, &image_info, &display_list] {
+            // TODO(dnfield): This isn't safe if display_list contains any GPU
+            // resources like an SkImage_gpu.
             result = MakeBitmapImage(display_list, image_info);
           })
           .SetIfFalse([&result, &image_info, &display_list,
@@ -300,6 +302,8 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
                        gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
+              // TODO(dnfield): This isn't safe if display_list contains any GPU
+              // resources like an SkImage_gpu.
               result = MakeBitmapImage(display_list, image_info);
               return;
             }
