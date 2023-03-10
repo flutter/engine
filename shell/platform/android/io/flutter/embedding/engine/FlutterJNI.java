@@ -33,7 +33,10 @@ import io.flutter.plugin.platform.PlatformViewsController;
 import io.flutter.util.Preconditions;
 import io.flutter.view.AccessibilityBridge;
 import io.flutter.view.FlutterCallbackInformation;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -170,6 +173,7 @@ public class FlutterJNI {
       @Nullable String bundlePath,
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
+      @Nullable String shorebirdYaml,
       long initTimeMillis);
 
   /**
@@ -195,8 +199,22 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.init called more than once");
     }
 
+    String shorebirdYaml = null;
+    try {
+      InputStream yaml = context.getAssets().open("flutter_assets/shorebird.yaml");
+      BufferedReader r = new BufferedReader(new InputStreamReader(yaml));
+      StringBuilder total = new StringBuilder();
+      for (String line; (line = r.readLine()) != null; ) {
+          total.append(line).append('\n');
+      }
+      shorebirdYaml = total.toString();
+      Log.w(TAG, "shorebird.yaml: " + shorebirdYaml);
+    } catch (IOException e) {
+      Log.e(TAG, "Failed to load shorebird.yaml", e);
+    }
+
     FlutterJNI.nativeInit(
-        context, args, bundlePath, appStoragePath, engineCachesPath, initTimeMillis);
+        context, args, bundlePath, appStoragePath, engineCachesPath, shorebirdYaml, initTimeMillis);
     FlutterJNI.initCalled = true;
   }
 
