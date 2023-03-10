@@ -79,7 +79,6 @@ const flutter::Settings& FlutterMain::GetSettings() const {
 void ConfigureShorebird(std::string android_cache_path,
                         flutter::Settings& settings,
                         std::string shorebirdYaml) {
-  FML_LOG(INFO) << "android_cache_path " << android_cache_path;
   auto cache_dir =
       fml::paths::JoinPaths({android_cache_path, "shorebird_updater"});
 
