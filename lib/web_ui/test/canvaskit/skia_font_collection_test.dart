@@ -188,7 +188,7 @@ void testMain() {
       await fontCollection.debugDownloadTestFonts();
       fontCollection.registerDownloadedFonts();
       expect(fontCollection.debugRegisteredFonts, isNotEmpty);
-      expect(fontCollection.debugRegisteredFonts?.first.family, 'FlutterTest');
+      expect(fontCollection.debugRegisteredFonts!.first.family, 'FlutterTest');
     });
   });
 }
