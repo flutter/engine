@@ -1,4 +1,4 @@
-Signature: 6ec478c26efdfe5ea8dadbcab077f030
+Signature: d3b81fe86442d501de398da7c89a0800
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8416,8 +8416,6 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.cpp + 
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphicsPipeline.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphicsPipeline.h + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphiteUtils.cpp + ../../../third_party/skia/LICENSE
-ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphiteUtilsPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnResourceProvider.cpp + ../../../third_party/skia/LICENSE
@@ -8429,6 +8427,8 @@ ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnSharedContext.h + ..
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTexture.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTexture.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTypesPriv.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnUtils.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/gpu/graphite/dawn/DawnUtilsPriv.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/geom/Geometry.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/geom/SubRunData.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputePipeline.h + ../../../third_party/skia/LICENSE
@@ -8641,8 +8641,6 @@ FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnCommandBuffer.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphicsPipeline.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphicsPipeline.h
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphiteUtils.cpp
-FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnGraphiteUtilsPriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnQueueManager.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnResourceProvider.cpp
@@ -8654,6 +8652,8 @@ FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnSharedContext.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTexture.cpp
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTexture.h
 FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnTypesPriv.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnUtils.cpp
+FILE: ../../../third_party/skia/src/gpu/graphite/dawn/DawnUtilsPriv.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/Geometry.h
 FILE: ../../../third_party/skia/src/gpu/graphite/geom/SubRunData.h
 FILE: ../../../third_party/skia/src/gpu/graphite/mtl/MtlComputePipeline.h

@@ -2725,6 +2725,7 @@
 ../../../third_party/skia/modules/skunicode/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/include/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/src/BUILD.bazel
+../../../third_party/skia/modules/skunicode/tests
 ../../../third_party/skia/modules/svg/include/BUILD.bazel
 ../../../third_party/skia/modules/svg/src/BUILD.bazel
 ../../../third_party/skia/modules/svg/tests
