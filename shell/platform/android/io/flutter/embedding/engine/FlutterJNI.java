@@ -5,6 +5,8 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.ColorSpace;
@@ -174,6 +176,7 @@ public class FlutterJNI {
       @NonNull String appStoragePath,
       @NonNull String engineCachesPath,
       @Nullable String shorebirdYaml,
+      @Nullable String version,
       long initTimeMillis);
 
   /**
@@ -199,13 +202,23 @@ public class FlutterJNI {
       Log.w(TAG, "FlutterJNI.init called more than once");
     }
 
+    String version = null;
+    try{
+      // Should this be versionName or getLongVersionCode()?
+      // versionName is human readable, but getLongVersionCode() is a
+      // monotonically increasing number.
+      version = context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+    } catch (PackageManager.NameNotFoundException e) {
+      Log.e(TAG, "Failed to read app version.  Shorebird updater can't run.", e);
+    }
+
     String shorebirdYaml = null;
     try {
       InputStream yaml = context.getAssets().open("flutter_assets/shorebird.yaml");
       BufferedReader r = new BufferedReader(new InputStreamReader(yaml));
       StringBuilder total = new StringBuilder();
       for (String line; (line = r.readLine()) != null; ) {
-          total.append(line).append('\n');
+        total.append(line).append('\n');
       }
       shorebirdYaml = total.toString();
       Log.w(TAG, "shorebird.yaml: " + shorebirdYaml);
@@ -214,7 +227,7 @@ public class FlutterJNI {
     }
 
     FlutterJNI.nativeInit(
-        context, args, bundlePath, appStoragePath, engineCachesPath, shorebirdYaml, initTimeMillis);
+        context, args, bundlePath, appStoragePath, engineCachesPath, shorebirdYaml, version, initTimeMillis);
     FlutterJNI.initCalled = true;
   }
 
