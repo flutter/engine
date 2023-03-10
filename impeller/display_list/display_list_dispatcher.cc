@@ -405,6 +405,42 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case Paint::ColorSourceType::kConicalGradient: {
+      const flutter::DlConicalGradientColorSource* conical_gradient =
+          source->asConicalGradient();
+      FML_DCHECK(conical_gradient);
+      Point center = ToPoint(conical_gradient->start_center());
+      SkScalar radius = conical_gradient->start_radius();
+      Point focus_center = ToPoint(conical_gradient->end_center());
+      SkScalar focus_radius = conical_gradient->end_radius();
+      std::vector<Color> colors;
+      std::vector<float> stops;
+      ConvertStops(conical_gradient, &colors, &stops);
+
+      auto tile_mode = ToTileMode(conical_gradient->tile_mode());
+      auto matrix = ToMatrix(conical_gradient->matrix());
+      paint_.color_source = [center, radius, colors = std::move(colors),
+                             stops = std::move(stops), tile_mode, matrix,
+                             focus_center, focus_radius]() {
+        auto contents = std::make_shared<RadialGradientContents>();
+        contents->SetColors(colors);
+        contents->SetStops(stops);
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetTileMode(tile_mode);
+        contents->SetEffectTransform(matrix);
+        contents->SetFocus(focus_center, focus_radius);
+
+        auto radius_pt = Point(radius, radius);
+        std::vector<Point> bounds{center + radius_pt, center - radius_pt};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
+        return contents;
+      };
+      return;
+    }
     case Paint::ColorSourceType::kRadialGradient: {
       const flutter::DlRadialGradientColorSource* radialGradient =
           source->asRadialGradient();
@@ -425,6 +461,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+        contents->SetFocus({}, 0.0);
 
         auto radius_pt = Point(radius, radius);
         std::vector<Point> bounds{center + radius_pt, center - radius_pt};
@@ -541,9 +578,6 @@ void DisplayListDispatcher::setColorSource(
 #endif  // IMPELLER_ENABLE_3D
       return;
     }
-    case Paint::ColorSourceType::kConicalGradient:
-      UNIMPLEMENTED;
-      break;
   }
 }
 
