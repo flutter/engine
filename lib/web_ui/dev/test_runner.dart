@@ -61,6 +61,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             'run the suites and not compile the bundles.'
       )
       ..addFlag(
+        'copy-artifacts',
+        help:
+            'Copy artifacts needed for test suites. If this is specified on '
+            'its own, we will only copy the artifacts and not compile or run'
+            'the tests bundles or suites.'
+      )
+      ..addFlag(
         'require-skia-gold',
         help:
             'Whether we require Skia Gold to be available or not. When this '
@@ -327,16 +334,18 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
 
     bool shouldRun = boolArg('run');
     bool shouldCompile = boolArg('compile');
-    if (!shouldRun && !shouldCompile) {
-      // If neither is specified, we should assume we need to both compile and run.
+    bool shouldCopyArtifacts = boolArg('copy-artifacts');
+    if (!shouldRun && !shouldCompile && !shouldCopyArtifacts) {
+      // If none of these is specified, we should assume we need to do all of them.
       shouldRun = true;
       shouldCompile = true;
+      shouldCopyArtifacts = true;
     }
 
     final Set<FilePath>? testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      CopyArtifactsStep(artifacts),
+      if (shouldCopyArtifacts) CopyArtifactsStep(artifacts),
       if (shouldCompile)
         for (final TestBundle bundle in bundles)
           CompileBundleStep(

@@ -73,6 +73,20 @@
             }
         }
     ],
+    "generators": {
+        "tasks": [
+            {
+                "name": "copy web_tests artifacts",
+                "parameters": [
+                    "test",
+                    "--copy-artifacts"
+                ],
+                "scripts": [
+                    "flutter/lib/web_ui/dev/felt"
+                ]
+            }
+        ]
+    },
     "tests": [
         {
             "name": "linux chrome dart2js web tests",

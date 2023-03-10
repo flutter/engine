@@ -37,12 +37,15 @@ class CopyArtifactsStep implements PipelineStep {
     await copyTestFonts();
     await copySkiaTestImages();
     if (artifactDeps.canvasKit) {
+      print('Copying CanvasKit...');
       await copyCanvasKitFiles('canvaskit', 'canvaskit');
     }
     if (artifactDeps.canvasKitChromium) {
+      print('Copying CanvasKit (Chromium)...');
       await copyCanvasKitFiles('canvaskit_chromium', 'canvaskit/chromium');
     }
     if (artifactDeps.skwasm) {
+      print('Copying Skwasm...');
       await copySkwasm();
     }
   }
