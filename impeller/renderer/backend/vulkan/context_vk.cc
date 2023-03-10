@@ -79,8 +79,6 @@ bool HasValidationLayers() {
 
 static std::set<std::string> kRequiredDeviceExtensions = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-    // Used by VMA; part of Vulkan 1.1 core.
-    VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME,
 #if FML_OS_MACOSX
     "VK_KHR_portability_subset",  // For Molten VK. No define present in header.
 #endif
