@@ -77,7 +77,9 @@ const flutter::Settings& FlutterMain::GetSettings() const {
 
 // TODO: Move this out into a separate file?
 void ConfigureShorebird(std::string android_cache_path,
-                        flutter::Settings& settings) {
+                        flutter::Settings& settings,
+                        std::string shorebirdYaml) {
+  FML_LOG(INFO) << "android_cache_path " << android_cache_path;
   auto cache_dir =
       fml::paths::JoinPaths({android_cache_path, "shorebird_updater"});
 
@@ -86,19 +88,15 @@ void ConfigureShorebird(std::string android_cache_path,
 
   AppParameters app_parameters;
   // TODO: Read from AndroidManifest.xml
-  app_parameters.channel = "stable";
-  app_parameters.client_id = "client_id";
-  app_parameters.product_id = "com.example.product";
   app_parameters.base_version = "1.0.0";
-  app_parameters.update_url = NULL;  // default
 
   app_parameters.original_libapp_path =
       settings.application_library_path[0].c_str();
-  // How do can we get the path to libflutter.so?
+  // TODO: How do can we get the path to libflutter.so?
   app_parameters.vm_path = "libflutter.so";
 
   app_parameters.cache_dir = cache_dir.c_str();
-  shorebird_init(&app_parameters);
+  shorebird_init(&app_parameters, shorebirdYaml.c_str());
 
   FML_LOG(INFO) << "Starting Shorebird update";
   shorebird_update();
@@ -130,6 +128,7 @@ void FlutterMain::Init(JNIEnv* env,
                        jstring kernelPath,
                        jstring appStoragePath,
                        jstring engineCachesPath,
+                       jstring shorebirdYaml,
                        jlong initTimeMillis) {
   std::vector<std::string> args;
   args.push_back("flutter");
@@ -169,7 +168,8 @@ void FlutterMain::Init(JNIEnv* env,
   fml::paths::InitializeAndroidCachesPath(android_cache_path);
 
 #if FLUTTER_RELEASE
-  ConfigureShorebird(android_cache_path, settings);
+  std::string shorebird_yaml = fml::jni::JavaStringToString(env, shorebirdYaml);
+  ConfigureShorebird(android_cache_path, settings, shorebird_yaml);
 #endif
 
   flutter::DartCallbackCache::LoadCacheFromDisk();
@@ -258,7 +258,8 @@ bool FlutterMain::Register(JNIEnv* env) {
       {
           .name = "nativeInit",
           .signature = "(Landroid/content/Context;[Ljava/lang/String;Ljava/"
-                       "lang/String;Ljava/lang/String;Ljava/lang/String;J)V",
+                       "lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/"
+                       "lang/String;J)V",
           .fnPtr = reinterpret_cast<void*>(&Init),
       },
       {
