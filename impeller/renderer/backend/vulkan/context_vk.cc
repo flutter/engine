@@ -51,7 +51,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
   }
 
   const auto prefix = impeller::vk::to_string(
-      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT(severity));
   // Just so that the log doesn't say FML_DCHECK(false).
   constexpr bool kVulkanValidationFailure = false;
   FML_DCHECK(kVulkanValidationFailure)
@@ -557,6 +557,8 @@ ContextVK::ContextVK(
           .SetSupportsFramebufferFetch(false)
           .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
           .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+          // TODO(110622): detect this and enable.
+          .SetSupportsCompute(false, false)
           .Build();
   graphics_command_pool_ = std::move(graphics_command_pool.value);
   descriptor_pool_ = std::move(descriptor_pool.value);
