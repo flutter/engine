@@ -161,7 +161,7 @@ TEST_P(ComputeTest, HeartCubicsToStrokeVertices) {
         quads->AsBufferView().contents);
 
     EXPECT_EQ(q->count, golden_heart_quads.size());
-    for (size_t i = 0; i < golden_heart_quads.size(); i++) {
+    for (size_t i = 0; i < q->count; i++) {
       EXPECT_LT(std::abs(golden_heart_quads[i].p1.x - q->data[i].p1.x), 1e-3);
       EXPECT_LT(std::abs(golden_heart_quads[i].p1.y - q->data[i].p1.y), 1e-3);
 
