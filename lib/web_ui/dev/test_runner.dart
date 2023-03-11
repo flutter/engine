@@ -68,6 +68,11 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             'the tests bundles or suites.'
       )
       ..addFlag(
+        'profile',
+        help:
+            'Use artifacts from the profile build instead of release.'
+      )
+      ..addFlag(
         'require-skia-gold',
         help:
             'Whether we require Skia Gold to be available or not. When this '
@@ -345,7 +350,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final Set<FilePath>? testFiles = targetFiles.isEmpty ? null : Set<FilePath>.from(targetFiles);
     final Pipeline testPipeline = Pipeline(steps: <PipelineStep>[
       if (isWatchMode) ClearTerminalScreenStep(),
-      if (shouldCopyArtifacts) CopyArtifactsStep(artifacts),
+      if (shouldCopyArtifacts) CopyArtifactsStep(artifacts, isProfile: boolArg('profile')),
       if (shouldCompile)
         for (final TestBundle bundle in bundles)
           CompileBundleStep(
