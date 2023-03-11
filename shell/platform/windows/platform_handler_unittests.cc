@@ -370,7 +370,8 @@ TEST_F(PlatformHandlerTest, ClipboardSetData) {
   EXPECT_EQ(result, "[null]");
 }
 
-TEST_F(PlatformHandlerTest, ClipboardSetDataNullText) {
+// Regression test for: https://github.com/flutter/flutter/issues/121976
+TEST_F(PlatformHandlerTest, ClipboardSetDataTextMustBeString) {
   use_engine_with_view();
 
   TestBinaryMessenger messenger;
