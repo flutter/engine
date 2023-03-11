@@ -236,19 +236,18 @@ void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
 void DlSkCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list,
     SkScalar opacity) {
-  int restore_count;
+  const int restore_count = canvas_->getSaveCount();
 
   // Compute combined opacity and figure out whether we can apply it
   // during dispatch or if we need a saveLayer.
   SkScalar combined_opacity = opacity * this->opacity();
   if (combined_opacity < SK_Scalar1 &&
       !display_list->can_apply_group_opacity()) {
-    SkPaint save_paint;
-    save_paint.setAlphaf(combined_opacity);
-    restore_count = canvas_->saveLayer(display_list->bounds(), &save_paint);
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+    canvas_->saveLayerAlphaf(&display_list->bounds(), combined_opacity);
     combined_opacity = SK_Scalar1;
   } else {
-    restore_count = canvas_->save();
+    canvas_->save();
   }
 
   // Create a new CanvasDispatcher to isolate the actions of the
