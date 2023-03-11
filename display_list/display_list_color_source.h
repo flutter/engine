@@ -702,8 +702,6 @@ class DlSceneColorSource final : public DlColorSource {
 
   impeller::Matrix camera_matrix() const { return camera_matrix_; }
 
-  sk_sp<SkShader> skia_object() const override { return nullptr; }
-
  protected:
   bool equals_(DlColorSource const& other) const override {
     FML_DCHECK(other.type() == DlColorSourceType::kScene);
