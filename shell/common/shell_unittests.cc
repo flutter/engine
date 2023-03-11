@@ -11,6 +11,10 @@
 #include <utility>
 #include <vector>
 
+#if SHELL_ENABLE_GL
+#include <EGL/egl.h>
+#endif  // SHELL_ENABLE_GL
+
 #include "assets/directory_asset_bundle.h"
 #include "common/graphics/persistent_cache.h"
 #include "flutter/flow/layers/backdrop_filter_layer.h"
@@ -19,6 +23,7 @@
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 #include "flutter/flow/layers/platform_view_layer.h"
 #include "flutter/flow/layers/transform_layer.h"
+#include "flutter/fml/backtrace.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/dart/dart_converter.h"
 #include "flutter/fml/make_copyable.h"
@@ -192,6 +197,42 @@ class TestAssetResolver : public AssetResolver {
  private:
   bool valid_;
   AssetResolver::AssetResolverType type_;
+};
+
+class ThreadCheckingAssetResolver : public AssetResolver {
+ public:
+  explicit ThreadCheckingAssetResolver(
+      std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop)
+      : concurrent_loop_(std::move(concurrent_loop)) {}
+
+  // |AssetResolver|
+  bool IsValid() const override { return true; }
+
+  // |AssetResolver|
+  bool IsValidAfterAssetManagerChange() const override { return true; }
+
+  // |AssetResolver|
+  AssetResolverType GetType() const {
+    return AssetResolverType::kApkAssetProvider;
+  }
+
+  // |AssetResolver|
+  std::unique_ptr<fml::Mapping> GetAsMapping(
+      const std::string& asset_name) const override {
+    if (asset_name == "FontManifest.json") {
+      // This file is loaded directly by the engine.
+      return nullptr;
+    }
+    mapping_requests.push_back(asset_name);
+    EXPECT_TRUE(concurrent_loop_->RunsTasksOnCurrentThread())
+        << fml::BacktraceHere();
+    return nullptr;
+  }
+
+  mutable std::vector<std::string> mapping_requests;
+
+ private:
+  std::shared_ptr<fml::ConcurrentMessageLoop> concurrent_loop_;
 };
 
 static bool ValidateShell(Shell* shell) {
@@ -3805,6 +3846,39 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
   ASSERT_FALSE(DartVMRef::IsInstanceRunning());
 }
 
+TEST_F(ShellTest, ImmutableBufferLoadsAssetOnBackgroundThread) {
+  Settings settings = CreateSettingsForFixture();
+  auto task_runner = CreateNewThread();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+  std::unique_ptr<Shell> shell = CreateShell(settings, task_runners);
+
+  fml::CountDownLatch latch(1);
+  AddNativeCallback("NotifyNative",
+                    CREATE_NATIVE_ENTRY([&](auto args) { latch.CountDown(); }));
+
+  // Create the surface needed by rasterizer
+  PlatformViewNotifyCreated(shell.get());
+
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  configuration.SetEntrypoint("testThatAssetLoadingHappensOnWorkerThread");
+  auto asset_manager = configuration.GetAssetManager();
+  auto test_resolver = std::make_unique<ThreadCheckingAssetResolver>(
+      shell->GetDartVM()->GetConcurrentMessageLoop());
+  auto leaked_resolver = test_resolver.get();
+  asset_manager->PushBack(std::move(test_resolver));
+
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  EXPECT_EQ(leaked_resolver->mapping_requests[0], "DoesNotExist");
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+
 TEST_F(ShellTest, PictureToImageSync) {
 #if !SHELL_ENABLE_GL
   // This test uses the GL backend.
@@ -3819,6 +3893,11 @@ TEST_F(ShellTest, PictureToImageSync) {
                   false,                                          //
                   ShellTestPlatformView::BackendType::kGLBackend  //
       );
+
+  AddNativeCallback("NativeOnBeforeToImageSync",
+                    CREATE_NATIVE_ENTRY([&](auto args) {
+                      // nop
+                    }));
 
   fml::CountDownLatch latch(2);
   AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
@@ -3841,6 +3920,58 @@ TEST_F(ShellTest, PictureToImageSync) {
   PlatformViewNotifyDestroyed(shell.get());
   DestroyShell(std::move(shell));
 }
+
+#if SHELL_ENABLE_GL
+// This test uses the GL backend and refers to symbols in egl.h
+TEST_F(ShellTest, PictureToImageSyncWithTrampledContext) {
+  // make it easier to trample the GL context by running on a single task
+  // runner.
+  ThreadHost thread_host("io.flutter.test." + GetCurrentTestName() + ".",
+                         ThreadHost::Type::Platform);
+  auto task_runner = thread_host.platform_thread->GetTaskRunner();
+  TaskRunners task_runners("test", task_runner, task_runner, task_runner,
+                           task_runner);
+
+  auto settings = CreateSettingsForFixture();
+  std::unique_ptr<Shell> shell =
+      CreateShell(settings,                                       //
+                  task_runners,                                   //
+                  false,                                          //
+                  nullptr,                                        //
+                  false,                                          //
+                  ShellTestPlatformView::BackendType::kGLBackend  //
+      );
+
+  AddNativeCallback(
+      "NativeOnBeforeToImageSync", CREATE_NATIVE_ENTRY([&](auto args) {
+        // Trample the GL context. If the rasterizer fails
+        // to make the right one current again, test will
+        // fail.
+        ::eglMakeCurrent(::eglGetCurrentDisplay(), NULL, NULL, NULL);
+      }));
+
+  fml::CountDownLatch latch(2);
+  AddNativeCallback("NotifyNative", CREATE_NATIVE_ENTRY([&](auto args) {
+                      // Teardown and set up rasterizer again.
+                      PlatformViewNotifyDestroyed(shell.get());
+                      PlatformViewNotifyCreated(shell.get());
+                      latch.CountDown();
+                    }));
+
+  ASSERT_NE(shell, nullptr);
+  ASSERT_TRUE(shell->IsSetup());
+  auto configuration = RunConfiguration::InferFromSettings(settings);
+  PlatformViewNotifyCreated(shell.get());
+  configuration.SetEntrypoint("toImageSync");
+  RunEngine(shell.get(), std::move(configuration));
+  PumpOneFrame(shell.get());
+
+  latch.Wait();
+
+  PlatformViewNotifyDestroyed(shell.get());
+  DestroyShell(std::move(shell), task_runners);
+}
+#endif  // SHELL_ENABLE_GL
 
 TEST_F(ShellTest, PluginUtilitiesCallbackHandleErrorHandling) {
   auto settings = CreateSettingsForFixture();
