@@ -2610,7 +2610,7 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
   }
 }
 
-TEST(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
+TEST_F(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
   DisplayListBuilder builder;
   builder.DrawCircle({10, 10}, 5, DlPaint());
   builder.Save();
