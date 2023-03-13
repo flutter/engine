@@ -423,27 +423,14 @@ void DisplayListDispatcher::setColorSource(
       paint_.color_source = [center, radius, colors = std::move(colors),
                              stops = std::move(stops), tile_mode, matrix,
                              focus_center, focus_radius]() {
-        std::shared_ptr<ColorSourceContents> contents;
-        if (focus_center.x == center.x && focus_center.y == center.y) {
-          // If focus == center just use the radial gradient.
-          auto radial_contents = std::make_shared<RadialGradientContents>();
-          radial_contents->SetColors(colors);
-          radial_contents->SetStops(stops);
-          radial_contents->SetCenterAndRadius(center,
-                                              std::max(radius, focus_radius));
-          radial_contents->SetTileMode(tile_mode);
-          radial_contents->SetEffectTransform(matrix);
-          contents = radial_contents;
-        } else {
-          auto conical_contents = std::make_shared<ConicalGradientContents>();
-          conical_contents->SetColors(colors);
-          conical_contents->SetStops(stops);
-          conical_contents->SetCenterAndRadius(center, radius);
-          conical_contents->SetTileMode(tile_mode);
-          conical_contents->SetEffectTransform(matrix);
-          conical_contents->SetFocus(focus_center, focus_radius);
-          contents = conical_contents;
-        }
+        std::shared_ptr<ConicalGradientContents> contents =
+            std::make_shared<ConicalGradientContents>();
+        contents->SetColors(colors);
+        contents->SetStops(stops);
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetTileMode(tile_mode);
+        contents->SetEffectTransform(matrix);
+        contents->SetFocus(focus_center, focus_radius);
 
         auto radius_pt = Point(radius, radius);
         std::vector<Point> bounds{center + radius_pt, center - radius_pt};

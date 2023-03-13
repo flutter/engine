@@ -16,7 +16,8 @@ float IPComputeConicalT(vec2 c0, float r0, vec2 c1, float r1, vec2 p) {
   float result = 0.0;
   vec2 ab = c1 - c0;
   float dr = r1 - r0;
-  float delta = 1.0 / length(ab);
+  // Set sample rate to a minimum for the case where c0 and c1 are close.
+  float delta = max(1.0 / length(ab), 100.0);
   while (w >= 0.0) {
     vec2 cw = w * ab + c0;
     float rw = w * dr + r0;
