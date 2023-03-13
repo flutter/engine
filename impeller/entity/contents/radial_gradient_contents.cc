@@ -45,12 +45,6 @@ const std::vector<Scalar>& RadialGradientContents::GetStops() const {
   return stops_;
 }
 
-void RadialGradientContents::SetFocus(std::optional<Point> focus,
-                                      Scalar radius) {
-  focus_ = focus;
-  focus_radius_ = radius;
-}
-
 bool RadialGradientContents::Render(const ContentContext& renderer,
                                     const Entity& entity,
                                     RenderPass& pass) const {
@@ -71,13 +65,6 @@ bool RadialGradientContents::RenderSSBO(const ContentContext& renderer,
   frag_info.radius = radius_;
   frag_info.tile_mode = static_cast<Scalar>(tile_mode_);
   frag_info.alpha = GetAlpha();
-  if (focus_) {
-    frag_info.focus = focus_.value();
-    frag_info.focus_radius = focus_radius_;
-  } else {
-    frag_info.focus = center_;
-    frag_info.focus_radius = 0.0;
-  }
 
   auto& host_buffer = pass.GetTransientsBuffer();
   auto colors = CreateGradientColors(colors_, stops_);

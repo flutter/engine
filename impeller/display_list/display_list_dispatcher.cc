@@ -462,7 +462,6 @@ void DisplayListDispatcher::setColorSource(
         contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
-        contents->SetFocus({}, 0.0);
 
         auto radius_pt = Point(radius, radius);
         std::vector<Point> bounds{center + radius_pt, center - radius_pt};

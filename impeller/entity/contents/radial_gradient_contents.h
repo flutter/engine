@@ -41,8 +41,6 @@ class RadialGradientContents final : public ColorSourceContents {
 
   void SetTileMode(Entity::TileMode tile_mode);
 
-  void SetFocus(std::optional<Point> focus, Scalar radius);
-
  private:
   bool RenderTexture(const ContentContext& renderer,
                      const Entity& entity,
@@ -52,12 +50,10 @@ class RadialGradientContents final : public ColorSourceContents {
                   const Entity& entity,
                   RenderPass& pass) const;
   Point center_;
-  Scalar radius_ = 0.0f;
+  Scalar radius_;
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
-  std::optional<Point> focus_;
-  Scalar focus_radius_ = 0.0f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
 };

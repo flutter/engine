@@ -63,8 +63,8 @@ bool ConicalGradientContents::Render(const ContentContext& renderer,
 bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
                                          const Entity& entity,
                                          RenderPass& pass) const {
-  using VS = RadialGradientSSBOFillPipeline::VertexShader;
-  using FS = RadialGradientSSBOFillPipeline::FragmentShader;
+  using VS = ConicalGradientSSBOFillPipeline::VertexShader;
+  using FS = ConicalGradientSSBOFillPipeline::FragmentShader;
 
   FS::FragInfo frag_info;
   frag_info.center = center_;
@@ -104,7 +104,7 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetRadialGradientSSBOFillPipeline(options);
+  cmd.pipeline = renderer.GetConicalGradientSSBOFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
@@ -126,8 +126,8 @@ bool ConicalGradientContents::RenderSSBO(const ContentContext& renderer,
 bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
                                             const Entity& entity,
                                             RenderPass& pass) const {
-  using VS = RadialGradientFillPipeline::VertexShader;
-  using FS = RadialGradientFillPipeline::FragmentShader;
+  using VS = ConicalGradientFillPipeline::VertexShader;
+  using FS = ConicalGradientFillPipeline::FragmentShader;
 
   auto gradient_data = CreateGradientBuffer(colors_, stops_);
   auto gradient_texture =
@@ -162,7 +162,7 @@ bool ConicalGradientContents::RenderTexture(const ContentContext& renderer,
     options.stencil_operation = StencilOperation::kIncrementClamp;
   }
   options.primitive_type = geometry_result.type;
-  cmd.pipeline = renderer.GetRadialGradientFillPipeline(options);
+  cmd.pipeline = renderer.GetConicalGradientFillPipeline(options);
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));

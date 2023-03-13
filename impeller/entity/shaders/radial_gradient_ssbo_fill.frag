@@ -22,8 +22,6 @@ uniform FragInfo {
   float tile_mode;
   float alpha;
   int colors_length;
-  vec2 focus;
-  float focus_radius;
 }
 frag_info;
 
@@ -31,27 +29,9 @@ in vec2 v_position;
 
 out vec4 frag_color;
 
-float calc_t(vec2 c0, float r0, vec2 c1, float r1, vec2 p) {
-  float w = 1.0;
-  float result = 0.0;
-  vec2 ab = c1 - c0;
-  float dr = r1 - r0;
-  float delta = 1.0 / length(ab);
-  while (w >= 0.0) {
-    vec2 cw = w * ab + c0;
-    float rw = w * dr + r0;
-    if (length(p - cw) <= rw) {
-      result = w;
-      break;
-    }
-    w -= delta;
-  }
-  return 1.0 - result;
-}
-
 void main() {
-  float t = calc_t(frag_info.center, frag_info.radius, frag_info.focus,
-                   frag_info.focus_radius, v_position);
+  float len = length(v_position - frag_info.center);
+  float t = len / frag_info.radius;
 
   if ((t < 0.0 || t > 1.0) && frag_info.tile_mode == kTileModeDecal) {
     frag_color = vec4(0);
