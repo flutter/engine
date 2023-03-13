@@ -6502,7 +6502,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 22,
+          "uniform_registers_used": 16,
           "work_registers_used": 32
         },
         "Varying": {
@@ -6513,10 +6513,10 @@
               "load_store"
             ],
             "longest_path_cycles": [
-              0.125,
-              0.125,
               0.03125,
-              0.0625,
+              0.015625,
+              0.03125,
+              0.0,
               3.0,
               0.0
             ],
@@ -6532,10 +6532,10 @@
               "load_store"
             ],
             "shortest_path_cycles": [
-              0.125,
-              0.125,
               0.03125,
-              0.0625,
+              0.015625,
+              0.03125,
+              0.0,
               3.0,
               0.0
             ],
@@ -6543,18 +6543,18 @@
               "load_store"
             ],
             "total_cycles": [
-              0.125,
-              0.125,
               0.03125,
-              0.0625,
+              0.015625,
+              0.03125,
+              0.0,
               3.0,
               0.0
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 16,
-          "work_registers_used": 8
+          "uniform_registers_used": 10,
+          "work_registers_used": 7
         }
       }
     },
@@ -6571,8 +6571,8 @@
               "load_store"
             ],
             "longest_path_cycles": [
-              3.9600000381469727,
-              4.0,
+              2.9700000286102295,
+              5.0,
               0.0
             ],
             "pipelines": [
@@ -6584,23 +6584,22 @@
               "load_store"
             ],
             "shortest_path_cycles": [
-              3.9600000381469727,
-              4.0,
+              2.9700000286102295,
+              5.0,
               0.0
             ],
             "total_bound_pipelines": [
-              "arithmetic",
               "load_store"
             ],
             "total_cycles": [
-              4.0,
-              4.0,
+              3.0,
+              5.0,
               0.0
             ]
           },
           "thread_occupancy": 100,
-          "uniform_registers_used": 6,
-          "work_registers_used": 3
+          "uniform_registers_used": 4,
+          "work_registers_used": 2
         }
       }
     }
