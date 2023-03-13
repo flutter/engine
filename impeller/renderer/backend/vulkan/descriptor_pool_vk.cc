@@ -28,7 +28,6 @@ static vk::UniqueDescriptorPool CreatePool(const vk::Device& device,
   auto [result, pool] = device.createDescriptorPoolUnique(pool_info);
   if (result != vk::Result::eSuccess) {
     VALIDATION_LOG << "Unable to create a descriptor pool";
-    return {};
   }
   return std::move(pool);
 }
