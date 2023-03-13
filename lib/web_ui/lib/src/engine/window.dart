@@ -204,7 +204,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
               ).toString(),
             );
           } else {
-            path = arguments!.tryString('location')!;
+            path = arguments.tryString('location')!;
           }
           browserHistory.setRouteName(
             path,
