@@ -1482,8 +1482,6 @@ ORIGIN: ../../../flutter/impeller/renderer/device_buffer.cc + ../../../flutter/L
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.cc + ../../../flutter/LICENSE
@@ -4018,8 +4016,6 @@ FILE: ../../../flutter/impeller/renderer/device_buffer.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
-FILE: ../../../flutter/impeller/renderer/device_capabilities.cc
-FILE: ../../../flutter/impeller/renderer/device_capabilities.h
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
 FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
