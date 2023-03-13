@@ -264,7 +264,9 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
-    gn_args['enable_unittests'] = args.enable_unittests
+    gn_args['enable_unittests'] = True
+  if args.no_enable_unittests:
+    gn_args['enable_unittests'] = False
 
   # Skia GN args.
   gn_args['skia_enable_flutter_defines'
@@ -323,6 +325,9 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
+  if not args.build_engine_artifacts:
+    gn_args['flutter_build_engine_artifacts'] = False
+
   # We cannot cross-compile for 32 bit arm on a Windows host. We work around
   # this by leaving 'target_cpu' and 'dart_target_arch' set to 'arm' so that
   # Dart tools such as gen_snapshot that are built for the host will correctly
@@ -379,6 +384,10 @@ def to_gn_args(args):
     gn_args['dart_runtime_mode'] = 'release'
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
+
+  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+  # it doesn't build properly with our gn configuration.
+  gn_args['dart_include_wasm_opt'] = False
 
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
@@ -656,7 +665,18 @@ def parse_args(args):
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
-  parser.add_argument('--enable-unittests', action='store_true', default=False)
+  parser.add_argument(
+      '--enable-unittests',
+      action='store_true',
+      default=False,
+      help='Force enable building unit test binaries.'
+  )
+  parser.add_argument(
+      '--no-enable-unittests',
+      default=False,
+      action='store_true',
+      help='Force disable building unit test binaries.'
+  )
 
   parser.add_argument(
       '--runtime-mode',
@@ -749,6 +769,19 @@ def parse_args(args):
   )
   parser.add_argument(
       '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
+  )
+
+  parser.add_argument(
+      '--build-engine-artifacts',
+      default=True,
+      action='store_true',
+      help='Build the host-side development artifacts.'
+  )
+  parser.add_argument(
+      '--no-build-engine-artifacts',
+      dest='build_engine_artifacts',
+      action='store_false',
+      help='Do not build the host-side development artifacts.'
   )
 
   parser.add_argument('--goma', default=True, action='store_true')

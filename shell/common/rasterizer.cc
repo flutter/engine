@@ -266,13 +266,15 @@ std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeBitmapImage(
   if (image_info.width() > 16384 || image_info.height() > 16384) {
     return std::make_unique<SnapshotDelegate::GpuImageResult>(
         GrBackendTexture(), nullptr, nullptr,
-        "unable to create render target at specified size");
+        "unable to create bitmap render target at specified size " +
+            std::to_string(image_info.width()) + "x" +
+            std::to_string(image_info.height()));
   };
 
   sk_sp<SkSurface> surface = SkSurface::MakeRaster(image_info);
-  auto canvas = DlSkCanvasAdapter(surface->getCanvas());
-  canvas.Clear(DlColor::kTransparent());
-  canvas.DrawDisplayList(display_list);
+  SkCanvas* canvas = surface->getCanvas();
+  canvas->clear(SK_ColorTRANSPARENT);
+  display_list->RenderTo(canvas);
 
   sk_sp<SkImage> image = surface->makeImageSnapshot();
   return std::make_unique<SnapshotDelegate::GpuImageResult>(
@@ -287,17 +289,12 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
   TRACE_EVENT0("flutter", "Rasterizer::MakeGpuImage");
   FML_DCHECK(display_list);
 
-// TODO(dnfield): the Linux embedding is in a rough state right now and
-// I can't seem to get the GPU path working on it.
-// https://github.com/flutter/flutter/issues/108835
-#if FML_OS_LINUX
-  return MakeBitmapImage(display_list, image_info);
-#endif
-
   std::unique_ptr<SnapshotDelegate::GpuImageResult> result;
   delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&result, &image_info, &display_list] {
+            // TODO(dnfield): This isn't safe if display_list contains any GPU
+            // resources like an SkImage_gpu.
             result = MakeBitmapImage(display_list, image_info);
           })
           .SetIfFalse([&result, &image_info, &display_list,
@@ -305,6 +302,14 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
                        gpu_image_behavior = gpu_image_behavior_] {
             if (!surface ||
                 gpu_image_behavior == MakeGpuImageBehavior::kBitmap) {
+              // TODO(dnfield): This isn't safe if display_list contains any GPU
+              // resources like an SkImage_gpu.
+              result = MakeBitmapImage(display_list, image_info);
+              return;
+            }
+
+            auto context_switch = surface->MakeRenderContextCurrent();
+            if (!context_switch->GetResult()) {
               result = MakeBitmapImage(display_list, image_info);
               return;
             }
@@ -321,7 +326,9 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
             if (!texture.isValid()) {
               result = std::make_unique<SnapshotDelegate::GpuImageResult>(
                   GrBackendTexture(), nullptr, nullptr,
-                  "unable to create render target at specified size");
+                  "unable to create texture render target at specified size " +
+                      std::to_string(image_info.width()) + "x" +
+                      std::to_string(image_info.height()));
               return;
             }
 
@@ -335,9 +342,9 @@ std::unique_ptr<Rasterizer::GpuImageResult> Rasterizer::MakeSkiaGpuImage(
               return;
             }
 
-            auto canvas = DlSkCanvasAdapter(sk_surface->getCanvas());
-            canvas.Clear(DlColor::kTransparent());
-            canvas.DrawDisplayList(display_list);
+            SkCanvas* canvas = sk_surface->getCanvas();
+            canvas->clear(SK_ColorTRANSPARENT);
+            display_list->RenderTo(canvas);
 
             result = std::make_unique<SnapshotDelegate::GpuImageResult>(
                 texture, sk_ref_sp(context), nullptr, "");
