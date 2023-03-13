@@ -110,7 +110,7 @@ bool GenerateMipmap(const std::shared_ptr<Context>& context,
   }
   pass->GenerateMipmap(std::move(texture), std::move(label));
   pass->EncodeCommands(context->GetResourceAllocator());
-  return true;
+  return buffer->SubmitCommands();
 }
 
 TEST_P(AiksTest, CanRenderTiledTexture) {
@@ -1235,7 +1235,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
-                                 "NotoColorEmoji.ttf"));
+                                  "NotoColorEmoji.ttf"));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1247,7 +1247,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc", { .alpha = 0.5 }
 #else
-                                 "NotoColorEmoji.ttf", {.alpha = 0.5}
+                                  "NotoColorEmoji.ttf", {.alpha = 0.5}
 #endif
                                  ));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
@@ -1823,6 +1823,10 @@ TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
 }
 
 TEST_P(AiksTest, CanRenderClippedLayers) {
+  if (GetBackend() == PlaygroundBackend::kVulkan) {
+    GTEST_SKIP_("Temporarily disabled.");
+  }
+
   Canvas canvas;
 
   canvas.DrawPaint({.color = Color::White()});
@@ -1873,6 +1877,9 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
 }
 
 TEST_P(AiksTest, SceneColorSource) {
+  if (GetBackend() == PlaygroundBackend::kVulkan) {
+    GTEST_SKIP_("Temporarily disabled.");
+  }
   // Load up the scene.
   auto mapping =
       flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");

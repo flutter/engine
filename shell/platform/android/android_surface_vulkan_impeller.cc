@@ -91,13 +91,11 @@ bool AndroidSurfaceVulkanImpeller::OnScreenSurfaceResize(const SkISize& size) {
 }
 
 bool AndroidSurfaceVulkanImpeller::ResourceContextMakeCurrent() {
-  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
-  return false;
+  return true;
 }
 
 bool AndroidSurfaceVulkanImpeller::ResourceContextClearCurrent() {
-  FML_DLOG(ERROR) << "The vulkan backend does not support resource contexts.";
-  return false;
+  return true;
 }
 
 bool AndroidSurfaceVulkanImpeller::SetNativeWindow(
