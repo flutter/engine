@@ -29,7 +29,11 @@ EmbedderSurfaceGL::EmbedderSurfaceGL(
   valid_ = true;
 }
 
-EmbedderSurfaceGL::~EmbedderSurfaceGL() = default;
+EmbedderSurfaceGL::~EmbedderSurfaceGL() {
+  if (main_context_ != nullptr) {
+    main_context_->releaseResourcesAndAbandonContext();
+  }
+}
 
 // |EmbedderSurface|
 bool EmbedderSurfaceGL::IsValid() const {

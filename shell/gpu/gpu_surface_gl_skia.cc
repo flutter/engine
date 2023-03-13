@@ -95,9 +95,6 @@ GPUSurfaceGLSkia::~GPUSurfaceGLSkia() {
 
   onscreen_surface_ = nullptr;
   fbo_id_ = 0;
-  if (context_owner_) {
-    context_->releaseResourcesAndAbandonContext();
-  }
   context_ = nullptr;
 
   delegate_->GLContextClearCurrent();
