@@ -89,30 +89,32 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   }
   bool all_can_accept = true;
   std::vector<Rect> all_coverages;
-  auto had_subpass = entity_pass->IterateAllFlatEntities([&](Entity& entity) {
-    auto contents = entity.GetContents();
-    if (!contents->CanAcceptOpacity(entity)) {
-      all_can_accept = false;
-      return false;
-    }
-    auto maybe_coverage = contents->GetCoverage(entity);
-    if (maybe_coverage.has_value()) {
-      auto coverage = maybe_coverage.value();
-      for (const auto& cv : all_coverages) {
-        if (cv.IntersectsWithRect(coverage)) {
+  auto had_subpass = entity_pass->IterateAllFlatEntities(
+      [&all_coverages, &all_can_accept](Entity& entity) {
+        auto contents = entity.GetContents();
+        if (!contents->CanAcceptOpacity(entity)) {
           all_can_accept = false;
           return false;
         }
-      }
-      all_coverages.push_back(coverage);
-    }
-    return true;
-  });
+        auto maybe_coverage = contents->GetCoverage(entity);
+        if (maybe_coverage.has_value()) {
+          auto coverage = maybe_coverage.value();
+          for (const auto& cv : all_coverages) {
+            if (cv.IntersectsWithRect(coverage)) {
+              all_can_accept = false;
+              return false;
+            }
+          }
+          all_coverages.push_back(coverage);
+        }
+        return true;
+      });
   if (had_subpass || !all_can_accept) {
     return false;
   }
-  entity_pass->IterateAllFlatEntities([&](Entity& entity) {
-    entity.GetContents()->InheritOpacity(paint_.color.alpha);
+  auto alpha = paint_.color.alpha;
+  entity_pass->IterateAllFlatEntities([&alpha](Entity& entity) {
+    entity.GetContents()->InheritOpacity(alpha);
     return true;
   });
   return true;
