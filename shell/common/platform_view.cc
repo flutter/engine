@@ -56,6 +56,14 @@ void PlatformView::SetViewportMetrics(const ViewportMetrics& metrics) {
 }
 
 void PlatformView::NotifyCreated() {
+  delegate_.OnPlatformViewCreated();
+}
+
+void PlatformView::NotifyDestroyed() {
+  delegate_.OnPlatformViewDestroyed();
+}
+
+std::unique_ptr<Surface> PlatformView::CreateSurface() {
   std::unique_ptr<Surface> surface;
   // Threading: We want to use the platform view on the non-platform thread.
   // Using the weak pointer is illegal. But, we are going to introduce a latch
@@ -73,13 +81,9 @@ void PlatformView::NotifyCreated() {
   latch.Wait();
   if (!surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
-    return;
+    return nullptr;
   }
-  delegate_.OnPlatformViewCreated(std::move(surface));
-}
-
-void PlatformView::NotifyDestroyed() {
-  delegate_.OnPlatformViewDestroyed();
+  return surface;
 }
 
 void PlatformView::ScheduleFrame() {

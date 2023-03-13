@@ -745,7 +745,7 @@ DartVM* Shell::GetDartVM() {
 }
 
 // |PlatformView::Delegate|
-void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
+void Shell::OnPlatformViewCreated() {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
@@ -773,6 +773,8 @@ void Shell::OnPlatformViewCreated(std::unique_ptr<Surface> surface) {
   // raster_task.
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
+
+  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
 
   fml::AutoResetWaitableEvent latch;
   auto raster_task =

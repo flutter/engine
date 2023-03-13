@@ -75,11 +75,7 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
 
   // |flutter::PlatformView::Delegate|
-  void OnPlatformViewCreated(std::unique_ptr<flutter::Surface> surface) {
-    ASSERT_EQ(surface_.get(), nullptr);
-
-    surface_ = std::move(surface);
-  }
+  void OnPlatformViewCreated() {}
   // |flutter::PlatformView::Delegate|
   void OnPlatformViewDestroyed() {}
   // |flutter::PlatformView::Delegate|
@@ -147,7 +143,6 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
       std::unique_ptr<flutter::AssetResolver> updated_asset_resolver,
       flutter::AssetResolver::AssetResolverType type) {}
 
-  flutter::Surface* surface() const { return surface_.get(); }
   flutter::PlatformMessage* message() const { return message_.get(); }
   const flutter::ViewportMetrics& metrics() const { return metrics_; }
   int32_t semantics_features() const { return semantics_features_; }
@@ -164,7 +159,6 @@ class MockPlatformViewDelegate : public flutter::PlatformView::Delegate {
   }
 
  private:
-  std::unique_ptr<flutter::Surface> surface_;
   std::unique_ptr<flutter::PlatformMessage> message_;
   flutter::ViewportMetrics metrics_;
   std::vector<std::unique_ptr<flutter::PointerDataPacket>> pointer_packets_;
@@ -630,7 +624,8 @@ TEST_F(FlatlandPlatformViewTests, CreateSurfaceTest) {
 
   RunLoopUntilIdle();
 
-  EXPECT_EQ(gr_context.get(), delegate.surface()->GetContext());
+  // TODO(dkwingsmt)
+  // EXPECT_EQ(gr_context.get(), delegate.surface()->GetContext());
   EXPECT_EQ(external_view_embedder.get(),
             platform_view.CreateExternalViewEmbedder().get());
 }

@@ -16,7 +16,7 @@ namespace flutter {
 namespace testing {
 namespace {
 class MockDelegate : public PlatformView::Delegate {
-  MOCK_METHOD1(OnPlatformViewCreated, void(std::unique_ptr<Surface>));
+  MOCK_METHOD0(OnPlatformViewCreated, void());
   MOCK_METHOD0(OnPlatformViewDestroyed, void());
   MOCK_METHOD0(OnPlatformViewScheduleFrame, void());
   MOCK_METHOD1(OnPlatformViewSetNextFrameCallback,

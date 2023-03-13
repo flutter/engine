@@ -20,7 +20,7 @@ namespace {
 
 class FakeDelegate : public PlatformView::Delegate {
  public:
-  void OnPlatformViewCreated(std::unique_ptr<Surface> surface) override {}
+  void OnPlatformViewCreated() override {}
   void OnPlatformViewDestroyed() override {}
   void OnPlatformViewScheduleFrame() override {}
   void OnPlatformViewSetNextFrameCallback(const fml::closure& closure) override {}

@@ -60,15 +60,10 @@ class PlatformView {
    public:
     using KeyDataResponse = std::function<void(bool)>;
     //--------------------------------------------------------------------------
-    /// @brief      Notifies the delegate that the platform view was created
-    ///             with the given render surface. This surface is platform
-    ///             (iOS, Android) and client-rendering API (OpenGL, Software,
-    ///             Metal, Vulkan) specific. This is usually a sign to the
-    ///             rasterizer to set up and begin rendering to that surface.
+    /// @brief      Notifies the delegate that the platform view was created.
+    ///             This is usually a sign to the rasterizer to set up.
     ///
-    /// @param[in]  surface           The surface
-    ///
-    virtual void OnPlatformViewCreated(std::unique_ptr<Surface> surface) = 0;
+    virtual void OnPlatformViewCreated() = 0;
 
     //--------------------------------------------------------------------------
     /// @brief      Notifies the delegate that the platform view was destroyed.
@@ -497,6 +492,8 @@ class PlatformView {
   ///             class method at some point in their implementation.
   ///
   virtual void NotifyDestroyed();
+
+  std::unique_ptr<Surface> CreateSurface();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to schedule a frame. In response to this
