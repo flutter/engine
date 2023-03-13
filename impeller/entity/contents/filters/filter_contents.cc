@@ -121,7 +121,7 @@ std::shared_ptr<FilterContents> FilterContents::MakeMatrixFilter(
   filter->SetMatrix(matrix);
   filter->SetSamplerDescriptor(desc);
   filter->SetEffectTransform(effect_transform);
-  filter->SetSubpass(is_subpass);
+  filter->SetIsSubpass(is_subpass);
   return filter;
 }
 

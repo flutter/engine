@@ -14,7 +14,7 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
   matrix_ = matrix;
 }
 
-void MatrixFilterContents::SetSubpass(bool is_subpass) {
+void MatrixFilterContents::SetIsSubpass(bool is_subpass) {
   is_subpass_ = is_subpass;
 }
 
