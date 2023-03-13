@@ -97,7 +97,7 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.SceneBuilder createSceneBuilder() {
-    throw UnimplementedError('createSceneBuilder not yet implemented');
+    return SkwasmSceneBuilder();
   }
 
   @override
