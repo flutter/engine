@@ -122,6 +122,8 @@ impeller_component("entity") {
     "contents/color_source_contents.h",
     "contents/color_source_text_contents.cc",
     "contents/color_source_text_contents.h",
+    "contents/conical_gradient_contents.cc",
+    "contents/conical_gradient_contents.h",
     "contents/content_context.cc",
     "contents/content_context.h",
     "contents/contents.cc",

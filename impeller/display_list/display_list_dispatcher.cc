@@ -22,6 +22,7 @@
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
+#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -422,7 +423,7 @@ void DisplayListDispatcher::setColorSource(
       paint_.color_source = [center, radius, colors = std::move(colors),
                              stops = std::move(stops), tile_mode, matrix,
                              focus_center, focus_radius]() {
-        auto contents = std::make_shared<RadialGradientContents>();
+        auto contents = std::make_shared<ConicalGradientContents>();
         contents->SetColors(colors);
         contents->SetStops(stops);
         contents->SetCenterAndRadius(center, radius);
