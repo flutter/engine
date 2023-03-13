@@ -39,6 +39,53 @@ std::optional<Rect> SolidColorContents::GetCoverage(
   return geometry_->GetCoverage(entity.GetTransformation());
 };
 
+std::optional<Snapshot> SolidColorContents::RenderToSnapshot(
+    const ContentContext& renderer,
+    const Entity& entity,
+    const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+    bool msaa_enabled) const {
+  auto coverage = GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return std::nullopt;
+  }
+
+  impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+  texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+  texture_descriptor.size = {1, 1};
+  auto texture = renderer.GetContext()->GetResourceAllocator()->CreateTexture(
+      texture_descriptor);
+  if (!texture) {
+    FML_DLOG(ERROR) << "Could not create Impeller texture.";
+    return std::nullopt;
+  }
+
+  std::vector<uint8_t> data(4);
+  auto raw_color = color_.Premultiply().ToR8G8B8A8();
+  data[0] = raw_color[0];
+  data[1] = raw_color[1];
+  data[2] = raw_color[2];
+  data[3] = raw_color[3];
+  auto mapping = std::make_shared<fml::DataMapping>(data);
+  if (!texture->SetContents(mapping)) {
+    FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
+    return std::nullopt;
+  }
+  texture->SetLabel(impeller::SPrintF("SolidColorSnapshot"));
+
+  auto size = coverage->size;
+  auto origin = coverage->origin;
+  // clang-format off
+  auto tsx = Matrix(
+    size.width, 0.0,         0.0, 0.0,
+    0.0,        size.height, 0.0, 0.0,
+    0.0,        0.0,         1.0, 0.0,
+    origin.x,   origin.y,    0.0, 1.0
+  );
+  // clang-format on
+  return Snapshot{.texture = texture, .transform = tsx};
+}
+
 bool SolidColorContents::ShouldRender(
     const Entity& entity,
     const std::optional<Rect>& stencil_coverage) const {
