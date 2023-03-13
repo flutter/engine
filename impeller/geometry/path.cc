@@ -245,7 +245,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
 
   auto get_path_component =
       [this](size_t component_i) -> std::optional<const PathComponent*> {
-    if (component_i < 0 || component_i >= components_.size()) {
+    if (component_i >= components_.size()) {
       return std::nullopt;
     }
     const auto& component = components_[component_i];
@@ -261,21 +261,22 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     }
   };
 
-  auto compute_contour_start_direction = [&get_path_component](
-                                             int current_path_component_index) {
-    int next_component_index = current_path_component_index + 1;
-    while (get_path_component(next_component_index).has_value()) {
-      auto next_component = get_path_component(next_component_index).value();
-      if (next_component->GetStartDirection().has_value()) {
-        return next_component->GetStartDirection().value();
-      } else {
-        next_component_index++;
-      }
-    }
-    return Vector2(0, -1);
-  };
+  auto compute_contour_start_direction =
+      [&get_path_component](size_t current_path_component_index) {
+        size_t next_component_index = current_path_component_index + 1;
+        while (get_path_component(next_component_index).has_value()) {
+          auto next_component =
+              get_path_component(next_component_index).value();
+          if (next_component->GetStartDirection().has_value()) {
+            return next_component->GetStartDirection().value();
+          } else {
+            next_component_index++;
+          }
+        }
+        return Vector2(0, -1);
+      };
 
-  std::optional<int> previous_path_component_index;
+  std::optional<size_t> previous_path_component_index;
   auto end_contour = [&polyline, &previous_path_component_index,
                       &get_path_component]() {
     // Whenever a contour has ended, extract the exact end direction from the
@@ -291,7 +292,7 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
     auto& contour = polyline.contours.back();
     contour.end_direction = Vector2(0, 1);
 
-    int previous_index = previous_path_component_index.value();
+    size_t previous_index = previous_path_component_index.value();
     while (get_path_component(previous_index).has_value()) {
       auto previous_path_component = get_path_component(previous_index).value();
       if (previous_path_component->GetEndDirection().has_value()) {
@@ -299,6 +300,9 @@ Path::Polyline Path::CreatePolyline(Scalar scale) const {
             previous_path_component->GetEndDirection().value();
         break;
       } else {
+        if (previous_index == 0) {
+          break;
+        }
         previous_index--;
       }
     }
