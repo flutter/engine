@@ -4,7 +4,6 @@
 
 #include "impeller/entity/contents/text_contents.h"
 
-#include <iostream>
 #include <optional>
 #include <type_traits>
 #include <utility>
