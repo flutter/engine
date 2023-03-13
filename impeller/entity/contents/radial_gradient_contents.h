@@ -52,12 +52,12 @@ class RadialGradientContents final : public ColorSourceContents {
                   const Entity& entity,
                   RenderPass& pass) const;
   Point center_;
-  Scalar radius_;
+  Scalar radius_ = 0.0f;
   std::vector<Color> colors_;
   std::vector<Scalar> stops_;
   Entity::TileMode tile_mode_;
   std::optional<Point> focus_;
-  Scalar focus_radius_;
+  Scalar focus_radius_ = 0.0f;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RadialGradientContents);
 };

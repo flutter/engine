@@ -409,10 +409,10 @@ void DisplayListDispatcher::setColorSource(
       const flutter::DlConicalGradientColorSource* conical_gradient =
           source->asConicalGradient();
       FML_DCHECK(conical_gradient);
-      Point center = ToPoint(conical_gradient->start_center());
-      SkScalar radius = conical_gradient->start_radius();
-      Point focus_center = ToPoint(conical_gradient->end_center());
-      SkScalar focus_radius = conical_gradient->end_radius();
+      Point center = ToPoint(conical_gradient->end_center());
+      SkScalar radius = conical_gradient->end_radius();
+      Point focus_center = ToPoint(conical_gradient->start_center());
+      SkScalar focus_radius = conical_gradient->start_radius();
       std::vector<Color> colors;
       std::vector<float> stops;
       ConvertStops(conical_gradient, &colors, &stops);
