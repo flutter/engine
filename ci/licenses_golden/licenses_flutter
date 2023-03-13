@@ -680,7 +680,6 @@ LIBRARY: engine
 LIBRARY: spring_animation
 LIBRARY: tonic
 LIBRARY: txt
-LIBRARY: web_sdk_version
 LIBRARY: web_test_fonts
 LIBRARY: web_unicode
 ORIGIN: ../../../flutter/LICENSE
@@ -1122,6 +1121,8 @@ ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.cc + ../../../fl
 ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/contents.cc + ../../../flutter/LICENSE
@@ -1251,7 +1252,6 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag + ..
 ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/position.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_color.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_uv.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag + ../../../flutter/LICENSE
@@ -3169,8 +3169,6 @@ ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc + ../../../
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_linux.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_windows.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/third_party/web_sdk_version/lib/web_sdk_version.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/third_party/web_sdk_version/lib/web_sdk_version/web_sdk_version.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart + ../../../flutter/LICENSE
@@ -3652,6 +3650,8 @@ FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.h
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
 FILE: ../../../flutter/impeller/entity/contents/content_context.h
 FILE: ../../../flutter/impeller/entity/contents/contents.cc
@@ -3781,7 +3781,6 @@ FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
-FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
@@ -5720,8 +5719,6 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
-FILE: ../../../flutter/third_party/web_sdk_version/lib/web_sdk_version.dart
-FILE: ../../../flutter/third_party/web_sdk_version/lib/web_sdk_version/web_sdk_version.dart
 FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart
 FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart
 FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
