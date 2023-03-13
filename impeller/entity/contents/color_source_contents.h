@@ -44,10 +44,6 @@ class ColorSourceContents : public Contents {
  protected:
   const std::shared_ptr<Geometry>& GetGeometry() const;
 
-  const Matrix& GetInverseMatrix() const;
-
-  Scalar GetAlpha() const;
-
  private:
   std::shared_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
