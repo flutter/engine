@@ -64,6 +64,9 @@ class ContextMTL final : public Context,
   // |Context|
   const std::shared_ptr<const Capabilities>& GetCapabilities() const override;
 
+  // |Context|
+  bool UpdateOffscreenLayerPixelFormat(PixelFormat format) override;
+
  private:
   id<MTLDevice> device_ = nullptr;
   id<MTLCommandQueue> command_queue_ = nullptr;

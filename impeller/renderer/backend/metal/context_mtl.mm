@@ -35,6 +35,32 @@ static bool DeviceSupportsFramebufferFetch(id<MTLDevice> device) {
 #endif  // FML_OS_IOS
 }
 
+static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
+  bool supports_subgroups = false;
+  // Refer to the "SIMD-scoped reduction operations" feature in the table
+  // below: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+  if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
+    supports_subgroups = [device supportsFamily:MTLGPUFamilyApple7] ||
+                         [device supportsFamily:MTLGPUFamilyMac2];
+  }
+  return supports_subgroups;
+}
+
+static std::unique_ptr<Capabilities> InferMetalCapabilities(
+    id<MTLDevice> device,
+    PixelFormat color_format = PixelFormat::kB8G8R8A8UNormInt) {
+  return CapabilitiesBuilder()
+      .SetHasThreadingRestrictions(false)
+      .SetSupportsOffscreenMSAA(true)
+      .SetSupportsSSBO(true)
+      .SetSupportsTextureToTextureBlits(true)
+      .SetSupportsFramebufferFetch(DeviceSupportsFramebufferFetch(device))
+      .SetDefaultColorFormat(color_format)
+      .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+      .SetSupportsCompute(true, DeviceSupportsComputeSubgroups(device))
+      .Build();
+}
+
 ContextMTL::ContextMTL(id<MTLDevice> device,
                        NSArray<id<MTLLibrary>>* shader_libraries)
     : device_(device) {
@@ -108,28 +134,7 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
   { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
 #endif
 
-  {
-    bool supports_subgroups = false;
-    // Refer to the "SIMD-scoped reduction operations" feature in the table
-    // below: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
-    if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
-      supports_subgroups = [device supportsFamily:MTLGPUFamilyApple7] ||
-                           [device supportsFamily:MTLGPUFamilyMac2];
-    }
-
-    device_capabilities_ =
-        CapabilitiesBuilder()
-            .SetHasThreadingRestrictions(false)
-            .SetSupportsOffscreenMSAA(true)
-            .SetSupportsSSBO(true)
-            .SetSupportsTextureToTextureBlits(true)
-            .SetSupportsFramebufferFetch(
-                DeviceSupportsFramebufferFetch(device_))
-            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
-            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
-            .SetSupportsCompute(true, supports_subgroups)
-            .Build();
-  }
+  device_capabilities_ = InferMetalCapabilities(device_);
 
   is_valid_ = true;
 }
@@ -290,6 +295,12 @@ id<MTLDevice> ContextMTL::GetMTLDevice() const {
 
 const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
   return device_capabilities_;
+}
+
+// |Context|
+bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
+  device_capabilities_ = InferMetalCapabilities(device_);
+  return true;
 }
 
 }  // namespace impeller

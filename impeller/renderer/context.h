@@ -30,6 +30,8 @@ class Context : public std::enable_shared_from_this<Context> {
   virtual const std::shared_ptr<const Capabilities>& GetCapabilities()
       const = 0;
 
+  virtual bool UpdateOffscreenLayerPixelFormat(PixelFormat format);
+
   virtual std::shared_ptr<Allocator> GetResourceAllocator() const = 0;
 
   virtual std::shared_ptr<ShaderLibrary> GetShaderLibrary() const = 0;
