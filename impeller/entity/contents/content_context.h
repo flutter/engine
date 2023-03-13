@@ -18,6 +18,7 @@
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
+#include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
