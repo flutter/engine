@@ -42,7 +42,7 @@ class SolidColorContents final : public Contents {
   std::optional<Snapshot> RenderToSnapshot(
       const ContentContext& renderer,
       const Entity& entity,
-      const std::optional<SamplerDescriptor>& sampler_descriptor,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
       bool msaa_enabled = true) const override;
 
   // |Contents|

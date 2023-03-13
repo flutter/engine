@@ -42,7 +42,7 @@ std::optional<Rect> SolidColorContents::GetCoverage(
 std::optional<Snapshot> SolidColorContents::RenderToSnapshot(
     const ContentContext& renderer,
     const Entity& entity,
-    const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+    const std::optional<SamplerDescriptor>& sampler_descriptor,
     bool msaa_enabled) const {
   auto coverage = GetCoverage(entity);
   if (!coverage.has_value()) {

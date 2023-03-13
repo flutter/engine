@@ -2345,5 +2345,34 @@ TEST_P(EntityTest, RuntimeEffect) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(EntityTest, SolidColorContentsRenderSnapshot) {
+  auto callback = [&](ContentContext& context, RenderPass& pass) -> bool {
+    auto solid_contents = std::make_shared<SolidColorContents>();
+    solid_contents->SetGeometry(Geometry::MakeFillPath(
+        PathBuilder{}.AddRect(Rect::MakeLTRB(10, 10, 100, 100)).TakePath()));
+    solid_contents->SetColor(Color::Red());
+
+    Entity filter_entity;
+    filter_entity.SetContents(solid_contents);
+    auto snapshot = solid_contents->RenderToSnapshot(context, filter_entity);
+
+    if (snapshot->texture->GetSize() != ISize(1, 1)) {
+      FML_DLOG(ERROR) << "Solid Color texture size was not 1x1: "
+                      << snapshot->texture->GetSize();
+      return false;
+    }
+
+    Entity entity;
+    auto contents = TextureContents::MakeRect(Rect::MakeLTRB(0, 0, 500, 256));
+    contents->SetTexture(snapshot->texture);
+    contents->SetSourceRect(Rect::MakeSize(snapshot->texture->GetSize()));
+    entity.SetContents(contents);
+    entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+    return entity.Render(context, pass);
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
 }  // namespace testing
 }  // namespace impeller
