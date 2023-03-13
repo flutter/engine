@@ -22,6 +22,8 @@ class ColorSourceContents : public Contents {
 
   void SetEffectTransform(Matrix matrix);
 
+  const Matrix& GetInverseMatrix() const;
+
   void SetAlpha(Scalar alpha);
 
   // |Contents|
@@ -43,6 +45,8 @@ class ColorSourceContents : public Contents {
   const std::shared_ptr<Geometry>& GetGeometry() const;
 
   const Matrix& GetInverseMatrix() const;
+
+  Scalar GetAlpha() const;
 
  private:
   std::shared_ptr<Geometry> geometry_;
