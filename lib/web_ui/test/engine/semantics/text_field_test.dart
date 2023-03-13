@@ -56,7 +56,7 @@ void testMain() {
           textFieldSemantics.debugRoleManagerFor(Role.textField)! as TextField;
 
       // ensureInitialized() isn't called prior to calling dispose() here.
-      // Since we are conditionally called dispose() on our
+      // Since we are conditionally calling dispose() on our
       // SemanticsTextEditingStrategy._instance, we shouldn't expect an error.
       // ref: https://github.com/flutter/engine/pull/40146
       expect(() => textField.dispose(), returnsNormally);
