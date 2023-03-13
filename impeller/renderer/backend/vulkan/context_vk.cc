@@ -179,7 +179,7 @@ void ContextVK::Setup(
 
   std::vector<vk::ValidationFeatureEnableEXT> enabled_validations = {
       // vk::ValidationFeatureEnableEXT::eBestPractices,
-      vk::ValidationFeatureEnableEXT::eSynchronizationValidation,
+      // vk::ValidationFeatureEnableEXT::eSynchronizationValidation,
   };
 
   vk::ValidationFeaturesEXT validation;

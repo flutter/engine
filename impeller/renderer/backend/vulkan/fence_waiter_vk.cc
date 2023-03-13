@@ -26,7 +26,8 @@ bool FenceWaiterVK::IsValid() const {
   return is_valid_;
 }
 
-bool FenceWaiterVK::AddFence(vk::UniqueFence fence, fml::closure callback) {
+bool FenceWaiterVK::AddFence(vk::UniqueFence fence,
+                             const fml::closure& callback) {
   if (!IsValid() || !fence || !callback) {
     return false;
   }

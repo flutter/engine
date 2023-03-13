@@ -14,7 +14,7 @@ TextureVK::TextureVK(std::weak_ptr<Context> context,
                      std::shared_ptr<TextureSourceVK> source)
     : Texture(source->GetTextureDescriptor()),
       context_(std::move(context)),
-      source_(source) {}
+      source_(std::move(source)) {}
 
 TextureVK::~TextureVK() = default;
 

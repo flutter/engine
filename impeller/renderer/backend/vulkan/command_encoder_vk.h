@@ -34,7 +34,7 @@ class CommandEncoderVK {
 
   bool Track(std::shared_ptr<const DeviceBuffer> buffer);
 
-  bool Track(std::shared_ptr<const Texture> texture);
+  bool Track(const std::shared_ptr<const Texture>& texture);
 
   bool Track(std::shared_ptr<const TextureSourceVK> texture);
 
@@ -61,7 +61,7 @@ class CommandEncoderVK {
 
   CommandEncoderVK(vk::Device device,
                    vk::Queue queue,
-                   std::shared_ptr<CommandPoolVK> pool,
+                   const std::shared_ptr<CommandPoolVK>& pool,
                    std::shared_ptr<FenceWaiterVK> fence_waiter);
 
   void Reset();

@@ -81,10 +81,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugReportVK::DebugUtilsMessengerCallback(
     VkDebugUtilsMessageTypeFlagsEXT type,
     const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
     void* debug_report) {
-  auto result = reinterpret_cast<DebugReportVK*>(debug_report)
-                    ->OnDebugCallback(
-                        vk::DebugUtilsMessageSeverityFlagBitsEXT{severity},
-                        vk::DebugUtilsMessageTypeFlagsEXT{type}, callback_data);
+  auto result =
+      reinterpret_cast<DebugReportVK*>(debug_report)
+          ->OnDebugCallback(
+              static_cast<vk::DebugUtilsMessageSeverityFlagBitsEXT>(
+                  severity),                                         //
+              static_cast<vk::DebugUtilsMessageTypeFlagsEXT>(type),  //
+              callback_data                                          //
+          );
   switch (result) {
     case Result::kContinue:
       return VK_FALSE;

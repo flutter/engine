@@ -28,7 +28,7 @@ class FenceWaiterVK {
 
   void Terminate();
 
-  bool AddFence(vk::UniqueFence fence, fml::closure callback);
+  bool AddFence(vk::UniqueFence fence, const fml::closure& callback);
 
  private:
   friend class ContextVK;
