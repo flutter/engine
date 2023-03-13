@@ -25,13 +25,14 @@ import '../html_image_codec.dart';
 import '../profiler.dart';
 import '../renderer.dart';
 import '../util.dart';
+import 'compositor.dart';
 import 'scene.dart';
 
 class SceneletRenderer implements Renderer {
   static bool enabled = true;
 
   final HtmlRenderer _htmlRenderer = HtmlRenderer();
-  late FlutterViewEmbedder _viewEmbedder;
+  late SceneletCompositor _compositor;
 
   @override
   String get rendererTag => 'scenelet';
@@ -53,15 +54,15 @@ class SceneletRenderer implements Renderer {
 
   @override
   void renderScene(ui.Scene scene) {
-    // _viewEmbedder.addSceneToSceneHost((scene as SceneletScene).rootElement);
+    scene as SceneletScene;
+    _compositor.render(scene);
     frameTimingsOnRasterFinish();
   }
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    _viewEmbedder = embedder;
+    _compositor = SceneletCompositor(embedder.sceneHostElement!);
   }
-
 
   @override
   ui.Paint createPaint() => SurfacePaint();

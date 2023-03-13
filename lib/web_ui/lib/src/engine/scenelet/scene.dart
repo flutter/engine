@@ -12,6 +12,10 @@ import '../initialization.dart' show platformViewManager;
 import 'properties.dart';
 import 'scenelet.dart';
 
+/// A scene builder implementation that breaks down the scene into [Scenelet]s.
+///
+/// The breakdown of content into scenelets allows separating the rendering of
+/// Flutter-native content from platform views into two orthogonal aspects.
 class SceneletSceneBuilder implements ui.SceneBuilder {
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {}
@@ -42,6 +46,19 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
       'Failed to add a scenelet to a scene. The scenelet would have no '
       'platform views and empty render tree.',
     );
+    final SceneletRenderTree? renderTree;
+
+    if (_renderTreeBuilder.hasContent) {
+      renderTree = _renderTreeBuilder.build();
+      assert(
+        renderTree.isNotEmpty,
+        'SceneletRenderTreeBuilder.hasContent was true, but SceneletRenderTree '
+        'built from it was empty.\n'
+        'SceneletRenderTreeBuilder contains ${_renderTreeBuilder.contentCount} pieces of content.\n'
+        'SceneletRenderTree contains ${renderTree.contentCount} pieces of content.',
+      );
+    }
+
     _scenelets.add(Scenelet(
       platformViews: _platformViews.isNotEmpty ? _platformViews : null,
       renderTree: _renderTreeBuilder.hasContent ? _renderTreeBuilder.build() : null,
@@ -82,6 +99,7 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
   @override
   void pop() {
     _containerStack.removeLast();
+    _renderTreeBuilder.pop();
   }
 
   @override
@@ -258,13 +276,18 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    // TODO: is it safe to assume that this has render content? Probably safe
-    //       to assume there are not platform views in addRetained, but can
-    //       layers be empty? Maybe we should optimize that out.
     _addingRenderContent();
 
-    retainedLayer as SceneLayer;
-    // TODO: implement addRetained
+    retainedLayer as SceneLayer<LayerProperties>;
+
+    // The only way a single scene layer can be rendered into multiple scenelet
+    // layers is when the scene layer is split up by a platform view inside it.
+    assert(
+      retainedLayer.sceneletLayers.length == 1,
+      'Retained layer cannot contain platform views.',
+    );
+
+    _renderTreeBuilder.addRetained(retainedLayer.sceneletLayers.single);
   }
 
   @override
@@ -273,12 +296,6 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
     _addingRenderContent();
   }
 
-  /// Adds a platform view.
-  ///
-  /// This is a key part of the scenelet concept. Whenever a platform view is
-  /// found in the layer tree, all the previous content is split into its own
-  /// scenelet, followed by a platform view scenelet, and a new scenelet is
-  /// started after the platform view.
   @override
   void addPlatformView(int viewId, {ui.Offset offset = ui.Offset.zero, double width = 0.0, double height = 0.0}) {
     final List<LayerProperties> propStack = <LayerProperties>[];
@@ -297,6 +314,12 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
 
     final bool isVisible = platformViewManager.isVisible(viewId);
 
+    // Avoid splitting the scene into scenelets unless it's necessary for
+    // correctness. In particular, if all visible platform views of a scene
+    // appear behind all Flutter-rendered content, the scene can be rendered
+    // using one scenelet (and therefore one canvas). When visible platform
+    // views interleave Flutter-rendered content, use as few scenelets as
+    // possible without sacrificing visual and interactive correctness.
     if (isVisible && _currentSceneletHasRenderContent) {
       // Adding a visible platform view after rendering some rendered content.
       // The platform view cannot be added to the existing scenelet, because it
@@ -328,9 +351,15 @@ class SceneletSceneBuilder implements ui.SceneBuilder {
   }
 }
 
+/// A [ui.Scene] implementation that's made of [Scenelet]s.
 class SceneletScene implements ui.Scene {
   const SceneletScene(this.scenelets);
 
+  /// Scenelets comprising this scene.
+  ///
+  /// The order of scenelets in this list matters. Scenelets at the beginning of
+  /// of the list appear before scenelets later in the list visually and in
+  /// terms of hit-test order.
   final List<Scenelet> scenelets;
 
   @override

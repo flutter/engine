@@ -9,7 +9,7 @@ import 'package:ui/ui.dart' as ui;
 
 import 'properties.dart';
 
-/// Builds a [RenderTree].
+/// Builds a [SceneletRenderTree].
 class SceneletRenderTreeBuilder {
   /// Creates an empty builder.
   SceneletRenderTreeBuilder() : _containerStack = <ContainerSceneletLayer>[
@@ -22,6 +22,7 @@ class SceneletRenderTreeBuilder {
 
   int _contentCount = 0;
 
+  int get contentCount => _contentCount;
   bool get hasContent => _contentCount > 0;
   bool get hasNoContent => _contentCount == 0;
 
@@ -30,6 +31,7 @@ class SceneletRenderTreeBuilder {
   }
 
   T _pushContainer<T extends ContainerSceneletLayer>(T layer) {
+    _currentContainer.appendChild(layer);
     _containerStack.add(layer);
     return layer;
   }
@@ -105,7 +107,7 @@ class SceneletRenderTreeBuilder {
   }
 
   void addRetained(SceneletLayer retainedLayer) {
-    _contentCount += 1;
+    _contentCount += retainedLayer.contentCount;
     _currentContainer.appendChild(retainedLayer);
   }
 
@@ -141,7 +143,7 @@ class Scenelet {
     required this.platformViews,
     required this.renderTree,
   }) : assert(platformViews == null || platformViews.isNotEmpty),
-       assert(renderTree == null || renderTree.debugIsNotEmpty);
+       assert(renderTree == null || renderTree.isNotEmpty);
 
   final List<SceneletPlatformView>? platformViews;
   final SceneletRenderTree? renderTree;
@@ -154,6 +156,10 @@ class Scenelet {
   }
 }
 
+/// Contains Flutter-native renderable content
+///
+/// This class plays a similar role to [ui.Scene], except it does not contain
+/// platform views.
 @immutable
 class SceneletRenderTree {
   const SceneletRenderTree({
@@ -162,9 +168,11 @@ class SceneletRenderTree {
 
   final RootSceneletLayer rootLayer;
 
-  int get debugContentCount => rootLayer.debugContentCount;
+  int get contentCount => rootLayer.contentCount;
 
-  bool get debugIsNotEmpty => debugContentCount > 0;
+  bool get isEmpty => contentCount == 0;
+
+  bool get isNotEmpty => contentCount > 0;
 
   void dispose() {
     // TODO
@@ -205,12 +213,21 @@ class SceneletPlatformView {
 abstract class SceneletLayer {
   const SceneletLayer();
 
-  /// When assertions are enabled, returns the number of atomic pieces of
-  /// renderable content this layer contributes.
+  /// The number of atomic renderable pieces of content that this layer has.
   ///
-  /// For example, a picture layer should return 1. A container layer should
-  /// return the sum of content contributed by its children.
-  int get debugContentCount;
+  /// Renderable content includes pictures and textures, each of which
+  /// contributes 1 piece of atomic content (i.e. pictures and textures cannot
+  /// be split into multiple pieces of content).
+  ///
+  /// This number includes content of descendant layers.
+  ///
+  /// This number must be greater than or equal to zero.
+  ///
+  /// If content count is zero then the layer tree is essentially empty. As an
+  /// optimization the rasterizer may ignore this layer and all its descendants,
+  /// and it may reorder platform views around this layer to reduce the number
+  /// of canvases needed to render the frame.
+  int get contentCount;
 
   void dispose() {
     // TODO(yjbanov);
@@ -221,7 +238,7 @@ abstract class LeafSceneletLayer extends SceneletLayer {
   const LeafSceneletLayer();
 
   @override
-  int get debugContentCount => 1;
+  int get contentCount => 1;
 }
 
 class SceneletPictureLayer extends LeafSceneletLayer {
@@ -260,19 +277,16 @@ abstract class ContainerSceneletLayer extends SceneletLayer {
   ContainerSceneletLayer({ required this.oldId });
 
   final int? oldId;
+
+  List<SceneletLayer> get children => _children;
   final List<SceneletLayer> _children = <SceneletLayer>[];
 
   @override
-  int get debugContentCount {
+  int get contentCount {
     int count = 0;
-    assert(() {
-      for (final SceneletLayer child in _children) {
-        if (child is ContainerSceneletLayer) {
-          count += child.debugContentCount;
-        }
-      }
-      return true;
-    }());
+    for (final SceneletLayer child in _children) {
+      count += child.contentCount;
+    }
     return count;
   }
 

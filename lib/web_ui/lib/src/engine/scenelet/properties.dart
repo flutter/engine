@@ -9,6 +9,11 @@ import 'package:ui/ui.dart' as ui;
 
 import 'scenelet.dart';
 
+/// Base class for a family of classes providing layer properties.
+///
+/// At a minimum all layers have the [id] property, which is a unique layer
+/// identifier. When the framework constructs a new layer but provides the same
+/// [id] value, the engine should treat it as an update to an existing layer.
 @immutable
 abstract class LayerProperties {
   LayerProperties();
