@@ -22,7 +22,7 @@ class ContextVK;
 ///
 class CapabilitiesVK final : public Capabilities {
  public:
-  CapabilitiesVK(bool enable_validations = true);
+  CapabilitiesVK(bool enable_validations = false);
 
   ~CapabilitiesVK();
 
