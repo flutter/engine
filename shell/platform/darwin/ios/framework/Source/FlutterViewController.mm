@@ -44,6 +44,38 @@ NSNotificationName const FlutterViewControllerHideHomeIndicator =
 NSNotificationName const FlutterViewControllerShowHomeIndicator =
     @"FlutterViewControllerShowHomeIndicator";
 
+/**
+ * Compute the interpolated value under linear interpolation.
+ */
+CGFloat FLTLinearInterpolatedValue(double progress, CGFloat from, CGFloat to, CGFloat scale) {
+  NSCAssert(progress >= 0 && progress <= 1, @"progress must be between 0 and 1");
+  return (from * (1 - progress) + to * progress) * scale;
+}
+
+/**
+ * Interpolate the viewport metrics for smoother rotation transition.
+ */
+void FLTInterpolateViewportMetrics(flutter::ViewportMetrics& viewportMetrics,
+                                   double rotationProgress,
+                                   CGSize fromSize,
+                                   UIEdgeInsets fromPadding,
+                                   CGSize toSize,
+                                   UIEdgeInsets toPadding) {
+  CGFloat scale = [UIScreen mainScreen].scale;
+  viewportMetrics.physical_width =
+      FLTLinearInterpolatedValue(rotationProgress, fromSize.width, toSize.width, scale);
+  viewportMetrics.physical_height =
+      FLTLinearInterpolatedValue(rotationProgress, fromSize.height, toSize.height, scale);
+  viewportMetrics.physical_padding_top =
+      FLTLinearInterpolatedValue(rotationProgress, fromPadding.top, toPadding.top, scale);
+  viewportMetrics.physical_padding_left =
+      FLTLinearInterpolatedValue(rotationProgress, fromPadding.left, toPadding.left, scale);
+  viewportMetrics.physical_padding_bottom =
+      FLTLinearInterpolatedValue(rotationProgress, fromPadding.bottom, toPadding.bottom, scale);
+  viewportMetrics.physical_padding_right =
+      FLTLinearInterpolatedValue(rotationProgress, fromPadding.right, toPadding.right, scale);
+}
+
 // Struct holding data to help adapt system mouse/trackpad events to embedder events.
 typedef struct MouseState {
   // Current coordinate of the mouse cursor in physical device pixels.
@@ -62,6 +94,11 @@ typedef struct MouseState {
 @property(nonatomic, readwrite, getter=isDisplayingFlutterUI) BOOL displayingFlutterUI;
 @property(nonatomic, assign) BOOL isHomeIndicatorHidden;
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
+
+/**
+ * Whether the device is rotating.
+ */
+@property(nonatomic, assign) BOOL isDuringRotationTransition;
 
 /**
  * Keyboard animation properties
@@ -843,6 +880,62 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [super viewDidDisappear:animated];
 }
 
+- (void)viewWillTransitionToSize:(CGSize)size
+       withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+  [super viewWillTransitionToSize:size withTransitionCoordinator:coordinator];
+
+  // We interpolate the viewport metrics (size and paddings) during rotation transition, to address
+  // a bug with distorted aspect ratio.
+  // See: https://github.com/flutter/flutter/issues/16322
+  //
+  // For every `kRotationViewportMetricsUpdateInterval`, we send the metrics which is interpolated
+  // between the old metrics before the rotation transition, to the new metrics after the rotation
+  // transition.
+  //
+  // Currently it is using linear interpolation. Using non-linear ease-in/out interpolation may
+  // achieve better results. It may also help to send only rotation info (such as rotation duration)
+  // and perform the interpolation on the framework side, to reduce engine/framework communication.
+  // However, since flutter's drawing happens on the ui thread, which is not iOS main thread,
+  // there is no guarantee that the viewport metrics change is immediately taken effect, resulting
+  // in some amount of unavoidable distortion.
+
+  NSTimeInterval transitionDuration = coordinator.transitionDuration;
+  // Do not interpolate if zero transition duration.
+  if (transitionDuration == 0) {
+    return;
+  }
+
+  _isDuringRotationTransition = YES;
+
+  CGSize oldSize = self.view.bounds.size;
+  UIEdgeInsets oldPadding = self.view.safeAreaInsets;
+
+  __block double rotationProgress = 0;
+  // Timer is retained by the run loop, and will be released after invalidated.
+  [NSTimer
+      scheduledTimerWithTimeInterval:kRotationViewportMetricsUpdateInterval
+                             repeats:YES
+                               block:^(NSTimer* timer) {
+                                 double progressDelta =
+                                     kRotationViewportMetricsUpdateInterval / transitionDuration;
+                                 rotationProgress = fmin(1, rotationProgress + progressDelta);
+
+                                 CGSize newSize = self.view.bounds.size;
+                                 UIEdgeInsets newPadding = self.view.safeAreaInsets;
+
+                                 FLTInterpolateViewportMetrics(_viewportMetrics, rotationProgress,
+                                                               oldSize, oldPadding, newSize,
+                                                               newPadding);
+                                 [self updateViewportMetricsIfNeeded:YES];
+
+                                 // End of rotation. Invalidate the timer.
+                                 if (rotationProgress == 1) {
+                                   _isDuringRotationTransition = NO;
+                                   [timer invalidate];
+                                 }
+                               }];
+}
+
 - (void)flushOngoingTouches {
   if (_engine && _ongoingTouches.get().count > 0) {
     auto packet = std::make_unique<flutter::PointerDataPacket>(_ongoingTouches.get().count);
@@ -1278,7 +1371,11 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 #pragma mark - Handle view resizing
 
-- (void)updateViewportMetrics {
+- (void)updateViewportMetricsIfNeeded:(BOOL)forRotation {
+  // update viewport metrics only if `_isDuringRotationTransition` matches `forRotation`.
+  if (_isDuringRotationTransition != forRotation) {
+    return;
+  }
   if ([_engine.get() viewController] == self) {
     [_engine.get() updateViewportMetrics:_viewportMetrics];
   }
@@ -1299,7 +1396,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   _viewportMetrics.physical_height = viewBounds.size.height * scale;
 
   [self updateViewportPadding];
-  [self updateViewportMetrics];
+  [self updateViewportMetricsIfNeeded:NO];
 
   // There is no guarantee that UIKit will layout subviews when the application is active. Creating
   // the surface when inactive will cause GPU accesses from the background. Only wait for the first
@@ -1329,7 +1426,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 - (void)viewSafeAreaInsetsDidChange {
   [self updateViewportPadding];
-  [self updateViewportMetrics];
+  [self updateViewportMetricsIfNeeded:NO];
   [super viewSafeAreaInsetsDidChange];
 }
 
@@ -1661,7 +1758,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
         flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
             flutterViewController.get()
                 .keyboardAnimationView.layer.presentationLayer.frame.origin.y;
-        [flutterViewController updateViewportMetrics];
+        [flutterViewController updateViewportMetricsIfNeeded:NO];
       }
     } else {
       fml::TimeDelta timeElapsed = recorder.get()->GetVsyncTargetTime() -
@@ -1669,7 +1766,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
       flutterViewController.get()->_viewportMetrics.physical_view_inset_bottom =
           [[flutterViewController keyboardSpringAnimation] curveFunction:timeElapsed.ToSecondsF()];
-      [flutterViewController updateViewportMetrics];
+      [flutterViewController updateViewportMetricsIfNeeded:NO];
     }
   };
   flutter::Shell& shell = [_engine.get() shell];
@@ -1698,7 +1795,7 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
   if (_viewportMetrics.physical_view_inset_bottom != self.targetViewInsetBottom) {
     // Make sure the `physical_view_inset_bottom` is the target value.
     _viewportMetrics.physical_view_inset_bottom = self.targetViewInsetBottom;
-    [self updateViewportMetrics];
+    [self updateViewportMetricsIfNeeded:NO];
   }
 }
 

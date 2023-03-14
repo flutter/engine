@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_DARWIN_IOS_FRAMEWORK_SOURCE_FLUTTERVIEWCONTROLLER_INTERNAL_H_
 
 #include "flutter/fml/memory/weak_ptr.h"
+#include "flutter/lib/ui/window/viewport_metrics.h"
 
 #import "flutter/shell/platform/darwin/ios/framework/Headers/FlutterViewController.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySecondaryResponder.h"
@@ -27,11 +28,20 @@ extern NSNotificationName const FlutterViewControllerHideHomeIndicator;
 FLUTTER_DARWIN_EXPORT
 extern NSNotificationName const FlutterViewControllerShowHomeIndicator;
 
+constexpr NSTimeInterval kRotationViewportMetricsUpdateInterval = 1.0 / 60;
+
 typedef NS_ENUM(NSInteger, FlutterKeyboardMode) {
   FlutterKeyboardModeHidden = 0,
   FlutterKeyboardModeDocked = 1,
   FlutterKeyboardModeFloating = 2,
 };
+
+void FLTInterpolateViewportMetrics(flutter::ViewportMetrics& viewportMetrics,
+                                   double rotationProgress,
+                                   CGSize fromSize,
+                                   UIEdgeInsets fromPadding,
+                                   CGSize toSize,
+                                   UIEdgeInsets toPadding);
 
 @interface FlutterViewController () <FlutterViewResponder>
 

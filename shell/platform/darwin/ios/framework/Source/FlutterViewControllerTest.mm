@@ -126,7 +126,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
               nextAction:(void (^)())next API_AVAILABLE(ios(13.4));
 - (void)discreteScrollEvent:(UIPanGestureRecognizer*)recognizer;
 - (flutter::PointerData)createAuxillaryStylusActionData;
-- (void)updateViewportMetrics;
+- (void)updateViewportMetricsIfNeeded:(BOOL)forRotation;
 - (void)onUserSettingsChanged:(NSNotification*)notification;
 - (void)applicationWillTerminate:(NSNotification*)notification;
 - (void)goToApplicationLifecycle:(nonnull NSString*)state;
@@ -836,7 +836,7 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   OCMReject([lifecycleChannel sendMessage:@"AppLifecycleState.inactive"]);
 }
 
-- (void)testUpdateViewportMetricsDoesntInvokeEngineWhenNotTheViewController {
+- (void)testUpdateViewportMetricsIfNeeded_DoesNotInvokeEngineWhenNotTheViewController {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewControllerA = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -847,12 +847,12 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
                                                                                  nibName:nil
                                                                                   bundle:nil];
   mockEngine.viewController = viewControllerB;
-  [viewControllerA updateViewportMetrics];
+  [viewControllerA updateViewportMetricsIfNeeded:NO];
   flutter::ViewportMetrics viewportMetrics;
   OCMVerify(never(), [mockEngine updateViewportMetrics:viewportMetrics]);
 }
 
-- (void)testUpdateViewportMetricsDoesInvokeEngineWhenIsTheViewController {
+- (void)testUpdateViewportMetricsIfNeeded_DoesInvokeEngineWhenIsTheViewController {
   FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
   [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
   FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
@@ -861,7 +861,190 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   mockEngine.viewController = viewController;
   flutter::ViewportMetrics viewportMetrics;
   OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
-  [viewController updateViewportMetrics];
+  [viewController updateViewportMetricsIfNeeded:NO];
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testUpdateViewportMetricsIfNeeded_DoesInvokeEngineForRotationWhenRotatingDevice {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+  flutter::ViewportMetrics viewportMetrics;
+  OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0.5);
+
+  // Mimic the device rotation.
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  // Should trigger the engine call when passing YES to `forRotation`.
+  [viewController updateViewportMetricsIfNeeded:YES];
+
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testUpdateViewportMetricsIfNeeded_DoesInvokeEngineNotForRotationWhenNotRotatingDevice {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+  flutter::ViewportMetrics viewportMetrics;
+  OCMExpect([mockEngine updateViewportMetrics:viewportMetrics]).ignoringNonObjectArgs();
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0.5);
+
+  // Should trigger the engine call when passing NO to `forRotation`.
+  [viewController updateViewportMetricsIfNeeded:NO];
+
+  OCMVerifyAll(mockEngine);
+}
+
+- (void)testUpdateViewportMetricsIfNeeded_DoesNotInvokeEngineForRotationWhenNotRotatingDevice {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0.5);
+
+  // Should not trigger the engine call when passing YES to `forRotation`.
+  [viewController updateViewportMetricsIfNeeded:YES];
+  OCMVerify(never(), [mockEngine updateViewportMetrics:flutter::ViewportMetrics()]);
+}
+
+- (void)testUpdateViewportMetricsIfNeeded_DoesNotInvokeEngineNotForRotationWhenRotatingDevice {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0.5);
+
+  // Mimic the device rotation.
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  // Should not trigger the engine call when passing NO to `forRotation`.
+  [viewController updateViewportMetricsIfNeeded:NO];
+
+  OCMVerify(never(), [mockEngine updateViewportMetrics:flutter::ViewportMetrics()]);
+}
+
+- (void)testFLTInterpolateViewportMetrics_UsesLinearInterpolation {
+  // Verify linear interpolation by checking 0%, 25%, 50% and 100% of progresses.
+
+  // 0% of rotation progress
+  CGSize fromSize = CGSizeMake(1000, 500);
+  CGSize toSize = CGSizeMake(500, 1000);
+  UIEdgeInsets fromPadding = UIEdgeInsetsMake(/*top=*/10, /*left=*/20, /*bottom=*/30, /*right=*/40);
+  UIEdgeInsets toPadding = UIEdgeInsetsMake(/*top=*/50, /*left=*/60, /*bottom=*/70, /*right=*/80);
+
+  flutter::ViewportMetrics viewportMetrics;
+  FLTInterpolateViewportMetrics(viewportMetrics,
+                                /*rotationProgress=*/0, fromSize, fromPadding, toSize, toPadding);
+
+  XCTAssertEqual(viewportMetrics.physical_width, 1000 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 500 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 10 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 20 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 30 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 40 * UIScreen.mainScreen.scale);
+
+  // 25% of rotation progress
+  FLTInterpolateViewportMetrics(viewportMetrics,
+                                /*rotationProgress=*/0.25, fromSize, fromPadding, toSize,
+                                toPadding);
+
+  XCTAssertEqual(viewportMetrics.physical_width, 875 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 625 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 20 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 30 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 40 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 50 * UIScreen.mainScreen.scale);
+
+  // 50% of rotation progress
+  FLTInterpolateViewportMetrics(viewportMetrics,
+                                /*rotationProgress=*/0.5, fromSize, fromPadding, toSize, toPadding);
+
+  XCTAssertEqual(viewportMetrics.physical_width, 750 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 750 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 30 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 40 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 50 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 60 * UIScreen.mainScreen.scale);
+
+  // 100% of rotation progress
+  FLTInterpolateViewportMetrics(viewportMetrics,
+                                /*rotationProgress=*/1, fromSize, fromPadding, toSize, toPadding);
+
+  XCTAssertEqual(viewportMetrics.physical_width, 500 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 1000 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 50 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 60 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 70 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 80 * UIScreen.mainScreen.scale);
+}
+
+- (void)testViewWillTransitionToSize_DoesInterpolateViewportMetricsIfNonZeroDuration {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  NSTimeInterval transitionDuration = 0.5;
+  OCMStub([mockCoordinator transitionDuration]).andReturn(transitionDuration);
+
+  flutter::ViewportMetrics viewportMetrics;
+
+  XCTestExpectation* expectation =
+      [self expectationWithDescription:@"update viewport with interpolated metrics"];
+  __block int frameCount = 0;
+  OCMStub([mockEngine updateViewportMetrics:viewportMetrics])
+      .ignoringNonObjectArgs()
+      .andDo(^(NSInvocation* invocation) {
+        frameCount += 1;
+        // Since we actually accumulate the progress delta (from 0%-100%), rather than directly
+        // dividing the total transition duration by the frame interval, there can easily be
+        // a rounding error. So we take the floor for simplicity.
+        // We cannot use `expectedFulfillmentCount` since it could over fulfill once.
+        double estimatedCount = transitionDuration / kRotationViewportMetricsUpdateInterval;
+        if (frameCount == floor(estimatedCount)) {
+          [expectation fulfill];
+        }
+      });
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+}
+
+- (void)testViewWillTransitionToSize_DoesNotInterpolateViewportMetricsIfZeroDuration {
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  OCMStub([mockCoordinator transitionDuration]).andReturn(0);
+
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+
+  OCMExpect([mockEngine updateViewportMetrics:flutter::ViewportMetrics()]).ignoringNonObjectArgs();
+  // Should directly update the view port metrics (when passing NO to `forRotation`).
+  [viewController updateViewportMetricsIfNeeded:NO];
   OCMVerifyAll(mockEngine);
 }
 
