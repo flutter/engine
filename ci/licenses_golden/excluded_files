@@ -2725,6 +2725,7 @@
 ../../../third_party/skia/modules/skunicode/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/include/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/src/BUILD.bazel
+../../../third_party/skia/modules/skunicode/tests
 ../../../third_party/skia/modules/svg/include/BUILD.bazel
 ../../../third_party/skia/modules/svg/src/BUILD.bazel
 ../../../third_party/skia/modules/svg/tests
@@ -2811,6 +2812,7 @@
 ../../../third_party/skia/third_party/freetype2
 ../../../third_party/skia/third_party/harfbuzz/README
 ../../../third_party/skia/third_party/icu
+../../../third_party/skia/third_party/icu4x/Makefile
 ../../../third_party/skia/third_party/libjpeg-turbo
 ../../../third_party/skia/third_party/libpng
 ../../../third_party/skia/third_party/lua
