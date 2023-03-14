@@ -26,7 +26,7 @@ void TextureRegistry::RegisterTexture(const std::shared_ptr<Texture>& texture) {
 void TextureRegistry::RegisterContextListener(
     uintptr_t id,
     std::weak_ptr<ContextListener> image) {
-  size_t next_id = image_counter_.fetch_add(1);
+  size_t next_id = image_counter_++;
   auto const result = image_indices_.insert({id, next_id});
   if (!result.second) {
     ordered_images_.erase(result.first->second);
@@ -56,9 +56,8 @@ void TextureRegistry::OnGrContextCreated() {
 
   // Calling OnGrContextCreated may result in a subsequent call to
   // RegisterContextListener from the listener, which may modify the map.
-  std::vector<
-      std::pair<size_t, std::pair<uintptr_t, std::weak_ptr<ContextListener>>>>
-      ordered_images(ordered_images_.begin(), ordered_images_.end());
+  std::vector<InsertionOrderMap::value_type> ordered_images(
+      ordered_images_.begin(), ordered_images_.end());
 
   for (const auto& [id, pair] : ordered_images) {
     auto index_id = pair.first;
@@ -77,14 +76,16 @@ void TextureRegistry::OnGrContextDestroyed() {
     it.second->OnGrContextDestroyed();
   }
 
-  for (const auto& [id, pair] : ordered_images_) {
-    auto index_id = pair.first;
-    auto weak_image = pair.second;
+  auto it = ordered_images_.begin();
+  while (it != ordered_images_.end()) {
+    auto index_id = it->second.first;
+    auto weak_image = it->second.second;
     if (auto image = weak_image.lock()) {
       image->OnGrContextDestroyed();
+      it++;
     } else {
       image_indices_.erase(index_id);
-      ordered_images_.erase(id);
+      it = ordered_images_.erase(it);
     }
   }
 }

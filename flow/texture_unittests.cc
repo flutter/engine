@@ -20,7 +20,7 @@ struct TestContextListener : public ContextListener {
   TestContextListener(uintptr_t p_id,
                       int_closure p_create,
                       int_closure p_destroy)
-      : id(p_id), create(p_create), destroy(p_destroy) {}
+      : id(p_id), create(std::move(p_create)), destroy(std::move(p_destroy)) {}
 
   virtual ~TestContextListener() = default;
 
