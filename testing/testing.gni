@@ -12,8 +12,7 @@ is_aot_test =
 
 # Unit tests targets are only enabled for host machines and Fuchsia right now
 declare_args() {
-  # enable_unittests = current_toolchain == host_toolchain || is_fuchsia
-  enable_unittests = true  #current_toolchain == host_toolchain || is_fuchsia
+  enable_unittests = current_toolchain == host_toolchain || is_fuchsia
 }
 
 # Creates a translation unit that defines the flutter::testing::GetFixturesPath
