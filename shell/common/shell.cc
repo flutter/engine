@@ -781,8 +781,6 @@ void Shell::OnPlatformViewCreated() {
   const bool should_post_raster_task =
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
-  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
-
   fml::AutoResetWaitableEvent latch;
   auto raster_task =
       fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
