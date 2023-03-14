@@ -37,7 +37,6 @@ class MockDelegate : public Rasterizer::Delegate {
                      const fml::RefPtr<fml::RasterThreadMerger>());
   MOCK_CONST_METHOD0(GetIsGpuDisabledSyncSwitch,
                      std::shared_ptr<const fml::SyncSwitch>());
-  MOCK_METHOD0(CreateSnapshotSurface, std::unique_ptr<Surface>());
   MOCK_CONST_METHOD0(GetSettings, const Settings&());
 };
 
