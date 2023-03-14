@@ -7,70 +7,30 @@ import 'dart:typed_data';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-mixin PictureLayer implements ui.EngineLayer {
-  ui.Picture? picture;
+class SkwasmScene implements ui.Scene {
+  SkwasmScene(this.picture);
 
+  final ui.Picture picture;
+
+  @override
   void dispose() {
-    picture?.dispose();
-  }
-}
-
-abstract class LayerOperation {
-  void pre(ui.Canvas canvas);
-  void post(ui.Canvas canvas);
-}
-
-class LayerBuilder {
-  LayerBuilder._(
-    this.recorder,
-    this.canvas,
-    this.parent,
-    this.layer,
-    this.operation
-  );
-
-  factory LayerBuilder() {
-    final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, ui.Rect.largest);
-    return LayerBuilder._(recorder, canvas);
+    picture.dispose();
   }
 
-  final LayerBuilder? parent;
-  final ui.PictureRecorder recorder;
-  final ui.Canvas canvas;
-  final PictureLayer? layer;
-  final LayerOperation? operation;
-
-  void prepare() {
-    operation.pre(canvas);
+  @override
+  Future<ui.Image> toImage(int width, int height) {
+    return picture.toImage(width, height);
   }
 
-  ui.Picture build() {
-    operation.post(canvas);
-    final ui.Picture picture = recorder.endRecording();
-    layer?.picture = picture;
-    return picture;
+  @override
+  ui.Image toImageSync(int width, int height) {
+    return picture.toImageSync(width, height);
   }
 
-  void addPicture(
-    ui.Offset offset,
-    ui.Picture picture, {
-    bool isComplexHint = false, 
-    bool willChangeHint = false
-  }) {
-    if (offset != ui.Offset.zero) {
-      canvas.save();
-      canvas.translate(offset.dx, offset.dy);
-      canvas.drawPicture(picture);
-      canvas.restore();
-    } else {
-      canvas.drawPicture(picture);
-    }
-  }
 }
 
 class SkwasmSceneBuilder implements ui.SceneBuilder {
-  LayerBuilder currentBuilder = LayerBuilder();
+  LayerBuilder currentBuilder = LayerBuilder.rootLayer();
 
   @override
   void addPerformanceOverlay(int enabledOptions, ui.Rect bounds) {
@@ -85,7 +45,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     bool isComplexHint = false, 
     bool willChangeHint = false
   }) {
-    layerBuilder.addPicture(
+    currentBuilder.addPicture(
       offset,
       picture,
       isComplexHint:
@@ -101,12 +61,16 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     double width = 0.0,
     double height = 0.0
   }) {
-    throw UnimplementedError("Platform view not implemented with skwasm renderer.");
+    throw UnimplementedError('Platform view not yet implemented with skwasm renderer.');
   }
 
   @override
   void addRetained(ui.EngineLayer retainedLayer) {
-    // TODO(jacksongardner): implement addRetained
+    final ui.Picture? picture = (retainedLayer as PictureLayer).picture;
+    if (picture == null) {
+      throw StateError('Adding incomplete retained layer.');
+    }
+    currentBuilder.addPicture(ui.Offset.zero, picture);
   }
 
   @override
@@ -127,8 +91,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.BlendMode blendMode = ui.BlendMode.srcOver,
     ui.BackdropFilterEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushBackdropFilter
-    return ui.BackdropFilterEngineLayer();
+    return pushLayer<BackdropFilterLayer>(
+      BackdropFilterLayer(),
+      BackdropFilterOperation()
+    );
   }
 
   @override
@@ -137,8 +103,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipPathEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushClipPath
-    throw UnimplementedError();
+    return pushLayer<ClipPathLayer>(
+      ClipPathLayer(),
+      ClipPathOperation(path, clipBehavior),
+    );
   }
 
   @override
@@ -147,8 +115,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     required ui.Clip clipBehavior,
     ui.ClipRRectEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushClipRRect
-    throw UnimplementedError();
+    return pushLayer<ClipRRectLayer>(
+      ClipRRectLayer(),
+      ClipRRectOperation(rrect, clipBehavior)
+    );
   }
 
   @override
@@ -157,8 +127,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.Clip clipBehavior = ui.Clip.antiAlias,
     ui.ClipRectEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushClipRect
-    throw UnimplementedError();
+    return pushLayer<ClipRectLayer>(
+      ClipRectLayer(),
+      ClipRectOperation(rect, clipBehavior)
+    );
   }
 
   @override
@@ -166,8 +138,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.ColorFilter filter, {
     ui.ColorFilterEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushColorFilter
-    throw UnimplementedError();
+    return pushLayer<ColorFilterLayer>(
+      ColorFilterLayer(),
+      ColorFilterOperation(),
+    );
   }
 
   @override
@@ -176,8 +150,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.ImageFilterEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushImageFilter
-    throw UnimplementedError();
+    return pushLayer<ImageFilterLayer>(
+      ImageFilterLayer(),
+      ImageFilterOperation(),
+    );
   }
 
   @override
@@ -186,8 +162,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     double dy, {
     ui.OffsetEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushOffset
-    throw UnimplementedError();
+    return pushLayer<OffsetLayer>(
+      OffsetLayer(),
+      OffsetOperation(dx, dy)
+    );
   }
 
   @override
@@ -195,8 +173,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     ui.Offset offset = ui.Offset.zero,
     ui.OpacityEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushOpacity
-    throw UnimplementedError();
+    return pushLayer<OpacityLayer>(
+      OpacityLayer(),
+      OpacityOperation(alpha, offset),
+    );
   }
 
   @override
@@ -229,8 +209,10 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
     Float64List matrix4, {
     ui.TransformEngineLayer? oldLayer
   }) {
-    // TODO(jacksongardner): implement pushTransform
-    throw UnimplementedError();
+    return pushLayer<TransformLayer>(
+      TransformLayer(),
+      TransformOperation(matrix4),
+    );
   }
 
   @override
@@ -263,12 +245,30 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
 
   @override
   ui.Scene build() {
-    // TODO(jacksongardner): implement build
-    throw UnimplementedError();
+    while (currentBuilder.parent != null) {
+      pop();
+    }
+    final ui.Picture finalPicture = currentBuilder.build();
+    return SkwasmScene(finalPicture);
   }
 
   @override
   void pop() {
-    // TODO(jacksongardner): implement pop
+    final ui.Picture picture = currentBuilder.build();
+    final LayerBuilder? parentBuilder = currentBuilder.parent;
+    if (parentBuilder == null) {
+      throw StateError('Popped too many times.');
+    }
+    currentBuilder = parentBuilder;
+    currentBuilder.addPicture(ui.Offset.zero, picture);
+  }
+
+  T pushLayer<T extends PictureLayer>(T layer, LayerOperation operation) {
+    currentBuilder = LayerBuilder.childLayer(
+      parent: currentBuilder,
+      layer: layer,
+      operation: operation
+    );
+    return layer;
   }
 }
