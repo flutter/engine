@@ -1574,8 +1574,12 @@ class Paint {
 /// [Image.toByteData], where images that are in the [extendedSRGB] color space
 /// should use something like [ImageByteFormat.rawExtendedRgba128] so that
 /// colors aren't lost. This is also the result of [Image.colorSpace].
+///
+/// See also: https://en.wikipedia.org/wiki/Color_space
 enum ColorSpace {
   /// The sRGB color space, the defined standard color space for the web.
+  ///
+  /// See also: https://en.wikipedia.org/wiki/SRGB
   sRGB,
   /// A color space that is backwards compatible with sRGB but can represent
   /// colors outside of that gamut with values outside of [0..1]. In order to
@@ -1610,7 +1614,7 @@ enum ImageByteFormat {
   /// Raw extended range RGBA format.
   ///
   /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit
-  /// float (IEEE 754) per channel.
+  /// float (IEEE 754 binary32) per channel.
   ///
   /// Example usage:
   ///
@@ -1774,8 +1778,11 @@ class Image {
   /// example, loading a PNG that is in the Display P3 color space will result
   /// in a [ColorSpace.extendedSRGB] image.
   ///
-  /// On certain platforms/rendering backends, wide gamut images will still
-  /// report [ColorSpace.sRGB] if rendering wide gamut colors isn't supported.
+  /// On rendering backends that don't support wide gamut colors (anything but
+  /// iOS impeller), wide gamut images will still report [ColorSpace.sRGB] if
+  /// rendering wide gamut colors isn't supported.
+  // Note: The docstring will become outdated as new platforms support wide
+  // gamut color, please keep it up to date.
   ColorSpace get colorSpace {
     final int colorSpaceValue = _image.colorSpace;
     switch (colorSpaceValue) {
