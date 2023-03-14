@@ -750,6 +750,13 @@ void Shell::OnPlatformViewCreated() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
+  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
+  if (surface == nullptr) {
+    // TODO(dkwingsmt): This case is observed in windows unit tests. Anyway,
+    // we're probably not creating the surface in this callback eventually.
+    return;
+  }
+
   // Prevent any request to change the thread configuration for raster and
   // platform queues while the platform view is being created.
   //
