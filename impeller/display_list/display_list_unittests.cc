@@ -277,8 +277,7 @@ TEST_P(DisplayListTest, StrokedPathsDrawCorrectly) {
     builder.Translate(150, 0);
     builder.DrawDRRect(
         SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
-        SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 30), 10, 10),
-        paint);
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 30), 10, 10), paint);
 
     // Contour with duplicate join points
     {
