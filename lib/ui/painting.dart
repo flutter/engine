@@ -1571,13 +1571,18 @@ class Paint {
 /// The color space describes the colors that are available to an [Image].
 ///
 /// This value can help decide which [ImageByteFormat] to use with
-/// [Image.toByteData], where images that are in the [extendedSRGB] color space
+/// [Image.toByteData]. Images that are in the [extendedSRGB] color space
 /// should use something like [ImageByteFormat.rawExtendedRgba128] so that
-/// colors aren't lost. This is also the result of [Image.colorSpace].
+/// colors outside of the sRGB gamut aren't lost.
+///
+/// This is also the result of [Image.colorSpace].
 ///
 /// See also: https://en.wikipedia.org/wiki/Color_space
 enum ColorSpace {
-  /// The sRGB color space, the defined standard color space for the web.
+  /// The sRGB color space.
+  ///
+  /// You may know this as the standard color space for the web or the color
+  /// space of non-wide-gamut Flutter apps.
   ///
   /// See also: https://en.wikipedia.org/wiki/SRGB
   sRGB,
@@ -1760,6 +1765,10 @@ class Image {
   ///
   /// The [format] argument specifies the format in which the bytes will be
   /// returned.
+  ///
+  /// Using [ImageByteFormat.rawRgba] on an image in the color space
+  /// [ColorSpace.extendedSRGB] will result in the gamut being squished to fit
+  /// into the sRGB gamut, resulting in the loss of wide-gamut colors.
   ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
