@@ -54,8 +54,7 @@ Uint32List fragmentUsingIntlSegmenter(
     breaks.add(iterator.current.index);
   }
   breaks.add(text.length);
-
-  return mallocUint32List(breaks.length).toTypedArray()..setAll(0, breaks);
+  return Uint32List.fromList(breaks);
 }
 
 // These are the soft/hard line break values expected by Skia's SkParagraph.
@@ -69,7 +68,7 @@ Uint32List fragmentUsingV8LineBreaker(String text) {
       breakLinesUsingV8BreakIterator(text, _v8LineBreaker);
 
   final int size = (fragments.length + 1) * 2;
-  final Uint32List typedArray = mallocUint32List(size).toTypedArray();
+  final Uint32List typedArray = Uint32List(size);
 
   typedArray[0] = 0; // start index
   typedArray[1] = _kSoftLineBreak; // break type
