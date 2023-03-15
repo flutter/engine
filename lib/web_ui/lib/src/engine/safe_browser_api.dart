@@ -217,16 +217,17 @@ const bool _browserImageDecodingEnabled = bool.fromEnvironment(
 );
 
 /// Whether the current browser supports `ImageDecoder`.
-bool browserSupportsImageDecoder =
-  _browserImageDecodingEnabled &&
-  _imageDecoderConstructor != null &&
-  browserEngine == BrowserEngine.blink;
+bool browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 
 /// Sets the value of [browserSupportsImageDecoder] to its default value.
 void debugResetBrowserSupportsImageDecoder() {
-  browserSupportsImageDecoder =
-      _imageDecoderConstructor != null;
+  browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 }
+
+bool _defaultBrowserSupportsImageDecoder =
+    _browserImageDecodingEnabled &&
+    _imageDecoderConstructor != null &&
+    browserEngine == BrowserEngine.blink;
 
 /// The signature of the function passed to the constructor of JavaScript `Promise`.
 typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
