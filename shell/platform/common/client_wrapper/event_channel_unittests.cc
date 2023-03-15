@@ -280,8 +280,10 @@ TEST(EventChannelTest, StreamHandlerErrorPassByValue) {
   {
     std::string code = "Code";
     std::string msg = "Message";
-    std::unique_ptr<EncodableValue> details = std::make_unique<EncodableValue>("Details");
-    error = std::make_unique<StreamHandlerError<>>(code, msg, std::move(details));
+    std::unique_ptr<EncodableValue> details =
+        std::make_unique<EncodableValue>("Details");
+    error =
+        std::make_unique<StreamHandlerError<>>(code, msg, std::move(details));
   }
 
   ASSERT_NE(error.get(), nullptr);
