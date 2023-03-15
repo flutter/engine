@@ -154,6 +154,7 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/tools/build_metal_library.py
 ../../../flutter/impeller/tools/check_licenses.py
+../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
@@ -2747,6 +2748,7 @@
 ../../../third_party/skia/src/encode/BUILD.bazel
 ../../../third_party/skia/src/fonts/BUILD.bazel
 ../../../third_party/skia/src/gpu/BUILD.bazel
+../../../third_party/skia/src/gpu/dawn/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/d3d/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/dawn/BUILD.bazel
