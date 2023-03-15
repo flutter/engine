@@ -52,10 +52,6 @@ std::unique_ptr<Geometry> Geometry::MakeRect(Rect rect) {
   return std::make_unique<RectGeometry>(rect);
 }
 
-bool Geometry::MaybeHasOverlapping(const Entity& entity) const {
-  return true;
-}
-
 /////// Path Geometry ///////
 
 FillPathGeometry::FillPathGeometry(const Path& path) : path_(path) {}
@@ -528,10 +524,6 @@ std::optional<Rect> CoverGeometry::GetCoverage(const Matrix& transform) const {
   return Rect::MakeMaximum();
 }
 
-bool CoverGeometry::MaybeHasOverlapping(const Entity& entity) const {
-  return false;
-}
-
 /////// Rect Geometry ///////
 
 RectGeometry::RectGeometry(Rect rect) : rect_(rect) {}
@@ -566,10 +558,6 @@ GeometryVertexType RectGeometry::GetVertexType() const {
 
 std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
-}
-
-bool RectGeometry::MaybeHasOverlapping(const Entity& entity) const {
-  return false;
 }
 
 }  // namespace impeller

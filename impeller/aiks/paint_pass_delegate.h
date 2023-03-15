@@ -42,6 +42,11 @@ class PaintPassDelegate final : public EntityPassDelegate {
   FML_DISALLOW_COPY_AND_ASSIGN(PaintPassDelegate);
 };
 
+/// A delegate that attempts to forward opacity from a save layer to
+/// child contents.
+///
+/// Currently this has a hardcoded limit of 3 entities in a pass, and
+/// cannot forward to child subpass delegates.
 class OpacityPeepholePassDelegate final : public EntityPassDelegate {
  public:
   OpacityPeepholePassDelegate(Paint paint, std::optional<Rect> coverage);

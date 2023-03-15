@@ -30,7 +30,7 @@ void SolidColorContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
 
 // | Contents|
 bool SolidColorContents::CanAcceptOpacity(const Entity& entity) const {
-  return !geometry_->MaybeHasOverlapping(entity);
+  return true;
 }
 
 // | Contents|

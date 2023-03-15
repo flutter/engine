@@ -43,7 +43,7 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
 };
 
 bool ColorSourceContents::CanAcceptOpacity(const Entity& entity) const {
-  return !geometry_->MaybeHasOverlapping(entity);
+  return true;
 }
 
 void ColorSourceContents::InheritOpacity(Scalar opacity) {
