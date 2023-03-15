@@ -830,7 +830,7 @@ class PlatformView {
 
  protected:
   // This is the only method called on the raster task runner.
-  virtual std::unique_ptr<Surface> CreateRenderingSurface();
+  virtual std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id);
 
   PlatformView::Delegate& delegate_;
   const TaskRunners task_runners_;

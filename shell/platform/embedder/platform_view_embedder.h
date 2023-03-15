@@ -6,6 +6,7 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_PLATFORM_VIEW_EMBEDDER_H_
 
 #include <functional>
+#include <unordered_map>
 
 #include "flow/embedded_views.h"
 #include "flutter/fml/macros.h"
@@ -50,6 +51,12 @@ class PlatformViewEmbedder final : public PlatformView {
         compute_platform_resolved_locale_callback;
     OnPreEngineRestartCallback on_pre_engine_restart_callback;  // optional
   };
+
+  PlatformViewEmbedder(
+      PlatformView::Delegate& delegate,
+      const flutter::TaskRunners& task_runners,
+      std::unique_ptr<EmbedderStudio> embedder_studio,
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   // Create a platform view that sets up a software rasterizer.
   PlatformViewEmbedder(
@@ -108,7 +115,9 @@ class PlatformViewEmbedder final : public PlatformView {
  private:
   class EmbedderPlatformMessageHandler;
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
-  std::unique_ptr<EmbedderSurface> embedder_surface_;
+  std::unique_ptr<EmbedderStudio> embedder_studio_;
+  std::unordered_map<int64_t, std::unique_ptr<EmbedderSurface>>
+      embedder_surfaces_;
   std::shared_ptr<EmbedderPlatformMessageHandler> platform_message_handler_;
   PlatformDispatchTable platform_dispatch_table_;
 

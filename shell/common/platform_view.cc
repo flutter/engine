@@ -63,6 +63,8 @@ void PlatformView::NotifyDestroyed() {
   delegate_.OnPlatformViewDestroyed();
 }
 
+constexpr int64_t kFlutterDefaultViewId = 0;
+
 std::unique_ptr<Surface> PlatformView::CreateSurface() {
   std::unique_ptr<Surface> surface;
   // Threading: We want to use the platform view on the non-platform thread.
@@ -72,7 +74,7 @@ std::unique_ptr<Surface> PlatformView::CreateSurface() {
   fml::ManualResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
       task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
-        surface = platform_view->CreateRenderingSurface();
+        surface = platform_view->CreateRenderingSurface(kFlutterDefaultViewId);
         if (surface && !surface->IsValid()) {
           surface.reset();
         }
@@ -138,7 +140,7 @@ void PlatformView::MarkTextureFrameAvailable(int64_t texture_id) {
   delegate_.OnPlatformViewMarkTextureFrameAvailable(texture_id);
 }
 
-std::unique_ptr<Surface> PlatformView::CreateRenderingSurface() {
+std::unique_ptr<Surface> PlatformView::CreateRenderingSurface(int64_t view_id) {
   // We have a default implementation because tests create a platform view but
   // never a rendering surface.
   FML_DCHECK(false) << "This platform does not provide a rendering surface but "
