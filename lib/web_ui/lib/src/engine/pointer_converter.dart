@@ -242,6 +242,8 @@ class PointerDataConverter {
     final bool isDown = buttons != 0;
     if (signalKind == null ||
       signalKind == ui.PointerSignalKind.none) {
+      // The test fails when this print is removed.
+      print('if');
       switch (change) {
         case ui.PointerChange.add:
           assert(!_pointers.containsKey(device));
