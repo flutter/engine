@@ -109,7 +109,7 @@ class ColorFilterLayer
   implements ui.ColorFilterEngineLayer {}
 class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation();
-  
+
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     // TODO(jacksongardner): Implement color filter
@@ -279,7 +279,7 @@ class LayerBuilder {
   void addPicture(
     ui.Offset offset,
     ui.Picture picture, {
-    bool isComplexHint = false, 
+    bool isComplexHint = false,
     bool willChangeHint = false
   }) {
     drawCommands.add(PictureDrawCommand(offset, picture));

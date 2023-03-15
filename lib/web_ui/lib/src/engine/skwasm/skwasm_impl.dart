@@ -8,6 +8,7 @@ library skwasm_impl;
 import 'dart:ffi';
 
 export 'skwasm_impl/canvas.dart';
+export 'skwasm_impl/font_collection.dart';
 export 'skwasm_impl/image.dart';
 export 'skwasm_impl/layers.dart';
 export 'skwasm_impl/paint.dart';

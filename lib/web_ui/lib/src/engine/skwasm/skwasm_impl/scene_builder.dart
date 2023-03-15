@@ -42,7 +42,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
   void addPicture(
     ui.Offset offset,
     ui.Picture picture, {
-    bool isComplexHint = false, 
+    bool isComplexHint = false,
     bool willChangeHint = false
   }) {
     currentBuilder.addPicture(
@@ -228,7 +228,7 @@ class SkwasmSceneBuilder implements ui.SceneBuilder {
   @override
   void setProperties(
     double width,
-    double height, 
+    double height,
     double insetTop,
     double insetRight,
     double insetBottom,

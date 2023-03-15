@@ -29,7 +29,7 @@ SKWASM_EXPORT SkPicture* pictureRecorder_endRecording(
   return recorder->finishRecordingAsPicture().release();
 }
 
-SKWASM_EXPORT void picture_getCullRect(SkPicture *picture, SkRect *outRect) {
+SKWASM_EXPORT void picture_getCullRect(SkPicture* picture, SkRect* outRect) {
   *outRect = picture->cullRect();
 }
 

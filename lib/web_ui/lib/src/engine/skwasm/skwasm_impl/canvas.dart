@@ -206,7 +206,7 @@ class SkwasmCanvas implements ui.Canvas {
 
   @override
   void drawParagraph(ui.Paragraph uiParagraph, ui.Offset offset) {
-    throw UnimplementedError();
+    // TODO(jacksongardner): implement this
   }
 
   @override
@@ -260,7 +260,7 @@ class SkwasmCanvas implements ui.Canvas {
     double elevation,
     bool transparentOccluder,
   ) {
-    throw UnimplementedError();
+    // TODO(jacksongardner): implement this
   }
 
   @override

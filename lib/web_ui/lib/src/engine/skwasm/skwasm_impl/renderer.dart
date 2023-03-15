@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:html';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -13,9 +12,21 @@ import 'package:ui/ui.dart' as ui;
 
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
-  DomCanvasElement? sceneElement;
+  late final DomCanvasElement sceneElement = _createCanvas();
   SkwasmSurface? surface;
   ui.Size? surfaceSize;
+
+  DomCanvasElement _createCanvas() {
+    final DomCanvasElement newCanvas = createDomCanvasElement();
+    newCanvas.id = 'flt-scene';
+    final ui.Size frameSize = ui.window.physicalSize;
+    newCanvas.width = frameSize.width;
+    newCanvas.height = frameSize.height;
+    return newCanvas;
+  }
+
+  @override
+  final SkwasmFontCollection fontCollection = SkwasmFontCollection();
 
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
@@ -64,7 +75,7 @@ class SkwasmRenderer implements Renderer {
 
   @override
   ui.Gradient createLinearGradient(ui.Offset from, ui.Offset to, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, Float32List? matrix4]) {
-    throw UnimplementedError('createLinearGradientn ot yet implemented');
+    throw UnimplementedError('createLinearGradientn not yet implemented');
   }
 
   @override
@@ -76,14 +87,22 @@ class SkwasmRenderer implements Renderer {
   ui.Paint createPaint() => SkwasmPaint();
 
   @override
-  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) {
-    throw UnimplementedError('createParagraphBuilder not yet implemented');
-  }
+  ui.ParagraphBuilder createParagraphBuilder(ui.ParagraphStyle style) => SkwasmParagraphBuilder();
 
   @override
-  ui.ParagraphStyle createParagraphStyle({ui.TextAlign? textAlign, ui.TextDirection? textDirection, int? maxLines, String? fontFamily, double? fontSize, double? height, ui.TextHeightBehavior? textHeightBehavior, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.StrutStyle? strutStyle, String? ellipsis, ui.Locale? locale}) {
-    throw UnimplementedError('createParagraphStyle not yet implemented');
-  }
+  ui.ParagraphStyle createParagraphStyle({
+    ui.TextAlign? textAlign,
+    ui.TextDirection? textDirection,
+    int? maxLines, String? fontFamily,
+    double? fontSize,
+    double? height,
+    ui.TextHeightBehavior? textHeightBehavior,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.StrutStyle? strutStyle,
+    String? ellipsis,
+    ui.Locale? locale
+  }) => SkwasmParagraphStyle();
 
   @override
   ui.Path createPath() => SkwasmPath();
@@ -100,19 +119,57 @@ class SkwasmRenderer implements Renderer {
   ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();
 
   @override
-  ui.StrutStyle createStrutStyle({String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? height, ui.TextLeadingDistribution? leadingDistribution, double? leading, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, bool? forceStrutHeight}) {
+  ui.StrutStyle createStrutStyle({
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    double? leading,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    bool? forceStrutHeight
+  }) {
     throw UnimplementedError('createStrutStyle not yet implemented');
   }
 
   @override
-  ui.Gradient createSweepGradient(ui.Offset center, List<ui.Color> colors, [List<double>? colorStops, ui.TileMode tileMode = ui.TileMode.clamp, double startAngle = 0.0, double endAngle = math.pi * 2, Float32List? matrix4]) {
+  ui.Gradient createSweepGradient(
+    ui.Offset center,
+    List<ui.Color> colors, [
+    List<double>? colorStops,
+    ui.TileMode tileMode = ui.TileMode.clamp,
+    double startAngle = 0.0,
+    double endAngle = math.pi * 2,
+    Float32List? matrix4
+  ]) {
     throw UnimplementedError('createSweepGradient not yet implemented');
   }
 
   @override
-  ui.TextStyle createTextStyle({ui.Color? color, ui.TextDecoration? decoration, ui.Color? decorationColor, ui.TextDecorationStyle? decorationStyle, double? decorationThickness, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, ui.TextBaseline? textBaseline, String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? letterSpacing, double? wordSpacing, double? height, ui.TextLeadingDistribution? leadingDistribution, ui.Locale? locale, ui.Paint? background, ui.Paint? foreground, List<ui.Shadow>? shadows, List<ui.FontFeature>? fontFeatures, List<ui.FontVariation>? fontVariations}) {
-    throw UnimplementedError('createTextStyle not yet implemented');
-  }
+  ui.TextStyle createTextStyle({
+    ui.Color? color,
+    ui.TextDecoration? decoration,
+    ui.Color? decorationColor,
+    ui.TextDecorationStyle? decorationStyle,
+    double? decorationThickness,
+    ui.FontWeight? fontWeight,
+    ui.FontStyle? fontStyle,
+    ui.TextBaseline? textBaseline,
+    String? fontFamily,
+    List<String>? fontFamilyFallback,
+    double? fontSize,
+    double? letterSpacing,
+    double? wordSpacing,
+    double? height,
+    ui.TextLeadingDistribution? leadingDistribution,
+    ui.Locale? locale,
+    ui.Paint? background,
+    ui.Paint? foreground,
+    List<ui.Shadow>? shadows,
+    List<ui.FontFeature>? fontFeatures,
+    List<ui.FontVariation>? fontVariations
+  }) => SkwasmTextStyle();
 
   @override
   ui.Vertices createVertices(
@@ -154,14 +211,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  FontCollection get fontCollection => throw UnimplementedError('fontCollection not yet implemented');
-
-  @override
   FutureOr<void> initialize() {
-    final DomCanvasElement newCanvas = createDomCanvasElement();
-    newCanvas.id = 'flt-scene';
-
-    sceneElement = newCanvas;
   }
 
   @override
@@ -178,8 +228,8 @@ class SkwasmRenderer implements Renderer {
   void renderScene(ui.Scene scene) {
     final ui.Size frameSize = ui.window.physicalSize;
     if (frameSize != surfaceSize) {
-      sceneElement!.width = frameSize.width;
-      sceneElement!.height = frameSize.height;
+      // sceneElement.width = frameSize.width;
+      // sceneElement.height = frameSize.height;
       surface!.setSize(frameSize.width.ceil(), frameSize.height.ceil());
       surfaceSize = frameSize;
     }
