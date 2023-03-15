@@ -1624,10 +1624,20 @@ enum ImageByteFormat {
   /// Example usage:
   ///
   /// ```dart
-  /// final ByteData data =
-  ///     (await image.toByteData(format: ImageByteFormat.rawExtendedRgba128))!;
-  /// final Float32List floats = Float32List.view(data.buffer);
-  /// print('r:${floats[0]} g:${floats[1]} b:${floats[2]} a:${floats[3]}');
+  /// import 'dart:ui' as ui;
+  /// import 'dart:typed_data';
+  ///
+  /// Future<Map<String, double>> getFirstPixel(ui.Image image) async {
+  ///   final ByteData data =
+  ///       (await image.toByteData(format: ui.ImageByteFormat.rawExtendedRgba128))!;
+  ///   final Float32List floats = Float32List.view(data.buffer);
+  ///   return <String, double>{
+  ///     'r': floats[0],
+  ///     'g': floats[1],
+  ///     'b': floats[2],
+  ///     'a': floats[3],
+  ///   };
+  /// }
   /// ```
   rawExtendedRgba128,
 
