@@ -2,7 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+@DefaultAsset('skwasm')
 library skwasm_impl;
+
+import 'dart:ffi';
 
 export 'skwasm_impl/canvas.dart';
 export 'skwasm_impl/image.dart';

@@ -3,19 +3,20 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:html';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:ui/src/engine.dart';
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../embedder.dart';
-import '../../fonts.dart';
-import '../../html_image_codec.dart';
-import '../../renderer.dart';
-
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
+  DomCanvasElement? sceneElement;
+  SkwasmSurface? surface;
+  ui.Size? surfaceSize;
+
   @override
   ui.Path combinePaths(ui.PathOperation op, ui.Path path1, ui.Path path2) {
     return SkwasmPath.combine(op, path1 as SkwasmPath, path2 as SkwasmPath);
@@ -96,9 +97,7 @@ class SkwasmRenderer implements Renderer {
   }
 
   @override
-  ui.SceneBuilder createSceneBuilder() {
-    return SkwasmSceneBuilder();
-  }
+  ui.SceneBuilder createSceneBuilder() => SkwasmSceneBuilder();
 
   @override
   ui.StrutStyle createStrutStyle({String? fontFamily, List<String>? fontFamilyFallback, double? fontSize, double? height, ui.TextLeadingDistribution? leadingDistribution, double? leading, ui.FontWeight? fontWeight, ui.FontStyle? fontStyle, bool? forceStrutHeight}) {
@@ -159,7 +158,10 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FutureOr<void> initialize() {
-    throw UnimplementedError('initialize not yet implemented');
+    final DomCanvasElement newCanvas = createDomCanvasElement();
+    newCanvas.id = 'flt-scene';
+
+    sceneElement = newCanvas;
   }
 
   @override
@@ -174,7 +176,15 @@ class SkwasmRenderer implements Renderer {
 
   @override
   void renderScene(ui.Scene scene) {
-    throw UnimplementedError('renderScene not yet implemented');
+    final ui.Size frameSize = ui.window.physicalSize;
+    if (frameSize != surfaceSize) {
+      sceneElement!.width = frameSize.width;
+      sceneElement!.height = frameSize.height;
+      surface!.setSize(frameSize.width.ceil(), frameSize.height.ceil());
+      surfaceSize = frameSize;
+    }
+    final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
+    surface!.renderPicture(picture);
   }
 
   @override
@@ -182,7 +192,8 @@ class SkwasmRenderer implements Renderer {
 
   @override
   void reset(FlutterViewEmbedder embedder) {
-    throw UnimplementedError('reset not yet implemented');
+    embedder.addSceneToSceneHost(sceneElement);
+    surface = SkwasmSurface('flt-scene');
   }
 
   @override

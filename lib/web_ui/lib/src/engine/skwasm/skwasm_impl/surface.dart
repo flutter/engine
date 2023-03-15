@@ -6,16 +6,16 @@ import 'dart:ffi';
 
 import 'package:ui/src/engine/skwasm/skwasm_impl.dart';
 
-class Surface {
-  factory Surface(String canvasQuerySelector) {
+class SkwasmSurface {
+  factory SkwasmSurface(String canvasQuerySelector) {
     final SurfaceHandle surfaceHandle = withStackScope((StackScope scope) {
       final Pointer<Int8> pointer = scope.convertStringToNative(canvasQuerySelector);
       return surfaceCreateFromCanvas(pointer);
     });
-    return Surface._fromHandle(surfaceHandle);
+    return SkwasmSurface._fromHandle(surfaceHandle);
   }
 
-  Surface._fromHandle(this._handle);
+  SkwasmSurface._fromHandle(this._handle);
   final SurfaceHandle _handle;
 
   void setSize(int width, int height) =>
