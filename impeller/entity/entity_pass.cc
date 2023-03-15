@@ -623,7 +623,7 @@ void EntityPass::IterateAllEntities(
   }
 }
 
-bool EntityPass::IterateAllFlatEntities(
+bool EntityPass::IterateUntilSubpass(
     const std::function<bool(Entity&)>& iterator) {
   if (!iterator) {
     return true;

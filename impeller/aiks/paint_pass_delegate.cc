@@ -89,7 +89,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   }
   bool all_can_accept = true;
   std::vector<Rect> all_coverages;
-  auto had_subpass = entity_pass->IterateAllFlatEntities(
+  auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
         auto contents = entity.GetContents();
         if (!contents->CanAcceptOpacity(entity)) {
@@ -113,7 +113,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     return false;
   }
   auto alpha = paint_.color.alpha;
-  entity_pass->IterateAllFlatEntities([&alpha](Entity& entity) {
+  entity_pass->IterateUntilSubpass([&alpha](Entity& entity) {
     entity.GetContents()->InheritOpacity(alpha);
     return true;
   });
