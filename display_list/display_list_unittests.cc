@@ -708,7 +708,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
     static auto display_list = builder.Build();
     RUN_TESTS2(receiver.drawDisplayList(display_list);, false);
   }
-  RUN_TESTS(receiver.drawTextBlob(TestBlob1, 0, 0););
+  RUN_TESTS2(receiver.drawTextBlob(TestBlob1, 0, 0);, false);
   RUN_TESTS2(receiver.drawShadow(kTestPath1, SK_ColorBLACK, 1.0, false, 1.0);
              , false);
 
