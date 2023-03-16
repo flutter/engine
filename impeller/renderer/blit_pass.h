@@ -141,7 +141,7 @@ class BlitPass {
       std::string label) = 0;
 
   virtual bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                                      std::string label);
+                                      std::string label) = 0;
 
   virtual bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                        std::string label) = 0;

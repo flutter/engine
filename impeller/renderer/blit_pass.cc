@@ -121,11 +121,6 @@ bool BlitPass::OptimizeForGPUAccess(std::shared_ptr<Texture> texture,
   return OnOptimizeForGPUAccess(std::move(texture), std::move(label));
 }
 
-bool BlitPass::OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                                      std::string label) {
-  return true;
-}
-
 bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,
                               std::string label) {
   if (!texture) {
