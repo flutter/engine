@@ -27,7 +27,8 @@ class EntityPass {
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
-      const Matrix& effect_transform)>;
+      const Matrix& effect_transform,
+      bool is_subpass)>;
 
   EntityPass();
 
@@ -51,6 +52,15 @@ class EntityPass {
               const RenderTarget& render_target) const;
 
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
+
+  /// @brief  Iterate entities in this pass up until the first subpass is found.
+  ///         This is useful for limiting look-ahead optimizations.
+  ///
+  /// @return Returns whether a subpass was encountered.
+  bool IterateUntilSubpass(const std::function<bool(Entity&)>& iterator);
+
+  /// @brief Return the number of entities on this pass.
+  size_t GetEntityCount() const;
 
   void SetTransformation(Matrix xformation);
 
@@ -118,7 +128,7 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
 
-  /// These value are incremented whenever something is added to the pass that
+  /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
   /// the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
@@ -126,10 +136,10 @@ class EntityPass {
   /// These are tracked as separate values because we may ignore
   /// blend_reads_from_pass_texture_ if the device supports framebuffer based
   /// advanced blends.
-  uint32_t filter_reads_from_pass_texture_ = 0;
-  uint32_t blend_reads_from_pass_texture_ = 0;
+  uint32_t advanced_blend_reads_from_pass_texture_ = 0;
+  uint32_t backdrop_filter_reads_from_pass_texture_ = 0;
 
-  uint32_t ComputeTotalReads(ContentContext& renderer) const;
+  uint32_t GetTotalPassReads(ContentContext& renderer) const;
 
   std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
 

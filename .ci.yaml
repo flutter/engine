@@ -24,7 +24,7 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      # CIPD flutter_internal/java/openjdk/$platform
+      # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
           {"dependency": "open_jdk", "version": "version:11"},
@@ -46,7 +46,7 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      # CIPD flutter_internal/java/openjdk/$platform
+      # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
           {"dependency": "open_jdk", "version": "version:11"}
@@ -68,7 +68,7 @@ platform_properties:
       ios_debug: "false"
       ios_profile: "false"
       ios_release: "false"
-      # CIPD flutter_internal/java/openjdk/$platform
+      # CIPD flutter/java/openjdk/$platform
       dependencies: >-
         [
           {"dependency": "open_jdk", "version": "version:11"}
@@ -156,6 +156,7 @@ targets:
       emulator_arch: "x64"
       enable_cso: "true"
     timeout: 60
+    bringup: true
 
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
@@ -168,6 +169,7 @@ targets:
       emulator_arch: "arm64"
       enable_cso: "true"
     timeout: 60
+    bringup: true
 
   - name: Linux Framework Smoke Tests
     recipe: engine/framework_smoke

@@ -77,7 +77,7 @@ class BrowserPlatform extends PlatformPlugin {
         // Serves files from the bundle's output build directory
         .add(createSimpleDirectoryHandler(getBundleBuildDirectory(suite.testBundle)))
 
-        // Serves files from the web_ui/build/ directory at the root (/) URL path.
+        // Serves files from the out/web_tests/ directory at the root (/) URL path.
         .add(createSimpleDirectoryHandler(env.environment.webUiBuildDir))
 
         // Serves files from thes test set directory
@@ -222,7 +222,7 @@ class BrowserPlatform extends PlatformPlugin {
     );
   }
 
-  /// Lists available test images under `web_ui/build/test_images`.
+  /// Lists available test images under `out/web_tests/test_images`.
   Future<shelf.Response> _testImageListingHandler(shelf.Request request) async {
     const Map<String, String> supportedImageTypes = <String, String>{
       '.png': 'image/png',

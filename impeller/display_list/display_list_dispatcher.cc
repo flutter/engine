@@ -22,6 +22,7 @@
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
+#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -405,6 +406,43 @@ void DisplayListDispatcher::setColorSource(
       };
       return;
     }
+    case Paint::ColorSourceType::kConicalGradient: {
+      const flutter::DlConicalGradientColorSource* conical_gradient =
+          source->asConicalGradient();
+      FML_DCHECK(conical_gradient);
+      Point center = ToPoint(conical_gradient->end_center());
+      SkScalar radius = conical_gradient->end_radius();
+      Point focus_center = ToPoint(conical_gradient->start_center());
+      SkScalar focus_radius = conical_gradient->start_radius();
+      std::vector<Color> colors;
+      std::vector<float> stops;
+      ConvertStops(conical_gradient, &colors, &stops);
+
+      auto tile_mode = ToTileMode(conical_gradient->tile_mode());
+      auto matrix = ToMatrix(conical_gradient->matrix());
+      paint_.color_source = [center, radius, colors = std::move(colors),
+                             stops = std::move(stops), tile_mode, matrix,
+                             focus_center, focus_radius]() {
+        std::shared_ptr<ConicalGradientContents> contents =
+            std::make_shared<ConicalGradientContents>();
+        contents->SetColors(colors);
+        contents->SetStops(stops);
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetTileMode(tile_mode);
+        contents->SetEffectTransform(matrix);
+        contents->SetFocus(focus_center, focus_radius);
+
+        auto radius_pt = Point(radius, radius);
+        std::vector<Point> bounds{center + radius_pt, center - radius_pt};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
+        return contents;
+      };
+      return;
+    }
     case Paint::ColorSourceType::kRadialGradient: {
       const flutter::DlRadialGradientColorSource* radialGradient =
           source->asRadialGradient();
@@ -541,9 +579,6 @@ void DisplayListDispatcher::setColorSource(
 #endif  // IMPELLER_ENABLE_3D
       return;
     }
-    case Paint::ColorSourceType::kConicalGradient:
-      UNIMPLEMENTED;
-      break;
   }
 }
 
@@ -653,7 +688,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto tile_mode = ToTileMode(blur->tile_mode());
 
       return [sigma_x, sigma_y, tile_mode](const FilterInput::Ref& input,
-                                           const Matrix& effect_transform) {
+                                           const Matrix& effect_transform,
+                                           bool is_subpass) {
         return FilterContents::MakeGaussianBlur(
             input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
             tile_mode, effect_transform);
@@ -670,7 +706,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto radius_x = Radius(dilate->radius_x());
       auto radius_y = Radius(dilate->radius_y());
       return [radius_x, radius_y](FilterInput::Ref input,
-                                  const Matrix& effect_transform) {
+                                  const Matrix& effect_transform,
+                                  bool is_subpass) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
             FilterContents::MorphType::kDilate, effect_transform);
@@ -686,7 +723,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto radius_x = Radius(erode->radius_x());
       auto radius_y = Radius(erode->radius_y());
       return [radius_x, radius_y](FilterInput::Ref input,
-                                  const Matrix& effect_transform) {
+                                  const Matrix& effect_transform,
+                                  bool is_subpass) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
             FilterContents::MorphType::kErode, effect_transform);
@@ -699,8 +737,9 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto matrix = ToMatrix(matrix_filter->matrix());
       auto desc = ToSamplerDescriptor(matrix_filter->sampling());
       return [matrix, desc](FilterInput::Ref input,
-                            const Matrix& effect_transform) {
-        return FilterContents::MakeMatrixFilter(std::move(input), matrix, desc);
+                            const Matrix& effect_transform, bool is_subpass) {
+        return FilterContents::MakeMatrixFilter(std::move(input), matrix, desc,
+                                                effect_transform, is_subpass);
       };
       break;
     }
@@ -719,10 +758,13 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
       return [outer_filter = outer_proc.value(),
-              inner_filter = inner_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        auto contents = inner_filter(std::move(input), effect_transform);
-        contents = outer_filter(FilterInput::Make(contents), effect_transform);
+              inner_filter = inner_proc.value()](FilterInput::Ref input,
+                                                 const Matrix& effect_transform,
+                                                 bool is_subpass) {
+        auto contents =
+            inner_filter(std::move(input), effect_transform, is_subpass);
+        contents = outer_filter(FilterInput::Make(contents), effect_transform,
+                                is_subpass);
         return contents;
       };
       break;
@@ -736,9 +778,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
         return std::nullopt;
       }
       return [color_filter = color_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        return color_filter(std::move(input));
-      };
+                 FilterInput::Ref input, const Matrix& effect_transform,
+                 bool is_subpass) { return color_filter(std::move(input)); };
       break;
     }
     case flutter::DlImageFilterType::kLocalMatrixFilter: {
@@ -755,9 +796,10 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto matrix = ToMatrix(local_matrix_filter->matrix());
 
       return [matrix, filter_proc = image_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
+                 FilterInput::Ref input, const Matrix& effect_transform,
+                 bool is_subpass) {
         std::shared_ptr<FilterContents> filter =
-            filter_proc(std::move(input), effect_transform);
+            filter_proc(std::move(input), effect_transform, is_subpass);
         return FilterContents::MakeLocalMatrixFilter(FilterInput::Make(filter),
                                                      matrix);
       };
@@ -896,8 +938,7 @@ static Entity::ClipOperation ToClipOperation(
 void DisplayListDispatcher::clipRect(const SkRect& rect,
                                      ClipOp clip_op,
                                      bool is_aa) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.ClipPath(path, ToClipOperation(clip_op));
+  canvas_.ClipRect(ToRect(rect), ToClipOperation(clip_op));
 }
 
 static PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
@@ -996,7 +1037,12 @@ static Path ToPath(const SkRRect& rrect) {
 void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
                                       ClipOp clip_op,
                                       bool is_aa) {
-  canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  if (rrect.isSimple()) {
+    canvas_.ClipRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX,
+                      ToClipOperation(clip_op));
+  } else {
+    canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  }
 }
 
 // |flutter::Dispatcher|
