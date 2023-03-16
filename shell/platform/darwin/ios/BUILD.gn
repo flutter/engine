@@ -326,7 +326,10 @@ shared_library("create_flutter_framework_dylib") {
 
   output_name = "Flutter"
 
-  ldflags = [ "-Wl,-install_name,@rpath/Flutter.framework/Flutter" ]
+  ldflags = [
+    "-Wl,-install_name,@rpath/Flutter.framework/Flutter",
+    "-fapplication-extension",
+  ]
 
   public = _flutter_framework_headers
 
