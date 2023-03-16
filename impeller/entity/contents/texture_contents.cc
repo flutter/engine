@@ -29,7 +29,6 @@ std::shared_ptr<TextureContents> TextureContents::MakeRect(Rect destination) {
   auto contents = std::make_shared<TextureContents>();
   contents->path_ = PathBuilder{}.AddRect(destination).TakePath();
   contents->is_rect_ = true;
-  contents->rect_ = destination;
   return contents;
 }
 
@@ -40,7 +39,6 @@ void TextureContents::SetLabel(std::string label) {
 void TextureContents::SetPath(const Path& path) {
   path_ = path;
   is_rect_ = false;
-  rect_ = std::nullopt;
 }
 
 void TextureContents::SetTexture(std::shared_ptr<Texture> texture) {
@@ -105,78 +103,6 @@ std::optional<Snapshot> TextureContents::RenderToSnapshot(
       renderer, entity, sampler_descriptor.value_or(sampler_descriptor_));
 }
 
-std::optional<VertexBuffer> TextureContents::CreateVertexBuffer(
-    const ContentContext& renderer,
-    RenderPass& pass,
-    Rect coverage_rect) const {
-  const auto texture_size = texture_->GetSize();
-  auto& host_buffer = pass.GetTransientsBuffer();
-  if (is_rect_) {
-    constexpr uint16_t kRectIndicies[4] = {0, 1, 2, 3};
-    std::vector<Scalar> data(16);
-    auto points = rect_->GetPoints();
-    for (auto i = 0u, j = 0u; i < 16; i += 4, j++) {
-      auto vtx = points[j];
-      data[i] = vtx.x;
-      data[i + 1] = vtx.y;
-
-      auto coverage_coords = (vtx - coverage_rect.origin) / coverage_rect.size;
-      auto texture_coords =
-          (source_rect_.origin + source_rect_.size * coverage_coords) /
-          texture_size;
-
-      data[i + 2] = texture_coords.x;
-      data[i + 3] = texture_coords.y;
-    }
-
-    return VertexBuffer{
-        .vertex_buffer = host_buffer.Emplace(data.data(), 16 * sizeof(float),
-                                             alignof(float)),
-        .index_buffer = host_buffer.Emplace(kRectIndicies, 4 * sizeof(uint16_t),
-                                            alignof(uint16_t)),
-        .index_count = 4,
-        .index_type = IndexType::k16bit,
-    };
-  }
-  using VS = TextureFillVertexShader;
-
-  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
-  {
-    const auto tess_result = renderer.GetTessellator()->Tessellate(
-        path_.GetFillType(), path_.CreatePolyline(1.0f),
-        [this, &vertex_builder, &coverage_rect, &texture_size](
-            const float* vertices, size_t vertices_size,
-            const uint16_t* indices, size_t indices_size) {
-          for (auto i = 0u; i < vertices_size; i += 2) {
-            VS::PerVertexData data;
-            Point vtx = {vertices[i], vertices[i + 1]};
-            data.position = vtx;
-            auto coverage_coords =
-                (vtx - coverage_rect.origin) / coverage_rect.size;
-            data.texture_coords =
-                (source_rect_.origin + source_rect_.size * coverage_coords) /
-                texture_size;
-            vertex_builder.AppendVertex(data);
-          }
-          FML_DCHECK(vertex_builder.GetVertexCount() == vertices_size / 2);
-          for (auto i = 0u; i < indices_size; i++) {
-            vertex_builder.AppendIndex(indices[i]);
-          }
-          return true;
-        });
-
-    if (tess_result == Tessellator::Result::kInputError ||
-        tess_result == Tessellator::Result::kTessellationError) {
-      return std::nullopt;
-    }
-  }
-
-  if (!vertex_builder.HasVertices()) {
-    return std::nullopt;
-  }
-  return vertex_builder.CreateVertexBuffer(host_buffer);
-}
-
 bool TextureContents::Render(const ContentContext& renderer,
                              const Entity& entity,
                              RenderPass& pass) const {
@@ -206,10 +132,41 @@ bool TextureContents::Render(const ContentContext& renderer,
     return true;
   }
 
-  auto vertex_buffer =
-      CreateVertexBuffer(renderer, pass, coverage_rect.value());
-  if (!vertex_buffer.has_value()) {
-    return false;
+  VertexBufferBuilder<VS::PerVertexData> vertex_builder;
+  {
+    const auto tess_result = renderer.GetTessellator()->Tessellate(
+        path_.GetFillType(), path_.CreatePolyline(1.0f),
+        [this, &vertex_builder, &coverage_rect, &texture_size](
+            const float* vertices, size_t vertices_size,
+            const uint16_t* indices, size_t indices_size) {
+          for (auto i = 0u; i < vertices_size; i += 2) {
+            VS::PerVertexData data;
+            Point vtx = {vertices[i], vertices[i + 1]};
+            data.position = vtx;
+            auto coverage_coords =
+                (vtx - coverage_rect->origin) / coverage_rect->size;
+            data.texture_coords =
+                (source_rect_.origin + source_rect_.size * coverage_coords) /
+                texture_size;
+            vertex_builder.AppendVertex(data);
+          }
+          FML_DCHECK(vertex_builder.GetVertexCount() == vertices_size / 2);
+          for (auto i = 0u; i < indices_size; i++) {
+            vertex_builder.AppendIndex(indices[i]);
+          }
+          return true;
+        });
+
+    if (tess_result == Tessellator::Result::kInputError) {
+      return true;
+    }
+    if (tess_result == Tessellator::Result::kTessellationError) {
+      return false;
+    }
+  }
+
+  if (!vertex_builder.HasVertices()) {
+    return true;
   }
 
   auto& host_buffer = pass.GetTransientsBuffer();
@@ -232,13 +189,9 @@ bool TextureContents::Render(const ContentContext& renderer,
   if (!stencil_enabled_) {
     pipeline_options.stencil_compare = CompareFunction::kAlways;
   }
-  if (is_rect_) {
-    pipeline_options.primitive_type = PrimitiveType::kTriangleStrip;
-  }
-
   cmd.pipeline = renderer.GetTexturePipeline(pipeline_options);
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(vertex_buffer.value());
+  cmd.BindVertices(vertex_builder.CreateVertexBuffer(host_buffer));
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
   FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
   FS::BindTextureSampler(cmd, texture_,

@@ -16,7 +16,6 @@
 namespace impeller {
 
 class Texture;
-struct VertexBuffer;
 
 class TextureContents final : public Contents {
  public:
@@ -75,15 +74,10 @@ class TextureContents final : public Contents {
   void SetDeferApplyingOpacity(bool defer_applying_opacity);
 
  private:
-  std::optional<VertexBuffer> CreateVertexBuffer(const ContentContext& renderer,
-                                                 RenderPass& pass,
-                                                 Rect coverage_rect) const;
-
   std::string label_;
 
   Path path_;
   bool is_rect_ = false;
-  std::optional<Rect> rect_ = std::nullopt;
   bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;
