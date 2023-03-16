@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry.h"
+#include <iostream>
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
@@ -29,6 +30,11 @@ GeometryResult Geometry::GetPositionUVBuffer(Rect texture_coverage,
 // static
 std::unique_ptr<Geometry> Geometry::MakeFillPath(const Path& path) {
   return std::make_unique<FillPathGeometry>(path);
+}
+
+// static
+std::unique_ptr<Geometry> Geometry::MakeRRect(Rect rect, Scalar corner_radius) {
+  return std::make_unique<RRectGeometry>(rect, corner_radius);
 }
 
 std::unique_ptr<Geometry> Geometry::MakeStrokePath(const Path& path,
@@ -557,6 +563,129 @@ GeometryVertexType RectGeometry::GetVertexType() const {
 }
 
 std::optional<Rect> RectGeometry::GetCoverage(const Matrix& transform) const {
+  return rect_.TransformBounds(transform);
+}
+
+/////// RRect Geometry ///////
+
+RRectGeometry::RRectGeometry(Rect rect, Scalar corner_radius)
+    : rect_(rect), corner_radius_(corner_radius) {}
+
+RRectGeometry::~RRectGeometry() = default;
+
+static void AppendRRectCorner(Path::Polyline polyline,
+                              Point corner,
+                              VertexBufferBuilder<Point>& vtx_builder) {
+  for (auto i = 1u; i < polyline.points.size(); i++) {
+    vtx_builder.AddVertices({
+        polyline.points[i - 1],
+        polyline.points[i],
+        corner,
+    });
+  }
+}
+
+GeometryResult RRectGeometry::GetPositionBuffer(const ContentContext& renderer,
+                                                const Entity& entity,
+                                                RenderPass& pass) {
+  VertexBufferBuilder<Point> vtx_builder;
+  auto& host_buffer = pass.GetTransientsBuffer();
+
+  // The rounded rectangle is split into parts:
+  //  * four corner sections defined by an arc
+  //  * An interior shape composed of three rectangles.
+
+  auto left = rect_.GetLeft();
+  auto right = rect_.GetRight();
+  auto bottom = rect_.GetBottom();
+  auto top = rect_.GetTop();
+  auto radii = PathBuilder::RoundingRadii(corner_radius_, corner_radius_,
+                                          corner_radius_, corner_radius_);
+
+  auto topLeft =
+      PathBuilder{}
+          .MoveTo({rect_.origin.x, rect_.origin.y + corner_radius_})
+          .AddRoundedRectTopLeft(rect_, radii)
+          .TakePath()
+          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+  AppendRRectCorner(topLeft, Point(left + corner_radius_, top + corner_radius_),
+                    vtx_builder);
+
+  auto topRight =
+      PathBuilder{}
+          .MoveTo({right - radii.top_right.x, rect_.origin.y})
+          .AddRoundedRectTopRight(rect_, radii)
+          .TakePath()
+          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+
+  AppendRRectCorner(topRight,
+                    Point(right - corner_radius_, top + corner_radius_),
+                    vtx_builder);
+
+  auto bottomLeft =
+      PathBuilder{}
+          .MoveTo({left + corner_radius_, bottom})
+          .AddRoundedRectBottomLeft(rect_, radii)
+          .TakePath()
+          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+
+  AppendRRectCorner(bottomLeft,
+                    Point(left + corner_radius_, bottom - corner_radius_),
+                    vtx_builder);
+
+  auto bottomRight =
+      PathBuilder{}
+          .MoveTo({right, bottom - corner_radius_})
+          .AddRoundedRectBottomRight(rect_, radii)
+          .TakePath()
+          .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+
+  AppendRRectCorner(bottomRight,
+                    Point(right - corner_radius_, bottom - corner_radius_),
+                    vtx_builder);
+  vtx_builder.AddVertices({
+      // Top Component.
+      Point(left + corner_radius_, top + corner_radius_),
+      Point(left + corner_radius_, top),
+      Point(right - corner_radius_, top + corner_radius_),
+
+      Point(left + corner_radius_, top),
+      Point(right - corner_radius_, top + corner_radius_),
+      Point(right - corner_radius_, top),
+
+      // Bottom Component.
+      Point(left + corner_radius_, bottom - corner_radius_),
+      Point(left + corner_radius_, bottom),
+      Point(right - corner_radius_, bottom - corner_radius_),
+
+      Point(left + corner_radius_, bottom),
+      Point(right - corner_radius_, bottom - corner_radius_),
+      Point(right - corner_radius_, bottom),
+
+      // // Center Component.
+      Point(left, top + corner_radius_),
+      Point(right, top + corner_radius_),
+      Point(right, bottom - corner_radius_),
+
+      Point(left, top + corner_radius_),
+      Point(left, bottom - corner_radius_),
+      Point(right, bottom - corner_radius_),
+  });
+
+  return GeometryResult{
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = false,
+  };
+}
+
+GeometryVertexType RRectGeometry::GetVertexType() const {
+  return GeometryVertexType::kPosition;
+}
+
+std::optional<Rect> RRectGeometry::GetCoverage(const Matrix& transform) const {
   return rect_.TransformBounds(transform);
 }
 

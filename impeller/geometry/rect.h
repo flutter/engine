@@ -151,6 +151,13 @@ struct TRect {
     return std::max(origin.y, origin.y + size.height);
   }
 
+  /// @brief Returns a new rectangle with edges moved outwards by the given
+  ///        delta.
+  constexpr TRect Inflate(Scalar delta) const {
+    return MakeLTRB(GetLeft() - delta, GetTop() - delta, GetRight() + delta,
+                    GetBottom() + delta);
+  }
+
   constexpr std::array<T, 4> GetLTRB() const {
     return {GetLeft(), GetTop(), GetRight(), GetBottom()};
   }

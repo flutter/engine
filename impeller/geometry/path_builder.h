@@ -96,11 +96,24 @@ class PathBuilder {
              top_right.IsZero() &&    //
              bottom_right.IsZero();
     }
+
+    bool AreAllSame() const {
+      return top_left == bottom_left && bottom_left == top_right &&
+             top_right == bottom_right;
+    }
   };
 
   PathBuilder& AddRoundedRect(Rect rect, RoundingRadii radii);
 
   PathBuilder& AddRoundedRect(Rect rect, Scalar radius);
+
+  PathBuilder& AddRoundedRectTopLeft(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectTopRight(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectBottomRight(Rect rect, RoundingRadii radii);
+
+  PathBuilder& AddRoundedRectBottomLeft(Rect rect, RoundingRadii radii);
 
   PathBuilder& AddPath(const Path& path);
 

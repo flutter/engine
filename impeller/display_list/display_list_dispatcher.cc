@@ -261,6 +261,16 @@ static Point ToPoint(const SkPoint& point) {
   return Point::MakeXY(point.fX, point.fY);
 }
 
+static bool IsRRectSimple(const SkRRect& rrect) {
+  using Corner = SkRRect::Corner;
+  PathBuilder::RoundingRadii radii;
+  radii.bottom_left = ToPoint(rrect.radii(Corner::kLowerLeft_Corner));
+  radii.bottom_right = ToPoint(rrect.radii(Corner::kLowerRight_Corner));
+  radii.top_left = ToPoint(rrect.radii(Corner::kUpperLeft_Corner));
+  radii.top_right = ToPoint(rrect.radii(Corner::kUpperRight_Corner));
+  return radii.AreAllSame();
+}
+
 static Color ToColor(const SkColor& color) {
   return {
       static_cast<Scalar>(SkColorGetR(color) / 255.0),  //
@@ -938,8 +948,7 @@ static Entity::ClipOperation ToClipOperation(
 void DisplayListDispatcher::clipRect(const SkRect& rect,
                                      ClipOp clip_op,
                                      bool is_aa) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.ClipPath(path, ToClipOperation(clip_op));
+  canvas_.ClipRect(ToRect(rect), ToClipOperation(clip_op));
 }
 
 static PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
@@ -1038,7 +1047,14 @@ static Path ToPath(const SkRRect& rrect) {
 void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
                                       ClipOp clip_op,
                                       bool is_aa) {
-  canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  if (IsRRectSimple(rrect)) {
+    using Corner = SkRRect::Corner;
+    auto bottom_left = ToPoint(rrect.radii(Corner::kLowerLeft_Corner));
+    canvas_.ClipRRect(ToRect(rrect.rect()), bottom_left.x,
+                      ToClipOperation(clip_op));
+  } else {
+    canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  }
 }
 
 // |flutter::Dispatcher|
@@ -1092,8 +1108,10 @@ void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawRRect(const SkRRect& rrect) {
-  if (rrect.isSimple()) {
-    canvas_.DrawRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX, paint_);
+  if (IsRRectSimple(rrect)) {
+    using Corner = SkRRect::Corner;
+    auto bottom_left = ToPoint(rrect.radii(Corner::kLowerLeft_Corner));
+    canvas_.DrawRRect(ToRect(rrect.rect()), bottom_left.x, paint_);
   } else {
     canvas_.DrawPath(ToPath(rrect), paint_);
   }
