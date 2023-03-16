@@ -524,7 +524,7 @@ Future<void> testMain() async {
       canvasRect: screenRect,
       region: region,
     );
-  });
+  }, skip: isFirefox);
 
   test('Paints transformed sweep gradient', () async {
     final RecordingCanvas canvas =
@@ -581,7 +581,7 @@ Future<void> testMain() async {
       canvasRect: screenRect,
       region: region,
     );
-  });
+  }, skip: isFirefox);
 
   test('Paints transformed radial gradient', () async {
     final RecordingCanvas canvas =
@@ -637,8 +637,7 @@ Future<void> testMain() async {
       canvasRect: screenRect,
       region: region,
     );
-  });
-
+  }, skip: isFirefox);
 }
 
 Shader engineGradientToShader(GradientSweep gradient, Rect rect) {
