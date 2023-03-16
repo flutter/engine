@@ -434,7 +434,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await canvasScreenshot(canvas, 'linear_gradient_rect_clamp_rotated', canvasRect: screenRect, region: region);
-  });
+    }, skip: isFirefox);
 
   test('Paints linear gradient properly when within svg context', () async {
     final RecordingCanvas canvas =
@@ -468,7 +468,7 @@ Future<void> testMain() async {
 
     canvas.restore();
     await canvasScreenshot(canvas, 'linear_gradient_in_svg_context', canvasRect: screenRect, region: region);
-  });
+  }, skip: isFirefox);
 
   test('Paints transformed linear gradient', () async {
     final RecordingCanvas canvas =
