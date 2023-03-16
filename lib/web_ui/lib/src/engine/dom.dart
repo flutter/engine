@@ -1420,6 +1420,9 @@ extension DomURLExtension on DomURL {
 @staticInterop
 class DomBlob {}
 
+DomBlob createDomBlob(List<Object?> parts) =>
+    domCallConstructorString('Blob', <Object>[parts])! as DomBlob;
+
 extension DomBlobExtension on DomBlob {
   Future<dynamic> arrayBuffer() => js_util
       .promiseToFuture(js_util.callMethod(this, 'arrayBuffer', <Object>[]));
