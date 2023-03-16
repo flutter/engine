@@ -211,9 +211,9 @@ struct Settings {
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
   bool enable_impeller = false;
-    
-  // Disable the partical repaint on supported platforms. Ignored if partical repaint is
-  // not supported on the platform.
+
+  // Disable the partical repaint on supported platforms. Ignored if partical
+  // repaint is not supported on the platform.
   bool disable_partical_repaint = false;
 
   // Data set by platform-specific embedders for use in font initialization.

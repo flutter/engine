@@ -44,7 +44,6 @@ public class FlutterLoader {
   private static final String DISABLE_PARTICAL_REPAINT_META_DATA_KEY =
       "io.flutter.embedding.android.DisableParticalRepaint";
 
-
   /**
    * Set whether leave or clean up the VM after the last shell shuts down. It can be set from app's
    * meta-data in <application /> in AndroidManifest.xml. Set it to true in to leave the Dart VM,
@@ -325,8 +324,7 @@ public class FlutterLoader {
 
       final String leakVM = isLeakVM(metaData) ? "true" : "false";
       shellArgs.add("--leak-vm=" + leakVM);
-        
-    
+
       if (metaData != null && metaData.getBoolean(DISABLE_PARTICAL_REPAINT_META_DATA_KEY, false)) {
         shellArgs.add("--disable-partical-repaint");
       }

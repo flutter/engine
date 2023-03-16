@@ -212,11 +212,12 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   if (enableImpeller != nil) {
     settings.enable_impeller = enableImpeller.boolValue;
   }
-    
+
   // Whether to disable partial repaint.
-  NSNumber* disablePartialRepaint = [mainBundle objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
+  NSNumber* disablePartialRepaint =
+      [mainBundle objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
   if (disablePartialRepaint != nil) {
-     settings.disable_partical_repaint = disablePartialRepaint.boolValue;
+    settings.disable_partical_repaint = disablePartialRepaint.boolValue;
   }
 
   NSNumber* enableTraceSystrace = [mainBundle objectForInfoDictionaryKey:@"FLTTraceSystrace"];

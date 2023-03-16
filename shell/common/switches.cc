@@ -455,7 +455,6 @@ Settings SettingsFromCommandLine(const fml::CommandLine& command_line) {
   settings.disable_partical_repaint =
       command_line.HasOption(FlagForSwitch(Switch::DisableParticalRepaint));
 
-
   std::string all_dart_flags;
   if (command_line.GetOptionValue(FlagForSwitch(Switch::DartFlags),
                                   &all_dart_flags)) {
