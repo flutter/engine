@@ -315,7 +315,8 @@ std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
 }
 
 // |flutter::PlatformView|
-std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface() {
+std::unique_ptr<flutter::Surface> PlatformView::CreateRenderingSurface(
+    int64_t view_id) {
   return on_create_surface_callback_ ? on_create_surface_callback_() : nullptr;
 }
 

@@ -40,7 +40,7 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
       shell_test_external_view_embedder_;
 
   // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override;
+  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;

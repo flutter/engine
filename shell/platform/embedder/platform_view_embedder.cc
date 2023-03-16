@@ -53,7 +53,7 @@ PlatformViewEmbedder::PlatformViewEmbedder(
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)
     : PlatformView(delegate, task_runners),
       external_view_embedder_(std::move(external_view_embedder)),
-      embedder_studio_(std::move(embedder_studio_)),
+      embedder_studio_(std::move(embedder_studio)),
       platform_message_handler_(new EmbedderPlatformMessageHandler(
           GetWeakPtr(),
           task_runners.GetPlatformTaskRunner())),
@@ -88,12 +88,16 @@ void PlatformViewEmbedder::HandlePlatformMessage(
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface() {
-  if (embedder_surface_ == nullptr) {
-    FML_LOG(ERROR) << "Embedder surface was null.";
+std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface(
+    int64_t view_id) {
+  auto found_iter = embedder_surfaces_.find(view_id);
+  if (found_iter != embedder_surfaces_.end()) {
+    FML_LOG(ERROR) << "Embedder surface " << view_id << " already exists.";
     return nullptr;
   }
-  return embedder_surface_->CreateGPUSurface();
+  auto& embedder_surface = embedder_surfaces_[view_id] =
+      embedder_studio_->CreateSurface(external_view_embedder_);
+  return embedder_surface->CreateGPUSurface();
 }
 
 // |PlatformView|
@@ -104,11 +108,7 @@ PlatformViewEmbedder::CreateExternalViewEmbedder() {
 
 // |PlatformView|
 sk_sp<GrDirectContext> PlatformViewEmbedder::CreateResourceContext() const {
-  if (embedder_surface_ == nullptr) {
-    FML_LOG(ERROR) << "Embedder surface was null.";
-    return nullptr;
-  }
-  return embedder_surface_->CreateResourceContext();
+  return embedder_studio_->CreateResourceContext();
 }
 
 // |PlatformView|

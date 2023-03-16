@@ -52,7 +52,8 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface() {
+std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
+    int64_t view_id) {
   return std::make_unique<OffScreenSurface>(proc_table_,
                                             shell_test_external_view_embedder_);
 }

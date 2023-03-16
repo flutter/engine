@@ -138,7 +138,7 @@ class MockPlatformView : public PlatformView {
   MockPlatformView(MockPlatformViewDelegate& delegate,
                    const TaskRunners& task_runners)
       : PlatformView(delegate, task_runners) {}
-  MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
+  MOCK_METHOD1(CreateRenderingSurface, std::unique_ptr<Surface>(int64_t));
   MOCK_CONST_METHOD0(GetPlatformMessageHandler,
                      std::shared_ptr<PlatformMessageHandler>());
 };
@@ -147,7 +147,7 @@ class TestPlatformView : public PlatformView {
  public:
   TestPlatformView(Shell& shell, const TaskRunners& task_runners)
       : PlatformView(shell, task_runners) {}
-  MOCK_METHOD0(CreateRenderingSurface, std::unique_ptr<Surface>());
+  MOCK_METHOD1(CreateRenderingSurface, std::unique_ptr<Surface>(int64_t));
 };
 
 class MockPlatformMessageHandler : public PlatformMessageHandler {
@@ -1596,7 +1596,7 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
   Shell::CreateCallback<PlatformView> platform_view_create_callback =
       [task_runners, main_context](flutter::Shell& shell) {
         auto result = std::make_unique<TestPlatformView>(shell, task_runners);
-        ON_CALL(*result, CreateRenderingSurface())
+        ON_CALL(*result, CreateRenderingSurface(0ll))
             .WillByDefault(::testing::Invoke([main_context] {
               auto surface = std::make_unique<MockSurface>();
               ON_CALL(*surface, GetContext())
@@ -3050,7 +3050,7 @@ TEST_F(ShellTest, Spawn) {
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
-              ON_CALL(*result, CreateRenderingSurface())
+              ON_CALL(*result, CreateRenderingSurface(0ll))
                   .WillByDefault(::testing::Invoke(
                       [] { return std::make_unique<MockSurface>(); }));
               return result;
@@ -3162,7 +3162,7 @@ TEST_F(ShellTest, SpawnWithDartEntrypointArgs) {
             [&platform_view_delegate](Shell& shell) {
               auto result = std::make_unique<MockPlatformView>(
                   platform_view_delegate, shell.GetTaskRunners());
-              ON_CALL(*result, CreateRenderingSurface())
+              ON_CALL(*result, CreateRenderingSurface(0ll))
                   .WillByDefault(::testing::Invoke(
                       [] { return std::make_unique<MockSurface>(); }));
               return result;
@@ -3225,7 +3225,7 @@ TEST_F(ShellTest, IOManagerIsSharedBetweenParentAndSpawnedShell) {
         [&platform_view_delegate](Shell& shell) {
           auto result = std::make_unique<MockPlatformView>(
               platform_view_delegate, shell.GetTaskRunners());
-          ON_CALL(*result, CreateRenderingSurface())
+          ON_CALL(*result, CreateRenderingSurface(0ll))
               .WillByDefault(::testing::Invoke(
                   [] { return std::make_unique<MockSurface>(); }));
           return result;
@@ -3279,7 +3279,7 @@ TEST_F(ShellTest, IOManagerInSpawnedShellIsNotNullAfterParentShellDestroyed) {
         [&platform_view_delegate](Shell& shell) {
           auto result = std::make_unique<MockPlatformView>(
               platform_view_delegate, shell.GetTaskRunners());
-          ON_CALL(*result, CreateRenderingSurface())
+          ON_CALL(*result, CreateRenderingSurface(0ll))
               .WillByDefault(::testing::Invoke(
                   [] { return std::make_unique<MockSurface>(); }));
           return result;
@@ -3327,7 +3327,7 @@ TEST_F(ShellTest, ImageGeneratorRegistryNotNullAfterParentShellDestroyed) {
         [&platform_view_delegate](Shell& shell) {
           auto result = std::make_unique<MockPlatformView>(
               platform_view_delegate, shell.GetTaskRunners());
-          ON_CALL(*result, CreateRenderingSurface())
+          ON_CALL(*result, CreateRenderingSurface(0ll))
               .WillByDefault(::testing::Invoke(
                   [] { return std::make_unique<MockSurface>(); }));
           return result;
@@ -3825,7 +3825,7 @@ TEST_F(ShellTest, SpawnWorksWithOnError) {
               auto result =
                   std::make_unique<::testing::NiceMock<MockPlatformView>>(
                       platform_view_delegate, shell.GetTaskRunners());
-              ON_CALL(*result, CreateRenderingSurface())
+              ON_CALL(*result, CreateRenderingSurface(0ll))
                   .WillByDefault(::testing::Invoke([] {
                     return std::make_unique<::testing::NiceMock<MockSurface>>();
                   }));

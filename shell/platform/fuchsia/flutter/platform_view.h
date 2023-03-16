@@ -106,7 +106,8 @@ class PlatformView : public flutter::PlatformView {
   std::unique_ptr<flutter::VsyncWaiter> CreateVSyncWaiter() override;
 
   // |flutter::PlatformView|
-  std::unique_ptr<flutter::Surface> CreateRenderingSurface() override;
+  std::unique_ptr<flutter::Surface> CreateRenderingSurface(
+      int64_t view_id) override;
 
   // |flutter::PlatformView|
   void HandlePlatformMessage(

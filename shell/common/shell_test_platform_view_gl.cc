@@ -37,7 +37,8 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface() {
+std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface(
+    int64_t view_id) {
   return std::make_unique<GPUSurfaceGLSkia>(
       GPUSurfaceGLSkia::MakeGLContext(this), this, true);
 }

@@ -7,7 +7,7 @@
 
 #include <functional>
 
-#include "flutter/flow/external_view_embedder.h"
+#include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 
 namespace flutter {
@@ -21,13 +21,19 @@ class EmbedderStudio {
 
   virtual ~EmbedderStudio() = default;
 
-  virtual std::unique_ptr<EmbedderSurface> CreateSurface(std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder) {
+  virtual std::unique_ptr<EmbedderSurface> CreateSurface(
+      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder) {
     return builder_(external_view_embedder);
+  }
+
+  virtual sk_sp<GrDirectContext> CreateResourceContext() const {
+    // TODO(dkwingsmt)
+    return nullptr;
   }
 
  private:
   Builder builder_;
-}
+};
 
 }  // namespace flutter
 

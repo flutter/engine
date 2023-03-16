@@ -83,7 +83,7 @@ class TesterPlatformView : public PlatformView,
       : PlatformView(delegate, task_runners) {}
 
   // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override {
+  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override {
     auto surface = std::make_unique<TesterGPUSurfaceSoftware>(
         this, true /* render to surface */);
     FML_DCHECK(surface->IsValid());

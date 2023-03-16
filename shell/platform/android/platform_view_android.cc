@@ -281,7 +281,8 @@ std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface() {
+std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface(
+    int64_t view_id) {
   if (!android_surface_) {
     return nullptr;
   }

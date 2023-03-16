@@ -138,7 +138,7 @@ void PlatformViewIOS::RegisterExternalTexture(int64_t texture_id,
 }
 
 // |PlatformView|
-std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface() {
+std::unique_ptr<Surface> PlatformViewIOS::CreateRenderingSurface(int64_t view_id) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (!ios_surface_) {

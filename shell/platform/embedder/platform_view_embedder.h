@@ -12,6 +12,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
+#include "flutter/shell/platform/embedder/embedder_studio.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
@@ -56,47 +57,8 @@ class PlatformViewEmbedder final : public PlatformView {
       PlatformView::Delegate& delegate,
       const flutter::TaskRunners& task_runners,
       std::unique_ptr<EmbedderStudio> embedder_studio,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
-
-  // Create a platform view that sets up a software rasterizer.
-  PlatformViewEmbedder(
-      PlatformView::Delegate& delegate,
-      const flutter::TaskRunners& task_runners,
-      const EmbedderSurfaceSoftware::SoftwareDispatchTable&
-          software_dispatch_table,
       PlatformDispatchTable platform_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
-
-#ifdef SHELL_ENABLE_GL
-  // Creates a platform view that sets up an OpenGL rasterizer.
-  PlatformViewEmbedder(
-      PlatformView::Delegate& delegate,
-      const flutter::TaskRunners& task_runners,
-      const EmbedderSurfaceGL::GLDispatchTable& gl_dispatch_table,
-      bool fbo_reset_after_present,
-      PlatformDispatchTable platform_dispatch_table,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
-#endif
-
-#ifdef SHELL_ENABLE_METAL
-  // Creates a platform view that sets up an metal rasterizer.
-  PlatformViewEmbedder(
-      PlatformView::Delegate& delegate,
-      const flutter::TaskRunners& task_runners,
-      std::unique_ptr<EmbedderSurfaceMetal> embedder_surface,
-      PlatformDispatchTable platform_dispatch_table,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
-#endif
-
-#ifdef SHELL_ENABLE_VULKAN
-  // Creates a platform view that sets up an Vulkan rasterizer.
-  PlatformViewEmbedder(
-      PlatformView::Delegate& delegate,
-      const flutter::TaskRunners& task_runners,
-      std::unique_ptr<EmbedderSurfaceVulkan> embedder_surface,
-      PlatformDispatchTable platform_dispatch_table,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
-#endif
 
   ~PlatformViewEmbedder() override;
 
@@ -122,7 +84,7 @@ class PlatformViewEmbedder final : public PlatformView {
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
-  std::unique_ptr<Surface> CreateRenderingSurface() override;
+  std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;
