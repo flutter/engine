@@ -112,4 +112,23 @@ bool BlitGenerateMipmapCommandMTL::Encode(
   return true;
 };
 
+BlitOptimizeGPUAccessCommandMTL::~BlitOptimizeGPUAccessCommandMTL() = default;
+
+std::string BlitOptimizeGPUAccessCommandMTL::GetLabel() const {
+  return label;
+}
+
+bool BlitOptimizeGPUAccessCommandMTL::Encode(
+    id<MTLBlitCommandEncoder> encoder) const {
+  if (@available(macOS 10.15, iOS 12, tvOS 13, *)) {
+    auto texture_mtl = TextureMTL::Cast(*texture).GetMTLTexture();
+    if (!texture_mtl) {
+      return false;
+    }
+
+    [encoder optimizeContentsForGPUAccess:texture_mtl];
+  }
+  return true;
+}
+
 }  // namespace impeller
