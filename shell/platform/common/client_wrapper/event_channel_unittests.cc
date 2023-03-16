@@ -293,7 +293,8 @@ TEST(EventChannelTest, StreamHandlerErrorPassByValue) {
 }
 
 TEST(EventChannelTest, StreamHandlerErrorNullptr) {
-  std::unique_ptr<StreamHandlerError<>> error = std::make_unique<StreamHandlerError<>>("Code", "Message", nullptr);
+  std::unique_ptr<StreamHandlerError<>> error =
+      std::make_unique<StreamHandlerError<>>("Code", "Message", nullptr);
 
   ASSERT_NE(error.get(), nullptr);
   EXPECT_FALSE(error->error_details);
