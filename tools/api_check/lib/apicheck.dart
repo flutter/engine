@@ -12,7 +12,6 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:pub_semver/pub_semver.dart';
 
 /// Returns all indexed fields in [className].
 ///
