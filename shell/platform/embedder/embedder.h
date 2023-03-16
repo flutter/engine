@@ -25,9 +25,16 @@
 // - Function signatures (names, argument counts, argument order, and argument
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
+// - Instead of nesting structures by value within another structure, prefer
+//   nesting by pointer. This ensures that adding members to the nested struct
+//   does not break the ABI of the parent struct.
+// - Instead of array of structures, prefer array of pointers to structures.
+//   This ensures that array indexing does not break if members are added
+//   to the structure.
 //
 // These changes are allowed:
-// - Adding new struct members at the end of a structure.
+// - Adding new struct members at the end of a structure as long as the struct
+//   is not nested within another struct by value.
 // - Adding new enum members with a new value.
 // - Renaming a struct member as long as its type, size, and intent remain the
 //   same.
@@ -299,8 +306,8 @@ typedef enum {
 ///
 ///   - all other formats are called packed formats, and the component order
 ///     as specified in the format name refers to the order in the native type.
-///     for example, for kRGB565, the R component uses the 5 least significant
-///     bits of the uint16_t pixel value.
+///     for example, for kFlutterSoftwarePixelFormatRGB565, the R component
+///     uses the 5 least significant bits of the uint16_t pixel value.
 ///
 /// Each pixel format in this list is documented with an example on how to get
 /// the color components from the pixel.
@@ -316,30 +323,31 @@ typedef enum {
   /// pixel with 8 bit grayscale value.
   /// The grayscale value is the luma value calculated from r, g, b
   /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
-  kGray8,
+  kFlutterSoftwarePixelFormatGray8,
 
   /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
   ///   r = p & 0x3F; g = (p>>5) & 0x3F; b = p>>11;
-  kRGB565,
+  kFlutterSoftwarePixelFormatRGB565,
 
   /// pixel with 4 bits for alpha, red, green, blue; in 16-bit word.
   ///   r = p & 0xF;  g = (p>>4) & 0xF;  b = (p>>8) & 0xF;   a = p>>12;
-  kRGBA4444,
+  kFlutterSoftwarePixelFormatRGBA4444,
 
   /// pixel with 8 bits for red, green, blue, alpha.
   ///   r = p[0]; g = p[1]; b = p[2]; a = p[3];
-  kRGBA8888,
+  kFlutterSoftwarePixelFormatRGBA8888,
 
   /// pixel with 8 bits for red, green and blue and 8 unused bits.
   ///   r = p[0]; g = p[1]; b = p[2];
-  kRGBX8888,
+  kFlutterSoftwarePixelFormatRGBX8888,
 
   /// pixel with 8 bits for blue, green, red and alpha.
   ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
-  kBGRA8888,
+  kFlutterSoftwarePixelFormatBGRA8888,
 
-  /// either kBGRA8888 or kRGBA8888 depending on CPU endianess and OS
-  kNative32,
+  /// either kFlutterSoftwarePixelFormatBGRA8888 or
+  /// kFlutterSoftwarePixelFormatRGBA8888 depending on CPU endianess and OS
+  kFlutterSoftwarePixelFormatNative32,
 } FlutterSoftwarePixelFormat;
 
 typedef struct {
@@ -888,6 +896,7 @@ typedef enum {
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
   kFlutterPointerSignalKindScale,
+  kFlutterPointerSignalKindStylusAuxiliaryAction,
 } FlutterPointerSignalKind;
 
 typedef struct {

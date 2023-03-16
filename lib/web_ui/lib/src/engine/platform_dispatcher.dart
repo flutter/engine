@@ -91,9 +91,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   static EnginePlatformDispatcher get instance => _instance;
   static final EnginePlatformDispatcher _instance = EnginePlatformDispatcher();
 
-  /// The current platform configuration.
-  @override
-  ui.PlatformConfiguration configuration = ui.PlatformConfiguration(
+  PlatformConfiguration configuration = PlatformConfiguration(
     locales: parseBrowserLanguages(),
     textScaleFactor: findBrowserTextScaleFactor(),
     accessibilityFeatures: computeAccessibilityFeatures(),
@@ -144,9 +142,37 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   ///
   /// This should be considered a protected member, only to be used by
   /// [PlatformDispatcher] subclasses.
-  Map<Object, ui.ViewConfiguration> get windowConfigurations => _windowConfigurations;
-  final Map<Object, ui.ViewConfiguration> _windowConfigurations =
-      <Object, ui.ViewConfiguration>{};
+  Map<Object, ViewConfiguration> get windowConfigurations => _windowConfigurations;
+  final Map<Object, ViewConfiguration> _windowConfigurations =
+      <Object, ViewConfiguration>{};
+
+  /// The [FlutterView] provided by the engine if the platform is unable to
+  /// create windows, or, for backwards compatibility.
+  ///
+  /// If the platform provides an implicit view, it can be used to bootstrap
+  /// the framework. This is common for platforms designed for single-view
+  /// applications like mobile devices with a single display.
+  ///
+  /// Applications and libraries must not rely on this property being set
+  /// as it may be null depending on the engine's configuration. Instead,
+  /// consider using [View.of] to lookup the [FlutterView] the current
+  /// [BuildContext] is drawing into.
+  ///
+  /// While the properties on the referenced [FlutterView] may change,
+  /// the reference itself is guaranteed to never change over the lifetime
+  /// of the application: if this property is null at startup, it will remain
+  /// so throughout the entire lifetime of the application. If it points to a
+  /// specific [FlutterView], it will continue to point to the same view until
+  /// the application is shut down (although the engine may replace or remove
+  /// the underlying backing surface of the view at its discretion).
+  ///
+  /// See also:
+  ///
+  /// * [View.of], for accessing the current view.
+  /// * [PlatformDisptacher.views] for a list of all [FlutterView]s provided
+  ///   by the platform.
+  @override
+  ui.FlutterView? get implicitView => viewData[kImplicitViewId];
 
   /// A callback that is invoked whenever the platform's [devicePixelRatio],
   /// [physicalSize], [padding], [viewInsets], or [systemGestureInsets]
@@ -463,12 +489,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
 
       case 'flutter/assets':
         final String url = utf8.decode(data!.buffer.asUint8List());
-        ui.webOnlyAssetManager.load(url).then((ByteData assetData) {
-          replyToPlatformMessage(callback, assetData);
-        }, onError: (dynamic error) {
-          printWarning('Error while trying to load an asset: $error');
-          replyToPlatformMessage(callback, null);
-        });
+        _handleFlutterAssetsMessage(url, callback);
         return;
 
       case 'flutter/platform':
@@ -479,7 +500,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             // TODO(a-wallen): As multi-window support expands, the pop call
             // will need to include the view ID. Right now only one view is
             // supported.
-            (viewData[kSingletonViewId]! as EngineFlutterWindow)
+            (viewData[kImplicitViewId]! as EngineFlutterWindow)
                 .browserHistory
                 .exit()
                 .then((_) {
@@ -567,7 +588,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         _platformViewMessageHandler ??= PlatformViewMessageHandler(
           contentManager: platformViewManager,
           contentHandler: (DomElement content) {
-            flutterViewEmbedder.glassPaneElement!.append(content);
+            flutterViewEmbedder.glassPaneElement.append(content);
           },
         );
         _platformViewMessageHandler!.handlePlatformViewCall(data, callback!);
@@ -584,7 +605,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
         // TODO(a-wallen): As multi-window support expands, the navigation call
         // will need to include the view ID. Right now only one view is
         // supported.
-        (viewData[kSingletonViewId]! as EngineFlutterWindow)
+        (viewData[kImplicitViewId]! as EngineFlutterWindow)
             .handleNavigationMessage(data)
             .then((bool handled) {
           if (handled) {
@@ -611,6 +632,17 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
     // implemented. Look at [MethodChannel.invokeMethod] to see how [null] is
     // handled.
     replyToPlatformMessage(callback, null);
+  }
+
+  Future<void> _handleFlutterAssetsMessage(String url, ui.PlatformMessageResponseCallback? callback) async {
+    try {
+      final HttpFetchResponse response = await ui.webOnlyAssetManager.loadAsset(url);
+      final ByteBuffer assetData = await response.asByteBuffer();
+      replyToPlatformMessage(callback, assetData.asByteData());
+    } catch (error) {
+      printWarning('Error while trying to load an asset: $error');
+      replyToPlatformMessage(callback, null);
+    }
   }
 
   int _getHapticFeedbackDuration(String? type) {
@@ -1173,7 +1205,7 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
   @override
   String get defaultRouteName {
     return _defaultRouteName ??=
-        (viewData[kSingletonViewId]! as EngineFlutterWindow).browserHistory.currentPath;
+        (viewData[kImplicitViewId]! as EngineFlutterWindow).browserHistory.currentPath;
   }
 
   /// Lazily initialized when the `defaultRouteName` getter is invoked.
@@ -1285,4 +1317,105 @@ const double _defaultRootFontSize = 16.0;
 double findBrowserTextScaleFactor() {
   final num fontSize = parseFontSize(domDocument.documentElement!) ?? _defaultRootFontSize;
   return fontSize / _defaultRootFontSize;
+}
+
+class ViewConfiguration {
+  const ViewConfiguration({
+    this.view,
+    this.devicePixelRatio = 1.0,
+    this.geometry = ui.Rect.zero,
+    this.visible = false,
+    this.viewInsets = ui.ViewPadding.zero as ViewPadding,
+    this.viewPadding = ui.ViewPadding.zero as ViewPadding,
+    this.systemGestureInsets = ui.ViewPadding.zero as ViewPadding,
+    this.padding = ui.ViewPadding.zero as ViewPadding,
+    this.gestureSettings = const ui.GestureSettings(),
+    this.displayFeatures = const <ui.DisplayFeature>[],
+  });
+
+  ViewConfiguration copyWith({
+    ui.FlutterView? view,
+    double? devicePixelRatio,
+    ui.Rect? geometry,
+    bool? visible,
+    ViewPadding? viewInsets,
+    ViewPadding? viewPadding,
+    ViewPadding? systemGestureInsets,
+    ViewPadding? padding,
+    ui.GestureSettings? gestureSettings,
+    List<ui.DisplayFeature>? displayFeatures,
+  }) {
+    return ViewConfiguration(
+      view: view ?? this.view,
+      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
+      geometry: geometry ?? this.geometry,
+      visible: visible ?? this.visible,
+      viewInsets: viewInsets ?? this.viewInsets,
+      viewPadding: viewPadding ?? this.viewPadding,
+      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
+      padding: padding ?? this.padding,
+      gestureSettings: gestureSettings ?? this.gestureSettings,
+      displayFeatures: displayFeatures ?? this.displayFeatures,
+    );
+  }
+
+  final ui.FlutterView? view;
+  final double devicePixelRatio;
+  final ui.Rect geometry;
+  final bool visible;
+  final ViewPadding viewInsets;
+  final ViewPadding viewPadding;
+  final ViewPadding systemGestureInsets;
+  final ViewPadding padding;
+  final ui.GestureSettings gestureSettings;
+  final List<ui.DisplayFeature> displayFeatures;
+
+  @override
+  String toString() {
+    return '$runtimeType[view: $view, geometry: $geometry]';
+  }
+}
+
+class PlatformConfiguration {
+  const PlatformConfiguration({
+    this.accessibilityFeatures = const EngineAccessibilityFeatures(0),
+    this.alwaysUse24HourFormat = false,
+    this.semanticsEnabled = false,
+    this.platformBrightness = ui.Brightness.light,
+    this.textScaleFactor = 1.0,
+    this.locales = const <ui.Locale>[],
+    this.defaultRouteName = '/',
+    this.systemFontFamily,
+  });
+
+  PlatformConfiguration copyWith({
+    ui.AccessibilityFeatures? accessibilityFeatures,
+    bool? alwaysUse24HourFormat,
+    bool? semanticsEnabled,
+    ui.Brightness? platformBrightness,
+    double? textScaleFactor,
+    List<ui.Locale>? locales,
+    String? defaultRouteName,
+    String? systemFontFamily,
+  }) {
+    return PlatformConfiguration(
+      accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
+      alwaysUse24HourFormat: alwaysUse24HourFormat ?? this.alwaysUse24HourFormat,
+      semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
+      platformBrightness: platformBrightness ?? this.platformBrightness,
+      textScaleFactor: textScaleFactor ?? this.textScaleFactor,
+      locales: locales ?? this.locales,
+      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
+      systemFontFamily: systemFontFamily ?? this.systemFontFamily,
+    );
+  }
+
+  final ui.AccessibilityFeatures accessibilityFeatures;
+  final bool alwaysUse24HourFormat;
+  final bool semanticsEnabled;
+  final ui.Brightness platformBrightness;
+  final double textScaleFactor;
+  final List<ui.Locale> locales;
+  final String defaultRouteName;
+  final String? systemFontFamily;
 }

@@ -22,6 +22,7 @@
 #include "impeller/display_list/display_list_image_impeller.h"
 #include "impeller/display_list/display_list_vertices_geometry.h"
 #include "impeller/display_list/nine_patch_converter.h"
+#include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 #include "impeller/entity/contents/linear_gradient_contents.h"
@@ -136,6 +137,9 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.label = "Nearest Sampler";
       break;
     case flutter::DlImageSampling::kLinear:
+    // Impeller doesn't support cubic sampling, but linear is closer to correct
+    // than nearest for this case.
+    case flutter::DlImageSampling::kCubic:
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.label = "Linear Sampler";
       break;
@@ -143,8 +147,6 @@ static impeller::SamplerDescriptor ToSamplerDescriptor(
       desc.min_filter = desc.mag_filter = impeller::MinMagFilter::kLinear;
       desc.mip_filter = impeller::MipFilter::kLinear;
       desc.label = "Mipmap Linear Sampler";
-      break;
-    default:
       break;
   }
   return desc;
@@ -341,8 +343,6 @@ static std::optional<Paint::ColorSourceType> ToColorSourceType(
     case flutter::DlColorSourceType::kScene:
       return Paint::ColorSourceType::kScene;
 #endif  // IMPELLER_ENABLE_3D
-    case flutter::DlColorSourceType::kUnknown:
-      return std::nullopt;
   }
 }
 
@@ -395,6 +395,50 @@ void DisplayListDispatcher::setColorSource(
         contents->SetEndPoints(start_point, end_point);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
+        std::vector<Point> bounds{start_point, end_point};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
+        return contents;
+      };
+      return;
+    }
+    case Paint::ColorSourceType::kConicalGradient: {
+      const flutter::DlConicalGradientColorSource* conical_gradient =
+          source->asConicalGradient();
+      FML_DCHECK(conical_gradient);
+      Point center = ToPoint(conical_gradient->end_center());
+      SkScalar radius = conical_gradient->end_radius();
+      Point focus_center = ToPoint(conical_gradient->start_center());
+      SkScalar focus_radius = conical_gradient->start_radius();
+      std::vector<Color> colors;
+      std::vector<float> stops;
+      ConvertStops(conical_gradient, &colors, &stops);
+
+      auto tile_mode = ToTileMode(conical_gradient->tile_mode());
+      auto matrix = ToMatrix(conical_gradient->matrix());
+      paint_.color_source = [center, radius, colors = std::move(colors),
+                             stops = std::move(stops), tile_mode, matrix,
+                             focus_center, focus_radius]() {
+        std::shared_ptr<ConicalGradientContents> contents =
+            std::make_shared<ConicalGradientContents>();
+        contents->SetColors(colors);
+        contents->SetStops(stops);
+        contents->SetCenterAndRadius(center, radius);
+        contents->SetTileMode(tile_mode);
+        contents->SetEffectTransform(matrix);
+        contents->SetFocus(focus_center, focus_radius);
+
+        auto radius_pt = Point(radius, radius);
+        std::vector<Point> bounds{center + radius_pt, center - radius_pt};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
         return contents;
       };
       return;
@@ -419,6 +463,14 @@ void DisplayListDispatcher::setColorSource(
         contents->SetCenterAndRadius(center, radius);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
+        auto radius_pt = Point(radius, radius);
+        std::vector<Point> bounds{center + radius_pt, center - radius_pt};
+        auto intrinsic_size =
+            Rect::MakePointBounds(bounds.begin(), bounds.end());
+        if (intrinsic_size.has_value()) {
+          contents->SetColorSourceSize(intrinsic_size->size);
+        }
         return contents;
       };
       return;
@@ -446,6 +498,7 @@ void DisplayListDispatcher::setColorSource(
         contents->SetStops(stops);
         contents->SetTileMode(tile_mode);
         contents->SetEffectTransform(matrix);
+
         return contents;
       };
       return;
@@ -459,13 +512,15 @@ void DisplayListDispatcher::setColorSource(
       auto y_tile_mode = ToTileMode(image_color_source->vertical_tile_mode());
       auto desc = ToSamplerDescriptor(image_color_source->sampling());
       auto matrix = ToMatrix(image_color_source->matrix());
-      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc,
-                             matrix]() {
+      paint_.color_source = [texture, x_tile_mode, y_tile_mode, desc, matrix,
+                             &paint = paint_]() {
         auto contents = std::make_shared<TiledTextureContents>();
         contents->SetTexture(texture);
         contents->SetTileModes(x_tile_mode, y_tile_mode);
         contents->SetSamplerDescriptor(desc);
         contents->SetEffectTransform(matrix);
+        contents->SetColorFilter(paint.color_filter);
+        contents->SetColorSourceSize(Size::Ceil(texture->GetSize()));
         return contents;
       };
       return;
@@ -524,9 +579,6 @@ void DisplayListDispatcher::setColorSource(
 #endif  // IMPELLER_ENABLE_3D
       return;
     }
-    case Paint::ColorSourceType::kConicalGradient:
-      UNIMPLEMENTED;
-      break;
   }
 }
 
@@ -562,9 +614,6 @@ static std::optional<Paint::ColorFilterProc> ToColorFilterProc(
       return [](FilterInput::Ref input) {
         return ColorFilterContents::MakeLinearToSrgbFilter({std::move(input)});
       };
-    case flutter::DlColorFilterType::kUnknown:
-      FML_LOG(ERROR) << "Requested DlColorFilterType::kUnknown";
-      UNIMPLEMENTED;
   }
   return std::nullopt;
 }
@@ -578,18 +627,12 @@ void DisplayListDispatcher::setColorFilter(
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setInvertColors(bool invert) {
-  UNIMPLEMENTED;
+  paint_.invert_colors = invert;
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::setBlendMode(flutter::DlBlendMode dl_mode) {
   paint_.blend_mode = ToBlendMode(dl_mode);
-}
-
-// |flutter::Dispatcher|
-void DisplayListDispatcher::setBlender(sk_sp<SkBlender> blender) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
@@ -628,9 +671,6 @@ void DisplayListDispatcher::setMaskFilter(const flutter::DlMaskFilter* filter) {
       };
       break;
     }
-    case flutter::DlMaskFilterType::kUnknown:
-      UNIMPLEMENTED;
-      break;
   }
 }
 
@@ -648,7 +688,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto tile_mode = ToTileMode(blur->tile_mode());
 
       return [sigma_x, sigma_y, tile_mode](const FilterInput::Ref& input,
-                                           const Matrix& effect_transform) {
+                                           const Matrix& effect_transform,
+                                           bool is_subpass) {
         return FilterContents::MakeGaussianBlur(
             input, sigma_x, sigma_y, FilterContents::BlurStyle::kNormal,
             tile_mode, effect_transform);
@@ -665,7 +706,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto radius_x = Radius(dilate->radius_x());
       auto radius_y = Radius(dilate->radius_y());
       return [radius_x, radius_y](FilterInput::Ref input,
-                                  const Matrix& effect_transform) {
+                                  const Matrix& effect_transform,
+                                  bool is_subpass) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
             FilterContents::MorphType::kDilate, effect_transform);
@@ -681,7 +723,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto radius_x = Radius(erode->radius_x());
       auto radius_y = Radius(erode->radius_y());
       return [radius_x, radius_y](FilterInput::Ref input,
-                                  const Matrix& effect_transform) {
+                                  const Matrix& effect_transform,
+                                  bool is_subpass) {
         return FilterContents::MakeMorphology(
             std::move(input), radius_x, radius_y,
             FilterContents::MorphType::kErode, effect_transform);
@@ -694,8 +737,9 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto matrix = ToMatrix(matrix_filter->matrix());
       auto desc = ToSamplerDescriptor(matrix_filter->sampling());
       return [matrix, desc](FilterInput::Ref input,
-                            const Matrix& effect_transform) {
-        return FilterContents::MakeMatrixFilter(std::move(input), matrix, desc);
+                            const Matrix& effect_transform, bool is_subpass) {
+        return FilterContents::MakeMatrixFilter(std::move(input), matrix, desc,
+                                                effect_transform, is_subpass);
       };
       break;
     }
@@ -714,10 +758,13 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       }
       FML_DCHECK(outer_proc.has_value() && inner_proc.has_value());
       return [outer_filter = outer_proc.value(),
-              inner_filter = inner_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        auto contents = inner_filter(std::move(input), effect_transform);
-        contents = outer_filter(FilterInput::Make(contents), effect_transform);
+              inner_filter = inner_proc.value()](FilterInput::Ref input,
+                                                 const Matrix& effect_transform,
+                                                 bool is_subpass) {
+        auto contents =
+            inner_filter(std::move(input), effect_transform, is_subpass);
+        contents = outer_filter(FilterInput::Make(contents), effect_transform,
+                                is_subpass);
         return contents;
       };
       break;
@@ -731,9 +778,8 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
         return std::nullopt;
       }
       return [color_filter = color_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
-        return color_filter(std::move(input));
-      };
+                 FilterInput::Ref input, const Matrix& effect_transform,
+                 bool is_subpass) { return color_filter(std::move(input)); };
       break;
     }
     case flutter::DlImageFilterType::kLocalMatrixFilter: {
@@ -750,16 +796,15 @@ static std::optional<Paint::ImageFilterProc> ToImageFilterProc(
       auto matrix = ToMatrix(local_matrix_filter->matrix());
 
       return [matrix, filter_proc = image_filter_proc.value()](
-                 FilterInput::Ref input, const Matrix& effect_transform) {
+                 FilterInput::Ref input, const Matrix& effect_transform,
+                 bool is_subpass) {
         std::shared_ptr<FilterContents> filter =
-            filter_proc(std::move(input), effect_transform);
+            filter_proc(std::move(input), effect_transform, is_subpass);
         return FilterContents::MakeLocalMatrixFilter(FilterInput::Make(filter),
                                                      matrix);
       };
       break;
     }
-    case flutter::DlImageFilterType::kUnknown:
-      return std::nullopt;
   }
 }
 
@@ -872,27 +917,28 @@ void DisplayListDispatcher::transformFullPerspective(SkScalar mxx,
 // |flutter::Dispatcher|
 void DisplayListDispatcher::transformReset() {
   canvas_.ResetTransform();
+  canvas_.Transform(initial_matrix_);
 }
 
 static Rect ToRect(const SkRect& rect) {
   return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
 }
 
-static Entity::ClipOperation ToClipOperation(SkClipOp clip_op) {
+static Entity::ClipOperation ToClipOperation(
+    flutter::DlCanvas::ClipOp clip_op) {
   switch (clip_op) {
-    case SkClipOp::kDifference:
+    case flutter::DlCanvas::ClipOp::kDifference:
       return Entity::ClipOperation::kDifference;
-    case SkClipOp::kIntersect:
+    case flutter::DlCanvas::ClipOp::kIntersect:
       return Entity::ClipOperation::kIntersect;
   }
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipRect(const SkRect& rect,
-                                     SkClipOp clip_op,
+                                     ClipOp clip_op,
                                      bool is_aa) {
-  auto path = PathBuilder{}.AddRect(ToRect(rect)).TakePath();
-  canvas_.ClipPath(path, ToClipOperation(clip_op));
+  canvas_.ClipRect(ToRect(rect), ToClipOperation(clip_op));
 }
 
 static PathBuilder::RoundingRadii ToRoundingRadii(const SkRRect& rrect) {
@@ -989,14 +1035,19 @@ static Path ToPath(const SkRRect& rrect) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipRRect(const SkRRect& rrect,
-                                      SkClipOp clip_op,
+                                      ClipOp clip_op,
                                       bool is_aa) {
-  canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  if (rrect.isSimple()) {
+    canvas_.ClipRRect(ToRect(rrect.rect()), rrect.getSimpleRadii().fX,
+                      ToClipOperation(clip_op));
+  } else {
+    canvas_.ClipPath(ToPath(rrect), ToClipOperation(clip_op));
+  }
 }
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::clipPath(const SkPath& path,
-                                     SkClipOp clip_op,
+                                     ClipOp clip_op,
                                      bool is_aa) {
   canvas_.ClipPath(ToPath(path), ToClipOperation(clip_op));
 }
@@ -1040,7 +1091,6 @@ void DisplayListDispatcher::drawOval(const SkRect& bounds) {
 
 // |flutter::Dispatcher|
 void DisplayListDispatcher::drawCircle(const SkPoint& center, SkScalar radius) {
-  auto path = PathBuilder{}.AddCircle(ToPoint(center), radius).TakePath();
   canvas_.DrawCircle(ToPoint(center), radius, paint_);
 }
 
@@ -1079,13 +1129,13 @@ void DisplayListDispatcher::drawArc(const SkRect& oval_bounds,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
+void DisplayListDispatcher::drawPoints(PointMode mode,
                                        uint32_t count,
                                        const SkPoint points[]) {
   Paint paint = paint_;
   paint.style = Paint::Style::kStroke;
   switch (mode) {
-    case SkCanvas::kPoints_PointMode:
+    case flutter::DlCanvas::PointMode::kPoints:
       if (paint.stroke_cap == Cap::kButt) {
         paint.stroke_cap = Cap::kSquare;
       }
@@ -1095,7 +1145,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
         canvas_.DrawPath(path, paint);
       }
       break;
-    case SkCanvas::kLines_PointMode:
+    case flutter::DlCanvas::PointMode::kLines:
       for (uint32_t i = 1; i < count; i += 2) {
         Point p0 = ToPoint(points[i - 1]);
         Point p1 = ToPoint(points[i]);
@@ -1103,7 +1153,7 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
         canvas_.DrawPath(path, paint);
       }
       break;
-    case SkCanvas::kPolygon_PointMode:
+    case flutter::DlCanvas::PointMode::kPolygon:
       if (count > 1) {
         Point p0 = ToPoint(points[0]);
         for (uint32_t i = 1; i < count; i++) {
@@ -1115,13 +1165,6 @@ void DisplayListDispatcher::drawPoints(SkCanvas::PointMode mode,
       }
       break;
   }
-}
-
-// |flutter::Dispatcher|
-void DisplayListDispatcher::drawSkVertices(const sk_sp<SkVertices> vertices,
-                                           SkBlendMode mode) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
 }
 
 // |flutter::Dispatcher|
@@ -1191,18 +1234,6 @@ void DisplayListDispatcher::drawImageNine(const sk_sp<flutter::DlImage> image,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawImageLattice(
-    const sk_sp<flutter::DlImage> image,
-    const SkCanvas::Lattice& lattice,
-    const SkRect& dst,
-    flutter::DlFilterMode filter,
-    bool render_with_attributes) {
-  // Don't implement this one since it is not exposed by flutter,
-  // Skia internally converts calls to drawImageNine into this method,
-  // which is then converted back to drawImageNine by display list.
-}
-
-// |flutter::Dispatcher|
 void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
                                       const SkRSXform xform[],
                                       const SkRect tex[],
@@ -1219,21 +1250,16 @@ void DisplayListDispatcher::drawAtlas(const sk_sp<flutter::DlImage> atlas,
 }
 
 // |flutter::Dispatcher|
-void DisplayListDispatcher::drawPicture(const sk_sp<SkPicture> picture,
-                                        const SkMatrix* matrix,
-                                        bool render_with_attributes) {
-  // Needs https://github.com/flutter/flutter/issues/95434
-  UNIMPLEMENTED;
-}
-
-// |flutter::Dispatcher|
 void DisplayListDispatcher::drawDisplayList(
     const sk_sp<flutter::DisplayList> display_list) {
   int saveCount = canvas_.GetSaveCount();
   Paint savePaint = paint_;
+  Matrix saveMatrix = initial_matrix_;
   paint_ = Paint();
+  initial_matrix_ = canvas_.GetCurrentTransformation();
   display_list->Dispatch(*this);
   paint_ = savePaint;
+  initial_matrix_ = saveMatrix;
   canvas_.RestoreToCount(saveCount);
 }
 

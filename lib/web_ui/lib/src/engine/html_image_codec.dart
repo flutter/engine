@@ -56,7 +56,9 @@ class HtmlCodec implements ui.Codec {
         int naturalWidth = imgElement.naturalWidth.toInt();
         int naturalHeight = imgElement.naturalHeight.toInt();
         // Workaround for https://bugzilla.mozilla.org/show_bug.cgi?id=700533.
-        if (naturalWidth == 0 && naturalHeight == 0 && browserEngine == BrowserEngine.firefox) {
+        if (naturalWidth == 0 &&
+            naturalHeight == 0 &&
+            browserEngine == BrowserEngine.firefox) {
           const int kDefaultImageSizeFallback = 300;
           naturalWidth = kDefaultImageSizeFallback;
           naturalHeight = kDefaultImageSizeFallback;
@@ -162,7 +164,8 @@ class HtmlImage implements ui.Image {
     if (assertionsEnabled) {
       return _disposed;
     }
-    return throw StateError('Image.debugDisposed is only available when asserts are enabled.');
+    return throw StateError(
+        'Image.debugDisposed is only available when asserts are enabled.');
   }
 
   @override
@@ -181,7 +184,8 @@ class HtmlImage implements ui.Image {
   final int height;
 
   @override
-  Future<ByteData?> toByteData({ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
+  Future<ByteData?> toByteData(
+      {ui.ImageByteFormat format = ui.ImageByteFormat.rawRgba}) {
     switch (format) {
       // TODO(ColdPaleLight): https://github.com/flutter/flutter/issues/89128
       // The format rawRgba always returns straight rather than premul currently.
@@ -228,19 +232,12 @@ class HtmlImage implements ui.Image {
   Future<ByteData?> _byteDataFromBlobString(String blobString) async {
     assert(blobString.startsWith('blob:'));
 
-    try {
-      final DomXMLHttpRequest request = await domHttpRequest(blobString, responseType: 'blob');
-      final ByteBuffer byteBuffer = await (request.response as DomBlob).arrayBuffer() as ByteBuffer;
-
-      return byteBuffer.asByteData();
-    } catch (e) {
-      throw Exception(
-        "Couldn't load Blob Image\n"
-        'URL: $blobString\n'
-        'error: $e',
-      );
-    }
+    final ByteBuffer byteBuffer = await httpFetchByteBuffer(blobString);
+    return byteBuffer.asByteData();
   }
+
+  @override
+  ui.ColorSpace get colorSpace => ui.ColorSpace.sRGB;
 
   DomHTMLImageElement cloneImageElement() {
     if (!_didClone) {

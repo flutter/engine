@@ -1624,6 +1624,9 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1739,6 +1742,10 @@ void _paragraphTests() {
     );
     builder.addText('hello');
 
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
+
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1826,4 +1833,19 @@ void _paragraphTests() {
 
     expect(surface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+
+  test('respects actual location of canvaskit files', () {
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'https://example.com/'),
+      'https://example.com/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/'),
+      'http://localhost:1234/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/foo/'),
+      'http://localhost:1234/foo/canvaskit.wasm',
+    );
+  });
 }

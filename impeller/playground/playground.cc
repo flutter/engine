@@ -195,7 +195,11 @@ bool Playground::OpenPlaygroundHere(
   fml::ScopedCleanupClosure destroy_imgui_context(
       []() { ImGui::DestroyContext(); });
   ImGui::StyleColorsDark();
-  ImGui::GetIO().IniFilename = nullptr;
+
+  auto& io = ImGui::GetIO();
+  io.IniFilename = nullptr;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigWindowsResizeFromEdges = true;
 
   auto window = reinterpret_cast<GLFWwindow*>(impl_->GetWindowHandle());
   if (!window) {
@@ -210,8 +214,7 @@ bool Playground::OpenPlaygroundHere(
         if (!playground) {
           return;
         }
-        playground->SetWindowSize(
-            ISize{std::max(width, 0), std::max(height, 0)});
+        playground->SetWindowSize(ISize{width, height}.Max({}));
       });
   ::glfwSetKeyCallback(window, &PlaygroundKeyCallback);
   ::glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x,
@@ -246,6 +249,8 @@ bool Playground::OpenPlaygroundHere(
         [render_callback,
          &renderer = renderer_](RenderTarget& render_target) -> bool {
       ImGui::NewFrame();
+      ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
+                                   ImGuiDockNodeFlags_PassthruCentralNode);
       bool result = render_callback(render_target);
       ImGui::Render();
 
@@ -391,13 +396,14 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   if (!image.has_value()) {
     return nullptr;
   }
-  return CreateTextureForFixture(image.value());
+  return CreateTextureForFixture(image.value(), enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name));
+  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name),
+                                 enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(

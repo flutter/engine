@@ -37,7 +37,7 @@ FlutterSemanticsNode CreateSemanticsNode(
   };
 }
 
-TEST(AccessibilityBridgeTest, basicTest) {
+TEST(AccessibilityBridgeTest, BasicTest) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
 
@@ -46,9 +46,9 @@ TEST(AccessibilityBridgeTest, basicTest) {
   FlutterSemanticsNode child1 = CreateSemanticsNode(1, "child 1");
   FlutterSemanticsNode child2 = CreateSemanticsNode(2, "child 2");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child1);
-  bridge->AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -66,7 +66,98 @@ TEST(AccessibilityBridgeTest, basicTest) {
   EXPECT_EQ(child2_node->GetName(), "child 2");
 }
 
-TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
+// Flutter used to assume that the accessibility root had ID 0.
+// In a multi-view world, each view has its own accessibility root
+// with a globally unique node ID.
+TEST(AccessibilityBridgeTest, AccessibilityRootId) {
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
+
+  std::vector<int32_t> children{456, 789};
+  FlutterSemanticsNode root = CreateSemanticsNode(123, "root", &children);
+  FlutterSemanticsNode child1 = CreateSemanticsNode(456, "child 1");
+  FlutterSemanticsNode child2 = CreateSemanticsNode(789, "child 2");
+
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
+  bridge->CommitUpdates();
+
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(123).lock();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(456).lock();
+  auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(789).lock();
+  auto fake_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+
+  EXPECT_EQ(bridge->GetRootAsAXNode()->id(), 123);
+  EXPECT_EQ(bridge->RootDelegate()->GetName(), "root");
+
+  EXPECT_EQ(root_node->GetChildCount(), 2);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 456);
+  EXPECT_EQ(root_node->GetData().child_ids[1], 789);
+  EXPECT_EQ(root_node->GetName(), "root");
+
+  EXPECT_EQ(child1_node->GetChildCount(), 0);
+  EXPECT_EQ(child1_node->GetName(), "child 1");
+
+  EXPECT_EQ(child2_node->GetChildCount(), 0);
+  EXPECT_EQ(child2_node->GetName(), "child 2");
+
+  ASSERT_FALSE(fake_delegate);
+}
+
+// Semantic nodes can be added in any order.
+TEST(AccessibilityBridgeTest, AddOrder) {
+  std::shared_ptr<TestAccessibilityBridge> bridge =
+      std::make_shared<TestAccessibilityBridge>();
+
+  std::vector<int32_t> root_children{34, 56};
+  std::vector<int32_t> child2_children{78};
+  std::vector<int32_t> child3_children{90};
+  FlutterSemanticsNode root = CreateSemanticsNode(12, "root", &root_children);
+  FlutterSemanticsNode child1 = CreateSemanticsNode(34, "child 1");
+  FlutterSemanticsNode child2 =
+      CreateSemanticsNode(56, "child 2", &child2_children);
+  FlutterSemanticsNode child3 =
+      CreateSemanticsNode(78, "child 3", &child3_children);
+  FlutterSemanticsNode child4 = CreateSemanticsNode(90, "child 4");
+
+  bridge->AddFlutterSemanticsNodeUpdate(child3);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
+  bridge->AddFlutterSemanticsNodeUpdate(child4);
+  bridge->CommitUpdates();
+
+  auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(12).lock();
+  auto child1_node = bridge->GetFlutterPlatformNodeDelegateFromID(34).lock();
+  auto child2_node = bridge->GetFlutterPlatformNodeDelegateFromID(56).lock();
+  auto child3_node = bridge->GetFlutterPlatformNodeDelegateFromID(78).lock();
+  auto child4_node = bridge->GetFlutterPlatformNodeDelegateFromID(90).lock();
+
+  EXPECT_EQ(bridge->GetRootAsAXNode()->id(), 12);
+  EXPECT_EQ(bridge->RootDelegate()->GetName(), "root");
+
+  EXPECT_EQ(root_node->GetChildCount(), 2);
+  EXPECT_EQ(root_node->GetData().child_ids[0], 34);
+  EXPECT_EQ(root_node->GetData().child_ids[1], 56);
+  EXPECT_EQ(root_node->GetName(), "root");
+
+  EXPECT_EQ(child1_node->GetChildCount(), 0);
+  EXPECT_EQ(child1_node->GetName(), "child 1");
+
+  EXPECT_EQ(child2_node->GetChildCount(), 1);
+  EXPECT_EQ(child2_node->GetData().child_ids[0], 78);
+  EXPECT_EQ(child2_node->GetName(), "child 2");
+
+  EXPECT_EQ(child3_node->GetChildCount(), 1);
+  EXPECT_EQ(child3_node->GetData().child_ids[0], 90);
+  EXPECT_EQ(child3_node->GetName(), "child 3");
+
+  EXPECT_EQ(child4_node->GetChildCount(), 0);
+  EXPECT_EQ(child4_node->GetName(), "child 4");
+}
+
+TEST(AccessibilityBridgeTest, CanFireChildrenChangedCorrectly) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
 
@@ -74,8 +165,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root", &children);
   FlutterSemanticsNode child1 = CreateSemanticsNode(1, "child 1");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
 
   bridge->CommitUpdates();
 
@@ -96,8 +187,8 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
 
   FlutterSemanticsNode child2 = CreateSemanticsNode(2, "child 2");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
   bridge->CommitUpdates();
 
   root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -114,7 +205,7 @@ TEST(AccessibilityBridgeTest, canFireChildrenChangedCorrectly) {
               Contains(ui::AXEventGenerator::Event::SUBTREE_CREATED));
 }
 
-TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
+TEST(AccessibilityBridgeTest, CanRecreateNodeDelegates) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
 
@@ -122,8 +213,8 @@ TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root", &children);
   FlutterSemanticsNode child1 = CreateSemanticsNode(1, "child 1");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child1);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0);
@@ -148,14 +239,14 @@ TEST(AccessibilityBridgeTest, canRecreateNodeDelegates) {
   EXPECT_EQ(new_child1_node->GetName(), "child 1");
 }
 
-TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
+TEST(AccessibilityBridgeTest, CanHandleSelectionChangeCorrectly) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocused);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   const ui::AXTreeData& tree = bridge->GetAXTreeData();
@@ -165,7 +256,7 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
   // Update the selection.
   root.text_selection_base = 0;
   root.text_selection_extent = 5;
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -180,14 +271,14 @@ TEST(AccessibilityBridgeTest, canHandleSelectionChangeCorrectly) {
             ui::AXEventGenerator::Event::OTHER_ATTRIBUTE_CHANGED);
 }
 
-TEST(AccessibilityBridgeTest, doesNotAssignEditableRootToSelectableText) {
+TEST(AccessibilityBridgeTest, DoesNotAssignEditableRootToSelectableText) {
   std::shared_ptr<TestAccessibilityBridge> bridge =
       std::make_shared<TestAccessibilityBridge>();
   FlutterSemanticsNode root = CreateSemanticsNode(0, "root");
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsReadOnly);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -204,7 +295,7 @@ TEST(AccessibilityBridgeTest, ToggleHasToggleButtonRole) {
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasEnabledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsEnabled);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -220,7 +311,7 @@ TEST(AccessibilityBridgeTest, SliderHasSliderRole) {
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasEnabledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsEnabled |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsFocusable);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -239,7 +330,7 @@ TEST(AccessibilityBridgeTest, CanSetCheckboxChecked) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -260,9 +351,9 @@ TEST(AccessibilityBridgeTest, CanReparentNode) {
       CreateSemanticsNode(1, "child 1", &child1_children);
   FlutterSemanticsNode child2 = CreateSemanticsNode(2, "child 2");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child1);
-  bridge->AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
   bridge->CommitUpdates();
   bridge->accessibility_events.clear();
 
@@ -274,9 +365,9 @@ TEST(AccessibilityBridgeTest, CanReparentNode) {
   root.child_count = 2;
   root.children_in_traversal_order = new_root_children;
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&child1);
-  bridge->AddFlutterSemanticsNodeUpdate(&child2);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(child1);
+  bridge->AddFlutterSemanticsNodeUpdate(child2);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -336,12 +427,12 @@ TEST(AccessibilityBridgeTest, CanReparentMultipleNodes) {
   FlutterSemanticsNode leaf2 = CreateSemanticsNode(leaf2_id, "leaf 2");
   FlutterSemanticsNode leaf3 = CreateSemanticsNode(leaf3_id, "leaf 3");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary1);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf1);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf3);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary1);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf1);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf3);
   bridge->CommitUpdates();
   bridge->accessibility_events.clear();
 
@@ -354,11 +445,11 @@ TEST(AccessibilityBridgeTest, CanReparentMultipleNodes) {
   intermediary2.child_count = 1;
   intermediary2.children_in_traversal_order = new_intermediary2_children;
 
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary1);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf1);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf3);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary1);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf1);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf3);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(root_id).lock();
@@ -425,10 +516,10 @@ TEST(AccessibilityBridgeTest, CanReparentNodeWithChild) {
       CreateSemanticsNode(intermediary2_id, "intermediary 2");
   FlutterSemanticsNode leaf1 = CreateSemanticsNode(leaf1_id, "leaf 1");
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary1);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf1);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary1);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf1);
   bridge->CommitUpdates();
   bridge->accessibility_events.clear();
 
@@ -441,10 +532,10 @@ TEST(AccessibilityBridgeTest, CanReparentNodeWithChild) {
   intermediary2.child_count = 1;
   intermediary2.children_in_traversal_order = new_intermediary2_children;
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary1);
-  bridge->AddFlutterSemanticsNodeUpdate(&intermediary2);
-  bridge->AddFlutterSemanticsNodeUpdate(&leaf1);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary1);
+  bridge->AddFlutterSemanticsNodeUpdate(intermediary2);
+  bridge->AddFlutterSemanticsNodeUpdate(leaf1);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(root_id).lock();
@@ -504,7 +595,7 @@ TEST(AccessibilityBridgeTest, LineBreakingObjectTest) {
 
   FlutterSemanticsNode root = CreateSemanticsNode(root_id, "root", {});
 
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(root_id).lock();

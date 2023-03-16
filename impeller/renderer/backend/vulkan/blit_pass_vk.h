@@ -5,9 +5,12 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/backend/vulkan/blit_command_vk.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
+
+class CommandEncoderVK;
 
 class BlitPassVK final : public BlitPass {
  public:
@@ -17,7 +20,11 @@ class BlitPassVK final : public BlitPass {
  private:
   friend class CommandBufferVK;
 
-  BlitPassVK();
+  std::weak_ptr<CommandEncoderVK> encoder_;
+  std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
+  std::string label_;
+
+  BlitPassVK(std::weak_ptr<CommandEncoderVK> encoder);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -43,6 +50,9 @@ class BlitPassVK final : public BlitPass {
                                     size_t destination_offset,
                                     std::string label) override;
 
+  // |BlitPass|
+  bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
+                              std::string label) override;
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;

@@ -1,48 +1,7 @@
 ====================================================================================================
 LIBRARY: txt
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/paint_record_benchmarks.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/paragraph_benchmarks.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/paragraph_builder_benchmarks.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/skparagraph_benchmarks.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/benchmarks/txt_run_all_benchmarks.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/log/log.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/log/log.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/CmapCoverage.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/CmapCoverage.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Emoji.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Emoji.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontCollection.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontCollection.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontFamily.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontFamily.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontLanguage.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontLanguage.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontLanguageListCache.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontLanguageListCache.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontUtils.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/FontUtils.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/GraphemeBreak.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/GraphemeBreak.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/HbFontCache.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/HbFontCache.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Hyphenator.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Hyphenator.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Layout.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Layout.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/LayoutUtils.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/LayoutUtils.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/LineBreaker.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/LineBreaker.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Measurement.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/Measurement.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/MinikinFont.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/MinikinFont.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/MinikinInternal.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/MinikinInternal.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/SparseBitSet.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/SparseBitSet.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/WordBreaker.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/minikin/WordBreaker.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/skia/paragraph_skia.cc
@@ -55,27 +14,17 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutte
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_collection.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_features.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_features.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_skia.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_skia.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_style.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/font_weight.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/line_metrics.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paint_record.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paint_record.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_builder.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_builder.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_builder_txt.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_builder_txt.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_style.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_style.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_txt.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/paragraph_txt.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/placeholder_run.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/run_metrics.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/styled_runs.cc
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/styled_runs.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/test_font_manager.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/test_font_manager.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/text_baseline.h
@@ -87,57 +36,9 @@ ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutte
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/text_style.h
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/LinuxUtils.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/LruCache.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/MacUtils.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
-ORIGIN: http://www.apache.org/licenses/LICENSE-2.0 referenced by ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 TYPE: LicenseType.apache
-FILE: ../../../flutter/third_party/txt/benchmarks/paint_record_benchmarks.cc
-FILE: ../../../flutter/third_party/txt/benchmarks/paragraph_benchmarks.cc
-FILE: ../../../flutter/third_party/txt/benchmarks/paragraph_builder_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/skparagraph_benchmarks.cc
 FILE: ../../../flutter/third_party/txt/benchmarks/txt_run_all_benchmarks.cc
-FILE: ../../../flutter/third_party/txt/src/log/log.cc
-FILE: ../../../flutter/third_party/txt/src/log/log.h
-FILE: ../../../flutter/third_party/txt/src/minikin/CmapCoverage.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/CmapCoverage.h
-FILE: ../../../flutter/third_party/txt/src/minikin/Emoji.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/Emoji.h
-FILE: ../../../flutter/third_party/txt/src/minikin/FontCollection.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/FontCollection.h
-FILE: ../../../flutter/third_party/txt/src/minikin/FontFamily.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/FontFamily.h
-FILE: ../../../flutter/third_party/txt/src/minikin/FontLanguage.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/FontLanguage.h
-FILE: ../../../flutter/third_party/txt/src/minikin/FontLanguageListCache.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/FontLanguageListCache.h
-FILE: ../../../flutter/third_party/txt/src/minikin/FontUtils.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/FontUtils.h
-FILE: ../../../flutter/third_party/txt/src/minikin/GraphemeBreak.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/GraphemeBreak.h
-FILE: ../../../flutter/third_party/txt/src/minikin/HbFontCache.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/HbFontCache.h
-FILE: ../../../flutter/third_party/txt/src/minikin/Hyphenator.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/Hyphenator.h
-FILE: ../../../flutter/third_party/txt/src/minikin/Layout.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/Layout.h
-FILE: ../../../flutter/third_party/txt/src/minikin/LayoutUtils.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/LayoutUtils.h
-FILE: ../../../flutter/third_party/txt/src/minikin/LineBreaker.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/LineBreaker.h
-FILE: ../../../flutter/third_party/txt/src/minikin/Measurement.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/Measurement.h
-FILE: ../../../flutter/third_party/txt/src/minikin/MinikinFont.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/MinikinFont.h
-FILE: ../../../flutter/third_party/txt/src/minikin/MinikinInternal.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/MinikinInternal.h
-FILE: ../../../flutter/third_party/txt/src/minikin/SparseBitSet.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/SparseBitSet.h
-FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.cpp
-FILE: ../../../flutter/third_party/txt/src/minikin/WordBreaker.h
 FILE: ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.cc
 FILE: ../../../flutter/third_party/txt/src/skia/paragraph_builder_skia.h
 FILE: ../../../flutter/third_party/txt/src/skia/paragraph_skia.cc
@@ -150,27 +51,17 @@ FILE: ../../../flutter/third_party/txt/src/txt/font_collection.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_collection.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_features.cc
 FILE: ../../../flutter/third_party/txt/src/txt/font_features.h
-FILE: ../../../flutter/third_party/txt/src/txt/font_skia.cc
-FILE: ../../../flutter/third_party/txt/src/txt/font_skia.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/font_weight.h
 FILE: ../../../flutter/third_party/txt/src/txt/line_metrics.h
-FILE: ../../../flutter/third_party/txt/src/txt/paint_record.cc
-FILE: ../../../flutter/third_party/txt/src/txt/paint_record.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder.h
-FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder_txt.cc
-FILE: ../../../flutter/third_party/txt/src/txt/paragraph_builder_txt.h
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/paragraph_style.h
-FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.cc
-FILE: ../../../flutter/third_party/txt/src/txt/paragraph_txt.h
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.cc
 FILE: ../../../flutter/third_party/txt/src/txt/placeholder_run.h
 FILE: ../../../flutter/third_party/txt/src/txt/run_metrics.h
-FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.cc
-FILE: ../../../flutter/third_party/txt/src/txt/styled_runs.h
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.cc
 FILE: ../../../flutter/third_party/txt/src/txt/test_font_manager.h
 FILE: ../../../flutter/third_party/txt/src/txt/text_baseline.h
@@ -182,13 +73,6 @@ FILE: ../../../flutter/third_party/txt/src/txt/text_style.cc
 FILE: ../../../flutter/third_party/txt/src/txt/text_style.h
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.cc
 FILE: ../../../flutter/third_party/txt/src/txt/typeface_font_asset_provider.h
-FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.cpp
-FILE: ../../../flutter/third_party/txt/src/utils/JenkinsHash.h
-FILE: ../../../flutter/third_party/txt/src/utils/LinuxUtils.h
-FILE: ../../../flutter/third_party/txt/src/utils/LruCache.h
-FILE: ../../../flutter/third_party/txt/src/utils/MacUtils.h
-FILE: ../../../flutter/third_party/txt/src/utils/TypeHelpers.h
-FILE: ../../../flutter/third_party/txt/src/utils/WindowsUtils.h
 ----------------------------------------------------------------------------------------------------
 Apache License
 Version 2.0, January 2004
@@ -714,9 +598,11 @@ SOFTWARE.
 
 ====================================================================================================
 LIBRARY: spring_animation
-ORIGIN: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.h + ../../../flutter/third_party/spring_animation/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/spring_animation.mm + ../../../flutter/third_party/spring_animation/LICENSE
 TYPE: LicenseType.mit
-FILE: ../../../flutter/third_party/spring_animation/Libraries/Animated/animations/SpringAnimation.js
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.h
+FILE: ../../../flutter/third_party/spring_animation/spring_animation.mm
 ----------------------------------------------------------------------------------------------------
 Copyright (c) Meta Platforms, Inc. and affiliates.
 
@@ -791,8 +677,10 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ====================================================================================================
 LIBRARY: accessibility
 LIBRARY: engine
+LIBRARY: spring_animation
 LIBRARY: tonic
 LIBRARY: txt
+LIBRARY: web_test_fonts
 LIBRARY: web_unicode
 ORIGIN: ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/assets/asset_manager.cc + ../../../flutter/LICENSE
@@ -819,27 +707,15 @@ ORIGIN: ../../../flutter/common/task_runners.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_attributes.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_attributes_testing.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_benchmarks.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_canvas_provider.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_gl.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_gl.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_metal.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_metal.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_software.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_benchmarks_software.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_blend_mode.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_blend_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_builder.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_builder_benchmarks.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_builder_multiplexer.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_builder_multiplexer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_canvas_dispatcher.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_canvas_dispatcher.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_canvas_recorder.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_canvas_recorder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color_filter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_color_filter.h + ../../../flutter/LICENSE
@@ -878,13 +754,14 @@ ORIGIN: ../../../flutter/display_list/display_list_rtree.h + ../../../flutter/LI
 ORIGIN: ../../../flutter/display_list/display_list_runtime_effect.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_runtime_effect.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_sampling_options.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_test_utils.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/display_list/display_list_test_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_tile_mode.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_utils.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_vertices.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/display_list_vertices.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/dl_canvas.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/display_list/skia/dl_sk_canvas.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/display_list/types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/flow/compositor_context.h + ../../../flutter/LICENSE
@@ -1212,6 +1089,7 @@ ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl + ../.
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl + ../../../flutter/LICENSE
@@ -1223,6 +1101,8 @@ ORIGIN: ../../../flutter/impeller/compiler/switches.cc + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/impeller/compiler/switches.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/types.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/types.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/uniform_sorter.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/compiler/uniform_sorter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/compiler/utilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/display_list_dispatcher.cc + ../../../flutter/LICENSE
@@ -1241,6 +1121,10 @@ ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.cc + ../../../fl
 ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/conical_gradient_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/conical_gradient_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/contents.cc + ../../../flutter/LICENSE
@@ -1277,6 +1161,8 @@ ORIGIN: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/gradient_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/gradient_generator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc + ../../../flutter/LICENSE
@@ -1332,12 +1218,33 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_screen.
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_softlight.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/blending/blend.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_color.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_colorburn.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_colordodge.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_darken.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_difference.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_exclusion.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_hardlight.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_hue.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_lighten.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_luminosity.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_multiply.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_overlay.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_saturation.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_screen.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_softlight.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag + ../../../flutter/LICENSE
@@ -1349,7 +1256,6 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag + ..
 ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/position.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_color.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_uv.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag + ../../../flutter/LICENSE
@@ -1499,24 +1405,20 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 ORIGIN: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fenced_command_buffer_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc + ../../../flutter/LICENSE
@@ -1533,20 +1435,23 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.cc 
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shared_object_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/shared_object_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_image_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_image_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_impl_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_impl_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend_features.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/blit_command.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/blit_command.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/blit_pass.cc + ../../../flutter/LICENSE
@@ -1574,6 +1479,8 @@ ORIGIN: ../../../flutter/impeller/renderer/device_buffer.cc + ../../../flutter/L
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.cc + ../../../flutter/LICENSE
@@ -1788,6 +1695,8 @@ ORIGIN: ../../../flutter/lib/ui/painting/image_filter.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/lib/ui/painting/image_filter.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/painting/image_generator_apng.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_generator_registry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/painting/image_shader.cc + ../../../flutter/LICENSE
@@ -1937,6 +1846,7 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.d
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart + ../../../flutter/LICENSE
@@ -2033,7 +1943,24 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart 
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/canvas.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/image.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paint.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paragraph.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path_metrics.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/picture.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_canvas.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_geometry.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_memory.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_paint.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path_metrics.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_picture.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_surface.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/renderer.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/surface.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/vertices.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart + ../../../flutter/LICENSE
@@ -2074,6 +2001,15 @@ ORIGIN: ../../../flutter/lib/web_ui/lib/text.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/tile_mode.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/ui.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/web_ui/lib/window.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/canvas.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/export.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/helpers.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/paint.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/path.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/picture.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/surface.cpp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/web_ui/skwasm/wrappers.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/dart_isolate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/dart_isolate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/runtime/dart_isolate_group_data.cc + ../../../flutter/LICENSE
@@ -2506,6 +2442,8 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChann
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProjectTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponderTest.mm + ../../../flutter/LICENSE
@@ -2526,8 +2464,6 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySe
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h + ../../../flutter/LICENSE
@@ -2620,6 +2556,7 @@ ORIGIN: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm + ../../
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h + ../../../flutter/LICENSE
@@ -2631,6 +2568,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/Accessibil
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h + ../../../flutter/LICENSE
@@ -2663,6 +2603,9 @@ ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMen
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorViewTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMacTest.mm + ../../../flutter/LICENSE
@@ -2806,8 +2749,6 @@ ORIGIN: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h + 
 ORIGIN: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc + ../../../flutter/LICENSE
@@ -2986,6 +2927,7 @@ ORIGIN: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h 
 ORIGIN: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_platform_plugin.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/linux/fl_platform_plugin_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc + ../../../flutter/LICENSE
@@ -3164,6 +3106,7 @@ ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.cc + ../../
 ORIGIN: ../../../flutter/third_party/accessibility/base/string_utils.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/accessibility/gfx/transform.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/build_config.h + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.cc + ../../../flutter/third_party/tonic/LICENSE
 ORIGIN: ../../../flutter/third_party/tonic/common/log.h + ../../../flutter/third_party/tonic/LICENSE
@@ -3230,6 +3173,8 @@ ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc + ../../../
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_linux.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_mac.mm + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/txt/src/txt/platform_windows.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/vulkan/procs/vulkan_handle.cc + ../../../flutter/LICENSE
@@ -3295,27 +3240,15 @@ FILE: ../../../flutter/common/task_runners.h
 FILE: ../../../flutter/display_list/display_list.cc
 FILE: ../../../flutter/display_list/display_list.h
 FILE: ../../../flutter/display_list/display_list_attributes.h
-FILE: ../../../flutter/display_list/display_list_attributes_testing.h
 FILE: ../../../flutter/display_list/display_list_benchmarks.cc
 FILE: ../../../flutter/display_list/display_list_benchmarks.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_canvas_provider.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_gl.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_gl.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_metal.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_metal.h
-FILE: ../../../flutter/display_list/display_list_benchmarks_software.cc
-FILE: ../../../flutter/display_list/display_list_benchmarks_software.h
 FILE: ../../../flutter/display_list/display_list_blend_mode.cc
 FILE: ../../../flutter/display_list/display_list_blend_mode.h
 FILE: ../../../flutter/display_list/display_list_builder.cc
 FILE: ../../../flutter/display_list/display_list_builder.h
 FILE: ../../../flutter/display_list/display_list_builder_benchmarks.cc
-FILE: ../../../flutter/display_list/display_list_builder_multiplexer.cc
-FILE: ../../../flutter/display_list/display_list_builder_multiplexer.h
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.cc
 FILE: ../../../flutter/display_list/display_list_canvas_dispatcher.h
-FILE: ../../../flutter/display_list/display_list_canvas_recorder.cc
-FILE: ../../../flutter/display_list/display_list_canvas_recorder.h
 FILE: ../../../flutter/display_list/display_list_color.h
 FILE: ../../../flutter/display_list/display_list_color_filter.cc
 FILE: ../../../flutter/display_list/display_list_color_filter.h
@@ -3354,13 +3287,14 @@ FILE: ../../../flutter/display_list/display_list_rtree.h
 FILE: ../../../flutter/display_list/display_list_runtime_effect.cc
 FILE: ../../../flutter/display_list/display_list_runtime_effect.h
 FILE: ../../../flutter/display_list/display_list_sampling_options.h
-FILE: ../../../flutter/display_list/display_list_test_utils.cc
-FILE: ../../../flutter/display_list/display_list_test_utils.h
 FILE: ../../../flutter/display_list/display_list_tile_mode.h
 FILE: ../../../flutter/display_list/display_list_utils.cc
 FILE: ../../../flutter/display_list/display_list_utils.h
 FILE: ../../../flutter/display_list/display_list_vertices.cc
 FILE: ../../../flutter/display_list/display_list_vertices.h
+FILE: ../../../flutter/display_list/dl_canvas.h
+FILE: ../../../flutter/display_list/skia/dl_sk_canvas.cc
+FILE: ../../../flutter/display_list/skia/dl_sk_canvas.h
 FILE: ../../../flutter/display_list/types.h
 FILE: ../../../flutter/flow/compositor_context.cc
 FILE: ../../../flutter/flow/compositor_context.h
@@ -3688,6 +3622,7 @@ FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/color.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/constants.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gaussian.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/gradient.glsl
+FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/path.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/texture.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/transform.glsl
 FILE: ../../../flutter/impeller/compiler/shader_lib/impeller/types.glsl
@@ -3699,6 +3634,8 @@ FILE: ../../../flutter/impeller/compiler/switches.cc
 FILE: ../../../flutter/impeller/compiler/switches.h
 FILE: ../../../flutter/impeller/compiler/types.cc
 FILE: ../../../flutter/impeller/compiler/types.h
+FILE: ../../../flutter/impeller/compiler/uniform_sorter.cc
+FILE: ../../../flutter/impeller/compiler/uniform_sorter.h
 FILE: ../../../flutter/impeller/compiler/utilities.cc
 FILE: ../../../flutter/impeller/compiler/utilities.h
 FILE: ../../../flutter/impeller/display_list/display_list_dispatcher.cc
@@ -3717,6 +3654,10 @@ FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.h
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.h
+FILE: ../../../flutter/impeller/entity/contents/conical_gradient_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/conical_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
 FILE: ../../../flutter/impeller/entity/contents/content_context.h
 FILE: ../../../flutter/impeller/entity/contents/contents.cc
@@ -3753,6 +3694,8 @@ FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_co
 FILE: ../../../flutter/impeller/entity/contents/filters/srgb_to_linear_filter_contents.h
 FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/filters/yuv_to_rgb_filter_contents.h
+FILE: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/framebuffer_blend_contents.h
 FILE: ../../../flutter/impeller/entity/contents/gradient_generator.cc
 FILE: ../../../flutter/impeller/entity/contents/gradient_generator.h
 FILE: ../../../flutter/impeller/entity/contents/linear_gradient_contents.cc
@@ -3808,12 +3751,33 @@ FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_screen.fr
 FILE: ../../../flutter/impeller/entity/shaders/blending/advanced_blend_softlight.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.frag
 FILE: ../../../flutter/impeller/entity/shaders/blending/blend.vert
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend.glsl
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend.vert
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_color.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_colorburn.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_colordodge.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_darken.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_difference.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_exclusion.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_hardlight.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_hue.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_lighten.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_luminosity.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_multiply.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_overlay.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_saturation.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_screen.frag
+FILE: ../../../flutter/impeller/entity/shaders/blending/ios/framebuffer_blend_softlight.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
+FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
@@ -3825,7 +3789,6 @@ FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
-FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
@@ -3975,24 +3938,20 @@ FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.h
 FILE: ../../../flutter/impeller/renderer/backend/metal/vertex_descriptor_mtl.mm
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/allocator_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_command_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/blit_pass_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/capabilities_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/deletion_queue_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/fenced_command_buffer_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc
@@ -4009,20 +3968,23 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_function_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/shader_library_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_producer_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/shared_object_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/shared_object_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/surface_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_details_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_image_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_image_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_impl_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_impl_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/swapchain_vk.h
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.cc
+FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_source_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/texture_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vertex_descriptor_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/vk.h
-FILE: ../../../flutter/impeller/renderer/backend_features.h
 FILE: ../../../flutter/impeller/renderer/blit_command.cc
 FILE: ../../../flutter/impeller/renderer/blit_command.h
 FILE: ../../../flutter/impeller/renderer/blit_pass.cc
@@ -4050,6 +4012,8 @@ FILE: ../../../flutter/impeller/renderer/device_buffer.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
+FILE: ../../../flutter/impeller/renderer/device_capabilities.cc
+FILE: ../../../flutter/impeller/renderer/device_capabilities.h
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
 FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
@@ -4166,6 +4130,7 @@ FILE: ../../../flutter/impeller/toolkit/egl/egl.cc
 FILE: ../../../flutter/impeller/toolkit/egl/egl.h
 FILE: ../../../flutter/impeller/toolkit/egl/surface.cc
 FILE: ../../../flutter/impeller/toolkit/egl/surface.h
+FILE: ../../../flutter/impeller/tools/malioc.json
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.cc
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_frame_skia.h
 FILE: ../../../flutter/impeller/typographer/backends/skia/text_render_context_skia.cc
@@ -4265,6 +4230,8 @@ FILE: ../../../flutter/lib/ui/painting/image_filter.cc
 FILE: ../../../flutter/lib/ui/painting/image_filter.h
 FILE: ../../../flutter/lib/ui/painting/image_generator.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator.h
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.cc
+FILE: ../../../flutter/lib/ui/painting/image_generator_apng.h
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.cc
 FILE: ../../../flutter/lib/ui/painting/image_generator_registry.h
 FILE: ../../../flutter/lib/ui/painting/image_shader.cc
@@ -4414,6 +4381,7 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/skia_object_cache.dar
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/surface_factory.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/text_fragmenter.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/util.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/canvaskit/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/clipboard.dart
@@ -4510,7 +4478,24 @@ FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/message_codecs.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/services/serialization.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/shadow.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/image.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paint.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/paragraph.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/picture.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_canvas.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_geometry.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_memory.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_paint.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_path_metrics.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_picture.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/raw/raw_surface.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/renderer.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/surface.dart
+FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_impl/vertices.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/skwasm/skwasm_stub/renderer.dart
 FILE: ../../../flutter/lib/web_ui/lib/src/engine/svg.dart
@@ -4551,6 +4536,15 @@ FILE: ../../../flutter/lib/web_ui/lib/text.dart
 FILE: ../../../flutter/lib/web_ui/lib/tile_mode.dart
 FILE: ../../../flutter/lib/web_ui/lib/ui.dart
 FILE: ../../../flutter/lib/web_ui/lib/window.dart
+FILE: ../../../flutter/lib/web_ui/skwasm/canvas.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/contour_measure.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/export.h
+FILE: ../../../flutter/lib/web_ui/skwasm/helpers.h
+FILE: ../../../flutter/lib/web_ui/skwasm/paint.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/path.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/picture.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/surface.cpp
+FILE: ../../../flutter/lib/web_ui/skwasm/wrappers.h
 FILE: ../../../flutter/runtime/dart_isolate.cc
 FILE: ../../../flutter/runtime/dart_isolate.h
 FILE: ../../../flutter/runtime/dart_isolate_group_data.cc
@@ -4992,6 +4986,8 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterChannel
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProjectTest.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h
+FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponder.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterEmbedderKeyResponderTest.mm
@@ -5012,8 +5008,6 @@ FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeySeco
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManager.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterKeyboardManagerTest.mm
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h
-FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.h
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterOverlayView.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h
@@ -5107,6 +5101,7 @@ FILE: ../../../flutter/shell/platform/darwin/ios/platform_view_ios.mm
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.h
 FILE: ../../../flutter/shell/platform/darwin/ios/rendering_api_selection.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterDartProject.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Headers/FlutterMacOS.h
@@ -5119,6 +5114,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/Accessibilit
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMac.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/AccessibilityBridgeMacTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterChannelKeyResponder.h
@@ -5151,6 +5149,9 @@ FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuP
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin_Internal.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMouseCursorPlugin.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.h
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorView.mm
+FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterMutatorViewTest.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.h
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMac.mm
 FILE: ../../../flutter/shell/platform/darwin/macos/framework/Source/FlutterPlatformNodeDelegateMacTest.mm
@@ -5302,8 +5303,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
@@ -5336,19 +5335,11 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/common.shard.cml
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/platform_view.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/platform_view.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate.cc
@@ -5490,6 +5481,7 @@ FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_pixel_buffer_texture_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.cc
 FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin.h
+FILE: ../../../flutter/shell/platform/linux/fl_platform_plugin_test.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar.cc
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_private.h
 FILE: ../../../flutter/shell/platform/linux/fl_plugin_registrar_test.cc
@@ -5668,6 +5660,7 @@ FILE: ../../../flutter/third_party/accessibility/base/string_utils.cc
 FILE: ../../../flutter/third_party/accessibility/base/string_utils.h
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.cc
 FILE: ../../../flutter/third_party/accessibility/gfx/transform.h
+FILE: ../../../flutter/third_party/spring_animation/SpringAnimationTest.mm
 FILE: ../../../flutter/third_party/tonic/common/build_config.h
 FILE: ../../../flutter/third_party/tonic/common/log.cc
 FILE: ../../../flutter/third_party/tonic/common/log.h
@@ -5734,6 +5727,8 @@ FILE: ../../../flutter/third_party/txt/src/txt/platform_fuchsia.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_linux.cc
 FILE: ../../../flutter/third_party/txt/src/txt/platform_mac.mm
 FILE: ../../../flutter/third_party/txt/src/txt/platform_windows.cc
+FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts.dart
+FILE: ../../../flutter/third_party/web_test_fonts/lib/web_test_fonts/web_test_fonts.dart
 FILE: ../../../flutter/third_party/web_unicode/lib/web_unicode.dart
 FILE: ../../../flutter/third_party/web_unicode/tool/unicode_sync_script.dart
 FILE: ../../../flutter/vulkan/procs/vulkan_handle.cc

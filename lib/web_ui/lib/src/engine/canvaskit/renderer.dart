@@ -28,6 +28,22 @@ import 'shader.dart';
 import 'text.dart';
 import 'vertices.dart';
 
+enum CanvasKitVariant {
+  /// The appropriate variant is chosen based on the browser.
+  ///
+  /// This is the default variant.
+  auto,
+
+  /// The full variant that can be used in any browser.
+  full,
+
+  /// The variant that is optimized for Chromium browsers.
+  ///
+  /// WARNING: In most cases, you should use [auto] instead of this variant. Using
+  /// this variant in a non-Chromium browser will result in a broken app.
+  chromium,
+}
+
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;

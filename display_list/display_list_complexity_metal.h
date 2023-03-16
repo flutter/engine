@@ -14,7 +14,7 @@ class DisplayListMetalComplexityCalculator
  public:
   static DisplayListMetalComplexityCalculator* GetInstance();
 
-  unsigned int Compute(DisplayList* display_list) override {
+  unsigned int Compute(const DisplayList* display_list) override {
     MetalHelper helper(ceiling_);
     display_list->Dispatch(helper);
     return helper.ComplexityScore();
@@ -52,11 +52,9 @@ class DisplayListMetalComplexityCalculator
                  SkScalar start_degrees,
                  SkScalar sweep_degrees,
                  bool use_center) override;
-    void drawPoints(SkCanvas::PointMode mode,
+    void drawPoints(DlCanvas::PointMode mode,
                     uint32_t count,
                     const SkPoint points[]) override;
-    void drawSkVertices(const sk_sp<SkVertices> vertices,
-                        SkBlendMode mode) override;
     void drawVertices(const DlVertices* vertices, DlBlendMode mode) override;
     void drawImage(const sk_sp<DlImage> image,
                    const SkPoint point,

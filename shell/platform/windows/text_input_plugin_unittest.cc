@@ -7,9 +7,11 @@
 #include <windows.h>
 #include <memory>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/json_message_codec.h"
 #include "flutter/shell/platform/common/json_method_codec.h"
 #include "flutter/shell/platform/windows/testing/test_binary_messenger.h"
+#include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -39,13 +41,11 @@ class MockTextInputPluginDelegate : public TextInputPluginDelegate {
   MockTextInputPluginDelegate() {}
   virtual ~MockTextInputPluginDelegate() = default;
 
-  // Prevent copying.
-  MockTextInputPluginDelegate(MockTextInputPluginDelegate const&) = delete;
-  MockTextInputPluginDelegate& operator=(MockTextInputPluginDelegate const&) =
-      delete;
-
   MOCK_METHOD1(OnCursorRectUpdated, void(const Rect&));
   MOCK_METHOD0(OnResetImeComposing, void());
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockTextInputPluginDelegate);
 };
 
 }  // namespace

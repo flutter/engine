@@ -19,6 +19,7 @@
 #include "flutter/fml/thread.h"
 #include "third_party/dart/runtime/bin/elf_loader.h"
 #include "third_party/dart/runtime/include/dart_native_api.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 #if !defined(FLUTTER_NO_EXPORT)
 #if FML_OS_WIN
@@ -1267,6 +1268,10 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
       transform.get(SkMatrix::kMScaleY), transform.get(SkMatrix::kMTransY),
       transform.get(SkMatrix::kMPersp0), transform.get(SkMatrix::kMPersp1),
       transform.get(SkMatrix::kMPersp2)};
+  // Do not add new members to FlutterSemanticsNode.
+  // This would break the forward compatibility of FlutterSemanticsUpdate.
+  // TODO(loicsharma): Introduce FlutterSemanticsNode2.
+  // https://github.com/flutter/flutter/issues/121176
   return {
       sizeof(FlutterSemanticsNode),
       node.id,
@@ -1304,6 +1309,10 @@ FlutterSemanticsNode CreateEmbedderSemanticsNode(
 // actions.
 FlutterSemanticsCustomAction CreateEmbedderSemanticsCustomAction(
     const flutter::CustomAccessibilityAction& action) {
+  // Do not add new members to FlutterSemanticsCustomAction.
+  // This would break the forward compatibility of FlutterSemanticsUpdate.
+  // TODO(loicsharma): Introduce FlutterSemanticsCustomAction2.
+  // https://github.com/flutter/flutter/issues/121176
   return {
       sizeof(FlutterSemanticsCustomAction),
       action.id,
@@ -2019,6 +2028,8 @@ inline flutter::PointerData::SignalKind ToPointerDataSignalKind(
       return flutter::PointerData::SignalKind::kScrollInertiaCancel;
     case kFlutterPointerSignalKindScale:
       return flutter::PointerData::SignalKind::kScale;
+    case kFlutterPointerSignalKindStylusAuxiliaryAction:
+      return flutter::PointerData::SignalKind::kStylusAuxiliaryAction;
   }
   return flutter::PointerData::SignalKind::kNone;
 }

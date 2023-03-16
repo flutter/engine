@@ -5,9 +5,10 @@
 #ifndef FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKS_H_
 #define FLUTTER_FLOW_DISPLAY_LIST_BENCHMARKS_H_
 
-#include "flutter/display_list/display_list_benchmarks_canvas_provider.h"
 #include "flutter/display_list/display_list_sampling_options.h"
 #include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/testing/dl_test_surface_provider.h"
 
 #include "third_party/benchmark/include/benchmark/benchmark.h"
 #include "third_party/skia/include/core/SkCanvas.h"
@@ -16,20 +17,8 @@
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/core/SkVertices.h"
 
-#ifdef ENABLE_SOFTWARE_BENCHMARKS
-#include "flutter/display_list/display_list_benchmarks_software.h"
-#endif
-#ifdef ENABLE_OPENGL_BENCHMARKS
-#include "flutter/display_list/display_list_benchmarks_gl.h"
-#endif
-#ifdef ENABLE_METAL_BENCHMARKS
-#include "flutter/display_list/display_list_benchmarks_metal.h"
-#endif
-
 namespace flutter {
 namespace testing {
-
-typedef enum { kSoftware_Backend, kOpenGL_Backend, kMetal_Backend } BackendType;
 
 enum BenchmarkAttributes {
   kEmpty_Flag = 0,
@@ -39,8 +28,9 @@ enum BenchmarkAttributes {
   kAntiAliasing_Flag = 1 << 3
 };
 
-std::unique_ptr<CanvasProvider> CreateCanvasProvider(BackendType backend_type);
-SkPaint GetPaintForRun(unsigned attributes);
+DlPaint GetPaintForRun(unsigned attributes);
+
+using BackendType = DlSurfaceProvider::BackendType;
 
 // Benchmarks
 
@@ -74,7 +64,7 @@ void BM_DrawPath(benchmark::State& state,
 void BM_DrawPoints(benchmark::State& state,
                    BackendType backend_type,
                    unsigned attributes,
-                   SkCanvas::PointMode mode);
+                   DlCanvas::PointMode mode);
 void BM_DrawVertices(benchmark::State& state,
                      BackendType backend_type,
                      unsigned attributes,
@@ -210,7 +200,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawPoints, Points/BACKEND,                      \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkCanvas::kPoints_PointMode)                        \
+                    DlCanvas::PointMode::kPoints)                       \
       ->RangeMultiplier(2)                                              \
       ->Range(1024, 32768)                                              \
       ->UseRealTime()                                                   \
@@ -219,7 +209,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawPoints, Lines/BACKEND,                       \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkCanvas::kLines_PointMode)                         \
+                    DlCanvas::PointMode::kLines)                        \
       ->RangeMultiplier(2)                                              \
       ->Range(1024, 32768)                                              \
       ->UseRealTime()                                                   \
@@ -228,7 +218,7 @@ void BM_SaveLayer(benchmark::State& state,
   BENCHMARK_CAPTURE(BM_DrawPoints, Polygon/BACKEND,                     \
                     BackendType::k##BACKEND##_Backend,                  \
                     ATTRIBUTES,                                         \
-                    SkCanvas::kPolygon_PointMode)                       \
+                    DlCanvas::PointMode::kPolygon)                      \
       ->RangeMultiplier(2)                                              \
       ->Range(1024, 32768)                                              \
       ->UseRealTime()                                                   \

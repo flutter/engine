@@ -82,21 +82,15 @@ class GfxExternalViewEmbedder final : public flutter::ExternalViewEmbedder {
   ~GfxExternalViewEmbedder();
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
-
-  // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
-
-  // |ExternalViewEmbedder|
-  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override;
+  flutter::DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
+  flutter::DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   flutter::PostPrerollResult PostPrerollAction(

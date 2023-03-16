@@ -8,19 +8,18 @@
 #include <memory>
 #include <unordered_map>
 
-#include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_complexity.h"
+#include "flutter/display_list/dl_canvas.h"
 #include "flutter/flow/raster_cache_key.h"
 #include "flutter/flow/raster_cache_util.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/fml/trace_event.h"
-#include "include/core/SkCanvas.h"
 #include "include/core/SkMatrix.h"
 #include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
 
+class GrDirectContext;
 class SkColorSpace;
 
 namespace flutter {
@@ -29,24 +28,24 @@ enum class RasterCacheLayerStrategy { kLayer, kLayerChildren };
 
 class RasterCacheResult {
  public:
-  RasterCacheResult(sk_sp<SkImage> image,
+  RasterCacheResult(sk_sp<DlImage> image,
                     const SkRect& logical_rect,
                     const char* type);
 
   virtual ~RasterCacheResult() = default;
 
-  virtual void draw(SkCanvas& canvas, const SkPaint* paint) const;
+  virtual void draw(DlCanvas& canvas, const DlPaint* paint) const;
 
   virtual SkISize image_dimensions() const {
     return image_ ? image_->dimensions() : SkISize::Make(0, 0);
   };
 
   virtual int64_t image_bytes() const {
-    return image_ ? image_->imageInfo().computeMinByteSize() : 0;
+    return image_ ? image_->GetApproximateByteSize() : 0;
   };
 
  private:
-  sk_sp<SkImage> image_;
+  sk_sp<DlImage> image_;
   SkRect logical_rect_;
   fml::tracing::TraceFlow flow_;
 };
@@ -121,17 +120,21 @@ class RasterCache {
     const SkRect& logical_rect;
     const char* flow_type;
   };
+  struct CacheInfo {
+    const size_t accesses_since_visible;
+    const bool has_image;
+  };
 
   std::unique_ptr<RasterCacheResult> Rasterize(
       const RasterCache::Context& context,
-      const std::function<void(SkCanvas*)>& draw_function,
-      const std::function<void(SkCanvas*, const SkRect& rect)>&
+      const std::function<void(DlCanvas*)>& draw_function,
+      const std::function<void(DlCanvas*, const SkRect& rect)>&
           draw_checkerboard) const;
 
   explicit RasterCache(
       size_t access_threshold = 3,
       size_t picture_and_display_list_cache_limit_per_frame =
-          RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame);
+          RasterCacheUtil::kDefaultPictureAndDisplayListCacheLimitPerFrame);
 
   virtual ~RasterCache() = default;
 
@@ -141,8 +144,8 @@ class RasterCache {
   // or if the attempt to populate the entry failed due to bounds overflow
   // conditions.
   bool Draw(const RasterCacheKeyID& id,
-            SkCanvas& canvas,
-            const SkPaint* paint) const;
+            DlCanvas& canvas,
+            const DlPaint* paint) const;
 
   bool HasEntry(const RasterCacheKeyID& id, const SkMatrix&) const;
 
@@ -203,7 +206,7 @@ class RasterCache {
    * If the number is one, then it must be prepared and drawn on 1 frame
    * and it will then be cached on the next frame if it is prepared.
    */
-  int access_threshold() const { return access_threshold_; }
+  size_t access_threshold() const { return access_threshold_; }
 
   bool GenerateNewCacheInThisFrame() const {
     // Disabling caching when access_threshold is zero is historic behavior.
@@ -221,9 +224,9 @@ class RasterCache {
    * @return the number of times the entry has been hit since it was created.
    * For a new entry that will be 1 if it is visible, or zero if non-visible.
    */
-  int MarkSeen(const RasterCacheKeyID& id,
-               const SkMatrix& matrix,
-               bool visible) const;
+  CacheInfo MarkSeen(const RasterCacheKeyID& id,
+                     const SkMatrix& matrix,
+                     bool visible) const;
 
   /**
    * Returns the access count (i.e. accesses_since_visible) for the given
@@ -234,7 +237,7 @@ class RasterCache {
   bool UpdateCacheEntry(
       const RasterCacheKeyID& id,
       const Context& raster_cache_context,
-      const std::function<void(SkCanvas*)>& render_function) const;
+      const std::function<void(DlCanvas*)>& render_function) const;
 
  private:
   struct Entry {

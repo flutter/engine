@@ -95,6 +95,7 @@ typedef CanvasPath Path;
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
+  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
   V(PlatformConfigurationNativeApi::Render, 1)                        \
@@ -189,6 +190,7 @@ typedef CanvasPath Path;
   V(Image, width, 1)                                   \
   V(Image, height, 1)                                  \
   V(Image, toByteData, 3)                              \
+  V(Image, colorSpace, 1)                              \
   V(ImageDescriptor, bytesPerPixel, 1)                 \
   V(ImageDescriptor, dispose, 1)                       \
   V(ImageDescriptor, height, 1)                        \

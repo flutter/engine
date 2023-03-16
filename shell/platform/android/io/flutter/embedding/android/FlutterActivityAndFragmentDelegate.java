@@ -235,9 +235,16 @@ import java.util.List;
     DartExecutor.DartEntrypoint dartEntrypoint =
         new DartExecutor.DartEntrypoint(
             appBundlePathOverride, host.getDartEntrypointFunctionName());
+    String initialRoute = host.getInitialRoute();
+    if (initialRoute == null) {
+      initialRoute = maybeGetInitialRouteFromIntent(host.getActivity().getIntent());
+      if (initialRoute == null) {
+        initialRoute = DEFAULT_INITIAL_ROUTE;
+      }
+    }
     return options
         .setDartEntrypoint(dartEntrypoint)
-        .setInitialRoute(host.getInitialRoute())
+        .setInitialRoute(initialRoute)
         .setDartEntrypointArgs(host.getDartEntrypointArgs());
   }
 
@@ -829,11 +836,13 @@ import java.util.List;
   void onNewIntent(@NonNull Intent intent) {
     ensureAlive();
     if (flutterEngine != null) {
-      Log.v(TAG, "Forwarding onNewIntent() to FlutterEngine and sending pushRoute message.");
+      Log.v(
+          TAG,
+          "Forwarding onNewIntent() to FlutterEngine and sending pushRouteInformation message.");
       flutterEngine.getActivityControlSurface().onNewIntent(intent);
       String initialRoute = maybeGetInitialRouteFromIntent(intent);
       if (initialRoute != null && !initialRoute.isEmpty()) {
-        flutterEngine.getNavigationChannel().pushRoute(initialRoute);
+        flutterEngine.getNavigationChannel().pushRouteInformation(initialRoute);
       }
     } else {
       Log.w(TAG, "onNewIntent() invoked before FlutterFragment was attached to an Activity.");

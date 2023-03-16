@@ -100,9 +100,7 @@ Future<void> testMain() async {
 
     group('toByteData', () {
       test('returns unmodified blob bytes', () async {
-        final DomXMLHttpRequest request =
-            await domHttpRequest('sample_image1.png', responseType: 'blob');
-        final DomBlob blob = request.response as DomBlob;
+        final DomBlob blob = await httpFetchBlob('sample_image1.png');
         final Uint8List responseBytes = (await blob.arrayBuffer() as ByteBuffer).asUint8List();
 
         final HtmlCodec codec = HtmlBlobCodec(blob);

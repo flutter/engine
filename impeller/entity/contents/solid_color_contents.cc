@@ -24,8 +24,19 @@ const Color& SolidColorContents::GetColor() const {
   return color_;
 }
 
-void SolidColorContents::SetGeometry(std::unique_ptr<Geometry> geometry) {
+void SolidColorContents::SetGeometry(std::shared_ptr<Geometry> geometry) {
   geometry_ = std::move(geometry);
+}
+
+// | Contents|
+bool SolidColorContents::CanAcceptOpacity(const Entity& entity) const {
+  return true;
+}
+
+// | Contents|
+void SolidColorContents::InheritOpacity(Scalar opacity) {
+  auto color = color_;
+  color_ = color.WithAlpha(color.alpha * opacity);
 }
 
 std::optional<Rect> SolidColorContents::GetCoverage(
@@ -70,9 +81,9 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   cmd.pipeline = renderer.GetSolidFillPipeline(options);
   cmd.BindVertices(geometry_result.vertex_buffer);
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = geometry_result.transform;
-  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
+  VS::FrameInfo frame_info;
+  frame_info.mvp = geometry_result.transform;
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
   frag_info.color = color_.Premultiply();
@@ -83,7 +94,9 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   }
 
   if (geometry_result.prevent_overdraw) {
-    return ClipRestoreContents().Render(renderer, entity, pass);
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
   }
   return true;
 }
