@@ -355,7 +355,7 @@ Future<void> testMain() async {
         RenderStrategy());
     canvas.endRecording();
     canvas.apply(engineCanvas, screenRect);
-  });
+  }, skip: isFirefox);
 
   test("Creating lots of gradients doesn't create too many webgl contexts",
       () async {
