@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/entity/geometry.h"
-#include <iostream>
+
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/position_color.vert.h"
@@ -752,37 +752,37 @@ VertexBufferBuilder<Point> RRectGeometry::CreatePositionBuffer(
           .AddRoundedRectTopLeft(rect_, radii)
           .TakePath()
           .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-  AppendRRectCorner(topLeft, Point(left + corner_radius_, top + corner_radius_),
-                    vtx_builder);
-
   auto topRight =
       PathBuilder{}
           .MoveTo({right - radii.top_right.x, rect_.origin.y})
           .AddRoundedRectTopRight(rect_, radii)
           .TakePath()
           .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-
-  AppendRRectCorner(topRight,
-                    Point(right - corner_radius_, top + corner_radius_),
-                    vtx_builder);
-
   auto bottomLeft =
       PathBuilder{}
           .MoveTo({left + corner_radius_, bottom})
           .AddRoundedRectBottomLeft(rect_, radii)
           .TakePath()
           .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
-
-  AppendRRectCorner(bottomLeft,
-                    Point(left + corner_radius_, bottom - corner_radius_),
-                    vtx_builder);
-
   auto bottomRight =
       PathBuilder{}
           .MoveTo({right, bottom - corner_radius_})
           .AddRoundedRectBottomRight(rect_, radii)
           .TakePath()
           .CreatePolyline(entity.GetTransformation().GetMaxBasisLength());
+
+  vtx_builder.Reserve(12 * (topLeft.points.size() - 1) + 18);
+
+  AppendRRectCorner(topLeft, Point(left + corner_radius_, top + corner_radius_),
+                    vtx_builder);
+
+  AppendRRectCorner(topRight,
+                    Point(right - corner_radius_, top + corner_radius_),
+                    vtx_builder);
+
+  AppendRRectCorner(bottomLeft,
+                    Point(left + corner_radius_, bottom - corner_radius_),
+                    vtx_builder);
 
   AppendRRectCorner(bottomRight,
                     Point(right - corner_radius_, bottom - corner_radius_),
