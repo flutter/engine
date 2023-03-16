@@ -231,7 +231,6 @@ constexpr char kTextPlainFormat[] = "text/plain";
                      return;
                    }
                    NSDictionary* replyArgs = (NSDictionary*)decoded_reply;
-                   NSLog(@"dictionary: %@", replyArgs);
                    if ([replyArgs[@"response"] isEqual:@"exit"]) {
                      _terminator(sender);
                    }
