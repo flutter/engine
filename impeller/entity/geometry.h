@@ -279,10 +279,19 @@ class RRectGeometry : public Geometry {
                                    RenderPass& pass) override;
 
   // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
+  // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  VertexBufferBuilder<Point> CreatePositionBuffer(const Entity& entity) const;
 
   Rect rect_;
   Scalar corner_radius_;

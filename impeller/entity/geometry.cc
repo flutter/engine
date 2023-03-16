@@ -731,11 +731,9 @@ static void AppendRRectCorner(Path::Polyline polyline,
   }
 }
 
-GeometryResult RRectGeometry::GetPositionBuffer(const ContentContext& renderer,
-                                                const Entity& entity,
-                                                RenderPass& pass) {
+VertexBufferBuilder<Point> RRectGeometry::CreatePositionBuffer(
+    const Entity& entity) const {
   VertexBufferBuilder<Point> vtx_builder;
-  auto& host_buffer = pass.GetTransientsBuffer();
 
   // The rounded rectangle is split into parts:
   //  * four corner sections defined by an arc
@@ -818,12 +816,50 @@ GeometryResult RRectGeometry::GetPositionBuffer(const ContentContext& renderer,
       Point(right, bottom - corner_radius_),
   });
 
+  return vtx_builder;
+}
+
+GeometryResult RRectGeometry::GetPositionBuffer(const ContentContext& renderer,
+                                                const Entity& entity,
+                                                RenderPass& pass) {
+  auto vtx_builder = CreatePositionBuffer(entity);
+
   return GeometryResult{
       .type = PrimitiveType::kTriangle,
-      .vertex_buffer = vtx_builder.CreateVertexBuffer(host_buffer),
+      .vertex_buffer =
+          vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
       .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                    entity.GetTransformation(),
       .prevent_overdraw = false,
+  };
+}
+
+GeometryResult RRectGeometry::GetPositionUVBuffer(
+    Rect texture_coverage,
+    Matrix effect_transform,
+    const ContentContext& renderer,
+    const Entity& entity,
+    RenderPass& pass) {
+  auto vtx_builder = CreatePositionBuffer(entity);
+
+  VertexBufferBuilder<TextureFillVertexShader::PerVertexData> vertex_builder;
+  vtx_builder.IterateVertices(
+      [&vertex_builder, &texture_coverage, &effect_transform](Point position) {
+        TextureFillVertexShader::PerVertexData data;
+        data.position = position;
+        auto coverage_coords =
+            (position - texture_coverage.origin) / texture_coverage.size;
+        data.texture_coords = effect_transform * coverage_coords;
+        vertex_builder.AppendVertex(data);
+      });
+
+  return GeometryResult{
+      .type = PrimitiveType::kTriangle,
+      .vertex_buffer =
+          vertex_builder.CreateVertexBuffer(pass.GetTransientsBuffer()),
+      .transform = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation(),
+      .prevent_overdraw = true,
   };
 }
 
