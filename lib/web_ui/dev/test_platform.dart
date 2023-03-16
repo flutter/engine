@@ -555,7 +555,7 @@ class BrowserPlatform extends PlatformPlugin {
     _checkNotClosed();
 
     final Uri suiteUrl = url.resolveUri(p.toUri('${p.withoutExtension(
-            p.relative(path, from: env.environment.webUiBuildDir.path))}.html'));
+            p.relative(path, from: env.environment.webUiRootDir.path))}.html'));
     _checkNotClosed();
 
     final BrowserManager? browserManager = await _startBrowserManager();
