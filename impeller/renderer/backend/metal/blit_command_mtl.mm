@@ -120,7 +120,7 @@ std::string BlitOptimizeGPUAccessCommandMTL::GetLabel() const {
 
 bool BlitOptimizeGPUAccessCommandMTL::Encode(
     id<MTLBlitCommandEncoder> encoder) const {
-  if (@available(macOS 10.15, iOS 12, tvOS 13, *)) {
+  if (@available(macOS 10.14, iOS 12, tvOS 12, *)) {
     auto texture_mtl = TextureMTL::Cast(*texture).GetMTLTexture();
     if (!texture_mtl) {
       return false;
