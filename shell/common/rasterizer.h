@@ -103,6 +103,10 @@ class Rasterizer final : public SnapshotDelegate,
         const = 0;
 
     virtual const Settings& GetSettings() const = 0;
+
+    ///Whether to disable partial repaint on platform
+    virtual bool DisableParticalRepaint() const = 0;
+
   };
 
   //----------------------------------------------------------------------------

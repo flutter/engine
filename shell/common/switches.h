@@ -266,6 +266,10 @@ DEF_SWITCH(LeakVM,
            "When the last shell shuts down, the shared VM is leaked by default "
            "(the leak_vm in VM settings is true). To clean up the leak VM, set "
            "this value to false.")
+DEF_SWITCH(DisableParticalRepaint,
+           "disable-partical-repaint",
+           "Disable the partical repaint on supported platforms"
+           "Ignored if partical repaint is not supported on the platform.")
 DEF_SWITCH(
     MsaaSamples,
     "msaa-samples",

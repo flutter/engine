@@ -646,6 +646,10 @@ class Shell final : public PlatformView::Delegate,
 
   // |Rasterizer::Delegate|
   fml::TimePoint GetLatestFrameTargetTime() const override;
+                        
+                        
+  // |Rasterizer::Delegate|
+  bool DisableParticalRepaint() const override;
 
   // |ServiceProtocol::Handler|
   fml::RefPtr<fml::TaskRunner> GetServiceProtocolHandlerTaskRunner(
