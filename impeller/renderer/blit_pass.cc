@@ -118,7 +118,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
 
 bool BlitPass::OptimizeForGPUAccess(std::shared_ptr<Texture> texture,
                                     std::string label) {
-  return OnOptimizeForGPUAccess(texture, label);
+  return OnOptimizeForGPUAccess(std::move(texture), std::move(label));
 }
 
 bool BlitPass::OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
