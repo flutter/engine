@@ -1525,7 +1525,7 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   return latest_frame_target_time_.value();
 }
 
-bool Shell::DisableParticalRepaint() const {
+bool Shell::DisableParticalRepaintFromSetting() const {
   return settings_.disable_partical_repaint;
 }
 
