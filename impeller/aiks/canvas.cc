@@ -407,7 +407,7 @@ void Canvas::SaveLayer(
     // the size of the render target that would have been allocated will be
     // absent. Explicitly add back a clip to reproduce that behavior. Since
     // clips never require a render target switch, this is a cheap operation.
-    ClipPath(PathBuilder{}.AddRect(bounds.value()).TakePath());
+    ClipRect(bounds.value());
   }
 }
 
