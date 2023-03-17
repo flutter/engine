@@ -67,9 +67,6 @@ class MockBlitPass : public BlitPass {
                     size_t source_offset,
                     IPoint destination_origin,
                     std::string label));
-  MOCK_METHOD2(OnOptimizeForGPUAccess,
-               bool(std::shared_ptr<Texture> texture, std::string label));
-
   MOCK_METHOD2(OnGenerateMipmapCommand,
                bool(std::shared_ptr<Texture> texture, std::string label));
 };

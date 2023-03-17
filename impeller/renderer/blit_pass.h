@@ -120,19 +120,6 @@ class BlitPass {
   bool GenerateMipmap(std::shared_ptr<Texture> texture, std::string label = "");
 
   //----------------------------------------------------------------------------
-  /// @brief      Optimize the provided texture for GPU access.
-  ///             This will no-op on platforms where this functionality is
-  ///             unsupported.
-  ///
-  /// @param[in]  texture  The texture to generate mipmaps for.
-  /// @param[in]  label    The optional debug label to give the command.
-  ///
-  /// @return     If the command was valid for subsequent commitment.
-  ///
-  bool OptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                            std::string label = "");
-
-  //----------------------------------------------------------------------------
   /// @brief      Encode the recorded commands to the underlying command buffer.
   ///
   /// @param      transients_allocator  The transients allocator.
@@ -170,9 +157,6 @@ class BlitPass {
       size_t source_offset,
       IPoint destination_origin,
       std::string label) = 0;
-
-  virtual bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                                      std::string label) = 0;
 
   virtual bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                        std::string label) = 0;
