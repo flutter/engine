@@ -54,10 +54,7 @@ extern const intptr_t kPlatformStrongDillSize;
 #include "flutter/shell/platform/embedder/embedder_platform_message_response.h"
 #include "flutter/shell/platform/embedder/embedder_render_target.h"
 #include "flutter/shell/platform/embedder/embedder_struct_macros.h"
-#include "flutter/shell/platform/embedder/embedder_studio_gl.h"
-#include "flutter/shell/platform/embedder/embedder_studio_metal.h"
 #include "flutter/shell/platform/embedder/embedder_studio_software.h"
-#include "flutter/shell/platform/embedder/embedder_studio_vulkan.h"
 #include "flutter/shell/platform/embedder/embedder_task_runner.h"
 #include "flutter/shell/platform/embedder/embedder_thread_host.h"
 #include "flutter/shell/platform/embedder/pixel_formats.h"
@@ -67,10 +64,15 @@ extern const intptr_t kPlatformStrongDillSize;
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
+#include "flutter/shell/platform/embedder/embedder_studio_gl.h"
 #endif
 
 #ifdef SHELL_ENABLE_METAL
-#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
+#include "flutter/shell/platform/embedder/embedder_studio_metal.h"
+#endif
+
+#ifdef SHELL_ENABLE_VULKAN
+#include "flutter/shell/platform/embedder/embedder_studio_vulkan.h"
 #endif
 
 const int32_t kFlutterSemanticsNodeIdBatchEnd = -1;
