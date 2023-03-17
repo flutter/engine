@@ -7,6 +7,10 @@ import("//flutter/impeller/tools/impeller.gni")
 impeller_shaders("entity_shaders") {
   name = "entity"
 
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
   shaders = [
     "shaders/blending/advanced_blend.vert",
     "shaders/blending/advanced_blend_color.frag",
@@ -30,6 +34,7 @@ impeller_shaders("entity_shaders") {
     "shaders/border_mask_blur.vert",
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
+    "shaders/conical_gradient_fill.frag",
     "shaders/gaussian_blur.frag",
     "shaders/gaussian_blur_decal.frag",
     "shaders/gaussian_blur.vert",
@@ -45,7 +50,6 @@ impeller_shaders("entity_shaders") {
     "shaders/morphology_filter.vert",
     "shaders/position_color.vert",
     "shaders/position_uv.vert",
-    "shaders/position.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
@@ -69,10 +73,15 @@ impeller_shaders("modern_entity_shaders") {
   name = "modern"
 
   if (impeller_enable_opengles) {
-    gles_language_version = "460"
+    gles_language_version = 460
+  }
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
   }
 
   shaders = [
+    "shaders/conical_gradient_ssbo_fill.frag",
     "shaders/linear_gradient_ssbo_fill.frag",
     "shaders/radial_gradient_ssbo_fill.frag",
     "shaders/sweep_gradient_ssbo_fill.frag",
@@ -90,7 +99,11 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
 
   # This version is to disable malioc checks.
   if (impeller_enable_opengles) {
-    gles_language_version = "460"
+    gles_language_version = 460
+  }
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
   }
 
   shaders = [
@@ -121,6 +134,10 @@ impeller_component("entity") {
     "contents/clip_contents.h",
     "contents/color_source_contents.cc",
     "contents/color_source_contents.h",
+    "contents/color_source_text_contents.cc",
+    "contents/color_source_text_contents.h",
+    "contents/conical_gradient_contents.cc",
+    "contents/conical_gradient_contents.h",
     "contents/content_context.cc",
     "contents/content_context.h",
     "contents/contents.cc",

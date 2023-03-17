@@ -18,6 +18,7 @@
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
+#include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
@@ -52,12 +53,12 @@
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
-#include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
 
+#include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/sweep_gradient_ssbo_fill.frag.h"
@@ -104,11 +105,17 @@ using SolidFillPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
+using ConicalGradientFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    ConicalGradientFillFragmentShader>;
 using SweepGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
 using LinearGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     LinearGradientSsboFillFragmentShader>;
+using ConicalGradientSSBOFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    ConicalGradientSsboFillFragmentShader>;
 using RadialGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     RadialGradientSsboFillFragmentShader>;
@@ -152,8 +159,6 @@ using GlyphAtlasSdfPipeline =
 using ClipPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 
-using GeometryPositionPipeline =
-    RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
@@ -327,6 +332,12 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetConicalGradientSSBOFillPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
+    return GetPipeline(conical_gradient_ssbo_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetSweepGradientSSBOFillPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
@@ -335,6 +346,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetConicalGradientFillPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(conical_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurPipeline(
@@ -425,11 +441,6 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryColorPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(geometry_color_pipelines_, opts);
-  }
-
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryPositionPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_position_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
@@ -638,11 +649,15 @@ class ContentContext {
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
+  mutable Variants<ConicalGradientFillPipeline>
+      conical_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
   mutable Variants<LinearGradientSSBOFillPipeline>
       linear_gradient_ssbo_fill_pipelines_;
   mutable Variants<RadialGradientSSBOFillPipeline>
       radial_gradient_ssbo_fill_pipelines_;
+  mutable Variants<ConicalGradientSSBOFillPipeline>
+      conical_gradient_ssbo_fill_pipelines_;
   mutable Variants<SweepGradientSSBOFillPipeline>
       sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
@@ -661,7 +676,6 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
-  mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   // Advanced blends.
