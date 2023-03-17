@@ -362,23 +362,29 @@ void PlatformHandler::SystemExitApplication(
   result_doc.SetObject();
   if (exit_type.compare(kExitTypeRequired) == 0) {
     QuitApplication(exit_code);
-    result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseExit, result_doc.GetAllocator());
+    result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseExit,
+                                      result_doc.GetAllocator());
     result->Success(result_doc);
-  }
-  else {
+  } else {
     exit_code_ = exit_code;
     RequestAppExit(exit_type);
-    result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel, result_doc.GetAllocator());
+    result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel,
+                                      result_doc.GetAllocator());
     result->Success(result_doc);
   }
 }
 
 void PlatformHandler::RequestAppExit(const std::string& exit_type) {
-  auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>([this](const rapidjson::Document* response) { RequestAppExitSuccess(response); }, nullptr, nullptr);
+  auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
+      [this](const rapidjson::Document* response) {
+        RequestAppExitSuccess(response);
+      },
+      nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
   args->SetObject();
   args->GetObjectW().AddMember(kExitTypeKey, exit_type, args->GetAllocator());
-  channel_->InvokeMethod(kRequestAppExitMethod, std::move(args), std::move(callback));
+  channel_->InvokeMethod(kRequestAppExitMethod, std::move(args),
+                         std::move(callback));
 }
 
 void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result) {

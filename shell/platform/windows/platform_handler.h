@@ -57,9 +57,9 @@ class PlatformHandler {
 
   // Handle a request from the framework to exit the application.
   virtual void SystemExitApplication(
-    const std::string& exit_type,
-    int64_t exit_code,
-    std::unique_ptr<MethodResult<rapidjson::Document>> result);
+      const std::string& exit_type,
+      int64_t exit_code,
+      std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
   // Actually quit the application with the provided exit code.
   virtual void QuitApplication(int64_t exit_code);
@@ -71,8 +71,6 @@ class PlatformHandler {
   // Callback from when the cancelable exit request response request is
   // answered by the framework.
   virtual void RequestAppExitSuccess(const rapidjson::Document* result);
-
-  
 
   // A error type to use for error responses.
   static constexpr char kClipboardError[] = "Clipboard error";
