@@ -2568,7 +2568,6 @@
 ../../../third_party/skia/WORKSPACE.bazel
 ../../../third_party/skia/bazel
 ../../../third_party/skia/bench
-../../../third_party/skia/bin/clang_update.py
 ../../../third_party/skia/codereview.settings
 ../../../third_party/skia/defines.bzl
 ../../../third_party/skia/demos.skia.org
@@ -2624,6 +2623,7 @@
 ../../../third_party/skia/include/gpu/BUILD.bazel
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/glx/BUILD.bazel
