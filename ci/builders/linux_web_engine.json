@@ -71,14 +71,8 @@
             "gclient_variables": {
                 "download_android_deps": false
             },
-            "gn": [],
             "name": "web_tests",
-            "ninja": {},
             "generators": {
-                "pub_dirs": [
-                    "flutter/lib/web_ui/",
-                    "flutter/web_sdk/web_engine_tester/"
-                ],
                 "tasks": [
                     {
                         "name": "compile web_tests",
@@ -91,8 +85,7 @@
                         ]
                     }
                 ]
-            },
-            "tests": []
+            }
         }
 
     ],
