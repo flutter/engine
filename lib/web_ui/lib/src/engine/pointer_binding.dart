@@ -456,7 +456,12 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
 
     final List<ui.PointerData> data = <ui.PointerData>[];
     final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
-    if (event.ctrlKey) {
+    bool ignoreCtrlKey = false;
+    if (operatingSystem == OperatingSystem.macOs) {
+      ignoreCtrlKey = (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlLeft) ?? false) ||
+                      (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlRight) ?? false);
+    }
+    if (event.ctrlKey && !ignoreCtrlKey) {
       _pointerDataConverter.convert(
         data,
         change: ui.PointerChange.hover,
