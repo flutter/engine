@@ -76,6 +76,9 @@ template("embedder_source_set") {
       "embedder_render_target_cache.cc",
       "embedder_render_target_cache.h",
       "embedder_struct_macros.h",
+      "embedder_studio.h",
+      "embedder_studio_software.cc",
+      "embedder_studio_software.h",
       "embedder_surface.cc",
       "embedder_surface.h",
       "embedder_surface_software.cc",
@@ -95,6 +98,8 @@ template("embedder_source_set") {
       sources += [
         "embedder_external_texture_gl.cc",
         "embedder_external_texture_gl.h",
+        "embedder_studio_gl.cc",
+        "embedder_studio_gl.h",
         "embedder_surface_gl.cc",
         "embedder_surface_gl.h",
       ]
@@ -120,6 +125,8 @@ template("embedder_source_set") {
       sources += [
         "embedder_external_texture_metal.h",
         "embedder_external_texture_metal.mm",
+        "embedder_studio_metal.h",
+        "embedder_studio_metal.mm",
         "embedder_surface_metal.h",
         "embedder_surface_metal.mm",
       ]
@@ -132,6 +139,8 @@ template("embedder_source_set") {
 
     if (embedder_enable_vulkan) {
       sources += [
+        "embedder_studio_vulkan.cc",
+        "embedder_studio_vulkan.h",
         "embedder_surface_vulkan.cc",
         "embedder_surface_vulkan.h",
       ]

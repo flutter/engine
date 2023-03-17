@@ -14,23 +14,18 @@ namespace flutter {
 
 class EmbedderStudio {
  public:
-  using Builder = std::function<std::unique_ptr<EmbedderSurface>()>;
-
-  EmbedderStudio(Builder builder) : builder_(std::move(builder)) {}
+  EmbedderStudio() {}
 
   virtual ~EmbedderStudio() = default;
 
-  virtual std::unique_ptr<EmbedderSurface> CreateSurface() {
-    return builder_();
-  }
+  virtual bool IsValid() const = 0;
 
-  virtual sk_sp<GrDirectContext> CreateResourceContext() const {
-    // TODO(dkwingsmt)
-    return nullptr;
-  }
+  virtual std::unique_ptr<EmbedderSurface> CreateSurface() = 0;
+
+  virtual sk_sp<GrDirectContext> CreateResourceContext() const = 0;
 
  private:
-  Builder builder_;
+  FML_DISALLOW_COPY_AND_ASSIGN(EmbedderStudio);
 };
 
 }  // namespace flutter

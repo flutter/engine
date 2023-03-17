@@ -2666,6 +2666,15 @@ ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target.h + ../.
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_gl.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_gl.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_metal.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_metal.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_software.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_software.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc + ../../../flutter/LICENSE
@@ -5213,6 +5222,15 @@ FILE: ../../../flutter/shell/platform/embedder/embedder_render_target.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_render_target_cache.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_struct_macros.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_gl.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_gl.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_metal.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_metal.mm
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_software.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_software.h
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.cc
+FILE: ../../../flutter/shell/platform/embedder/embedder_studio_vulkan.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.cc
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface.h
 FILE: ../../../flutter/shell/platform/embedder/embedder_surface_gl.cc

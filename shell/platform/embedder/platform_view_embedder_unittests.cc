@@ -61,8 +61,7 @@ class MockResponse : public PlatformMessageResponse {
 
 class MockStudio : public EmbedderStudio {
  public:
-  MockStudio() : EmbedderStudio(nullptr) {}
-
+  MOCK_CONST_METHOD0(IsValid, bool());
   MOCK_METHOD0(CreateSurface, std::unique_ptr<EmbedderSurface>());
   MOCK_CONST_METHOD0(CreateResourceContext, sk_sp<GrDirectContext>());
 };
@@ -77,7 +76,6 @@ TEST(PlatformViewEmbedderTest, HasPlatformMessageHandler) {
   fml::AutoResetWaitableEvent latch;
   task_runners.GetPlatformTaskRunner()->PostTask([&latch, task_runners] {
     MockDelegate delegate;
-    EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
     PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
     std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
     auto embedder = std::make_unique<PlatformViewEmbedder>(
@@ -143,28 +141,27 @@ TEST(PlatformViewEmbedderTest, DeletionDisabledDispatch) {
   bool did_call = false;
   {
     fml::AutoResetWaitableEvent latch;
-    task_runners.GetPlatformTaskRunner()->PostTask([&latch, task_runners,
-                                                    &did_call] {
-      MockDelegate delegate;
-      EmbedderSurfaceSoftware::SoftwareDispatchTable software_dispatch_table;
-      PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
-      platform_dispatch_table.platform_message_response_callback =
-          [&did_call](std::unique_ptr<PlatformMessage> message) {
-            did_call = true;
-          };
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
-      auto embedder = std::make_unique<PlatformViewEmbedder>(
-          delegate, task_runners, std::make_unique<MockStudio>(),
-          platform_dispatch_table, external_view_embedder);
-      auto platform_message_handler = embedder->GetPlatformMessageHandler();
-      fml::RefPtr<PlatformMessageResponse> response =
-          fml::MakeRefCounted<MockResponse>();
-      std::unique_ptr<PlatformMessage> message =
-          std::make_unique<PlatformMessage>("foo", response);
-      platform_message_handler->HandlePlatformMessage(std::move(message));
-      embedder.reset();
-      latch.Signal();
-    });
+    task_runners.GetPlatformTaskRunner()->PostTask(
+        [&latch, task_runners, &did_call] {
+          MockDelegate delegate;
+          PlatformViewEmbedder::PlatformDispatchTable platform_dispatch_table;
+          platform_dispatch_table.platform_message_response_callback =
+              [&did_call](std::unique_ptr<PlatformMessage> message) {
+                did_call = true;
+              };
+          std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder;
+          auto embedder = std::make_unique<PlatformViewEmbedder>(
+              delegate, task_runners, std::make_unique<MockStudio>(),
+              platform_dispatch_table, external_view_embedder);
+          auto platform_message_handler = embedder->GetPlatformMessageHandler();
+          fml::RefPtr<PlatformMessageResponse> response =
+              fml::MakeRefCounted<MockResponse>();
+          std::unique_ptr<PlatformMessage> message =
+              std::make_unique<PlatformMessage>("foo", response);
+          platform_message_handler->HandlePlatformMessage(std::move(message));
+          embedder.reset();
+          latch.Signal();
+        });
     latch.Wait();
   }
   {

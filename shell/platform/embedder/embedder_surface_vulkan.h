@@ -11,58 +11,27 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
+#include "flutter/shell/platform/embedder/embedder_studio_vulkan.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace flutter {
 
-class EmbedderSurfaceVulkan final : public EmbedderSurface,
-                                    public GPUSurfaceVulkanDelegate {
+class EmbedderSurfaceVulkan final : public EmbedderSurface {
  public:
-  struct VulkanDispatchTable {
-    PFN_vkGetInstanceProcAddr get_instance_proc_address;  // required
-    std::function<FlutterVulkanImage(const SkISize& frame_size)>
-        get_next_image;  // required
-    std::function<bool(VkImage image, VkFormat format)>
-        present_image;  // required
-  };
-
-  EmbedderSurfaceVulkan(
-      uint32_t version,
-      VkInstance instance,
-      size_t instance_extension_count,
-      const char** instance_extensions,
-      size_t device_extension_count,
-      const char** device_extensions,
-      VkPhysicalDevice physical_device,
-      VkDevice device,
-      uint32_t queue_family_index,
-      VkQueue queue,
-      const VulkanDispatchTable& vulkan_dispatch_table,
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
+  EmbedderSurfaceVulkan(EmbedderStudioVulkan* studio,
+                        sk_sp<GrDirectContext> main_context,
+                        bool render_to_surface);
 
   ~EmbedderSurfaceVulkan() override;
 
-  // |GPUSurfaceVulkanDelegate|
-  const vulkan::VulkanProcTable& vk() override;
-
-  // |GPUSurfaceVulkanDelegate|
-  FlutterVulkanImage AcquireImage(const SkISize& size) override;
-
-  // |GPUSurfaceVulkanDelegate|
-  bool PresentImage(VkImage image, VkFormat format) override;
-
- private:
-  bool valid_ = false;
-  fml::RefPtr<vulkan::VulkanProcTable> vk_;
-  vulkan::VulkanDevice device_;
-  VulkanDispatchTable vulkan_dispatch_table_;
-  std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
-  sk_sp<GrDirectContext> main_context_;
-  sk_sp<GrDirectContext> resource_context_;
-
   // |EmbedderSurface|
   bool IsValid() const override;
+
+ private:
+  sk_sp<GrDirectContext> main_context_;
+  EmbedderStudioVulkan* studio_;
+  bool render_to_surface_;
 
   // |EmbedderSurface|
   std::unique_ptr<Surface> CreateGPUSurface() override;
