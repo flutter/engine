@@ -287,7 +287,9 @@ public class InputConnectionAdaptor extends BaseInputConnection
   // occur, and need a chance to be handled by the framework.
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
-    // TODO: Where should this logic actually live? I get lost following the keyboardDelegate call stack.
+    // Prevent Samsung IME keyboards from incorrectly handling Japanese
+    // suggestions.
+    // https://github.com/flutter/flutter/issues/120351
     if (event.getAction() == KeyEvent.ACTION_DOWN &&
             event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
       return handleKeyEvent(event);
