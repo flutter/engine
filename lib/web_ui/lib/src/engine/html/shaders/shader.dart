@@ -107,7 +107,8 @@ class GradientSweep extends EngineGradient {
           gl.getUniformLocation(glProgram.program, 'm_gradient');
     final Matrix4 gradientTransform = Matrix4.identity();
     if (matrix4 != null) {
-      final Matrix4 m4 = Matrix4.fromFloat32List(matrix4!)..invert();
+      final Matrix4 m4 = Matrix4.zero()
+        ..copyInverse(Matrix4.fromFloat32List(matrix4!));
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
       gradientTransform.translate(center.dx, center.dy);
@@ -324,7 +325,8 @@ class GradientLinear extends EngineGradient {
       // with flipped y axis.
       // We flip y axis, translate to center, multiply matrix and translate
       // and flip back so it is applied correctly.
-      final Matrix4 m4 = Matrix4.fromFloat32List(matrix4!.matrix)..invert();
+      final Matrix4 m4 = Matrix4.zero()
+        ..copyInverse(Matrix4.fromFloat32List(matrix4!.matrix));
       final ui.Offset center = shaderBounds.center;
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
@@ -557,7 +559,8 @@ class GradientRadial extends EngineGradient {
     final Matrix4 gradientTransform = Matrix4.identity();
 
     if (matrix4 != null) {
-      final Matrix4 m4 = Matrix4.fromFloat32List(matrix4!)..invert();
+      final Matrix4 m4 = Matrix4.zero()
+        ..copyInverse(Matrix4.fromFloat32List(matrix4!));
       gradientTransform.translate(-center.dx, -center.dy);
       gradientTransform.multiply(m4);
       gradientTransform.translate(center.dx, center.dy);
