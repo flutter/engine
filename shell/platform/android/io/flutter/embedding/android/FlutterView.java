@@ -689,7 +689,8 @@ public class FlutterView extends FrameLayout
 
     boolean statusBarVisible = (SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
     boolean navigationBarVisible =
-        (SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+            !(((SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION | SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+                & getWindowSystemUiVisibility()) == 0);
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       int mask = 0;
