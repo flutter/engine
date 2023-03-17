@@ -1814,29 +1814,23 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 }
 
 - (void)performOrientationUpdate:(UIInterfaceOrientationMask)new_preferences {
-#if !APPLICATION_EXTENSION_API_ONLY
   if (new_preferences != _orientationPreferences) {
     _orientationPreferences = new_preferences;
 
     if (@available(iOS 16.0, *)) {
+#if APPLICATION_EXTENSION_API_ONLY
+      UIWindowScene* windowScene = self.viewIfLoaded.window.windowScene;
+      [self performOrientationUpdateOnWindowScene:windowScene];
+#else
       for (UIScene* scene in UIApplication.sharedApplication.connectedScenes) {
         if (![scene isKindOfClass:[UIWindowScene class]]) {
           continue;
         }
-        UIWindowScene* windowScene = (UIWindowScene*)scene;
-        UIWindowSceneGeometryPreferencesIOS* preference =
-            [[UIWindowSceneGeometryPreferencesIOS alloc]
-                initWithInterfaceOrientations:_orientationPreferences];
-        [windowScene
-            requestGeometryUpdateWithPreferences:preference
-                                    errorHandler:^(NSError* error) {
-                                      os_log_error(OS_LOG_DEFAULT,
-                                                   "Failed to change device orientation: %@",
-                                                   error);
-                                    }];
-        [self setNeedsUpdateOfSupportedInterfaceOrientations];
+        [self performOrientationUpdateOnWindowScene:(UIWindowScene*)scene];
       }
+#endif
     } else {
+#if !APPLICATION_EXTENSION_API_ONLY
       UIInterfaceOrientationMask currentInterfaceOrientation =
           1 << [[UIApplication sharedApplication] statusBarOrientation];
       if (!(_orientationPreferences & currentInterfaceOrientation)) {
@@ -1859,9 +1853,26 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
                                       forKey:@"orientation"];
         }
       }
+#endif
     }
   }
-#endif
+}
+
+- (void)performOrientationUpdateOnWindowScene:(UIWindowScene*)windowScene API_AVAILABLE(ios(16.0)) {
+  if (windowScene == nil) {
+    return;
+  }
+
+  UIWindowSceneGeometryPreferencesIOS* preference = [[UIWindowSceneGeometryPreferencesIOS alloc]
+      initWithInterfaceOrientations:_orientationPreferences];
+  [windowScene
+      requestGeometryUpdateWithPreferences:preference
+                              errorHandler:^(NSError* error) {
+                                os_log_error(OS_LOG_DEFAULT,
+                                             "Failed to change device orientation: %@", error);
+                              }];
+  [self setNeedsUpdateOfSupportedInterfaceOrientations];
+  [preference release];
 }
 
 - (void)onHideHomeIndicatorNotification:(NSNotification*)notification {

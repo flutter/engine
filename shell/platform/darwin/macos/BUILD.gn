@@ -133,6 +133,7 @@ source_set("flutter_framework_source") {
   defines = [
     "FLUTTER_FRAMEWORK",
     "FLUTTER_ENGINE_NO_PROTOTYPES",
+    "APPLICATION_EXTENSION_API_ONLY=1",
   ]
 
   cflags_objcc = flutter_cflags_objcc_arc
@@ -151,7 +152,10 @@ shared_library("flutter_framework_dylib") {
   visibility = [ ":*" ]
   output_name = "$_flutter_framework_name"
 
-  ldflags = [ "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath" ]
+  ldflags = [
+    "-Wl,-install_name,@rpath/$_flutter_framework_filename/$_framework_binary_subpath",
+    "-fapplication-extension",
+  ]
 
   deps = [ ":flutter_framework_source" ]
 }
