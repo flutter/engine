@@ -10,6 +10,7 @@ import 'package:analyzer/dart/analysis/features.dart';
 import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
+import 'package:pub_semver/pub_semver.dart';
 
 // Ignore members defined on Object.
 const Set<String> _kObjectMembers = <String>{
@@ -19,7 +20,10 @@ const Set<String> _kObjectMembers = <String>{
 };
 
 CompilationUnit _parseAndCheckDart(String path) {
-  final FeatureSet analyzerFeatures = FeatureSet.latestLanguageVersion();
+  final FeatureSet analyzerFeatures = FeatureSet.fromEnableFlags2(
+    flags: <String>['class-modifiers', 'sealed-class', 'records', 'patterns'],
+    sdkLanguageVersion: Version.parse('3.0.0-0'),
+  );
   if (!analyzerFeatures.isEnabled(Feature.non_nullable)) {
     throw Exception('non-nullable feature is disabled.');
   }
