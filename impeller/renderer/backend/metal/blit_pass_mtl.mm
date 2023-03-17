@@ -123,6 +123,23 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
   return true;
 }
 
+bool BlitPassMTL::OnCopyBufferToTextureCommand(
+    std::shared_ptr<DeviceBuffer> source,
+    std::shared_ptr<Texture> destination,
+    size_t source_offset,
+    IPoint destination_origin,
+    std::string label) {
+  auto command = std::make_unique<BlitCopyBufferToTextureCommandMTL>();
+  command->label = label;
+  command->source = std::move(source);
+  command->destination = std::move(destination);
+  command->source_offset = source_offset;
+  command->destination_origin = destination_origin;
+
+  commands_.emplace_back(std::move(command));
+  return true;
+}
+
 // |BlitPass|
 bool BlitPassMTL::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                           std::string label) {

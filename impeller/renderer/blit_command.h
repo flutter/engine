@@ -28,6 +28,13 @@ struct BlitCopyTextureToBufferCommand : public BlitCommand {
   size_t destination_offset;
 };
 
+struct BlitCopyBufferToTextureCommand : public BlitCommand {
+  std::shared_ptr<DeviceBuffer> source;
+  std::shared_ptr<Texture> destination;
+  size_t source_offset;
+  IPoint destination_origin;
+};
+
 struct BlitGenerateMipmapCommand : public BlitCommand {
   std::shared_ptr<Texture> texture;
 };

@@ -52,6 +52,12 @@ class BlitPassMTL final : public BlitPass {
                                     IRect source_region,
                                     size_t destination_offset,
                                     std::string label) override;
+  // |BlitPass|
+  bool OnCopyBufferToTextureCommand(std::shared_ptr<DeviceBuffer> source,
+                                    std::shared_ptr<Texture> destination,
+                                    size_t source_offset,
+                                    IPoint destination_origin,
+                                    std::string label) override;
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,

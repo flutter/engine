@@ -10,12 +10,37 @@
 #include "flutter/fml/macros.h"
 #include "flutter/lib/ui/painting/image_decoder.h"
 #include "impeller/geometry/size.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 namespace impeller {
 class Context;
+class Allocator;
+class DeviceBuffer;
 }  // namespace impeller
 
 namespace flutter {
+
+class ImpellerAllocator : public SkBitmap::Allocator {
+ public:
+  explicit ImpellerAllocator(std::shared_ptr<impeller::Allocator> allocator);
+
+  ~ImpellerAllocator() = default;
+
+  // |Allocator|
+  bool allocPixelRef(SkBitmap* bitmap) override;
+
+  std::optional<std::shared_ptr<impeller::DeviceBuffer>> GetDeviceBuffer()
+      const;
+
+ private:
+  std::shared_ptr<impeller::Allocator> allocator_;
+  std::optional<std::shared_ptr<impeller::DeviceBuffer>> buffer_;
+};
+
+struct DecompressResult {
+  std::shared_ptr<impeller::DeviceBuffer> device_buffer;
+  SkImageInfo image_info;
+};
 
 class ImageDecoderImpeller final : public ImageDecoder {
  public:
@@ -33,11 +58,17 @@ class ImageDecoderImpeller final : public ImageDecoder {
               uint32_t target_height,
               const ImageResult& result) override;
 
-  static std::shared_ptr<SkBitmap> DecompressTexture(
+  static std::optional<DecompressResult> DecompressTexture(
       ImageDescriptor* descriptor,
       SkISize target_size,
       impeller::ISize max_texture_size,
-      bool supports_wide_gamut);
+      bool supports_wide_gamut,
+      const std::shared_ptr<impeller::Context>& context);
+
+  static sk_sp<DlImage> UploadTexture(
+      const std::shared_ptr<impeller::Context>& context,
+      std::shared_ptr<impeller::DeviceBuffer> buffer,
+      const SkImageInfo& image_info);
 
   static sk_sp<DlImage> UploadTexture(
       const std::shared_ptr<impeller::Context>& context,

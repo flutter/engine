@@ -61,7 +61,12 @@ class MockBlitPass : public BlitPass {
                     IRect source_region,
                     size_t destination_offset,
                     std::string label));
-
+  MOCK_METHOD5(OnCopyBufferToTextureCommand,
+               bool(std::shared_ptr<DeviceBuffer> source,
+                    std::shared_ptr<Texture> destination,
+                    size_t source_offset,
+                    IPoint destination_origin,
+                    std::string label));
   MOCK_METHOD2(OnOptimizeForGPUAccess,
                bool(std::shared_ptr<Texture> texture, std::string label));
 

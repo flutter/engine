@@ -116,6 +116,25 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
                                       std::move(label));
 }
 
+bool BlitPass::AddCopy(std::shared_ptr<DeviceBuffer> source,
+                       std::shared_ptr<Texture> destination,
+                       size_t source_offset,
+                       IPoint destination_origin,
+                       std::string label) {
+  if (!source) {
+    VALIDATION_LOG << "Attempted to add a texture blit with no source.";
+    return false;
+  }
+  if (!destination) {
+    VALIDATION_LOG << "Attempted to add a texture blit with no destination.";
+    return false;
+  }
+
+  return OnCopyBufferToTextureCommand(std::move(source), std::move(destination),
+                                      source_offset, destination_origin,
+                                      std::move(label));
+}
+
 bool BlitPass::OptimizeForGPUAccess(std::shared_ptr<Texture> texture,
                                     std::string label) {
   return OnOptimizeForGPUAccess(std::move(texture), std::move(label));

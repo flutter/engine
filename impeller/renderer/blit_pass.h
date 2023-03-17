@@ -85,6 +85,30 @@ class BlitPass {
                std::string label = "");
 
   //----------------------------------------------------------------------------
+  /// @brief      Record a command to copy the contents of the buffer to
+  ///             the texture.
+  ///             No work is encoded into the command buffer at this time.
+  ///
+  /// @param[in]  source              The texture to read for copying.
+  /// @param[in]  destination         The buffer to overwrite using the source
+  ///                                 contents.
+  /// @param[in]  source_region       The optional region of the source texture
+  ///                                 to use for copying. If not specified, the
+  ///                                 full size of the source texture is used.
+  /// @param[in]  destination_offset  The offset to start writing to in the
+  ///                                 destination buffer.
+  /// @param[in]  label               The optional debug label to give the
+  ///                                 command.
+  ///
+  /// @return     If the command was valid for subsequent commitment.
+  ///
+  bool AddCopy(std::shared_ptr<DeviceBuffer> source,
+               std::shared_ptr<Texture> destination,
+               size_t source_offset = 0,
+               IPoint destination_origin = {},
+               std::string label = "");
+
+  //----------------------------------------------------------------------------
   /// @brief      Record a command to generate all mip levels for a texture.
   ///             No work is encoded into the command buffer at this time.
   ///
@@ -138,6 +162,13 @@ class BlitPass {
       std::shared_ptr<DeviceBuffer> destination,
       IRect source_region,
       size_t destination_offset,
+      std::string label) = 0;
+
+  virtual bool OnCopyBufferToTextureCommand(
+      std::shared_ptr<DeviceBuffer> source,
+      std::shared_ptr<Texture> destination,
+      size_t source_offset,
+      IPoint destination_origin,
       std::string label) = 0;
 
   virtual bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
