@@ -43,7 +43,7 @@ void EntityPass::SetDelegate(std::unique_ptr<EntityPassDelegate> delegate) {
 
 void EntityPass::AddEntity(Entity entity) {
   if (entity.GetBlendMode() > Entity::kLastPipelineBlendMode) {
-    blend_reads_from_pass_texture_ += 1;
+    advanced_blend_reads_from_pass_texture_ += 1;
   }
   elements_.emplace_back(std::move(entity));
 }
@@ -131,10 +131,10 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   pass->superpass_ = this;
 
   if (pass->backdrop_filter_proc_.has_value()) {
-    filter_reads_from_pass_texture_ += 1;
+    backdrop_filter_reads_from_pass_texture_ += 1;
   }
   if (pass->blend_mode_ > Entity::kLastPipelineBlendMode) {
-    blend_reads_from_pass_texture_ += 1;
+    advanced_blend_reads_from_pass_texture_ += 1;
   }
 
   auto subpass_pointer = pass.get();
@@ -190,15 +190,16 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
   );
 }
 
-uint32_t EntityPass::ComputeTotalReads(ContentContext& renderer) const {
+uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
   return renderer.GetDeviceCapabilities().SupportsFramebufferFetch()
-             ? filter_reads_from_pass_texture_
-             : filter_reads_from_pass_texture_ + blend_reads_from_pass_texture_;
+             ? backdrop_filter_reads_from_pass_texture_
+             : backdrop_filter_reads_from_pass_texture_ +
+                   advanced_blend_reads_from_pass_texture_;
 }
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
-  if (ComputeTotalReads(renderer) > 0) {
+  if (GetTotalPassReads(renderer) > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
     if (!OnRender(renderer, offscreen_target.GetRenderTargetSize(),
@@ -292,7 +293,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     }
 
     if (!subpass->backdrop_filter_proc_.has_value() &&
-        subpass->delegate_->CanCollapseIntoParentPass()) {
+        subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(renderer, root_pass_size,
                              pass_context.GetRenderTarget(), position, position,
@@ -309,7 +310,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // Render the backdrop texture before any of the pass elements.
       const auto& proc = subpass->backdrop_filter_proc_.value();
       backdrop_filter_contents =
-          proc(FilterInput::Make(std::move(texture)), subpass->xformation_);
+          proc(FilterInput::Make(std::move(texture)), subpass->xformation_,
+               /*is_subpass*/ true);
 
       // The subpass will need to read from the current pass texture when
       // rendering the backdrop, so if there's an active pass, end it prior to
@@ -328,33 +330,25 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       if (backdrop_coverage.has_value()) {
         backdrop_coverage->origin += position;
 
-        if (subpass_coverage.has_value()) {
-          subpass_coverage = subpass_coverage->Union(backdrop_coverage.value());
-        } else {
-          subpass_coverage = backdrop_coverage;
-        }
+        subpass_coverage =
+            subpass_coverage.has_value()
+                ? subpass_coverage->Union(backdrop_coverage.value())
+                : backdrop_coverage;
       }
     }
 
-    if (subpass_coverage.has_value()) {
-      subpass_coverage =
-          subpass_coverage->Intersection(Rect::MakeSize(root_pass_size));
-    }
-
-    if (!subpass_coverage.has_value()) {
+    if (!subpass_coverage.has_value() || subpass_coverage->size.IsEmpty()) {
+      // The subpass doesn't contain anything visible, so skip it.
       return EntityPass::EntityResult::Skip();
     }
 
-    if (subpass_coverage->size.IsEmpty()) {
-      // It is not an error to have an empty subpass. But subpasses that can't
-      // create their intermediates must trip errors.
-      return EntityPass::EntityResult::Skip();
-    }
+    subpass_coverage =
+        subpass_coverage->Intersection(Rect::MakeSize(root_pass_size));
 
     auto subpass_target =
         CreateRenderTarget(renderer,                       //
                            ISize(subpass_coverage->size),  //
-                           subpass->ComputeTotalReads(renderer) > 0);
+                           subpass->GetTotalPassReads(renderer) > 0);
 
     auto subpass_texture = subpass_target.GetRenderTargetTexture();
 
@@ -364,7 +358,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
 
     auto offscreen_texture_contents =
         subpass->delegate_->CreateContentsForSubpassTarget(
-            subpass_texture, subpass->xformation_);
+            subpass_texture,
+            Matrix::MakeTranslation(Vector3{-position}) * subpass->xformation_);
 
     if (!offscreen_texture_contents) {
       // This is an error because the subpass delegate said the pass couldn't
@@ -417,7 +412,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   auto context = renderer.GetContext();
   InlinePassContext pass_context(context, render_target,
-                                 ComputeTotalReads(renderer),
+                                 GetTotalPassReads(renderer),
                                  std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
     return false;
@@ -621,6 +616,28 @@ void EntityPass::IterateAllEntities(
     }
     FML_UNREACHABLE();
   }
+}
+
+bool EntityPass::IterateUntilSubpass(
+    const std::function<bool(Entity&)>& iterator) {
+  if (!iterator) {
+    return true;
+  }
+
+  for (auto& element : elements_) {
+    if (auto entity = std::get_if<Entity>(&element)) {
+      if (!iterator(*entity)) {
+        return false;
+      }
+      continue;
+    }
+    return true;
+  }
+  return false;
+}
+
+size_t EntityPass::GetEntityCount() const {
+  return elements_.size();
 }
 
 std::unique_ptr<EntityPass> EntityPass::Clone() const {

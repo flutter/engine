@@ -154,6 +154,7 @@
 ../../../flutter/impeller/tessellator/tessellator_unittests.cc
 ../../../flutter/impeller/tools/build_metal_library.py
 ../../../flutter/impeller/tools/check_licenses.py
+../../../flutter/impeller/tools/malioc_cores.py
 ../../../flutter/impeller/tools/malioc_diff.py
 ../../../flutter/impeller/tools/xxd.py
 ../../../flutter/impeller/typographer/typographer_unittests.cc
@@ -2567,6 +2568,7 @@
 ../../../third_party/skia/WORKSPACE.bazel
 ../../../third_party/skia/bazel
 ../../../third_party/skia/bench
+../../../third_party/skia/bin/clang_update.py
 ../../../third_party/skia/codereview.settings
 ../../../third_party/skia/defines.bzl
 ../../../third_party/skia/demos.skia.org
