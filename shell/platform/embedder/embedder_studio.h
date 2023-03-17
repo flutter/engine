@@ -14,16 +14,14 @@ namespace flutter {
 
 class EmbedderStudio {
  public:
-  using Builder = std::function<std::unique_ptr<EmbedderSurface>(
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder)>;
+  using Builder = std::function<std::unique_ptr<EmbedderSurface>()>;
 
   EmbedderStudio(Builder builder) : builder_(std::move(builder)) {}
 
   virtual ~EmbedderStudio() = default;
 
-  virtual std::unique_ptr<EmbedderSurface> CreateSurface(
-      std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder) {
-    return builder_(external_view_embedder);
+  virtual std::unique_ptr<EmbedderSurface> CreateSurface() {
+    return builder_();
   }
 
   virtual sk_sp<GrDirectContext> CreateResourceContext() const {

@@ -63,10 +63,7 @@ class MockStudio : public EmbedderStudio {
  public:
   MockStudio() : EmbedderStudio(nullptr) {}
 
-  MOCK_METHOD1(CreateSurface,
-               std::unique_ptr<EmbedderSurface>(
-                   std::shared_ptr<EmbedderExternalViewEmbedder>
-                       external_view_embedder));
+  MOCK_METHOD0(CreateSurface, std::unique_ptr<EmbedderSurface>());
   MOCK_CONST_METHOD0(CreateResourceContext, sk_sp<GrDirectContext>());
 };
 }  // namespace

@@ -426,24 +426,24 @@ InferOpenGLPlatformViewCreationCallback(
       gl_populate_existing_damage,         // gl_populate_existing_damage
   };
 
-  auto surface_builder =
-      [gl_dispatch_table, fbo_reset_after_present](
-          std::shared_ptr<flutter::EmbedderExternalViewEmbedder>
-              external_view_embedder) {
-        return std::make_unique<flutter::EmbedderSurfaceGL>(
-            gl_dispatch_table, fbo_reset_after_present, external_view_embedder);
-      };
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> shared_view_embedder =
+      std::move(external_view_embedder);
+
+  auto surface_builder = [gl_dispatch_table, fbo_reset_after_present,
+                          shared_view_embedder]() {
+    return std::make_unique<flutter::EmbedderSurfaceGL>(
+        gl_dispatch_table, fbo_reset_after_present, shared_view_embedder);
+  };
 
   return fml::MakeCopyable(
       [surface_builder, platform_dispatch_table,
-       external_view_embedder =
-           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+       shared_view_embedder](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             std::make_unique<flutter::EmbedderStudio>(surface_builder),
             platform_dispatch_table,  // embedder platform dispatch table
-            std::move(external_view_embedder)  // external view embedder
+            shared_view_embedder      // external view embedder
         );
       });
 #else
@@ -497,29 +497,29 @@ InferMetalPlatformViewCreationCallback(
       .get_texture = metal_get_texture,
   };
 
-  auto surface_builder =
-      [config, metal_dispatch_table](
-          std::shared_ptr<flutter::EmbedderExternalViewEmbedder>
-              external_view_embedder) {
-        return std::make_unique<flutter::EmbedderSurfaceMetal>(
-            const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
-            const_cast<flutter::GPUMTLCommandQueueHandle>(
-                config->metal.present_command_queue),
-            metal_dispatch_table, external_view_embedder);
-      };
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> shared_view_embedder =
+      std::move(external_view_embedder);
+
+  auto surface_builder = [config, metal_dispatch_table,
+                          shared_view_embedder]() {
+    return std::make_unique<flutter::EmbedderSurfaceMetal>(
+        const_cast<flutter::GPUMTLDeviceHandle>(config->metal.device),
+        const_cast<flutter::GPUMTLCommandQueueHandle>(
+            config->metal.present_command_queue),
+        metal_dispatch_table, shared_view_embedder);
+  };
 
   // The static leak checker gets confused by the use of fml::MakeCopyable.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
   return fml::MakeCopyable(
       [surface_builder, platform_dispatch_table,
-       external_view_embedder =
-           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+       shared_view_embedder](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             std::make_unique<flutter::EmbedderStudio>(surface_builder),
-            platform_dispatch_table,           // platform dispatch table
-            std::move(external_view_embedder)  // external view embedder
+            platform_dispatch_table,  // platform dispatch table
+            shared_view_embedder      // external view embedder
         );
       });
 #else
@@ -581,33 +581,33 @@ InferVulkanPlatformViewCreationCallback(
       .present_image = vulkan_present_image_callback,
   };
 
-  auto surface_builder =
-      [config, vulkan_dispatch_table,
-       vk_instance](std::shared_ptr<flutter::EmbedderExternalViewEmbedder>
-                        external_view_embedder) {
-        return std::make_unique<flutter::EmbedderSurfaceVulkan>(
-            config->vulkan.version, vk_instance,
-            config->vulkan.enabled_instance_extension_count,
-            config->vulkan.enabled_instance_extensions,
-            config->vulkan.enabled_device_extension_count,
-            config->vulkan.enabled_device_extensions,
-            static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
-            static_cast<VkDevice>(config->vulkan.device),
-            config->vulkan.queue_family_index,
-            static_cast<VkQueue>(config->vulkan.queue), vulkan_dispatch_table,
-            external_view_embedder);
-      };
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> shared_view_embedder =
+      std::move(external_view_embedder);
+
+  auto surface_builder = [config, vulkan_dispatch_table, vk_instance,
+                          shared_view_embedder]() {
+    return std::make_unique<flutter::EmbedderSurfaceVulkan>(
+        config->vulkan.version, vk_instance,
+        config->vulkan.enabled_instance_extension_count,
+        config->vulkan.enabled_instance_extensions,
+        config->vulkan.enabled_device_extension_count,
+        config->vulkan.enabled_device_extensions,
+        static_cast<VkPhysicalDevice>(config->vulkan.physical_device),
+        static_cast<VkDevice>(config->vulkan.device),
+        config->vulkan.queue_family_index,
+        static_cast<VkQueue>(config->vulkan.queue), vulkan_dispatch_table,
+        shared_view_embedder);
+  };
 
   return fml::MakeCopyable(
       [surface_builder, platform_dispatch_table,
-       external_view_embedder =
-           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+       shared_view_embedder](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             std::make_unique<flutter::EmbedderStudio>(surface_builder),
-            platform_dispatch_table,           // platform dispatch table
-            std::move(external_view_embedder)  // external view embedder
+            platform_dispatch_table,  // platform dispatch table
+            shared_view_embedder      // external view embedder
         );
       });
 #else
@@ -638,24 +638,23 @@ InferSoftwarePlatformViewCreationCallback(
           software_present_backing_store,  // required
       };
 
-  auto surface_builder =
-      [software_dispatch_table](
-          std::shared_ptr<flutter::EmbedderExternalViewEmbedder>
-              external_view_embedder) {
-        return std::make_unique<flutter::EmbedderSurfaceSoftware>(
-            software_dispatch_table, external_view_embedder);
-      };
+  std::shared_ptr<flutter::EmbedderExternalViewEmbedder> shared_view_embedder =
+      std::move(external_view_embedder);
+
+  auto surface_builder = [software_dispatch_table, shared_view_embedder]() {
+    return std::make_unique<flutter::EmbedderSurfaceSoftware>(
+        software_dispatch_table, shared_view_embedder);
+  };
 
   return fml::MakeCopyable(
       [software_dispatch_table, surface_builder, platform_dispatch_table,
-       external_view_embedder =
-           std::move(external_view_embedder)](flutter::Shell& shell) mutable {
+       shared_view_embedder](flutter::Shell& shell) mutable {
         return std::make_unique<flutter::PlatformViewEmbedder>(
             shell,                   // delegate
             shell.GetTaskRunners(),  // task runners
             std::make_unique<flutter::EmbedderStudio>(surface_builder),
-            platform_dispatch_table,           // platform dispatch table
-            std::move(external_view_embedder)  // external view embedder
+            platform_dispatch_table,  // platform dispatch table
+            shared_view_embedder      // external view embedder
         );
       });
 }

@@ -96,7 +96,7 @@ std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface(
     return nullptr;
   }
   auto& embedder_surface = embedder_surfaces_[view_id] =
-      embedder_studio_->CreateSurface(external_view_embedder_);
+      embedder_studio_->CreateSurface();
   return embedder_surface->CreateGPUSurface();
 }
 
