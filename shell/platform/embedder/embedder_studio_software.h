@@ -15,7 +15,7 @@
 namespace flutter {
 
 class EmbedderStudioSoftware final : public EmbedderStudio,
-                                      public GPUSurfaceSoftwareDelegate {
+                                     public GPUSurfaceSoftwareDelegate {
  public:
   struct SoftwareDispatchTable {
     std::function<bool(const void* allocation, size_t row_bytes, size_t height)>

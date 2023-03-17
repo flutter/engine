@@ -6,8 +6,8 @@
 
 #include <utility>
 
-#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #include "flutter/shell/common/shell_io_manager.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 
 namespace flutter {
 

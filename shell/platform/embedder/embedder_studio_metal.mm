@@ -8,8 +8,8 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
-#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
+#include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 FLUTTER_ASSERT_NOT_ARC
@@ -43,10 +43,9 @@ std::unique_ptr<EmbedderSurface> EmbedderStudioMetal::CreateSurface() {
     return nullptr;
   }
   const bool render_to_surface = !external_view_embedder_;
-  return std::make_unique<EmbedderSurfaceMetal>(
-      main_context_,
-      this,              // GPU surface GL delegate
-      render_to_surface  // render to surface
+  return std::make_unique<EmbedderSurfaceMetal>(main_context_,
+                                                this,              // GPU surface GL delegate
+                                                render_to_surface  // render to surface
   );
 }
 

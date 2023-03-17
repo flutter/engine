@@ -41,7 +41,8 @@ std::unique_ptr<EmbedderSurface> EmbedderStudioSoftware::CreateSurface() {
     return nullptr;
   }
   const bool render_to_surface = !external_view_embedder_;
-  auto surface = std::make_unique<EmbedderSurfaceSoftware>(this, render_to_surface);
+  auto surface =
+      std::make_unique<EmbedderSurfaceSoftware>(this, render_to_surface);
 
   if (!surface->IsValid()) {
     return nullptr;

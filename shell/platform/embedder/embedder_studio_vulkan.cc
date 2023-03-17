@@ -9,8 +9,8 @@
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
-#include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
@@ -112,7 +112,7 @@ bool EmbedderStudioVulkan::IsValid() const {
 std::unique_ptr<EmbedderSurface> EmbedderStudioVulkan::CreateSurface() {
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<EmbedderSurfaceVulkan>(this, main_context_,
-                                            render_to_surface);
+                                                 render_to_surface);
 }
 
 // |EmbedderStudio|
