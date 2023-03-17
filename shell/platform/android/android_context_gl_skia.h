@@ -30,7 +30,8 @@ class AndroidContextGLSkia : public AndroidContext {
   AndroidContextGLSkia(AndroidRenderingAPI rendering_api,
                        fml::RefPtr<AndroidEnvironmentGL> environment,
                        const TaskRunners& taskRunners,
-                       uint8_t msaa_samples);
+                       uint8_t msaa_samples,
+                       bool disableParticalRepaint = false);
 
   ~AndroidContextGLSkia();
 
@@ -95,6 +96,7 @@ class AndroidContextGLSkia : public AndroidContext {
   EGLContext resource_context_;
   bool valid_ = false;
   TaskRunners task_runners_;
+  bool disableParticalRepaint_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGLSkia);
 };

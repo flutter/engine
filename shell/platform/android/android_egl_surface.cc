@@ -193,6 +193,14 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
   damage_->init(display_, context);
 }
 
+AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
+                                     EGLDisplay display,
+                                     EGLContext context,
+                                     bool disableParticalRepaint)
+    : AndroidEGLSurface(surface, display, context) {
+  disableParticalRepaint_ = disableParticalRepaint;
+}
+
 AndroidEGLSurface::~AndroidEGLSurface() {
   [[maybe_unused]] auto result = eglDestroySurface(display_, surface_);
   FML_DCHECK(result == EGL_TRUE);
@@ -260,7 +268,11 @@ bool AndroidEGLSurface::SwapBuffers(
 }
 
 bool AndroidEGLSurface::SupportsPartialRepaint() const {
-  return damage_->SupportsPartialRepaint();
+  if (disableParticalRepaint_) {
+    return false;
+  } else {
+    return damage_->SupportsPartialRepaint();
+  }
 }
 
 std::optional<SkIRect> AndroidEGLSurface::InitialDamage() {

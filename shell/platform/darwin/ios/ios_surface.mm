@@ -16,7 +16,8 @@
 namespace flutter {
 
 std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> context,
-                                               const fml::scoped_nsobject<CALayer>& layer) {
+                                               const fml::scoped_nsobject<CALayer>& layer,
+                                               bool disable_partical_repaint) {
   FML_DCHECK(layer);
   FML_DCHECK(context);
 
@@ -28,8 +29,8 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
           return std::make_unique<IOSSurfaceMetalSkia>(
               fml::scoped_nsobject<CAMetalLayer>(
                   reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
-              std::move(context)                                           // context
-          );
+              std::move(context),                                          // context
+              disable_partical_repaint);
           break;
         case IOSRenderingBackend::kImpeller:
           return std::make_unique<IOSSurfaceMetalImpeller>(

@@ -42,6 +42,11 @@ class AndroidEGLSurface {
  public:
   AndroidEGLSurface(EGLSurface surface, EGLDisplay display, EGLContext context);
 
+  AndroidEGLSurface(EGLSurface surface,
+                    EGLDisplay display,
+                    EGLContext context,
+                    bool disableParticalRepaint);
+
   ~AndroidEGLSurface();
 
   //----------------------------------------------------------------------------
@@ -107,6 +112,7 @@ class AndroidEGLSurface {
   const EGLSurface surface_;
   const EGLDisplay display_;
   const EGLContext context_;
+  bool disableParticalRepaint_ = false;
   std::unique_ptr<AndroidEGLSurfaceDamage> damage_;
   PFNEGLPRESENTATIONTIMEANDROIDPROC presentation_time_proc_;
 };

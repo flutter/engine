@@ -1525,10 +1525,6 @@ fml::TimePoint Shell::GetLatestFrameTargetTime() const {
   return latest_frame_target_time_.value();
 }
 
-bool Shell::DisableParticalRepaintFromSetting() const {
-  return settings_.disable_partical_repaint;
-}
-
 // |ServiceProtocol::Handler|
 fml::RefPtr<fml::TaskRunner> Shell::GetServiceProtocolHandlerTaskRunner(
     std::string_view method) const {

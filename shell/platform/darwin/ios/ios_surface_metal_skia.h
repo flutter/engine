@@ -18,7 +18,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
                                                                   public GPUSurfaceMetalDelegate {
  public:
   IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
-                      std::shared_ptr<IOSContext> context);
+                      std::shared_ptr<IOSContext> context,
+                      bool disable_partical_repaint = false);
 
   // |IOSSurface|
   ~IOSSurfaceMetalSkia();
@@ -28,6 +29,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
   id<MTLDevice> device_;
   id<MTLCommandQueue> command_queue_;
   bool is_valid_ = false;
+  bool disable_partical_repaint_ = false;
 
   // |IOSSurface|
   bool IsValid() const override;

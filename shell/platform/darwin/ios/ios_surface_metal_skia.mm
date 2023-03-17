@@ -15,10 +15,12 @@ static IOSContextMetalSkia* CastToMetalContext(const std::shared_ptr<IOSContext>
 }
 
 IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer>& layer,
-                                         std::shared_ptr<IOSContext> context)
+                                         std::shared_ptr<IOSContext> context,
+                                         bool disable_partical_repaint)
     : IOSSurface(std::move(context)),
       GPUSurfaceMetalDelegate(MTLRenderTargetType::kCAMetalLayer),
-      layer_(layer) {
+      layer_(layer),
+      disable_partical_repaint_(disable_partical_repaint) {
   is_valid_ = layer_;
   auto metal_context = CastToMetalContext(GetContext());
   auto darwin_context = metal_context->GetDarwinContext().get();
@@ -42,10 +44,10 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,                               // delegate
-                                               sk_ref_sp(context),                 // context
-                                               GetContext()->GetMsaaSampleCount()  // sample count
-  );
+  return std::make_unique<GPUSurfaceMetalSkia>(this,                                // delegate
+                                               sk_ref_sp(context),                  // context
+                                               GetContext()->GetMsaaSampleCount(),  // sample count
+                                               true, disable_partical_repaint_);
 }
 
 // |GPUSurfaceMetalDelegate|

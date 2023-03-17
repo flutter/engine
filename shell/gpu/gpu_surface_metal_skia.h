@@ -18,7 +18,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                       sk_sp<GrDirectContext> context,
                       MsaaSampleCount msaa_samples,
-                      bool render_to_surface = true);
+                      bool render_to_surface = true,
+                      bool disable_partical_repaint = false);
 
   // |Surface|
   ~GPUSurfaceMetalSkia();
@@ -37,6 +38,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   // hack to make avoid allocating resources for the root surface when an
   // external view embedder is present.
   bool render_to_surface_ = true;
+
+  bool disable_partical_repaint_ = false;
 
   // Accumulated damage for each framebuffer; Key is address of underlying
   // MTLTexture for each drawable

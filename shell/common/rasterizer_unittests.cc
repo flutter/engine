@@ -39,7 +39,6 @@ class MockDelegate : public Rasterizer::Delegate {
                      std::shared_ptr<const fml::SyncSwitch>());
   MOCK_METHOD0(CreateSnapshotSurface, std::unique_ptr<Surface>());
   MOCK_CONST_METHOD0(GetSettings, const Settings&());
-  MOCK_CONST_METHOD0(DisableParticalRepaintFromSetting, bool());
 };
 
 class MockSurface : public Surface {
