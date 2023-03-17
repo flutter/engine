@@ -214,8 +214,7 @@ PlatformHandler::PlatformHandler(
           messenger,
           kChannelName,
           &JsonMethodCodec::GetInstance())),
-      engine_(engine),
-      exit_code_(std::nullopt) {
+      engine_(engine) {
   channel_->SetMethodCallHandler(
       [this](const MethodCall<rapidjson::Document>& call,
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
@@ -366,18 +365,17 @@ void PlatformHandler::SystemExitApplication(
                                       result_doc.GetAllocator());
     result->Success(result_doc);
   } else {
-    exit_code_ = exit_code;
-    RequestAppExit(exit_type);
+    RequestAppExit(exit_type, exit_code);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel,
                                       result_doc.GetAllocator());
     result->Success(result_doc);
   }
 }
 
-void PlatformHandler::RequestAppExit(const std::string& exit_type) {
+void PlatformHandler::RequestAppExit(const std::string& exit_type, int64_t exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
-      [this](const rapidjson::Document* response) {
-        RequestAppExitSuccess(response);
+      [this, exit_code](const rapidjson::Document* response) {
+        RequestAppExitSuccess(response, exit_code);
       },
       nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
@@ -387,12 +385,11 @@ void PlatformHandler::RequestAppExit(const std::string& exit_type) {
                          std::move(callback));
 }
 
-void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result) {
+void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result, int64_t exit_code) {
   const std::string& exit_type = result[0][kExitResponseKey].GetString();
   if (exit_type.compare(kExitResponseExit) == 0) {
-    QuitApplication(*exit_code_);
+    QuitApplication(exit_code);
   }
-  exit_code_ = std::nullopt;
 }
 
 void PlatformHandler::QuitApplication(int64_t exit_code) {

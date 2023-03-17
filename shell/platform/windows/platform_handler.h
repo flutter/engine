@@ -66,11 +66,11 @@ class PlatformHandler {
 
   // Send a request to the framework to test if a cancelable exit request
   // should be canceled or honored.
-  virtual void RequestAppExit(const std::string& exit_type);
+  virtual void RequestAppExit(const std::string& exit_type, int64_t exit_code);
 
   // Callback from when the cancelable exit request response request is
   // answered by the framework.
-  virtual void RequestAppExitSuccess(const rapidjson::Document* result);
+  virtual void RequestAppExitSuccess(const rapidjson::Document* result, int64_t exit_code);
 
   // A error type to use for error responses.
   static constexpr char kClipboardError[] = "Clipboard error";
@@ -94,11 +94,6 @@ class PlatformHandler {
   // unnecessarily. See flutter/flutter#103205.
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
-
-  // Store the exit code of the currently executing exit request, if a request
-  // must also be sent back to the framework. Cleared to nullopt when the
-  // request completes.
-  std::optional<int64_t> exit_code_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandler);
 };
