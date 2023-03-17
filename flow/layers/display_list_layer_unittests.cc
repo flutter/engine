@@ -93,8 +93,8 @@ TEST_F(DisplayListLayerTest, SimpleDisplayList) {
       {MockCanvas::DrawCall{0, MockCanvas::SaveData{1}},
        MockCanvas::DrawCall{
            1, MockCanvas::ConcatMatrixData{SkM44(layer_offset_matrix)}},
-       MockCanvas::DrawCall{
-           1, MockCanvas::DrawRectData{picture_bounds, SkPaint()}},
+       MockCanvas::DrawCall{1,
+                            MockCanvas::DrawDisplayListData{display_list, 1}},
        MockCanvas::DrawCall{1, MockCanvas::RestoreData{0}}});
   EXPECT_EQ(mock_canvas().draw_calls(), expected_draw_calls);
 }
@@ -156,6 +156,7 @@ TEST_F(DisplayListLayerTest, SimpleDisplayListOpacityInheritance) {
             expected_builder.drawDisplayList(child_display_list);
           }
           expected_builder.restore();
+          expected_builder.setColor(DlColor::kBlack());
         }
         expected_builder.restore();
       }
@@ -261,49 +262,42 @@ TEST_F(DisplayListLayerTest, CachedIncompatibleDisplayListOpacityInheritance) {
   opacity_layer->Preroll(context);
   EXPECT_TRUE(opacity_layer->children_can_accept_opacity());
 
-  // The following would be a great test of the painting of the above
-  // setup, but for the fact that the raster cache stores raw pointers
-  // to sk_sp<SkImage> and the canvas recorder then wraps each of those
-  // in a unique DlImage - which means the DisplayList objects will not
-  // compare with the Equals method since the addresses of the two
-  // DlImage objects will not be equal even if they point to the same
-  // SkImage on each frame.
-  // See https://github.com/flutter/flutter/issues/102331
-  //   auto display_list_bounds = picture1_bounds;
-  //   display_list_bounds.join(picture2_bounds);
-  //   auto save_layer_bounds =
-  //       display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
-  //   save_layer_bounds.roundOut(&save_layer_bounds);
-  //   auto opacity_integral_matrix =
-  //       RasterCacheUtil::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
-  //   SkMatrix layer_offset_matrix = opacity_integral_matrix;
-  //   layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
-  //   auto layer_offset_integral_matrix =
-  //       RasterCacheUtil::GetIntegralTransCTM(layer_offset_matrix);
-  //   // Using a recorder instead of a DisplayListBuilder so we can hand it
-  //   // off to the RasterCache::Draw() method
-  //   DisplayListCanvasRecorder recorder(SkRect::MakeWH(1000, 1000));
-  //   /* opacity_layer::Paint() */ {
-  //     recorder.save();
-  //     {
-  //       recorder.translate(opacity_offset.fX, opacity_offset.fY);
-  //       /* display_list_layer::Paint() */ {
-  //         recorder.save();
-  //         {
-  //           recorder.translate(layer_offset.fX, layer_offset.fY);
-  //           SkPaint p;
-  //           p.setAlpha(opacity_alpha);
-  //           context->raster_cache->Draw(*display_list, recorder, &p);
-  //         }
-  //         recorder.restore();
-  //       }
-  //     }
-  //     recorder.restore();
-  //   }
+  auto display_list_bounds = picture1_bounds;
+  display_list_bounds.join(picture2_bounds);
+  auto save_layer_bounds =
+      display_list_bounds.makeOffset(layer_offset.fX, layer_offset.fY);
+  save_layer_bounds.roundOut(&save_layer_bounds);
+  auto opacity_integral_matrix =
+      RasterCacheUtil::GetIntegralTransCTM(SkMatrix::Translate(opacity_offset));
+  SkMatrix layer_offset_matrix = opacity_integral_matrix;
+  layer_offset_matrix.postTranslate(layer_offset.fX, layer_offset.fY);
+  auto layer_offset_integral_matrix =
+      RasterCacheUtil::GetIntegralTransCTM(layer_offset_matrix);
+  DisplayListBuilder expected(SkRect::MakeWH(1000, 1000));
+  /* opacity_layer::Paint() */ {
+    expected.Save();
+    {
+      expected.Translate(opacity_offset.fX, opacity_offset.fY);
+      expected.TransformReset();
+      expected.Transform(opacity_integral_matrix);
+      /* display_list_layer::Paint() */ {
+        expected.Save();
+        {
+          expected.Translate(layer_offset.fX, layer_offset.fY);
+          expected.TransformReset();
+          expected.Transform(layer_offset_integral_matrix);
+          context->raster_cache->Draw(display_list_layer->caching_key_id(),
+                                      expected,
+                                      &DlPaint().setAlpha(opacity_alpha));
+        }
+        expected.Restore();
+      }
+    }
+    expected.Restore();
+  }
 
-  //   opacity_layer->Paint(display_list_paint_context());
-  //   EXPECT_TRUE(
-  //       DisplayListsEQ_Verbose(recorder.Build(), this->display_list()));
+  opacity_layer->Paint(display_list_paint_context());
+  EXPECT_TRUE(DisplayListsEQ_Verbose(expected.Build(), this->display_list()));
 }
 
 using DisplayListLayerDiffTest = DiffContextTest;
@@ -523,7 +517,7 @@ TEST_F(DisplayListLayerTest, OverflowCachedDisplayListOpacityInheritance) {
   use_mock_raster_cache();
   PrerollContext* context = preroll_context();
   int per_frame =
-      RasterCacheUtil::kDefaultPictureAndDispLayListCacheLimitPerFrame;
+      RasterCacheUtil::kDefaultPictureAndDisplayListCacheLimitPerFrame;
   int layer_count = per_frame + 1;
   SkPoint opacity_offset = {10, 10};
   auto opacity_layer = std::make_shared<OpacityLayer>(0.5f, opacity_offset);

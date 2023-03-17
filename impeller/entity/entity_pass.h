@@ -27,7 +27,8 @@ class EntityPass {
   using Element = std::variant<Entity, std::unique_ptr<EntityPass>>;
   using BackdropFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
-      const Matrix& effect_transform)>;
+      const Matrix& effect_transform,
+      bool is_subpass)>;
 
   EntityPass();
 
@@ -43,8 +44,6 @@ class EntityPass {
 
   void SetElements(std::vector<Element> elements);
 
-  const std::shared_ptr<LazyGlyphAtlas>& GetLazyGlyphAtlas() const;
-
   EntityPass* AddSubpass(std::unique_ptr<EntityPass> pass);
 
   EntityPass* GetSuperpass() const;
@@ -53,6 +52,15 @@ class EntityPass {
               const RenderTarget& render_target) const;
 
   void IterateAllEntities(const std::function<bool(Entity&)>& iterator);
+
+  /// @brief  Iterate entities in this pass up until the first subpass is found.
+  ///         This is useful for limiting look-ahead optimizations.
+  ///
+  /// @return Returns whether a subpass was encountered.
+  bool IterateUntilSubpass(const std::function<bool(Entity&)>& iterator);
+
+  /// @brief Return the number of entities on this pass.
+  size_t GetEntityCount() const;
 
   void SetTransformation(Matrix xformation);
 
@@ -101,15 +109,16 @@ class EntityPass {
                                    uint32_t pass_depth,
                                    size_t stencil_depth_floor) const;
 
-  bool OnRender(
-      ContentContext& renderer,
-      ISize root_pass_size,
-      const RenderTarget& render_target,
-      Point position,
-      Point parent_position,
-      uint32_t pass_depth,
-      size_t stencil_depth_floor = 0,
-      std::shared_ptr<Contents> backdrop_filter_contents = nullptr) const;
+  bool OnRender(ContentContext& renderer,
+                ISize root_pass_size,
+                const RenderTarget& render_target,
+                Point position,
+                Point parent_position,
+                uint32_t pass_depth,
+                size_t stencil_depth_floor = 0,
+                std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
+                std::optional<InlinePassContext::RenderPassResult>
+                    collapsed_parent_pass = std::nullopt) const;
 
   std::vector<Element> elements_;
 
@@ -119,19 +128,23 @@ class EntityPass {
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
 
-  /// This value is incremented whenever something is added to the pass that
+  /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
   /// the following scenarios:
   ///   1. An entity with an "advanced blend" is added to the pass.
   ///   2. A subpass with a backdrop filter is added to the pass.
-  uint32_t reads_from_pass_texture_ = 0;
+  /// These are tracked as separate values because we may ignore
+  /// blend_reads_from_pass_texture_ if the device supports framebuffer based
+  /// advanced blends.
+  uint32_t advanced_blend_reads_from_pass_texture_ = 0;
+  uint32_t backdrop_filter_reads_from_pass_texture_ = 0;
+
+  uint32_t GetTotalPassReads(ContentContext& renderer) const;
 
   std::optional<BackdropFilterProc> backdrop_filter_proc_ = std::nullopt;
 
   std::unique_ptr<EntityPassDelegate> delegate_ =
       EntityPassDelegate::MakeDefault();
-  std::shared_ptr<LazyGlyphAtlas> lazy_glyph_atlas_ =
-      std::make_shared<LazyGlyphAtlas>();
 
   FML_DISALLOW_COPY_AND_ASSIGN(EntityPass);
 };

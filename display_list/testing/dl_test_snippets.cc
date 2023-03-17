@@ -116,23 +116,16 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
            {0, 0, 0, 0,
             [](DisplayListBuilder& b) { b.setColor(SK_ColorBLACK); }},
        }},
-      {"SetBlendModeOrBlender",
+      {"SetBlendMode",
        {
            {0, 8, 0, 0,
             [](DisplayListBuilder& b) { b.setBlendMode(DlBlendMode::kSrcIn); }},
            {0, 8, 0, 0,
             [](DisplayListBuilder& b) { b.setBlendMode(DlBlendMode::kDstIn); }},
-           {0, 16, 0, 0,
-            [](DisplayListBuilder& b) { b.setBlender(kTestBlender1); }},
-           {0, 16, 0, 0,
-            [](DisplayListBuilder& b) { b.setBlender(kTestBlender2); }},
-           {0, 16, 0, 0,
-            [](DisplayListBuilder& b) { b.setBlender(kTestBlender3); }},
            {0, 0, 0, 0,
             [](DisplayListBuilder& b) {
               b.setBlendMode(DlBlendMode::kSrcOver);
             }},
-           {0, 0, 0, 0, [](DisplayListBuilder& b) { b.setBlender(nullptr); }},
        }},
       {"SetColorSource",
        {
@@ -234,6 +227,13 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
             }},
            {0, 0, 0, 0,
             [](DisplayListBuilder& b) { b.setImageFilter(nullptr); }},
+           {0, 24, 0, 0,
+            [](DisplayListBuilder& b) {
+              b.setImageFilter(
+                  kTestBlurImageFilter1
+                      .makeWithLocalMatrix(SkMatrix::Translate(2, 2))
+                      .get());
+            }},
        }},
       {"SetColorFilter",
        {
@@ -308,7 +308,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             [](DisplayListBuilder& b) {
               b.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -323,7 +323,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 96, 5, 96,
             [](DisplayListBuilder& b) {
               b.save();
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -331,7 +331,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 96, 5, 96,
             [](DisplayListBuilder& b) {
               b.saveLayer(nullptr, false);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -339,7 +339,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 96, 5, 96,
             [](DisplayListBuilder& b) {
               b.saveLayer(nullptr, true);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -347,7 +347,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 112, 5, 112,
             [](DisplayListBuilder& b) {
               b.saveLayer(&kTestBounds, false);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -355,7 +355,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
            {5, 112, 5, 112,
             [](DisplayListBuilder& b) {
               b.saveLayer(&kTestBounds, true);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -373,7 +373,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             [](DisplayListBuilder& b) {
               b.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -382,7 +382,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             [](DisplayListBuilder& b) {
               b.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
                           &kTestCFImageFilter1);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -391,7 +391,7 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             [](DisplayListBuilder& b) {
               b.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
                           &kTestCFImageFilter1);
-              b.clipRect({0, 0, 25, 25}, SkClipOp::kIntersect, true);
+              b.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               b.drawRect({5, 5, 15, 15});
               b.drawRect({10, 10, 20, 20});
               b.restore();
@@ -476,85 +476,85 @@ std::vector<DisplayListInvocationGroup> CreateAllClipOps() {
        {
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipRect(kTestBounds, SkClipOp::kIntersect, true);
+              b.clipRect(kTestBounds, DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipRect(kTestBounds.makeOffset(1, 1), SkClipOp::kIntersect,
-                         true);
+              b.clipRect(kTestBounds.makeOffset(1, 1),
+                         DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipRect(kTestBounds, SkClipOp::kIntersect, false);
+              b.clipRect(kTestBounds, DlCanvas::ClipOp::kIntersect, false);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipRect(kTestBounds, SkClipOp::kDifference, true);
+              b.clipRect(kTestBounds, DlCanvas::ClipOp::kDifference, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipRect(kTestBounds, SkClipOp::kDifference, false);
+              b.clipRect(kTestBounds, DlCanvas::ClipOp::kDifference, false);
             }},
        }},
       {"ClipRRect",
        {
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipRRect(kTestRRect, SkClipOp::kIntersect, true);
+              b.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipRRect(kTestRRect.makeOffset(1, 1), SkClipOp::kIntersect,
-                          true);
+              b.clipRRect(kTestRRect.makeOffset(1, 1),
+                          DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipRRect(kTestRRect, SkClipOp::kIntersect, false);
+              b.clipRRect(kTestRRect, DlCanvas::ClipOp::kIntersect, false);
             }},
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipRRect(kTestRRect, SkClipOp::kDifference, true);
+              b.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, true);
             }},
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipRRect(kTestRRect, SkClipOp::kDifference, false);
+              b.clipRRect(kTestRRect, DlCanvas::ClipOp::kDifference, false);
             }},
        }},
       {"ClipPath",
        {
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath1, SkClipOp::kIntersect, true);
+              b.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath2, SkClipOp::kIntersect, true);
+              b.clipPath(kTestPath2, DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath3, SkClipOp::kIntersect, true);
+              b.clipPath(kTestPath3, DlCanvas::ClipOp::kIntersect, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath1, SkClipOp::kIntersect, false);
+              b.clipPath(kTestPath1, DlCanvas::ClipOp::kIntersect, false);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath1, SkClipOp::kDifference, true);
+              b.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, true);
             }},
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPath1, SkClipOp::kDifference, false);
+              b.clipPath(kTestPath1, DlCanvas::ClipOp::kDifference, false);
             }},
            // clipPath(rect) becomes clipRect
            {1, 24, 1, 24,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPathRect, SkClipOp::kIntersect, true);
+              b.clipPath(kTestPathRect, DlCanvas::ClipOp::kIntersect, true);
             }},
            // clipPath(oval) becomes clipRRect
            {1, 64, 1, 64,
             [](DisplayListBuilder& b) {
-              b.clipPath(kTestPathOval, SkClipOp::kIntersect, true);
+              b.clipPath(kTestPathOval, DlCanvas::ClipOp::kIntersect, true);
             }},
        }},
   };
@@ -716,22 +716,22 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
        {
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DisplayListBuilder& b) {
-              b.drawPoints(SkCanvas::kPoints_PointMode, TestPointCount,
+              b.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount,
                            TestPoints);
             }},
            {1, 8 + (TestPointCount - 1) * 8, 1, 8 + (TestPointCount - 1) * 8,
             [](DisplayListBuilder& b) {
-              b.drawPoints(SkCanvas::kPoints_PointMode, TestPointCount - 1,
+              b.drawPoints(DlCanvas::PointMode::kPoints, TestPointCount - 1,
                            TestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DisplayListBuilder& b) {
-              b.drawPoints(SkCanvas::kLines_PointMode, TestPointCount,
+              b.drawPoints(DlCanvas::PointMode::kLines, TestPointCount,
                            TestPoints);
             }},
            {1, 8 + TestPointCount * 8, 1, 8 + TestPointCount * 8,
             [](DisplayListBuilder& b) {
-              b.drawPoints(SkCanvas::kPolygon_PointMode, TestPointCount,
+              b.drawPoints(DlCanvas::PointMode::kPolygon, TestPointCount,
                            TestPoints);
             }},
        }},
@@ -776,6 +776,11 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DisplayListBuilder& b) {
               b.drawImage(TestImage2, {10, 10}, kNearestSampling, false);
             }},
+           {1, 24, -1, 48,
+            [](DisplayListBuilder& b) {
+              auto dl_image = DlImage::Make(TestSkImage);
+              b.drawImage(dl_image, {10, 10}, kNearestSampling, false);
+            }},
        }},
       {"DrawImageRect",
        {
@@ -816,10 +821,16 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               b.drawImageRect(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
                               kNearestSampling, false);
             }},
+           {1, 56, -1, 80,
+            [](DisplayListBuilder& b) {
+              auto dl_image = DlImage::Make(TestSkImage);
+              b.drawImageRect(dl_image, {10, 10, 15, 15}, {10, 10, 80, 80},
+                              kNearestSampling, false);
+            }},
        }},
       {"DrawImageNine",
        {
-           // SkVanvas::drawImageNine is immediately converted to
+           // SkCanvas::drawImageNine is immediately converted to
            // drawImageLattice
            {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
@@ -851,89 +862,11 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
               b.drawImageNine(TestImage2, {10, 10, 15, 15}, {10, 10, 80, 80},
                               DlFilterMode::kNearest, false);
             }},
-       }},
-      {"DrawImageLattice",
-       {
-           // Lattice:
-           // const int*      fXDivs;     //!< x-axis values dividing bitmap
-           // const int*      fYDivs;     //!< y-axis values dividing bitmap
-           // const RectType* fRectTypes; //!< array of fill types
-           // int             fXCount;    //!< number of x-coordinates
-           // int             fYCount;    //!< number of y-coordinates
-           // const SkIRect*  fBounds;    //!< source bounds to draw from
-           // const SkColor*  fColors;    //!< array of colors
-           // size = 64 + fXCount * 4 + fYCount * 4
-           // if fColors and fRectTypes are not null, add (fXCount + 1) *
-           // (fYCount + 1) * 5
-           {1, 88, -1, 88,
+           {1, 48, -1, 80,
             [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
-            }},
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 45}, DlFilterMode::kNearest, false);
-            }},
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs2, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
-            }},
-           // One less yDiv does not change the allocation due to 8-byte
-           // alignment
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 2, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
-            }},
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kLinear, false);
-            }},
-           {1, 96, -1, 96,
-            [](DisplayListBuilder& b) {
-              b.setColor(SK_ColorMAGENTA);
-              b.drawImageLattice(
-                  TestImage1,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, true);
-            }},
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(
-                  TestImage2,
-                  {kTestDivs1, kTestDivs1, nullptr, 3, 3, nullptr, nullptr},
-                  {10, 10, 40, 40}, DlFilterMode::kNearest, false);
-            }},
-           // Supplying fBounds does not change size because the Op record
-           // always includes it
-           {1, 88, -1, 88,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(TestImage1,
-                                 {kTestDivs1, kTestDivs1, nullptr, 3, 3,
-                                  &kTestLatticeSrcRect, nullptr},
-                                 {10, 10, 40, 40}, DlFilterMode::kNearest,
-                                 false);
-            }},
-           {1, 128, -1, 128,
-            [](DisplayListBuilder& b) {
-              b.drawImageLattice(TestImage1,
-                                 {kTestDivs3, kTestDivs3, kTestRTypes, 2, 2,
-                                  nullptr, kTestLatticeColors},
-                                 {10, 10, 40, 40}, DlFilterMode::kNearest,
-                                 false);
+              auto dl_image = DlImage::Make(TestSkImage);
+              b.drawImageNine(dl_image, {10, 10, 15, 15}, {10, 10, 80, 80},
+                              DlFilterMode::kNearest, false);
             }},
        }},
       {"DrawAtlas",
@@ -1012,33 +945,14 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
                           DlBlendMode::kSrcIn, kNearestSampling, &cull_rect,
                           false);
             }},
-       }},
-      {"DrawPicture",
-       {
-           // cv.drawPicture cannot be compared as SkCanvas may inline it
-           {1, 16, -1, 16,
+           {1, 48 + 32 + 8, -1, 48 + 32 + 32,
             [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, nullptr, false);
-            }},
-           {1, 16, -1, 16,
-            [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture2, nullptr, false);
-            }},
-           {1, 16, -1, 16,
-            [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, nullptr, true);
-            }},
-           {1, 56, -1, 56,
-            [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix1, false);
-            }},
-           {1, 56, -1, 56,
-            [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix2, false);
-            }},
-           {1, 56, -1, 56,
-            [](DisplayListBuilder& b) {
-              b.drawPicture(TestPicture1, &kTestMatrix1, true);
+              auto dl_image = DlImage::Make(TestSkImage);
+              static SkRSXform xforms[] = {{1, 0, 0, 0}, {0, 1, 0, 0}};
+              static SkRect texs[] = {{10, 10, 20, 20}, {20, 20, 30, 30}};
+              b.drawAtlas(dl_image, xforms, texs, nullptr, 2,
+                          DlBlendMode::kSrcIn, kNearestSampling, nullptr,
+                          false);
             }},
        }},
       {"DrawDisplayList",
@@ -1048,6 +962,10 @@ std::vector<DisplayListInvocationGroup> CreateAllRenderingOps() {
             [](DisplayListBuilder& b) { b.drawDisplayList(TestDisplayList1); }},
            {1, 16, -1, 16,
             [](DisplayListBuilder& b) { b.drawDisplayList(TestDisplayList2); }},
+           {1, 16, -1, 16,
+            [](DisplayListBuilder& b) {
+              b.drawDisplayList(MakeTestDisplayList(10, 10, SK_ColorRED));
+            }},
        }},
       {"DrawTextBlob",
        {

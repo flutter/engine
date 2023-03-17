@@ -26,6 +26,7 @@
 #include "impeller/entity/contents/solid_color_contents.h"
 #include "impeller/entity/contents/text_contents.h"
 #include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/entity/contents/vertices_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass.h"
@@ -61,8 +62,8 @@ TEST_P(EntityTest, CanCreateEntity) {
 
 class TestPassDelegate final : public EntityPassDelegate {
  public:
-  explicit TestPassDelegate(std::optional<Rect> coverage)
-      : coverage_(coverage) {}
+  explicit TestPassDelegate(std::optional<Rect> coverage, bool collapse = false)
+      : coverage_(coverage), collapse_(collapse) {}
 
   // |EntityPassDelegate|
   ~TestPassDelegate() override = default;
@@ -74,7 +75,9 @@ class TestPassDelegate final : public EntityPassDelegate {
   bool CanElide() override { return false; }
 
   // |EntityPassDelgate|
-  bool CanCollapseIntoParentPass() override { return false; }
+  bool CanCollapseIntoParentPass(EntityPass* entity_pass) override {
+    return collapse_;
+  }
 
   // |EntityPassDelgate|
   std::shared_ptr<Contents> CreateContentsForSubpassTarget(
@@ -85,15 +88,19 @@ class TestPassDelegate final : public EntityPassDelegate {
 
  private:
   const std::optional<Rect> coverage_;
+  const bool collapse_;
 };
 
-auto CreatePassWithRectPath(Rect rect, std::optional<Rect> bounds_hint) {
+auto CreatePassWithRectPath(Rect rect,
+                            std::optional<Rect> bounds_hint,
+                            bool collapse = false) {
   auto subpass = std::make_unique<EntityPass>();
   Entity entity;
   entity.SetContents(SolidColorContents::Make(
       PathBuilder{}.AddRect(rect).TakePath(), Color::Red()));
   subpass->AddEntity(entity);
-  subpass->SetDelegate(std::make_unique<TestPassDelegate>(bounds_hint));
+  subpass->SetDelegate(
+      std::make_unique<TestPassDelegate>(bounds_hint, collapse));
   return subpass;
 }
 
@@ -122,6 +129,27 @@ TEST_P(EntityTest, EntityPassCoverageRespectsDelegateBoundsHint) {
   auto coverage = pass.GetElementsCoverage(std::nullopt);
   ASSERT_TRUE(coverage.has_value());
   ASSERT_RECT_NEAR(coverage.value(), Rect::MakeLTRB(50, 50, 900, 900));
+}
+
+TEST_P(EntityTest, EntityPassCanMergeSubpassIntoParent) {
+  // Both a red and a blue box should appear if the pass merging has worked
+  // correctly.
+
+  EntityPass pass;
+  auto subpass = CreatePassWithRectPath(Rect::MakeLTRB(0, 0, 100, 100),
+                                        Rect::MakeLTRB(50, 50, 150, 150), true);
+  pass.AddSubpass(std::move(subpass));
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto contents = std::make_unique<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  contents->SetColor(Color::Blue());
+  entity.SetContents(std::move(contents));
+
+  pass.AddEntity(entity);
+
+  ASSERT_TRUE(OpenPlaygroundHere(pass));
 }
 
 TEST_P(EntityTest, EntityPassCoverageRespectsCoverageLimit) {
@@ -191,6 +219,18 @@ TEST_P(EntityTest, CanDrawRect) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
+TEST_P(EntityTest, CanDrawRRect) {
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
   auto geometry = Geometry::MakeRect({100, 100, 100, 100});
   auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
@@ -214,6 +254,27 @@ TEST_P(EntityTest, ThreeStrokesInOnePath) {
   auto contents = std::make_unique<SolidColorContents>();
   contents->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
   contents->SetColor(Color::Red());
+  entity.SetContents(std::move(contents));
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
+TEST_P(EntityTest, StrokeWithTextureContents) {
+  auto bridge = CreateTextureForFixture("bay_bridge.jpg");
+  Path path = PathBuilder{}
+                  .MoveTo({100, 100})
+                  .LineTo({100, 200})
+                  .MoveTo({100, 300})
+                  .LineTo({100, 400})
+                  .MoveTo({100, 500})
+                  .LineTo({100, 600})
+                  .TakePath();
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  auto contents = std::make_unique<TiledTextureContents>();
+  contents->SetGeometry(Geometry::MakeStrokePath(path, 100.0));
+  contents->SetTexture(bridge);
+  contents->SetTileModes(Entity::TileMode::kClamp, Entity::TileMode::kClamp);
   entity.SetContents(std::move(contents));
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
@@ -808,11 +869,11 @@ TEST_P(EntityTest, BlendingModeOptions) {
       cmd.BindVertices(
           vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-      VS::VertInfo frame_info;
+      VS::FrameInfo frame_info;
       frame_info.mvp =
           Matrix::MakeOrthographic(pass.GetRenderTargetSize()) * world_matrix;
-      VS::BindVertInfo(cmd,
-                       pass.GetTransientsBuffer().EmplaceUniform(frame_info));
+      VS::BindFrameInfo(cmd,
+                        pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
       FS::FragInfo frag_info;
       frag_info.color = color.Premultiply();
@@ -2115,6 +2176,69 @@ TEST_P(EntityTest, SdfText) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
+TEST_P(EntityTest, AtlasContentsSubAtlas) {
+  auto boston = CreateTextureForFixture("boston.jpg");
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Red(),
+        Color::Red(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors and sample rects are the same, there should
+    // only be a single entry in the sub atlas.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 1u);
+  }
+
+  {
+    auto contents = std::make_shared<AtlasContents>();
+    contents->SetBlendMode(BlendMode::kSourceOver);
+    contents->SetTexture(boston);
+    contents->SetColors({
+        Color::Red(),
+        Color::Green(),
+        Color::Blue(),
+    });
+    contents->SetTextureCoordinates({
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+        Rect::MakeLTRB(0, 0, 10, 10),
+    });
+    contents->SetTransforms({
+        Matrix::MakeTranslation(Vector2(0, 0)),
+        Matrix::MakeTranslation(Vector2(100, 100)),
+        Matrix::MakeTranslation(Vector2(200, 200)),
+    });
+
+    // Since all colors are different, there are three entires.
+    auto subatlas = contents->GenerateSubAtlas();
+    ASSERT_EQ(subatlas->sub_texture_coords.size(), 3u);
+
+    // The translations are kept but the sample rects point into
+    // different parts of the sub atlas.
+    ASSERT_EQ(subatlas->result_texture_coords[0], Rect::MakeXYWH(0, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[1],
+              Rect::MakeXYWH(11, 0, 10, 10));
+    ASSERT_EQ(subatlas->result_texture_coords[2],
+              Rect::MakeXYWH(22, 0, 10, 10));
+  }
+}
+
 static Vector3 RGBToYUV(Vector3 rgb, YUVColorSpace yuv_color_space) {
   Vector3 yuv;
   switch (yuv_color_space) {
@@ -2255,6 +2379,64 @@ TEST_P(EntityTest, RuntimeEffect) {
     return contents->Render(context, entity, pass);
   };
   ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(EntityTest, InheritOpacityTest) {
+  Entity entity;
+
+  // Texture contents can always accept opacity.
+  auto texture_contents = std::make_shared<TextureContents>();
+  texture_contents->SetOpacity(0.5);
+  ASSERT_TRUE(texture_contents->CanAcceptOpacity(entity));
+
+  texture_contents->InheritOpacity(0.5);
+  ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
+
+  // Solid color contents can accept opacity if their geometry
+  // doesn't overlap.
+  auto solid_color = std::make_shared<SolidColorContents>();
+  solid_color->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  solid_color->SetColor(Color::Blue().WithAlpha(0.5));
+
+  ASSERT_TRUE(solid_color->CanAcceptOpacity(entity));
+
+  solid_color->InheritOpacity(0.5);
+  ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
+
+  // Color source contents can accept opacity if their geometry
+  // doesn't overlap.
+  auto tiled_texture = std::make_shared<TiledTextureContents>();
+  tiled_texture->SetGeometry(
+      Geometry::MakeRect(Rect::MakeLTRB(100, 100, 200, 200)));
+  tiled_texture->SetAlpha(0.5);
+
+  ASSERT_TRUE(tiled_texture->CanAcceptOpacity(entity));
+
+  tiled_texture->InheritOpacity(0.5);
+  ASSERT_EQ(tiled_texture->GetAlpha(), 0.25);
+
+  // Text contents can accept opacity if the text frames do not
+  // overlap
+  SkFont font;
+  font.setSize(30);
+  auto blob = SkTextBlob::MakeFromString("A", font);
+  auto frame = TextFrameFromTextBlob(blob);
+  auto lazy_glyph_atlas = std::make_shared<LazyGlyphAtlas>();
+  lazy_glyph_atlas->AddTextFrame(frame);
+
+  auto text_contents = std::make_shared<TextContents>();
+  text_contents->SetTextFrame(frame);
+  text_contents->SetColor(Color::Blue().WithAlpha(0.5));
+
+  ASSERT_TRUE(text_contents->CanAcceptOpacity(entity));
+
+  text_contents->InheritOpacity(0.5);
+  ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
+
+  // Clips and restores trivially accept opacity.
+  ASSERT_TRUE(ClipContents().CanAcceptOpacity(entity));
+  ASSERT_TRUE(ClipRestoreContents().CanAcceptOpacity(entity));
 }
 
 }  // namespace testing

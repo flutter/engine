@@ -75,9 +75,32 @@ class Contents {
   virtual bool ShouldRender(const Entity& entity,
                             const std::optional<Rect>& stencil_coverage) const;
 
+  /// @brief  Return the color source's intrinsic size, if available.
+  ///
+  /// For example, a gradient has a size based on its end and beginning points,
+  /// ignoring any tiling. Solid colors and runtime effects have no size.
+  std::optional<Size> ColorSourceSize() const { return color_source_size_; }
+
+  void SetColorSourceSize(Size size) { color_source_size_ = size; }
+
+  /// @brief Whether or not this contents can accept the opacity peephole
+  ///        optimization.
+  ///
+  ///        By default all contents return false. Contents are responsible
+  ///        for determining whether or not their own geometries intersect in
+  ///        a way that makes accepting opacity impossible. It is always safe
+  ///        to return false, especially if computing overlap would be
+  ///        computationally expensive.
+  virtual bool CanAcceptOpacity(const Entity& entity) const;
+
+  /// @brief Inherit the provided opacity.
+  virtual void InheritOpacity(Scalar opacity);
+
  protected:
 
  private:
+  std::optional<Size> color_source_size_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(Contents);
 };
 

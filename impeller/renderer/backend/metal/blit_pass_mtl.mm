@@ -80,7 +80,7 @@ bool BlitPassMTL::EncodeCommands(id<MTLBlitCommandEncoder> encoder) const {
       auto_pop_debug_marker.Release();
     }
 
-    if (command->Encode(encoder)) {
+    if (!command->Encode(encoder)) {
       return false;
     }
   }
@@ -127,6 +127,17 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
 bool BlitPassMTL::OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                           std::string label) {
   auto command = std::make_unique<BlitGenerateMipmapCommandMTL>();
+  command->label = label;
+  command->texture = std::move(texture);
+
+  commands_.emplace_back(std::move(command));
+  return true;
+}
+
+// |BlitPass|
+bool BlitPassMTL::OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
+                                         std::string label) {
+  auto command = std::make_unique<BlitOptimizeGPUAccessCommandMTL>();
   command->label = label;
   command->texture = std::move(texture);
 

@@ -10,6 +10,8 @@
 #include "impeller/fixtures/sample.comp.h"
 #include "impeller/fixtures/stage1.comp.h"
 #include "impeller/fixtures/stage2.comp.h"
+#include "impeller/geometry/path.h"
+#include "impeller/geometry/path_component.h"
 #include "impeller/playground/compute_playground_test.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
@@ -19,7 +21,6 @@
 
 namespace impeller {
 namespace testing {
-
 using ComputeTest = ComputePlaygroundTest;
 INSTANTIATE_COMPUTE_SUITE(ComputeTest);
 
@@ -27,6 +28,8 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+
   using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
   auto pipeline_desc =
       SamplePipelineBuilder::MakeDefaultPipelineDescriptor(*context);
@@ -51,7 +54,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   CS::Info info{.count = kCount};
   CS::Input0<kCount> input_0;
   CS::Input1<kCount> input_1;
-  for (uint i = 0; i < kCount; i++) {
+  for (size_t i = 0; i < kCount; i++) {
     input_0.elements[i] = Vector4(2.0 + i, 3.0 + i, 4.0 + i, 5.0 * i);
     input_1.elements[i] = Vector4(6.0, 7.0, 8.0, 9.0);
   }
@@ -61,13 +64,8 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   input_0.some_int = 5;
   input_1.some_struct = CS::SomeStruct{.vf = Point(3, 4), .i = 42};
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
-  buffer_desc.size = sizeof(CS::Output<kCount>);
-
-  auto output_buffer =
-      context->GetResourceAllocator()->CreateBuffer(buffer_desc);
-  output_buffer->SetLabel("Output Buffer");
+  auto output_buffer = CreateHostVisibleDeviceBuffer<CS::Output<kCount>>(
+      context, "Output Buffer");
 
   CS::BindInfo(cmd, pass->GetTransientsBuffer().EmplaceUniform(info));
   CS::BindInput0(cmd,
@@ -113,6 +111,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   auto context = GetContext();
   ASSERT_TRUE(context);
+  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
 
   auto pipeline_desc_1 =
       Stage1PipelineBuilder::MakeDefaultPipelineDescriptor(*context);
@@ -140,31 +139,20 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   CS1::Input<kCount1> input_1;
   input_1.count = kCount1;
-  for (uint i = 0; i < kCount1; i++) {
+  for (size_t i = 0; i < kCount1; i++) {
     input_1.elements[i] = i;
   }
 
   CS2::Input<kCount2> input_2;
   input_2.count = kCount2;
-  for (uint i = 0; i < kCount2; i++) {
+  for (size_t i = 0; i < kCount2; i++) {
     input_2.elements[i] = i;
   }
 
-  DeviceBufferDescriptor output_desc_1;
-  output_desc_1.storage_mode = StorageMode::kHostVisible;
-  output_desc_1.size = sizeof(CS1::Output<kCount2>);
-
-  auto output_buffer_1 =
-      context->GetResourceAllocator()->CreateBuffer(output_desc_1);
-  output_buffer_1->SetLabel("Output Buffer Stage 1");
-
-  DeviceBufferDescriptor output_desc_2;
-  output_desc_2.storage_mode = StorageMode::kHostVisible;
-  output_desc_2.size = sizeof(CS2::Output<kCount2>);
-
-  auto output_buffer_2 =
-      context->GetResourceAllocator()->CreateBuffer(output_desc_2);
-  output_buffer_2->SetLabel("Output Buffer Stage 2");
+  auto output_buffer_1 = CreateHostVisibleDeviceBuffer<CS1::Output<kCount2>>(
+      context, "Output Buffer Stage 1");
+  auto output_buffer_2 = CreateHostVisibleDeviceBuffer<CS2::Output<kCount2>>(
+      context, "Output Buffer Stage 2");
 
   {
     ComputeCommand cmd;

@@ -214,8 +214,7 @@ bool Playground::OpenPlaygroundHere(
         if (!playground) {
           return;
         }
-        playground->SetWindowSize(
-            ISize{std::max(width, 0), std::max(height, 0)});
+        playground->SetWindowSize(ISize{width, height}.Max({}));
       });
   ::glfwSetKeyCallback(window, &PlaygroundKeyCallback);
   ::glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x,
@@ -397,13 +396,14 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   if (!image.has_value()) {
     return nullptr;
   }
-  return CreateTextureForFixture(image.value());
+  return CreateTextureForFixture(image.value(), enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name));
+  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name),
+                                 enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(

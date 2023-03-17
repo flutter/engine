@@ -38,6 +38,7 @@ enum ImageByteFormat {
   kRawRGBA,
   kRawStraightRGBA,
   kRawUnmodified,
+  kRawExtendedRgba128,
   kPNG,
 };
 
@@ -123,19 +124,21 @@ sk_sp<SkData> EncodeImage(const sk_sp<SkImage>& raster_image,
         return nullptr;
       };
       return png_image;
-    } break;
-    case kRawRGBA: {
+    }
+    case kRawRGBA:
       return CopyImageByteData(raster_image, kRGBA_8888_SkColorType,
                                kPremul_SkAlphaType);
-    } break;
-    case kRawStraightRGBA: {
+
+    case kRawStraightRGBA:
       return CopyImageByteData(raster_image, kRGBA_8888_SkColorType,
                                kUnpremul_SkAlphaType);
-    } break;
-    case kRawUnmodified: {
+
+    case kRawUnmodified:
       return CopyImageByteData(raster_image, raster_image->colorType(),
                                raster_image->alphaType());
-    } break;
+    case kRawExtendedRgba128:
+      return CopyImageByteData(raster_image, kRGBA_F32_SkColorType,
+                               kUnpremul_SkAlphaType);
   }
 
   FML_LOG(ERROR) << "Unknown error encoding image.";
@@ -173,9 +176,9 @@ void EncodeImageAndInvokeDataCallback(
   FML_DCHECK(image);
 #if IMPELLER_SUPPORTS_RENDERING
   if (is_impeller_enabled) {
-    ConvertImageToRasterImpeller(image, encode_task, raster_task_runner,
-                                 io_task_runner, is_gpu_disabled_sync_switch,
-                                 impeller_context);
+    ImageEncodingImpeller::ConvertImageToRaster(
+        image, encode_task, raster_task_runner, io_task_runner,
+        is_gpu_disabled_sync_switch, impeller_context);
     return;
   }
 #endif  // IMPELLER_SUPPORTS_RENDERING

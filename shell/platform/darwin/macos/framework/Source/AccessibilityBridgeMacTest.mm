@@ -71,7 +71,7 @@ TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfF
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+  auto bridge = std::static_pointer_cast<AccessibilityBridgeMacSpy>(
       viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
@@ -87,7 +87,7 @@ TEST(AccessibilityBridgeMacTest, sendsAccessibilityCreateNotificationToWindowOfF
   root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -119,7 +119,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenH
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+  auto bridge = std::static_pointer_cast<AccessibilityBridgeMacSpy>(
       viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
@@ -135,7 +135,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenH
   root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
@@ -166,7 +166,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenN
   // Setting up bridge so that the AccessibilityBridgeMacDelegateSpy
   // can query semantics information from.
   engine.semanticsEnabled = YES;
-  auto bridge = std::reinterpret_pointer_cast<AccessibilityBridgeMacSpy>(
+  auto bridge = std::static_pointer_cast<AccessibilityBridgeMacSpy>(
       viewController.accessibilityBridge.lock());
   FlutterSemanticsNode root;
   root.id = 0;
@@ -182,7 +182,7 @@ TEST(AccessibilityBridgeMacTest, doesNotSendAccessibilityCreateNotificationWhenN
   root.tooltip = "";
   root.child_count = 0;
   root.custom_accessibility_actions_count = 0;
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto platform_node_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();

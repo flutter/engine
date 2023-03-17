@@ -45,7 +45,6 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
   void setStrokeMiter(float limit) override {}
   void setColor(DlColor color) override {}
   void setBlendMode(DlBlendMode mode) override {}
-  void setBlender(sk_sp<SkBlender> blender) override {}
   void setColorSource(const DlColorSource* source) override {}
   void setImageFilter(const DlImageFilter* filter) override {}
   void setColorFilter(const DlColorFilter* filter) override {}
@@ -56,9 +55,15 @@ class IgnoreAttributeDispatchHelper : public virtual Dispatcher {
 // A utility class that will ignore all Dispatcher methods relating
 // to setting a clip.
 class IgnoreClipDispatchHelper : public virtual Dispatcher {
-  void clipRect(const SkRect& rect, SkClipOp clip_op, bool is_aa) override {}
-  void clipRRect(const SkRRect& rrect, SkClipOp clip_op, bool is_aa) override {}
-  void clipPath(const SkPath& path, SkClipOp clip_op, bool is_aa) override {}
+  void clipRect(const SkRect& rect,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {}
+  void clipRRect(const SkRRect& rrect,
+                 DlCanvas::ClipOp clip_op,
+                 bool is_aa) override {}
+  void clipPath(const SkPath& path,
+                DlCanvas::ClipOp clip_op,
+                bool is_aa) override {}
 };
 
 // A utility class that will ignore all Dispatcher methods relating
@@ -103,11 +108,9 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                SkScalar start_degrees,
                SkScalar sweep_degrees,
                bool use_center) override {}
-  void drawPoints(SkCanvas::PointMode mode,
+  void drawPoints(DlCanvas::PointMode mode,
                   uint32_t count,
                   const SkPoint points[]) override {}
-  void drawSkVertices(const sk_sp<SkVertices> vertices,
-                      SkBlendMode mode) override {}
   void drawVertices(const DlVertices* vertices, DlBlendMode mode) override {}
   void drawImage(const sk_sp<DlImage> image,
                  const SkPoint point,
@@ -124,11 +127,6 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                      const SkRect& dst,
                      DlFilterMode filter,
                      bool render_with_attributes) override {}
-  void drawImageLattice(const sk_sp<DlImage> image,
-                        const SkCanvas::Lattice& lattice,
-                        const SkRect& dst,
-                        DlFilterMode filter,
-                        bool render_with_attributes) override {}
   void drawAtlas(const sk_sp<DlImage> atlas,
                  const SkRSXform xform[],
                  const SkRect tex[],
@@ -138,9 +136,6 @@ class IgnoreDrawDispatchHelper : public virtual Dispatcher {
                  DlImageSampling sampling,
                  const SkRect* cull_rect,
                  bool render_with_attributes) override {}
-  void drawPicture(const sk_sp<SkPicture> picture,
-                   const SkMatrix* matrix,
-                   bool render_with_attributes) override {}
   void drawDisplayList(const sk_sp<DisplayList> display_list) override {}
   void drawTextBlob(const sk_sp<SkTextBlob> blob,
                     SkScalar x,
@@ -176,7 +171,6 @@ class SkPaintDispatchHelper : public virtual Dispatcher {
   void setColorFilter(const DlColorFilter* filter) override;
   void setInvertColors(bool invert) override;
   void setBlendMode(DlBlendMode mode) override;
-  void setBlender(sk_sp<SkBlender> blender) override;
   void setPathEffect(const DlPathEffect* effect) override;
   void setMaskFilter(const DlMaskFilter* filter) override;
   void setImageFilter(const DlImageFilter* filter) override;

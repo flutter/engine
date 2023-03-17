@@ -1568,6 +1568,31 @@ class Paint {
   }
 }
 
+/// The color space describes the colors that are available to an [Image].
+///
+/// This value can help decide which [ImageByteFormat] to use with
+/// [Image.toByteData]. Images that are in the [extendedSRGB] color space
+/// should use something like [ImageByteFormat.rawExtendedRgba128] so that
+/// colors outside of the sRGB gamut aren't lost.
+///
+/// This is also the result of [Image.colorSpace].
+///
+/// See also: https://en.wikipedia.org/wiki/Color_space
+enum ColorSpace {
+  /// The sRGB color space.
+  ///
+  /// You may know this as the standard color space for the web or the color
+  /// space of non-wide-gamut Flutter apps.
+  ///
+  /// See also: https://en.wikipedia.org/wiki/SRGB
+  sRGB,
+  /// A color space that is backwards compatible with sRGB but can represent
+  /// colors outside of that gamut with values outside of [0..1]. In order to
+  /// see the extended values an [ImageByteFormat] like
+  /// [ImageByteFormat.rawExtendedRgba128] must be used.
+  extendedSRGB,
+}
+
 /// The format in which image bytes should be returned when using
 /// [Image.toByteData].
 // We do not expect to add more encoding formats to the ImageByteFormat enum,
@@ -1591,6 +1616,31 @@ enum ImageByteFormat {
   /// image may use a single 8-bit channel for each pixel.
   rawUnmodified,
 
+  /// Raw extended range RGBA format.
+  ///
+  /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit
+  /// float (IEEE 754 binary32) per channel.
+  ///
+  /// Example usage:
+  ///
+  /// ```dart
+  /// import 'dart:ui' as ui;
+  /// import 'dart:typed_data';
+  ///
+  /// Future<Map<String, double>> getFirstPixel(ui.Image image) async {
+  ///   final ByteData data =
+  ///       (await image.toByteData(format: ui.ImageByteFormat.rawExtendedRgba128))!;
+  ///   final Float32List floats = Float32List.view(data.buffer);
+  ///   return <String, double>{
+  ///     'r': floats[0],
+  ///     'g': floats[1],
+  ///     'b': floats[2],
+  ///     'a': floats[3],
+  ///   };
+  /// }
+  /// ```
+  rawExtendedRgba128,
+
   /// PNG format.
   ///
   /// A loss-less compression format for images. This format is well suited for
@@ -1613,13 +1663,19 @@ enum ImageByteFormat {
 enum PixelFormat {
   /// Each pixel is 32 bits, with the highest 8 bits encoding red, the next 8
   /// bits encoding green, the next 8 bits encoding blue, and the lowest 8 bits
-  /// encoding alpha.
+  /// encoding alpha. Premultiplied alpha is used.
   rgba8888,
 
   /// Each pixel is 32 bits, with the highest 8 bits encoding blue, the next 8
   /// bits encoding green, the next 8 bits encoding red, and the lowest 8 bits
-  /// encoding alpha.
+  /// encoding alpha. Premultiplied alpha is used.
   bgra8888,
+
+  /// Each pixel is 128 bits, where each color component is a 32 bit float that
+  /// is normalized across the sRGB gamut.  The first float is the red
+  /// component, followed by: green, blue and alpha. Premultiplied alpha isn't
+  /// used, matching [ImageByteFormat.rawExtendedRgba128].
+  rgbaFloat32,
 }
 
 /// Signature for [Image] lifecycle events.
@@ -1726,6 +1782,10 @@ class Image {
   /// The [format] argument specifies the format in which the bytes will be
   /// returned.
   ///
+  /// Using [ImageByteFormat.rawRgba] on an image in the color space
+  /// [ColorSpace.extendedSRGB] will result in the gamut being squished to fit
+  /// into the sRGB gamut, resulting in the loss of wide-gamut colors.
+  ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
   // We do not expect to add more encoding formats to the ImageByteFormat enum,
@@ -1735,6 +1795,29 @@ class Image {
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     assert(!_disposed && !_image._disposed);
     return _image.toByteData(format: format);
+  }
+
+  /// The color space that is used by the [Image]'s colors.
+  ///
+  /// This value is a consequence of how the [Image] has been created.  For
+  /// example, loading a PNG that is in the Display P3 color space will result
+  /// in a [ColorSpace.extendedSRGB] image.
+  ///
+  /// On rendering backends that don't support wide gamut colors (anything but
+  /// iOS impeller), wide gamut images will still report [ColorSpace.sRGB] if
+  /// rendering wide gamut colors isn't supported.
+  // Note: The docstring will become outdated as new platforms support wide
+  // gamut color, please keep it up to date.
+  ColorSpace get colorSpace {
+    final int colorSpaceValue = _image.colorSpace;
+    switch (colorSpaceValue) {
+      case 0:
+        return ColorSpace.sRGB;
+      case 1:
+        return ColorSpace.extendedSRGB;
+      default:
+        throw UnsupportedError('Unrecognized color space: $colorSpaceValue');
+    }
   }
 
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
@@ -1902,6 +1985,9 @@ class _Image extends NativeFieldWrapperClass1 {
   external void _dispose();
 
   final Set<Image> _handles = <Image>{};
+
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::colorSpace')
+  external int get colorSpace;
 
   @override
   String toString() => '[$width\u00D7$height]';
@@ -3278,13 +3364,13 @@ class ColorFilter implements ImageFilter {
   /// Construct a color filter that transforms a color by a 5x5 matrix, where
   /// the fifth row is implicitly added in an identity configuration.
   ///
-  /// Every pixel's color value, repsented as an `[R, G, B, A]`, is matrix
+  /// Every pixel's color value, represented as an `[R, G, B, A]`, is matrix
   /// multiplied to create a new color:
   ///
   ///     | R' |   | a00 a01 a02 a03 a04 |   | R |
-  ///     | G' |   | a10 a11 a22 a33 a44 |   | G |
-  ///     | B' | = | a20 a21 a22 a33 a44 | * | B |
-  ///     | A' |   | a30 a31 a22 a33 a44 |   | A |
+  ///     | G' |   | a10 a11 a12 a13 a14 |   | G |
+  ///     | B' | = | a20 a21 a22 a23 a24 | * | B |
+  ///     | A' |   | a30 a31 a32 a33 a34 |   | A |
   ///     | 1  |   |  0   0   0   0   1  |   | 1 |
   ///
   /// The matrix is in row-major order and the translation column is specified
@@ -4252,8 +4338,9 @@ class FragmentProgram extends NativeFieldWrapperClass1 {
   /// Creates a fragment program from the asset with key [assetKey].
   ///
   /// The asset must be a file produced as the output of the `impellerc`
-  /// compiler. The constructed object should then be reused via the [shader]
-  /// method to create [Shader] objects that can be used by [Shader.paint].
+  /// compiler. The constructed object should then be reused via the
+  /// [fragmentShader] method to create [Shader] objects that can be used by
+  /// [Paint.shader].
   static Future<FragmentProgram> fromAsset(String assetKey) {
     // The flutter tool converts all asset keys with spaces into URI
     // encoded paths (replacing ' ' with '%20', for example). We perform
@@ -4684,7 +4771,7 @@ class Vertices extends NativeFieldWrapperClass1 {
 /// Defines how a list of points is interpreted when drawing a set of points.
 ///
 /// Used by [Canvas.drawPoints] and [Canvas.drawRawPoints].
-// These enum values must be kept in sync with SkCanvas::PointMode.
+// These enum values must be kept in sync with DlCanvas::PointMode.
 enum PointMode {
   /// Draw each point separately.
   ///
@@ -5090,7 +5177,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   ///
   /// After executing both of those calls there is no area left in which to draw
   /// because the two paths have no overlapping regions. But, in this case,
-  /// [getClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
+  /// [getLocalClipBounds] would return a rectangle from `10, 10` to `100, 100` because it
   /// only intersects the bounds of the two path objects to obtain its conservative
   /// estimate.
   ///
@@ -6293,7 +6380,12 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
       return instance._initFromAsset(encodedKey, callback);
-    }).then((int length) => instance.._length = length);
+    }).then((int length) {
+      if (length == -1) {
+        throw Exception('Asset not found');
+      }
+      return instance.._length = length;
+    });
   }
 
   /// Create a buffer from the file with [path].
