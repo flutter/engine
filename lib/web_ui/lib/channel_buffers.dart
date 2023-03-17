@@ -16,29 +16,36 @@ typedef DrainChannelCallback = Future<void> Function(ByteData? data, PlatformMes
 
 typedef ChannelCallback = void Function(ByteData? data, PlatformMessageResponseCallback callback);
 
-class _ChannelCallbackRecord {
-  _ChannelCallbackRecord(this._callback) : _zone = Zone.current;
-  final ChannelCallback _callback;
-  final Zone _zone;
+typedef ZonedCallback<T extends Function> = ({Zone zone, T fn});
+ZonedCallback<T>? createZonedCallback<T extends Function>(T? callback) {
+  return callback == null ? null : (zone: Zone.current, fn: callback);
+}
 
+typedef _ChannelCallbackRecord = ZonedCallback<ChannelCallback>;
+extension on _ChannelCallbackRecord {
   void invoke(ByteData? dataArg, PlatformMessageResponseCallback callbackArg) {
-    engine.invoke2<ByteData?, PlatformMessageResponseCallback>(_callback, _zone, dataArg, callbackArg);
+    engine.invoke2<ByteData?, PlatformMessageResponseCallback>(this, dataArg, callbackArg);
   }
 }
 
-class _StoredMessage {
-  _StoredMessage(this.data, this._callback) : _zone = Zone.current;
-
-  final ByteData? data;
-
-  final PlatformMessageResponseCallback _callback;
-
-  final Zone _zone;
-
+typedef _StoredMessage = ({
+  ByteData? data,
+  ZonedCallback<PlatformMessageResponseCallback> callback,
+});
+extension _StoredMessageExtension on _StoredMessage {
   void invoke(ByteData? dataArg) {
-    engine.invoke1(_callback, _zone, dataArg);
+    engine.invoke1(callback, dataArg);
   }
 }
+_StoredMessage _createStoredMessage(
+  ByteData? data,
+  PlatformMessageResponseCallback callback,
+) {
+    return (
+      data: data,
+      callback: createZonedCallback(callback)!,
+    );
+  }
 
 class _Channel {
   _Channel([ this._capacity = ChannelBuffers.kDefaultBufferSize ])
@@ -89,7 +96,7 @@ class _Channel {
 
   void setListener(ChannelCallback callback) {
     final bool needDrain = _channelCallbackRecord == null;
-    _channelCallbackRecord = _ChannelCallbackRecord(callback);
+    _channelCallbackRecord = createZonedCallback(callback);
     if (needDrain && !_draining) {
       _drain();
     }
@@ -128,7 +135,7 @@ class ChannelBuffers {
 
   void push(String name, ByteData? data, PlatformMessageResponseCallback callback) {
     final _Channel channel = _channels.putIfAbsent(name, () => _Channel());
-    if (channel.push(_StoredMessage(data, callback))) {
+    if (channel.push(_createStoredMessage(data, callback))) {
       assert(() {
         print(
           'A message on the $name channel was discarded before it could be handled.\n'
