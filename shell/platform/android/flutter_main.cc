@@ -87,7 +87,7 @@ void ConfigureShorebird(std::string android_cache_path,
                        fml::FilePermission::kReadWrite);
 
   AppParameters app_parameters;
-  app_parameters.base_version = version.c_str();
+  app_parameters.release_version = version.c_str();
   app_parameters.cache_dir = cache_dir.c_str();
 
   // The intent is that the rust side could hash or otherwise check that the
