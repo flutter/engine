@@ -88,7 +88,6 @@ NS_INLINE NSBundle* FLTFrameworkBundle() {
                                     .URLByDeletingLastPathComponent];
     bundle = FLTFrameworkBundleInternal([FlutterDartProject defaultBundleIdentifier],
                                         appBundle.privateFrameworksURL);
-    [bundle load];
   }
 
   if (bundle == nil) {
