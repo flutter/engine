@@ -288,7 +288,7 @@ public class InputConnectionAdaptor extends BaseInputConnection
   @Override
   public boolean sendKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN
-        && (event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) == true) {
+        && event.getKeyCode() == KeyEvent.KEYCODE_DPAD_LEFT) {
       return handleKeyEvent(event);
     }
     return keyboardDelegate.handleEvent(event);
