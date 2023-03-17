@@ -302,32 +302,25 @@ class ParagraphSpan {
   final int end;
 }
 
-class PlaceholderSpan extends ParagraphPlaceholder implements ParagraphSpan {
-  PlaceholderSpan(
-    this.style,
-    this.start,
-    this.end,
-    double width,
-    double height,
-    ui.PlaceholderAlignment alignment, {
+class PlaceholderSpan extends ParagraphSpan {
+  PlaceholderSpan({
+    required super.style,
+    required super.start,
+    required super.end,
+    required double width,
+    required double height,
+    required ui.PlaceholderAlignment alignment,
     required double baselineOffset,
     required ui.TextBaseline baseline,
-  }) : super(
-          width,
-          height,
-          alignment,
+  }) : placeholder = (
+          width: width,
+          height: height,
+          alignment: alignment,
           baselineOffset: baselineOffset,
           baseline: baseline,
         );
 
-  @override
-  final EngineTextStyle style;
-
-  @override
-  final int start;
-
-  @override
-  final int end;
+  final ParagraphPlaceholder placeholder;
 }
 
 /// Represents a node in the tree of text styles pushed to [ui.ParagraphBuilder].
@@ -604,12 +597,12 @@ class CanvasParagraphBuilder implements ui.ParagraphBuilder {
     _placeholderCount++;
     _placeholderScales.add(scale);
     _spans.add(PlaceholderSpan(
-      style,
-      start,
-      end,
-      width * scale,
-      height * scale,
-      alignment,
+      style: style,
+      start: start,
+      end: end,
+      width: width * scale,
+      height: height * scale,
+      alignment: alignment,
       baselineOffset: (baselineOffset ?? height) * scale,
       baseline: baseline ?? ui.TextBaseline.alphabetic,
     ));

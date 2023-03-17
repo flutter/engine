@@ -701,33 +701,25 @@ class EngineStrutStyle implements ui.StrutStyle {
 /// Holds information for a placeholder in a paragraph.
 ///
 /// [width], [height] and [baselineOffset] are expected to be already scaled.
-class ParagraphPlaceholder {
-  ParagraphPlaceholder(
-    this.width,
-    this.height,
-    this.alignment, {
-    required this.baselineOffset,
-    required this.baseline,
-  });
-
+typedef ParagraphPlaceholder = ({
   /// The scaled width of the placeholder.
-  final double width;
+  double width,
 
   /// The scaled height of the placeholder.
-  final double height;
+  double height,
 
   /// Specifies how the placeholder rectangle will be vertically aligned with
   /// the surrounding text.
-  final ui.PlaceholderAlignment alignment;
+  ui.PlaceholderAlignment alignment,
 
   /// When the [alignment] value is [ui.PlaceholderAlignment.baseline], the
   /// [baselineOffset] indicates the distance from the baseline to the top of
   /// the placeholder rectangle.
-  final double baselineOffset;
+  double baselineOffset,
 
   /// Dictates whether to use alphabetic or ideographic baseline.
-  final ui.TextBaseline baseline;
-}
+  ui.TextBaseline baseline,
+});
 
 /// Converts [fontWeight] to its CSS equivalent value.
 String? fontWeightToCss(ui.FontWeight? fontWeight) {

@@ -940,7 +940,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
       placeholderStyle.height,
       placeholderStyle.alignment,
       placeholderStyle.baseline,
-      placeholderStyle.offset,
+      placeholderStyle.baselineOffset,
     );
   }
 
@@ -951,11 +951,11 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
     double baselineOffset,
     ui.TextBaseline baseline,
   ) {
-    final _CkParagraphPlaceholder properties = _CkParagraphPlaceholder(
+    final _CkParagraphPlaceholder properties = (
       width: width,
       height: height,
       alignment: toSkPlaceholderAlignment(alignment),
-      offset: baselineOffset,
+      baselineOffset: baselineOffset,
       baseline: toSkTextBaseline(baseline),
     );
     return properties;
@@ -1057,21 +1057,13 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
   }
 }
 
-class _CkParagraphPlaceholder {
-  _CkParagraphPlaceholder({
-    required this.width,
-    required this.height,
-    required this.alignment,
-    required this.baseline,
-    required this.offset,
-  });
-
-  final double width;
-  final double height;
-  final SkPlaceholderAlignment alignment;
-  final SkTextBaseline baseline;
-  final double offset;
-}
+typedef _CkParagraphPlaceholder = ({
+  double width,
+  double height,
+  SkPlaceholderAlignment alignment,
+  SkTextBaseline baseline,
+  double baselineOffset,
+});
 
 class _ParagraphCommand {
   const _ParagraphCommand._(

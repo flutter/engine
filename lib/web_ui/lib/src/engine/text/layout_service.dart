@@ -630,7 +630,7 @@ class LineBuilder {
   }
 
   void _adjustPlaceholderAscentDescent(LayoutFragment fragment) {
-    final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
+    final ParagraphPlaceholder placeholder = (fragment.span as PlaceholderSpan).placeholder;
 
     final double ascent, descent;
     switch (placeholder.alignment) {
@@ -979,7 +979,7 @@ class Spanometer {
 
   void measureFragment(LayoutFragment fragment) {
     if (fragment.isPlaceholder) {
-      final PlaceholderSpan placeholder = fragment.span as PlaceholderSpan;
+      final ParagraphPlaceholder placeholder = (fragment.span as PlaceholderSpan).placeholder;
       // The ascent/descent values of the placeholder fragment will be finalized
       // later when the line is built.
       fragment.setMetrics(this,
