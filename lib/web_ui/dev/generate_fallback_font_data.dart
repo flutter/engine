@@ -82,6 +82,9 @@ class GenerateFallbackFontDataCommand extends Command<bool>
     }
     for (final String family in fallbackFonts) {
       print('Downloading $family...');
+      if (urlForFamily[family] == null) {
+        throw ToolExit('No URL found for "$family"');
+      }
       final Uri uri = urlForFamily[family]!;
       final http.Response fontResponse = await client.get(uri);
       if (fontResponse.statusCode != 200) {
@@ -242,7 +245,7 @@ const List<String> fallbackFonts = <String>[
   'Noto Sans Mro',
   'Noto Sans Multani',
   'Noto Sans Myanmar',
-  'Noto Sans N Ko',
+  'Noto Sans NKo',
   'Noto Sans Nabataean',
   'Noto Sans New Tai Lue',
   'Noto Sans Newa',
