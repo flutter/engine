@@ -217,17 +217,17 @@ const bool _browserImageDecodingEnabled = bool.fromEnvironment(
 );
 
 /// Whether the current browser supports `ImageDecoder`.
-bool browserSupportsImageDecoder = _kDefaultBrowserSupportsImageDecoder;
+bool browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 
 /// Sets the value of [browserSupportsImageDecoder] to its default value.
 void debugResetBrowserSupportsImageDecoder() {
-  browserSupportsImageDecoder = _kDefaultBrowserSupportsImageDecoder;
+  browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 }
 
-bool get _kDefaultBrowserSupportsImageDecoder =>
+bool get _defaultBrowserSupportsImageDecoder =>
     _browserImageDecodingEnabled &&
     _imageDecoderConstructor != null &&
-    _kProtectFromImageDecoderIncompatibilities;
+    _isBrowserImageDecoderStable;
 
 // TODO(yjbanov): https://github.com/flutter/flutter/issues/122761
 // Frequently, when a browser launches an API that other browsers already
@@ -236,7 +236,7 @@ bool get _kDefaultBrowserSupportsImageDecoder =>
 // picking up potentially incompatible implementations of ImagdeDecoder API.
 // Instead, when a new browser engine launches the API, we'll evaluate it and
 // enable it explicitly.
-bool get _kProtectFromImageDecoderIncompatibilities => browserEngine == BrowserEngine.blink;
+bool get _isBrowserImageDecoderStable => browserEngine == BrowserEngine.blink;
 
 /// The signature of the function passed to the constructor of JavaScript `Promise`.
 typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
