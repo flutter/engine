@@ -55,15 +55,21 @@ class PlatformHandler {
       const std::string& sound_type,
       std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
+  // Handle a request from the framework to exit the application.
   virtual void SystemExitApplication(
     const std::string& exit_type,
     int64_t exit_code,
     std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
+  // Actually quit the application with the provided exit code.
   virtual void QuitApplication(int64_t exit_code);
 
+  // Send a request to the framework to test if a cancelable exit request
+  // should be canceled or honored.
   virtual void RequestAppExit(const std::string& exit_type);
 
+  // Callback from when the cancelable exit request response request is
+  // answered by the framework.
   virtual void RequestAppExitSuccess(const rapidjson::Document* result);
 
   
@@ -91,6 +97,9 @@ class PlatformHandler {
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
 
+  // Store the exit code of the currently executing exit request, if a request
+  // must also be sent back to the framework. Cleared to nullopt when the
+  // request completes.
   std::optional<int64_t> exit_code_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandler);
