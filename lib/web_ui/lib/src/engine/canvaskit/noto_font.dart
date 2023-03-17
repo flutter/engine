@@ -23,12 +23,13 @@ class NotoFont {
     int max = _ranges.length - 1;
     while (min <= max) {
       final int mid = (min + max) ~/ 2;
-      final CodeunitRange range = _ranges[mid];
-      if (range.start > codeUnit) {
+      final (int rangeStart, int rangeEnd) = _ranges[mid];
+
+      if (rangeStart > codeUnit) {
         max = mid - 1;
       } else {
         // range.start <= codeUnit
-        if (range.end >= codeUnit) {
+        if (rangeEnd >= codeUnit) {
           return true;
         }
         min = mid + 1;
@@ -38,30 +39,13 @@ class NotoFont {
   }
 }
 
-class CodeunitRange {
-  const CodeunitRange(this.start, this.end);
+typedef CodeunitRange = (int start, int end);
 
-  final int start;
-  final int end;
-
+extension CodeunitRangeExtension on CodeunitRange {
   bool contains(int codeUnit) {
+    final (start, end) = this;
     return start <= codeUnit && codeUnit <= end;
   }
-
-  @override
-  bool operator ==(Object other) {
-    if (other is! CodeunitRange) {
-      return false;
-    }
-    final CodeunitRange range = other;
-    return range.start == start && range.end == end;
-  }
-
-  @override
-  int get hashCode => Object.hash(start, end);
-
-  @override
-  String toString() => '[$start, $end]';
 }
 
 final int _kCharPipe = '|'.codeUnitAt(0);
@@ -81,7 +65,7 @@ List<CodeunitRange> _unpackFontRange(String packedRange) {
       final int rangeStart = _consumeInt36(packedRange, i, until: _kCharPipe);
       final int rangeLength = _consumeInt36(packedRange, i, until: _kCharSemicolon);
       final int rangeEnd = rangeStart + rangeLength;
-      ranges.add(CodeunitRange(rangeStart, rangeEnd));
+      ranges.add((rangeStart, rangeEnd));
     }
     return ranges;
 }

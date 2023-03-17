@@ -14,6 +14,8 @@ import 'line_breaker.dart';
 import 'paragraph.dart';
 import 'text_direction.dart';
 
+typedef LayoutFragmentPair = (LayoutFragment?, LayoutFragment?);
+
 /// Splits [text] into fragments that are ready to be laid out by
 /// [TextLayoutService].
 ///
@@ -178,18 +180,16 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
 
   /// Splits this fragment into two fragments with the split point being the
   /// given [index].
-  // TODO(mdebbar): If we ever get multiple return values in Dart, we should use it!
-  //                See: https://github.com/dart-lang/language/issues/68
-  List<LayoutFragment?> split(int index) {
+  LayoutFragmentPair split(int index) {
     assert(start <= index);
     assert(index <= end);
 
     if (start == index) {
-      return <LayoutFragment?>[null, this];
+      return (null, this);
     }
 
     if (end == index) {
-      return <LayoutFragment?>[this, null];
+      return (this, null);
     }
 
     // The length of the second fragment after the split.
@@ -200,7 +200,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
     final int secondTrailingNewlines = math.min(trailingNewlines, secondLength);
     final int secondTrailingSpaces = math.min(trailingSpaces, secondLength);
 
-    return <LayoutFragment>[
+    return (
       LayoutFragment(
         start,
         index,
@@ -221,7 +221,7 @@ class LayoutFragment extends _CombinedFragment with _FragmentMetrics, _FragmentP
         trailingNewlines: secondTrailingNewlines,
         trailingSpaces: secondTrailingSpaces,
       ),
-    ];
+    );
   }
 
   @override
@@ -622,7 +622,7 @@ class EllipsisFragment extends LayoutFragment {
   }
 
   @override
-  List<LayoutFragment> split(int index) {
+  LayoutFragmentPair split(int index) {
     throw Exception('Cannot split an EllipsisFragment');
   }
 }

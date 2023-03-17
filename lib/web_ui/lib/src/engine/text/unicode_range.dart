@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:web_unicode/web_unicode.dart';
+
 const int kChar_0 = 48;
 const int kChar_9 = kChar_0 + 9;
 const int kChar_A = 65;
@@ -18,26 +20,24 @@ enum _ComparisonResult {
   lower,
 }
 
-/// Each instance of [UnicodeRange] represents a range of unicode characters
-/// that are assigned a [CharProperty]. For example, the following snippet:
+/// Each [UnicodeRange] record represents a range of unicode characters
+/// that are assigned a certain property. For example, the following snippet:
 ///
 /// ```dart
-/// UnicodeRange(0x0041, 0x005A, CharProperty.ALetter);
+/// var alphaRange = (0x0041, 0x005A, WordCharProperty.ALetter);
 /// ```
 ///
 /// is saying that all characters between 0x0041 ("A") and 0x005A ("Z") are
-/// assigned the property [CharProperty.ALetter].
+/// assigned the property [WordCharProperty.ALetter].
 ///
 /// Note that the Unicode spec uses inclusive ranges and we are doing the
 /// same here.
-class UnicodeRange<P> {
-  const UnicodeRange(this.start, this.end, this.property);
+typedef UnicodeRange<P> = (int start, int end, P property);
 
-  final int start;
-
-  final int end;
-
-  final P property;
+extension UnicodeRangeExtension<P> on UnicodeRange<P> {
+  int get start => $1;
+  int get end => $2;
+  P get property => $3;
 
   /// Compare a [value] to this range.
   ///
@@ -224,7 +224,7 @@ List<UnicodeRange<P>> _unpackProperties<P>(
         propertyEnumValues[_getEnumIndexFromPackedValue(charCode)];
     i++;
 
-    ranges.add(UnicodeRange<P>(rangeStart, rangeEnd, property));
+    ranges.add((rangeStart, rangeEnd, property));
   }
   return ranges;
 }

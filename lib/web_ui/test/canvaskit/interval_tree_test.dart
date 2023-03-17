@@ -14,8 +14,8 @@ void testMain() {
   group('$IntervalTree', () {
     test('is balanced', () {
       final Map<String, List<CodeunitRange>> ranges = <String, List<CodeunitRange>>{
-        'A': const <CodeunitRange>[CodeunitRange(0, 5), CodeunitRange(6, 10)],
-        'B': const <CodeunitRange>[CodeunitRange(4, 6)],
+        'A': const <CodeunitRange>[(0, 5), (6, 10)],
+        'B': const <CodeunitRange>[(4, 6)],
       };
 
       // Should create a balanced 3-node tree with a root with a left and right
@@ -32,21 +32,21 @@ void testMain() {
       // Should create a balanced 15-node tree (4 layers deep).
       final Map<String, List<CodeunitRange>> ranges2 = <String, List<CodeunitRange>>{
         'A': const <CodeunitRange>[
-          CodeunitRange(1, 1),
-          CodeunitRange(2, 2),
-          CodeunitRange(3, 3),
-          CodeunitRange(4, 4),
-          CodeunitRange(5, 5),
-          CodeunitRange(6, 6),
-          CodeunitRange(7, 7),
-          CodeunitRange(8, 8),
-          CodeunitRange(9, 9),
-          CodeunitRange(10, 10),
-          CodeunitRange(11, 11),
-          CodeunitRange(12, 12),
-          CodeunitRange(13, 13),
-          CodeunitRange(14, 14),
-          CodeunitRange(15, 15),
+          (1, 1),
+          (2, 2),
+          (3, 3),
+          (4, 4),
+          (5, 5),
+          (6, 6),
+          (7, 7),
+          (8, 8),
+          (9, 9),
+          (10, 10),
+          (11, 11),
+          (12, 12),
+          (13, 13),
+          (14, 14),
+          (15, 15),
         ],
       };
 
@@ -67,8 +67,8 @@ void testMain() {
 
     test('finds values whose intervals overlap with a given point', () {
       final Map<String, List<CodeunitRange>> ranges = <String, List<CodeunitRange>>{
-        'A': const <CodeunitRange>[CodeunitRange(0, 5), CodeunitRange(7, 10)],
-        'B': const <CodeunitRange>[CodeunitRange(4, 6)],
+        'A': const <CodeunitRange>[(0, 5), (7, 10)],
+        'B': const <CodeunitRange>[(4, 6)],
       };
       final IntervalTree<String> tree = IntervalTree<String>.createFromRanges(ranges);
 

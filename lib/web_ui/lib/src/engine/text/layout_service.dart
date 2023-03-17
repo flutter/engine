@@ -746,15 +746,13 @@ class LineBuilder {
     _fragments.removeLast();
     _recalculateMetrics();
 
-    final List<LayoutFragment?> split = lastFragment.split(breakingPoint);
+    final (LayoutFragment? first, LayoutFragment? second) = lastFragment.split(breakingPoint);
 
-    final LayoutFragment? first = split.first;
     if (first != null) {
       spanometer.measureFragment(first);
       addFragment(first);
     }
 
-    final LayoutFragment? second = split.last;
     if (second != null) {
       spanometer.measureFragment(second);
       _fragmentsForNextLine!.insert(0, second);

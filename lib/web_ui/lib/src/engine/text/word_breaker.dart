@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import '../util.dart';
+import 'unicode_range.dart';
 import 'word_break_properties.dart';
 
 class _FindBreakDirection {
@@ -51,7 +52,7 @@ abstract final class WordBreaker {
     }
 
     // Do not break inside surrogate pair
-    if (_isUtf16Surrogate(text.codeUnitAt(index - 1))) {
+    if (isUtf16Surrogate(text.codeUnitAt(index - 1))) {
       return false;
     }
 
@@ -292,10 +293,6 @@ abstract final class WordBreaker {
     // Otherwise, break everywhere (including around ideographs).
     // WB999: Any ÷ Any
     return true;
-  }
-
-  static bool _isUtf16Surrogate(int value) {
-    return value & 0xF800 == 0xD800;
   }
 
   static bool _oneOf(
