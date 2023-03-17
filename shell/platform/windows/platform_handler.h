@@ -91,6 +91,8 @@ class PlatformHandler {
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
 
+  std::optional<int64_t> exit_code_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandler);
 };
 

@@ -214,7 +214,8 @@ PlatformHandler::PlatformHandler(
           messenger,
           kChannelName,
           &JsonMethodCodec::GetInstance())),
-      engine_(engine) {
+      engine_(engine),
+      exit_code_(std::nullopt) {
   channel_->SetMethodCallHandler(
       [this](const MethodCall<rapidjson::Document>& call,
              std::unique_ptr<MethodResult<rapidjson::Document>> result) {
@@ -365,6 +366,7 @@ void PlatformHandler::SystemExitApplication(
     result->Success(result_doc);
   }
   else {
+    exit_code_ = exit_code;
     RequestAppExit(exit_type);
     result_doc.GetObjectW().AddMember(kExitResponseKey, kExitResponseCancel, result_doc.GetAllocator());
     result->Success(result_doc);
@@ -382,8 +384,9 @@ void PlatformHandler::RequestAppExit(const std::string& exit_type) {
 void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result) {
   const std::string& exit_type = result[0][kExitResponseKey].GetString();
   if (exit_type.compare(kExitResponseExit) == 0) {
-    QuitApplication(0);
+    QuitApplication(*exit_code_);
   }
+  exit_code_ = std::nullopt;
 }
 
 void PlatformHandler::QuitApplication(int64_t exit_code) {
