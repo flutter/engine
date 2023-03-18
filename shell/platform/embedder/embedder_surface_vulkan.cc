@@ -21,7 +21,7 @@ EmbedderSurfaceVulkan::EmbedderSurfaceVulkan(
     EmbedderStudioVulkan* studio,
     sk_sp<GrDirectContext> main_context,
     bool render_to_surface)
-    : main_context_(main_context),
+    : main_context_(std::move(main_context)),
       studio_(studio),
       render_to_surface_(render_to_surface) {}
 
