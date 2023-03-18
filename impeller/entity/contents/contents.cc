@@ -46,30 +46,6 @@ std::shared_ptr<Contents> Contents::MakeAnonymous(
                                  std::move(coverage_proc));
 }
 
-std::optional<Entity> Contents::EntityFromSnapshot(
-    const std::optional<Snapshot>& snapshot,
-    BlendMode blend_mode,
-    uint32_t stencil_depth) {
-  if (!snapshot.has_value()) {
-    return std::nullopt;
-  }
-
-  auto texture_rect = Rect::MakeSize(snapshot->texture->GetSize());
-
-  auto contents = TextureContents::MakeRect(texture_rect);
-  contents->SetTexture(snapshot->texture);
-  contents->SetSamplerDescriptor(snapshot->sampler_descriptor);
-  contents->SetSourceRect(texture_rect);
-  contents->SetOpacity(snapshot->opacity);
-
-  Entity entity;
-  entity.SetBlendMode(blend_mode);
-  entity.SetStencilDepth(stencil_depth);
-  entity.SetTransformation(snapshot->transform);
-  entity.SetContents(contents);
-  return entity;
-}
-
 Contents::Contents() = default;
 
 Contents::~Contents() = default;

@@ -45,12 +45,6 @@ class Contents {
   static std::shared_ptr<Contents> MakeAnonymous(RenderProc render_proc,
                                                  CoverageProc coverage_proc);
 
-  /// @brief  Create an entity that renders a given snapshot.
-  static std::optional<Entity> EntityFromSnapshot(
-      const std::optional<Snapshot>& snapshot,
-      BlendMode blend_mode = BlendMode::kSourceOver,
-      uint32_t stencil_depth = 0);
-
   Contents();
 
   virtual ~Contents();
