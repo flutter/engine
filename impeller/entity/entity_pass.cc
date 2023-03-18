@@ -414,7 +414,7 @@ struct StencilLayer {
 
 bool EntityPass::OnRender(ContentContext& renderer,
                           ISize root_pass_size,
-                          EntityPassTarget& render_target,
+                          EntityPassTarget& pass_target,
                           Point position,
                           Point parent_position,
                           uint32_t pass_depth,
@@ -425,7 +425,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, render_target,
+  InlinePassContext pass_context(context, pass_target,
                                  GetTotalPassReads(renderer),
                                  std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
@@ -434,7 +434,7 @@ bool EntityPass::OnRender(ContentContext& renderer,
 
   std::vector<StencilLayer> stencil_stack = {StencilLayer{
       .coverage =
-          Rect::MakeSize(render_target.GetRenderTarget().GetRenderTargetSize()),
+          Rect::MakeSize(pass_target.GetRenderTarget().GetRenderTargetSize()),
       .stencil_depth = stencil_depth_floor}};
 
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
@@ -448,6 +448,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
     // If the pass context returns a texture, we need to draw it to the current
     // pass. We do this because it's faster and takes significantly less memory
     // than storing/loading large MSAA textures.
+    // Also, it's not possible to blit the non-MSAA resolve texture of the
+    // previous pass to MSAA textures (let alone a transient one).
     if (result.backdrop_texture) {
       auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
       auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);

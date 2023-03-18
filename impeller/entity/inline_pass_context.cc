@@ -148,9 +148,16 @@ InlinePassContext::RenderPassResult InlinePassContext::GetRenderPass(
       "EntityPass Render Pass: Depth=" + std::to_string(pass_depth) +
       " Count=" + std::to_string(pass_count_));
 
-  ++pass_count_;
-
   result.pass = pass_;
+
+  if (!context_->GetDeviceCapabilities().SupportsReadFromResolve() &&
+      result.backdrop_texture ==
+          result.pass->GetRenderTarget().GetRenderTargetTexture()) {
+    VALIDATION_LOG << "EntityPass backdrop restore configuration is not valid "
+                      "for the current graphics backend.";
+  }
+
+  ++pass_count_;
   return result;
 }
 
