@@ -80,7 +80,7 @@ class Entity {
 
   bool Render(const ContentContext& renderer, RenderPass& parent_pass) const;
 
-  static bool BlendModeShouldCoverWholeScreen(BlendMode blend_mode);
+  static bool IsBlendModeDestructive(BlendMode blend_mode);
 
  private:
   Matrix transformation_;

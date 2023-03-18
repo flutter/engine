@@ -76,7 +76,14 @@ BlendMode Entity::GetBlendMode() const {
   return blend_mode_;
 }
 
-bool Entity::BlendModeShouldCoverWholeScreen(BlendMode blend_mode) {
+/// @brief  Returns true if the blend mode is "destrictive", meaning that even
+///         fully transparent source colors would result in the destination
+///         getting changed.
+///
+///         This is useful for determining if EntityPass textures can be
+///         shrinkwrapped to their Entities' coverage; they can be shrinkwrapped
+///         if all of the contained Entities have non-destructive blends.
+bool Entity::IsBlendModeDestructive(BlendMode blend_mode) {
   switch (blend_mode) {
     case BlendMode::kClear:
     case BlendMode::kSource:
