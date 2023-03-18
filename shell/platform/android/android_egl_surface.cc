@@ -72,9 +72,10 @@ static bool HasExtension(const char* extensions, const char* name) {
 class AndroidEGLSurfaceDamage {
  public:
   void init(EGLDisplay display, EGLContext context) {
-    if (GetAPILevel() < 29) {
-      // Disable partial repaint for devices older than Android 10. There
-      // are old devices that have extensions below available but the
+    if (GetAPILevel() < 29 || DisablePartialRedraw()) {
+      // Disable partial repaint for devices older than Android 10 and for
+      // users that explicitely opt-out through a system property. There are
+      // old devices that have extensions below available but the
       // implementation causes glitches (i.e. Xperia Z3 with Android 6).
       partial_redraw_supported_ = false;
       return;
@@ -108,6 +109,15 @@ class AndroidEGLSurfaceDamage {
     } else {
       return -1;
     }
+  }
+
+  static bool DisablePartialRedraw() {
+    char disable_partial_redraw[PROP_VALUE_MAX];
+    if (__system_property_get("persist.debug.flutter.disable_partial_redraw",
+                              disable_partial_redraw)) {
+      return strcmp(disable_partial_redraw, "0") != 0;
+    }
+    return false;
   }
 
   void SetDamageRegion(EGLDisplay display,
