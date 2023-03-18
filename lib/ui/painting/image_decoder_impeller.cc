@@ -117,7 +117,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     SkISize target_size,
     impeller::ISize max_texture_size,
     bool supports_wide_gamut,
-    const std::shared_ptr<impeller::Context>& context) {
+    const std::shared_ptr<impeller::Allocator>& allocator) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!descriptor) {
     FML_DLOG(ERROR) << "Invalid descriptor.";
@@ -172,11 +172,10 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
 
   auto bitmap = std::make_shared<SkBitmap>();
   bitmap->setInfo(image_info);
-  auto allocator =
-      std::make_shared<ImpellerAllocator>(context->GetResourceAllocator());
+  auto bitmap_allocator = std::make_shared<ImpellerAllocator>(allocator);
 
   if (descriptor->is_compressed()) {
-    if (!bitmap->tryAllocPixels(allocator.get())) {
+    if (!bitmap->tryAllocPixels(bitmap_allocator.get())) {
       FML_DLOG(ERROR)
           << "Could not allocate intermediate for image decompression.";
       return std::nullopt;
@@ -198,7 +197,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
         base_image_info, descriptor->row_bytes(), descriptor->data());
     temp_bitmap->setPixelRef(pixel_ref, 0, 0);
 
-    if (!bitmap->tryAllocPixels(allocator.get())) {
+    if (!bitmap->tryAllocPixels(bitmap_allocator.get())) {
       FML_DLOG(ERROR)
           << "Could not allocate intermediate for pixel conversion.";
       return std::nullopt;
@@ -208,7 +207,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   }
 
   if (bitmap->dimensions() == target_size) {
-    auto buffer = allocator->GetDeviceBuffer();
+    auto buffer = bitmap_allocator->GetDeviceBuffer();
     if (!buffer.has_value()) {
       return std::nullopt;
     }
@@ -224,8 +223,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
   const auto scaled_image_info = image_info.makeDimensions(target_size);
 
   auto scaled_bitmap = std::make_shared<SkBitmap>();
-  auto scaled_allocator =
-      std::make_shared<ImpellerAllocator>(context->GetResourceAllocator());
+  auto scaled_allocator = std::make_shared<ImpellerAllocator>(allocator);
   scaled_bitmap->setInfo(scaled_image_info);
   if (!scaled_bitmap->tryAllocPixels(scaled_allocator.get())) {
     FML_LOG(ERROR)
@@ -244,7 +242,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     return std::nullopt;
   }
   return DecompressResult{.device_buffer = buffer.value(),
-                          .image_info = bitmap->info()};
+                          .image_info = scaled_bitmap->info()};
 }
 
 sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
@@ -361,9 +359,9 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
             context->GetResourceAllocator()->GetMaxTextureSizeSupported();
 
         // Always decompress on the concurrent runner.
-        auto bitmap_result =
-            DecompressTexture(raw_descriptor, target_size, max_size_supported,
-                              supports_wide_gamut, context);
+        auto bitmap_result = DecompressTexture(
+            raw_descriptor, target_size, max_size_supported,
+            supports_wide_gamut, context->GetResourceAllocator());
         if (!bitmap_result.has_value()) {
           result(nullptr);
           return;

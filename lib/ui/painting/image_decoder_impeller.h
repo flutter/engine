@@ -63,7 +63,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
       SkISize target_size,
       impeller::ISize max_texture_size,
       bool supports_wide_gamut,
-      const std::shared_ptr<impeller::Context>& context);
+      const std::shared_ptr<impeller::Allocator>& allocator);
 
   static sk_sp<DlImage> UploadTexture(
       const std::shared_ptr<impeller::Context>& context,

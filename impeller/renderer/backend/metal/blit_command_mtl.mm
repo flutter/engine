@@ -116,21 +116,20 @@ bool BlitCopyBufferToTextureCommandMTL::Encode(
   auto destination_origin_mtl =
       MTLOriginMake(destination_origin.x, destination_origin.y, 0);
 
+  auto image_size = destination->GetTextureDescriptor().size;
+  auto source_size_mtl = MTLSizeMake(image_size.width, image_size.height, 1);
+
   auto destination_bytes_per_pixel =
       BytesPerPixelForPixelFormat(destination->GetTextureDescriptor().format);
   auto destination_bytes_per_row =
-      destination->GetTextureDescriptor().size.width *
-      destination_bytes_per_pixel;
-  auto source_size_mtl =
-      MTLSizeMake(destination->GetTextureDescriptor().size.width,
-                  destination->GetTextureDescriptor().size.height, 1);
-  auto source_bytes_per_image =
+      source_size_mtl.width * destination_bytes_per_pixel;
+  auto destination_bytes_per_image =
       source_size_mtl.height * destination_bytes_per_row;
 
   [encoder copyFromBuffer:source_mtl
-             sourceOffset:source_offset
+             sourceOffset:0
         sourceBytesPerRow:destination_bytes_per_row
-      sourceBytesPerImage:source_bytes_per_image
+      sourceBytesPerImage:destination_bytes_per_image
                sourceSize:source_size_mtl
                 toTexture:destination_mtl
          destinationSlice:0
