@@ -212,6 +212,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
       return std::nullopt;
     }
     return DecompressResult{.device_buffer = buffer.value(),
+                            .sk_bitmap = bitmap,
                             .image_info = bitmap->info()};
   }
 
@@ -242,6 +243,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     return std::nullopt;
   }
   return DecompressResult{.device_buffer = buffer.value(),
+                          .sk_bitmap = bitmap,
                           .image_info = scaled_bitmap->info()};
 }
 
@@ -287,6 +289,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
   dest_texture_descriptor.format = pixel_format.value();
   dest_texture_descriptor.size = {image_info.width(), image_info.height()};
   dest_texture_descriptor.mip_count = dest_texture_descriptor.size.MipCount();
+  dest_texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(dest_texture_descriptor);
@@ -311,7 +314,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
     return nullptr;
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
-  blit_pass->AddCopy(buffer, dest_texture);
+  blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
   if (dest_texture_descriptor.size.MipCount() > 1) {
     blit_pass->GenerateMipmap(dest_texture);
   }

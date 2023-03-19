@@ -51,9 +51,8 @@ class BlitPassGLES final : public BlitPass {
                                     std::string label) override;
 
   // |BlitPass|
-  bool OnCopyBufferToTextureCommand(std::shared_ptr<DeviceBuffer> source,
+  bool OnCopyBufferToTextureCommand(std::shared_ptr<BufferView> source,
                                     std::shared_ptr<Texture> destination,
-                                    size_t source_offset,
                                     IPoint destination_origin,
                                     std::string label) override {
     return false;

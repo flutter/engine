@@ -103,7 +103,7 @@ std::string BlitCopyBufferToTextureCommandMTL::GetLabel() const {
 
 bool BlitCopyBufferToTextureCommandMTL::Encode(
     id<MTLBlitCommandEncoder> encoder) const {
-  auto source_mtl = DeviceBufferMTL::Cast(*source).GetMTLBuffer();
+  auto source_mtl = DeviceBufferMTL::Cast(*source.buffer).GetMTLBuffer();
   if (!source_mtl) {
     return false;
   }
@@ -127,7 +127,7 @@ bool BlitCopyBufferToTextureCommandMTL::Encode(
       source_size_mtl.height * destination_bytes_per_row;
 
   [encoder copyFromBuffer:source_mtl
-             sourceOffset:0
+             sourceOffset:source.range.offset
         sourceBytesPerRow:destination_bytes_per_row
       sourceBytesPerImage:destination_bytes_per_image
                sourceSize:source_size_mtl

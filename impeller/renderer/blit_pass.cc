@@ -100,7 +100,7 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
   if (destination_offset + bytes_per_image >
       destination->GetDeviceBufferDescriptor().size) {
     VALIDATION_LOG
-        << "Attempted to add a texture blit with out fo bounds access.";
+        << "Attempted to add a texture blit with out of bounds access.";
     return false;
   }
 
@@ -116,23 +116,28 @@ bool BlitPass::AddCopy(std::shared_ptr<Texture> source,
                                       std::move(label));
 }
 
-bool BlitPass::AddCopy(std::shared_ptr<DeviceBuffer> source,
+bool BlitPass::AddCopy(BufferView source,
                        std::shared_ptr<Texture> destination,
-                       size_t source_offset,
                        IPoint destination_origin,
                        std::string label) {
-  if (!source) {
-    VALIDATION_LOG << "Attempted to add a texture blit with no source.";
-    return false;
-  }
   if (!destination) {
     VALIDATION_LOG << "Attempted to add a texture blit with no destination.";
     return false;
   }
 
+  auto bytes_per_pixel =
+      BytesPerPixelForPixelFormat(destination->GetTextureDescriptor().format);
+  auto bytes_per_image =
+      destination->GetTextureDescriptor().size.Area() * bytes_per_pixel;
+
+  if (source.range.length != bytes_per_image) {
+    VALIDATION_LOG
+        << "Attempted to add a texture blit with out of bounds access.";
+    return false;
+  }
+
   return OnCopyBufferToTextureCommand(std::move(source), std::move(destination),
-                                      source_offset, destination_origin,
-                                      std::move(label));
+                                      destination_origin, std::move(label));
 }
 
 bool BlitPass::GenerateMipmap(std::shared_ptr<Texture> texture,

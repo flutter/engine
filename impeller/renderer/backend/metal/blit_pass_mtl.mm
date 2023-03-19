@@ -124,16 +124,14 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
 }
 
 bool BlitPassMTL::OnCopyBufferToTextureCommand(
-    std::shared_ptr<DeviceBuffer> source,
+    BufferView source,
     std::shared_ptr<Texture> destination,
-    size_t source_offset,
     IPoint destination_origin,
     std::string label) {
   auto command = std::make_unique<BlitCopyBufferToTextureCommandMTL>();
   command->label = label;
   command->source = std::move(source);
   command->destination = std::move(destination);
-  command->source_offset = source_offset;
   command->destination_origin = destination_origin;
 
   commands_.emplace_back(std::move(command));

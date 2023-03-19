@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/metal/allocator_mtl.h"
-#include <iostream>
 
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/logging.h"
@@ -77,6 +76,13 @@ static ISize DeviceMaxTextureSizeSupported(id<MTLDevice> device) {
 #endif
     return {8192, 8192};
   }
+}
+
+static bool SupportsLossyTextureCompression(id<MTLDevice> device) {
+  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+    return [device supportsFamily:MTLGPUFamilyApple8];
+  }
+  return false;
 }
 
 AllocatorMTL::AllocatorMTL(id<MTLDevice> device, std::string label)
@@ -195,8 +201,10 @@ std::shared_ptr<Texture> AllocatorMTL::OnCreateTexture(
 
   mtl_texture_desc.storageMode = ToMTLStorageMode(
       desc.storage_mode, supports_memoryless_targets_, supports_uma_);
+
   if (@available(macOS 12.5, ios 15.0, *)) {
-    if (mtl_texture_desc.storageMode == MTLStorageModePrivate) {
+    if (desc.compression_type == CompressionType::kLossy &&
+        SupportsLossyTextureCompression(device_)) {
       mtl_texture_desc.compressionType = MTLTextureCompressionTypeLossy;
     }
   }

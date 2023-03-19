@@ -29,9 +29,8 @@ struct BlitCopyTextureToBufferCommand : public BlitCommand {
 };
 
 struct BlitCopyBufferToTextureCommand : public BlitCommand {
-  std::shared_ptr<DeviceBuffer> source;
+  BufferView source;
   std::shared_ptr<Texture> destination;
-  size_t source_offset;
   IPoint destination_origin;
 };
 
