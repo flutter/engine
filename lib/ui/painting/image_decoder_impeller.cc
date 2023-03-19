@@ -243,7 +243,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
     return std::nullopt;
   }
   return DecompressResult{.device_buffer = buffer.value(),
-                          .sk_bitmap = bitmap,
+                          .sk_bitmap = scaled_bitmap,
                           .image_info = scaled_bitmap->info()};
 }
 
