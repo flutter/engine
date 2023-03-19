@@ -51,11 +51,11 @@ class BlitPassVK final : public BlitPass {
                                     std::string label) override;
 
   // |BlitPass|
-  bool OnCopyBufferToTextureCommand(std::shared_ptr<BufferView> source,
+  bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
                                     IPoint destination_origin,
                                     std::string label) override {
-    return false;
+    IMPELLER_UNIMPLEMENTED;
   }
 
   // |BlitPass|

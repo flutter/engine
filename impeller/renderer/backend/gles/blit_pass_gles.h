@@ -51,13 +51,12 @@ class BlitPassGLES final : public BlitPass {
                                     std::string label) override;
 
   // |BlitPass|
-  bool OnCopyBufferToTextureCommand(std::shared_ptr<BufferView> source,
+  bool OnCopyBufferToTextureCommand(BufferView source,
                                     std::shared_ptr<Texture> destination,
                                     IPoint destination_origin,
                                     std::string label) override {
-    return false;
+    FML_UNIMPLEMENTED;
   }
-
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;

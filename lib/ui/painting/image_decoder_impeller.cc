@@ -270,6 +270,8 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
   return UploadTexture(context, device_buffer, bitmap->info());
 }
 
+#if FML_OS_IOS
+
 sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<impeller::DeviceBuffer> buffer,
@@ -284,15 +286,14 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
     return nullptr;
   }
 
-  impeller::TextureDescriptor dest_texture_descriptor;
-  dest_texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
-  dest_texture_descriptor.format = pixel_format.value();
-  dest_texture_descriptor.size = {image_info.width(), image_info.height()};
-  dest_texture_descriptor.mip_count = dest_texture_descriptor.size.MipCount();
-  dest_texture_descriptor.compression_type = impeller::CompressionType::kLossy;
+  impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kDevicePrivate;
+  texture_descriptor.format = pixel_format.value();
+  texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
 
   auto dest_texture =
-      context->GetResourceAllocator()->CreateTexture(dest_texture_descriptor);
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
   if (!dest_texture) {
     FML_DLOG(ERROR) << "Could not create Impeller texture.";
     return nullptr;
@@ -315,7 +316,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
   }
   blit_pass->SetLabel("Mipmap Blit Pass");
   blit_pass->AddCopy(buffer->AsBufferView(), dest_texture);
-  if (dest_texture_descriptor.size.MipCount() > 1) {
+  if (texture_descriptor.size.MipCount() > 1) {
     blit_pass->GenerateMipmap(dest_texture);
   }
 
@@ -327,6 +328,77 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
 
   return impeller::DlImageImpeller::Make(std::move(dest_texture));
 }
+
+#else
+
+sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
+    const std::shared_ptr<impeller::Context>& context,
+    std::shared_ptr<impeller::DeviceBuffer> buffer,
+    const SkImageInfo& image_info) {
+  TRACE_EVENT0("impeller", __FUNCTION__);
+  if (!context || !buffer) {
+    return nullptr;
+  }
+  const auto pixel_format = ToPixelFormat(image_info.colorType());
+  if (!pixel_format) {
+    FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
+    return nullptr;
+  }
+
+  impeller::TextureDescriptor texture_descriptor;
+  texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+  texture_descriptor.format = pixel_format.value();
+  texture_descriptor.size = {image_info.width(), image_info.height()};
+  texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+
+  auto texture =
+      context->GetResourceAllocator()->CreateTexture(texture_descriptor);
+  if (!texture) {
+    FML_DLOG(ERROR) << "Could not create Impeller texture.";
+    return nullptr;
+  }
+
+  auto mapping = std::make_shared<fml::NonOwnedMapping>(
+      reinterpret_cast<const uint8_t*>(buffer->OnGetContents()),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),             // size
+      [buffer](auto, auto) mutable { buffer.reset(); }            // proc
+  );
+
+  if (!texture->SetContents(mapping)) {
+    FML_DLOG(ERROR) << "Could not copy contents into Impeller texture.";
+    return nullptr;
+  }
+
+  texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
+
+  if (texture_descriptor.mip_count > 1u) {
+    auto command_buffer = context->CreateCommandBuffer();
+    if (!command_buffer) {
+      FML_DLOG(ERROR)
+          << "Could not create command buffer for mipmap generation.";
+      return nullptr;
+    }
+    command_buffer->SetLabel("Mipmap Command Buffer");
+
+    auto blit_pass = command_buffer->CreateBlitPass();
+    if (!blit_pass) {
+      FML_DLOG(ERROR) << "Could not create blit pass for mipmap generation.";
+      return nullptr;
+    }
+    blit_pass->SetLabel("Mipmap Blit Pass");
+    blit_pass->GenerateMipmap(texture);
+
+    blit_pass->EncodeCommands(context->GetResourceAllocator());
+    if (!command_buffer->SubmitCommands()) {
+      FML_DLOG(ERROR) << "Failed to submit blit pass command buffer.";
+      return nullptr;
+    }
+  }
+
+  return impeller::DlImageImpeller::Make(std::move(texture));
+}
+
+#endif  // FML_OS_IOS
 
 // |ImageDecoder|
 void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
