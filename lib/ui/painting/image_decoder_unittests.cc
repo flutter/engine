@@ -784,18 +784,19 @@ TEST(ImageDecoderTest, VerifySimpleDecoding) {
                 ->dimensions(),
             SkISize::Make(6, 2));
 
-  // #if IMPELLER_SUPPORTS_RENDERING
-  //   ASSERT_EQ(ImageDecoderImpeller::DecompressTexture(
-  //                 descriptor.get(), SkISize::Make(6, 2), {100, 100},
-  //                 /*supports_wide_gamut=*/false)
-  //                 ->dimensions(),
-  //             SkISize::Make(6, 2));
-  //   ASSERT_EQ(ImageDecoderImpeller::DecompressTexture(
-  //                 descriptor.get(), SkISize::Make(60, 20), {10, 10},
-  //                 /*supports_wide_gamut=*/false)
-  //                 ->dimensions(),
-  //             SkISize::Make(10, 10));
-  // #endif  // IMPELLER_SUPPORTS_RENDERING
+#if IMPELLER_SUPPORTS_RENDERING
+  std::shared_ptr<impeller::Allocator> allocator =
+      std::make_shared<impeller::TestImpellerAllocator>();
+  auto result_1 = ImageDecoderImpeller::DecompressTexture(
+      descriptor.get(), SkISize::Make(6, 2), {100, 100},
+      /*supports_wide_gamut=*/false, allocator);
+  ASSERT_EQ(result_1->sk_bitmap->dimensions(), SkISize::Make(6, 2));
+
+  auto result_2 = ImageDecoderImpeller::DecompressTexture(
+      descriptor.get(), SkISize::Make(60, 20), {10, 10},
+      /*supports_wide_gamut=*/false, allocator);
+  ASSERT_EQ(result_2->sk_bitmap->dimensions(), SkISize::Make(10, 10));
+#endif  // IMPELLER_SUPPORTS_RENDERING
 }
 
 TEST(ImageDecoderTest, VerifySubpixelDecodingPreservesExifOrientation) {

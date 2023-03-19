@@ -459,7 +459,7 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
 
 ImpellerAllocator::ImpellerAllocator(
     std::shared_ptr<impeller::Allocator> allocator)
-    : allocator_(allocator) {}
+    : allocator_(std::move(allocator)) {}
 
 std::optional<std::shared_ptr<impeller::DeviceBuffer>>
 ImpellerAllocator::GetDeviceBuffer() const {
