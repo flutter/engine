@@ -36,7 +36,7 @@ class TestImpellerDeviceBuffer : public DeviceBuffer {
     bytes_ = static_cast<uint8_t*>(malloc(desc.size));
   }
 
-  ~TestImpellerDeviceBuffer() = default;
+  ~TestImpellerDeviceBuffer() { free(bytes_); }
 
  private:
   std::shared_ptr<Texture> AsTexture(Allocator& allocator,
