@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/impeller/base/config.h"
 #include "flutter/impeller/renderer/backend/gles/reactor_gles.h"
 #include "flutter/impeller/renderer/blit_pass.h"
 #include "impeller/renderer/backend/gles/blit_command_gles.h"
@@ -55,7 +56,8 @@ class BlitPassGLES final : public BlitPass {
                                     std::shared_ptr<Texture> destination,
                                     IPoint destination_origin,
                                     std::string label) override {
-    FML_UNIMPLEMENTED;
+    IMPELLER_UNIMPLEMENTED;
+    return false;
   }
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
