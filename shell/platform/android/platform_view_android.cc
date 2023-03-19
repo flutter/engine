@@ -99,7 +99,8 @@ PlatformViewAndroid::PlatformViewAndroid(
               use_software_rendering,
               task_runners,
               msaa_samples,
-              delegate.OnPlatformViewGetSettings().enable_impeller)) {}
+              delegate.OnPlatformViewGetSettings().enable_impeller,
+              delegate.OnPlatformViewGetSettings().disable_partical_repaint)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
