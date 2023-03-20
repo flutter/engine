@@ -189,7 +189,7 @@ bool AndroidSurfaceGLImpeller::IsValid() const {
 
 // |AndroidSurface|
 std::unique_ptr<Studio> AndroidSurfaceGLImpeller::CreateGPUStudio(
-    GrDirectContext* gr_context) override {
+    GrDirectContext* gr_context) {
   auto studio =
       std::make_unique<GPUStudioGLImpeller>(this,              // delegate
                                             impeller_context_  // context

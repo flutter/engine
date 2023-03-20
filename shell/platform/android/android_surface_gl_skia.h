@@ -31,7 +31,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   bool IsValid() const override;
 
   // |AndroidSurface|
-  std::unique_ptr<Studio> CreateGPUStudio() override;
+  std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context) override;
 
   // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface(
@@ -89,7 +89,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
 
-  static sk_sp<GrDirectContext> UseExistingMainContextOrCreate(
+  GrDirectContext* UseExistingMainContextOrCreate(
       GrDirectContext* gr_context);
 
   //----------------------------------------------------------------------------

@@ -68,7 +68,7 @@ void AndroidSurfaceVulkanImpeller::TeardownOnScreenContext() {
 }
 
 std::unique_ptr<Studio> AndroidSurfaceVulkanImpeller::CreateGPUStudio(
-    GrDirectContext* gr_context) override {
+    GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }

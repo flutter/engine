@@ -50,7 +50,7 @@ bool AndroidSurfaceGLSkia::IsValid() const {
   return offscreen_surface_ && GLContextPtr()->IsValid();
 }
 
-static GrDirectContext* AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
+GrDirectContext* AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
     GrDirectContext* gr_context) {
   if (gr_context) {
     return gr_context;
@@ -67,10 +67,11 @@ static GrDirectContext* AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
 }
 
 std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateGPUStudio(
-    GrDirectContext* gr_context) override {
+    GrDirectContext* gr_context) {
   auto studio = std::make_unique<GPUStudioGLSkia>(
       sk_ref_sp(UseExistingMainContextOrCreate(gr_context)),
-      this) if (!studio->IsValid()) {
+      this);
+   if (!studio->IsValid()) {
     return nullptr;
   }
   return studio;
