@@ -30,7 +30,7 @@ std::unique_ptr<IOSSurface> IOSSurface::Create(std::shared_ptr<IOSContext> conte
               fml::scoped_nsobject<CAMetalLayer>(
                   reinterpret_cast<CAMetalLayer*>([layer.get() retain])),  // Metal layer
               std::move(context),                                          // context
-              disable_partial_repaint);
+              disable_partial_repaint);  // disable partial repaint
           break;
         case IOSRenderingBackend::kImpeller:
           return std::make_unique<IOSSurfaceMetalImpeller>(
