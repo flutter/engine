@@ -14,14 +14,14 @@ impeller_component("impeller_golden_tests") {
   testonly = true
 
   sources = [
+    "golden_digest.cc",
+    "golden_digest.h",
     "golden_tests.cc",
     "main.cc",
     "metal_screenshot.h",
     "metal_screenshot.mm",
     "metal_screenshoter.h",
     "metal_screenshoter.mm",
-    "skia_gold_client.cc",
-    "skia_gold_client.h",
     "working_directory.cc",
     "working_directory.h",
   ]

@@ -9,6 +9,7 @@
 #include "impeller/aiks/canvas.h"
 #include "impeller/entity/contents/conical_gradient_contents.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/golden_tests/golden_digest.h"
 #include "impeller/golden_tests/metal_screenshot.h"
 #include "impeller/golden_tests/metal_screenshoter.h"
 #include "impeller/golden_tests/working_directory.h"
@@ -17,22 +18,30 @@ namespace impeller {
 namespace testing {
 
 namespace {
-std::string GetGoldenFilename() {
+std::string GetTestName() {
   std::string suite_name =
       ::testing::UnitTest::GetInstance()->current_test_suite()->name();
   std::string test_name =
       ::testing::UnitTest::GetInstance()->current_test_info()->name();
   std::stringstream ss;
-  ss << "impeller_" << suite_name << "_" << test_name << ".png";
+  ss << "impeller_" << suite_name << "_" << test_name;
   return ss.str();
+}
+
+std::string GetGoldenFilename() {
+  return GetTestName() + ".png";
 }
 
 bool SaveScreenshot(std::unique_ptr<MetalScreenshot> screenshot) {
   if (!screenshot || !screenshot->GetBytes()) {
     return false;
   }
+  std::string test_name = GetTestName();
+  std::string filename = GetGoldenFilename();
+  GoldenDigest::Instance()->AddImage(
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
   return screenshot->WriteToPNG(
-      WorkingDirectory::Instance()->GetFilenamePath(GetGoldenFilename()));
+      WorkingDirectory::Instance()->GetFilenamePath(filename));
 }
 }  // namespace
 

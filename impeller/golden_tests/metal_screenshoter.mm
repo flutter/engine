@@ -5,6 +5,7 @@
 #include "flutter/impeller/golden_tests/metal_screenshoter.h"
 
 #include <CoreImage/CoreImage.h>
+#include "impeller/renderer/backend/metal/context_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
 #define GLFW_INCLUDE_NONE
 #include "third_party/glfw/include/GLFW/glfw3.h"
@@ -32,14 +33,17 @@ std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
 
   CIImage* ciImage = [[CIImage alloc] initWithMTLTexture:metal_texture
                                                  options:@{}];
-  if (!ciImage) {
-    return {};
-  }
+  FML_CHECK(ciImage);
 
-  CIContext* context = [CIContext contextWithOptions:nil];
+  std::shared_ptr<Context> context = playground_->GetContext();
+  std::shared_ptr<ContextMTL> context_mtl =
+      std::static_pointer_cast<ContextMTL>(context);
+  CIContext* cicontext =
+      [CIContext contextWithMTLDevice:context_mtl->GetMTLDevice()];
+  FML_CHECK(context);
 
-  CGImageRef cgImage = [context createCGImage:ciImage
-                                     fromRect:[ciImage extent]];
+  CGImageRef cgImage = [cicontext createCGImage:ciImage
+                                       fromRect:[ciImage extent]];
 
   return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));
 }

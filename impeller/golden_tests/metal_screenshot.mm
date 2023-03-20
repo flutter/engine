@@ -7,8 +7,6 @@
 namespace impeller {
 namespace testing {
 
-extern char* golden_test_working_directory;
-
 MetalScreenshot::MetalScreenshot(CGImageRef cgImage) : cgImage_(cgImage) {
   CGDataProviderRef data_provider = CGImageGetDataProvider(cgImage);
   pixel_data_ = CGDataProviderCopyData(data_provider);
@@ -16,7 +14,7 @@ MetalScreenshot::MetalScreenshot(CGImageRef cgImage) : cgImage_(cgImage) {
 
 MetalScreenshot::~MetalScreenshot() {
   CFRelease(pixel_data_);
-  CFRelease(cgImage_);
+  CGImageRelease(cgImage_);
 }
 
 const UInt8* MetalScreenshot::GetBytes() const {

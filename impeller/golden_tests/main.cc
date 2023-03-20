@@ -8,6 +8,7 @@
 #include "flutter/fml/build_config.h"
 #include "flutter/fml/command_line.h"
 #include "flutter/fml/logging.h"
+#include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/working_directory.h"
 #include "gtest/gtest.h"
 
@@ -51,5 +52,10 @@ int main(int argc, char** argv) {
             << impeller::testing::WorkingDirectory::Instance()->GetPath()
             << std::endl;
 
-  return RUN_ALL_TESTS();
+  int return_code = RUN_ALL_TESTS();
+  if (0 == return_code) {
+    impeller::testing::GoldenDigest::Instance()->Write(
+        impeller::testing::WorkingDirectory::Instance());
+  }
+  return return_code;
 }
