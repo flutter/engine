@@ -19,13 +19,13 @@ import '../semantics.dart' show EngineSemanticsOwner;
 /// It also takes into account semantics being enabled to fix the case where
 /// offsetX, offsetY == 0 (TalkBack events).
 ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarget) {
-  // On top of a platform view
-  if (event.target != actualTarget) {
-    return _computeOffsetOnPlatformView(event, actualTarget);
-  }
   // On a TalkBack event
   if (EngineSemanticsOwner.instance.semanticsEnabled && event.offsetX == 0 && event.offsetY == 0) {
     return _computeOffsetForTalkbackEvent(event, actualTarget);
+  }
+  // On top of a platform view
+  if (event.target != actualTarget) {
+    return _computeOffsetOnPlatformView(event, actualTarget);
   }
   // Return the offsetX/Y in the normal case.
   // (This works with 3D translations of the parent element.)
