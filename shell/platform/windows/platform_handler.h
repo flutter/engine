@@ -70,7 +70,8 @@ class PlatformHandler {
 
   // Callback from when the cancelable exit request response request is
   // answered by the framework.
-  virtual void RequestAppExitSuccess(const rapidjson::Document* result, int64_t exit_code);
+  virtual void RequestAppExitSuccess(const rapidjson::Document* result,
+                                     int64_t exit_code);
 
   // A error type to use for error responses.
   static constexpr char kClipboardError[] = "Clipboard error";

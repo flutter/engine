@@ -372,7 +372,8 @@ void PlatformHandler::SystemExitApplication(
   }
 }
 
-void PlatformHandler::RequestAppExit(const std::string& exit_type, int64_t exit_code) {
+void PlatformHandler::RequestAppExit(const std::string& exit_type,
+                                     int64_t exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this, exit_code](const rapidjson::Document* response) {
         RequestAppExitSuccess(response, exit_code);
@@ -385,7 +386,8 @@ void PlatformHandler::RequestAppExit(const std::string& exit_type, int64_t exit_
                          std::move(callback));
 }
 
-void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result, int64_t exit_code) {
+void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
+                                            int64_t exit_code) {
   const std::string& exit_type = result[0][kExitResponseKey].GetString();
   if (exit_type.compare(kExitResponseExit) == 0) {
     QuitApplication(exit_code);
