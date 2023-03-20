@@ -2,12 +2,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/impeller/base/work_queue.h"
+#include "flutter/display_list/dl_op_receiver.h"
 
-namespace impeller {
+namespace flutter {
 
-WorkQueue::WorkQueue() = default;
+// Just exists to ensure that the header can be cleanly imported.
 
-WorkQueue::~WorkQueue() = default;
-
-}  // namespace impeller
+}  // namespace flutter

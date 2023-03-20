@@ -9,7 +9,6 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
-#include "impeller/base/platform/darwin/work_queue_darwin.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/device_capabilities.h"
 #include "impeller/renderer/sampler_descriptor.h"
@@ -74,15 +73,6 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
-  // Setup the work queue.
-  {
-    work_queue_ = WorkQueueDarwin::Create();
-    if (!work_queue_) {
-      VALIDATION_LOG << "Could not setup the work queue.";
-      return;
-    }
-  }
-
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
     (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
   // Setup the gpu tracer.
@@ -108,6 +98,7 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
             .SetSupportsCompute(true, supports_subgroups)
+            .SetSupportsReadFromResolve(true)
             .Build();
   }
 
@@ -254,11 +245,6 @@ std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
 // |Context|
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
-}
-
-// |Context|
-std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
-  return work_queue_;
 }
 
 std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {
