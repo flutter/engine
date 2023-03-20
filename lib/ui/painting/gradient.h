@@ -55,7 +55,8 @@ class CanvasGradient : public Shader {
                            const tonic::Float64List& matrix4);
 
   std::shared_ptr<DlColorSource> shader(DlImageSampling sampling) override {
-    return dl_shader_->with_sampling(sampling);
+    // Gradient color sources do not have image sampling variants...
+    return dl_shader_;
   }
 
  private:

@@ -111,11 +111,6 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
 
   virtual bool is_opaque() const = 0;
 
-  virtual std::shared_ptr<DlColorSource> with_sampling(
-      DlImageSampling options) const {
-    return shared();
-  }
-
   // Return a DlColorColorSource pointer to this object iff it is an Color
   // type of ColorSource, otherwise return nullptr.
   virtual const DlColorColorSource* asColor() const { return nullptr; }
@@ -237,8 +232,7 @@ class DlImageColorSource final : public SkRefCnt,
     return with_sampling(sampling_);
   }
 
-  std::shared_ptr<DlColorSource> with_sampling(
-      DlImageSampling sampling) const override {
+  std::shared_ptr<DlColorSource> with_sampling(DlImageSampling sampling) const {
     return std::make_shared<DlImageColorSource>(image_, horizontal_tile_mode_,
                                                 vertical_tile_mode_, sampling,
                                                 matrix_ptr());
@@ -701,8 +695,6 @@ class DlSceneColorSource final : public DlColorSource {
   std::shared_ptr<impeller::scene::Node> scene_node() const { return node_; }
 
   impeller::Matrix camera_matrix() const { return camera_matrix_; }
-
-  sk_sp<SkShader> skia_object() const override { return nullptr; }
 
  protected:
   bool equals_(DlColorSource const& other) const override {

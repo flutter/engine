@@ -56,6 +56,25 @@ TEST_P(DisplayListTest, CanDrawTextBlob) {
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
 }
 
+TEST_P(DisplayListTest, CanDrawTextBlobWithGradient) {
+  flutter::DisplayListBuilder builder;
+
+  std::vector<flutter::DlColor> colors = {flutter::DlColor::kBlue(),
+                                          flutter::DlColor::kRed()};
+  const float stops[2] = {0.0, 1.0};
+
+  auto linear = flutter::DlColorSource::MakeLinear({0.0, 0.0}, {300.0, 300.0},
+                                                   2, colors.data(), stops,
+                                                   flutter::DlTileMode::kClamp);
+  flutter::DlPaint paint;
+  paint.setColorSource(linear);
+
+  builder.DrawTextBlob(
+      SkTextBlob::MakeFromString("Hello World", CreateTestFont()), 100, 100,
+      paint);
+  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+}
+
 TEST_P(DisplayListTest, CanDrawTextWithSaveLayer) {
   flutter::DisplayListBuilder builder;
   builder.DrawTextBlob(SkTextBlob::MakeFromString("Hello", CreateTestFont()),
@@ -187,52 +206,176 @@ TEST_P(DisplayListTest, CanDrawArc) {
 }
 
 TEST_P(DisplayListTest, StrokedPathsDrawCorrectly) {
-  flutter::DisplayListBuilder builder;
-  flutter::DlPaint paint;
+  auto callback = [&]() {
+    flutter::DisplayListBuilder builder;
+    flutter::DlPaint paint;
 
-  paint.setColor(SK_ColorRED);
-  paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
-  paint.setStrokeWidth(10);
+    paint.setColor(SK_ColorRED);
+    paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
 
-  // Rectangle
-  builder.Translate(100, 100);
-  builder.DrawRect(SkRect::MakeSize({100, 100}), paint);
+    static float stroke_width = 10.0f;
+    static int selected_stroke_type = 0;
+    static int selected_join_type = 0;
+    const char* stroke_types[] = {"Butte", "Round", "Square"};
+    const char* join_type[] = {"kMiter", "Round", "kBevel"};
 
-  // Rounded rectangle
-  builder.Translate(150, 0);
-  builder.DrawRRect(SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
-                    paint);
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Combo("Cap", &selected_stroke_type, stroke_types,
+                 sizeof(stroke_types) / sizeof(char*));
+    ImGui::Combo("Join", &selected_join_type, join_type,
+                 sizeof(join_type) / sizeof(char*));
+    ImGui::SliderFloat("Stroke Width", &stroke_width, 10.0f, 50.0f);
+    ImGui::End();
 
-  // Double rounded rectangle
-  builder.Translate(150, 0);
-  builder.DrawDRRect(
-      SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
-      SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 30), 10, 10), paint);
+    flutter::DlStrokeCap cap;
+    flutter::DlStrokeJoin join;
+    switch (selected_stroke_type) {
+      case 0:
+        cap = flutter::DlStrokeCap::kButt;
+        break;
+      case 1:
+        cap = flutter::DlStrokeCap::kRound;
+        break;
+      case 2:
+        cap = flutter::DlStrokeCap::kSquare;
+        break;
+      default:
+        cap = flutter::DlStrokeCap::kButt;
+        break;
+    }
+    switch (selected_join_type) {
+      case 0:
+        join = flutter::DlStrokeJoin::kMiter;
+        break;
+      case 1:
+        join = flutter::DlStrokeJoin::kRound;
+        break;
+      case 2:
+        join = flutter::DlStrokeJoin::kBevel;
+        break;
+      default:
+        join = flutter::DlStrokeJoin::kMiter;
+        break;
+    }
+    paint.setStrokeCap(cap);
+    paint.setStrokeJoin(join);
+    paint.setStrokeWidth(stroke_width);
 
-  // Contour with duplicate join points
-  {
+    // Make rendering better to watch.
+    builder.Scale(1.5f, 1.5f);
+
+    // Rectangle
+    builder.Translate(100, 100);
+    builder.DrawRect(SkRect::MakeSize({100, 100}), paint);
+
+    // Rounded rectangle
     builder.Translate(150, 0);
-    SkPath path;
-    path.lineTo({100, 0});
-    path.lineTo({100, 0});
-    path.lineTo({100, 100});
-    builder.DrawPath(path, paint);
-  }
+    builder.DrawRRect(SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
+                      paint);
 
-  // Contour with duplicate end points
-  {
-    paint.setStrokeCap(flutter::DlStrokeCap::kRound);
+    // Double rounded rectangle
     builder.Translate(150, 0);
-    SkPath path;
-    path.moveTo(0, 0);
-    path.lineTo({0, 0});
-    path.lineTo({50, 50});
-    path.lineTo({100, 0});
-    path.lineTo({100, 0});
-    builder.DrawPath(path, paint);
-  }
+    builder.DrawDRRect(
+        SkRRect::MakeRectXY(SkRect::MakeSize({100, 50}), 10, 10),
+        SkRRect::MakeRectXY(SkRect::MakeXYWH(10, 10, 80, 30), 10, 10), paint);
 
-  ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
+    // Contour with duplicate join points
+    {
+      builder.Translate(150, 0);
+      SkPath path;
+      path.moveTo(0, 0);
+      path.lineTo(0, 0);
+      path.lineTo({100, 0});
+      path.lineTo({100, 0});
+      path.lineTo({100, 100});
+      builder.DrawPath(path, paint);
+    }
+
+    // Contour with duplicate start and end points
+
+    // Line.
+    builder.Translate(200, 0);
+    {
+      builder.Save();
+
+      SkPath line_path;
+      line_path.moveTo(0, 0);
+      line_path.moveTo(0, 0);
+      line_path.lineTo({0, 0});
+      line_path.lineTo({0, 0});
+      line_path.lineTo({50, 50});
+      line_path.lineTo({50, 50});
+      line_path.lineTo({100, 0});
+      line_path.lineTo({100, 0});
+      builder.DrawPath(line_path, paint);
+
+      builder.Translate(0, 100);
+      builder.DrawPath(line_path, paint);
+
+      builder.Translate(0, 100);
+      SkPath line_path2;
+      line_path2.moveTo(0, 0);
+      line_path2.lineTo(0, 0);
+      line_path2.lineTo(0, 0);
+      builder.DrawPath(line_path2, paint);
+
+      builder.Restore();
+    }
+
+    // Cubic.
+    builder.Translate(150, 0);
+    {
+      builder.Save();
+
+      SkPath cubic_path;
+      cubic_path.moveTo({0, 0});
+      cubic_path.cubicTo(0, 0, 140.0, 100.0, 140, 20);
+      builder.DrawPath(cubic_path, paint);
+
+      builder.Translate(0, 100);
+      SkPath cubic_path2;
+      cubic_path2.moveTo({0, 0});
+      cubic_path2.cubicTo(0, 0, 0, 0, 150, 150);
+      builder.DrawPath(cubic_path2, paint);
+
+      builder.Translate(0, 100);
+      SkPath cubic_path3;
+      cubic_path3.moveTo({0, 0});
+      cubic_path3.cubicTo(0, 0, 0, 0, 0, 0);
+      builder.DrawPath(cubic_path3, paint);
+
+      builder.Restore();
+    }
+
+    // Quad.
+    builder.Translate(200, 0);
+    {
+      builder.Save();
+
+      SkPath quad_path;
+      quad_path.moveTo(0, 0);
+      quad_path.moveTo(0, 0);
+      quad_path.quadTo({100, 40}, {50, 80});
+      builder.DrawPath(quad_path, paint);
+
+      builder.Translate(0, 150);
+      SkPath quad_path2;
+      quad_path2.moveTo(0, 0);
+      quad_path2.moveTo(0, 0);
+      quad_path2.quadTo({0, 0}, {100, 100});
+      builder.DrawPath(quad_path2, paint);
+
+      builder.Translate(0, 100);
+      SkPath quad_path3;
+      quad_path3.moveTo(0, 0);
+      quad_path3.quadTo({0, 0}, {0, 0});
+      builder.DrawPath(quad_path3, paint);
+
+      builder.Restore();
+    }
+    return builder.Build();
+  };
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
 TEST_P(DisplayListTest, CanDrawWithOddPathWinding) {
@@ -944,6 +1087,63 @@ TEST_P(DisplayListTest, CanDrawWithMatrixFilter) {
       builder.Restore();
     }
 
+    return builder.Build();
+  };
+
+  ASSERT_TRUE(OpenPlaygroundHere(callback));
+}
+
+TEST_P(DisplayListTest, CanDrawWithMatrixFilterWhenSavingLayer) {
+  auto callback = [&]() {
+    static float translation[2] = {0, 0};
+    static bool enable_save_layer = true;
+
+    ImGui::Begin("Controls", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::SliderFloat2("Translation", translation, -130, 130);
+    ImGui::Checkbox("Enable save layer", &enable_save_layer);
+    ImGui::End();
+
+    flutter::DisplayListBuilder builder;
+    builder.Save();
+    builder.Scale(2.0, 2.0);
+    flutter::DlPaint paint;
+    paint.setColor(flutter::DlColor::kYellow());
+    builder.DrawRect(SkRect::MakeWH(300, 300), paint);
+    paint.setStrokeWidth(1.0);
+    paint.setDrawStyle(flutter::DlDrawStyle::kStroke);
+    paint.setColor(flutter::DlColor::kBlack().withAlpha(0x80));
+    builder.DrawLine(SkPoint::Make(150, 0), SkPoint::Make(150, 300), paint);
+    builder.DrawLine(SkPoint::Make(0, 150), SkPoint::Make(300, 150), paint);
+
+    flutter::DlPaint save_paint;
+    SkRect bounds = SkRect::MakeXYWH(100, 100, 100, 100);
+    SkMatrix translate_matrix =
+        SkMatrix::Translate(translation[0], translation[1]);
+    if (enable_save_layer) {
+      auto filter = flutter::DlMatrixImageFilter(
+          translate_matrix, flutter::DlImageSampling::kNearestNeighbor);
+      save_paint.setImageFilter(filter.shared());
+      builder.SaveLayer(&bounds, &save_paint);
+    } else {
+      builder.Save();
+      builder.Transform(translate_matrix);
+    }
+
+    SkMatrix filter_matrix = SkMatrix::I();
+    filter_matrix.postTranslate(-150, -150);
+    filter_matrix.postScale(0.2f, 0.2f);
+    filter_matrix.postTranslate(150, 150);
+    auto filter = flutter::DlMatrixImageFilter(
+        filter_matrix, flutter::DlImageSampling::kNearestNeighbor);
+
+    save_paint.setImageFilter(filter.shared());
+
+    builder.SaveLayer(&bounds, &save_paint);
+    flutter::DlPaint paint2;
+    paint2.setColor(flutter::DlColor::kBlue());
+    builder.DrawRect(bounds, paint2);
+    builder.Restore();
+    builder.Restore();
     return builder.Build();
   };
 

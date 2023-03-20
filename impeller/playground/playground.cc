@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "fml/time/time_point.h"
+#include "impeller/image/backends/skia/compressed_image_skia.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
@@ -214,8 +215,7 @@ bool Playground::OpenPlaygroundHere(
         if (!playground) {
           return;
         }
-        playground->SetWindowSize(
-            ISize{std::max(width, 0), std::max(height, 0)});
+        playground->SetWindowSize(ISize{width, height}.Max({}));
       });
   ::glfwSetKeyCallback(window, &PlaygroundKeyCallback);
   ::glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x,
@@ -301,6 +301,10 @@ bool Playground::OpenPlaygroundHere(
       VALIDATION_LOG << "Could not render into the surface.";
       return false;
     }
+
+    if (!ShouldKeepRendering()) {
+      break;
+    }
   }
 
   ::glfwHideWindow(window);
@@ -337,7 +341,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
 
 std::shared_ptr<CompressedImage> Playground::LoadFixtureImageCompressed(
     std::shared_ptr<fml::Mapping> mapping) const {
-  auto compressed_image = CompressedImage::Create(std::move(mapping));
+  auto compressed_image = CompressedImageSkia::Create(std::move(mapping));
   if (!compressed_image) {
     VALIDATION_LOG << "Could not create compressed image.";
     return nullptr;
@@ -449,6 +453,10 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
 
 void Playground::SetWindowSize(ISize size) {
   window_size_ = size;
+}
+
+bool Playground::ShouldKeepRendering() const {
+  return true;
 }
 
 }  // namespace impeller
