@@ -41,7 +41,7 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 }
 
 // |IOSSurface|
-std::unique_ptr<Studio> IOSSurfaceMetalSkia::CreateGPUStudio(GrDirectContext* gr_context) {
+std::unique_ptr<Studio> IOSSurfaceMetalSkia::CreateGPUStudio(GrDirectContext* context) {
   FML_DCHECK(context);
   return std::make_unique<GPUStudioMetalSkia>(this,                // delegate
                                               sk_ref_sp(context),  // context

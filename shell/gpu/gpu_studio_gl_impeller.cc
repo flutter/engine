@@ -13,7 +13,7 @@ namespace flutter {
 
 GPUStudioGLImpeller::GPUStudioGLImpeller(
     GPUSurfaceGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context) {
+    const std::shared_ptr<impeller::Context>& context) {
   if (delegate == nullptr) {
     return;
   }

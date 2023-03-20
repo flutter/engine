@@ -19,7 +19,7 @@ namespace flutter {
 class GPUStudioGLImpeller final : public Studio {
  public:
   explicit GPUStudioGLImpeller(GPUSurfaceGLDelegate* delegate,
-                               std::shared_ptr<impeller::Context> context);
+                               const std::shared_ptr<impeller::Context>& context);
 
   // |Studio|
   ~GPUStudioGLImpeller() override;
