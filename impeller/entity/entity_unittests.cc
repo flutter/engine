@@ -219,6 +219,18 @@ TEST_P(EntityTest, CanDrawRect) {
   ASSERT_TRUE(OpenPlaygroundHere(entity));
 }
 
+TEST_P(EntityTest, CanDrawRRect) {
+  auto contents = std::make_shared<SolidColorContents>();
+  contents->SetGeometry(Geometry::MakeRRect({100, 100, 100, 100}, 10.0));
+  contents->SetColor(Color::Red());
+
+  Entity entity;
+  entity.SetTransformation(Matrix::MakeScale(GetContentScale()));
+  entity.SetContents(contents);
+
+  ASSERT_TRUE(OpenPlaygroundHere(entity));
+}
+
 TEST_P(EntityTest, GeometryBoundsAreTransformed) {
   auto geometry = Geometry::MakeRect({100, 100, 100, 100});
   auto transform = Matrix::MakeScale({2.0, 2.0, 2.0});
@@ -2377,7 +2389,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
   texture_contents->SetOpacity(0.5);
   ASSERT_TRUE(texture_contents->CanAcceptOpacity(entity));
 
-  texture_contents->InheritOpacity(0.5);
+  texture_contents->SetInheritedOpacity(0.5);
   ASSERT_EQ(texture_contents->GetOpacity(), 0.25);
 
   // Solid color contents can accept opacity if their geometry
@@ -2389,7 +2401,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   ASSERT_TRUE(solid_color->CanAcceptOpacity(entity));
 
-  solid_color->InheritOpacity(0.5);
+  solid_color->SetInheritedOpacity(0.5);
   ASSERT_EQ(solid_color->GetColor().alpha, 0.25);
 
   // Color source contents can accept opacity if their geometry
@@ -2401,7 +2413,7 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   ASSERT_TRUE(tiled_texture->CanAcceptOpacity(entity));
 
-  tiled_texture->InheritOpacity(0.5);
+  tiled_texture->SetInheritedOpacity(0.5);
   ASSERT_EQ(tiled_texture->GetAlpha(), 0.25);
 
   // Text contents can accept opacity if the text frames do not
@@ -2419,19 +2431,12 @@ TEST_P(EntityTest, InheritOpacityTest) {
 
   ASSERT_TRUE(text_contents->CanAcceptOpacity(entity));
 
-  text_contents->InheritOpacity(0.5);
+  text_contents->SetInheritedOpacity(0.5);
   ASSERT_EQ(text_contents->GetColor().alpha, 0.25);
 
   // Clips and restores trivially accept opacity.
   ASSERT_TRUE(ClipContents().CanAcceptOpacity(entity));
   ASSERT_TRUE(ClipRestoreContents().CanAcceptOpacity(entity));
-
-  // Potentially overlapping geometry always returns false.
-  auto solid_color_2 = std::make_shared<TiledTextureContents>();
-  Path path = PathBuilder{}.MoveTo({100, 100}).LineTo({100, 200}).TakePath();
-  solid_color_2->SetGeometry(Geometry::MakeStrokePath(path, 5.0));
-
-  ASSERT_FALSE(solid_color_2->CanAcceptOpacity(entity));
 }
 
 }  // namespace testing
