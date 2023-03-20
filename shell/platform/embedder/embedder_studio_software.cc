@@ -8,9 +8,9 @@
 
 #include "flutter/fml/trace_event.h"
 
+#include "flutter/shell/gpu/gpu_studio_software.h"
 #include "flutter/shell/platform/embedder/embedder_studio_software.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
-#include "flutter/shell/gpu/gpu_studio_software.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"

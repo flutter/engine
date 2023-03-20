@@ -28,9 +28,8 @@
 namespace flutter {
 
 GPUStudioGLSkia::GPUStudioGLSkia(const sk_sp<GrDirectContext>& gr_context,
-                                   GPUSurfaceGLDelegate* delegate)
-    : delegate_(delegate),
-      context_(gr_context) {
+                                 GPUSurfaceGLDelegate* delegate)
+    : delegate_(delegate), context_(gr_context) {
   auto context_switch = delegate_->GLContextMakeCurrent();
   if (!context_switch->GetResult()) {
     FML_LOG(ERROR)

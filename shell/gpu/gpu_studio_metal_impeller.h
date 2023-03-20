@@ -20,7 +20,7 @@ namespace flutter {
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalImpeller : public Studio {
  public:
   GPUStudioMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                          const std::shared_ptr<impeller::Context>& context);
+                         const std::shared_ptr<impeller::Context>& context);
 
   // |Studio|
   ~GPUStudioMetalImpeller();

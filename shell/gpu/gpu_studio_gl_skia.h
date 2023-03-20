@@ -10,8 +10,8 @@
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/embedded_views.h"
-#include "flutter/flow/surface.h"
 #include "flutter/flow/studio.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
@@ -23,7 +23,7 @@ namespace flutter {
 class GPUStudioGLSkia : public Studio {
  public:
   GPUStudioGLSkia(const sk_sp<GrDirectContext>& gr_context,
-                   GPUSurfaceGLDelegate* delegate);
+                  GPUSurfaceGLDelegate* delegate);
 
   // |Studio|
   ~GPUStudioGLSkia() override;
@@ -44,7 +44,6 @@ class GPUStudioGLSkia : public Studio {
   bool AllowsDrawingWhenGpuDisabled() const override;
 
  private:
-
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
   bool valid_ = false;

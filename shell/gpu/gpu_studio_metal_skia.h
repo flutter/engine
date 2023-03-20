@@ -6,8 +6,8 @@
 #define FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_H_
 
 #include "flutter/common/graphics/msaa_sample_count.h"
-#include "flutter/flow/surface.h"
 #include "flutter/flow/studio.h"
+#include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
@@ -17,7 +17,7 @@ namespace flutter {
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalSkia : public Studio {
  public:
   GPUStudioMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                      sk_sp<GrDirectContext> context);
+                     sk_sp<GrDirectContext> context);
 
   // |Studio|
   ~GPUStudioMetalSkia();

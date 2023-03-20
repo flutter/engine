@@ -29,10 +29,8 @@ static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 namespace flutter {
 
 GPUStudioMetalSkia::GPUStudioMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                                         sk_sp<GrDirectContext> context)
-    : delegate_(delegate),
-      context_(std::move(context)) {
-}
+                                       sk_sp<GrDirectContext> context)
+    : delegate_(delegate), context_(std::move(context)) {}
 
 GPUStudioMetalSkia::~GPUStudioMetalSkia() = default;
 

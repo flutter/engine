@@ -7,8 +7,8 @@
 #include <utility>
 
 #include "flutter/shell/common/shell_io_manager.h"
-#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 #include "flutter/shell/gpu/gpu_studio_gl_skia.h"
+#include "flutter/shell/platform/embedder/embedder_surface_gl.h"
 
 namespace flutter {
 
@@ -104,8 +104,7 @@ std::unique_ptr<Studio> EmbedderStudioGL::CreateGPUStudio() {
   if (!IsValid()) {
     return nullptr;
   }
-  auto studio =
-         std::make_unique<GPUStudioGLSkia>(main_context_, this);
+  auto studio = std::make_unique<GPUStudioGLSkia>(main_context_, this);
   if (!studio->IsValid()) {
     return nullptr;
   }

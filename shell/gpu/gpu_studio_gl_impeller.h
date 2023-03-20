@@ -6,11 +6,11 @@
 #define SHELL_GPU_GPU_STUDIO_GL_IMPELLER_H_
 
 #include "flutter/common/graphics/gl_context_switch.h"
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/impeller/aiks/aiks_context.h"
-#include "flutter/flow/studio.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 
@@ -19,7 +19,7 @@ namespace flutter {
 class GPUStudioGLImpeller final : public Studio {
  public:
   explicit GPUStudioGLImpeller(GPUSurfaceGLDelegate* delegate,
-                                std::shared_ptr<impeller::Context> context);
+                               std::shared_ptr<impeller::Context> context);
 
   // |Studio|
   ~GPUStudioGLImpeller() override;

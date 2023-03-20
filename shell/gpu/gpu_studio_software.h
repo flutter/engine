@@ -5,11 +5,11 @@
 #ifndef FLUTTER_SHELL_GPU_GPU_STUDIO_SOFTWARE_H_
 #define FLUTTER_SHELL_GPU_GPU_STUDIO_SOFTWARE_H_
 
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/gpu/gpu_surface_software_delegate.h"
-#include "flutter/flow/studio.h"
 
 namespace flutter {
 

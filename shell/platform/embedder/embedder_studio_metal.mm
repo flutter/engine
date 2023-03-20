@@ -7,9 +7,9 @@
 #include <utility>
 
 #include "flutter/fml/logging.h"
+#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
-#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 

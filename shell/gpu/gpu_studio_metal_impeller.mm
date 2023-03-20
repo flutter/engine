@@ -29,7 +29,7 @@ static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
 }
 
 GPUStudioMetalImpeller::GPUStudioMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 const std::shared_ptr<impeller::Context>& context)
+                                               const std::shared_ptr<impeller::Context>& context)
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
