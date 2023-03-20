@@ -2,10 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "flutter/display_list/display_list_dispatcher.h"
+#pragma once
+
+#include "flutter/fml/command_line.h"
 
 namespace flutter {
+namespace testing {
 
-//
+const fml::CommandLine& GetArgsForProcess();
 
+void SetArgsForProcess(int argc, char** argv);
+
+}  // namespace testing
 }  // namespace flutter

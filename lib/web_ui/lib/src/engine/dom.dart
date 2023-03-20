@@ -1889,7 +1889,7 @@ DomFontFace createDomFontFace(String family, Object source,
     return DomFontFace._args2(family.toJS, source.toJSAnyShallow);
   } else {
     return DomFontFace._args3(
-        family.toJS, source.toJSAnyShallow, descriptors.toJSAnyShallow);
+        family.toJS, source.toJSAnyShallow, descriptors.toJSAnyDeep);
   }
 }
 
@@ -1901,6 +1901,10 @@ extension DomFontFaceExtension on DomFontFace {
   @JS('family')
   external JSString? get _family;
   String? get family => _family?.toDart;
+
+  @JS('weight')
+  external JSString? get _weight;
+  String? get weight => _weight?.toDart;
 }
 
 @JS()
@@ -2332,6 +2336,10 @@ extension DomMouseEventExtension on DomMouseEvent {
   @JS('buttons')
   external JSNumber? get _buttons;
   double? get buttons => _buttons?.toDart;
+
+  @JS('ctrlKey')
+  external JSBoolean get _ctrlKey;
+  bool get ctrlKey => _ctrlKey.toDart;
 
   @JS('getModifierState')
   external JSBoolean _getModifierState(JSString keyArg);
