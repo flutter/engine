@@ -15,6 +15,7 @@
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
 #include "flutter/flow/layers/layer_tree.h"
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/memory/weak_ptr.h"
@@ -152,7 +153,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  surface  The on-screen render surface.
   ///
-  void Setup(std::unique_ptr<Surface> surface);
+  void Setup(std::unique_ptr<Studio> studio, std::unique_ptr<Surface> surface);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and
@@ -541,6 +542,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
+  std::unique_ptr<Studio> studio_;
   std::unique_ptr<Surface> surface_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;

@@ -750,8 +750,10 @@ void Shell::OnPlatformViewCreated() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
-  if (surface == nullptr) {
+  auto studio_and_surface = platform_view_->CreateStudioAndSurface();
+  std::unique_ptr<Studio> studio = std::move(studio_and_surface.first);
+  std::unique_ptr<Surface> surface = std::move(studio_and_surface.second);
+  if (studio == nullptr || surface == nullptr) {
     // TODO(dkwingsmt): This case is observed in windows unit tests. Anyway,
     // we're probably not creating the surface in this callback eventually.
     return;
@@ -782,15 +784,15 @@ void Shell::OnPlatformViewCreated() {
       !task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread();
 
   fml::AutoResetWaitableEvent latch;
-  auto raster_task =
-      fml::MakeCopyable([&waiting_for_first_frame = waiting_for_first_frame_,
-                         rasterizer = rasterizer_->GetWeakPtr(),  //
-                         surface = std::move(surface)]() mutable {
+  auto raster_task = fml::MakeCopyable(
+      [&waiting_for_first_frame = waiting_for_first_frame_,
+       rasterizer = rasterizer_->GetWeakPtr(),  //
+       studio = std::move(studio), surface = std::move(surface)]() mutable {
         if (rasterizer) {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
-          rasterizer->Setup(std::move(surface));
+          rasterizer->Setup(std::move(studio), std::move(surface));
         }
 
         waiting_for_first_frame.store(true);

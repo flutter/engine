@@ -11,6 +11,7 @@
 #include "flutter/common/graphics/texture.h"
 #include "flutter/common/task_runners.h"
 #include "flutter/flow/embedded_views.h"
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/mapping.h"
@@ -493,7 +494,8 @@ class PlatformView {
   ///
   virtual void NotifyDestroyed();
 
-  std::unique_ptr<Surface> CreateSurface();
+  std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>>
+  CreateStudioAndSurface();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to schedule a frame. In response to this
@@ -829,7 +831,9 @@ class PlatformView {
   const Settings& GetSettings() const;
 
  protected:
-  // This is the only method called on the raster task runner.
+  virtual std::unique_ptr<Studio> CreateRenderingStudio();
+
+  // This is called on the raster task runner.
   virtual std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id);
 
   PlatformView::Delegate& delegate_;

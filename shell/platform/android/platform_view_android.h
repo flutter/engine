@@ -143,6 +143,9 @@ class PlatformViewAndroid final : public PlatformView {
   std::unique_ptr<VsyncWaiter> CreateVSyncWaiter() override;
 
   // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
   // |PlatformView|

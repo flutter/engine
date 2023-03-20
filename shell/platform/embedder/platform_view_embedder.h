@@ -84,6 +84,9 @@ class PlatformViewEmbedder final : public PlatformView {
   PlatformDispatchTable platform_dispatch_table_;
 
   // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
   // |PlatformView|

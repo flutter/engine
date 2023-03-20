@@ -65,27 +65,36 @@ void PlatformView::NotifyDestroyed() {
 
 constexpr int64_t kFlutterDefaultViewId = 0;
 
-std::unique_ptr<Surface> PlatformView::CreateSurface() {
+std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>>
+PlatformView::CreateStudioAndSurface() {
+  std::unique_ptr<Studio> studio;
   std::unique_ptr<Surface> surface;
   // Threading: We want to use the platform view on the non-platform thread.
   // Using the weak pointer is illegal. But, we are going to introduce a latch
-  // so that the platform view is not collected till the surface is obtained.
+  // so that the platform view is not collected till the studio and the surface
+  // are obtained.
   auto* platform_view = this;
   fml::ManualResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
+      task_runners_.GetRasterTaskRunner(),
+      [platform_view, &studio, &surface, &latch]() {
+        studio = platform_view->CreateRenderingStudio();
         surface = platform_view->CreateRenderingSurface(kFlutterDefaultViewId);
-        if (surface && !surface->IsValid()) {
+        if (!studio || !studio->IsValid() || !surface || !surface->IsValid()) {
           surface.reset();
+          studio.reset();
         }
         latch.Signal();
       });
   latch.Wait();
-  if (!surface) {
+  std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>> result;
+  if (!studio || !surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
-    return nullptr;
+    return result;
   }
-  return surface;
+  result.first = std::move(studio);
+  result.second = std::move(surface);
+  return result;
 }
 
 void PlatformView::ScheduleFrame() {
@@ -140,11 +149,19 @@ void PlatformView::MarkTextureFrameAvailable(int64_t texture_id) {
   delegate_.OnPlatformViewMarkTextureFrameAvailable(texture_id);
 }
 
+std::unique_ptr<Studio> PlatformView::CreateRenderingStudio() {
+  // We have a default implementation because tests create a platform view but
+  // never a rendering studio.
+  FML_DCHECK(false) << "This platform does not provide a rendering studio but "
+                       "it was notified of rendering studio creation.";
+  return nullptr;
+}
+
 std::unique_ptr<Surface> PlatformView::CreateRenderingSurface(int64_t view_id) {
   // We have a default implementation because tests create a platform view but
   // never a rendering surface.
   FML_DCHECK(false) << "This platform does not provide a rendering surface but "
-                       "it was notified of surface rendering surface creation.";
+                       "it was notified of rendering surface creation.";
   return nullptr;
 }
 

@@ -281,6 +281,15 @@ std::unique_ptr<VsyncWaiter> PlatformViewAndroid::CreateVSyncWaiter() {
 }
 
 // |PlatformView|
+std::unique_ptr<Studio> PlatformViewAndroid::CreateRenderingStudio() {
+  if (!android_surface_) {
+    return nullptr;
+  }
+  return android_surface_->CreateGPUStudio(
+      android_context_->GetMainSkiaContext().get());
+}
+
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewAndroid::CreateRenderingSurface(
     int64_t view_id) {
   if (!android_surface_) {

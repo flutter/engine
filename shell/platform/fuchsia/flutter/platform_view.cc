@@ -50,6 +50,7 @@ PlatformView::PlatformView(
     fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry,
     OnEnableWireframe wireframe_enabled_callback,
     OnUpdateView on_update_view_callback,
+    OnCreateStudio on_create_studio_callback,
     OnCreateSurface on_create_surface_callback,
     OnSemanticsNodeUpdate on_semantics_node_update_callback,
     OnRequestAnnounce on_request_announce_callback,
@@ -67,6 +68,7 @@ PlatformView::PlatformView(
                                             std::move(mouse_source))),
       wireframe_enabled_callback_(std::move(wireframe_enabled_callback)),
       on_update_view_callback_(std::move(on_update_view_callback)),
+      on_create_studio_callback_(std::move(on_create_studio_callback)),
       on_create_surface_callback_(std::move(on_create_surface_callback)),
       on_semantics_node_update_callback_(
           std::move(on_semantics_node_update_callback)),
@@ -312,6 +314,11 @@ std::unique_ptr<flutter::VsyncWaiter> PlatformView::CreateVSyncWaiter() {
   return std::make_unique<flutter_runner::VsyncWaiter>(
       await_vsync_callback_, await_vsync_for_secondary_callback_callback_,
       task_runners_);
+}
+
+// |flutter::PlatformView|
+std::unique_ptr<flutter::Studio> PlatformView::CreateRenderingStudio() {
+  return on_create_studio_callback_ ? on_create_studio_callback_() : nullptr;
 }
 
 // |flutter::PlatformView|

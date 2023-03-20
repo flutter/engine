@@ -34,6 +34,8 @@
 #include "focus_delegate.h"
 #include "pointer_delegate.h"
 #include "pointer_injector_delegate.h"
+#include "studio.h"
+#include "surface.h"
 #include "text_delegate.h"
 
 namespace flutter_runner {
@@ -41,6 +43,7 @@ namespace flutter_runner {
 using OnEnableWireframe = fit::function<void(bool)>;
 using ViewCallback = std::function<void()>;
 using OnUpdateView = fit::function<void(int64_t, SkRect, bool, bool)>;
+using OnCreateStudio = fit::function<std::unique_ptr<flutter::Studio>()>;
 using OnCreateSurface = fit::function<std::unique_ptr<flutter::Surface>()>;
 using OnSemanticsNodeUpdate =
     fit::function<void(flutter::SemanticsNodeUpdates, float)>;
@@ -78,6 +81,7 @@ class PlatformView : public flutter::PlatformView {
       fuchsia::ui::pointerinjector::RegistryHandle pointerinjector_registry,
       OnEnableWireframe wireframe_enabled_callback,
       OnUpdateView on_update_view_callback,
+      OnCreateStudio on_create_studio_callback,
       OnCreateSurface on_create_surface_callback,
       OnSemanticsNodeUpdate on_semantics_node_update_callback,
       OnRequestAnnounce on_request_announce_callback,
@@ -104,6 +108,9 @@ class PlatformView : public flutter::PlatformView {
 
   // |flutter::PlatformView|
   std::unique_ptr<flutter::VsyncWaiter> CreateVSyncWaiter() override;
+
+  // |flutter::PlatformView|
+  std::unique_ptr<flutter::Studio> CreateRenderingStudio() override;
 
   // |flutter::PlatformView|
   std::unique_ptr<flutter::Surface> CreateRenderingSurface(
@@ -179,6 +186,7 @@ class PlatformView : public flutter::PlatformView {
 
   OnEnableWireframe wireframe_enabled_callback_;
   OnUpdateView on_update_view_callback_;
+  OnCreateStudio on_create_studio_callback_;
   OnCreateSurface on_create_surface_callback_;
   OnSemanticsNodeUpdate on_semantics_node_update_callback_;
   OnRequestAnnounce on_request_announce_callback_;

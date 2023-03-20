@@ -88,6 +88,11 @@ void PlatformViewEmbedder::HandlePlatformMessage(
 }
 
 // |PlatformView|
+std::unique_ptr<Studio> PlatformViewEmbedder::CreateRenderingStudio() {
+  return embedder_studio_->CreateGPUStudio();
+}
+
+// |PlatformView|
 std::unique_ptr<Surface> PlatformViewEmbedder::CreateRenderingSurface(
     int64_t view_id) {
   auto found_iter = embedder_surfaces_.find(view_id);
