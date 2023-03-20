@@ -74,7 +74,7 @@ AndroidContextGLSkia::AndroidContextGLSkia(
       environment_(std::move(environment)),
       config_(nullptr),
       task_runners_(task_runners),
-      disableParticalRepaint_(disable_partical_repaint) {
+      disable_partical_repaint_(disable_partical_repaint) {
   if (!environment_->IsValid()) {
     FML_LOG(ERROR) << "Could not create an Android GL environment.";
     return;
@@ -160,7 +160,7 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGLSkia::CreateOnscreenSurface(
         display, config_,
         reinterpret_cast<EGLNativeWindowType>(window->handle()), attribs);
     return std::make_unique<AndroidEGLSurface>(surface, display, context_,
-                                               disableParticalRepaint_);
+                                               disable_partical_repaint_);
   }
 }
 
@@ -174,7 +174,7 @@ AndroidContextGLSkia::CreateOffscreenSurface() const {
 
   EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
   return std::make_unique<AndroidEGLSurface>(
-      surface, display, resource_context_, disableParticalRepaint_);
+      surface, display, resource_context_, disable_partical_repaint_);
 }
 
 std::unique_ptr<AndroidEGLSurface> AndroidContextGLSkia::CreatePbufferSurface()
@@ -185,7 +185,7 @@ std::unique_ptr<AndroidEGLSurface> AndroidContextGLSkia::CreatePbufferSurface()
 
   EGLSurface surface = eglCreatePbufferSurface(display, config_, attribs);
   return std::make_unique<AndroidEGLSurface>(surface, display, context_,
-                                             disableParticalRepaint_);
+                                             disable_partical_repaint_);
 }
 
 fml::RefPtr<AndroidEnvironmentGL> AndroidContextGLSkia::Environment() const {

@@ -96,7 +96,7 @@ class AndroidContextGLSkia : public AndroidContext {
   EGLContext resource_context_;
   bool valid_ = false;
   TaskRunners task_runners_;
-  bool disableParticalRepaint_ = false;
+  bool disable_partical_repaint_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AndroidContextGLSkia);
 };
