@@ -13,6 +13,7 @@
 namespace impeller {
 namespace testing {
 
+/// Manages a global variable for tracking instances of golden images.
 class GoldenDigest {
  public:
   static GoldenDigest* Instance();
@@ -22,6 +23,9 @@ class GoldenDigest {
                 int32_t width,
                 int32_t height);
 
+  /// Writes a "digest.json" file to `working_directory`.
+  ///
+  /// Returns `true` on success.
   bool Write(WorkingDirectory* working_directory);
 
  private:

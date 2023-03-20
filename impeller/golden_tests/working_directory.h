@@ -11,6 +11,8 @@
 namespace impeller {
 namespace testing {
 
+/// Keeps track of the global variable for the specified working
+/// directory.
 class WorkingDirectory {
  public:
   static WorkingDirectory* Instance();

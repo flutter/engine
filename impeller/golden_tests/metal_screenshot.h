@@ -15,6 +15,7 @@ namespace testing {
 
 class MetalScreenshoter;
 
+/// A screenshot that was produced from `MetalScreenshoter`.
 class MetalScreenshot {
  public:
   ~MetalScreenshot();

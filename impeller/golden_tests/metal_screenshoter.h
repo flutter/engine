@@ -12,6 +12,7 @@
 namespace impeller {
 namespace testing {
 
+/// Converts `Picture`'s to `MetalScreenshot`'s with the playground backend.
 class MetalScreenshoter {
  public:
   MetalScreenshoter();
