@@ -30,8 +30,7 @@ class GPUStudioVulkan : public Studio {
   /// @brief      Create a GPUStudioVulkan while letting it reuse an existing
   ///             GrDirectContext.
   ///
-  GPUStudioVulkan(GPUSurfaceVulkanDelegate* delegate,
-                  const sk_sp<GrDirectContext>& context);
+  GPUStudioVulkan(const sk_sp<GrDirectContext>& context);
 
   ~GPUStudioVulkan() override;
 
@@ -44,7 +43,6 @@ class GPUStudioVulkan : public Studio {
   static SkColorType ColorTypeFromFormat(const VkFormat format);
 
  private:
-  GPUSurfaceVulkanDelegate* delegate_;
   sk_sp<GrDirectContext> skia_context_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUStudioVulkan);

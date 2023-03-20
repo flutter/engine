@@ -2824,6 +2824,8 @@ ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.cc + ..
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/studio.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/studio.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/surface_producer.h + ../../../flutter/LICENSE
@@ -5403,6 +5405,8 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/software_surface_producer.h
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/studio.cc
+FILE: ../../../flutter/shell/platform/fuchsia/flutter/studio.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/surface_producer.h

@@ -114,7 +114,7 @@ std::unique_ptr<Studio> EmbedderStudioVulkan::CreateGPUStudio() {
   if (!IsValid()) {
     return nullptr;
   }
-  auto studio = std::make_unique<GPUStudioVulkan>(this, main_context_);
+  auto studio = std::make_unique<GPUStudioVulkan>(main_context_);
 
   if (!studio->IsValid()) {
     return nullptr;

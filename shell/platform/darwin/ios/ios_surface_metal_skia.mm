@@ -6,6 +6,7 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
+#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 
 namespace flutter {
@@ -40,7 +41,7 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 }
 
 // |IOSSurface|
-std::unique_ptr<Studio> IOSSurfaceMetalSkia::CreateGPUStudio(GrDirectContext* gr_context) override {
+std::unique_ptr<Studio> IOSSurfaceMetalSkia::CreateGPUStudio(GrDirectContext* gr_context) {
   FML_DCHECK(context);
   return std::make_unique<GPUStudioMetalSkia>(this,                // delegate
                                               sk_ref_sp(context),  // context

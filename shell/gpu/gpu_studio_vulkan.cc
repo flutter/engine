@@ -13,9 +13,8 @@
 
 namespace flutter {
 
-GPUStudioVulkan::GPUStudioVulkan(GPUSurfaceVulkanDelegate* delegate,
-                                 const sk_sp<GrDirectContext>& skia_context)
-    : delegate_(delegate), skia_context_(skia_context) {}
+GPUStudioVulkan::GPUStudioVulkan(const sk_sp<GrDirectContext>& skia_context)
+    : skia_context_(skia_context) {}
 
 GPUStudioVulkan::~GPUStudioVulkan() = default;
 

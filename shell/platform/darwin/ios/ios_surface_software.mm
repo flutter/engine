@@ -11,6 +11,8 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/gpu/gpu_studio_software.h"
 
 #include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
@@ -34,7 +36,7 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
-std::unique_ptr<Studio> IOSSurfaceSoftware::CreateGPUStudio(GrDirectContext* gr_context) override {
+std::unique_ptr<Studio> IOSSurfaceSoftware::CreateGPUStudio(GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
   }
