@@ -117,7 +117,7 @@ void PlatformViewIOS::attachView() {
   auto flutter_view = static_cast<FlutterView*>(owner_controller_.get().view);
   auto ca_layer = fml::scoped_nsobject<CALayer>{[[flutter_view layer] retain]};
   ios_surface_ = IOSSurface::Create(ios_context_, ca_layer,
-                                    delegate_.OnPlatformViewGetSettings().disable_partical_repaint);
+                                    delegate_.OnPlatformViewGetSettings().disable_partial_repaint);
   FML_DCHECK(ios_surface_ != nullptr);
 
   if (accessibility_bridge_) {

@@ -26,7 +26,7 @@ class IOSSurface {
  public:
   static std::unique_ptr<IOSSurface> Create(std::shared_ptr<IOSContext> context,
                                             const fml::scoped_nsobject<CALayer>& layer,
-                                            bool disable_partical_repaint = false);
+                                            bool disable_partial_repaint = false);
 
   std::shared_ptr<IOSContext> GetContext() const;
 

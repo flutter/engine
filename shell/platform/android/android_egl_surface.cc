@@ -196,9 +196,9 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
 AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
                                      EGLDisplay display,
                                      EGLContext context,
-                                     bool disableParticalRepaint)
+                                     bool disable_partial_repaint)
     : AndroidEGLSurface(surface, display, context) {
-  disableParticalRepaint_ = disableParticalRepaint;
+  disable_partial_repaint_ = disable_partial_repaint;
 }
 
 AndroidEGLSurface::~AndroidEGLSurface() {
@@ -268,7 +268,7 @@ bool AndroidEGLSurface::SwapBuffers(
 }
 
 bool AndroidEGLSurface::SupportsPartialRepaint() const {
-  if (disableParticalRepaint_) {
+  if (disable_partial_repaint_) {
     return false;
   } else {
     return damage_->SupportsPartialRepaint();

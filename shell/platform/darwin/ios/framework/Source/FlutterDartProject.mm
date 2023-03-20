@@ -217,7 +217,7 @@ flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle) {
   NSNumber* disablePartialRepaint =
       [mainBundle objectForInfoDictionaryKey:@"FLTDisablePartialRepaint"];
   if (disablePartialRepaint != nil) {
-    settings.disable_partical_repaint = disablePartialRepaint.boolValue;
+    settings.disable_partial_repaint = disablePartialRepaint.boolValue;
   }
 
   NSNumber* enableTraceSystrace = [mainBundle objectForInfoDictionaryKey:@"FLTTraceSystrace"];

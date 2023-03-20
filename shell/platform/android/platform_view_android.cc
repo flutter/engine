@@ -70,7 +70,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     const flutter::TaskRunners& task_runners,
     uint8_t msaa_samples,
     bool enable_impeller,
-    bool disable_partical_repaint) {
+    bool disable_partial_repaint) {
   if (use_software_rendering) {
     return std::make_shared<AndroidContext>(AndroidRenderingAPI::kSoftware);
   }
@@ -82,7 +82,7 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
       fml::MakeRefCounted<AndroidEnvironmentGL>(),  //
       task_runners,                                 //
       msaa_samples,                                 //
-      disable_partical_repaint);
+      disable_partial_repaint);
 }
 
 PlatformViewAndroid::PlatformViewAndroid(
@@ -100,7 +100,7 @@ PlatformViewAndroid::PlatformViewAndroid(
               task_runners,
               msaa_samples,
               delegate.OnPlatformViewGetSettings().enable_impeller,
-              delegate.OnPlatformViewGetSettings().disable_partical_repaint)) {}
+              delegate.OnPlatformViewGetSettings().disable_partial_repaint)) {}
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,

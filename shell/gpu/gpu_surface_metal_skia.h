@@ -19,7 +19,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
                       sk_sp<GrDirectContext> context,
                       MsaaSampleCount msaa_samples,
                       bool render_to_surface = true,
-                      bool disable_partical_repaint = false);
+                      bool disable_partial_repaint = false);
 
   // |Surface|
   ~GPUSurfaceMetalSkia();
@@ -39,7 +39,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   // external view embedder is present.
   bool render_to_surface_ = true;
 
-  bool disable_partical_repaint_ = false;
+  bool disable_partial_repaint_ = false;
 
   // Accumulated damage for each framebuffer; Key is address of underlying
   // MTLTexture for each drawable

@@ -54,13 +54,13 @@ GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                                          sk_sp<GrDirectContext> context,
                                          MsaaSampleCount msaa_samples,
                                          bool render_to_surface,
-                                         bool disable_partical_repaint)
+                                         bool disable_partial_repaint)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
       render_to_surface_(render_to_surface),
-      disable_partical_repaint_(disable_partical_repaint) {}
+      disable_partial_repaint_(disable_partial_repaint) {}
 
 GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 
@@ -157,7 +157,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
       canvas->Flush();
     }
 
-    if (!disable_partical_repaint_) {
+    if (!disable_partial_repaint_) {
       uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);
       for (auto& entry : damage_) {
         if (entry.first != texture) {
@@ -177,7 +177,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
   SurfaceFrame::FramebufferInfo framebuffer_info;
   framebuffer_info.supports_readback = true;
 
-  if (!disable_partical_repaint_) {
+  if (!disable_partial_repaint_) {
     // Provide accumulated damage to rasterizer (area in current framebuffer that lags behind
     // front buffer)
     uintptr_t texture = reinterpret_cast<uintptr_t>(drawable.get().texture);

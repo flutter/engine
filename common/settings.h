@@ -212,9 +212,9 @@ struct Settings {
   // not supported on the platform.
   bool enable_impeller = false;
 
-  // Disable the partical repaint on supported platforms. Ignored if partical
+  // Disable the partial repaint on supported platforms. Ignored if partial
   // repaint is not supported on the platform.
-  bool disable_partical_repaint = false;
+  bool disable_partial_repaint = false;
 
   // Data set by platform-specific embedders for use in font initialization.
   uint32_t font_initialization_data = 0;
