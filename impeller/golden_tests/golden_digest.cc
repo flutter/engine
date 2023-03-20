@@ -43,9 +43,9 @@ bool GoldenDigest::Write(WorkingDirectory* working_directory) {
     }
     fout << "  { "
          << "\"testName\" : \"" << entry.test_name << "\", "
-         << "\"fileName\" : \"" << entry.filename << "\", "
-         << "\"width\" : \"" << entry.width << "\", "
-         << "\"height\" : \"" << entry.height << "\" "
+         << "\"filename\" : \"" << entry.filename << "\", "
+         << "\"width\" : " << entry.width << ", "
+         << "\"height\" : " << entry.height << " "
          << "}";
   }
   fout << std::endl << "]" << std::endl;

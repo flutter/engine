@@ -1,0 +1,41 @@
+// Copyright 2013 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:path/path.dart' as p;
+import 'package:skia_gold_client/skia_gold_client.dart';
+
+/// Reads the digest inside of [workDirectory], sending tests to
+/// [skiaGoldClient].
+Future<void> harvest(SkiaGoldClient skiaGoldClient, Directory workDirectory) async {
+  await skiaGoldClient.auth();
+
+  final File digest = File(p.join(workDirectory.path, 'digest.json'));
+  if (!digest.existsSync()) {
+    print('Error: digest.json does not exist in ${workDirectory.path}.');
+    return;
+  }
+  final Object? decoded = jsonDecode(digest.readAsStringSync());
+  final List<Object?> entries = (decoded as List<Object?>?)!;
+  final List<Future<void>> pendingComparisons = <Future<void>>[];
+  for (final Object? entry in entries) {
+    final Map<String, Object?> map = (entry as Map<String, Object?>?)!;
+    final String testName = (map['testName'] as String?)!;
+    final String filename = (map['filename'] as String?)!;
+    final int width = (map['width'] as int?)!;
+    final int height = (map['height'] as int?)!;
+    final File goldenImage = File(p.join(workDirectory.path, filename));
+    final Future<void> future = skiaGoldClient
+        .addImg(testName, goldenImage, screenshotSize: width * height)
+        .catchError((dynamic err) {
+      print('skia gold comparison failed: $err');
+      throw Exception('Failed comparison: $testName');
+    });
+    pendingComparisons.add(future);
+  }
+
+  await Future.wait(pendingComparisons);
+}
