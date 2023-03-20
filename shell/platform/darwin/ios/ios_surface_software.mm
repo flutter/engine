@@ -34,6 +34,20 @@ void IOSSurfaceSoftware::UpdateStorageSizeIfNecessary() {
   // Android oddities.
 }
 
+std::unique_ptr<Studio> IOSSurfaceSoftware::CreateGPUStudio(GrDirectContext* gr_context) override {
+  if (!IsValid()) {
+    return nullptr;
+  }
+
+  auto studio = std::make_unique<GPUStudioSoftware>(this);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
+}
+
 std::unique_ptr<Surface> IOSSurfaceSoftware::CreateGPUSurface(GrDirectContext* gr_context) {
   if (!IsValid()) {
     return nullptr;
