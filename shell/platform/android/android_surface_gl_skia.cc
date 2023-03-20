@@ -9,6 +9,8 @@
 
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/shell/gpu/gpu_studio_gl_skia.h"
+#include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_egl_surface.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 
@@ -48,11 +50,10 @@ bool AndroidSurfaceGLSkia::IsValid() const {
   return offscreen_surface_ && GLContextPtr()->IsValid();
 }
 
-std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
+static GrDirectContext* AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
     GrDirectContext* gr_context) {
   if (gr_context) {
-    return std::make_unique<GPUSurfaceGLSkia>(sk_ref_sp(gr_context), this,
-                                              true);
+    return gr_context;
   } else {
     sk_sp<GrDirectContext> main_skia_context =
         GLContextPtr()->GetMainSkiaContext();
@@ -60,8 +61,25 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
       main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
       GLContextPtr()->SetMainSkiaContext(main_skia_context);
     }
-    return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
+    FML_DCHECK(GLContextPtr()->GetMainSkiaContext() == main_skia_context);
+    return main_skia_context;
   }
+}
+
+std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateGPUStudio(
+    GrDirectContext* gr_context) override {
+  auto studio = std::make_unique<GPUStudioGLSkia>(
+      sk_ref_sp(UseExistingMainContextOrCreate(gr_context)),
+      this) if (!studio->IsValid()) {
+    return nullptr;
+  }
+  return studio;
+}
+
+std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateGPUSurface(
+    GrDirectContext* gr_context) {
+  return std::make_unique<GPUSurfaceGLSkia>(
+      UseExistingMainContextOrCreate(gr_context), this, true);
 }
 
 bool AndroidSurfaceGLSkia::OnScreenSurfaceResize(const SkISize& size) {

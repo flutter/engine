@@ -35,6 +35,9 @@ class AndroidSurfaceSoftware final : public AndroidSurface,
   bool ResourceContextClearCurrent() override;
 
   // |AndroidSurface|
+  std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context) override;
+
+  // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface(
       GrDirectContext* gr_context) override;
 

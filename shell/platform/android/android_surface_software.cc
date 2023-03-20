@@ -11,6 +11,8 @@
 #include "flutter/fml/platform/android/jni_weak_ref.h"
 #include "flutter/fml/platform/android/scoped_java_ref.h"
 #include "flutter/fml/trace_event.h"
+#include "flutter/shell/gpu/gpu_studio_gl_software.h"
+#include "flutter/shell/gpu/gpu_surface_gl_software.h"
 #include "flutter/shell/platform/android/android_shell_holder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
 
@@ -61,6 +63,21 @@ bool AndroidSurfaceSoftware::ResourceContextMakeCurrent() {
 
 bool AndroidSurfaceSoftware::ResourceContextClearCurrent() {
   return false;
+}
+
+std::unique_ptr<Studio> AndroidSurfaceSoftware::CreateGPUStudio(
+    GrDirectContext* gr_context) override {
+  if (!IsValid()) {
+    return nullptr;
+  }
+
+  auto studio = std::make_unique<GPUStudioSoftware>(this);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 std::unique_ptr<Surface> AndroidSurfaceSoftware::CreateGPUSurface(

@@ -28,6 +28,9 @@ class AndroidSurfaceGLImpeller final : public GPUSurfaceGLDelegate,
   bool IsValid() const override;
 
   // |AndroidSurface|
+  std::unique_ptr<Studio> CreateGPUStudio(GrDirectContext* gr_context) override;
+
+  // |AndroidSurface|
   std::unique_ptr<Surface> CreateGPUSurface(
       GrDirectContext* gr_context) override;
 

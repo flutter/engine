@@ -11,6 +11,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/impeller/renderer/backend/vulkan/context_vk.h"
+#include "flutter/shell/gpu/gpu_studio_vulkan_impeller.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan_impeller.h"
 #include "flutter/vulkan/vulkan_native_surface_android.h"
 #include "impeller/entity/vk/entity_shaders_vk.h"
@@ -64,6 +65,22 @@ bool AndroidSurfaceVulkanImpeller::IsValid() const {
 
 void AndroidSurfaceVulkanImpeller::TeardownOnScreenContext() {
   // Nothing to do.
+}
+
+std::unique_ptr<Studio> AndroidSurfaceVulkanImpeller::CreateGPUStudio(
+    GrDirectContext* gr_context) override {
+  if (!IsValid()) {
+    return nullptr;
+  }
+
+  std::unique_ptr<GPUStudioVulkanImpeller> studio =
+      std::make_unique<GPUStudioVulkanImpeller>(impeller_context_);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 std::unique_ptr<Surface> AndroidSurfaceVulkanImpeller::CreateGPUSurface(
