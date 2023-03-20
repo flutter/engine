@@ -4,9 +4,9 @@
 
 #import "flutter/shell/platform/darwin/ios/ios_surface_metal_skia.h"
 
+#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
-#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/platform/darwin/ios/ios_context_metal_skia.h"
 
 namespace flutter {
