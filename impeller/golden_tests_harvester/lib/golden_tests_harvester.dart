@@ -8,14 +8,20 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:skia_gold_client/skia_gold_client.dart';
 
+import 'logger.dart';
+
+export 'logger.dart';
+
 /// Reads the digest inside of [workDirectory], sending tests to
 /// [skiaGoldClient].
-Future<void> harvest(SkiaGoldClient skiaGoldClient, Directory workDirectory) async {
+Future<void> harvest(
+    SkiaGoldClient skiaGoldClient, Directory workDirectory) async {
   await skiaGoldClient.auth();
 
   final File digest = File(p.join(workDirectory.path, 'digest.json'));
   if (!digest.existsSync()) {
-    print('Error: digest.json does not exist in ${workDirectory.path}.');
+    Logger.instance
+        .log('Error: digest.json does not exist in ${workDirectory.path}.');
     return;
   }
   final Object? decoded = jsonDecode(digest.readAsStringSync());
@@ -31,7 +37,7 @@ Future<void> harvest(SkiaGoldClient skiaGoldClient, Directory workDirectory) asy
     final Future<void> future = skiaGoldClient
         .addImg(testName, goldenImage, screenshotSize: width * height)
         .catchError((dynamic err) {
-      print('skia gold comparison failed: $err');
+      Logger.instance.log('skia gold comparison failed: $err');
       throw Exception('Failed comparison: $testName');
     });
     pendingComparisons.add(future);

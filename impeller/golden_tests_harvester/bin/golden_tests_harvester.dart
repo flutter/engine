@@ -23,12 +23,12 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
       {double differentPixelsRate = 0.01,
       int pixelColorDelta = 0,
       required int screenshotSize}) async {
-    print('addImg $testName ${goldenFile.path} $screenshotSize');
+    Logger.instance.log('addImg $testName ${goldenFile.path} $screenshotSize');
   }
 
   @override
   Future<void> auth() async {
-    print('auth');
+    Logger.instance.log('auth');
   }
 
   @override
@@ -70,7 +70,8 @@ class FakeSkiaGoldClient implements SkiaGoldClient {
 }
 
 void _printUsage() {
-  print('dart run ./bin/golden_tests_harvester.dart <working_dir>');
+  Logger.instance
+      .log('dart run ./bin/golden_tests_harvester.dart <working_dir>');
 }
 
 Future<void> main(List<String> arguments) async {
