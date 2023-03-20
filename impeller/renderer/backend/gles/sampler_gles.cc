@@ -19,8 +19,18 @@ bool SamplerGLES::IsValid() const {
   return true;
 }
 
-static GLint ToParam(MinMagFilter minmag_filter, MipFilter mip_filter) {
-  switch (mip_filter) {
+static GLint ToParam(MinMagFilter minmag_filter,
+                     std::optional<MipFilter> mip_filter = std::nullopt) {
+  if (!mip_filter.has_value()) {
+    switch (minmag_filter) {
+      case MinMagFilter::kNearest:
+        return GL_NEAREST;
+      case MinMagFilter::kLinear:
+        return GL_LINEAR;
+    }
+  }
+
+  switch (mip_filter.value()) {
     case MipFilter::kNearest:
       switch (minmag_filter) {
         case MinMagFilter::kNearest:
@@ -67,7 +77,7 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
                    ToParam(desc.min_filter, desc.mip_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
-                   ToParam(desc.mag_filter, MipFilter::kNearest));
+                   ToParam(desc.mag_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
                    ToAddressMode(desc.width_address_mode));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_T,
