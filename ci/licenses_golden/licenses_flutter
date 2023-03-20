@@ -2115,6 +2115,20 @@ ORIGIN: ../../../flutter/shell/common/vsync_waiter_fallback.cc + ../../../flutte
 ORIGIN: ../../../flutter/shell/common/vsync_waiter_fallback.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiters_test.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/common/vsync_waiters_test.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_skia.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_gl_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_skia.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_metal_skia.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_software.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_software.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/gpu/gpu_surface_gl_impeller.cc + ../../../flutter/LICENSE
@@ -4659,6 +4673,20 @@ FILE: ../../../flutter/shell/common/vsync_waiter_fallback.cc
 FILE: ../../../flutter/shell/common/vsync_waiter_fallback.h
 FILE: ../../../flutter/shell/common/vsync_waiters_test.cc
 FILE: ../../../flutter/shell/common/vsync_waiters_test.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.cc
+FILE: ../../../flutter/shell/gpu/gpu_studio_gl_impeller.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_gl_skia.cc
+FILE: ../../../flutter/shell/gpu/gpu_studio_gl_skia.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_metal_impeller.mm
+FILE: ../../../flutter/shell/gpu/gpu_studio_metal_skia.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_metal_skia.mm
+FILE: ../../../flutter/shell/gpu/gpu_studio_software.cc
+FILE: ../../../flutter/shell/gpu/gpu_studio_software.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan.cc
+FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan.h
+FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.cc
+FILE: ../../../flutter/shell/gpu/gpu_studio_vulkan_impeller.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.cc
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_delegate.h
 FILE: ../../../flutter/shell/gpu/gpu_surface_gl_impeller.cc

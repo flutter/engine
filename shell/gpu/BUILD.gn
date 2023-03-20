@@ -17,6 +17,8 @@ gpu_common_deps = [
 
 source_set("gpu_surface_software") {
   sources = [
+    "gpu_studio_software.cc",
+    "gpu_studio_software.h",
     "gpu_surface_software.cc",
     "gpu_surface_software.h",
     "gpu_surface_software_delegate.cc",
@@ -28,6 +30,8 @@ source_set("gpu_surface_software") {
 
 source_set("gpu_surface_gl") {
   sources = [
+    "gpu_studio_gl_skia.cc",
+    "gpu_studio_gl_skia.h",
     "gpu_surface_gl_delegate.cc",
     "gpu_surface_gl_delegate.h",
     "gpu_surface_gl_skia.cc",
@@ -38,6 +42,8 @@ source_set("gpu_surface_gl") {
 
   if (impeller_enable_opengles) {
     sources += [
+      "gpu_studio_gl_impeller.cc",
+      "gpu_studio_gl_impeller.h",
       "gpu_surface_gl_impeller.cc",
       "gpu_surface_gl_impeller.h",
     ]
@@ -48,6 +54,8 @@ source_set("gpu_surface_gl") {
 
 source_set("gpu_surface_vulkan") {
   sources = [
+    "gpu_studio_vulkan.cc",
+    "gpu_studio_vulkan.h",
     "gpu_surface_vulkan.cc",
     "gpu_surface_vulkan.h",
     "gpu_surface_vulkan_delegate.cc",
@@ -61,6 +69,8 @@ source_set("gpu_surface_vulkan") {
 
   if (impeller_enable_vulkan) {
     sources += [
+      "gpu_studio_vulkan_impeller.cc",
+      "gpu_studio_vulkan_impeller.h",
       "gpu_surface_vulkan_impeller.cc",
       "gpu_surface_vulkan_impeller.h",
     ]
@@ -71,6 +81,8 @@ source_set("gpu_surface_vulkan") {
 
 source_set("gpu_surface_metal") {
   sources = [
+    "gpu_studio_metal_skia.h",
+    "gpu_studio_metal_skia.mm",
     "gpu_surface_metal_delegate.cc",
     "gpu_surface_metal_delegate.h",
     "gpu_surface_metal_skia.h",
@@ -81,6 +93,8 @@ source_set("gpu_surface_metal") {
 
   if (impeller_enable_metal) {
     sources += [
+      "gpu_studio_metal_impeller.h",
+      "gpu_studio_metal_impeller.mm",
       "gpu_surface_metal_impeller.h",
       "gpu_surface_metal_impeller.mm",
     ]
