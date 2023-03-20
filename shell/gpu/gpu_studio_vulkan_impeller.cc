@@ -12,14 +12,8 @@
 namespace flutter {
 
 GPUStudioVulkanImpeller::GPUStudioVulkanImpeller(
-    std::shared_ptr<impeller::Context> context)
-    : weak_factory_(this) {
+    std::shared_ptr<impeller::Context> context) {
   if (!context || !context->IsValid()) {
-    return;
-  }
-
-  auto renderer = std::make_shared<impeller::Renderer>(context);
-  if (!renderer->IsValid()) {
     return;
   }
 
@@ -29,7 +23,6 @@ GPUStudioVulkanImpeller::GPUStudioVulkanImpeller(
   }
 
   impeller_context_ = std::move(context);
-  impeller_renderer_ = std::move(renderer);
   aiks_context_ = std::move(aiks_context);
   is_valid_ = true;
 }

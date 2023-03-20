@@ -2,11 +2,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
+#ifndef FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_IMPELLER_H_
+#define FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_IMPELLER_H_
 
 #include <QuartzCore/CAMetalLayer.h>
 
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -18,7 +19,7 @@ namespace flutter {
 
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalImpeller : public Studio {
  public:
-  GPUStudioMetalImpeller(GPUStudioMetalDelegate* delegate,
+  GPUStudioMetalImpeller(GPUSurfaceMetalDelegate* delegate,
                           const std::shared_ptr<impeller::Context>& context);
 
   // |Studio|
@@ -27,13 +28,10 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalImpeller : public Studio {
   // |Studio|
   bool IsValid() override;
 
-  virtual Studio::StudioData GetStudioData() const override;
-
  private:
-  const GPUStudioMetalDelegate* delegate_;
+  const GPUSurfaceMetalDelegate* delegate_;
   std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
-  fml::scoped_nsprotocol<id<MTLDrawable>> last_drawable_;
 
   // |Studio|
   GrDirectContext* GetContext() override;
@@ -55,4 +53,4 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalImpeller : public Studio {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_METAL_IMPELLER_H_
+#endif  // FLUTTER_SHELL_GPU_GPU_STUDIO_METAL_IMPELLER_H_

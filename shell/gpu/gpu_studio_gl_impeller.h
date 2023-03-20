@@ -2,14 +2,15 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
-#define SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#ifndef SHELL_GPU_GPU_STUDIO_GL_IMPELLER_H_
+#define SHELL_GPU_GPU_STUDIO_GL_IMPELLER_H_
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/impeller/aiks/aiks_context.h"
+#include "flutter/flow/studio.h"
 #include "flutter/impeller/renderer/context.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
 
@@ -17,7 +18,7 @@ namespace flutter {
 
 class GPUStudioGLImpeller final : public Studio {
  public:
-  explicit GPUStudioGLImpeller(GPUStudioGLDelegate* delegate,
+  explicit GPUStudioGLImpeller(GPUSurfaceGLDelegate* delegate,
                                 std::shared_ptr<impeller::Context> context);
 
   // |Studio|
@@ -27,12 +28,9 @@ class GPUStudioGLImpeller final : public Studio {
   bool IsValid() override;
 
  private:
-  GPUStudioGLDelegate* delegate_ = nullptr;
-  std::shared_ptr<impeller::Context> impeller_context_;
-  std::shared_ptr<impeller::Renderer> impeller_renderer_;
+  GPUSurfaceGLDelegate* delegate_ = nullptr;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   bool is_valid_ = false;
-  fml::WeakPtrFactory<GPUStudioGLImpeller> weak_factory_;
 
   // |Studio|
   GrDirectContext* GetContext() override;
@@ -57,4 +55,4 @@ class GPUStudioGLImpeller final : public Studio {
 
 }  // namespace flutter
 
-#endif  // SHELL_GPU_GPU_SURFACE_GL_IMPELLER_H_
+#endif  // SHELL_GPU_GPU_STUDIO_GL_IMPELLER_H_

@@ -7,6 +7,7 @@
 
 #include <functional>
 
+#include "flutter/flow/studio.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
 
@@ -19,6 +20,8 @@ class EmbedderStudio {
   virtual ~EmbedderStudio() = default;
 
   virtual bool IsValid() const = 0;
+
+  virtual std::unique_ptr<Studio> CreateGPUStudio() = 0;
 
   virtual std::unique_ptr<EmbedderSurface> CreateSurface() = 0;
 

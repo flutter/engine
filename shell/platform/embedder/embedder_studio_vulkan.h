@@ -56,6 +56,9 @@ class EmbedderStudioVulkan final : public EmbedderStudio,
   bool IsValid() const override;
 
   // |EmbedderStudio|
+  std::unique_ptr<Studio> CreateGPUStudio() override;
+
+  // |EmbedderStudio|
   std::unique_ptr<EmbedderSurface> CreateSurface() override;
 
   // |EmbedderStudio|

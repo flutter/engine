@@ -12,9 +12,8 @@
 namespace flutter {
 
 GPUStudioGLImpeller::GPUStudioGLImpeller(
-    GPUStudioGLDelegate* delegate,
-    std::shared_ptr<impeller::Context> context)
-    : weak_factory_(this) {
+    GPUSurfaceGLDelegate* delegate,
+    std::shared_ptr<impeller::Context> context) {
   if (delegate == nullptr) {
     return;
   }
@@ -35,8 +34,6 @@ GPUStudioGLImpeller::GPUStudioGLImpeller(
   }
 
   delegate_ = delegate;
-  impeller_context_ = std::move(context);
-  impeller_renderer_ = std::move(renderer);
   aiks_context_ = std::move(aiks_context);
   is_valid_ = true;
 }

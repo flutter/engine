@@ -8,6 +8,7 @@
 
 #include "flutter/shell/common/shell_io_manager.h"
 #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
+#include "flutter/shell/gpu/gpu_studio_gl_skia.h"
 
 namespace flutter {
 
@@ -96,6 +97,20 @@ SurfaceFrame::FramebufferInfo EmbedderStudioGL::GLContextFramebufferInfo()
   info.supports_partial_repaint =
       gl_dispatch_table_.gl_populate_existing_damage != nullptr;
   return info;
+}
+
+// |EmbedderStudio|
+std::unique_ptr<Studio> EmbedderStudioGL::CreateGPUStudio() {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  auto studio =
+         std::make_unique<GPUStudioGLSkia>(main_context_, this);
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 // |EmbedderStudio|

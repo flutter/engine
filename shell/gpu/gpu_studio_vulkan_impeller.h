@@ -6,6 +6,7 @@
 
 #include "flutter/common/graphics/gl_context_switch.h"
 #include "flutter/flow/surface.h"
+#include "flutter/flow/studio.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/impeller/aiks/aiks_context.h"
@@ -26,10 +27,8 @@ class GPUStudioVulkanImpeller final : public Studio {
 
  private:
   std::shared_ptr<impeller::Context> impeller_context_;
-  std::shared_ptr<impeller::Renderer> impeller_renderer_;
   std::shared_ptr<impeller::AiksContext> aiks_context_;
   bool is_valid_ = false;
-  fml::WeakPtrFactory<GPUStudioVulkanImpeller> weak_factory_;
 
   // |Studio|
   GrDirectContext* GetContext() override;

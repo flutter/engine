@@ -14,6 +14,7 @@
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "include/gpu/GrDirectContext.h"
 #include "include/gpu/vk/GrVkBackendContext.h"
+#include "flutter/shell/gpu/gpu_studio_vulkan.h"
 #include "include/gpu/vk/GrVkExtensions.h"
 
 namespace flutter {
@@ -106,6 +107,20 @@ bool EmbedderStudioVulkan::PresentImage(VkImage image, VkFormat format) {
 // |EmbedderStudio|
 bool EmbedderStudioVulkan::IsValid() const {
   return valid_;
+}
+
+// |EmbedderStudio|
+std::unique_ptr<Studio> EmbedderStudioVulkan::CreateGPUStudio() {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  auto studio = std::make_unique<GPUStudioVulkan>(this, main_context_);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 // |EmbedderStudio|

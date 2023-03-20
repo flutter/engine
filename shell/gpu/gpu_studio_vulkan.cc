@@ -9,17 +9,14 @@
 
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/core/SkStudio.h"
 #include "vulkan/vulkan_core.h"
 
 namespace flutter {
 
-GPUStudioVulkan::GPUStudioVulkan(GPUStudioVulkanDelegate* delegate,
-                                   const sk_sp<GrDirectContext>& skia_context,
-                                   bool render_to_surface)
+GPUStudioVulkan::GPUStudioVulkan(GPUSurfaceVulkanDelegate* delegate,
+                                   const sk_sp<GrDirectContext>& skia_context)
     : delegate_(delegate),
       skia_context_(skia_context),
-      render_to_surface_(render_to_surface),
       weak_factory_(this) {}
 
 GPUStudioVulkan::~GPUStudioVulkan() = default;

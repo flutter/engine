@@ -62,6 +62,7 @@ class MockResponse : public PlatformMessageResponse {
 class MockStudio : public EmbedderStudio {
  public:
   MOCK_CONST_METHOD0(IsValid, bool());
+  MOCK_METHOD0(CreateGPUStudio, std::unique_ptr<Studio>());
   MOCK_METHOD0(CreateSurface, std::unique_ptr<EmbedderSurface>());
   MOCK_CONST_METHOD0(CreateResourceContext, sk_sp<GrDirectContext>());
 };

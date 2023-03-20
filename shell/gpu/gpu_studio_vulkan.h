@@ -2,8 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef SHELL_GPU_GPU_SURFACE_VULKAN_H_
-#define SHELL_GPU_GPU_SURFACE_VULKAN_H_
+#ifndef SHELL_GPU_GPU_STUDIO_VULKAN_H_
+#define SHELL_GPU_GPU_STUDIO_VULKAN_H_
 
 #include <memory>
 
@@ -13,16 +13,16 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
 #include "flutter/vulkan/vulkan_backbuffer.h"
 #include "flutter/vulkan/vulkan_native_surface.h"
+#include "flutter/flow/studio.h"
 #include "flutter/vulkan/vulkan_window.h"
 
 #include "third_party/skia/include/core/SkRefCnt.h"
-#include "third_party/skia/include/core/SkStudio.h"
 
 namespace flutter {
 
 //------------------------------------------------------------------------------
 /// @brief  A GPU surface backed by VkImages provided by a
-///         GPUStudioVulkanDelegate.
+///         GPUSurfaceVulkanDelegate.
 ///
 class GPUStudioVulkan : public Studio {
  public:
@@ -30,9 +30,8 @@ class GPUStudioVulkan : public Studio {
   /// @brief      Create a GPUStudioVulkan while letting it reuse an existing
   ///             GrDirectContext.
   ///
-  GPUStudioVulkan(GPUStudioVulkanDelegate* delegate,
-                   const sk_sp<GrDirectContext>& context,
-                   bool render_to_surface);
+  GPUStudioVulkan(GPUSurfaceVulkanDelegate* delegate,
+                   const sk_sp<GrDirectContext>& context);
 
   ~GPUStudioVulkan() override;
 
@@ -45,15 +44,12 @@ class GPUStudioVulkan : public Studio {
   static SkColorType ColorTypeFromFormat(const VkFormat format);
 
  private:
-  GPUStudioVulkanDelegate* delegate_;
+  GPUSurfaceVulkanDelegate* delegate_;
   sk_sp<GrDirectContext> skia_context_;
-  bool render_to_surface_;
-
-  fml::WeakPtrFactory<GPUSurfaceVulkan> weak_factory_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(GPUStudioVulkan);
 };
 
 }  // namespace flutter
 
-#endif  // SHELL_GPU_GPU_SURFACE_VULKAN_H_
+#endif  // SHELL_GPU_GPU_STUDIO_VULKAN_H_

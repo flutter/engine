@@ -2,20 +2,20 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
-#define FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
+#ifndef FLUTTER_SHELL_GPU_GPU_STUDIO_SOFTWARE_H_
+#define FLUTTER_SHELL_GPU_GPU_STUDIO_SOFTWARE_H_
 
 #include "flutter/flow/surface.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/gpu/gpu_surface_software_delegate.h"
+#include "flutter/flow/studio.h"
 
 namespace flutter {
 
 class GPUStudioSoftware : public Studio {
  public:
-  GPUStudioSoftware(GPUStudioSoftwareDelegate* delegate,
-                     bool render_to_surface);
+  GPUStudioSoftware(GPUSurfaceSoftwareDelegate* delegate);
 
   ~GPUStudioSoftware() override;
 
@@ -26,16 +26,11 @@ class GPUStudioSoftware : public Studio {
   GrDirectContext* GetContext() override;
 
  private:
-  GPUStudioSoftwareDelegate* delegate_;
-  // TODO(38466): Refactor GPU surface APIs take into account the fact that an
-  // external view embedder may want to render to the root surface. This is a
-  // hack to make avoid allocating resources for the root surface when an
-  // external view embedder is present.
-  const bool render_to_surface_;
-  fml::TaskRunnerAffineWeakPtrFactory<GPUStudioSoftware> weak_factory_;
+  GPUSurfaceSoftwareDelegate* delegate_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(GPUStudioSoftware);
 };
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_GPU_GPU_SURFACE_SOFTWARE_H_
+#endif  // FLUTTER_SHELL_GPU_GPU_STUDIO_SOFTWARE_H_

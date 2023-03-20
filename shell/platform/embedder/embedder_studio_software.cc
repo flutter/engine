@@ -10,6 +10,7 @@
 
 #include "flutter/shell/platform/embedder/embedder_studio_software.h"
 #include "flutter/shell/platform/embedder/embedder_surface_software.h"
+#include "flutter/shell/gpu/gpu_studio_software.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -33,6 +34,20 @@ EmbedderStudioSoftware::~EmbedderStudioSoftware() = default;
 // |EmbedderStudio|
 bool EmbedderStudioSoftware::IsValid() const {
   return valid_;
+}
+
+// |EmbedderStudio|
+std::unique_ptr<Studio> EmbedderStudioSoftware::CreateGPUStudio() {
+  if (!IsValid()) {
+    return nullptr;
+  }
+  auto studio = std::make_unique<GPUStudioSoftware>(this);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 // |EmbedderStudio|

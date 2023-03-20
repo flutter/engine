@@ -9,6 +9,7 @@
 #include "flutter/fml/logging.h"
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 #import "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
+#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -36,6 +37,24 @@ EmbedderStudioMetal::~EmbedderStudioMetal() = default;
 
 bool EmbedderStudioMetal::IsValid() const {
   return valid_;
+}
+
+std::unique_ptr<Studio> EmbedderStudioMetal::CreateGPUStudio() API_AVAILABLE(ios(13.0)) {
+  if (@available(iOS 13.0, *)) {
+  } else {
+    return nullptr;
+  }
+  if (!IsValid()) {
+    return nullptr;
+  }
+
+  auto studio = std::make_unique<GPUStudioMetalSkia>(this, main_context_);
+
+  if (!studio->IsValid()) {
+    return nullptr;
+  }
+
+  return studio;
 }
 
 std::unique_ptr<EmbedderSurface> EmbedderStudioMetal::CreateSurface() {

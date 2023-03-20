@@ -80,6 +80,8 @@ source_set("flow") {
     "rtree.cc",
     "rtree.h",
     "skia_gpu_object.h",
+    "studio.cc",
+    "studio.h",
     "surface.cc",
     "surface.h",
     "surface_frame.cc",

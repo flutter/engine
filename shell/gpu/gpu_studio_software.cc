@@ -8,15 +8,10 @@
 
 #include "flutter/fml/logging.h"
 
-#include "third_party/skia/include/core/SkStudio.h"
-
 namespace flutter {
 
-GPUStudioSoftware::GPUStudioSoftware(GPUStudioSoftwareDelegate* delegate,
-                                       bool render_to_surface)
-    : delegate_(delegate),
-      render_to_surface_(render_to_surface),
-      weak_factory_(this) {}
+GPUStudioSoftware::GPUStudioSoftware(GPUSurfaceSoftwareDelegate* delegate)
+    : delegate_(delegate) {}
 
 GPUStudioSoftware::~GPUStudioSoftware() = default;
 
