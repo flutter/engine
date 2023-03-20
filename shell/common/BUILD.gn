@@ -150,6 +150,8 @@ source_set("common") {
     "//third_party/skia",
   ]
 
+  include_dirs = [ "//flutter/updater" ]
+
   if (impeller_supports_rendering) {
     sources += [
       "snapshot_controller_impeller.cc",
