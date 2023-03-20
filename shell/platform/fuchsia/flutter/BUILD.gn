@@ -99,6 +99,8 @@ template("runner_sources") {
       "software_surface.h",
       "software_surface_producer.cc",
       "software_surface_producer.h",
+      "studio.cc",
+      "studio.h",
       "surface.cc",
       "surface.h",
       "surface_producer.h",

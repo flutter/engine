@@ -833,6 +833,10 @@ void Engine::DestroyFlatlandView(int64_t view_id,
       });
 }
 
+std::unique_ptr<flutter::Studio> Engine::CreateStudio() {
+  return std::make_unique<Studio>(surface_producer_->gr_context());
+}
+
 std::unique_ptr<flutter::Surface> Engine::CreateSurface() {
   return std::make_unique<Surface>(thread_label_, GetExternalViewEmbedder(),
                                    surface_producer_->gr_context());
