@@ -1,4 +1,4 @@
-Signature: 1583b09be00c4b0f5900e3f5551e6ae5
+Signature: fa6adc88bc6cd0ad17a9d7f2e2728eef
 
 ====================================================================================================
 LIBRARY: etc1
@@ -8883,6 +8883,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 LIBRARY: skia
 ORIGIN: ../../../third_party/skia/gm/coordclampshader.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/gm/imagefiltersunpremul.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/include/ports/SkFontMgr_data.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkGainmapInfo.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkGainmapShader.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/include/private/SkJpegGainmapEncoder.h + ../../../third_party/skia/LICENSE
@@ -8904,6 +8905,7 @@ ORIGIN: ../../../third_party/skia/src/shaders/SkGainmapShader.cpp + ../../../thi
 TYPE: LicenseType.bsd
 FILE: ../../../third_party/skia/gm/coordclampshader.cpp
 FILE: ../../../third_party/skia/gm/imagefiltersunpremul.cpp
+FILE: ../../../third_party/skia/include/ports/SkFontMgr_data.h
 FILE: ../../../third_party/skia/include/private/SkGainmapInfo.h
 FILE: ../../../third_party/skia/include/private/SkGainmapShader.h
 FILE: ../../../third_party/skia/include/private/SkJpegGainmapEncoder.h
@@ -8971,6 +8973,7 @@ ORIGIN: ../../../third_party/skia/src/base/SkQuads.cpp + ../../../third_party/sk
 ORIGIN: ../../../third_party/skia/src/base/SkQuads.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/base/SkSafeMath.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkBlitter_A8.h + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawBase.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkDrawBase.h + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkFontMetricsPriv.cpp + ../../../third_party/skia/LICENSE
@@ -8979,6 +8982,7 @@ ORIGIN: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp + ../../../third_
 ORIGIN: ../../../third_party/skia/src/core/SkPixmapDraw.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkRSXform.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp + ../../../third_party/skia/LICENSE
+ORIGIN: ../../../third_party/skia/src/core/SkScan_SAAPath.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/core/SkWritePixelsRec.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/encode/SkEncoder.cpp + ../../../third_party/skia/LICENSE
 ORIGIN: ../../../third_party/skia/src/gpu/dawn/DawnUtilsPriv.h + ../../../third_party/skia/LICENSE
@@ -9021,6 +9025,7 @@ FILE: ../../../third_party/skia/src/base/SkQuads.cpp
 FILE: ../../../third_party/skia/src/base/SkQuads.h
 FILE: ../../../third_party/skia/src/base/SkSafeMath.cpp
 FILE: ../../../third_party/skia/src/core/SkBlitter_A8.h
+FILE: ../../../third_party/skia/src/core/SkCanvas_Raster.cpp
 FILE: ../../../third_party/skia/src/core/SkDrawBase.cpp
 FILE: ../../../third_party/skia/src/core/SkDrawBase.h
 FILE: ../../../third_party/skia/src/core/SkFontMetricsPriv.cpp
@@ -9029,6 +9034,7 @@ FILE: ../../../third_party/skia/src/core/SkMipmapBuilder.cpp
 FILE: ../../../third_party/skia/src/core/SkPixmapDraw.cpp
 FILE: ../../../third_party/skia/src/core/SkRSXform.cpp
 FILE: ../../../third_party/skia/src/core/SkReadPixelsRec.cpp
+FILE: ../../../third_party/skia/src/core/SkScan_SAAPath.cpp
 FILE: ../../../third_party/skia/src/core/SkWritePixelsRec.cpp
 FILE: ../../../third_party/skia/src/encode/SkEncoder.cpp
 FILE: ../../../third_party/skia/src/gpu/dawn/DawnUtilsPriv.h
