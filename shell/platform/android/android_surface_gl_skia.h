@@ -89,8 +89,7 @@ class AndroidSurfaceGLSkia final : public GPUSurfaceGLDelegate,
   std::unique_ptr<AndroidEGLSurface> onscreen_surface_;
   std::unique_ptr<AndroidEGLSurface> offscreen_surface_;
 
-  GrDirectContext* UseExistingMainContextOrCreate(
-      GrDirectContext* gr_context);
+  GrDirectContext* UseExistingMainContextOrCreate(GrDirectContext* gr_context);
 
   //----------------------------------------------------------------------------
   /// @brief      Takes the super class AndroidSurface's AndroidContext and

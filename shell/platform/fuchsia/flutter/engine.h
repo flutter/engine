@@ -31,8 +31,8 @@
 #include "gfx_session_connection.h"
 #include "isolate_configurator.h"
 #include "studio.h"
-#include "surface_producer.h"
 #include "surface.h"
+#include "surface_producer.h"
 
 namespace flutter_runner {
 

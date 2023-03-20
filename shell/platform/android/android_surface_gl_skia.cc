@@ -69,9 +69,8 @@ GrDirectContext* AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
 std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateGPUStudio(
     GrDirectContext* gr_context) {
   auto studio = std::make_unique<GPUStudioGLSkia>(
-      sk_ref_sp(UseExistingMainContextOrCreate(gr_context)),
-      this);
-   if (!studio->IsValid()) {
+      sk_ref_sp(UseExistingMainContextOrCreate(gr_context)), this);
+  if (!studio->IsValid()) {
     return nullptr;
   }
   return studio;

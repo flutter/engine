@@ -13,8 +13,7 @@
 
 namespace flutter_runner {
 
-Studio::Studio(GrDirectContext* gr_context)
-    : gr_context_(gr_context) {}
+Studio::Studio(GrDirectContext* gr_context) : gr_context_(gr_context) {}
 
 Studio::~Studio() = default;
 
