@@ -725,8 +725,7 @@ TEST_P(RendererTest, CanGenerateMipmaps) {
   bool first_frame = true;
   Renderer::RenderCallback callback = [&](RenderTarget& render_target) {
     const char* mip_filter_names[] = {"None", "Nearest", "Linear"};
-    const MipFilter mip_filters[] = {MipFilter::kNone, MipFilter::kNearest,
-                                     MipFilter::kLinear};
+    const MipFilter mip_filters[] = {MipFilter::kNearest, MipFilter::kLinear};
     const char* min_filter_names[] = {"Nearest", "Linear"};
     const MinMagFilter min_filters[] = {MinMagFilter::kNearest,
                                         MinMagFilter::kLinear};
