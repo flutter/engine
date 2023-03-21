@@ -41,7 +41,6 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)) {
-
   if (!proc_table_ || !proc_table_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
     return;
@@ -103,8 +102,9 @@ std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
-  return std::make_unique<OffScreenSurface>(
-      proc_table_, shell_test_external_view_embedder_, context_, memory_allocator_);
+  return std::make_unique<OffScreenSurface>(proc_table_,
+                                            shell_test_external_view_embedder_,
+                                            context_, memory_allocator_);
 }
 
 // |PlatformView|

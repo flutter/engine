@@ -31,12 +31,11 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
  private:
   class OffScreenSurface : public flutter::Surface {
    public:
-    OffScreenSurface(
-        fml::RefPtr<vulkan::VulkanProcTable> vk,
-        std::shared_ptr<ShellTestExternalViewEmbedder>
-            shell_test_external_view_embedder,
-        sk_sp<GrDirectContext> context,
-        sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator);
+    OffScreenSurface(fml::RefPtr<vulkan::VulkanProcTable> vk,
+                     std::shared_ptr<ShellTestExternalViewEmbedder>
+                         shell_test_external_view_embedder,
+                     sk_sp<GrDirectContext> context,
+                     sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator);
 
     ~OffScreenSurface() override;
 
