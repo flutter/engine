@@ -689,23 +689,18 @@ public class FlutterView extends FrameLayout
       viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
     }
 
-    boolean statusBarVisible =
-        !((SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN & getWindowSystemUiVisibility()) == 0);
-    boolean navigationBarVisible =
-        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+    boolean statusBarVisible = (SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
+    boolean navigationBarVisible =(SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      WindowInsetsControllerCompat controller =
-          WindowCompat.getInsetsController(
-              ((Activity) getContext()).getWindow(),
-              ((Activity) getContext()).getWindow().getDecorView());
-      if (navigationBarVisible) {
-        navigationBarVisible =
-            (controller.getSystemBarsBehavior()
-                    & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
-                == 0;
-      }
+      Window window = ((Activity) getContext()).getWindow();
+      View view = window.getDecorView();
+      WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, view);
 
+      if (navigationBarVisible) {
+        navigationBarVisible = (controller.getSystemBarsBehavior() & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE) == 0;
+      }
+      
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
