@@ -22,7 +22,8 @@ namespace impeller {
 struct Paint {
   using ImageFilterProc = std::function<std::shared_ptr<FilterContents>(
       FilterInput::Ref,
-      const Matrix& effect_transform)>;
+      const Matrix& effect_transform,
+      bool is_subpass)>;
   using ColorFilterProc =
       std::function<std::shared_ptr<ColorFilterContents>(FilterInput::Ref)>;
   using MaskFilterProc = std::function<std::shared_ptr<FilterContents>(
@@ -86,8 +87,7 @@ struct Paint {
   ///             original contents is returned.
   std::shared_ptr<Contents> WithFilters(
       std::shared_ptr<Contents> input,
-      std::optional<bool> is_solid_color = std::nullopt,
-      const Matrix& effect_transform = Matrix()) const;
+      std::optional<bool> is_solid_color = std::nullopt) const;
 
   /// @brief      Wrap this paint's configured filters to the given contents of
   ///             subpass target.
@@ -118,9 +118,9 @@ struct Paint {
                                          bool is_solid_color,
                                          const Matrix& effect_transform) const;
 
-  std::shared_ptr<Contents> WithImageFilter(
-      std::shared_ptr<Contents> input,
-      const Matrix& effect_transform) const;
+  std::shared_ptr<Contents> WithImageFilter(std::shared_ptr<Contents> input,
+                                            const Matrix& effect_transform,
+                                            bool is_subpass) const;
 
   std::shared_ptr<Contents> WithColorFilter(std::shared_ptr<Contents> input,
                                             bool absorb_opacity = false) const;

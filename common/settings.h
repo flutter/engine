@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/fml/closure.h"
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/time/time_point.h"
@@ -210,7 +211,11 @@ struct Settings {
 
   // Enable the Impeller renderer on supported platforms. Ignored if Impeller is
   // not supported on the platform.
+#if FML_OS_IOS || FML_OS_IOS_SIMULATOR
+  bool enable_impeller = true;
+#else
   bool enable_impeller = false;
+#endif
 
   // Disable the partial repaint on supported platforms. Ignored if partial
   // repaint is not supported on the platform.

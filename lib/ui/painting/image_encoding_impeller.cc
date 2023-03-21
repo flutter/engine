@@ -9,6 +9,7 @@
 #include "impeller/renderer/context.h"
 #include "impeller/renderer/device_buffer.h"
 #include "impeller/renderer/formats.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 namespace flutter {
 namespace {
@@ -161,6 +162,18 @@ void ImageEncodingImpeller::ConvertImageToRaster(
                                    is_gpu_disabled_sync_switch,
                                    impeller_context);
   });
+}
+
+int ImageEncodingImpeller::GetColorSpace(
+    const std::shared_ptr<impeller::Texture>& texture) {
+  const impeller::TextureDescriptor& desc = texture->GetTextureDescriptor();
+  switch (desc.format) {
+    case impeller::PixelFormat::kB10G10R10XR:  // intentional_fallthrough
+    case impeller::PixelFormat::kR16G16B16A16Float:
+      return ColorSpace::kExtendedSRGB;
+    default:
+      return ColorSpace::kSRGB;
+  }
 }
 
 }  // namespace flutter
