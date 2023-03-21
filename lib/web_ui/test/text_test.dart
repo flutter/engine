@@ -363,7 +363,7 @@ Future<void> testMain() async {
     final bool resetValue = debugEmulateFlutterTesterEnvironment;
     debugEmulateFlutterTesterEnvironment = true;
     tearDownAll(() => debugEmulateFlutterTesterEnvironment = resetValue);
-    const List<String> testFonts = <String>['Ahem', 'FlutterTest'];
+    const List<String> testFonts = <String>['FlutterTest', 'Ahem'];
 
     test('The default test font is used when a non-test fontFamily is specified, or fontFamily is not specified', () {
       final String defaultTestFontFamily = testFonts.first;
