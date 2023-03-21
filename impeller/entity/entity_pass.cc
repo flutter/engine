@@ -309,7 +309,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(renderer, root_pass_size,
                              pass_context.GetPassTarget(), position, position,
-                             pass_depth, stencil_depth_ + 1, nullptr,
+                             pass_depth, stencil_depth_, nullptr,
                              pass_context.GetRenderPass(pass_depth))) {
         return EntityPass::EntityResult::Failure();
       }
