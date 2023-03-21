@@ -247,32 +247,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
                           .image_info = scaled_bitmap->info()};
 }
 
-sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
-    const std::shared_ptr<impeller::Context>& context,
-    std::shared_ptr<SkBitmap> bitmap) {
-  auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
-      bitmap->computeByteSize(),                                // size
-      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
-  );
-
-  impeller::DeviceBufferDescriptor descriptor;
-  descriptor.storage_mode = impeller::StorageMode::kHostVisible;
-  descriptor.size = mapping->GetSize();
-
-  auto device_buffer =
-      context->GetResourceAllocator()->CreateBuffer(descriptor);
-  if (!device_buffer->CopyHostBuffer(mapping->GetMapping(),
-                                     impeller::Range{0, mapping->GetSize()})) {
-    return nullptr;
-  }
-
-  return UploadTexture(context, std::move(device_buffer), bitmap->info());
-}
-
-#if FML_OS_IOS
-
-sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
+sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
     std::shared_ptr<impeller::DeviceBuffer> buffer,
     const SkImageInfo& image_info) {
@@ -329,16 +304,15 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
   return impeller::DlImageImpeller::Make(std::move(dest_texture));
 }
 
-#else
-
-sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
+sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToShared(
     const std::shared_ptr<impeller::Context>& context,
-    std::shared_ptr<impeller::DeviceBuffer> buffer,
-    const SkImageInfo& image_info) {
+    std::shared_ptr<SkBitmap> bitmap,
+    bool create_mips) {
   TRACE_EVENT0("impeller", __FUNCTION__);
-  if (!context || !buffer) {
+  if (!context || !bitmap) {
     return nullptr;
   }
+  const auto image_info = bitmap->info();
   const auto pixel_format = ToPixelFormat(image_info.colorType());
   if (!pixel_format) {
     FML_DLOG(ERROR) << "Pixel format unsupported by Impeller.";
@@ -359,9 +333,9 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
   }
 
   auto mapping = std::make_shared<fml::NonOwnedMapping>(
-      reinterpret_cast<const uint8_t*>(buffer->OnGetContents()),  // data
-      texture_descriptor.GetByteSizeOfBaseMipLevel(),             // size
-      [buffer](auto, auto) mutable { buffer.reset(); }            // proc
+      reinterpret_cast<const uint8_t*>(bitmap->getAddr(0, 0)),  // data
+      texture_descriptor.GetByteSizeOfBaseMipLevel(),           // size
+      [bitmap](auto, auto) mutable { bitmap.reset(); }          // proc
   );
 
   if (!texture->SetContents(mapping)) {
@@ -371,7 +345,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
 
   texture->SetLabel(impeller::SPrintF("ui.Image(%p)", texture.get()).c_str());
 
-  if (texture_descriptor.mip_count > 1u) {
+  if (texture_descriptor.mip_count > 1u && create_mips) {
     auto command_buffer = context->CreateCommandBuffer();
     if (!command_buffer) {
       FML_DLOG(ERROR)
@@ -397,8 +371,6 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
 
   return impeller::DlImageImpeller::Make(std::move(texture));
 }
-
-#endif  // FML_OS_IOS
 
 // |ImageDecoder|
 void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
@@ -441,12 +413,19 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           result(nullptr);
           return;
         }
-        auto upload_texture_and_invoke_result = [result, context,
-                                                 bitmap_result =
-                                                     bitmap_result.value()]() {
-          result(UploadTexture(context, std::move(bitmap_result.device_buffer),
-                               bitmap_result.image_info));
-        };
+        auto upload_texture_and_invoke_result =
+            [result, context, bitmap_result = bitmap_result.value()]() {
+// TODO(jonahwilliams): remove ifdef once blit from buffer to texture is
+// implemented on other platforms.
+#ifdef FML_OS_IOS
+              result(UploadTextureToPrivate(
+                  context, std::move(bitmap_result.device_buffer),
+                  bitmap_result.image_info));
+#else
+              result(UploadTextureToShared(context,
+                                           std::move(bitmap_result.sk_bitmap)));
+#endif
+            };
         // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
         // Technically we don't need to post tasks to the io runner, but without
         // this forced serialization we can end up overloading the GPU and/or

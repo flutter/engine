@@ -66,14 +66,26 @@ class ImageDecoderImpeller final : public ImageDecoder {
       bool supports_wide_gamut,
       const std::shared_ptr<impeller::Allocator>& allocator);
 
-  static sk_sp<DlImage> UploadTexture(
+  /// @brief Create a device private texture from the provided host buffer.
+  ///        This method is only suported on the metal backend.
+  /// @param context    The Impeller graphics context.
+  /// @param buffer     A host buffer containing the image to be uploaded.
+  /// @param image_info Format information about the particular image.
+  /// @return           A DlImage.
+  static sk_sp<DlImage> UploadTextureToPrivate(
       const std::shared_ptr<impeller::Context>& context,
       std::shared_ptr<impeller::DeviceBuffer> buffer,
       const SkImageInfo& image_info);
 
-  static sk_sp<DlImage> UploadTexture(
+  /// @brief Create a host visible texture from the provided bitmap.
+  /// @param context     The Impeller graphics context.
+  /// @param bitmap      A bitmap containg the image to be uploaded.
+  /// @param create_mips Whether mipmaps should be generated for the given image.
+  /// @return            A DlImage.
+  static sk_sp<DlImage> UploadTextureToShared(
       const std::shared_ptr<impeller::Context>& context,
-      std::shared_ptr<SkBitmap> bitmap);
+      std::shared_ptr<SkBitmap> bitmap,
+      bool create_mips = true);
 
  private:
   using FutureContext = std::shared_future<std::shared_ptr<impeller::Context>>;
