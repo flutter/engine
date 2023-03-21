@@ -97,7 +97,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] init]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
-      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
+      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer, true);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface();
 
       layer = std::make_shared<FlutterPlatformViewLayer>(
@@ -109,7 +109,7 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewLayerPool::GetLayer
       overlay_view_wrapper.reset([[FlutterOverlayView alloc] initWithContentsScale:screenScale]);
 
       auto ca_layer = fml::scoped_nsobject<CALayer>{[[overlay_view.get() layer] retain]};
-      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer);
+      std::unique_ptr<IOSSurface> ios_surface = IOSSurface::Create(ios_context, ca_layer, true);
       std::unique_ptr<Surface> surface = ios_surface->CreateGPUSurface(gr_context);
 
       layer = std::make_shared<FlutterPlatformViewLayer>(

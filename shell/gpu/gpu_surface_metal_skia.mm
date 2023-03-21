@@ -53,14 +53,14 @@ sk_sp<SkSurface> CreateSurfaceFromMetalTexture(GrDirectContext* context,
 GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(GPUSurfaceMetalDelegate* delegate,
                                          sk_sp<GrDirectContext> context,
                                          MsaaSampleCount msaa_samples,
-                                         bool render_to_surface,
-                                         bool disable_partial_repaint)
+                                         bool disable_partial_repaint,
+                                         bool render_to_surface)
     : delegate_(delegate),
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
-      render_to_surface_(render_to_surface),
-      disable_partial_repaint_(disable_partial_repaint) {}
+      disable_partial_repaint_(disable_partial_repaint),
+      render_to_surface_(render_to_surface) {}
 
 GPUSurfaceMetalSkia::~GPUSurfaceMetalSkia() = default;
 

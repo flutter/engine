@@ -31,7 +31,7 @@ class AndroidContextGLSkia : public AndroidContext {
                        fml::RefPtr<AndroidEnvironmentGL> environment,
                        const TaskRunners& taskRunners,
                        uint8_t msaa_samples,
-                       bool disable_partial_repaint = false);
+                       bool disable_partial_repaint);
 
   ~AndroidContextGLSkia();
 

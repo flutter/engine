@@ -48,7 +48,6 @@ std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* 
       this,                                // delegate
       sk_ref_sp(context),                  // context
       GetContext()->GetMsaaSampleCount(),  // sample count
-      true,                                // render to surface
       disable_partial_repaint_);           // disable partial repaint
 }
 
