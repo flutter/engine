@@ -74,7 +74,7 @@ class ImageDecoderImpeller final : public ImageDecoder {
   /// @return           A DlImage.
   static sk_sp<DlImage> UploadTextureToPrivate(
       const std::shared_ptr<impeller::Context>& context,
-      std::shared_ptr<impeller::DeviceBuffer> buffer,
+      const std::shared_ptr<impeller::DeviceBuffer>& buffer,
       const SkImageInfo& image_info);
 
   /// @brief Create a host visible texture from the provided bitmap.

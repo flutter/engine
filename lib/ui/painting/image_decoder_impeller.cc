@@ -249,7 +249,7 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
 
 sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
     const std::shared_ptr<impeller::Context>& context,
-    std::shared_ptr<impeller::DeviceBuffer> buffer,
+    const std::shared_ptr<impeller::DeviceBuffer>& buffer,
     const SkImageInfo& image_info) {
   TRACE_EVENT0("impeller", __FUNCTION__);
   if (!context || !buffer) {
@@ -413,19 +413,18 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           result(nullptr);
           return;
         }
-        auto upload_texture_and_invoke_result =
-            [result, context, bitmap_result = bitmap_result.value()]() {
+        auto upload_texture_and_invoke_result = [result, context,
+                                                 bitmap_result =
+                                                     bitmap_result.value()]() {
 // TODO(jonahwilliams): remove ifdef once blit from buffer to texture is
 // implemented on other platforms.
 #ifdef FML_OS_IOS
-              result(UploadTextureToPrivate(
-                  context, std::move(bitmap_result.device_buffer),
-                  bitmap_result.image_info));
+          result(UploadTextureToPrivate(context, bitmap_result.device_buffer,
+                                        bitmap_result.image_info));
 #else
-              result(UploadTextureToShared(context,
-                                           std::move(bitmap_result.sk_bitmap)));
+          result(UploadTextureToShared(context, bitmap_result.sk_bitmap));
 #endif
-            };
+        };
         // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
         // Technically we don't need to post tasks to the io runner, but without
         // this forced serialization we can end up overloading the GPU and/or
