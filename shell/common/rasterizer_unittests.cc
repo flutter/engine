@@ -899,7 +899,7 @@ TEST(RasterizerTest,
             [](const SurfaceFrame& frame, DlCanvas*) { return true; },
             /*frame_size=*/SkISize::Make(800, 600));
       }));
-  ON_CALL(*surface, MakeRenderContextCurrent())
+  ON_CALL(*studio, MakeRenderContextCurrent())
       .WillByDefault(::testing::Invoke(
           [] { return std::make_unique<GLContextDefaultResult>(true); }));
 
@@ -1070,7 +1070,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
   fml::CountDownLatch submit_latch(2);
   auto studio = std::make_unique<NiceMock<MockStudio>>();
   auto surface = std::make_unique<MockSurface>();
-  ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
+  ON_CALL(*studio, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
   ON_CALL(*surface, AcquireFrame(SkISize()))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
@@ -1090,7 +1090,7 @@ TEST(RasterizerTest, presentationTimeSetWhenVsyncTargetInFuture) {
             /*frame_size=*/SkISize::Make(800, 600));
       }));
 
-  ON_CALL(*surface, MakeRenderContextCurrent())
+  ON_CALL(*studio, MakeRenderContextCurrent())
       .WillByDefault(::testing::Invoke(
           [] { return std::make_unique<GLContextDefaultResult>(true); }));
 
@@ -1154,7 +1154,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
   fml::CountDownLatch submit_latch(1);
   auto studio = std::make_unique<NiceMock<MockStudio>>();
   auto surface = std::make_unique<MockSurface>();
-  ON_CALL(*surface, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
+  ON_CALL(*studio, AllowsDrawingWhenGpuDisabled()).WillByDefault(Return(true));
   ON_CALL(*surface, AcquireFrame(SkISize()))
       .WillByDefault(::testing::Invoke([&] {
         SurfaceFrame::FramebufferInfo framebuffer_info;
@@ -1172,7 +1172,7 @@ TEST(RasterizerTest, presentationTimeNotSetWhenVsyncTargetInPast) {
             /*frame_size=*/SkISize::Make(800, 600));
       }));
 
-  ON_CALL(*surface, MakeRenderContextCurrent())
+  ON_CALL(*studio, MakeRenderContextCurrent())
       .WillByDefault(::testing::Invoke(
           [] { return std::make_unique<GLContextDefaultResult>(true); }));
 

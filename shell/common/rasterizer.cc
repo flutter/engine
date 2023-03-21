@@ -477,7 +477,7 @@ RasterStatus Rasterizer::DrawToSurface(
   FML_DCHECK(surface_);
 
   RasterStatus raster_status;
-  if (surface_->AllowsDrawingWhenGpuDisabled()) {
+  if (studio_->AllowsDrawingWhenGpuDisabled()) {
     raster_status = DrawToSurfaceUnsafe(frame_timings_recorder, layer_tree);
   } else {
     delegate_.GetIsGpuDisabledSyncSwitch()->Execute(
