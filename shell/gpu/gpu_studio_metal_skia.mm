@@ -31,7 +31,9 @@ GPUStudioMetalSkia::GPUStudioMetalSkia(
     GPUSurfaceMetalDelegate* delegate,
     sk_sp<GrDirectContext> context,
     std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler)
-    : delegate_(delegate), context_(std::move(context)), sksl_precompiler_(std::move(sksl_precompiler)) {}
+    : delegate_(delegate),
+      context_(std::move(context)),
+      sksl_precompiler_(std::move(sksl_precompiler)) {}
 
 GPUStudioMetalSkia::~GPUStudioMetalSkia() = default;
 

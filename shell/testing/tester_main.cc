@@ -23,8 +23,8 @@
 #include "flutter/shell/common/shell.h"
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
-#include "flutter/shell/gpu/gpu_surface_software.h"
 #include "flutter/shell/gpu/gpu_studio_software.h"
+#include "flutter/shell/gpu/gpu_surface_software.h"
 
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
