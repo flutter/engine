@@ -2698,8 +2698,8 @@ const String _kChromiumCanvasKitJsFileName = 'chromium/canvaskit.js';
 String get _canvasKitBaseUrl => configuration.canvasKitBaseUrl;
 
 @visibleForTesting
-List<String> get canvasKitJsFileNames {
-  switch (configuration.canvasKitVariant) {
+List<String> getCanvasKitJsFileNames(CanvasKitVariant variant) {
+  switch (variant) {
     case CanvasKitVariant.auto:
       return <String>[
         if (_enableCanvasKitChromiumInAutoMode) _kChromiumCanvasKitJsFileName,
@@ -2712,7 +2712,9 @@ List<String> get canvasKitJsFileNames {
   }
 }
 Iterable<String> get _canvasKitJsUrls {
-  return canvasKitJsFileNames.map((String filename) => '$_canvasKitBaseUrl$filename');
+  return getCanvasKitJsFileNames(configuration.canvasKitVariant).map(
+    (String filename) => '$_canvasKitBaseUrl$filename',
+  );
 }
 @visibleForTesting
 String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>

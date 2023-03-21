@@ -1835,7 +1835,7 @@ void _paragraphTests() {
     expect(surface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
-  group('CanvasKit Chromium', () {
+  group('getCanvasKitJsFileNames', () {
     late dynamic oldV8BreakIterator = v8BreakIterator;
     setUp(() {
       oldV8BreakIterator = v8BreakIterator;
@@ -1845,28 +1845,36 @@ void _paragraphTests() {
       debugResetBrowserSupportsImageDecoder();
     });
 
-    test('is downloaded in Chromium-based browsers', () {
+    test('in Chromium-based browsers', () {
       v8BreakIterator = Object(); // Any non-null value.
       browserSupportsImageDecoder = true;
 
-      expect(canvasKitJsFileNames, <String>[
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>[
         'chromium/canvaskit.js',
         'canvaskit.js',
       ]);
     });
 
-    test('is not downloaded in other browsers', () {
+    test('in other browsers', () {
       v8BreakIterator = null;
       browserSupportsImageDecoder = true;
-      expect(canvasKitJsFileNames, <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
 
       v8BreakIterator = Object();
       browserSupportsImageDecoder = false;
-      expect(canvasKitJsFileNames, <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
 
       v8BreakIterator = null;
       browserSupportsImageDecoder = false;
-      expect(canvasKitJsFileNames, <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
     });
   });
 
