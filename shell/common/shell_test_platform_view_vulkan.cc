@@ -41,6 +41,12 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)) {
+
+  if (!proc_table_ || !proc_table_->HasAcquiredMandatoryProcAddresses()) {
+    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
+    return;
+  }
+
   // Create the application instance.
   std::vector<std::string> extensions = {
       VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
@@ -50,8 +56,29 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       *proc_table_, "FlutterTest", std::move(extensions),
       VK_MAKE_VERSION(1, 0, 0), VK_MAKE_VERSION(1, 1, 0), true);
 
+  if (!application_->IsValid() || !proc_table_->AreInstanceProcsSetup()) {
+    // Make certain the application instance was created and it set up the
+    // instance proc table entries.
+    FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
+    return;
+  }
+
   // Create the device.
   logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
+
+  if (logical_device_ == nullptr || !logical_device_->IsValid() ||
+      !proc_table_->AreDeviceProcsSetup()) {
+    // Make certain the device was created and it set up the device proc table
+    // entries.
+    FML_DLOG(ERROR) << "Device proc addresses have not been set up.";
+    return;
+  }
+
+  memory_allocator_ = FlutterSkiaVulkanMemoryAllocator::Make(
+      application_->GetAPIVersion(), application_->GetInstance(),
+      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
+      proc_table_, true);
+
   // Create the Skia GrContext.
   if (!CreateSkiaGrContext()) {
     FML_DLOG(ERROR) << "Could not create Skia context.";
@@ -70,15 +97,14 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 
 // |PlatformView|
 std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
-  return std::make_unique<GPUStudioVulkan>(context_, this);
+  return std::make_unique<GPUStudioVulkan>(context_);
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
   return std::make_unique<OffScreenSurface>(
-      proc_table_, shell_test_external_view_embedder_, context_, application_,
-      logical_device_);
+      proc_table_, shell_test_external_view_embedder_, context_, memory_allocator_);
 }
 
 // |PlatformView|
@@ -159,46 +185,17 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder,
     sk_sp<GrDirectContext> context,
-    const std::make_unique<vulkan::VulkanApplication>& application,
-    const std::unique_ptr<VulkanDevice>& logical_device)
-    : valid_(false),
-      vk_(std::move(vk)),
+    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator)
+    : vk_(std::move(vk)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)),
       context_(context),
-{
-  if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
-    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
-    return;
-  }
-
-  if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
-    // Make certain the application instance was created and it set up the
-    // instance proc table entries.
-    FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
-    return;
-  }
-
-  if (logical_device_ == nullptr || !logical_device_->IsValid() ||
-      !vk_->AreDeviceProcsSetup()) {
-    // Make certain the device was created and it set up the device proc table
-    // entries.
-    FML_DLOG(ERROR) << "Device proc addresses have not been set up.";
-    return;
-  }
-
-  memory_allocator_ = FlutterSkiaVulkanMemoryAllocator::Make(
-      application_->GetAPIVersion(), application_->GetInstance(),
-      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
-      vk_, true);
-
-  valid_ = true;
-}
+      memory_allocator_(memory_allocator) {}
 
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
-  return valid_;
+  return true;
 }
 
 std::unique_ptr<SurfaceFrame>

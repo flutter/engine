@@ -36,8 +36,7 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
         std::shared_ptr<ShellTestExternalViewEmbedder>
             shell_test_external_view_embedder,
         sk_sp<GrDirectContext> context,
-        const std::make_unique<vulkan::VulkanApplication>& application,
-        const std::unique_ptr<VulkanDevice>& logical_device);
+        sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator);
 
     ~OffScreenSurface() override;
 
@@ -53,14 +52,11 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     GrDirectContext* GetContext() override;
 
    private:
-    bool valid_;
     fml::RefPtr<vulkan::VulkanProcTable> vk_;
     std::shared_ptr<ShellTestExternalViewEmbedder>
         shell_test_external_view_embedder_;
-    std::unique_ptr<vulkan::VulkanApplication> application_;
-    std::unique_ptr<vulkan::VulkanDevice> logical_device_;
-    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
     sk_sp<GrDirectContext> context_;
+    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
 
     FML_DISALLOW_COPY_AND_ASSIGN(OffScreenSurface);
   };
@@ -76,9 +72,11 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
   sk_sp<GrDirectContext> context_;
 
-  std::make_unique<vulkan::VulkanApplication> application_;
+  std::unique_ptr<vulkan::VulkanApplication> application_;
 
-  std::unique_ptr<VulkanDevice> logical_device_;
+  std::unique_ptr<vulkan::VulkanDevice> logical_device_;
+
+  sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
 
   // |PlatformView|
   std::unique_ptr<Studio> CreateRenderingStudio() override;
