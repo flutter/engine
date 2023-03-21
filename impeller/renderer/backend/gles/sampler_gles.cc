@@ -72,10 +72,12 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   if (!target.has_value()) {
     return false;
   }
+  bool has_mips = texture.GetTextureDescriptor().mip_count > 1;
 
   const auto& desc = GetDescriptor();
-  gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
-                   ToParam(desc.min_filter, desc.mip_filter));
+  gl.TexParameteri(
+      target.value(), GL_TEXTURE_MIN_FILTER,
+      ToParam(desc.min_filter, has_mips ? desc.mip_filter : std::nullopt));
   gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
                    ToParam(desc.mag_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
