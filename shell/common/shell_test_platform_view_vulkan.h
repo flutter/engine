@@ -31,10 +31,13 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
  private:
   class OffScreenSurface : public flutter::Surface {
    public:
-    OffScreenSurface(fml::RefPtr<vulkan::VulkanProcTable> vk,
-                     std::shared_ptr<ShellTestExternalViewEmbedder>
-                         shell_test_external_view_embedder,
-                     sk_sp<GrDirectContext> context);
+    OffScreenSurface(
+        fml::RefPtr<vulkan::VulkanProcTable> vk,
+        std::shared_ptr<ShellTestExternalViewEmbedder>
+            shell_test_external_view_embedder,
+        sk_sp<GrDirectContext> context,
+        const std::make_unique<vulkan::VulkanApplication>& application,
+        const std::unique_ptr<VulkanDevice>& logical_device);
 
     ~OffScreenSurface() override;
 
@@ -72,6 +75,10 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
       shell_test_external_view_embedder_;
 
   sk_sp<GrDirectContext> context_;
+
+  std::make_unique<vulkan::VulkanApplication> application_;
+
+  std::unique_ptr<VulkanDevice> logical_device_;
 
   // |PlatformView|
   std::unique_ptr<Studio> CreateRenderingStudio() override;

@@ -6,6 +6,7 @@
 
 #include <utility>
 
+#include "flutter/shell/gpu/gpu_studio_gl_skia.h"
 #include "flutter/shell/gpu/gpu_surface_gl_skia.h"
 
 namespace flutter {

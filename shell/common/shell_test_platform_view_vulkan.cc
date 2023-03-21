@@ -6,9 +6,10 @@
 
 #include <utility>
 
-#include "flutter/common/graphics/persistent_cache.h"
+// #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/context_options.h"
+#include "flutter/shell/gpu/gpu_studio_vulkan.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
@@ -40,6 +41,17 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)) {
+  // Create the application instance.
+  std::vector<std::string> extensions = {
+      VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+  };
+
+  application_ = std::make_unique<vulkan::VulkanApplication>(
+      *proc_table_, "FlutterTest", std::move(extensions),
+      VK_MAKE_VERSION(1, 0, 0), VK_MAKE_VERSION(1, 1, 0), true);
+
+  // Create the device.
+  logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
   // Create the Skia GrContext.
   if (!CreateSkiaGrContext()) {
     FML_DLOG(ERROR) << "Could not create Skia context.";
@@ -65,7 +77,8 @@ std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
   return std::make_unique<OffScreenSurface>(
-      proc_table_, shell_test_external_view_embedder_, context_);
+      proc_table_, shell_test_external_view_embedder_, context_, application_,
+      logical_device_);
 }
 
 // |PlatformView|
@@ -144,25 +157,20 @@ bool ShellTestPlatformViewVulkan::CreateSkiaBackendContext(
 ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     fml::RefPtr<vulkan::VulkanProcTable> vk,
     std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder)
+        shell_test_external_view_embedder,
+    sk_sp<GrDirectContext> context,
+    const std::make_unique<vulkan::VulkanApplication>& application,
+    const std::unique_ptr<VulkanDevice>& logical_device)
     : valid_(false),
       vk_(std::move(vk)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)),
-      context_(context) {
+      context_(context),
+{
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
     return;
   }
-
-  // Create the application instance.
-  std::vector<std::string> extensions = {
-      VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
-  };
-
-  application_ = std::make_unique<vulkan::VulkanApplication>(
-      *vk_, "FlutterTest", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
-      VK_MAKE_VERSION(1, 1, 0), true);
 
   if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
     // Make certain the application instance was created and it set up the
@@ -170,10 +178,6 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
     return;
   }
-
-  // Create the device.
-
-  logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
 
   if (logical_device_ == nullptr || !logical_device_->IsValid() ||
       !vk_->AreDeviceProcsSetup()) {

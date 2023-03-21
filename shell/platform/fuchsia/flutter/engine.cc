@@ -366,6 +366,9 @@ void Engine::Initialize(
       std::bind(&Engine::DestroyFlatlandView, this, std::placeholders::_1,
                 std::placeholders::_2);
 
+  OnCreateSurface on_create_studio_callback =
+      std::bind(&Engine::CreateStudio, this);
+
   OnCreateSurface on_create_surface_callback =
       std::bind(&Engine::CreateSurface, this);
 
@@ -425,6 +428,7 @@ void Engine::Initialize(
                std::move(on_destroy_gfx_view_callback),
            on_destroy_flatland_view_callback =
                std::move(on_destroy_flatland_view_callback),
+           on_create_studio_callback = std::move(on_create_studio_callback),
            on_create_surface_callback = std::move(on_create_surface_callback),
            on_semantics_node_update_callback =
                std::move(on_semantics_node_update_callback),
@@ -496,6 +500,7 @@ void Engine::Initialize(
                       std::move(on_create_flatland_view_callback),
                       std::move(on_update_view_callback),
                       std::move(on_destroy_flatland_view_callback),
+                      std::move(on_create_studio_callback),
                       std::move(on_create_surface_callback),
                       std::move(on_semantics_node_update_callback),
                       std::move(on_request_announce_callback),
@@ -516,6 +521,7 @@ void Engine::Initialize(
                   std::move(on_create_gfx_view_callback),
                   std::move(on_update_view_callback),
                   std::move(on_destroy_gfx_view_callback),
+                  std::move(on_create_studio_callback),
                   std::move(on_create_surface_callback),
                   std::move(on_semantics_node_update_callback),
                   std::move(on_request_announce_callback),
