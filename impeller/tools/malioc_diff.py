@@ -223,6 +223,8 @@ def compare_variants(befores, afters):
   return differences
 
 
+# Compares two shaders. Prints a report and returns True if there are
+# differences, and returns False otherwise.
 def compare_shaders(malioc_tree, before_shader, after_shader):
   differences = []
   for key, before_val in before_shader.items():
@@ -285,11 +287,17 @@ def main(argv):
 
   for filename, shaders in after_json.items():
     if filename not in before_json:
-      print(
-          'Shader {} is new. Run with --update to update checked-in results'
-          .format(filename)
-      )
+      print('Shader {} is new.'.format(filename))
       changed = True
+
+  if changed:
+    print(
+        'There are new shaders, or performance changes to existing shaders. '
+        'The golden file must be updated after a build of android_debug_unopt '
+        'using the --malioc-path flag to the flutter/tools/gn script.\n\n'
+        '$ ./flutter/impeller/tools/malioc_diff.py --before {} --after {} --update'
+        .format(args.before, args.after)
+    )
 
   return 1 if changed else 0
 

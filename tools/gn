@@ -446,7 +446,7 @@ def to_gn_args(args):
   # Enable Vulkan on all platforms except for iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['ios']:
+  if gn_args['target_os'] not in ['ios', 'mac']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
@@ -554,11 +554,21 @@ def to_gn_args(args):
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
 
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_vulkan'] = True
+
+  if args.enable_impeller_opengles:
+    gn_args['impeller_enable_opengles'] = True
+
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
   if args.malioc_path is not None:
     gn_args['impeller_malioc_path'] = args.malioc_path
+  else:
+    malioc_path = os.environ.get('MALIOC_PATH')
+    if malioc_path:
+      gn_args['impeller_malioc_path'] = malioc_path
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -613,17 +623,16 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_vulkan'] = False
   gn_args['skia_use_webgpu'] = False
   gn_args['skia_use_libheif'] = False
-  gn_args['skia_use_libjpeg_turbo_decode'] = True
   gn_args['skia_use_libjpeg_turbo_encode'] = False
-  gn_args['skia_use_libpng_decode'] = True
+  # TODO(yjbanov): https://github.com/flutter/flutter/issues/122759
+  # Remove this and implement it through Canvas2d.
   gn_args['skia_use_libpng_encode'] = True
-  gn_args['skia_use_libwebp_decode'] = True
   gn_args['skia_use_libwebp_encode'] = False
   gn_args['skia_use_lua'] = False
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_zlib'] = True
   gn_args['skia_gl_standard'] = 'webgl'
-  gn_args['skia_enable_gpu'] = True
+  gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
@@ -973,6 +982,20 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Whether impeller unit tests run in playground mode.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-vulkan',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller Vulkan backend.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-opengles',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller OpenGL ES backend.'
   )
 
   parser.add_argument(
