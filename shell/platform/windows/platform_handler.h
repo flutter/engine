@@ -96,6 +96,8 @@ class PlatformHandler {
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
 
+  static bool WindowProcCallback(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result);
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandler);
 };
 

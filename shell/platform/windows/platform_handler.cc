@@ -227,6 +227,7 @@ PlatformHandler::PlatformHandler(
       return std::make_unique<ScopedClipboard>();
     };
   }
+  FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(engine_->GetRegistrar(), PlatformHandler::WindowProcCallback, this);
 }
 
 PlatformHandler::~PlatformHandler() = default;
@@ -445,6 +446,16 @@ void PlatformHandler::HandleMethodCall(
   } else {
     result->NotImplemented();
   }
+}
+
+// static
+bool PlatformHandler::WindowProcCallback(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result) {
+  PlatformHandler* that = static_cast<PlatformHandler*>(user_data);
+  if (msg == WM_CLOSE) {
+    that->RequestAppExit(kExitTypeRequired, 0);
+    return true;
+  }
+  return false;
 }
 
 }  // namespace flutter
