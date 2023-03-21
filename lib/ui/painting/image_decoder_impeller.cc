@@ -267,7 +267,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTexture(
     return nullptr;
   }
 
-  return UploadTexture(context, device_buffer, bitmap->info());
+  return UploadTexture(context, std::move(device_buffer), bitmap->info());
 }
 
 #if FML_OS_IOS
@@ -441,11 +441,12 @@ void ImageDecoderImpeller::Decode(fml::RefPtr<ImageDescriptor> descriptor,
           result(nullptr);
           return;
         }
-        auto upload_texture_and_invoke_result =
-            [result, context, bitmap_result = bitmap_result.value()]() {
-              result(UploadTexture(context, bitmap_result.device_buffer,
-                                   bitmap_result.image_info));
-            };
+        auto upload_texture_and_invoke_result = [result, context,
+                                                 bitmap_result =
+                                                     bitmap_result.value()]() {
+          result(UploadTexture(context, std::move(bitmap_result.device_buffer),
+                               bitmap_result.image_info));
+        };
         // TODO(jonahwilliams): https://github.com/flutter/flutter/issues/123058
         // Technically we don't need to post tasks to the io runner, but without
         // this forced serialization we can end up overloading the GPU and/or
