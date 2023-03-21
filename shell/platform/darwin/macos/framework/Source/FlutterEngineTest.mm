@@ -12,6 +12,7 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
@@ -646,7 +647,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ull);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -663,7 +664,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.id, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ull);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -677,7 +678,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ull);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -685,7 +686,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.id, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ull);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -694,7 +695,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.id, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ull);
 }
 
 TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
@@ -718,10 +719,19 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
       .andDo((^(NSInvocation* invocation) {
         [invocation retainArguments];
         FlutterBinaryReply callback;
+        NSData* returnedMessage;
         [invocation getArgument:&callback atIndex:4];
-        NSDictionary* responseDict = @{@"response" : nextResponse};
-        NSData* returnedMessage =
-            [[FlutterJSONMethodCodec sharedInstance] encodeSuccessEnvelope:responseDict];
+        if ([nextResponse isEqualToString:@"error"]) {
+          FlutterError* errorResponse = [FlutterError errorWithCode:@"Error"
+                                                            message:@"Failed"
+                                                            details:@"Details"];
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeErrorEnvelope:errorResponse];
+        } else {
+          NSDictionary* responseDict = @{@"response" : nextResponse};
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeSuccessEnvelope:responseDict];
+        }
         callback(returnedMessage);
       }));
   __block NSString* calledAfterTerminate = @"";
@@ -734,16 +744,26 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
                                         arguments:@{@"type" : @"cancelable"}];
 
   triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
   nextResponse = @"exit";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
   EXPECT_TRUE(triedToTerminate);
 
   triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
   nextResponse = @"cancel";
   [engineMock handleMethodCall:methodExitApplication result:appExitResult];
   EXPECT_STREQ([calledAfterTerminate UTF8String], "cancel");
   EXPECT_FALSE(triedToTerminate);
+
+  // Check that it doesn't crash on error.
+  triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
+  nextResponse = @"error";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
 }
 
 }  // namespace flutter::testing

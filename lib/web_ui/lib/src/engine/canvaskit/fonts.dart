@@ -24,7 +24,7 @@ const String _robotoUrl =
     'https://fonts.gstatic.com/s/roboto/v20/KFOmCnqEu92Fr1Me5WZLCzYlKw.ttf';
 
 /// Manages the fonts used in the Skia-based backend.
-class SkiaFontCollection implements FontCollection {
+class SkiaFontCollection implements FlutterFontCollection {
   final Set<String> _downloadedFontFamilies = <String>{};
 
   /// Fonts that started the download process, but are not yet registered.
@@ -184,12 +184,15 @@ class SkiaFontCollection implements FontCollection {
       }
     }
     final List<UnregisteredFont?> completedPendingFonts = await Future.wait(pendingFonts);
-    completedPendingFonts.add(UnregisteredFont(
+    final List<UnregisteredFont> fonts = <UnregisteredFont>[
+      UnregisteredFont(
         EmbeddedTestFont.flutterTest.data.buffer,
         '<embedded>',
         EmbeddedTestFont.flutterTest.fontFamily,
-    ));
-    _unregisteredFonts.addAll(completedPendingFonts.whereType<UnregisteredFont>());
+      ),
+      ...completedPendingFonts.whereType<UnregisteredFont>(),
+    ];
+    _unregisteredFonts.addAll(fonts);
 
     // Ahem must be added to font fallbacks list regardless of where it was
     // downloaded from.

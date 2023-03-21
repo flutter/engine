@@ -1045,8 +1045,6 @@ ORIGIN: ../../../flutter/impeller/base/backend_cast.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/comparable.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/comparable.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/config.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/promise.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/promise.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/strings.cc + ../../../flutter/LICENSE
@@ -1060,10 +1058,6 @@ ORIGIN: ../../../flutter/impeller/base/validation.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/validation.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/version.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/base/version.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/work_queue.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/work_queue.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/work_queue_common.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/base/work_queue_common.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/blobcat/blob.fbs + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/blobcat/blob_library.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/blobcat/blob_library.h + ../../../flutter/LICENSE
@@ -1120,12 +1114,18 @@ ORIGIN: ../../../flutter/impeller/display_list/display_list_vertices_geometry.cc
 ORIGIN: ../../../flutter/impeller/display_list/display_list_vertices_geometry.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/nine_patch_converter.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/display_list/nine_patch_converter.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/anonymous_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/anonymous_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/atlas_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/atlas_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/clip_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/color_source_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/color_source_text_contents.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/conical_gradient_contents.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/contents/conical_gradient_contents.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/content_context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/contents/contents.cc + ../../../flutter/LICENSE
@@ -1194,6 +1194,8 @@ ORIGIN: ../../../flutter/impeller/entity/entity_pass.cc + ../../../flutter/LICEN
 ORIGIN: ../../../flutter/impeller/entity/entity_pass.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_pass_delegate.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_pass_delegate.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/entity_pass_target.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/entity_playground.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/geometry.cc + ../../../flutter/LICENSE
@@ -1240,6 +1242,8 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag + ../../.
 ORIGIN: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert + ../../../flutter/LICENSE
@@ -1255,7 +1259,6 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag + ..
 ORIGIN: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/morphology_filter.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/position.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_color.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/position_uv.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag + ../../../flutter/LICENSE
@@ -2749,8 +2752,6 @@ ORIGIN: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h + 
 ORIGIN: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc + ../../../flutter/LICENSE
@@ -3580,8 +3581,6 @@ FILE: ../../../flutter/impeller/base/backend_cast.h
 FILE: ../../../flutter/impeller/base/comparable.cc
 FILE: ../../../flutter/impeller/base/comparable.h
 FILE: ../../../flutter/impeller/base/config.h
-FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.cc
-FILE: ../../../flutter/impeller/base/platform/darwin/work_queue_darwin.h
 FILE: ../../../flutter/impeller/base/promise.cc
 FILE: ../../../flutter/impeller/base/promise.h
 FILE: ../../../flutter/impeller/base/strings.cc
@@ -3595,10 +3594,6 @@ FILE: ../../../flutter/impeller/base/validation.cc
 FILE: ../../../flutter/impeller/base/validation.h
 FILE: ../../../flutter/impeller/base/version.cc
 FILE: ../../../flutter/impeller/base/version.h
-FILE: ../../../flutter/impeller/base/work_queue.cc
-FILE: ../../../flutter/impeller/base/work_queue.h
-FILE: ../../../flutter/impeller/base/work_queue_common.cc
-FILE: ../../../flutter/impeller/base/work_queue_common.h
 FILE: ../../../flutter/impeller/blobcat/blob.fbs
 FILE: ../../../flutter/impeller/blobcat/blob_library.cc
 FILE: ../../../flutter/impeller/blobcat/blob_library.h
@@ -3655,12 +3650,18 @@ FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.cc
 FILE: ../../../flutter/impeller/display_list/display_list_vertices_geometry.h
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.cc
 FILE: ../../../flutter/impeller/display_list/nine_patch_converter.h
+FILE: ../../../flutter/impeller/entity/contents/anonymous_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/anonymous_contents.h
 FILE: ../../../flutter/impeller/entity/contents/atlas_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/atlas_contents.h
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/clip_contents.h
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.cc
 FILE: ../../../flutter/impeller/entity/contents/color_source_contents.h
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/color_source_text_contents.h
+FILE: ../../../flutter/impeller/entity/contents/conical_gradient_contents.cc
+FILE: ../../../flutter/impeller/entity/contents/conical_gradient_contents.h
 FILE: ../../../flutter/impeller/entity/contents/content_context.cc
 FILE: ../../../flutter/impeller/entity/contents/content_context.h
 FILE: ../../../flutter/impeller/entity/contents/contents.cc
@@ -3729,6 +3730,8 @@ FILE: ../../../flutter/impeller/entity/entity_pass.cc
 FILE: ../../../flutter/impeller/entity/entity_pass.h
 FILE: ../../../flutter/impeller/entity/entity_pass_delegate.cc
 FILE: ../../../flutter/impeller/entity/entity_pass_delegate.h
+FILE: ../../../flutter/impeller/entity/entity_pass_target.cc
+FILE: ../../../flutter/impeller/entity/entity_pass_target.h
 FILE: ../../../flutter/impeller/entity/entity_playground.cc
 FILE: ../../../flutter/impeller/entity/entity_playground.h
 FILE: ../../../flutter/impeller/entity/geometry.cc
@@ -3775,6 +3778,8 @@ FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/border_mask_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
+FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag
+FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl
 FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
@@ -3790,7 +3795,6 @@ FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/linear_to_srgb_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/morphology_filter.vert
-FILE: ../../../flutter/impeller/entity/shaders/position.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_color.vert
 FILE: ../../../flutter/impeller/entity/shaders/position_uv.vert
 FILE: ../../../flutter/impeller/entity/shaders/radial_gradient_fill.frag
@@ -5305,8 +5309,6 @@ FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/service_isolate.h
 FILE: ../../../flutter/shell/platform/fuchsia/dart_runner/vmservice/empty.dart
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/accessibility_bridge.h
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v1.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/component_v2.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/engine.cc
@@ -5339,19 +5341,11 @@ FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/keyboard.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/logging.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/main.cc
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/aot_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/common.shard.cml
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_aot_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_product_runner.cmx
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cml
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/flutter_jit_runner.cmx
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_product_runtime
-FILE: ../../../flutter/shell/platform/fuchsia/flutter/meta/jit_runtime
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/platform_view.cc
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/platform_view.h
 FILE: ../../../flutter/shell/platform/fuchsia/flutter/pointer_delegate.cc

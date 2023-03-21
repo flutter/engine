@@ -100,7 +100,7 @@ const DlPaint* Paint::paint(DlPaint& paint,
         if (Shader* decoded = tonic::DartConverter<Shader*>::FromDart(shader)) {
           auto sampling =
               ImageFilter::SamplingFromIndex(uint_data[kFilterQualityIndex]);
-          paint.setColorSource(decoded->shader(sampling).get());
+          paint.setColorSource(decoded->shader(sampling));
         } else {
           paint.setColorSource(nullptr);
         }

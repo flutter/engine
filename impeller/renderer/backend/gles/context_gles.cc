@@ -6,7 +6,6 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
-#include "impeller/base/work_queue_common.h"
 #include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
@@ -60,15 +59,6 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
   }
 
-  // Create the work queue.
-  {
-    work_queue_ = WorkQueueCommon::Create();
-    if (!work_queue_) {
-      VALIDATION_LOG << "Could not create work queue.";
-      return;
-    }
-  }
-
   // Create the device capabilities.
   {
     device_capabilities_ =
@@ -81,6 +71,8 @@ ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
             .SetSupportsFramebufferFetch(false)
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .SetSupportsCompute(false, false)
+            .SetSupportsReadFromResolve(false)
             .Build();
   }
 
@@ -136,11 +128,6 @@ std::shared_ptr<PipelineLibrary> ContextGLES::GetPipelineLibrary() const {
 std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
   return std::shared_ptr<CommandBufferGLES>(
       new CommandBufferGLES(weak_from_this(), reactor_));
-}
-
-// |Context|
-std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
-  return work_queue_;
 }
 
 // |Context|

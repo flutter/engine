@@ -708,7 +708,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
     static auto display_list = builder.Build();
     RUN_TESTS2(receiver.drawDisplayList(display_list);, false);
   }
-  RUN_TESTS(receiver.drawTextBlob(TestBlob1, 0, 0););
+  RUN_TESTS2(receiver.drawTextBlob(TestBlob1, 0, 0);, false);
   RUN_TESTS2(receiver.drawShadow(kTestPath1, SK_ColorBLACK, 1.0, false, 1.0);
              , false);
 
@@ -2608,6 +2608,18 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
   }
+}
+
+TEST_F(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
+  DisplayListBuilder builder;
+  builder.DrawCircle({10, 10}, 5, DlPaint());
+  builder.Save();
+  builder.ClipRect({0, 0, 20, 20}, DlCanvas::ClipOp::kIntersect, false);
+  builder.DrawRect({5, 5, 15, 15}, DlPaint());
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  ASSERT_FALSE(display_list->can_apply_group_opacity());
 }
 
 }  // namespace testing
