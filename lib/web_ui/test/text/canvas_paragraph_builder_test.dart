@@ -98,7 +98,8 @@ Future<void> testMain() async {
   });
 
   test('Correct defaults', () {
-    final EngineParagraphStyle style = EngineParagraphStyle();
+    // The FlutterTest font doesn't produce the correct line height: https://github.com/flutter/flutter/issues/122066
+    final EngineParagraphStyle style = EngineParagraphStyle(fontFamily: 'Ahem');
     final CanvasParagraphBuilder builder = CanvasParagraphBuilder(style);
 
     builder.addText('Hello');
@@ -112,7 +113,7 @@ Future<void> testMain() async {
     expectOuterHtml(
       paragraph,
       '<flt-paragraph style="${paragraphStyle()}">'
-      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5)}">'
+      '<flt-span style="${spanStyle(top: 0, left: 0, width: 14*5, fontFamily: 'Ahem')}">'
       'Hello'
       '</flt-span>'
       '</flt-paragraph>',
@@ -120,7 +121,7 @@ Future<void> testMain() async {
     );
 
     final ParagraphSpan span = paragraph.spans.single;
-    expect(span.style, styleWithDefaults());
+    expect(span.style, styleWithDefaults(fontFamily: 'Ahem'));
   });
 
   test('Sets correct styles for max-lines', () {
