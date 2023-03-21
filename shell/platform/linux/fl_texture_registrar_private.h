@@ -33,6 +33,17 @@ FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine);
 FlTexture* fl_texture_registrar_lookup_texture(FlTextureRegistrar* registrar,
                                                int64_t texture_id);
 
+/**
+ * fl_texture_registrar_get_textures_locked:
+ * @registrar: an #FlTextureRegistrar.
+ *
+ * Checks whether the textures is locked by the mutex.
+ *
+ * Returns: %TRUE on locked, %FALSE otherwise.
+ */
+gboolean fl_texture_registrar_get_textures_locked(
+    FlTextureRegistrar* registrar);
+
 G_END_DECLS
 
 #endif  // FLUTTER_SHELL_PLATFORM_LINUX_FL_TEXTURE_REGISTRAR_PRIVATE_H_

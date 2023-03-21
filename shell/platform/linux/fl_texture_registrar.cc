@@ -207,6 +207,18 @@ fl_texture_registrar_unregister_texture(FlTextureRegistrar* self,
                                                                   texture);
 }
 
+gboolean fl_texture_registrar_get_textures_locked(
+    FlTextureRegistrar* registrar) {
+  g_return_val_if_fail(FL_IS_TEXTURE_REGISTRAR_IMPL(registrar), FALSE);
+  FlTextureRegistrarImpl* self = FL_TEXTURE_REGISTRAR_IMPL(registrar);
+  gboolean locked = g_mutex_trylock(&self->textures_mutex);
+  if (locked) {
+    g_mutex_unlock(&self->textures_mutex);
+    return FALSE;
+  }
+  return TRUE;
+}
+
 FlTextureRegistrar* fl_texture_registrar_new(FlEngine* engine) {
   FlTextureRegistrarImpl* self = FL_TEXTURE_REGISTRAR_IMPL(
       g_object_new(fl_texture_registrar_impl_get_type(), nullptr));

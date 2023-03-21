@@ -104,3 +104,24 @@ TEST(FlTextureRegistrarTest, MarkTextureFrameAvailable) {
   EXPECT_TRUE(
       fl_texture_registrar_mark_texture_frame_available(registrar, texture));
 }
+
+// Test that mutex should be unlocked after calling register_texture.
+TEST(FlTextureRegistrarTest, RegistrarRegisterTextureMutex) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
+  g_autoptr(FlTexture) texture = FL_TEXTURE(fl_test_registrar_texture_new());
+
+  EXPECT_FALSE(fl_texture_registrar_get_textures_locked(registrar));
+  EXPECT_TRUE(fl_texture_registrar_register_texture(registrar, texture));
+  EXPECT_FALSE(fl_texture_registrar_get_textures_locked(registrar));
+}
+
+// Test that mutex should be unlocked after calling lookup textures.
+TEST(FlTextureRegistrarTest, LookupTextureMutex) {
+  g_autoptr(FlEngine) engine = make_mock_engine();
+  g_autoptr(FlTextureRegistrar) registrar = fl_texture_registrar_new(engine);
+
+  EXPECT_FALSE(fl_texture_registrar_get_textures_locked(registrar));
+  EXPECT_EQ(fl_texture_registrar_lookup_texture(registrar, 1), nullptr);
+  EXPECT_FALSE(fl_texture_registrar_get_textures_locked(registrar));
+}
