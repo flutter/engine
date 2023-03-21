@@ -64,9 +64,8 @@ std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
-  return std::make_unique<OffScreenSurface>(proc_table_,
-                                            shell_test_external_view_embedder_,
-                                            context_);
+  return std::make_unique<OffScreenSurface>(
+      proc_table_, shell_test_external_view_embedder_, context_);
 }
 
 // |PlatformView|

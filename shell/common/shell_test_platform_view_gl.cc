@@ -41,8 +41,7 @@ std::unique_ptr<Studio> ShellTestPlatformViewGL::CreateRenderingStudio() {
   if (main_context_ == nullptr) {
     main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
   }
-  return std::make_unique<GPUStudioGLSkia>(
-      main_context_, this);
+  return std::make_unique<GPUStudioGLSkia>(main_context_, this);
 }
 
 // |PlatformView|
@@ -51,8 +50,7 @@ std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface(
   if (main_context_ == nullptr) {
     main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
   }
-  return std::make_unique<GPUSurfaceGLSkia>(
-      main_context_, this, true);
+  return std::make_unique<GPUSurfaceGLSkia>(main_context_, this, true);
 }
 
 // |PlatformView|

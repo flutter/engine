@@ -9,8 +9,8 @@
 #include <utility>
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
-#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/gpu/gpu_studio_metal_skia.h"
+#include "flutter/shell/gpu/gpu_surface_metal_skia.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 
 namespace flutter {
