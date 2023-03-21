@@ -227,7 +227,7 @@ PlatformHandler::PlatformHandler(
       return std::make_unique<ScopedClipboard>();
     };
   }
-  FlutterDesktopPluginRegistrarRegisterTopLevelWindowProcDelegate(engine_->GetRegistrar(), PlatformHandler::WindowProcCallback, this);
+  engine_->window_proc_delegate_manager()->RegisterTopLevelWindowProcDelegate(WindowProcCallback, this);
 }
 
 PlatformHandler::~PlatformHandler() = default;
@@ -396,7 +396,7 @@ void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
 }
 
 void PlatformHandler::QuitApplication(int64_t exit_code) {
-  PostQuitMessage(exit_code);
+  engine_->OnQuit(exit_code);
 }
 
 void PlatformHandler::HandleMethodCall(

@@ -103,6 +103,8 @@ source_set("flutter_windows_source") {
     "window_proc_delegate_manager.cc",
     "window_proc_delegate_manager.h",
     "window_state.h",
+    "window_top_level_message_handler.cc",
+    "window_top_level_message_handler.h",
     "windows_proc_table.cc",
     "windows_proc_table.h",
     "windows_registry.cc",

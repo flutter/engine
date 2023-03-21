@@ -66,6 +66,10 @@ class EngineModifier {
   // restart. This resets the keyboard's state if it exists.
   void Restart() { engine_->OnPreEngineRestart(); }
 
+  void SetTopLevelHandler(std::unique_ptr<WindowTopLevelMessageHandler>&& handler) {
+    engine_->top_level_handler_ = std::move(handler);
+  }
+
  private:
   FlutterWindowsEngine* engine_;
 

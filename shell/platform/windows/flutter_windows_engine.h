@@ -35,6 +35,7 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
+#include "flutter/shell/platform/windows/window_top_level_message_handler.h"
 #include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
@@ -254,6 +255,14 @@ class FlutterWindowsEngine {
   // Updates accessibility, e.g. switch to high contrast mode
   void UpdateAccessibilityFeatures(FlutterAccessibilityFeature flags);
 
+  // Called when the application quits in response to a quit request.
+  void OnQuit(int64_t exit_code);
+
+  // Called when a WM_CLOSE message is received.
+  void RequestApplicationQuit(const std::string& exit_type, int64_t exit_code);
+
+  static bool TopLevelWindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result);
+
  protected:
   // Creates the keyboard key handler.
   //
@@ -394,6 +403,9 @@ class FlutterWindowsEngine {
 
   // Wrapper providing Windows registry access.
   std::unique_ptr<WindowsRegistry> windows_registry_;
+
+  // Handler for top level window messages.
+  std::unique_ptr<WindowTopLevelMessageHandler> top_level_handler_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };

@@ -618,5 +618,37 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
   }
 }
 
+class MockWindowTopLevelMessageHandler : public WindowTopLevelMessageHandler {
+ public:
+  MockWindowTopLevelMessageHandler(FlutterWindowsEngine& engine) : WindowTopLevelMessageHandler(engine) {}
+  virtual ~MockWindowTopLevelMessageHandler(){}
+
+  MOCK_METHOD1(Quit, void(int64_t));
+};
+
+TEST_F(FlutterWindowsEngineTest, ControllerTest) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("exitTest");
+  int finished = -1;
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowTopLevelMessageHandler>(*engine);
+  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code){
+    finished = exit_code;
+  });
+  modifier.SetTopLevelHandler(std::move(handler));
+
+  engine->Run();
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0, 0);
+
+  while (finished != 0) {
+    engine->task_runner()->ProcessTasks();
+  }
+}
+
 }  // namespace testing
 }  // namespace flutter

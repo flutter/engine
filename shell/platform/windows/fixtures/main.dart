@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:io' as io;
 import 'dart:typed_data' show ByteData, Uint8List;
 import 'dart:ui' as ui;
+import 'dart:convert';
 
 // Signals a waiting latch in the native test.
 @pragma('vm:external-name', 'Signal')
@@ -84,6 +85,20 @@ void alertPlatformChannel() async {
   await enabled.future;
 
   ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/accessibility', byteData, (ByteData? _){});
+}
+
+@pragma('vm:entry-point')
+void exitTest() async {
+  ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    print('Got message!');
+    const String jsonString = '[{"response":"exit"}]';
+    ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    callback(responseData);
+  });
+  final Completer<ByteData?> exited = Completer<ByteData?>();
+  const String jsonString = '{"method":"System.exitApplication","args":{"type":"required","exitCode":0}}';
+  //ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
+  //await exited.future;
 }
 
 @pragma('vm:entry-point')

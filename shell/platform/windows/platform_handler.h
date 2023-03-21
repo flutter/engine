@@ -33,6 +33,10 @@ class PlatformHandler {
 
   virtual ~PlatformHandler();
 
+  // Send a request to the framework to test if a cancelable exit request
+  // should be canceled or honored.
+  virtual void RequestAppExit(const std::string& exit_type, int64_t exit_code);
+
  protected:
   // Gets plain text from the clipboard and provides it to |result| as the
   // value in a dictionary with the given |key|.
@@ -63,10 +67,6 @@ class PlatformHandler {
 
   // Actually quit the application with the provided exit code.
   virtual void QuitApplication(int64_t exit_code);
-
-  // Send a request to the framework to test if a cancelable exit request
-  // should be canceled or honored.
-  virtual void RequestAppExit(const std::string& exit_type, int64_t exit_code);
 
   // Callback from when the cancelable exit request response request is
   // answered by the framework.
