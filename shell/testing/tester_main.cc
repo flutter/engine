@@ -24,6 +24,7 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+#include "flutter/shell/gpu/gpu_studio_software.h"
 
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
@@ -67,13 +68,19 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   DisplayListBuilder builder_;
 };
 
+class TesterGPUStudioSoftware : public GPUStudioSoftware {
+ public:
+  TesterGPUStudioSoftware(GPUSurfaceSoftwareDelegate* delegate)
+      : GPUStudioSoftware(delegate) {}
+
+  bool EnableRasterCache() const override { return false; }
+};
+
 class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {
  public:
   TesterGPUSurfaceSoftware(GPUSurfaceSoftwareDelegate* delegate,
                            bool render_to_surface)
       : GPUSurfaceSoftware(delegate, render_to_surface) {}
-
-  bool EnableRasterCache() const override { return false; }
 };
 
 class TesterPlatformView : public PlatformView,
@@ -81,6 +88,13 @@ class TesterPlatformView : public PlatformView,
  public:
   TesterPlatformView(Delegate& delegate, const TaskRunners& task_runners)
       : PlatformView(delegate, task_runners) {}
+
+  // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override {
+    auto studio = std::make_unique<TesterGPUStudioSoftware>(this);
+    FML_DCHECK(studio->IsValid());
+    return studio;
+  }
 
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override {

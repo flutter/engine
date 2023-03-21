@@ -22,7 +22,7 @@ EmbedderSurfaceMetal::EmbedderSurfaceMetal(
     bool render_to_surface)
     : main_context_(std::move(main_context)),
       studio_(studio),
-      sksl_precompiler_(sksl_precompiler),
+      sksl_precompiler_(std::move(sksl_precompiler)),
       render_to_surface_(render_to_surface) {}
 
 EmbedderSurfaceMetal::~EmbedderSurfaceMetal() = default;

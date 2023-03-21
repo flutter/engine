@@ -59,7 +59,7 @@ GPUSurfaceMetalSkia::GPUSurfaceMetalSkia(
       render_target_type_(delegate->GetRenderTargetType()),
       context_(std::move(context)),
       msaa_samples_(msaa_samples),
-      sksl_precompiler_(sksl_precompiler),
+      sksl_precompiler_(std::move(sksl_precompiler)),
       render_to_surface_(render_to_surface) {
   // If this preference is explicitly set, we allow for disabling partial repaint.
   NSNumber* disablePartialRepaint =
