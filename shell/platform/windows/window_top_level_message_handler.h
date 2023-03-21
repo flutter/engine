@@ -23,8 +23,9 @@ class WindowTopLevelMessageHandler {
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
  private:
-  FlutterWindowsEngine& engine_;
+  bool IsLastWindowOfProcess();
 
+  FlutterWindowsEngine& engine_;
 };
 
 }
