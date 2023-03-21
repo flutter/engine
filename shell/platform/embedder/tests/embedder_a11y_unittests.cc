@@ -93,13 +93,7 @@ TEST_F(EmbedderA11yTest, A11yTreeIsConsistent) {
   GTEST_SKIP() << "This test crashes on Fuchsia. https://fxbug.dev/87493 ";
 #endif  // OS_FUCHSIA
 
-#ifdef SHELL_ENABLE_GL
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
-#elif SHELL_ENABLE_METAL
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
-#else
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-#endif
 
   fml::AutoResetWaitableEvent signal_native_latch;
 
@@ -281,7 +275,7 @@ TEST_F(EmbedderA11yTest, A11yTreeIsConsistentUsingUnstableCallbacks) {
   GTEST_SKIP() << "This test crashes on Fuchsia. https://fxbug.dev/87493 ";
 #endif  // OS_FUCHSIA
 
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
+  auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
 
   fml::AutoResetWaitableEvent signal_native_latch;
 
@@ -457,13 +451,7 @@ TEST_F(EmbedderA11yTest, A11yTreeIsConsistentUsingUnstableCallbacks) {
 }
 
 TEST_F(EmbedderA11yTest, A11yTreeIsConsistentUsingLegacyCallbacks) {
-#ifdef SHELL_ENABLE_GL
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kOpenGLContext);
-#elif SHELL_ENABLE_METAL
-  auto& context = GetEmbedderContext(EmbedderTestContextType::kMetalContext);
-#else
   auto& context = GetEmbedderContext(EmbedderTestContextType::kSoftwareContext);
-#endif
 
   fml::AutoResetWaitableEvent signal_native_latch;
 
