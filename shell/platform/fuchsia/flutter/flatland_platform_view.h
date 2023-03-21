@@ -40,6 +40,7 @@ class FlatlandPlatformView final : public flutter_runner::PlatformView {
       OnCreateFlatlandView on_create_view_callback,
       OnUpdateView on_update_view_callback,
       OnDestroyFlatlandView on_destroy_view_callback,
+      OnCreateStudio on_create_studio_callback,
       OnCreateSurface on_create_surface_callback,
       OnSemanticsNodeUpdate on_semantics_node_update_callback,
       OnRequestAnnounce on_request_announce_callback,

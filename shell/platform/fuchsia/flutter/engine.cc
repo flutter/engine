@@ -366,7 +366,7 @@ void Engine::Initialize(
       std::bind(&Engine::DestroyFlatlandView, this, std::placeholders::_1,
                 std::placeholders::_2);
 
-  OnCreateSurface on_create_studio_callback =
+  OnCreateStudio on_create_studio_callback =
       std::bind(&Engine::CreateStudio, this);
 
   OnCreateSurface on_create_surface_callback =
