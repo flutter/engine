@@ -32,6 +32,7 @@ class Surface {
   Surface(const char* canvasID) : _canvasID(canvasID) {
     pthread_attr_t attr;
     pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     emscripten_pthread_attr_settransferredcanvases(&attr, _canvasID.c_str());
 
     pthread_create(
@@ -41,7 +42,6 @@ class Surface {
           return nullptr;
         },
         this);
-    pthread_detach(_thread);
   }
 
   void dispose() {
@@ -51,6 +51,7 @@ class Surface {
   }
 
   void setCanvasSize(int width, int height) {
+    emscripten_set_canvas_element_size(_canvasID.c_str(), width, height);
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
                                   reinterpret_cast<void*>(fSetCanvasSize),
                                   nullptr, this, width, height);

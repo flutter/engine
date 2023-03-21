@@ -12,18 +12,9 @@ import 'package:ui/ui.dart' as ui;
 
 // TODO(jacksongardner): Actually implement skwasm renderer.
 class SkwasmRenderer implements Renderer {
-  late final DomCanvasElement sceneElement = _createCanvas();
-  SkwasmSurface? surface;
+  late DomCanvasElement sceneElement;
+  late SkwasmSurface surface;
   ui.Size? surfaceSize;
-
-  DomCanvasElement _createCanvas() {
-    final DomCanvasElement newCanvas = createDomCanvasElement();
-    newCanvas.id = 'flt-scene';
-    final ui.Size frameSize = ui.window.physicalSize;
-    newCanvas.width = frameSize.width;
-    newCanvas.height = frameSize.height;
-    return newCanvas;
-  }
 
   @override
   final SkwasmFontCollection fontCollection = SkwasmFontCollection();
@@ -212,6 +203,11 @@ class SkwasmRenderer implements Renderer {
 
   @override
   FutureOr<void> initialize() {
+    sceneElement = createDomCanvasElement();
+    sceneElement.id = 'flt-scene';
+    domDocument.body!.appendChild(sceneElement);
+    surface = SkwasmSurface('#flt-scene');
+    domDocument.body!.removeChild(sceneElement);
   }
 
   @override
@@ -228,13 +224,18 @@ class SkwasmRenderer implements Renderer {
   void renderScene(ui.Scene scene) {
     final ui.Size frameSize = ui.window.physicalSize;
     if (frameSize != surfaceSize) {
-      // sceneElement.width = frameSize.width;
-      // sceneElement.height = frameSize.height;
-      surface!.setSize(frameSize.width.ceil(), frameSize.height.ceil());
+      final double logicalWidth = frameSize.width.ceil() / window.devicePixelRatio;
+      final double logicalHeight = frameSize.height.ceil() / window.devicePixelRatio;
+      final DomCSSStyleDeclaration style = sceneElement.style;
+      style.width = '${logicalWidth}px';
+      style.height = '${logicalHeight}px';
+
+      surface.setSize(frameSize.width.ceil(), frameSize.height.ceil());
       surfaceSize = frameSize;
     }
     final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    surface!.renderPicture(picture);
+    print('cullRect = ${picture.cullRect}');
+    surface.renderPicture(picture);
   }
 
   @override
@@ -243,7 +244,6 @@ class SkwasmRenderer implements Renderer {
   @override
   void reset(FlutterViewEmbedder embedder) {
     embedder.addSceneToSceneHost(sceneElement);
-    surface = SkwasmSurface('flt-scene');
   }
 
   @override
