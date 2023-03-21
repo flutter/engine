@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/backend/gles/sampler_gles.h"
+#include <iostream>
 
 #include "impeller/renderer/backend/gles/formats_gles.h"
 #include "impeller/renderer/backend/gles/proc_table_gles.h"
@@ -28,6 +29,7 @@ static GLint ToParam(MinMagFilter minmag_filter,
       case MinMagFilter::kLinear:
         return GL_LINEAR;
     }
+    FML_UNREACHABLE();
   }
 
   switch (mip_filter.value()) {
@@ -72,12 +74,15 @@ bool SamplerGLES::ConfigureBoundTexture(const TextureGLES& texture,
   if (!target.has_value()) {
     return false;
   }
-  bool has_mips = texture.GetTextureDescriptor().mip_count > 1;
-
   const auto& desc = GetDescriptor();
-  gl.TexParameteri(
-      target.value(), GL_TEXTURE_MIN_FILTER,
-      ToParam(desc.min_filter, has_mips ? desc.mip_filter : std::nullopt));
+
+  std::optional<MipFilter> mip_filter = std::nullopt;
+  if (texture.GetTextureDescriptor().mip_count > 1) {
+    mip_filter = desc.mip_filter;
+  }
+
+  gl.TexParameteri(target.value(), GL_TEXTURE_MIN_FILTER,
+                   ToParam(desc.min_filter, mip_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_MAG_FILTER,
                    ToParam(desc.mag_filter));
   gl.TexParameteri(target.value(), GL_TEXTURE_WRAP_S,
