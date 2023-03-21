@@ -141,9 +141,15 @@ std::unique_ptr<Shell> Shell::Create(
   auto isolate_snapshot = DartSnapshot::IsolateSnapshotFromSettings(settings);
   auto vm = DartVMRef::Create(settings, vm_snapshot, isolate_snapshot);
   FML_CHECK(vm) << "Must be able to initialize the VM.";
+
+// FIXME: This is probably the wrong place to hook into.  Currently we only
+// link the shorebird updater on Android, so if we don't guard this other
+// non-android targets (e.g. flutter_tester) will fail to link.
+#if FML_OS_ANDROID
   if (!vm) {
     shorebird_report_failed_launch();
   }
+#endif
 
   // If the settings did not specify an `isolate_snapshot`, fall back to the
   // one the VM was launched with.
