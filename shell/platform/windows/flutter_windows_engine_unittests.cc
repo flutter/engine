@@ -626,10 +626,11 @@ class MockWindowTopLevelMessageHandler : public WindowTopLevelMessageHandler {
   MOCK_METHOD1(Quit, void(int64_t));
 };
 
-TEST_F(FlutterWindowsEngineTest, ControllerTest) {
+TEST_F(FlutterWindowsEngineTest, TestExit) {
   FlutterWindowsEngineBuilder builder{GetContext()};
-  builder.SetDartEntrypoint("exitTest");
-  int finished = -1;
+  builder.SetDartEntrypoint("exitTestExit");
+  bool finished = false;
+  bool did_call = false;
 
   std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
 
@@ -637,17 +638,68 @@ TEST_F(FlutterWindowsEngineTest, ControllerTest) {
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowTopLevelMessageHandler>(*engine);
   ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code){
-    finished = exit_code;
+    finished = exit_code == 0;
   });
+  EXPECT_CALL(*handler, Quit).Times(1);
   modifier.SetTopLevelHandler(std::move(handler));
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  binary_messenger->SetMessageHandler(
+      "flutter/platform", [&did_call](const uint8_t* message, size_t message_size,
+                             BinaryReply reply) {
+        did_call = true;
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
 
   engine->Run();
 
   engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0, 0);
 
-  while (finished != 0) {
+  while (!finished) {
     engine->task_runner()->ProcessTasks();
   }
+
+  EXPECT_FALSE(did_call);
+}
+
+TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
+  FlutterWindowsEngineBuilder builder{GetContext()};
+  builder.SetDartEntrypoint("exitTestCancel");
+  bool finished = false;
+  bool did_call = false;
+
+  std::unique_ptr<FlutterWindowsEngine> engine = builder.Build();
+
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
+  auto handler = std::make_unique<MockWindowTopLevelMessageHandler>(*engine);
+  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code){
+    finished = true;
+  });
+  EXPECT_CALL(*handler, Quit).Times(0);
+  modifier.SetTopLevelHandler(std::move(handler));
+
+  auto binary_messenger =
+      std::make_unique<BinaryMessengerImpl>(engine->messenger());
+  binary_messenger->SetMessageHandler(
+      "flutter/platform", [&did_call](const uint8_t* message, size_t message_size,
+                             BinaryReply reply) {
+        did_call = true;
+        char response[] = "";
+        reply(reinterpret_cast<uint8_t*>(response), 0);
+      });
+
+  engine->Run();
+
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0, 0);
+
+  while (!did_call) {
+    engine->task_runner()->ProcessTasks();
+  }
+
+  EXPECT_FALSE(finished);
 }
 
 }  // namespace testing

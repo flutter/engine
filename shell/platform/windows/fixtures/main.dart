@@ -88,17 +88,39 @@ void alertPlatformChannel() async {
 }
 
 @pragma('vm:entry-point')
-void exitTest() async {
+void exitTestExit() async {
+  final Completer<ByteData?> closed = Completer<ByteData?>();
   ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
-    print('Got message!');
     const String jsonString = '[{"response":"exit"}]';
     ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
     callback(responseData);
+    closed.complete(data);
   });
+  await closed.future;
+
+  // From here down, nothing should be called, because the application will have already been closed.
   final Completer<ByteData?> exited = Completer<ByteData?>();
   const String jsonString = '{"method":"System.exitApplication","args":{"type":"required","exitCode":0}}';
-  //ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
-  //await exited.future;
+  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
+  await exited.future;
+}
+
+@pragma('vm:entry-point')
+void exitTestCancel() async {
+  final Completer<ByteData?> closed = Completer<ByteData?>();
+  ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
+    const String jsonString = '[{"response":"cancel"}]';
+    ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    callback(responseData);
+    closed.complete(data);
+  });
+  await closed.future;
+
+  // Because the request was canceled, the below shall execute.
+  final Completer<ByteData?> exited = Completer<ByteData?>();
+  const String jsonString = '{"method":"System.exitApplication","args":{"type":"required","exitCode":0}}';
+  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
+  await exited.future;
 }
 
 @pragma('vm:entry-point')
