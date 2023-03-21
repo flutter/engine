@@ -1606,10 +1606,9 @@ TEST_F(ShellTest, MultipleFluttersSetResourceCacheBytes) {
       [task_runners, main_context](flutter::Shell& shell) {
         auto result = std::make_unique<TestPlatformView>(shell, task_runners);
         ON_CALL(*result, CreateRenderingSurface(0ll))
-            .WillByDefault(::testing::Invoke([main_context] {
+            .WillByDefault(::testing::Invoke([] {
               auto surface = std::make_unique<MockSurface>();
-              ON_CALL(*surface, GetContext())
-                  .WillByDefault(Return(main_context.get()));
+              ON_CALL(*surface, IsValid()).WillByDefault(Return(true));
               return surface;
             }));
         ON_CALL(*result, CreateRenderingStudio())
