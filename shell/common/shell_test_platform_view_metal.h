@@ -47,6 +47,9 @@ class ShellTestPlatformViewMetal final : public ShellTestPlatformView,
   PointerDataDispatcherMaker GetDispatcherMaker() override;
 
   // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override;
+
+  // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
   // |GPUSurfaceMetalDelegate|

@@ -33,7 +33,8 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
    public:
     OffScreenSurface(fml::RefPtr<vulkan::VulkanProcTable> vk,
                      std::shared_ptr<ShellTestExternalViewEmbedder>
-                         shell_test_external_view_embedder);
+                         shell_test_external_view_embedder,
+                     sk_sp<GrDirectContext> context);
 
     ~OffScreenSurface() override;
 
@@ -58,9 +59,6 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
     sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator_;
     sk_sp<GrDirectContext> context_;
 
-    bool CreateSkiaGrContext();
-    bool CreateSkiaBackendContext(GrVkBackendContext* context);
-
     FML_DISALLOW_COPY_AND_ASSIGN(OffScreenSurface);
   };
 
@@ -73,6 +71,11 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
   std::shared_ptr<ShellTestExternalViewEmbedder>
       shell_test_external_view_embedder_;
 
+  sk_sp<GrDirectContext> context_;
+
+  // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override;
+
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
 
@@ -84,6 +87,9 @@ class ShellTestPlatformViewVulkan : public ShellTestPlatformView {
 
   // |PlatformView|
   PointerDataDispatcherMaker GetDispatcherMaker() override;
+
+  bool CreateSkiaGrContext();
+  bool CreateSkiaBackendContext(GrVkBackendContext* context);
 
   FML_DISALLOW_COPY_AND_ASSIGN(ShellTestPlatformViewVulkan);
 };

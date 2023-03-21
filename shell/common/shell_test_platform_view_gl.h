@@ -39,8 +39,13 @@ class ShellTestPlatformViewGL : public ShellTestPlatformView,
   std::shared_ptr<ShellTestExternalViewEmbedder>
       shell_test_external_view_embedder_;
 
+  sk_sp<GrDirectContext> main_context_;
+
   // |PlatformView|
   std::unique_ptr<Surface> CreateRenderingSurface(int64_t view_id) override;
+
+  // |PlatformView|
+  std::unique_ptr<Studio> CreateRenderingStudio() override;
 
   // |PlatformView|
   std::shared_ptr<ExternalViewEmbedder> CreateExternalViewEmbedder() override;

@@ -14,20 +14,7 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_studio.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
-// #include "flutter/shell/platform/embedder/embedder_surface_software.h"
 #include "flutter/shell/platform/embedder/vsync_waiter_embedder.h"
-
-// #ifdef SHELL_ENABLE_GL
-// #include "flutter/shell/platform/embedder/embedder_surface_gl.h"
-// #endif
-
-// #ifdef SHELL_ENABLE_METAL
-// #include "flutter/shell/platform/embedder/embedder_surface_metal.h"
-// #endif
-
-// #ifdef SHELL_ENABLE_VULKAN
-// #include "flutter/shell/platform/embedder/embedder_surface_vulkan.h"
-// #endif
 
 namespace flutter {
 

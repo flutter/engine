@@ -10,6 +10,7 @@
 
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
 #include "flutter/shell/gpu/gpu_surface_metal_skia.h"
+#include "flutter/shell/gpu/gpu_studio_metal_skia.h"
 #include "flutter/shell/platform/darwin/graphics/FlutterDarwinContextMetalSkia.h"
 
 namespace flutter {
@@ -89,6 +90,11 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
   return [](DefaultPointerDataDispatcher::Delegate& delegate) {
     return std::make_unique<SmoothPointerDataDispatcher>(delegate);
   };
+}
+
+// |PlatformView|
+std::unique_ptr<Studio> ShellTestPlatformViewMetal::CreateRenderingStudio() {
+  return std::make_unique<GPUStudioMetalSkia>(this, [metal_context_->context() mainContext]);
 }
 
 // |PlatformView|

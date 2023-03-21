@@ -39,7 +39,12 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       vsync_clock_(std::move(vsync_clock)),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {}
+          std::move(shell_test_external_view_embedder)) {
+  // Create the Skia GrContext.
+  if (!CreateSkiaGrContext()) {
+    FML_DLOG(ERROR) << "Could not create Skia context.";
+  }
+}
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
 
@@ -52,10 +57,16 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 }
 
 // |PlatformView|
+std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
+  return std::make_unique<GPUStudioVulkan>(context_, this);
+}
+
+// |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
   return std::make_unique<OffScreenSurface>(proc_table_,
-                                            shell_test_external_view_embedder_);
+                                            shell_test_external_view_embedder_,
+                                            context_);
 }
 
 // |PlatformView|
@@ -71,6 +82,62 @@ PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
   };
 }
 
+bool ShellTestPlatformViewVulkan::CreateSkiaGrContext() {
+  GrVkBackendContext backend_context;
+
+  if (!CreateSkiaBackendContext(&backend_context)) {
+    FML_DLOG(ERROR) << "Could not create Skia backend context.";
+    return false;
+  }
+
+  const auto options =
+      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
+
+  sk_sp<GrDirectContext> context =
+      GrDirectContext::MakeVulkan(backend_context, options);
+
+  if (context == nullptr) {
+    FML_DLOG(ERROR) << "Failed to create GrDirectContext";
+    return false;
+  }
+
+  context->setResourceCacheLimit(vulkan::kGrCacheMaxByteSize);
+
+  context_ = context;
+
+  return true;
+}
+
+bool ShellTestPlatformViewVulkan::CreateSkiaBackendContext(
+    GrVkBackendContext* context) {
+  auto getProc = CreateSkiaGetProc(proc_table_);
+
+  if (getProc == nullptr) {
+    FML_DLOG(ERROR) << "GetProcAddress is null";
+    return false;
+  }
+
+  uint32_t skia_features = 0;
+  if (!logical_device_->GetPhysicalDeviceFeaturesSkia(&skia_features)) {
+    FML_DLOG(ERROR) << "Failed to get Physical Device features";
+    return false;
+  }
+
+  context->fInstance = application_->GetInstance();
+  context->fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
+  context->fDevice = logical_device_->GetHandle();
+  context->fQueue = logical_device_->GetQueueHandle();
+  context->fGraphicsQueueIndex = logical_device_->GetGraphicsQueueIndex();
+  context->fMinAPIVersion = application_->GetAPIVersion();
+  context->fMaxAPIVersion = application_->GetAPIVersion();
+  context->fFeatures = skia_features;
+  context->fGetProc = std::move(getProc);
+  context->fOwnsInstanceAndDevice = false;
+  context->fMemoryAllocator = memory_allocator_;
+
+  return true;
+}
+
 // TODO(gw280): This code was forked from vulkan_window.cc specifically for
 // shell_test.
 //              We need to merge this functionality back into //vulkan.
@@ -82,7 +149,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     : valid_(false),
       vk_(std::move(vk)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {
+          std::move(shell_test_external_view_embedder)),
+      context_(context) {
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
     return;
@@ -121,69 +189,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
       logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
       vk_, true);
 
-  // Create the Skia GrContext.
-  if (!CreateSkiaGrContext()) {
-    FML_DLOG(ERROR) << "Could not create Skia context.";
-    return;
-  }
-
   valid_ = true;
-}
-
-bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
-  GrVkBackendContext backend_context;
-
-  if (!CreateSkiaBackendContext(&backend_context)) {
-    FML_DLOG(ERROR) << "Could not create Skia backend context.";
-    return false;
-  }
-
-  const auto options =
-      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kVulkan);
-
-  sk_sp<GrDirectContext> context =
-      GrDirectContext::MakeVulkan(backend_context, options);
-
-  if (context == nullptr) {
-    FML_DLOG(ERROR) << "Failed to create GrDirectContext";
-    return false;
-  }
-
-  context->setResourceCacheLimit(vulkan::kGrCacheMaxByteSize);
-
-  context_ = context;
-
-  return true;
-}
-
-bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaBackendContext(
-    GrVkBackendContext* context) {
-  auto getProc = CreateSkiaGetProc(vk_);
-
-  if (getProc == nullptr) {
-    FML_DLOG(ERROR) << "GetProcAddress is null";
-    return false;
-  }
-
-  uint32_t skia_features = 0;
-  if (!logical_device_->GetPhysicalDeviceFeaturesSkia(&skia_features)) {
-    FML_DLOG(ERROR) << "Failed to get Physical Device features";
-    return false;
-  }
-
-  context->fInstance = application_->GetInstance();
-  context->fPhysicalDevice = logical_device_->GetPhysicalDeviceHandle();
-  context->fDevice = logical_device_->GetHandle();
-  context->fQueue = logical_device_->GetQueueHandle();
-  context->fGraphicsQueueIndex = logical_device_->GetGraphicsQueueIndex();
-  context->fMinAPIVersion = application_->GetAPIVersion();
-  context->fMaxAPIVersion = application_->GetAPIVersion();
-  context->fFeatures = skia_features;
-  context->fGetProc = std::move(getProc);
-  context->fOwnsInstanceAndDevice = false;
-  context->fMemoryAllocator = memory_allocator_;
-
-  return true;
 }
 
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
