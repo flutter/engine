@@ -128,6 +128,8 @@ impeller_shaders("framebuffer_blend_entity_shaders") {
 
 impeller_component("entity") {
   sources = [
+    "contents/anonymous_contents.cc",
+    "contents/anonymous_contents.h",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
     "contents/clip_contents.cc",
@@ -206,6 +208,8 @@ impeller_component("entity") {
     "entity_pass.h",
     "entity_pass_delegate.cc",
     "entity_pass_delegate.h",
+    "entity_pass_target.cc",
+    "entity_pass_target.h",
     "geometry.cc",
     "geometry.h",
     "inline_pass_context.cc",
@@ -217,7 +221,7 @@ impeller_component("entity") {
     ":framebuffer_blend_entity_shaders",
     ":modern_entity_shaders",
     "../archivist",
-    "../image",
+    "../image:image_skia_backend",
     "../renderer",
     "../scene",
     "../typographer",

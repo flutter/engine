@@ -4,10 +4,11 @@
 
 #include "flutter/shell/common/snapshot_controller_skia.h"
 
-#include "display_list/display_list_image.h"
+#include "display_list/image/dl_image.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/snapshot_controller.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
@@ -126,7 +127,7 @@ sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize size) {
   return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
-    display_list->RenderTo(canvas);
+    DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
   });
 }
 
