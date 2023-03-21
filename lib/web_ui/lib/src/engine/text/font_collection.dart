@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:ui/src/engine/fonts.dart';
+import 'package:web_test_fonts/web_test_fonts.dart';
 
 import '../assets.dart';
 import '../dom.dart';
@@ -19,7 +20,7 @@ import 'layout_service.dart';
 /// [downloadAssetFonts] with it to register fonts declared in the
 /// font manifest. If test fonts are enabled, then call
 /// [debugDownloadTestFonts] as well.
-class HtmlFontCollection implements FontCollection {
+class HtmlFontCollection implements FlutterFontCollection {
   FontManager? _assetFontManager;
   FontManager? _testFontManager;
 
@@ -74,14 +75,15 @@ class HtmlFontCollection implements FontCollection {
   /// Downloads fonts that are used by tests.
   @override
   Future<void> debugDownloadTestFonts() async {
-    _testFontManager = FontManager();
-    _testFontManager!.downloadAsset(
-        ahemFontFamily, 'url($ahemFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoFontFamily,
-        'url($robotoTestFontUrl)', const <String, String>{});
-    _testFontManager!.downloadAsset(robotoVariableFontFamily,
-        'url($robotoVariableTestFontUrl)', const <String, String>{});
-    await _testFontManager!.downloadAllFonts();
+    final FontManager fontManager = _testFontManager = FontManager();
+    fontManager._downloadedFonts.add(createDomFontFace(
+      EmbeddedTestFont.flutterTest.fontFamily,
+      EmbeddedTestFont.flutterTest.data,
+    ));
+    for (final MapEntry<String, String> fontEntry in testFontUrls.entries) {
+      fontManager.downloadAsset(fontEntry.key, 'url(${fontEntry.value})', const <String, String>{});
+    }
+    await fontManager.downloadAllFonts();
   }
 
   @override

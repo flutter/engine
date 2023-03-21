@@ -12,7 +12,6 @@
 
 #include "flutter/common/graphics/texture.h"
 #include "flutter/display_list/dl_canvas.h"
-#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/diff_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/instrumentation.h"
@@ -32,6 +31,8 @@
 #include "third_party/skia/include/core/SkRRect.h"
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/utils/SkNWayCanvas.h"
+
+class GrDirectContext;
 
 namespace flutter {
 

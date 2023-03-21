@@ -10,6 +10,12 @@
 #include <vector>
 
 #include "flutter/shell/platform/common/engine_switches.h"
+#include "flutter/shell/platform/embedder/embedder.h"
+
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterAppDelegate_Internal.h"
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterApplication_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterCompositor.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterMenuPlugin.h"
@@ -18,9 +24,10 @@
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterRenderer.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewEngineProvider.h"
-#include "flutter/shell/platform/embedder/embedder.h"
 
 const uint64_t kFlutterDefaultViewId = 0;
+
+NSString* const kFlutterPlatformChannel = @"flutter/platform";
 
 /**
  * Constructs and returns a FlutterLocale struct corresponding to |locale|, which must outlive
@@ -147,6 +154,98 @@ constexpr char kTextPlainFormat[] = "text/plain";
  * Handles messages received from the Flutter engine on the _*Channel channels.
  */
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result;
+
+@end
+
+#pragma mark -
+
+@implementation FlutterEngineTerminationHandler {
+  FlutterEngine* _engine;
+  FlutterTerminationCallback _terminator;
+}
+
+- (instancetype)initWithEngine:(FlutterEngine*)engine
+                    terminator:(FlutterTerminationCallback)terminator {
+  self = [super init];
+  _engine = engine;
+  _terminator = terminator ? terminator : ^(id sender) {
+    // Default to actually terminating the application. The terminator exists to
+    // allow tests to override it so that an actual exit doesn't occur.
+    FlutterApplication* flutterApp = [FlutterApplication sharedApplication];
+    if (flutterApp && [flutterApp respondsToSelector:@selector(terminateApplication:)]) {
+      [[FlutterApplication sharedApplication] terminateApplication:sender];
+    } else if (flutterApp) {
+      [flutterApp terminate:sender];
+    }
+  };
+  FlutterAppDelegate* appDelegate =
+      (FlutterAppDelegate*)[[FlutterApplication sharedApplication] delegate];
+  appDelegate.terminationHandler = self;
+  return self;
+}
+
+// This is called by the method call handler in the engine when the application
+// requests termination itself.
+- (void)handleRequestAppExitMethodCall:(NSDictionary<NSString*, id>*)arguments
+                                result:(FlutterResult)result {
+  NSString* type = arguments[@"type"];
+  // Ignore the "exitCode" value in the arguments because AppKit doesn't have
+  // any good way to set the process exit code other than calling exit(), and
+  // that bypasses all of the native applicationShouldExit shutdown events,
+  // etc., which we don't want to skip.
+
+  FlutterAppExitType exitType =
+      [type isEqualTo:@"cancelable"] ? kFlutterAppExitTypeCancelable : kFlutterAppExitTypeRequired;
+
+  [self requestApplicationTermination:[FlutterApplication sharedApplication]
+                             exitType:exitType
+                               result:result];
+}
+
+// This is called by the FlutterAppDelegate whenever any termination request is
+// received.
+- (void)requestApplicationTermination:(id)sender
+                             exitType:(FlutterAppExitType)type
+                               result:(nullable FlutterResult)result {
+  switch (type) {
+    case kFlutterAppExitTypeCancelable: {
+      FlutterJSONMethodCodec* codec = [FlutterJSONMethodCodec sharedInstance];
+      FlutterMethodCall* methodCall =
+          [FlutterMethodCall methodCallWithMethodName:@"System.requestAppExit" arguments:nil];
+      [_engine sendOnChannel:kFlutterPlatformChannel
+                     message:[codec encodeMethodCall:methodCall]
+                 binaryReply:^(NSData* _Nullable reply) {
+                   NSAssert(_terminator, @"terminator shouldn't be nil");
+                   id decoded_reply = [codec decodeEnvelope:reply];
+                   if ([decoded_reply isKindOfClass:[FlutterError class]]) {
+                     FlutterError* error = (FlutterError*)decoded_reply;
+                     NSLog(@"Method call returned error[%@]: %@ %@", [error code], [error message],
+                           [error details]);
+                     _terminator(sender);
+                     return;
+                   }
+                   if (![decoded_reply isKindOfClass:[NSDictionary class]]) {
+                     NSLog(@"Call to System.requestAppExit returned an unexpected object: %@",
+                           decoded_reply);
+                     _terminator(sender);
+                     return;
+                   }
+                   NSDictionary* replyArgs = (NSDictionary*)decoded_reply;
+                   if ([replyArgs[@"response"] isEqual:@"exit"]) {
+                     _terminator(sender);
+                   }
+                   if (result != nil) {
+                     result(replyArgs);
+                   }
+                 }];
+      break;
+    }
+    case kFlutterAppExitTypeRequired:
+      NSAssert(_terminator, @"terminator shouldn't be nil");
+      _terminator(sender);
+      break;
+  }
+}
 
 @end
 
@@ -290,6 +389,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   _semanticsEnabled = NO;
   _isResponseValid = [[NSMutableArray alloc] initWithCapacity:1];
   [_isResponseValid addObject:@YES];
+  _terminationHandler = [[FlutterEngineTerminationHandler alloc] initWithEngine:self
+                                                                     terminator:nil];
   // kFlutterDefaultViewId is reserved for the default view.
   // All IDs above it are for regular views.
   _nextViewId = kFlutterDefaultViewId + 1;
@@ -469,7 +570,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
            @"The incoming view controller is already attached to an engine.");
   NSAssert([_viewControllers objectForKey:@(viewId)] == nil, @"The requested view ID is occupied.");
   [controller attachToEngine:self withId:viewId];
-  NSAssert(controller.id == viewId, @"Failed to assign view ID.");
+  NSAssert(controller.viewId == viewId, @"Failed to assign view ID.");
   [_viewControllers setObject:controller forKey:@(viewId)];
 }
 
@@ -489,7 +590,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
 - (FlutterViewController*)viewControllerForId:(uint64_t)viewId {
   FlutterViewController* controller = [_viewControllers objectForKey:@(viewId)];
-  NSAssert(controller == nil || controller.id == viewId,
+  NSAssert(controller == nil || controller.viewId == viewId,
            @"The stored controller has unexpected view ID.");
   return controller;
 }
@@ -511,8 +612,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
              controller.engine);
     [self registerViewController:controller forId:kFlutterDefaultViewId];
   } else if (currentController != nil && controller == nil) {
-    NSAssert(currentController.id == kFlutterDefaultViewId,
-             @"The default controller has an unexpected ID %llu", currentController.id);
+    NSAssert(currentController.viewId == kFlutterDefaultViewId,
+             @"The default controller has an unexpected ID %llu", currentController.viewId);
     // From non-nil to nil.
     [self deregisterViewControllerForId:kFlutterDefaultViewId];
     [self shutDownIfNeeded];
@@ -582,7 +683,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 - (void)removeViewController:(nonnull FlutterViewController*)viewController {
   NSAssert([viewController attached] && viewController.engine == self,
            @"The given view controller is not associated with this engine.");
-  [self deregisterViewControllerForId:viewController.id];
+  [self deregisterViewControllerForId:viewController.viewId];
   [self shutDownIfNeeded];
 }
 
@@ -646,7 +747,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)updateWindowMetricsForViewController:(FlutterViewController*)viewController {
-  if (viewController.id != kFlutterDefaultViewId) {
+  if (viewController.viewId != kFlutterDefaultViewId) {
     // TODO(dkwingsmt): The embedder API only supports single-view for now. As
     // embedder APIs are converted to multi-view, this method should support any
     // views.
@@ -655,7 +756,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if (!_engine || !viewController || !viewController.viewLoaded) {
     return;
   }
-  NSAssert([self viewControllerForId:viewController.id] == viewController,
+  NSAssert([self viewControllerForId:viewController.viewId] == viewController,
            @"The provided view controller is not attached to this engine.");
   NSView* view = viewController.flutterView;
   CGRect scaledBounds = [view convertRectToBacking:view.bounds];
@@ -881,6 +982,8 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
     result(nil);
   } else if ([call.method isEqualToString:@"Clipboard.hasStrings"]) {
     result(@{@"value" : @([self clipboardHasStrings])});
+  } else if ([call.method isEqualToString:@"System.exitApplication"]) {
+    [[self terminationHandler] handleRequestAppExitMethodCall:call.arguments result:result];
   } else {
     result(FlutterMethodNotImplemented);
   }

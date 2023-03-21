@@ -16,14 +16,22 @@ import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:js/js.dart';
+import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
+import '../browser_detection.dart';
 import '../configuration.dart';
 import '../dom.dart';
 import '../profiler.dart';
+import 'renderer.dart';
 
 /// Entrypoint into the CanvasKit API.
 late CanvasKit canvasKit;
+
+// TODO(mdebbar): Turn this on when CanvasKit Chromium is ready.
+// Set it to `browserSupportsCanvasKitChromium`.
+// https://github.com/flutter/flutter/issues/122329
+const bool _enableCanvasKitChromiumInAutoMode = false;
 
 /// Sets the [CanvasKit] object on `window` so we can use `@JS()` to bind to
 /// static APIs.
@@ -1865,6 +1873,13 @@ extension SkParagraphBuilderNamespaceExtension on SkParagraphBuilderNamespace {
     SkParagraphStyle paragraphStyle,
     TypefaceFontProvider? fontManager,
   );
+
+  bool RequiresClientICU() {
+    if (!js_util.hasProperty(this, 'RequiresClientICU')) {
+      return false;
+    }
+    return js_util.callMethod(this, 'RequiresClientICU', const <Object>[],) as bool;
+  }
 }
 
 @JS()
@@ -2678,13 +2693,30 @@ void patchCanvasKitModule(DomHTMLScriptElement canvasKitScript) {
     js_util.callMethod(objectConstructor,
         'defineProperty', <dynamic>[domWindow, 'module', moduleAccessor]);
   }
-  domDocument.head!.appendChild(canvasKitScript);
 }
 
-String get canvasKitBuildUrl => configuration.canvasKitBaseUrl;
-String get canvasKitJavaScriptBindingsUrl =>
-    '${canvasKitBuildUrl}canvaskit.js';
-String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
+const String _kFullCanvasKitJsFileName = 'canvaskit.js';
+const String _kChromiumCanvasKitJsFileName = 'chromium/canvaskit.js';
+
+String get _canvasKitBaseUrl => configuration.canvasKitBaseUrl;
+List<String> get _canvasKitJsFileNames {
+  switch (configuration.canvasKitVariant) {
+    case CanvasKitVariant.auto:
+      return <String>[
+        if (_enableCanvasKitChromiumInAutoMode) _kChromiumCanvasKitJsFileName,
+        _kFullCanvasKitJsFileName,
+      ];
+    case CanvasKitVariant.full:
+      return <String>[_kFullCanvasKitJsFileName];
+    case CanvasKitVariant.chromium:
+      return <String>[_kChromiumCanvasKitJsFileName];
+  }
+}
+Iterable<String> get _canvasKitJsUrls {
+  return _canvasKitJsFileNames.map((String filename) => '$_canvasKitBaseUrl$filename');
+}
+@visibleForTesting
+String canvasKitWasmModuleUrl(String file, String canvasKitBase) =>
     canvasKitBase + file;
 
 /// Download and initialize the CanvasKit module.
@@ -2692,31 +2724,69 @@ String canvasKitWasmModuleUrl(String canvasKitBase, String file) =>
 /// Downloads the CanvasKit JavaScript, then calls `CanvasKitInit` to download
 /// and intialize the CanvasKit wasm.
 Future<CanvasKit> downloadCanvasKit() async {
-  await _downloadCanvasKitJs();
+  await _downloadOneOf(_canvasKitJsUrls);
 
-  return CanvasKitInit(CanvasKitInitOptions(
-    locateFile: allowInterop((String file, String unusedBase) =>
-        canvasKitWasmModuleUrl(canvasKitBuildUrl, file)),
+  final CanvasKit canvasKit = await CanvasKitInit(CanvasKitInitOptions(
+    locateFile: allowInterop(canvasKitWasmModuleUrl),
   ));
+
+  if (canvasKit.ParagraphBuilder.RequiresClientICU() && !browserSupportsCanvaskitChromium) {
+    throw Exception(
+      'The CanvasKit variant you are using only works on Chromium browsers. '
+      'Please use a different CanvasKit variant, or use a Chromium browser.',
+    );
+  }
+
+  return canvasKit;
 }
 
-/// Downloads the CanvasKit JavaScript file at [canvasKitBase].
-Future<void> _downloadCanvasKitJs() {
-  final String canvasKitJavaScriptUrl = canvasKitJavaScriptBindingsUrl;
-
-  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
-  canvasKitScript.src = createTrustedScriptUrl(canvasKitJavaScriptUrl);
-
-  final Completer<void> canvasKitLoadCompleter = Completer<void>();
-  late DomEventListener callback;
-  void loadEventHandler(DomEvent _) {
-    canvasKitLoadCompleter.complete();
-    canvasKitScript.removeEventListener('load', callback);
+/// Finds the first URL in [urls] that can be downloaded successfully, and
+/// downloads it.
+///
+/// If none of the URLs can be downloaded, throws an [Exception].
+Future<void> _downloadOneOf(Iterable<String> urls) async {
+  for (final String url in urls) {
+    if (await _downloadCanvasKitJs(url)) {
+      return;
+    }
   }
-  callback = allowInterop(loadEventHandler);
-  canvasKitScript.addEventListener('load', callback);
+
+  // Reaching this point means that all URLs failed to download.
+  throw Exception(
+    'Failed to download any of the following CanvasKit URLs: $urls',
+  );
+}
+
+/// Downloads the CanvasKit JavaScript file at [url].
+///
+/// Returns a [Future] that completes with `true` if the CanvasKit JavaScript
+/// file was successfully downloaded, or `false` if it failed.
+Future<bool> _downloadCanvasKitJs(String url) {
+  final DomHTMLScriptElement canvasKitScript = createDomHTMLScriptElement();
+  canvasKitScript.src = createTrustedScriptUrl(url);
+
+  final Completer<bool> canvasKitLoadCompleter = Completer<bool>();
+
+  late final DomEventListener loadCallback;
+  late final DomEventListener errorCallback;
+
+  void loadEventHandler(DomEvent _) {
+    canvasKitScript.remove();
+    canvasKitLoadCompleter.complete(true);
+  }
+  void errorEventHandler(DomEvent errorEvent) {
+    canvasKitScript.remove();
+    canvasKitLoadCompleter.complete(false);
+  }
+
+  loadCallback = allowInterop(loadEventHandler);
+  errorCallback = allowInterop(errorEventHandler);
+
+  canvasKitScript.addEventListener('load', loadCallback);
+  canvasKitScript.addEventListener('error', errorCallback);
 
   patchCanvasKitModule(canvasKitScript);
+  domDocument.head!.appendChild(canvasKitScript);
 
   return canvasKitLoadCompleter.future;
 }

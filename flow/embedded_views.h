@@ -7,7 +7,7 @@
 
 #include <vector>
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
@@ -21,6 +21,8 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+class GrDirectContext;
 
 namespace flutter {
 

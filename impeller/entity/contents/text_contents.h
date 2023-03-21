@@ -32,6 +32,14 @@ class TextContents final : public Contents {
 
   void SetColor(Color color);
 
+  Color GetColor() const;
+
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  void SetInheritedOpacity(Scalar opacity) override;
+
+  void SetInverseMatrix(Matrix matrix);
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
@@ -49,6 +57,7 @@ class TextContents final : public Contents {
   TextFrame frame_;
   Color color_;
   mutable std::shared_ptr<LazyGlyphAtlas> lazy_atlas_;
+  Matrix inverse_matrix_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
       GlyphAtlas::Type type,

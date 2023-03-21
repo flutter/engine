@@ -42,6 +42,14 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
   return geometry_->GetCoverage(entity.GetTransformation());
 };
 
+bool ColorSourceContents::CanAcceptOpacity(const Entity& entity) const {
+  return true;
+}
+
+void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
+  SetAlpha(GetAlpha() * opacity);
+}
+
 bool ColorSourceContents::ShouldRender(
     const Entity& entity,
     const std::optional<Rect>& stencil_coverage) const {

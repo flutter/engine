@@ -4,6 +4,7 @@
 
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngine_Internal.h"
+#include "gtest/gtest.h"
 
 #include <functional>
 #include <thread>
@@ -11,7 +12,9 @@
 #include "flutter/fml/synchronization/waitable_event.h"
 #include "flutter/lib/ui/window/platform_message.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
+#import "flutter/shell/platform/darwin/common/framework/Headers/FlutterChannels.h"
 #import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterAppDelegate.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterApplication.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterEngineTestUtils.h"
 #import "flutter/shell/platform/darwin/macos/framework/Source/FlutterViewControllerTestUtils.h"
 #include "flutter/shell/platform/embedder/embedder.h"
@@ -407,7 +410,7 @@ TEST_F(FlutterEngineTest, NativeCallbacks) {
   ASSERT_TRUE(latch_called);
 }
 
-TEST(FlutterEngine, Compositor) {
+TEST_F(FlutterEngineTest, Compositor) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -446,7 +449,7 @@ TEST(FlutterEngine, Compositor) {
   [engine shutDownEngine];
 }  // namespace flutter::testing
 
-TEST(FlutterEngine, DartEntrypointArguments) {
+TEST_F(FlutterEngineTest, DartEntrypointArguments) {
   NSString* fixtures = @(flutter::testing::GetFixturesPath());
   FlutterDartProject* project = [[FlutterDartProject alloc]
       initWithAssetsPath:fixtures
@@ -541,7 +544,7 @@ TEST_F(FlutterEngineTest, MessengerCleanupConnectionWorks) {
   EXPECT_EQ(record, 21);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
+TEST_F(FlutterEngineTest, HasStringsWhenPasteboardEmpty) {
   id engineMock = CreateMockFlutterEngine(nil);
 
   // Call hasStrings and expect it to be false.
@@ -559,7 +562,7 @@ TEST(FlutterEngine, HasStringsWhenPasteboardEmpty) {
   EXPECT_FALSE(valueAfterClear);
 }
 
-TEST(FlutterEngine, HasStringsWhenPasteboardFull) {
+TEST_F(FlutterEngineTest, HasStringsWhenPasteboardFull) {
   id engineMock = CreateMockFlutterEngine(@"some string");
 
   // Call hasStrings and expect it to be true.
@@ -619,7 +622,7 @@ TEST_F(FlutterEngineTest, ResponseFromBackgroundThread) {
   }
 }
 
-TEST(EngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
+TEST_F(FlutterEngineTest, ThreadSynchronizerNotBlockingRasterThreadAfterShutdown) {
   FlutterThreadSynchronizer* threadSynchronizer = [[FlutterThreadSynchronizer alloc] init];
   [threadSynchronizer shutdown];
 
@@ -644,7 +647,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
   @autoreleasepool {
     // Create FVC1.
     viewController1 = [[FlutterViewController alloc] initWithProject:project];
-    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ull);
 
     engine = viewController1.engine;
     engine.viewController = nil;
@@ -661,7 +664,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByController) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.id, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ull);
 }
 
 TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
@@ -675,7 +678,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   @autoreleasepool {
     viewController1 = [[FlutterViewController alloc] initWithEngine:engine nibName:nil bundle:nil];
-    EXPECT_EQ(viewController1.id, 0ull);
+    EXPECT_EQ(viewController1.viewId, 0ull);
     EXPECT_EQ(engine.viewController, viewController1);
 
     engine.viewController = nil;
@@ -683,7 +686,7 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
     FlutterViewController* viewController2 = [[FlutterViewController alloc] initWithEngine:engine
                                                                                    nibName:nil
                                                                                     bundle:nil];
-    EXPECT_EQ(viewController2.id, 0ull);
+    EXPECT_EQ(viewController2.viewId, 0ull);
     EXPECT_EQ(engine.viewController, viewController2);
   }
   // FVC2 is deallocated but FVC1 is retained.
@@ -692,7 +695,75 @@ TEST_F(FlutterEngineTest, ManageControllersIfInitiatedByEngine) {
 
   engine.viewController = viewController1;
   EXPECT_EQ(engine.viewController, viewController1);
-  EXPECT_EQ(viewController1.id, 0ull);
+  EXPECT_EQ(viewController1.viewId, 0ull);
+}
+
+TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
+  id engineMock = CreateMockFlutterEngine(nil);
+  __block NSString* nextResponse = @"exit";
+  __block BOOL triedToTerminate = FALSE;
+  FlutterEngineTerminationHandler* terminationHandler =
+      [[FlutterEngineTerminationHandler alloc] initWithEngine:engineMock
+                                                   terminator:^(id sender) {
+                                                     triedToTerminate = TRUE;
+                                                     // Don't actually terminate, of course.
+                                                   }];
+  OCMStub([engineMock terminationHandler]).andReturn(terminationHandler);
+  id binaryMessengerMock = OCMProtocolMock(@protocol(FlutterBinaryMessenger));
+  OCMStub(  // NOLINT(google-objc-avoid-throwing-exception)
+      [engineMock binaryMessenger])
+      .andReturn(binaryMessengerMock);
+  OCMStub([engineMock sendOnChannel:@"flutter/platform"
+                            message:[OCMArg any]
+                        binaryReply:[OCMArg any]])
+      .andDo((^(NSInvocation* invocation) {
+        [invocation retainArguments];
+        FlutterBinaryReply callback;
+        NSData* returnedMessage;
+        [invocation getArgument:&callback atIndex:4];
+        if ([nextResponse isEqualToString:@"error"]) {
+          FlutterError* errorResponse = [FlutterError errorWithCode:@"Error"
+                                                            message:@"Failed"
+                                                            details:@"Details"];
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeErrorEnvelope:errorResponse];
+        } else {
+          NSDictionary* responseDict = @{@"response" : nextResponse};
+          returnedMessage =
+              [[FlutterJSONMethodCodec sharedInstance] encodeSuccessEnvelope:responseDict];
+        }
+        callback(returnedMessage);
+      }));
+  __block NSString* calledAfterTerminate = @"";
+  FlutterResult appExitResult = ^(id result) {
+    NSDictionary* resultDict = result;
+    calledAfterTerminate = resultDict[@"response"];
+  };
+  FlutterMethodCall* methodExitApplication =
+      [FlutterMethodCall methodCallWithMethodName:@"System.exitApplication"
+                                        arguments:@{@"type" : @"cancelable"}];
+
+  triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
+  nextResponse = @"exit";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "exit");
+  EXPECT_TRUE(triedToTerminate);
+
+  triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
+  nextResponse = @"cancel";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "cancel");
+  EXPECT_FALSE(triedToTerminate);
+
+  // Check that it doesn't crash on error.
+  triedToTerminate = FALSE;
+  calledAfterTerminate = @"";
+  nextResponse = @"error";
+  [engineMock handleMethodCall:methodExitApplication result:appExitResult];
+  EXPECT_STREQ([calledAfterTerminate UTF8String], "");
+  EXPECT_TRUE(triedToTerminate);
 }
 
 }  // namespace flutter::testing

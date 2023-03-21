@@ -162,7 +162,7 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdate) {
   node.label = "name";
   node.value = "value";
   node.platform_view_id = -1;
-  bridge->AddFlutterSemanticsNodeUpdate(&node);
+  bridge->AddFlutterSemanticsNodeUpdate(node);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -275,10 +275,10 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -426,6 +426,126 @@ TEST(FlutterWindowsView, AddSemanticsNodeUpdateWithChildren) {
   }
 }
 
+// Flutter used to assume that the accessibility root had ID 0.
+// In a multi-view world, each view has its own accessibility root
+// with a globally unique node ID.
+//
+//        node1
+//          |
+//        node2
+//
+// node1 is a grouping node, node0 is a static text node.
+TEST(FlutterWindowsView, NonZeroSemanticsRoot) {
+  std::unique_ptr<FlutterWindowsEngine> engine = GetTestEngine();
+  EngineModifier modifier(engine.get());
+  modifier.embedder_api().UpdateSemanticsEnabled =
+      [](FLUTTER_API_SYMBOL(FlutterEngine) engine, bool enabled) {
+        return kSuccess;
+      };
+
+  auto window_binding_handler =
+      std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
+  FlutterWindowsView view(std::move(window_binding_handler));
+  view.SetEngine(std::move(engine));
+
+  // Enable semantics to instantiate accessibility bridge.
+  view.OnUpdateSemanticsEnabled(true);
+
+  auto bridge = view.GetEngine()->accessibility_bridge().lock();
+  ASSERT_TRUE(bridge);
+
+  // Add root node.
+  FlutterSemanticsNode node1{sizeof(FlutterSemanticsNode), 1};
+  std::vector<int32_t> node1_children{2};
+  node1.child_count = node1_children.size();
+  node1.children_in_traversal_order = node1_children.data();
+  node1.children_in_hit_test_order = node1_children.data();
+
+  FlutterSemanticsNode node2{sizeof(FlutterSemanticsNode), 2};
+  node2.label = "prefecture";
+  node2.value = "Kyoto";
+
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->CommitUpdates();
+
+  // Look up the root windows node delegate.
+  auto root_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(1).lock();
+  ASSERT_TRUE(root_delegate);
+  EXPECT_EQ(root_delegate->GetChildCount(), 1);
+
+  // Look up the child node delegate
+  auto child_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(2).lock();
+  ASSERT_TRUE(child_delegate);
+  EXPECT_EQ(child_delegate->GetChildCount(), 0);
+
+  // Ensure a node with ID 0 does not exist.
+  auto fake_delegate = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();
+  ASSERT_FALSE(fake_delegate);
+
+  // Get the root's native IAccessible object.
+  IAccessible* node1_accessible = root_delegate->GetNativeViewAccessible();
+  ASSERT_TRUE(node1_accessible != nullptr);
+
+  // Property lookups will be made against this node itself.
+  VARIANT varchild{};
+  varchild.vt = VT_I4;
+  varchild.lVal = CHILDID_SELF;
+
+  // Verify node type is a group.
+  VARIANT varrole{};
+  varrole.vt = VT_I4;
+  ASSERT_EQ(node1_accessible->get_accRole(varchild, &varrole), S_OK);
+  EXPECT_EQ(varrole.lVal, ROLE_SYSTEM_GROUPING);
+
+  // Verify child count.
+  long node1_child_count = 0;
+  ASSERT_EQ(node1_accessible->get_accChildCount(&node1_child_count), S_OK);
+  EXPECT_EQ(node1_child_count, 1);
+
+  {
+    // Look up first child of node1 (node0), a static text node.
+    varchild.lVal = 1;
+    IDispatch* node2_dispatch = nullptr;
+    ASSERT_EQ(node1_accessible->get_accChild(varchild, &node2_dispatch), S_OK);
+    ASSERT_TRUE(node2_dispatch != nullptr);
+    IAccessible* node2_accessible = nullptr;
+    ASSERT_EQ(node2_dispatch->QueryInterface(
+                  IID_IAccessible, reinterpret_cast<void**>(&node2_accessible)),
+              S_OK);
+    ASSERT_TRUE(node2_accessible != nullptr);
+
+    // Verify node name matches our label.
+    varchild.lVal = CHILDID_SELF;
+    BSTR bname = nullptr;
+    ASSERT_EQ(node2_accessible->get_accName(varchild, &bname), S_OK);
+    std::string name(_com_util::ConvertBSTRToString(bname));
+    EXPECT_EQ(name, "prefecture");
+
+    // Verify node value matches.
+    BSTR bvalue = nullptr;
+    ASSERT_EQ(node2_accessible->get_accValue(varchild, &bvalue), S_OK);
+    std::string value(_com_util::ConvertBSTRToString(bvalue));
+    EXPECT_EQ(value, "Kyoto");
+
+    // Verify node type is static text.
+    VARIANT varrole{};
+    varrole.vt = VT_I4;
+    ASSERT_EQ(node2_accessible->get_accRole(varchild, &varrole), S_OK);
+    EXPECT_EQ(varrole.lVal, ROLE_SYSTEM_STATICTEXT);
+
+    // Verify the parent node is the root.
+    IDispatch* parent_dispatch;
+    node2_accessible->get_accParent(&parent_dispatch);
+    IAccessible* parent_accessible;
+    ASSERT_EQ(
+        parent_dispatch->QueryInterface(
+            IID_IAccessible, reinterpret_cast<void**>(&parent_accessible)),
+        S_OK);
+    EXPECT_EQ(parent_accessible, node1_accessible);
+  }
+}
+
 // Verify the native IAccessible accHitTest method returns the correct
 // IAccessible COM object for the given coordinates.
 //
@@ -498,10 +618,10 @@ TEST(FlutterWindowsViewTest, AccessibilityHitTesting) {
   node3.label = "city";
   node3.value = "Uji";
 
-  bridge->AddFlutterSemanticsNodeUpdate(&node0);
-  bridge->AddFlutterSemanticsNodeUpdate(&node1);
-  bridge->AddFlutterSemanticsNodeUpdate(&node2);
-  bridge->AddFlutterSemanticsNodeUpdate(&node3);
+  bridge->AddFlutterSemanticsNodeUpdate(node0);
+  bridge->AddFlutterSemanticsNodeUpdate(node1);
+  bridge->AddFlutterSemanticsNodeUpdate(node2);
+  bridge->AddFlutterSemanticsNodeUpdate(node3);
   bridge->CommitUpdates();
 
   // Look up the root windows node delegate.
@@ -623,7 +743,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsChecked);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -662,7 +782,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   // Test unchecked too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -701,7 +821,7 @@ TEST(FlutterWindowsViewTest, CheckboxNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasCheckedState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsCheckStateMixed);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -769,7 +889,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState |
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsToggled);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
 
@@ -818,7 +938,7 @@ TEST(FlutterWindowsViewTest, SwitchNativeState) {
   // Test unpressed too.
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagHasToggledState);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
   bridge->CommitUpdates();
 
   {
@@ -886,7 +1006,7 @@ TEST(FlutterWindowsViewTest, TooltipNodeData) {
   root.custom_accessibility_actions_count = 0;
   root.flags = static_cast<FlutterSemanticsFlag>(
       FlutterSemanticsFlag::kFlutterSemanticsFlagIsTextField);
-  bridge->AddFlutterSemanticsNodeUpdate(&root);
+  bridge->AddFlutterSemanticsNodeUpdate(root);
 
   bridge->CommitUpdates();
   auto root_node = bridge->GetFlutterPlatformNodeDelegateFromID(0).lock();

@@ -106,14 +106,14 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   }
 
   if (blur_sigma_.sigma < kEhCloseEnough) {
-    return Contents::EntityFromSnapshot(
+    return Entity::FromSnapshot(
         input_snapshot.value(), entity.GetBlendMode(),
         entity.GetStencilDepth());  // No blur to render.
   }
 
   auto radius = Radius{blur_sigma_}.radius;
 
-  auto transform = entity.GetTransformation() * effect_transform;
+  auto transform = entity.GetTransformation() * effect_transform.Basis();
   auto transformed_blur_radius =
       transform.TransformDirection(blur_direction_ * radius);
 
@@ -122,7 +122,7 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   // If the radius length is < .5, the shader will take at most 1 sample,
   // resulting in no blur.
   if (transformed_blur_radius_length < .5) {
-    return Contents::EntityFromSnapshot(
+    return Entity::FromSnapshot(
         input_snapshot.value(), entity.GetBlendMode(),
         entity.GetStencilDepth());  // No blur to render.
   }
@@ -276,18 +276,18 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
   Vector2 scaled_size = pass_texture_rect.size * scale;
   ISize floored_size = ISize(scaled_size.x, scaled_size.y);
 
-  auto out_texture = renderer.MakeSubpass(floored_size, callback);
+  auto out_texture = renderer.MakeSubpass("Directional Gaussian Blur Filter",
+                                          floored_size, callback);
 
   if (!out_texture) {
     return std::nullopt;
   }
-  out_texture->SetLabel("DirectionalGaussianBlurFilter Texture");
 
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kLinear;
   sampler_desc.mag_filter = MinMagFilter::kLinear;
 
-  return Contents::EntityFromSnapshot(
+  return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
                .transform = texture_rotate.Invert() *
                             Matrix::MakeTranslation(pass_texture_rect.origin) *
@@ -311,7 +311,7 @@ std::optional<Rect> DirectionalGaussianBlurFilterContents::GetFilterCoverage(
     return std::nullopt;
   }
 
-  auto transform = inputs[0]->GetTransform(entity) * effect_transform;
+  auto transform = inputs[0]->GetTransform(entity) * effect_transform.Basis();
   auto transformed_blur_vector =
       transform.TransformDirection(blur_direction_* Radius{blur_sigma_}.radius)
           .Abs();

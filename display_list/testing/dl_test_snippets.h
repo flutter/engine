@@ -6,12 +6,10 @@
 #define FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_SNIPPETS_H_
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 
-#include "third_party/skia/include/core/SkPicture.h"
-#include "third_party/skia/include/core/SkPictureRecorder.h"
+#include "third_party/skia/include/core/SkCanvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
-#include "third_party/skia/include/effects/SkBlenders.h"
 #include "third_party/skia/include/effects/SkDashPathEffect.h"
 #include "third_party/skia/include/effects/SkGradientShader.h"
 #include "third_party/skia/include/effects/SkImageFilters.h"
@@ -23,7 +21,7 @@ sk_sp<DisplayList> GetSampleDisplayList();
 sk_sp<DisplayList> GetSampleDisplayList(int ops);
 sk_sp<DisplayList> GetSampleNestedDisplayList();
 
-typedef const std::function<void(DisplayListBuilder&)> DlInvoker;
+typedef const std::function<void(DlOpReceiver&)> DlInvoker;
 
 constexpr SkPoint kEndPoints[] = {
     {0, 0},
@@ -92,13 +90,8 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, int checker_size) {
 
 static auto TestImage1 = MakeTestImage(40, 40, 5);
 static auto TestImage2 = MakeTestImage(50, 50, 5);
+static auto TestSkImage = MakeTestImage(30, 30, 5) -> skia_image();
 
-static const sk_sp<SkBlender> kTestBlender1 =
-    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, false);
-static const sk_sp<SkBlender> kTestBlender2 =
-    SkBlenders::Arithmetic(0.2, 0.2, 0.2, 0.2, true);
-static const sk_sp<SkBlender> kTestBlender3 =
-    SkBlenders::Arithmetic(0.3, 0.3, 0.3, 0.3, true);
 static const DlImageColorSource kTestSource1(TestImage1,
                                              DlTileMode::kClamp,
                                              DlTileMode::kMirror,
@@ -186,11 +179,11 @@ static const std::shared_ptr<DlPathEffect> kTestPathEffect1 =
     DlDashPathEffect::Make(kTestDashes1, 2, 0.0f);
 static const std::shared_ptr<DlPathEffect> kTestPathEffect2 =
     DlDashPathEffect::Make(kTestDashes2, 2, 0.0f);
-static const DlBlurMaskFilter kTestMaskFilter1(kNormal_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter2(kNormal_SkBlurStyle, 5.0);
-static const DlBlurMaskFilter kTestMaskFilter3(kSolid_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter4(kInner_SkBlurStyle, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter5(kOuter_SkBlurStyle, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter1(DlBlurStyle::kNormal, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
+static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter4(DlBlurStyle::kInner, 3.0);
+static const DlBlurMaskFilter kTestMaskFilter5(DlBlurStyle::kOuter, 3.0);
 constexpr SkRect kTestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
 static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestBounds, 5, 5);
 static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestBounds);
@@ -220,44 +213,9 @@ static std::shared_ptr<const DlVertices> TestVertices2 =
                      nullptr,
                      kColors);
 
-static constexpr int kTestDivs1[] = {10, 20, 30};
-static constexpr int kTestDivs2[] = {15, 20, 25};
-static constexpr int kTestDivs3[] = {15, 25};
-static constexpr SkCanvas::Lattice::RectType kTestRTypes[] = {
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-    SkCanvas::Lattice::RectType::kDefault,
-    SkCanvas::Lattice::RectType::kTransparent,
-    SkCanvas::Lattice::RectType::kFixedColor,
-};
-static constexpr SkColor kTestLatticeColors[] = {
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-    SK_ColorBLUE, SK_ColorGREEN, SK_ColorYELLOW,
-};
-static constexpr SkIRect kTestLatticeSrcRect = {1, 1, 39, 39};
-
-static sk_sp<SkPicture> MakeTestPicture(int w, int h, SkColor color) {
-  SkPictureRecorder recorder;
-  SkRTreeFactory rtree_factory;
-  SkCanvas* cv = recorder.beginRecording(kTestBounds, &rtree_factory);
-  SkPaint paint;
-  paint.setColor(color);
-  paint.setStyle(SkPaint::kFill_Style);
-  cv->drawRect(SkRect::MakeWH(w, h), paint);
-  return recorder.finishRecordingAsPicture();
-}
-static sk_sp<SkPicture> TestPicture1 = MakeTestPicture(20, 20, SK_ColorGREEN);
-static sk_sp<SkPicture> TestPicture2 = MakeTestPicture(25, 25, SK_ColorBLUE);
-
 static sk_sp<DisplayList> MakeTestDisplayList(int w, int h, SkColor color) {
   DisplayListBuilder builder;
-  builder.setColor(color);
-  builder.drawRect(SkRect::MakeWH(w, h));
+  builder.DrawRect(SkRect::MakeWH(w, h), DlPaint(color));
   return builder.Build();
 }
 static sk_sp<DisplayList> TestDisplayList1 =
@@ -313,13 +271,13 @@ struct DisplayListInvocation {
   // through an SkCanvas interface, comparable to |DisplayList.byte_count().
   size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
 
-  void Invoke(DisplayListBuilder& builder) { invoker(builder); }
+  void Invoke(DlOpReceiver& builder) { invoker(builder); }
 
-  sk_sp<DisplayList> Build() {
-    DisplayListBuilder builder;
-    invoker(builder);
-    return builder.Build();
-  }
+  // sk_sp<DisplayList> Build() {
+  //   DisplayListBuilder builder;
+  //   invoker(builder.asReceiver());
+  //   return builder.Build();
+  // }
 };
 
 struct DisplayListInvocationGroup {

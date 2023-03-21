@@ -2,9 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#include "flutter/display_list/benchmarking/dl_complexity.h"
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_complexity.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
 #include "flutter/flow/layers/container_layer.h"
 #include "flutter/flow/layers/display_list_layer.h"
@@ -449,8 +449,7 @@ TEST(RasterCache, DeviceRectRoundOutForDisplayList) {
 
   SkRect logical_rect = SkRect::MakeLTRB(28, 0, 354.56731, 310.288);
   DisplayListBuilder builder(logical_rect);
-  builder.setColor(SK_ColorRED);
-  builder.drawRect(logical_rect);
+  builder.DrawRect(logical_rect, DlPaint(DlColor::kRed()));
   sk_sp<DisplayList> display_list = builder.Build();
 
   SkMatrix ctm = SkMatrix::MakeAll(1.3312, 0, 233, 0, 1.3312, 206, 0, 0, 1);
