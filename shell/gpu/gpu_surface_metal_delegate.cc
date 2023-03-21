@@ -4,6 +4,8 @@
 
 #include "flutter/shell/gpu/gpu_surface_metal_delegate.h"
 
+#include "flutter/common/graphics/persistent_cache.h"
+
 namespace flutter {
 
 GPUSurfaceMetalDelegate::GPUSurfaceMetalDelegate(
@@ -18,6 +20,19 @@ MTLRenderTargetType GPUSurfaceMetalDelegate::GetRenderTargetType() {
 
 bool GPUSurfaceMetalDelegate::AllowsDrawingWhenGpuDisabled() const {
   return true;
+}
+
+GPUSurfaceMetalDelegate::SkSLPrecompiler::SkSLPrecompiler() {}
+
+void GPUSurfaceMetalDelegate::SkSLPrecompiler::PrecompileKnownSkSLsIfNecessary(
+    GrDirectContext* current_context) {
+  if (current_context == precompiled_sksl_context_) {
+    // Known SkSLs have already been prepared in this context.
+    return;
+  }
+  precompiled_sksl_context_ = current_context;
+  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(
+      precompiled_sksl_context_);
 }
 
 }  // namespace flutter

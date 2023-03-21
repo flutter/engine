@@ -17,7 +17,9 @@ namespace flutter {
 class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalSkia : public Studio {
  public:
   GPUStudioMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                     sk_sp<GrDirectContext> context);
+                     sk_sp<GrDirectContext> context,
+                     std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler>
+                         sksl_precompiler);
 
   // |Studio|
   ~GPUStudioMetalSkia();
@@ -28,7 +30,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUStudioMetalSkia : public Studio {
  private:
   const GPUSurfaceMetalDelegate* delegate_;
   sk_sp<GrDirectContext> context_;
-  GrDirectContext* precompiled_sksl_context_ = nullptr;
+  std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler_;
 
   // |Studio|
   GrDirectContext* GetContext() override;

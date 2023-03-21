@@ -67,6 +67,7 @@ ShellTestPlatformViewMetal::ShellTestPlatformViewMetal(
       vsync_clock_(std::move(vsync_clock)),
       shell_test_external_view_embedder_(std::move(shell_test_external_view_embedder)) {
   FML_CHECK([metal_context_->context() mainContext] != nil);
+  sksl_precompiler_ = std::make_shared<GPUSurfaceMetalDelegate::SkSLPrecompiler>();
 }
 
 ShellTestPlatformViewMetal::~ShellTestPlatformViewMetal() = default;
@@ -94,13 +95,14 @@ PointerDataDispatcherMaker ShellTestPlatformViewMetal::GetDispatcherMaker() {
 
 // |PlatformView|
 std::unique_ptr<Studio> ShellTestPlatformViewMetal::CreateRenderingStudio() {
-  return std::make_unique<GPUStudioMetalSkia>(this, [metal_context_->context() mainContext]);
+  return std::make_unique<GPUStudioMetalSkia>(this, [metal_context_->context() mainContext],
+                                              sksl_precompiler_);
 }
 
 // |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewMetal::CreateRenderingSurface(int64_t view_id) {
   return std::make_unique<GPUSurfaceMetalSkia>(this, [metal_context_->context() mainContext],
-                                               MsaaSampleCount::kNone);
+                                               MsaaSampleCount::kNone, sksl_precompiler_);
 }
 
 // |GPUSurfaceMetalDelegate|

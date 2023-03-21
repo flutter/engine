@@ -15,11 +15,14 @@
 FLUTTER_ASSERT_NOT_ARC
 namespace flutter {
 
-EmbedderSurfaceMetal::EmbedderSurfaceMetal(sk_sp<GrDirectContext> main_context,
-                                           EmbedderStudioMetal* studio,
-                                           bool render_to_surface)
+EmbedderSurfaceMetal::EmbedderSurfaceMetal(
+    sk_sp<GrDirectContext> main_context,
+    EmbedderStudioMetal* studio,
+    std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler,
+    bool render_to_surface)
     : main_context_(std::move(main_context)),
       studio_(studio),
+      sksl_precompiler_(sksl_precompiler),
       render_to_surface_(render_to_surface) {}
 
 EmbedderSurfaceMetal::~EmbedderSurfaceMetal() = default;
@@ -37,8 +40,8 @@ std::unique_ptr<Surface> EmbedderSurfaceMetal::CreateGPUSurface() API_AVAILABLE(
     return nullptr;
   }
 
-  auto surface = std::make_unique<GPUSurfaceMetalSkia>(studio_, main_context_,
-                                                       MsaaSampleCount::kNone, render_to_surface_);
+  auto surface = std::make_unique<GPUSurfaceMetalSkia>(
+      studio_, main_context_, MsaaSampleCount::kNone, sksl_precompiler_, render_to_surface_);
 
   if (!surface->IsValid()) {
     return nullptr;

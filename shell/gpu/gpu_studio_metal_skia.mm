@@ -9,7 +9,6 @@
 
 #include <utility>
 
-#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/platform/darwin/scoped_nsobject.h"
@@ -28,25 +27,17 @@ static_assert(!__has_feature(objc_arc), "ARC must be disabled.");
 
 namespace flutter {
 
-GPUStudioMetalSkia::GPUStudioMetalSkia(GPUSurfaceMetalDelegate* delegate,
-                                       sk_sp<GrDirectContext> context)
-    : delegate_(delegate), context_(std::move(context)) {}
+GPUStudioMetalSkia::GPUStudioMetalSkia(
+    GPUSurfaceMetalDelegate* delegate,
+    sk_sp<GrDirectContext> context,
+    std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler)
+    : delegate_(delegate), context_(std::move(context)), sksl_precompiler_(sksl_precompiler) {}
 
 GPUStudioMetalSkia::~GPUStudioMetalSkia() = default;
 
 // |Studio|
 bool GPUStudioMetalSkia::IsValid() {
   return context_ != nullptr;
-}
-
-void GPUStudioMetalSkia::PrecompileKnownSkSLsIfNecessary() {
-  auto* current_context = GetContext();
-  if (current_context == precompiled_sksl_context_) {
-    // Known SkSLs have already been prepared in this context.
-    return;
-  }
-  precompiled_sksl_context_ = current_context;
-  flutter::PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(precompiled_sksl_context_);
 }
 
 // |Studio|
@@ -58,7 +49,7 @@ GrDirectContext* GPUStudioMetalSkia::GetContext() {
 std::unique_ptr<GLContextResult> GPUStudioMetalSkia::MakeRenderContextCurrent() {
   // A context may either be necessary to render to the surface or to snapshot an offscreen
   // surface. Either way, SkSL precompilation must be attempted.
-  PrecompileKnownSkSLsIfNecessary();
+  sksl_precompiler_->PrecompileKnownSkSLsIfNecessary(GetContext());
 
   // This backend has no such concept.
   return std::make_unique<GLContextDefaultResult>(true);

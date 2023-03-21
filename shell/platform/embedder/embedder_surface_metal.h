@@ -20,6 +20,8 @@ class EmbedderSurfaceMetal final : public EmbedderSurface {
  public:
   EmbedderSurfaceMetal(sk_sp<GrDirectContext> main_context,
                        EmbedderStudioMetal* studio,
+                       std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler>
+                           sksl_precompiler,
                        bool render_to_surface);
 
   ~EmbedderSurfaceMetal() override;
@@ -30,6 +32,7 @@ class EmbedderSurfaceMetal final : public EmbedderSurface {
  private:
   sk_sp<GrDirectContext> main_context_;
   EmbedderStudioMetal* studio_;
+  std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler_;
   bool render_to_surface_;
 
   // |EmbedderSurface|

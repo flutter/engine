@@ -25,6 +25,7 @@ IOSSurfaceMetalSkia::IOSSurfaceMetalSkia(const fml::scoped_nsobject<CAMetalLayer
   auto darwin_context = metal_context->GetDarwinContext().get();
   command_queue_ = darwin_context.commandQueue;
   device_ = darwin_context.device;
+  sksl_precompiler_ = std::make_shared<GPUSurfaceMetalDelegate::SkSLPrecompiler>();
 }
 
 // |IOSSurface|
@@ -43,18 +44,18 @@ void IOSSurfaceMetalSkia::UpdateStorageSizeIfNecessary() {
 // |IOSSurface|
 std::unique_ptr<Studio> IOSSurfaceMetalSkia::CreateGPUStudio(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUStudioMetalSkia>(this,               // delegate
-                                              sk_ref_sp(context)  // context
-  );
+  return std::make_unique<GPUStudioMetalSkia>(this,                // delegate
+                                              sk_ref_sp(context),  // context
+                                              sksl_precompiler_);
 }
 
 // |IOSSurface|
 std::unique_ptr<Surface> IOSSurfaceMetalSkia::CreateGPUSurface(GrDirectContext* context) {
   FML_DCHECK(context);
-  return std::make_unique<GPUSurfaceMetalSkia>(this,                               // delegate
-                                               sk_ref_sp(context),                 // context
-                                               GetContext()->GetMsaaSampleCount()  // sample count
-  );
+  return std::make_unique<GPUSurfaceMetalSkia>(this,                                // delegate
+                                               sk_ref_sp(context),                  // context
+                                               GetContext()->GetMsaaSampleCount(),  // sample count
+                                               sksl_precompiler_);
 }
 
 // |GPUSurfaceMetalDelegate|

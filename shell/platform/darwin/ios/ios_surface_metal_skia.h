@@ -28,6 +28,7 @@ class SK_API_AVAILABLE_CA_METAL_LAYER IOSSurfaceMetalSkia final : public IOSSurf
   id<MTLDevice> device_;
   id<MTLCommandQueue> command_queue_;
   bool is_valid_ = false;
+  std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler_;
 
   // |IOSSurface|
   bool IsValid() const override;

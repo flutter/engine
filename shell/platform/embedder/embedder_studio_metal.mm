@@ -30,6 +30,7 @@ EmbedderStudioMetal::EmbedderStudioMetal(
   resource_context_ =
       [FlutterDarwinContextMetalSkia createGrContext:(id<MTLDevice>)device
                                         commandQueue:(id<MTLCommandQueue>)command_queue];
+  sksl_precompiler_ = std::make_shared<GPUSurfaceMetalDelegate::SkSLPrecompiler>();
   valid_ = main_context_ && resource_context_;
 }
 
@@ -48,7 +49,7 @@ std::unique_ptr<Studio> EmbedderStudioMetal::CreateGPUStudio() API_AVAILABLE(ios
     return nullptr;
   }
 
-  auto studio = std::make_unique<GPUStudioMetalSkia>(this, main_context_);
+  auto studio = std::make_unique<GPUStudioMetalSkia>(this, main_context_, sksl_precompiler_);
 
   if (!studio->IsValid()) {
     return nullptr;
@@ -63,7 +64,8 @@ std::unique_ptr<EmbedderSurface> EmbedderStudioMetal::CreateSurface() {
   }
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<EmbedderSurfaceMetal>(main_context_,
-                                                this,              // GPU surface GL delegate
+                                                this,  // GPU surface GL delegate
+                                                sksl_precompiler_,
                                                 render_to_surface  // render to surface
   );
 }

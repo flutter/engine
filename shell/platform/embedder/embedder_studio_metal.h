@@ -64,6 +64,7 @@ class EmbedderStudioMetal final : public EmbedderStudio,
   sk_sp<SkSurface> surface_;
   sk_sp<GrDirectContext> main_context_;
   sk_sp<GrDirectContext> resource_context_;
+  std::shared_ptr<GPUSurfaceMetalDelegate::SkSLPrecompiler> sksl_precompiler_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderStudioMetal);
 };
