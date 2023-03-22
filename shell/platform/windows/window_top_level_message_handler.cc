@@ -35,8 +35,11 @@ bool WindowTopLevelMessageHandler::WindowProc(HWND hwnd, UINT msg, WPARAM wpar, 
 }
 
 static BOOL CALLBACK WindowEnumCallback(HWND hwnd, LPARAM user_data) {
-  int64_t& count = *static_cast<int64_t*>(reinterpret_cast<void*>(user_data));
-  count++;
+  HWND parent = GetParent(hwnd);
+  if (parent == NULL) {
+    int64_t& count = *static_cast<int64_t*>(reinterpret_cast<void*>(user_data));
+    count++;
+  }
   return true;
 }
 
