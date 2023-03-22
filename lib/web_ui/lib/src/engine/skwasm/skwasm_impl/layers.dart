@@ -14,6 +14,9 @@ class BackdropFilterOperation implements LayerOperation {
   BackdropFilterOperation();
 
   @override
+  ui.Rect? get clipRect => null;
+
+  @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     // TODO(jacksongardner): Implement backdrop filter
   }
@@ -32,6 +35,9 @@ class ClipPathOperation implements LayerOperation {
 
   final ui.Path path;
   final ui.Clip clip;
+
+  @override
+  ui.Rect? get clipRect => path.getBounds();
 
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
@@ -61,6 +67,9 @@ class ClipRectOperation implements LayerOperation {
   final ui.Clip clip;
 
   @override
+  ui.Rect? get clipRect => rect;
+
+  @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     canvas.save();
     canvas.clipRect(rect, doAntiAlias: clip != ui.Clip.hardEdge);
@@ -86,6 +95,10 @@ class ClipRRectOperation implements LayerOperation {
 
   final ui.RRect rrect;
   final ui.Clip clip;
+
+  @override
+  ui.Rect? get clipRect => rrect.outerRect;
+
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     canvas.save();
@@ -111,6 +124,9 @@ class ColorFilterOperation implements LayerOperation {
   ColorFilterOperation();
 
   @override
+  ui.Rect? get clipRect => null;
+
+  @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     // TODO(jacksongardner): Implement color filter
   }
@@ -125,6 +141,9 @@ class ImageFilterLayer
   with PictureLayer
   implements ui.ImageFilterEngineLayer {}
 class ImageFilterOperation implements LayerOperation {
+  @override
+  ui.Rect? get clipRect => null;
+
   @override
   void pre(ui.Canvas canvas, ui.Rect contentRect) {
     // TODO(jacksongardner): Implement image filter
@@ -146,6 +165,9 @@ class OffsetOperation implements LayerOperation {
   final double dy;
 
   @override
+  ui.Rect? get clipRect => null;
+
+  @override
   void pre(ui.Canvas canvas, ui.Rect cullRect) {
     canvas.save();
     canvas.translate(dx, dy);
@@ -165,6 +187,9 @@ class OpacityOperation implements LayerOperation {
 
   final int alpha;
   final ui.Offset offset;
+
+  @override
+  ui.Rect? get clipRect => null;
 
   @override
   void pre(ui.Canvas canvas, ui.Rect cullRect) {
@@ -196,6 +221,9 @@ class TransformOperation implements LayerOperation {
   final Float64List transform;
 
   @override
+  ui.Rect? get clipRect => null;
+
+  @override
   void pre(ui.Canvas canvas, ui.Rect cullRect) {
     canvas.save();
     canvas.transform(transform);
@@ -219,6 +247,7 @@ mixin PictureLayer implements ui.EngineLayer {
 abstract class LayerOperation {
   const LayerOperation();
 
+  ui.Rect? get clipRect;
   void pre(ui.Canvas canvas, ui.Rect contentRect);
   void post(ui.Canvas canvas);
 }
@@ -256,8 +285,12 @@ class LayerBuilder {
   ui.Rect contentRect = ui.Rect.zero;
 
   ui.Picture build() {
+    final ui.Rect? clipRect = operation?.clipRect;
+    final ui.Rect rect = clipRect == null
+      ? contentRect
+      : contentRect.intersect(clipRect);
     final ui.PictureRecorder recorder = ui.PictureRecorder();
-    final ui.Canvas canvas = ui.Canvas(recorder, contentRect);
+    final ui.Canvas canvas = ui.Canvas(recorder, rect);
 
     operation?.pre(canvas, contentRect);
     for (final PictureDrawCommand command in drawCommands) {

@@ -234,7 +234,6 @@ class SkwasmRenderer implements Renderer {
       surfaceSize = frameSize;
     }
     final SkwasmPicture picture = (scene as SkwasmScene).picture as SkwasmPicture;
-    print('cullRect = ${picture.cullRect}');
     surface.renderPicture(picture);
   }
 

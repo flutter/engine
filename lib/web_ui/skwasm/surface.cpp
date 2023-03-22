@@ -51,7 +51,6 @@ class Surface {
   }
 
   void setCanvasSize(int width, int height) {
-    emscripten_set_canvas_element_size(_canvasID.c_str(), width, height);
     emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
                                   reinterpret_cast<void*>(fSetCanvasSize),
                                   nullptr, this, width, height);
@@ -120,6 +119,7 @@ class Surface {
 
   void _setCanvasSize(int width, int height) {
     if (_canvasWidth != width || _canvasHeight != height) {
+      emscripten_set_canvas_element_size(_canvasID.c_str(), width, height);
       _canvasWidth = width;
       _canvasHeight = height;
       _recreateSurface();
@@ -127,6 +127,7 @@ class Surface {
   }
 
   void _recreateSurface() {
+    makeCurrent(_glContext);
     GrBackendRenderTarget target(_canvasWidth, _canvasHeight, _sampleCount,
                                  _stencil, _fbInfo);
     _surface = SkSurface::MakeFromBackendRenderTarget(
@@ -140,6 +141,7 @@ class Surface {
       return;
     }
 
+    makeCurrent(_glContext);
     auto canvas = _surface->getCanvas();
     canvas->drawPicture(picture);
     _surface->flush();

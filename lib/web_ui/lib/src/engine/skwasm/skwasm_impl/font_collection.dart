@@ -8,7 +8,7 @@ import 'dart:typed_data';
 
 import 'package:ui/src/engine.dart';
 
-class SkwasmFontCollection implements FontCollection {
+class SkwasmFontCollection implements FlutterFontCollection {
   @override
   void clear() {
     // TODO: implement clear

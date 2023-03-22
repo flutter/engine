@@ -13,6 +13,7 @@ import 'pipeline.dart';
 import 'utils.dart';
 
 enum RuntimeMode {
+  debug,
   profile,
   release,
 }
@@ -45,6 +46,12 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
           'output will be located at "out/wasm_profile".\nThis only applies to '
           'the wasm build. The host build is always built in release mode.',
     );
+    argParser.addFlag(
+      'debug',
+      help: 'Build in debug mode instead of release mode. In this mode, the '
+          'output will be located at "out/wasm_debug".\nThis only applies to '
+          'the wasm build. The host build is always built in release mode.',
+    );
   }
 
   @override
@@ -57,8 +64,15 @@ class BuildCommand extends Command<bool> with ArgUtils<bool> {
 
   bool get host => boolArg('host');
 
-  RuntimeMode get runtimeMode =>
-      boolArg('profile') ? RuntimeMode.profile : RuntimeMode.release;
+  RuntimeMode get runtimeMode {
+    if (boolArg('profile')) {
+      return RuntimeMode.profile;
+    } else if (boolArg('debug')) {
+      return RuntimeMode.debug;
+    } else {
+      return RuntimeMode.release;
+    }
+  }
 
   List<String> get targets => argResults?.rest ?? <String>[];
 
@@ -114,6 +128,8 @@ class GnPipelineStep extends ProcessStep {
 
   String get runtimeModeFlag {
     switch (runtimeMode) {
+      case RuntimeMode.debug:
+        return 'debug';
       case RuntimeMode.profile:
         return 'profile';
       case RuntimeMode.release:
@@ -170,6 +186,8 @@ class NinjaPipelineStep extends ProcessStep {
       return environment.hostDebugUnoptDir.path;
     }
     switch (runtimeMode) {
+      case RuntimeMode.debug:
+        return environment.wasmDebugOutDir.path;
       case RuntimeMode.profile:
         return environment.wasmProfileOutDir.path;
       case RuntimeMode.release:
