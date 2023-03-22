@@ -109,15 +109,14 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
-  EntityResult GetEntityForElement(
-      const EntityPass::Element& element,
-      ContentContext& renderer,
-      InlinePassContext& pass_context,
-      ISize root_pass_size,
-      Point position,
-      uint32_t pass_depth,
-      StencilCoverageStack& stencil_coverage_stack,
-      size_t stencil_depth_floor) const;
+  EntityResult GetEntityForElement(const EntityPass::Element& element,
+                                   ContentContext& renderer,
+                                   InlinePassContext& pass_context,
+                                   ISize root_pass_size,
+                                   Point position,
+                                   uint32_t pass_depth,
+                                   StencilCoverageStack& stencil_coverage_stack,
+                                   size_t stencil_depth_floor) const;
 
   bool OnRender(ContentContext& renderer,
                 ISize root_pass_size,
