@@ -29,6 +29,9 @@ shared uint point_counts[512];
 shared uint count_sums[512];
 
 uint ComputePosition(uint index) {
+  if (index < gl_SubgroupSize) {
+    return count_sums[index];
+  }
   int position = -1;
   uint count_sum = count_sums[index];
   do {
