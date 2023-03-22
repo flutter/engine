@@ -92,7 +92,7 @@ static int64_t NumWindowsOfThread(const THREADENTRY32& thread) {
   int64_t num_windows = 0;
   EnumThreadWindows(thread.th32ThreadID, [](HWND hwnd, LPARAM lparam){
     int64_t* windows_ptr = reinterpret_cast<int64_t*>(lparam);
-    if (GetParent(hwnd) == NULL) {
+    if (GetParent(hwnd) == nullptr) {
       (*windows_ptr)++;
     }
     return *windows_ptr <= 1 ? 1 : 0; // Must return BOOL (i.e. int), not bool.
