@@ -927,7 +927,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // Invalidate the timer to avoid race condition when a new rotation starts before the previous
   // rotation's timer ends. The `viewWillTransitionToSize` itself is guaranteed to be called after
   // the previous rotation is complete. However, there can still be race condition because:
-  // 1. the transition duration may not be divisible by `kRotationViewportMetricsUpdateInterval`, \
+  // 1. the transition duration may not be divisible by `kRotationViewportMetricsUpdateInterval`,
   // resulting in 1 additional frame.
   // 2. there can still be rounding errors when accumulating the progress which is normalized.
   // 3. NSTimer is backed by the run loop, which is not accurate timing.
