@@ -25,6 +25,7 @@ class ScopedClipboardInterface;
 // Handler for internal system channels.
 class PlatformHandler {
  public:
+  static constexpr char kExitTypeCancelable[] = "cancelable";
   explicit PlatformHandler(
       BinaryMessenger* messenger,
       FlutterWindowsEngine* engine,

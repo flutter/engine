@@ -13,8 +13,6 @@
 
 namespace flutter {
 
-static constexpr char kExitTypeCancelable[] = "cancelable";
-
 WindowTopLevelMessageHandler::WindowTopLevelMessageHandler(FlutterWindowsEngine& engine) : engine_(engine) {}
 
 WindowTopLevelMessageHandler::~WindowTopLevelMessageHandler() {}
@@ -27,7 +25,7 @@ bool WindowTopLevelMessageHandler::WindowProc(HWND hwnd, UINT msg, WPARAM wpar, 
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
-        engine_.RequestApplicationQuit(kExitTypeCancelable, wpar);
+        engine_.RequestApplicationQuit(PlatformHandler::kExitTypeCancelable, wpar);
       }
       return true;
   }

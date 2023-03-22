@@ -28,7 +28,6 @@ static constexpr char kPlaySoundMethod[] = "SystemSound.play";
 static constexpr char kExitCodeKey[] = "exitCode";
 
 static constexpr char kExitTypeKey[] = "type";
-static constexpr char kExitTypeCancelable[] = "cancelable";
 static constexpr char kExitTypeRequired[] = "required";
 
 static constexpr char kExitResponseKey[] = "response";
