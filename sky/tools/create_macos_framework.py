@@ -128,8 +128,8 @@ def regenerate_symlinks(fat_framework):
 
 
 def embed_codesign_configuration(config_path, content):
-  with open(config_path, 'w') as f:
-    f.write(content)
+  with open(config_path, 'w') as file:
+    file.write(content)
 
 
 def process_framework(dst, args, fat_framework, fat_framework_binary):
@@ -151,16 +151,16 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
 
   # Zip FlutterMacOS.framework.
   if args.zip:
-    macos_filepath_with_entitlements = ''
-    macos_filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
+    filepath_with_entitlements = ''
+    filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
 
     embed_codesign_configuration(
-        os.path.join(dst, 'entitlements.txt'), macos_filepath_with_entitlements
+        os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements
     )
 
     embed_codesign_configuration(
         os.path.join(dst, 'without_entitlements.txt'),
-        macos_filepath_without_entitlements
+        filepath_without_entitlements
     )
     subprocess.check_call([
         'zip',
