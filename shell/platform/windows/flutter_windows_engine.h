@@ -261,8 +261,6 @@ class FlutterWindowsEngine {
   // Called when a WM_CLOSE message is received.
   void RequestApplicationQuit(const std::string& exit_type, int64_t exit_code);
 
-  static bool TopLevelWindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result);
-
  protected:
   // Creates the keyboard key handler.
   //

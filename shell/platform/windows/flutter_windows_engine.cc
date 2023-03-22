@@ -204,7 +204,12 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
-  window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(TopLevelWindowProc, static_cast<void*>(this));
+  window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate([](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result){
+    BASE_DCHECK(user_data);
+    FlutterWindowsEngine* that = static_cast<FlutterWindowsEngine*>(user_data);
+    BASE_DCHECK(that->lifecycle_manager_);
+    return that->lifecycle_manager_->WindowProc(hwnd, msg, wpar, lpar, result);
+  }, static_cast<void*>(this));
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
@@ -751,18 +756,6 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
   }
   SendPlatformMessageResponse(message->response_handle,
                               reinterpret_cast<const uint8_t*>(""), 0);
-}
-
-// static
-bool FlutterWindowsEngine::TopLevelWindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data, LRESULT* result) {
-  if (user_data == nullptr) {
-    return false;
-  }
-  FlutterWindowsEngine* that = static_cast<FlutterWindowsEngine*>(user_data);
-  if (!that->lifecycle_manager_) {
-    return false;
-  }
-  return that->lifecycle_manager_->WindowProc(hwnd, msg, wpar, lpar, result);
 }
 
 void FlutterWindowsEngine::RequestApplicationQuit(const std::string& exit_type, int64_t exit_code) {
