@@ -534,7 +534,7 @@ void hooksTests() async {
     expectEquals(x.countryCode, y.countryCode);
   });
 
-  await test('Window padding/insets/viewPadding/systemGestureInsets', () {
+  await test('View padding/insets/viewPadding/systemGestureInsets', () {
     _callHook(
       '_updateWindowMetrics',
       20,
@@ -622,7 +622,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 11.0));
 
     _callHook(
@@ -650,7 +650,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: null));
 
     _callHook(
@@ -678,7 +678,7 @@ void hooksTests() async {
       <int>[],     // display features states
     );
 
-    expectEquals(window.viewConfiguration.gestureSettings,
+    expectEquals(window.gestureSettings,
       GestureSettings(physicalTouchSlop: 22.0));
   });
 

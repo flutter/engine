@@ -40,6 +40,11 @@ import 'browser.dart';
 import 'environment.dart' as env;
 import 'utils.dart';
 
+const Map<String, String> coopCoepHeaders = <String, String>{
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+};
+
 /// Custom test platform that serves web engine unit tests.
 class BrowserPlatform extends PlatformPlugin {
   BrowserPlatform._({
@@ -69,7 +74,7 @@ class BrowserPlatform extends PlatformPlugin {
         .add(_packageUrlHandler)
         .add(_canvasKitOverrideHandler)
 
-        // Serves files from the web_ui/build/ directory at the root (/) URL path.
+        // Serves files from the out/web_tests/ directory at the root (/) URL path.
         .add(buildDirectoryHandler)
         .add(_testImageListingHandler)
 
@@ -90,6 +95,12 @@ class BrowserPlatform extends PlatformPlugin {
         // This handler goes last, after all more specific handlers failed to handle the request.
         .add(_createAbsolutePackageUrlHandler())
         .add(_screenshotHandler)
+
+        // Generates and serves a test payload of given length, split into chunks
+        // of given size. Reponds to requests to /long_test_payload.
+        .add(_testPayloadGenerator)
+
+        // If none of the handlers above handled the request, return 404.
         .add(_fileNotFoundCatcher);
 
     server.mount(cascade.handler);
@@ -203,7 +214,7 @@ class BrowserPlatform extends PlatformPlugin {
     );
   }
 
-  /// Lists available test images under `web_ui/build/test_images`.
+  /// Lists available test images under `out/web_tests/test_images`.
   Future<shelf.Response> _testImageListingHandler(shelf.Request request) async {
     const Map<String, String> supportedImageTypes = <String, String>{
       '.png': 'image/png',
@@ -320,6 +331,46 @@ class BrowserPlatform extends PlatformPlugin {
     };
   }
 
+  Future<shelf.Response> _testPayloadGenerator(shelf.Request request) async {
+    if (!request.requestedUri.path.endsWith('/long_test_payload')) {
+      return shelf.Response.notFound(
+          'This request is not handled by the test payload generator');
+    }
+
+    final int payloadLength = int.parse(request.requestedUri.queryParameters['length']!);
+    final int chunkLength = int.parse(request.requestedUri.queryParameters['chunk']!);
+
+    final StreamController<List<int>> controller = StreamController<List<int>>();
+
+    Future<void> fillPayload() async {
+      int remainingByteCount = payloadLength;
+      int byteCounter = 0;
+      while (remainingByteCount > 0) {
+        final int currentChunkLength = min(chunkLength, remainingByteCount);
+        final List<int> chunk = List<int>.generate(
+          currentChunkLength,
+          (int i) => (byteCounter + i) & 0xFF,
+        );
+        byteCounter = (byteCounter + currentChunkLength) & 0xFF;
+        remainingByteCount -= currentChunkLength;
+        controller.add(chunk);
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      await controller.close();
+    }
+
+    // Kick off payload filling function but don't block on it. The stream should
+    // be returned immediately, and the client should receive data in chunks.
+    unawaited(fillPayload());
+    return shelf.Response.ok(
+      controller.stream,
+      headers: <String, String>{
+        'Content-Type': 'application/octet-stream',
+        'Content-Length': '$payloadLength',
+      },
+    );
+  }
+
   Future<shelf.Response> _screenshotHandler(shelf.Request request) async {
     if (!request.requestedUri.path.endsWith('/screenshot')) {
       return shelf.Response.notFound(
@@ -426,10 +477,16 @@ class BrowserPlatform extends PlatformPlugin {
       return shelf.Response.internalServerError(body: error);
     }
 
+    final bool needsCoopCoep =
+      extension == '.js' ||
+      extension == '.mjs' ||
+      extension == '.html';
     return shelf.Response.ok(
       fileInBuild.readAsBytesSync(),
       headers: <String, Object>{
         HttpHeaders.contentTypeHeader: contentType,
+        if (needsCoopCoep && isWasm && renderer == Renderer.skwasm)
+          ...coopCoepHeaders,
       },
     );
   }
@@ -443,7 +500,7 @@ class BrowserPlatform extends PlatformPlugin {
 
       // Link to the Dart wrapper.
       final String scriptBase = htmlEscape.convert(p.basename(test));
-      final String link = '<link rel="x-dart-test" href="$scriptBase">';
+      final String link = '<link rel="x-dart-test" href="$scriptBase"${renderer == Renderer.skwasm ? " skwasm" : ""}>';
 
       final String testRunner = isWasm ? '/test_dart2wasm.js' : 'packages/test/dart.js';
 
@@ -462,7 +519,11 @@ class BrowserPlatform extends PlatformPlugin {
           <script src="$testRunner"></script>
         </head>
         </html>
-      ''', headers: <String, String>{'Content-Type': 'text/html'});
+      ''', headers: <String, String>{
+        'Content-Type': 'text/html',
+        if (isWasm && renderer == Renderer.skwasm)
+          ...coopCoepHeaders
+      });
     }
 
     return shelf.Response.notFound('Not found.');
@@ -494,7 +555,7 @@ class BrowserPlatform extends PlatformPlugin {
     _checkNotClosed();
 
     final Uri suiteUrl = url.resolveUri(p.toUri('${p.withoutExtension(
-            p.relative(path, from: env.environment.webUiBuildDir.path))}.html'));
+            p.relative(path, from: env.environment.webUiRootDir.path))}.html'));
     _checkNotClosed();
 
     final BrowserManager? browserManager = await _startBrowserManager();
@@ -820,7 +881,7 @@ class BrowserManager {
 
   /// Loads [_BrowserEnvironment].
   Future<_BrowserEnvironment> _loadBrowserEnvironment() async {
-    return _BrowserEnvironment(this, await _browser.observatoryUrl,
+    return _BrowserEnvironment(this, await _browser.vmServiceUrl,
         await _browser.remoteDebuggerUrl, _onRestartController.stream);
   }
 
@@ -890,8 +951,8 @@ class BrowserManager {
               '${p.basename(path)}.browser_test.dart.js.map';
           final String pathToTest = p.dirname(path);
 
-          final String mapPath = p.join(env.environment.webUiRootDir.path,
-              'build', getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
+          final String mapPath = p.join(env.environment.webUiBuildDir.path,
+              getBuildDirForRenderer(_renderer), pathToTest, sourceMapFileName);
 
           final Map<String, Uri> packageMap = <String, Uri>{
             for (Package p in packageConfig.packages) p.name: p.packageUriRoot

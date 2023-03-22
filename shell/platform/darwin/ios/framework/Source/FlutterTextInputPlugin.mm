@@ -50,6 +50,10 @@ static NSString* const kSetEditableSizeAndTransformMethod =
     @"TextInput.setEditableSizeAndTransform";
 static NSString* const kSetMarkedTextRectMethod = @"TextInput.setMarkedTextRect";
 static NSString* const kFinishAutofillContextMethod = @"TextInput.finishAutofillContext";
+// TODO(justinmc): Remove the TextInput method constant when the framework has
+// finished transitioning to using the Scribble channel.
+// https://github.com/flutter/flutter/pull/104128
+static NSString* const kDeprecatedSetSelectionRectsMethod = @"TextInput.setSelectionRects";
 static NSString* const kSetSelectionRectsMethod = @"Scribble.setSelectionRects";
 static NSString* const kStartLiveTextInputMethod = @"TextInput.startLiveTextInput";
 
@@ -662,7 +666,7 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 @end
 
 // A FlutterTextInputView that masquerades as a UITextField, and forwards
-// selectors it can't respond to to a shared UITextField instance.
+// selectors it can't respond to a shared UITextField instance.
 //
 // Relevant API docs claim that password autofill supports any custom view
 // that adopts the UITextInput protocol, automatic strong password seems to
@@ -2107,6 +2111,12 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
   } else if ([method isEqualToString:kFinishAutofillContextMethod]) {
     [self triggerAutofillSave:[args boolValue]];
     result(nil);
+    // TODO(justinmc): Remove the TextInput method constant when the framework has
+    // finished transitioning to using the Scribble channel.
+    // https://github.com/flutter/flutter/pull/104128
+  } else if ([method isEqualToString:kDeprecatedSetSelectionRectsMethod]) {
+    [self setSelectionRects:args];
+    result(nil);
   } else if ([method isEqualToString:kSetSelectionRectsMethod]) {
     [self setSelectionRects:args];
     result(nil);
@@ -2429,6 +2439,13 @@ static BOOL IsSelectionRectCloserToPoint(CGPoint point,
 - (void)addToInputParentViewIfNeeded:(FlutterTextInputView*)inputView {
   if (![inputView isDescendantOfView:_inputHider]) {
     [_inputHider addSubview:inputView];
+  }
+
+  if (_viewController.view == nil) {
+    // If view controller's view has detached from flutter engine, we don't add _inputHider
+    // in parent view to fallback and avoid crash.
+    // https://github.com/flutter/flutter/issues/106404.
+    return;
   }
   UIView* parentView = self.hostView;
   if (_inputHider.superview != parentView) {

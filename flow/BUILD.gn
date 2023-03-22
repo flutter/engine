@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("flow") {
@@ -85,10 +86,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    "//flutter/vulkan:vulkan_config",
-  ]
+  public_configs = [ "//flutter:config" ]
+  if (shell_enable_vulkan) {
+    public_configs += [ "//flutter/vulkan:vulkan_config" ]
+  }
 
   deps = [
     "//flutter/common",
@@ -183,7 +184,7 @@ if (enable_unittests) {
       ":flow_fixtures",
       ":flow_testing",
       "//flutter/common/graphics",
-      "//flutter/display_list:display_list_testing",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",

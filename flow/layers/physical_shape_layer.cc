@@ -4,13 +4,12 @@
 
 #include "flutter/flow/layers/physical_shape_layer.h"
 
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
 #include "flutter/flow/paint_utils.h"
 
 namespace flutter {
 
-PhysicalShapeLayer::PhysicalShapeLayer(SkColor color,
-                                       SkColor shadow_color,
+PhysicalShapeLayer::PhysicalShapeLayer(DlColor color,
+                                       DlColor shadow_color,
                                        float elevation,
                                        const SkPath& path,
                                        Clip clip_behavior)
@@ -36,9 +35,9 @@ void PhysicalShapeLayer::Diff(DiffContext* context, const Layer* old_layer) {
   if (elevation_ == 0) {
     bounds = path_.getBounds();
   } else {
-    bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
-        path_, elevation_, context->frame_device_pixel_ratio(),
-        context->GetTransform());
+    bounds = DlCanvas::ComputeShadowBounds(path_, elevation_,
+                                           context->frame_device_pixel_ratio(),
+                                           context->GetTransform3x3());
   }
 
   context->AddLayerBounds(bounds);
@@ -65,7 +64,7 @@ void PhysicalShapeLayer::Preroll(PrerollContext* context) {
   } else {
     // We will draw the shadow in Paint(), so add some margin to the paint
     // bounds to leave space for the shadow.
-    paint_bounds = DisplayListCanvasDispatcher::ComputeShadowBounds(
+    paint_bounds = DlCanvas::ComputeShadowBounds(
         path_, elevation_, context->frame_device_pixel_ratio,
         context->state_stack.transform_3x3());
   }
@@ -81,17 +80,17 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
   FML_DCHECK(needs_painting(context));
 
   if (elevation_ != 0) {
-    DisplayListCanvasDispatcher::DrawShadow(
-        context.canvas, path_, shadow_color_, elevation_,
-        SkColorGetA(color_) != 0xff, context.frame_device_pixel_ratio);
+    context.canvas->DrawShadow(path_, shadow_color_, elevation_,
+                               SkColorGetA(color_) != 0xff,
+                               context.frame_device_pixel_ratio);
   }
 
   // Call drawPath without clip if possible for better performance.
-  SkPaint paint;
+  DlPaint paint;
   paint.setColor(color_);
   paint.setAntiAlias(true);
   if (clip_behavior_ != Clip::antiAliasWithSaveLayer) {
-    context.canvas->drawPath(path_, paint);
+    context.canvas->DrawPath(path_, paint);
   }
 
   auto mutator = context.state_stack.save();
@@ -116,7 +115,7 @@ void PhysicalShapeLayer::Paint(PaintContext& context) const {
     // (https://github.com/flutter/flutter/issues/18057#issue-328003931)
     // using saveLayer, we have to call drawPaint instead of drawPath as
     // anti-aliased drawPath will always have such artifacts.
-    context.canvas->drawPaint(paint);
+    context.canvas->DrawPaint(paint);
   }
 
   PaintChildren(context);

@@ -347,6 +347,19 @@ struct Matrix {
     );
   }
 
+  /// @brief  Returns true if the matrix has a scale-only basis and is
+  ///         non-projective. Note that an identity matrix meets this criteria.
+  constexpr bool IsTranslationScaleOnly() const {
+    return (
+        // clang-format off
+        m[0] != 0.0 && m[1]  == 0.0 && m[2]  == 0.0 && m[3]  == 0.0 &&
+        m[4] == 0.0 && m[5]  != 0.0 && m[6]  == 0.0 && m[7]  == 0.0 &&
+        m[8] == 0.0 && m[9]  == 0.0 && m[10] != 0.0 && m[11] == 0.0 &&
+                                                       m[15] == 1.0
+        // clang-format on
+    );
+  }
+
   std::optional<MatrixDecomposition> Decompose() const;
 
   constexpr bool operator==(const Matrix& m) const {
@@ -430,7 +443,7 @@ struct Matrix {
     // Per assumptions about NDC documented above.
     const auto scale =
         MakeScale({2.0f / static_cast<Scalar>(size.width),
-                   -2.0f / static_cast<Scalar>(size.height), 1.0});
+                   -2.0f / static_cast<Scalar>(size.height), 0.0});
     const auto translate = MakeTranslation({-1.0, 1.0, 0.5});
     return translate * scale;
   }

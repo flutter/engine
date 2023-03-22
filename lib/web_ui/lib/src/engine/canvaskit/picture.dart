@@ -100,8 +100,9 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
   }
 
   @override
-  ui.Image toImageSync(int width, int height) {
+  CkImage toImageSync(int width, int height) {
     assert(debugCheckNotDisposed('Cannot convert picture to image.'));
+
     final Surface surface = SurfaceFactory.instance.pictureToImageSurface;
     final CkSurface ckSurface =
       surface.createOrUpdateSurface(ui.Size(width.toDouble(), height.toDouble()));
@@ -113,11 +114,11 @@ class CkPicture extends ManagedSkiaObject<SkPicture> implements ui.Picture {
       alphaType: canvasKit.AlphaType.Premul,
       colorType: canvasKit.ColorType.RGBA_8888,
       colorSpace: SkColorSpaceSRGB,
-      width: width,
-      height: height,
+      width: width.toDouble(),
+      height: height.toDouble(),
     );
     final Uint8List pixels = skImage.readPixels(0, 0, imageInfo);
-    final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, 4 * width);
+    final SkImage? rasterImage = canvasKit.MakeImage(imageInfo, pixels, (4 * width).toDouble());
     if (rasterImage == null) {
       throw StateError('Unable to convert image pixels into SkImage.');
     }

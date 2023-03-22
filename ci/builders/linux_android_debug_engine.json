@@ -33,7 +33,7 @@
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for android_jit_release_x86",
                     "parameters": [
                         "--variant",
@@ -48,35 +48,6 @@
                     "type": "local"
                 }
             ]
-        },
-        {
-            "archives": [
-                {
-                    "name": "android_debug_unopt",
-                    "type": "gcs",
-                    "base_path": "out/android_release/zip_archives/",
-                    "include_paths": []
-                }
-            ],
-            "drone_dimensions": [
-                "device_type=none",
-                "os=Linux"
-            ],
-            "gclient_custom_vars": {
-                "download_android_deps": false
-            },
-            "gn": [
-                "--android",
-                "--unoptimized",
-                "--runtime-mode=debug",
-                "--no-lto"
-            ],
-            "name": "android_debug_unopt",
-            "ninja": {
-                "config": "android_debug_unopt",
-                "targets": []
-            },
-            "tests": []
         },
         {
             "archives": [
@@ -115,7 +86,7 @@
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for android_debug",
                     "parameters": [
                         "--variant",

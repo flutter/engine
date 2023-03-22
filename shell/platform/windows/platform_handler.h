@@ -12,6 +12,7 @@
 #include <optional>
 #include <variant>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/binary_messenger.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/method_channel.h"
 #include "rapidjson/document.h"
@@ -54,6 +55,24 @@ class PlatformHandler {
       const std::string& sound_type,
       std::unique_ptr<MethodResult<rapidjson::Document>> result);
 
+  // Handle a request from the framework to exit the application.
+  virtual void SystemExitApplication(
+      const std::string& exit_type,
+      int64_t exit_code,
+      std::unique_ptr<MethodResult<rapidjson::Document>> result);
+
+  // Actually quit the application with the provided exit code.
+  virtual void QuitApplication(int64_t exit_code);
+
+  // Send a request to the framework to test if a cancelable exit request
+  // should be canceled or honored.
+  virtual void RequestAppExit(const std::string& exit_type, int64_t exit_code);
+
+  // Callback from when the cancelable exit request response request is
+  // answered by the framework.
+  virtual void RequestAppExitSuccess(const rapidjson::Document* result,
+                                     int64_t exit_code);
+
   // A error type to use for error responses.
   static constexpr char kClipboardError[] = "Clipboard error";
 
@@ -76,6 +95,8 @@ class PlatformHandler {
   // unnecessarily. See flutter/flutter#103205.
   std::function<std::unique_ptr<ScopedClipboardInterface>()>
       scoped_clipboard_provider_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(PlatformHandler);
 };
 
 // A public interface for ScopedClipboard, so that it can be injected into

@@ -17,7 +17,7 @@ LinearToSrgbFilterContents::LinearToSrgbFilterContents() = default;
 
 LinearToSrgbFilterContents::~LinearToSrgbFilterContents() = default;
 
-std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
+std::optional<Entity> LinearToSrgbFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
@@ -60,10 +60,10 @@ std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
     frag_info.input_alpha = GetAbsorbOpacity() ? input_snapshot->opacity : 1.0f;
 
     auto sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
@@ -74,18 +74,18 @@ std::optional<Snapshot> LinearToSrgbFilterContents::RenderFilter(
     return pass.AddCommand(std::move(cmd));
   };
 
-  auto out_texture =
-      renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Linear to sRGB Filter", input_snapshot->texture->GetSize(), callback);
   if (!out_texture) {
     return std::nullopt;
   }
-  out_texture->SetLabel("LinearToSrgb Texture");
 
-  return Snapshot{
-      .texture = out_texture,
-      .transform = input_snapshot->transform,
-      .sampler_descriptor = input_snapshot->sampler_descriptor,
-      .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity};
+  return Entity::FromSnapshot(
+      Snapshot{.texture = out_texture,
+               .transform = input_snapshot->transform,
+               .sampler_descriptor = input_snapshot->sampler_descriptor,
+               .opacity = GetAbsorbOpacity() ? 1.0f : input_snapshot->opacity},
+      entity.GetBlendMode(), entity.GetStencilDepth());
 }
 
 }  // namespace impeller

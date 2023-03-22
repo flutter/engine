@@ -205,9 +205,11 @@ class RuntimeController : public PlatformConfigurationClient {
   bool SetUserSettingsData(const std::string& data);
 
   //----------------------------------------------------------------------------
-  /// @brief      Forward the lifecycle state data to the running isolate. If
-  ///             the isolate is not running, this data will be saved and
-  ///             flushed to the isolate when it starts running.
+  /// @brief      Forward the initial lifecycle state data to the running
+  ///             isolate. If the isolate is not running, this data will be
+  ///             saved and flushed to the isolate when it starts running.
+  ///             After the isolate starts running, the current lifecycle
+  ///             state is pushed to it via the "flutter/lifecycle" channel.
   ///
   /// @deprecated The persistent isolate data must be used for this purpose
   ///             instead.
@@ -217,7 +219,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @return     If the lifecycle state data was forwarded to the running
   ///             isolate.
   ///
-  bool SetLifecycleState(const std::string& data);
+  bool SetInitialLifecycleState(const std::string& data);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the running isolate about whether the semantics tree
@@ -477,7 +479,7 @@ class RuntimeController : public PlatformConfigurationClient {
   /// @brief      Get an identifier that represents the Dart isolate group the
   ///             root isolate is in.
   ///
-  /// @return     The root isolate isolate group identifier, zero if one can't
+  /// @return     The root isolate group identifier, zero if one can't
   ///             be established.
   uint64_t GetRootIsolateGroup() const;
 
@@ -535,7 +537,7 @@ class RuntimeController : public PlatformConfigurationClient {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
@@ -609,6 +611,9 @@ class RuntimeController : public PlatformConfigurationClient {
   PlatformConfiguration* GetPlatformConfigurationIfAvailable();
 
   bool FlushRuntimeStateToIsolate();
+
+  // |PlatformConfigurationClient|
+  bool ImplicitViewEnabled() override;
 
   // |PlatformConfigurationClient|
   std::string DefaultRouteName() override;

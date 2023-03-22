@@ -46,6 +46,7 @@ import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
+import 'dart:js_interop' hide JS;
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
@@ -94,6 +95,7 @@ final Map<Pattern, String> extraImportsMap = <Pattern, String>{
   RegExp('skwasm_(stub|impl)'): "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
   'engine': "import 'dart:_engine';",
   'web_unicode': "import 'dart:_web_unicode';",
+  'web_test_fonts': "import 'dart:_web_test_fonts';",
   'web_locale_keymap': "import 'dart:_web_locale_keymap' as locale_keymap;",
 };
 
@@ -111,7 +113,7 @@ void main(List<String> arguments) {
   if (results['ui'] as bool) {
     replacementPatterns = uiPatterns;
   } else {
-    libraryName = results['library-name'] as String;
+    libraryName = results['library-name'] as String?;
     if (libraryName == null) {
       throw Exception('library-name must be specified if not rewriting ui');
     }
@@ -165,6 +167,10 @@ List<String> getExtraImportsForLibrary(String libraryName) {
     if (entry.key.matchAsPrefix(libraryName) == null) {
       extraImports.add(entry.value);
     }
+  }
+
+  if (libraryName == 'skwasm_impl') {
+    extraImports.add("import 'dart:ffi';");
   }
   return extraImports;
 }

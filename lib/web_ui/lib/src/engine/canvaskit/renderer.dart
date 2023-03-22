@@ -28,6 +28,22 @@ import 'shader.dart';
 import 'text.dart';
 import 'vertices.dart';
 
+enum CanvasKitVariant {
+  /// The appropriate variant is chosen based on the browser.
+  ///
+  /// This is the default variant.
+  auto,
+
+  /// The full variant that can be used in any browser.
+  full,
+
+  /// The variant that is optimized for Chromium browsers.
+  ///
+  /// WARNING: In most cases, you should use [auto] instead of this variant. Using
+  /// this variant in a non-Chromium browser will result in a broken app.
+  chromium,
+}
+
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
   static late CanvasKitRenderer _instance;
@@ -383,9 +399,6 @@ class CanvasKitRenderer implements Renderer {
   Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
     if (_programs.containsKey(assetKey)) {
       return _programs[assetKey]!;
-    }
-    if (!isRuntimeEffectAvailable) {
-      throw Exception('FragmentProgram is not supported.');
     }
     return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
       return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());

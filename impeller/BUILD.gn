@@ -54,7 +54,7 @@ group("impeller") {
       "aiks",
       "display_list",
       "entity",
-      "image",
+      "image:image_skia_backend",
       "renderer",
       "renderer/backend",
       "typographer",
@@ -90,5 +90,15 @@ impeller_component("impeller_unittests") {
       "scene:scene_unittests",
       "typographer:typographer_unittests",
     ]
+  }
+}
+
+if (impeller_supports_rendering) {
+  impeller_component("impeller_dart_unittests") {
+    target_type = "executable"
+
+    testonly = true
+
+    deps = [ "renderer:renderer_dart_unittests" ]
   }
 }

@@ -250,7 +250,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isFalse);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isFalse);
 
     final DomElement placeholder =
@@ -266,7 +266,7 @@ void _testEngineSemanticsOwner() {
     expect(semantics().semanticsEnabled, isTrue);
     expect(
         EnginePlatformDispatcher
-            .instance.configuration.accessibilityFeatures.accessibleNavigation,
+            .instance.accessibilityFeatures.accessibleNavigation,
         isTrue);
 
     // The placeholder should be removed
@@ -996,7 +996,7 @@ void _testVerticalScrolling() {
     expect(scrollable.scrollTop >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testHorizontalScrolling() {
@@ -1129,7 +1129,7 @@ void _testHorizontalScrolling() {
     expect(scrollable.scrollLeft >= (10 - browserMaxScrollDiff), isTrue);
 
     semantics().semanticsEnabled = false;
-  });
+  }, skip: isWasm); // https://github.com/dart-lang/sdk/issues/50778
 }
 
 void _testIncrementables() {
@@ -1628,6 +1628,27 @@ void _testTappable() {
 
     semantics().semanticsEnabled = false;
   });
+
+  test('focuses on tappable after element has been attached', () async {
+    semantics()
+      ..debugOverrideTimestampFunction(() => _testTime)
+      ..semanticsEnabled = true;
+
+    final SemanticsTester tester = SemanticsTester(semantics());
+    tester.updateNode(
+      id: 0,
+      hasTap: true,
+      hasEnabledState: true,
+      isEnabled: true,
+      isButton: true,
+      isFocused: true,
+      rect: const ui.Rect.fromLTRB(0, 0, 100, 50),
+    );
+    tester.apply();
+
+    expect(flutterViewEmbedder.glassPaneShadow.activeElement, tester.getSemanticsObject(0).element);
+    semantics().semanticsEnabled = false;
+  });
 }
 
 void _testImage() {
@@ -1986,7 +2007,7 @@ void _testPlatformView() {
     expect(child3Rect.bottom, 60);
 
     final DomElement platformViewElement =
-        flutterViewEmbedder.glassPaneElement!.querySelector('#view-0')!;
+        flutterViewEmbedder.glassPaneElement.querySelector('#view-0')!;
     final DomRect platformViewRect = platformViewElement.getBoundingClientRect();
     expect(platformViewRect.left, 0);
     expect(platformViewRect.top, 15);

@@ -237,6 +237,47 @@ public class FlutterActivityAndFragmentDelegateTest {
     // Expect IllegalStateException.
   }
 
+  // Bug: b/271100292
+  @Test
+  public void flutterEngineGroupGetsInitialRouteFromIntent() {
+    // ---- Test setup ----
+    FlutterLoader mockFlutterLoader = mock(FlutterLoader.class);
+    Activity mockActivity = mock(Activity.class);
+    Intent mockIntent = mock(Intent.class);
+    when(mockFlutterLoader.findAppBundlePath()).thenReturn("default_flutter_assets/path");
+    FlutterInjector.setInstance(
+        new FlutterInjector.Builder().setFlutterLoader(mockFlutterLoader).build());
+    FlutterEngineGroup flutterEngineGroup = mock(FlutterEngineGroup.class);
+    FlutterEngineGroupCache.getInstance().put("my_flutter_engine_group", flutterEngineGroup);
+
+    List<String> entryPointArgs = new ArrayList<>();
+    entryPointArgs.add("entrypoint-arg");
+
+    // Adjust fake host to request cached engine group.
+    when(mockHost.getInitialRoute()).thenReturn(null);
+    when(mockHost.getCachedEngineGroupId()).thenReturn("my_flutter_engine_group");
+    when(mockHost.provideFlutterEngine(any(Context.class))).thenReturn(null);
+    when(mockHost.shouldAttachEngineToActivity()).thenReturn(false);
+    when(mockHost.getDartEntrypointArgs()).thenReturn(entryPointArgs);
+    when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
+    when(mockHost.getActivity()).thenReturn(mockActivity);
+    when(mockActivity.getIntent()).thenReturn(mockIntent);
+    when(mockIntent.getData()).thenReturn(Uri.parse("foo://example.com/initial_route"));
+
+    // Create the real object that we're testing.
+    FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
+
+    // --- Execute the behavior under test ---
+    // The FlutterEngine is obtained in onAttach().
+    delegate.onAttach(ctx);
+
+    DartExecutor.DartEntrypoint entrypoint = new DartExecutor.DartEntrypoint("/fake/path", "main");
+    ArgumentCaptor<FlutterEngineGroup.Options> optionsCaptor =
+        ArgumentCaptor.forClass(FlutterEngineGroup.Options.class);
+    verify(flutterEngineGroup, times(1)).createAndRunEngine(optionsCaptor.capture());
+    assertEquals("/initial_route", optionsCaptor.getValue().getInitialRoute());
+  }
+
   @Test
   public void itUsesNewEngineInGroupWhenProvided() {
     // ---- Test setup ----
@@ -726,7 +767,7 @@ public class FlutterActivityAndFragmentDelegateTest {
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntent() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntent() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -742,11 +783,11 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route?query=test");
+        .pushRouteInformation("/custom/route?query=test");
   }
 
   @Test
-  public void itDoesNotSendPushRouteMessageWhenOnNewIntentIsNonHierarchicalUri() {
+  public void itDoesNotSendPushRouteInformationMessageWhenOnNewIntentIsNonHierarchicalUri() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -764,11 +805,12 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was not given a push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(0)).pushRoute("mailto:test@test.com");
+    verify(mockFlutterEngine.getNavigationChannel(), times(0))
+        .pushRouteInformation("mailto:test@test.com");
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentWithQueryParameterAndFragment() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentWithQueryParameterAndFragment() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -785,11 +827,11 @@ public class FlutterActivityAndFragmentDelegateTest {
 
     // Verify that the navigation channel was given the push route message.
     verify(mockFlutterEngine.getNavigationChannel(), times(1))
-        .pushRoute("/custom/route?query=test#fragment");
+        .pushRouteInformation("/custom/route?query=test#fragment");
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentWithFragmentNoQueryParameter() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentWithFragmentNoQueryParameter() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -804,11 +846,12 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route#fragment");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .pushRouteInformation("/custom/route#fragment");
   }
 
   @Test
-  public void itSendsPushRouteMessageWhenOnNewIntentNoQueryParameter() {
+  public void itSendsPushRouteInformationMessageWhenOnNewIntentNoQueryParameter() {
     when(mockHost.shouldHandleDeeplinking()).thenReturn(true);
     // Create the real object that we're testing.
     FlutterActivityAndFragmentDelegate delegate = new FlutterActivityAndFragmentDelegate(mockHost);
@@ -823,7 +866,8 @@ public class FlutterActivityAndFragmentDelegateTest {
     delegate.onNewIntent(mockIntent);
 
     // Verify that the navigation channel was given the push route message.
-    verify(mockFlutterEngine.getNavigationChannel(), times(1)).pushRoute("/custom/route");
+    verify(mockFlutterEngine.getNavigationChannel(), times(1))
+        .pushRouteInformation("/custom/route");
   }
 
   @Test

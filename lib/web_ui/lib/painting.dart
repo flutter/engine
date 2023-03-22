@@ -7,14 +7,12 @@ part of ui;
 
 // ignore: unused_element, Used in Shader assert.
 bool _offsetIsValid(Offset offset) {
-  assert(offset != null, 'Offset argument was null.');
   assert(!offset.dx.isNaN && !offset.dy.isNaN, 'Offset argument contained a NaN value.');
   return true;
 }
 
 // ignore: unused_element, Used in Shader assert.
 bool _matrix4IsValid(Float32List matrix4) {
-  assert(matrix4 != null, 'Matrix4 argument was null.');
   assert(matrix4.length == 16, 'Matrix4 must have 16 entries.');
   return true;
 }
@@ -93,7 +91,6 @@ class Color {
   }
 
   static Color? lerp(Color? a, Color? b, double t) {
-    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -145,7 +142,6 @@ class Color {
   }
 
   static int getAlphaFromOpacity(double opacity) {
-    assert(opacity != null);
     return (clampDouble(opacity, 0.0, 1.0) * 255).round();
   }
 
@@ -355,6 +351,8 @@ abstract class Image {
 
   List<StackTrace>? debugGetOpenHandleStackTraces() => null;
 
+  ColorSpace get colorSpace => ColorSpace.sRGB;
+
   @override
   String toString() => '[$width\u00D7$height]';
 }
@@ -379,8 +377,7 @@ class MaskFilter {
   const MaskFilter.blur(
     this._style,
     this._sigma,
-  )   : assert(_style != null),
-        assert(_sigma != null);
+  );
 
   final BlurStyle _style;
   final double _sigma;
@@ -434,6 +431,11 @@ class ImageFilter {
 
   factory ImageFilter.compose({required ImageFilter outer, required ImageFilter inner}) =>
     engine.renderer.composeImageFilters(outer: outer, inner: inner);
+}
+
+enum ColorSpace {
+  sRGB,
+  extendedSRGB,
 }
 
 enum ImageByteFormat {
@@ -490,6 +492,42 @@ Future<Codec> instantiateImageCodecFromBuffer(
   targetWidth: targetWidth,
   targetHeight: targetHeight,
   allowUpscaling: allowUpscaling);
+
+Future<Codec> instantiateImageCodecWithSize(
+  ImmutableBuffer buffer, {
+  TargetImageSizeCallback? getTargetSize,
+}) async {
+  if (getTargetSize == null) {
+    return engine.renderer.instantiateImageCodec(buffer._list!);
+  } else {
+    final Codec codec = await engine.renderer.instantiateImageCodec(buffer._list!);
+    try {
+      final FrameInfo info = await codec.getNextFrame();
+      try {
+        final int width = info.image.width;
+        final int height = info.image.height;
+        final TargetImageSize targetSize = getTargetSize(width, height);
+        return engine.renderer.instantiateImageCodec(buffer._list!,
+            targetWidth: targetSize.width, targetHeight: targetSize.height, allowUpscaling: false);
+      } finally {
+        info.image.dispose();
+      }
+    } finally {
+      codec.dispose();
+    }
+  }
+}
+
+typedef TargetImageSizeCallback = TargetImageSize Function(int intrinsicWidth, int intrinsicHeight);
+
+class TargetImageSize {
+  const TargetImageSize({this.width, this.height})
+      : assert(width == null || width > 0),
+        assert(height == null || height > 0);
+
+  final int? width;
+  final int? height;
+}
 
 Future<Codec> webOnlyInstantiateImageCodecFromUrl(Uri uri,
   {engine.WebOnlyImageCodecChunkCallback? chunkCallback}) =>
@@ -615,9 +653,7 @@ class Shadow {
     this.color = const Color(_kColorDefault),
     this.offset = Offset.zero,
     this.blurRadius = 0.0,
-  })  : assert(color != null, 'Text shadow color was null.'),
-        assert(offset != null, 'Text shadow offset was null.'),
-        assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
+  })  : assert(blurRadius >= 0.0, 'Text shadow blur radius should be non-negative.');
 
   static const int _kColorDefault = 0xFF000000;
   final Color color;
@@ -645,7 +681,6 @@ class Shadow {
   }
 
   static Shadow? lerp(Shadow? a, Shadow? b, double t) {
-    assert(t != null);
     if (b == null) {
       if (a == null) {
         return null;
@@ -666,7 +701,6 @@ class Shadow {
   }
 
   static List<Shadow>? lerpList(List<Shadow>? a, List<Shadow>? b, double t) {
-    assert(t != null);
     if (a == null && b == null) {
       return null;
     }

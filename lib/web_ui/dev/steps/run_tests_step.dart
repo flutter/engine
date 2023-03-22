@@ -70,7 +70,7 @@ class RunTestsStep implements PipelineStep {
     final SkiaGoldClient? skiaClient = await _createSkiaClient();
     final List<FilePath> testFiles = this.testFiles ?? findAllTests();
 
-    final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles);
+    final TestsByRenderer sortedTests = sortTestsByRenderer(testFiles, isWasm);
 
     bool testsPassed = true;
 
@@ -132,7 +132,10 @@ class RunTestsStep implements PipelineStep {
   Future<SkiaGoldClient?> _createSkiaClient() async {
     final SkiaGoldClient skiaClient = SkiaGoldClient(
       environment.webUiSkiaGoldDirectory,
-      dimensions: <String, String> {'Browser': browserName},
+      dimensions: <String, String> {
+        'Browser': browserName,
+        if (isWasm) 'Wasm': 'true',
+      },
     );
 
     if (await _checkSkiaClient(skiaClient)) {

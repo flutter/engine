@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -11,13 +10,13 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../matchers.dart';
-
 void main() {
   internalBootstrapBrowserTest(() => testMain);
 }
 
 void testMain() {
+  ensureFlutterViewEmbedderInitialized();
+
   group('PlatformDispatcher', () {
     test('high contrast in accessibilityFeatures has the correct value', () {
       final MockHighContrastSupport mockHighContrast =
@@ -73,30 +72,42 @@ void testMain() {
       );
     });
 
-    test('responds correctly to flutter/platform Clipboard.getData failure',
-        () async {
-      // Patch browser so that clipboard api is not available.
-      final Object? originalClipboard =
-          js_util.getProperty<Object?>(domWindow.navigator, 'clipboard');
-      js_util.setProperty(domWindow.navigator, 'clipboard', null);
+    test('responds to flutter/contextmenu enable', () async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
-        'flutter/platform',
+        'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
-          'Clipboard.getData',
+          'enableContextMenu',
         )),
         completer.complete,
       );
+
       final ByteData? response = await completer.future;
-      if (response != null) {
-        expect(
-              () => codec.decodeEnvelope(response),
-          throwsA(isA<PlatformException>()),
-        );
-      }
-      js_util.setProperty(
-          domWindow.navigator, 'clipboard', originalClipboard);
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('responds to flutter/contextmenu disable', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/contextmenu',
+        codec.encodeMethodCall(const MethodCall(
+          'disableContextMenu',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
     });
 
     test('can find text scale factor', () async {
@@ -161,42 +172,6 @@ void testMain() {
       expect(isCalled, isTrue);
       expect(ui.PlatformDispatcher.instance.textScaleFactor, findBrowserTextScaleFactor());
     });
-  });
-
-  test('A ViewConfiguration asserts that both window and view are not provided', () {
-    expect(() {
-      // ignore: deprecated_member_use
-      final EngineFlutterWindow window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
-      ui.ViewConfiguration(
-        window: window,
-        view: window,
-      );
-    }, throwsAssertionError);
-  });
-
-  test("A ViewConfiguration's view and window are backed with the same property", () {
-    final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
-    final ui.ViewConfiguration viewConfiguration = ui.ViewConfiguration(view: window);
-    // ignore: deprecated_member_use
-    expect(viewConfiguration.view, window);
-    // ignore: deprecated_member_use
-    expect(viewConfiguration.window, viewConfiguration.view);
-  });
-
-  test('Initialize a ViewConfiguration with a window', () {
-    final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
-    // ignore: deprecated_member_use
-    final ui.ViewConfiguration configuration = ui.ViewConfiguration(window: window);
-    // ignore: deprecated_member_use
-    expect(window, configuration.window);
-  });
-
-  test("copyWith() on a ViewConfiguration asserts that both a window aren't provided", () {
-    final ui.FlutterView window = EngineFlutterWindow(0, ui.PlatformDispatcher.instance);
-    // ignore: deprecated_member_use
-    expect(() {
-      ui.ViewConfiguration(view: window).copyWith(view: window, window: window);
-    }, throwsAssertionError);
   });
 }
 

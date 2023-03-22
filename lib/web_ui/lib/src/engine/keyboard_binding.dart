@@ -35,8 +35,8 @@ final int _kLogicalMetaRight = kWebLogicalLocationMap['Meta']![_kLocationRight]!
 
 final int _kPhysicalAltLeft = kWebToPhysicalKey['AltLeft']!;
 final int _kPhysicalAltRight = kWebToPhysicalKey['AltRight']!;
-final int _kPhysicalControlLeft = kWebToPhysicalKey['ControlLeft']!;
-final int _kPhysicalControlRight = kWebToPhysicalKey['ControlRight']!;
+final int kPhysicalControlLeft = kWebToPhysicalKey['ControlLeft']!;
+final int kPhysicalControlRight = kWebToPhysicalKey['ControlRight']!;
 final int _kPhysicalShiftLeft = kWebToPhysicalKey['ShiftLeft']!;
 final int _kPhysicalShiftRight = kWebToPhysicalKey['ShiftRight']!;
 final int _kPhysicalMetaLeft = kWebToPhysicalKey['MetaLeft']!;
@@ -286,6 +286,9 @@ class KeyboardConverter {
   static const Duration _kKeydownCancelDurationMac = Duration(milliseconds: 2000);
 
   static int _getPhysicalCode(String code) {
+    if (code.isEmpty) {
+      return _kWebKeyIdPlane;
+    }
     return kWebToPhysicalKey[code] ?? (code.hashCode + _kWebKeyIdPlane);
   }
 
@@ -366,7 +369,7 @@ class KeyboardConverter {
     _keyGuards.remove(physicalKey)?.call();
     _keyGuards[physicalKey] = cancelingCallback;
   }
-  // Call this method on an up event event of a non-modifier key.
+  // Call this method on an up event of a non-modifier key.
   void _stopGuardingKey(int physicalKey) {
     _keyGuards.remove(physicalKey)?.call();
   }
@@ -612,8 +615,8 @@ class KeyboardConverter {
       eventTimestamp,
     );
     _synthesizeModifierIfNeeded(
-      _kPhysicalControlLeft,
-      _kPhysicalControlRight,
+      kPhysicalControlLeft,
+      kPhysicalControlRight,
       _kLogicalControlLeft,
       controlPressed ? ui.KeyEventType.down : ui.KeyEventType.up,
       eventTimestamp,
@@ -691,8 +694,7 @@ class KeyboardConverter {
     _pressingRecords.remove(physical);
   }
 
-  @visibleForTesting
-  bool debugKeyIsPressed(int physical) {
+  bool keyIsPressed(int physical) {
     return _pressingRecords.containsKey(physical);
   }
 }

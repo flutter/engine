@@ -33,8 +33,9 @@ typedef _PointerDataCallback = void Function(Iterable<ui.PointerData>);
 // here, we use an already very large number (30 bits).
 const int _kButtonsMask = 0x3FFFFFFF;
 
-// Intentionally set to -1 so it doesn't conflict with other device IDs.
+// Intentionally set to -1 or -2 so it doesn't conflict with other device IDs.
 const int _mouseDeviceId = -1;
+const int _trackpadDeviceId = -2;
 
 const int _kPrimaryMouseButton = 0x1;
 const int _kSecondaryMouseButton = 0x2;
@@ -421,8 +422,10 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
     const int domDeltaPage = 0x02;
 
     ui.PointerDeviceKind kind = ui.PointerDeviceKind.mouse;
+    int deviceId = _mouseDeviceId;
     if (_isTrackpadEvent(event)) {
       kind = ui.PointerDeviceKind.trackpad;
+      deviceId = _trackpadDeviceId;
     }
 
     // Flutter only supports pixel scroll delta. Convert deltaMode values
@@ -453,21 +456,43 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
 
     final List<ui.PointerData> data = <ui.PointerData>[];
     final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
-    _pointerDataConverter.convert(
-      data,
-      change: ui.PointerChange.hover,
-      timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
-      kind: kind,
-      signalKind: ui.PointerSignalKind.scroll,
-      device: _mouseDeviceId,
-      physicalX: offset.dx * ui.window.devicePixelRatio,
-      physicalY: offset.dy * ui.window.devicePixelRatio,
-      buttons: event.buttons!.toInt(),
-      pressure: 1.0,
-      pressureMax: 1.0,
-      scrollDeltaX: deltaX,
-      scrollDeltaY: deltaY,
-    );
+    bool ignoreCtrlKey = false;
+    if (operatingSystem == OperatingSystem.macOs) {
+      ignoreCtrlKey = (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlLeft) ?? false) ||
+                      (KeyboardBinding.instance?.converter.keyIsPressed(kPhysicalControlRight) ?? false);
+    }
+    if (event.ctrlKey && !ignoreCtrlKey) {
+      _pointerDataConverter.convert(
+        data,
+        change: ui.PointerChange.hover,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+        kind: kind,
+        signalKind: ui.PointerSignalKind.scale,
+        device: deviceId,
+        physicalX: offset.dx * ui.window.devicePixelRatio,
+        physicalY: offset.dy * ui.window.devicePixelRatio,
+        buttons: event.buttons!.toInt(),
+        pressure: 1.0,
+        pressureMax: 1.0,
+        scale: math.exp(-deltaY / 200),
+      );
+    } else {
+      _pointerDataConverter.convert(
+        data,
+        change: ui.PointerChange.hover,
+        timeStamp: _BaseAdapter._eventTimeStampToDuration(event.timeStamp!),
+        kind: kind,
+        signalKind: ui.PointerSignalKind.scroll,
+        device: deviceId,
+        physicalX: offset.dx * ui.window.devicePixelRatio,
+        physicalY: offset.dy * ui.window.devicePixelRatio,
+        buttons: event.buttons!.toInt(),
+        pressure: 1.0,
+        pressureMax: 1.0,
+        scrollDeltaX: deltaX,
+        scrollDeltaY: deltaY,
+      );
+    }
     _lastWheelEvent = event;
     _lastWheelEventWasTrackpad = kind == ui.PointerDeviceKind.trackpad;
     return data;
@@ -488,14 +513,6 @@ mixin _WheelEventListenerMixin on _BaseAdapter {
       print(event.type);
     }
     _callback(_convertWheelEventToPointerData(event));
-    if (event.getModifierState('Control') &&
-        operatingSystem != OperatingSystem.macOs &&
-        operatingSystem != OperatingSystem.iOs) {
-      // Ignore Control+wheel events since the default handler
-      // will change browser zoom level instead of scrolling.
-      // The exception is MacOs where Control+wheel will still scroll and zoom.
-      return;
-    }
     // Prevent default so mouse wheel event doesn't get converted to
     // a scroll event that semantic nodes would process.
     //
@@ -817,9 +834,6 @@ class _PointerAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomPointerEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
     final ui.PointerDeviceKind kind = _pointerTypeToDeviceKind(event.pointerType!);
     final double tilt = _computeHighestTilt(event);
     final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
@@ -930,7 +944,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchstart', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (!nowPressed) {
           _pressTouch(touch.identifier!.toInt());
@@ -950,7 +964,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault(); // Prevents standard overscroll on iOS/Webkit.
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _convertEventToPointerData(
@@ -971,7 +985,7 @@ class _TouchAdapter extends _BaseAdapter {
       event.preventDefault();
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
@@ -990,7 +1004,7 @@ class _TouchAdapter extends _BaseAdapter {
     _addTouchEventListener(glassPaneElement, 'touchcancel', (DomTouchEvent event) {
       final Duration timeStamp = _BaseAdapter._eventTimeStampToDuration(event.timeStamp!);
       final List<ui.PointerData> pointerData = <ui.PointerData>[];
-      for (final DomTouch touch in event.changedTouches!.cast<DomTouch>()) {
+      for (final DomTouch touch in event.changedTouches.cast<DomTouch>()) {
         final bool nowPressed = _isTouchPressed(touch.identifier!.toInt());
         if (nowPressed) {
           _unpressTouch(touch.identifier!.toInt());
@@ -1147,9 +1161,6 @@ class _MouseAdapter extends _BaseAdapter with _WheelEventListenerMixin {
     required DomMouseEvent event,
     required _SanitizedDetails details,
   }) {
-    assert(data != null);
-    assert(event != null);
-    assert(details != null);
     final ui.Offset offset = computeEventOffsetToTarget(event, glassPaneElement);
     _pointerDataConverter.convert(
       data,

@@ -95,7 +95,7 @@ std::shared_ptr<Geometry> Geometry::MakeFromFlatbuffer(
   }
 
   DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = vertices_bytes * indices_bytes;
+  buffer_desc.size = vertices_bytes + indices_bytes;
   buffer_desc.storage_mode = StorageMode::kHostVisible;
 
   auto buffer = allocator.CreateBuffer(buffer_desc);
@@ -168,9 +168,9 @@ void CuboidGeometry::BindToCommand(const SceneContext& scene_context,
   command.BindVertices(
       GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
 
-  UnskinnedVertexShader::VertInfo info;
+  UnskinnedVertexShader::FrameInfo info;
   info.mvp = transform;
-  UnskinnedVertexShader::BindVertInfo(command, buffer.EmplaceUniform(info));
+  UnskinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
 }
 
 //------------------------------------------------------------------------------
@@ -206,9 +206,9 @@ void UnskinnedVertexBufferGeometry::BindToCommand(
   command.BindVertices(
       GetVertexBuffer(*scene_context.GetContext()->GetResourceAllocator()));
 
-  UnskinnedVertexShader::VertInfo info;
+  UnskinnedVertexShader::FrameInfo info;
   info.mvp = transform;
-  UnskinnedVertexShader::BindVertInfo(command, buffer.EmplaceUniform(info));
+  UnskinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
 }
 
 //------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ void SkinnedVertexBufferGeometry::BindToCommand(
   SamplerDescriptor sampler_desc;
   sampler_desc.min_filter = MinMagFilter::kNearest;
   sampler_desc.mag_filter = MinMagFilter::kNearest;
-  sampler_desc.mip_filter = MipFilter::kNone;
+  sampler_desc.mip_filter = MipFilter::kNearest;
   sampler_desc.width_address_mode = SamplerAddressMode::kRepeat;
   sampler_desc.label = "NN Repeat";
 
@@ -256,12 +256,12 @@ void SkinnedVertexBufferGeometry::BindToCommand(
       scene_context.GetContext()->GetSamplerLibrary()->GetSampler(
           sampler_desc));
 
-  SkinnedVertexShader::VertInfo info;
+  SkinnedVertexShader::FrameInfo info;
   info.mvp = transform;
   info.enable_skinning = joints_texture_ ? 1 : 0;
   info.joint_texture_size =
       joints_texture_ ? joints_texture_->GetSize().width : 1;
-  SkinnedVertexShader::BindVertInfo(command, buffer.EmplaceUniform(info));
+  SkinnedVertexShader::BindFrameInfo(command, buffer.EmplaceUniform(info));
 }
 
 // |Geometry|

@@ -7,11 +7,9 @@
 #include <io.h>
 
 #include <algorithm>
-#include <cassert>
 #include <chrono>
 #include <cstdlib>
 #include <filesystem>
-#include <iostream>
 #include <memory>
 #include <vector>
 
@@ -267,6 +265,9 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
                                           const size_t message_size,
                                           const FlutterDesktopBinaryReply reply,
                                           void* user_data) {
+  FML_DCHECK(FlutterDesktopMessengerIsAvailable(messenger))
+      << "Messenger must reference a running engine to send a message";
+
   return flutter::FlutterDesktopMessenger::FromRef(messenger)
       ->GetEngine()
       ->SendPlatformMessage(channel, message, message_size, reply, user_data);
@@ -285,6 +286,9 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
+  FML_DCHECK(FlutterDesktopMessengerIsAvailable(messenger))
+      << "Messenger must reference a running engine to send a response";
+
   flutter::FlutterDesktopMessenger::FromRef(messenger)
       ->GetEngine()
       ->SendPlatformMessageResponse(handle, data, data_length);
@@ -294,6 +298,9 @@ void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
+  FML_DCHECK(FlutterDesktopMessengerIsAvailable(messenger))
+      << "Messenger must reference a running engine to set a callback";
+
   flutter::FlutterDesktopMessenger::FromRef(messenger)
       ->GetEngine()
       ->message_dispatcher()

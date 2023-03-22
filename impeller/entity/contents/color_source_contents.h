@@ -20,7 +20,9 @@ class ColorSourceContents : public Contents {
 
   void SetGeometry(std::shared_ptr<Geometry> geometry);
 
-  void SetMatrix(Matrix matrix);
+  void SetEffectTransform(Matrix matrix);
+
+  const Matrix& GetInverseMatrix() const;
 
   void SetAlpha(Scalar alpha);
 
@@ -31,12 +33,16 @@ class ColorSourceContents : public Contents {
   bool ShouldRender(const Entity& entity,
                     const std::optional<Rect>& stencil_coverage) const override;
 
- protected:
-  const std::shared_ptr<Geometry>& GetGeometry() const;
+  // | Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
 
-  const Matrix& GetInverseMatrix() const;
+  // | Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
   Scalar GetAlpha() const;
+
+ protected:
+  const std::shared_ptr<Geometry>& GetGeometry() const;
 
  private:
   std::shared_ptr<Geometry> geometry_;

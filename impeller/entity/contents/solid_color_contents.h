@@ -29,11 +29,17 @@ class SolidColorContents final : public Contents {
   static std::unique_ptr<SolidColorContents> Make(const Path& path,
                                                   Color color);
 
-  void SetGeometry(std::unique_ptr<Geometry> geometry);
+  void SetGeometry(std::shared_ptr<Geometry> geometry);
 
   void SetColor(Color color);
 
   const Color& GetColor() const;
+
+  // | Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  // | Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -48,7 +54,7 @@ class SolidColorContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  std::unique_ptr<Geometry> geometry_;
+  std::shared_ptr<Geometry> geometry_;
 
   Color color_;
 

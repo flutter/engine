@@ -15,6 +15,20 @@
 
 namespace impeller {
 
+struct SubAtlasResult {
+  // Sub atlas values.
+  std::vector<Rect> sub_texture_coords;
+  std::vector<Color> sub_colors;
+  std::vector<Matrix> sub_transforms;
+
+  // Result atlas values.
+  std::vector<Rect> result_texture_coords;
+  std::vector<Matrix> result_transforms;
+
+  // Size of the sub-atlass.
+  ISize size;
+};
+
 class AtlasContents final : public Contents {
  public:
   explicit AtlasContents();
@@ -41,6 +55,17 @@ class AtlasContents final : public Contents {
 
   const SamplerDescriptor& GetSamplerDescriptor() const;
 
+  const std::vector<Matrix>& GetTransforms() const;
+
+  const std::vector<Rect>& GetTextureCoordinates() const;
+
+  const std::vector<Color>& GetColors() const;
+
+  /// @brief Compress a drawAtlas call with blending into a smaller sized atlas.
+  ///        This atlas has no overlapping to ensure
+  ///        blending behaves as if it were done in the fragment shader.
+  std::shared_ptr<SubAtlasResult> GenerateSubAtlas() const;
+
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
@@ -50,6 +75,8 @@ class AtlasContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
+  Rect ComputeBoundingBox() const;
+
   std::shared_ptr<Texture> texture_;
   std::vector<Rect> texture_coords_;
   std::vector<Color> colors_;
@@ -58,8 +85,73 @@ class AtlasContents final : public Contents {
   std::optional<Rect> cull_rect_;
   Scalar alpha_ = 1.0;
   SamplerDescriptor sampler_descriptor_ = {};
+  mutable std::optional<Rect> bounding_box_cache_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(AtlasContents);
+};
+
+class AtlasTextureContents final : public Contents {
+ public:
+  explicit AtlasTextureContents(const AtlasContents& parent);
+
+  ~AtlasTextureContents() override;
+
+  // |Contents|
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  bool Render(const ContentContext& renderer,
+              const Entity& entity,
+              RenderPass& pass) const override;
+
+  void SetAlpha(Scalar alpha);
+
+  void SetCoverage(Rect coverage);
+
+  void SetTexture(std::shared_ptr<Texture> texture);
+
+  void SetUseDestination(bool value);
+
+  void SetSubAtlas(const std::shared_ptr<SubAtlasResult>& subatlas);
+
+ private:
+  const AtlasContents& parent_;
+  Scalar alpha_ = 1.0;
+  Rect coverage_;
+  std::optional<std::shared_ptr<Texture>> texture_;
+  bool use_destination_ = false;
+  std::optional<std::shared_ptr<SubAtlasResult>> subatlas_ = std::nullopt;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(AtlasTextureContents);
+};
+
+class AtlasColorContents final : public Contents {
+ public:
+  explicit AtlasColorContents(const AtlasContents& parent);
+
+  ~AtlasColorContents() override;
+
+  // |Contents|
+  std::optional<Rect> GetCoverage(const Entity& entity) const override;
+
+  // |Contents|
+  bool Render(const ContentContext& renderer,
+              const Entity& entity,
+              RenderPass& pass) const override;
+
+  void SetAlpha(Scalar alpha);
+
+  void SetCoverage(Rect coverage);
+
+  void SetSubAtlas(const std::shared_ptr<SubAtlasResult>& subatlas);
+
+ private:
+  const AtlasContents& parent_;
+  Scalar alpha_ = 1.0;
+  Rect coverage_;
+  std::optional<std::shared_ptr<SubAtlasResult>> subatlas_ = std::nullopt;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(AtlasColorContents);
 };
 
 }  // namespace impeller

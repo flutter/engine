@@ -5,10 +5,12 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "flutter/fml/macros.h"
 #include "impeller/scene/animation/animation.h"
+#include "impeller/scene/animation/animation_transforms.h"
 
 namespace impeller {
 namespace scene {
@@ -60,7 +62,9 @@ class AnimationClip final {
   void Advance(SecondsF delta_time);
 
   /// @brief  Applies the animation to all binded properties in the scene.
-  void ApplyToBindings() const;
+  void ApplyToBindings(
+      std::unordered_map<Node*, AnimationTransforms>& transform_decomps,
+      Scalar weight_multiplier) const;
 
  private:
   void BindToTarget(Node* node);

@@ -6,11 +6,6 @@ import("//flutter/build/zip_bundle.gni")
 import("//flutter/common/config.gni")
 import("//third_party/dart/build/dart/dart_action.gni")
 
-declare_args() {
-  build_canvaskit = false
-  archive_flutter_web_sdk = true
-}
-
 dart_sdk_package_config = "//third_party/dart/.dart_tool/package_config.json"
 
 web_ui_sources = exec_script("//third_party/dart/tools/list_dart_files.py",
@@ -27,6 +22,7 @@ web_engine_libraries = [
   ":web_ui_library",
   ":web_ui_library_sources",
   ":web_unicode_library",
+  ":web_test_fonts_library",
   ":web_locale_keymap_library",
 ]
 
@@ -35,10 +31,6 @@ group("web_sdk") {
     ":flutter_ddc_modules",
     ":flutter_platform_dills",
   ]
-
-  if (archive_flutter_web_sdk && !is_fuchsia) {
-    deps += [ ":flutter_web_sdk_archive" ]
-  }
 }
 
 template("sdk_rewriter") {
@@ -142,6 +134,13 @@ sdk_rewriter("web_unicode_library") {
   api_file = "//flutter/third_party/web_unicode/lib/web_unicode.dart"
   input_dir = "//flutter/third_party/web_unicode/lib/web_unicode/"
   output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_unicode/"
+}
+
+sdk_rewriter("web_test_fonts_library") {
+  library_name = "web_test_fonts"
+  api_file = "//flutter/third_party/web_test_fonts/lib/web_test_fonts.dart"
+  input_dir = "//flutter/third_party/web_test_fonts/lib/web_test_fonts/"
+  output_dir = "$root_out_dir/flutter_web_sdk/lib/_web_test_fonts/"
 }
 
 sdk_rewriter("web_locale_keymap_library") {
@@ -547,6 +546,8 @@ if (!is_fuchsia) {
   zip_bundle_from_file("flutter_web_sdk_archive") {
     if (target_os == "wasm") {
       output = "flutter-web-sdk.zip"
+    } else if (is_win) {
+      output = "flutter-web-sdk-${full_target_platform_name}.zip"
     } else {
       # TODO(jacksongardner): remove this once we stop making platform-specific
       # flutter_web_sdk archives.
@@ -556,11 +557,10 @@ if (!is_fuchsia) {
     deps = [
              ":flutter_ddc_modules",
              ":flutter_platform_dills",
+             "//flutter/third_party/canvaskit:canvaskit_group",
+             "//flutter/third_party/canvaskit:canvaskit_chromium_group",
+             "//flutter/lib/web_ui/skwasm",
            ] + web_engine_libraries
-
-    if (build_canvaskit) {
-      deps += [ "//third_party/skia/modules/canvaskit" ]
-    }
 
     # flutter_ddc_modules
     sources = get_target_outputs(":flutter_dartdevc_kernel_sdk")
@@ -591,26 +591,46 @@ if (!is_fuchsia) {
     }
 
     tmp_files = []
-    foreach(source, sources) {
+    web_sdk_files =
+        filter_include(sources, [ "$root_build_dir/flutter_web_sdk/**" ])
+    foreach(source, web_sdk_files) {
       tmp_files += [
         {
           source = rebase_path(source)
-          destination = rebase_path(source, "$root_build_dir")
+          destination = rebase_path(source, "$root_build_dir/flutter_web_sdk")
         },
       ]
     }
-    if (build_canvaskit) {
-      tmp_files += [
-        {
-          source = rebase_path("$root_out_dir/canvaskit.js")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.js"
-        },
-        {
-          source = rebase_path("$root_out_dir/canvaskit.wasm")
-          destination = "flutter_web_sdk/canvaskit/canvaskit.wasm"
-        },
-      ]
-    }
+    tmp_files += [
+      {
+        source = rebase_path("$root_out_dir/canvaskit/canvaskit.js")
+        destination = "canvaskit/canvaskit.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/canvaskit/canvaskit.wasm")
+        destination = "canvaskit/canvaskit.wasm"
+      },
+      {
+        source = rebase_path("$root_out_dir/canvaskit/chromium/canvaskit.js")
+        destination = "canvaskit/chromium/canvaskit.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/canvaskit/chromium/canvaskit.wasm")
+        destination = "canvaskit/chromium/canvaskit.wasm"
+      },
+      {
+        source = rebase_path("$root_out_dir/skwasm.js")
+        destination = "canvaskit/skwasm.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/skwasm.worker.js")
+        destination = "canvaskit/skwasm.worker.js"
+      },
+      {
+        source = rebase_path("$root_out_dir/skwasm.wasm")
+        destination = "canvaskit/skwasm.wasm"
+      },
+    ]
     files = tmp_files
   }
 }

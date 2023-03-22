@@ -34,6 +34,9 @@ bool _debugPrintTextInputCommands = false;
 /// The `keyCode` of the "Enter" key.
 const int _kReturnKeyCode = 13;
 
+/// Offset in pixels to place an element outside of the screen.
+const int offScreenOffset = -9999;
+
 /// Blink and Webkit engines, bring an overlay on top of the text field when it
 /// is autofilled.
 bool browserHasAutofillOverlay() =>
@@ -48,7 +51,7 @@ void _emptyCallback(dynamic _) {}
 
 /// The default [HostNode] that hosts all DOM required for text editing when a11y is not enabled.
 @visibleForTesting
-HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow!;
+HostNode get defaultTextEditingRoot => flutterViewEmbedder.glassPaneShadow;
 
 /// These style attributes are constant throughout the life time of an input
 /// element.
@@ -119,8 +122,8 @@ void _hideAutofillElements(DomHTMLElement domElement,
 
   if (isOffScreen) {
     elementStyle
-      ..top = '-9999px'
-      ..left = '-9999px';
+      ..top = '${offScreenOffset}px'
+      ..left = '${offScreenOffset}px';
   }
 
   if (browserHasAutofillOverlay()) {
@@ -357,7 +360,6 @@ class AutofillInfo {
   factory AutofillInfo.fromFrameworkMessage(Map<String, dynamic> autofill,
       {TextCapitalizationConfig textCapitalization =
           const TextCapitalizationConfig.defaultCapitalization()}) {
-    assert(autofill != null);
     final String uniqueIdentifier = autofill.readString('uniqueIdentifier');
     final List<dynamic>? hintsList = autofill.tryList('hints');
     final String? firstHint = (hintsList == null || hintsList.isEmpty) ? null : hintsList.first as String;
@@ -1361,7 +1363,7 @@ abstract class DefaultTextEditingStrategy with CompositionAwareMixin implements 
         editingDeltaState.deltaStart = lastEditingState!.extentOffset!;
         editingDeltaState.deltaEnd = lastEditingState!.extentOffset!;
       } else if (eventData != null) {
-        // When event.data is not null we we will begin by considering this delta as an insertion
+        // When event.data is not null we will begin by considering this delta as an insertion
         // at the selection extentOffset. This may change due to logic in handleChange to handle
         // composition and other IME behaviors.
         editingDeltaState.deltaText = eventData;
@@ -1509,7 +1511,7 @@ class IOSTextEditingStrategy extends GloballyPositionedTextEditingStrategy {
     /// Position the element outside of the page before focusing on it. This is
     /// useful for not triggering a scroll when iOS virtual keyboard is
     /// coming up.
-    activeDomElement.style.transform = 'translate(-9999px, -9999px)';
+    activeDomElement.style.transform = 'translate(${offScreenOffset}px, ${offScreenOffset}px)';
 
     _canPosition = false;
   }
@@ -2355,7 +2357,9 @@ class EditableTextGeometry {
     assert(encodedGeometry.containsKey('transform'));
 
     final List<double> transformList =
-        List<double>.from(encodedGeometry.readList('transform'));
+        List<double>.from(encodedGeometry.readList('transform').map(
+          (final dynamic e) => (e as num).toDouble()
+        ));
     return EditableTextGeometry(
       width: encodedGeometry.readDouble('width'),
       height: encodedGeometry.readDouble('height'),

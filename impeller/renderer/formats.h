@@ -89,18 +89,12 @@ enum class PixelFormat {
   kB8G8R8A8UNormIntSRGB,
   kR32G32B32A32Float,
   kR16G16B16A16Float,
-
+  kB10G10R10XR,
+  kB10G10R10XRSRGB,
+  kB10G10R10A10XR,
   // Depth and stencil formats.
   kS8UInt,
   kD32FloatS8UInt,
-
-  // Defaults. If you don't know which ones to use, these are usually a safe
-  // bet.
-  //
-  // On Metal, this is a support format for layer drawable and can be used to
-  // specify the format of the resolve texture if needed.
-  kDefaultColor = kB8G8R8A8UNormInt,
-  kDefaultStencil = kS8UInt,
 };
 
 enum class BlendFactor {
@@ -221,6 +215,11 @@ enum class PrimitiveType {
   // checks. Hence, they are not supported here.
 };
 
+enum class PolygonMode {
+  kFill,
+  kLine,
+};
+
 struct DepthRange {
   Scalar z_near = 0.0;
   Scalar z_far = 1.0;
@@ -248,8 +247,6 @@ enum class MinMagFilter {
 };
 
 enum class MipFilter {
-  /// Always sample from mip level 0. Other mip levels are ignored.
-  kNone,
   /// Sample from the nearest mip level.
   kNearest,
   /// Sample from the two nearest mip levels and linearly interpolate between
@@ -289,10 +286,13 @@ constexpr size_t BytesPerPixelForPixelFormat(PixelFormat format) {
     case PixelFormat::kR8G8B8A8UNormIntSRGB:
     case PixelFormat::kB8G8R8A8UNormInt:
     case PixelFormat::kB8G8R8A8UNormIntSRGB:
+    case PixelFormat::kB10G10R10XRSRGB:
+    case PixelFormat::kB10G10R10XR:
       return 4u;
     case PixelFormat::kD32FloatS8UInt:
       return 5u;
     case PixelFormat::kR16G16B16A16Float:
+    case PixelFormat::kB10G10R10A10XR:
       return 8u;
     case PixelFormat::kR32G32B32A32Float:
       return 16u;

@@ -128,10 +128,11 @@ Switches::Switches(const fml::CommandLine& command_line)
           command_line.GetOptionValueWithDefault("reflection-cc", "")),
       depfile_path(command_line.GetOptionValueWithDefault("depfile", "")),
       json_format(command_line.HasOption("json")),
-      remap_samplers(command_line.HasOption("remap-samplers")),
       gles_language_version(
           stoi(command_line.GetOptionValueWithDefault("gles-language-version",
                                                       "0"))),
+      metal_version(
+          command_line.GetOptionValueWithDefault("metal-version", "1.2")),
       entry_point(
           command_line.GetOptionValueWithDefault("entry-point", "main")) {
   auto language =

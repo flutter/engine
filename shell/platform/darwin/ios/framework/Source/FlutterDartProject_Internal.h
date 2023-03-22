@@ -12,9 +12,13 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+NSBundle* FLTFrameworkBundleInternal(NSString* bundleID, NSURL* searchURL);
+
 flutter::Settings FLTDefaultSettingsForBundle(NSBundle* bundle = nil);
 
 @interface FlutterDartProject ()
+
+@property(nonatomic, readonly) BOOL isWideGamutEnabled;
 
 /**
  * This is currently used for *only for tests* to override settings.

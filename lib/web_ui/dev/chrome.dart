@@ -101,6 +101,8 @@ class Chrome extends Browser {
           '--start-maximized',
         if (debug)
           '--auto-open-devtools-for-tabs',
+        // Always run unit tests at a 1x scale factor
+        '--force-device-scale-factor=1',
         '--disable-extensions',
         '--disable-popup-blocking',
         // Indicates that the browser is in "browse without sign-in" (Guest session) mode.
@@ -110,6 +112,14 @@ class Chrome extends Browser {
         '--disable-default-apps',
         '--disable-translate',
         '--remote-debugging-port=$kDevtoolsPort',
+
+        // SwiftShader support on ARM macs is disabled until they upgrade to a newer
+        // version of LLVM, see https://issuetracker.google.com/issues/165000222. In
+        // headless Chrome, the default is to use SwiftShader as a software renderer
+        // for WebGL contexts. In order to work around this limitation, we can force
+        // GPU rendering with this flag.
+        if (environment.isMacosArm)
+          '--use-angle=metal',
       ];
 
       final Process process =

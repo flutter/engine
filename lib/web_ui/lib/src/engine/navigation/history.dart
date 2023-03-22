@@ -32,7 +32,7 @@ BrowserHistory createHistoryForExistingState(UrlStrategy? urlStrategy) {
 /// interact with the html browser history and should come up with their own
 /// ways to manage the states in the browser history.
 ///
-/// There should only be one global instance among all all subclasses.
+/// There should only be one global instance among all subclasses.
 ///
 /// See also:
 ///
@@ -152,7 +152,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
 
   Object _tagWithSerialCount(Object? originialState, int count) {
     return <dynamic, dynamic>{
-      'serialCount': count,
+      'serialCount': count.toDouble(),
       'state': originialState,
     };
   }
@@ -220,7 +220,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(_hasSerialCount(currentState));
     final int backCount = _currentSerialCount;
     if (backCount > 0) {
-      await urlStrategy!.go(-backCount);
+      await urlStrategy!.go(-backCount.toDouble());
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);
@@ -359,7 +359,6 @@ class SingleEntryBrowserHistory extends BrowserHistory {
   /// replaces the state of the entry so that we can recognize it later using
   /// [_isOriginEntry] inside [_popStateListener].
   void _setupOriginEntry(UrlStrategy strategy) {
-    assert(strategy != null);
     strategy.replaceState(_wrapOriginState(currentState), 'origin', '');
   }
 
@@ -370,7 +369,6 @@ class SingleEntryBrowserHistory extends BrowserHistory {
     bool replace = false,
     String? path,
   }) {
-    assert(strategy != null);
     path ??= currentPath;
     if (replace) {
       strategy.replaceState(_flutterState, 'flutter', path);

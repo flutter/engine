@@ -331,7 +331,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
       state == "AppLifecycleState.inactive") {
     ScheduleFrame();
   }
-  runtime_controller_->SetLifecycleState(state);
+  runtime_controller_->SetInitialLifecycleState(state);
   // Always forward these messages to the framework by returning false.
   return false;
 }
@@ -429,6 +429,14 @@ void Engine::SetSemanticsEnabled(bool enabled) {
 
 void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
+}
+
+bool Engine::ImplicitViewEnabled() {
+  // TODO(loicsharma): This value should be provided by the embedder
+  // when it launches the engine. For now, assume the embedder always creates a
+  // view.
+  // See: https://github.com/flutter/flutter/issues/120306
+  return true;
 }
 
 std::string Engine::DefaultRouteName() {

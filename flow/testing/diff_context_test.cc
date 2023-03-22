@@ -5,7 +5,7 @@
 #include "diff_context_test.h"
 
 #include <utility>
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 
 namespace flutter {
 namespace testing {
@@ -35,8 +35,7 @@ Damage DiffContextTest::DiffLayerTree(MockLayerTree& layer_tree,
 sk_sp<DisplayList> DiffContextTest::CreateDisplayList(const SkRect& bounds,
                                                       SkColor color) {
   DisplayListBuilder builder;
-  builder.setColor(color);
-  builder.drawRect(bounds);
+  builder.DrawRect(bounds, DlPaint().setColor(color));
   return builder.Build();
 }
 

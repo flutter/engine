@@ -563,12 +563,6 @@ String blurSigmasToCssString(double sigmaX, double sigmaY) {
   return 'blur(${(sigmaX + sigmaY) * 0.5}px)';
 }
 
-/// A typed variant of [domWindow.fetch].
-Future<DomResponse> httpFetch(String url) async {
-  final Object? result = await domWindow.fetch(url);
-  return result! as DomResponse;
-}
-
 /// Extensions to [Map] that make it easier to treat it as a JSON object. The
 /// keys are `dynamic` because when JSON is deserialized from method channels
 /// it arrives as `Map<dynamic, dynamic>`.
@@ -627,19 +621,19 @@ extension JsonExtensions on Map<dynamic, dynamic> {
   }
 
   int readInt(String propertyName) {
-    return this[propertyName] as int;
+    return (this[propertyName] as num).toInt();
   }
 
   int? tryInt(String propertyName) {
-    return this[propertyName] as int?;
+    return (this[propertyName] as num?)?.toInt();
   }
 
   double readDouble(String propertyName) {
-    return this[propertyName] as double;
+    return (this[propertyName] as num).toDouble();
   }
 
   double? tryDouble(String propertyName) {
-    return this[propertyName] as double?;
+    return (this[propertyName] as num?)?.toDouble();
   }
 }
 

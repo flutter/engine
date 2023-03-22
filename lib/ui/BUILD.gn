@@ -5,6 +5,7 @@
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("ui") {
@@ -59,6 +60,8 @@ source_set("ui") {
     "painting/image_filter.h",
     "painting/image_generator.cc",
     "painting/image_generator.h",
+    "painting/image_generator_apng.cc",
+    "painting/image_generator_apng.h",
     "painting/image_generator_registry.cc",
     "painting/image_generator_registry.h",
     "painting/image_shader.cc",
@@ -161,6 +164,7 @@ source_set("ui") {
     "//third_party/dart/runtime/bin:dart_io_api",
     "//third_party/rapidjson",
     "//third_party/skia",
+    "//third_party/zlib:zlib",
   ]
 
   if (impeller_supports_rendering) {
@@ -178,12 +182,6 @@ source_set("ui") {
 
   if (!defined(defines)) {
     defines = []
-  }
-  if (flutter_enable_skshaper) {
-    defines += [ "FLUTTER_ENABLE_SKSHAPER" ]
-  }
-  if (flutter_always_use_skshaper) {
-    defines += [ "FLUTTER_ALWAYS_USE_SKSHAPER" ]
   }
   if (is_win) {
     # Required for M_PI and others.
@@ -209,6 +207,8 @@ if (enable_unittests) {
     fixtures = [
       "fixtures/DashInNooglerHat.jpg",
       "fixtures/DashInNooglerHat%20WithSpace.jpg",
+      "fixtures/DisplayP3Logo.jpg",
+      "fixtures/DisplayP3Logo.png",
       "fixtures/Horizontal.jpg",
       "fixtures/Horizontal.png",
       "fixtures/hello_loop_2.gif",
@@ -261,6 +261,7 @@ if (enable_unittests) {
       ":ui",
       ":ui_unittests_fixtures",
       "//flutter/common",
+      "//flutter/impeller",
       "//flutter/lib/snapshot",
       "//flutter/shell/common:shell_test_fixture_sources",
       "//flutter/testing",
@@ -271,7 +272,7 @@ if (enable_unittests) {
     ]
 
     # TODO(https://github.com/flutter/flutter/issues/63837): This test is hard-coded to use a TestGLSurface so it cannot run on fuchsia.
-    if (!is_fuchsia) {
+    if (shell_enable_gl) {
       sources += [ "painting/image_decoder_unittests.cc" ]
 
       deps += [ "//flutter/testing:opengl" ]

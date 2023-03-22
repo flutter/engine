@@ -7,7 +7,8 @@
 
 #include <vector>
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/rtree.h"
 #include "flutter/flow/surface_frame.h"
 #include "flutter/fml/memory/ref_counted.h"
@@ -20,6 +21,8 @@
 #include "third_party/skia/include/core/SkRect.h"
 #include "third_party/skia/include/core/SkSize.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+class GrDirectContext;
 
 namespace flutter {
 
@@ -185,6 +188,7 @@ class MutatorsStack {
   void PushClipPath(const SkPath& path);
   void PushTransform(const SkMatrix& matrix);
   void PushOpacity(const int& alpha);
+  // `filter_rect` is in global coordinates.
   void PushBackdropFilter(const std::shared_ptr<const DlImageFilter>& filter,
                           const SkRect& filter_rect);
 
@@ -284,6 +288,8 @@ class EmbeddedViewParams {
   const SkRect& finalBoundingRect() const { return final_bounding_rect_; }
 
   // Pushes the stored DlImageFilter object to the mutators stack.
+  //
+  // `filter_rect` is in global coordinates.
   void PushImageFilter(std::shared_ptr<const DlImageFilter> filter,
                        const SkRect& filter_rect) {
     mutators_stack_.PushBackdropFilter(filter, filter_rect);
@@ -320,50 +326,20 @@ enum class PostPrerollResult {
   kSkipAndRetryFrame
 };
 
-// The |PlatformViewLayer| calls |CompositeEmbeddedView| in its |Paint|
-// method to replace the leaf_nodes_canvas and leaf_nodes_builder in its
-// |PaintContext| for subsequent layers in the frame to render into.
-// The builder value will only be supplied if the associated ScopedFrame
-// is being rendered to DisplayLists. The |EmbedderPaintContext| struct
-// allows the method to return both values.
-struct EmbedderPaintContext {
-  SkCanvas* canvas;
-  DisplayListBuilder* builder;
-};
-
 // The |EmbedderViewSlice| represents the details of recording all of
 // the layer tree rendering operations that appear between before, after
-// and between the embedded views. The Slice may be recorded into an
-// SkPicture or a DisplayListBuilder depending on the ScopedFrame.
+// and between the embedded views. The Slice used to abstract away
+// implementations that were based on either an SkPicture or a
+// DisplayListBuilder but more recently all of the embedder recordings
+// have standardized on the DisplayList.
 class EmbedderViewSlice {
  public:
   virtual ~EmbedderViewSlice() = default;
-  virtual SkCanvas* canvas() = 0;
-  virtual DisplayListBuilder* builder() = 0;
+  virtual DlCanvas* canvas() = 0;
   virtual void end_recording() = 0;
   virtual std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const = 0;
-  virtual void render_into(SkCanvas* canvas) = 0;
-  virtual void render_into(DisplayListBuilder* builder) = 0;
-};
-
-class SkPictureEmbedderViewSlice : public EmbedderViewSlice {
- public:
-  SkPictureEmbedderViewSlice(SkRect view_bounds);
-  ~SkPictureEmbedderViewSlice() override = default;
-
-  SkCanvas* canvas() override;
-  DisplayListBuilder* builder() override;
-  void end_recording() override;
-  std::list<SkRect> searchNonOverlappingDrawnRects(
-      const SkRect& query) const override;
-  void render_into(SkCanvas* canvas) override;
-  void render_into(DisplayListBuilder* builder) override;
-
- private:
-  std::unique_ptr<SkPictureRecorder> recorder_;
-  sk_sp<RTree> rtree_;
-  sk_sp<SkPicture> picture_;
+  virtual void render_into(DlCanvas* canvas) = 0;
 };
 
 class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
@@ -371,16 +347,14 @@ class DisplayListEmbedderViewSlice : public EmbedderViewSlice {
   DisplayListEmbedderViewSlice(SkRect view_bounds);
   ~DisplayListEmbedderViewSlice() override = default;
 
-  SkCanvas* canvas() override;
-  DisplayListBuilder* builder() override;
+  DlCanvas* canvas() override;
   void end_recording() override;
   std::list<SkRect> searchNonOverlappingDrawnRects(
       const SkRect& query) const override;
-  void render_into(SkCanvas* canvas) override;
-  void render_into(DisplayListBuilder* builder) override;
+  void render_into(DlCanvas* canvas) override;
 
  private:
-  std::unique_ptr<DisplayListCanvasRecorder> recorder_;
+  std::unique_ptr<DisplayListBuilder> builder_;
   sk_sp<DisplayList> display_list_;
 };
 
@@ -400,7 +374,7 @@ class ExternalViewEmbedder {
   // the view embedder wants to provide a canvas to the rasterizer, it may
   // return one here. This canvas takes priority over the canvas materialized
   // from the on-screen render target.
-  virtual SkCanvas* GetRootCanvas() = 0;
+  virtual DlCanvas* GetRootCanvas() = 0;
 
   // Call this in-lieu of |SubmitFrame| to clear pre-roll state and
   // sets the stage for the next pre-roll.
@@ -417,7 +391,7 @@ class ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) = 0;
 
   virtual void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) = 0;
 
   // This needs to get called after |Preroll| finishes on the layer tree.
@@ -429,11 +403,8 @@ class ExternalViewEmbedder {
     return PostPrerollResult::kSuccess;
   }
 
-  virtual std::vector<SkCanvas*> GetCurrentCanvases() = 0;
-  virtual std::vector<DisplayListBuilder*> GetCurrentBuilders() = 0;
-
   // Must be called on the UI thread.
-  virtual EmbedderPaintContext CompositeEmbeddedView(int view_id) = 0;
+  virtual DlCanvas* CompositeEmbeddedView(int64_t view_id) = 0;
 
   // Implementers must submit the frame by calling frame.Submit().
   //
@@ -486,6 +457,8 @@ class ExternalViewEmbedder {
 
   // Pushes a DlImageFilter object to each platform view within a list of
   // visited platform views.
+  //
+  // `filter_rect` is in global coordinates.
   //
   // See also: |PushVisitedPlatformView| for pushing platform view ids to the
   // visited platform views list.

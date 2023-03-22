@@ -38,8 +38,7 @@ class BitmapCanvas extends EngineCanvas {
   /// initialize this canvas.
   BitmapCanvas(this._bounds, RenderStrategy renderStrategy,
       {double density = 1.0})
-      : assert(_bounds != null),
-        _density = density,
+      : _density = density,
         _renderStrategy = renderStrategy,
         widthInBitmapPixels = widthToPhysical(_bounds.width),
         heightInBitmapPixels = heightToPhysical(_bounds.height),
@@ -69,7 +68,6 @@ class BitmapCanvas extends EngineCanvas {
   /// Painting outside these bounds will result in cropping.
   ui.Rect get bounds => _bounds;
   set bounds(ui.Rect newValue) {
-    assert(newValue != null);
     _bounds = newValue;
     final int newCanvasPositionX = _bounds.left.floor() - kPaddingPixels;
     final int newCanvasPositionY = _bounds.top.floor() - kPaddingPixels;
@@ -217,7 +215,6 @@ class BitmapCanvas extends EngineCanvas {
 
   // Used by picture to assess if canvas is large enough to reuse as is.
   bool doesFitBounds(ui.Rect newBounds, double newDensity) {
-    assert(newBounds != null);
     return widthInBitmapPixels >= widthToPhysical(newBounds.width) &&
         heightInBitmapPixels >= heightToPhysical(newBounds.height) &&
         _density == newDensity;
@@ -538,20 +535,6 @@ class BitmapCanvas extends EngineCanvas {
     if (_useDomForRenderingFill(paint)) {
       final Matrix4 transform = _canvasPool.currentTransform;
       final SurfacePath surfacePath = path as SurfacePath;
-      final ui.Rect? pathAsLine = surfacePath.toStraightLine();
-      if (pathAsLine != null) {
-        ui.Rect rect = (pathAsLine.top == pathAsLine.bottom)
-            ? ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, pathAsLine.width, 1)
-            : ui.Rect.fromLTWH(
-                pathAsLine.left, pathAsLine.top, 1, pathAsLine.height);
-
-        rect = adjustRectForDom(rect, paint);
-        final DomHTMLElement element = buildDrawRectElement(
-            rect, paint, 'draw-rect', _canvasPool.currentTransform);
-        _drawElement(element, rect.topLeft, paint);
-        return;
-      }
 
       final ui.Rect? pathAsRect = surfacePath.toRect();
       if (pathAsRect != null) {
@@ -563,9 +546,7 @@ class BitmapCanvas extends EngineCanvas {
         drawRRect(pathAsRRect, paint);
         return;
       }
-      final ui.Rect pathBounds = surfacePath.getBounds();
-      final DomElement svgElm = pathToSvgElement(
-          surfacePath, paint, '${pathBounds.right}', '${pathBounds.bottom}');
+      final DomElement svgElm = pathToSvgElement(surfacePath, paint);
       if (!_canvasPool.isClipped) {
         final DomCSSStyleDeclaration style = svgElm.style;
         style.position = 'absolute';
@@ -1350,7 +1331,6 @@ String? stringForStrokeCap(ui.StrokeCap? strokeCap) {
 }
 
 String stringForStrokeJoin(ui.StrokeJoin strokeJoin) {
-  assert(strokeJoin != null);
   switch (strokeJoin) {
     case ui.StrokeJoin.round:
       return 'round';

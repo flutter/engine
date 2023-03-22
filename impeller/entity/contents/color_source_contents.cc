@@ -29,7 +29,7 @@ Scalar ColorSourceContents::GetAlpha() const {
   return alpha_;
 }
 
-void ColorSourceContents::SetMatrix(Matrix matrix) {
+void ColorSourceContents::SetEffectTransform(Matrix matrix) {
   inverse_matrix_ = matrix.Invert();
 }
 
@@ -41,6 +41,14 @@ std::optional<Rect> ColorSourceContents::GetCoverage(
     const Entity& entity) const {
   return geometry_->GetCoverage(entity.GetTransformation());
 };
+
+bool ColorSourceContents::CanAcceptOpacity(const Entity& entity) const {
+  return true;
+}
+
+void ColorSourceContents::SetInheritedOpacity(Scalar opacity) {
+  SetAlpha(GetAlpha() * opacity);
+}
 
 bool ColorSourceContents::ShouldRender(
     const Entity& entity,

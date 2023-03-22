@@ -24,8 +24,10 @@
 #include "flutter/shell/common/switches.h"
 #include "flutter/shell/common/thread_host.h"
 #include "flutter/shell/gpu/gpu_surface_software.h"
+
 #include "third_party/dart/runtime/include/bin/dart_io_api.h"
 #include "third_party/dart/runtime/include/dart_api.h"
+#include "third_party/skia/include/core/SkSurface.h"
 
 #if defined(FML_OS_WIN)
 #include <combaseapi.h>
@@ -39,7 +41,7 @@ namespace flutter {
 
 class TesterExternalViewEmbedder : public ExternalViewEmbedder {
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override { return nullptr; }
+  DlCanvas* GetRootCanvas() override { return nullptr; }
 
   // |ExternalViewEmbedder|
   void CancelFrame() override {}
@@ -53,22 +55,16 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<EmbeddedViewParams> params) override {}
 
   // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override { return {&canvas_}; }
-
-  // |ExternalViewEmbedder|
-  std::vector<DisplayListBuilder*> GetCurrentBuilders() override { return {}; }
-
-  // |ExternalViewEmbedder|
-  EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
-    return {&canvas_, nullptr};
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override {
+    return &builder_;
   }
 
  private:
-  SkCanvas canvas_;
+  DisplayListBuilder builder_;
 };
 
 class TesterGPUSurfaceSoftware : public GPUSurfaceSoftware {

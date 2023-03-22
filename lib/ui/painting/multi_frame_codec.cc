@@ -107,24 +107,27 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   std::optional<unsigned int> prior_frame_index = std::nullopt;
 
   if (requiredFrameIndex != SkCodec::kNoFrame) {
+    // We currently assume that frames can only ever depend on the immediately
+    // previous frame, if any. This means that
+    // `DisposalMethod::kRestorePrevious` is not supported.
     if (lastRequiredFrame_ == nullptr) {
-      FML_LOG(ERROR) << "Frame " << nextFrameIndex_ << " depends on frame "
-                     << requiredFrameIndex
-                     << " and no required frames are cached.";
-      return nullptr;
-    } else if (lastRequiredFrameIndex_ != requiredFrameIndex) {
-      FML_DLOG(INFO) << "Required frame " << requiredFrameIndex
-                     << " is not cached. Using " << lastRequiredFrameIndex_
-                     << " instead";
-    }
-
-    if (lastRequiredFrame_->getPixels() &&
-        CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
-                     *lastRequiredFrame_)) {
-      prior_frame_index = requiredFrameIndex;
+      FML_DLOG(INFO)
+          << "Frame " << nextFrameIndex_ << " depends on frame "
+          << requiredFrameIndex
+          << " and no required frames are cached. Using blank slate instead.";
+    } else {
+      // Copy the previous frame's output buffer into the current frame as the
+      // starting point.
+      if (lastRequiredFrame_->getPixels() &&
+          CopyToBitmap(&bitmap, lastRequiredFrame_->colorType(),
+                       *lastRequiredFrame_)) {
+        prior_frame_index = requiredFrameIndex;
+      }
     }
   }
 
+  // Write the new frame to the output buffer. The bitmap pixels as supplied
+  // are already set in accordance with the previous frame's disposal policy.
   if (!generator_->GetPixels(info, bitmap.getPixels(), bitmap.rowBytes(),
                              nextFrameIndex_, requiredFrameIndex)) {
     FML_LOG(ERROR) << "Could not getPixels for frame " << nextFrameIndex_;
@@ -132,7 +135,8 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   }
 
   // Hold onto this if we need it to decode future frames.
-  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep) {
+  if (frameInfo.disposal_method == SkCodecAnimation::DisposalMethod::kKeep ||
+      lastRequiredFrame_) {
     lastRequiredFrame_ = std::make_unique<SkBitmap>(bitmap);
     lastRequiredFrameIndex_ = nextFrameIndex_;
   }
@@ -143,8 +147,9 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
     // impeller, transfer to DlImageImpeller
     gpu_disable_sync_switch->Execute(fml::SyncSwitch::Handlers().SetIfFalse(
         [&result, &bitmap, &impeller_context_] {
-          result = ImageDecoderImpeller::UploadTexture(
-              impeller_context_, std::make_shared<SkBitmap>(bitmap));
+          result = ImageDecoderImpeller::UploadTextureToShared(
+              impeller_context_, std::make_shared<SkBitmap>(bitmap),
+              /*create_mips=*/false);
         }));
 
     return result;
@@ -155,9 +160,9 @@ sk_sp<DlImage> MultiFrameCodec::State::GetNextFrameImage(
   gpu_disable_sync_switch->Execute(
       fml::SyncSwitch::Handlers()
           .SetIfTrue([&skImage, &bitmap] {
-            // Defer decoding until time of draw later on the raster thread. Can
-            // happen when GL operations are currently forbidden such as in the
-            // background on iOS.
+            // Defer decoding until time of draw later on the raster thread.
+            // Can happen when GL operations are currently forbidden such as
+            // in the background on iOS.
             skImage = SkImage::MakeFromBitmap(bitmap);
           })
           .SetIfFalse([&skImage, &resourceContext, &bitmap] {
@@ -251,8 +256,8 @@ Dart_Handle MultiFrameCodec::getNextFrame(Dart_Handle callback_handle) {
       }));
 
   return Dart_Null();
-  // The static leak checker gets confused by the control flow, unique pointers
-  // and closures in this function.
+  // The static leak checker gets confused by the control flow, unique
+  // pointers and closures in this function.
   // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDeleteLeaks)
 }
 

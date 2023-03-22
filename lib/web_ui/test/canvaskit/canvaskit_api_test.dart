@@ -349,44 +349,41 @@ void _shaderTests() {
   });
 
   test('RuntimeEffect', () {
-    // TODO(hterkelsen): Remove this check when local CanvasKit is default.
-    if (isRuntimeEffectAvailable) {
-      const String kSkSlProgram = r'''
+    const String kSkSlProgram = r'''
 half4 main(vec2 fragCoord) {
   return vec4(1.0, 0.0, 0.0, 1.0);
 }
   ''';
 
-      final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
-      expect(effect, isNotNull);
+    final SkRuntimeEffect? effect = MakeRuntimeEffect(kSkSlProgram);
+    expect(effect, isNotNull);
 
-      const String kInvalidSkSlProgram = '';
+    const String kInvalidSkSlProgram = '';
 
-      // Invalid SkSL returns null.
-      final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
-      expect(invalidEffect, isNull);
+    // Invalid SkSL returns null.
+    final SkRuntimeEffect? invalidEffect = MakeRuntimeEffect(kInvalidSkSlProgram);
+    expect(invalidEffect, isNull);
 
-      final SkShader? shader = effect!.makeShader(<double>[]);
-      expect(shader, isNotNull);
+    final SkShader? shader = effect!.makeShader(<double>[]);
+    expect(shader, isNotNull);
 
-      // mismatched uniforms returns null.
-      final SkShader? invalidShader = effect.makeShader(<double>[1]);
+    // mismatched uniforms returns null.
+    final SkShader? invalidShader = effect.makeShader(<double>[1]);
 
-      expect(invalidShader, isNull);
+    expect(invalidShader, isNull);
 
-      const String kSkSlProgramWithUniforms = r'''
+    const String kSkSlProgramWithUniforms = r'''
 uniform vec4 u_color;
 
 half4 main(vec2 fragCoord) {
-  return u_color;
+return u_color;
 }
-  ''';
+''';
 
-      final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
-        !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
+    final SkShader? shaderWithUniform = MakeRuntimeEffect(kSkSlProgramWithUniforms)
+      !.makeShader(<double>[1.0, 0.0, 0.0, 1.0]);
 
-      expect(shaderWithUniform, isNotNull);
-    }
+    expect(shaderWithUniform, isNotNull);
   });
 }
 
@@ -1314,7 +1311,7 @@ void _canvasTests() {
         devicePixelRatio * kLightRadius,
         tonalColors.ambient,
         tonalColors.spot,
-        flags,
+        flags.toDouble(),
       );
     }
   });
@@ -1627,6 +1624,9 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1669,8 +1669,14 @@ void _paragraphTests() {
     expectAlmost(paragraph.getMaxIntrinsicWidth(), 263);
     expectAlmost(paragraph.getMinIntrinsicWidth(), 135);
     expectAlmost(paragraph.getMaxWidth(), 500);
+    final SkRectWithDirection rectWithDirection =
+      paragraph.getRectsForRange(
+        1,
+        3,
+        canvasKit.RectHeightStyle.Tight,
+        canvasKit.RectWidthStyle.Max).single! as SkRectWithDirection;
     expect(
-      paragraph.getRectsForRange(1, 3, canvasKit.RectHeightStyle.Tight, canvasKit.RectWidthStyle.Max).single,
+      rectWithDirection.rect,
       hasLength(4),
     );
     expect(paragraph.getRectsForPlaceholders(), hasLength(1));
@@ -1694,16 +1700,16 @@ void _paragraphTests() {
 
     // "Hello"
     for (int i = 0; i < 5; i++) {
-      expect(paragraph.getWordBoundary(i).start, 0);
-      expect(paragraph.getWordBoundary(i).end, 5);
+      expect(paragraph.getWordBoundary(i.toDouble()).start, 0);
+      expect(paragraph.getWordBoundary(i.toDouble()).end, 5);
     }
     // Placeholder
     expect(paragraph.getWordBoundary(5).start, 5);
     expect(paragraph.getWordBoundary(5).end, 6);
     // "World"
     for (int i = 6; i < 11; i++) {
-      expect(paragraph.getWordBoundary(i).start, 6);
-      expect(paragraph.getWordBoundary(i).end, 11);
+      expect(paragraph.getWordBoundary(i.toDouble()).start, 6);
+      expect(paragraph.getWordBoundary(i.toDouble()).end, 11);
     }
     // "!"
     expect(paragraph.getWordBoundary(11).start, 11);
@@ -1736,20 +1742,22 @@ void _paragraphTests() {
     );
     builder.addText('hello');
 
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
+
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
-    expect(
-      paragraph.getRectsForRange(
-        0,
-        1,
-        canvasKit.RectHeightStyle.Strut,
-        canvasKit.RectWidthStyle.Tight,
-      ),
-      <List<double>>[
-        <double>[0, 0, 13.770000457763672, 75],
-      ],
-    );
+    final List<SkRectWithDirection> rects = paragraph.getRectsForRange(
+      0,
+      1,
+      canvasKit.RectHeightStyle.Strut,
+      canvasKit.RectWidthStyle.Tight,
+    ).cast<SkRectWithDirection>();
+    expect(rects.length, 1);
+    final SkRectWithDirection rect = rects.first;
+    expect(rect.rect, <double>[0, 0, 13.770000457763672, 75]);
   });
 
   test('TextHeightBehavior', () {
@@ -1775,6 +1783,69 @@ void _paragraphTests() {
         applyHeightToLastDescent: false,
       )),
       canvasKit.TextHeightBehavior.DisableAll,
+    );
+  });
+
+  test('MakeOnScreenGLSurface test', () {
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: 100,
+      height: 100,
+    );
+    final WebGLContext gl = canvas.getGlContext(webGLVersion);
+    final int sampleCount = gl.getParameter(gl.samples);
+    final int stencilBits = gl.getParameter(gl.stencilBits);
+
+    final double glContext = canvasKit.GetWebGLContext(
+      canvas,
+      SkWebGLContextOptions(
+        antialias: 0,
+        majorVersion: webGLVersion.toDouble(),
+      ),
+    );
+    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext);
+    final SkSurface? skSurface = canvasKit.MakeOnScreenGLSurface(
+      grContext,
+      100,
+      100,
+      SkColorSpaceSRGB,
+      sampleCount,
+      stencilBits
+    );
+
+    expect(skSurface, isNotNull);
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+
+  test('MakeRenderTarget test', () {
+    final DomCanvasElement canvas = createDomCanvasElement(
+      width: 100,
+      height: 100,
+    );
+
+    final int glContext = canvasKit.GetWebGLContext(
+      canvas,
+      SkWebGLContextOptions(
+        antialias: 0,
+        majorVersion: webGLVersion.toDouble(),
+      ),
+    ).toInt();
+    final SkGrContext grContext =  canvasKit.MakeGrContext(glContext.toDouble());
+    final SkSurface? surface = canvasKit.MakeRenderTarget(grContext, 1, 1);
+
+    expect(surface, isNotNull);
+  }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
+
+  test('respects actual location of canvaskit files', () {
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'https://example.com/'),
+      'https://example.com/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/'),
+      'http://localhost:1234/canvaskit.wasm',
+    );
+    expect(
+      canvasKitWasmModuleUrl('canvaskit.wasm', 'http://localhost:1234/foo/'),
+      'http://localhost:1234/foo/canvaskit.wasm',
     );
   });
 }

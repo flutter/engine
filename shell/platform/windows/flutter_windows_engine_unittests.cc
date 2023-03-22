@@ -4,6 +4,7 @@
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/test_utils/proc_table_replacement.h"
 #include "flutter/shell/platform/windows/flutter_windows_view.h"
@@ -12,6 +13,7 @@
 #include "flutter/shell/platform/windows/testing/mock_window_binding_handler.h"
 #include "flutter/shell/platform/windows/testing/test_keyboard.h"
 #include "flutter/shell/platform/windows/testing/windows_test.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 #include "fml/synchronization/waitable_event.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -567,7 +569,11 @@ class MockFlutterWindowsView : public FlutterWindowsView {
       : FlutterWindowsView(std::move(wbh)) {}
   ~MockFlutterWindowsView() {}
 
-  MOCK_METHOD4(NotifyWinEventWrapper, void(DWORD, HWND, LONG, LONG));
+  MOCK_METHOD2(NotifyWinEventWrapper,
+               void(ui::AXPlatformNodeWin*, ax::mojom::Event));
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockFlutterWindowsView);
 };
 
 TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
@@ -576,9 +582,11 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   auto window_binding_handler =
       std::make_unique<::testing::NiceMock<MockWindowBindingHandler>>();
-  AccessibilityRootNode* root_node = AccessibilityRootNode::Create();
-  ON_CALL(*window_binding_handler, GetAccessibilityRootNode)
-      .WillByDefault(::testing::Return(root_node));
+  ui::AXPlatformNodeDelegateBase parent_delegate;
+  AlertPlatformNodeDelegate delegate(parent_delegate);
+  ON_CALL(*window_binding_handler, GetAlertDelegate).WillByDefault([&delegate] {
+    return &delegate;
+  });
   MockFlutterWindowsView view(std::move(window_binding_handler));
   view.SetEngine(builder.Build());
   FlutterWindowsEngine* engine = view.GetEngine();
@@ -598,9 +606,8 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
   bool did_call = false;
   ON_CALL(view, NotifyWinEventWrapper)
-      .WillByDefault([&did_call](DWORD event, HWND hwnd, LONG obj, LONG child) {
-        did_call = true;
-      });
+      .WillByDefault([&did_call](ui::AXPlatformNodeWin* node,
+                                 ax::mojom::Event event) { did_call = true; });
 
   engine->UpdateSemanticsEnabled(true);
   engine->Run();

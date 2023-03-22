@@ -42,7 +42,7 @@ void main() {
 
 void testMain() {
   ensureFlutterViewEmbedderInitialized();
-  final DomElement glassPane = flutterViewEmbedder.glassPaneElement!;
+  final DomElement glassPane = flutterViewEmbedder.glassPaneElement;
   late double dpi;
 
   setUp(() {
@@ -282,10 +282,10 @@ void testMain() {
 
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
     expect(event.type, equals('touchstart'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(100));
-    expect(event.changedTouches![0].client.y, equals(101));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(100));
+    expect(event.changedTouches.first.client.y, equals(101));
 
     events = expectCorrectTypes(context.multiTouchDown(const <_TouchDetails>[
       _TouchDetails(pointer: 100, clientX: 120, clientY: 121),
@@ -293,20 +293,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchstart'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(100));
-    expect(events[0].changedTouches![0].client.x, equals(120));
-    expect(events[0].changedTouches![0].client.y, equals(121));
-    expect(events[0].changedTouches![1].identifier, equals(101));
-    expect(events[0].changedTouches![1].client.x, equals(122));
-    expect(events[0].changedTouches![1].client.y, equals(123));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(100));
+    expect(events[0].changedTouches.first.client.x, equals(120));
+    expect(events[0].changedTouches.first.client.y, equals(121));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(101));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(122));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(123));
 
     event = expectCorrectType(context.primaryMove(clientX: 200, clientY: 201));
     expect(event.type, equals('touchmove'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(200));
-    expect(event.changedTouches![0].client.y, equals(201));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(200));
+    expect(event.changedTouches.first.client.y, equals(201));
 
     events = expectCorrectTypes(context.multiTouchMove(const <_TouchDetails>[
       _TouchDetails(pointer: 102, clientX: 220, clientY: 221),
@@ -314,20 +314,20 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchmove'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(102));
-    expect(events[0].changedTouches![0].client.x, equals(220));
-    expect(events[0].changedTouches![0].client.y, equals(221));
-    expect(events[0].changedTouches![1].identifier, equals(103));
-    expect(events[0].changedTouches![1].client.x, equals(222));
-    expect(events[0].changedTouches![1].client.y, equals(223));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(102));
+    expect(events[0].changedTouches.first.client.x, equals(220));
+    expect(events[0].changedTouches.first.client.y, equals(221));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(103));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(222));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(223));
 
     event = expectCorrectType(context.primaryUp(clientX: 300, clientY: 301));
     expect(event.type, equals('touchend'));
-    expect(event.changedTouches!.length, equals(1));
-    expect(event.changedTouches![0].identifier, equals(1));
-    expect(event.changedTouches![0].client.x, equals(300));
-    expect(event.changedTouches![0].client.y, equals(301));
+    expect(event.changedTouches.length, equals(1));
+    expect(event.changedTouches.first.identifier, equals(1));
+    expect(event.changedTouches.first.client.x, equals(300));
+    expect(event.changedTouches.first.client.y, equals(301));
 
     events = expectCorrectTypes(context.multiTouchUp(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -335,13 +335,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchend'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     events = expectCorrectTypes(context.multiTouchCancel(const <_TouchDetails>[
       _TouchDetails(pointer: 104, clientX: 320, clientY: 321),
@@ -349,13 +349,13 @@ void testMain() {
     ]));
     expect(events.length, equals(1));
     expect(events[0].type, equals('touchcancel'));
-    expect(events[0].changedTouches!.length, equals(2));
-    expect(events[0].changedTouches![0].identifier, equals(104));
-    expect(events[0].changedTouches![0].client.x, equals(320));
-    expect(events[0].changedTouches![0].client.y, equals(321));
-    expect(events[0].changedTouches![1].identifier, equals(105));
-    expect(events[0].changedTouches![1].client.x, equals(322));
-    expect(events[0].changedTouches![1].client.y, equals(323));
+    expect(events[0].changedTouches.length, equals(2));
+    expect(events[0].changedTouches.first.identifier, equals(104));
+    expect(events[0].changedTouches.first.client.x, equals(320));
+    expect(events[0].changedTouches.first.client.y, equals(321));
+    expect(events[0].changedTouches.elementAt(1).identifier, equals(105));
+    expect(events[0].changedTouches.elementAt(1).client.x, equals(322));
+    expect(events[0].changedTouches.elementAt(1).client.y, equals(323));
 
     context.pressAllModifiers();
     event = expectCorrectType(context.primaryDown(clientX: 100, clientY: 101));
@@ -544,8 +544,8 @@ void testMain() {
         final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         glassPane.dispatchEvent(context.primaryDown());
         expect(keyDataList.length, 1);
         expectKeyData(keyDataList.last,
@@ -594,8 +594,8 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
         glassPane.dispatchEvent(context.primaryDown());
@@ -614,8 +614,8 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), true);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
         glassPane.dispatchEvent(context.primaryDown());
@@ -664,8 +664,8 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Left', key, modifiers, kLocationLeft));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), true);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), true);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
         glassPane.dispatchEvent(context.primaryDown());
@@ -677,7 +677,7 @@ void testMain() {
           character: null,
           synthesized: true,
         );
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
       }
 
       // Should synthesize a modifier right key up event when DOM event indicates
@@ -693,8 +693,8 @@ void testMain() {
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
         keyboardConverter.handleEvent(keyDownEvent('${key}Right', key, modifiers, kLocationRight));
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), true);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), true);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
         glassPane.dispatchEvent(context.primaryDown());
@@ -706,7 +706,7 @@ void testMain() {
           character: null,
           synthesized: true,
         );
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
       }
 
       context.altPressed = false;
@@ -745,8 +745,8 @@ void testMain() {
         final KeyboardConverter keyboardConverter = createKeyboardConverter(keyDataList);
         PointerBinding.instance!.debugOverrideKeyboardConverter(keyboardConverter);
 
-        expect(keyboardConverter.debugKeyIsPressed(physicalLeft), false);
-        expect(keyboardConverter.debugKeyIsPressed(physicalRight), false);
+        expect(keyboardConverter.keyIsPressed(physicalLeft), false);
+        expect(keyboardConverter.keyIsPressed(physicalRight), false);
         keyDataList.clear(); // Remove key data generated by handleEvent
 
         glassPane.dispatchEvent(context.primaryDown());
@@ -783,7 +783,7 @@ void testMain() {
 
       // Simulate pressing `AltGr` key.
       keyboardConverter.handleEvent(keyDownEvent('AltRight', 'AltGraph'));
-      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), true);
+      expect(keyboardConverter.keyIsPressed(physicalAltRight), true);
       keyDataList.clear(); // Remove key data generated by handleEvent.
 
       glassPane.dispatchEvent(context.primaryDown());
@@ -795,7 +795,7 @@ void testMain() {
         character: null,
         synthesized: true,
       );
-      expect(keyboardConverter.debugKeyIsPressed(physicalAltRight), false);
+      expect(keyboardConverter.keyIsPressed(physicalAltRight), false);
     },
   );
 
@@ -1265,6 +1265,7 @@ void testMain() {
           packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[0].data[1].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[0].data[1].device, equals(-2));
       expect(packets[0].data[1].pointerIdentifier, equals(0));
       expect(packets[0].data[1].synthesized, isFalse);
       expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
@@ -1281,6 +1282,7 @@ void testMain() {
           packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[1].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[1].data[0].device, equals(-2));
       expect(packets[1].data[0].pointerIdentifier, equals(0));
       expect(packets[1].data[0].synthesized, isFalse);
       expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
@@ -1297,6 +1299,7 @@ void testMain() {
           packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[2].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[2].data[0].device, equals(-2));
       expect(packets[2].data[0].pointerIdentifier, equals(0));
       expect(packets[2].data[0].synthesized, isFalse);
       expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
@@ -1313,6 +1316,7 @@ void testMain() {
           packets[3].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[3].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[3].data[0].device, equals(-2));
       expect(packets[3].data[0].pointerIdentifier, equals(0));
       expect(packets[3].data[0].synthesized, isFalse);
       expect(packets[3].data[0].physicalX, equals(10.0 * dpi));
@@ -1323,13 +1327,14 @@ void testMain() {
       expect(packets[3].data[0].scrollDeltaY, equals(119.0));
 
       // Because the delta is in increments of 120, and is not similar to the
-      // previous event, but occured soon after the previous event, it will be
+      // previous event, but occurred soon after the previous event, it will be
       // a trackpad event.
       expect(packets[4].data[0].change, equals(ui.PointerChange.hover));
       expect(
           packets[4].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[4].data[0].kind, equals(ui.PointerDeviceKind.trackpad));
+      expect(packets[4].data[0].device, equals(-2));
       expect(packets[4].data[0].pointerIdentifier, equals(0));
       expect(packets[4].data[0].synthesized, isFalse);
       expect(packets[4].data[0].physicalX, equals(10.0 * dpi));
@@ -1339,22 +1344,39 @@ void testMain() {
       expect(packets[4].data[0].scrollDeltaX, equals(-120.0));
       expect(packets[4].data[0].scrollDeltaY, equals(-120.0));
 
-      // Because the delta is in increments of 120, and is not similar to
-      // the previous event, and occured long after the previous event, it will be a mouse event.
-      expect(packets[5].data, hasLength(1));
-      expect(packets[5].data[0].change, equals(ui.PointerChange.hover));
+      // An add will be synthesized.
+      expect(packets[5].data, hasLength(2));
+      expect(packets[5].data[0].change, equals(ui.PointerChange.add));
       expect(
-          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+          packets[5].data[0].signalKind, equals(ui.PointerSignalKind.none));
       expect(
           packets[5].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[0].device, equals(-1));
       expect(packets[5].data[0].pointerIdentifier, equals(0));
-      expect(packets[5].data[0].synthesized, isFalse);
+      expect(packets[5].data[0].synthesized, isTrue);
       expect(packets[5].data[0].physicalX, equals(10.0 * dpi));
       expect(packets[5].data[0].physicalY, equals(10.0 * dpi));
       expect(packets[5].data[0].physicalDeltaX, equals(0.0));
       expect(packets[5].data[0].physicalDeltaY, equals(0.0));
       expect(packets[5].data[0].scrollDeltaX, equals(0.0));
       expect(packets[5].data[0].scrollDeltaY, equals(-120.0));
+      // Because the delta is in increments of 120, and is not similar to
+      // the previous event, and occurred long after the previous event, it will
+      // be a mouse event.
+      expect(packets[5].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[5].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[5].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[5].data[1].device, equals(-1));
+      expect(packets[5].data[1].pointerIdentifier, equals(0));
+      expect(packets[5].data[1].synthesized, isFalse);
+      expect(packets[5].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[5].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[5].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[5].data[1].scrollDeltaY, equals(-120.0));
 
       // Because the delta is not in increments of 120 and has non-matching
       // wheelDelta, it will be a mouse event.
@@ -1364,6 +1386,7 @@ void testMain() {
           packets[6].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
       expect(
           packets[6].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[6].data[0].device, equals(-1));
       expect(packets[6].data[0].pointerIdentifier, equals(0));
       expect(packets[6].data[0].synthesized, isFalse);
       expect(packets[6].data[0].physicalX, equals(10.0 * dpi));
@@ -1372,6 +1395,111 @@ void testMain() {
       expect(packets[6].data[0].physicalDeltaY, equals(0.0));
       expect(packets[6].data[0].scrollDeltaX, equals(0.0));
       expect(packets[6].data[0].scrollDeltaY, equals(40.0));
+    },
+  );
+
+  _testEach<_ButtonedEventMixin>(
+    <_ButtonedEventMixin>[
+      if (!isIosSafari) _PointerEventContext(),
+      if (!isIosSafari) _MouseEventContext(),
+    ],
+    'does choose scroll vs scale based on ctrlKey',
+    (_ButtonedEventMixin context) {
+      PointerBinding.instance!.debugOverrideDetector(context);
+      final List<ui.PointerDataPacket> packets = <ui.PointerDataPacket>[];
+      ui.window.onPointerDataPacket = (ui.PointerDataPacket packet) {
+        packets.add(packet);
+      };
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 120,
+      ));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 100,
+        ctrlKey: true,
+      ));
+
+      debugOperatingSystemOverride = OperatingSystem.macOs;
+      KeyboardBinding.instance?.converter.handleEvent(keyDownEvent('ControlLeft', 'Control', kCtrl));
+
+      glassPane.dispatchEvent(context.wheel(
+        buttons: 0,
+        clientX: 10,
+        clientY: 10,
+        deltaX: 0,
+        deltaY: 240,
+        ctrlKey: true,
+      ));
+
+      KeyboardBinding.instance?.converter.handleEvent(keyUpEvent('ControlLeft', 'Control', kCtrl));
+
+      expect(packets, hasLength(3));
+
+      // An add will be synthesized.
+      expect(packets[0].data, hasLength(2));
+      expect(packets[0].data[0].change, equals(ui.PointerChange.add));
+      expect(packets[0].data[0].pointerIdentifier, equals(0));
+      expect(packets[0].data[0].synthesized, isTrue);
+      expect(packets[0].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[0].physicalDeltaY, equals(0.0));
+      // Because ctrlKey is not pressed, it will be a scroll.
+      expect(packets[0].data[1].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[0].data[1].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[0].data[1].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[0].data[1].pointerIdentifier, equals(0));
+      expect(packets[0].data[1].synthesized, isFalse);
+      expect(packets[0].data[1].physicalX, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalY, equals(10.0 * dpi));
+      expect(packets[0].data[1].physicalDeltaX, equals(0.0));
+      expect(packets[0].data[1].physicalDeltaY, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaX, equals(0.0));
+      expect(packets[0].data[1].scrollDeltaY, equals(120.0));
+
+      // Because ctrlKey is pressed, it will be a scale.
+      expect(packets[1].data, hasLength(1));
+      expect(packets[1].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[1].data[0].signalKind, equals(ui.PointerSignalKind.scale));
+      expect(
+          packets[1].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[1].data[0].pointerIdentifier, equals(0));
+      expect(packets[1].data[0].synthesized, isFalse);
+      expect(packets[1].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[1].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[1].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[1].data[0].scale, closeTo(0.60653065971, 1e-10)); // math.exp(-100/200)
+
+      // [macOS only]: Because ctrlKey is true, but the key is pressed physically, it will be a scroll.
+      expect(packets[2].data, hasLength(1));
+      expect(packets[2].data[0].change, equals(ui.PointerChange.hover));
+      expect(
+          packets[2].data[0].signalKind, equals(ui.PointerSignalKind.scroll));
+      expect(
+          packets[2].data[0].kind, equals(ui.PointerDeviceKind.mouse));
+      expect(packets[2].data[0].pointerIdentifier, equals(0));
+      expect(packets[2].data[0].synthesized, isFalse);
+      expect(packets[2].data[0].physicalX, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalY, equals(10.0 * dpi));
+      expect(packets[2].data[0].physicalDeltaX, equals(0.0));
+      expect(packets[2].data[0].physicalDeltaY, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaX, equals(0.0));
+      expect(packets[2].data[0].scrollDeltaY, equals(240.0));
+
+      debugOperatingSystemOverride = null;
     },
   );
 
@@ -3085,24 +3213,18 @@ mixin _ButtonedEventMixin on _BasicEventContext {
     double? wheelDeltaX,
     double? wheelDeltaY,
     int? timeStamp,
+    bool ctrlKey = false,
   }) {
-    final Function jsWheelEvent = js_util.getProperty<Function>(domWindow, 'WheelEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      'wheel',
-      <String, dynamic>{
-        'buttons': buttons,
-        'clientX': clientX,
-        'clientY': clientY,
-        'deltaX': deltaX,
-        'deltaY': deltaY,
-        'wheelDeltaX': wheelDeltaX,
-        'wheelDeltaY': wheelDeltaY,
-      }
-    ];
-    final DomEvent event = js_util.callConstructor<DomEvent>(
-      jsWheelEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    final DomEvent event = createDomWheelEvent('wheel', <String, Object>{
+        if (buttons != null) 'buttons': buttons,
+        if (clientX != null) 'clientX': clientX,
+        if (clientY != null) 'clientY': clientY,
+        if (deltaX != null) 'deltaX': deltaX,
+        if (deltaY != null) 'deltaY': deltaY,
+        if (wheelDeltaX != null) 'wheelDeltaX': wheelDeltaX,
+        if (wheelDeltaY != null) 'wheelDeltaY': wheelDeltaY,
+        'ctrlKey': ctrlKey,
+    });
     // timeStamp can't be set in the constructor, need to override the getter.
     if (timeStamp != null) {
       js_util.callMethod(
@@ -3351,26 +3473,17 @@ class _MouseEventContext extends _BasicEventContext
     double? clientX,
     double? clientY,
   }) {
-    final Function jsMouseEvent =
-        js_util.getProperty<Function>(domWindow, 'MouseEvent');
-    final List<dynamic> eventArgs = <dynamic>[
-      type,
-      <String, dynamic>{
-        'bubbles': true,
-        'buttons': buttons,
-        'button': button,
-        'clientX': clientX,
-        'clientY': clientY,
-        'altKey': altPressed,
-        'ctrlKey': ctrlPressed,
-        'metaKey': metaPressed,
-        'shiftKey': shiftPressed,
-      }
-    ];
-    return js_util.callConstructor<DomMouseEvent>(
-      jsMouseEvent,
-      js_util.jsify(eventArgs) as List<Object?>,
-    );
+    return createDomMouseEvent(type, <String, Object>{
+      if (buttons != null) 'buttons': buttons,
+      if (button != null) 'button': button,
+      if (clientX != null) 'clientX': clientX,
+      if (clientY != null) 'clientY': clientY,
+      'bubbles': true,
+      'altKey': altPressed,
+      'ctrlKey': ctrlPressed,
+      'metaKey': metaPressed,
+      'shiftKey': shiftPressed,
+    });
   }
 }
 

@@ -261,13 +261,12 @@ def to_gn_args(args):
     to_gn_wasm_args(args, gn_args)
     return gn_args
 
-  gn_args['flutter_build_web_sdk'] = args.build_web_sdk
   gn_args['full_dart_sdk'] = args.full_dart_sdk
-  if args.build_web_sdk or args.full_dart_sdk:
-    gn_args['build_canvaskit'] = args.build_canvaskit
 
   if args.enable_unittests:
-    gn_args['enable_unittests'] = args.enable_unittests
+    gn_args['enable_unittests'] = True
+  if args.no_enable_unittests:
+    gn_args['enable_unittests'] = False
 
   # Skia GN args.
   gn_args['skia_enable_flutter_defines'
@@ -282,10 +281,7 @@ def to_gn_args(args):
   gn_args['skia_use_fontconfig'] = args.enable_fontconfig
   gn_args['skia_use_legacy_layer_bounds'
          ] = True  # Temporary: See skbug.com/12083, skbug.com/12303.
-
-  if args.enable_skshaper:
-    gn_args['skia_use_icu'] = True
-    gn_args['flutter_always_use_skshaper'] = args.always_use_skshaper
+  gn_args['skia_use_icu'] = True
   gn_args['is_official_build'] = True  # Disable Skia test utilities.
   gn_args['android_full_debug'
          ] = args.target_os == 'android' and args.unoptimized
@@ -329,6 +325,9 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
+  if not args.build_engine_artifacts:
+    gn_args['flutter_build_engine_artifacts'] = False
+
   # We cannot cross-compile for 32 bit arm on a Windows host. We work around
   # this by leaving 'target_cpu' and 'dart_target_arch' set to 'arm' so that
   # Dart tools such as gen_snapshot that are built for the host will correctly
@@ -342,22 +341,21 @@ def to_gn_args(args):
     gn_args['host_cpu'] = 'x86'
     gn_args['current_cpu'] = 'x86'
 
-  if is_host_build(args) and gn_args['host_os'] == 'mac':
-    # macOS host builds (whether x64 or arm64) must currently be built under
-    # Rosetta on Apple Silicon Macs.
-    # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+  # When building binaries to run on a macOS host (like gen_snapshot), always
+  # use the clang_x64 toolchain, which will run under Rosetta. This is done for
+  # two reasons:
+  #  1. goma currently only supports the clang_x64 toolchain.
+  #  2. gen_snapshot cannot crossbuild from arm64 to x64. Its host architecture
+  #     must be x64 to target x64.
+  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
+  if get_host_os() == 'mac' and not args.force_mac_arm64:
     gn_args['host_cpu'] = 'x64'
 
+  if is_host_build(args) and gn_args['host_os'] == 'mac':
     # macOS unit tests include Vulkan headers which reference Metal types
     # introduced in macOS 10.14.
     gn_args['mac_sdk_min'] = '10.14'
     gn_args['mac_deployment_target'] = '10.14.0'
-
-  # macOS target builds (whether x64 or arm64) must currently be built under
-  # Rosetta on Apple Silicon Macs.
-  # TODO(cbracken): https://github.com/flutter/flutter/issues/103386
-  if 'target_os' in gn_args and gn_args['target_os'] == 'mac':
-    gn_args['host_cpu'] = 'x64'
 
   if gn_args['target_os'] == 'ios':
     gn_args['use_ios_simulator'] = args.simulator
@@ -372,7 +370,6 @@ def to_gn_args(args):
     gn_args['dart_debug_optimization_level'] = '0'
 
   gn_args['flutter_use_fontconfig'] = args.enable_fontconfig
-  gn_args['flutter_enable_skshaper'] = args.enable_skshaper
   gn_args['dart_component_kind'
          ] = 'static_library'  # Always link Dart in statically.
   gn_args['embedder_for_target'] = args.embedder_for_target
@@ -388,11 +385,14 @@ def to_gn_args(args):
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
 
+  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+  # it doesn't build properly with our gn configuration.
+  gn_args['dart_include_wasm_opt'] = False
+
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
   # Linux will bring in pkg-config dependencies at generation time). These
-  # flags allow preventing those those targets from being part of the build
-  # tree.
+  # flags allow preventing those targets from being part of the build tree.
   gn_args['enable_desktop_embeddings'] = not args.disable_desktop_embeddings
 
   # Overrides whether Boring SSL is compiled with system as. Only meaningful
@@ -446,7 +446,7 @@ def to_gn_args(args):
   # Enable Vulkan on all platforms except for iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['ios']:
+  if gn_args['target_os'] not in ['ios', 'mac']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
@@ -554,8 +554,21 @@ def to_gn_args(args):
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
 
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_vulkan'] = True
+
+  if args.enable_impeller_opengles:
+    gn_args['impeller_enable_opengles'] = True
+
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
+
+  if args.malioc_path is not None:
+    gn_args['impeller_malioc_path'] = args.malioc_path
+  else:
+    malioc_path = os.environ.get('MALIOC_PATH')
+    if malioc_path:
+      gn_args['impeller_malioc_path'] = malioc_path
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -575,6 +588,11 @@ def to_gn_args(args):
     # https://github.com/flutter/flutter/issues/114107
     if get_host_os() == 'win':
       gn_args['angle_force_context_check_every_call'] = True
+
+    # ANGLE and SwiftShader share build flags to enable X11 and Wayland,
+    # but we only need these enabled for SwiftShader.
+    gn_args['angle_use_x11'] = False
+    gn_args['angle_use_wayland'] = False
 
     # Requires RTTI. We may want to build this in debug modes, punting on that
     # for now.
@@ -605,19 +623,17 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_vulkan'] = False
   gn_args['skia_use_webgpu'] = False
   gn_args['skia_use_libheif'] = False
-  gn_args['skia_use_libjpeg_turbo_decode'] = True
   gn_args['skia_use_libjpeg_turbo_encode'] = False
-  gn_args['skia_use_libpng_decode'] = True
+  # TODO(yjbanov): https://github.com/flutter/flutter/issues/122759
+  # Remove this and implement it through Canvas2d.
   gn_args['skia_use_libpng_encode'] = True
-  gn_args['skia_use_libwebp_decode'] = True
   gn_args['skia_use_libwebp_encode'] = False
   gn_args['skia_use_lua'] = False
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_zlib'] = True
   gn_args['skia_gl_standard'] = 'webgl'
-  gn_args['skia_enable_gpu'] = True
+  gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_sksl_tracing'] = False
-  gn_args['skia_use_icu'] = True
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
   gn_args['skia_use_harfbuzz'] = True
@@ -635,7 +651,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_enable_effects_deserialization'] = False
   gn_args['skia_canvaskit_enable_skottie'] = False
   gn_args['skia_canvaskit_include_viewer'] = False
-  gn_args['skia_canvaskit_enable_particles'] = False
   gn_args['skia_canvaskit_enable_pathops'] = True
   gn_args['skia_canvaskit_enable_rt_shader'] = True
   gn_args['skia_canvaskit_enable_matrix_helper'] = False
@@ -652,12 +667,6 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_canvaskit_profile_build'] = is_profile_build
   gn_args['flutter_prebuilt_dart_sdk'] = True
 
-  # TODO(jacksongardner): Make this based off of the input argument rather
-  # than forced to true, once the recipes are updated.
-  # https://github.com/flutter/flutter/issues/113303
-  gn_args['build_canvaskit'] = True
-  gn_args['flutter_build_web_sdk'] = True
-
 
 def parse_args(args):
   args = args[1:]
@@ -665,7 +674,18 @@ def parse_args(args):
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
-  parser.add_argument('--enable-unittests', action='store_true', default=False)
+  parser.add_argument(
+      '--enable-unittests',
+      action='store_true',
+      default=False,
+      help='Force enable building unit test binaries.'
+  )
+  parser.add_argument(
+      '--no-enable-unittests',
+      default=False,
+      action='store_true',
+      help='Force disable building unit test binaries.'
+  )
 
   parser.add_argument(
       '--runtime-mode',
@@ -722,6 +742,13 @@ def parse_args(args):
   parser.add_argument(
       '--mac-cpu', type=str, choices=['x64', 'arm64'], default='x64'
   )
+  parser.add_argument(
+      '--force-mac-arm64',
+      action='store_true',
+      default=False,
+      help='Force use of the clang_arm64 toolchain on an arm64 mac host when '
+      'building host binaries.'
+  )
   parser.add_argument('--simulator', action='store_true', default=False)
   parser.add_argument(
       '--linux', dest='target_os', action='store_const', const='linux'
@@ -751,6 +778,19 @@ def parse_args(args):
   )
   parser.add_argument(
       '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
+  )
+
+  parser.add_argument(
+      '--build-engine-artifacts',
+      default=True,
+      action='store_true',
+      help='Build the host-side development artifacts.'
+  )
+  parser.add_argument(
+      '--no-build-engine-artifacts',
+      dest='build_engine_artifacts',
+      action='store_false',
+      help='Do not build the host-side development artifacts.'
   )
 
   parser.add_argument('--goma', default=True, action='store_true')
@@ -816,14 +856,6 @@ def parse_args(args):
       '--enable-vulkan-validation-layers', action='store_true', default=False
   )
 
-  parser.add_argument('--enable-skshaper', action='store_true', default=True)
-  parser.add_argument(
-      '--no-enable-skshaper', dest='enable_skshaper', action='store_false'
-  )
-  parser.add_argument(
-      '--always-use-skshaper', action='store_true', default=False
-  )
-
   parser.add_argument(
       '--embedder-for-target',
       dest='embedder_for_target',
@@ -857,23 +889,10 @@ def parse_args(args):
   )
 
   parser.add_argument(
-      '--build-web-sdk',
-      default=False,
-      action='store_true',
-      help='build the flutter web sdk'
-  )
-  parser.add_argument(
-      '--no-build-web-sdk', dest='build_web_sdk', action='store_false'
-  )
-
-  parser.add_argument(
       '--build-canvaskit',
       default=False,
       action='store_true',
-      help='build canvaskit from source'
-  )
-  parser.add_argument(
-      '--no-build-canvaskit', dest='build_canvaskit', action='store_false'
+      help='build canvaskit from source (DEPRECATED: use ninja targets to select what to build)'
   )
 
   parser.add_argument(
@@ -966,6 +985,20 @@ def parse_args(args):
   )
 
   parser.add_argument(
+      '--enable-impeller-vulkan',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller Vulkan backend.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-opengles',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller OpenGL ES backend.'
+  )
+
+  parser.add_argument(
       '--prebuilt-impellerc',
       default=None,
       type=str,
@@ -978,6 +1011,10 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Enables experimental 3d support.'
+  )
+
+  parser.add_argument(
+      '--malioc-path', type=str, help='The path to the malioc tool.'
   )
 
   # Sanitizers.
@@ -1031,6 +1068,7 @@ def main(argv):
     elif sys.platform.startswith('win'):
       # On Windows, generate a Visual Studio project.
       command.append('--ide=vs')
+      command.append('--ninja-executable=ninja')
 
   command.append('--export-compile-commands=default')
 

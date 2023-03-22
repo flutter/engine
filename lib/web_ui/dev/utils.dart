@@ -224,8 +224,7 @@ class ProcessManager {
     return (await eval()).stderr;
   }
 
-  @alwaysThrows
-  void _throwProcessException({required String description, int? exitCode}) {
+  Never _throwProcessException({required String description, int? exitCode}) {
     throw ProcessException(
       description: description,
       executable: executable,
@@ -408,7 +407,7 @@ class TestsByRenderer {
 }
 
 /// Given a list of test files, organizes them by which renderer should run them.
-TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
+TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles, bool forWasm) {
   final List<FilePath> htmlTargets = <FilePath>[];
   final List<FilePath> canvasKitTargets = <FilePath>[];
   final List<FilePath> skwasmTargets = <FilePath>[];
@@ -426,6 +425,10 @@ TestsByRenderer sortTestsByRenderer(List<FilePath> testFiles) {
     } else if (path.isWithin(uiTestDirectory, testFile.absolute)) {
       htmlTargets.add(testFile);
       canvasKitTargets.add(testFile);
+      if (forWasm) {
+        // Only add these tests in wasm mode, since JS mode has a stub renderer.
+        skwasmTargets.add(testFile);
+      }
     } else {
       htmlTargets.add(testFile);
     }

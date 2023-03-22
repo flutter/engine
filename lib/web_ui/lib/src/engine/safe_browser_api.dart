@@ -110,13 +110,6 @@ void removeJsEventListener(Object target, String type, Function listener, Object
   );
 }
 
-/// The signature of the `parseFloat` JavaScript function.
-typedef _JsParseFloat = num? Function(String source);
-
-/// The JavaScript-side `parseFloat` function.
-@JS('parseFloat')
-external _JsParseFloat get _jsParseFloat;
-
 /// Parses a string [source] into a double.
 ///
 /// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
@@ -126,7 +119,7 @@ external _JsParseFloat get _jsParseFloat;
 num? parseFloat(String source) {
   // Using JavaScript's `parseFloat` here because it can parse values
   // like "20px", while Dart's `double.tryParse` fails.
-  final num? result = _jsParseFloat(source);
+  final num? result = js_util.callMethod(domWindow, 'parseFloat', <Object>[source]);
 
   if (result == null || result.isNaN) {
     return null;
@@ -224,16 +217,26 @@ const bool _browserImageDecodingEnabled = bool.fromEnvironment(
 );
 
 /// Whether the current browser supports `ImageDecoder`.
-bool browserSupportsImageDecoder =
-  _browserImageDecodingEnabled &&
-  _imageDecoderConstructor != null &&
-  browserEngine == BrowserEngine.blink;
+bool browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 
 /// Sets the value of [browserSupportsImageDecoder] to its default value.
 void debugResetBrowserSupportsImageDecoder() {
-  browserSupportsImageDecoder =
-      _imageDecoderConstructor != null;
+  browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 }
+
+bool get _defaultBrowserSupportsImageDecoder =>
+    _browserImageDecodingEnabled &&
+    _imageDecoderConstructor != null &&
+    _isBrowserImageDecoderStable;
+
+// TODO(yjbanov): https://github.com/flutter/flutter/issues/122761
+// Frequently, when a browser launches an API that other browsers already
+// support, there are subtle incompatibilities that may cause apps to crash if,
+// we blindly adopt the new implementation. This variable prevents us from
+// picking up potentially incompatible implementations of ImagdeDecoder API.
+// Instead, when a new browser engine launches the API, we'll evaluate it and
+// enable it explicitly.
+bool get _isBrowserImageDecoderStable => browserEngine == BrowserEngine.blink;
 
 /// The signature of the function passed to the constructor of JavaScript `Promise`.
 typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
@@ -312,7 +315,7 @@ extension DecodeResultExtension on DecodeResult {
 @staticInterop
 class DecodeOptions {
   external factory DecodeOptions({
-    required int frameIndex,
+    required double frameIndex,
   });
 }
 
@@ -330,7 +333,7 @@ class VideoFrame implements DomCanvasImageSource {}
 
 extension VideoFrameExtension on VideoFrame {
   external double allocationSize();
-  external JsPromise copyTo(Uint8List destination);
+  external JsPromise copyTo(Object destination);
   external String? get format;
   external double get codedWidth;
   external double get codedHeight;
@@ -453,7 +456,7 @@ class GlContext {
   Object? _kRGBA;
   Object? _kLinear;
   Object? _kTextureMinFilter;
-  int? _kTexture0;
+  double? _kTexture0;
 
   Object? _canvas;
   int? _widthInPixels;
@@ -569,7 +572,7 @@ class GlContext {
     js_util.callMethod<void>(glContext, 'bindTexture', <dynamic>[target, buffer]);
   }
 
-  void activeTexture(int textureUnit) {
+  void activeTexture(double textureUnit) {
     js_util.callMethod<void>(glContext, 'activeTexture', <dynamic>[textureUnit]);
   }
 
@@ -710,8 +713,8 @@ class GlContext {
   Object? get kTexture2D =>
       _kTexture2D ??= js_util.getProperty(glContext, 'TEXTURE_2D');
 
-  int get kTexture0 =>
-      _kTexture0 ??= js_util.getProperty<int>(glContext, 'TEXTURE0');
+  double get kTexture0 =>
+      _kTexture0 ??= js_util.getProperty<double>(glContext, 'TEXTURE0');
 
   Object? get kTextureWrapS =>
       _kTextureWrapS ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_S');
@@ -1047,7 +1050,7 @@ class OffScreenCanvas {
     }
   }
 
-  /// Draws an image to canvas for both offscreen canvas canvas context2d.
+  /// Draws an image to canvas for both offscreen canvas context2d.
   void drawImage(Object image, int x, int y, int width, int height) {
     js_util.callMethod<void>(
         getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);
