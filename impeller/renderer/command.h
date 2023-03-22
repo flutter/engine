@@ -41,6 +41,8 @@ using TextureResource = Resource<std::shared_ptr<const Texture>>;
 using SamplerResource = Resource<std::shared_ptr<const Sampler>>;
 
 struct Bindings {
+  std::map<size_t, ShaderUniformSlot> uniforms;
+  std::map<size_t, SampledImageSlot> sampled_images;
   std::map<size_t, BufferResource> buffers;
   std::map<size_t, TextureResource> textures;
   std::map<size_t, SamplerResource> samplers;
@@ -101,13 +103,6 @@ struct Command {
   ///
   std::string label;
   //----------------------------------------------------------------------------
-  /// The type of primitives in the vertex buffer. Set the vertex and index
-  /// buffers using a call to `BindVertices`.
-  ///
-  /// @see         `BindVertices`
-  ///
-  PrimitiveType primitive_type = PrimitiveType::kTriangle;
-  //----------------------------------------------------------------------------
   /// The reference value to use in stenciling operations. Stencil configuration
   /// is part of pipeline setup and can be read from the pipelines descriptor.
   ///
@@ -153,23 +148,23 @@ struct Command {
   bool BindResource(ShaderStage stage,
                     const ShaderUniformSlot& slot,
                     const ShaderMetadata& metadata,
-                    BufferView view);
+                    const BufferView& view);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture);
+                    const std::shared_ptr<const Texture>& texture);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Sampler> sampler);
+                    const std::shared_ptr<const Sampler>& sampler);
 
   bool BindResource(ShaderStage stage,
                     const SampledImageSlot& slot,
                     const ShaderMetadata& metadata,
-                    std::shared_ptr<const Texture> texture,
-                    std::shared_ptr<const Sampler> sampler);
+                    const std::shared_ptr<const Texture>& texture,
+                    const std::shared_ptr<const Sampler>& sampler);
 
   BufferView GetVertexBuffer() const;
 

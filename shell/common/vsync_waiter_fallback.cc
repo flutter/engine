@@ -25,9 +25,9 @@ static fml::TimePoint SnapToNextTick(fml::TimePoint value,
 
 }  // namespace
 
-VsyncWaiterFallback::VsyncWaiterFallback(TaskRunners task_runners,
+VsyncWaiterFallback::VsyncWaiterFallback(const TaskRunners& task_runners,
                                          bool for_testing)
-    : VsyncWaiter(std::move(task_runners)),
+    : VsyncWaiter(task_runners),
       phase_(fml::TimePoint::Now()),
       for_testing_(for_testing) {}
 
@@ -35,13 +35,17 @@ VsyncWaiterFallback::~VsyncWaiterFallback() = default;
 
 // |VsyncWaiter|
 void VsyncWaiterFallback::AwaitVSync() {
-  TRACE_EVENT0("flutter", "VSYNC");
-
   constexpr fml::TimeDelta kSingleFrameInterval =
       fml::TimeDelta::FromSecondsF(1.0 / 60.0);
   auto frame_start_time =
       SnapToNextTick(fml::TimePoint::Now(), phase_, kSingleFrameInterval);
   auto frame_target_time = frame_start_time + kSingleFrameInterval;
+
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_start_time.ToEpochDelta().ToMicroseconds(),
+                   "frame_target_time",
+                   frame_target_time.ToEpochDelta().ToMicroseconds());
+
   std::weak_ptr<VsyncWaiterFallback> weak_this =
       std::static_pointer_cast<VsyncWaiterFallback>(shared_from_this());
 

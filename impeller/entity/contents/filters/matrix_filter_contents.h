@@ -17,19 +17,27 @@ class MatrixFilterContents final : public FilterContents {
 
   void SetMatrix(Matrix matrix);
 
+  void SetIsSubpass(bool is_subpass);
+
+  void SetSamplerDescriptor(SamplerDescriptor desc);
+
   // |FilterContents|
-  Matrix GetLocalTransform(const Matrix& parent_transform) const override;
+  std::optional<Rect> GetFilterCoverage(
+      const FilterInput::Vector& inputs,
+      const Entity& entity,
+      const Matrix& effect_transform) const override;
 
  private:
   // |FilterContents|
-  std::optional<Snapshot> RenderFilter(
-      const FilterInput::Vector& input_textures,
-      const ContentContext& renderer,
-      const Entity& entity,
-      const Matrix& effect_transform,
-      const Rect& coverage) const override;
+  std::optional<Entity> RenderFilter(const FilterInput::Vector& input_textures,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     const Matrix& effect_transform,
+                                     const Rect& coverage) const override;
 
   Matrix matrix_;
+  SamplerDescriptor sampler_descriptor_ = {};
+  bool is_subpass_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(MatrixFilterContents);
 };

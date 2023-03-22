@@ -7,8 +7,11 @@
 #include <memory>
 
 #include "flutter/fml/macros.h"
+#include "flutter/testing/test_args.h"
 #include "flutter/testing/testing.h"
+#include "impeller/geometry/scalar.h"
 #include "impeller/playground/playground.h"
+#include "impeller/playground/switches.h"
 
 namespace impeller {
 
@@ -27,10 +30,18 @@ class PlaygroundTest : public Playground,
   std::unique_ptr<fml::Mapping> OpenAssetAsMapping(
       std::string asset_name) const override;
 
+  std::shared_ptr<RuntimeStage> OpenAssetAsRuntimeStage(
+      const char* asset_name) const;
+
   // |Playground|
   std::string GetWindowTitle() const override;
 
  private:
+  const PlaygroundSwitches switches_;
+
+  // |Playground|
+  bool ShouldKeepRendering() const;
+
   FML_DISALLOW_COPY_AND_ASSIGN(PlaygroundTest);
 };
 

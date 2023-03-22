@@ -7,6 +7,7 @@
 #include <optional>
 
 #include "impeller/geometry/path_component.h"
+#include "path_component.h"
 
 namespace impeller {
 
@@ -75,10 +76,10 @@ void Path::SetContourClosed(bool is_closed) {
 }
 
 void Path::EnumerateComponents(
-    Applier<LinearPathComponent> linear_applier,
-    Applier<QuadraticPathComponent> quad_applier,
-    Applier<CubicPathComponent> cubic_applier,
-    Applier<ContourComponent> contour_applier) const {
+    const Applier<LinearPathComponent>& linear_applier,
+    const Applier<QuadraticPathComponent>& quad_applier,
+    const Applier<CubicPathComponent>& cubic_applier,
+    const Applier<ContourComponent>& contour_applier) const {
   size_t currentIndex = 0;
   for (const auto& component : components_) {
     switch (component.type) {
@@ -221,8 +222,7 @@ bool Path::UpdateContourComponentAtIndex(size_t index,
   return true;
 }
 
-Path::Polyline Path::CreatePolyline(
-    const SmoothingApproximation& approximation) const {
+Path::Polyline Path::CreatePolyline(Scalar scale) const {
   Polyline polyline;
 
   std::optional<Point> previous_contour_point;
@@ -231,8 +231,6 @@ Path::Polyline Path::CreatePolyline(
     if (collection.empty()) {
       return;
     }
-
-    polyline.points.reserve(polyline.points.size() + collection.size());
 
     for (const auto& point : collection) {
       if (previous_contour_point.has_value() &&
@@ -245,18 +243,86 @@ Path::Polyline Path::CreatePolyline(
     }
   };
 
+  auto get_path_component =
+      [this](size_t component_i) -> std::optional<const PathComponent*> {
+    if (component_i >= components_.size()) {
+      return std::nullopt;
+    }
+    const auto& component = components_[component_i];
+    switch (component.type) {
+      case ComponentType::kLinear:
+        return &linears_[component.index];
+      case ComponentType::kQuadratic:
+        return &quads_[component.index];
+      case ComponentType::kCubic:
+        return &cubics_[component.index];
+      case ComponentType::kContour:
+        return std::nullopt;
+    }
+  };
+
+  auto compute_contour_start_direction =
+      [&get_path_component](size_t current_path_component_index) {
+        size_t next_component_index = current_path_component_index + 1;
+        while (get_path_component(next_component_index).has_value()) {
+          auto next_component =
+              get_path_component(next_component_index).value();
+          if (next_component->GetStartDirection().has_value()) {
+            return next_component->GetStartDirection().value();
+          } else {
+            next_component_index++;
+          }
+        }
+        return Vector2(0, -1);
+      };
+
+  std::optional<size_t> previous_path_component_index;
+  auto end_contour = [&polyline, &previous_path_component_index,
+                      &get_path_component]() {
+    // Whenever a contour has ended, extract the exact end direction from the
+    // last component.
+    if (polyline.contours.empty()) {
+      return;
+    }
+
+    if (!previous_path_component_index.has_value()) {
+      return;
+    }
+
+    auto& contour = polyline.contours.back();
+    contour.end_direction = Vector2(0, 1);
+
+    size_t previous_index = previous_path_component_index.value();
+    while (get_path_component(previous_index).has_value()) {
+      auto previous_path_component = get_path_component(previous_index).value();
+      if (previous_path_component->GetEndDirection().has_value()) {
+        contour.end_direction =
+            previous_path_component->GetEndDirection().value();
+        break;
+      } else {
+        if (previous_index == 0) {
+          break;
+        }
+        previous_index--;
+      }
+    }
+  };
+
   for (size_t component_i = 0; component_i < components_.size();
        component_i++) {
     const auto& component = components_[component_i];
     switch (component.type) {
       case ComponentType::kLinear:
         collect_points(linears_[component.index].CreatePolyline());
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kQuadratic:
-        collect_points(quads_[component.index].CreatePolyline(approximation));
+        collect_points(quads_[component.index].CreatePolyline(scale));
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kCubic:
-        collect_points(cubics_[component.index].CreatePolyline(approximation));
+        collect_points(cubics_[component.index].CreatePolyline(scale));
+        previous_path_component_index = component_i;
         break;
       case ComponentType::kContour:
         if (component_i == components_.size() - 1) {
@@ -264,13 +330,18 @@ Path::Polyline Path::CreatePolyline(
           // contour, so skip it.
           continue;
         }
+        end_contour();
+
+        Vector2 start_direction = compute_contour_start_direction(component_i);
         const auto& contour = contours_[component.index];
         polyline.contours.push_back({.start_index = polyline.points.size(),
-                                     .is_closed = contour.is_closed});
+                                     .is_closed = contour.is_closed,
+                                     .start_direction = start_direction});
         previous_contour_point = std::nullopt;
         collect_points({contour.destination});
         break;
     }
+    end_contour();
   }
   return polyline;
 }
@@ -302,33 +373,35 @@ std::optional<std::pair<Point, Point>> Path::GetMinMaxCoveragePoints() const {
 
   std::optional<Point> min, max;
 
-  auto clamp = [&min, &max](const std::vector<Point>& extrema) {
-    for (const auto& extremum : extrema) {
-      if (!min.has_value()) {
-        min = extremum;
-      }
+  auto clamp = [&min, &max](const Point& point) {
+    if (min.has_value()) {
+      min = min->Min(point);
+    } else {
+      min = point;
+    }
 
-      if (!max.has_value()) {
-        max = extremum;
-      }
-
-      min->x = std::min(min->x, extremum.x);
-      min->y = std::min(min->y, extremum.y);
-      max->x = std::max(max->x, extremum.x);
-      max->y = std::max(max->y, extremum.y);
+    if (max.has_value()) {
+      max = max->Max(point);
+    } else {
+      max = point;
     }
   };
 
   for (const auto& linear : linears_) {
-    clamp(linear.Extrema());
+    clamp(linear.p1);
+    clamp(linear.p2);
   }
 
   for (const auto& quad : quads_) {
-    clamp(quad.Extrema());
+    for (const Point& point : quad.Extrema()) {
+      clamp(point);
+    }
   }
 
   for (const auto& cubic : cubics_) {
-    clamp(cubic.Extrema());
+    for (const Point& point : cubic.Extrema()) {
+      clamp(point);
+    }
   }
 
   if (!min.has_value() || !max.has_value()) {

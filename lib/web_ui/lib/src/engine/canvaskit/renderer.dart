@@ -11,6 +11,7 @@ import 'package:ui/ui.dart' as ui;
 import '../dom.dart';
 import '../embedder.dart';
 import '../html_image_codec.dart';
+import '../initialization.dart';
 import '../profiler.dart';
 import '../renderer.dart';
 import 'canvaskit_api.dart';
@@ -25,8 +26,23 @@ import 'picture_recorder.dart';
 import 'rasterizer.dart';
 import 'shader.dart';
 import 'text.dart';
-import 'util.dart';
 import 'vertices.dart';
+
+enum CanvasKitVariant {
+  /// The appropriate variant is chosen based on the browser.
+  ///
+  /// This is the default variant.
+  auto,
+
+  /// The full variant that can be used in any browser.
+  full,
+
+  /// The variant that is optimized for Chromium browsers.
+  ///
+  /// WARNING: In most cases, you should use [auto] instead of this variant. Using
+  /// this variant in a non-Chromium browser will result in a broken app.
+  chromium,
+}
 
 class CanvasKitRenderer implements Renderer {
   static CanvasKitRenderer get instance => _instance;
@@ -52,12 +68,6 @@ class CanvasKitRenderer implements Renderer {
   Future<void> initialize() async {
     if (windowFlutterCanvasKit != null) {
       canvasKit = windowFlutterCanvasKit!;
-    } else if (useH5vccCanvasKit) {
-      if (h5vcc?.canvasKit == null) {
-        throw CanvasKitError('H5vcc CanvasKit implementation not found.');
-      }
-      canvasKit = h5vcc!.canvasKit!;
-      windowFlutterCanvasKit = canvasKit;
     } else {
       canvasKit = await downloadCanvasKit();
       windowFlutterCanvasKit = canvasKit;
@@ -376,5 +386,22 @@ class CanvasKitRenderer implements Renderer {
 
     rasterizer.draw((scene as LayerScene).layerTree);
     frameTimingsOnRasterFinish();
+  }
+
+  @override
+  void clearFragmentProgramCache() {
+    _programs.clear();
+  }
+
+  static final Map<String, Future<ui.FragmentProgram>> _programs = <String, Future<ui.FragmentProgram>>{};
+
+  @override
+  Future<ui.FragmentProgram> createFragmentProgram(String assetKey) {
+    if (_programs.containsKey(assetKey)) {
+      return _programs[assetKey]!;
+    }
+    return _programs[assetKey] = assetManager.load(assetKey).then((ByteData data) {
+      return CkFragmentProgram.fromBytes(assetKey, data.buffer.asUint8List());
+    });
   }
 }

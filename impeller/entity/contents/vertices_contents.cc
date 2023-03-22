@@ -5,8 +5,11 @@
 #include "vertices_contents.h"
 
 #include "impeller/entity/contents/content_context.h"
+#include "impeller/entity/contents/filters/color_filter_contents.h"
+#include "impeller/entity/contents/filters/filter_contents.h"
+#include "impeller/entity/contents/texture_contents.h"
+#include "impeller/entity/position_color.vert.h"
 #include "impeller/entity/vertices.frag.h"
-#include "impeller/entity/vertices.vert.h"
 #include "impeller/geometry/color.h"
 #include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
@@ -15,108 +18,173 @@
 
 namespace impeller {
 
-VerticesContents::VerticesContents(Vertices vertices)
-    : vertices_(std::move(vertices)){};
+VerticesContents::VerticesContents() = default;
 
 VerticesContents::~VerticesContents() = default;
 
 std::optional<Rect> VerticesContents::GetCoverage(const Entity& entity) const {
-  return vertices_.GetTransformedBoundingBox(entity.GetTransformation());
+  return geometry_->GetCoverage(entity.GetTransformation());
 };
 
-void VerticesContents::SetColor(Color color) {
-  color_ = color.Premultiply();
+void VerticesContents::SetGeometry(std::shared_ptr<VerticesGeometry> geometry) {
+  geometry_ = std::move(geometry);
+}
+
+void VerticesContents::SetSourceContents(std::shared_ptr<Contents> contents) {
+  src_contents_ = std::move(contents);
+}
+
+std::shared_ptr<VerticesGeometry> VerticesContents::GetGeometry() const {
+  return geometry_;
+}
+
+void VerticesContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
 }
 
 void VerticesContents::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
 }
 
-static PrimitiveType GetPrimitiveType(const Vertices& vertices) {
-  switch (vertices.GetMode()) {
-    case VertexMode::kTriangle:
-      return PrimitiveType::kTriangle;
-    case VertexMode::kTriangleStrip:
-      return PrimitiveType::kTriangleStrip;
-  }
+const std::shared_ptr<Contents>& VerticesContents::GetSourceContents() const {
+  return src_contents_;
 }
 
 bool VerticesContents::Render(const ContentContext& renderer,
                               const Entity& entity,
                               RenderPass& pass) const {
-  if (!vertices_.IsValid()) {
+  if (blend_mode_ == BlendMode::kClear) {
     return true;
   }
-
-  using VS = VerticesPipeline::VertexShader;
-
-  const auto coverage_rect = vertices_.GetBoundingBox();
-
-  if (!coverage_rect.has_value()) {
-    return true;
-  }
-
-  if (coverage_rect->size.IsEmpty()) {
-    return true;
-  }
-
-  std::vector<VS::PerVertexData> vertex_data;
-  {
-    const auto& positions = vertices_.GetPositions();
-    const auto& colors = vertices_.GetColors();
-    for (size_t i = 0; i < positions.size(); i++) {
-      auto color = i < colors.size()
-                       ? Color::BlendColor(color_, colors[i], blend_mode_)
-                       : color_;
-      vertex_data.push_back(VS::PerVertexData{
-          .position = positions[i],
-          .color = color,
-      });
+  std::shared_ptr<Contents> src_contents = src_contents_;
+  if (geometry_->HasTextureCoordinates()) {
+    auto contents = std::make_shared<VerticesUVContents>(*this);
+    if (!geometry_->HasVertexColors()) {
+      contents->SetAlpha(alpha_);
+      return contents->Render(renderer, entity, pass);
     }
+    src_contents = contents;
   }
 
-  size_t total_vtx_bytes = vertex_data.size() * sizeof(VS::PerVertexData);
-  size_t total_idx_bytes = vertices_.GetIndices().size() * sizeof(uint16_t);
+  auto dst_contents = std::make_shared<VerticesColorContents>(*this);
 
-  DeviceBufferDescriptor buffer_desc;
-  buffer_desc.size = total_vtx_bytes + total_idx_bytes;
-  buffer_desc.storage_mode = StorageMode::kHostVisible;
+  auto contents = ColorFilterContents::MakeBlend(
+      blend_mode_, {FilterInput::Make(dst_contents, false),
+                    FilterInput::Make(src_contents, false)});
+  contents->SetAlpha(alpha_);
 
-  auto buffer =
-      renderer.GetContext()->GetResourceAllocator()->CreateBuffer(buffer_desc);
+  return contents->Render(renderer, entity, pass);
+}
 
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(vertex_data.data()),
-                              Range{0, total_vtx_bytes}, 0)) {
+//------------------------------------------------------
+// VerticesUVContents
+
+VerticesUVContents::VerticesUVContents(const VerticesContents& parent)
+    : parent_(parent) {}
+
+VerticesUVContents::~VerticesUVContents() {}
+
+std::optional<Rect> VerticesUVContents::GetCoverage(
+    const Entity& entity) const {
+  return parent_.GetCoverage(entity);
+}
+
+void VerticesUVContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+bool VerticesUVContents::Render(const ContentContext& renderer,
+                                const Entity& entity,
+                                RenderPass& pass) const {
+  using VS = TexturePipeline::VertexShader;
+  using FS = TexturePipeline::FragmentShader;
+
+  auto src_contents = parent_.GetSourceContents();
+
+  auto snapshot = src_contents->RenderToSnapshot(renderer, entity);
+  if (!snapshot.has_value()) {
     return false;
   }
-  if (!buffer->CopyHostBuffer(reinterpret_cast<uint8_t*>(const_cast<uint16_t*>(
-                                  vertices_.GetIndices().data())),
-                              Range{0, total_idx_bytes}, total_vtx_bytes)) {
-    return false;
-  }
 
+  Command cmd;
+  cmd.label = "VerticesUV";
   auto& host_buffer = pass.GetTransientsBuffer();
+  auto geometry = parent_.GetGeometry();
+
+  auto coverage = src_contents->GetCoverage(Entity{});
+  if (!coverage.has_value()) {
+    return false;
+  }
+  auto geometry_result = geometry->GetPositionUVBuffer(
+      coverage.value(), Matrix(), renderer, entity, pass);
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetTexturePipeline(opts);
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(geometry_result.vertex_buffer);
 
   VS::FrameInfo frame_info;
-  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                   entity.GetTransformation();
-  Command cmd;
-  cmd.label = "Vertices";
-  cmd.pipeline =
-      renderer.GetVerticesPipeline(OptionsFromPassAndEntity(pass, entity));
-  cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.primitive_type = GetPrimitiveType(vertices_);
-  cmd.BindVertices({
-      .vertex_buffer = {.buffer = buffer, .range = Range{0, total_vtx_bytes}},
-      .index_buffer = {.buffer = buffer,
-                       .range = Range{total_vtx_bytes, total_idx_bytes}},
-      .index_count = vertices_.GetIndices().size(),
-      .index_type = IndexType::k16bit,
-  });
+  frame_info.mvp = geometry_result.transform;
+  frame_info.texture_sampler_y_coord_scale =
+      snapshot->texture->GetYCoordScale();
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
-  pass.AddCommand(std::move(cmd));
 
-  return true;
+  FS::FragInfo frag_info;
+  frag_info.alpha = alpha_ * snapshot->opacity;
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+  FS::BindTextureSampler(cmd, snapshot->texture,
+                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+                             snapshot->sampler_descriptor));
+
+  return pass.AddCommand(std::move(cmd));
+}
+
+//------------------------------------------------------
+// VerticesColorContents
+
+VerticesColorContents::VerticesColorContents(const VerticesContents& parent)
+    : parent_(parent) {}
+
+VerticesColorContents::~VerticesColorContents() {}
+
+std::optional<Rect> VerticesColorContents::GetCoverage(
+    const Entity& entity) const {
+  return parent_.GetCoverage(entity);
+}
+
+void VerticesColorContents::SetAlpha(Scalar alpha) {
+  alpha_ = alpha;
+}
+
+bool VerticesColorContents::Render(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) const {
+  using VS = GeometryColorPipeline::VertexShader;
+  using FS = GeometryColorPipeline::FragmentShader;
+
+  Command cmd;
+  cmd.label = "VerticesColors";
+  auto& host_buffer = pass.GetTransientsBuffer();
+  auto geometry = parent_.GetGeometry();
+
+  auto geometry_result =
+      geometry->GetPositionColorBuffer(renderer, entity, pass);
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetGeometryColorPipeline(opts);
+  cmd.stencil_reference = entity.GetStencilDepth();
+  cmd.BindVertices(geometry_result.vertex_buffer);
+
+  VS::FrameInfo frame_info;
+  frame_info.mvp = geometry_result.transform;
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+
+  FS::FragInfo frag_info;
+  frag_info.alpha = alpha_;
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+  return pass.AddCommand(std::move(cmd));
 }
 
 }  // namespace impeller

@@ -2,16 +2,14 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// Copyright 2013 The Flutter Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
 #include "flutter/shell/platform/windows/text_input_manager.h"
 
 #include <imm.h>
 
-#include <cassert>
 #include <memory>
+
+#include "flutter/fml/logging.h"
+#include "flutter/fml/macros.h"
 
 namespace flutter {
 
@@ -21,7 +19,7 @@ class ImmContext {
   ImmContext(HWND window_handle)
       : context_(::ImmGetContext(window_handle)),
         window_handle_(window_handle) {
-    assert(window_handle);
+    FML_DCHECK(window_handle);
   }
 
   ~ImmContext() {
@@ -30,22 +28,20 @@ class ImmContext {
     }
   }
 
-  // Prevent copying.
-  ImmContext(const ImmContext& other) = delete;
-  ImmContext& operator=(const ImmContext& other) = delete;
-
   // Returns true if a valid IMM context has been obtained.
   bool IsValid() const { return context_ != nullptr; }
 
   // Returns the IMM context.
   HIMC get() {
-    assert(context_);
+    FML_DCHECK(context_);
     return context_;
   }
 
  private:
   HWND window_handle_;
   HIMC context_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(ImmContext);
 };
 
 void TextInputManager::SetWindowHandle(HWND window_handle) {

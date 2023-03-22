@@ -4,9 +4,48 @@
 
 #include "impeller/typographer/glyph_atlas.h"
 
+#include <utility>
+
 namespace impeller {
 
-GlyphAtlas::GlyphAtlas() = default;
+GlyphAtlasContext::GlyphAtlasContext()
+    : atlas_(std::make_shared<GlyphAtlas>(GlyphAtlas::Type::kAlphaBitmap)),
+      atlas_size_(ISize(0, 0)) {}
+
+GlyphAtlasContext::~GlyphAtlasContext() {}
+
+std::shared_ptr<GlyphAtlas> GlyphAtlasContext::GetGlyphAtlas() const {
+  return atlas_;
+}
+
+const ISize& GlyphAtlasContext::GetAtlasSize() const {
+  return atlas_size_;
+}
+
+std::shared_ptr<SkBitmap> GlyphAtlasContext::GetBitmap() const {
+  return bitmap_;
+}
+
+std::shared_ptr<skgpu::Rectanizer> GlyphAtlasContext::GetRectPacker() const {
+  return rect_packer_;
+}
+
+void GlyphAtlasContext::UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas,
+                                         ISize size) {
+  atlas_ = std::move(atlas);
+  atlas_size_ = size;
+}
+
+void GlyphAtlasContext::UpdateBitmap(std::shared_ptr<SkBitmap> bitmap) {
+  bitmap_ = std::move(bitmap);
+}
+
+void GlyphAtlasContext::UpdateRectPacker(
+    std::shared_ptr<skgpu::Rectanizer> rect_packer) {
+  rect_packer_ = std::move(rect_packer);
+}
+
+GlyphAtlas::GlyphAtlas(Type type) : type_(type) {}
 
 GlyphAtlas::~GlyphAtlas() = default;
 
@@ -14,8 +53,8 @@ bool GlyphAtlas::IsValid() const {
   return !!texture_;
 }
 
-bool GlyphAtlas::ContainsColorGlyph() const {
-  return has_color_glyph;
+GlyphAtlas::Type GlyphAtlas::GetType() const {
+  return type_;
 }
 
 const std::shared_ptr<Texture>& GlyphAtlas::GetTexture() const {
@@ -26,27 +65,9 @@ void GlyphAtlas::SetTexture(std::shared_ptr<Texture> texture) {
   texture_ = std::move(texture);
 }
 
-void GlyphAtlas::AddTypefaceGlyphPosition(FontGlyphPair pair, Rect rect) {
-  if (callback_.has_value()) {
-    auto has_color = callback_.value()(pair);
-    has_color_glyph |= has_color;
-    colors_[pair] = has_color;
-  }
-
+void GlyphAtlas::AddTypefaceGlyphPosition(const FontGlyphPair& pair,
+                                          Rect rect) {
   positions_[pair] = rect;
-}
-
-void GlyphAtlas::SetFontColorCallback(
-    std::function<bool(const FontGlyphPair& pair)> callback) {
-  callback_ = std::move(callback);
-}
-
-bool GlyphAtlas::IsColorFontGlyphPair(const FontGlyphPair& pair) const {
-  auto found = colors_.find(pair);
-  if (found == colors_.end()) {
-    return false;
-  }
-  return found->second;
 }
 
 std::optional<Rect> GlyphAtlas::FindFontGlyphPosition(
@@ -63,8 +84,8 @@ size_t GlyphAtlas::GetGlyphCount() const {
 }
 
 size_t GlyphAtlas::IterateGlyphs(
-    std::function<bool(const FontGlyphPair& pair, const Rect& rect)> iterator)
-    const {
+    const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+        iterator) const {
   if (!iterator) {
     return 0u;
   }
@@ -77,6 +98,17 @@ size_t GlyphAtlas::IterateGlyphs(
     }
   }
   return count;
+}
+
+FontGlyphPair::Vector GlyphAtlas::HasSamePairs(
+    const FontGlyphPair::Vector& new_glyphs) {
+  std::vector<FontGlyphPair> new_pairs;
+  for (auto pair : new_glyphs) {
+    if (positions_.find(pair) == positions_.end()) {
+      new_pairs.push_back(pair);
+    }
+  }
+  return new_pairs;
 }
 
 }  // namespace impeller

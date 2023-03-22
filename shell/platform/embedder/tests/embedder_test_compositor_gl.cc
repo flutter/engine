@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
 
+#include <utility>
+
 #include "flutter/fml/logging.h"
 #include "flutter/shell/platform/embedder/tests/embedder_assertions.h"
 #include "third_party/skia/include/core/SkSurface.h"
@@ -14,7 +16,7 @@ namespace testing {
 EmbedderTestCompositorGL::EmbedderTestCompositorGL(
     SkISize surface_size,
     sk_sp<GrDirectContext> context)
-    : EmbedderTestCompositor(surface_size, context) {}
+    : EmbedderTestCompositor(surface_size, std::move(context)) {}
 
 EmbedderTestCompositorGL::~EmbedderTestCompositorGL() = default;
 
@@ -27,7 +29,7 @@ bool EmbedderTestCompositorGL::UpdateOffscrenComposition(
 
   auto surface =
       SkSurface::MakeRenderTarget(context_.get(),            // context
-                                  SkBudgeted::kNo,           // budgeted
+                                  skgpu::Budgeted::kNo,      // budgeted
                                   image_info,                // image info
                                   1,                         // sample count
                                   kTopLeft_GrSurfaceOrigin,  // surface origin

@@ -14,6 +14,7 @@
 
 #include <cstdlib>
 #include <memory>
+#include <utility>
 
 namespace flutter {
 namespace testing {
@@ -22,7 +23,7 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
     sk_sp<GrDirectContext> context,
     RenderTargetType type,
     FlutterSoftwarePixelFormat software_pixfmt)
-    : context_(context),
+    : context_(std::move(context)),
       type_(type),
       software_pixfmt_(software_pixfmt)
 #ifdef SHELL_ENABLE_METAL
@@ -35,8 +36,9 @@ EmbedderTestBackingStoreProducer::EmbedderTestBackingStoreProducer(
 #endif
 {
   if (type == RenderTargetType::kSoftwareBuffer &&
-      software_pixfmt_ != kNative32) {
-    FML_LOG(ERROR) << "Expected pixel format to be the default (kNative32) when"
+      software_pixfmt_ != kFlutterSoftwarePixelFormatNative32) {
+    FML_LOG(ERROR) << "Expected pixel format to be the default "
+                      "(kFlutterSoftwarePixelFormatNative32) when"
                       "backing store producer should produce deprecated v1 "
                       "software backing "
                       "stores.";
@@ -82,7 +84,7 @@ bool EmbedderTestBackingStoreProducer::CreateFramebuffer(
 
   auto surface = SkSurface::MakeRenderTarget(
       context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
+      skgpu::Budgeted::kNo,         // budgeted
       image_info,                   // image info
       1,                            // sample count
       kBottomLeft_GrSurfaceOrigin,  // surface origin
@@ -135,7 +137,7 @@ bool EmbedderTestBackingStoreProducer::CreateTexture(
 
   auto surface = SkSurface::MakeRenderTarget(
       context_.get(),               // context
-      SkBudgeted::kNo,              // budgeted
+      skgpu::Budgeted::kNo,         // budgeted
       image_info,                   // image info
       1,                            // sample count
       kBottomLeft_GrSurfaceOrigin,  // surface origin

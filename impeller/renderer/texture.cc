@@ -8,7 +8,7 @@
 
 namespace impeller {
 
-Texture::Texture(TextureDescriptor desc) : desc_(std::move(desc)) {}
+Texture::Texture(TextureDescriptor desc) : desc_(desc) {}
 
 Texture::~Texture() = default;
 
@@ -61,12 +61,20 @@ bool Texture::IsSliceValid(size_t slice) const {
   FML_UNREACHABLE();
 }
 
+void Texture::SetIntent(TextureIntent intent) {
+  intent_ = intent;
+}
+
 TextureIntent Texture::GetIntent() const {
   return intent_;
 }
 
 Scalar Texture::GetYCoordScale() const {
   return 1.0;
+}
+
+bool Texture::NeedsMipmapGeneration() const {
+  return !mipmap_generated_ && desc_.mip_count > 1;
 }
 
 }  // namespace impeller

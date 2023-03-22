@@ -21,8 +21,8 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
     // There is a rendering surface that may contain textures that are going to
     // be referenced in the layer tree about to be drawn.
     return SkSurface::MakeRenderTarget(
-        reinterpret_cast<GrRecordingContext*>(surface_context), SkBudgeted::kNo,
-        image_info);
+        reinterpret_cast<GrRecordingContext*>(surface_context),
+        skgpu::Budgeted::kNo, image_info);
   }
 
   // There is no rendering surface, assume no GPU textures are present and
@@ -33,7 +33,7 @@ static sk_sp<SkSurface> CreateSnapshotSurface(GrDirectContext* surface_context,
 /// Returns a buffer containing a snapshot of the surface.
 ///
 /// If compressed is true the data is encoded as PNG.
-static sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
+static sk_sp<SkData> GetRasterData(const sk_sp<SkSurface>& offscreen_surface,
                                    bool compressed) {
   // Prepare an image from the surface, this image may potentially be on th GPU.
   auto potentially_gpu_snapshot = offscreen_surface->makeImageSnapshot();
@@ -68,14 +68,17 @@ static sk_sp<SkData> GetRasterData(sk_sp<SkSurface> offscreen_surface,
 OffscreenSurface::OffscreenSurface(GrDirectContext* surface_context,
                                    const SkISize& size) {
   offscreen_surface_ = CreateSnapshotSurface(surface_context, size);
+  if (offscreen_surface_) {
+    adapter_.set_canvas(offscreen_surface_->getCanvas());
+  }
 }
 
 sk_sp<SkData> OffscreenSurface::GetRasterData(bool compressed) const {
   return flutter::GetRasterData(offscreen_surface_, compressed);
 }
 
-SkCanvas* OffscreenSurface::GetCanvas() const {
-  return offscreen_surface_->getCanvas();
+DlCanvas* OffscreenSurface::GetCanvas() {
+  return &adapter_;
 }
 
 bool OffscreenSurface::IsValid() const {

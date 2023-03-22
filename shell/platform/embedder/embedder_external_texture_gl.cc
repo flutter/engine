@@ -5,6 +5,8 @@
 #include "flutter/shell/platform/embedder/embedder_external_texture_gl.h"
 
 #include "flutter/fml/logging.h"
+#include "include/core/SkCanvas.h"
+#include "include/core/SkPaint.h"
 #include "third_party/skia/include/core/SkAlphaType.h"
 #include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkColorType.h"
@@ -25,30 +27,32 @@ EmbedderExternalTextureGL::EmbedderExternalTextureGL(
 EmbedderExternalTextureGL::~EmbedderExternalTextureGL() = default;
 
 // |flutter::Texture|
-void EmbedderExternalTextureGL::Paint(SkCanvas& canvas,
+void EmbedderExternalTextureGL::Paint(PaintContext& context,
                                       const SkRect& bounds,
                                       bool freeze,
-                                      GrDirectContext* context,
-                                      const SkSamplingOptions& sampling,
-                                      const SkPaint* paint) {
+                                      const DlImageSampling sampling) {
   if (last_image_ == nullptr) {
     last_image_ =
         ResolveTexture(Id(),                                           //
-                       context,                                        //
+                       context.gr_context,                             //
                        SkISize::Make(bounds.width(), bounds.height())  //
         );
   }
 
+  DlCanvas* canvas = context.canvas;
+  const DlPaint* paint = context.paint;
+
   if (last_image_) {
-    if (bounds != SkRect::Make(last_image_->bounds())) {
-      canvas.drawImageRect(last_image_, bounds, sampling, paint);
+    SkRect image_bounds = SkRect::Make(last_image_->bounds());
+    if (bounds != image_bounds) {
+      canvas->DrawImageRect(last_image_, image_bounds, bounds, sampling, paint);
     } else {
-      canvas.drawImage(last_image_, bounds.x(), bounds.y(), sampling, paint);
+      canvas->DrawImage(last_image_, {bounds.x(), bounds.y()}, sampling, paint);
     }
   }
 }
 
-sk_sp<SkImage> EmbedderExternalTextureGL::ResolveTexture(
+sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
     int64_t texture_id,
     GrDirectContext* context,
     const SkISize& size) {
@@ -96,7 +100,7 @@ sk_sp<SkImage> EmbedderExternalTextureGL::ResolveTexture(
     return nullptr;
   }
 
-  return image;
+  return DlImage::Make(std::move(image));
 }
 
 // |flutter::Texture|

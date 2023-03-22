@@ -7,6 +7,9 @@
 #include <algorithm>
 #include <limits>
 
+#if IMPELLER_SUPPORTS_RENDERING
+#include "flutter/lib/ui/painting/image_encoding_impeller.h"
+#endif
 #include "flutter/lib/ui/painting/image_encoding.h"
 #include "third_party/tonic/converter/dart_converter.h"
 #include "third_party/tonic/dart_args.h"
@@ -18,10 +21,7 @@ namespace flutter {
 typedef CanvasImage Image;
 
 // Since _Image is a private class, we can't use IMPLEMENT_WRAPPERTYPEINFO
-static const tonic::DartWrapperInfo kDartWrapperInfoUIImage = {
-    "ui",
-    "_Image",
-};
+static const tonic::DartWrapperInfo kDartWrapperInfoUIImage("ui", "_Image");
 const tonic::DartWrapperInfo& Image::dart_wrapper_info_ =
     kDartWrapperInfoUIImage;
 
@@ -36,6 +36,18 @@ Dart_Handle CanvasImage::toByteData(int format, Dart_Handle callback) {
 void CanvasImage::dispose() {
   image_.reset();
   ClearDartWrapper();
+}
+
+int CanvasImage::colorSpace() {
+  if (image_->skia_image()) {
+    return ColorSpace::kSRGB;
+  } else if (image_->impeller_texture()) {
+#if IMPELLER_SUPPORTS_RENDERING
+    return ImageEncodingImpeller::GetColorSpace(image_->impeller_texture());
+#endif  // IMPELLER_SUPPORTS_RENDERING
+  }
+
+  return -1;
 }
 
 }  // namespace flutter

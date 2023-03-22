@@ -27,7 +27,7 @@ ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
                                  std::optional<size_t> row_bytes)
     : buffer_(std::move(buffer)),
       generator_(nullptr),
-      image_info_(std::move(image_info)),
+      image_info_(image_info),
       row_bytes_(row_bytes) {}
 
 ImageDescriptor::ImageDescriptor(sk_sp<SkData> buffer,
@@ -79,12 +79,13 @@ Dart_Handle ImageDescriptor::initEncoded(Dart_Handle descriptor_handle,
 }
 
 void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
-                              fml::RefPtr<ImmutableBuffer> data,
+                              const fml::RefPtr<ImmutableBuffer>& data,
                               int width,
                               int height,
                               int row_bytes,
                               PixelFormat pixel_format) {
   SkColorType color_type = kUnknown_SkColorType;
+  SkAlphaType alpha_type = kPremul_SkAlphaType;
   switch (pixel_format) {
     case PixelFormat::kRGBA8888:
       color_type = kRGBA_8888_SkColorType;
@@ -92,10 +93,14 @@ void ImageDescriptor::initRaw(Dart_Handle descriptor_handle,
     case PixelFormat::kBGRA8888:
       color_type = kBGRA_8888_SkColorType;
       break;
+    case PixelFormat::kRGBAFloat32:
+      // `PixelFormat.rgbaFloat32` is documented to not use premultiplied alpha.
+      color_type = kRGBA_F32_SkColorType;
+      alpha_type = kUnpremul_SkAlphaType;
+      break;
   }
   FML_DCHECK(color_type != kUnknown_SkColorType);
-  auto image_info =
-      SkImageInfo::Make(width, height, color_type, kPremul_SkAlphaType);
+  auto image_info = SkImageInfo::Make(width, height, color_type, alpha_type);
   auto descriptor = fml::MakeRefCounted<ImageDescriptor>(
       data->data(), std::move(image_info),
       row_bytes == -1 ? std::nullopt : std::optional<size_t>(row_bytes));

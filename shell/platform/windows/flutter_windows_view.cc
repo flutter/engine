@@ -6,10 +6,11 @@
 
 #include <chrono>
 
+#include "flutter/fml/platform/win/wstring_conversion.h"
 #include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/windows/keyboard_key_channel_handler.h"
-#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
 #include "flutter/shell/platform/windows/text_input_plugin.h"
+#include "flutter/third_party/accessibility/ax/platform/ax_platform_node_win.h"
 
 namespace flutter {
 
@@ -48,6 +49,9 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  if (engine_) {
+    engine_->SetView(nullptr);
+  }
   DestroyRenderSurface();
 }
 
@@ -57,44 +61,10 @@ void FlutterWindowsView::SetEngine(
 
   engine_->SetView(this);
 
-  internal_plugin_registrar_ =
-      std::make_unique<PluginRegistrar>(engine_->GetRegistrar());
-
-  // Set up the system channel handlers.
-  auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  InitializeKeyboard();
-  platform_handler_ =
-      std::make_unique<PlatformHandler>(internal_plugin_messenger, this);
-  cursor_handler_ = std::make_unique<CursorHandler>(internal_plugin_messenger,
-                                                    binding_handler_.get());
-
   PhysicalWindowBounds bounds = binding_handler_->GetPhysicalWindowBounds();
 
   SendWindowMetrics(bounds.width, bounds.height,
                     binding_handler_->GetDpiScale());
-}
-
-std::unique_ptr<KeyboardHandlerBase>
-FlutterWindowsView::CreateKeyboardKeyHandler(
-    BinaryMessenger* messenger,
-    KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
-    KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan) {
-  auto keyboard_key_handler = std::make_unique<KeyboardKeyHandler>();
-  keyboard_key_handler->AddDelegate(
-      std::make_unique<KeyboardKeyEmbedderHandler>(
-          [this](const FlutterKeyEvent& event, FlutterKeyEventCallback callback,
-                 void* user_data) {
-            return engine_->SendKeyEvent(event, callback, user_data);
-          },
-          get_key_state, map_vk_to_scan));
-  keyboard_key_handler->AddDelegate(
-      std::make_unique<KeyboardKeyChannelHandler>(messenger));
-  return keyboard_key_handler;
-}
-
-std::unique_ptr<TextInputPlugin> FlutterWindowsView::CreateTextInputPlugin(
-    BinaryMessenger* messenger) {
-  return std::make_unique<TextInputPlugin>(messenger, this);
 }
 
 uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
@@ -116,15 +86,19 @@ uint32_t FlutterWindowsView::GetFrameBufferId(size_t width, size_t height) {
   return kWindowFrameBufferID;
 }
 
+void FlutterWindowsView::UpdateFlutterCursor(const std::string& cursor_name) {
+  binding_handler_->UpdateFlutterCursor(cursor_name);
+}
+
+void FlutterWindowsView::SetFlutterCursor(HCURSOR cursor) {
+  binding_handler_->SetFlutterCursor(cursor);
+}
+
 void FlutterWindowsView::ForceRedraw() {
   if (resize_status_ == ResizeState::kDone) {
     // Request new frame.
     engine_->ScheduleFrame();
   }
-}
-
-void FlutterWindowsView::OnPreEngineRestart() {
-  InitializeKeyboard();
 }
 
 void FlutterWindowsView::OnWindowSizeChanged(size_t width, size_t height) {
@@ -168,7 +142,9 @@ void FlutterWindowsView::OnWindowRepaint() {
 void FlutterWindowsView::OnPointerMove(double x,
                                        double y,
                                        FlutterPointerDeviceKind device_kind,
-                                       int32_t device_id) {
+                                       int32_t device_id,
+                                       int modifiers_state) {
+  engine_->keyboard_key_handler()->SyncModifiersIfNeeded(modifiers_state);
   SendPointerMove(x, y, GetOrCreatePointerState(device_kind, device_id));
 }
 
@@ -264,12 +240,17 @@ void FlutterWindowsView::OnScroll(double x,
              device_id);
 }
 
+void FlutterWindowsView::OnScrollInertiaCancel(int32_t device_id) {
+  PointerLocation point = binding_handler_->GetPrimaryPointerLocation();
+  SendScrollInertiaCancel(device_id, point.x, point.y);
+}
+
 void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
   engine_->UpdateSemanticsEnabled(enabled);
 }
 
 gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
-  return engine_->GetNativeAccessibleFromId(AccessibilityBridge::kRootNodeId);
+  return engine_->GetNativeViewAccessible();
 }
 
 void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
@@ -278,22 +259,6 @@ void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {
 
 void FlutterWindowsView::OnResetImeComposing() {
   binding_handler_->OnResetImeComposing();
-}
-
-void FlutterWindowsView::InitializeKeyboard() {
-  auto internal_plugin_messenger = internal_plugin_registrar_->messenger();
-  // TODO(cbracken): This can be inlined into KeyboardKeyEmedderHandler once
-  // UWP code is removed. https://github.com/flutter/flutter/issues/102172.
-  KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state = GetKeyState;
-  KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan =
-      [](UINT virtual_key, bool extended) {
-        return MapVirtualKey(virtual_key,
-                             extended ? MAPVK_VK_TO_VSC_EX : MAPVK_VK_TO_VSC);
-      };
-  keyboard_key_handler_ = std::move(CreateKeyboardKeyHandler(
-      internal_plugin_messenger, get_key_state, map_vk_to_scan));
-  text_input_plugin_ =
-      std::move(CreateTextInputPlugin(internal_plugin_messenger));
 }
 
 // Sends new size  information to FlutterEngine.
@@ -443,7 +408,7 @@ void FlutterWindowsView::SendPointerPanZoomEnd(int32_t device_id) {
 }
 
 void FlutterWindowsView::SendText(const std::u16string& text) {
-  text_input_plugin_->TextHook(text);
+  engine_->text_input_plugin()->TextHook(text);
 }
 
 void FlutterWindowsView::SendKey(int key,
@@ -453,32 +418,32 @@ void FlutterWindowsView::SendKey(int key,
                                  bool extended,
                                  bool was_down,
                                  KeyEventCallback callback) {
-  keyboard_key_handler_->KeyboardHook(
+  engine_->keyboard_key_handler()->KeyboardHook(
       key, scancode, action, character, extended, was_down,
       [=, callback = std::move(callback)](bool handled) {
         if (!handled) {
-          text_input_plugin_->KeyboardHook(key, scancode, action, character,
-                                           extended, was_down);
+          engine_->text_input_plugin()->KeyboardHook(
+              key, scancode, action, character, extended, was_down);
         }
         callback(handled);
       });
 }
 
 void FlutterWindowsView::SendComposeBegin() {
-  text_input_plugin_->ComposeBeginHook();
+  engine_->text_input_plugin()->ComposeBeginHook();
 }
 
 void FlutterWindowsView::SendComposeCommit() {
-  text_input_plugin_->ComposeCommitHook();
+  engine_->text_input_plugin()->ComposeCommitHook();
 }
 
 void FlutterWindowsView::SendComposeEnd() {
-  text_input_plugin_->ComposeEndHook();
+  engine_->text_input_plugin()->ComposeEndHook();
 }
 
 void FlutterWindowsView::SendComposeChange(const std::u16string& text,
                                            int cursor_pos) {
-  text_input_plugin_->ComposeChangeHook(text, cursor_pos);
+  engine_->text_input_plugin()->ComposeChangeHook(text, cursor_pos);
 }
 
 void FlutterWindowsView::SendScroll(double x,
@@ -496,6 +461,21 @@ void FlutterWindowsView::SendScroll(double x,
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
   event.scroll_delta_x = delta_x * scroll_offset_multiplier;
   event.scroll_delta_y = delta_y * scroll_offset_multiplier;
+  SetEventPhaseFromCursorButtonState(&event, state);
+  SendPointerEventWithData(event, state);
+}
+
+void FlutterWindowsView::SendScrollInertiaCancel(int32_t device_id,
+                                                 double x,
+                                                 double y) {
+  auto state =
+      GetOrCreatePointerState(kFlutterPointerDeviceKindTrackpad, device_id);
+
+  FlutterPointerEvent event = {};
+  event.x = x;
+  event.y = y;
+  event.signal_kind =
+      FlutterPointerSignalKind::kFlutterPointerSignalKindScrollInertiaCancel;
   SetEventPhaseFromCursorButtonState(&event, state);
   SendPointerEventWithData(event, state);
 }
@@ -634,6 +614,31 @@ PlatformWindow FlutterWindowsView::GetPlatformWindow() const {
 
 FlutterWindowsEngine* FlutterWindowsView::GetEngine() {
   return engine_.get();
+}
+
+void FlutterWindowsView::AnnounceAlert(const std::wstring& text) {
+  auto alert_delegate = binding_handler_->GetAlertDelegate();
+  if (!alert_delegate) {
+    return;
+  }
+  alert_delegate->SetText(fml::WideStringToUtf16(text));
+  ui::AXPlatformNodeWin* alert_node = binding_handler_->GetAlert();
+  NotifyWinEventWrapper(alert_node, ax::mojom::Event::kAlert);
+}
+
+void FlutterWindowsView::NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
+                                               ax::mojom::Event event) {
+  if (node) {
+    node->NotifyAccessibilityEvent(event);
+  }
+}
+
+ui::AXFragmentRootDelegateWin* FlutterWindowsView::GetAxFragmentRootDelegate() {
+  return engine_->accessibility_bridge().lock().get();
+}
+
+ui::AXPlatformNodeWin* FlutterWindowsView::AlertNode() const {
+  return binding_handler_->GetAlert();
 }
 
 }  // namespace flutter

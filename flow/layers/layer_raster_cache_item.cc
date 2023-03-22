@@ -47,7 +47,7 @@ void LayerRasterCacheItem::PrerollFinalize(PrerollContext* context,
   // alive, but if the following conditions apply then we need to set our
   // state back to kDoNotCache so that we don't populate the entry later.
   if (context->has_platform_view || context->has_texture_layer ||
-      !SkRect::Intersects(context->cull_rect, layer_->paint_bounds())) {
+      context->state_stack.content_culled(layer_->paint_bounds())) {
     return;
   }
   child_items_ = context->raster_cached_entries->size() - child_items_;
@@ -101,25 +101,24 @@ const SkRect* LayerRasterCacheItem::GetPaintBoundsFromLayer() const {
 bool Rasterize(RasterCacheItem::CacheState cache_state,
                Layer* layer,
                const PaintContext& paint_context,
-               SkCanvas* canvas) {
+               DlCanvas* canvas) {
   FML_DCHECK(cache_state != RasterCacheItem::CacheState::kNone);
-  SkISize canvas_size = canvas->getBaseLayerSize();
-  SkNWayCanvas internal_nodes_canvas(canvas_size.width(), canvas_size.height());
-  internal_nodes_canvas.setMatrix(canvas->getTotalMatrix());
-  internal_nodes_canvas.addCanvas(canvas);
+  LayerStateStack state_stack;
+  state_stack.set_delegate(canvas);
+  state_stack.set_checkerboard_func(
+      paint_context.state_stack.checkerboard_func());
   PaintContext context = {
       // clang-format off
-          .internal_nodes_canvas         = static_cast<SkCanvas*>(&internal_nodes_canvas),
-          .leaf_nodes_canvas             = canvas,
-          .gr_context                    = paint_context.gr_context,
-          .dst_color_space               = paint_context.dst_color_space,
-          .view_embedder                 = paint_context.view_embedder,
-          .raster_time                   = paint_context.raster_time,
-          .ui_time                       = paint_context.ui_time,
-          .texture_registry              = paint_context.texture_registry,
-          .raster_cache                  = paint_context.raster_cache,
-          .checkerboard_offscreen_layers = paint_context.checkerboard_offscreen_layers,
-          .frame_device_pixel_ratio      = paint_context.frame_device_pixel_ratio,
+      .state_stack                   = state_stack,
+      .canvas                        = canvas,
+      .gr_context                    = paint_context.gr_context,
+      .dst_color_space               = paint_context.dst_color_space,
+      .view_embedder                 = paint_context.view_embedder,
+      .raster_time                   = paint_context.raster_time,
+      .ui_time                       = paint_context.ui_time,
+      .texture_registry              = paint_context.texture_registry,
+      .raster_cache                  = paint_context.raster_cache,
+      .frame_device_pixel_ratio      = paint_context.frame_device_pixel_ratio,
       // clang-format on
   };
 
@@ -159,7 +158,7 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
       return context.raster_cache->UpdateCacheEntry(
           GetId().value(), r_context,
           [ctx = context, cache_state = cache_state_,
-           layer = layer_](SkCanvas* canvas) {
+           layer = layer_](DlCanvas* canvas) {
             Rasterize(cache_state, layer, ctx, canvas);
           });
     }
@@ -168,13 +167,13 @@ bool LayerRasterCacheItem::TryToPrepareRasterCache(const PaintContext& context,
 }
 
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
-                                const SkPaint* paint) const {
-  return Draw(context, context.leaf_nodes_canvas, paint);
+                                const DlPaint* paint) const {
+  return Draw(context, context.canvas, paint);
 }
 
 bool LayerRasterCacheItem::Draw(const PaintContext& context,
-                                SkCanvas* canvas,
-                                const SkPaint* paint) const {
+                                DlCanvas* canvas,
+                                const DlPaint* paint) const {
   if (!context.raster_cache || !canvas) {
     return false;
   }

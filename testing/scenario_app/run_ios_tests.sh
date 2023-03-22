@@ -27,7 +27,11 @@ function follow_links() (
 SCRIPT_DIR=$(follow_links "$(dirname -- "${BASH_SOURCE[0]}")")
 SRC_DIR="$(cd "$SCRIPT_DIR/../../.."; pwd -P)"
 
-FLUTTER_ENGINE="ios_debug_sim_unopt"
+if uname -m | grep "arm64"; then
+  FLUTTER_ENGINE="ios_debug_sim_unopt_arm64"
+else
+  FLUTTER_ENGINE="ios_debug_sim_unopt"
+fi
 
 if [[ $# -eq 1 ]]; then
   FLUTTER_ENGINE="$1"
@@ -38,8 +42,24 @@ fi
 defaults write com.apple.iphonesimulator RotateWindowWhenSignaledByGuest -int 1
 
 cd $SRC_DIR/out/$FLUTTER_ENGINE/scenario_app/Scenarios
+
+echo "Running simulator tests with Skia"
+echo ""
+
 set -o pipefail && xcodebuild -sdk iphonesimulator \
   -scheme Scenarios \
-  -destination 'platform=iOS Simulator,OS=13.0,name=iPhone 8' \
+  -destination 'platform=iOS Simulator,OS=16.0,name=iPhone 8' \
   clean test \
   FLUTTER_ENGINE="$FLUTTER_ENGINE"
+
+echo "Running simulator tests with Impeller"
+echo ""
+
+# Skip testFontRenderingWhenSuppliedWithBogusFont: https://github.com/flutter/flutter/issues/113250
+set -o pipefail && xcodebuild -sdk iphonesimulator \
+  -scheme Scenarios \
+  -destination 'platform=iOS Simulator,OS=16.0,name=iPhone 8' \
+  clean test \
+  FLUTTER_ENGINE="$FLUTTER_ENGINE" \
+  -skip-testing "ScenariosUITests/BogusFontTextTest/testFontRenderingWhenSuppliedWithBogusFont" \
+  INFOPLIST_FILE="Scenarios/Info_Impeller.plist" # Plist with FLTEnableImpeller=YES

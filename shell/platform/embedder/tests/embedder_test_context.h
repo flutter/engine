@@ -24,6 +24,10 @@
 namespace flutter {
 namespace testing {
 
+using SemanticsUpdateCallback2 =
+    std::function<void(const FlutterSemanticsUpdate2*)>;
+using SemanticsUpdateCallback =
+    std::function<void(const FlutterSemanticsUpdate*)>;
 using SemanticsNodeCallback = std::function<void(const FlutterSemanticsNode*)>;
 using SemanticsActionCallback =
     std::function<void(const FlutterSemanticsCustomAction*)>;
@@ -67,7 +71,11 @@ class EmbedderTestContext {
 
   void SetRootSurfaceTransformation(SkMatrix matrix);
 
-  void AddIsolateCreateCallback(fml::closure closure);
+  void AddIsolateCreateCallback(const fml::closure& closure);
+
+  void SetSemanticsUpdateCallback2(SemanticsUpdateCallback2 update_semantics);
+
+  void SetSemanticsUpdateCallback(SemanticsUpdateCallback update_semantics);
 
   void AddNativeCallback(const char* name, Dart_NativeFunction function);
 
@@ -120,6 +128,8 @@ class EmbedderTestContext {
   UniqueAOTData aot_data_;
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
+  SemanticsUpdateCallback2 update_semantics_callback2_;
+  SemanticsUpdateCallback update_semantics_callback_;
   SemanticsNodeCallback update_semantics_node_callback_;
   SemanticsActionCallback update_semantics_custom_action_callback_;
   std::function<void(const FlutterPlatformMessage*)> platform_message_callback_;
@@ -131,10 +141,13 @@ class EmbedderTestContext {
 
   static VoidCallback GetIsolateCreateCallbackHook();
 
-  static FlutterUpdateSemanticsNodeCallback
-  GetUpdateSemanticsNodeCallbackHook();
+  FlutterUpdateSemanticsCallback2 GetUpdateSemanticsCallback2Hook();
 
-  static FlutterUpdateSemanticsCustomActionCallback
+  FlutterUpdateSemanticsCallback GetUpdateSemanticsCallbackHook();
+
+  FlutterUpdateSemanticsNodeCallback GetUpdateSemanticsNodeCallbackHook();
+
+  FlutterUpdateSemanticsCustomActionCallback
   GetUpdateSemanticsCustomActionCallbackHook();
 
   static FlutterLogMessageCallback GetLogMessageCallbackHook();

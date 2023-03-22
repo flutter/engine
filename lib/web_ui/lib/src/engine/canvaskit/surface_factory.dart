@@ -49,6 +49,10 @@ class SurfaceFactory {
   /// The maximum number of surfaces which can be live at once.
   final int maximumSurfaces;
 
+  /// A surface used specifically for `Picture.toImage` when software rendering
+  /// is supported.
+  late final Surface pictureToImageSurface = Surface();
+
   /// The maximum number of assignable overlays.
   ///
   /// This is just `maximumSurfaces - 1` (the maximum number of surfaces minus
@@ -81,7 +85,7 @@ class SurfaceFactory {
 
   /// Gets an overlay surface from the cache or creates a new one if it wouldn't
   /// exceed the maximum. If there are no available surfaces, returns `null`.
-  Surface? getOverlay() {
+  Surface? getSurface() {
     if (_cache.isNotEmpty) {
       final Surface surface = _cache.removeLast();
       _liveSurfaces.add(surface);

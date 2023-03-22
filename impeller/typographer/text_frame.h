@@ -43,7 +43,7 @@ class TextFrame {
   ///
   /// @return     If the text run could be added to this frame.
   ///
-  bool AddTextRun(TextRun run);
+  bool AddTextRun(const TextRun& run);
 
   //----------------------------------------------------------------------------
   /// @brief      Returns a reference to all the text runs in this frame.
@@ -52,8 +52,23 @@ class TextFrame {
   ///
   const std::vector<TextRun>& GetRuns() const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      Whether any of the glyphs of this run are potentially
+  /// overlapping
+  ///
+  ///             It is always safe to return true from this method. Generally,
+  ///             any large blobs of text should return true to avoid
+  ///             computationally complex calculations. This information is used
+  ///             to apply opacity peephole optimizations to text blobs.
+  bool MaybeHasOverlapping() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Whether any run in this frame has color.
+  bool HasColor() const;
+
  private:
   std::vector<TextRun> runs_;
+  bool has_color_ = false;
 };
 
 }  // namespace impeller

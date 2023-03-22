@@ -6,7 +6,8 @@ import 'dart:isolate';
 import 'dart:ui';
 import 'dart:io' show Platform;
 
-void passMessage(String message) native 'PassMessage';
+@pragma('vm:external-name', 'PassMessage')
+external void passMessage(String message);
 
 bool didCallRegistrantBeforeEntrypoint = false;
 
@@ -41,6 +42,13 @@ void dartPluginRegistrantIsolate(SendPort sendPort) {
   sendPort.send(didCallRegistrantBeforeEntrypoint);
 }
 
+void registerBackgroundIsolate(List args) {
+  SendPort sendPort = args[0] as SendPort;
+  RootIsolateToken token = args[1] as RootIsolateToken;
+  PlatformDispatcher.instance.registerBackgroundIsolate(token);
+  sendPort.send(didCallRegistrantBeforeEntrypoint);
+}
+
 @pragma('vm:entry-point')
 void callDartPluginRegistrantFromBackgroundIsolate() async {
   ReceivePort receivePort = ReceivePort();
@@ -62,6 +70,19 @@ void noDartPluginRegistrantIsolate(SendPort sendPort) {
 void dontCallDartPluginRegistrantFromBackgroundIsolate() async {
   ReceivePort receivePort = ReceivePort();
   Isolate isolate = await Isolate.spawn(noDartPluginRegistrantIsolate, receivePort.sendPort);
+  bool didCallEntrypoint = await receivePort.first;
+  if (didCallEntrypoint) {
+    passMessage('_PluginRegistrant.register() was called on background isolate');
+  } else {
+    passMessage('_PluginRegistrant.register() was not called on background isolate');
+  }
+  isolate.kill();
+}
+
+@pragma('vm:entry-point')
+void registerBackgroundIsolateCallsDartPluginRegistrant() async {
+  ReceivePort receivePort = ReceivePort();
+  Isolate isolate = await Isolate.spawn(registerBackgroundIsolate, [receivePort.sendPort, RootIsolateToken.instance]);
   bool didCallEntrypoint = await receivePort.first;
   if (didCallEntrypoint) {
     passMessage('_PluginRegistrant.register() was called on background isolate');

@@ -20,8 +20,8 @@ Future<void> testMain() async {
   setUpAll(() async {
     debugEmulateFlutterTesterEnvironment = true;
     await webOnlyInitializePlatform();
-    renderer.fontCollection.debugRegisterTestFonts();
-    await renderer.fontCollection.ensureFontsLoaded();
+    await renderer.fontCollection.debugDownloadTestFonts();
+    renderer.fontCollection.registerDownloadedFonts();
   });
 
   const Color red = Color(0xFFFF0000);
@@ -110,6 +110,25 @@ Future<void> testMain() async {
 
     rc.restore();
     await canvasScreenshot(rc, 'canvas_image_blend_and_text');
+  });
+
+  test('Does not re-use styles with same image src', () async {
+    final RecordingCanvas rc = RecordingCanvas(
+        const Rect.fromLTRB(0, 0, 400, 400));
+    final HtmlImage flutterImage = createFlutterLogoTestImage();
+    rc.save();
+    rc.drawRect(const Rect.fromLTWH(0, 50, 200, 50), makePaint()
+      ..color = white);
+    rc.drawImage(flutterImage, const Offset(0, 50),
+        makePaint()
+          ..colorFilter = const EngineColorFilter.mode(red, BlendMode.modulate));
+
+    // Expect that the colorFilter is only applied to the first image, since the
+    // colorFilter is applied to a clone of the flutterImage and not the original
+    rc.drawImage(flutterImage, const Offset(0, 100), makePaint());
+
+    rc.restore();
+    await canvasScreenshot(rc, 'canvas_image_same_src');
   });
 }
 

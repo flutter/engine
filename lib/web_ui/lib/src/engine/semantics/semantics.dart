@@ -381,8 +381,7 @@ abstract class RoleManager {
   /// Initializes a role for [semanticsObject].
   ///
   /// A single role object manages exactly one [SemanticsObject].
-  RoleManager(this.role, this.semanticsObject)
-      : assert(semanticsObject != null);
+  RoleManager(this.role, this.semanticsObject);
 
   /// Role identifier.
   final Role role;
@@ -869,7 +868,6 @@ class SemanticsObject {
   void updateSelf(SemanticsNodeUpdate update) {
     // Update all field values and their corresponding dirty flags before
     // applying the updates to the DOM.
-    assert(update.flags != null);
     if (_flags != update.flags) {
       _flags = update.flags;
       _markFlagsDirty();
@@ -1221,6 +1219,11 @@ class SemanticsObject {
     }
   }
 
+  /// Removes the `role` HTML attribue, if any.
+  void clearAriaRole() {
+    element.removeAttribute('role');
+  }
+
   /// Role managers.
   ///
   /// The [_roleManagers] map needs to have a stable order for easier debugging
@@ -1473,8 +1476,6 @@ class EngineSemanticsOwner {
   /// allows the same node to be detached from one parent in the tree and
   /// reattached to another parent.
   void _attachObject({required SemanticsObject parent, required SemanticsObject child}) {
-    assert(child != null);
-    assert(parent != null);
     child._parent = parent;
     _attachments[child.id] = parent;
   }
@@ -1578,7 +1579,7 @@ class EngineSemanticsOwner {
     final EngineAccessibilityFeatures original =
         EnginePlatformDispatcher.instance.configuration.accessibilityFeatures
         as EngineAccessibilityFeatures;
-    final ui.PlatformConfiguration newConfiguration =
+    final PlatformConfiguration newConfiguration =
         EnginePlatformDispatcher.instance.configuration.copyWith(
             accessibilityFeatures:
                 original.copyWith(accessibleNavigation: value));
@@ -1611,13 +1612,7 @@ class EngineSemanticsOwner {
   /// the Web Engine.
   ///
   /// The default mode is [AccessibilityMode.unknown].
-  AccessibilityMode get mode => _mode;
-  set mode(AccessibilityMode value) {
-    assert(value != null);
-    _mode = value;
-  }
-
-  AccessibilityMode _mode = AccessibilityMode.unknown;
+  AccessibilityMode mode = AccessibilityMode.unknown;
 
   /// Currently used [GestureMode].
   ///
@@ -1759,7 +1754,7 @@ class EngineSemanticsOwner {
   /// not accompanied by pointer events. In the presence of pointer events,
   /// delegate to Flutter's gesture detection system to produce gestures.
   bool shouldAcceptBrowserGesture(String eventType) {
-    if (_mode == AccessibilityMode.known) {
+    if (mode == AccessibilityMode.known) {
       // Do not ignore accessibility gestures in known mode, unless semantics
       // is explicitly disabled.
       return semanticsEnabled;

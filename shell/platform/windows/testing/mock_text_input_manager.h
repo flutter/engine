@@ -5,10 +5,10 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TESTING_MOCK_TEXT_INPUT_MANAGER_WIN32_H_
 
-#include <windowsx.h>
 #include <cstring>
 #include <optional>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/windows/text_input_manager.h"
 #include "gmock/gmock.h"
 
@@ -21,13 +21,12 @@ class MockTextInputManager : public TextInputManager {
   MockTextInputManager();
   virtual ~MockTextInputManager();
 
-  // Prevent copying.
-  MockTextInputManager(MockTextInputManager const&) = delete;
-  MockTextInputManager& operator=(MockTextInputManager const&) = delete;
-
   MOCK_CONST_METHOD0(GetComposingString, std::optional<std::u16string>());
   MOCK_CONST_METHOD0(GetResultString, std::optional<std::u16string>());
   MOCK_CONST_METHOD0(GetComposingCursorPosition, long());
+
+ private:
+  FML_DISALLOW_COPY_AND_ASSIGN(MockTextInputManager);
 };
 
 }  // namespace testing

@@ -4,6 +4,7 @@
 
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert' as convert;
 import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
@@ -20,24 +21,60 @@ void main() async {
     return true;
   }());
 
+  test('impellerc produces reasonable JSON encoded IPLR files', () async {
+    final Directory directory = shaderDirectory('iplr-json');
+    final Object? rawData = convert.json.decode(
+      File(path.join(directory.path, 'ink_sparkle.frag.iplr')).readAsStringSync());
+
+    expect(rawData is Map<String, Object?>, true);
+
+    final Map<String, Object?> data = rawData! as Map<String, Object?>;
+    expect(data['sksl'] is String, true);
+    expect(data['uniforms'] is List<Object?>, true);
+
+    final Object? rawUniformData = (data['uniforms']! as List<Object?>)[0];
+
+    expect(rawUniformData is Map<String, Object?>, true);
+
+    final Map<String, Object?> uniformData = rawUniformData! as Map<String, Object?>;
+
+    expect(uniformData['location'] is int, true);
+  });
+
   test('FragmentShader setSampler throws with out-of-bounds index', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader fragmentShader = program.fragmentShader();
 
     try {
-      fragmentShader.setSampler(1, imageShader);
+      fragmentShader.setImageSampler(1, blueGreenImage);
       fail('Unreachable');
     } catch (e) {
       expect(e, contains('Sampler index out of bounds'));
     } finally {
       fragmentShader.dispose();
-      imageShader.dispose();
       blueGreenImage.dispose();
+    }
+  });
+
+  test('FragmentShader with sampler asserts if sampler is missing when assigned to paint', () async {
+    if (!assertsEnabled) {
+      return;
+    }
+    final FragmentProgram program = await FragmentProgram.fromAsset(
+      'blue_green_sampler.frag.iplr',
+    );
+    final FragmentShader fragmentShader = program.fragmentShader();
+
+    try {
+      Paint().shader = fragmentShader;
+      fail('Expected to throw');
+    } catch (err) {
+      expect(err.toString(), contains('Invalid FragmentShader blue_green_sampler.frag.iplr'));
+    } finally {
+      fragmentShader.dispose();
     }
   });
 
@@ -46,11 +83,9 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
       final Paint paint = Paint()..shader = shader;  // ignore: unused_local_variable
@@ -60,7 +95,6 @@ void main() async {
     } catch (e) {
       expect(e.toString(), contains('Attempted to set a disposed shader'));
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -88,19 +122,17 @@ void main() async {
     }
   });
 
-  test('Disposed FragmentShader setSampler', () async {
+  test('Disposed FragmentShader setImageSampler', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
 
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     shader.dispose();
     try {
-      shader.setSampler(0, imageShader);
+      shader.setImageSampler(0, blueGreenImage);
       if (assertsEnabled) {
         fail('Unreachable');
       }
@@ -115,7 +147,6 @@ void main() async {
         contains('the native peer has been collected'),
       );
     }
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -138,16 +169,6 @@ void main() async {
         expect(e is StateError, true);
       }
     }
-  });
-
-  test('simple shader renders correctly', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'functions.frag.iplr',
-    );
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[1]),
-    );
-    await _expectShaderRendersGreen(shader);
   });
 
   test('FragmentShader simple shader renders correctly', () async {
@@ -174,50 +195,15 @@ void main() async {
     shader.dispose();
   });
 
-  test('blue-green image renders green', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'blue_green_sampler.frag.iplr',
-    );
-    final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[]),
-      samplerUniforms: <ImageShader>[imageShader],
-    );
-    await _expectShaderRendersGreen(shader);
-    imageShader.dispose();
-    blueGreenImage.dispose();
-  });
-
   test('FragmentShader blue-green image renders green', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = await _createBlueGreenImage();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
-    blueGreenImage.dispose();
-  });
-
-  test('blue-green image renders green - GPU image', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'blue_green_sampler.frag.iplr',
-    );
-    final Image blueGreenImage = _createBlueGreenImageSync();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[]),
-      samplerUniforms: <ImageShader>[imageShader],
-    );
-    await _expectShaderRendersGreen(shader);
-    imageShader.dispose();
     blueGreenImage.dispose();
   });
 
@@ -226,40 +212,11 @@ void main() async {
       'blue_green_sampler.frag.iplr',
     );
     final Image blueGreenImage = _createBlueGreenImageSync();
-    final ImageShader imageShader = ImageShader(
-        blueGreenImage, TileMode.clamp, TileMode.clamp, _identityMatrix);
     final FragmentShader shader = program.fragmentShader()
-      ..setSampler(0, imageShader);
+      ..setImageSampler(0, blueGreenImage);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-    imageShader.dispose();
     blueGreenImage.dispose();
-  });
-
-  test('shader with uniforms renders correctly', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'uniforms.frag.iplr',
-    );
-
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[
-        0.0, // iFloatUniform
-        0.25, // iVec2Uniform.x
-        0.75, // iVec2Uniform.y
-        0.0, // iMat2Uniform[0][0]
-        0.0, // iMat2Uniform[0][1]
-        0.0, // iMat2Uniform[1][0]
-        1.0, // iMat2Uniform[1][1]
-    ]));
-
-    final ByteData renderedBytes = (await _imageByteDataFromShader(
-      shader: shader,
-    ))!;
-
-    expect(toFloat(renderedBytes.getUint8(0)), closeTo(0.0, epsilon));
-    expect(toFloat(renderedBytes.getUint8(1)), closeTo(0.25, epsilon));
-    expect(toFloat(renderedBytes.getUint8(2)), closeTo(0.75, epsilon));
-    expect(toFloat(renderedBytes.getUint8(3)), closeTo(1.0, epsilon));
   });
 
   test('FragmentShader with uniforms renders correctly', () async {
@@ -288,48 +245,18 @@ void main() async {
     shader.dispose();
   });
 
-  test('shader with array uniforms renders correctly', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'uniform_arrays.frag.iplr',
-    );
-
-    final List<double> floatArray = List<double>.generate(
-      24, (int i) => i.toDouble(),
-    );
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[
-        ...floatArray,
-    ]));
-
-    await _expectShaderRendersGreen(shader);
-  });
-
   test('FragmentShader shader with array uniforms renders correctly', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'uniform_arrays.frag.iplr',
     );
 
     final FragmentShader shader = program.fragmentShader();
-    for (int i = 0; i < 24; i++) {
+    for (int i = 0; i < 20; i++) {
       shader.setFloat(i, i.toDouble());
     }
 
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-  });
-
-  test('The ink_sparkle shader is accepted', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'ink_sparkle.frag.iplr',
-    );
-    final Shader shader = program.shader(
-      floatUniforms: Float32List(32),
-    );
-
-    await _imageByteDataFromShader(shader: shader);
-
-    // Testing that no exceptions are thrown. Tests that the ink_sparkle shader
-    // produces the correct pixels are in the framework.
   });
 
   test('FragmentShader The ink_sparkle shader is accepted', () async {
@@ -343,22 +270,6 @@ void main() async {
     // Testing that no exceptions are thrown. Tests that the ink_sparkle shader
     // produces the correct pixels are in the framework.
     shader.dispose();
-  });
-
-  test('Uniforms are sorted correctly', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'uniforms_sorted.frag.iplr',
-    );
-
-    // The shader will not render green if the compiler doesn't keep the
-    // uniforms in the right order.
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(
-        List<double>.generate(32, (int i) => i.toDouble()),
-      ),
-    );
-
-    await _expectShaderRendersGreen(shader);
   });
 
   test('FragmentShader Uniforms are sorted correctly', () async {
@@ -402,16 +313,6 @@ void main() async {
     expect(throws, equals(true));
   });
 
-  test('user defined functions do not redefine builtins', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'no_builtin_redefinition.frag.iplr',
-    );
-    final Shader shader = program.shader(
-      floatUniforms: Float32List.fromList(<double>[1.0]),
-    );
-    await _expectShaderRendersGreen(shader);
-  });
-
   test('FragmentShader user defined functions do not redefine builtins', () async {
     final FragmentProgram program = await FragmentProgram.fromAsset(
       'no_builtin_redefinition.frag.iplr',
@@ -420,14 +321,6 @@ void main() async {
       ..setFloat(0, 1.0);
     await _expectShaderRendersGreen(shader);
     shader.dispose();
-  });
-
-  test('fromAsset accepts a shader with no uniforms', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'no_uniforms.frag.iplr',
-    );
-    final Shader shader = program.shader();
-    await _expectShaderRendersGreen(shader);
   });
 
   test('FragmentShader fromAsset accepts a shader with no uniforms', () async {
@@ -445,7 +338,6 @@ void main() async {
     '.iplr',
   );
   expect(iplrSupportedGLSLOpShaders.isNotEmpty, true);
-  _expectIplrShadersRenderGreen(iplrSupportedGLSLOpShaders);
   _expectFragmentShadersRenderGreen(iplrSupportedGLSLOpShaders);
 
   // Test all supported instructions. See lib/spirv/lib/src/constants.dart
@@ -454,61 +346,12 @@ void main() async {
     '.iplr',
   );
   expect(iplrSupportedOpShaders.isNotEmpty, true);
-  _expectIplrShadersRenderGreen(iplrSupportedOpShaders);
   _expectFragmentShadersRenderGreen(iplrSupportedOpShaders);
-
-  test('Equality depends on floatUniforms', () async {
-    final FragmentProgram program = await FragmentProgram.fromAsset(
-      'simple.frag.iplr',
-    );
-    final Float32List ones = Float32List.fromList(<double>[1]);
-    final Float32List zeroes = Float32List.fromList(<double>[0]);
-
-    {
-      final Shader a = program.shader(floatUniforms: ones);
-      final Shader b = program.shader(floatUniforms: ones);
-      expect(a, b);
-      expect(a.hashCode, b.hashCode);
-    }
-
-    {
-      final Shader a = program.shader(floatUniforms: ones);
-      final Shader b = program.shader(floatUniforms: zeroes);
-      expect(a, notEquals(b));
-      expect(a.hashCode, notEquals(b.hashCode));
-    }
-  });
-
-  test('Equality depends on data', () async {
-    final FragmentProgram programA = await FragmentProgram.fromAsset(
-      'simple.frag.iplr',
-    );
-    final FragmentProgram programB = await FragmentProgram.fromAsset(
-      'uniforms.frag.iplr',
-    );
-    final Shader a = programA.shader();
-    final Shader b = programB.shader();
-
-    expect(a, notEquals(b));
-    expect(a.hashCode, notEquals(b.hashCode));
-  });
 }
 
 // Expect that all of the shaders in this folder render green.
 // Keeping the outer loop of the test synchronous allows for easy printing
 // of the file name within the test case.
-void _expectIplrShadersRenderGreen(Map<String, FragmentProgram> shaders) {
-  for (final String key in shaders.keys) {
-    test('iplr $key renders green', () async {
-      final FragmentProgram program = shaders[key]!;
-      final Shader shader = program.shader(
-        floatUniforms: Float32List.fromList(<double>[1]),
-      );
-      await _expectShaderRendersGreen(shader);
-    });
-  }
-}
-
 void _expectFragmentShadersRenderGreen(Map<String, FragmentProgram> programs) {
   for (final String key in programs.keys) {
     test('FragmentProgram $key renders green', () async {
@@ -642,10 +485,7 @@ Image _createBlueGreenImageSync() {
   }
 }
 
-
-final Float64List _identityMatrix = Float64List.fromList(<double>[
-  1, 0, 0, 0,
-  0, 1, 0, 0,
-  0, 0, 1, 0,
-  0, 0, 0, 1,
-]);
+// Ignore invalid utf8 since file is not actually text.
+String readAsStringLossy(File file) {
+  return convert.utf8.decode(file.readAsBytesSync(), allowMalformed: true);
+}

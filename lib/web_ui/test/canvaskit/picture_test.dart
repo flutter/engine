@@ -45,13 +45,10 @@ void testMain() {
         expect(actualError, isNotNull);
 
         // TODO(yjbanov): cannot test precise message due to https://github.com/flutter/flutter/issues/96298
-        expect('$actualError', allOf(
-          startsWith(
+        expect('$actualError', startsWith(
             'Bad state: Test.\n'
             'The picture has been disposed. '
             'When the picture was disposed the stack trace was:\n'
-          ),
-          contains('StackTrace_current'),
         ));
 
         // Emulate SkiaObjectCache deleting the picture
@@ -101,8 +98,7 @@ void testMain() {
       expect(data, isNotNull);
       expect(data!.lengthInBytes, 10 * 15 * 4);
       expect(data.buffer.asUint32List().first, color.value);
-    // TODO(hterkelsen): https://github.com/flutter/flutter/issues/109265
-    }, skip: isFirefox || isSafari);
+    });
   // TODO(hterkelsen): https://github.com/flutter/flutter/issues/60040
   }, skip: isIosSafari);
 }

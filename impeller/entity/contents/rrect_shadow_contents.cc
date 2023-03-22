@@ -39,7 +39,7 @@ std::optional<Rect> RRectShadowContents::GetCoverage(
     return std::nullopt;
   }
 
-  Scalar radius = Radius{sigma_}.radius;
+  Scalar radius = sigma_.sigma * 2;
 
   auto ltrb = rect_->GetLTRB();
   Rect bounds = Rect::MakeLTRB(ltrb[0] - radius, ltrb[1] - radius,
@@ -59,7 +59,7 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
 
   VertexBufferBuilder<VS::PerVertexData> vtx_builder;
 
-  auto blur_radius = Radius{sigma_}.radius;
+  auto blur_radius = sigma_.sigma * 2;
   auto positive_rect = rect_->GetPositive();
   {
     auto left = -blur_radius;
@@ -79,22 +79,22 @@ bool RRectShadowContents::Render(const ContentContext& renderer,
 
   Command cmd;
   cmd.label = "RRect Shadow";
-  cmd.pipeline =
-      renderer.GetRRectBlurPipeline(OptionsFromPassAndEntity(pass, entity));
+  auto opts = OptionsFromPassAndEntity(pass, entity);
+  opts.primitive_type = PrimitiveType::kTriangle;
+  cmd.pipeline = renderer.GetRRectBlurPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  cmd.primitive_type = PrimitiveType::kTriangle;
   cmd.BindVertices(vtx_builder.CreateVertexBuffer(pass.GetTransientsBuffer()));
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation() *
-                  Matrix::MakeTranslation({positive_rect.origin});
-  VS::BindVertInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(vert_info));
+  VS::FrameInfo frame_info;
+  frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
+                   entity.GetTransformation() *
+                   Matrix::MakeTranslation({positive_rect.origin});
+  VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
   frag_info.color = color_;
-  frag_info.blur_radius = blur_radius;
+  frag_info.blur_sigma = sigma_.sigma;
   frag_info.rect_size = Point(positive_rect.size);
   frag_info.corner_radius =
       std::min(corner_radius_, std::min(positive_rect.size.width / 2.0f,

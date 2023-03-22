@@ -39,16 +39,15 @@ def main():
       help='The source file to compile. Can be specified multiple times.'
   )
   parser.add_argument(
-      '--optimize',
-      action='store_true',
-      default=False,
-      help='If available optimizations must be applied to the compiled Metal sources.'
-  )
-  parser.add_argument(
       '--platform',
       required=True,
       choices=['mac', 'ios', 'ios-simulator'],
       help='Select the platform.'
+  )
+  parser.add_argument(
+      '--metal-version',
+      required=True,
+      help='The language standard version to compile for.'
   )
 
   args = parser.parse_args()
@@ -59,76 +58,74 @@ def main():
       'xcrun',
   ]
 
+  # Select the SDK.
+  command += ['-sdk']
   if args.platform == 'mac':
     command += [
-        '-sdk',
         'macosx',
     ]
   elif args.platform == 'ios':
     command += [
-        '-sdk',
         'iphoneos',
     ]
   elif args.platform == 'ios-simulator':
     command += [
-        '-sdk',
         'iphonesimulator',
     ]
+  else:
+    raise 'Unknown target platform'
 
   command += [
       'metal',
-      # These warnings are from generated code and would make no sense to the GLSL
-      # author.
+      # These warnings are from generated code and would make no sense to the
+      # GLSL author.
       '-Wno-unused-variable',
       # Both user and system header will be tracked.
       '-MMD',
+      # Like -Os (and thus -O2), but reduces code size further.
+      '-Oz',
+      # Allow aggressive, lossy floating-point optimizations.
+      '-ffast-math',
+      # Record symbols in a separate *.metallibsym file.
+      '-frecord-sources=flat',
       '-MF',
       args.depfile,
       '-o',
       args.output,
   ]
 
+  # Select the Metal standard and the minimum supported OS versions.
   # The Metal standard must match the specification in impellerc.
   if args.platform == 'mac':
     command += [
-        '--std=macos-metal1.2',
+        '--std=macos-metal%s' % args.metal_version,
+        '-mmacos-version-min=10.14',
     ]
-
-  if args.optimize:
+  elif args.platform == 'ios':
     command += [
-        # Like -Os (and thus -O2), but reduces code size further.
-        '-Oz',
-        # Allow aggressive, lossy floating-point optimizations.
-        '-ffast-math',
+        '--std=ios-metal%s' % args.metal_version,
+        '-mios-version-min=11.0',
     ]
-    if args.platform == 'ios':
-      # limiting to ios-metal1.2 disables shader debug symbols, only
-      # enabling these in optimize mode.
-      # see https://github.com/flutter/flutter/issues/106066
-      command += [
-          '--std=ios-metal1.2',
-          '-mios-version-min=10.0',
-      ]
+  elif args.platform == 'ios-simulator':
+    command += [
+        '--std=ios-metal%s' % args.metal_version,
+        '-miphonesimulator-version-min=11.0',
+    ]
   else:
-    command += [
-        # Embeds both sources and driver options in the output. This aids in
-        # debugging but should be removed from release builds.
-        # TODO(chinmaygarde): Use -frecord-sources when CI upgrades to
-        # Xcode 13.
-        '-MO',
-        # Assist the sampling profiler.
-        '-gline-tables-only',
-        '-g',
-        # Optimize for debuggability.
-        '-Og',
-    ]
+    raise 'Unknown target platform'
 
   command += args.source
 
-  subprocess.check_call(command)
+  try:
+    subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
+  except subprocess.CalledProcessError as cpe:
+    print(cpe.output)
+    return cpe.returncode
+
+  return 0
 
 
 if __name__ == '__main__':
   if sys.platform != 'darwin':
     raise Exception('This script only runs on Mac')
-  main()
+  sys.exit(main())

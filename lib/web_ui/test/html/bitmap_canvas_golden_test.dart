@@ -10,6 +10,7 @@ import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart';
 
 import 'package:web_engine_tester/golden_tester.dart';
+import 'paragraph/helper.dart';
 import 'screenshot.dart';
 
 void main() {
@@ -31,13 +32,13 @@ Future<void> testMain() async {
       testScene.style.transform = 'scale(0.3)';
     }
     testScene.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(testScene);
+    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene-host')!.append(testScene);
   }
 
   setUpStableTestFonts();
 
   tearDown(() {
-    flutterViewEmbedder.glassPaneShadow?.querySelector('flt-scene')?.remove();
+    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene')?.remove();
   });
 
   /// Draws several lines, some aligned precisely with the pixel grid, and some
@@ -125,7 +126,7 @@ Future<void> testMain() async {
     canvas.clipRect(const Rect.fromLTWH(0, 0, 50, 50), ClipOp.intersect);
     canvas.translate(25, 25);
     canvas.drawPaint(SurfacePaintData()
-      ..color = const Color.fromRGBO(0, 255, 0, 1.0)
+      ..color = const Color.fromRGBO(0, 255, 0, 1.0).value
       ..style = PaintingStyle.fill);
 
     appendToScene();
@@ -208,7 +209,7 @@ Future<void> testMain() async {
     canvas.debugChildOverdraw = true;
 
     final SurfacePaintData pathPaint = SurfacePaintData()
-      ..color = const Color(0xFF7F7F7F)
+      ..color = 0xFF7F7F7F
       ..style = PaintingStyle.fill;
 
     const double r = 200.0;
@@ -225,8 +226,13 @@ Future<void> testMain() async {
       ..lineTo(-r, 0)
       ..close()).shift(const Offset(250, 250));
 
+    final SurfacePaintData borderPaint = SurfacePaintData()
+      ..color = black.value
+      ..style = PaintingStyle.stroke;
+
     canvas.drawPath(path, pathPaint);
     canvas.drawParagraph(paragraph, const Offset(180, 50));
+    canvas.drawRect(Rect.fromLTWH(180, 50, paragraph.width, paragraph.height), borderPaint);
 
     expect(
       canvas.rootElement.querySelectorAll('flt-paragraph').map<String?>((DomElement e) => e.text).toList(),
@@ -254,7 +260,7 @@ Future<void> testMain() async {
     }
 
     sceneElement.querySelector('flt-clip')!.append(canvas.rootElement);
-    flutterViewEmbedder.glassPaneShadow!.querySelector('flt-scene-host')!.append(sceneElement);
+    flutterViewEmbedder.glassPaneShadow.querySelector('flt-scene-host')!.append(sceneElement);
 
     await matchGoldenFile(
       'bitmap_canvas_draws_text_on_top_of_canvas.png',

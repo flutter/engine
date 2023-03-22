@@ -45,6 +45,8 @@ void CreateSimulatedPointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = 0.0;
   data.scroll_delta_y = 0.0;
+  data.preferred_auxiliary_stylus_action =
+      PointerData::PreferredStylusAuxiliaryAction::kIgnore;
 }
 
 void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
@@ -84,6 +86,8 @@ void CreateSimulatedMousePointerData(PointerData& data,  // NOLINT
   data.platformData = 0;
   data.scroll_delta_x = scroll_delta_x;
   data.scroll_delta_y = scroll_delta_y;
+  data.preferred_auxiliary_stylus_action =
+      PointerData::PreferredStylusAuxiliaryAction::kIgnore;
 }
 
 void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
@@ -129,24 +133,20 @@ void CreateSimulatedTrackpadGestureData(PointerData& data,  // NOLINT
   data.pan_delta_y = 0.0;
   data.scale = scale;
   data.rotation = rotation;
+  data.preferred_auxiliary_stylus_action =
+      PointerData::PreferredStylusAuxiliaryAction::kIgnore;
 }
 
 void UnpackPointerPacket(std::vector<PointerData>& output,  // NOLINT
                          std::unique_ptr<PointerDataPacket> packet) {
-  size_t kBytesPerPointerData = kPointerDataFieldCount * kBytesPerField;
-  auto buffer = packet->data();
-  size_t buffer_length = buffer.size();
-
-  for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    PointerData pointer_data;
-    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
-           sizeof(PointerData));
+  for (size_t i = 0; i < packet->GetLength(); i++) {
+    PointerData pointer_data = packet->GetPointerData(i);
     output.push_back(pointer_data);
   }
   packet.reset();
 }
 
-TEST(PointerDataPacketConverterTest, CanConvetPointerDataPacket) {
+TEST(PointerDataPacketConverterTest, CanConvertPointerDataPacket) {
   PointerDataPacketConverter converter;
   auto packet = std::make_unique<PointerDataPacket>(6);
   PointerData data;
@@ -558,6 +558,7 @@ TEST(PointerDataPacketConverterTest, CanConvertPointerSignals) {
   PointerData::SignalKind signal_kinds[] = {
       PointerData::SignalKind::kScroll,
       PointerData::SignalKind::kScrollInertiaCancel,
+      PointerData::SignalKind::kScale,
   };
   for (const PointerData::SignalKind& kind : signal_kinds) {
     PointerDataPacketConverter converter;

@@ -4,17 +4,18 @@
 
 #include "flutter/shell/common/snapshot_controller_skia.h"
 
-#include "display_list/display_list_image.h"
+#include "display_list/image/dl_image.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/trace_event.h"
 #include "flutter/shell/common/snapshot_controller.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
 namespace flutter {
 
 namespace {
 sk_sp<SkImage> DrawSnapshot(
-    sk_sp<SkSurface> surface,
+    const sk_sp<SkSurface>& surface,
     const std::function<void(SkCanvas*)>& draw_callback) {
   if (surface == nullptr || surface->getCanvas() == nullptr) {
     return nullptr;
@@ -104,9 +105,9 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
               // When there is an on screen surface, we need a render target
               // SkSurface because we want to access texture backed images.
               sk_sp<SkSurface> sk_surface =
-                  SkSurface::MakeRenderTarget(context,          // context
-                                              SkBudgeted::kNo,  // budgeted
-                                              image_info        // image info
+                  SkSurface::MakeRenderTarget(context,               // context
+                                              skgpu::Budgeted::kNo,  // budgeted
+                                              image_info  // image info
                   );
               if (!sk_surface) {
                 FML_LOG(ERROR)
@@ -126,7 +127,7 @@ sk_sp<DlImage> SnapshotControllerSkia::MakeRasterSnapshot(
     sk_sp<DisplayList> display_list,
     SkISize size) {
   return DoMakeRasterSnapshot(size, [display_list](SkCanvas* canvas) {
-    display_list->RenderTo(canvas);
+    DlSkCanvasAdapter(canvas).DrawDisplayList(display_list);
   });
 }
 

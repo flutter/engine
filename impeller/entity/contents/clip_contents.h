@@ -11,6 +11,7 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/entity.h"
+#include "impeller/entity/geometry.h"
 
 namespace impeller {
 
@@ -20,7 +21,7 @@ class ClipContents final : public Contents {
 
   ~ClipContents();
 
-  void SetPath(Path path);
+  void SetGeometry(std::unique_ptr<Geometry> geometry);
 
   void SetClipOperation(Entity::ClipOperation clip_op);
 
@@ -40,9 +41,14 @@ class ClipContents final : public Contents {
   bool Render(const ContentContext& renderer,
               const Entity& entity,
               RenderPass& pass) const override;
+  // |Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
  private:
-  Path path_;
+  std::unique_ptr<Geometry> geometry_;
   Entity::ClipOperation clip_op_ = Entity::ClipOperation::kIntersect;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ClipContents);
@@ -53,6 +59,12 @@ class ClipRestoreContents final : public Contents {
   ClipRestoreContents();
 
   ~ClipRestoreContents();
+
+  /// @brief  The area on the pass texture where this clip restore will be
+  ///         applied. If unset, the entire pass texture will be restored.
+  ///
+  /// @note   This rectangle is not transformed by the entity's transformation.
+  void SetRestoreCoverage(std::optional<Rect> coverage);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -71,7 +83,15 @@ class ClipRestoreContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
+
  private:
+  std::optional<Rect> restore_coverage_;
+
   FML_DISALLOW_COPY_AND_ASSIGN(ClipRestoreContents);
 };
 

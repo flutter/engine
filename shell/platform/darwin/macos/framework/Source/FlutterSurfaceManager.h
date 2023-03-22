@@ -3,109 +3,100 @@
 // found in the LICENSE file.
 
 #import <Cocoa/Cocoa.h>
-#import <QuartzCore/CAMetalLayer.h>
+#import <QuartzCore/QuartzCore.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterBackingStore.h"
-#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterIOSurfaceHolder.h"
-
-/**
- * Manages the render surfaces and their corresponding backing stores.
- */
-@protocol FlutterSurfaceManager
+#import "flutter/shell/platform/darwin/macos/framework/Source/FlutterSurface.h"
 
 /**
- * Updates the backing store size of the managed IOSurfaces to `size`. If the surfaces are already
- * of the same size, this is a no-op.
+ * Surface with additional properties needed for presenting.
  */
-- (void)ensureSurfaceSize:(CGSize)size;
+@interface FlutterSurfacePresentInfo : NSObject
 
-/**
- * Swaps the front and the back buffer.
- */
-- (void)swapBuffers;
+@property(readwrite, strong, nonatomic, nonnull) FlutterSurface* surface;
+@property(readwrite, nonatomic) CGPoint offset;
+@property(readwrite, nonatomic) size_t zIndex;
 
-/**
- * Returns the backing store for the back buffer.
+@end
+
+@protocol FlutterSurfaceManagerDelegate <NSObject>
+
+/*
+ * Schedules the block on the platform thread and blocks until the block is executed.
+ * Provided `frameSize` is used to unblock the platform thread if it waits for
+ * a certain frame size during resizing.
  */
-- (nonnull FlutterRenderBackingStore*)renderBuffer;
+- (void)onPresent:(CGSize)frameSize withBlock:(nonnull dispatch_block_t)block;
 
 @end
 
 /**
- * Methods for managing the IOSurfaces held by FlutterIOSurfaceManager.
- */
-@protocol FlutterIOSurfaceManagerDelegate
-
-/**
- * Tells the delegate that the front and back IOSurfaces are swapped.
- */
-- (void)onSwapBuffers;
-
-/**
- * Tells the delegate that the IOSurfaces have been resized. `bufferIndex` is to indicate the front
- * vs back buffer. `size` is the new size of the IOSurface.
- */
-- (void)onUpdateSurface:(nonnull FlutterIOSurfaceHolder*)surface
-            bufferIndex:(size_t)index
-                   size:(CGSize)size;
-
-/**
- * Tells the delegate that IOSurface with given index has been released. Delegate should free
- * all resources associated with the surface
- */
-- (void)onSurfaceReleased:(size_t)index;
-
-@end
-
-/**
- * Manages IOSurfaces for the FlutterEngine to render to.
+ * FlutterSurfaceManager is responsible for providing and presenting Core Animation render
+ * surfaces and managing sublayers.
  *
- * The backing store when rendering with OpenGL is a frame buffer backed by a texture, on Metal its
- * a Metal texture. There are two IOSurfaces created during initialization, FlutterSurfaceManager
- * manages the lifecycle of these.
+ * Owned by `FlutterView`.
  */
-@interface FlutterIOSurfaceManager : NSObject <FlutterSurfaceManager>
+@interface FlutterSurfaceManager : NSObject
 
 /**
- * The object that acts as the delegate for the FlutterIOSurfaceManager. See:
- * FlutterIOSurfaceManagerDelegate.
- */
-@property(nullable, nonatomic, weak) id<FlutterIOSurfaceManagerDelegate> delegate;
-
-/**
- * Initializes and returns an IOSurface manager that renders to a child layer (referred to as the
- * content layer) of the containing layer and applies the transform to the contents of the content
- * layer.
- */
-- (nullable instancetype)initWithLayer:(nonnull CALayer*)containingLayer
-                      contentTransform:(CATransform3D)transform;
-
-@end
-
-/**
- * FlutterSurfaceManager implementation where the IOSurfaces managed are backed by a frame buffers
- * which are bound to offscreen textures.
- */
-@interface FlutterGLSurfaceManager : FlutterIOSurfaceManager <FlutterIOSurfaceManagerDelegate>
-
-/**
- * Creates two IOSurfaces backed by frame buffers and their backing textures.
- */
-- (nullable instancetype)initWithLayer:(nonnull CALayer*)containingLayer
-                         openGLContext:(nonnull NSOpenGLContext*)openGLContext;
-
-@end
-
-/**
- * FlutterSurfaceManager implementation where the IOSurfaces managed are backed by a Metal textures.
- */
-@interface FlutterMetalSurfaceManager : FlutterIOSurfaceManager <FlutterIOSurfaceManagerDelegate>
-
-/**
- * Creates two IOSurfaces backed by Metal textures.
+ * Initializes and returns a surface manager that renders to a child layer (referred to as the
+ * content layer) of the containing layer.
  */
 - (nullable instancetype)initWithDevice:(nonnull id<MTLDevice>)device
                            commandQueue:(nonnull id<MTLCommandQueue>)commandQueue
-                                  layer:(nonnull CALayer*)containingLayer;
+                                  layer:(nonnull CALayer*)containingLayer
+                               delegate:(nonnull id<FlutterSurfaceManagerDelegate>)delegate;
+
+/**
+ * Returns a back buffer surface of the given size to which Flutter can render content.
+ * A cached surface will be returned if available; otherwise a new one will be created.
+ *
+ * Must be called on raster thread.
+ */
+- (nonnull FlutterSurface*)surfaceForSize:(CGSize)size;
+
+/**
+ * Sets the provided surfaces as contents of FlutterView. Will create, update and
+ * remove sublayers as needed.
+ *
+ * Must be called on raster thread. This will schedule a commit on the platform thread and block the
+ * raster thread until the commit is done. The `notify` block will be invoked on the platform thread
+ * and can be used to perform additional work, such as mutating platform views. It is guaranteed be
+ * called in the same CATransaction.
+ */
+- (void)present:(nonnull NSArray<FlutterSurfacePresentInfo*>*)surfaces
+         notify:(nullable dispatch_block_t)notify;
+
+@end
+
+/**
+ * Cache of back buffers to prevent unnecessary IOSurface allocations.
+ */
+@interface FlutterBackBufferCache : NSObject
+
+/**
+ * Removes surface with given size from cache (if available) and returns it.
+ */
+- (nullable FlutterSurface*)removeSurfaceForSize:(CGSize)size;
+
+/**
+ * Removes all cached surfaces replacing them with new ones.
+ */
+- (void)replaceSurfaces:(nonnull NSArray<FlutterSurface*>*)surfaces;
+
+/**
+ * Returns number of surfaces currently in cache. Used for tests.
+ */
+- (NSUInteger)count;
+
+@end
+
+/**
+ * Interface to internal properties used for testing.
+ */
+@interface FlutterSurfaceManager (Private)
+
+@property(readonly, nonatomic, nonnull) FlutterBackBufferCache* backBufferCache;
+@property(readonly, nonatomic, nonnull) NSArray<FlutterSurface*>* frontSurfaces;
+@property(readonly, nonatomic, nonnull) NSArray<CALayer*>* layers;
 
 @end

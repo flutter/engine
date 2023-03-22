@@ -4,6 +4,8 @@
 
 #include "flutter/fml/logging.h"
 
+#include <algorithm>
+
 #include "flutter/shell/platform/windows/direct_manipulation.h"
 #include "flutter/shell/platform/windows/window.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
@@ -24,6 +26,10 @@
 
 namespace flutter {
 
+int32_t DirectManipulationEventHandler::GetDeviceId() {
+  return (int32_t) reinterpret_cast<int64_t>(this);
+}
+
 STDMETHODIMP DirectManipulationEventHandler::QueryInterface(REFIID iid,
                                                             void** ppv) {
   if ((iid == IID_IUnknown) ||
@@ -39,30 +45,70 @@ STDMETHODIMP DirectManipulationEventHandler::QueryInterface(REFIID iid,
   return E_NOINTERFACE;
 }
 
+DirectManipulationEventHandler::GestureData
+DirectManipulationEventHandler::ConvertToGestureData(float transform[6]) {
+  // DirectManipulation provides updates with very high precision. If the user
+  // holds their fingers steady on a trackpad, DirectManipulation sends
+  // jittery updates. This calculation will reduce the precision of the scale
+  // value of the event to avoid jitter.
+  const int mantissa_bits_chop = 2;
+  const float factor = (1 << mantissa_bits_chop) + 1;
+  float c = factor * transform[0];
+  return GestureData{
+      c - (c - transform[0]),  // scale
+      transform[4],            // pan_x
+      transform[5],            // pan_y
+  };
+}
+
 HRESULT DirectManipulationEventHandler::OnViewportStatusChanged(
     IDirectManipulationViewport* viewport,
     DIRECTMANIPULATION_STATUS current,
     DIRECTMANIPULATION_STATUS previous) {
-  if (during_synthesized_reset_ && previous == DIRECTMANIPULATION_RUNNING) {
-    during_synthesized_reset_ = false;
-  } else if (current == DIRECTMANIPULATION_RUNNING) {
-    if (!during_synthesized_reset_) {
-      // Not a false event.
-      if (owner_->binding_handler_delegate) {
-        owner_->binding_handler_delegate->OnPointerPanZoomStart(
-            (int32_t) reinterpret_cast<int64_t>(this));
+  if (during_synthesized_reset_) {
+    during_synthesized_reset_ = current != DIRECTMANIPULATION_READY;
+    return S_OK;
+  }
+  during_inertia_ = current == DIRECTMANIPULATION_INERTIA;
+  if (current == DIRECTMANIPULATION_RUNNING) {
+    IDirectManipulationContent* content;
+    HRESULT hr = viewport->GetPrimaryContent(IID_PPV_ARGS(&content));
+    if (SUCCEEDED(hr)) {
+      float transform[6];
+      hr = content->GetContentTransform(transform, ARRAYSIZE(transform));
+      if (SUCCEEDED(hr)) {
+        initial_gesture_data_ = ConvertToGestureData(transform);
+      } else {
+        FML_LOG(ERROR) << "GetContentTransform failed";
       }
+    } else {
+      FML_LOG(ERROR) << "GetPrimaryContent failed";
+    }
+    if (owner_->binding_handler_delegate) {
+      owner_->binding_handler_delegate->OnPointerPanZoomStart(GetDeviceId());
     }
   } else if (previous == DIRECTMANIPULATION_RUNNING) {
+    // Reset deltas to ensure only inertia values will be compared later.
+    last_pan_delta_x_ = 0.0;
+    last_pan_delta_y_ = 0.0;
     if (owner_->binding_handler_delegate) {
-      owner_->binding_handler_delegate->OnPointerPanZoomEnd(
-          (int32_t) reinterpret_cast<int64_t>(this));
+      owner_->binding_handler_delegate->OnPointerPanZoomEnd(GetDeviceId());
+    }
+  } else if (previous == DIRECTMANIPULATION_INERTIA) {
+    if (owner_->binding_handler_delegate &&
+        (std::max)(std::abs(last_pan_delta_x_), std::abs(last_pan_delta_y_)) >
+            0.01) {
+      owner_->binding_handler_delegate->OnScrollInertiaCancel(GetDeviceId());
     }
     // Need to reset the content transform to its original position
     // so that we are ready for the next gesture.
     // Use during_synthesized_reset_ flag to prevent sending reset also to the
     // framework.
     during_synthesized_reset_ = true;
+    last_pan_x_ = 0.0;
+    last_pan_y_ = 0.0;
+    last_pan_delta_x_ = 0.0;
+    last_pan_delta_y_ = 0.0;
     RECT rect;
     HRESULT hr = viewport->GetViewportRect(&rect);
     if (FAILED(hr)) {
@@ -94,19 +140,17 @@ HRESULT DirectManipulationEventHandler::OnContentUpdated(
     return S_OK;
   }
   if (!during_synthesized_reset_) {
-    // DirectManipulation provides updates with very high precision. If the user
-    // holds their fingers steady on a trackpad, DirectManipulation sends
-    // jittery updates. This calculation will reduce the precision of the scale
-    // value of the event to avoid jitter.
-    const int mantissa_bits_chop = 2;
-    const float factor = (1 << mantissa_bits_chop) + 1;
-    float c = factor * transform[0];
-    float scale = c - (c - transform[0]);
-    float pan_x = transform[4];
-    float pan_y = transform[5];
-    if (owner_->binding_handler_delegate) {
+    GestureData data = ConvertToGestureData(transform);
+    float scale = data.scale / initial_gesture_data_.scale;
+    float pan_x = data.pan_x - initial_gesture_data_.pan_x;
+    float pan_y = data.pan_y - initial_gesture_data_.pan_y;
+    last_pan_delta_x_ = pan_x - last_pan_x_;
+    last_pan_delta_y_ = pan_y - last_pan_y_;
+    last_pan_x_ = pan_x;
+    last_pan_y_ = pan_y;
+    if (owner_->binding_handler_delegate && !during_inertia_) {
       owner_->binding_handler_delegate->OnPointerPanZoomUpdate(
-          (int32_t) reinterpret_cast<int64_t>(this), pan_x, pan_y, scale, 0);
+          GetDeviceId(), pan_x, pan_y, scale, 0);
     }
   }
   return S_OK;
@@ -144,7 +188,8 @@ int DirectManipulationOwner::Init(unsigned int width, unsigned int height) {
       DIRECTMANIPULATION_CONFIGURATION_INTERACTION |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_X |
       DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_Y |
-      DIRECTMANIPULATION_CONFIGURATION_SCALING;
+      DIRECTMANIPULATION_CONFIGURATION_SCALING |
+      DIRECTMANIPULATION_CONFIGURATION_TRANSLATION_INERTIA;
   RETURN_IF_FAILED(viewport_->ActivateConfiguration(configuration));
   RETURN_IF_FAILED(viewport_->SetViewportOptions(
       DIRECTMANIPULATION_VIEWPORT_OPTIONS_MANUALUPDATE));

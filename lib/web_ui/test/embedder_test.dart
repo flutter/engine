@@ -4,6 +4,7 @@
 @JS()
 library embedder_test; // We need this to mess with the ShadowDOM.
 
+import 'dart:js_interop';
 import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
@@ -46,14 +47,14 @@ void testMain() {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
 
     expect(
-      embedder.glassPaneShadow?.querySelectorAll('flt-semantics-placeholder'),
+      embedder.glassPaneShadow.querySelectorAll('flt-semantics-placeholder'),
       isNotEmpty,
     );
   });
 
   test('renders a shadowRoot by default', () {
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final HostNode hostNode = embedder.glassPaneShadow!;
+    final HostNode hostNode = embedder.glassPaneShadow;
     expect(domInstanceOfString(hostNode.node, 'ShadowRoot'), isTrue);
   });
 
@@ -64,7 +65,7 @@ void testMain() {
     attachShadow = null; // Break ShadowDOM
 
     final FlutterViewEmbedder embedder = FlutterViewEmbedder();
-    final HostNode hostNode = embedder.glassPaneShadow!;
+    final HostNode hostNode = embedder.glassPaneShadow;
     expect(domInstanceOfString(hostNode.node, 'Element'), isTrue);
     expect(
       (hostNode.node as DomElement).tagName,
@@ -92,7 +93,7 @@ void testMain() {
 
     regularTextField.focus();
     DomCSSStyleDeclaration? style = domWindow.getComputedStyle(
-        embedder.glassPaneShadow!.querySelector('input')!,
+        embedder.glassPaneShadow.querySelector('input')!,
         '::placeholder');
     expect(style, isNotNull);
     expect(style.opacity, isNot('0'));
@@ -104,7 +105,7 @@ void testMain() {
 
     textField.focus();
     style = domWindow.getComputedStyle(
-        embedder.glassPaneShadow!.querySelector('input.flt-text-editing')!,
+        embedder.glassPaneShadow.querySelector('input.flt-text-editing')!,
         '::placeholder');
     expect(style, isNotNull);
     expect(style.opacity, '0');
@@ -112,7 +113,9 @@ void testMain() {
 }
 
 @JS('Element.prototype.attachShadow')
-external dynamic get attachShadow;
+external JSAny? get _attachShadow;
+dynamic get attachShadow => _attachShadow?.toObjectShallow;
 
 @JS('Element.prototype.attachShadow')
-external set attachShadow(dynamic x);
+external set _attachShadow(JSAny? x);
+set attachShadow(Object? x) => _attachShadow = x?.toJSAnyShallow;

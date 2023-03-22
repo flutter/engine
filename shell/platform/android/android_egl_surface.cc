@@ -21,9 +21,7 @@ void LogLastEGLError() {
   };
 
 #define _EGL_ERROR_DESC(a) \
-  {                        \
-#a, a                  \
-  }
+  { #a, a }
 
   const EGLNameErrorPair pairs[] = {
       _EGL_ERROR_DESC(EGL_SUCCESS),
@@ -74,8 +72,8 @@ static bool HasExtension(const char* extensions, const char* name) {
 class AndroidEGLSurfaceDamage {
  public:
   void init(EGLDisplay display, EGLContext context) {
-    if (GetAPILevel() < 28) {
-      // Disable partial repaint for devices older than Android 9. There
+    if (GetAPILevel() < 29) {
+      // Disable partial repaint for devices older than Android 10. There
       // are old devices that have extensions below available but the
       // implementation causes glitches (i.e. Xperia Z3 with Android 6).
       partial_redraw_supported_ = false;
@@ -193,14 +191,6 @@ AndroidEGLSurface::AndroidEGLSurface(EGLSurface surface,
       damage_(std::make_unique<AndroidEGLSurfaceDamage>()),
       presentation_time_proc_(nullptr) {
   damage_->init(display_, context);
-
-  const char* extensions = eglQueryString(display, EGL_EXTENSIONS);
-
-  if (HasExtension(extensions, "EGL_ANDROID_presentation_time")) {
-    presentation_time_proc_ =
-        reinterpret_cast<PFNEGLPRESENTATIONTIMEANDROIDPROC>(
-            eglGetProcAddress("eglPresentationTimeANDROID"));
-  }
 }
 
 AndroidEGLSurface::~AndroidEGLSurface() {

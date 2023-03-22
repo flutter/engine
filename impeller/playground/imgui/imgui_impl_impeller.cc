@@ -48,7 +48,8 @@ static ImGui_ImplImpeller_Data* ImGui_ImplImpeller_GetBackendData() {
              : nullptr;
 }
 
-bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
+bool ImGui_ImplImpeller_Init(
+    const std::shared_ptr<impeller::Context>& context) {
   ImGuiIO& io = ImGui::GetIO();
   IM_ASSERT(io.BackendRendererUserData == nullptr &&
             "Already initialized a renderer backend!");
@@ -93,15 +94,11 @@ bool ImGui_ImplImpeller_Init(std::shared_ptr<impeller::Context> context) {
     auto desc = impeller::PipelineBuilder<impeller::ImguiRasterVertexShader,
                                           impeller::ImguiRasterFragmentShader>::
         MakeDefaultPipelineDescriptor(*context);
-    auto stencil = desc->GetFrontStencilAttachmentDescriptor();
-    if (stencil.has_value()) {
-      stencil->stencil_compare = impeller::CompareFunction::kAlways;
-      stencil->depth_stencil_pass = impeller::StencilOperation::kKeep;
-      desc->SetStencilAttachmentDescriptors(stencil.value());
-    }
+    desc->ClearStencilAttachments();
+    desc->ClearDepthAttachment();
 
     bd->pipeline =
-        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).get();
+        context->GetPipelineLibrary()->GetPipeline(std::move(desc)).Get();
     IM_ASSERT(bd->pipeline != nullptr && "Could not create ImGui pipeline.");
 
     bd->sampler = context->GetSamplerLibrary()->GetSampler({});
@@ -263,7 +260,6 @@ void ImGui_ImplImpeller_RenderDrawData(ImDrawData* draw_data,
         vertex_buffer.index_type = impeller::IndexType::k16bit;
         cmd.BindVertices(vertex_buffer);
         cmd.base_vertex = pcmd->VtxOffset;
-        cmd.primitive_type = impeller::PrimitiveType::kTriangle;
 
         render_pass.AddCommand(std::move(cmd));
       }

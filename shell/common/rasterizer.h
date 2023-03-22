@@ -10,7 +10,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/flow/compositor_context.h"
 #include "flutter/flow/embedded_views.h"
 #include "flutter/flow/frame_timings.h"
@@ -106,11 +106,11 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   //----------------------------------------------------------------------------
-  /// @brief     How to handle calls to MakeGpuImage.
+  /// @brief     How to handle calls to MakeSkiaGpuImage.
   enum class MakeGpuImageBehavior {
-    /// MakeGpuImage returns a GPU resident image, if possible.
+    /// MakeSkiaGpuImage returns a GPU resident image, if possible.
     kGpu,
-    /// MakeGpuImage returns a checkerboard bitmap. This is useful in test
+    /// MakeSkiaGpuImage returns a checkerboard bitmap. This is useful in test
     /// contexts where no GPU surface is available.
     kBitmap,
   };
@@ -123,7 +123,7 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  delegate                   The rasterizer delegate.
   /// @param[in]  gpu_image_behavior         How to handle calls to
-  ///                                        MakeGpuImage.
+  ///                                        MakeSkiaGpuImage.
   ///
   explicit Rasterizer(
       Delegate& delegate,
@@ -256,7 +256,7 @@ class Rasterizer final : public SnapshotDelegate,
   /// @param[in]  discard_callback if specified and returns true, the layer tree
   ///                             is discarded instead of being rendered
   ///
-  RasterStatus Draw(std::shared_ptr<LayerTreePipeline> pipeline,
+  RasterStatus Draw(const std::shared_ptr<LayerTreePipeline>& pipeline,
                     LayerTreeDiscardCallback discard_callback = NoDiscard);
 
   //----------------------------------------------------------------------------
@@ -287,6 +287,12 @@ class Rasterizer final : public SnapshotDelegate,
     /// container is used.
     ///
     CompressedImage,
+
+    //--------------------------------------------------------------------------
+    /// Reads the data directly from the Rasterizer's surface. The pixel format
+    /// is determined from the surface. This is the only way to read wide gamut
+    /// color data, but isn't supported everywhere.
+    SurfaceData,
   };
 
   //----------------------------------------------------------------------------
@@ -308,6 +314,11 @@ class Rasterizer final : public SnapshotDelegate,
     SkISize frame_size = SkISize::MakeEmpty();
 
     //--------------------------------------------------------------------------
+    /// Characterization of the format of the data in `data`.
+    ///
+    std::string format;
+
+    //--------------------------------------------------------------------------
     /// @brief      Creates an empty screenshot
     ///
     Screenshot();
@@ -317,8 +328,11 @@ class Rasterizer final : public SnapshotDelegate,
     ///
     /// @param[in]  p_data  The screenshot data
     /// @param[in]  p_size  The screenshot size.
+    /// @param[in]  p_format  The screenshot format.
     ///
-    Screenshot(sk_sp<SkData> p_data, SkISize p_size);
+    Screenshot(sk_sp<SkData> p_data,
+               SkISize p_size,
+               const std::string& p_format);
 
     //--------------------------------------------------------------------------
     /// @brief      The copy constructor for a screenshot.
@@ -470,7 +484,7 @@ class Rasterizer final : public SnapshotDelegate,
 
  private:
   // |SnapshotDelegate|
-  std::unique_ptr<SnapshotDelegate::GpuImageResult> MakeGpuImage(
+  std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
       const SkImageInfo& image_info) override;
 

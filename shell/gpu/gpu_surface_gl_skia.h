@@ -14,6 +14,8 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/weak_ptr.h"
 #include "flutter/shell/gpu/gpu_surface_gl_delegate.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
 namespace flutter {
@@ -25,7 +27,7 @@ class GPUSurfaceGLSkia : public Surface {
   GPUSurfaceGLSkia(GPUSurfaceGLDelegate* delegate, bool render_to_surface);
 
   // Creates a new GL surface reusing an existing GrDirectContext.
-  GPUSurfaceGLSkia(sk_sp<GrDirectContext> gr_context,
+  GPUSurfaceGLSkia(const sk_sp<GrDirectContext>& gr_context,
                    GPUSurfaceGLDelegate* delegate,
                    bool render_to_surface);
 
@@ -60,7 +62,7 @@ class GPUSurfaceGLSkia : public Surface {
       const SkISize& untransformed_size,
       const SkMatrix& root_surface_transformation);
 
-  bool PresentSurface(const SurfaceFrame& frame, SkCanvas* canvas);
+  bool PresentSurface(const SurfaceFrame& frame, DlCanvas* canvas);
 
   GPUSurfaceGLDelegate* delegate_;
   sk_sp<GrDirectContext> context_;

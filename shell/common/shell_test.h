@@ -34,13 +34,13 @@ class ShellTest : public FixtureTest {
   ShellTest();
 
   Settings CreateSettingsForFixture() override;
-  std::unique_ptr<Shell> CreateShell(Settings settings,
+  std::unique_ptr<Shell> CreateShell(const Settings& settings,
                                      bool simulate_vsync = false);
   std::unique_ptr<Shell> CreateShell(
-      Settings settings,
+      const Settings& settings,
       TaskRunners task_runners,
       bool simulate_vsync = false,
-      std::shared_ptr<ShellTestExternalViewEmbedder>
+      const std::shared_ptr<ShellTestExternalViewEmbedder>&
           shell_test_external_view_embedder = nullptr,
       bool is_gpu_disabled = false,
       ShellTestPlatformView::BackendType rendering_backend =
@@ -48,7 +48,8 @@ class ShellTest : public FixtureTest {
       Shell::CreateCallback<PlatformView> platform_view_create_callback =
           nullptr);
   void DestroyShell(std::unique_ptr<Shell> shell);
-  void DestroyShell(std::unique_ptr<Shell> shell, TaskRunners task_runners);
+  void DestroyShell(std::unique_ptr<Shell> shell,
+                    const TaskRunners& task_runners);
   TaskRunners GetTaskRunnersForFixture();
 
   fml::TimePoint GetLatestFrameTargetTime(Shell* shell) const;
@@ -73,14 +74,14 @@ class ShellTest : public FixtureTest {
       std::function<void(std::shared_ptr<ContainerLayer> root)>;
 
   static void SetViewportMetrics(Shell* shell, double width, double height);
-  static void NotifyIdle(Shell* shell, fml::TimePoint deadline);
+  static void NotifyIdle(Shell* shell, fml::TimeDelta deadline);
 
   static void PumpOneFrame(Shell* shell,
                            double width = 1,
                            double height = 1,
                            LayerTreeBuilder = {});
   static void PumpOneFrame(Shell* shell,
-                           flutter::ViewportMetrics viewport_metrics,
+                           const flutter::ViewportMetrics& viewport_metrics,
                            LayerTreeBuilder = {});
   static void DispatchFakePointerData(Shell* shell);
   static void DispatchPointerData(Shell* shell,
@@ -115,7 +116,7 @@ class ShellTest : public FixtureTest {
   static void OnServiceProtocol(
       Shell* shell,
       ServiceProtocolEnum some_protocol,
-      fml::RefPtr<fml::TaskRunner> task_runner,
+      const fml::RefPtr<fml::TaskRunner>& task_runner,
       const ServiceProtocol::Handler::ServiceProtocolMap& params,
       rapidjson::Document* response);
 
@@ -127,7 +128,7 @@ class ShellTest : public FixtureTest {
   static int UnreportedTimingsCount(Shell* shell);
 
   static size_t GetLiveTrackedPathCount(
-      std::shared_ptr<VolatilePathTracker> tracker);
+      const std::shared_ptr<VolatilePathTracker>& tracker);
 
  private:
   ThreadHost thread_host_;

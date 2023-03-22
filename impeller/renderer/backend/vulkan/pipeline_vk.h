@@ -16,18 +16,26 @@ namespace impeller {
 class PipelineCreateInfoVK {
  public:
   PipelineCreateInfoVK(vk::UniquePipeline pipeline,
-                       vk::UniqueRenderPass render_pass);
+                       vk::UniqueRenderPass render_pass,
+                       vk::UniquePipelineLayout pipeline_layout,
+                       vk::UniqueDescriptorSetLayout descriptor_set_layout);
 
   bool IsValid() const;
 
-  vk::UniquePipeline GetPipeline();
+  const vk::Pipeline& GetVKPipeline() const;
 
-  vk::UniqueRenderPass GetRenderPass();
+  vk::RenderPass GetRenderPass() const;
+
+  vk::PipelineLayout GetPipelineLayout() const;
+
+  vk::DescriptorSetLayout GetDescriptorSetLayout() const;
 
  private:
   bool is_valid_ = false;
   vk::UniquePipeline pipeline_;
   vk::UniqueRenderPass render_pass_;
+  vk::UniquePipelineLayout pipeline_layout_;
+  vk::UniqueDescriptorSetLayout descriptor_set_layout_;
 };
 
 class PipelineVK final
@@ -35,11 +43,13 @@ class PipelineVK final
       public BackendCast<PipelineVK, Pipeline<PipelineDescriptor>> {
  public:
   PipelineVK(std::weak_ptr<PipelineLibrary> library,
-             PipelineDescriptor desc,
+             const PipelineDescriptor& desc,
              std::unique_ptr<PipelineCreateInfoVK> create_info);
 
   // |Pipeline|
   ~PipelineVK() override;
+
+  PipelineCreateInfoVK* GetCreateInfo() const;
 
  private:
   friend class PipelineLibraryVK;

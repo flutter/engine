@@ -7,7 +7,9 @@ import 'dart:typed_data';
 
 import 'package:ui/ui.dart' as ui;
 
+import '../color_filter.dart';
 import 'canvaskit_api.dart';
+import 'color_filter.dart';
 import 'image.dart';
 import 'image_filter.dart';
 import 'painting.dart';
@@ -35,7 +37,7 @@ class CkCanvas {
 
   final SkCanvas skCanvas;
 
-  int? get saveCount => skCanvas.getSaveCount();
+  int? get saveCount => skCanvas.getSaveCount().toInt();
 
   void clear(ui.Color color) {
     skCanvas.clear(toSharedSkColor1(color));
@@ -116,7 +118,7 @@ class CkCanvas {
 
   void drawColor(ui.Color color, ui.BlendMode blendMode) {
     skCanvas.drawColorInt(
-      color.value,
+      color.value.toDouble(),
       toSkBlendMode(blendMode),
     );
   }
@@ -264,7 +266,7 @@ class CkCanvas {
   }
 
   void restoreToCount(int count) {
-    skCanvas.restoreToCount(count);
+    skCanvas.restoreToCount(count.toDouble());
   }
 
   void rotate(double radians) {
@@ -272,7 +274,7 @@ class CkCanvas {
   }
 
   int save() {
-    return skCanvas.save();
+    return skCanvas.save().toInt();
   }
 
   void saveLayer(ui.Rect bounds, CkPaint? paint) {
@@ -290,8 +292,12 @@ class CkCanvas {
 
   void saveLayerWithFilter(ui.Rect bounds, ui.ImageFilter filter,
       [CkPaint? paint]) {
-    final CkManagedSkImageFilterConvertible convertible =
-        filter as CkManagedSkImageFilterConvertible;
+      final CkManagedSkImageFilterConvertible convertible;
+      if (filter is ui.ColorFilter) {
+        convertible = createCkColorFilter(filter as EngineColorFilter)!;
+      } else {
+        convertible = filter as CkManagedSkImageFilterConvertible;
+      }
     return skCanvas.saveLayer(
       paint?.skiaObject,
       toSkRect(bounds),
@@ -648,7 +654,7 @@ class CkRestoreToCountCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    canvas.restoreToCount(count);
+    canvas.restoreToCount(count.toDouble());
   }
 }
 
@@ -815,7 +821,7 @@ class CkDrawColorCommand extends CkPaintCommand {
   @override
   void apply(SkCanvas canvas) {
     canvas.drawColorInt(
-      color.value,
+      color.value.toDouble(),
       toSkBlendMode(blendMode),
     );
   }
@@ -1163,8 +1169,12 @@ class CkSaveLayerWithFilterCommand extends CkPaintCommand {
 
   @override
   void apply(SkCanvas canvas) {
-    final CkManagedSkImageFilterConvertible convertible =
-        filter as CkManagedSkImageFilterConvertible;
+    final CkManagedSkImageFilterConvertible convertible;
+    if (filter is ui.ColorFilter) {
+      convertible = createCkColorFilter(filter as EngineColorFilter)!;
+    } else {
+      convertible = filter as CkManagedSkImageFilterConvertible;
+    }
     return canvas.saveLayer(
       paint?.skiaObject,
       toSkRect(bounds),

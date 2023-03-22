@@ -6,6 +6,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path.h"
 
@@ -17,13 +18,13 @@ class ColorSourceContents : public Contents {
 
   ~ColorSourceContents() override;
 
-  void SetPath(Path path);
+  void SetGeometry(std::shared_ptr<Geometry> geometry);
 
-  void SetMatrix(Matrix matrix);
+  void SetEffectTransform(Matrix matrix);
+
+  const Matrix& GetInverseMatrix() const;
 
   void SetAlpha(Scalar alpha);
-
-  void SetCover(bool cover);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -32,20 +33,21 @@ class ColorSourceContents : public Contents {
   bool ShouldRender(const Entity& entity,
                     const std::optional<Rect>& stencil_coverage) const override;
 
- protected:
-  const Path& GetPath() const;
+  // | Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
 
-  const Matrix& GetInverseMatrix() const;
+  // | Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
   Scalar GetAlpha() const;
 
-  bool GetCover() const;
+ protected:
+  const std::shared_ptr<Geometry>& GetGeometry() const;
 
  private:
-  Path path_;
+  std::shared_ptr<Geometry> geometry_;
   Matrix inverse_matrix_;
   Scalar alpha_ = 1.0;
-  bool cover_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(ColorSourceContents);
 };

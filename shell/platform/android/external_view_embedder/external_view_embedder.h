@@ -34,24 +34,15 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       const AndroidContext& android_context,
       std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
       std::shared_ptr<AndroidSurfaceFactory> surface_factory,
-      TaskRunners task_runners);
+      const TaskRunners& task_runners);
 
   // |ExternalViewEmbedder|
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override;
 
   // |ExternalViewEmbedder|
-  EmbedderPaintContext CompositeEmbeddedView(int view_id) override;
-
-  // |ExternalViewEmbedder|
-  std::vector<SkCanvas*> GetCurrentCanvases() override;
-
-  // |ExternalViewEmbedder|
-  // Similar call to GetCurrentCanvases but will return the array of
-  // builders being used by PlatformViews on platforms that provide
-  // optional DisplayListBuilder objects for rendering.
-  std::vector<DisplayListBuilder*> GetCurrentBuilders() override;
+  DlCanvas* CompositeEmbeddedView(int64_t view_id) override;
 
   // |ExternalViewEmbedder|
   void SubmitFrame(GrDirectContext* context,
@@ -62,7 +53,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override;
 
   // |ExternalViewEmbedder|
-  SkCanvas* GetRootCanvas() override;
+  DlCanvas* GetRootCanvas() override;
 
   // |ExternalViewEmbedder|
   void BeginFrame(
@@ -85,7 +76,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
 
   // Gets the rect based on the device pixel ratio of a platform view displayed
   // on the screen.
-  SkRect GetViewRect(int view_id) const;
+  SkRect GetViewRect(int64_t view_id) const;
 
  private:
   // The number of frames the rasterizer task runner will continue

@@ -13,23 +13,23 @@ PipelineLibrary::~PipelineLibrary() = default;
 PipelineFuture<PipelineDescriptor> PipelineLibrary::GetPipeline(
     std::optional<PipelineDescriptor> descriptor) {
   if (descriptor.has_value()) {
-    return GetPipeline(std::move(descriptor.value()));
+    return GetPipeline(descriptor.value());
   }
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<PipelineDescriptor>>>>();
   promise->set_value(nullptr);
-  return promise->get_future();
+  return {descriptor, promise->get_future()};
 }
 
 PipelineFuture<ComputePipelineDescriptor> PipelineLibrary::GetPipeline(
     std::optional<ComputePipelineDescriptor> descriptor) {
   if (descriptor.has_value()) {
-    return GetPipeline(std::move(descriptor.value()));
+    return GetPipeline(descriptor.value());
   }
   auto promise = std::make_shared<
       std::promise<std::shared_ptr<Pipeline<ComputePipelineDescriptor>>>>();
   promise->set_value(nullptr);
-  return promise->get_future();
+  return {descriptor, promise->get_future()};
 }
 
 }  // namespace impeller

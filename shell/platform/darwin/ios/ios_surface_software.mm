@@ -11,13 +11,15 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/platform/darwin/cf_utils.h"
 #include "flutter/fml/trace_event.h"
+
+#include "third_party/skia/include/core/SkSurface.h"
 #include "third_party/skia/include/utils/mac/SkCGUtils.h"
 
 namespace flutter {
 
-IOSSurfaceSoftware::IOSSurfaceSoftware(fml::scoped_nsobject<CALayer> layer,
+IOSSurfaceSoftware::IOSSurfaceSoftware(const fml::scoped_nsobject<CALayer>& layer,
                                        std::shared_ptr<IOSContext> context)
-    : IOSSurface(std::move(context)), layer_(std::move(layer)) {}
+    : IOSSurface(std::move(context)), layer_(layer) {}
 
 IOSSurfaceSoftware::~IOSSurfaceSoftware() = default;
 

@@ -6,67 +6,28 @@
 
 namespace flutter {
 
-SkPictureEmbedderViewSlice::SkPictureEmbedderViewSlice(SkRect view_bounds) {
-  auto rtree_factory = RTreeFactory();
-  rtree_ = rtree_factory.getInstance();
-
-  recorder_ = std::make_unique<SkPictureRecorder>();
-  recorder_->beginRecording(view_bounds, &rtree_factory);
-}
-
-SkCanvas* SkPictureEmbedderViewSlice::canvas() {
-  return recorder_->getRecordingCanvas();
-}
-
-DisplayListBuilder* SkPictureEmbedderViewSlice::builder() {
-  return nullptr;
-}
-
-void SkPictureEmbedderViewSlice::end_recording() {
-  picture_ = recorder_->finishRecordingAsPicture();
-}
-
-std::list<SkRect> SkPictureEmbedderViewSlice::searchNonOverlappingDrawnRects(
-    const SkRect& query) const {
-  return rtree_->searchNonOverlappingDrawnRects(query);
-}
-
-void SkPictureEmbedderViewSlice::render_into(SkCanvas* canvas) {
-  canvas->drawPicture(picture_);
-}
-
-void SkPictureEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
-  builder->drawPicture(picture_, nullptr, false);
-}
-
 DisplayListEmbedderViewSlice::DisplayListEmbedderViewSlice(SkRect view_bounds) {
-  recorder_ = std::make_unique<DisplayListCanvasRecorder>(view_bounds);
+  builder_ = std::make_unique<DisplayListBuilder>(
+      /*bounds=*/view_bounds,
+      /*prepare_rtree=*/true);
 }
 
-SkCanvas* DisplayListEmbedderViewSlice::canvas() {
-  return recorder_ ? recorder_.get() : nullptr;
-}
-
-DisplayListBuilder* DisplayListEmbedderViewSlice::builder() {
-  return recorder_ ? recorder_->builder().get() : nullptr;
+DlCanvas* DisplayListEmbedderViewSlice::canvas() {
+  return builder_ ? builder_.get() : nullptr;
 }
 
 void DisplayListEmbedderViewSlice::end_recording() {
-  display_list_ = recorder_->Build();
-  recorder_ = nullptr;
+  display_list_ = builder_->Build();
+  builder_ = nullptr;
 }
 
 std::list<SkRect> DisplayListEmbedderViewSlice::searchNonOverlappingDrawnRects(
     const SkRect& query) const {
-  return display_list_->rtree()->searchNonOverlappingDrawnRects(query);
+  return display_list_->rtree()->searchAndConsolidateRects(query);
 }
 
-void DisplayListEmbedderViewSlice::render_into(SkCanvas* canvas) {
-  display_list_->RenderTo(canvas);
-}
-
-void DisplayListEmbedderViewSlice::render_into(DisplayListBuilder* builder) {
-  builder->drawDisplayList(display_list_);
+void DisplayListEmbedderViewSlice::render_into(DlCanvas* canvas) {
+  canvas->DrawDisplayList(display_list_);
 }
 
 void ExternalViewEmbedder::SubmitFrame(GrDirectContext* context,
@@ -100,14 +61,22 @@ void MutatorsStack::PushOpacity(const int& alpha) {
 };
 
 void MutatorsStack::PushBackdropFilter(
-    std::shared_ptr<const DlImageFilter> filter) {
-  std::shared_ptr<Mutator> element = std::make_shared<Mutator>(filter);
+    const std::shared_ptr<const DlImageFilter>& filter,
+    const SkRect& filter_rect) {
+  std::shared_ptr<Mutator> element =
+      std::make_shared<Mutator>(filter, filter_rect);
   vector_.push_back(element);
 };
 
 void MutatorsStack::Pop() {
   vector_.pop_back();
 };
+
+void MutatorsStack::PopTo(size_t stack_count) {
+  while (vector_.size() > stack_count) {
+    Pop();
+  }
+}
 
 const std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator
 MutatorsStack::Top() const {

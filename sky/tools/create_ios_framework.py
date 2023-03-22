@@ -10,7 +10,7 @@ import shutil
 import sys
 import os
 
-from create_xcframework import create_xcframework
+from create_xcframework import create_xcframework  # pylint: disable=import-error
 
 DSYMUTIL = os.path.join(
     os.path.dirname(__file__), '..', '..', '..', 'buildtools', 'mac-x64',
@@ -31,14 +31,8 @@ def main():
       '--simulator-x64-out-dir', '--simulator-out-dir', type=str, required=True
   )
   parser.add_argument('--simulator-arm64-out-dir', type=str, required=False)
-  parser.add_argument('--strip', action="store_true", default=False)
-  parser.add_argument('--dsym', action="store_true", default=False)
-  parser.add_argument(
-      '--strip-bitcode',
-      dest='strip_bitcode',
-      action="store_true",
-      default=False
-  )
+  parser.add_argument('--strip', action='store_true', default=False)
+  parser.add_argument('--dsym', action='store_true', default=False)
 
   args = parser.parse_args()
 
@@ -70,7 +64,7 @@ def main():
     return 1
 
   if not os.path.isfile(simulator_x64_dylib):
-    print('Cannot find iOS simulator dylib at %s' % simulator_dylib)
+    print('Cannot find iOS simulator dylib at %s' % simulator_x64_dylib)
     return 1
 
   if not os.path.isfile(DSYMUTIL):
@@ -94,12 +88,12 @@ def main():
         '-output', simulator_framework_binary
     ])
     process_framework(args, simulator_framework, simulator_framework_binary)
-    simulator_framework = simulator_framework
   else:
     simulator_framework = simulator_x64_framework
 
-  # Create XCFramework from the arm-only fat framework and the arm64/x64 simulator frameworks, or just the
-  # x64 simulator framework if only that one exists.
+  # Create XCFramework from the arm-only fat framework and the arm64/x64
+  # simulator frameworks, or just the x64 simulator framework if only that one
+  # exists.
   xcframeworks = [simulator_framework, framework]
   create_xcframework(location=args.dst, name='Flutter', frameworks=xcframeworks)
 
@@ -110,14 +104,10 @@ def main():
   ])
 
   process_framework(args, framework, framework_binary)
+  return 0
 
 
 def process_framework(args, framework, framework_binary):
-  if args.strip_bitcode:
-    subprocess.check_call([
-        'xcrun', 'bitcode_strip', '-r', framework_binary, '-o', framework_binary
-    ])
-
   if args.dsym:
     dsym_out = os.path.splitext(framework)[0] + '.dSYM'
     subprocess.check_call([DSYMUTIL, '-o', dsym_out, framework_binary])
@@ -127,7 +117,7 @@ def process_framework(args, framework, framework_binary):
     unstripped_out = os.path.join(args.dst, 'Flutter.unstripped')
     shutil.copyfile(framework_binary, unstripped_out)
 
-    subprocess.check_call(["strip", "-x", "-S", framework_binary])
+    subprocess.check_call(['strip', '-x', '-S', framework_binary])
 
 
 if __name__ == '__main__':

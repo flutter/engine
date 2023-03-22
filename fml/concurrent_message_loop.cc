@@ -123,7 +123,7 @@ void ConcurrentMessageLoop::Terminate() {
   tasks_condition_.notify_all();
 }
 
-void ConcurrentMessageLoop::PostTaskToAllWorkers(fml::closure task) {
+void ConcurrentMessageLoop::PostTaskToAllWorkers(const fml::closure& task) {
   if (!task) {
     return;
   }
@@ -168,6 +168,16 @@ void ConcurrentTaskRunner::PostTask(const fml::closure& task) {
       << "Tried to post to a concurrent message loop that has already died. "
          "Executing the task on the callers thread.";
   task();
+}
+
+bool ConcurrentMessageLoop::RunsTasksOnCurrentThread() {
+  std::scoped_lock lock(tasks_mutex_);
+  for (const auto& worker_thread_id : worker_thread_ids_) {
+    if (worker_thread_id == std::this_thread::get_id()) {
+      return true;
+    }
+  }
+  return false;
 }
 
 }  // namespace fml

@@ -64,11 +64,10 @@ void Paragraph::paint(Canvas* canvas, double x, double y) {
     return;
   }
 
-  SkCanvas* sk_canvas = canvas->canvas();
-  if (!sk_canvas) {
-    return;
+  DisplayListBuilder* builder = canvas->builder();
+  if (builder) {
+    m_paragraph->Paint(builder, x, y);
   }
-  m_paragraph->Paint(sk_canvas, x, y);
 }
 
 static tonic::Float32List EncodeTextBoxes(

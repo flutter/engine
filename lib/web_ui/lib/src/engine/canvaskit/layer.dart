@@ -394,17 +394,21 @@ class OffsetEngineLayer extends TransformEngineLayer
 /// A layer that applies an [ui.ImageFilter] to its children.
 class ImageFilterEngineLayer extends ContainerLayer
     implements ui.ImageFilterEngineLayer {
-  ImageFilterEngineLayer(this._filter);
+  ImageFilterEngineLayer(this._filter, this._offset);
 
+  final ui.Offset _offset;
   final ui.ImageFilter _filter;
 
   @override
   void paint(PaintContext paintContext) {
     assert(needsPainting);
+    paintContext.internalNodesCanvas.save();
+    paintContext.internalNodesCanvas.translate(_offset.dx, _offset.dy);
     final CkPaint paint = CkPaint();
     paint.imageFilter = _filter;
     paintContext.internalNodesCanvas.saveLayer(paintBounds, paint);
     paintChildren(paintContext);
+    paintContext.internalNodesCanvas.restore();
     paintContext.internalNodesCanvas.restore();
   }
 
@@ -468,7 +472,6 @@ class PictureLayer extends Layer {
 
   @override
   void paint(PaintContext paintContext) {
-    assert(picture != null);
     assert(needsPainting);
 
     paintContext.leafNodesCanvas!.save();
@@ -591,7 +594,10 @@ class PlatformViewLayer extends Layer {
   @override
   void preroll(PrerollContext prerollContext, Matrix4 matrix) {
     paintBounds = ui.Rect.fromLTWH(offset.dx, offset.dy, width, height);
-    prerollContext.viewEmbedder!.prerollCompositeEmbeddedView(
+
+    /// ViewEmbedder is set to null when screenshotting. Therefore, skip
+    /// rendering
+    prerollContext.viewEmbedder?.prerollCompositeEmbeddedView(
       viewId,
       EmbeddedViewParams(
         offset,
@@ -604,7 +610,7 @@ class PlatformViewLayer extends Layer {
   @override
   void paint(PaintContext paintContext) {
     final CkCanvas? canvas =
-        paintContext.viewEmbedder!.compositeEmbeddedView(viewId);
+        paintContext.viewEmbedder?.compositeEmbeddedView(viewId);
     if (canvas != null) {
       paintContext.leafNodesCanvas = canvas;
     }

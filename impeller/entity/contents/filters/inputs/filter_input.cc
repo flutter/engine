@@ -5,6 +5,7 @@
 #include "impeller/entity/contents/filters/inputs/filter_input.h"
 
 #include <memory>
+#include <utility>
 
 #include "flutter/fml/logging.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
@@ -14,7 +15,7 @@
 
 namespace impeller {
 
-FilterInput::Ref FilterInput::Make(Variant input) {
+FilterInput::Ref FilterInput::Make(Variant input, bool msaa_enabled) {
   if (auto filter = std::get_if<std::shared_ptr<FilterContents>>(&input)) {
     return std::static_pointer_cast<FilterInput>(
         std::shared_ptr<FilterContentsFilterInput>(
@@ -24,7 +25,7 @@ FilterInput::Ref FilterInput::Make(Variant input) {
   if (auto contents = std::get_if<std::shared_ptr<Contents>>(&input)) {
     return std::static_pointer_cast<FilterInput>(
         std::shared_ptr<ContentsFilterInput>(
-            new ContentsFilterInput(*contents)));
+            new ContentsFilterInput(*contents, msaa_enabled)));
   }
 
   if (auto texture = std::get_if<std::shared_ptr<Texture>>(&input)) {
@@ -37,7 +38,7 @@ FilterInput::Ref FilterInput::Make(Variant input) {
 FilterInput::Ref FilterInput::Make(std::shared_ptr<Texture> texture,
                                    Matrix local_transform) {
   return std::shared_ptr<TextureFilterInput>(
-      new TextureFilterInput(texture, local_transform));
+      new TextureFilterInput(std::move(texture), local_transform));
 }
 
 FilterInput::Vector FilterInput::Make(std::initializer_list<Variant> inputs) {

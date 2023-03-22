@@ -43,18 +43,19 @@ PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     const std::shared_ptr<IOSContext>& context,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    flutter::TaskRunners task_runners)
-    : PlatformView(delegate, std::move(task_runners)),
+    const flutter::TaskRunners& task_runners)
+    : PlatformView(delegate, task_runners),
       ios_context_(context),
       platform_views_controller_(platform_views_controller),
       accessibility_bridge_([this](bool enabled) { PlatformView::SetSemanticsEnabled(enabled); }),
-      platform_message_handler_(new PlatformMessageHandlerIos(task_runners)) {}
+      platform_message_handler_(
+          new PlatformMessageHandlerIos(task_runners.GetPlatformTaskRunner())) {}
 
 PlatformViewIOS::PlatformViewIOS(
     PlatformView::Delegate& delegate,
     IOSRenderingAPI rendering_api,
     const std::shared_ptr<FlutterPlatformViewsController>& platform_views_controller,
-    flutter::TaskRunners task_runners)
+    const flutter::TaskRunners& task_runners)
     : PlatformViewIOS(
           delegate,
           IOSContext::Create(
@@ -76,7 +77,8 @@ fml::WeakPtr<FlutterViewController> PlatformViewIOS::GetOwnerViewController() co
   return owner_controller_;
 }
 
-void PlatformViewIOS::SetOwnerViewController(fml::WeakPtr<FlutterViewController> owner_controller) {
+void PlatformViewIOS::SetOwnerViewController(
+    const fml::WeakPtr<FlutterViewController>& owner_controller) {
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
   std::lock_guard<std::mutex> guard(ios_surface_mutex_);
   if (ios_surface_ || !owner_controller) {
@@ -189,7 +191,7 @@ void PlatformViewIOS::UpdateSemantics(flutter::SemanticsNodeUpdates update,
                                       flutter::CustomAccessibilityActionUpdates actions) {
   FML_DCHECK(owner_controller_);
   if (accessibility_bridge_) {
-    accessibility_bridge_.get()->UpdateSemantics(std::move(update), std::move(actions));
+    accessibility_bridge_.get()->UpdateSemantics(std::move(update), actions);
     [[NSNotificationCenter defaultCenter] postNotificationName:FlutterSemanticsUpdateNotification
                                                         object:owner_controller_.get()];
   }

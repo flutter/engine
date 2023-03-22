@@ -5,6 +5,7 @@
 import 'package:meta/meta.dart';
 
 import 'dom.dart';
+import 'safe_browser_api.dart';
 
 // iOS 15 launched WebGL 2.0, but there's something broken about it, which
 // leads to apps failing to load. For now, we're forcing WebGL 1 on iOS.
@@ -142,7 +143,7 @@ OperatingSystem detectOperatingSystem({
     // iDevices requesting a "desktop site" spoof their UA so it looks like a Mac.
     // This checks if we're in a touch device, or on a real mac.
     final int maxTouchPoints =
-        overrideMaxTouchPoints ?? domWindow.navigator.maxTouchPoints ?? 0;
+        overrideMaxTouchPoints ?? domWindow.navigator.maxTouchPoints?.toInt() ?? 0;
     if (maxTouchPoints > 2) {
       return OperatingSystem.iOs;
     }
@@ -223,6 +224,14 @@ bool get isSafari => browserEngine == BrowserEngine.webkit;
 /// Whether the current browser is Firefox.
 bool get isFirefox => browserEngine == BrowserEngine.firefox;
 
+/// Whether the current browser is Edge.
+bool get isEdge => domWindow.navigator.userAgent.contains('Edg/');
+
+/// Whether we are running from a wasm module compiled with dart2wasm.
+/// Note: Currently the ffi library is available from dart2wasm but not dart2js
+/// or dartdevc.
+bool get isWasm => const bool.fromEnvironment('dart.library.ffi');
+
 /// Use in tests to simulate the detection of iOS 15.
 bool? debugIsIOS15;
 
@@ -258,3 +267,7 @@ int _detectWebGLVersion() {
   }
   return -1;
 }
+
+/// Whether the current browser supports the Chromium variant of CanvasKit.
+bool get browserSupportsCanvaskitChromium =>
+    browserSupportsImageDecoder && domIntl.v8BreakIterator != null;

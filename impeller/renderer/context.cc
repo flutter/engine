@@ -10,8 +10,12 @@ Context::~Context() = default;
 
 Context::Context() = default;
 
-bool Context::HasThreadingRestrictions() const {
-  return false;
+std::shared_ptr<GPUTracer> Context::GetGPUTracer() const {
+  return nullptr;
+}
+
+PixelFormat Context::GetColorAttachmentPixelFormat() const {
+  return GetDeviceCapabilities().GetDefaultColorFormat();
 }
 
 }  // namespace impeller

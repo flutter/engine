@@ -5,9 +5,7 @@
 #include <type_traits>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_canvas_dispatcher.h"
-#include "flutter/display_list/display_list_ops.h"
-#include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_op_records.h"
 #include "flutter/fml/trace_event.h"
 
 namespace flutter {
@@ -23,70 +21,172 @@ DisplayList::DisplayList()
       nested_op_count_(0),
       unique_id_(0),
       bounds_({0, 0, 0, 0}),
-      bounds_cull_({0, 0, 0, 0}),
       can_apply_group_opacity_(true) {}
 
-DisplayList::DisplayList(uint8_t* ptr,
+DisplayList::DisplayList(DisplayListStorage&& storage,
                          size_t byte_count,
                          unsigned int op_count,
                          size_t nested_byte_count,
                          unsigned int nested_op_count,
-                         const SkRect& cull_rect,
-                         bool can_apply_group_opacity)
-    : storage_(ptr),
+                         const SkRect& bounds,
+                         bool can_apply_group_opacity,
+                         sk_sp<const DlRTree> rtree)
+    : storage_(std::move(storage)),
       byte_count_(byte_count),
       op_count_(op_count),
       nested_byte_count_(nested_byte_count),
       nested_op_count_(nested_op_count),
-      bounds_({0, 0, -1, -1}),
-      bounds_cull_(cull_rect),
-      can_apply_group_opacity_(can_apply_group_opacity) {
-  static std::atomic<uint32_t> next_id{1};
-  do {
-    unique_id_ = next_id.fetch_add(+1, std::memory_order_relaxed);
-  } while (unique_id_ == 0);
-}
+      unique_id_(next_unique_id()),
+      bounds_(bounds),
+      can_apply_group_opacity_(can_apply_group_opacity),
+      rtree_(std::move(rtree)) {}
 
 DisplayList::~DisplayList() {
   uint8_t* ptr = storage_.get();
   DisposeOps(ptr, ptr + byte_count_);
 }
 
-void DisplayList::ComputeBounds() {
-  RectBoundsAccumulator accumulator;
-  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
-  Dispatch(calculator);
-  if (calculator.is_unbounded()) {
-    FML_LOG(INFO) << "returning partial bounds for unbounded DisplayList";
-  }
-  bounds_ = accumulator.bounds();
+uint32_t DisplayList::next_unique_id() {
+  static std::atomic<uint32_t> next_id{1};
+  uint32_t id;
+  do {
+    id = next_id.fetch_add(+1, std::memory_order_relaxed);
+  } while (id == 0);
+  return id;
 }
 
-void DisplayList::ComputeRTree() {
-  RTreeBoundsAccumulator accumulator;
-  DisplayListBoundsCalculator calculator(accumulator, &bounds_cull_);
-  Dispatch(calculator);
-  if (calculator.is_unbounded()) {
-    FML_LOG(INFO) << "returning partial rtree for unbounded DisplayList";
+class Culler {
+ public:
+  virtual ~Culler() = default;
+  virtual bool init(DispatchContext& context) = 0;
+  virtual void update(DispatchContext& context) = 0;
+};
+class NopCuller final : public Culler {
+ public:
+  static NopCuller instance;
+
+  ~NopCuller() = default;
+
+  bool init(DispatchContext& context) override {
+    // Setting next_render_index to 0 means that
+    // all rendering ops will be at or after that
+    // index so they will execute and all restore
+    // indices will be after it as well so all
+    // clip and transform operations will execute.
+    context.next_render_index = 0;
+    return true;
   }
-  rtree_ = accumulator.rtree();
+  void update(DispatchContext& context) override {}
+};
+NopCuller NopCuller::instance = NopCuller();
+class VectorCuller final : public Culler {
+ public:
+  VectorCuller(const DlRTree* rtree, const std::vector<int>& rect_indices)
+      : rtree_(rtree), cur_(rect_indices.begin()), end_(rect_indices.end()) {}
+
+  ~VectorCuller() = default;
+
+  bool init(DispatchContext& context) override {
+    if (cur_ < end_) {
+      context.next_render_index = rtree_->id(*cur_++);
+      return true;
+    } else {
+      // Setting next_render_index to MAX_INT means that
+      // all rendering ops will be "before" that index and
+      // they will skip themselves and all clip and transform
+      // ops will see that the next render index is not
+      // before the next restore index (even if both are MAX_INT)
+      // and so they will also not execute.
+      // None of this really matters because returning false
+      // here should cause the Dispatch operation to abort,
+      // but this value is conceptually correct if that short
+      // circuit optimization isn't used.
+      context.next_render_index = std::numeric_limits<int>::max();
+      return false;
+    }
+  }
+  void update(DispatchContext& context) override {
+    if (++context.cur_index > context.next_render_index) {
+      while (cur_ < end_) {
+        context.next_render_index = rtree_->id(*cur_++);
+        if (context.next_render_index >= context.cur_index) {
+          // It should be rare that we have duplicate indices
+          // but if we do, then having a while loop is a cheap
+          // insurance for those cases.
+          // The main cause of duplicate indices is when a
+          // DrawDisplayListOp was added to this DisplayList and
+          // both are computing an R-Tree, in which case the
+          // builder method will forward all of the child
+          // DisplayList's rects to this R-Tree with the same
+          // op_index.
+          return;
+        }
+      }
+      context.next_render_index = std::numeric_limits<int>::max();
+    }
+  }
+
+ private:
+  const DlRTree* rtree_;
+  std::vector<int>::const_iterator cur_;
+  std::vector<int>::const_iterator end_;
+};
+
+void DisplayList::Dispatch(DlOpReceiver& receiver) const {
+  uint8_t* ptr = storage_.get();
+  Dispatch(receiver, ptr, ptr + byte_count_, NopCuller::instance);
 }
 
-void DisplayList::Dispatch(Dispatcher& dispatcher,
+void DisplayList::Dispatch(DlOpReceiver& receiver,
+                           const SkRect& cull_rect) const {
+  if (cull_rect.isEmpty()) {
+    return;
+  }
+  if (cull_rect.contains(bounds())) {
+    Dispatch(receiver);
+    return;
+  }
+  const DlRTree* rtree = this->rtree().get();
+  FML_DCHECK(rtree != nullptr);
+  if (rtree == nullptr) {
+    FML_LOG(ERROR) << "dispatched with culling rect on DL with no rtree";
+    Dispatch(receiver);
+    return;
+  }
+  uint8_t* ptr = storage_.get();
+  std::vector<int> rect_indices;
+  rtree->search(cull_rect, &rect_indices);
+  VectorCuller culler(rtree, rect_indices);
+  Dispatch(receiver, ptr, ptr + byte_count_, culler);
+}
+
+void DisplayList::Dispatch(DlOpReceiver& receiver,
                            uint8_t* ptr,
-                           uint8_t* end) const {
-  TRACE_EVENT0("flutter", "DisplayList::Dispatch");
+                           uint8_t* end,
+                           Culler& culler) const {
+  DispatchContext context = {
+      .receiver = receiver,
+      .cur_index = 0,
+      // next_render_index will be initialized by culler.init()
+      .next_restore_index = std::numeric_limits<int>::max(),
+  };
+  if (!culler.init(context)) {
+    return;
+  }
   while (ptr < end) {
     auto op = reinterpret_cast<const DLOp*>(ptr);
     ptr += op->size;
     FML_DCHECK(ptr <= end);
     switch (op->type) {
-#define DL_OP_DISPATCH(name)                                \
-  case DisplayListOpType::k##name:                          \
-    static_cast<const name##Op*>(op)->dispatch(dispatcher); \
+#define DL_OP_DISPATCH(name)                             \
+  case DisplayListOpType::k##name:                       \
+    static_cast<const name##Op*>(op)->dispatch(context); \
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_DISPATCH(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPATCH
 
@@ -94,6 +194,7 @@ void DisplayList::Dispatch(Dispatcher& dispatcher,
         FML_DCHECK(false);
         return;
     }
+    culler.update(context);
   }
 }
 
@@ -111,6 +212,9 @@ void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_DISPOSE(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPOSE
 
@@ -149,6 +253,9 @@ static bool CompareOps(uint8_t* ptrA,
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_EQUALS)
+#ifdef IMPELLER_ENABLE_3D
+      DL_OP_EQUALS(SetSceneColorSource)
+#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_EQUALS
 
@@ -185,20 +292,6 @@ static bool CompareOps(uint8_t* ptrA,
     }
   }
   return true;
-}
-
-void DisplayList::RenderTo(DisplayListBuilder* builder,
-                           SkScalar opacity) const {
-  // TODO(100983): Opacity is not respected and attributes are not reset.
-  if (!builder) {
-    return;
-  }
-  Dispatch(*builder);
-}
-
-void DisplayList::RenderTo(SkCanvas* canvas, SkScalar opacity) const {
-  DisplayListCanvasDispatcher dispatcher(canvas, opacity);
-  Dispatch(dispatcher);
 }
 
 bool DisplayList::Equals(const DisplayList* other) const {

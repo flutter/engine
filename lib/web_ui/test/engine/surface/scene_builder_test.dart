@@ -5,6 +5,7 @@
 @TestOn('chrome || firefox')
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:js_util' as js_util;
 
 import 'package:test/bootstrap/browser.dart';
@@ -35,7 +36,7 @@ void testMain() {
     test('pushTransform implements surface lifecycle', () {
       testLayerLifeCycle((ui.SceneBuilder sceneBuilder, ui.EngineLayer? oldLayer) {
         return sceneBuilder.pushTransform(
-            (Matrix4.identity()..scale(domWindow.devicePixelRatio as double)).toFloat64());
+            (Matrix4.identity()..scale(domWindow.devicePixelRatio)).toFloat64());
       }, () {
         return '''<s><flt-transform></flt-transform></s>''';
       });
@@ -500,12 +501,12 @@ void testMain() {
 
       // Watches DOM mutations and counts deletions and additions to the child
       // list of the `<flt-scene>` element.
-      final DomMutationObserver observer = createDomMutationObserver(allowInterop((List<dynamic> mutations, _) {
-        for (final DomMutationRecord record in mutations.cast<DomMutationRecord>()) {
+      final DomMutationObserver observer = createDomMutationObserver((JSArray mutations, _) {
+        for (final DomMutationRecord record in mutations.toDart.cast<DomMutationRecord>()) {
           actualDeletions.addAll(record.removedNodes!);
           actualAdditions.addAll(record.addedNodes!);
         }
-      }));
+      });
       observer.observe(
           SurfaceSceneBuilder.debugLastFrameScene!.rootElement!, childList: true);
 
@@ -595,8 +596,8 @@ void testMain() {
 
     final DomElement content = builder.build().webOnlyRootElement!;
     final DomCanvasElement canvas = content.querySelector('canvas')! as DomCanvasElement;
-    final int unscaledWidth = canvas.width!;
-    final int unscaledHeight = canvas.height!;
+    final int unscaledWidth = canvas.width!.toInt();
+    final int unscaledHeight = canvas.height!.toInt();
 
     // Force update to scene which will utilize reuse code path.
     final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();
@@ -627,8 +628,8 @@ void testMain() {
 
     final DomElement content = builder.build().webOnlyRootElement!;
     final DomCanvasElement canvas = content.querySelector('canvas')! as DomCanvasElement;
-    final int unscaledWidth = canvas.width!;
-    final int unscaledHeight = canvas.height!;
+    final int unscaledWidth = canvas.width!.toInt();
+    final int unscaledHeight = canvas.height!.toInt();
 
     // Force update to scene which will utilize reuse code path.
     final SurfaceSceneBuilder builder2 = SurfaceSceneBuilder();

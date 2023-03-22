@@ -239,11 +239,13 @@ ParagraphBuilder::ParagraphBuilder(
     mask = encoded[0];
 
     if (mask & kPSTextAlignMask) {
-      style.text_align = txt::TextAlign(encoded[kPSTextAlignIndex]);
+      style.text_align =
+          static_cast<txt::TextAlign>(encoded[kPSTextAlignIndex]);
     }
 
     if (mask & kPSTextDirectionMask) {
-      style.text_direction = txt::TextDirection(encoded[kPSTextDirectionIndex]);
+      style.text_direction =
+          static_cast<txt::TextDirection>(encoded[kPSTextDirectionIndex]);
     }
 
     if (mask & kPSFontWeightMask) {
@@ -295,23 +297,8 @@ ParagraphBuilder::ParagraphBuilder(
                                         ->client()
                                         ->GetFontCollection();
 
-  typedef std::unique_ptr<txt::ParagraphBuilder> (*ParagraphBuilderFactory)(
-      const txt::ParagraphStyle& style,
-      std::shared_ptr<txt::FontCollection> font_collection);
-  ParagraphBuilderFactory factory = txt::ParagraphBuilder::CreateTxtBuilder;
-
-#if FLUTTER_ENABLE_SKSHAPER
-#if FLUTTER_ALWAYS_USE_SKSHAPER
-  bool enable_skparagraph = true;
-#else
-  bool enable_skparagraph = UIDartState::Current()->enable_skparagraph();
-#endif
-  if (enable_skparagraph) {
-    factory = txt::ParagraphBuilder::CreateSkiaBuilder;
-  }
-#endif  // FLUTTER_ENABLE_SKSHAPER
-
-  m_paragraphBuilder = factory(style, font_collection.GetFontCollection());
+  m_paragraphBuilder = txt::ParagraphBuilder::CreateSkiaBuilder(
+      style, font_collection.GetFontCollection());
 }
 
 ParagraphBuilder::~ParagraphBuilder() = default;
@@ -467,18 +454,18 @@ void ParagraphBuilder::pushStyle(const tonic::Int32List& encoded,
   if (mask & kTSBackgroundMask) {
     Paint background(background_objects, background_data);
     if (background.isNotNull()) {
-      SkPaint sk_paint;
-      style.has_background = true;
-      style.background = *background.paint(sk_paint);
+      DlPaint dl_paint;
+      background.toDlPaint(dl_paint);
+      style.background = dl_paint;
     }
   }
 
   if (mask & kTSForegroundMask) {
     Paint foreground(foreground_objects, foreground_data);
     if (foreground.isNotNull()) {
-      SkPaint sk_paint;
-      style.has_foreground = true;
-      style.foreground = *foreground.paint(sk_paint);
+      DlPaint dl_paint;
+      foreground.toDlPaint(dl_paint);
+      style.foreground = dl_paint;
     }
   }
 

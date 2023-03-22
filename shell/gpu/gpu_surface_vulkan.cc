@@ -5,9 +5,11 @@
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
 
 #include "flutter/fml/logging.h"
-#include "fml/trace_event.h"
-#include "include/core/SkColorSpace.h"
-#include "include/core/SkSize.h"
+#include "flutter/fml/trace_event.h"
+
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/core/SkSurface.h"
 #include "vulkan/vulkan_core.h"
 
 namespace flutter {
@@ -41,7 +43,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
   if (!render_to_surface_) {
     return std::make_unique<SurfaceFrame>(
         nullptr, SurfaceFrame::FramebufferInfo(),
-        [](const SurfaceFrame& surface_frame, SkCanvas* canvas) {
+        [](const SurfaceFrame& surface_frame, DlCanvas* canvas) {
           return true;
         },
         frame_size);
@@ -63,14 +65,14 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
 
   SurfaceFrame::SubmitCallback callback = [image = image, delegate = delegate_](
                                               const SurfaceFrame&,
-                                              SkCanvas* canvas) -> bool {
+                                              DlCanvas* canvas) -> bool {
     TRACE_EVENT0("flutter", "GPUSurfaceVulkan::PresentImage");
     if (canvas == nullptr) {
       FML_DLOG(ERROR) << "Canvas not available.";
       return false;
     }
 
-    canvas->flush();
+    canvas->Flush();
 
     return delegate->PresentImage(reinterpret_cast<VkImage>(image.image),
                                   static_cast<VkFormat>(image.format));
@@ -78,8 +80,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceVulkan::AcquireFrame(
 
   SurfaceFrame::FramebufferInfo framebuffer_info{.supports_readback = true};
 
-  return std::make_unique<SurfaceFrame>(std::move(surface),
-                                        std::move(framebuffer_info),
+  return std::make_unique<SurfaceFrame>(std::move(surface), framebuffer_info,
                                         std::move(callback), frame_size);
 }
 

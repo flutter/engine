@@ -9,11 +9,10 @@ typedef FrameCallback = void Function(Duration duration);
 typedef TimingsCallback = void Function(List<FrameTiming> timings);
 typedef PointerDataPacketCallback = void Function(PointerDataPacket packet);
 typedef KeyDataCallback = bool Function(KeyData data);
-typedef SemanticsActionCallback = void Function(int id, SemanticsAction action, ByteData? args);
+typedef SemanticsActionCallback = void Function(int nodeId, SemanticsAction action, ByteData? args);
 typedef PlatformMessageResponseCallback = void Function(ByteData? data);
 typedef PlatformMessageCallback = void Function(
     String name, ByteData? data, PlatformMessageResponseCallback? callback);
-typedef PlatformConfigurationChangedCallback = void Function(PlatformConfiguration configuration);
 typedef ErrorCallback = bool Function(Object exception, StackTrace stackTrace);
 
 // ignore: avoid_classes_with_only_static_members
@@ -27,11 +26,12 @@ class RootIsolateToken {
 abstract class PlatformDispatcher {
   static PlatformDispatcher get instance => engine.EnginePlatformDispatcher.instance;
 
-  PlatformConfiguration get configuration;
   VoidCallback? get onPlatformConfigurationChanged;
   set onPlatformConfigurationChanged(VoidCallback? callback);
 
   Iterable<FlutterView> get views;
+
+  FlutterView? get implicitView;
 
   VoidCallback? get onMetricsChanged;
   set onMetricsChanged(VoidCallback? callback);
@@ -83,11 +83,19 @@ abstract class PlatformDispatcher {
   VoidCallback? get onAccessibilityFeaturesChanged;
   set onAccessibilityFeaturesChanged(VoidCallback? callback);
 
+  @Deprecated('''
+    In a multi-view world, the platform dispatcher can no longer provide apis
+    to update semantics since each view will host its own semantics tree.
+
+    Semantics updates must be passed to an individual [FlutterView]. To update
+    semantics, use PlatformDispatcher.instance.views to get a [FlutterView] and
+    call `updateSemantics`.
+  ''')
   void updateSemantics(SemanticsUpdate update);
 
   Locale get locale;
 
-  List<Locale> get locales => configuration.locales;
+  List<Locale> get locales;
 
   Locale? computePlatformResolvedLocale(List<Locale> supportedLocales);
 
@@ -96,9 +104,9 @@ abstract class PlatformDispatcher {
 
   String get initialLifecycleState => 'AppLifecycleState.resumed';
 
-  bool get alwaysUse24HourFormat => configuration.alwaysUse24HourFormat;
+  bool get alwaysUse24HourFormat;
 
-  double get textScaleFactor => configuration.textScaleFactor;
+  double get textScaleFactor;
 
   bool get nativeSpellCheckServiceDefined => false;
 
@@ -107,17 +115,17 @@ abstract class PlatformDispatcher {
   VoidCallback? get onTextScaleFactorChanged;
   set onTextScaleFactorChanged(VoidCallback? callback);
 
-  Brightness get platformBrightness => configuration.platformBrightness;
+  Brightness get platformBrightness;
 
   VoidCallback? get onPlatformBrightnessChanged;
   set onPlatformBrightnessChanged(VoidCallback? callback);
 
-  String? get systemFontFamily => configuration.systemFontFamily;
+  String? get systemFontFamily;
 
   VoidCallback? get onSystemFontFamilyChanged;
   set onSystemFontFamilyChanged(VoidCallback? callback);
 
-  bool get semanticsEnabled => configuration.semanticsEnabled;
+  bool get semanticsEnabled;
 
   VoidCallback? get onSemanticsEnabledChanged;
   set onSemanticsEnabledChanged(VoidCallback? callback);
@@ -134,107 +142,6 @@ abstract class PlatformDispatcher {
 
   VoidCallback? get onFrameDataChanged => null;
   set onFrameDataChanged(VoidCallback? callback) {}
-}
-
-class PlatformConfiguration {
-  const PlatformConfiguration({
-    this.accessibilityFeatures = const engine.EngineAccessibilityFeatures(0),
-    this.alwaysUse24HourFormat = false,
-    this.semanticsEnabled = false,
-    this.platformBrightness = Brightness.light,
-    this.textScaleFactor = 1.0,
-    this.locales = const <Locale>[],
-    this.defaultRouteName = '/',
-    this.systemFontFamily,
-  });
-
-  PlatformConfiguration copyWith({
-    AccessibilityFeatures? accessibilityFeatures,
-    bool? alwaysUse24HourFormat,
-    bool? semanticsEnabled,
-    Brightness? platformBrightness,
-    double? textScaleFactor,
-    List<Locale>? locales,
-    String? defaultRouteName,
-    String? systemFontFamily,
-  }) {
-    return PlatformConfiguration(
-      accessibilityFeatures: accessibilityFeatures ?? this.accessibilityFeatures,
-      alwaysUse24HourFormat: alwaysUse24HourFormat ?? this.alwaysUse24HourFormat,
-      semanticsEnabled: semanticsEnabled ?? this.semanticsEnabled,
-      platformBrightness: platformBrightness ?? this.platformBrightness,
-      textScaleFactor: textScaleFactor ?? this.textScaleFactor,
-      locales: locales ?? this.locales,
-      defaultRouteName: defaultRouteName ?? this.defaultRouteName,
-      systemFontFamily: systemFontFamily ?? this.systemFontFamily,
-    );
-  }
-
-  final AccessibilityFeatures accessibilityFeatures;
-  final bool alwaysUse24HourFormat;
-  final bool semanticsEnabled;
-  final Brightness platformBrightness;
-  final double textScaleFactor;
-  final List<Locale> locales;
-  final String defaultRouteName;
-  final String? systemFontFamily;
-}
-
-class ViewConfiguration {
-  const ViewConfiguration({
-    this.window,
-    this.devicePixelRatio = 1.0,
-    this.geometry = Rect.zero,
-    this.visible = false,
-    this.viewInsets = WindowPadding.zero,
-    this.viewPadding = WindowPadding.zero,
-    this.systemGestureInsets = WindowPadding.zero,
-    this.padding = WindowPadding.zero,
-    this.gestureSettings = const GestureSettings(),
-    this.displayFeatures = const <DisplayFeature>[],
-  });
-
-  ViewConfiguration copyWith({
-    FlutterWindow? window,
-    double? devicePixelRatio,
-    Rect? geometry,
-    bool? visible,
-    WindowPadding? viewInsets,
-    WindowPadding? viewPadding,
-    WindowPadding? systemGestureInsets,
-    WindowPadding? padding,
-    GestureSettings? gestureSettings,
-    List<DisplayFeature>? displayFeatures,
-  }) {
-    return ViewConfiguration(
-      window: window ?? this.window,
-      devicePixelRatio: devicePixelRatio ?? this.devicePixelRatio,
-      geometry: geometry ?? this.geometry,
-      visible: visible ?? this.visible,
-      viewInsets: viewInsets ?? this.viewInsets,
-      viewPadding: viewPadding ?? this.viewPadding,
-      systemGestureInsets: systemGestureInsets ?? this.systemGestureInsets,
-      padding: padding ?? this.padding,
-      gestureSettings: gestureSettings ?? this.gestureSettings,
-      displayFeatures: displayFeatures ?? this.displayFeatures,
-    );
-  }
-
-  final FlutterWindow? window;
-  final double devicePixelRatio;
-  final Rect geometry;
-  final bool visible;
-  final WindowPadding viewInsets;
-  final WindowPadding viewPadding;
-  final WindowPadding systemGestureInsets;
-  final WindowPadding padding;
-  final GestureSettings gestureSettings;
-  final List<DisplayFeature> displayFeatures;
-
-  @override
-  String toString() {
-    return '$runtimeType[window: $window, geometry: $geometry]';
-  }
 }
 
 enum FramePhase {
@@ -344,25 +251,41 @@ enum AppLifecycleState {
   detached,
 }
 
-abstract class WindowPadding {
-  const factory WindowPadding._(
+enum AppExitResponse {
+  exit,
+  cancel,
+}
+
+enum AppExitType {
+  cancelable,
+  required,
+}
+
+abstract class ViewPadding {
+  const factory ViewPadding._(
       {required double left,
       required double top,
       required double right,
-      required double bottom}) = engine.WindowPadding;
+      required double bottom}) = engine.ViewPadding;
 
   double get left;
   double get top;
   double get right;
   double get bottom;
 
-  static const WindowPadding zero = WindowPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
+  static const ViewPadding zero = ViewPadding._(left: 0.0, top: 0.0, right: 0.0, bottom: 0.0);
 
   @override
   String toString() {
-    return 'WindowPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
+    return 'ViewPadding(left: $left, top: $top, right: $right, bottom: $bottom)';
   }
 }
+
+@Deprecated(
+  'Use ViewPadding instead. '
+  'This feature was deprecated after v3.8.0-14.0.pre.',
+)
+typedef WindowPadding = ViewPadding;
 
 class DisplayFeature {
   const DisplayFeature({
@@ -414,16 +337,14 @@ class Locale {
   const Locale(
     this._languageCode, [
     this._countryCode,
-  ])  : assert(_languageCode != null),
-        assert(_languageCode != ''),
+  ])  : assert(_languageCode != ''),
         scriptCode = null;
 
   const Locale.fromSubtags({
     String languageCode = 'und',
     this.scriptCode,
     String? countryCode,
-  })  : assert(languageCode != null),
-        assert(languageCode != ''),
+  })  : assert(languageCode != ''),
         _languageCode = languageCode,
         assert(scriptCode != ''),
         assert(countryCode != ''),

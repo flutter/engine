@@ -6,9 +6,6 @@
         "gtest_runner.shard.cml",
         "sys/component/realm_builder_absolute.shard.cml",
 
-        "syslog/client.shard.cml",
-        "vulkan/client.shard.cml",
-
         // This test needs both the vulkan facet and the hermetic-tier-2 facet,
         // so we are forced to make it a system test.
         "sys/testing/system-test.shard.cml",
@@ -18,11 +15,11 @@
         binary: "bin/app",
     },
     use: [
-        { protocol: "fuchsia.sys2.EventSource" },
-        {
-            event: "stopped",
-            from: "framework",
-        },
+      {
+        protocol: [
+          "fuchsia.ui.test.input.KeyboardInputListener",
+        ]
+      }
     ],
     offer: [
         {
@@ -33,10 +30,44 @@
                 "fuchsia.scheduler.ProfileProvider",
                 "fuchsia.sysmem.Allocator",
                 "fuchsia.tracing.provider.Registry",
+                "fuchsia.ui.input.ImeService",
                 "fuchsia.vulkan.loader.Loader",
+                "fuchsia.ui.scenic.Scenic",
+                "fuchsia.ui.test.input.KeyboardInputListener",
+                "fuchsia.ui.input3.Keyboard",
+                "fuchsia.intl.PropertyProvider",
+                "fuchsia.posix.socket.Provider",
+                "fuchsia.ui.pointerinjector.Registry",
+                "fuchsia.fonts.Provider",
+                "fuchsia.feedback.CrashReportingProductRegister",
+                "fuchsia.settings.Keyboard",
+                "fuchsia.accessibility.semantics.SemanticsManager",
             ],
             from: "parent",
             to: "#realm_builder",
         },
+        {
+            directory: "pkg",
+            subdir: "config",
+            as: "config-data",
+            from: "framework",
+            to: "#realm_builder",
+        },
     ],
+    // TODO(https://fxbug.dev/114584): Figure out how to bring these in as deps (if possible oot).
+    facets: {
+        "fuchsia.test": {
+            "deprecated-allowed-packages": [
+                "cursor",
+                "flatland-scene-manager-test-ui-stack",
+                "test-ui-stack",
+                "oot_flutter_aot_runner",
+                "oot_flutter_jit_runner",
+                "oot_flutter_jit_product_runner",
+                "oot_flutter_aot_product_runner",
+                "test_manager",
+                "text-input-view",
+            ],
+        },
+    },
 }

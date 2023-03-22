@@ -82,6 +82,16 @@ struct TSize {
     };
   }
 
+  constexpr TSize Floor() const {
+    return {std::floor(width), std::floor(height)};
+  }
+
+  constexpr TSize Ceil() const { return {std::ceil(width), std::ceil(height)}; }
+
+  constexpr TSize Round() const {
+    return {std::round(width), std::round(height)};
+  }
+
   constexpr Type Area() const { return width * height; }
 
   constexpr bool IsPositive() const { return width > 0 && height > 0; }
@@ -99,10 +109,12 @@ struct TSize {
   }
 
   constexpr size_t MipCount() const {
+    constexpr size_t minimum_mip = 1u;
     if (!IsPositive()) {
-      return 1u;
+      return minimum_mip;
     }
-    return std::max(ceil(log2(width)), ceil(log2(height)));
+    size_t result = std::max(ceil(log2(width)), ceil(log2(height)));
+    return std::max(result, minimum_mip);
   }
 };
 

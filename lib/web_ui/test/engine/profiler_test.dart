@@ -2,13 +2,17 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:js_util' as js_util;
-
+import 'dart:js_interop';
+import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 
 import '../spy.dart';
+
+@JS('window._flutter_internal_on_benchmark')
+external set _onBenchmark (JSAny? object);
+set onBenchmark (Object? object) => _onBenchmark = object?.toJSAnyShallow;
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
@@ -31,7 +35,7 @@ void _profilerTests() {
   });
 
   tearDown(() {
-    jsOnBenchmark(null);
+    onBenchmark = null;
     Profiler.isBenchmarkMode = false;
   });
 
@@ -41,7 +45,7 @@ void _profilerTests() {
 
   test('can listen to benchmarks', () {
     final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
-    jsOnBenchmark((String name, num value) {
+    onBenchmark = allowInterop((String name, num value) {
       data.add(BenchmarkDatapoint(name, value));
     });
 
@@ -55,7 +59,7 @@ void _profilerTests() {
 
     // Remove listener and make sure nothing breaks and the data isn't being
     // sent to the old callback anymore.
-    jsOnBenchmark(null);
+    onBenchmark = null;
     expect(() => Profiler.instance.benchmark('baz', 99.999), returnsNormally);
     expect(data, isEmpty);
   });
@@ -64,17 +68,20 @@ void _profilerTests() {
     final List<BenchmarkDatapoint> data = <BenchmarkDatapoint>[];
 
     // Wrong callback signature.
-    jsOnBenchmark((num value) {
+    onBenchmark = allowInterop((num value) {
       data.add(BenchmarkDatapoint('bad', value));
     });
     expect(
       () => Profiler.instance.benchmark('foo', 123),
-      throwsA(isA<NoSuchMethodError>()),
+
+      // dart2js throws a NoSuchMethodError, dart2wasm throws a TypeError here.
+      // Just make sure it throws an error in this case.
+      throwsA(isA<Error>()),
     );
     expect(data, isEmpty);
 
     // Not even a callback.
-    jsOnBenchmark('string');
+    onBenchmark = 'string';
     expect(
       () => Profiler.instance.benchmark('foo', 123),
       throwsA(isA<TypeError>()),
@@ -154,14 +161,4 @@ class BenchmarkDatapoint {
   String toString() {
     return '$runtimeType("$name", $value)';
   }
-}
-
-void jsOnBenchmark(dynamic listener) {
-  js_util.setProperty(
-    domWindow,
-    '_flutter_internal_on_benchmark',
-    listener is Function
-      ? allowInterop(listener)
-      : listener,
-  );
 }

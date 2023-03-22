@@ -25,9 +25,9 @@ class FlutterMain {
 
  private:
   const flutter::Settings settings_;
-  DartServiceIsolate::CallbackHandle observatory_uri_callback_;
+  DartServiceIsolate::CallbackHandle vm_service_uri_callback_;
 
-  explicit FlutterMain(flutter::Settings settings);
+  explicit FlutterMain(const flutter::Settings& settings);
 
   static void Init(JNIEnv* env,
                    jclass clazz,
@@ -38,7 +38,7 @@ class FlutterMain {
                    jstring engineCachesPath,
                    jlong initTimeMillis);
 
-  void SetupObservatoryUriCallback(JNIEnv* env);
+  void SetupDartVMServiceUriCallback(JNIEnv* env);
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterMain);
 };

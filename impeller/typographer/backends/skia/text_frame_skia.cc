@@ -4,15 +4,21 @@
 
 #include "impeller/typographer/backends/skia/text_frame_skia.h"
 
+#include <vector>
+
 #include "flutter/fml/logging.h"
 #include "impeller/typographer/backends/skia/typeface_skia.h"
+#include "include/core/SkFontTypes.h"
+#include "include/core/SkRect.h"
 #include "third_party/skia/include/core/SkFont.h"
 #include "third_party/skia/include/core/SkFontMetrics.h"
+#include "third_party/skia/src/core/SkStrikeSpec.h"    // nogncheck
 #include "third_party/skia/src/core/SkTextBlobPriv.h"  // nogncheck
 
 namespace impeller {
 
-static Font ToFont(const SkFont& font, Scalar scale) {
+static Font ToFont(const SkTextBlobRunIterator& run, Scalar scale) {
+  auto& font = run.font();
   auto typeface = std::make_shared<TypefaceSkia>(font.refTypefaceOrDefault());
 
   SkFontMetrics sk_metrics;
@@ -21,15 +27,18 @@ static Font ToFont(const SkFont& font, Scalar scale) {
   Font::Metrics metrics;
   metrics.scale = scale;
   metrics.point_size = font.getSize();
-  metrics.ascent = sk_metrics.fAscent;
-  metrics.descent = sk_metrics.fDescent;
-  metrics.min_extent = {sk_metrics.fXMin, sk_metrics.fAscent};
-  metrics.max_extent = {sk_metrics.fXMax, sk_metrics.fDescent};
+  metrics.embolden = font.isEmbolden();
+  metrics.skewX = font.getSkewX();
+  metrics.scaleX = font.getScaleX();
 
-  return Font{std::move(typeface), std::move(metrics)};
+  return Font{std::move(typeface), metrics};
 }
 
-TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale) {
+static Rect ToRect(const SkRect& rect) {
+  return Rect::MakeLTRB(rect.fLeft, rect.fTop, rect.fRight, rect.fBottom);
+}
+
+TextFrame TextFrameFromTextBlob(const sk_sp<SkTextBlob>& blob, Scalar scale) {
   if (!blob) {
     return {};
   }
@@ -37,7 +46,13 @@ TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale) {
   TextFrame frame;
 
   for (SkTextBlobRunIterator run(blob.get()); !run.done(); run.next()) {
-    TextRun text_run(ToFont(run.font(), scale));
+    TextRun text_run(ToFont(run, scale));
+
+    // TODO(jonahwilliams): ask Skia for a public API to look this up.
+    // https://github.com/flutter/flutter/issues/112005
+    SkStrikeSpec strikeSpec = SkStrikeSpec::MakeWithNoDevice(run.font());
+    SkBulkGlyphMetricsAndPaths paths{strikeSpec};
+
     const auto glyph_count = run.glyphCount();
     const auto* glyphs = run.glyphs();
     switch (run.positioning()) {
@@ -47,14 +62,24 @@ TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale) {
       case SkTextBlobRunIterator::kHorizontal_Positioning:
         FML_DLOG(ERROR) << "Unimplemented.";
         break;
-      case SkTextBlobRunIterator::kFull_Positioning:
+      case SkTextBlobRunIterator::kFull_Positioning: {
+        std::vector<SkRect> glyph_bounds;
+        glyph_bounds.resize(glyph_count);
+        run.font().getBounds(glyphs, glyph_count, glyph_bounds.data(), nullptr);
+
         for (auto i = 0u; i < glyph_count; i++) {
           // kFull_Positioning has two scalars per glyph.
           const SkPoint* glyph_points = run.points();
           const auto* point = glyph_points + i;
-          text_run.AddGlyph(glyphs[i], Point{point->x(), point->y()});
+          Glyph::Type type = paths.glyph(glyphs[i])->isColor()
+                                 ? Glyph::Type::kBitmap
+                                 : Glyph::Type::kPath;
+
+          text_run.AddGlyph(Glyph{glyphs[i], type, ToRect(glyph_bounds[i])},
+                            Point{point->x(), point->y()}.Round());
         }
         break;
+      }
       case SkTextBlobRunIterator::kRSXform_Positioning:
         FML_DLOG(ERROR) << "Unimplemented.";
         break;
@@ -62,7 +87,7 @@ TextFrame TextFrameFromTextBlob(sk_sp<SkTextBlob> blob, Scalar scale) {
         FML_DLOG(ERROR) << "Unimplemented.";
         continue;
     }
-    frame.AddTextRun(std::move(text_run));
+    frame.AddTextRun(text_run);
   }
 
   return frame;

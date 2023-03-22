@@ -7,7 +7,10 @@
 #include <array>
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <sstream>
+#include <string>
+#include <utility>
 
 #include "flutter/fml/paths.h"
 #include "impeller/base/allocation.h"
@@ -15,13 +18,37 @@
 #include "impeller/compiler/includer.h"
 #include "impeller/compiler/logger.h"
 #include "impeller/compiler/types.h"
+#include "impeller/compiler/uniform_sorter.h"
 
 namespace impeller {
 namespace compiler {
 
 const uint32_t kFragBindingBase = 128;
 const size_t kNumUniformKinds =
-    int(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
+    static_cast<int>(shaderc_uniform_kind::shaderc_uniform_kind_buffer) + 1;
+
+static uint32_t ParseMSLVersion(const std::string& msl_version) {
+  std::stringstream sstream(msl_version);
+  std::string version_part;
+  uint32_t major = 1;
+  uint32_t minor = 2;
+  uint32_t patch = 0;
+  if (std::getline(sstream, version_part, '.')) {
+    major = std::stoi(version_part);
+    if (std::getline(sstream, version_part, '.')) {
+      minor = std::stoi(version_part);
+      if (std::getline(sstream, version_part, '.')) {
+        patch = std::stoi(version_part);
+      }
+    }
+  }
+  if (major < 1 || (major == 1 && minor < 2)) {
+    std::cerr << "--metal-version version must be at least 1.2. Have "
+              << msl_version << std::endl;
+  }
+  return spirv_cross::CompilerMSL::Options::make_msl_version(major, minor,
+                                                             patch);
+}
 
 static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
                                          const SourceOptions& source_options) {
@@ -29,11 +56,55 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   spirv_cross::CompilerMSL::Options sl_options;
   sl_options.platform =
       TargetPlatformToMSLPlatform(source_options.target_platform);
-  // If this version specification changes, the GN rules that process the
-  // Metal to AIR must be updated as well.
-  sl_options.msl_version =
-      spirv_cross::CompilerMSL::Options::make_msl_version(1, 2);
+  sl_options.msl_version = ParseMSLVersion(source_options.metal_version);
+  sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
+
+  // Sort the float and sampler uniforms according to their declared/decorated
+  // order. For user authored fragment shaders, the API for setting uniform
+  // values uses the index of the uniform in the declared order. By default, the
+  // metal backend of spirv-cross will order uniforms according to usage. To fix
+  // this, we use the sorted order and the add_msl_resource_binding API to force
+  // the ordering to match the declared order. Note that while this code runs
+  // for all compiled shaders, it will only affect fragment shaders due to the
+  // specified stage.
+  auto floats =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::Float);
+  auto images =
+      SortUniforms(&ir, sl_compiler.get(), spirv_cross::SPIRType::SampledImage);
+
+  uint32_t buffer_offset = 0;
+  uint32_t sampler_offset = 0;
+  for (auto& float_id : floats) {
+    sl_compiler->add_msl_resource_binding(
+        {.stage = spv::ExecutionModel::ExecutionModelFragment,
+         .basetype = spirv_cross::SPIRType::BaseType::Float,
+         .desc_set = sl_compiler->get_decoration(float_id,
+                                                 spv::DecorationDescriptorSet),
+         .binding =
+             sl_compiler->get_decoration(float_id, spv::DecorationBinding),
+         .count = 1u,
+         .msl_buffer = buffer_offset});
+    buffer_offset++;
+  }
+  for (auto& image_id : images) {
+    sl_compiler->add_msl_resource_binding({
+        .stage = spv::ExecutionModel::ExecutionModelFragment,
+        .basetype = spirv_cross::SPIRType::BaseType::SampledImage,
+        .desc_set =
+            sl_compiler->get_decoration(image_id, spv::DecorationDescriptorSet),
+        .binding =
+            sl_compiler->get_decoration(image_id, spv::DecorationBinding),
+        .count = 1u,
+        // A sampled image is both an image and a sampler, so both
+        // offsets need to be set or depending on the partiular shader
+        // the bindings may be incorrect.
+        .msl_texture = sampler_offset,
+        .msl_sampler = sampler_offset,
+    });
+    sampler_offset++;
+  }
+
   return CompilerBackend(sl_compiler);
 }
 
@@ -43,11 +114,16 @@ static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
   spirv_cross::CompilerGLSL::Options sl_options;
   sl_options.force_zero_initialized_variables = true;
   sl_options.vertex.fixup_clipspace = true;
-  if (source_options.target_platform == TargetPlatform::kOpenGLES) {
-    sl_options.version = 100;
+  if (source_options.target_platform == TargetPlatform::kOpenGLES ||
+      source_options.target_platform == TargetPlatform::kRuntimeStageGLES) {
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 100;
     sl_options.es = true;
   } else {
-    sl_options.version = 120;
+    sl_options.version = source_options.gles_language_version > 0
+                             ? source_options.gles_language_version
+                             : 120;
     sl_options.es = false;
   }
   gl_compiler->set_common_options(sl_options);
@@ -69,7 +145,6 @@ static bool EntryPointMustBeNamedMain(TargetPlatform platform) {
     case TargetPlatform::kVulkan:
     case TargetPlatform::kRuntimeStageMetal:
       return false;
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kSkSL:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
@@ -86,14 +161,13 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
-    case TargetPlatform::kRuntimeStageGLES:
     case TargetPlatform::kVulkan:
       compiler = CreateMSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
-    case TargetPlatform::kFlutterSPIRV:
     case TargetPlatform::kOpenGLES:
     case TargetPlatform::kOpenGLDesktop:
+    case TargetPlatform::kRuntimeStageGLES:
       compiler = CreateGLSLCompiler(ir, source_options);
       break;
     case TargetPlatform::kSkSL:
@@ -103,7 +177,8 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     return {};
   }
   auto* backend = compiler.GetCompiler();
-  if (!EntryPointMustBeNamedMain(source_options.target_platform)) {
+  if (!EntryPointMustBeNamedMain(source_options.target_platform) &&
+      source_options.source_language == SourceLanguage::kGLSL) {
     backend->rename_entry_point("main", source_options.entry_point_name,
                                 ToExecutionModel(source_options.type));
   }
@@ -238,7 +313,7 @@ void Compiler::SetBindingBase(shaderc::CompileOptions& compiler_opts) const {
 }
 
 Compiler::Compiler(const fml::Mapping& source_mapping,
-                   SourceOptions source_options,
+                   const SourceOptions& source_options,
                    Reflector::Options reflector_options)
     : options_(source_options) {
   if (source_mapping.GetMapping() == nullptr) {
@@ -266,12 +341,24 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
   // here are irrelevant and get in the way of generating reflection code.
   spirv_options.SetGenerateDebugInfo();
 
-  // Expects GLSL 4.60 (Core Profile).
-  // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
-  spirv_options.SetSourceLanguage(
-      shaderc_source_language::shaderc_source_language_glsl);
-  spirv_options.SetForcedVersionProfile(460,
-                                        shaderc_profile::shaderc_profile_core);
+  switch (options_.source_language) {
+    case SourceLanguage::kGLSL:
+      // Expects GLSL 4.60 (Core Profile).
+      // https://www.khronos.org/registry/OpenGL/specs/gl/GLSLangSpec.4.60.pdf
+      spirv_options.SetSourceLanguage(
+          shaderc_source_language::shaderc_source_language_glsl);
+      spirv_options.SetForcedVersionProfile(
+          460, shaderc_profile::shaderc_profile_core);
+      break;
+    case SourceLanguage::kHLSL:
+      spirv_options.SetSourceLanguage(
+          shaderc_source_language::shaderc_source_language_hlsl);
+      break;
+    case SourceLanguage::kUnknown:
+      COMPILER_ERROR << "Source language invalid.";
+      return;
+  }
+
   SetLimitations(spirv_options);
 
   switch (source_options.target_platform) {
@@ -292,9 +379,9 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_optimization_level::shaderc_optimization_level_performance);
       spirv_options.SetTargetEnvironment(
           shaderc_target_env::shaderc_target_env_vulkan,
-          shaderc_env_version::shaderc_env_version_vulkan_1_0);
+          shaderc_env_version::shaderc_env_version_vulkan_1_1);
       spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+          shaderc_spirv_version::shaderc_spirv_version_1_3);
       break;
     case TargetPlatform::kRuntimeStageMetal:
     case TargetPlatform::kRuntimeStageGLES:
@@ -305,21 +392,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_0);
-      break;
-    case TargetPlatform::kFlutterSPIRV:
-      // With any optimization level above 'zero' enabled, shaderc will emit
-      // ops that are not supported by the Engine's SPIR-V -> SkSL transpiler.
-      // In particular, with 'shaderc_optimization_level_size' enabled, it will
-      // generate OpPhi (opcode 245) for test 246_OpLoopMerge.frag instead of
-      // the OpLoopMerge op expected by that test.
-      // See: https://github.com/flutter/flutter/issues/105396.
-      spirv_options.SetOptimizationLevel(
-          shaderc_optimization_level::shaderc_optimization_level_zero);
-      spirv_options.SetTargetEnvironment(
-          shaderc_target_env::shaderc_target_env_opengl,
-          shaderc_env_version::shaderc_env_version_opengl_4_5);
-      spirv_options.SetTargetSpirv(
-          shaderc_spirv_version::shaderc_spirv_version_1_0);
+      spirv_options.AddMacroDefinition("IMPELLER_GRAPHICS_BACKEND");
       break;
     case TargetPlatform::kSkSL:
       // When any optimization level above 'zero' is enabled, the phi merges at
@@ -333,6 +406,7 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           shaderc_env_version::shaderc_env_version_opengl_4_5);
       spirv_options.SetTargetSpirv(
           shaderc_spirv_version::shaderc_spirv_version_1_0);
+      spirv_options.AddMacroDefinition("SKIA_GRAPHICS_BACKEND");
       break;
     case TargetPlatform::kUnknown:
       COMPILER_ERROR << "Target platform invalid.";
@@ -361,7 +435,9 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
 
   shaderc::Compiler spv_compiler;
   if (!spv_compiler.IsValid()) {
-    COMPILER_ERROR << "Could not initialize the GLSL to SPIRV compiler.";
+    COMPILER_ERROR << "Could not initialize the "
+                   << SourceLanguageToString(options_.source_language)
+                   << " to SPIRV compiler.";
     return;
   }
 
@@ -378,11 +454,16 @@ Compiler::Compiler(const fml::Mapping& source_mapping,
           ));
   if (spv_result_->GetCompilationStatus() !=
       shaderc_compilation_status::shaderc_compilation_status_success) {
-    COMPILER_ERROR << "GLSL to SPIRV failed; "
+    COMPILER_ERROR << SourceLanguageToString(options_.source_language)
+                   << " to SPIRV failed; "
                    << ShaderCErrorToString(spv_result_->GetCompilationStatus())
                    << ". " << spv_result_->GetNumErrors() << " error(s) and "
                    << spv_result_->GetNumWarnings() << " warning(s).";
-    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0) {
+    // It should normally be enough to check that there are errors or warnings,
+    // but some cases result in no errors or warnings and still have an error
+    // message. If there's a message we should print it.
+    if (spv_result_->GetNumErrors() > 0 || spv_result_->GetNumWarnings() > 0 ||
+        !spv_result_->GetErrorMessage().empty()) {
       COMPILER_ERROR_NO_PREFIX << spv_result_->GetErrorMessage();
     }
     return;
@@ -482,7 +563,7 @@ const std::vector<std::string>& Compiler::GetIncludedFileNames() const {
 }
 
 static std::string JoinStrings(std::vector<std::string> items,
-                               std::string separator) {
+                               const std::string& separator) {
   std::stringstream stream;
   for (size_t i = 0, count = items.size(); i < count; i++) {
     const auto is_last = (i == count - 1);
@@ -495,7 +576,7 @@ static std::string JoinStrings(std::vector<std::string> items,
   return stream.str();
 }
 
-std::string Compiler::GetDependencyNames(std::string separator) const {
+std::string Compiler::GetDependencyNames(const std::string& separator) const {
   std::vector<std::string> dependencies = included_file_names_;
   dependencies.push_back(options_.file_name);
   return JoinStrings(dependencies, separator);

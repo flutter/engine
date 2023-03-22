@@ -12,7 +12,6 @@ import 'package:analyzer/dart/analysis/results.dart';
 import 'package:analyzer/dart/analysis/session.dart';
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
-import 'package:pub_semver/pub_semver.dart';
 
 /// Returns all indexed fields in [className].
 ///
@@ -36,11 +35,11 @@ List<String> getDartClassFields({
   final RegExp fieldExp = RegExp(r'_k(\w*)Index');
   final List<String> fields = <String>[];
   for (final CompilationUnitMember unitMember in result.unit.declarations) {
-    if (unitMember is ClassDeclaration && unitMember.name2.lexeme == className) {
+    if (unitMember is ClassDeclaration && unitMember.name.lexeme == className) {
       for (final ClassMember classMember in unitMember.members) {
         if (classMember is FieldDeclaration) {
           for (final VariableDeclaration field in classMember.fields.variables) {
-            final String fieldName = field.name2.lexeme;
+            final String fieldName = field.name.lexeme;
             final RegExpMatch? match = fieldExp.firstMatch(fieldName);
             if (match != null) {
               fields.add(match.group(1)!);
@@ -163,10 +162,7 @@ List<String> _getBlockStartingWith({
 /// Apply a visitor to all compilation units in the dart:ui library.
 void visitUIUnits(String flutterRoot, AstVisitor<void> visitor) {
   final String uiRoot = '$flutterRoot/lib/ui';
-  final FeatureSet analyzerFeatures = FeatureSet.fromEnableFlags2(
-    sdkLanguageVersion: Version.parse('2.17.0'),
-    flags: <String>['non-nullable'],
-  );
+  final FeatureSet analyzerFeatures = FeatureSet.latestLanguageVersion();
   final ParseStringResult uiResult = parseFile(path: '$uiRoot/ui.dart', featureSet: analyzerFeatures);
   for (final PartDirective part in uiResult.unit.directives.whereType<PartDirective>()) {
     final String partPath = part.uri.stringValue!;

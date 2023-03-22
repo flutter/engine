@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "third_party/skia/include/core/SkPath.h"
 #include "third_party/skia/include/core/SkSurface.h"
 
@@ -85,11 +86,11 @@ fml::TimeDelta Stopwatch::AverageDelta() const {
 
 // Initialize the SkSurface for drawing into. Draws the base background and any
 // timing data from before the initial Visualize() call.
-void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
+void Stopwatch::InitVisualizeSurface(SkISize size) const {
   // Mark as dirty if the size has changed.
   if (visualize_cache_surface_) {
-    if (rect.width() != visualize_cache_surface_->width() ||
-        rect.height() != visualize_cache_surface_->height()) {
+    if (size.width() != visualize_cache_surface_->width() ||
+        size.height() != visualize_cache_surface_->height()) {
       cache_dirty_ = true;
     };
   }
@@ -101,15 +102,15 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
 
   // TODO(garyq): Use a GPU surface instead of a CPU surface.
   visualize_cache_surface_ =
-      SkSurface::MakeRasterN32Premul(rect.width(), rect.height());
+      SkSurface::MakeRasterN32Premul(size.width(), size.height());
 
   SkCanvas* cache_canvas = visualize_cache_surface_->getCanvas();
 
   // Establish the graph position.
   const SkScalar x = 0;
   const SkScalar y = 0;
-  const SkScalar width = rect.width();
-  const SkScalar height = rect.height();
+  const SkScalar width = size.width();
+  const SkScalar height = size.height();
 
   SkPaint paint;
   paint.setColor(0x99FFFFFF);
@@ -152,9 +153,9 @@ void Stopwatch::InitVisualizeSurface(const SkRect& rect) const {
   cache_canvas->drawPath(path, paint);
 }
 
-void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
+void Stopwatch::Visualize(DlCanvas* canvas, const SkRect& rect) const {
   // Initialize visualize cache if it has not yet been initialized.
-  InitVisualizeSurface(rect);
+  InitVisualizeSurface(SkISize::Make(rect.width(), rect.height()));
 
   SkCanvas* cache_canvas = visualize_cache_surface_->getCanvas();
   SkPaint paint;
@@ -162,8 +163,8 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
   // Establish the graph position.
   const SkScalar x = 0;
   const SkScalar y = 0;
-  const SkScalar width = rect.width();
-  const SkScalar height = rect.height();
+  const SkScalar width = visualize_cache_surface_->width();
+  const SkScalar height = visualize_cache_surface_->height();
 
   // Scale the graph to show frame times up to those that are 3 times the frame
   // time.
@@ -241,7 +242,9 @@ void Stopwatch::Visualize(SkCanvas* canvas, const SkRect& rect) const {
   prev_drawn_sample_index_ = current_sample_;
 
   // Draw the cached surface onto the output canvas.
-  visualize_cache_surface_->draw(canvas, rect.x(), rect.y());
+  auto image = DlImage::Make(visualize_cache_surface_->makeImageSnapshot());
+  canvas->DrawImage(image, {rect.x(), rect.y()},
+                    DlImageSampling::kNearestNeighbor);
 }
 
 fml::Milliseconds Stopwatch::GetFrameBudget() const {

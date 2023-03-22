@@ -32,11 +32,11 @@ import 'dart:convert' hide Codec;
 import 'dart:developer' as developer;
 import 'dart:js_util' as js_util;
 import 'dart:_js_annotations';
+import 'dart:js_interop' hide JS;
 import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'dart:extra';
-
 
 
 // Comment 2
@@ -52,7 +52,7 @@ part 'engine/file3.dart';
         '/path/to/lib/web_ui/lib/src/engine.dart',
         source,
         'engine'),
-      generateApiFilePatterns('engine', "import 'dart:extra';\n"),
+      generateApiFilePatterns('engine', <String>["import 'dart:extra';"]),
     );
     expect(result, expected);
   });
@@ -74,7 +74,7 @@ export 'engine/file3.dart';
           '/path/to/lib/web_ui/lib/src/engine.dart',
           source,
           'engine'),
-        generateApiFilePatterns('engine', ''),
+        generateApiFilePatterns('engine', <String>[]),
       );
     } catch(error) {
       caught = error;
@@ -126,28 +126,31 @@ void printSomething() {
     expect(result, expected);
   });
 
-  test('does not insert an extra part directive', () {
-    const String source = '''
-part of engine;
+  test('gets correct extra imports', () {
+    // Root libraries.
+    expect(getExtraImportsForLibrary('engine'), <String>[
+      "import 'dart:_skwasm_stub' if (dart.library.ffi) 'dart:_skwasm_impl';",
+      "import 'dart:_web_unicode';",
+      "import 'dart:_web_test_fonts';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
+    ]);
+    expect(getExtraImportsForLibrary('skwasm_stub'), <String>[
+      "import 'dart:_engine';",
+      "import 'dart:_web_unicode';",
+      "import 'dart:_web_test_fonts';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
+    ]);
+    expect(getExtraImportsForLibrary('skwasm_impl'), <String>[
+      "import 'dart:_engine';",
+      "import 'dart:_web_unicode';",
+      "import 'dart:_web_test_fonts';",
+      "import 'dart:_web_locale_keymap' as locale_keymap;",
+      "import 'dart:ffi';",
+    ]);
 
-void printSomething() {
-  print('something');
-}
-''';
-
-    const String expected = '''
-part of dart._engine;
-
-void printSomething() {
-  print('something');
-}
-''';
-
-    final String result = processSource(
-      source,
-      (String source) => preprocessPartFile(source, 'engine'),
-      generatePartsPatterns('engine'),
-    );
-    expect(result, expected);
+    // Other libraries (should not have extra imports).
+    expect(getExtraImportsForLibrary('web_unicode'), isEmpty);
+    expect(getExtraImportsForLibrary('web_test_fonts'), isEmpty);
+    expect(getExtraImportsForLibrary('web_locale_keymap'), isEmpty);
   });
 }

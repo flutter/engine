@@ -48,6 +48,7 @@ class MockResponse : public PlatformMessageResponse {
 
 class MockRuntimeDelegate : public RuntimeDelegate {
  public:
+  MOCK_METHOD0(ImplicitViewEnabled, bool());
   MOCK_METHOD0(DefaultRouteName, std::string());
   MOCK_METHOD1(ScheduleFrame, void(bool));
   MOCK_METHOD1(Render, void(std::shared_ptr<flutter::LayerTree>));
@@ -69,20 +70,21 @@ class MockRuntimeDelegate : public RuntimeDelegate {
 
 class MockRuntimeController : public RuntimeController {
  public:
-  MockRuntimeController(RuntimeDelegate& client, TaskRunners p_task_runners)
+  MockRuntimeController(RuntimeDelegate& client,
+                        const TaskRunners& p_task_runners)
       : RuntimeController(client, p_task_runners) {}
   MOCK_METHOD0(IsRootIsolateRunning, bool());
   MOCK_METHOD1(DispatchPlatformMessage, bool(std::unique_ptr<PlatformMessage>));
   MOCK_METHOD3(LoadDartDeferredLibraryError,
                void(intptr_t, const std::string, bool));
   MOCK_CONST_METHOD0(GetDartVM, DartVM*());
-  MOCK_METHOD1(NotifyIdle, bool(fml::TimePoint));
+  MOCK_METHOD1(NotifyIdle, bool(fml::TimeDelta));
 };
 
 std::unique_ptr<PlatformMessage> MakePlatformMessage(
     const std::string& channel,
     const std::map<std::string, std::string>& values,
-    fml::RefPtr<PlatformMessageResponse> response) {
+    const fml::RefPtr<PlatformMessageResponse>& response) {
   rapidjson::Document document;
   auto& allocator = document.GetAllocator();
   document.SetObject();
@@ -145,7 +147,7 @@ class EngineTest : public testing::FixtureTest {
   fml::WeakPtr<IOManager> io_manager_;
   std::unique_ptr<RuntimeController> runtime_controller_;
   std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner_;
-  fml::WeakPtr<SnapshotDelegate> snapshot_delegate_;
+  fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate_;
 };
 }  // namespace
 

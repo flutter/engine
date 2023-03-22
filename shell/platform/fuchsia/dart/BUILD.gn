@@ -127,7 +127,7 @@ dart_library("args") {
   package_root = "//third_party/dart/third_party/pkg/args"
   package_name = "args"
 
-  language_version = "2.12"
+  language_version = "2.18"
 
   deps = []
 
@@ -259,6 +259,7 @@ dart_library("matcher") {
   deps = [ ":stack_trace" ]
 
   sources = [
+    "expect.dart",
     "matcher.dart",
     "mirror_matchers.dart",
     "src/core_matchers.dart",
@@ -266,6 +267,18 @@ dart_library("matcher") {
     "src/description.dart",
     "src/equals_matcher.dart",
     "src/error_matchers.dart",
+    "src/expect/async_matcher.dart",
+    "src/expect/expect.dart",
+    "src/expect/expect_async.dart",
+    "src/expect/future_matchers.dart",
+    "src/expect/never_called.dart",
+    "src/expect/prints_matcher.dart",
+    "src/expect/stream_matcher.dart",
+    "src/expect/stream_matchers.dart",
+    "src/expect/throws_matcher.dart",
+    "src/expect/throws_matchers.dart",
+    "src/expect/util/placeholder.dart",
+    "src/expect/util/pretty_print.dart",
     "src/feature_matcher.dart",
     "src/having_matcher.dart",
     "src/interfaces.dart",
@@ -286,7 +299,7 @@ dart_library("quiver") {
   package_name = "quiver"
 
   # The current version of this library is not null safe
-  language_version = "2.0"
+  language_version = "2.17"
 
   deps = [
     ":matcher",
@@ -299,16 +312,13 @@ dart_library("quiver") {
     "check.dart",
     "collection.dart",
     "core.dart",
-    "io.dart",
     "iterables.dart",
-    "mirrors.dart",
     "pattern.dart",
     "src/async/collect.dart",
     "src/async/concat.dart",
     "src/async/countdown_timer.dart",
     "src/async/enumerate.dart",
     "src/async/future_stream.dart",
-    "src/async/iteration.dart",
     "src/async/metronome.dart",
     "src/async/stream_buffer.dart",
     "src/async/stream_router.dart",
@@ -324,8 +334,10 @@ dart_library("quiver") {
     "src/collection/lru_map.dart",
     "src/collection/multimap.dart",
     "src/collection/treeset.dart",
+    "src/collection/utils.dart",
     "src/core/hash.dart",
     "src/core/optional.dart",
+    "src/core/utils.dart",
     "src/iterables/concat.dart",
     "src/iterables/count.dart",
     "src/iterables/cycle.dart",
@@ -343,10 +355,8 @@ dart_library("quiver") {
     "strings.dart",
     "testing/async.dart",
     "testing/equality.dart",
-    "testing/runtime.dart",
     "testing/src/async/fake_async.dart",
     "testing/src/equality/equality.dart",
-    "testing/src/runtime/checked_mode.dart",
     "testing/src/time/time.dart",
     "testing/time.dart",
     "time.dart",

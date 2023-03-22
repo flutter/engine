@@ -5,9 +5,13 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/impeller/base/config.h"
+#include "impeller/renderer/backend/vulkan/blit_command_vk.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
+
+class CommandEncoderVK;
 
 class BlitPassVK final : public BlitPass {
  public:
@@ -17,7 +21,11 @@ class BlitPassVK final : public BlitPass {
  private:
   friend class CommandBufferVK;
 
-  BlitPassVK();
+  std::weak_ptr<CommandEncoderVK> encoder_;
+  std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
+  std::string label_;
+
+  BlitPassVK(std::weak_ptr<CommandEncoderVK> encoder);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -30,14 +38,30 @@ class BlitPassVK final : public BlitPass {
       const std::shared_ptr<Allocator>& transients_allocator) const override;
 
   // |BlitPass|
-  void OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
+  bool OnCopyTextureToTextureCommand(std::shared_ptr<Texture> source,
                                      std::shared_ptr<Texture> destination,
                                      IRect source_region,
                                      IPoint destination_origin,
                                      std::string label) override;
 
   // |BlitPass|
-  void OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
+  bool OnCopyTextureToBufferCommand(std::shared_ptr<Texture> source,
+                                    std::shared_ptr<DeviceBuffer> destination,
+                                    IRect source_region,
+                                    size_t destination_offset,
+                                    std::string label) override;
+
+  // |BlitPass|
+  bool OnCopyBufferToTextureCommand(BufferView source,
+                                    std::shared_ptr<Texture> destination,
+                                    IPoint destination_origin,
+                                    std::string label) override {
+    IMPELLER_UNIMPLEMENTED;
+    return false;
+  }
+
+  // |BlitPass|
+  bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPassVK);

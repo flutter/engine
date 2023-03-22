@@ -56,7 +56,7 @@ class ManagedSkColorFilter extends ManagedSkiaObject<SkColorFilter> {
 /// Additionally, this class provides the interface for converting itself to a
 /// [ManagedSkiaObject] that manages a skia image filter.
 abstract class CkColorFilter
-    implements CkManagedSkImageFilterConvertible, EngineColorFilter {
+    implements CkManagedSkImageFilterConvertible {
   const CkColorFilter();
 
   /// Called by [ManagedSkiaObject.createDefault] and
@@ -81,8 +81,26 @@ class CkBlendModeColorFilter extends CkColorFilter {
   final ui.Color color;
   final ui.BlendMode blendMode;
 
+  static Float32List get identityTransform => _identityTransform ?? _computeIdentityTransform();
+  static Float32List? _identityTransform;
+
+  static Float32List _computeIdentityTransform() {
+    final Float32List result = Float32List(20);
+    const List<int> translationIndices = <int>[0, 6, 12, 18];
+    for (final int i in translationIndices) {
+      result[i] = 1;
+    }
+    _identityTransform = result;
+    return result;
+  }
+
   @override
   SkColorFilter _initRawColorFilter() {
+    /// Return the identity matrix when the color opacity is 0. Replicates
+    /// effect of applying no filter
+    if (color.opacity == 0) {
+      return canvasKit.ColorFilter.MakeMatrix(identityTransform);
+    }
     final SkColorFilter? filter = canvasKit.ColorFilter.MakeBlend(
       toSharedSkColor1(color),
       toSkBlendMode(blendMode),
@@ -208,4 +226,31 @@ class CkComposeColorFilter extends CkColorFilter {
 
   @override
   String toString() => 'ColorFilter.compose($outer, $inner)';
+}
+
+/// Convert the current [ColorFilter] to a CkColorFilter.
+///
+/// This workaround allows ColorFilter to be const constructbile and
+/// efficiently comparable, so that widgets can check for ColorFilter equality to
+/// avoid repainting.
+CkColorFilter? createCkColorFilter(EngineColorFilter colorFilter) {
+  switch (colorFilter.type) {
+      case ColorFilterType.mode:
+        if (colorFilter.color == null || colorFilter.blendMode == null) {
+          return null;
+        }
+        return CkBlendModeColorFilter(colorFilter.color!, colorFilter.blendMode!);
+      case ColorFilterType.matrix:
+        if (colorFilter.matrix == null) {
+          return null;
+        }
+        assert(colorFilter.matrix!.length == 20, 'Color Matrix must have 20 entries.');
+        return CkMatrixColorFilter(colorFilter.matrix!);
+      case ColorFilterType.linearToSrgbGamma:
+        return const CkLinearToSrgbGammaColorFilter();
+      case ColorFilterType.srgbToLinearGamma:
+        return const CkSrgbToLinearGammaColorFilter();
+      default:
+        throw StateError('Unknown mode $colorFilter.type for ColorFilter.');
+    }
 }

@@ -21,11 +21,15 @@ import 'environment.dart';
 
 /// Provides an environment for desktop Chrome.
 class ChromeEnvironment implements BrowserEnvironment {
+  ChromeEnvironment(this._enableWasmGC);
+
   late final BrowserInstallation _installation;
+
+  final bool _enableWasmGC;
 
   @override
   Future<Browser> launchBrowserInstance(Uri url, {bool debug = false}) async {
-    return Chrome(url, _installation, debug: debug);
+    return Chrome(url, _installation, debug: debug, enableWasmGC: _enableWasmGC);
   }
 
   @override
@@ -36,7 +40,7 @@ class ChromeEnvironment implements BrowserEnvironment {
     final String version = browserLock.chromeLock.versionForCurrentPlatform;
     _installation = await getOrInstallChrome(
       version,
-      infoLog: isCirrus ? stdout : DevNull(),
+      infoLog: isCi ? stdout : DevNull(),
     );
   }
 
@@ -60,7 +64,7 @@ class ChromeEnvironment implements BrowserEnvironment {
 class Chrome extends Browser {
   /// Starts a new instance of Chrome open to the given [url], which may be a
   /// [Uri] or a [String].
-  factory Chrome(Uri url, BrowserInstallation installation, {bool debug = false}) {
+  factory Chrome(Uri url, BrowserInstallation installation, {required bool debug, required bool enableWasmGC}) {
     final Completer<Uri> remoteDebuggerCompleter = Completer<Uri>.sync();
     return Chrome._(BrowserProcess(() async {
       // A good source of various Chrome CLI options:
@@ -76,7 +80,13 @@ class Chrome extends Browser {
       final bool isChromeNoSandbox =
           Platform.environment['CHROME_NO_SANDBOX'] == 'true';
       final String dir = environment.webUiDartToolDir.createTempSync('test_chrome_user_data_').resolveSymbolicLinksSync();
+      final String jsFlags = enableWasmGC ? <String>[
+        '--experimental-wasm-gc',
+        '--experimental-wasm-stack-switching',
+        '--experimental-wasm-type-reflection',
+      ].join(' ') : '';
       final List<String> args = <String>[
+        if (jsFlags.isNotEmpty) '--js-flags=$jsFlags',
         '--user-data-dir=$dir',
         url.toString(),
         if (!debug)
@@ -91,6 +101,8 @@ class Chrome extends Browser {
           '--start-maximized',
         if (debug)
           '--auto-open-devtools-for-tabs',
+        // Always run unit tests at a 1x scale factor
+        '--force-device-scale-factor=1',
         '--disable-extensions',
         '--disable-popup-blocking',
         // Indicates that the browser is in "browse without sign-in" (Guest session) mode.
@@ -100,6 +112,14 @@ class Chrome extends Browser {
         '--disable-default-apps',
         '--disable-translate',
         '--remote-debugging-port=$kDevtoolsPort',
+
+        // SwiftShader support on ARM macs is disabled until they upgrade to a newer
+        // version of LLVM, see https://issuetracker.google.com/issues/165000222. In
+        // headless Chrome, the default is to use SwiftShader as a software renderer
+        // for WebGL contexts. In order to work around this limitation, we can force
+        // GPU rendering with this flag.
+        if (environment.isMacosArm)
+          '--use-angle=metal',
       ];
 
       final Process process =

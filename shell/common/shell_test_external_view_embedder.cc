@@ -52,15 +52,10 @@ void ShellTestExternalViewEmbedder::BeginFrame(
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PrerollCompositeEmbeddedView(
-    int view_id,
+    int64_t view_id,
     std::unique_ptr<EmbeddedViewParams> params) {
   SkRect view_bounds = SkRect::Make(frame_size_);
-  std::unique_ptr<EmbedderViewSlice> view;
-  if (params->display_list_enabled()) {
-    view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
-  } else {
-    view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
-  }
+  auto view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
   slices_.insert_or_assign(view_id, std::move(view));
 }
 
@@ -72,35 +67,25 @@ PostPrerollResult ShellTestExternalViewEmbedder::PostPrerollAction(
 }
 
 // |ExternalViewEmbedder|
-std::vector<SkCanvas*> ShellTestExternalViewEmbedder::GetCurrentCanvases() {
-  return {};
-}
-
-// |ExternalViewEmbedder|
-std::vector<DisplayListBuilder*>
-ShellTestExternalViewEmbedder::GetCurrentBuilders() {
-  return {};
-}
-
-// |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushVisitedPlatformView(int64_t view_id) {
   visited_platform_views_.push_back(view_id);
 }
 
 // |ExternalViewEmbedder|
 void ShellTestExternalViewEmbedder::PushFilterToVisitedPlatformViews(
-    std::shared_ptr<const DlImageFilter> filter) {
+    std::shared_ptr<const DlImageFilter> filter,
+    const SkRect& filter_rect) {
   for (int64_t id : visited_platform_views_) {
     EmbeddedViewParams params = current_composition_params_[id];
-    params.PushImageFilter(filter);
+    params.PushImageFilter(filter, filter_rect);
     current_composition_params_[id] = params;
     mutators_stacks_[id] = params.mutatorsStack();
   }
 }
 
-EmbedderPaintContext ShellTestExternalViewEmbedder::CompositeEmbeddedView(
-    int view_id) {
-  return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
+DlCanvas* ShellTestExternalViewEmbedder::CompositeEmbeddedView(
+    int64_t view_id) {
+  return slices_[view_id]->canvas();
 }
 
 // |ExternalViewEmbedder|
@@ -128,7 +113,7 @@ void ShellTestExternalViewEmbedder::EndFrame(
 }
 
 // |ExternalViewEmbedder|
-SkCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
+DlCanvas* ShellTestExternalViewEmbedder::GetRootCanvas() {
   return nullptr;
 }
 

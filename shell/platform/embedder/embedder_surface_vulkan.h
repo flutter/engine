@@ -6,13 +6,13 @@
 #define FLUTTER_SHELL_PLATFORM_EMBEDDER_EMBEDDER_SURFACE_VULKAN_H_
 
 #include "flutter/fml/macros.h"
+#include "flutter/shell/common/context_options.h"
 #include "flutter/shell/gpu/gpu_surface_vulkan.h"
+#include "flutter/shell/gpu/gpu_surface_vulkan_delegate.h"
+#include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_external_view_embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
-#include "shell/common/context_options.h"
-#include "shell/gpu/gpu_surface_vulkan_delegate.h"
-#include "shell/platform/embedder/embedder.h"
-#include "vulkan/vulkan_proc_table.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 
 namespace flutter {
 
@@ -20,8 +20,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
                                     public GPUSurfaceVulkanDelegate {
  public:
   struct VulkanDispatchTable {
-    std::function<void*(VkInstance, const char*)>
-        get_instance_proc_address;  // required
+    PFN_vkGetInstanceProcAddr get_instance_proc_address;  // required
     std::function<FlutterVulkanImage(const SkISize& frame_size)>
         get_next_image;  // required
     std::function<bool(VkImage image, VkFormat format)>
@@ -39,7 +38,7 @@ class EmbedderSurfaceVulkan final : public EmbedderSurface,
       VkDevice device,
       uint32_t queue_family_index,
       VkQueue queue,
-      VulkanDispatchTable vulkan_dispatch_table,
+      const VulkanDispatchTable& vulkan_dispatch_table,
       std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder);
 
   ~EmbedderSurfaceVulkan() override;

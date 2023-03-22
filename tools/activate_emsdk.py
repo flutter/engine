@@ -9,7 +9,9 @@ import os
 import subprocess
 import sys
 
-EMSDK_ROOT = os.path.join('src', 'buildtools', 'emsdk')
+EMSDK_ROOT = os.path.abspath(
+    os.path.join(__file__, '..', '..', '..', 'buildtools', 'emsdk')
+)
 
 EMSDK_PATH = os.path.join(EMSDK_ROOT, 'emsdk.py')
 
@@ -21,14 +23,16 @@ def main():
   try:
     subprocess.check_call([
         sys.executable, EMSDK_PATH, 'install', EMSDK_VERSION
-    ])
+    ],
+                          stdout=subprocess.DEVNULL)
   except subprocess.CalledProcessError:
     print('Failed to install emsdk')
     return 1
   try:
     subprocess.check_call([
         sys.executable, EMSDK_PATH, 'activate', EMSDK_VERSION
-    ])
+    ],
+                          stdout=subprocess.DEVNULL)
   except subprocess.CalledProcessError:
     print('Failed to activate emsdk')
     return 1

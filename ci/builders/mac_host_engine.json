@@ -8,8 +8,7 @@
                     "include_paths": [
                         "out/host_debug/zip_archives/darwin-x64/artifacts.zip",
                         "out/host_debug/zip_archives/darwin-x64/FlutterEmbedder.framework.zip",
-                        "out/host_debug/zip_archives/dart-sdk-darwin-x64.zip",
-                        "out/host_debug/zip_archives/flutter-web-sdk-darwin-x64.zip"
+                        "out/host_debug/zip_archives/dart-sdk-darwin-x64.zip"
                     ],
                     "name": "host_debug"
                 }
@@ -26,7 +25,6 @@
                 "--runtime-mode",
                 "debug",
                 "--no-lto",
-                "--full-dart-sdk",
                 "--prebuilt-dart-sdk",
                 "--build-embedder-examples"
             ],
@@ -37,7 +35,6 @@
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
                     "flutter/build/archives:artifacts",
                     "flutter/build/archives:dart_sdk_archive",
-                    "flutter/build/archives:flutter_web_sdk",
                     "flutter/build/archives:archive_gen_snapshot",
                     "flutter/build/archives:flutter_embedder_framework"
                 ]
@@ -82,7 +79,7 @@
             },
             "tests": [
                 {
-                    "language": "python",
+                    "language": "python3",
                     "name": "Host Tests for host_profile",
                     "parameters": [
                         "--variant",
@@ -141,6 +138,7 @@
                     "base_path": "out/mac_debug_arm64/zip_archives/",
                     "type": "gcs",
                     "include_paths": [
+                        "out/mac_debug_arm64/zip_archives/darwin-arm64/artifacts.zip",
                         "out/mac_debug_arm64/zip_archives/dart-sdk-darwin-arm64.zip"
                     ],
                     "name": "mac_debug_arm64"
@@ -161,7 +159,6 @@
                 "--runtime-mode",
                 "debug",
                 "--no-lto",
-                "--full-dart-sdk",
                 "--prebuilt-dart-sdk"
             ],
             "name": "mac_debug_arm64",
@@ -170,6 +167,7 @@
                 "targets": [
                     "flutter/build/archives:dart_sdk_archive",
                     "flutter/build/archives:archive_gen_snapshot",
+                    "flutter/build/archives:artifacts",
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
                 ]
             },
@@ -216,7 +214,9 @@
                 {
                     "base_path": "out/mac_release_arm64/zip_archives/",
                     "type": "gcs",
-                    "include_paths": [],
+                    "include_paths": [
+                        "out/mac_release_arm64/zip_archives/darwin-arm64/font-subset.zip"
+                    ],
                     "name": "mac_release_arm64"
                 }
             ],
@@ -242,7 +242,8 @@
                 "config": "mac_release_arm64",
                 "targets": [
                     "flutter/build/archives:archive_gen_snapshot",
-                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework"
+                    "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
+                    "flutter/tools/font-subset"
                 ]
             },
             "tests": []

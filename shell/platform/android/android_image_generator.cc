@@ -5,11 +5,14 @@
 #include "flutter/shell/platform/android/android_image_generator.h"
 
 #include <memory>
+#include <utility>
 
 #include <android/bitmap.h>
 #include <android/hardware_buffer.h>
 
 #include "flutter/fml/platform/android/jni_util.h"
+
+#include "third_party/skia/include/codec/SkCodecAnimation.h"
 
 namespace flutter {
 
@@ -19,7 +22,7 @@ static jmethodID g_decode_image_method = nullptr;
 AndroidImageGenerator::~AndroidImageGenerator() = default;
 
 AndroidImageGenerator::AndroidImageGenerator(sk_sp<SkData> data)
-    : data_(data), image_info_(SkImageInfo::MakeUnknown(-1, -1)) {}
+    : data_(std::move(data)), image_info_(SkImageInfo::MakeUnknown(-1, -1)) {}
 
 const SkImageInfo& AndroidImageGenerator::GetInfo() {
   header_decoded_latch_.Wait();
@@ -35,7 +38,7 @@ unsigned int AndroidImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo AndroidImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
@@ -106,7 +109,7 @@ void AndroidImageGenerator::DoDecodeImage() {
   auto bitmap = std::make_unique<fml::jni::ScopedJavaGlobalRef<jobject>>(
       env, env->CallStaticObjectMethod(g_flutter_jni_class->obj(),
                                        g_decode_image_method, direct_buffer,
-                                       reinterpret_cast<long>(this)));
+                                       reinterpret_cast<jlong>(this)));
   FML_CHECK(fml::jni::CheckException(env));
 
   if (bitmap->is_null()) {
@@ -171,7 +174,7 @@ bool AndroidImageGenerator::Register(JNIEnv* env) {
 
 std::shared_ptr<ImageGenerator> AndroidImageGenerator::MakeFromData(
     sk_sp<SkData> data,
-    fml::RefPtr<fml::TaskRunner> task_runner) {
+    const fml::RefPtr<fml::TaskRunner>& task_runner) {
   std::shared_ptr<AndroidImageGenerator> generator(
       new AndroidImageGenerator(std::move(data)));
 

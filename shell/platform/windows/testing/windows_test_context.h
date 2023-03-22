@@ -32,10 +32,14 @@ class WindowsTestContext {
   // Returns the path to the ICU library data file.
   const std::wstring& GetIcuDataPath() const;
 
+  // Returns the path to the application's AOT library file.
+  const std::wstring& GetAotLibraryPath() const;
+
   // Registers a native function callable from Dart code in test fixtures. In
   // the Dart test fixture, the associated function can be declared as:
   //
-  //   ReturnType functionName() native 'IdentifyingName';
+  //   @pragma('vm:external-name', 'IdentifyingName')
+  //   external ReturnType functionName();
   //
   // where `IdentifyingName` matches the |name| parameter to this method.
   void AddNativeFunction(std::string_view name, Dart_NativeFunction function);
@@ -47,6 +51,7 @@ class WindowsTestContext {
  private:
   std::wstring assets_path_;
   std::wstring icu_data_path_ = L"icudtl.dat";
+  std::wstring aot_library_path_ = L"aot.so";
   std::vector<fml::closure> isolate_create_callbacks_;
   std::shared_ptr<TestDartNativeResolver> native_resolver_;
 

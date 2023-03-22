@@ -32,19 +32,34 @@ void testMain() {
     });
 
     setUp(() {
+      mockHttpFetchResponseFactory = null;
       warnings.clear();
     });
 
-    test('logs no warnings with the default mock asset manager', () {
+    tearDown(() {
+      mockHttpFetchResponseFactory = null;
+    });
+
+    test('logs no warnings with the default mock asset manager', () async {
       final SkiaFontCollection fontCollection = SkiaFontCollection();
       final WebOnlyMockAssetManager mockAssetManager =
           WebOnlyMockAssetManager();
-      expect(fontCollection.registerFonts(mockAssetManager), completes);
-      expect(fontCollection.ensureFontsLoaded(), completes);
+      await fontCollection.downloadAssetFonts(mockAssetManager);
+      fontCollection.registerDownloadedFonts();
+
       expect(warnings, isEmpty);
     });
 
     test('logs a warning if one of the registered fonts is invalid', () async {
+      mockHttpFetchResponseFactory = (String url) async {
+        final ByteBuffer bogusData = Uint8List.fromList('this is not valid font data'.codeUnits).buffer;
+        return MockHttpFetchResponse(
+          status: 200,
+          url: url,
+          contentLength: bogusData.lengthInBytes,
+          payload: MockHttpFetchPayload(byteBuffer: bogusData),
+        );
+      };
       final SkiaFontCollection fontCollection = SkiaFontCollection();
       final WebOnlyMockAssetManager mockAssetManager =
           WebOnlyMockAssetManager();
@@ -61,8 +76,8 @@ void testMain() {
   ]
       ''';
       // It should complete without error, but emit a warning about BrokenFont.
-      await fontCollection.registerFonts(mockAssetManager);
-      await fontCollection.ensureFontsLoaded();
+      await fontCollection.downloadAssetFonts(mockAssetManager);
+      fontCollection.registerDownloadedFonts();
       expect(
         warnings,
         containsAllInOrder(
@@ -71,6 +86,35 @@ void testMain() {
             'Verify that packages/bogus/BrokenFont.ttf contains a valid font.',
           ],
         ),
+      );
+    });
+
+    test('logs an HTTP warning if one of the registered fonts is missing (404 file not found)', () async {
+      final SkiaFontCollection fontCollection = SkiaFontCollection();
+      final WebOnlyMockAssetManager mockAssetManager =
+          WebOnlyMockAssetManager();
+      mockAssetManager.defaultFontManifest = '''
+[
+   {
+      "family":"Roboto",
+      "fonts":[{"asset":"/fonts/Roboto-Regular.ttf"}]
+   },
+   {
+      "family": "ThisFontDoesNotExist",
+      "fonts":[{"asset":"packages/bogus/ThisFontDoesNotExist.ttf"}]
+   }
+  ]
+      ''';
+
+      // It should complete without error, but emit a warning about ThisFontDoesNotExist.
+      await fontCollection.downloadAssetFonts(mockAssetManager);
+      fontCollection.registerDownloadedFonts();
+      expect(
+        warnings,
+        containsAllInOrder(<String>[
+          'Failed to load font ThisFontDoesNotExist at packages/bogus/ThisFontDoesNotExist.ttf',
+          'Flutter Web engine failed to fetch "packages/bogus/ThisFontDoesNotExist.ttf". HTTP request succeeded, but the server responded with HTTP status 404.',
+        ]),
       );
     });
 
@@ -87,15 +131,15 @@ void testMain() {
         ]
       '''.trim();
 
-      final ByteBuffer robotoData = (await (await httpFetch('/assets/fonts/Roboto-Regular.ttf')).arrayBuffer())! as ByteBuffer;
+      final ByteBuffer robotoData = await httpFetchByteBuffer('/assets/fonts/Roboto-Regular.ttf');
 
-      await fontCollection.registerFonts(mockAssetManager);
-      fontCollection.debugRegisterTestFonts();
-      await fontCollection.ensureFontsLoaded();
+      await fontCollection.downloadAssetFonts(mockAssetManager);
+      await fontCollection.debugDownloadTestFonts();
+      fontCollection.registerDownloadedFonts();
       expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.
-      final RegisteredFont ahem = fontCollection.debugDownloadedFonts!
+      final RegisteredFont ahem = fontCollection.debugRegisteredFonts!
         .singleWhere((RegisteredFont font) => font.family == 'Ahem');
 
       // Check that the contents of 'Ahem' is actually Roboto, because that's
@@ -109,20 +153,42 @@ void testMain() {
           WebOnlyMockAssetManager();
       mockAssetManager.defaultFontManifest = '[]';
 
-      final ByteBuffer ahemData = (await (await httpFetch('/assets/fonts/ahem.ttf')).arrayBuffer())! as ByteBuffer;
+      final ByteBuffer ahemData = await httpFetchByteBuffer('/assets/fonts/ahem.ttf');
 
-      await fontCollection.registerFonts(mockAssetManager);
-      fontCollection.debugRegisterTestFonts();
-      await fontCollection.ensureFontsLoaded();
+      await fontCollection.downloadAssetFonts(mockAssetManager);
+      await fontCollection.debugDownloadTestFonts();
+      fontCollection.registerDownloadedFonts();
       expect(warnings, isEmpty);
 
       // Use `singleWhere` to make sure only one version of 'Ahem' is loaded.
-      final RegisteredFont ahem = fontCollection.debugDownloadedFonts!
+      final RegisteredFont ahem = fontCollection.debugRegisteredFonts!
         .singleWhere((RegisteredFont font) => font.family == 'Ahem');
 
       // Check that the contents of 'Ahem' is actually Roboto, because that's
       // what's specified in the manifest, and the manifest takes precedence.
       expect(ahem.bytes.length, ahemData.lengthInBytes);
+    });
+
+    test('download fonts separately from registering', () async {
+      final SkiaFontCollection fontCollection = SkiaFontCollection();
+
+      await fontCollection.debugDownloadTestFonts();
+      /// Fonts should have been downloaded, but not yet registered
+      expect(fontCollection.debugRegisteredFonts, isEmpty);
+
+      fontCollection.registerDownloadedFonts();
+      /// Fonts should now be registered and _registeredFonts should be filled
+      expect(fontCollection.debugRegisteredFonts, isNotEmpty);
+      expect(warnings, isEmpty);
+    });
+
+    test('FlutterTest is the default test font', () async {
+      final SkiaFontCollection fontCollection = SkiaFontCollection();
+
+      await fontCollection.debugDownloadTestFonts();
+      fontCollection.registerDownloadedFonts();
+      expect(fontCollection.debugRegisteredFonts, isNotEmpty);
+      expect(fontCollection.debugRegisteredFonts!.first.family, 'FlutterTest');
     });
   });
 }

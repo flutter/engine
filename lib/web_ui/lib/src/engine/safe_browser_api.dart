@@ -12,6 +12,7 @@
 library browser_api;
 
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:js_util' as js_util;
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -110,13 +111,6 @@ void removeJsEventListener(Object target, String type, Function listener, Object
   );
 }
 
-/// The signature of the `parseFloat` JavaScript function.
-typedef _JsParseFloat = num? Function(String source);
-
-/// The JavaScript-side `parseFloat` function.
-@JS('parseFloat')
-external _JsParseFloat get _jsParseFloat;
-
 /// Parses a string [source] into a double.
 ///
 /// Uses the JavaScript `parseFloat` function instead of Dart's [double.parse]
@@ -126,20 +120,13 @@ external _JsParseFloat get _jsParseFloat;
 num? parseFloat(String source) {
   // Using JavaScript's `parseFloat` here because it can parse values
   // like "20px", while Dart's `double.tryParse` fails.
-  final num? result = _jsParseFloat(source);
+  final num? result = js_util.callMethod(domWindow, 'parseFloat', <Object>[source]);
 
   if (result == null || result.isNaN) {
     return null;
   }
   return result;
 }
-
-final bool supportsFontLoadingApi =
-    js_util.hasProperty(domWindow, 'FontFace');
-
-final bool supportsFontsClearApi =
-    js_util.hasProperty(domDocument, 'fonts') &&
-        js_util.hasProperty(domDocument.fonts!, 'clear');
 
 /// Used to decide if the browser tab still has the focus.
 ///
@@ -202,8 +189,8 @@ DomCanvasElement? tryCreateCanvasElement(int width, int height) {
     return null;
   }
   try {
-    canvas.width = width;
-    canvas.height = height;
+    canvas.width = width.toDouble();
+    canvas.height = height.toDouble();
   } catch (e) {
     // It seems the tribal knowledge of why we anticipate an exception while
     // setting width/height on a non-null canvas and why it's OK to return null
@@ -215,7 +202,9 @@ DomCanvasElement? tryCreateCanvasElement(int width, int height) {
 }
 
 @JS('window.ImageDecoder')
-external Object? get _imageDecoderConstructor;
+external JSAny? get __imageDecoderConstructor;
+Object? get _imageDecoderConstructor =>
+    __imageDecoderConstructor?.toObjectShallow;
 
 /// Environment variable that allows the developer to opt out of using browser's
 /// `ImageDecoder` API, and use the WASM codecs bundled with CanvasKit.
@@ -231,16 +220,26 @@ const bool _browserImageDecodingEnabled = bool.fromEnvironment(
 );
 
 /// Whether the current browser supports `ImageDecoder`.
-bool browserSupportsImageDecoder =
-  _browserImageDecodingEnabled &&
-  _imageDecoderConstructor != null &&
-  browserEngine == BrowserEngine.blink;
+bool browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 
 /// Sets the value of [browserSupportsImageDecoder] to its default value.
 void debugResetBrowserSupportsImageDecoder() {
-  browserSupportsImageDecoder =
-      _imageDecoderConstructor != null;
+  browserSupportsImageDecoder = _defaultBrowserSupportsImageDecoder;
 }
+
+bool get _defaultBrowserSupportsImageDecoder =>
+    _browserImageDecodingEnabled &&
+    _imageDecoderConstructor != null &&
+    _isBrowserImageDecoderStable;
+
+// TODO(yjbanov): https://github.com/flutter/flutter/issues/122761
+// Frequently, when a browser launches an API that other browsers already
+// support, there are subtle incompatibilities that may cause apps to crash if,
+// we blindly adopt the new implementation. This variable prevents us from
+// picking up potentially incompatible implementations of ImagdeDecoder API.
+// Instead, when a new browser engine launches the API, we'll evaluate it and
+// enable it explicitly.
+bool get _isBrowserImageDecoderStable => browserEngine == BrowserEngine.blink;
 
 /// The signature of the function passed to the constructor of JavaScript `Promise`.
 typedef JsPromiseCallback = void Function(void Function(Object? value) resolve, void Function(Object? error) reject);
@@ -269,9 +268,13 @@ class ImageDecoder {
 
 extension ImageDecoderExtension on ImageDecoder {
   external ImageTrackList get tracks;
-  external bool get complete;
+
+  @JS('complete')
+  external JSBoolean get _complete;
+  bool get complete => _complete.toDart;
+
   external JsPromise decode(DecodeOptions options);
-  external void close();
+  external JSVoid close();
 }
 
 /// Options passed to the `ImageDecoder` constructor.
@@ -284,13 +287,13 @@ extension ImageDecoderExtension on ImageDecoder {
 @staticInterop
 class ImageDecoderOptions {
   external factory ImageDecoderOptions({
-    required String type,
-    required Uint8List data,
-    required String premultiplyAlpha,
-    required int? desiredWidth,
-    required int? desiredHeight,
-    required String colorSpaceConversion,
-    required bool preferAnimation,
+    required JSString type,
+    required JSUint8Array data,
+    required JSString premultiplyAlpha,
+    JSNumber? desiredWidth,
+    JSNumber? desiredHeight,
+    required JSString colorSpaceConversion,
+    required JSBoolean preferAnimation,
   });
 }
 
@@ -306,7 +309,10 @@ class DecodeResult {}
 
 extension DecodeResultExtension on DecodeResult {
   external VideoFrame get image;
-  external bool get complete;
+
+  @JS('complete')
+  external JSBoolean get _complete;
+  bool get complete => _complete.toDart;
 }
 
 /// Options passed to [ImageDecoder.decode].
@@ -319,7 +325,7 @@ extension DecodeResultExtension on DecodeResult {
 @staticInterop
 class DecodeOptions {
   external factory DecodeOptions({
-    required int frameIndex,
+    required JSNumber frameIndex,
   });
 }
 
@@ -336,15 +342,40 @@ class DecodeOptions {
 class VideoFrame implements DomCanvasImageSource {}
 
 extension VideoFrameExtension on VideoFrame {
-  external int allocationSize();
-  external JsPromise copyTo(Uint8List destination);
-  external String? get format;
-  external int get codedWidth;
-  external int get codedHeight;
-  external int get displayWidth;
-  external int get displayHeight;
-  external int? get duration;
-  external void close();
+  @JS('allocationSize')
+  external JSNumber _allocationSize();
+  double allocationSize() => _allocationSize().toDart;
+
+  @JS('copyTo')
+  external JsPromise _copyTo(JSAny destination);
+  JsPromise copyTo(Object destination) => _copyTo(destination.toJSAnyShallow);
+
+  @JS('format')
+  external JSString? get _format;
+  String? get format => _format?.toDart;
+
+  @JS('codedWidth')
+  external JSNumber get _codedWidth;
+  double get codedWidth => _codedWidth.toDart;
+
+  @JS('codedHeight')
+  external JSNumber get _codedHeight;
+  double get codedHeight => _codedHeight.toDart;
+
+  @JS('displayWidth')
+  external JSNumber get _displayWidth;
+  double get displayWidth => _displayWidth.toDart;
+
+  @JS('displayHeight')
+  external JSNumber get _displayHeight;
+  double get displayHeight => _displayHeight.toDart;
+
+  @JS('duration')
+  external JSNumber? get _duration;
+  double? get duration => _duration?.toDart;
+
+  external VideoFrame clone();
+  external JSVoid close();
 }
 
 /// Corresponds to the browser's `ImageTrackList` type.
@@ -373,8 +404,13 @@ extension ImageTrackListExtension on ImageTrackList {
 class ImageTrack {}
 
 extension ImageTrackExtension on ImageTrack {
-  external int get repetitionCount;
-  external int get frameCount;
+  @JS('repetitionCount')
+  external JSNumber get _repetitionCount;
+  double get repetitionCount => _repetitionCount.toDart;
+
+  @JS('frameCount')
+  external JSNumber get _frameCount;
+  double get frameCount => _frameCount.toDart;
 }
 
 void scaleCanvas2D(Object context2d, num x, num y) {
@@ -459,7 +495,7 @@ class GlContext {
   Object? _kRGBA;
   Object? _kLinear;
   Object? _kTextureMinFilter;
-  int? _kTexture0;
+  double? _kTexture0;
 
   Object? _canvas;
   int? _widthInPixels;
@@ -575,7 +611,7 @@ class GlContext {
     js_util.callMethod<void>(glContext, 'bindTexture', <dynamic>[target, buffer]);
   }
 
-  void activeTexture(int textureUnit) {
+  void activeTexture(double textureUnit) {
     js_util.callMethod<void>(glContext, 'activeTexture', <dynamic>[textureUnit]);
   }
 
@@ -716,8 +752,8 @@ class GlContext {
   Object? get kTexture2D =>
       _kTexture2D ??= js_util.getProperty(glContext, 'TEXTURE_2D');
 
-  int get kTexture0 =>
-      _kTexture0 ??= js_util.getProperty<int>(glContext, 'TEXTURE0');
+  double get kTexture0 =>
+      _kTexture0 ??= js_util.getProperty<double>(glContext, 'TEXTURE0');
 
   Object? get kTextureWrapS =>
       _kTextureWrapS ??= js_util.getProperty(glContext, 'TEXTURE_WRAP_S');
@@ -989,11 +1025,11 @@ class OffScreenCanvas {
       width = requestedWidth;
       height = requestedHeight;
       if(offScreenCanvas != null) {
-        offScreenCanvas!.width = requestedWidth;
-        offScreenCanvas!.height = requestedHeight;
+        offScreenCanvas!.width = requestedWidth.toDouble();
+        offScreenCanvas!.height = requestedHeight.toDouble();
       } else if (canvasElement != null) {
-        canvasElement!.width = requestedWidth;
-        canvasElement!.height = requestedHeight;
+        canvasElement!.width = requestedWidth.toDouble();
+        canvasElement!.height = requestedHeight.toDouble();
         _updateCanvasCssSize(canvasElement!);
       }
     }
@@ -1053,7 +1089,7 @@ class OffScreenCanvas {
     }
   }
 
-  /// Draws an image to canvas for both offscreen canvas canvas context2d.
+  /// Draws an image to canvas for both offscreen canvas context2d.
   void drawImage(Object image, int x, int y, int width, int height) {
     js_util.callMethod<void>(
         getContext2d()!, 'drawImage', <dynamic>[image, x, y, width, height]);

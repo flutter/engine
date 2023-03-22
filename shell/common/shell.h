@@ -125,7 +125,7 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<Animator> animator,
       fml::WeakPtr<IOManager> io_manager,
       fml::RefPtr<SkiaUnrefQueue> unref_queue,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
       std::shared_ptr<VolatilePathTracker> volatile_path_tracker)>
       EngineCreateCallback;
 
@@ -162,7 +162,7 @@ class Shell final : public PlatformView::Delegate,
   ///
   static std::unique_ptr<Shell> Create(
       const PlatformData& platform_data,
-      TaskRunners task_runners,
+      const TaskRunners& task_runners,
       Settings settings,
       const CreateCallback<PlatformView>& on_create_platform_view,
       const CreateCallback<Rasterizer>& on_create_rasterizer,
@@ -452,7 +452,7 @@ class Shell final : public PlatformView::Delegate,
   std::atomic<bool> needs_report_timings_{false};
 
   // Whether there's a task scheduled to report the timings to Dart through
-  // ui.Window.onReportTimings.
+  // ui.PlatformDispatcher.onReportTimings.
   bool frame_timings_report_scheduled_ = false;
 
   // Vector of FrameTiming::kCount * n timestamps for n frames whose timings
@@ -478,11 +478,11 @@ class Shell final : public PlatformView::Delegate,
   size_t UnreportedFramesCount() const;
 
   Shell(DartVMRef vm,
-        TaskRunners task_runners,
+        const TaskRunners& task_runners,
         fml::RefPtr<fml::RasterThreadMerger> parent_merger,
         const std::shared_ptr<ResourceCacheLimitCalculator>&
             resource_cache_limit_calculator,
-        Settings settings,
+        const Settings& settings,
         std::shared_ptr<VolatilePathTracker> volatile_path_tracker,
         bool is_gpu_disabled);
 
@@ -492,9 +492,9 @@ class Shell final : public PlatformView::Delegate,
       std::shared_ptr<ShellIOManager> parent_io_manager,
       const std::shared_ptr<ResourceCacheLimitCalculator>&
           resource_cache_limit_calculator,
-      TaskRunners task_runners,
+      const TaskRunners& task_runners,
       const PlatformData& platform_data,
-      Settings settings,
+      const Settings& settings,
       fml::RefPtr<const DartSnapshot> isolate_snapshot,
       const Shell::CreateCallback<PlatformView>& on_create_platform_view,
       const Shell::CreateCallback<Rasterizer>& on_create_rasterizer,
@@ -503,9 +503,9 @@ class Shell final : public PlatformView::Delegate,
 
   static std::unique_ptr<Shell> CreateWithSnapshot(
       const PlatformData& platform_data,
-      TaskRunners task_runners,
-      fml::RefPtr<fml::RasterThreadMerger> parent_thread_merger,
-      std::shared_ptr<ShellIOManager> parent_io_manager,
+      const TaskRunners& task_runners,
+      const fml::RefPtr<fml::RasterThreadMerger>& parent_thread_merger,
+      const std::shared_ptr<ShellIOManager>& parent_io_manager,
       const std::shared_ptr<ResourceCacheLimitCalculator>&
           resource_cache_limit_calculator,
       Settings settings,
@@ -519,7 +519,7 @@ class Shell final : public PlatformView::Delegate,
   bool Setup(std::unique_ptr<PlatformView> platform_view,
              std::unique_ptr<Engine> engine,
              std::unique_ptr<Rasterizer> rasterizer,
-             std::shared_ptr<ShellIOManager> io_manager);
+             const std::shared_ptr<ShellIOManager>& io_manager);
 
   void ReportTimings();
 
@@ -545,7 +545,7 @@ class Shell final : public PlatformView::Delegate,
       std::unique_ptr<PointerDataPacket> packet) override;
 
   // |PlatformView::Delegate|
-  void OnPlatformViewDispatchSemanticsAction(int32_t id,
+  void OnPlatformViewDispatchSemanticsAction(int32_t node_id,
                                              SemanticsAction action,
                                              fml::MallocMapping args) override;
 
@@ -591,7 +591,7 @@ class Shell final : public PlatformView::Delegate,
                             uint64_t frame_number) override;
 
   // |Animator::Delegate|
-  void OnAnimatorNotifyIdle(fml::TimePoint deadline) override;
+  void OnAnimatorNotifyIdle(fml::TimeDelta deadline) override;
 
   // |Animator::Delegate|
   void OnAnimatorUpdateLatestFrameTargetTime(

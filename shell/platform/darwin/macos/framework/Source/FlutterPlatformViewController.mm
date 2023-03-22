@@ -53,6 +53,9 @@
   }
 
   NSView* platform_view = [factory createWithViewIdentifier:viewId arguments:nil];
+  // Flutter compositing requires CALayer-backed platform views.
+  // Force the platform view to be backed by a CALayer.
+  [platform_view setWantsLayer:YES];
   _platformViews[viewId] = platform_view;
   result(nil);
 }
@@ -87,7 +90,7 @@
   if ([[call method] isEqualToString:@"create"]) {
     NSMutableDictionary<NSString*, id>* args = [call arguments];
     if ([args objectForKey:@"id"]) {
-      int64_t viewId = [args[@"id"] longValue];
+      int64_t viewId = [args[@"id"] longLongValue];
       NSString* viewType = [NSString stringWithUTF8String:([args[@"viewType"] UTF8String])];
       [self onCreateWithViewID:viewId viewType:viewType result:result];
     } else {
@@ -97,7 +100,7 @@
     }
   } else if ([[call method] isEqualToString:@"dispose"]) {
     NSNumber* arg = [call arguments];
-    int64_t viewId = [arg longValue];
+    int64_t viewId = [arg longLongValue];
     [self onDisposeWithViewID:viewId result:result];
   } else {
     result(FlutterMethodNotImplemented);

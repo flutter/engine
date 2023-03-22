@@ -5,8 +5,6 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_VIEW_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_FLUTTER_WINDOWS_VIEW_H_
 
-#include <windowsx.h>
-
 #include <memory>
 #include <mutex>
 #include <string>
@@ -14,17 +12,13 @@
 #include <utility>
 #include <vector>
 
+#include "flutter/fml/macros.h"
 #include "flutter/shell/platform/common/client_wrapper/include/flutter/plugin_registrar.h"
 #include "flutter/shell/platform/common/geometry.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/windows/angle_surface_manager.h"
-#include "flutter/shell/platform/windows/cursor_handler.h"
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
-#include "flutter/shell/platform/windows/keyboard_handler_base.h"
-#include "flutter/shell/platform/windows/keyboard_key_embedder_handler.h"
-#include "flutter/shell/platform/windows/platform_handler.h"
 #include "flutter/shell/platform/windows/public/flutter_windows.h"
-#include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/text_input_plugin_delegate.h"
 #include "flutter/shell/platform/windows/window_binding_handler.h"
 #include "flutter/shell/platform/windows/window_binding_handler_delegate.h"
@@ -90,17 +84,21 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Send the initial accessibility features to the window
   void SendInitialAccessibilityFeatures();
 
+  // Set the text of the alert, and create it if it does not yet exist.
+  void AnnounceAlert(const std::wstring& text);
+
   // |WindowBindingHandlerDelegate|
   void UpdateHighContrastEnabled(bool enabled) override;
 
   // Returns the frame buffer id for the engine to render to.
   uint32_t GetFrameBufferId(size_t width, size_t height);
 
-  // Invoked by the engine right before the engine is restarted.
-  //
-  // This should reset necessary states to as if the view has just been
-  // created. This is typically caused by a hot restart (Shift-R in CLI.)
-  void OnPreEngineRestart();
+  // Sets the cursor that should be used when the mouse is over the Flutter
+  // content. See mouse_cursor.dart for the values and meanings of cursor_name.
+  void UpdateFlutterCursor(const std::string& cursor_name);
+
+  // Sets the cursor directly from a cursor handle.
+  void SetFlutterCursor(HCURSOR cursor);
 
   // |WindowBindingHandlerDelegate|
   void OnWindowSizeChanged(size_t width, size_t height) override;
@@ -112,7 +110,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   void OnPointerMove(double x,
                      double y,
                      FlutterPointerDeviceKind device_kind,
-                     int32_t device_id) override;
+                     int32_t device_id,
+                     int modifiers_state) override;
 
   // |WindowBindingHandlerDelegate|
   void OnPointerDown(double x,
@@ -181,6 +180,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                 int32_t device_id) override;
 
   // |WindowBindingHandlerDelegate|
+  void OnScrollInertiaCancel(int32_t device_id) override;
+
+  // |WindowBindingHandlerDelegate|
   virtual void OnUpdateSemanticsEnabled(bool enabled) override;
 
   // |WindowBindingHandlerDelegate|
@@ -192,21 +194,15 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // |TextInputPluginDelegate|
   void OnResetImeComposing() override;
 
- protected:
-  // Called to create keyboard key handler.
-  //
-  // The provided |dispatch_event| is where to inject events into the system,
-  // while |get_key_state| is where to acquire keyboard states. They will be
-  // the system APIs in production classes, but might be replaced with mock
-  // functions in unit tests.
-  virtual std::unique_ptr<KeyboardHandlerBase> CreateKeyboardKeyHandler(
-      BinaryMessenger* messenger,
-      KeyboardKeyEmbedderHandler::GetKeyStateHandler get_key_state,
-      KeyboardKeyEmbedderHandler::MapVirtualKeyToScanCode map_vk_to_scan);
+  // Get a pointer to the alert node for this view.
+  ui::AXPlatformNodeWin* AlertNode() const;
 
-  // Called to create text input plugin.
-  virtual std::unique_ptr<TextInputPlugin> CreateTextInputPlugin(
-      BinaryMessenger* messenger);
+  // |WindowBindingHandlerDelegate|
+  virtual ui::AXFragmentRootDelegateWin* GetAxFragmentRootDelegate() override;
+
+ protected:
+  virtual void NotifyWinEventWrapper(ui::AXPlatformNodeWin* node,
+                                     ax::mojom::Event event);
 
  private:
   // Struct holding the state of an individual pointer. The engine doesn't keep
@@ -249,11 +245,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
     // and the buffers have been swapped.
     kDone,
   };
-
-  // Initialize states related to keyboard.
-  //
-  // This is called when the view is first created, or restarted.
-  void InitializeKeyboard();
 
   // Sends a window metrics update to the Flutter engine using current window
   // dimensions in physical
@@ -331,6 +322,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
                   FlutterPointerDeviceKind device_kind,
                   int32_t device_id);
 
+  // Reports scroll inertia cancel events to Flutter engine.
+  void SendScrollInertiaCancel(int32_t device_id, double x, double y);
+
   // Creates a PointerState object unless it already exists.
   PointerState* GetOrCreatePointerState(FlutterPointerDeviceKind device_kind,
                                         int32_t device_id);
@@ -357,21 +351,6 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
   // Keeps track of pointer states in relation to the window.
   std::unordered_map<int32_t, std::unique_ptr<PointerState>> pointer_states_;
 
-  // The plugin registrar managing internal plugins.
-  std::unique_ptr<PluginRegistrar> internal_plugin_registrar_;
-
-  // Handlers for keyboard events from Windows.
-  std::unique_ptr<KeyboardHandlerBase> keyboard_key_handler_;
-
-  // Handlers for text events from Windows.
-  std::unique_ptr<TextInputPlugin> text_input_plugin_;
-
-  // Handler for the flutter/platform channel.
-  std::unique_ptr<PlatformHandler> platform_handler_;
-
-  // Handler for cursor events.
-  std::unique_ptr<CursorHandler> cursor_handler_;
-
   // Currently configured WindowBindingHandler for view.
   std::unique_ptr<WindowBindingHandler> binding_handler_;
 
@@ -394,6 +373,8 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate,
 
   // True when flutter's semantics tree is enabled.
   bool semantics_enabled_ = false;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsView);
 };
 
 }  // namespace flutter

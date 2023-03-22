@@ -54,7 +54,7 @@ group("impeller") {
       "aiks",
       "display_list",
       "entity",
-      "image",
+      "image:image_skia_backend",
       "renderer",
       "renderer/backend",
       "typographer",
@@ -74,6 +74,7 @@ impeller_component("impeller_unittests") {
     "compiler:compiler_unittests",
     "geometry:geometry_unittests",
     "runtime_stage:runtime_stage_unittests",
+    "scene/importer:importer_unittests",
     "tessellator:tessellator_unittests",
   ]
 
@@ -86,7 +87,18 @@ impeller_component("impeller_unittests") {
       "image:image_unittests",
       "playground",
       "renderer:renderer_unittests",
+      "scene:scene_unittests",
       "typographer:typographer_unittests",
     ]
+  }
+}
+
+if (impeller_supports_rendering) {
+  impeller_component("impeller_dart_unittests") {
+    target_type = "executable"
+
+    testonly = true
+
+    deps = [ "renderer:renderer_dart_unittests" ]
   }
 }

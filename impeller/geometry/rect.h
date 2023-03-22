@@ -53,24 +53,30 @@ struct TRect {
     return TRect(0.0, 0.0, size.width, size.height);
   }
 
-  constexpr static std::optional<TRect> MakePointBounds(
-      const std::vector<TPoint<Type>>& points) {
-    if (points.empty()) {
+  template <typename PointIter>
+  constexpr static std::optional<TRect> MakePointBounds(const PointIter first,
+                                                        const PointIter last) {
+    if (first == last) {
       return std::nullopt;
     }
-    auto left = points[0].x;
-    auto top = points[0].y;
-    auto right = points[0].x;
-    auto bottom = points[0].y;
-    if (points.size() > 1) {
-      for (size_t i = 1; i < points.size(); i++) {
-        left = std::min(left, points[i].x);
-        top = std::min(top, points[i].y);
-        right = std::max(right, points[i].x);
-        bottom = std::max(bottom, points[i].y);
-      }
+    auto left = first->x;
+    auto top = first->y;
+    auto right = first->x;
+    auto bottom = first->y;
+    for (auto it = first + 1; it < last; ++it) {
+      left = std::min(left, it->x);
+      top = std::min(top, it->y);
+      right = std::max(right, it->x);
+      bottom = std::max(bottom, it->y);
     }
     return TRect::MakeLTRB(left, top, right, bottom);
+  }
+
+  constexpr static TRect MakeMaximum() {
+    return TRect::MakeLTRB(-std::numeric_limits<Type>::infinity(),
+                           -std::numeric_limits<Type>::infinity(),
+                           std::numeric_limits<Type>::infinity(),
+                           std::numeric_limits<Type>::infinity());
   }
 
   template <class U>
@@ -103,8 +109,8 @@ struct TRect {
   }
 
   constexpr bool Contains(const TPoint<Type>& p) const {
-    return p.x >= origin.x && p.x < origin.x + size.width && p.y >= origin.y &&
-           p.y < origin.y + size.height;
+    return p.x >= GetLeft() && p.x < GetRight() && p.y >= GetTop() &&
+           p.y < GetBottom();
   }
 
   constexpr bool Contains(const TRect& o) const {
@@ -115,28 +121,38 @@ struct TRect {
 
   constexpr bool IsEmpty() const { return size.IsEmpty(); }
 
+  constexpr bool IsMaximum() const { return *this == MakeMaximum(); }
+
   constexpr auto GetLeft() const {
+    if (IsMaximum()) {
+      return -std::numeric_limits<Type>::infinity();
+    }
     return std::min(origin.x, origin.x + size.width);
   }
 
   constexpr auto GetTop() const {
+    if (IsMaximum()) {
+      return -std::numeric_limits<Type>::infinity();
+    }
     return std::min(origin.y, origin.y + size.height);
   }
 
   constexpr auto GetRight() const {
+    if (IsMaximum()) {
+      return std::numeric_limits<Type>::infinity();
+    }
     return std::max(origin.x, origin.x + size.width);
   }
 
   constexpr auto GetBottom() const {
+    if (IsMaximum()) {
+      return std::numeric_limits<Type>::infinity();
+    }
     return std::max(origin.y, origin.y + size.height);
   }
 
   constexpr std::array<T, 4> GetLTRB() const {
-    const auto left = std::min(origin.x, origin.x + size.width);
-    const auto top = std::min(origin.y, origin.y + size.height);
-    const auto right = std::max(origin.x, origin.x + size.width);
-    const auto bottom = std::max(origin.y, origin.y + size.height);
-    return {left, top, right, bottom};
+    return {GetLeft(), GetTop(), GetRight(), GetBottom()};
   }
 
   /// @brief  Get a version of this rectangle that has a non-negative size.
@@ -166,7 +182,7 @@ struct TRect {
   ///         rectangle.
   constexpr TRect TransformBounds(const Matrix& transform) const {
     auto points = GetTransformedPoints(transform);
-    return TRect::MakePointBounds({points.begin(), points.end()}).value();
+    return TRect::MakePointBounds(points.begin(), points.end()).value();
   }
 
   constexpr TRect Union(const TRect& o) const {
@@ -196,6 +212,45 @@ struct TRect {
 
   constexpr bool IntersectsWithRect(const TRect& o) const {
     return Intersection(o).has_value();
+  }
+
+  /// @brief Returns the new boundary rectangle that would result from the
+  ///        rectangle being cutout by a second rectangle.
+  constexpr std::optional<TRect<T>> Cutout(const TRect& o) const {
+    const auto& [a_left, a_top, a_right, a_bottom] = GetLTRB();  // Source rect.
+    const auto& [b_left, b_top, b_right, b_bottom] = o.GetLTRB();  // Cutout.
+    if (b_left <= a_left && b_right >= a_right) {
+      if (b_top <= a_top && b_bottom >= a_bottom) {
+        // Full cutout.
+        return std::nullopt;
+      }
+      if (b_top <= a_top) {
+        // Cuts off the top.
+        return TRect::MakeLTRB(a_left, b_bottom, a_right, a_bottom);
+      }
+      if (b_bottom >= b_bottom) {
+        // Cuts out the bottom.
+        return TRect::MakeLTRB(a_left, a_top, a_right, b_top);
+      }
+    }
+    if (b_top <= a_top && b_bottom >= a_bottom) {
+      if (b_left <= a_left) {
+        // Cuts out the left.
+        return TRect::MakeLTRB(b_right, a_top, a_right, a_bottom);
+      }
+      if (b_right >= a_right) {
+        // Cuts out the right.
+        return TRect::MakeLTRB(a_left, a_top, b_left, a_bottom);
+      }
+    }
+
+    return *this;
+  }
+
+  /// @brief  Returns a new rectangle translated by the given offset.
+  constexpr TRect<T> Shift(TPoint<T> offset) const {
+    return TRect(origin.x + offset.x, origin.y + offset.y, size.width,
+                 size.height);
   }
 };
 

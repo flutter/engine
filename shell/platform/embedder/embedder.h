@@ -25,9 +25,16 @@
 // - Function signatures (names, argument counts, argument order, and argument
 //   type) cannot change.
 // - The core behavior of existing functions cannot change.
+// - Instead of nesting structures by value within another structure, prefer
+//   nesting by pointer. This ensures that adding members to the nested struct
+//   does not break the ABI of the parent struct.
+// - Instead of array of structures, prefer array of pointers to structures.
+//   This ensures that array indexing does not break if members are added
+//   to the structure.
 //
 // These changes are allowed:
-// - Adding new struct members at the end of a structure.
+// - Adding new struct members at the end of a structure as long as the struct
+//   is not nested within another struct by value.
 // - Adding new enum members with a new value.
 // - Renaming a struct member as long as its type, size, and intent remain the
 //   same.
@@ -299,8 +306,8 @@ typedef enum {
 ///
 ///   - all other formats are called packed formats, and the component order
 ///     as specified in the format name refers to the order in the native type.
-///     for example, for kRGB565, the R component uses the 5 least significant
-///     bits of the uint16_t pixel value.
+///     for example, for kFlutterSoftwarePixelFormatRGB565, the R component
+///     uses the 5 least significant bits of the uint16_t pixel value.
 ///
 /// Each pixel format in this list is documented with an example on how to get
 /// the color components from the pixel.
@@ -316,30 +323,31 @@ typedef enum {
   /// pixel with 8 bit grayscale value.
   /// The grayscale value is the luma value calculated from r, g, b
   /// according to BT.709. (gray = r*0.2126 + g*0.7152 + b*0.0722)
-  kGray8,
+  kFlutterSoftwarePixelFormatGray8,
 
   /// pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word.
   ///   r = p & 0x3F; g = (p>>5) & 0x3F; b = p>>11;
-  kRGB565,
+  kFlutterSoftwarePixelFormatRGB565,
 
   /// pixel with 4 bits for alpha, red, green, blue; in 16-bit word.
   ///   r = p & 0xF;  g = (p>>4) & 0xF;  b = (p>>8) & 0xF;   a = p>>12;
-  kRGBA4444,
+  kFlutterSoftwarePixelFormatRGBA4444,
 
   /// pixel with 8 bits for red, green, blue, alpha.
   ///   r = p[0]; g = p[1]; b = p[2]; a = p[3];
-  kRGBA8888,
+  kFlutterSoftwarePixelFormatRGBA8888,
 
   /// pixel with 8 bits for red, green and blue and 8 unused bits.
   ///   r = p[0]; g = p[1]; b = p[2];
-  kRGBX8888,
+  kFlutterSoftwarePixelFormatRGBX8888,
 
   /// pixel with 8 bits for blue, green, red and alpha.
   ///   r = p[2]; g = p[1]; b = p[0]; a = p[3];
-  kBGRA8888,
+  kFlutterSoftwarePixelFormatBGRA8888,
 
-  /// either kBGRA8888 or kRGBA8888 depending on CPU endianess and OS
-  kNative32,
+  /// either kFlutterSoftwarePixelFormatBGRA8888 or
+  /// kFlutterSoftwarePixelFormatRGBA8888 depending on CPU endianess and OS
+  kFlutterSoftwarePixelFormatNative32,
 } FlutterSoftwarePixelFormat;
 
 typedef struct {
@@ -448,7 +456,9 @@ typedef struct {
 /// This information is passed to the embedder when requesting a frame buffer
 /// object.
 ///
-/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback.
+/// See: \ref FlutterOpenGLRendererConfig.fbo_with_frame_info_callback,
+/// \ref FlutterMetalRendererConfig.get_next_drawable_callback,
+/// and \ref FlutterVulkanRendererConfig.get_next_image_callback.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterFrameInfo).
   size_t struct_size;
@@ -584,6 +594,12 @@ typedef enum {
   kRGBA,
 } FlutterMetalExternalTexturePixelFormat;
 
+/// YUV color space for the YUV external texture.
+typedef enum {
+  kBT601FullRange,
+  kBT601LimitedRange,
+} FlutterMetalExternalTextureYUVColorSpace;
+
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterMetalExternalTexture).
   size_t struct_size;
@@ -604,6 +620,8 @@ typedef struct {
   /// `FlutterEngineUnregisterExternalTexture`, the embedder has to release
   /// these textures.
   FlutterMetalTextureHandle* textures;
+  /// The YUV color space of the YUV external texture.
+  FlutterMetalExternalTextureYUVColorSpace yuv_color_space;
 } FlutterMetalExternalTexture;
 
 /// Callback to provide an external texture for a given texture_id.
@@ -625,6 +643,8 @@ typedef struct {
   int64_t texture_id;
   /// Handle to the MTLTexture that is owned by the embedder. Engine will render
   /// the frame into this texture.
+  ///
+  /// A NULL texture is considered invalid.
   FlutterMetalTextureHandle texture;
   /// A baton that is not interpreted by the engine in any way. It will be given
   /// back to the embedder in the destruction callback below. Embedder resources
@@ -818,7 +838,7 @@ typedef enum {
   /// any other buttons are still pressed when one button is released, that
   /// should be sent as a kMove rather than a kUp.
   kUp,
-  /// The pointer, which must have been been up, is now down.
+  /// The pointer, which must have been up, is now down.
   ///
   /// For touch, this means that the pointer has come into contact with the
   /// screen. For a mouse, it means a button is now pressed. Note that if any
@@ -875,6 +895,8 @@ typedef enum {
   kFlutterPointerSignalKindNone,
   kFlutterPointerSignalKindScroll,
   kFlutterPointerSignalKindScrollInertiaCancel,
+  kFlutterPointerSignalKindScale,
+  kFlutterPointerSignalKindStylusAuxiliaryAction,
 } FlutterPointerSignalKind;
 
 typedef struct {
@@ -1022,7 +1044,8 @@ typedef void (*FlutterDataCallback)(const uint8_t* /* data */,
 typedef int64_t FlutterPlatformViewIdentifier;
 
 /// `FlutterSemanticsNode` ID used as a sentinel to signal the end of a batch of
-/// semantics node updates.
+/// semantics node updates. This is unused if using
+/// `FlutterUpdateSemanticsCallback2`.
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 
@@ -1031,7 +1054,12 @@ extern const int32_t kFlutterSemanticsNodeIdBatchEnd;
 /// The semantics tree is maintained during the semantics phase of the pipeline
 /// (i.e., during PipelineOwner.flushSemantics), which happens after
 /// compositing. Updates are then pushed to embedders via the registered
-/// `FlutterUpdateSemanticsNodeCallback`.
+/// `FlutterUpdateSemanticsCallback`.
+///
+/// @deprecated     Use `FlutterSemanticsNode2` instead. In order to preserve
+///                 ABI compatibility for existing users, no new fields will be
+///                 added to this struct. New fields will continue to be added
+///                 to `FlutterSemanticsNode2`.
 typedef struct {
   /// The size of this struct. Must be sizeof(FlutterSemanticsNode).
   size_t struct_size;
@@ -1073,8 +1101,8 @@ typedef struct {
   /// A value that `value` will have after a kFlutterSemanticsActionDecrease`
   /// action has been performed.
   const char* decreased_value;
-  /// The reading direction for `label`, `value`, `hint`, `increasedValue`, and
-  /// `decreasedValue`.
+  /// The reading direction for `label`, `value`, `hint`, `increasedValue`,
+  /// `decreasedValue`, and `tooltip`.
   FlutterTextDirection text_direction;
   /// The bounding box for this node in its coordinate system.
   FlutterRect rect;
@@ -1095,10 +1123,88 @@ typedef struct {
   /// Identifier of the platform view associated with this semantics node, or
   /// -1 if none.
   FlutterPlatformViewIdentifier platform_view_id;
+  /// A textual tooltip attached to the node.
+  const char* tooltip;
 } FlutterSemanticsNode;
 
+/// A node in the Flutter semantics tree.
+///
+/// The semantics tree is maintained during the semantics phase of the pipeline
+/// (i.e., during PipelineOwner.flushSemantics), which happens after
+/// compositing. Updates are then pushed to embedders via the registered
+/// `FlutterUpdateSemanticsCallback2`.
+///
+/// @see https://api.flutter.dev/flutter/semantics/SemanticsNode-class.html
+typedef struct {
+  /// The size of this struct. Must be sizeof(FlutterSemanticsNode).
+  size_t struct_size;
+  /// The unique identifier for this node.
+  int32_t id;
+  /// The set of semantics flags associated with this node.
+  FlutterSemanticsFlag flags;
+  /// The set of semantics actions applicable to this node.
+  FlutterSemanticsAction actions;
+  /// The position at which the text selection originates.
+  int32_t text_selection_base;
+  /// The position at which the text selection terminates.
+  int32_t text_selection_extent;
+  /// The total number of scrollable children that contribute to semantics.
+  int32_t scroll_child_count;
+  /// The index of the first visible semantic child of a scroll node.
+  int32_t scroll_index;
+  /// The current scrolling position in logical pixels if the node is
+  /// scrollable.
+  double scroll_position;
+  /// The maximum in-range value for `scrollPosition` if the node is scrollable.
+  double scroll_extent_max;
+  /// The minimum in-range value for `scrollPosition` if the node is scrollable.
+  double scroll_extent_min;
+  /// The elevation along the z-axis at which the rect of this semantics node is
+  /// located above its parent.
+  double elevation;
+  /// Describes how much space the semantics node takes up along the z-axis.
+  double thickness;
+  /// A textual description of the node.
+  const char* label;
+  /// A brief description of the result of performing an action on the node.
+  const char* hint;
+  /// A textual description of the current value of the node.
+  const char* value;
+  /// A value that `value` will have after a kFlutterSemanticsActionIncrease`
+  /// action has been performed.
+  const char* increased_value;
+  /// A value that `value` will have after a kFlutterSemanticsActionDecrease`
+  /// action has been performed.
+  const char* decreased_value;
+  /// The reading direction for `label`, `value`, `hint`, `increasedValue`,
+  /// `decreasedValue`, and `tooltip`.
+  FlutterTextDirection text_direction;
+  /// The bounding box for this node in its coordinate system.
+  FlutterRect rect;
+  /// The transform from this node's coordinate system to its parent's
+  /// coordinate system.
+  FlutterTransformation transform;
+  /// The number of children this node has.
+  size_t child_count;
+  /// Array of child node IDs in traversal order. Has length `child_count`.
+  const int32_t* children_in_traversal_order;
+  /// Array of child node IDs in hit test order. Has length `child_count`.
+  const int32_t* children_in_hit_test_order;
+  /// The number of custom accessibility action associated with this node.
+  size_t custom_accessibility_actions_count;
+  /// Array of `FlutterSemanticsCustomAction` IDs associated with this node.
+  /// Has length `custom_accessibility_actions_count`.
+  const int32_t* custom_accessibility_actions;
+  /// Identifier of the platform view associated with this semantics node, or
+  /// -1 if none.
+  FlutterPlatformViewIdentifier platform_view_id;
+  /// A textual tooltip attached to the node.
+  const char* tooltip;
+} FlutterSemanticsNode2;
+
 /// `FlutterSemanticsCustomAction` ID used as a sentinel to signal the end of a
-/// batch of semantics custom action updates.
+/// batch of semantics custom action updates. This is unused if using
+/// `FlutterUpdateSemanticsCallback2`.
 FLUTTER_EXPORT
 extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
 
@@ -1111,6 +1217,11 @@ extern const int32_t kFlutterSemanticsCustomActionIdBatchEnd;
 /// Action overrides are custom actions that the application developer requests
 /// to be used in place of the standard actions in the `FlutterSemanticsAction`
 /// enum.
+///
+/// @deprecated     Use `FlutterSemanticsCustomAction2` instead. In order to
+///                 preserve ABI compatility for existing users, no new fields
+///                 will be added to this struct. New fields will continue to
+///                 be added to `FlutterSemanticsCustomAction2`.
 typedef struct {
   /// The size of the struct. Must be sizeof(FlutterSemanticsCustomAction).
   size_t struct_size;
@@ -1125,6 +1236,65 @@ typedef struct {
   const char* hint;
 } FlutterSemanticsCustomAction;
 
+/// A custom semantics action, or action override.
+///
+/// Custom actions can be registered by applications in order to provide
+/// semantic actions other than the standard actions available through the
+/// `FlutterSemanticsAction` enum.
+///
+/// Action overrides are custom actions that the application developer requests
+/// to be used in place of the standard actions in the `FlutterSemanticsAction`
+/// enum.
+///
+/// @see
+/// https://api.flutter.dev/flutter/semantics/CustomSemanticsAction-class.html
+typedef struct {
+  /// The size of the struct. Must be sizeof(FlutterSemanticsCustomAction).
+  size_t struct_size;
+  /// The unique custom action or action override ID.
+  int32_t id;
+  /// For overridden standard actions, corresponds to the
+  /// `FlutterSemanticsAction` to override.
+  FlutterSemanticsAction override_action;
+  /// The user-readable name of this custom semantics action.
+  const char* label;
+  /// The hint description of this custom semantics action.
+  const char* hint;
+} FlutterSemanticsCustomAction2;
+
+/// A batch of updates to semantics nodes and custom actions.
+///
+/// @deprecated     Use `FlutterSemanticsUpdate2` instead. Adding members
+///                 to `FlutterSemanticsNode` or `FlutterSemanticsCustomAction`
+///                 breaks the ABI of this struct.
+typedef struct {
+  /// The size of the struct. Must be sizeof(FlutterSemanticsUpdate).
+  size_t struct_size;
+  /// The number of semantics node updates.
+  size_t nodes_count;
+  // Array of semantics nodes. Has length `nodes_count`.
+  FlutterSemanticsNode* nodes;
+  /// The number of semantics custom action updates.
+  size_t custom_actions_count;
+  /// Array of semantics custom actions. Has length `custom_actions_count`.
+  FlutterSemanticsCustomAction* custom_actions;
+} FlutterSemanticsUpdate;
+
+/// A batch of updates to semantics nodes and custom actions.
+typedef struct {
+  /// The size of the struct. Must be sizeof(FlutterSemanticsUpdate2).
+  size_t struct_size;
+  /// The number of semantics node updates.
+  size_t node_count;
+  // Array of semantics node pointers. Has length `node_count`.
+  FlutterSemanticsNode2** nodes;
+  /// The number of semantics custom action updates.
+  size_t custom_action_count;
+  /// Array of semantics custom action pointers. Has length
+  /// `custom_action_count`.
+  FlutterSemanticsCustomAction2** custom_actions;
+} FlutterSemanticsUpdate2;
+
 typedef void (*FlutterUpdateSemanticsNodeCallback)(
     const FlutterSemanticsNode* /* semantics node */,
     void* /* user data */);
@@ -1132,6 +1302,14 @@ typedef void (*FlutterUpdateSemanticsNodeCallback)(
 typedef void (*FlutterUpdateSemanticsCustomActionCallback)(
     const FlutterSemanticsCustomAction* /* semantics custom action */,
     void* /* user data */);
+
+typedef void (*FlutterUpdateSemanticsCallback)(
+    const FlutterSemanticsUpdate* /* semantics update */,
+    void* /* user data*/);
+
+typedef void (*FlutterUpdateSemanticsCallback2)(
+    const FlutterSemanticsUpdate2* /* semantics update */,
+    void* /* user data*/);
 
 typedef struct _FlutterTaskRunner* FlutterTaskRunner;
 
@@ -1728,24 +1906,36 @@ typedef struct {
   /// The callback invoked by the engine in root isolate scope. Called
   /// immediately after the root isolate has been created and marked runnable.
   VoidCallback root_isolate_create_callback;
-  /// The callback invoked by the engine in order to give the embedder the
-  /// chance to respond to semantics node updates from the Dart application.
+  /// The legacy callback invoked by the engine in order to give the embedder
+  /// the chance to respond to semantics node updates from the Dart application.
   /// Semantics node updates are sent in batches terminated by a 'batch end'
   /// callback that is passed a sentinel `FlutterSemanticsNode` whose `id` field
   /// has the value `kFlutterSemanticsNodeIdBatchEnd`.
   ///
   /// The callback will be invoked on the thread on which the `FlutterEngineRun`
   /// call is made.
+  ///
+  /// @deprecated    Use `update_semantics_callback2` instead. Only one of
+  ///                `update_semantics_node_callback`,
+  ///                `update_semantics_callback`, and
+  ///                `update_semantics_callback2` may be provided; the others
+  ///                should be set to null.
   FlutterUpdateSemanticsNodeCallback update_semantics_node_callback;
-  /// The callback invoked by the engine in order to give the embedder the
-  /// chance to respond to updates to semantics custom actions from the Dart
-  /// application.  Custom action updates are sent in batches terminated by a
+  /// The legacy callback invoked by the engine in order to give the embedder
+  /// the chance to respond to updates to semantics custom actions from the Dart
+  /// application. Custom action updates are sent in batches terminated by a
   /// 'batch end' callback that is passed a sentinel
   /// `FlutterSemanticsCustomAction` whose `id` field has the value
   /// `kFlutterSemanticsCustomActionIdBatchEnd`.
   ///
   /// The callback will be invoked on the thread on which the `FlutterEngineRun`
   /// call is made.
+  ///
+  /// @deprecated    Use `update_semantics_callback2` instead. Only one of
+  ///                `update_semantics_node_callback`,
+  ///                `update_semantics_callback`, and
+  ///                `update_semantics_callback2` may be provided; the others
+  ///                should be set to null.
   FlutterUpdateSemanticsCustomActionCallback
       update_semantics_custom_action_callback;
   /// Path to a directory used to store data that is cached across runs of a
@@ -1882,6 +2072,32 @@ typedef struct {
   //
   // The first argument is the `user_data` from `FlutterEngineInitialize`.
   OnPreEngineRestartCallback on_pre_engine_restart_callback;
+
+  /// The callback invoked by the engine in order to give the embedder the
+  /// chance to respond to updates to semantics nodes and custom actions from
+  /// the Dart application.
+  ///
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
+  /// call is made.
+  ///
+  /// @deprecated    Use `update_semantics_callback2` instead. Only one of
+  ///                `update_semantics_node_callback`,
+  ///                `update_semantics_callback`, and
+  ///                `update_semantics_callback2` may be provided; the others
+  ///                must be set to null.
+  FlutterUpdateSemanticsCallback update_semantics_callback;
+
+  /// The callback invoked by the engine in order to give the embedder the
+  /// chance to respond to updates to semantics nodes and custom actions from
+  /// the Dart application.
+  ///
+  /// The callback will be invoked on the thread on which the `FlutterEngineRun`
+  /// call is made.
+  ///
+  /// Only one of `update_semantics_node_callback`, `update_semantics_callback`,
+  /// and `update_semantics_callback2` may be provided; the others must be set
+  /// to null.
+  FlutterUpdateSemanticsCallback2 update_semantics_callback2;
 } FlutterProjectArgs;
 
 #ifndef FLUTTER_ENGINE_NO_PROTOTYPES
@@ -2223,8 +2439,8 @@ FlutterEngineResult FlutterEngineMarkExternalTextureFrameAvailable(
 /// @param[in]  engine     A running engine instance.
 /// @param[in]  enabled    When enabled, changes to the semantic contents of the
 ///                        window are sent via the
-///                        `FlutterUpdateSemanticsNodeCallback` registered to
-///                        `update_semantics_node_callback` in
+///                        `FlutterUpdateSemanticsCallback2` registered to
+///                        `update_semantics_callback2` in
 ///                        `FlutterProjectArgs`.
 ///
 /// @return     The result of the call.
@@ -2251,7 +2467,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 /// @brief      Dispatch a semantics action to the specified semantics node.
 ///
 /// @param[in]  engine       A running engine instance.
-/// @param[in]  identifier   The semantics action identifier.
+/// @param[in]  node_id      The semantics node identifier.
 /// @param[in]  action       The semantics action.
 /// @param[in]  data         Data associated with the action.
 /// @param[in]  data_length  The data length.
@@ -2261,7 +2477,7 @@ FlutterEngineResult FlutterEngineUpdateAccessibilityFeatures(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineDispatchSemanticsAction(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    uint64_t id,
+    uint64_t node_id,
     FlutterSemanticsAction action,
     const uint8_t* data,
     size_t data_length);

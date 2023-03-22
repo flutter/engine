@@ -35,8 +35,12 @@ impeller_component("renderer") {
     "device_buffer.h",
     "device_buffer_descriptor.cc",
     "device_buffer_descriptor.h",
+    "device_capabilities.cc",
+    "device_capabilities.h",
     "formats.cc",
     "formats.h",
+    "gpu_tracer.cc",
+    "gpu_tracer.h",
     "host_buffer.cc",
     "host_buffer.h",
     "pipeline.cc",
@@ -104,17 +108,47 @@ impeller_component("renderer_unittests") {
   sources = [
     "device_buffer_unittests.cc",
     "host_buffer_unittests.cc",
+    "pipeline_descriptor_unittests.cc",
     "renderer_unittests.cc",
   ]
 
-  if (impeller_enable_metal || impeller_enable_vulkan) {
-    sources += [ "compute_unittests.cc" ]
+  if (impeller_enable_vulkan || impeller_enable_metal) {
+    sources += [
+      "compute_subgroup_unittests.cc",
+      "compute_unittests.cc",
+    ]
   }
 
   deps = [
     ":renderer",
+    "../entity",
     "../fixtures",
     "../playground:playground_test",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
+test_fixtures("renderer_dart_fixtures") {
+  dart_main = "../fixtures/dart_tests.dart"
+
+  fixtures = [
+    "../fixtures/bay_bridge.jpg",
+    "../fixtures/boston.jpg",
+  ]
+}
+
+impeller_component("renderer_dart_unittests") {
+  testonly = true
+
+  sources = [ "renderer_dart_unittests.cc" ]
+
+  deps = [
+    ":renderer",
+    ":renderer_dart_fixtures",
+    "../fixtures:shader_fixtures",
+    "../playground:playground_test",
+    "//flutter/runtime:runtime",
+    "//flutter/testing:fixture_test",
     "//flutter/testing:testing_lib",
   ]
 }

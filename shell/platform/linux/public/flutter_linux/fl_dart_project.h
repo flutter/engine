@@ -36,33 +36,6 @@ G_DECLARE_FINAL_TYPE(FlDartProject, fl_dart_project, FL, DART_PROJECT, GObject)
 FlDartProject* fl_dart_project_new();
 
 /**
- * fl_dart_project_set_enable_mirrors:
- * @project: an #FlDartProject.
- * @enable_mirrors: %TRUE if the dart:mirrors library should be used.
- *
- * Sets if this Flutter project can use the dart:mirrors library.
- *
- * Deprecated: This function is temporary and will be removed in a future
- * release.
- */
-void fl_dart_project_set_enable_mirrors(FlDartProject* project,
-                                        gboolean enable_mirrors) G_DEPRECATED;
-
-/**
- * fl_dart_project_get_enable_mirrors:
- * @project: an #FlDartProject.
- *
- * Gets if this Flutter project can use the dart:mirrors library.
- *
- * Returns: %TRUE if the dart:mirrors library can be used.
- *
- * Deprecated: This function is temporary and will be removed in a future
- * release.
- */
-gboolean fl_dart_project_get_enable_mirrors(FlDartProject* project)
-    G_DEPRECATED;
-
-/**
  * fl_dart_project_get_aot_library_path:
  * @project: an #FlDartProject.
  *
@@ -72,6 +45,17 @@ gboolean fl_dart_project_get_enable_mirrors(FlDartProject* project)
  * "/projects/my_dart_project/lib/libapp.so".
  */
 const gchar* fl_dart_project_get_aot_library_path(FlDartProject* project);
+
+/**
+ * fl_dart_project_set_assets_path:
+ * @project: an #FlDartProject.
+ * @path: the absolute path to the assets directory.
+ *
+ * Sets the path to the directory containing the assets used in the Flutter
+ * application. By default, this is the data/flutter_assets subdirectory
+ * relative to the executable directory.
+ */
+void fl_dart_project_set_assets_path(FlDartProject* project, gchar* path);
 
 /**
  * fl_dart_project_get_assets_path:
@@ -84,6 +68,16 @@ const gchar* fl_dart_project_get_aot_library_path(FlDartProject* project);
  * "/projects/my_dart_project/data/flutter_assets".
  */
 const gchar* fl_dart_project_get_assets_path(FlDartProject* project);
+
+/**
+ * fl_dart_project_set_icu_data_path:
+ * @project: an #FlDartProject.
+ * @path: the absolute path to the ICU data file.
+ *
+ * Sets the path to the ICU data file used in the Flutter application. By
+ * default, this is data/icudtl.dat relative to the executable directory.
+ */
+void fl_dart_project_set_icu_data_path(FlDartProject* project, gchar* path);
 
 /**
  * fl_dart_project_get_icu_data_path:

@@ -13,7 +13,7 @@ part of dart.ui;
 /// See also:
 ///   - file://./../../lib/ui/semantics/semantics_node.h
 class SemanticsAction {
-  const SemanticsAction._(this.index) : assert(index != null);
+  const SemanticsAction._(this.index);
 
   static const int _kTapIndex = 1 << 0;
   static const int _kLongPressIndex = 1 << 1;
@@ -285,9 +285,11 @@ class SemanticsAction {
 //
 // When changes are made to this class, the equivalent APIs in
 // `lib/ui/semantics/semantics_node.h` and in each of the embedders *must* be
-// updated.
+// updated. If the change affects the visibility of a [SemanticsNode] to
+// accessibility services, `flutter_test/controller.dart#SemanticsController._importantFlags`
+// must be updated as well.
 class SemanticsFlag {
-  const SemanticsFlag._(this.index) : assert(index != null);
+  const SemanticsFlag._(this.index);
 
   /// The numerical value for this flag.
   ///
@@ -324,7 +326,10 @@ class SemanticsFlag {
   // value in testing/dart/semantics_test.dart, or tests will fail. Also,
   // please update the Flag enum in
   // flutter/shell/platform/android/io/flutter/view/AccessibilityBridge.java,
-  // and the SemanticsFlag class in lib/web_ui/lib/semantics.dart.
+  // and the SemanticsFlag class in lib/web_ui/lib/semantics.dart. If the new flag
+  // affects the visibility of a [SemanticsNode] to accessibility services,
+  // `flutter_test/controller.dart#SemanticsController._importantFlags`
+  // must be updated as well.
 
   /// The semantics node has the quality of either being "checked" or "unchecked".
   ///
@@ -707,7 +712,7 @@ class SpellOutStringAttribute extends StringAttribute {
     _initSpellOutStringAttribute(this, range.start, range.end);
   }
 
-  @FfiNative<Void Function(Handle, Int32, Int32)>('NativeStringAttribute::initSpellOutStringAttribute')
+  @Native<Void Function(Handle, Int32, Int32)>(symbol: 'NativeStringAttribute::initSpellOutStringAttribute')
   external static void _initSpellOutStringAttribute(SpellOutStringAttribute instance, int start, int end);
 
   @override
@@ -743,7 +748,7 @@ class LocaleStringAttribute extends StringAttribute {
   /// The lanuage of this attribute.
   final Locale locale;
 
-  @FfiNative<Void Function(Handle, Int32, Int32, Handle)>('NativeStringAttribute::initLocaleStringAttribute')
+  @Native<Void Function(Handle, Int32, Int32, Handle)>(symbol: 'NativeStringAttribute::initLocaleStringAttribute')
   external static void _initLocaleStringAttribute(LocaleStringAttribute instance, int start, int end, String locale);
 
   @override
@@ -768,7 +773,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   @pragma('vm:entry-point')
   SemanticsUpdateBuilder() { _constructor(); }
 
-  @FfiNative<Void Function(Handle)>('SemanticsUpdateBuilder::Create')
+  @Native<Void Function(Handle)>(symbol: 'SemanticsUpdateBuilder::Create')
   external void _constructor();
 
   /// Update the information associated with the node with the given `id`.
@@ -887,10 +892,6 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     required Int32List additionalActions,
   }) {
     assert(_matrix4IsValid(transform));
-    assert(
-      scrollChildren == 0 || scrollChildren == null || (scrollChildren > 0 && childrenInHitTestOrder != null),
-      'If a node has scrollChildren, it must have childrenInHitTestOrder',
-    );
     _updateNode(
       id,
       flags,
@@ -929,7 +930,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
       additionalActions,
     );
   }
-  @FfiNative<
+  @Native<
       Void Function(
           Pointer<Void>,
           Int32,
@@ -966,7 +967,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
           Handle,
           Handle,
           Handle,
-          Handle)>('SemanticsUpdateBuilder::updateNode')
+          Handle)>(symbol: 'SemanticsUpdateBuilder::updateNode')
   external void _updateNode(
       int id,
       int flags,
@@ -1020,11 +1021,9 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
   /// [SemanticsAction.index] value. For custom actions this argument should not be
   /// provided.
   void updateCustomAction({required int id, String? label, String? hint, int overrideId = -1}) {
-    assert(id != null);
-    assert(overrideId != null);
     _updateCustomAction(id, label ?? '', hint ?? '', overrideId);
   }
-  @FfiNative<Void Function(Pointer<Void>, Int32, Handle, Handle, Int32)>('SemanticsUpdateBuilder::updateCustomAction')
+  @Native<Void Function(Pointer<Void>, Int32, Handle, Handle, Int32)>(symbol: 'SemanticsUpdateBuilder::updateCustomAction')
   external void _updateCustomAction(int id, String label, String hint, int overrideId);
 
   /// Creates a [SemanticsUpdate] object that encapsulates the updates recorded
@@ -1039,7 +1038,7 @@ class SemanticsUpdateBuilder extends NativeFieldWrapperClass1 {
     _build(semanticsUpdate);
     return semanticsUpdate;
   }
-  @FfiNative<Void Function(Pointer<Void>, Handle)>('SemanticsUpdateBuilder::build')
+  @Native<Void Function(Pointer<Void>, Handle)>(symbol: 'SemanticsUpdateBuilder::build')
   external void _build(SemanticsUpdate outSemanticsUpdate);
 }
 
@@ -1065,6 +1064,6 @@ class SemanticsUpdate extends NativeFieldWrapperClass1 {
   ///
   /// This can't be a leaf call because the native function calls Dart API
   /// (Dart_SetNativeInstanceField).
-  @FfiNative<Void Function(Pointer<Void>)>('SemanticsUpdate::dispose')
+  @Native<Void Function(Pointer<Void>)>(symbol: 'SemanticsUpdate::dispose')
   external void dispose();
 }

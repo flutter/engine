@@ -17,9 +17,9 @@
 namespace impeller {
 
 RenderPassGLES::RenderPassGLES(std::weak_ptr<const Context> context,
-                               RenderTarget target,
+                               const RenderTarget& target,
                                ReactorGLES::Ref reactor)
-    : RenderPass(std::move(context), std::move(target)),
+    : RenderPass(std::move(context), target),
       reactor_(std::move(reactor)),
       is_valid_(reactor_ && reactor_->IsValid()) {}
 
@@ -409,9 +409,21 @@ struct RenderPassData {
     }
 
     //--------------------------------------------------------------------------
+    /// Determine the primitive type.
+    ///
+    // GLES doesn't support setting the fill mode, so override the primitive
+    // with GL_LINE_STRIP to somewhat emulate PolygonMode::kLine. This isn't
+    // correct; full triangle outlines won't be drawn and disconnected
+    // geometry may appear connected. However this can still be useful for
+    // wireframe debug views.
+    auto mode = pipeline.GetDescriptor().GetPolygonMode() == PolygonMode::kLine
+                    ? GL_LINE_STRIP
+                    : ToMode(pipeline.GetDescriptor().GetPrimitiveType());
+
+    //--------------------------------------------------------------------------
     /// Finally! Invoke the draw call.
     ///
-    gl.DrawElements(ToMode(command.primitive_type),   // mode
+    gl.DrawElements(mode,                             // mode
                     command.index_count,              // count
                     ToIndexType(command.index_type),  // type
                     reinterpret_cast<const GLvoid*>(static_cast<GLsizei>(

@@ -10,6 +10,7 @@
 
 import 'dart:async';
 import 'dart:convert' show base64;
+import 'dart:js_interop';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
@@ -44,8 +45,6 @@ void debugRestoreWebDecoderExpireDuration() {
 class CkBrowserImageDecoder implements ui.Codec {
   CkBrowserImageDecoder._({
     required this.contentType,
-    required this.targetWidth,
-    required this.targetHeight,
     required this.data,
     required this.debugSource,
   });
@@ -53,8 +52,6 @@ class CkBrowserImageDecoder implements ui.Codec {
   static Future<CkBrowserImageDecoder> create({
     required Uint8List data,
     required String debugSource,
-    int? targetWidth,
-    int? targetHeight,
   }) async {
     // ImageDecoder does not detect image type automatically. It requires us to
     // tell it what the image type is.
@@ -76,8 +73,6 @@ class CkBrowserImageDecoder implements ui.Codec {
 
     final CkBrowserImageDecoder decoder = CkBrowserImageDecoder._(
       contentType: contentType,
-      targetWidth: targetWidth,
-      targetHeight: targetHeight,
       data: data,
       debugSource: debugSource,
     );
@@ -88,8 +83,6 @@ class CkBrowserImageDecoder implements ui.Codec {
   }
 
   final String contentType;
-  final int? targetWidth;
-  final int? targetHeight;
   final Uint8List data;
   final String debugSource;
 
@@ -155,21 +148,18 @@ class CkBrowserImageDecoder implements ui.Codec {
     _cacheExpirationClock.callback = null;
     try {
       final ImageDecoder webDecoder = ImageDecoder(ImageDecoderOptions(
-        type: contentType,
-        data: data,
+        type: contentType.toJS,
+        data: data.toJS,
 
         // Flutter always uses premultiplied alpha when decoding.
-        premultiplyAlpha: 'premultiply',
-        desiredWidth: targetWidth,
-        desiredHeight: targetHeight,
-
+        premultiplyAlpha: 'premultiply'.toJS,
         // "default" gives the browser the liberty to convert to display-appropriate
         // color space, typically SRGB, which is what we want.
-        colorSpaceConversion: 'default',
+        colorSpaceConversion: 'default'.toJS,
 
         // Flutter doesn't give the developer a way to customize this, so if this
         // is an animated image we should prefer the animated track.
-        preferAnimation: true,
+        preferAnimation: true.toJS,
       ));
 
       await promiseToFuture<void>(webDecoder.tracks.ready);
@@ -179,9 +169,14 @@ class CkBrowserImageDecoder implements ui.Codec {
       // package:js bindings don't work with getters that return a Promise, which
       // is why js_util is used instead.
       await promiseToFuture<void>(getJsProperty(webDecoder, 'completed'));
-      frameCount = webDecoder.tracks.selectedTrack!.frameCount;
-      repetitionCount = webDecoder.tracks.selectedTrack!.repetitionCount;
+      frameCount = webDecoder.tracks.selectedTrack!.frameCount.toInt();
 
+      // We coerce the DOM's `repetitionCount` into an int by explicitly
+      // handling `infinity`. Note: This will still throw if the DOM returns a
+      // `NaN.
+      final double rawRepetitionCount = webDecoder.tracks.selectedTrack!.repetitionCount;
+      repetitionCount = rawRepetitionCount == double.infinity ? -1 :
+          rawRepetitionCount.toInt();
       _cachedWebDecoder = webDecoder;
 
       // Expire the decoder if it's not used for several seconds. If the image is
@@ -223,7 +218,7 @@ class CkBrowserImageDecoder implements ui.Codec {
     _debugCheckNotDisposed();
     final ImageDecoder webDecoder = await _getOrCreateWebDecoder();
     final DecodeResult result = await promiseToFuture<DecodeResult>(
-      webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex)),
+      webDecoder.decode(DecodeOptions(frameIndex: _nextFrameIndex.toJS)),
     );
     final VideoFrame frame = result.image;
     _nextFrameIndex = (_nextFrameIndex + 1) % frameCount;
@@ -242,7 +237,7 @@ class CkBrowserImageDecoder implements ui.Codec {
     // Duration can be null if the image is not animated. However, Flutter
     // requires a non-null value. 0 indicates that the frame is meant to be
     // displayed indefinitely, which is fine for a static image.
-    final Duration duration = Duration(microseconds: frame.duration ?? 0);
+    final Duration duration = Duration(microseconds: frame.duration?.toInt() ?? 0);
 
     if (skImage == null) {
       throw ImageCodecException(
@@ -445,7 +440,7 @@ bool _shouldReadPixelsUnmodified(VideoFrame videoFrame, ui.ImageByteFormat forma
 }
 
 Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
-  final int size = videoFrame.allocationSize();
+  final int size = videoFrame.allocationSize().toInt();
   final Uint8List destination = Uint8List(size);
   final JsPromise copyPromise = videoFrame.copyTo(destination);
   await promiseToFuture<void>(copyPromise);
@@ -453,8 +448,8 @@ Future<ByteBuffer> readVideoFramePixelsUnmodified(VideoFrame videoFrame) async {
 }
 
 Future<Uint8List> encodeVideoFrameAsPng(VideoFrame videoFrame) async {
-  final int width = videoFrame.displayWidth;
-  final int height = videoFrame.displayHeight;
+  final int width = videoFrame.displayWidth.toInt();
+  final int height = videoFrame.displayHeight.toInt();
   final DomCanvasElement canvas = createDomCanvasElement(width: width, height:
       height);
   final DomCanvasRenderingContext2D ctx = canvas.context2D;

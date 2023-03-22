@@ -62,7 +62,7 @@ void FontCollection::SetupDefaultFontManager(
 //
 // Structure described in https://docs.flutter.dev/cookbook/design/fonts
 void FontCollection::RegisterFonts(
-    std::shared_ptr<AssetManager> asset_manager) {
+    const std::shared_ptr<AssetManager>& asset_manager) {
   std::unique_ptr<fml::Mapping> manifest_mapping =
       asset_manager->GetAsMapping("FontManifest.json");
   if (manifest_mapping == nullptr) {
@@ -121,19 +121,16 @@ void FontCollection::RegisterFonts(
 }
 
 void FontCollection::RegisterTestFonts() {
-  std::vector<sk_sp<SkTypeface>> test_typefaces;
-  std::vector<std::unique_ptr<SkStreamAsset>> font_data = GetTestFontData();
-  for (auto& font : font_data) {
-    test_typefaces.push_back(SkTypeface::MakeFromStream(std::move(font)));
-  }
-
+  std::vector<sk_sp<SkTypeface>> test_typefaces = GetTestFontData();
   std::unique_ptr<txt::TypefaceFontAssetProvider> font_provider =
       std::make_unique<txt::TypefaceFontAssetProvider>();
 
   size_t index = 0;
   std::vector<std::string> names = GetTestFontFamilyNames();
   for (sk_sp<SkTypeface> typeface : test_typefaces) {
-    font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    if (typeface) {
+      font_provider->RegisterTypeface(std::move(typeface), names[index]);
+    }
     index++;
   }
 
@@ -145,7 +142,7 @@ void FontCollection::RegisterTestFonts() {
 
 void FontCollection::LoadFontFromList(Dart_Handle font_data_handle,
                                       Dart_Handle callback,
-                                      std::string family_name) {
+                                      const std::string& family_name) {
   tonic::Uint8List font_data(font_data_handle);
   UIDartState::ThrowIfUIOperationsProhibited();
   FontCollection& font_collection = UIDartState::Current()

@@ -16,6 +16,9 @@
 #include "flutter/shell/platform/android/android_surface_gl_impeller.h"
 #include "flutter/shell/platform/android/android_surface_gl_skia.h"
 #include "flutter/shell/platform/android/android_surface_software.h"
+#if IMPELLER_ENABLE_VULKAN  // b/258506856 for why this is behind an if
+#include "flutter/shell/platform/android/android_surface_vulkan_impeller.h"
+#endif
 #include "flutter/shell/platform/android/context/android_context.h"
 #include "flutter/shell/platform/android/external_view_embedder/external_view_embedder.h"
 #include "flutter/shell/platform/android/jni/platform_view_android_jni.h"
@@ -31,7 +34,7 @@ AndroidSurfaceFactoryImpl::AndroidSurfaceFactoryImpl(
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
     bool enable_impeller)
     : android_context_(context),
-      jni_facade_(jni_facade),
+      jni_facade_(std::move(jni_facade)),
       enable_impeller_(enable_impeller) {}
 
 AndroidSurfaceFactoryImpl::~AndroidSurfaceFactoryImpl() = default;
@@ -43,8 +46,15 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
                                                       jni_facade_);
     case AndroidRenderingAPI::kOpenGLES:
       if (enable_impeller_) {
+// TODO(kaushikiska@): Enable this after wiring a preference for Vulkan backend.
+#if false
+        return std::make_unique<AndroidSurfaceVulkanImpeller>(android_context_,
+                                                              jni_facade_);
+
+#else
         return std::make_unique<AndroidSurfaceGLImpeller>(android_context_,
                                                           jni_facade_);
+#endif
       } else {
         return std::make_unique<AndroidSurfaceGLSkia>(android_context_,
                                                       jni_facade_);
@@ -57,7 +67,7 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
 
 static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
     bool use_software_rendering,
-    const flutter::TaskRunners task_runners,
+    const flutter::TaskRunners& task_runners,
     uint8_t msaa_samples,
     bool enable_impeller) {
   if (use_software_rendering) {
@@ -76,14 +86,14 @@ static std::shared_ptr<flutter::AndroidContext> CreateAndroidContext(
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
-    flutter::TaskRunners task_runners,
-    std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
+    const flutter::TaskRunners& task_runners,
+    const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     bool use_software_rendering,
     uint8_t msaa_samples)
     : PlatformViewAndroid(
           delegate,
-          std::move(task_runners),
-          std::move(jni_facade),
+          task_runners,
+          jni_facade,
           CreateAndroidContext(
               use_software_rendering,
               task_runners,
@@ -92,12 +102,12 @@ PlatformViewAndroid::PlatformViewAndroid(
 
 PlatformViewAndroid::PlatformViewAndroid(
     PlatformView::Delegate& delegate,
-    flutter::TaskRunners task_runners,
+    const flutter::TaskRunners& task_runners,
     const std::shared_ptr<PlatformViewAndroidJNI>& jni_facade,
     const std::shared_ptr<flutter::AndroidContext>& android_context)
-    : PlatformView(delegate, std::move(task_runners)),
+    : PlatformView(delegate, task_runners),
       jni_facade_(jni_facade),
-      android_context_(std::move(android_context)),
+      android_context_(android_context),
       platform_view_android_delegate_(jni_facade),
       platform_message_handler_(new PlatformMessageHandlerAndroid(jni_facade)) {
   if (android_context_) {
@@ -259,7 +269,7 @@ void PlatformViewAndroid::RegisterExternalTexture(
     const fml::jni::ScopedJavaGlobalRef<jobject>& surface_texture) {
   if (android_context_->RenderingApi() == AndroidRenderingAPI::kOpenGLES) {
     RegisterTexture(std::make_shared<AndroidExternalTextureGL>(
-        texture_id, surface_texture, std::move(jni_facade_)));
+        texture_id, surface_texture, jni_facade_));
   } else {
     FML_LOG(INFO) << "Attempted to use a GL texture in a non GL context.";
   }

@@ -21,11 +21,12 @@
 #import "flutter/shell/platform/darwin/common/command_line.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartVMServicePublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterIndirectScribbleDelegate.h"
-#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterObservatoryPublisher.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterPlatformPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterSpellCheckPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputDelegate.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextureRegistryRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerDelegate.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterUndoManagerPlugin.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
@@ -87,7 +88,8 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @interface FlutterEngine () <FlutterIndirectScribbleDelegate,
                              FlutterUndoManagerDelegate,
                              FlutterTextInputDelegate,
-                             FlutterBinaryMessenger>
+                             FlutterBinaryMessenger,
+                             FlutterTextureRegistry>
 // Maintains a dictionary of plugin names that have registered with the engine.  Used by
 // FlutterEngineRegistrar to implement a FlutterPluginRegistrar.
 @property(nonatomic, readonly) NSMutableDictionary* pluginPublications;
@@ -96,6 +98,12 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 @property(nonatomic, readwrite, copy) NSString* isolateId;
 @property(nonatomic, copy) NSString* initialRoute;
 @property(nonatomic, retain) id<NSObject> flutterViewControllerWillDeallocObserver;
+
+#pragma mark - Embedder API properties
+
+@property(nonatomic, assign) BOOL enableEmbedderAPI;
+// Function pointers for interacting with the embedder.h API.
+@property(nonatomic) FlutterEngineProcTable& embedderAPI;
 @end
 
 @implementation FlutterEngine {
@@ -106,7 +114,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   std::unique_ptr<fml::WeakPtrFactory<FlutterEngine>> _weakFactory;
 
   fml::WeakPtr<FlutterViewController> _viewController;
-  fml::scoped_nsobject<FlutterObservatoryPublisher> _publisher;
+  fml::scoped_nsobject<FlutterDartVMServicePublisher> _publisher;
 
   std::shared_ptr<flutter::FlutterPlatformViewsController> _platformViewsController;
   flutter::IOSRenderingAPI _renderingApi;
@@ -126,17 +134,20 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   fml::scoped_nsobject<FlutterMethodChannel> _platformViewsChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _textInputChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _undoManagerChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _scribbleChannel;
   fml::scoped_nsobject<FlutterMethodChannel> _spellCheckChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _lifecycleChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _systemChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _settingsChannel;
   fml::scoped_nsobject<FlutterBasicMessageChannel> _keyEventChannel;
+  fml::scoped_nsobject<FlutterMethodChannel> _screenshotChannel;
 
   int64_t _nextTextureId;
 
   BOOL _allowHeadlessExecution;
   BOOL _restorationEnabled;
   FlutterBinaryMessengerRelay* _binaryMessenger;
+  FlutterTextureRegistryRelay* _textureRegistry;
   std::unique_ptr<flutter::ConnectionCollection> _connections;
 }
 
@@ -181,6 +192,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
     _dartProject.reset([project retain]);
   }
 
+  _enableEmbedderAPI = _dartProject.get().settings.enable_embedder_api;
+  if (_enableEmbedderAPI) {
+    NSLog(@"============== iOS: enable_embedder_api is on ==============");
+    _embedderAPI.struct_size = sizeof(FlutterEngineProcTable);
+    FlutterEngineGetProcAddresses(&_embedderAPI);
+  }
+
   if (!EnableTracingIfNecessary([_dartProject.get() settings])) {
     NSLog(
         @"Cannot create a FlutterEngine instance in debug mode without Flutter tooling or "
@@ -196,6 +214,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [self recreatePlatformViewController];
 
   _binaryMessenger = [[FlutterBinaryMessengerRelay alloc] initWithParent:self];
+  _textureRegistry = [[FlutterTextureRegistryRelay alloc] initWithParent:self];
   _connections.reset(new flutter::ConnectionCollection());
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -260,7 +279,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   [_pluginPublications release];
   [_registrars release];
   _binaryMessenger.parent = nil;
+  _textureRegistry.parent = nil;
   [_binaryMessenger release];
+  [_textureRegistry release];
+  _textureRegistry = nil;
   [_isolateId release];
 
   NSNotificationCenter* center = [NSNotificationCenter defaultCenter];
@@ -286,7 +308,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   if (!self.platformView) {
     return;
   }
-  self.platformView->SetViewportMetrics(std::move(viewportMetrics));
+  self.platformView->SetViewportMetrics(viewportMetrics);
 }
 
 - (void)dispatchPointerDataPacket:(std::unique_ptr<flutter::PointerDataPacket>)packet {
@@ -471,6 +493,9 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 - (FlutterMethodChannel*)undoManagerChannel {
   return _undoManagerChannel.get();
 }
+- (FlutterMethodChannel*)scribbleChannel {
+  return _scribbleChannel.get();
+}
 - (FlutterMethodChannel*)spellCheckChannel {
   return _spellCheckChannel.get();
 }
@@ -491,6 +516,10 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   return [_publisher.get() url];
 }
 
+- (NSURL*)vmServiceUrl {
+  return [_publisher.get() url];
+}
+
 - (void)resetChannels {
   _localizationChannel.reset();
   _navigationChannel.reset();
@@ -499,6 +528,7 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
   _platformViewsChannel.reset();
   _textInputChannel.reset();
   _undoManagerChannel.reset();
+  _scribbleChannel.reset();
   _lifecycleChannel.reset();
   _systemChannel.reset();
   _settingsChannel.reset();
@@ -572,6 +602,11 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
       binaryMessenger:self.binaryMessenger
                 codec:[FlutterJSONMethodCodec sharedInstance]]);
 
+  _scribbleChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/scribble"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterJSONMethodCodec sharedInstance]]);
+
   _spellCheckChannel.reset([[FlutterMethodChannel alloc]
          initWithName:@"flutter/spellcheck"
       binaryMessenger:self.binaryMessenger
@@ -612,6 +647,36 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
          initWithChannel:_restorationChannel.get()
       restorationEnabled:_restorationEnabled]);
   _spellCheckPlugin.reset([[FlutterSpellCheckPlugin alloc] init]);
+
+  _screenshotChannel.reset([[FlutterMethodChannel alloc]
+         initWithName:@"flutter/screenshot"
+      binaryMessenger:self.binaryMessenger
+                codec:[FlutterStandardMethodCodec sharedInstance]]);
+
+  [_screenshotChannel.get()
+      setMethodCallHandler:^(FlutterMethodCall* _Nonnull call, FlutterResult _Nonnull result) {
+        if (!(weakSelf.get() && weakSelf.get()->_shell && weakSelf.get()->_shell->IsSetup())) {
+          return result([FlutterError
+              errorWithCode:@"invalid_state"
+                    message:@"Requesting screenshot while engine is not running."
+                    details:nil]);
+        }
+        flutter::Rasterizer::Screenshot screenshot =
+            [weakSelf.get() screenshot:flutter::Rasterizer::ScreenshotType::SurfaceData
+                          base64Encode:NO];
+        if (!screenshot.data) {
+          return result([FlutterError errorWithCode:@"failure"
+                                            message:@"Unable to get screenshot."
+                                            details:nil]);
+        }
+        // TODO(gaaclarke): Find way to eliminate this data copy.
+        NSData* data = [NSData dataWithBytes:screenshot.data->writable_data()
+                                      length:screenshot.data->size()];
+        NSString* format = [NSString stringWithCString:screenshot.format.c_str()];
+        NSNumber* width = @(screenshot.frame_size.fWidth);
+        NSNumber* height = @(screenshot.frame_size.fHeight);
+        return result(@[ width, height, format, data ]);
+      }];
 }
 
 - (void)maybeSetupPlatformViewChannels {
@@ -663,13 +728,13 @@ static constexpr int kNumProfilerSamplesPerSec = 5;
 }
 
 - (void)setupShell:(std::unique_ptr<flutter::Shell>)shell
-    withObservatoryPublication:(BOOL)doesObservatoryPublication {
+    withVMServicePublication:(BOOL)doesVMServicePublication {
   _shell = std::move(shell);
   [self setupChannels];
   [self onLocaleUpdated:nil];
   [self initializeDisplays];
-  _publisher.reset([[FlutterObservatoryPublisher alloc]
-      initWithEnableObservatoryPublication:doesObservatoryPublication]);
+  _publisher.reset([[FlutterDartVMServicePublisher alloc]
+      initWithEnableVMServicePublication:doesVMServicePublication]);
   [self maybeSetupPlatformViewChannels];
   _shell->SetGpuAvailability(_isGpuDisabled ? flutter::GpuAvailability::kUnavailable
                                             : flutter::GpuAvailability::kAvailable);
@@ -787,9 +852,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
       [UIApplication sharedApplication].applicationState == UIApplicationStateBackground;
   // Create the shell. This is a blocking operation.
   std::unique_ptr<flutter::Shell> shell = flutter::Shell::Create(
-      /*platform_data=*/std::move(platformData),
-      /*task_runners=*/std::move(task_runners),
-      /*settings=*/std::move(settings),
+      /*platform_data=*/platformData,
+      /*task_runners=*/task_runners,
+      /*settings=*/settings,
       /*on_create_platform_view=*/on_create_platform_view,
       /*on_create_rasterizer=*/on_create_rasterizer,
       /*is_gpu_disabled=*/_isGpuDisabled);
@@ -799,7 +864,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                    << entrypoint.UTF8String;
   } else {
     [self setupShell:std::move(shell)
-        withObservatoryPublication:settings.enable_observatory_publication];
+        withVMServicePublication:settings.enable_vm_service_publication];
     if ([FlutterEngine isProfilerEnabled]) {
       [self startProfiler];
     }
@@ -965,6 +1030,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 #pragma mark - FlutterViewEngineDelegate
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView showToolbar:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.showToolbar" arguments:@[ @(client) ]];
 }
 
@@ -972,6 +1040,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                   focusElement:(UIScribbleElementIdentifier)elementIdentifier
                        atPoint:(CGPoint)referencePoint
                         result:(FlutterResult)callback {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get()
       invokeMethod:@"TextInputClient.focusElement"
          arguments:@[ elementIdentifier, @(referencePoint.x), @(referencePoint.y) ]
@@ -981,6 +1052,9 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputPlugin:(FlutterTextInputPlugin*)textInputPlugin
          requestElementsInRect:(CGRect)rect
                         result:(FlutterResult)callback {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get()
       invokeMethod:@"TextInputClient.requestElementsInRect"
          arguments:@[ @(rect.origin.x), @(rect.origin.y), @(rect.size.width), @(rect.size.height) ]
@@ -988,10 +1062,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (void)flutterTextInputViewScribbleInteractionBegan:(FlutterTextInputView*)textInputView {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionBegan" arguments:nil];
 }
 
 - (void)flutterTextInputViewScribbleInteractionFinished:(FlutterTextInputView*)textInputView {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.scribbleInteractionFinished"
                               arguments:nil];
 }
@@ -999,12 +1079,18 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.insertTextPlaceholder"
                               arguments:@[ @(client), @(size.width), @(size.height) ]];
 }
 
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView
        removeTextPlaceholder:(int)client {
+  // TODO(justinmc): Switch from the TextInputClient to Scribble channel when
+  // the framework has finished transitioning to the Scribble channel.
+  // https://github.com/flutter/flutter/pull/115296
   [_textInputChannel.get() invokeMethod:@"TextInputClient.removeTextPlaceholder"
                               arguments:@[ @(client) ]];
 }
@@ -1063,6 +1149,10 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
 - (NSObject<FlutterBinaryMessenger>*)binaryMessenger {
   return _binaryMessenger;
+}
+
+- (NSObject<FlutterTextureRegistry>*)textureRegistry {
+  return _textureRegistry;
 }
 
 // For test only. Ideally we should create a dependency injector for all dependencies and
@@ -1293,12 +1383,16 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   result->_profiler = _profiler;
   result->_profiler_metrics = _profiler_metrics;
   result->_isGpuDisabled = _isGpuDisabled;
-  [result setupShell:std::move(shell) withObservatoryPublication:NO];
+  [result setupShell:std::move(shell) withVMServicePublication:NO];
   return [result autorelease];
 }
 
 - (const flutter::ThreadHost&)threadHost {
   return *_threadHost;
+}
+
+- (FlutterDartProject*)project {
+  return _dartProject.get();
 }
 
 @end
@@ -1325,7 +1419,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 }
 
 - (NSObject<FlutterTextureRegistry>*)textures {
-  return _flutterEngine;
+  return _flutterEngine.textureRegistry;
 }
 
 - (void)publish:(NSObject*)value {

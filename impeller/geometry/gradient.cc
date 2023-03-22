@@ -4,26 +4,26 @@
 
 #include <algorithm>
 
+#include "flutter/fml/logging.h"
 #include "impeller/geometry/gradient.h"
 
 namespace impeller {
 
-static void AppendColor(const Color& color, std::vector<uint8_t>* colors) {
+static void AppendColor(const Color& color, GradientData* data) {
   auto converted = color.ToR8G8B8A8();
-  colors->push_back(converted[0]);
-  colors->push_back(converted[1]);
-  colors->push_back(converted[2]);
-  colors->push_back(converted[3]);
+  data->color_bytes.push_back(converted[0]);
+  data->color_bytes.push_back(converted[1]);
+  data->color_bytes.push_back(converted[2]);
+  data->color_bytes.push_back(converted[3]);
 }
 
-std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
-                                          const std::vector<Scalar>& stops,
-                                          uint32_t* out_texture_size) {
+GradientData CreateGradientBuffer(const std::vector<Color>& colors,
+                                  const std::vector<Scalar>& stops) {
+  FML_DCHECK(stops.size() == colors.size());
+
   uint32_t texture_size;
-  // TODO(jonahwilliams): we should add a display list flag to check if the
-  // stops were provided or not, then we can skip this step.
   if (stops.size() == 2) {
-    texture_size = 2;
+    texture_size = colors.size();
   } else {
     auto minimum_delta = 1.0;
     for (size_t i = 1; i < stops.size(); i++) {
@@ -40,16 +40,18 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     // very close together.
     // TODO(jonahwilliams): this should use a platform specific max texture
     // size.
-    texture_size =
-        std::min((uint32_t)std::round(1.0 / minimum_delta) + 1, 1024u);
+    texture_size = std::min(
+        static_cast<uint32_t>(std::round(1.0 / minimum_delta)) + 1, 1024u);
   }
-  *out_texture_size = texture_size;
-  std::vector<uint8_t> color_stop_channels;
-  color_stop_channels.reserve(texture_size * 4);
+  GradientData data = {
+      .color_bytes = {},
+      .texture_size = texture_size,
+  };
+  data.color_bytes.reserve(texture_size * 4);
 
   if (texture_size == colors.size() && colors.size() <= 1024) {
     for (auto i = 0u; i < colors.size(); i++) {
-      AppendColor(colors[i], &color_stop_channels);
+      AppendColor(colors[i], &data);
     }
   } else {
     Color previous_color = colors[0];
@@ -57,15 +59,15 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
     auto previous_color_index = 0;
 
     // The first index is always equal to the first color, exactly.
-    AppendColor(previous_color, &color_stop_channels);
+    AppendColor(previous_color, &data);
 
     for (auto i = 1u; i < texture_size - 1; i++) {
-      auto scaled_i = i / (texture_size * 1.0);
+      auto scaled_i = i / (texture_size - 1.0);
       Color next_color = colors[previous_color_index + 1];
       auto next_stop = stops[previous_color_index + 1];
       // We're almost exactly equal to the next stop.
       if (ScalarNearlyEqual(scaled_i, next_stop)) {
-        AppendColor(next_color, &color_stop_channels);
+        AppendColor(next_color, &data);
 
         previous_color = next_color;
         previous_stop = next_stop;
@@ -75,7 +77,7 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
         auto t = (scaled_i - previous_stop) / (next_stop - previous_stop);
         auto mixed_color = Color::lerp(previous_color, next_color, t);
 
-        AppendColor(mixed_color, &color_stop_channels);
+        AppendColor(mixed_color, &data);
       } else {
         // We've slightly overshot the previous stop.
         previous_color = next_color;
@@ -87,13 +89,13 @@ std::vector<uint8_t> CreateGradientBuffer(const std::vector<Color>& colors,
         auto t = (scaled_i - previous_stop) / (next_stop - previous_stop);
         auto mixed_color = Color::lerp(previous_color, next_color, t);
 
-        AppendColor(mixed_color, &color_stop_channels);
+        AppendColor(mixed_color, &data);
       }
     }
     // The last index is always equal to the last color, exactly.
-    AppendColor(colors.back(), &color_stop_channels);
+    AppendColor(colors.back(), &data);
   }
-  return color_stop_channels;
+  return data;
 }
 
 }  // namespace impeller

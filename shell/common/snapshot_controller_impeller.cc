@@ -31,7 +31,7 @@ sk_sp<DlImage> SnapshotControllerImpeller::MakeRasterSnapshot(
 }
 
 sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
-    sk_sp<DisplayList> display_list,
+    const sk_sp<DisplayList>& display_list,
     SkISize size) {
   impeller::DisplayListDispatcher dispatcher;
   display_list->Dispatch(dispatcher);
@@ -64,7 +64,8 @@ sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
     std::shared_ptr<impeller::Image> image =
         picture.ToImage(*context, render_target_size);
     if (image) {
-      return impeller::DlImageImpeller::Make(image->GetTexture());
+      return impeller::DlImageImpeller::Make(image->GetTexture(),
+                                             DlImage::OwningContext::kRaster);
     }
   }
 

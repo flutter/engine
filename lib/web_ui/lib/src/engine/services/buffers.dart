@@ -108,7 +108,7 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
   /// or equal to [start] and [values] must have at least [end] elements.
   @override
   void insertAll(int index, Iterable<E> values, [int start = 0, int? end]) {
-    RangeError.checkValidIndex(index, this, 'index', _length + 1);
+    IndexError.check(index, _length + 1, indexable: this, name: 'index');
     RangeError.checkNotNegative(start, 'start');
     if (end != null) {
       if (start > end) {
@@ -212,8 +212,6 @@ abstract class _TypedDataBuffer<E> extends ListBase<E> {
 
   /// Like [insertAll], but with a guaranteed non-`null` [start] and [end].
   void _insertKnownLength(int index, Iterable<E> values, int start, int end) {
-    assert(values != null);
-    assert(end != null);
     if (start > values.length || end > values.length) {
       throw StateError('Too few elements');
     }

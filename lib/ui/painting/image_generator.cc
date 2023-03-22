@@ -4,7 +4,10 @@
 
 #include "flutter/lib/ui/painting/image_generator.h"
 
+#include <utility>
+
 #include "flutter/fml/logging.h"
+#include "third_party/skia/include/core/SkBitmap.h"
 
 namespace flutter {
 
@@ -48,7 +51,7 @@ unsigned int BuiltinSkiaImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   return {.required_frame = std::nullopt,
           .duration = 0,
           .disposal_method = SkCodecAnimation::DisposalMethod::kKeep};
@@ -85,7 +88,8 @@ BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
 BuiltinSkiaCodecImageGenerator::BuiltinSkiaCodecImageGenerator(
     sk_sp<SkData> buffer)
     : codec_generator_(static_cast<SkCodecImageGenerator*>(
-          SkCodecImageGenerator::MakeFromEncodedCodec(buffer).release())) {}
+          SkCodecImageGenerator::MakeFromEncodedCodec(std::move(buffer))
+              .release())) {}
 
 const SkImageInfo& BuiltinSkiaCodecImageGenerator::GetInfo() {
   return codec_generator_->getInfo();
@@ -101,7 +105,7 @@ unsigned int BuiltinSkiaCodecImageGenerator::GetPlayCount() const {
 }
 
 const ImageGenerator::FrameInfo BuiltinSkiaCodecImageGenerator::GetFrameInfo(
-    unsigned int frame_index) const {
+    unsigned int frame_index) {
   SkCodec::FrameInfo info = {};
   codec_generator_->getFrameInfo(frame_index, &info);
   return {
@@ -133,7 +137,7 @@ bool BuiltinSkiaCodecImageGenerator::GetPixels(
 
 std::unique_ptr<ImageGenerator> BuiltinSkiaCodecImageGenerator::MakeFromData(
     sk_sp<SkData> data) {
-  auto codec = SkCodec::MakeFromData(data);
+  auto codec = SkCodec::MakeFromData(std::move(data));
   if (!codec) {
     return nullptr;
   }

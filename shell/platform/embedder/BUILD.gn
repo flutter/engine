@@ -135,6 +135,11 @@ template("embedder_source_set") {
         "embedder_surface_vulkan.cc",
         "embedder_surface_vulkan.h",
       ]
+
+      deps += [
+        "//flutter/flutter_vma:flutter_skia_vma",
+        "//flutter/vulkan/procs",
+      ]
     }
 
     public_deps = [ ":embedder_headers" ]
@@ -221,8 +226,10 @@ if (enable_unittests) {
     include_dirs = [ "." ]
 
     sources = [
+      "platform_view_embedder_unittests.cc",
       "tests/embedder_config_builder.cc",
       "tests/embedder_config_builder.h",
+      "tests/embedder_frozen.h",
       "tests/embedder_test.cc",
       "tests/embedder_test.h",
       "tests/embedder_test_backingstore_producer.cc",
@@ -290,6 +297,7 @@ if (enable_unittests) {
       public_deps += [
         "//flutter/testing:vulkan",
         "//flutter/vulkan",
+        "//flutter/vulkan/procs",
       ]
     }
   }
@@ -305,16 +313,19 @@ if (enable_unittests) {
 
     include_dirs = [ "." ]
 
-    sources = [ "tests/embedder_unittests.cc" ]
+    sources = [
+      "tests/embedder_frozen_unittests.cc",
+      "tests/embedder_unittests.cc",
+    ]
 
     deps = [ ":embedder_unittests_library" ]
 
     if (test_enable_gl) {
-      sources += [ "tests/embedder_unittests_gl.cc" ]
+      sources += [ "tests/embedder_gl_unittests.cc" ]
     }
 
     if (test_enable_metal) {
-      sources += [ "tests/embedder_unittests_metal.mm" ]
+      sources += [ "tests/embedder_metal_unittests.mm" ]
     }
   }
 
@@ -419,9 +430,6 @@ if (is_mac && !embedder_for_target) {
       "--destination",
       rebase_path(outputs[0]),
     ]
-    if (enable_bitcode) {
-      args += [ "--bitcode" ]
-    }
   }
 
   copy("copy_module_map") {
@@ -526,7 +534,8 @@ if (is_mac) {
 
 if (host_os == "linux" || host_os == "win") {
   zip_bundle("embedder-archive") {
-    output = "$full_platform_name/$full_platform_name-embedder.zip"
+    output =
+        "$full_target_platform_name/$full_target_platform_name-embedder.zip"
     deps = [
       "//flutter/shell/platform/embedder:copy_headers",
       "//flutter/shell/platform/embedder:flutter_engine_library",

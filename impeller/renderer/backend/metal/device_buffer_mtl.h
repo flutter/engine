@@ -12,9 +12,8 @@
 
 namespace impeller {
 
-class DeviceBufferMTL final
-    : public DeviceBuffer,
-      public BackendCast<DeviceBufferMTL, DeviceBuffer> {
+class DeviceBufferMTL final : public DeviceBuffer,
+                              public BackendCast<DeviceBufferMTL, Buffer> {
  public:
   DeviceBufferMTL();
 
@@ -32,6 +31,14 @@ class DeviceBufferMTL final
   DeviceBufferMTL(DeviceBufferDescriptor desc,
                   id<MTLBuffer> buffer,
                   MTLStorageMode storage_mode);
+
+  // |DeviceBuffer|
+  uint8_t* OnGetContents() const override;
+
+  // |DeviceBuffer|
+  std::shared_ptr<Texture> AsTexture(Allocator& allocator,
+                                     const TextureDescriptor& descriptor,
+                                     uint16_t row_bytes) const override;
 
   // |DeviceBuffer|
   bool OnCopyHostBuffer(const uint8_t* source,

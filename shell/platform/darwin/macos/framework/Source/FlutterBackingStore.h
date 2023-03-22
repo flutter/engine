@@ -11,30 +11,6 @@
  */
 @interface FlutterRenderBackingStore : NSObject
 
-@end
-
-/**
- * Wraps an OpenGL frame buffer.
- */
-@interface FlutterOpenGLRenderBackingStore : FlutterRenderBackingStore
-
-/**
- * Frame buffer ID referenced by this backing store instance.
- */
-@property(nonatomic, readonly) uint32_t frameBufferID;
-
-/**
- * Initializes a backing store with the specified frame buffer id.
- */
-- (nonnull instancetype)initWithFrameBufferID:(uint32_t)fboID;
-
-@end
-
-/**
- * Wraps a Metal texture.
- */
-@interface FlutterMetalRenderBackingStore : FlutterRenderBackingStore
-
 /**
  * MTLTexture referenced by this backing store instance.
  */

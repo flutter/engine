@@ -10,8 +10,6 @@ import shutil
 import sys
 import os
 
-from create_xcframework import create_xcframework
-
 buildroot_dir = os.path.abspath(
     os.path.join(os.path.realpath(__file__), '..', '..', '..', '..')
 )
@@ -32,10 +30,10 @@ def main():
   parser.add_argument('--dst', type=str, required=True)
   parser.add_argument('--arm64-out-dir', type=str, required=True)
   parser.add_argument('--x64-out-dir', type=str, required=True)
-  parser.add_argument('--strip', action="store_true", default=False)
-  parser.add_argument('--dsym', action="store_true", default=False)
+  parser.add_argument('--strip', action='store_true', default=False)
+  parser.add_argument('--dsym', action='store_true', default=False)
   # TODO(godofredoc): Remove after recipes v2 have landed.
-  parser.add_argument('--zip', action="store_true", default=False)
+  parser.add_argument('--zip', action='store_true', default=False)
 
   args = parser.parse_args()
 
@@ -93,6 +91,8 @@ def main():
   ])
   process_framework(dst, args, fat_framework, fat_framework_binary)
 
+  return 0
+
 
 def regenerate_symlinks(fat_framework):
   """Regenerates the symlinks structure.
@@ -127,6 +127,11 @@ def regenerate_symlinks(fat_framework):
   )
 
 
+def embed_codesign_configuration(config_path, content):
+  with open(config_path, 'w') as file:
+    file.write(content)
+
+
 def process_framework(dst, args, fat_framework, fat_framework_binary):
   if args.dsym:
     dsym_out = os.path.splitext(fat_framework)[0] + '.dSYM'
@@ -142,13 +147,29 @@ def process_framework(dst, args, fat_framework, fat_framework_binary):
     unstripped_out = os.path.join(dst, 'FlutterMacOS.unstripped')
     shutil.copyfile(fat_framework_binary, unstripped_out)
 
-    subprocess.check_call(["strip", "-x", "-S", fat_framework_binary])
+    subprocess.check_call(['strip', '-x', '-S', fat_framework_binary])
 
   # Zip FlutterMacOS.framework.
   if args.zip:
+    filepath_with_entitlements = ''
+    filepath_without_entitlements = 'FlutterMacOS.framework/Versions/A/FlutterMacOS'
+
+    embed_codesign_configuration(
+        os.path.join(dst, 'entitlements.txt'), filepath_with_entitlements
+    )
+
+    embed_codesign_configuration(
+        os.path.join(dst, 'without_entitlements.txt'),
+        filepath_without_entitlements
+    )
     subprocess.check_call([
-        'zip', '-r', '-y', 'FlutterMacOS.framework.zip',
-        'FlutterMacOS.framework'
+        'zip',
+        '-r',
+        '-y',
+        'FlutterMacOS.framework.zip',
+        'FlutterMacOS.framework',
+        'entitlements.txt',
+        'without_entitlements.txt',
     ],
                           cwd=dst)
 

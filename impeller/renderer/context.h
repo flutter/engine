@@ -8,6 +8,8 @@
 #include <string>
 
 #include "flutter/fml/macros.h"
+#include "impeller/renderer/device_capabilities.h"
+#include "impeller/renderer/formats.h"
 
 namespace impeller {
 
@@ -16,7 +18,7 @@ class SamplerLibrary;
 class CommandBuffer;
 class PipelineLibrary;
 class Allocator;
-class WorkQueue;
+class GPUTracer;
 
 class Context : public std::enable_shared_from_this<Context> {
  public:
@@ -37,11 +39,14 @@ class Context : public std::enable_shared_from_this<Context> {
 
   virtual std::shared_ptr<CommandBuffer> CreateCommandBuffer() const = 0;
 
-  virtual std::shared_ptr<WorkQueue> GetWorkQueue() const = 0;
+  //----------------------------------------------------------------------------
+  /// @return A GPU Tracer to trace gpu rendering.
+  ///
+  virtual std::shared_ptr<GPUTracer> GetGPUTracer() const;
 
-  virtual bool HasThreadingRestrictions() const;
+  virtual PixelFormat GetColorAttachmentPixelFormat() const;
 
-  virtual bool SupportsOffscreenMSAA() const = 0;
+  virtual const IDeviceCapabilities& GetDeviceCapabilities() const = 0;
 
  protected:
   Context();

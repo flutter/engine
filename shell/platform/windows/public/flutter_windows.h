@@ -147,7 +147,7 @@ FLUTTER_EXPORT bool FlutterDesktopEngineDestroy(FlutterDesktopEngineRef engine);
 // set in the dart_entrypoint field of the FlutterDesktopEngineProperties
 // struct passed to FlutterDesktopEngineCreate.
 //
-// If sprecified, entry_point must be the name of a top-level function from the
+// If specified, entry_point must be the name of a top-level function from the
 // same Dart library that contains the app's main() function, and must be
 // decorated with `@pragma(vm:entry-point)` to ensure the method is not
 // tree-shaken by the Dart compiler. If conflicting non-null values are passed
@@ -181,6 +181,12 @@ FlutterDesktopEngineGetPluginRegistrar(FlutterDesktopEngineRef engine,
                                        const char* plugin_name);
 
 // Returns the messenger associated with the engine.
+//
+// This does not provide an owning reference, so should *not* be balanced with a
+// call to |FlutterDesktopMessengerRelease|.
+//
+// Callers should use |FlutterDesktopMessengerAddRef| if the returned pointer
+// will potentially outlive 'engine', such as when passing it to another thread.
 FLUTTER_EXPORT FlutterDesktopMessengerRef
 FlutterDesktopEngineGetMessenger(FlutterDesktopEngineRef engine);
 

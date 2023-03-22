@@ -11,8 +11,14 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/geometry/rect.h"
+#include "impeller/renderer/pipeline.h"
 #include "impeller/renderer/texture.h"
 #include "impeller/typographer/font_glyph_pair.h"
+
+class SkBitmap;
+namespace skgpu {
+class Rectanizer;
+}
 
 namespace impeller {
 
@@ -24,18 +30,43 @@ namespace impeller {
 class GlyphAtlas {
  public:
   //----------------------------------------------------------------------------
+  /// @brief      Describes how the glyphs are represented in the texture.
+  enum class Type {
+    //--------------------------------------------------------------------------
+    /// The glyphs are represented at a fixed size in an 8-bit grayscale texture
+    /// where the value of each pixel represents a signed-distance field that
+    /// stores the glyph outlines.
+    ///
+    kSignedDistanceField,
+
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using only an 8-bit
+    /// alpha channel.
+    ///
+    kAlphaBitmap,
+
+    //--------------------------------------------------------------------------
+    /// The glyphs are reprsented at their requested size using N32 premul
+    /// colors.
+    ///
+    kColorBitmap,
+  };
+
+  //----------------------------------------------------------------------------
   /// @brief      Create an empty glyph atlas.
   ///
-  GlyphAtlas();
+  /// @param[in]  type  How the glyphs are represented in the texture.
+  ///
+  explicit GlyphAtlas(Type type);
 
   ~GlyphAtlas();
 
   bool IsValid() const;
 
   //----------------------------------------------------------------------------
-  /// @brief   Whether at least one font-glyph pair has colors.
+  /// @brief      Describes how the glyphs are represented in the texture.
   ///
-  bool ContainsColorGlyph() const;
+  Type GetType() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Set the texture for the glyph atlas.
@@ -43,20 +74,6 @@ class GlyphAtlas {
   /// @param[in]  texture  The texture
   ///
   void SetTexture(std::shared_ptr<Texture> texture);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Set a callback that determines if a glyph-font pair
-  ///             has color.
-  ///
-  /// @param[in]  callback  The callback
-  ///
-  void SetFontColorCallback(
-      std::function<bool(const FontGlyphPair& pair)> callback);
-
-  //----------------------------------------------------------------------------
-  /// @brief      Whether the provided glyph-font pair contains color.
-  ///
-  bool IsColorFontGlyphPair(const FontGlyphPair& pair) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Get the texture for the glyph atlas.
@@ -72,7 +89,7 @@ class GlyphAtlas {
   /// @param[in]  pair  The font-glyph pair
   /// @param[in]  rect  The rectangle
   ///
-  void AddTypefaceGlyphPosition(FontGlyphPair pair, Rect rect);
+  void AddTypefaceGlyphPosition(const FontGlyphPair& pair, Rect rect);
 
   //----------------------------------------------------------------------------
   /// @brief      Get the number of unique font-glyph pairs in this atlas.
@@ -90,8 +107,9 @@ class GlyphAtlas {
   ///
   /// @return     The number of glyphs iterated over.
   ///
-  size_t IterateGlyphs(std::function<bool(const FontGlyphPair& pair,
-                                          const Rect& rect)> iterator) const;
+  size_t IterateGlyphs(
+      const std::function<bool(const FontGlyphPair& pair, const Rect& rect)>&
+          iterator) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Find the location of a specific font-glyph pair in the atlas.
@@ -103,10 +121,20 @@ class GlyphAtlas {
   ///
   std::optional<Rect> FindFontGlyphPosition(const FontGlyphPair& pair) const;
 
+  //----------------------------------------------------------------------------
+  /// @brief      whether this atlas contains all of the same font-glyph pairs
+  ///             as the vector.
+  ///
+  /// @param[in]  new_glyphs  The full set of new glyphs
+  ///
+  /// @return     A vector containing the glyphs from new_glyphs that are not
+  ///             present in the existing atlas. May be empty of there are none.
+  ///
+  FontGlyphPair::Vector HasSamePairs(const FontGlyphPair::Vector& new_glyphs);
+
  private:
+  const Type type_;
   std::shared_ptr<Texture> texture_;
-  std::optional<std::function<bool(const FontGlyphPair& pair)>> callback_;
-  bool has_color_glyph = false;
 
   std::unordered_map<FontGlyphPair,
                      Rect,
@@ -114,13 +142,49 @@ class GlyphAtlas {
                      FontGlyphPair::Equal>
       positions_;
 
-  std::unordered_map<FontGlyphPair,
-                     bool,
-                     FontGlyphPair::Hash,
-                     FontGlyphPair::Equal>
-      colors_;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlas);
+};
+
+//------------------------------------------------------------------------------
+/// @brief      A container for caching a glyph atlas across frames.
+///
+class GlyphAtlasContext {
+ public:
+  GlyphAtlasContext();
+
+  ~GlyphAtlasContext();
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the current glyph atlas.
+  std::shared_ptr<GlyphAtlas> GetGlyphAtlas() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the size of the current glyph atlas.
+  const ISize& GetAtlasSize() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the previous (if any) SkBitmap instance.
+  std::shared_ptr<SkBitmap> GetBitmap() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Retrieve the previous (if any) rect packer.
+  std::shared_ptr<skgpu::Rectanizer> GetRectPacker() const;
+
+  //----------------------------------------------------------------------------
+  /// @brief      Update the context with a newly constructed glyph atlas.
+  void UpdateGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas, ISize size);
+
+  void UpdateBitmap(std::shared_ptr<SkBitmap> bitmap);
+
+  void UpdateRectPacker(std::shared_ptr<skgpu::Rectanizer> rect_packer);
+
+ private:
+  std::shared_ptr<GlyphAtlas> atlas_;
+  ISize atlas_size_;
+  std::shared_ptr<SkBitmap> bitmap_;
+  std::shared_ptr<skgpu::Rectanizer> rect_packer_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(GlyphAtlasContext);
 };
 
 }  // namespace impeller

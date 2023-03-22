@@ -38,8 +38,8 @@ source_set("flutter_windows_headers") {
 source_set("flutter_windows_source") {
   # Common Windows sources.
   sources = [
-    "accessibility_bridge_delegate_windows.cc",
-    "accessibility_bridge_delegate_windows.h",
+    "accessibility_bridge_windows.cc",
+    "accessibility_bridge_windows.h",
     "angle_surface_manager.cc",
     "angle_surface_manager.h",
     "cursor_handler.cc",
@@ -105,6 +105,9 @@ source_set("flutter_windows_source") {
     "window_state.h",
     "windows_proc_table.cc",
     "windows_proc_table.h",
+    "windows_registry.cc",
+    "windows_registry.h",
+    "windowsx_shim.h",
   ]
 
   libs = [
@@ -169,7 +172,8 @@ executable("flutter_windows_unittests") {
 
   # Common Windows test sources.
   sources = [
-    "accessibility_bridge_delegate_windows_unittests.cc",
+    "accessibility_bridge_windows_unittests.cc",
+    "cursor_handler_unittests.cc",
     "direct_manipulation_unittests.cc",
     "dpi_utils_unittests.cc",
     "flutter_project_bundle_unittests.cc",
@@ -191,6 +195,8 @@ executable("flutter_windows_unittests") {
     "testing/engine_modifier.h",
     "testing/flutter_window_test.cc",
     "testing/flutter_window_test.h",
+    "testing/flutter_windows_engine_builder.cc",
+    "testing/flutter_windows_engine_builder.h",
     "testing/mock_direct_manipulation.h",
     "testing/mock_gl_functions.h",
     "testing/mock_text_input_manager.cc",
@@ -226,6 +232,7 @@ executable("flutter_windows_unittests") {
     ":flutter_windows_headers",
     ":flutter_windows_source",
     "//flutter/shell/platform/common:common_cpp",
+    "//flutter/shell/platform/common/client_wrapper:client_wrapper",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
     "//flutter/testing",

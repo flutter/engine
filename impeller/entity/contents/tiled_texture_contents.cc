@@ -4,8 +4,9 @@
 
 #include "impeller/entity/contents/tiled_texture_contents.h"
 
+#include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
-#include "impeller/entity/contents/solid_fill_utils.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/entity/tiled_texture_fill.frag.h"
 #include "impeller/entity/tiled_texture_fill.vert.h"
 #include "impeller/geometry/path_builder.h"
@@ -13,6 +14,23 @@
 #include "impeller/renderer/sampler_library.h"
 
 namespace impeller {
+
+static std::optional<SamplerAddressMode> TileModeToAddressMode(
+    Entity::TileMode tile_mode) {
+  switch (tile_mode) {
+    case Entity::TileMode::kClamp:
+      return SamplerAddressMode::kClampToEdge;
+      break;
+    case Entity::TileMode::kMirror:
+      return SamplerAddressMode::kMirror;
+      break;
+    case Entity::TileMode::kRepeat:
+      return SamplerAddressMode::kRepeat;
+      break;
+    case Entity::TileMode::kDecal:
+      return std::nullopt;
+  }
+}
 
 TiledTextureContents::TiledTextureContents() = default;
 
@@ -32,6 +50,36 @@ void TiledTextureContents::SetSamplerDescriptor(SamplerDescriptor desc) {
   sampler_descriptor_ = std::move(desc);
 }
 
+void TiledTextureContents::SetColorFilter(
+    std::optional<ColorFilterProc> color_filter) {
+  color_filter_ = std::move(color_filter);
+}
+
+std::optional<std::shared_ptr<Texture>>
+TiledTextureContents::CreateFilterTexture(
+    const ContentContext& renderer) const {
+  const ColorFilterProc& filter = color_filter_.value();
+  auto color_filter_contents = filter(FilterInput::Make(texture_));
+  auto snapshot = color_filter_contents->RenderToSnapshot(renderer, Entity());
+  if (snapshot.has_value()) {
+    return snapshot.value().texture;
+  }
+  return std::nullopt;
+}
+
+SamplerDescriptor TiledTextureContents::CreateDescriptor() const {
+  SamplerDescriptor descriptor = sampler_descriptor_;
+  auto width_mode = TileModeToAddressMode(x_tile_mode_);
+  auto height_mode = TileModeToAddressMode(y_tile_mode_);
+  if (width_mode.has_value()) {
+    descriptor.width_address_mode = width_mode.value();
+  }
+  if (height_mode.has_value()) {
+    descriptor.height_address_mode = height_mode.value();
+  }
+  return descriptor;
+}
+
 bool TiledTextureContents::Render(const ContentContext& renderer,
                                   const Entity& entity,
                                   RenderPass& pass) const {
@@ -49,36 +97,61 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   auto& host_buffer = pass.GetTransientsBuffer();
 
-  VS::VertInfo vert_info;
-  vert_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
-                  entity.GetTransformation();
-  vert_info.matrix = GetInverseMatrix();
-  vert_info.texture_size = Vector2{static_cast<Scalar>(texture_size.width),
-                                   static_cast<Scalar>(texture_size.height)};
+  auto bounds_origin = GetGeometry()->GetCoverage(Matrix())->origin;
+  auto geometry_result = GetGeometry()->GetPositionUVBuffer(
+      Rect(bounds_origin, Size(texture_size)), GetInverseMatrix(), renderer,
+      entity, pass);
+
+  VS::FrameInfo frame_info;
+  frame_info.mvp = geometry_result.transform;
+  frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
 
   FS::FragInfo frag_info;
-  frag_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
   frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
   frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
   frag_info.alpha = GetAlpha();
 
   Command cmd;
   cmd.label = "TiledTextureFill";
-  cmd.pipeline =
-      renderer.GetTiledTexturePipeline(OptionsFromPassAndEntity(pass, entity));
   cmd.stencil_reference = entity.GetStencilDepth();
-  cmd.BindVertices(CreateSolidFillVertices<VS::PerVertexData>(
-      GetCover()
-          ? PathBuilder{}.AddRect(Size(pass.GetRenderTargetSize())).TakePath()
-          : GetPath(),
-      pass.GetTransientsBuffer()));
-  VS::BindVertInfo(cmd, host_buffer.EmplaceUniform(vert_info));
-  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  FS::BindTextureSampler(cmd, texture_,
-                         renderer.GetContext()->GetSamplerLibrary()->GetSampler(
-                             sampler_descriptor_));
-  pass.AddCommand(std::move(cmd));
 
+  auto options = OptionsFromPassAndEntity(pass, entity);
+  if (geometry_result.prevent_overdraw) {
+    options.stencil_compare = CompareFunction::kEqual;
+    options.stencil_operation = StencilOperation::kIncrementClamp;
+  }
+  options.primitive_type = geometry_result.type;
+  cmd.pipeline = renderer.GetTiledTexturePipeline(options);
+
+  cmd.BindVertices(geometry_result.vertex_buffer);
+  VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+  FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+
+  if (color_filter_.has_value()) {
+    auto filtered_texture = CreateFilterTexture(renderer);
+    if (!filtered_texture.has_value()) {
+      return false;
+    }
+    FS::BindTextureSampler(
+        cmd, filtered_texture.value(),
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            CreateDescriptor()));
+  } else {
+    FS::BindTextureSampler(
+        cmd, texture_,
+        renderer.GetContext()->GetSamplerLibrary()->GetSampler(
+            CreateDescriptor()));
+  }
+
+  if (!pass.AddCommand(std::move(cmd))) {
+    return false;
+  }
+
+  if (geometry_result.prevent_overdraw) {
+    auto restore = ClipRestoreContents();
+    restore.SetRestoreCoverage(GetCoverage(entity));
+    return restore.Render(renderer, entity, pass);
+  }
   return true;
 }
 

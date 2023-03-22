@@ -11,15 +11,15 @@ namespace flutter {
 
 class PhysicalShapeLayer : public ContainerLayer {
  public:
-  PhysicalShapeLayer(SkColor color,
-                     SkColor shadow_color,
+  PhysicalShapeLayer(DlColor color,
+                     DlColor shadow_color,
                      float elevation,
                      const SkPath& path,
                      Clip clip_behavior);
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
   void Paint(PaintContext& context) const override;
 
@@ -30,8 +30,8 @@ class PhysicalShapeLayer : public ContainerLayer {
   float elevation() const { return elevation_; }
 
  private:
-  SkColor color_;
-  SkColor shadow_color_;
+  DlColor color_;
+  DlColor shadow_color_;
   float elevation_ = 0.0f;
   SkPath path_;
   Clip clip_behavior_;

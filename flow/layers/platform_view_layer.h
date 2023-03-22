@@ -5,6 +5,7 @@
 #ifndef FLUTTER_FLOW_LAYERS_PLATFORM_VIEW_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_PLATFORM_VIEW_LAYER_H_
 
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "flutter/flow/layers/layer.h"
 #include "third_party/skia/include/core/SkPoint.h"
 #include "third_party/skia/include/core/SkSize.h"
@@ -15,7 +16,7 @@ class PlatformViewLayer : public Layer {
  public:
   PlatformViewLayer(const SkPoint& offset, const SkSize& size, int64_t view_id);
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
   void Paint(PaintContext& context) const override;
 
  private:

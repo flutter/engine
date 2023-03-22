@@ -4,6 +4,7 @@
 
 import("//build/fuchsia/sdk.gni")
 import("//flutter/common/config.gni")
+import("//flutter/shell/config.gni")
 import("//flutter/testing/testing.gni")
 
 source_set("flow") {
@@ -45,6 +46,8 @@ source_set("flow") {
     "layers/layer.h",
     "layers/layer_raster_cache_item.cc",
     "layers/layer_raster_cache_item.h",
+    "layers/layer_state_stack.cc",
+    "layers/layer_state_stack.h",
     "layers/layer_tree.cc",
     "layers/layer_tree.h",
     "layers/offscreen_surface.cc",
@@ -83,10 +86,10 @@ source_set("flow") {
     "surface_frame.h",
   ]
 
-  public_configs = [
-    "//flutter:config",
-    "//flutter/vulkan:vulkan_config",
-  ]
+  public_configs = [ "//flutter:config" ]
+  if (shell_enable_vulkan) {
+    public_configs += [ "//flutter/vulkan:vulkan_config" ]
+  }
 
   deps = [
     "//flutter/common",
@@ -156,6 +159,7 @@ if (enable_unittests) {
       "layers/container_layer_unittests.cc",
       "layers/display_list_layer_unittests.cc",
       "layers/image_filter_layer_unittests.cc",
+      "layers/layer_state_stack_unittests.cc",
       "layers/layer_tree_unittests.cc",
       "layers/offscreen_surface_unittests.cc",
       "layers/opacity_layer_unittests.cc",
@@ -170,7 +174,6 @@ if (enable_unittests) {
       "rtree_unittests.cc",
       "skia_gpu_object_unittests.cc",
       "surface_frame_unittests.cc",
-      "testing/auto_save_layer_unittests.cc",
       "testing/mock_layer_unittests.cc",
       "testing/mock_texture_unittests.cc",
       "texture_unittests.cc",
@@ -181,7 +184,7 @@ if (enable_unittests) {
       ":flow_fixtures",
       ":flow_testing",
       "//flutter/common/graphics",
-      "//flutter/display_list:display_list_testing",
+      "//flutter/display_list/testing:display_list_testing",
       "//flutter/fml",
       "//flutter/testing:skia",
       "//flutter/testing:testing_lib",

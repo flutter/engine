@@ -5,11 +5,22 @@
 #include "impeller/renderer/backend/vulkan/sampler_vk.h"
 
 namespace impeller {
-SamplerVK::~SamplerVK() {}
 
 SamplerVK::SamplerVK(SamplerDescriptor desc, vk::UniqueSampler sampler)
-    : Sampler(desc), sampler_(std::move(sampler)) {
+    : Sampler(std::move(desc)),
+      sampler_(MakeSharedVK<vk::Sampler>(std::move(sampler))) {
   is_valid_ = true;
+}
+
+SamplerVK::~SamplerVK() = default;
+
+vk::Sampler SamplerVK::GetSamplerVK() const {
+  return *sampler_;
+}
+
+const std::shared_ptr<SharedObjectVKT<vk::Sampler>>&
+SamplerVK::GetSharedSampler() const {
+  return sampler_;
 }
 
 bool SamplerVK::IsValid() const {

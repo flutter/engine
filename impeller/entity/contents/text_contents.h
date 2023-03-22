@@ -12,11 +12,11 @@
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/geometry/color.h"
+#include "impeller/typographer/glyph_atlas.h"
 #include "impeller/typographer/text_frame.h"
 
 namespace impeller {
 
-class GlyphAtlas;
 class LazyGlyphAtlas;
 class Context;
 
@@ -26,13 +26,19 @@ class TextContents final : public Contents {
 
   ~TextContents();
 
-  void SetTextFrame(TextFrame frame);
-
-  void SetGlyphAtlas(std::shared_ptr<GlyphAtlas> atlas);
+  void SetTextFrame(const TextFrame& frame);
 
   void SetGlyphAtlas(std::shared_ptr<LazyGlyphAtlas> atlas);
 
   void SetColor(Color color);
+
+  Color GetColor() const;
+
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  void SetInheritedOpacity(Scalar opacity) override;
+
+  void SetInverseMatrix(Matrix matrix);
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -42,14 +48,20 @@ class TextContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // TODO(dnfield): remove this https://github.com/flutter/flutter/issues/111640
+  bool RenderSdf(const ContentContext& renderer,
+                 const Entity& entity,
+                 RenderPass& pass) const;
+
  private:
   TextFrame frame_;
   Color color_;
-  mutable std::variant<std::shared_ptr<GlyphAtlas>,
-                       std::shared_ptr<LazyGlyphAtlas>>
-      atlas_;
+  mutable std::shared_ptr<LazyGlyphAtlas> lazy_atlas_;
+  Matrix inverse_matrix_;
 
   std::shared_ptr<GlyphAtlas> ResolveAtlas(
+      GlyphAtlas::Type type,
+      std::shared_ptr<GlyphAtlasContext> atlas_context,
       std::shared_ptr<Context> context) const;
 
   FML_DISALLOW_COPY_AND_ASSIGN(TextContents);

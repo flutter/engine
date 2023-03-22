@@ -36,11 +36,6 @@ class FilterContents : public Contents {
 
   enum class MorphType { kDilate, kErode };
 
-  static std::shared_ptr<FilterContents> MakeBlend(
-      BlendMode blend_mode,
-      FilterInput::Vector inputs,
-      std::optional<Color> foreground_color = std::nullopt);
-
   static std::shared_ptr<FilterContents> MakeDirectionalGaussianBlur(
       FilterInput::Ref input,
       Sigma sigma,
@@ -52,7 +47,7 @@ class FilterContents : public Contents {
       const Matrix& effect_transform = Matrix());
 
   static std::shared_ptr<FilterContents> MakeGaussianBlur(
-      FilterInput::Ref input,
+      const FilterInput::Ref& input,
       Sigma sigma_x,
       Sigma sigma_y,
       BlurStyle blur_style = BlurStyle::kNormal,
@@ -80,19 +75,21 @@ class FilterContents : public Contents {
       MorphType morph_type,
       const Matrix& effect_transform = Matrix());
 
-  static std::shared_ptr<FilterContents> MakeColorMatrix(
-      FilterInput::Ref input,
-      const ColorMatrix& color_matrix);
-
-  static std::shared_ptr<FilterContents> MakeLinearToSrgbFilter(
-      FilterInput::Ref input);
-
-  static std::shared_ptr<FilterContents> MakeSrgbToLinearFilter(
-      FilterInput::Ref input);
-
   static std::shared_ptr<FilterContents> MakeMatrixFilter(
       FilterInput::Ref input,
+      const Matrix& matrix,
+      const SamplerDescriptor& desc,
+      const Matrix& effect_transform,
+      bool is_subpass);
+
+  static std::shared_ptr<FilterContents> MakeLocalMatrixFilter(
+      FilterInput::Ref input,
       const Matrix& matrix);
+
+  static std::shared_ptr<FilterContents> MakeYUVToRGBFilter(
+      std::shared_ptr<Texture> y_texture,
+      std::shared_ptr<Texture> uv_texture,
+      YUVColorSpace yuv_color_space);
 
   FilterContents();
 
@@ -112,6 +109,10 @@ class FilterContents : public Contents {
   ///         filter. Note that this is in addition to the entity's transform.
   void SetEffectTransform(Matrix effect_transform);
 
+  /// @brief  Create an Entity that renders this filter's output.
+  std::optional<Entity> GetEntity(const ContentContext& renderer,
+                                  const Entity& entity) const;
+
   // |Contents|
   bool Render(const ContentContext& renderer,
               const Entity& entity,
@@ -121,8 +122,11 @@ class FilterContents : public Contents {
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
 
   // |Contents|
-  std::optional<Snapshot> RenderToSnapshot(const ContentContext& renderer,
-                                           const Entity& entity) const override;
+  std::optional<Snapshot> RenderToSnapshot(
+      const ContentContext& renderer,
+      const Entity& entity,
+      const std::optional<SamplerDescriptor>& sampler_descriptor = std::nullopt,
+      bool msaa_enabled = true) const override;
 
   virtual Matrix GetLocalTransform(const Matrix& parent_transform) const;
 
@@ -134,13 +138,12 @@ class FilterContents : public Contents {
       const Entity& entity,
       const Matrix& effect_transform) const;
 
-  /// @brief  Converts zero or more filter inputs into a new texture.
-  virtual std::optional<Snapshot> RenderFilter(
-      const FilterInput::Vector& inputs,
-      const ContentContext& renderer,
-      const Entity& entity,
-      const Matrix& effect_transform,
-      const Rect& coverage) const = 0;
+  /// @brief  Converts zero or more filter inputs into a render instruction.
+  virtual std::optional<Entity> RenderFilter(const FilterInput::Vector& inputs,
+                                             const ContentContext& renderer,
+                                             const Entity& entity,
+                                             const Matrix& effect_transform,
+                                             const Rect& coverage) const = 0;
 
   std::optional<Rect> GetLocalCoverage(const Entity& local_entity) const;
 

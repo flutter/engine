@@ -7,14 +7,21 @@ import 'dart:typed_data';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 import 'font_fallbacks.dart';
 import 'painting.dart';
 import 'renderer.dart';
 import 'skia_object_cache.dart';
+import 'text_fragmenter.dart';
 import 'util.dart';
+
+final List<String> _testFonts = <String>['Ahem', 'FlutterTest'];
+String? _effectiveFontFamily(String? fontFamily) {
+  return ui.debugEmulateFlutterTesterEnvironment && !_testFonts.contains(fontFamily)
+    ? _testFonts.first
+    : fontFamily;
+}
 
 @immutable
 class CkParagraphStyle implements ui.ParagraphStyle {
@@ -35,7 +42,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           textAlign,
           textDirection,
           maxLines,
-          ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+          _effectiveFontFamily(fontFamily),
           fontSize,
           height,
           textHeightBehavior,
@@ -45,7 +52,7 @@ class CkParagraphStyle implements ui.ParagraphStyle {
           ellipsis,
           locale,
         ),
-        _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+        _fontFamily = _effectiveFontFamily(fontFamily),
         _fontSize = fontSize,
         _height = height,
         _leadingDistribution = textHeightBehavior?.leadingDistribution,
@@ -231,7 +238,7 @@ class CkTextStyle implements ui.TextStyle {
       fontWeight,
       fontStyle,
       textBaseline,
-      ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+      _effectiveFontFamily(fontFamily),
       ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
       fontSize,
       letterSpacing,
@@ -363,15 +370,15 @@ class CkTextStyle implements ui.TextStyle {
     }
 
     if (decoration != null) {
-      int decorationValue = canvasKit.NoDecoration;
+      int decorationValue = canvasKit.NoDecoration.toInt();
       if (decoration.contains(ui.TextDecoration.underline)) {
-        decorationValue |= canvasKit.UnderlineDecoration;
+        decorationValue |= canvasKit.UnderlineDecoration.toInt();
       }
       if (decoration.contains(ui.TextDecoration.overline)) {
-        decorationValue |= canvasKit.OverlineDecoration;
+        decorationValue |= canvasKit.OverlineDecoration.toInt();
       }
       if (decoration.contains(ui.TextDecoration.lineThrough)) {
-        decorationValue |= canvasKit.LineThroughDecoration;
+        decorationValue |= canvasKit.LineThroughDecoration.toInt();
       }
       properties.decoration = decorationValue;
     }
@@ -483,7 +490,7 @@ class CkStrutStyle implements ui.StrutStyle {
     ui.FontWeight? fontWeight,
     ui.FontStyle? fontStyle,
     bool? forceStrutHeight,
-  })  : _fontFamily = ui.debugEmulateFlutterTesterEnvironment ? 'Ahem' : fontFamily,
+  })  : _fontFamily = _effectiveFontFamily(fontFamily),
         _fontFamilyFallback = ui.debugEmulateFlutterTesterEnvironment ? null : fontFamilyFallback,
         _fontSize = fontSize,
         _height = height,
@@ -631,7 +638,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         _width = paragraph.getMaxWidth();
         _boxesForPlaceholders =
             skRectsToTextBoxes(
-                paragraph.getRectsForPlaceholders().cast<Float32List>());
+                paragraph.getRectsForPlaceholders().cast<SkRectWithDirection>());
       } catch (e) {
         printWarning('CanvasKit threw an exception while laying '
             'out the paragraph. The font was "${_paragraphStyle._fontFamily}". '
@@ -732,23 +739,23 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     }
 
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<Float32List> skRects = paragraph.getRectsForRange(
-      start,
-      end,
+    final List<SkRectWithDirection> skRects = paragraph.getRectsForRange(
+      start.toDouble(),
+      end.toDouble(),
       toSkRectHeightStyle(boxHeightStyle),
       toSkRectWidthStyle(boxWidthStyle),
-    ).cast<Float32List>();
+    ).cast<SkRectWithDirection>();
 
     return skRectsToTextBoxes(skRects);
   }
 
-  List<ui.TextBox> skRectsToTextBoxes(List<Float32List> skRects) {
+  List<ui.TextBox> skRectsToTextBoxes(List<SkRectWithDirection> skRects) {
     final List<ui.TextBox> result = <ui.TextBox>[];
 
     for (int i = 0; i < skRects.length; i++) {
-      final Float32List rect = skRects[i];
-      final int skTextDirection =
-          getJsProperty(getJsProperty(rect, 'direction'), 'value');
+      final SkRectWithDirection skRect = skRects[i];
+      final Float32List rect = skRect.rect;
+      final int skTextDirection = skRect.dir.value.toInt();
       result.add(ui.TextBox.fromLTRBD(
         rect[0],
         rect[1],
@@ -784,8 +791,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         characterPosition = position.offset;
         break;
     }
-    final SkTextRange skRange = paragraph.getWordBoundary(characterPosition);
-    return ui.TextRange(start: skRange.start, end: skRange.end);
+    final SkTextRange skRange = paragraph.getWordBoundary(characterPosition.toDouble());
+    return ui.TextRange(start: skRange.start.toInt(), end: skRange.end.toInt());
   }
 
   @override
@@ -808,7 +815,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     final int offset = position.offset;
     for (final SkLineMetrics metric in metrics) {
       if (offset >= metric.startIndex && offset <= metric.endIndex) {
-        return ui.TextRange(start: metric.startIndex, end: metric.endIndex);
+        return ui.TextRange(start: metric.startIndex.toInt(), end: metric.endIndex.toInt());
       }
     }
     return ui.TextRange.empty;
@@ -876,7 +883,7 @@ class CkLineMetrics implements ui.LineMetrics {
   double get width => skLineMetrics.width;
 
   @override
-  int get lineNumber => skLineMetrics.lineNumber;
+  int get lineNumber => skLineMetrics.lineNumber.toInt();
 }
 
 class CkParagraphBuilder implements ui.ParagraphBuilder {
@@ -977,6 +984,9 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
 
   /// Builds the CkParagraph with the builder and deletes the builder.
   SkParagraph _buildSkParagraph() {
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(_paragraphBuilder);
+    }
     final SkParagraph result = _paragraphBuilder.build();
     _paragraphBuilder.delete();
     return result;
@@ -1032,7 +1042,7 @@ class CkParagraphBuilder implements ui.ParagraphBuilder {
       SkPaint? foreground = skStyle.foreground?.skiaObject;
       if (foreground == null) {
         _defaultTextForeground.setColorInt(
-          skStyle.color?.value ?? 0xFF000000,
+          (skStyle.color?.value ?? 0xFF000000).toDouble(),
         );
         foreground = _defaultTextForeground;
       }

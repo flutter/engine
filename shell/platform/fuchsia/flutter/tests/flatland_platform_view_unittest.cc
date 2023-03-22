@@ -43,13 +43,7 @@ namespace {
 
 class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
  public:
-  SkCanvas* GetRootCanvas() override { return nullptr; }
-  std::vector<SkCanvas*> GetCurrentCanvases() override {
-    return std::vector<SkCanvas*>();
-  }
-  std::vector<flutter::DisplayListBuilder*> GetCurrentBuilders() override {
-    return std::vector<flutter::DisplayListBuilder*>();
-  }
+  flutter::DlCanvas* GetRootCanvas() override { return nullptr; }
 
   void CancelFrame() override {}
   void BeginFrame(
@@ -57,16 +51,16 @@ class MockExternalViewEmbedder : public flutter::ExternalViewEmbedder {
       GrDirectContext* context,
       double device_pixel_ratio,
       fml::RefPtr<fml::RasterThreadMerger> raster_thread_merger) override {}
+
   void SubmitFrame(GrDirectContext* context,
-                   std::unique_ptr<flutter::SurfaceFrame> frame) override {
-    return;
-  }
+                   std::unique_ptr<flutter::SurfaceFrame> frame) override {}
 
   void PrerollCompositeEmbeddedView(
-      int view_id,
+      int64_t view_id,
       std::unique_ptr<flutter::EmbeddedViewParams> params) override {}
-  flutter::EmbedderPaintContext CompositeEmbeddedView(int view_id) override {
-    return {nullptr, nullptr};
+
+  flutter::DlCanvas* CompositeEmbeddedView(int64_t view_id) override {
+    return nullptr;
   }
 };
 
@@ -247,9 +241,7 @@ class MockChildViewWatcher
   // |fuchsia::ui::composition::ChildViewWatcher|
   void GetViewRef(GetViewRefCallback callback) override {
     // GetViewRef only returns once as per flatland.fidl comments
-    if (control_ref_.reference) {
-      return;
-    }
+    ASSERT_FALSE(control_ref_.reference);
     auto pair = scenic::ViewRefPair::New();
     control_ref_ = std::move(pair.control_ref);
     callback(std::move(pair.view_ref));
@@ -292,11 +284,14 @@ class MockParentViewportWatcher
     }
   }
 
-  void SetLayout(uint32_t logical_size_x, uint32_t logical_size_y) {
+  void SetLayout(uint32_t logical_size_x,
+                 uint32_t logical_size_y,
+                 float DPR = 1.0) {
     ::fuchsia::math::SizeU logical_size;
     logical_size.width = logical_size_x;
     logical_size.height = logical_size_y;
     layout_.set_logical_size(logical_size);
+    layout_.set_device_pixel_ratio({DPR, DPR});
 
     if (pending_callback_valid_) {
       pending_layout_callback_(std::move(layout_));
@@ -483,15 +478,8 @@ std::string ToString(const fml::Mapping& mapping) {
 // Stolen from pointer_data_packet_converter_unittests.cc.
 void UnpackPointerPacket(std::vector<flutter::PointerData>& output,  // NOLINT
                          std::unique_ptr<flutter::PointerDataPacket> packet) {
-  size_t kBytesPerPointerData =
-      flutter::kPointerDataFieldCount * flutter::kBytesPerField;
-  auto buffer = packet->data();
-  size_t buffer_length = buffer.size();
-
-  for (size_t i = 0; i < buffer_length / kBytesPerPointerData; i++) {
-    flutter::PointerData pointer_data;
-    memcpy(&pointer_data, &buffer[i * kBytesPerPointerData],
-           sizeof(flutter::PointerData));
+  for (size_t i = 0; i < packet->GetLength(); i++) {
+    flutter::PointerData pointer_data = packet->GetPointerData(i);
     output.push_back(pointer_data);
   }
   packet.reset();
@@ -651,6 +639,7 @@ TEST_F(FlatlandPlatformViewTests, CreateSurfaceTest) {
 // MetricsEvents sent to it via FIDL, correctly parses the metrics it receives,
 // and calls the SetViewportMetrics callback with the appropriate parameters.
 TEST_F(FlatlandPlatformViewTests, SetViewportMetrics) {
+  constexpr float kDPR = 2;
   constexpr uint32_t width = 640;
   constexpr uint32_t height = 480;
 
@@ -667,10 +656,11 @@ TEST_F(FlatlandPlatformViewTests, SetViewportMetrics) {
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.metrics(), flutter::ViewportMetrics());
 
-  watcher.SetLayout(width, height);
+  watcher.SetLayout(width, height, kDPR);
   RunLoopUntilIdle();
   EXPECT_EQ(delegate.metrics(),
-            flutter::ViewportMetrics(1.0, width, height, -1.0));
+            flutter::ViewportMetrics(kDPR, std::round(width * kDPR),
+                                     std::round(height * kDPR), -1.0));
 }
 
 // This test makes sure that the PlatformView correctly registers semantics

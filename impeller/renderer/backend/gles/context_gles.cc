@@ -6,20 +6,20 @@
 
 #include "impeller/base/config.h"
 #include "impeller/base/validation.h"
-#include "impeller/base/work_queue_common.h"
+#include "impeller/renderer/device_capabilities.h"
 
 namespace impeller {
 
 std::shared_ptr<ContextGLES> ContextGLES::Create(
     std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries) {
+    const std::vector<std::shared_ptr<fml::Mapping>>& shader_libraries) {
   return std::shared_ptr<ContextGLES>(
-      new ContextGLES(std::move(gl), std::move(shader_libraries)));
+      new ContextGLES(std::move(gl), shader_libraries));
 }
 
-ContextGLES::ContextGLES(
-    std::unique_ptr<ProcTableGLES> gl,
-    std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_mappings) {
+ContextGLES::ContextGLES(std::unique_ptr<ProcTableGLES> gl,
+                         const std::vector<std::shared_ptr<fml::Mapping>>&
+                             shader_libraries_mappings) {
   reactor_ = std::make_shared<ReactorGLES>(std::move(gl));
   if (!reactor_->IsValid()) {
     VALIDATION_LOG << "Could not create valid reactor.";
@@ -29,7 +29,7 @@ ContextGLES::ContextGLES(
   // Create the shader library.
   {
     auto library = std::shared_ptr<ShaderLibraryGLES>(
-        new ShaderLibraryGLES(std::move(shader_libraries_mappings)));
+        new ShaderLibraryGLES(shader_libraries_mappings));
     if (!library->IsValid()) {
       VALIDATION_LOG << "Could not create valid shader library.";
       return;
@@ -59,13 +59,21 @@ ContextGLES::ContextGLES(
         std::shared_ptr<SamplerLibraryGLES>(new SamplerLibraryGLES());
   }
 
-  // Create the work queue.
+  // Create the device capabilities.
   {
-    work_queue_ = WorkQueueCommon::Create();
-    if (!work_queue_) {
-      VALIDATION_LOG << "Could not create work queue.";
-      return;
-    }
+    device_capabilities_ =
+        DeviceCapabilitiesBuilder()
+            .SetHasThreadingRestrictions(true)
+            .SetSupportsOffscreenMSAA(false)
+            .SetSupportsSSBO(false)
+            .SetSupportsTextureToTextureBlits(
+                reactor_->GetProcTable().BlitFramebuffer.IsAvailable())
+            .SetSupportsFramebufferFetch(false)
+            .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
+            .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .SetSupportsCompute(false, false)
+            .SetSupportsReadFromResolve(false)
+            .Build();
   }
 
   is_valid_ = true;
@@ -78,11 +86,11 @@ const ReactorGLES::Ref& ContextGLES::GetReactor() const {
 }
 
 std::optional<ReactorGLES::WorkerID> ContextGLES::AddReactorWorker(
-    std::shared_ptr<ReactorGLES::Worker> worker) {
+    const std::shared_ptr<ReactorGLES::Worker>& worker) {
   if (!IsValid()) {
     return std::nullopt;
   }
-  return reactor_->AddWorker(std::move(worker));
+  return reactor_->AddWorker(worker);
 }
 
 bool ContextGLES::RemoveReactorWorker(ReactorGLES::WorkerID id) {
@@ -123,18 +131,13 @@ std::shared_ptr<CommandBuffer> ContextGLES::CreateCommandBuffer() const {
 }
 
 // |Context|
-std::shared_ptr<WorkQueue> ContextGLES::GetWorkQueue() const {
-  return work_queue_;
+const IDeviceCapabilities& ContextGLES::GetDeviceCapabilities() const {
+  return *device_capabilities_;
 }
 
 // |Context|
-bool ContextGLES::HasThreadingRestrictions() const {
-  return true;
-}
-
-// |Context|
-bool ContextGLES::SupportsOffscreenMSAA() const {
-  return false;
+PixelFormat ContextGLES::GetColorAttachmentPixelFormat() const {
+  return PixelFormat::kR8G8B8A8UNormInt;
 }
 
 }  // namespace impeller

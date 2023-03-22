@@ -39,6 +39,31 @@ _flutter_framework_headers = [
 
 _flutter_framework_headers_copy_dir = "$_flutter_framework_dir/Headers"
 
+source_set("flutter_framework_source_arc") {
+  visibility = [ ":*" ]
+  cflags_objc = flutter_cflags_objc_arc
+  cflags_objcc = flutter_cflags_objcc_arc
+
+  defines = [ "FLUTTER_FRAMEWORK=1" ]
+  allow_circular_includes_from = [ ":flutter_framework_source" ]
+  deps = [
+    ":flutter_framework_source",
+    "//flutter/fml",
+    "//flutter/shell/platform/common:common_cpp_input",
+    "//flutter/shell/platform/darwin/common:framework_shared",
+    "//third_party/icu",
+  ]
+  public_configs = [ "//flutter:config" ]
+
+  sources = [
+    "framework/Source/FlutterTextInputDelegate.h",
+    "framework/Source/FlutterTextInputPlugin.h",
+    "framework/Source/FlutterTextInputPlugin.mm",
+  ]
+
+  frameworks = [ "UIKit.framework" ]
+}
+
 source_set("flutter_framework_source") {
   visibility = [ ":*" ]
   cflags_objc = flutter_cflags_objc
@@ -55,6 +80,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterChannelKeyResponder.mm",
     "framework/Source/FlutterDartProject.mm",
     "framework/Source/FlutterDartProject_Internal.h",
+    "framework/Source/FlutterDartVMServicePublisher.h",
+    "framework/Source/FlutterDartVMServicePublisher.mm",
     "framework/Source/FlutterEmbedderKeyResponder.h",
     "framework/Source/FlutterEmbedderKeyResponder.mm",
     "framework/Source/FlutterEngine.mm",
@@ -65,8 +92,6 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterKeySecondaryResponder.h",
     "framework/Source/FlutterKeyboardManager.h",
     "framework/Source/FlutterKeyboardManager.mm",
-    "framework/Source/FlutterObservatoryPublisher.h",
-    "framework/Source/FlutterObservatoryPublisher.mm",
     "framework/Source/FlutterOverlayView.h",
     "framework/Source/FlutterOverlayView.mm",
     "framework/Source/FlutterPlatformPlugin.h",
@@ -81,9 +106,8 @@ source_set("flutter_framework_source") {
     "framework/Source/FlutterSemanticsScrollView.mm",
     "framework/Source/FlutterSpellCheckPlugin.h",
     "framework/Source/FlutterSpellCheckPlugin.mm",
-    "framework/Source/FlutterTextInputDelegate.h",
-    "framework/Source/FlutterTextInputPlugin.h",
-    "framework/Source/FlutterTextInputPlugin.mm",
+    "framework/Source/FlutterTextureRegistryRelay.h",
+    "framework/Source/FlutterTextureRegistryRelay.mm",
     "framework/Source/FlutterUIPressProxy.h",
     "framework/Source/FlutterUIPressProxy.mm",
     "framework/Source/FlutterUndoManagerDelegate.h",
@@ -163,6 +187,7 @@ source_set("flutter_framework_source") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/profiling:profiling",
+    "//flutter/third_party/spring_animation",
     "//third_party/skia",
   ]
 
@@ -209,6 +234,7 @@ source_set("ios_test_flutter_mrc") {
   ]
   deps = [
     ":flutter_framework_source",
+    ":flutter_framework_source_arc",
     "//flutter/common:common",
     "//flutter/lib/ui:ui",
     "//flutter/shell/common:common",
@@ -259,6 +285,7 @@ shared_library("ios_test_flutter") {
     "framework/Source/FlutterRestorationPluginTest.mm",
     "framework/Source/FlutterSpellCheckPluginTest.mm",
     "framework/Source/FlutterTextInputPluginTest.mm",
+    "framework/Source/FlutterTextureRegistryRelayTest.mm",
     "framework/Source/FlutterUndoManagerPluginTest.mm",
     "framework/Source/FlutterViewControllerTest.mm",
     "framework/Source/SemanticsObjectTest.mm",
@@ -267,6 +294,7 @@ shared_library("ios_test_flutter") {
   deps = [
     ":flutter_framework",
     ":flutter_framework_source",
+    ":flutter_framework_source_arc",
     ":ios_gpu_configuration",
     ":ios_test_flutter_mrc",
     "//flutter/common:common",
@@ -274,6 +302,7 @@ shared_library("ios_test_flutter") {
     "//flutter/shell/platform/darwin/common:framework_shared",
     "//flutter/shell/platform/embedder:embedder_as_internal_library",
     "//flutter/shell/platform/embedder:embedder_test_utils",
+    "//flutter/third_party/spring_animation",
     "//flutter/third_party/tonic",
     "//flutter/third_party/txt",
     "//third_party/ocmock:ocmock_shared",
@@ -295,7 +324,10 @@ shared_library("create_flutter_framework_dylib") {
 
   public = _flutter_framework_headers
 
-  deps = [ ":flutter_framework_source" ]
+  deps = [
+    ":flutter_framework_source",
+    ":flutter_framework_source_arc",
+  ]
 
   public_configs = [ "//flutter:config" ]
 }
@@ -340,9 +372,6 @@ action("copy_framework_info_plist") {
     "--minversion",
     ios_deployment_target,
   ]
-  if (enable_bitcode) {
-    args += [ "--bitcode" ]
-  }
 }
 
 copy("copy_framework_module_map") {

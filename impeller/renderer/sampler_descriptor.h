@@ -18,13 +18,20 @@ class Context;
 struct SamplerDescriptor final : public Comparable<SamplerDescriptor> {
   MinMagFilter min_filter = MinMagFilter::kNearest;
   MinMagFilter mag_filter = MinMagFilter::kNearest;
-  MipFilter mip_filter = MipFilter::kNone;
+  MipFilter mip_filter = MipFilter::kNearest;
 
   SamplerAddressMode width_address_mode = SamplerAddressMode::kClampToEdge;
   SamplerAddressMode height_address_mode = SamplerAddressMode::kClampToEdge;
   SamplerAddressMode depth_address_mode = SamplerAddressMode::kClampToEdge;
 
   std::string label = "NN Clamp Sampler";
+
+  SamplerDescriptor();
+
+  SamplerDescriptor(std::string label,
+                    MinMagFilter min_filter,
+                    MinMagFilter mag_filter,
+                    MipFilter mip_filter);
 
   // Comparable<SamplerDescriptor>
   std::size_t GetHash() const override {

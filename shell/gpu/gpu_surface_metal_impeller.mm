@@ -7,8 +7,10 @@
 #import <Metal/Metal.h>
 #import <QuartzCore/QuartzCore.h>
 
+#include "flutter/common/settings.h"
 #include "flutter/fml/make_copyable.h"
 #include "flutter/fml/mapping.h"
+#include "flutter/fml/trace_event.h"
 #include "flutter/impeller/display_list/display_list_dispatcher.h"
 #include "flutter/impeller/renderer/backend/metal/surface_mtl.h"
 
@@ -27,7 +29,7 @@ static std::shared_ptr<impeller::Renderer> CreateImpellerRenderer(
 }
 
 GPUSurfaceMetalImpeller::GPUSurfaceMetalImpeller(GPUSurfaceMetalDelegate* delegate,
-                                                 std::shared_ptr<impeller::Context> context)
+                                                 const std::shared_ptr<impeller::Context>& context)
     : delegate_(delegate),
       impeller_renderer_(CreateImpellerRenderer(context)),
       aiks_context_(
@@ -42,6 +44,8 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_info) {
+  TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
+
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
@@ -57,12 +61,15 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISiz
 
   auto surface = impeller::SurfaceMTL::WrapCurrentMetalLayerDrawable(
       impeller_renderer_->GetContext(), mtl_layer);
+  if (Settings::kSurfaceDataAccessible) {
+    last_drawable_.reset([surface->drawable() retain]);
+  }
 
   SurfaceFrame::SubmitCallback submit_callback =
       fml::MakeCopyable([renderer = impeller_renderer_,  //
                          aiks_context = aiks_context_,   //
                          surface = std::move(surface)    //
-  ](SurfaceFrame& surface_frame, SkCanvas* canvas) mutable -> bool {
+  ](SurfaceFrame& surface_frame, DlCanvas* canvas) mutable -> bool {
         if (!aiks_context) {
           return false;
         }
@@ -124,6 +131,45 @@ bool GPUSurfaceMetalImpeller::EnableRasterCache() const {
 // |Surface|
 impeller::AiksContext* GPUSurfaceMetalImpeller::GetAiksContext() const {
   return aiks_context_.get();
+}
+
+Surface::SurfaceData GPUSurfaceMetalImpeller::GetSurfaceData() const {
+  if (!(last_drawable_ && [last_drawable_ conformsToProtocol:@protocol(CAMetalDrawable)])) {
+    return {};
+  }
+  id<CAMetalDrawable> metal_drawable = static_cast<id<CAMetalDrawable>>(last_drawable_);
+  id<MTLTexture> texture = metal_drawable.texture;
+  int bytesPerPixel = 0;
+  std::string pixel_format;
+  switch (texture.pixelFormat) {
+    case MTLPixelFormatBGR10_XR:
+      bytesPerPixel = 4;
+      pixel_format = "MTLPixelFormatBGR10_XR";
+      break;
+    case MTLPixelFormatBGRA10_XR:
+      bytesPerPixel = 8;
+      pixel_format = "MTLPixelFormatBGRA10_XR";
+      break;
+    case MTLPixelFormatBGRA8Unorm:
+      bytesPerPixel = 4;
+      pixel_format = "MTLPixelFormatBGRA8Unorm";
+      break;
+    default:
+      return {};
+  }
+
+  // Zero initialized so that errors are easier to find at the cost of
+  // performance.
+  sk_sp<SkData> result =
+      SkData::MakeZeroInitialized(texture.width * texture.height * bytesPerPixel);
+  [texture getBytes:result->writable_data()
+        bytesPerRow:texture.width * bytesPerPixel
+         fromRegion:MTLRegionMake2D(0, 0, texture.width, texture.height)
+        mipmapLevel:0];
+  return {
+      .pixel_format = pixel_format,
+      .data = result,
+  };
 }
 
 }  // namespace flutter

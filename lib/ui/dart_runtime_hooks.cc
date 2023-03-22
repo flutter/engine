@@ -120,6 +120,7 @@ static void InitDartIO(Dart_Handle builtin_library,
       Dart_SetField(platform_type, ToDart("_localeClosure"), locale_closure);
   PropagateIfError(result);
 
+#if !FLUTTER_RELEASE
   // Register dart:io service extensions used for network profiling.
   Dart_Handle network_profiling_type =
       Dart_GetNonNullableType(io_lib, ToDart("_NetworkProfiling"), 0, nullptr);
@@ -127,6 +128,7 @@ static void InitDartIO(Dart_Handle builtin_library,
   result = Dart_Invoke(network_profiling_type,
                        ToDart("_registerServiceExtension"), 0, nullptr);
   PropagateIfError(result);
+#endif  // !FLUTTER_RELEASE
 }
 
 void DartRuntimeHooks::Install(bool is_ui_isolate,
@@ -138,13 +140,13 @@ void DartRuntimeHooks::Install(bool is_ui_isolate,
   InitDartIO(builtin, script_uri);
 }
 
-void DartRuntimeHooks::Logger_PrintDebugString(std::string message) {
+void DartRuntimeHooks::Logger_PrintDebugString(const std::string& message) {
 #ifndef NDEBUG
   DartRuntimeHooks::Logger_PrintString(message);
 #endif
 }
 
-void DartRuntimeHooks::Logger_PrintString(std::string message) {
+void DartRuntimeHooks::Logger_PrintString(const std::string& message) {
   const auto& tag = UIDartState::Current()->logger_prefix();
   UIDartState::Current()->LogMessage(tag, message);
 

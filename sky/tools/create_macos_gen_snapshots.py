@@ -24,7 +24,7 @@ def main():
   parser.add_argument('--x64-out-dir', type=str)
   parser.add_argument('--arm64-out-dir', type=str)
   parser.add_argument('--armv7-out-dir', type=str)
-  parser.add_argument('--zip', action="store_true", default=False)
+  parser.add_argument('--zip', action='store_true', default=False)
 
   args = parser.parse_args()
 
@@ -67,7 +67,18 @@ def main():
     zip_archive(dst)
 
 
+def embed_codesign_configuration(config_path, contents):
+  with open(config_path, 'w') as file:
+    file.write('\n'.join(contents) + '\n')
+
+
 def zip_archive(dst):
+  snapshot_filepath = ['gen_snapshot_arm64', 'gen_snapshot_x64']
+
+  embed_codesign_configuration(
+      os.path.join(dst, 'entitlements.txt'), snapshot_filepath
+  )
+
   subprocess.check_call([
       'zip',
       '-r',
@@ -82,21 +93,9 @@ def generate_gen_snapshot(directory, destination):
     print('Cannot find gen_snapshot at %s' % gen_snapshot_dir)
     sys.exit(1)
 
-  command = [
+  subprocess.check_call([
       'xcrun', 'bitcode_strip', '-r', gen_snapshot_dir, '-o', destination
-  ]
-  process = subprocess.Popen(
-      command, stderr=subprocess.STDOUT, stdout=subprocess.PIPE
-  )
-  stdout, stderr = process.communicate()
-  exit_status = process.wait()
-
-  if exit_status != 0:
-    print(
-        'Error processing command with stdout[%s] and stderr[%s]' %
-        (stdout, stderr)
-    )
-    return 1
+  ])
 
 
 if __name__ == '__main__':

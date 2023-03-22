@@ -111,6 +111,7 @@ static bool LogMTLCommandBufferErrorIfPresent(id<MTLCommandBuffer> buffer) {
 }
 
 static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
+#ifndef FLUTTER_RELEASE
   if (@available(iOS 14.0, macOS 11.0, *)) {
     auto desc = [[MTLCommandBufferDescriptor alloc] init];
     // Degrades CPU performance slightly but is well worth the cost for typical
@@ -118,12 +119,13 @@ static id<MTLCommandBuffer> CreateCommandBuffer(id<MTLCommandQueue> queue) {
     desc.errorOptions = MTLCommandBufferErrorOptionEncoderExecutionStatus;
     return [queue commandBufferWithDescriptor:desc];
   }
+#endif  // FLUTTER_RELEASE
   return [queue commandBuffer];
 }
 
-CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context> context,
+CommandBufferMTL::CommandBufferMTL(const std::weak_ptr<const Context>& context,
                                    id<MTLCommandQueue> queue)
-    : CommandBuffer(std::move(context)), buffer_(CreateCommandBuffer(queue)) {}
+    : CommandBuffer(context), buffer_(CreateCommandBuffer(queue)) {}
 
 CommandBufferMTL::~CommandBufferMTL() = default;
 
@@ -170,13 +172,13 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
 }
 
 std::shared_ptr<RenderPass> CommandBufferMTL::OnCreateRenderPass(
-    RenderTarget target) const {
+    RenderTarget target) {
   if (!buffer_) {
     return nullptr;
   }
 
   auto pass = std::shared_ptr<RenderPassMTL>(
-      new RenderPassMTL(context_, std::move(target), buffer_));
+      new RenderPassMTL(context_, target, buffer_));
   if (!pass->IsValid()) {
     return nullptr;
   }

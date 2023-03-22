@@ -8,7 +8,6 @@
 #include <memory>
 
 #include "flutter/flow/layers/container_layer.h"
-#include "flutter/flow/layers/display_list_raster_cache_item.h"
 #include "flutter/flow/layers/layer_raster_cache_item.h"
 
 namespace flutter {
@@ -27,7 +26,7 @@ class AutoCache {
   inline bool IsCacheEnabled();
   RasterCacheItem* raster_cache_item_ = nullptr;
   PrerollContext* context_ = nullptr;
-  const SkMatrix& matrix_;
+  const SkMatrix matrix_;
 };
 
 class CacheableContainerLayer : public ContainerLayer {

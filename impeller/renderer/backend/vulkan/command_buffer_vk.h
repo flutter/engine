@@ -5,35 +5,32 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
-#include "impeller/renderer/backend/vulkan/surface_producer_vk.h"
+#include "impeller/base/backend_cast.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/command_buffer.h"
 
 namespace impeller {
 
-class CommandBufferVK final : public CommandBuffer {
+class ContextVK;
+class CommandEncoderVK;
+
+class CommandBufferVK final
+    : public CommandBuffer,
+      public BackendCast<CommandBufferVK, CommandBuffer> {
  public:
-  static std::shared_ptr<CommandBufferVK> Create(
-      std::weak_ptr<const Context> context,
-      vk::Device device,
-      vk::CommandPool command_pool,
-      SurfaceProducerVK* surface_producer);
-
-  CommandBufferVK(std::weak_ptr<const Context> context,
-                  vk::Device device,
-                  SurfaceProducerVK* surface_producer,
-                  vk::UniqueCommandBuffer command_buffer);
-
   // |CommandBuffer|
   ~CommandBufferVK() override;
+
+  const std::shared_ptr<CommandEncoderVK>& GetEncoder() const;
 
  private:
   friend class ContextVK;
 
-  vk::Device device_;
-  vk::UniqueCommandBuffer command_buffer_;
-  SurfaceProducerVK* surface_producer_;
+  std::shared_ptr<CommandEncoderVK> encoder_;
   bool is_valid_ = false;
+
+  CommandBufferVK(std::weak_ptr<const Context> context,
+                  std::shared_ptr<CommandEncoderVK> encoder);
 
   // |CommandBuffer|
   void SetLabel(const std::string& label) const override;
@@ -45,8 +42,7 @@ class CommandBufferVK final : public CommandBuffer {
   bool OnSubmitCommands(CompletionCallback callback) override;
 
   // |CommandBuffer|
-  std::shared_ptr<RenderPass> OnCreateRenderPass(
-      RenderTarget target) const override;
+  std::shared_ptr<RenderPass> OnCreateRenderPass(RenderTarget target) override;
 
   // |CommandBuffer|
   std::shared_ptr<BlitPass> OnCreateBlitPass() const override;

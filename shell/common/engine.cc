@@ -40,22 +40,22 @@ Engine::Engine(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
     std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
-    TaskRunners task_runners,
-    Settings settings,
+    const TaskRunners& task_runners,
+    const Settings& settings,
     std::unique_ptr<Animator> animator,
     fml::WeakPtr<IOManager> io_manager,
     const std::shared_ptr<FontCollection>& font_collection,
     std::unique_ptr<RuntimeController> runtime_controller)
     : delegate_(delegate),
-      settings_(std::move(settings)),
+      settings_(settings),
       animator_(std::move(animator)),
       runtime_controller_(std::move(runtime_controller)),
       font_collection_(font_collection),
       image_decoder_(ImageDecoder::Make(settings_,
                                         task_runners,
-                                        image_decoder_task_runner,
-                                        io_manager)),
-      task_runners_(std::move(task_runners)),
+                                        std::move(image_decoder_task_runner),
+                                        std::move(io_manager))),
+      task_runners_(task_runners),
       weak_factory_(this) {
   pointer_data_dispatcher_ = dispatcher_maker(*this);
 }
@@ -64,13 +64,13 @@ Engine::Engine(Delegate& delegate,
                const PointerDataDispatcherMaker& dispatcher_maker,
                DartVM& vm,
                fml::RefPtr<const DartSnapshot> isolate_snapshot,
-               TaskRunners task_runners,
+               const TaskRunners& task_runners,
                const PlatformData& platform_data,
-               Settings settings,
+               const Settings& settings,
                std::unique_ptr<Animator> animator,
                fml::WeakPtr<IOManager> io_manager,
                fml::RefPtr<SkiaUnrefQueue> unref_queue,
-               fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+               fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
                std::shared_ptr<VolatilePathTracker> volatile_path_tracker)
     : Engine(delegate,
              dispatcher_maker,
@@ -100,17 +100,19 @@ Engine::Engine(Delegate& delegate,
           settings_.advisory_script_uri,           // advisory script uri
           settings_.advisory_script_entrypoint,    // advisory script entrypoint
           std::move(volatile_path_tracker),        // volatile path tracker
+          vm.GetConcurrentWorkerTaskRunner(),      // concurrent task runner
+          settings_.enable_impeller,               // enable impeller
       });
 }
 
 std::unique_ptr<Engine> Engine::Spawn(
     Delegate& delegate,
     const PointerDataDispatcherMaker& dispatcher_maker,
-    Settings settings,
+    const Settings& settings,
     std::unique_ptr<Animator> animator,
     const std::string& initial_route,
-    fml::WeakPtr<IOManager> io_manager,
-    fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const {
+    const fml::WeakPtr<IOManager>& io_manager,
+    fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const {
   auto result = std::make_unique<Engine>(
       /*delegate=*/delegate,
       /*dispatcher_maker=*/dispatcher_maker,
@@ -133,7 +135,7 @@ std::unique_ptr<Engine> Engine::Spawn(
       /*io_manager=*/io_manager,
       /*image_decoder=*/result->GetImageDecoderWeakPtr(),
       /*image_generator_registry=*/result->GetImageGeneratorRegistry(),
-      /*snapshot_delegate=*/snapshot_delegate);
+      /*snapshot_delegate=*/std::move(snapshot_delegate));
   result->initial_route_ = initial_route;
   return result;
 }
@@ -162,7 +164,7 @@ fml::WeakPtr<ImageGeneratorRegistry> Engine::GetImageGeneratorRegistry() {
 }
 
 bool Engine::UpdateAssetManager(
-    std::shared_ptr<AssetManager> new_asset_manager) {
+    const std::shared_ptr<AssetManager>& new_asset_manager) {
   if (asset_manager_ == new_asset_manager) {
     return false;
   }
@@ -252,16 +254,16 @@ void Engine::BeginFrame(fml::TimePoint frame_time, uint64_t frame_number) {
 }
 
 void Engine::ReportTimings(std::vector<int64_t> timings) {
-  TRACE_EVENT0("flutter", "Engine::ReportTimings");
   runtime_controller_->ReportTimings(std::move(timings));
 }
 
-void Engine::NotifyIdle(fml::TimePoint deadline) {
-  auto trace_event = std::to_string(deadline.ToEpochDelta().ToMicroseconds() -
-                                    Dart_TimelineGetMicros());
-  TRACE_EVENT1("flutter", "Engine::NotifyIdle", "deadline_now_delta",
-               trace_event.c_str());
+void Engine::NotifyIdle(fml::TimeDelta deadline) {
   runtime_controller_->NotifyIdle(deadline);
+}
+
+void Engine::NotifyDestroyed() {
+  TRACE_EVENT0("flutter", "Engine::NotifyDestroyed");
+  runtime_controller_->NotifyDestroyed();
 }
 
 std::optional<uint32_t> Engine::GetUIIsolateReturnCode() {
@@ -329,7 +331,7 @@ bool Engine::HandleLifecyclePlatformMessage(PlatformMessage* message) {
       state == "AppLifecycleState.inactive") {
     ScheduleFrame();
   }
-  runtime_controller_->SetLifecycleState(state);
+  runtime_controller_->SetInitialLifecycleState(state);
   // Always forward these messages to the framework by returning false.
   return false;
 }
@@ -350,7 +352,7 @@ bool Engine::HandleNavigationPlatformMessage(
     return false;
   }
   auto route = root.FindMember("args");
-  initial_route_ = std::move(route->value.GetString());
+  initial_route_ = route->value.GetString();
   return true;
 }
 
@@ -401,7 +403,7 @@ void Engine::HandleSettingsPlatformMessage(PlatformMessage* message) {
   const auto& data = message->data();
   std::string jsonData(reinterpret_cast<const char*>(data.GetMapping()),
                        data.GetSize());
-  if (runtime_controller_->SetUserSettingsData(std::move(jsonData))) {
+  if (runtime_controller_->SetUserSettingsData(jsonData)) {
     ScheduleFrame();
   }
 }
@@ -414,10 +416,11 @@ void Engine::DispatchPointerDataPacket(
   pointer_data_dispatcher_->DispatchPacket(std::move(packet), trace_flow_id);
 }
 
-void Engine::DispatchSemanticsAction(int id,
+void Engine::DispatchSemanticsAction(int node_id,
                                      SemanticsAction action,
                                      fml::MallocMapping args) {
-  runtime_controller_->DispatchSemanticsAction(id, action, std::move(args));
+  runtime_controller_->DispatchSemanticsAction(node_id, action,
+                                               std::move(args));
 }
 
 void Engine::SetSemanticsEnabled(bool enabled) {
@@ -426,6 +429,14 @@ void Engine::SetSemanticsEnabled(bool enabled) {
 
 void Engine::SetAccessibilityFeatures(int32_t flags) {
   runtime_controller_->SetAccessibilityFeatures(flags);
+}
+
+bool Engine::ImplicitViewEnabled() {
+  // TODO(loicsharma): This value should be provided by the embedder
+  // when it launches the engine. For now, assume the embedder always creates a
+  // view.
+  // See: https://github.com/flutter/flutter/issues/120306
+  return true;
 }
 
 std::string Engine::DefaultRouteName() {
@@ -560,7 +571,7 @@ void Engine::LoadDartDeferredLibrary(
 }
 
 void Engine::LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                          const std::string error_message,
+                                          const std::string& error_message,
                                           bool transient) {
   if (runtime_controller_->IsRootIsolateRunning()) {
     runtime_controller_->LoadDartDeferredLibraryError(loading_unit_id,

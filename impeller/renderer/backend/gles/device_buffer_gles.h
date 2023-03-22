@@ -27,6 +27,9 @@ class DeviceBufferGLES final
 
   const uint8_t* GetBufferData() const;
 
+  void UpdateBufferData(
+      const std::function<void(uint8_t*, size_t length)>& update_buffer_data);
+
   enum class BindingType {
     kArrayBuffer,
     kElementArrayBuffer,
@@ -40,6 +43,9 @@ class DeviceBufferGLES final
   mutable std::shared_ptr<Allocation> backing_store_;
   mutable uint32_t generation_ = 0;
   mutable uint32_t upload_generation_ = 0;
+
+  // |DeviceBuffer|
+  uint8_t* OnGetContents() const override;
 
   // |DeviceBuffer|
   bool OnCopyHostBuffer(const uint8_t* source,

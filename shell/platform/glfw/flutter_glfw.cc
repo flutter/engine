@@ -106,6 +106,10 @@ struct AOTDataDeleter {
 };
 
 using UniqueAotDataPtr = std::unique_ptr<_FlutterEngineAOTData, AOTDataDeleter>;
+/// Maintains one ref on the FlutterDesktopMessenger's internal reference count.
+using FlutterDesktopMessengerReferenceOwner =
+    std::unique_ptr<FlutterDesktopMessenger,
+                    decltype(&FlutterDesktopMessengerRelease)>;
 
 // Struct for storing state of a Flutter engine instance.
 struct FlutterDesktopEngineState {
@@ -116,7 +120,8 @@ struct FlutterDesktopEngineState {
   std::unique_ptr<flutter::EventLoop> event_loop;
 
   // The plugin messenger handle given to API clients.
-  std::unique_ptr<FlutterDesktopMessenger> messenger;
+  FlutterDesktopMessengerReferenceOwner messenger = {
+      nullptr, [](FlutterDesktopMessengerRef ref) {}};
 
   // Message dispatch manager for messages from the Flutter engine.
   std::unique_ptr<flutter::IncomingMessageDispatcher> message_dispatcher;
@@ -149,9 +154,74 @@ struct FlutterDesktopPluginRegistrar {
 
 // State associated with the messenger used to communicate with the engine.
 struct FlutterDesktopMessenger {
+  FlutterDesktopMessenger() = default;
+
+  /// Increments the reference count.
+  ///
+  /// Thread-safe.
+  void AddRef() { ref_count_.fetch_add(1); }
+
+  /// Decrements the reference count and deletes the object if the count has
+  /// gone to zero.
+  ///
+  /// Thread-safe.
+  void Release() {
+    int32_t old_count = ref_count_.fetch_sub(1);
+    if (old_count <= 1) {
+      delete this;
+    }
+  }
+
+  /// Getter for the engine field.
+  FlutterDesktopEngineState* GetEngine() const { return engine_; }
+
+  /// Setter for the engine field.
+  /// Thread-safe.
+  void SetEngine(FlutterDesktopEngineState* engine) {
+    std::scoped_lock lock(mutex_);
+    engine_ = engine;
+  }
+
+  /// Returns the mutex associated with the |FlutterDesktopMessenger|.
+  ///
+  /// This mutex is used to synchronize reading or writing state inside the
+  /// |FlutterDesktopMessenger| (ie |engine_|).
+  std::mutex& GetMutex() { return mutex_; }
+
+  FlutterDesktopMessenger(const FlutterDesktopMessenger& value) = delete;
+  FlutterDesktopMessenger& operator=(const FlutterDesktopMessenger& value) =
+      delete;
+
+ private:
   // The engine that backs this messenger.
-  FlutterDesktopEngineState* engine;
+  FlutterDesktopEngineState* engine_;
+  std::atomic<int32_t> ref_count_ = 0;
+  std::mutex mutex_;
 };
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerAddRef(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->AddRef();
+  return messenger;
+}
+
+void FlutterDesktopMessengerRelease(FlutterDesktopMessengerRef messenger) {
+  messenger->Release();
+}
+
+bool FlutterDesktopMessengerIsAvailable(FlutterDesktopMessengerRef messenger) {
+  return messenger->GetEngine() != nullptr;
+}
+
+FlutterDesktopMessengerRef FlutterDesktopMessengerLock(
+    FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().lock();
+  return messenger;
+}
+
+void FlutterDesktopMessengerUnlock(FlutterDesktopMessengerRef messenger) {
+  messenger->GetMutex().unlock();
+}
 
 // Retrieves state bag for the window in question from the GLFWWindow.
 static FlutterDesktopWindowControllerState* GetWindowController(
@@ -424,8 +494,8 @@ static void GLFWScrollCallback(GLFWwindow* window,
   auto* controller = GetWindowController(window);
   SetEventPhaseFromCursorButtonState(window, &event, controller->buttons);
   event.signal_kind = FlutterPointerSignalKind::kFlutterPointerSignalKindScroll;
-  // TODO: See if this can be queried from the OS; this value is chosen
-  // arbitrarily to get something that feels reasonable.
+  // TODO(chrome-bot): See if this can be queried from the OS; this value is
+  // chosen arbitrarily to get something that feels reasonable.
   const int kScrollOffsetMultiplier = 20;
   event.scroll_delta_x = delta_x * kScrollOffsetMultiplier;
   event.scroll_delta_y = -delta_y * kScrollOffsetMultiplier;
@@ -596,19 +666,19 @@ static void GLFWErrorCallback(int error_code, const char* description) {
 
 // Attempts to load AOT data from the given path, which must be absolute and
 // non-empty. Logs and returns nullptr on failure.
-UniqueAotDataPtr LoadAotData(std::filesystem::path aot_data_path) {
+UniqueAotDataPtr LoadAotData(const std::filesystem::path& aot_data_path) {
   if (aot_data_path.empty()) {
     std::cerr
         << "Attempted to load AOT data, but no aot_data_path was provided."
         << std::endl;
     return nullptr;
   }
+  std::string path_string = aot_data_path.string();
   if (!std::filesystem::exists(aot_data_path)) {
-    std::cerr << "Can't load AOT data from " << aot_data_path.u8string()
-              << "; no such file." << std::endl;
+    std::cerr << "Can't load AOT data from " << path_string << "; no such file."
+              << std::endl;
     return nullptr;
   }
-  std::string path_string = aot_data_path.u8string();
   FlutterEngineAOTDataSource source = {};
   source.type = kFlutterEngineAOTDataSourceTypeElfPath;
   source.elf_path = path_string.c_str();
@@ -664,10 +734,6 @@ static bool RunFlutterEngine(
           std::filesystem::path(executable_location) / aot_library_path;
     }
   }
-  std::string assets_path_string = assets_path.u8string();
-  std::string icu_path_string = icu_path.u8string();
-  std::string lib_path_string = aot_library_path.u8string();
-
   // Configure a task runner using the event loop.
   engine_state->event_loop = std::move(event_loop);
   FlutterTaskRunnerDescription platform_task_runner = {};
@@ -691,15 +757,15 @@ static bool RunFlutterEngine(
   }
   FlutterProjectArgs args = {};
   args.struct_size = sizeof(FlutterProjectArgs);
-  args.assets_path = assets_path_string.c_str();
-  args.icu_data_path = icu_path_string.c_str();
+  args.assets_path = assets_path.string().c_str();
+  args.icu_data_path = icu_path.string().c_str();
   args.command_line_argc = static_cast<int>(argv.size());
   args.command_line_argv = &argv[0];
   args.platform_message_callback = EngineOnFlutterPlatformMessage;
   args.custom_task_runners = &task_runners;
 
   if (FlutterEngineRunsAOTCompiledDartCode()) {
-    engine_state->aot_data = LoadAotData(lib_path_string);
+    engine_state->aot_data = LoadAotData(aot_library_path);
     if (!engine_state->aot_data) {
       std::cerr << "Unable to start engine without AOT data." << std::endl;
       return false;
@@ -747,8 +813,10 @@ static void SetUpLocales(FlutterDesktopEngineState* state) {
 static void SetUpCommonEngineState(FlutterDesktopEngineState* state,
                                    GLFWwindow* window) {
   // Messaging.
-  state->messenger = std::make_unique<FlutterDesktopMessenger>();
-  state->messenger->engine = state;
+  state->messenger = FlutterDesktopMessengerReferenceOwner(
+      FlutterDesktopMessengerAddRef(new FlutterDesktopMessenger()),
+      &FlutterDesktopMessengerRelease);
+  state->messenger->SetEngine(state);
   state->message_dispatcher =
       std::make_unique<flutter::IncomingMessageDispatcher>(
           state->messenger.get());
@@ -850,6 +918,7 @@ FlutterDesktopWindowControllerRef FlutterDesktopCreateWindow(
 }
 
 void FlutterDesktopDestroyWindow(FlutterDesktopWindowControllerRef controller) {
+  controller->engine->messenger->SetEngine(nullptr);
   FlutterDesktopPluginRegistrarRef registrar =
       controller->engine->plugin_registrar.get();
   if (registrar->destruction_handler) {
@@ -1049,7 +1118,8 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   FlutterPlatformMessageResponseHandle* response_handle = nullptr;
   if (reply != nullptr && user_data != nullptr) {
     FlutterEngineResult result = FlutterPlatformMessageCreateResponseHandle(
-        messenger->engine->flutter_engine, reply, user_data, &response_handle);
+        messenger->GetEngine()->flutter_engine, reply, user_data,
+        &response_handle);
     if (result != kSuccess) {
       std::cout << "Failed to create response handle\n";
       return false;
@@ -1065,11 +1135,11 @@ bool FlutterDesktopMessengerSendWithReply(FlutterDesktopMessengerRef messenger,
   };
 
   FlutterEngineResult message_result = FlutterEngineSendPlatformMessage(
-      messenger->engine->flutter_engine, &platform_message);
+      messenger->GetEngine()->flutter_engine, &platform_message);
 
   if (response_handle != nullptr) {
     FlutterPlatformMessageReleaseResponseHandle(
-        messenger->engine->flutter_engine, response_handle);
+        messenger->GetEngine()->flutter_engine, response_handle);
   }
 
   return message_result == kSuccess;
@@ -1088,16 +1158,16 @@ void FlutterDesktopMessengerSendResponse(
     const FlutterDesktopMessageResponseHandle* handle,
     const uint8_t* data,
     size_t data_length) {
-  FlutterEngineSendPlatformMessageResponse(messenger->engine->flutter_engine,
-                                           handle, data, data_length);
+  FlutterEngineSendPlatformMessageResponse(
+      messenger->GetEngine()->flutter_engine, handle, data, data_length);
 }
 
 void FlutterDesktopMessengerSetCallback(FlutterDesktopMessengerRef messenger,
                                         const char* channel,
                                         FlutterDesktopMessageCallback callback,
                                         void* user_data) {
-  messenger->engine->message_dispatcher->SetMessageCallback(channel, callback,
-                                                            user_data);
+  messenger->GetEngine()->message_dispatcher->SetMessageCallback(
+      channel, callback, user_data);
 }
 
 FlutterDesktopTextureRegistrarRef FlutterDesktopRegistrarGetTextureRegistrar(

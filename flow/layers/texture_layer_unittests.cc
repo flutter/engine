@@ -22,7 +22,7 @@ TEST_F(TextureLayerTest, InvalidTexture) {
   auto layer = std::make_shared<TextureLayer>(
       layer_offset, layer_size, 0, false, DlImageSampling::kNearestNeighbor);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
@@ -45,7 +45,7 @@ TEST_F(TextureLayerTest, PaintingEmptyLayerDies) {
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(), kEmptyRect);
   EXPECT_FALSE(layer->needs_painting(paint_context()));
 
@@ -80,7 +80,7 @@ TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   // Ensure the texture is located by the Layer.
   preroll_context()->texture_registry->RegisterTexture(mock_texture);
 
-  layer->Preroll(preroll_context(), SkMatrix());
+  layer->Preroll(preroll_context());
   EXPECT_EQ(layer->paint_bounds(),
             (SkRect::MakeSize(layer_size)
                  .makeOffset(layer_offset.fX, layer_offset.fY)));
@@ -90,7 +90,7 @@ TEST_F(TextureLayerTest, PaintingWithLinearSampling) {
   EXPECT_EQ(mock_texture->paint_calls(),
             std::vector({MockTexture::PaintCall{
                 mock_canvas(), layer->paint_bounds(), false, nullptr,
-                SkSamplingOptions(SkFilterMode::kLinear)}}));
+                DlImageSampling::kLinear}}));
   EXPECT_EQ(mock_canvas().draw_calls(), std::vector<MockCanvas::DrawCall>());
 }
 
@@ -128,10 +128,10 @@ TEST_F(TextureLayerTest, OpacityInheritance) {
 
   // The texture layer always reports opacity compatibility.
   PrerollContext* context = preroll_context();
-  context->subtree_can_inherit_opacity = false;
   context->texture_registry->RegisterTexture(mock_texture);
-  layer->Preroll(context, SkMatrix::I());
-  EXPECT_TRUE(context->subtree_can_inherit_opacity);
+  layer->Preroll(context);
+  EXPECT_EQ(context->renderable_state_flags,
+            LayerStateStack::kCallerCanApplyOpacity);
 
   // MockTexture has no actual textur to render into the
   // PaintContext canvas so we have no way to verify its

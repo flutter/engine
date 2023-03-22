@@ -3,7 +3,6 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-import 'dart:js_util' as js_util;
 import 'dart:typed_data';
 
 import 'package:test/bootstrap/browser.dart';
@@ -16,6 +15,8 @@ void main() {
 }
 
 void testMain() {
+  ensureFlutterViewEmbedderInitialized();
+
   group('PlatformDispatcher', () {
     test('high contrast in accessibilityFeatures has the correct value', () {
       final MockHighContrastSupport mockHighContrast =
@@ -71,30 +72,42 @@ void testMain() {
       );
     });
 
-    test('responds correctly to flutter/platform Clipboard.getData failure',
-        () async {
-      // Patch browser so that clipboard api is not available.
-      final Object? originalClipboard =
-          js_util.getProperty<Object?>(domWindow.navigator, 'clipboard');
-      js_util.setProperty(domWindow.navigator, 'clipboard', null);
+    test('responds to flutter/contextmenu enable', () async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<ByteData?> completer = Completer<ByteData?>();
       ui.PlatformDispatcher.instance.sendPlatformMessage(
-        'flutter/platform',
+        'flutter/contextmenu',
         codec.encodeMethodCall(const MethodCall(
-          'Clipboard.getData',
+          'enableContextMenu',
         )),
         completer.complete,
       );
+
       final ByteData? response = await completer.future;
-      if (response != null) {
-        expect(
-              () => codec.decodeEnvelope(response),
-          throwsA(isA<PlatformException>()),
-        );
-      }
-      js_util.setProperty(
-          domWindow.navigator, 'clipboard', originalClipboard);
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
+    test('responds to flutter/contextmenu disable', () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/contextmenu',
+        codec.encodeMethodCall(const MethodCall(
+          'disableContextMenu',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
     });
 
     test('can find text scale factor', () async {

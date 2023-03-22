@@ -7,9 +7,11 @@ import("//flutter/impeller/tools/impeller.gni")
 impeller_shaders("entity_shaders") {
   name = "entity"
 
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
   shaders = [
-    "shaders/atlas_fill.frag",
-    "shaders/atlas_fill.vert",
     "shaders/blending/advanced_blend.vert",
     "shaders/blending/advanced_blend_color.frag",
     "shaders/blending/advanced_blend_colorburn.frag",
@@ -32,23 +34,28 @@ impeller_shaders("entity_shaders") {
     "shaders/border_mask_blur.vert",
     "shaders/color_matrix_color_filter.frag",
     "shaders/color_matrix_color_filter.vert",
+    "shaders/conical_gradient_fill.frag",
     "shaders/gaussian_blur.frag",
+    "shaders/gaussian_blur_decal.frag",
     "shaders/gaussian_blur.vert",
     "shaders/glyph_atlas.frag",
     "shaders/glyph_atlas.vert",
+    "shaders/glyph_atlas_sdf.frag",
+    "shaders/glyph_atlas_sdf.vert",
     "shaders/gradient_fill.vert",
     "shaders/linear_to_srgb_filter.frag",
     "shaders/linear_to_srgb_filter.vert",
     "shaders/linear_gradient_fill.frag",
     "shaders/morphology_filter.frag",
     "shaders/morphology_filter.vert",
+    "shaders/position_color.vert",
+    "shaders/position_uv.vert",
     "shaders/radial_gradient_fill.frag",
     "shaders/rrect_blur.vert",
     "shaders/rrect_blur.frag",
+    "shaders/runtime_effect.vert",
     "shaders/solid_fill.frag",
     "shaders/solid_fill.vert",
-    "shaders/solid_stroke.frag",
-    "shaders/solid_stroke.vert",
     "shaders/srgb_to_linear_filter.frag",
     "shaders/srgb_to_linear_filter.vert",
     "shaders/sweep_gradient_fill.frag",
@@ -57,18 +64,82 @@ impeller_shaders("entity_shaders") {
     "shaders/tiled_texture_fill.frag",
     "shaders/tiled_texture_fill.vert",
     "shaders/vertices.frag",
-    "shaders/vertices.vert",
+    "shaders/yuv_to_rgb_filter.frag",
+    "shaders/yuv_to_rgb_filter.vert",
+  ]
+}
+
+impeller_shaders("modern_entity_shaders") {
+  name = "modern"
+
+  if (impeller_enable_opengles) {
+    gles_language_version = 460
+  }
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
+  shaders = [
+    "shaders/conical_gradient_ssbo_fill.frag",
+    "shaders/linear_gradient_ssbo_fill.frag",
+    "shaders/radial_gradient_ssbo_fill.frag",
+    "shaders/sweep_gradient_ssbo_fill.frag",
+  ]
+}
+
+impeller_shaders("framebuffer_blend_entity_shaders") {
+  name = "framebuffer_blend"
+
+  if (is_mac && !is_ios) {
+    # Note: this needs to correspond to the Apple7 Support family
+    # for M1 and M2.
+    metal_version = "2.3"
+  }
+
+  # This version is to disable malioc checks.
+  if (impeller_enable_opengles) {
+    gles_language_version = 460
+  }
+
+  if (impeller_enable_vulkan) {
+    vulkan_language_version = 130
+  }
+
+  shaders = [
+    "shaders/blending/ios/framebuffer_blend.vert",
+    "shaders/blending/ios/framebuffer_blend_color.frag",
+    "shaders/blending/ios/framebuffer_blend_colorburn.frag",
+    "shaders/blending/ios/framebuffer_blend_colordodge.frag",
+    "shaders/blending/ios/framebuffer_blend_darken.frag",
+    "shaders/blending/ios/framebuffer_blend_difference.frag",
+    "shaders/blending/ios/framebuffer_blend_exclusion.frag",
+    "shaders/blending/ios/framebuffer_blend_hardlight.frag",
+    "shaders/blending/ios/framebuffer_blend_hue.frag",
+    "shaders/blending/ios/framebuffer_blend_lighten.frag",
+    "shaders/blending/ios/framebuffer_blend_luminosity.frag",
+    "shaders/blending/ios/framebuffer_blend_multiply.frag",
+    "shaders/blending/ios/framebuffer_blend_overlay.frag",
+    "shaders/blending/ios/framebuffer_blend_saturation.frag",
+    "shaders/blending/ios/framebuffer_blend_screen.frag",
+    "shaders/blending/ios/framebuffer_blend_softlight.frag",
   ]
 }
 
 impeller_component("entity") {
   sources = [
+    "contents/anonymous_contents.cc",
+    "contents/anonymous_contents.h",
     "contents/atlas_contents.cc",
     "contents/atlas_contents.h",
     "contents/clip_contents.cc",
     "contents/clip_contents.h",
     "contents/color_source_contents.cc",
     "contents/color_source_contents.h",
+    "contents/color_source_text_contents.cc",
+    "contents/color_source_text_contents.h",
+    "contents/conical_gradient_contents.cc",
+    "contents/conical_gradient_contents.h",
     "contents/content_context.cc",
     "contents/content_context.h",
     "contents/contents.cc",
@@ -77,6 +148,8 @@ impeller_component("entity") {
     "contents/filters/blend_filter_contents.h",
     "contents/filters/border_mask_blur_filter_contents.cc",
     "contents/filters/border_mask_blur_filter_contents.h",
+    "contents/filters/color_filter_contents.cc",
+    "contents/filters/color_filter_contents.h",
     "contents/filters/color_matrix_filter_contents.cc",
     "contents/filters/color_matrix_filter_contents.h",
     "contents/filters/filter_contents.cc",
@@ -93,12 +166,18 @@ impeller_component("entity") {
     "contents/filters/inputs/texture_filter_input.h",
     "contents/filters/linear_to_srgb_filter_contents.cc",
     "contents/filters/linear_to_srgb_filter_contents.h",
+    "contents/filters/local_matrix_filter_contents.cc",
+    "contents/filters/local_matrix_filter_contents.h",
     "contents/filters/matrix_filter_contents.cc",
     "contents/filters/matrix_filter_contents.h",
     "contents/filters/morphology_filter_contents.cc",
     "contents/filters/morphology_filter_contents.h",
     "contents/filters/srgb_to_linear_filter_contents.cc",
     "contents/filters/srgb_to_linear_filter_contents.h",
+    "contents/filters/yuv_to_rgb_filter_contents.cc",
+    "contents/filters/yuv_to_rgb_filter_contents.h",
+    "contents/framebuffer_blend_contents.cc",
+    "contents/framebuffer_blend_contents.h",
     "contents/gradient_generator.cc",
     "contents/gradient_generator.h",
     "contents/linear_gradient_contents.cc",
@@ -107,12 +186,12 @@ impeller_component("entity") {
     "contents/radial_gradient_contents.h",
     "contents/rrect_shadow_contents.cc",
     "contents/rrect_shadow_contents.h",
+    "contents/runtime_effect_contents.cc",
+    "contents/runtime_effect_contents.h",
+    "contents/scene_contents.cc",
+    "contents/scene_contents.h",
     "contents/solid_color_contents.cc",
     "contents/solid_color_contents.h",
-    "contents/solid_fill_utils.cc",
-    "contents/solid_fill_utils.h",
-    "contents/solid_stroke_contents.cc",
-    "contents/solid_stroke_contents.h",
     "contents/sweep_gradient_contents.cc",
     "contents/sweep_gradient_contents.h",
     "contents/text_contents.cc",
@@ -129,15 +208,22 @@ impeller_component("entity") {
     "entity_pass.h",
     "entity_pass_delegate.cc",
     "entity_pass_delegate.h",
+    "entity_pass_target.cc",
+    "entity_pass_target.h",
+    "geometry.cc",
+    "geometry.h",
     "inline_pass_context.cc",
     "inline_pass_context.h",
   ]
 
   public_deps = [
     ":entity_shaders",
+    ":framebuffer_blend_entity_shaders",
+    ":modern_entity_shaders",
     "../archivist",
-    "../image",
+    "../image:image_skia_backend",
     "../renderer",
+    "../scene",
     "../typographer",
   ]
 

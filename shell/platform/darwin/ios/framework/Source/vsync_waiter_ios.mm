@@ -12,12 +12,16 @@
 
 #include "flutter/common/task_runners.h"
 #include "flutter/fml/logging.h"
+#include "flutter/fml/memory/task_runner_checker.h"
 #include "flutter/fml/trace_event.h"
+
+// When calculating refresh rate diffrence, anything within 0.1 fps is ignored.
+const static double kRefreshRateDiffToIgnore = 0.1;
 
 namespace flutter {
 
-VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
-    : VsyncWaiter(std::move(task_runners)) {
+VsyncWaiterIOS::VsyncWaiterIOS(const flutter::TaskRunners& task_runners)
+    : VsyncWaiter(task_runners) {
   auto callback = [this](std::unique_ptr<flutter::FrameTimingsRecorder> recorder) {
     const fml::TimePoint start_time = recorder->GetVsyncStartTime();
     const fml::TimePoint target_time = recorder->GetVsyncTargetTime();
@@ -26,6 +30,7 @@ VsyncWaiterIOS::VsyncWaiterIOS(flutter::TaskRunners task_runners)
   client_ =
       fml::scoped_nsobject{[[VSyncClient alloc] initWithTaskRunner:task_runners_.GetUITaskRunner()
                                                           callback:callback]};
+  max_refresh_rate_ = [DisplayLinkManager displayRefreshRate];
 }
 
 VsyncWaiterIOS::~VsyncWaiterIOS() {
@@ -35,12 +40,29 @@ VsyncWaiterIOS::~VsyncWaiterIOS() {
 }
 
 void VsyncWaiterIOS::AwaitVSync() {
+  double new_max_refresh_rate = [DisplayLinkManager displayRefreshRate];
+  if (fml::TaskRunnerChecker::RunsOnTheSameThread(
+          task_runners_.GetRasterTaskRunner()->GetTaskQueueId(),
+          task_runners_.GetPlatformTaskRunner()->GetTaskQueueId())) {
+    // Pressure tested on iPhone 13 pro, the oldest iPhone that supports refresh rate greater than
+    // 60fps. A flutter app can handle fast scrolling on 80 fps with 6 PlatformViews in the scene at
+    // the same time.
+    new_max_refresh_rate = 80;
+  }
+  if (fabs(new_max_refresh_rate - max_refresh_rate_) > kRefreshRateDiffToIgnore) {
+    max_refresh_rate_ = new_max_refresh_rate;
+    [client_.get() setMaxRefreshRate:max_refresh_rate_];
+  }
   [client_.get() await];
 }
 
 // |VariableRefreshRateReporter|
 double VsyncWaiterIOS::GetRefreshRate() const {
   return [client_.get() getRefreshRate];
+}
+
+fml::scoped_nsobject<VSyncClient> VsyncWaiterIOS::GetVsyncClient() const {
+  return client_;
 }
 
 }  // namespace flutter
@@ -64,7 +86,7 @@ double VsyncWaiterIOS::GetRefreshRate() const {
     };
     display_link_.get().paused = YES;
 
-    [self setMaxRefreshRateIfEnabled];
+    [self setMaxRefreshRate:[DisplayLinkManager displayRefreshRate]];
 
     task_runner->PostTask([client = [self retain]]() {
       [client->display_link_.get() addToRunLoop:[NSRunLoop currentRunLoop]
@@ -76,15 +98,12 @@ double VsyncWaiterIOS::GetRefreshRate() const {
   return self;
 }
 
-- (void)setMaxRefreshRateIfEnabled {
-  NSNumber* minimumFrameRateDisabled =
-      [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"];
-  if (![minimumFrameRateDisabled boolValue]) {
+- (void)setMaxRefreshRate:(double)refreshRate {
+  if (!DisplayLinkManager.maxRefreshRateEnabledOnIPhone) {
     return;
   }
-  double maxFrameRate = fmax([DisplayLinkManager displayRefreshRate], 60);
+  double maxFrameRate = fmax(refreshRate, 60);
   double minFrameRate = fmax(maxFrameRate / 2, 60);
-
   if (@available(iOS 15.0, *)) {
     display_link_.get().preferredFrameRateRange =
         CAFrameRateRangeMake(minFrameRate, maxFrameRate, maxFrameRate);
@@ -102,13 +121,15 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 }
 
 - (void)onDisplayLink:(CADisplayLink*)link {
-  TRACE_EVENT0("flutter", "VSYNC");
-
   CFTimeInterval delay = CACurrentMediaTime() - link.timestamp;
   fml::TimePoint frame_start_time = fml::TimePoint::Now() - fml::TimeDelta::FromSecondsF(delay);
 
   CFTimeInterval duration = link.targetTimestamp - link.timestamp;
   fml::TimePoint frame_target_time = frame_start_time + fml::TimeDelta::FromSecondsF(duration);
+
+  TRACE_EVENT2_INT("flutter", "PlatformVsync", "frame_start_time",
+                   frame_start_time.ToEpochDelta().ToMicroseconds(), "frame_target_time",
+                   frame_target_time.ToEpochDelta().ToMicroseconds());
 
   std::unique_ptr<flutter::FrameTimingsRecorder> recorder =
       std::make_unique<flutter::FrameTimingsRecorder>();
@@ -166,6 +187,11 @@ double VsyncWaiterIOS::GetRefreshRate() const {
 
 - (void)onDisplayLink:(CADisplayLink*)link {
   // no-op.
+}
+
++ (BOOL)maxRefreshRateEnabledOnIPhone {
+  return [[[NSBundle mainBundle] objectForInfoDictionaryKey:@"CADisableMinimumFrameDurationOnPhone"]
+      boolValue];
 }
 
 @end

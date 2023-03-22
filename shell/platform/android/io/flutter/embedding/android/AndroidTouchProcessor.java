@@ -65,17 +65,37 @@ public class AndroidTouchProcessor {
     PointerSignalKind.NONE,
     PointerSignalKind.SCROLL,
     PointerSignalKind.SCROLL_INERTIA_CANCEL,
+    PointerSignalKind.SCALE,
+    PointerSignalKind.STYLUS_AUXILIARY_ACTION,
     PointerSignalKind.UNKNOWN
   })
   public @interface PointerSignalKind {
     int NONE = 0;
     int SCROLL = 1;
     int SCROLL_INERTIA_CANCEL = 2;
-    int UNKNOWN = 3;
+    int SCALE = 3;
+    int STYLUS_AUXILIARY_ACTION = 4;
+    int UNKNOWN = 5;
+  }
+
+  // Must match the PointerPreferredStylusAuxiliaryAction enum in pointer.dart.
+  @IntDef({
+    PointerPreferredStylusAuxiliaryAction.IGNORE,
+    PointerPreferredStylusAuxiliaryAction.SHOW_COLOR_PALETTE,
+    PointerPreferredStylusAuxiliaryAction.SWITCH_ERASER,
+    PointerPreferredStylusAuxiliaryAction.SWITCH_PREVIOUS,
+    PointerPreferredStylusAuxiliaryAction.UNKNOWN
+  })
+  public @interface PointerPreferredStylusAuxiliaryAction {
+    int IGNORE = 0;
+    int SHOW_COLOR_PALETTE = 1;
+    int SWITCH_ERASER = 2;
+    int SWITCH_PREVIOUS = 3;
+    int UNKNOWN = 4;
   }
 
   // Must match the unpacking code in hooks.dart.
-  private static final int POINTER_DATA_FIELD_COUNT = 35;
+  private static final int POINTER_DATA_FIELD_COUNT = 36;
   @VisibleForTesting static final int BYTES_PER_FIELD = 8;
 
   // This value must match the value in framework's platform_view.dart.
@@ -353,6 +373,8 @@ public class AndroidTouchProcessor {
     packet.putDouble(1.0); // scale
     packet.putDouble(0.0); // rotation
 
+    packet.putLong(PointerPreferredStylusAuxiliaryAction.IGNORE); // preferred stylus action
+
     if (isTrackpadPan && getPointerChangeForPanZoom(pointerChange) == PointerChange.PAN_ZOOM_END) {
       ongoingPans.remove(event.getPointerId(pointerIndex));
     }
@@ -387,7 +409,7 @@ public class AndroidTouchProcessor {
     if (maskedAction == MotionEvent.ACTION_SCROLL) {
       return PointerChange.HOVER;
     }
-    throw new AssertionError("Unexpected masked action");
+    return -1;
   }
 
   @PointerChange

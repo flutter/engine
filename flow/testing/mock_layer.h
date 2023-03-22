@@ -24,20 +24,20 @@ namespace testing {
 // verify the data against expected values.
 class MockLayer : public Layer {
  public:
-  explicit MockLayer(SkPath path, SkPaint paint = SkPaint());
+  explicit MockLayer(const SkPath& path, DlPaint paint = DlPaint());
 
   static std::shared_ptr<MockLayer> Make(SkPath path,
-                                         SkPaint paint = SkPaint()) {
+                                         DlPaint paint = DlPaint()) {
     return std::make_shared<MockLayer>(path, paint);
   }
 
   static std::shared_ptr<MockLayer> MakeOpacityCompatible(SkPath path) {
-    auto mock_layer = std::make_shared<MockLayer>(path, SkPaint());
+    auto mock_layer = std::make_shared<MockLayer>(path, DlPaint());
     mock_layer->set_fake_opacity_compatible(true);
     return mock_layer;
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
   void Paint(PaintContext& context) const override;
 
   const MutatorsStack& parent_mutators() { return parent_mutators_; }
@@ -102,12 +102,17 @@ class MockLayer : public Layer {
     return *this;
   }
 
+  void set_expected_paint_matrix(const SkMatrix& matrix) {
+    expected_paint_matrix_ = matrix;
+  }
+
  private:
   MutatorsStack parent_mutators_;
   SkMatrix parent_matrix_;
   SkRect parent_cull_rect_ = SkRect::MakeEmpty();
   SkPath fake_paint_path_;
-  SkPaint fake_paint_;
+  DlPaint fake_paint_;
+  std::optional<SkMatrix> expected_paint_matrix_;
 
   static constexpr int kParentHasPlatformView = 1 << 0;
   static constexpr int kParentHasTextureLayer = 1 << 1;
@@ -135,7 +140,7 @@ class MockCacheableContainerLayer : public CacheableContainerLayer {
     return std::make_shared<MockCacheableContainerLayer>();
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
   explicit MockCacheableContainerLayer(bool cache_children = false)
       : CacheableContainerLayer(3, cache_children) {}
@@ -148,7 +153,7 @@ class MockLayerCacheableItem : public LayerRasterCacheItem {
 class MockCacheableLayer : public MockLayer {
  public:
   explicit MockCacheableLayer(SkPath path,
-                              SkPaint paint = SkPaint(),
+                              DlPaint paint = DlPaint(),
                               int render_limit = 3)
       : MockLayer(path, paint) {
     raster_cache_item_ =
@@ -159,7 +164,7 @@ class MockCacheableLayer : public MockLayer {
     return raster_cache_item_.get();
   }
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
  private:
   std::unique_ptr<LayerRasterCacheItem> raster_cache_item_;

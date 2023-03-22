@@ -19,8 +19,8 @@ class RenderPass;
 
 class Entity {
  public:
-  static const BlendMode kLastPipelineBlendMode;
-  static const BlendMode kLastAdvancedBlendMode;
+  static constexpr BlendMode kLastPipelineBlendMode = BlendMode::kModulate;
+  static constexpr BlendMode kLastAdvancedBlendMode = BlendMode::kLuminosity;
 
   /// An enum to define how to repeat, fold, or omit colors outside of the
   /// typically defined range of the source of the colors (such as the
@@ -48,6 +48,12 @@ class Entity {
     kDifference,
     kIntersect,
   };
+
+  /// @brief  Create an entity that can be used to render a given snapshot.
+  static std::optional<Entity> FromSnapshot(
+      const std::optional<Snapshot>& snapshot,
+      BlendMode blend_mode = BlendMode::kSourceOver,
+      uint32_t stencil_depth = 0);
 
   Entity();
 
@@ -80,7 +86,7 @@ class Entity {
 
   bool Render(const ContentContext& renderer, RenderPass& parent_pass) const;
 
-  static bool BlendModeShouldCoverWholeScreen(BlendMode blend_mode);
+  static bool IsBlendModeDestructive(BlendMode blend_mode);
 
  private:
   Matrix transformation_;

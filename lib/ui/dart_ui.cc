@@ -41,6 +41,11 @@
 #include "third_party/tonic/dart_args.h"
 #include "third_party/tonic/logging/dart_error.h"
 
+#ifdef IMPELLER_ENABLE_3D
+#include "flutter/lib/ui/painting/scene/scene_node.h"
+#include "flutter/lib/ui/painting/scene/scene_shader.h"
+#endif  // IMPELLER_ENABLE_3D
+
 using tonic::ToDart;
 
 namespace flutter {
@@ -50,7 +55,7 @@ typedef CanvasPathMeasure PathMeasure;
 typedef CanvasGradient Gradient;
 typedef CanvasPath Path;
 
-// List of native static functions used as @FfiNative functions.
+// List of native static functions used as @Native functions.
 // Items are tuples of ('function_name', 'parameter_count'), where:
 //   'function_name' is the fully qualified name of the native function.
 //   'parameter_count' is the number of parameters the function has.
@@ -60,8 +65,8 @@ typedef CanvasPath Path;
 //   bindings.
 //   If the name does not match a native function, the template will fail to
 //   instatiate, resulting in a compile time error.
-// - Resolve the native function pointer associated with an @FfiNative function.
-//   If there is a mismatch between name or parameter count an @FfiNative is
+// - Resolve the native function pointer associated with an @Native function.
+//   If there is a mismatch between name or parameter count an @Native is
 //   trying to resolve, an exception will be thrown.
 #define FFI_FUNCTION_LIST(V)                                          \
   /* Constructors */                                                  \
@@ -83,12 +88,14 @@ typedef CanvasPath Path;
   V(ImageDescriptor::initEncoded, 3)                                  \
   V(ImmutableBuffer::init, 3)                                         \
   V(ImmutableBuffer::initFromAsset, 3)                                \
+  V(ImmutableBuffer::initFromFile, 3)                                 \
   V(ImageDescriptor::initRaw, 6)                                      \
   V(IsolateNameServerNatives::LookupPortByName, 1)                    \
   V(IsolateNameServerNatives::RegisterPortWithName, 2)                \
   V(IsolateNameServerNatives::RemovePortNameMapping, 1)               \
   V(NativeStringAttribute::initLocaleStringAttribute, 4)              \
   V(NativeStringAttribute::initSpellOutStringAttribute, 3)            \
+  V(PlatformConfigurationNativeApi::ImplicitViewEnabled, 0)           \
   V(PlatformConfigurationNativeApi::DefaultRouteName, 0)              \
   V(PlatformConfigurationNativeApi::ScheduleFrame, 0)                 \
   V(PlatformConfigurationNativeApi::Render, 1)                        \
@@ -111,7 +118,7 @@ typedef CanvasPath Path;
   V(DartPluginRegistrant_EnsureInitialized, 0)                        \
   V(Vertices::init, 6)
 
-// List of native instance methods used as @FfiNative functions.
+// List of native instance methods used as @Native functions.
 // Items are tuples of ('class_name', 'method_name', 'parameter_count'), where:
 //   'class_name' is the name of the class containing the method.
 //   'method_name' is the name of the method.
@@ -123,8 +130,8 @@ typedef CanvasPath Path;
 //   bindings.
 //   If the name does not match a native function, the template will fail to
 //   instatiate, resulting in a compile time error.
-// - Resolve the native function pointer associated with an @FfiNative function.
-//   If there is a mismatch between names or parameter count an @FfiNative is
+// - Resolve the native function pointer associated with an @Native function.
+//   If there is a mismatch between names or parameter count an @Native is
 //   trying to resolve, an exception will be thrown.
 #define FFI_METHOD_LIST(V)                             \
   V(Canvas, clipPath, 3)                               \
@@ -172,9 +179,9 @@ typedef CanvasPath Path;
   V(ColorFilter, initSrgbToLinearGamma, 1)             \
   V(EngineLayer, dispose, 1)                           \
   V(FragmentProgram, initFromAsset, 2)                 \
-  V(FragmentProgram, shader, 4)                        \
   V(ReusableFragmentShader, Dispose, 1)                \
-  V(ReusableFragmentShader, SetSampler, 3)             \
+  V(ReusableFragmentShader, SetImageSampler, 3)        \
+  V(ReusableFragmentShader, ValidateSamplers, 1)       \
   V(Gradient, initLinear, 6)                           \
   V(Gradient, initRadial, 8)                           \
   V(Gradient, initSweep, 9)                            \
@@ -183,6 +190,7 @@ typedef CanvasPath Path;
   V(Image, width, 1)                                   \
   V(Image, height, 1)                                  \
   V(Image, toByteData, 3)                              \
+  V(Image, colorSpace, 1)                              \
   V(ImageDescriptor, bytesPerPixel, 1)                 \
   V(ImageDescriptor, dispose, 1)                       \
   V(ImageDescriptor, height, 1)                        \
@@ -293,6 +301,23 @@ typedef CanvasPath Path;
   V(SemanticsUpdate, dispose, 1)                       \
   V(Vertices, dispose, 1)
 
+#ifdef IMPELLER_ENABLE_3D
+
+#define FFI_FUNCTION_LIST_3D(V) \
+  V(SceneNode::Create, 1) V(SceneShader::Create, 2)
+
+#define FFI_METHOD_LIST_3D(V)           \
+  V(SceneNode, initFromAsset, 3)        \
+  V(SceneNode, initFromTransform, 2)    \
+  V(SceneNode, AddChild, 2)             \
+  V(SceneNode, SetTransform, 2)         \
+  V(SceneNode, SetAnimationState, 5)    \
+  V(SceneNode, SeekAnimation, 3)        \
+  V(SceneShader, SetCameraTransform, 2) \
+  V(SceneShader, Dispose, 1)
+
+#endif  // IMPELLER_ENABLE_3D
+
 #define FFI_FUNCTION_INSERT(FUNCTION, ARGS)     \
   g_function_dispatchers.insert(std::make_pair( \
       std::string_view(#FUNCTION),              \
@@ -319,6 +344,10 @@ void* ResolveFfiNativeFunction(const char* name, uintptr_t args) {
 void InitDispatcherMap() {
   FFI_FUNCTION_LIST(FFI_FUNCTION_INSERT)
   FFI_METHOD_LIST(FFI_METHOD_INSERT)
+#ifdef IMPELLER_ENABLE_3D
+  FFI_FUNCTION_LIST_3D(FFI_FUNCTION_INSERT)
+  FFI_METHOD_LIST_3D(FFI_METHOD_INSERT)
+#endif  // IMPELLER_ENABLE_3D
 }
 
 }  // anonymous namespace

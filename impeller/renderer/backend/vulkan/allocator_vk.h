@@ -5,8 +5,11 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/fml/memory/ref_ptr.h"
+#include "flutter/vulkan/procs/vulkan_proc_table.h"
 #include "impeller/renderer/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
+#include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
 
 #include <memory>
@@ -21,11 +24,14 @@ class AllocatorVK final : public Allocator {
  private:
   friend class ContextVK;
 
+  fml::RefPtr<vulkan::VulkanProcTable> vk_;
   VmaAllocator allocator_ = {};
-  ContextVK& context_;
+  std::weak_ptr<Context> context_;
+  vk::Device device_;
+  ISize max_texture_size_ = {4096, 4096};
   bool is_valid_ = false;
 
-  AllocatorVK(ContextVK& context,
+  AllocatorVK(std::weak_ptr<Context> context,
               uint32_t vulkan_api_version,
               const vk::PhysicalDevice& physical_device,
               const vk::Device& logical_device,

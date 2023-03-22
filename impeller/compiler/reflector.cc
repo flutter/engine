@@ -16,6 +16,7 @@
 #include "impeller/base/strings.h"
 #include "impeller/base/validation.h"
 #include "impeller/compiler/code_gen_template.h"
+#include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
@@ -356,36 +357,41 @@ std::shared_ptr<RuntimeStageData> Reflector::GenerateRuntimeStageData() const {
       options_.target_platform              //
   );
   data->SetShaderData(shader_data_);
-  ir_->for_each_typed_id<spirv_cross::SPIRVariable>(
-      [&](uint32_t, const spirv_cross::SPIRVariable& var) {
-        if (var.storage != spv::StorageClassUniformConstant) {
-          return;
-        }
-        const auto spir_type = compiler_->get_type(var.basetype);
-        UniformDescription uniform_description;
-        uniform_description.name = compiler_->get_name(var.self);
-        uniform_description.location = compiler_->get_decoration(
-            var.self, spv::Decoration::DecorationLocation);
-        uniform_description.type = spir_type.basetype;
-        uniform_description.rows = spir_type.vecsize;
-        uniform_description.columns = spir_type.columns;
-        uniform_description.bit_width = spir_type.width;
-        uniform_description.array_elements = GetArrayElements(spir_type);
-        data->AddUniformDescription(std::move(uniform_description));
-      });
+  if (sksl_data_) {
+    data->SetSkSLData(sksl_data_);
+  }
+
+  // Sort the IR so that the uniforms are in declaration order.
+  std::vector<spirv_cross::ID> uniforms =
+      SortUniforms(ir_.get(), compiler_.GetCompiler());
+
+  for (auto& sorted_id : uniforms) {
+    auto var = ir_->ids[sorted_id].get<spirv_cross::SPIRVariable>();
+    const auto spir_type = compiler_->get_type(var.basetype);
+    UniformDescription uniform_description;
+    uniform_description.name = compiler_->get_name(var.self);
+    uniform_description.location = compiler_->get_decoration(
+        var.self, spv::Decoration::DecorationLocation);
+    uniform_description.type = spir_type.basetype;
+    uniform_description.rows = spir_type.vecsize;
+    uniform_description.columns = spir_type.columns;
+    uniform_description.bit_width = spir_type.width;
+    uniform_description.array_elements = GetArrayElements(spir_type);
+    data->AddUniformDescription(std::move(uniform_description));
+  }
   return data;
 }
 
-uint32_t Reflector::GetArrayElements(const spirv_cross::SPIRType& type) const {
+std::optional<uint32_t> Reflector::GetArrayElements(
+    const spirv_cross::SPIRType& type) const {
   if (type.array.empty()) {
-    return 0;
+    return std::nullopt;
   }
-  uint32_t elements = 1;
-  for (size_t i = 0; i < type.array.size(); i++) {
-    FML_CHECK(type.array_size_literal[i]);
-    elements *= type.array[i];
-  }
-  return elements;
+  FML_CHECK(type.array.size() == 1)
+      << "Multi-dimensional arrays are not supported.";
+  FML_CHECK(type.array_size_literal.front())
+      << "Must use a literal for array sizes.";
+  return type.array.front();
 }
 
 static std::string ToString(CompilerBackend::Type type) {
@@ -440,6 +446,8 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectResource(
       resource.id, spv::Decoration::DecorationDescriptorSet);
   result["binding"] = compiler_->get_decoration(
       resource.id, spv::Decoration::DecorationBinding);
+  result["set"] = compiler_->get_decoration(
+      resource.id, spv::Decoration::DecorationDescriptorSet);
   result["location"] = compiler_->get_decoration(
       resource.id, spv::Decoration::DecorationLocation);
   result["index"] =
@@ -476,7 +484,11 @@ std::optional<nlohmann::json::object_t> Reflector::ReflectType(
       member["offset"] = struct_member.offset;
       member["size"] = struct_member.size;
       member["byte_length"] = struct_member.byte_length;
-      member["array_elements"] = struct_member.array_elements;
+      if (struct_member.array_elements.has_value()) {
+        member["array_elements"] = struct_member.array_elements.value();
+      } else {
+        member["array_elements"] = "std::nullopt";
+      }
       members.emplace_back(std::move(member));
     }
   }
@@ -573,7 +585,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
     const auto& member = compiler_->get_type(struct_type.member_types[i]);
     const auto struct_member_offset =
         compiler_->type_struct_member_offset(struct_type, i);
-    auto array_elements = std::max(1u, GetArrayElements(member));
+    auto array_elements = GetArrayElements(member);
 
     if (struct_member_offset > current_byte_offset) {
       const auto alignment_pad = struct_member_offset - current_byte_offset;
@@ -585,8 +597,8 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           current_byte_offset,                                    // offset
           alignment_pad,                                          // size
           alignment_pad,                                          // byte_length
-          1,  // array_elements
-          0,  // element_padding
+          std::nullopt,  // array_elements
+          0,             // element_padding
       });
       current_byte_offset += alignment_pad;
     }
@@ -596,6 +608,29 @@ std::vector<StructMember> Reflector::ReadStructMembers(
                          (member.width / 8) * member.columns * member.vecsize);
 
     FML_CHECK(current_byte_offset == struct_member_offset);
+
+    // A user defined struct.
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Struct) {
+      const size_t size =
+          GetReflectedStructSize(ReadStructMembers(member.self));
+      uint32_t stride = GetArrayStride<0>(struct_type, member, i);
+      if (stride == 0) {
+        stride = size;
+      }
+      uint32_t element_padding = stride - size;
+      result.emplace_back(StructMember{
+          compiler_->get_name(member.self),      // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          size,                                  // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
 
     // Tightly packed 4x4 Matrix is special cased as we know how to work with
     // those.
@@ -612,11 +647,57 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Matrix),                        // size
-          stride * array_elements,               // byte_length
+          stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
       });
-      current_byte_offset += stride * array_elements;
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
+    // Tightly packed UintPoint32 (uvec2)
+    if (member.basetype == spirv_cross::SPIRType::BaseType::UInt &&  //
+        member.width == sizeof(uint32_t) * 8 &&                      //
+        member.columns == 1 &&                                       //
+        member.vecsize == 2                                          //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(UintPoint32)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(UintPoint32);
+      result.emplace_back(StructMember{
+          "UintPoint32",                         // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(UintPoint32),                   // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
+    // Tightly packed UintPoint32 (ivec2)
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Int &&  //
+        member.width == sizeof(int32_t) * 8 &&                      //
+        member.columns == 1 &&                                      //
+        member.vecsize == 2                                         //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(IPoint32)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(IPoint32);
+      result.emplace_back(StructMember{
+          "IPoint32",                            // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(IPoint32),                      // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
       continue;
     }
 
@@ -634,11 +715,11 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Point),                         // size
-          stride * array_elements,               // byte_length
+          stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
       });
-      current_byte_offset += stride * array_elements;
+      current_byte_offset += stride * array_elements.value_or(1);
       continue;
     }
 
@@ -656,11 +737,11 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Vector3),                       // size
-          stride * array_elements,               // byte_length
+          stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
       });
-      current_byte_offset += stride * array_elements;
+      current_byte_offset += stride * array_elements.value_or(1);
       continue;
     }
 
@@ -678,11 +759,11 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           sizeof(Vector4),                       // size
-          stride * array_elements,               // byte_length
+          stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
       });
-      current_byte_offset += stride * array_elements;
+      current_byte_offset += stride * array_elements.value_or(1);
       continue;
     }
 
@@ -705,11 +786,11 @@ std::vector<StructMember> Reflector::ReadStructMembers(
             GetMemberNameAtIndex(struct_type, i),  // name
             struct_member_offset,                  // offset
             maybe_known_type.value().byte_size,    // size
-            stride * array_elements,               // byte_length
+            stride * array_elements.value_or(1),   // byte_length
             array_elements,                        // array_elements
             element_padding,                       // element_padding
         });
-        current_byte_offset += stride * array_elements;
+        current_byte_offset += stride * array_elements.value_or(1);
         continue;
       }
     }
@@ -729,11 +810,11 @@ std::vector<StructMember> Reflector::ReadStructMembers(
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
           size,                                  // size
-          stride * array_elements,               // byte_length
+          stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding
       });
-      current_byte_offset += stride * array_elements;
+      current_byte_offset += stride * array_elements.value_or(1);
       continue;
     }
   }
@@ -752,7 +833,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
             current_byte_offset,                         // offset
             padding,                                     // size
             padding,                                     // byte_length
-            1,                                           // array_elements
+            std::nullopt,                                // array_elements
             0,                                           // element_padding
         });
       }
@@ -797,7 +878,11 @@ nlohmann::json::object_t Reflector::EmitStructDefinition(
     member["base_type"] = struct_member.base_type;
     member["offset"] = struct_member.offset;
     member["byte_length"] = struct_member.byte_length;
-    member["array_elements"] = struct_member.array_elements;
+    if (struct_member.array_elements.has_value()) {
+      member["array_elements"] = struct_member.array_elements.value();
+    } else {
+      member["array_elements"] = "std::nullopt";
+    }
     member["element_padding"] = struct_member.element_padding;
   }
   return result;
@@ -911,7 +996,7 @@ Reflector::ReflectPerVertexStructDefinition(
         struc.byte_length,           // offset
         vertex_type.byte_length,     // size
         vertex_type.byte_length,     // byte_length
-        1,                           // array_elements
+        std::nullopt,                // array_elements
         0,                           // element_padding
     };
     struc.byte_length += vertex_type.byte_length;

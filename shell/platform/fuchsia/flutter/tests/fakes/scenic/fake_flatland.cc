@@ -850,7 +850,30 @@ void FakeFlatland::SetHitRegions(
 
   auto& transform = found_transform->second;
   FML_CHECK(transform);
-  transform->num_hit_regions = regions.size();
+  transform->hit_regions = std::move(regions);
+}
+
+void FakeFlatland::SetInfiniteHitRegion(
+    fuchsia::ui::composition::TransformId transform_id,
+    fuchsia::ui::composition::HitTestInteraction hit_test) {
+  if (transform_id.value == 0) {
+    // TODO(fxb/85619): Raise a FlatlandError here
+    FML_CHECK(false)
+        << "FakeFlatland::SetTranslation: TransformId 0 is invalid.";
+    return;
+  }
+
+  auto found_transform = pending_graph_.transform_map.find(transform_id.value);
+  if (found_transform == pending_graph_.transform_map.end()) {
+    // TODO(fxb/85619): Raise a FlatlandError here
+    FML_CHECK(false) << "FakeFlatland::SetTranslation: TransformId "
+                     << transform_id.value << " does not exist.";
+    return;
+  }
+
+  auto& transform = found_transform->second;
+  ZX_ASSERT(transform);
+  transform->hit_regions = {kInfiniteHitRegion};
 }
 
 void FakeFlatland::Clear() {

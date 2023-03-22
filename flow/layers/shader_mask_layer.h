@@ -5,7 +5,7 @@
 #ifndef FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 #define FLUTTER_FLOW_LAYERS_SHADER_MASK_LAYER_H_
 
-#include "flutter/display_list/display_list_color_source.h"
+#include "flutter/display_list/effects/dl_color_source.h"
 #include "flutter/flow/layers/cacheable_layer.h"
 
 namespace flutter {
@@ -18,7 +18,7 @@ class ShaderMaskLayer : public CacheableContainerLayer {
 
   void Diff(DiffContext* context, const Layer* old_layer) override;
 
-  void Preroll(PrerollContext* context, const SkMatrix& matrix) override;
+  void Preroll(PrerollContext* context) override;
 
   void Paint(PaintContext& context) const override;
 

@@ -10,6 +10,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/entity/contents/contents.h"
+#include "impeller/entity/geometry.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/path.h"
 
@@ -25,15 +26,20 @@ class SolidColorContents final : public Contents {
 
   ~SolidColorContents() override;
 
-  static std::unique_ptr<SolidColorContents> Make(Path path, Color color);
+  static std::unique_ptr<SolidColorContents> Make(const Path& path,
+                                                  Color color);
 
-  void SetPath(Path path);
-
-  void SetCover(bool cover);
+  void SetGeometry(std::shared_ptr<Geometry> geometry);
 
   void SetColor(Color color);
 
   const Color& GetColor() const;
+
+  // | Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  // | Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
 
   // |Contents|
   std::optional<Rect> GetCoverage(const Entity& entity) const override;
@@ -48,8 +54,7 @@ class SolidColorContents final : public Contents {
               RenderPass& pass) const override;
 
  private:
-  Path path_;
-  bool cover_ = false;
+  std::shared_ptr<Geometry> geometry_;
 
   Color color_;
 

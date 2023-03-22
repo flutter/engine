@@ -14,18 +14,52 @@ void MatrixFilterContents::SetMatrix(Matrix matrix) {
   matrix_ = matrix;
 }
 
-Matrix MatrixFilterContents::GetLocalTransform(
-    const Matrix& parent_transform) const {
-  return parent_transform.Invert() * matrix_ * parent_transform;
+void MatrixFilterContents::SetIsSubpass(bool is_subpass) {
+  is_subpass_ = is_subpass;
 }
 
-std::optional<Snapshot> MatrixFilterContents::RenderFilter(
+void MatrixFilterContents::SetSamplerDescriptor(SamplerDescriptor desc) {
+  sampler_descriptor_ = std::move(desc);
+}
+
+std::optional<Entity> MatrixFilterContents::RenderFilter(
     const FilterInput::Vector& inputs,
     const ContentContext& renderer,
     const Entity& entity,
     const Matrix& effect_transform,
     const Rect& coverage) const {
-  return inputs[0]->GetSnapshot(renderer, entity);
+  auto snapshot = inputs[0]->GetSnapshot(renderer, entity);
+  if (!snapshot.has_value()) {
+    return std::nullopt;
+  }
+
+  auto& transform = is_subpass_ ? effect_transform : entity.GetTransformation();
+  snapshot->transform = transform *           //
+                        matrix_ *             //
+                        transform.Invert() *  //
+                        snapshot->transform;
+  snapshot->sampler_descriptor = sampler_descriptor_;
+  return Entity::FromSnapshot(snapshot, entity.GetBlendMode(),
+                              entity.GetStencilDepth());
+}
+
+std::optional<Rect> MatrixFilterContents::GetFilterCoverage(
+    const FilterInput::Vector& inputs,
+    const Entity& entity,
+    const Matrix& effect_transform) const {
+  if (inputs.empty()) {
+    return std::nullopt;
+  }
+
+  auto coverage = inputs[0]->GetCoverage(entity);
+  if (!coverage.has_value()) {
+    return std::nullopt;
+  }
+  auto& m = is_subpass_ ? effect_transform : inputs[0]->GetTransform(entity);
+  auto transform = m *          //
+                   matrix_ *    //
+                   m.Invert();  //
+  return coverage->TransformBounds(transform);
 }
 
 }  // namespace impeller

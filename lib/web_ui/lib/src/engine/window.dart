@@ -12,8 +12,7 @@ import 'package:js/js.dart';
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../engine.dart' show registerHotRestartListener;
-import 'browser_detection.dart';
+import '../engine.dart' show DimensionsProvider, registerHotRestartListener, renderer;
 import 'dom.dart';
 import 'navigation/history.dart';
 import 'navigation/js_url_strategy.dart';
@@ -27,6 +26,9 @@ typedef _HandleMessageCallBack = Future<bool> Function();
 
 /// When set to true, all platform messages will be printed to the console.
 const bool debugPrintPlatformMessages = false;
+
+/// The view ID for the implicit flutter view provided by the platform.
+const int kImplicitViewId = 0;
 
 /// Whether [_customUrlStrategy] has been set or not.
 ///
@@ -44,20 +46,23 @@ set customUrlStrategy(UrlStrategy? strategy) {
 
 /// The Web implementation of [ui.SingletonFlutterWindow].
 class EngineFlutterWindow extends ui.SingletonFlutterWindow {
-  EngineFlutterWindow(this._windowId, this.platformDispatcher) {
+  EngineFlutterWindow(this.viewId, this.platformDispatcher) {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    engineDispatcher.windows[_windowId] = this;
-    engineDispatcher.windowConfigurations[_windowId] = const ui.ViewConfiguration();
+    engineDispatcher.viewData[viewId] = this;
+    engineDispatcher.windowConfigurations[viewId] = const ViewConfiguration();
     if (_isUrlStrategySet) {
       _browserHistory = createHistoryForExistingState(_customUrlStrategy);
     }
     registerHotRestartListener(() {
       _browserHistory?.dispose();
+      renderer.clearFragmentProgramCache();
+      _dimensionsProvider.close();
     });
   }
 
-  final Object _windowId;
+  @override
+  final Object viewId;
 
   @override
   final ui.PlatformDispatcher platformDispatcher;
@@ -197,14 +202,41 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     });
   }
 
-  @override
-  ui.ViewConfiguration get viewConfiguration {
+  ViewConfiguration get _viewConfiguration {
     final EnginePlatformDispatcher engineDispatcher =
         platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_windowId));
-    return engineDispatcher.windowConfigurations[_windowId] ??
-        const ui.ViewConfiguration();
+    assert(engineDispatcher.windowConfigurations.containsKey(viewId));
+    return engineDispatcher.windowConfigurations[viewId] ??
+        const ViewConfiguration();
   }
+
+  @override
+  ui.Rect get physicalGeometry => _viewConfiguration.geometry;
+
+  @override
+  ViewPadding get viewPadding => _viewConfiguration.viewPadding;
+
+  @override
+  ViewPadding get systemGestureInsets => _viewConfiguration.systemGestureInsets;
+
+  @override
+  ViewPadding get padding => _viewConfiguration.padding;
+
+  @override
+  ui.GestureSettings get gestureSettings => _viewConfiguration.gestureSettings;
+
+  @override
+  List<ui.DisplayFeature> get displayFeatures => _viewConfiguration.displayFeatures;
+
+  late DimensionsProvider _dimensionsProvider;
+  void configureDimensionsProvider(DimensionsProvider dimensionsProvider) {
+    _dimensionsProvider = dimensionsProvider;
+  }
+
+  @override
+  double get devicePixelRatio => _dimensionsProvider.getDevicePixelRatio();
+
+  Stream<ui.Size?> get onResize => _dimensionsProvider.onResize;
 
   @override
   ui.Size get physicalSize {
@@ -231,38 +263,7 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
     }());
 
     if (!override) {
-      double windowInnerWidth;
-      double windowInnerHeight;
-      final DomVisualViewport? viewport = domWindow.visualViewport;
-
-      if (viewport != null) {
-        if (operatingSystem == OperatingSystem.iOs) {
-          /// Chrome on iOS reports incorrect viewport.height when app
-          /// starts in portrait orientation and the phone is rotated to
-          /// landscape.
-          ///
-          /// We instead use documentElement clientWidth/Height to read
-          /// accurate physical size. VisualViewport api is only used during
-          /// text editing to make sure inset is correctly reported to
-          /// framework.
-          final double docWidth =
-              domDocument.documentElement!.clientWidth.toDouble();
-          final double docHeight =
-              domDocument.documentElement!.clientHeight.toDouble();
-          windowInnerWidth = docWidth * devicePixelRatio;
-          windowInnerHeight = docHeight * devicePixelRatio;
-        } else {
-          windowInnerWidth = viewport.width!.toDouble() * devicePixelRatio;
-          windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
-        }
-      } else {
-        windowInnerWidth = domWindow.innerWidth! * devicePixelRatio;
-        windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
-      }
-      _physicalSize = ui.Size(
-        windowInnerWidth,
-        windowInnerHeight,
-      );
+      _physicalSize = _dimensionsProvider.computePhysicalSize();
     }
   }
 
@@ -272,21 +273,10 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   void computeOnScreenKeyboardInsets(bool isEditingOnMobile) {
-    double windowInnerHeight;
-    final DomVisualViewport? viewport = domWindow.visualViewport;
-    if (viewport != null) {
-      if (operatingSystem == OperatingSystem.iOs && !isEditingOnMobile) {
-        windowInnerHeight =
-            domDocument.documentElement!.clientHeight * devicePixelRatio;
-      } else {
-        windowInnerHeight = viewport.height!.toDouble() * devicePixelRatio;
-      }
-    } else {
-      windowInnerHeight = domWindow.innerHeight! * devicePixelRatio;
-    }
-    final double bottomPadding = _physicalSize!.height - windowInnerHeight;
-    _viewInsets =
-        WindowPadding(bottom: bottomPadding, left: 0, right: 0, top: 0);
+    _viewInsets = _dimensionsProvider.computeKeyboardInsets(
+      _physicalSize!.height,
+      isEditingOnMobile,
+    );
   }
 
   /// Uses the previous physical size and current innerHeight/innerWidth
@@ -304,26 +294,16 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   /// height: 658 width: 393
   /// height: 368 width: 393
   bool isRotation() {
-    double height = 0;
-    double width = 0;
-    if (domWindow.visualViewport != null) {
-      height =
-          domWindow.visualViewport!.height!.toDouble() * devicePixelRatio;
-      width = domWindow.visualViewport!.width!.toDouble() * devicePixelRatio;
-    } else {
-      height = domWindow.innerHeight! * devicePixelRatio;
-      width = domWindow.innerWidth! * devicePixelRatio;
-    }
-
     // This method compares the new dimensions with the previous ones.
     // Return false if the previous dimensions are not set.
     if (_physicalSize != null) {
+      final ui.Size current = _dimensionsProvider.computePhysicalSize();
       // First confirm both height and width are effected.
-      if (_physicalSize!.height != height && _physicalSize!.width != width) {
+      if (_physicalSize!.height != current.height && _physicalSize!.width != current.width) {
         // If prior to rotation height is bigger than width it should be the
         // opposite after the rotation and vice versa.
-        if ((_physicalSize!.height > _physicalSize!.width && height < width) ||
-            (_physicalSize!.width > _physicalSize!.height && width < height)) {
+        if ((_physicalSize!.height > _physicalSize!.width && current.height < current.width) ||
+            (_physicalSize!.width > _physicalSize!.height && current.width < current.height)) {
           // Rotation detected
           return true;
         }
@@ -333,8 +313,8 @@ class EngineFlutterWindow extends ui.SingletonFlutterWindow {
   }
 
   @override
-  WindowPadding get viewInsets => _viewInsets;
-  WindowPadding _viewInsets = ui.WindowPadding.zero as WindowPadding;
+  ViewPadding get viewInsets => _viewInsets;
+  ViewPadding _viewInsets = ui.ViewPadding.zero as ViewPadding;
 
   /// Lazily populated and cleared at the end of the frame.
   ui.Size? _physicalSize;
@@ -380,36 +360,17 @@ class EngineSingletonFlutterWindow extends EngineFlutterWindow {
   double? _debugDevicePixelRatio;
 }
 
-/// A type of [FlutterView] that can be hosted inside of a [FlutterWindow].
-class EngineFlutterWindowView extends ui.FlutterWindow {
-  EngineFlutterWindowView._(this._viewId, this.platformDispatcher);
-
-  final Object _viewId;
-
-  @override
-  final ui.PlatformDispatcher platformDispatcher;
-
-  @override
-  ui.ViewConfiguration get viewConfiguration {
-    final EnginePlatformDispatcher engineDispatcher =
-        platformDispatcher as EnginePlatformDispatcher;
-    assert(engineDispatcher.windowConfigurations.containsKey(_viewId));
-    return engineDispatcher.windowConfigurations[_viewId] ??
-        const ui.ViewConfiguration();
-  }
-}
-
 /// The window singleton.
 ///
 /// `dart:ui` window delegates to this value. However, this value has a wider
 /// API surface, providing Web-specific functionality that the standard
 /// `dart:ui` version does not.
 final EngineSingletonFlutterWindow window =
-    EngineSingletonFlutterWindow(0, EnginePlatformDispatcher.instance);
+    EngineSingletonFlutterWindow(kImplicitViewId, EnginePlatformDispatcher.instance);
 
-/// The Web implementation of [ui.WindowPadding].
-class WindowPadding implements ui.WindowPadding {
-  const WindowPadding({
+/// The Web implementation of [ui.ViewPadding].
+class ViewPadding implements ui.ViewPadding {
+  const ViewPadding({
     required this.left,
     required this.top,
     required this.right,

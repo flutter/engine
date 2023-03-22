@@ -13,8 +13,6 @@ import 'package:ui/ui.dart' hide window;
 import '../screenshot.dart';
 import 'helper.dart';
 
-typedef CanvasTest = FutureOr<void> Function(EngineCanvas canvas);
-
 const Rect bounds = Rect.fromLTWH(0, 0, 800, 600);
 
 void main() {
@@ -174,7 +172,7 @@ Future<void> testMain() async {
       canvas.translate(offset.dx, offset.dy);
       canvas.rotate(math.pi / 4);
       final Rect rect = Rect.fromLTRB(0.0, 0.0, 150.0, paragraph.height);
-      canvas.drawRect(rect, SurfacePaintData()..color = black);
+      canvas.drawRect(rect, SurfacePaintData()..color = black.value);
       canvas.drawParagraph(paragraph, Offset.zero);
       canvas.restore();
     }
@@ -207,7 +205,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect = Rect.fromLTRB(0.0, 0.0, paragraph.maxIntrinsicWidth, paragraph.height);
-    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, Offset.zero);
   }
 
@@ -245,7 +243,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect = Rect.fromLTWH(offset.dx, offset.dy, paragraph.maxIntrinsicWidth, paragraph.height);
-    canvas.drawRect(rect, SurfacePaintData()..color = black);
+    canvas.drawRect(rect, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph, offset);
     offset = offset.translate(paragraph.maxIntrinsicWidth, 0.0);
 
@@ -264,7 +262,7 @@ Future<void> testMain() async {
       },
     )..layout(constrain(double.infinity));
     final Rect rect2 = Rect.fromLTWH(offset.dx, offset.dy, paragraph2.maxIntrinsicWidth, paragraph2.height);
-    canvas.drawRect(rect2, SurfacePaintData()..color = black);
+    canvas.drawRect(rect2, SurfacePaintData()..color = black.value);
     canvas.drawParagraph(paragraph2, offset);
     // Draw a rect in the placeholder.
     // Leave some padding around the placeholder to make the black paragraph
@@ -273,7 +271,7 @@ Future<void> testMain() async {
     final TextBox placeholderBox = paragraph2.getBoxesForPlaceholders().single;
     canvas.drawRect(
       placeholderBox.toRect().shift(offset).deflate(padding),
-      SurfacePaintData()..color = red,
+      SurfacePaintData()..color = red.value,
     );
 
     await takeScreenshot(canvas, bounds, 'canvas_paragraph_giant_body_font_size_dom');
@@ -632,7 +630,7 @@ Future<void> testMain() async {
     canvas.drawRect(
       paragraph.paintBounds,
       SurfacePaintData()
-        ..color = const Color(0xFF00FF00)
+        ..color = 0xFF00FF00
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1,
     );

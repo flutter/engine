@@ -22,6 +22,8 @@
 namespace flutter {
 namespace {
 
+constexpr int kImplicitViewId = 0;
+
 Dart_Handle ToByteData(const fml::Mapping& buffer) {
   return tonic::DartByteData::Create(buffer.GetMapping(), buffer.GetSize());
 }
@@ -46,9 +48,9 @@ void PlatformConfiguration::DidCreateIsolate() {
   update_user_settings_data_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateUserSettingsData")));
-  update_lifecycle_state_.Set(
+  update_initial_lifecycle_state_.Set(
       tonic::DartState::Current(),
-      Dart_GetField(library, tonic::ToDart("_updateLifecycleState")));
+      Dart_GetField(library, tonic::ToDart("_updateInitialLifecycleState")));
   update_semantics_enabled_.Set(
       tonic::DartState::Current(),
       Dart_GetField(library, tonic::ToDart("_updateSemanticsEnabled")));
@@ -67,8 +69,13 @@ void PlatformConfiguration::DidCreateIsolate() {
                   Dart_GetField(library, tonic::ToDart("_drawFrame")));
   report_timings_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_reportTimings")));
-  windows_.insert(std::make_pair(
-      0, std::make_unique<Window>(0, ViewportMetrics{1.0, 0.0, 0.0, -1})));
+
+  // TODO(loicsharma): This should only be created if the embedder enables the
+  // implicit view.
+  // See: https://github.com/flutter/flutter/issues/120306
+  windows_.emplace(kImplicitViewId,
+                   std::make_unique<Window>(
+                       kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1}));
 }
 
 void PlatformConfiguration::UpdateLocales(
@@ -101,17 +108,18 @@ void PlatformConfiguration::UpdateUserSettingsData(const std::string& data) {
                                                }));
 }
 
-void PlatformConfiguration::UpdateLifecycleState(const std::string& data) {
+void PlatformConfiguration::UpdateInitialLifecycleState(
+    const std::string& data) {
   std::shared_ptr<tonic::DartState> dart_state =
-      update_lifecycle_state_.dart_state().lock();
+      update_initial_lifecycle_state_.dart_state().lock();
   if (!dart_state) {
     return;
   }
   tonic::DartState::Scope scope(dart_state);
-  tonic::CheckAndHandleError(tonic::DartInvoke(update_lifecycle_state_.Get(),
-                                               {
-                                                   tonic::StdStringToDart(data),
-                                               }));
+  tonic::CheckAndHandleError(tonic::DartInvoke(
+      update_initial_lifecycle_state_.Get(), {
+                                                 tonic::StdStringToDart(data),
+                                             }));
 }
 
 void PlatformConfiguration::UpdateSemanticsEnabled(bool enabled) {
@@ -171,7 +179,7 @@ void PlatformConfiguration::DispatchPlatformMessage(
                          tonic::ToDart(response_id)}));
 }
 
-void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
+void PlatformConfiguration::DispatchSemanticsAction(int32_t node_id,
                                                     SemanticsAction action,
                                                     fml::MallocMapping args) {
   std::shared_ptr<tonic::DartState> dart_state =
@@ -190,7 +198,7 @@ void PlatformConfiguration::DispatchSemanticsAction(int32_t id,
 
   tonic::CheckAndHandleError(tonic::DartInvoke(
       dispatch_semantics_action_.Get(),
-      {tonic::ToDart(id), tonic::ToDart(static_cast<int32_t>(action)),
+      {tonic::ToDart(node_id), tonic::ToDart(static_cast<int32_t>(action)),
        args_handle}));
 }
 
@@ -344,9 +352,7 @@ Dart_Handle PlatformConfigurationNativeApi::SendPortPlatformMessage(
           c_send_port, tonic::DartConverter<int64_t>::FromDart(identifier),
           name);
 
-  HandlePlatformMessage(dart_state, name, data_handle, response);
-
-  return Dart_Null();
+  return HandlePlatformMessage(dart_state, name, data_handle, response);
 }
 
 void PlatformConfigurationNativeApi::RespondToPlatformMessage(
@@ -368,14 +374,22 @@ void PlatformConfigurationNativeApi::RespondToPlatformMessage(
 }
 
 void PlatformConfigurationNativeApi::SetIsolateDebugName(
-    const std::string name) {
+    const std::string& name) {
   UIDartState::ThrowIfUIOperationsProhibited();
   UIDartState::Current()->SetDebugName(name);
 }
 
+Dart_PerformanceMode PlatformConfigurationNativeApi::current_performace_mode_ =
+    Dart_PerformanceMode_Default;
+
+Dart_PerformanceMode PlatformConfigurationNativeApi::GetDartPerformanceMode() {
+  return current_performace_mode_;
+}
+
 int PlatformConfigurationNativeApi::RequestDartPerformanceMode(int mode) {
   UIDartState::ThrowIfUIOperationsProhibited();
-  return Dart_SetPerformanceMode(static_cast<Dart_PerformanceMode>(mode));
+  current_performace_mode_ = static_cast<Dart_PerformanceMode>(mode);
+  return Dart_SetPerformanceMode(current_performace_mode_);
 }
 
 Dart_Handle PlatformConfigurationNativeApi::GetPersistentIsolateData() {
@@ -419,6 +433,16 @@ Dart_Handle PlatformConfigurationNativeApi::ComputePlatformResolvedLocale(
            ->ComputePlatformResolvedLocale(supportedLocales);
 
   return tonic::DartConverter<std::vector<std::string>>::ToDart(results);
+}
+
+Dart_Handle PlatformConfigurationNativeApi::ImplicitViewEnabled() {
+  UIDartState::ThrowIfUIOperationsProhibited();
+  bool enabled = UIDartState::Current()
+                     ->platform_configuration()
+                     ->client()
+                     ->ImplicitViewEnabled();
+
+  return Dart_NewBoolean(enabled);
 }
 
 std::string PlatformConfigurationNativeApi::DefaultRouteName() {

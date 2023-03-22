@@ -304,8 +304,8 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   Engine(Delegate& delegate,
          const PointerDataDispatcherMaker& dispatcher_maker,
          std::shared_ptr<fml::ConcurrentTaskRunner> image_decoder_task_runner,
-         TaskRunners task_runners,
-         Settings settings,
+         const TaskRunners& task_runners,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          const std::shared_ptr<FontCollection>& font_collection,
@@ -357,13 +357,13 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
          const PointerDataDispatcherMaker& dispatcher_maker,
          DartVM& vm,
          fml::RefPtr<const DartSnapshot> isolate_snapshot,
-         TaskRunners task_runners,
+         const TaskRunners& task_runners,
          const PlatformData& platform_data,
-         Settings settings,
+         const Settings& settings,
          std::unique_ptr<Animator> animator,
          fml::WeakPtr<IOManager> io_manager,
          fml::RefPtr<SkiaUnrefQueue> unref_queue,
-         fml::WeakPtr<SnapshotDelegate> snapshot_delegate,
+         fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate,
          std::shared_ptr<VolatilePathTracker> volatile_path_tracker);
 
   //----------------------------------------------------------------------------
@@ -378,11 +378,11 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   std::unique_ptr<Engine> Spawn(
       Delegate& delegate,
       const PointerDataDispatcherMaker& dispatcher_maker,
-      Settings settings,
+      const Settings& settings,
       std::unique_ptr<Animator> animator,
       const std::string& initial_route,
-      fml::WeakPtr<IOManager> io_manager,
-      fml::WeakPtr<SnapshotDelegate> snapshot_delegate) const;
+      const fml::WeakPtr<IOManager>& io_manager,
+      fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> snapshot_delegate) const;
 
   //----------------------------------------------------------------------------
   /// @brief      Destroys the engine engine. Called by the shell on the UI task
@@ -465,7 +465,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @return     If the asset manager was successfully replaced. This may fail
   ///             if the new asset manager is invalid.
   ///
-  bool UpdateAssetManager(std::shared_ptr<AssetManager> asset_manager);
+  bool UpdateAssetManager(const std::shared_ptr<AssetManager>& asset_manager);
 
   //----------------------------------------------------------------------------
   /// @brief      Notifies the engine that it is time to begin working on a new
@@ -552,7 +552,14 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                       corresponding sweep can be performed within the
   ///                       deadline.
   ///
-  void NotifyIdle(fml::TimePoint deadline);
+  void NotifyIdle(fml::TimeDelta deadline);
+
+  //----------------------------------------------------------------------------
+  /// @brief      Notifies the engine that the attached flutter view has been
+  ///             destroyed.
+  ///             This enables the engine to notify the Dart VM so it can do
+  ///             some cleanp activities.
+  void NotifyDestroyed();
 
   //----------------------------------------------------------------------------
   /// @brief      Dart code cannot fully measure the time it takes for a
@@ -700,7 +707,7 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   /// @param[in]  trace_flow_id  The trace flow identifier associated with the
   ///                            pointer data packet. The engine uses this trace
   ///                            identifier to connect trace flows in the
-  ///                            timeline from the input event event to the
+  ///                            timeline from the input event to the
   ///                            frames generated due to those input events.
   ///                            These flows are tagged as "PointerEvent" in the
   ///                            timeline and allow grouping frames and input
@@ -715,12 +722,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///             originates on the platform view and has been forwarded to the
   ///             engine here on the UI task runner by the shell.
   ///
-  /// @param[in]  id      The identifier of the accessibility node.
+  /// @param[in]  node_id The identifier of the accessibility node.
   /// @param[in]  action  The accessibility related action performed on the
   ///                     node of the specified ID.
   /// @param[in]  args    Optional data that applies to the specified action.
   ///
-  void DispatchSemanticsAction(int id,
+  void DispatchSemanticsAction(int node_id,
                                SemanticsAction action,
                                fml::MallocMapping args);
 
@@ -863,12 +870,12 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   ///                              temporary conditions such as no network.
   ///                              Transient errors allow the dart VM to
   ///                              re-request the same deferred library and
-  ///                              and loading_unit_id again. Non-transient
+  ///                              loading_unit_id again. Non-transient
   ///                              errors are permanent and attempts to
   ///                              re-request the library will instantly
   ///                              complete with an error.
   void LoadDartDeferredLibraryError(intptr_t loading_unit_id,
-                                    const std::string error_message,
+                                    const std::string& error_message,
                                     bool transient);
 
   //--------------------------------------------------------------------------
@@ -881,6 +888,9 @@ class Engine final : public RuntimeDelegate, PointerDataDispatcher::Delegate {
   const std::weak_ptr<VsyncWaiter> GetVsyncWaiter() const;
 
  private:
+  // |RuntimeDelegate|
+  bool ImplicitViewEnabled() override;
+
   // |RuntimeDelegate|
   std::string DefaultRouteName() override;
 

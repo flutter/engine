@@ -7,8 +7,10 @@
 
 #import <Cocoa/Cocoa.h>
 
-#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterEngine.h"
+#import "flutter/shell/platform/darwin/macos/framework/Headers/FlutterViewController.h"
 
+#include "flutter/fml/macros.h"
+#include "flutter/shell/platform/common/accessibility_bridge.h"
 #include "flutter/shell/platform/common/flutter_platform_node_delegate.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 
@@ -19,9 +21,8 @@ namespace flutter {
 /// AXPlatformNodeMac to manage the macOS-specific accessibility objects.
 class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
  public:
-  explicit FlutterPlatformNodeDelegateMac(
-      __weak FlutterEngine* engine,
-      __weak FlutterViewController* view_controller);
+  FlutterPlatformNodeDelegateMac(std::weak_ptr<AccessibilityBridge> bridge,
+                                 __weak FlutterViewController* view_controller);
   virtual ~FlutterPlatformNodeDelegateMac();
 
   void Init(std::weak_ptr<OwnerBridge> bridge, ui::AXNode* node) override;
@@ -49,13 +50,15 @@ class FlutterPlatformNodeDelegateMac : public FlutterPlatformNodeDelegate {
 
  private:
   ui::AXPlatformNode* ax_platform_node_;
-  __weak FlutterEngine* engine_;
+  std::weak_ptr<AccessibilityBridge> bridge_;
   __weak FlutterViewController* view_controller_;
 
   gfx::RectF ConvertBoundsFromLocalToScreen(
       const gfx::RectF& local_bounds) const;
   gfx::RectF ConvertBoundsFromScreenToGlobal(
       const gfx::RectF& window_bounds) const;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(FlutterPlatformNodeDelegateMac);
 };
 
 }  // namespace flutter

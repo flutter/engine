@@ -9,6 +9,8 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
+import 'keyboard_test_common.dart';
+
 const int kLocationStandard = 0;
 const int kLocationLeft = 1;
 const int kLocationRight = 2;
@@ -16,6 +18,7 @@ const int kLocationNumpad = 3;
 
 final int kPhysicalKeyA = kWebToPhysicalKey['KeyA']!;
 final int kPhysicalKeyE = kWebToPhysicalKey['KeyE']!;
+final int kPhysicalKeyL = kWebToPhysicalKey['KeyL']!;
 final int kPhysicalKeyU = kWebToPhysicalKey['KeyU']!;
 final int kPhysicalDigit1 = kWebToPhysicalKey['Digit1']!;
 final int kPhysicalNumpad1 = kWebToPhysicalKey['Numpad1']!;
@@ -29,6 +32,7 @@ final int kPhysicalScrollLock = kWebToPhysicalKey['ScrollLock']!;
 const int kPhysicalEmptyCode = 0x1700000000;
 
 const int kLogicalKeyA = 0x00000000061;
+const int kLogicalKeyL = 0x0000000006C;
 const int kLogicalKeyU = 0x00000000075;
 const int kLogicalDigit1 = 0x00000000031;
 final int kLogicalNumpad1 = kWebLogicalLocationMap['1']![kLocationNumpad]!;
@@ -83,14 +87,9 @@ void testMain() {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
-    });
-    bool preventedDefault = false;
-    void onPreventDefault() { preventedDefault = true; }
+    }, OperatingSystem.linux);
 
-    converter.handleEvent(keyDownEvent('KeyA', 'a')
-      ..timeStamp = 1
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 1);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1),
       type: ui.KeyEventType.down,
@@ -98,13 +97,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, isTrue);
-    preventedDefault = false;
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
-      ..timeStamp = 1.5
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1.5);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(milliseconds: 1, microseconds: 500),
       type: ui.KeyEventType.repeat,
@@ -112,12 +107,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
-      ..timeStamp = 1500
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')..timeStamp = 1500);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(seconds: 1, milliseconds: 500),
       type: ui.KeyEventType.repeat,
@@ -125,12 +117,9 @@ void testMain() {
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    converter.handleEvent(keyUpEvent('KeyA', 'a')
-      ..timeStamp = 2000.5
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2000.5);
     expectKeyData(keyDataList.last,
       timeStamp: const Duration(seconds: 2, microseconds: 500),
       type: ui.KeyEventType.up,
@@ -138,7 +127,26 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
+  });
+
+  test('Special cases', () {
+    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+      keyDataList.add(key);
+      // Only handle down events
+      return key.type == ui.KeyEventType.down;
+    }, OperatingSystem.windows);
+
+    // en-in.win, with AltGr
+    converter.handleEvent(keyDownEvent('KeyL', 'l̥', kCtrl | kAlt)..timeStamp = 1);
+    expectKeyData(keyDataList.last,
+      timeStamp: const Duration(milliseconds: 1),
+      type: ui.KeyEventType.down,
+      physical: kPhysicalKeyL,
+      logical: kLogicalKeyL,
+      character: 'l̥',
+    );
   });
 
   test('Release modifier during a repeated sequence', () {
@@ -147,77 +155,61 @@ void testMain() {
       keyDataList.add(key);
       // Only handle down events
       return key.type == ui.KeyEventType.down;
-    });
-    bool preventedDefault = false;
-    void onPreventDefault() { preventedDefault = true; }
+    }, OperatingSystem.linux);
 
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, isTrue);
-    preventedDefault = false;
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    converter.handleEvent(keyDownEvent('KeyA', 'A', kShift)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.down,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(preventedDefault, isTrue);
-    preventedDefault = false;
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
-    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'A', kShift));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'A',
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
       physical: kPhysicalShiftLeft,
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
-    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a')
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyRepeatedDownEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.repeat,
       physical: kPhysicalKeyA,
       logical: kLogicalKeyA,
       character: 'a',
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
 
     converter.handleEvent(keyUpEvent('KeyA', 'a'));
     expectKeyData(keyDataList.last,
@@ -226,7 +218,7 @@ void testMain() {
       logical: kLogicalKeyA,
       character: null,
     );
-    expect(preventedDefault, isFalse);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isFalse);
   });
 
   test('Distinguish between left and right modifiers', () {
@@ -234,7 +226,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
@@ -274,7 +266,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('', 'Shift', kShift));
     expectKeyData(keyDataList.last,
@@ -346,7 +338,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('Digit1', '1'));
     expectKeyData(keyDataList.last,
@@ -386,7 +378,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     // The absolute values of the following logical keys are not guaranteed.
     const int kLogicalAltE = 0x1740070008;
@@ -460,21 +452,14 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
-    bool preventedDefault = false;
-    void onPreventDefault() { preventedDefault = true; }
+    }, OperatingSystem.linux);
 
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
-      ..onPreventDefault = onPreventDefault
-    );
-    expect(preventedDefault, isTrue);
-    preventedDefault = false;
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
     // A KeyUp of ShiftLeft is missed.
 
     keyDataList.clear();
-    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expect(keyDataList, hasLength(2));
     expectKeyData(keyDataList.first,
       type: ui.KeyEventType.up,
@@ -489,12 +474,10 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
 
     keyDataList.clear();
-    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyUpEvent('ShiftLeft', 'Shift', 0, kLocationLeft));
     expect(keyDataList, hasLength(1));
     expectKeyData(keyDataList.last,
       type: ui.KeyEventType.up,
@@ -502,7 +485,7 @@ void testMain() {
       logical: kLogicalShiftLeft,
       character: null,
     );
-    expect(preventedDefault, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
   });
 
   test('Duplicate ups are skipped', () {
@@ -510,18 +493,14 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
-    bool preventedDefault = false;
-    void onPreventDefault() { preventedDefault = true; }
+    }, OperatingSystem.linux);
 
     // A KeyDown of ShiftRight is missed due to loss of focus.
-    converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight)
-      ..onPreventDefault = onPreventDefault
-    );
+    converter.handleEvent(keyUpEvent('ShiftRight', 'Shift', 0, kLocationRight));
     expect(keyDataList, hasLength(1));
     expect(keyDataList[0].physical, 0);
     expect(keyDataList[0].logical, 0);
-    expect(preventedDefault, isTrue);
+    expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
   });
 
   test('Conflict from multiple keyboards do not crash', () {
@@ -529,7 +508,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     // Same layout
     converter.handleEvent(keyDownEvent('KeyA', 'a'));
@@ -562,206 +541,202 @@ void testMain() {
     );
   });
 
-  testFakeAsync('CapsLock down synthesizes an immediate cancel on macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
-      keyDataList.add(key);
-      return true;
-    }, onMacOs: true);
-    bool preventedDefault = false;
-    void onPreventDefault() { preventedDefault = true; }
+  for (final OperatingSystem system in <OperatingSystem>[OperatingSystem.macOs, OperatingSystem.iOs]) {
+    testFakeAsync('CapsLock down synthesizes an immediate cancel on $system', (FakeAsync async) {
+      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+      final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+        keyDataList.add(key);
+        return true;
+      }, system);
 
-    // A KeyDown of ShiftRight is missed due to loss of focus.
-    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock')
-      ..onPreventDefault = onPreventDefault
-    );
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.down,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-    expect(preventedDefault, isTrue);
-    keyDataList.clear();
-    preventedDefault = false;
+      // A KeyDown of ShiftRight is missed due to loss of focus.
+      converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+      expect(keyDataList, hasLength(1));
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.down,
+        physical: kPhysicalCapsLock,
+        logical: kLogicalCapsLock,
+        character: null,
+      );
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+      keyDataList.clear();
 
-    async.elapse(const Duration(microseconds: 1));
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.up,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-      synthesized: true,
-    );
-    expect(preventedDefault, isFalse);
-    keyDataList.clear();
+      async.elapse(const Duration(microseconds: 1));
+      expect(keyDataList, hasLength(1));
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.up,
+        physical: kPhysicalCapsLock,
+        logical: kLogicalCapsLock,
+        character: null,
+        synthesized: true,
+      );
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+      keyDataList.clear();
 
-    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock')
-      ..onPreventDefault = onPreventDefault
-    );
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.down,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-    expect(preventedDefault, isTrue);
-    keyDataList.clear();
-    preventedDefault = false;
+      converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+      expect(keyDataList, hasLength(1));
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.down,
+        physical: kPhysicalCapsLock,
+        logical: kLogicalCapsLock,
+        character: null,
+      );
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+      keyDataList.clear();
 
-    async.elapse(const Duration(microseconds: 1));
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.up,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-      synthesized: true,
-    );
-    expect(preventedDefault, isFalse);
-    keyDataList.clear();
+      async.elapse(const Duration(microseconds: 1));
+      expect(keyDataList, hasLength(1));
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.up,
+        physical: kPhysicalCapsLock,
+        logical: kLogicalCapsLock,
+        character: null,
+        synthesized: true,
+      );
+      expect(MockKeyboardEvent.lastDefaultPrevented, isTrue);
+      keyDataList.clear();
 
-    // Another key down works
-    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.down,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-    keyDataList.clear();
+      // Another key down works
+      converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+      expect(keyDataList, hasLength(1));
+      expectKeyData(keyDataList.last,
+        type: ui.KeyEventType.down,
+        physical: kPhysicalCapsLock,
+        logical: kLogicalCapsLock,
+        character: null,
+      );
+      keyDataList.clear();
 
 
-    // Schedules are canceled after disposal
-    converter.dispose();
-    async.elapse(const Duration(seconds: 10));
-    expect(keyDataList, isEmpty);
-  });
+      // Schedules are canceled after disposal
+      converter.dispose();
+      async.elapse(const Duration(seconds: 10));
+      expect(keyDataList, isEmpty);
+    });
+  }
 
   testFakeAsync('CapsLock behaves normally on non-macOS', (FakeAsync async) {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
+    }, OperatingSystem.linux);
+
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+    );
+    keyDataList.clear();
+
+    async.elapse(const Duration(seconds: 10));
+    expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+    expect(keyDataList, hasLength(1));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+    );
+    keyDataList.clear();
+
+    async.elapse(const Duration(seconds: 10));
+    expect(keyDataList, isEmpty);
+
+    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.down,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+    );
+
+    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
+    expectKeyData(keyDataList.last,
+      type: ui.KeyEventType.up,
+      physical: kPhysicalCapsLock,
+      logical: kLogicalCapsLock,
+      character: null,
+    );
+  });
+
+  for (final OperatingSystem system in <OperatingSystem>[OperatingSystem.macOs, OperatingSystem.iOs]) {
+    testFakeAsync('Key guards: key down events are guarded on $system', (FakeAsync async) {
+      final List<ui.KeyData> keyDataList = <ui.KeyData>[];
+      final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
+        keyDataList.add(key);
+        return true;
+      }, system);
+
+      converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
+      async.elapse(const Duration(milliseconds: 100));
+
+      converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
+      expectKeyData(keyDataList.last,
+        timeStamp: const Duration(milliseconds: 200),
+        type: ui.KeyEventType.down,
+        physical: kPhysicalKeyA,
+        logical: kLogicalKeyA,
+        character: 'a',
+      );
+      keyDataList.clear();
+
+      // Keyup of KeyA is omitted due to being a shortcut.
+
+      async.elapse(const Duration(milliseconds: 2500));
+      expectKeyData(keyDataList.last,
+        timeStamp: const Duration(milliseconds: 2200),
+        type: ui.KeyEventType.up,
+        physical: kPhysicalKeyA,
+        logical: kLogicalKeyA,
+        character: null,
+        synthesized: true,
+      );
+      keyDataList.clear();
+
+      converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700);
+      expectKeyData(keyDataList.last,
+        timeStamp: const Duration(milliseconds: 2700),
+        type: ui.KeyEventType.up,
+        physical: kPhysicalMetaLeft,
+        logical: kLogicalMetaLeft,
+        character: null,
+      );
+      async.elapse(const Duration(milliseconds: 100));
+
+      // Key A states are cleared
+      converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
+      expectKeyData(keyDataList.last,
+        timeStamp: const Duration(milliseconds: 2800),
+        type: ui.KeyEventType.down,
+        physical: kPhysicalKeyA,
+        logical: kLogicalKeyA,
+        character: 'a',
+      );
+      async.elapse(const Duration(milliseconds: 100));
+
+      converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
+      expectKeyData(keyDataList.last,
+        timeStamp: const Duration(milliseconds: 2900),
+        type: ui.KeyEventType.up,
+        physical: kPhysicalKeyA,
+        logical: kLogicalKeyA,
+        character: null,
+      );
     });
-
-    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.down,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-    keyDataList.clear();
-
-    async.elapse(const Duration(seconds: 10));
-    expect(keyDataList, isEmpty);
-
-    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
-    expect(keyDataList, hasLength(1));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.up,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-    keyDataList.clear();
-
-    async.elapse(const Duration(seconds: 10));
-    expect(keyDataList, isEmpty);
-
-    converter.handleEvent(keyDownEvent('CapsLock', 'CapsLock'));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.down,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-
-    converter.handleEvent(keyUpEvent('CapsLock', 'CapsLock'));
-    expectKeyData(keyDataList.last,
-      type: ui.KeyEventType.up,
-      physical: kPhysicalCapsLock,
-      logical: kLogicalCapsLock,
-      character: null,
-    );
-  });
-
-  testFakeAsync('Key guards: key down events are guarded on macOS', (FakeAsync async) {
-    final List<ui.KeyData> keyDataList = <ui.KeyData>[];
-    final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
-      keyDataList.add(key);
-      return true;
-    }, onMacOs: true);
-
-    converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
-    async.elapse(const Duration(milliseconds: 100));
-
-    converter.handleEvent(keyDownEvent('KeyA', 'a', kMeta)..timeStamp = 200);
-    expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 200),
-      type: ui.KeyEventType.down,
-      physical: kPhysicalKeyA,
-      logical: kLogicalKeyA,
-      character: 'a',
-    );
-    keyDataList.clear();
-
-    // Keyup of KeyA is omitted due to being a shortcut.
-
-    async.elapse(const Duration(milliseconds: 2500));
-    expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 2200),
-      type: ui.KeyEventType.up,
-      physical: kPhysicalKeyA,
-      logical: kLogicalKeyA,
-      character: null,
-      synthesized: true,
-    );
-    keyDataList.clear();
-
-    converter.handleEvent(keyUpEvent('MetaLeft', 'Meta', 0, kLocationLeft)..timeStamp = 2700);
-    expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 2700),
-      type: ui.KeyEventType.up,
-      physical: kPhysicalMetaLeft,
-      logical: kLogicalMetaLeft,
-      character: null,
-    );
-    async.elapse(const Duration(milliseconds: 100));
-
-    // Key A states are cleared
-    converter.handleEvent(keyDownEvent('KeyA', 'a')..timeStamp = 2800);
-    expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 2800),
-      type: ui.KeyEventType.down,
-      physical: kPhysicalKeyA,
-      logical: kLogicalKeyA,
-      character: 'a',
-    );
-    async.elapse(const Duration(milliseconds: 100));
-
-    converter.handleEvent(keyUpEvent('KeyA', 'a')..timeStamp = 2900);
-    expectKeyData(keyDataList.last,
-      timeStamp: const Duration(milliseconds: 2900),
-      type: ui.KeyEventType.up,
-      physical: kPhysicalKeyA,
-      logical: kLogicalKeyA,
-      character: null,
-    );
-  });
+  }
 
   testFakeAsync('Key guards: key repeated down events refreshes guards', (FakeAsync async) {
     final List<ui.KeyData> keyDataList = <ui.KeyData>[];
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    }, onMacOs: true);
+    }, OperatingSystem.macOs);
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
@@ -824,7 +799,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.macOs);
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
@@ -881,7 +856,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('MetaLeft', 'Meta', kMeta, kLocationLeft)..timeStamp = 100);
     async.elapse(const Duration(milliseconds: 100));
@@ -905,7 +880,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('ScrollLock', 'ScrollLock'));
     expect(keyDataList, hasLength(1));
@@ -952,7 +927,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('ShiftRight', 'Shift', kShift, kLocationRight));
     expectKeyData(keyDataList.last,
@@ -1008,7 +983,7 @@ void testMain() {
     final KeyboardConverter converter = KeyboardConverter((ui.KeyData key) {
       keyDataList.add(key);
       return true;
-    });
+    }, OperatingSystem.linux);
 
     converter.handleEvent(keyDownEvent('ShiftLeft', 'Shift', kShift, kLocationLeft));
     expectKeyData(keyDataList.last,
@@ -1052,60 +1027,6 @@ void testMain() {
   });
 }
 
-class MockKeyboardEvent implements FlutterHtmlKeyboardEvent {
-  MockKeyboardEvent({
-    required this.type,
-    required this.code,
-    required this.key,
-    this.timeStamp = 0,
-    this.repeat = false,
-    this.altKey = false,
-    this.ctrlKey = false,
-    this.shiftKey = false,
-    this.metaKey = false,
-    this.location = 0,
-    this.onPreventDefault,
-  });
-
-  @override
-  String type;
-
-  @override
-  String? code;
-
-  @override
-  String? key;
-
-  @override
-  bool? repeat;
-
-  @override
-  num? timeStamp;
-
-  @override
-  bool altKey;
-
-  @override
-  bool ctrlKey;
-
-  @override
-  bool shiftKey;
-
-  @override
-  bool metaKey;
-
-  @override
-  int? location;
-
-  @override
-  bool getModifierState(String key) => modifierState.contains(key);
-  final Set<String> modifierState = <String>{};
-
-  @override
-  void preventDefault() { onPreventDefault?.call(); }
-  VoidCallback? onPreventDefault;
-}
-
 // Flags used for the `modifiers` argument of `key***Event` functions.
 const int kAlt = 0x1;
 const int kCtrl = 0x2;
@@ -1114,7 +1035,7 @@ const int kMeta = 0x8;
 
 // Utility functions to make code more concise.
 //
-// To add timeStamp or onPreventDefault, use syntax like `..timeStamp = `.
+// To add timeStamp , use syntax `..timeStamp = `.
 MockKeyboardEvent keyDownEvent(String code, String key, [int modifiers = 0, int location = 0]) {
   return MockKeyboardEvent(
     type: 'keydown',

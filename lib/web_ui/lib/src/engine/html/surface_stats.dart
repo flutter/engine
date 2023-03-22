@@ -97,7 +97,7 @@ class DebugSurfaceStats {
 DomCanvasRenderingContext2D? _debugSurfaceStatsOverlayCtx;
 
 void debugRepaintSurfaceStatsOverlay(PersistedScene scene) {
-  final int overlayWidth = domWindow.innerWidth!;
+  final int overlayWidth = domWindow.innerWidth!.toInt();
   const int rowHeight = 30;
   const int rowCount = 4;
   const int overlayHeight = rowHeight * rowCount;
@@ -237,7 +237,6 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
 
   void countReusesRecursively(PersistedSurface surface) {
     final DebugSurfaceStats stats = surfaceStatsFor(surface);
-    assert(stats != null);
 
     surfaceRetainCount += stats.retainSurfaceCount;
     elementReuseCount += stats.reuseElementCount;
@@ -296,7 +295,7 @@ void debugPrintSurfaceStats(PersistedScene scene, int frameNumber) {
     final int pixelCount = canvasElements
         .cast<DomCanvasElement>()
         .map<int>((DomCanvasElement e) {
-      final int pixels = e.width! * e.height!;
+      final int pixels = (e.width! * e.height!).toInt();
       canvasInfo.writeln('    - ${e.width!} x ${e.height!} = $pixels pixels');
       return pixels;
     }).fold(0, (int total, int pixels) => total + pixels);
