@@ -5,7 +5,6 @@
 package io.flutter.embedding.engine;
 
 import android.content.Context;
-import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -203,7 +202,7 @@ public class FlutterJNI {
     }
 
     String version = null;
-    try{
+    try {
       // Should this be versionName or getLongVersionCode()?
       // versionName is human readable, but getLongVersionCode() is a
       // monotonically increasing number.
@@ -227,7 +226,14 @@ public class FlutterJNI {
     }
 
     FlutterJNI.nativeInit(
-        context, args, bundlePath, appStoragePath, engineCachesPath, shorebirdYaml, version, initTimeMillis);
+        context,
+        args,
+        bundlePath,
+        appStoragePath,
+        engineCachesPath,
+        shorebirdYaml,
+        version,
+        initTimeMillis);
     FlutterJNI.initCalled = true;
   }
 
