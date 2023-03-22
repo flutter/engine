@@ -91,8 +91,8 @@ void alertPlatformChannel() async {
 void exitTestExit() async {
   final Completer<ByteData?> closed = Completer<ByteData?>();
   ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
-    const String jsonString = '[{"response":"exit"}]';
-    ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    final String jsonString = json.encode(<Map<String, String>>[{'response': 'exit'}]);
+    final ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
     callback(responseData);
     closed.complete(data);
   });
@@ -100,7 +100,12 @@ void exitTestExit() async {
 
   // From here down, nothing should be called, because the application will have already been closed.
   final Completer<ByteData?> exited = Completer<ByteData?>();
-  const String jsonString = '{"method":"System.exitApplication","args":{"type":"required","exitCode":0}}';
+  final String jsonString = json.encode(<String, dynamic>{
+    'method': 'System.exitApplication',
+    'args': <String, dynamic>{
+      'type': 'required', 'exitCode': 0
+      }
+    });
   ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
   await exited.future;
 }
@@ -109,8 +114,8 @@ void exitTestExit() async {
 void exitTestCancel() async {
   final Completer<ByteData?> closed = Completer<ByteData?>();
   ui.channelBuffers.setListener('flutter/platform', (ByteData? data, ui.PlatformMessageResponseCallback callback) async {
-    const String jsonString = '[{"response":"cancel"}]';
-    ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
+    final String jsonString = json.encode(<Map<String, String>>[{'response': 'cancel'}]);
+    final ByteData responseData = ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString)));
     callback(responseData);
     closed.complete(data);
   });
@@ -118,7 +123,12 @@ void exitTestCancel() async {
 
   // Because the request was canceled, the below shall execute.
   final Completer<ByteData?> exited = Completer<ByteData?>();
-  const String jsonString = '{"method":"System.exitApplication","args":{"type":"required","exitCode":0}}';
+  final String jsonString = json.encode(<String, dynamic>{
+    'method': 'System.exitApplication',
+    'args': <String, dynamic>{
+      'type': 'required', 'exitCode': 0
+      }
+    });
   ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
   await exited.future;
 }
