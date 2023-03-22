@@ -22,7 +22,7 @@ namespace flutter {
 class FlutterWindowsEngine;
 class ScopedClipboardInterface;
 
-enum ExitType {
+enum class ExitType {
   required,
   cancelable,
 };
