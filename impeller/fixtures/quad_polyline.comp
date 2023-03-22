@@ -30,11 +30,11 @@ shared uint count_sums[512];
 
 uint ComputePosition(uint index) {
   int position = -1;
-  uint count_sum = count_sums[ident];
+  uint count_sum = count_sums[index];
   do {
     position += int(gl_SubgroupSize);
     count_sum += count_sums[position];
-  } while (position < ident);
+  } while (position < index);
   return count_sum;
 }
 
