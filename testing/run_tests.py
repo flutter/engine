@@ -1010,6 +1010,7 @@ def run_impeller_golden_tests(build_dir: str):
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, '--working_dir=%s' % temp_dir])
     with DirectoryChange(harvester_path):
+      run_cmd(['dart', 'pub', 'get'])
       bin_path = Path('.').joinpath('bin'
                                    ).joinpath('golden_tests_harvester.dart')
       run_cmd(['dart', 'run', str(bin_path), temp_dir])
@@ -1222,7 +1223,8 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
   if 'impeller-golden' in types or ('engine' in types and
-                                    platform.system() == 'Darwin'):
+                                    platform.system() == 'Darwin' and
+                                    args.variant == 'host_debug_unopt'):
     run_impeller_golden_tests(build_dir)
 
 
