@@ -13,7 +13,7 @@
 
 namespace flutter {
 
-WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine& engine)
+WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
     : engine_(engine) {}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
@@ -30,7 +30,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
-        engine_.RequestApplicationQuit(PlatformHandler::kExitTypeCancelable,
+        engine_->RequestApplicationQuit(PlatformHandler::kExitTypeCancelable,
                                        wpar);
       }
       return true;
@@ -41,43 +41,72 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
 static BOOL CALLBACK WindowEnumCallback(HWND hwnd, LPARAM user_data) {
   HWND parent = GetParent(hwnd);
   if (parent == NULL) {
-    int64_t& count = *static_cast<int64_t*>(reinterpret_cast<void*>(user_data));
+    int64_t& count = *reinterpret_cast<int64_t*>(user_data);
     count++;
   }
   return true;
 }
 
-bool WindowsLifecycleManager::IsLastWindowOfProcess() {
-  DWORD pid = GetCurrentProcessId();
-  HANDLE thread_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
-  if (thread_snapshot == INVALID_HANDLE_VALUE) {
-    FML_LOG(ERROR) << "Failed to get threads snapshot";
-    return true;
+class ThreadSnapshot {
+ public:
+  ThreadSnapshot() {
+    thread_snapshot_ = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+  }
+  ~ThreadSnapshot() {
+    if (thread_snapshot_ != INVALID_HANDLE_VALUE) {
+      CloseHandle(thread_snapshot_);
+    }
   }
 
-  THREADENTRY32 thread;
-  thread.dwSize = sizeof(thread);
-  if (!Thread32First(thread_snapshot, &thread)) {
-    DWORD error_num = GetLastError();
-    char msg[256];
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                   NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                   msg, 256, nullptr);
-    FML_LOG(ERROR) << "Failed to get thread(" << error_num << "): " << msg;
-    CloseHandle(thread_snapshot);
+  std::optional<THREADENTRY32> GetFirstThread() {
+    if (thread_snapshot_ == INVALID_HANDLE_VALUE) {
+      FML_LOG(ERROR) << "Failed to get thread snapshot";
+      return std::nullopt;
+    }
+    THREADENTRY32 thread;
+    thread.dwSize = sizeof(thread);
+    if (!Thread32First(thread_snapshot_, &thread)) {
+      DWORD error_num = GetLastError();
+      char msg[256];
+      FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                     NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                     msg, 256, nullptr);
+      FML_LOG(ERROR) << "Failed to get thread(" << error_num << "): " << msg;
+      return std::nullopt;
+    }
+    return thread;
+  }
+
+  bool GetNextThread(THREADENTRY32& thread) {
+    if (thread_snapshot_ == INVALID_HANDLE_VALUE) {
+      return false;
+    }
+    return Thread32Next(thread_snapshot_, &thread);
+  }
+
+ private:
+  HANDLE thread_snapshot_;
+};
+
+bool WindowsLifecycleManager::IsLastWindowOfProcess() {
+  DWORD pid = GetCurrentProcessId();
+  ThreadSnapshot thread_snapshot;
+  std::optional<THREADENTRY32> first_thread = thread_snapshot.GetFirstThread();
+  if (!first_thread.has_value()) {
+    FML_LOG(ERROR) << "No first thread found";
     return true;
   }
 
   int num_windows = 0;
+  THREADENTRY32 thread = *first_thread;
   do {
     if (thread.th32OwnerProcessID == pid) {
       EnumThreadWindows(
           thread.th32ThreadID, WindowEnumCallback,
           reinterpret_cast<LPARAM>(static_cast<void*>(&num_windows)));
     }
-  } while (Thread32Next(thread_snapshot, &thread));
+  } while (thread_snapshot.GetNextThread(thread));
 
-  CloseHandle(thread_snapshot);
   return num_windows <= 1;
 }
 

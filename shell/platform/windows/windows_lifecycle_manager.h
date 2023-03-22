@@ -15,7 +15,7 @@ class FlutterWindowsEngine;
 
 class WindowsLifecycleManager {
  public:
-  WindowsLifecycleManager(FlutterWindowsEngine& engine);
+  WindowsLifecycleManager(FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
   virtual void Quit(int64_t exit_code);
@@ -25,7 +25,7 @@ class WindowsLifecycleManager {
  private:
   bool IsLastWindowOfProcess();
 
-  FlutterWindowsEngine& engine_;
+  FlutterWindowsEngine* engine_;
 };
 
 }  // namespace flutter

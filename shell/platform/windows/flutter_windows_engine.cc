@@ -162,7 +162,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
       windows_registry_(std::move(registry)),
-      lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(*this)) {
+      lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
