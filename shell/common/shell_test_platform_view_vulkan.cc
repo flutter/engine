@@ -6,10 +6,9 @@
 
 #include <utility>
 
-// #include "flutter/common/graphics/persistent_cache.h"
+#include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/context_options.h"
-#include "flutter/shell/gpu/gpu_studio_vulkan.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
@@ -40,49 +39,7 @@ ShellTestPlatformViewVulkan::ShellTestPlatformViewVulkan(
       vsync_clock_(std::move(vsync_clock)),
       proc_table_(fml::MakeRefCounted<vulkan::VulkanProcTable>(VULKAN_SO_PATH)),
       shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {
-  if (!proc_table_ || !proc_table_->HasAcquiredMandatoryProcAddresses()) {
-    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
-    return;
-  }
-
-  // Create the application instance.
-  std::vector<std::string> extensions = {
-      VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
-  };
-
-  application_ = std::make_unique<vulkan::VulkanApplication>(
-      *proc_table_, "FlutterTest", std::move(extensions),
-      VK_MAKE_VERSION(1, 0, 0), VK_MAKE_VERSION(1, 1, 0), true);
-
-  if (!application_->IsValid() || !proc_table_->AreInstanceProcsSetup()) {
-    // Make certain the application instance was created and it set up the
-    // instance proc table entries.
-    FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
-    return;
-  }
-
-  // Create the device.
-  logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
-
-  if (logical_device_ == nullptr || !logical_device_->IsValid() ||
-      !proc_table_->AreDeviceProcsSetup()) {
-    // Make certain the device was created and it set up the device proc table
-    // entries.
-    FML_DLOG(ERROR) << "Device proc addresses have not been set up.";
-    return;
-  }
-
-  memory_allocator_ = FlutterSkiaVulkanMemoryAllocator::Make(
-      application_->GetAPIVersion(), application_->GetInstance(),
-      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
-      proc_table_, true);
-
-  // Create the Skia GrContext.
-  if (!CreateSkiaGrContext()) {
-    FML_DLOG(ERROR) << "Could not create Skia context.";
-  }
-}
+          std::move(shell_test_external_view_embedder)) {}
 
 ShellTestPlatformViewVulkan::~ShellTestPlatformViewVulkan() = default;
 
@@ -95,16 +52,10 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 }
 
 // |PlatformView|
-std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
-  return std::make_unique<GPUStudioVulkan>(context_);
-}
-
-// |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
   return std::make_unique<OffScreenSurface>(proc_table_,
-                                            shell_test_external_view_embedder_,
-                                            context_, memory_allocator_);
+                                            shell_test_external_view_embedder_);
 }
 
 // |PlatformView|
@@ -120,7 +71,66 @@ PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
   };
 }
 
-bool ShellTestPlatformViewVulkan::CreateSkiaGrContext() {
+// TODO(gw280): This code was forked from vulkan_window.cc specifically for
+// shell_test.
+//              We need to merge this functionality back into //vulkan.
+//              https://github.com/flutter/flutter/issues/51132
+ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
+    fml::RefPtr<vulkan::VulkanProcTable> vk,
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder)
+    : valid_(false),
+      vk_(std::move(vk)),
+      shell_test_external_view_embedder_(
+          std::move(shell_test_external_view_embedder)) {
+  if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
+    FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
+    return;
+  }
+
+  // Create the application instance.
+  std::vector<std::string> extensions = {
+      VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME,
+  };
+
+  application_ = std::make_unique<vulkan::VulkanApplication>(
+      *vk_, "FlutterTest", std::move(extensions), VK_MAKE_VERSION(1, 0, 0),
+      VK_MAKE_VERSION(1, 1, 0), true);
+
+  if (!application_->IsValid() || !vk_->AreInstanceProcsSetup()) {
+    // Make certain the application instance was created and it set up the
+    // instance proc table entries.
+    FML_DLOG(ERROR) << "Instance proc addresses have not been set up.";
+    return;
+  }
+
+  // Create the device.
+
+  logical_device_ = application_->AcquireFirstCompatibleLogicalDevice();
+
+  if (logical_device_ == nullptr || !logical_device_->IsValid() ||
+      !vk_->AreDeviceProcsSetup()) {
+    // Make certain the device was created and it set up the device proc table
+    // entries.
+    FML_DLOG(ERROR) << "Device proc addresses have not been set up.";
+    return;
+  }
+
+  memory_allocator_ = FlutterSkiaVulkanMemoryAllocator::Make(
+      application_->GetAPIVersion(), application_->GetInstance(),
+      logical_device_->GetPhysicalDeviceHandle(), logical_device_->GetHandle(),
+      vk_, true);
+
+  // Create the Skia GrContext.
+  if (!CreateSkiaGrContext()) {
+    FML_DLOG(ERROR) << "Could not create Skia context.";
+    return;
+  }
+
+  valid_ = true;
+}
+
+bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
   GrVkBackendContext backend_context;
 
   if (!CreateSkiaBackendContext(&backend_context)) {
@@ -146,9 +156,9 @@ bool ShellTestPlatformViewVulkan::CreateSkiaGrContext() {
   return true;
 }
 
-bool ShellTestPlatformViewVulkan::CreateSkiaBackendContext(
+bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaBackendContext(
     GrVkBackendContext* context) {
-  auto getProc = CreateSkiaGetProc(proc_table_);
+  auto getProc = CreateSkiaGetProc(vk_);
 
   if (getProc == nullptr) {
     FML_DLOG(ERROR) << "GetProcAddress is null";
@@ -176,26 +186,10 @@ bool ShellTestPlatformViewVulkan::CreateSkiaBackendContext(
   return true;
 }
 
-// TODO(gw280): This code was forked from vulkan_window.cc specifically for
-// shell_test.
-//              We need to merge this functionality back into //vulkan.
-//              https://github.com/flutter/flutter/issues/51132
-ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
-    fml::RefPtr<vulkan::VulkanProcTable> vk,
-    std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder,
-    sk_sp<GrDirectContext> context,
-    sk_sp<skgpu::VulkanMemoryAllocator> memory_allocator)
-    : vk_(std::move(vk)),
-      shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)),
-      context_(std::move(context)),
-      memory_allocator_(std::move(memory_allocator)) {}
-
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
-  return true;
+  return valid_;
 }
 
 std::unique_ptr<SurfaceFrame>
