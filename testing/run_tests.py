@@ -18,7 +18,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
-import tempfile as tempfile
+import tempfile
 import time
 import xvfb
 
@@ -978,8 +978,8 @@ class DirectoryChange():
   """
   A scoped change in the CWD.
   """
-  old_cwd: str = ""
-  new_cwd: str = ""
+  old_cwd: str = ''
+  new_cwd: str = ''
 
   def __init__(self, new_cwd: str):
     self.new_cwd = new_cwd
@@ -988,7 +988,7 @@ class DirectoryChange():
     self.old_cwd = os.getcwd()
     os.chdir(self.new_cwd)
 
-  def __exit__(self, type, value, traceback):
+  def __exit__(self, exception_type, exception_value, exception_traceback):
     os.chdir(self.old_cwd)
 
 
@@ -996,21 +996,21 @@ def run_impeller_golden_tests(build_dir: str):
   """
   Executes the impeller golden image tests from in the `variant` build.
   """
-  tests_path: str = os.path.join(build_dir, "impeller_golden_tests")
+  tests_path: str = os.path.join(build_dir, 'impeller_golden_tests')
   if not os.path.exists(tests_path):
     raise Exception(
-        "Cannot find the \"impeller_golden_tests\" executable in \"%s\". You may need to build it."
-        % (variant_path)
+        'Cannot find the "impeller_golden_tests" executable in "%s". You may need to build it.'
+        % (build_dir)
     )
-  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath("impeller").joinpath(
-      "golden_tests_harvester"
+  harvester_path: Path = Path(SCRIPT_DIR).parent.joinpath('impeller').joinpath(
+      'golden_tests_harvester'
   )
-  with tempfile.TemporaryDirectory(prefix="impeller_golden") as temp_dir:
-    run_cmd([tests_path, "--working_dir=%s" % temp_dir])
+  with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
+    run_cmd([tests_path, '--working_dir=%s' % temp_dir])
     with DirectoryChange(harvester_path):
-      bin_path = Path(".").joinpath("bin"
-                                   ).joinpath("golden_tests_harvester.dart")
-      run_cmd(["dart", "run", str(bin_path), temp_dir])
+      bin_path = Path(".").joinpath('bin'
+                                   ).joinpath('golden_tests_harvester.dart')
+      run_cmd(['dart', 'run', str(bin_path), temp_dir])
 
 
 def main():
@@ -1219,7 +1219,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       'font-subset' in types) and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
-  if ('impeller-golden' in types):
+  if 'impeller-golden' in types:
     run_impeller_golden_tests(build_dir)
 
 
