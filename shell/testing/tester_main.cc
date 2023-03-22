@@ -70,7 +70,7 @@ class TesterExternalViewEmbedder : public ExternalViewEmbedder {
 
 class TesterGPUStudioSoftware : public GPUStudioSoftware {
  public:
-  TesterGPUStudioSoftware(GPUSurfaceSoftwareDelegate* delegate)
+  explicit TesterGPUStudioSoftware(GPUSurfaceSoftwareDelegate* delegate)
       : GPUStudioSoftware(delegate) {}
 
   bool EnableRasterCache() const override { return false; }

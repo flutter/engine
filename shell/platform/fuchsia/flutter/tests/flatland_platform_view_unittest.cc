@@ -620,7 +620,7 @@ TEST_F(FlatlandPlatformViewTests, CreateSurfaceTest) {
   std::shared_ptr<MockExternalViewEmbedder> external_view_embedder =
       std::make_shared<MockExternalViewEmbedder>();
   auto CreateStudioCallback = [gr_context]() {
-    return std::make_unique<flutter_runner::Surface>(gr_context.get());
+    return std::make_unique<flutter_runner::Studio>(gr_context.get());
   };
   auto CreateSurfaceCallback = [&external_view_embedder, gr_context]() {
     return std::make_unique<flutter_runner::Surface>(
