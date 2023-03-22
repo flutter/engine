@@ -14,13 +14,15 @@ import errno
 import glob
 import multiprocessing
 import os
-from pathlib import Path
+import platform
 import re
 import subprocess
 import sys
 import tempfile
 import time
 import xvfb
+
+from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(
@@ -1008,7 +1010,7 @@ def run_impeller_golden_tests(build_dir: str):
   with tempfile.TemporaryDirectory(prefix='impeller_golden') as temp_dir:
     run_cmd([tests_path, '--working_dir=%s' % temp_dir])
     with DirectoryChange(harvester_path):
-      bin_path = Path(".").joinpath('bin'
+      bin_path = Path('.').joinpath('bin'
                                    ).joinpath('golden_tests_harvester.dart')
       run_cmd(['dart', 'run', str(bin_path), temp_dir])
 
