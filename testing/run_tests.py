@@ -8,6 +8,8 @@
 A top level harness to run all unit-tests in a specific engine build.
 """
 
+from pathlib import Path
+
 import argparse
 import csv
 import errno
@@ -20,8 +22,6 @@ import sys
 import tempfile
 import time
 import xvfb
-
-from pathlib import Path
 
 SCRIPT_DIR = os.path.dirname(os.path.realpath(__file__))
 BUILDROOT_DIR = os.path.abspath(
