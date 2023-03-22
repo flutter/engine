@@ -16,7 +16,6 @@ import errno
 import glob
 import multiprocessing
 import os
-import platform
 import re
 import subprocess
 import sys
@@ -1222,9 +1221,7 @@ Flutter Wiki page on the subject: https://github.com/flutter/flutter/wiki/Testin
       'font-subset' in types) and args.variant not in variants_to_skip:
     run_cmd(['python3', 'test.py'], cwd=FONT_SUBSET_DIR)
 
-  if 'impeller-golden' in types or ('engine' in types and
-                                    platform.system() == 'Darwin' and
-                                    args.variant == 'host_debug_unopt'):
+  if 'impeller-golden' in types:
     run_impeller_golden_tests(build_dir)
 
 
