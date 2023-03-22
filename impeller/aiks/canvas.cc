@@ -393,13 +393,10 @@ void Canvas::SaveLayer(
   auto& new_layer_pass = GetCurrentPass();
 
   // Only apply opacity peephole on default blending.
-  if (paint.blend_mode == BlendMode::kSourceOver) {
-    new_layer_pass.SetDelegate(
-        std::make_unique<OpacityPeepholePassDelegate>(paint, bounds));
-  } else {
-    new_layer_pass.SetDelegate(
-        std::make_unique<PaintPassDelegate>(paint, bounds));
-  }
+  // TODO(jonahwilliams): reland OpacityPeepholePassDelegate once stencil checks
+  // are fixed.
+  new_layer_pass.SetDelegate(
+      std::make_unique<PaintPassDelegate>(paint, bounds));
 
   if (bounds.has_value() && !backdrop_filter.has_value()) {
     // Render target switches due to a save layer can be elided. In such cases
@@ -485,7 +482,7 @@ void Canvas::DrawVertices(const std::shared_ptr<VerticesGeometry>& vertices,
     // the src contents should be. If neither has a value we fall back
     // to using the geometry coverage data.
     Rect src_coverage;
-    auto size = src_contents->ColorSourceSize();
+    auto size = src_contents->GetColorSourceSize();
     if (size.has_value()) {
       src_coverage = Rect::MakeXYWH(0, 0, size->width, size->height);
     } else {
