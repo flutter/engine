@@ -5,15 +5,16 @@
 #include "windows_lifecycle_manager.h"
 
 #include <TlHelp32.h>
-#include <Windows.h>
 #include <WinUser.h>
+#include <Windows.h>
 #include <tchar.h>
 
 #include "flutter/shell/platform/windows/flutter_windows_engine.h"
 
 namespace flutter {
 
-WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine& engine) : engine_(engine) {}
+WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine& engine)
+    : engine_(engine) {}
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
@@ -21,11 +22,16 @@ void WindowsLifecycleManager::Quit(int64_t exit_code) {
   PostQuitMessage(exit_code);
 }
 
-bool WindowsLifecycleManager::WindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, LRESULT* result) {
+bool WindowsLifecycleManager::WindowProc(HWND hwnd,
+                                         UINT msg,
+                                         WPARAM wpar,
+                                         LPARAM lpar,
+                                         LRESULT* result) {
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
-        engine_.RequestApplicationQuit(PlatformHandler::kExitTypeCancelable, wpar);
+        engine_.RequestApplicationQuit(PlatformHandler::kExitTypeCancelable,
+                                       wpar);
       }
       return true;
   }
@@ -54,7 +60,9 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   if (!Thread32First(thread_snapshot, &thread)) {
     DWORD error_num = GetLastError();
     char msg[256];
-    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg, 256, nullptr);
+    FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                   NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                   msg, 256, nullptr);
     FML_LOG(ERROR) << "Failed to get thread(" << error_num << "): " << msg;
     CloseHandle(thread_snapshot);
     return true;
@@ -63,7 +71,9 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   int num_windows = 0;
   do {
     if (thread.th32OwnerProcessID == pid) {
-      EnumThreadWindows(thread.th32ThreadID, WindowEnumCallback, reinterpret_cast<LPARAM>(static_cast<void*>(&num_windows)));
+      EnumThreadWindows(
+          thread.th32ThreadID, WindowEnumCallback,
+          reinterpret_cast<LPARAM>(static_cast<void*>(&num_windows)));
     }
   } while (Thread32Next(thread_snapshot, &thread));
 
@@ -71,4 +81,4 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   return num_windows <= 1;
 }
 
-}
+}  // namespace flutter

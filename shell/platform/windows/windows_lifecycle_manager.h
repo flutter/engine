@@ -28,6 +28,6 @@ class WindowsLifecycleManager {
   FlutterWindowsEngine& engine_;
 };
 
-}
+}  // namespace flutter
 
 #endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_TOP_LEVEL_MESSAGE_HANDLER_H_

@@ -620,8 +620,9 @@ TEST_F(FlutterWindowsEngineTest, AlertPlatformMessage) {
 
 class MockWindowsLifecycleManager : public WindowsLifecycleManager {
  public:
-  MockWindowsLifecycleManager(FlutterWindowsEngine& engine) : WindowsLifecycleManager(engine) {}
-  virtual ~MockWindowsLifecycleManager(){}
+  MockWindowsLifecycleManager(FlutterWindowsEngine& engine)
+      : WindowsLifecycleManager(engine) {}
+  virtual ~MockWindowsLifecycleManager() {}
 
   MOCK_METHOD1(Quit, void(int64_t));
 };
@@ -637,7 +638,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(*engine);
-  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code){
+  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code) {
     finished = exit_code == 0;
   });
   EXPECT_CALL(*handler, Quit).Times(1);
@@ -646,8 +647,8 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
   binary_messenger->SetMessageHandler(
-      "flutter/platform", [&did_call](const uint8_t* message, size_t message_size,
-                             BinaryReply reply) {
+      "flutter/platform", [&did_call](const uint8_t* message,
+                                      size_t message_size, BinaryReply reply) {
         did_call = true;
         char response[] = "";
         reply(reinterpret_cast<uint8_t*>(response), 0);
@@ -655,7 +656,8 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
 
   engine->Run();
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0, 0);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
 
   while (!finished) {
     engine->task_runner()->ProcessTasks();
@@ -675,7 +677,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   EngineModifier modifier(engine.get());
   modifier.embedder_api().RunsAOTCompiledDartCode = []() { return false; };
   auto handler = std::make_unique<MockWindowsLifecycleManager>(*engine);
-  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code){
+  ON_CALL(*handler, Quit).WillByDefault([&finished](int64_t exit_code) {
     finished = true;
   });
   EXPECT_CALL(*handler, Quit).Times(0);
@@ -684,8 +686,8 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
   binary_messenger->SetMessageHandler(
-      "flutter/platform", [&did_call](const uint8_t* message, size_t message_size,
-                             BinaryReply reply) {
+      "flutter/platform", [&did_call](const uint8_t* message,
+                                      size_t message_size, BinaryReply reply) {
         did_call = true;
         char response[] = "";
         reply(reinterpret_cast<uint8_t*>(response), 0);
@@ -693,7 +695,8 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
 
   engine->Run();
 
-  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0, 0);
+  engine->window_proc_delegate_manager()->OnTopLevelWindowProc(0, WM_CLOSE, 0,
+                                                               0);
 
   while (!did_call) {
     engine->task_runner()->ProcessTasks();
