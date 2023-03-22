@@ -559,7 +559,7 @@ if (!is_fuchsia) {
              ":flutter_platform_dills",
              "//flutter/third_party/canvaskit:canvaskit_group",
              "//flutter/third_party/canvaskit:canvaskit_chromium_group",
-             "//flutter/lib/web_ui/skwasm",
+             "//flutter/third_party/canvaskit:skwasm_group",
            ] + web_engine_libraries
 
     # flutter_ddc_modules
@@ -619,15 +619,15 @@ if (!is_fuchsia) {
         destination = "canvaskit/chromium/canvaskit.wasm"
       },
       {
-        source = rebase_path("$root_out_dir/skwasm.js")
+        source = rebase_path("$root_out_dir/canvaskit/skwasm.js")
         destination = "canvaskit/skwasm.js"
       },
       {
-        source = rebase_path("$root_out_dir/skwasm.worker.js")
+        source = rebase_path("$root_out_dir/canvaskit/skwasm.worker.js")
         destination = "canvaskit/skwasm.worker.js"
       },
       {
-        source = rebase_path("$root_out_dir/skwasm.wasm")
+        source = rebase_path("$root_out_dir/canvaskit/skwasm.wasm")
         destination = "canvaskit/skwasm.wasm"
       },
     ]
