@@ -41,7 +41,8 @@ void FLTInterpolateViewportMetrics(flutter::ViewportMetrics& viewportMetrics,
                                    CGSize fromSize,
                                    UIEdgeInsets fromPadding,
                                    CGSize toSize,
-                                   UIEdgeInsets toPadding);
+                                   UIEdgeInsets toPadding,
+                                   CGFloat scale);
 
 @interface FlutterViewController () <FlutterViewResponder>
 

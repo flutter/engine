@@ -948,51 +948,47 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGSize toSize = CGSizeMake(500, 1000);
   UIEdgeInsets fromPadding = UIEdgeInsetsMake(/*top=*/10, /*left=*/20, /*bottom=*/30, /*right=*/40);
   UIEdgeInsets toPadding = UIEdgeInsetsMake(/*top=*/50, /*left=*/60, /*bottom=*/70, /*right=*/80);
+  CGFloat scale = 2;
 
   flutter::ViewportMetrics viewportMetrics;
-  FLTInterpolateViewportMetrics(viewportMetrics,
-                                /*rotationProgress=*/0, fromSize, fromPadding, toSize, toPadding);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0, fromSize, fromPadding, toSize, toPadding, scale);
 
-  XCTAssertEqual(viewportMetrics.physical_width, 1000 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_height, 500 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_top, 10 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_left, 20 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 30 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_right, 40 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_width, 1000 * scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 500 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 10 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 20 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 30 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 40 * scale);
 
   // 25% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics,
-                                /*rotationProgress=*/0.25, fromSize, fromPadding, toSize,
-                                toPadding);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.25, fromSize, fromPadding, toSize, toPadding, scale);
 
-  XCTAssertEqual(viewportMetrics.physical_width, 875 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_height, 625 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_top, 20 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_left, 30 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 40 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_right, 50 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_width, 875 * scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 625 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 20 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 30 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 40 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 50 * scale);
 
   // 50% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics,
-                                /*rotationProgress=*/0.5, fromSize, fromPadding, toSize, toPadding);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.5, fromSize, fromPadding, toSize, toPadding, scale);
 
-  XCTAssertEqual(viewportMetrics.physical_width, 750 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_height, 750 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_top, 30 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_left, 40 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 50 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_right, 60 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_width, 750 * scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 750 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 30 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 40 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 50 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 60 * scale);
 
   // 100% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics,
-                                /*rotationProgress=*/1, fromSize, fromPadding, toSize, toPadding);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/1, fromSize, fromPadding, toSize, toPadding, scale);
 
-  XCTAssertEqual(viewportMetrics.physical_width, 500 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_height, 1000 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_top, 50 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_left, 60 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 70 * UIScreen.mainScreen.scale);
-  XCTAssertEqual(viewportMetrics.physical_padding_right, 80 * UIScreen.mainScreen.scale);
+  XCTAssertEqual(viewportMetrics.physical_width, 500 * scale);
+  XCTAssertEqual(viewportMetrics.physical_height, 1000 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_top, 50 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_left, 60 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_bottom, 70 * scale);
+  XCTAssertEqual(viewportMetrics.physical_padding_right, 80 * scale);
 }
 
 - (void)testViewWillTransitionToSize_DoesInterpolateViewportMetricsIfNonZeroDuration {
@@ -1046,6 +1042,52 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   // Should directly update the view port metrics (when passing NO to `forRotation`).
   [viewController updateViewportMetricsIfNeeded:NO];
   OCMVerifyAll(mockEngine);
+}
+
+- (void)testViewWillTransitionToSize_RotationTimerRaceCondition {
+  // This is to verify that when a new rotation happens, the previous rotation timer must be
+  // invalidated. Since NSTimer is toll-free bridge type, which is not supported by OCMock, this
+  // test is not as straight forward - we perform the second rotation in the middle of the first
+  // rotation, and then check the frame count to determine that the interpolation of the previous
+  // rotation is not happening after the mid point.
+  FlutterEngine* mockEngine = OCMPartialMock([[FlutterEngine alloc] init]);
+  [mockEngine createShell:@"" libraryURI:@"" initialRoute:nil];
+  FlutterViewController* viewController = [[FlutterViewController alloc] initWithEngine:mockEngine
+                                                                                nibName:nil
+                                                                                 bundle:nil];
+  mockEngine.viewController = viewController;
+
+  id mockCoordinator = OCMProtocolMock(@protocol(UIViewControllerTransitionCoordinator));
+  NSTimeInterval transitionDuration = 0.5;
+  OCMStub([mockCoordinator transitionDuration]).andReturn(transitionDuration);
+
+  flutter::ViewportMetrics viewportMetrics;
+
+  XCTestExpectation* expectation =
+      [self expectationWithDescription:@"completed expected frame count"];
+  int estimatedCount = floor(transitionDuration / kRotationViewportMetricsUpdateInterval);
+  __block int frameCount = 0;
+  OCMStub([mockEngine updateViewportMetrics:viewportMetrics])
+      .ignoringNonObjectArgs()
+      .andDo(^(NSInvocation* invocation) {
+        frameCount += 1;
+        if (frameCount == estimatedCount / 2) {
+          [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+        }
+        if (frameCount == estimatedCount * 3 / 2) {
+          [expectation fulfill];
+        }
+      });
+  [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+  [self waitForExpectationsWithTimeout:5.0 handler:nil];
+  // Wait for additional transitionDuration to allow updateViewportMetrics calls if any.
+  XCTWaiterResult result = [XCTWaiter waitForExpectations: @[[self expectationWithDescription:@"Waiting for rotation duration"]] timeout:transitionDuration];
+  XCTAssertEqual(result, XCTWaiterResultTimedOut);
+  // Since we actually accumulate the progress delta (from 0%-100%), rather than directly
+  // dividing the total transition duration by the frame interval, there can easily be
+  // a rounding error. We cannot use `expectedFulfillmentCount` since it could over-fulfill once.
+  // So we check the absolute difference of at most 1 frame.
+  XCTAssert(abs(frameCount - estimatedCount * 3 / 2) <= 1);
 }
 
 - (void)testViewDidLoadDoesntInvokeEngineWhenNotTheViewController {

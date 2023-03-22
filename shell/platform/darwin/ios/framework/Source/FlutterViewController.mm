@@ -62,8 +62,8 @@ void FLTInterpolateViewportMetrics(flutter::ViewportMetrics& viewportMetrics,
                                    CGSize fromSize,
                                    UIEdgeInsets fromPadding,
                                    CGSize toSize,
-                                   UIEdgeInsets toPadding) {
-  CGFloat scale = [UIScreen mainScreen].scale;
+                                   UIEdgeInsets toPadding,
+                                   CGFloat scale) {
   viewportMetrics.physical_width =
       FLTLinearInterpolatedValue(rotationProgress, fromSize.width, toSize.width, scale);
   viewportMetrics.physical_height =
@@ -101,6 +101,11 @@ typedef struct MouseState {
  * Whether the device is rotating.
  */
 @property(nonatomic, assign) BOOL isDuringRotationTransition;
+
+/**
+ * The timer for sending interpolated viewport metrics during rotation.
+ */
+@property(nonatomic, retain) NSTimer* rotationTimer;
 
 /**
  * Keyboard animation properties
@@ -907,14 +912,27 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
     return;
   }
 
+  // TODO(hellohuanlin): Use [self mainScreenIfViewLoaded] instead of [UIScreen mainScreen].
+  // This requires adding the view to window during unit tests, which calls multiple engine calls
+  // that is hard to mock since they take/return structs. An alternative approach is to partial mock
+  // the FlutterViewController to make view controller life cycle methods no-op, and insert
+  // this mock into the responder chain.
+  CGFloat scale = [UIScreen mainScreen].scale;
   _isDuringRotationTransition = YES;
 
   CGSize oldSize = self.view.bounds.size;
   UIEdgeInsets oldPadding = self.view.safeAreaInsets;
 
   __block double rotationProgress = 0;
-  // Timer is retained by the run loop, and will be released after invalidated.
-  [NSTimer
+  // Invalidate the timer to avoid race condition when a new rotation starts before the previous rotation's timer ends.
+  // The `viewWillTransitionToSize` itself is guaranteed to be called after the previous rotation is complete. However, there can still be race condition because:
+  // 1. the transition duration may not be divisible by `kRotationViewportMetricsUpdateInterval`, resulting in 1 additional frame.
+  // 2. there can still be rounding errors when accumulating the progress which is normalized from 0 to 1.
+  // 3. NSTimer is backed by the run loop, which is not accurate timing.
+  if ([_rotationTimer isValid]) {
+    [_rotationTimer invalidate];
+  }
+  self.rotationTimer = [NSTimer
       scheduledTimerWithTimeInterval:kRotationViewportMetricsUpdateInterval
                              repeats:YES
                                block:^(NSTimer* timer) {
@@ -927,7 +945,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
                                  FLTInterpolateViewportMetrics(_viewportMetrics, rotationProgress,
                                                                oldSize, oldPadding, newSize,
-                                                               newPadding);
+                                                               newPadding, scale);
                                  [self updateViewportMetricsIfNeeded:YES];
 
                                  // End of rotation. Invalidate the timer.
@@ -998,6 +1016,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   [_rotationGestureRecognizer release];
   _pencilInteraction.delegate = nil;
   [_pencilInteraction release];
+  [_rotationTimer release];
   [super dealloc];
 }
 
