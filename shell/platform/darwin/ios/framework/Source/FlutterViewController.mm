@@ -48,6 +48,8 @@ NSNotificationName const FlutterViewControllerShowHomeIndicator =
  * Compute the interpolated value under linear interpolation.
  */
 CGFloat FLTLinearInterpolatedValue(double progress, CGFloat from, CGFloat to, CGFloat scale) {
+  // TODO(hellohuanlin): consider non-linear interpolation to further reduce rotation distortion.
+  // See: https://github.com/flutter/flutter/issues/123248
   NSCAssert(progress >= 0 && progress <= 1, @"progress must be between 0 and 1");
   return (from * (1 - progress) + to * progress) * scale;
 }
