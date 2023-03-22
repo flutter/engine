@@ -951,7 +951,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   CGFloat scale = 2;
 
   flutter::ViewportMetrics viewportMetrics;
-  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0, fromSize, fromPadding, toSize, toPadding, scale);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0, fromSize, fromPadding,
+                                toSize, toPadding, scale);
 
   XCTAssertEqual(viewportMetrics.physical_width, 1000 * scale);
   XCTAssertEqual(viewportMetrics.physical_height, 500 * scale);
@@ -961,7 +962,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertEqual(viewportMetrics.physical_padding_right, 40 * scale);
 
   // 25% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.25, fromSize, fromPadding, toSize, toPadding, scale);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.25, fromSize, fromPadding,
+                                toSize, toPadding, scale);
 
   XCTAssertEqual(viewportMetrics.physical_width, 875 * scale);
   XCTAssertEqual(viewportMetrics.physical_height, 625 * scale);
@@ -971,7 +973,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertEqual(viewportMetrics.physical_padding_right, 50 * scale);
 
   // 50% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.5, fromSize, fromPadding, toSize, toPadding, scale);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/0.5, fromSize, fromPadding,
+                                toSize, toPadding, scale);
 
   XCTAssertEqual(viewportMetrics.physical_width, 750 * scale);
   XCTAssertEqual(viewportMetrics.physical_height, 750 * scale);
@@ -981,7 +984,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   XCTAssertEqual(viewportMetrics.physical_padding_right, 60 * scale);
 
   // 100% of rotation progress
-  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/1, fromSize, fromPadding, toSize, toPadding, scale);
+  FLTInterpolateViewportMetrics(viewportMetrics, /*rotationProgress=*/1, fromSize, fromPadding,
+                                toSize, toPadding, scale);
 
   XCTAssertEqual(viewportMetrics.physical_width, 500 * scale);
   XCTAssertEqual(viewportMetrics.physical_height, 1000 * scale);
@@ -1072,7 +1076,8 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
       .andDo(^(NSInvocation* invocation) {
         frameCount += 1;
         if (frameCount == estimatedCount / 2) {
-          [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
+          [viewController viewWillTransitionToSize:CGSizeZero
+                         withTransitionCoordinator:mockCoordinator];
         }
         if (frameCount == estimatedCount * 3 / 2) {
           [expectation fulfill];
@@ -1081,7 +1086,9 @@ extern NSNotificationName const FlutterViewControllerWillDealloc;
   [viewController viewWillTransitionToSize:CGSizeZero withTransitionCoordinator:mockCoordinator];
   [self waitForExpectationsWithTimeout:5.0 handler:nil];
   // Wait for additional transitionDuration to allow updateViewportMetrics calls if any.
-  XCTWaiterResult result = [XCTWaiter waitForExpectations: @[[self expectationWithDescription:@"Waiting for rotation duration"]] timeout:transitionDuration];
+  XCTWaiterResult result = [XCTWaiter
+      waitForExpectations:@[ [self expectationWithDescription:@"Waiting for rotation duration"] ]
+                  timeout:transitionDuration];
   XCTAssertEqual(result, XCTWaiterResultTimedOut);
   // Since we actually accumulate the progress delta (from 0%-100%), rather than directly
   // dividing the total transition duration by the frame interval, there can easily be

@@ -98,9 +98,9 @@ typedef struct MouseState {
 @property(nonatomic, assign) BOOL isPresentingViewControllerAnimating;
 
 /**
- * Whether the device is rotating.
+ * Whether it is interpolating viewport metrics for rotation transition.
  */
-@property(nonatomic, assign) BOOL isDuringRotationTransition;
+@property(nonatomic, assign) BOOL isDuringViewportMetricsInterpolationForRotation;
 
 /**
  * The timer for sending interpolated viewport metrics during rotation.
@@ -918,16 +918,18 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
   // the FlutterViewController to make view controller life cycle methods no-op, and insert
   // this mock into the responder chain.
   CGFloat scale = [UIScreen mainScreen].scale;
-  _isDuringRotationTransition = YES;
+  _isDuringViewportMetricsInterpolationForRotation = YES;
 
   CGSize oldSize = self.view.bounds.size;
   UIEdgeInsets oldPadding = self.view.safeAreaInsets;
 
   __block double rotationProgress = 0;
-  // Invalidate the timer to avoid race condition when a new rotation starts before the previous rotation's timer ends.
-  // The `viewWillTransitionToSize` itself is guaranteed to be called after the previous rotation is complete. However, there can still be race condition because:
-  // 1. the transition duration may not be divisible by `kRotationViewportMetricsUpdateInterval`, resulting in 1 additional frame.
-  // 2. there can still be rounding errors when accumulating the progress which is normalized from 0 to 1.
+  // Invalidate the timer to avoid race condition when a new rotation starts before the previous
+  // rotation's timer ends. The `viewWillTransitionToSize` itself is guaranteed to be called after
+  // the previous rotation is complete. However, there can still be race condition because:
+  // 1. the transition duration may not be divisible by `kRotationViewportMetricsUpdateInterval`, \
+  // resulting in 1 additional frame.
+  // 2. there can still be rounding errors when accumulating the progress which is normalized.
   // 3. NSTimer is backed by the run loop, which is not accurate timing.
   if ([_rotationTimer isValid]) {
     [_rotationTimer invalidate];
@@ -950,7 +952,7 @@ static void SendFakeTouchEvent(FlutterEngine* engine,
 
                                  // End of rotation. Invalidate the timer.
                                  if (rotationProgress == 1) {
-                                   _isDuringRotationTransition = NO;
+                                   _isDuringViewportMetricsInterpolationForRotation = NO;
                                    [timer invalidate];
                                  }
                                }];
@@ -1393,8 +1395,8 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 #pragma mark - Handle view resizing
 
 - (void)updateViewportMetricsIfNeeded:(BOOL)forRotation {
-  // update viewport metrics only if `_isDuringRotationTransition` matches `forRotation`.
-  if (_isDuringRotationTransition != forRotation) {
+  // update only if `_isDuringViewportMetricsInterpolationForRotation` matches `forRotation`.
+  if (_isDuringViewportMetricsInterpolationForRotation != forRotation) {
     return;
   }
   if ([_engine.get() viewController] == self) {
