@@ -763,12 +763,12 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
                               reinterpret_cast<const uint8_t*>(""), 0);
 }
 
-void FlutterWindowsEngine::RequestApplicationQuit(const std::string& exit_type,
-                                                  int64_t exit_code) {
+void FlutterWindowsEngine::RequestApplicationQuit(ExitType exit_type,
+                                                  UINT exit_code) {
   platform_handler_->RequestAppExit(exit_type, exit_code);
 }
 
-void FlutterWindowsEngine::OnQuit(int64_t exit_code) {
+void FlutterWindowsEngine::OnQuit(UINT exit_code) {
   lifecycle_manager_->Quit(exit_code);
 }
 

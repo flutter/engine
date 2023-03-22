@@ -2,23 +2,27 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_TOP_LEVEL_MESSAGE_HANDLER_H_
-#define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_TOP_LEVEL_MESSAGE_HANDLER_H_
-
-#include <cstdint>
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOWS_LIFECYCLE_MANAGER_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOWS_LIFECYCLE_MANAGER_H_
 
 #include <Windows.h>
+
+#include <cstdint>
 
 namespace flutter {
 
 class FlutterWindowsEngine;
 
+/// A manager for lifecycle events of the top-level window.
+///
+/// Currently handles the following events:
+/// WM_CLOSE
 class WindowsLifecycleManager {
  public:
   WindowsLifecycleManager(FlutterWindowsEngine* engine);
   virtual ~WindowsLifecycleManager();
 
-  virtual void Quit(int64_t exit_code);
+  virtual void Quit(UINT exit_code) const;
 
   bool WindowProc(HWND hwnd, UINT msg, WPARAM w, LPARAM l, LRESULT* result);
 
@@ -30,4 +34,4 @@ class WindowsLifecycleManager {
 
 }  // namespace flutter
 
-#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOW_TOP_LEVEL_MESSAGE_HANDLER_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_WINDOWS_LIFECYCLE_MANAGER_H_

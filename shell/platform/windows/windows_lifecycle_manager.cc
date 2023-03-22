@@ -18,8 +18,8 @@ WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine* engine)
 
 WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
-void WindowsLifecycleManager::Quit(int64_t exit_code) {
-  PostQuitMessage(exit_code);
+void WindowsLifecycleManager::Quit(UINT exit_code) const {
+  ::PostQuitMessage(exit_code);
 }
 
 bool WindowsLifecycleManager::WindowProc(HWND hwnd,
@@ -30,7 +30,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(PlatformHandler::kExitTypeCancelable,
+        engine_->RequestApplicationQuit(ExitType::cancelable,
                                        wpar);
       }
       return true;
@@ -88,6 +88,18 @@ class ThreadSnapshot {
   HANDLE thread_snapshot_;
 };
 
+static int64_t NumWindowsOfThread(const THREADENTRY32& thread) {
+  int64_t num_windows = 0;
+  EnumThreadWindows(thread.th32ThreadID, [](HWND hwnd, LPARAM lparam){
+    int64_t* windows_ptr = reinterpret_cast<int64_t*>(lparam);
+    if (GetParent(hwnd) == NULL) {
+      (*windows_ptr)++;
+    }
+    return *windows_ptr <= 1 ? 1 : 0; // Must return BOOL (i.e. int), not bool.
+  }, reinterpret_cast<LPARAM>(&num_windows));
+  return num_windows;
+}
+
 bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   DWORD pid = GetCurrentProcessId();
   ThreadSnapshot thread_snapshot;
@@ -101,9 +113,10 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   THREADENTRY32 thread = *first_thread;
   do {
     if (thread.th32OwnerProcessID == pid) {
-      EnumThreadWindows(
-          thread.th32ThreadID, WindowEnumCallback,
-          reinterpret_cast<LPARAM>(static_cast<void*>(&num_windows)));
+      num_windows += NumWindowsOfThread(thread);
+      if (num_windows > 1) {
+        return false;
+      }
     }
   } while (thread_snapshot.GetNextThread(thread));
 
