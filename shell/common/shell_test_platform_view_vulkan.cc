@@ -189,8 +189,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
     : vk_(std::move(vk)),
       shell_test_external_view_embedder_(
           std::move(shell_test_external_view_embedder)),
-      context_(context),
-      memory_allocator_(memory_allocator) {}
+      context_(std::move(context)),
+      memory_allocator_(std::move(memory_allocator)) {}
 
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
 
