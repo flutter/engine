@@ -908,7 +908,7 @@ enum Brightness {
 /// Deprecated. Will be removed in a future version of Flutter.
 ///
 /// This global property is deprecated to prepare for Flutter's upcoming support
-/// for multiple views and  multiple windows.
+/// for multiple views and multiple windows.
 ///
 /// It represents the main view for applications where there is only one
 /// view, such as applications designed for single-display mobile devices.
