@@ -31,6 +31,13 @@ class EntityPass {
       const Matrix& effect_transform,
       bool is_subpass)>;
 
+  struct StencilCoverageLayer {
+    std::optional<Rect> coverage;
+    size_t stencil_depth;
+  };
+
+  using StencilCoverageStack = std::vector<StencilCoverageLayer>;
+
   EntityPass();
 
   ~EntityPass();
@@ -102,13 +109,15 @@ class EntityPass {
     static EntityResult Skip() { return {{}, kSkip}; }
   };
 
-  EntityResult GetEntityForElement(const EntityPass::Element& element,
-                                   ContentContext& renderer,
-                                   InlinePassContext& pass_context,
-                                   ISize root_pass_size,
-                                   Point position,
-                                   uint32_t pass_depth,
-                                   size_t stencil_depth_floor) const;
+  EntityResult GetEntityForElement(
+      const EntityPass::Element& element,
+      ContentContext& renderer,
+      InlinePassContext& pass_context,
+      ISize root_pass_size,
+      Point position,
+      uint32_t pass_depth,
+      StencilCoverageStack& stencil_coverage_stack,
+      size_t stencil_depth_floor) const;
 
   bool OnRender(ContentContext& renderer,
                 ISize root_pass_size,
@@ -116,6 +125,7 @@ class EntityPass {
                 Point position,
                 Point parent_position,
                 uint32_t pass_depth,
+                StencilCoverageStack& stencil_coverage_stack,
                 size_t stencil_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 std::optional<InlinePassContext::RenderPassResult>
