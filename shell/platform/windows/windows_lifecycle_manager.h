@@ -13,10 +13,10 @@ namespace flutter {
 
 class FlutterWindowsEngine;
 
-class WindowTopLevelMessageHandler {
+class WindowsLifecycleManager {
  public:
-  WindowTopLevelMessageHandler(FlutterWindowsEngine& engine);
-  virtual ~WindowTopLevelMessageHandler();
+  WindowsLifecycleManager(FlutterWindowsEngine& engine);
+  virtual ~WindowsLifecycleManager();
 
   virtual void Quit(int64_t exit_code);
 

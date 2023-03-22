@@ -162,7 +162,7 @@ FlutterWindowsEngine::FlutterWindowsEngine(
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
       windows_registry_(std::move(registry)),
-      top_level_handler_(std::make_unique<WindowTopLevelMessageHandler>(*this)) {
+      lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(*this)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -759,10 +759,10 @@ bool FlutterWindowsEngine::TopLevelWindowProc(HWND hwnd, UINT msg, WPARAM wpar, 
     return false;
   }
   FlutterWindowsEngine* that = static_cast<FlutterWindowsEngine*>(user_data);
-  if (!that->top_level_handler_) {
+  if (!that->lifecycle_manager_) {
     return false;
   }
-  return that->top_level_handler_->WindowProc(hwnd, msg, wpar, lpar, result);
+  return that->lifecycle_manager_->WindowProc(hwnd, msg, wpar, lpar, result);
 }
 
 void FlutterWindowsEngine::RequestApplicationQuit(const std::string& exit_type, int64_t exit_code) {
@@ -770,7 +770,7 @@ void FlutterWindowsEngine::RequestApplicationQuit(const std::string& exit_type, 
 }
 
 void FlutterWindowsEngine::OnQuit(int64_t exit_code) {
-  top_level_handler_->Quit(exit_code);
+  lifecycle_manager_->Quit(exit_code);
 }
 
 }  // namespace flutter

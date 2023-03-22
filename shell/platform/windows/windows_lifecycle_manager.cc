@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "window_top_level_message_handler.h"
+#include "windows_lifecycle_manager.h"
 
 #include <TlHelp32.h>
 #include <Windows.h>
@@ -13,15 +13,15 @@
 
 namespace flutter {
 
-WindowTopLevelMessageHandler::WindowTopLevelMessageHandler(FlutterWindowsEngine& engine) : engine_(engine) {}
+WindowsLifecycleManager::WindowsLifecycleManager(FlutterWindowsEngine& engine) : engine_(engine) {}
 
-WindowTopLevelMessageHandler::~WindowTopLevelMessageHandler() {}
+WindowsLifecycleManager::~WindowsLifecycleManager() {}
 
-void WindowTopLevelMessageHandler::Quit(int64_t exit_code) {
+void WindowsLifecycleManager::Quit(int64_t exit_code) {
   PostQuitMessage(exit_code);
 }
 
-bool WindowTopLevelMessageHandler::WindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, LRESULT* result) {
+bool WindowsLifecycleManager::WindowProc(HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, LRESULT* result) {
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
@@ -41,8 +41,7 @@ static BOOL CALLBACK WindowEnumCallback(HWND hwnd, LPARAM user_data) {
   return true;
 }
 
-bool WindowTopLevelMessageHandler::IsLastWindowOfProcess() {
-  // TODO(schectman): This currently is not working. Test apps have 3 "windows" to their process.
+bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   DWORD pid = GetCurrentProcessId();
   HANDLE thread_snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
   if (thread_snapshot == INVALID_HANDLE_VALUE) {

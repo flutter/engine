@@ -35,7 +35,7 @@
 #include "flutter/shell/platform/windows/text_input_plugin.h"
 #include "flutter/shell/platform/windows/window_proc_delegate_manager.h"
 #include "flutter/shell/platform/windows/window_state.h"
-#include "flutter/shell/platform/windows/window_top_level_message_handler.h"
+#include "flutter/shell/platform/windows/windows_lifecycle_manager.h"
 #include "flutter/shell/platform/windows/windows_registry.h"
 #include "third_party/rapidjson/include/rapidjson/document.h"
 
@@ -405,7 +405,7 @@ class FlutterWindowsEngine {
   std::unique_ptr<WindowsRegistry> windows_registry_;
 
   // Handler for top level window messages.
-  std::unique_ptr<WindowTopLevelMessageHandler> top_level_handler_;
+  std::unique_ptr<WindowsLifecycleManager> lifecycle_manager_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(FlutterWindowsEngine);
 };
