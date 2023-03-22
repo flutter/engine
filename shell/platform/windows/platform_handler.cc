@@ -392,7 +392,7 @@ void PlatformHandler::RequestAppExit(ExitType exit_type,
       nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
   args->SetObject();
-  args->GetObjectW().AddMember(kExitTypeKey, std::string(exit_type_names[exit_type]), args->GetAllocator());
+  args->GetObjectW().AddMember(kExitTypeKey, std::string(exit_type_names[static_cast<int>(exit_type)]), args->GetAllocator());
   channel_->InvokeMethod(kRequestAppExitMethod, std::move(args),
                          std::move(callback));
 }
