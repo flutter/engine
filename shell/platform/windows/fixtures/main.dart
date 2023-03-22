@@ -106,7 +106,14 @@ void exitTestExit() async {
       'type': 'required', 'exitCode': 0
       }
     });
-  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
+    'flutter/platform',
+    ByteData.sublistView(
+      Uint8List.fromList(utf8.encode(jsonString))
+    ),
+    (ByteData? reply) {
+      exited.complete(reply);
+    });
   await exited.future;
 }
 
@@ -129,7 +136,14 @@ void exitTestCancel() async {
       'type': 'required', 'exitCode': 0
       }
     });
-  ui.PlatformDispatcher.instance.sendPlatformMessage('flutter/platform', ByteData.sublistView(Uint8List.fromList(utf8.encode(jsonString))), (ByteData? reply) {exited.complete(reply);});
+  ui.PlatformDispatcher.instance.sendPlatformMessage(
+    'flutter/platform',
+    ByteData.sublistView(
+      Uint8List.fromList(utf8.encode(jsonString))
+    ),
+    (ByteData? reply) {
+      exited.complete(reply);
+    });
   await exited.future;
 }
 

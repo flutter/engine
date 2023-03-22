@@ -208,8 +208,7 @@ static const char* exit_type_names[] = {"required", "cancelable"};
 static ExitType StringToExitType(const std::string& string) {
   if (string.compare(PlatformHandler::kExitTypeRequired) == 0) {
     return ExitType::required;
-  }
-  else if (string.compare(PlatformHandler::kExitTypeCancelable) == 0) {
+  } else if (string.compare(PlatformHandler::kExitTypeCancelable) == 0) {
     return ExitType::cancelable;
   }
   FML_LOG(ERROR) << string << " is not recognized as a valid exit type.";
@@ -383,8 +382,7 @@ void PlatformHandler::SystemExitApplication(
   }
 }
 
-void PlatformHandler::RequestAppExit(ExitType exit_type,
-                                     UINT exit_code) {
+void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
       [this, exit_code](const rapidjson::Document* response) {
         RequestAppExitSuccess(response, exit_code);
@@ -392,7 +390,9 @@ void PlatformHandler::RequestAppExit(ExitType exit_type,
       nullptr, nullptr);
   auto args = std::make_unique<rapidjson::Document>();
   args->SetObject();
-  args->GetObjectW().AddMember(kExitTypeKey, std::string(exit_type_names[static_cast<int>(exit_type)]), args->GetAllocator());
+  args->GetObjectW().AddMember(
+      kExitTypeKey, std::string(exit_type_names[static_cast<int>(exit_type)]),
+      args->GetAllocator());
   channel_->InvokeMethod(kRequestAppExitMethod, std::move(args),
                          std::move(callback));
 }
@@ -417,7 +417,8 @@ void PlatformHandler::HandleMethodCall(
     const rapidjson::Value& arguments = method_call.arguments()[0];
     const std::string& exit_type = arguments[kExitTypeKey].GetString();
     UINT exit_code = arguments[kExitCodeKey].GetInt64();
-    SystemExitApplication(StringToExitType(exit_type), exit_code, std::move(result));
+    SystemExitApplication(StringToExitType(exit_type), exit_code,
+                          std::move(result));
   } else if (method.compare(kGetClipboardDataMethod) == 0) {
     // Only one string argument is expected.
     const rapidjson::Value& format = method_call.arguments()[0];
