@@ -68,7 +68,7 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   } while (Thread32Next(thread_snapshot, &thread));
 
   CloseHandle(thread_snapshot);
-  return num_windows == 1;
+  return num_windows <= 1;
 }
 
 }
