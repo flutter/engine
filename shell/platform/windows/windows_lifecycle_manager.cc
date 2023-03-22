@@ -95,7 +95,7 @@ static int64_t NumWindowsOfThread(const THREADENTRY32& thread) {
     if (GetParent(hwnd) == nullptr) {
       (*windows_ptr)++;
     }
-    return *windows_ptr <= 1 ? 1 : 0; // Must return BOOL (i.e. int), not bool.
+    return *windows_ptr <= 1 ? TRUE : FALSE;
   }, reinterpret_cast<LPARAM>(&num_windows));
   return num_windows;
 }
