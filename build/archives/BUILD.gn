@@ -43,7 +43,7 @@ if (build_engine_artifacts && !is_android) {
       prefix = "$full_target_platform_name/"
     }
     if (flutter_runtime_mode != "debug") {
-      prefix = "$full_platform_name-$flutter_runtime_mode/"
+      prefix = "$full_target_platform_name-$flutter_runtime_mode/"
     }
     output = "$prefix/artifacts.zip"
 
