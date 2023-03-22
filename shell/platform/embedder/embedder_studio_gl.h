@@ -78,6 +78,8 @@ class EmbedderStudioGL final : public EmbedderStudio,
 
   std::shared_ptr<EmbedderExternalViewEmbedder> external_view_embedder_;
 
+  sk_sp<GrDirectContext> MainContext();
+
   FML_DISALLOW_COPY_AND_ASSIGN(EmbedderStudioGL);
 };
 

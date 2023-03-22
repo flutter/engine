@@ -104,7 +104,7 @@ std::unique_ptr<Studio> EmbedderStudioGL::CreateGPUStudio() {
   if (!IsValid()) {
     return nullptr;
   }
-  auto studio = std::make_unique<GPUStudioGLSkia>(main_context_, this);
+  auto studio = std::make_unique<GPUStudioGLSkia>(MainContext(), this);
   if (!studio->IsValid()) {
     return nullptr;
   }
@@ -114,12 +114,9 @@ std::unique_ptr<Studio> EmbedderStudioGL::CreateGPUStudio() {
 
 // |EmbedderStudio|
 std::unique_ptr<EmbedderSurface> EmbedderStudioGL::CreateSurface() {
-  if (!main_context_) {
-    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
-  }
   const bool render_to_surface = !external_view_embedder_;
   return std::make_unique<EmbedderSurfaceGL>(
-      main_context_,
+      MainContext(),
       this,              // GPU surface GL delegate
       render_to_surface  // render to surface
   );
@@ -146,6 +143,13 @@ sk_sp<GrDirectContext> EmbedderStudioGL::CreateResourceContext() const {
          "Expect degraded performance. Set a valid make_resource_current "
          "callback on FlutterOpenGLRendererConfig.";
   return nullptr;
+}
+
+sk_sp<GrDirectContext> EmbedderStudioGL::MainContext() {
+  if (!main_context_) {
+    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
+  }
+  return main_context_;
 }
 
 }  // namespace flutter
