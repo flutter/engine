@@ -1,7 +1,7 @@
 # Specify analysis options.
 #
 # This file is a copy of analysis_options.yaml from flutter repo
-# as of 2023-03-17, but with some modifications marked with
+# as of 2023-03-22, but with some modifications marked with
 # "DIFFERENT FROM FLUTTER/FLUTTER" below.
 
 analyzer:
