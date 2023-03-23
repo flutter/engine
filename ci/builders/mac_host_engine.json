@@ -127,10 +127,24 @@
                     "flutter/shell/platform/darwin/macos:zip_macos_flutter_framework",
                     "flutter/build/archives:archive_gen_snapshot",
                     "flutter/build/archives:artifacts",
-                    "flutter/tools/font-subset"
+                    "flutter/tools/font-subset",
+                    "flutter/impeller/golden_tests:impeller_golden_tests"
                 ]
             },
-            "tests": []
+            "tests": [
+                {
+                    "language": "python3",
+                    "name": "Impeller golden Tests for host_release",
+                    "parameters": [
+                        "--variant",
+                        "host_release",
+                        "--type",
+                        "impeller-golden"
+                    ],
+                    "script": "flutter/testing/run_tests.py",
+                    "type": "local"
+                }
+            ]
         },
         {
             "archives": [
