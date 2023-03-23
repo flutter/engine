@@ -203,7 +203,7 @@ int ScopedClipboard::SetString(const std::wstring string) {
 
 }  // namespace
 
-static const char* exit_type_names[] = {"required", "cancelable"};
+static const char* kExitTypeNames[] = {"required", "cancelable"};
 
 static ExitType StringToExitType(const std::string& string) {
   if (string.compare(PlatformHandler::kExitTypeRequired) == 0) {
