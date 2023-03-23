@@ -229,7 +229,9 @@ class SemanticsAction {
   };
 
   /// Temporary API until [values] return a list.
-  List<SemanticsAction> get valuesAsList => values.values.toList(growable: false);
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This getter is temporary and will be removed shortly.')
+  static List<SemanticsAction> get valuesAsList => values.values.toList(growable: false);
 
   @override
   String toString() {
@@ -602,7 +604,9 @@ class SemanticsFlag {
   };
 
   /// Temporary API until [values] return a list.
-  List<SemanticsFlag> get valuesAsList => values.values.toList(growable: false);
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This getter is temporary and will be removed shortly.')
+  static List<SemanticsFlag> get valuesAsList => values.values.toList(growable: false);
 
   @override
   String toString() {
