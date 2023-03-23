@@ -58,7 +58,7 @@ bool TextContents::CanAcceptOpacity(const Entity& entity) const {
   return !frame_.MaybeHasOverlapping();
 }
 
-void TextContents::InheritOpacity(Scalar opacity) {
+void TextContents::SetInheritedOpacity(Scalar opacity) {
   auto color = color_;
   color_ = color.WithAlpha(color.alpha * opacity);
 }
@@ -114,7 +114,7 @@ static bool CommonRender(
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
-  sampler_desc.mip_filter = MipFilter::kNone;
+  sampler_desc.mip_filter = MipFilter::kNearest;
 
   typename FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());

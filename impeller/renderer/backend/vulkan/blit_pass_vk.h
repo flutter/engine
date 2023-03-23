@@ -5,6 +5,7 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/impeller/base/config.h"
 #include "impeller/renderer/backend/vulkan/blit_command_vk.h"
 #include "impeller/renderer/blit_pass.h"
 
@@ -51,8 +52,14 @@ class BlitPassVK final : public BlitPass {
                                     std::string label) override;
 
   // |BlitPass|
-  bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                              std::string label) override;
+  bool OnCopyBufferToTextureCommand(BufferView source,
+                                    std::shared_ptr<Texture> destination,
+                                    IPoint destination_origin,
+                                    std::string label) override {
+    IMPELLER_UNIMPLEMENTED;
+    return false;
+  }
+
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;

@@ -142,9 +142,9 @@ EntityPass* EntityPass::AddSubpass(std::unique_ptr<EntityPass> pass) {
   return subpass_pointer;
 }
 
-static RenderTarget CreateRenderTarget(ContentContext& renderer,
-                                       ISize size,
-                                       bool readable) {
+static EntityPassTarget CreateRenderTarget(ContentContext& renderer,
+                                           ISize size,
+                                           bool readable) {
   auto context = renderer.GetContext();
 
   /// All of the load/store actions are managed by `InlinePassContext` when
@@ -152,8 +152,9 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
   /// What's important is the `StorageMode` of the textures, which cannot be
   /// changed for the lifetime of the textures.
 
+  RenderTarget target;
   if (context->GetDeviceCapabilities().SupportsOffscreenMSAA()) {
-    return RenderTarget::CreateOffscreenMSAA(
+    target = RenderTarget::CreateOffscreenMSAA(
         *context,      // context
         size,          // size
         "EntityPass",  // label
@@ -170,24 +171,27 @@ static RenderTarget CreateRenderTarget(ContentContext& renderer,
             .store_action = StoreAction::kDontCare,
         }  // stencil_attachment_config
     );
+  } else {
+    target = RenderTarget::CreateOffscreen(
+        *context,      // context
+        size,          // size
+        "EntityPass",  // label
+        RenderTarget::AttachmentConfig{
+            .storage_mode = StorageMode::kDevicePrivate,
+            .load_action = LoadAction::kDontCare,
+            .store_action = StoreAction::kDontCare,
+        },  // color_attachment_config
+        RenderTarget::AttachmentConfig{
+            .storage_mode = readable ? StorageMode::kDevicePrivate
+                                     : StorageMode::kDeviceTransient,
+            .load_action = LoadAction::kDontCare,
+            .store_action = StoreAction::kDontCare,
+        }  // stencil_attachment_config
+    );
   }
 
-  return RenderTarget::CreateOffscreen(
-      *context,      // context
-      size,          // size
-      "EntityPass",  // label
-      RenderTarget::AttachmentConfig{
-          .storage_mode = StorageMode::kDevicePrivate,
-          .load_action = LoadAction::kDontCare,
-          .store_action = StoreAction::kDontCare,
-      },  // color_attachment_config
-      RenderTarget::AttachmentConfig{
-          .storage_mode = readable ? StorageMode::kDevicePrivate
-                                   : StorageMode::kDeviceTransient,
-          .load_action = LoadAction::kDontCare,
-          .store_action = StoreAction::kDontCare,
-      }  // stencil_attachment_config
-  );
+  return EntityPassTarget(
+      target, renderer.GetDeviceCapabilities().SupportsReadFromResolve());
 }
 
 uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
@@ -199,11 +203,17 @@ uint32_t EntityPass::GetTotalPassReads(ContentContext& renderer) const {
 
 bool EntityPass::Render(ContentContext& renderer,
                         const RenderTarget& render_target) const {
+  StencilCoverageStack stencil_coverage_stack = {StencilCoverageLayer{
+      .coverage = Rect::MakeSize(render_target.GetRenderTargetSize()),
+      .stencil_depth = 0}};
+
   if (GetTotalPassReads(renderer) > 0) {
     auto offscreen_target =
         CreateRenderTarget(renderer, render_target.GetRenderTargetSize(), true);
-    if (!OnRender(renderer, offscreen_target.GetRenderTargetSize(),
-                  offscreen_target, Point(), Point(), 0)) {
+
+    if (!OnRender(
+            renderer, offscreen_target.GetRenderTarget().GetRenderTargetSize(),
+            offscreen_target, Point(), Point(), 0, stencil_coverage_stack)) {
       return false;
     }
 
@@ -215,8 +225,9 @@ bool EntityPass::Render(ContentContext& renderer,
             .SupportsTextureToTextureBlits()) {
       auto blit_pass = command_buffer->CreateBlitPass();
 
-      blit_pass->AddCopy(offscreen_target.GetRenderTargetTexture(),
-                         render_target.GetRenderTargetTexture());
+      blit_pass->AddCopy(
+          offscreen_target.GetRenderTarget().GetRenderTargetTexture(),
+          render_target.GetRenderTargetTexture());
 
       if (!blit_pass->EncodeCommands(
               renderer.GetContext()->GetResourceAllocator())) {
@@ -227,9 +238,11 @@ bool EntityPass::Render(ContentContext& renderer,
       render_pass->SetLabel("EntityPass Root Render Pass");
 
       {
-        auto size_rect = Rect::MakeSize(offscreen_target.GetRenderTargetSize());
+        auto size_rect = Rect::MakeSize(
+            offscreen_target.GetRenderTarget().GetRenderTargetSize());
         auto contents = TextureContents::MakeRect(size_rect);
-        contents->SetTexture(offscreen_target.GetRenderTargetTexture());
+        contents->SetTexture(
+            offscreen_target.GetRenderTarget().GetRenderTargetTexture());
         contents->SetSourceRect(size_rect);
 
         Entity entity;
@@ -250,8 +263,12 @@ bool EntityPass::Render(ContentContext& renderer,
     return true;
   }
 
-  return OnRender(renderer, render_target.GetRenderTargetSize(), render_target,
-                  Point(), Point(), 0);
+  EntityPassTarget pass_target(
+      render_target,
+      renderer.GetDeviceCapabilities().SupportsReadFromResolve());
+
+  return OnRender(renderer, render_target.GetRenderTargetSize(), pass_target,
+                  Point(), Point(), 0, stencil_coverage_stack);
 }
 
 EntityPass::EntityResult EntityPass::GetEntityForElement(
@@ -261,6 +278,7 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     ISize root_pass_size,
     Point position,
     uint32_t pass_depth,
+    StencilCoverageStack& stencil_coverage_stack,
     size_t stencil_depth_floor) const {
   Entity element_entity;
 
@@ -296,9 +314,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
         subpass->delegate_->CanCollapseIntoParentPass(subpass)) {
       // Directly render into the parent target and move on.
       if (!subpass->OnRender(renderer, root_pass_size,
-                             pass_context.GetRenderTarget(), position, position,
-                             pass_depth, stencil_depth_, nullptr,
-                             pass_context.GetRenderPass(pass_depth))) {
+                             pass_context.GetPassTarget(), position, position,
+                             pass_depth, stencil_coverage_stack, stencil_depth_,
+                             nullptr, pass_context.GetRenderPass(pass_depth))) {
         return EntityPass::EntityResult::Failure();
       }
       return EntityPass::EntityResult::Skip();
@@ -322,8 +340,9 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     auto subpass_coverage =
         GetSubpassCoverage(*subpass, Rect::MakeSize(root_pass_size));
     if (subpass->cover_whole_screen_) {
-      subpass_coverage = Rect(
-          position, Size(pass_context.GetRenderTarget().GetRenderTargetSize()));
+      subpass_coverage = Rect(position, Size(pass_context.GetPassTarget()
+                                                 .GetRenderTarget()
+                                                 .GetRenderTargetSize()));
     }
     if (backdrop_filter_contents) {
       auto backdrop_coverage = backdrop_filter_contents->GetCoverage(Entity{});
@@ -350,7 +369,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
                            ISize(subpass_coverage->size),  //
                            subpass->GetTotalPassReads(renderer) > 0);
 
-    auto subpass_texture = subpass_target.GetRenderTargetTexture();
+    auto subpass_texture =
+        subpass_target.GetRenderTarget().GetRenderTargetTexture();
 
     if (!subpass_texture) {
       return EntityPass::EntityResult::Failure();
@@ -377,7 +397,8 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
     // time they are transient).
     if (!subpass->OnRender(renderer, root_pass_size, subpass_target,
                            subpass_coverage->origin, position, ++pass_depth,
-                           subpass->stencil_depth_, backdrop_filter_contents)) {
+                           stencil_coverage_stack, subpass->stencil_depth_,
+                           backdrop_filter_contents)) {
       return EntityPass::EntityResult::Failure();
     }
 
@@ -393,17 +414,13 @@ EntityPass::EntityResult EntityPass::GetEntityForElement(
   return EntityPass::EntityResult::Success(element_entity);
 }
 
-struct StencilLayer {
-  std::optional<Rect> coverage;
-  size_t stencil_depth;
-};
-
 bool EntityPass::OnRender(ContentContext& renderer,
                           ISize root_pass_size,
-                          const RenderTarget& render_target,
+                          EntityPassTarget& pass_target,
                           Point position,
                           Point parent_position,
                           uint32_t pass_depth,
+                          StencilCoverageStack& stencil_coverage_stack,
                           size_t stencil_depth_floor,
                           std::shared_ptr<Contents> backdrop_filter_contents,
                           std::optional<InlinePassContext::RenderPassResult>
@@ -411,19 +428,16 @@ bool EntityPass::OnRender(ContentContext& renderer,
   TRACE_EVENT0("impeller", "EntityPass::OnRender");
 
   auto context = renderer.GetContext();
-  InlinePassContext pass_context(context, render_target,
+  InlinePassContext pass_context(context, pass_target,
                                  GetTotalPassReads(renderer),
                                  std::move(collapsed_parent_pass));
   if (!pass_context.IsValid()) {
     return false;
   }
 
-  std::vector<StencilLayer> stencil_stack = {StencilLayer{
-      .coverage = Rect::MakeSize(render_target.GetRenderTargetSize()),
-      .stencil_depth = stencil_depth_floor}};
-
   auto render_element = [&stencil_depth_floor, &pass_context, &pass_depth,
-                         &renderer, &stencil_stack](Entity& element_entity) {
+                         &renderer, &stencil_coverage_stack,
+                         &position](Entity& element_entity) {
     auto result = pass_context.GetRenderPass(pass_depth);
 
     if (!result.pass) {
@@ -433,6 +447,8 @@ bool EntityPass::OnRender(ContentContext& renderer,
     // If the pass context returns a texture, we need to draw it to the current
     // pass. We do this because it's faster and takes significantly less memory
     // than storing/loading large MSAA textures.
+    // Also, it's not possible to blit the non-MSAA resolve texture of the
+    // previous pass to MSAA textures (let alone a transient one).
     if (result.backdrop_texture) {
       auto size_rect = Rect::MakeSize(result.pass->GetRenderTargetSize());
       auto msaa_backdrop_contents = TextureContents::MakeRect(size_rect);
@@ -449,21 +465,33 @@ bool EntityPass::OnRender(ContentContext& renderer,
       }
     }
 
-    if (!element_entity.ShouldRender(stencil_stack.back().coverage)) {
+    auto current_stencil_coverage = stencil_coverage_stack.back().coverage;
+    if (current_stencil_coverage.has_value()) {
+      // Entity transforms are relative to the current pass position, so we need
+      // to check stencil coverage in the same space.
+      current_stencil_coverage->origin -= position;
+    }
+
+    if (!element_entity.ShouldRender(current_stencil_coverage)) {
       return true;  // Nothing to render.
     }
 
     auto stencil_coverage =
-        element_entity.GetStencilCoverage(stencil_stack.back().coverage);
+        element_entity.GetStencilCoverage(current_stencil_coverage);
+    if (stencil_coverage.coverage.has_value()) {
+      stencil_coverage.coverage->origin += position;
+    }
 
     switch (stencil_coverage.type) {
-      case Contents::StencilCoverage::Type::kNone:
+      case Contents::StencilCoverage::Type::kNoChange:
         break;
       case Contents::StencilCoverage::Type::kAppend: {
-        auto op = stencil_stack.back().coverage;
-        stencil_stack.push_back(StencilLayer{
+        auto op = stencil_coverage_stack.back().coverage;
+        stencil_coverage_stack.push_back(StencilCoverageLayer{
             .coverage = stencil_coverage.coverage,
             .stencil_depth = element_entity.GetStencilDepth() + 1});
+        FML_DCHECK(stencil_coverage_stack.back().stencil_depth ==
+                   stencil_coverage_stack.size() - 1);
 
         if (!op.has_value()) {
           // Running this append op won't impact the stencil because the whole
@@ -472,26 +500,28 @@ bool EntityPass::OnRender(ContentContext& renderer,
         }
       } break;
       case Contents::StencilCoverage::Type::kRestore: {
-        if (stencil_stack.back().stencil_depth <=
+        if (stencil_coverage_stack.back().stencil_depth <=
             element_entity.GetStencilDepth()) {
           // Drop stencil restores that will do nothing.
           return true;
         }
 
-        auto restoration_depth =
-            element_entity.GetStencilDepth() - stencil_depth_floor;
-        FML_DCHECK(restoration_depth < stencil_stack.size());
+        auto restoration_depth = element_entity.GetStencilDepth();
+        FML_DCHECK(restoration_depth < stencil_coverage_stack.size());
 
         // We only need to restore the area that covers the coverage of the
         // stencil rect at target depth + 1.
         std::optional<Rect> restore_coverage =
-            (restoration_depth + 1 < stencil_stack.size())
-                ? stencil_stack[restoration_depth + 1].coverage
+            (restoration_depth + 1 < stencil_coverage_stack.size())
+                ? stencil_coverage_stack[restoration_depth + 1].coverage
                 : std::nullopt;
+        if (restore_coverage.has_value()) {
+          // Make the coverage rectangle relative to the current pass.
+          restore_coverage->origin -= position;
+        }
+        stencil_coverage_stack.resize(restoration_depth + 1);
 
-        stencil_stack.resize(restoration_depth + 1);
-
-        if (!stencil_stack.back().coverage.has_value()) {
+        if (!stencil_coverage_stack.back().coverage.has_value()) {
           // Running this restore op won't make anything renderable, so skip it.
           return true;
         }
@@ -526,9 +556,9 @@ bool EntityPass::OnRender(ContentContext& renderer,
   }
 
   for (const auto& element : elements_) {
-    EntityResult result =
-        GetEntityForElement(element, renderer, pass_context, root_pass_size,
-                            position, pass_depth, stencil_depth_floor);
+    EntityResult result = GetEntityForElement(
+        element, renderer, pass_context, root_pass_size, position, pass_depth,
+        stencil_coverage_stack, stencil_depth_floor);
 
     switch (result.status) {
       case EntityResult::kSuccess:
@@ -671,7 +701,7 @@ void EntityPass::SetStencilDepth(size_t stencil_depth) {
 
 void EntityPass::SetBlendMode(BlendMode blend_mode) {
   blend_mode_ = blend_mode;
-  cover_whole_screen_ = Entity::BlendModeShouldCoverWholeScreen(blend_mode);
+  cover_whole_screen_ = Entity::IsBlendModeDestructive(blend_mode);
 }
 
 void EntityPass::SetBackdropFilter(std::optional<BackdropFilterProc> proc) {
