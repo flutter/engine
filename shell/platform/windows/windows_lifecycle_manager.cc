@@ -58,9 +58,10 @@ class ThreadSnapshot {
     if (!::Thread32First(thread_snapshot_, &thread)) {
       DWORD error_num = ::GetLastError();
       char msg[256];
-      ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                     NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                     msg, 256, nullptr);
+      ::FormatMessageA(
+          FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL,
+          error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), msg, 256,
+          nullptr);
       FML_LOG(ERROR) << "Failed to get thread(" << error_num << "): " << msg;
       return std::nullopt;
     }
