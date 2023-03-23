@@ -42,6 +42,9 @@ static constexpr char kValueKey[] = "value";
 static constexpr int kAccessDeniedErrorCode = 5;
 static constexpr int kErrorSuccess = 0;
 
+static constexpr char kExitRequestError[] = "ExitApplication error";
+static constexpr char kInvalidExitRequestMessage[] = "Invalid application exit request";
+
 namespace flutter {
 
 namespace {
@@ -203,6 +206,8 @@ int ScopedClipboard::SetString(const std::wstring string) {
 
 }  // namespace
 
+// Indicates whether an exit request may be canceled by the framework.
+// These values must be kept in sync with ExitType in platform_handler.h
 static const char* kExitTypeNames[] = {"required", "cancelable"};
 
 static ExitType StringToExitType(const std::string& string) {
@@ -399,7 +404,14 @@ void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code) {
 
 void PlatformHandler::RequestAppExitSuccess(const rapidjson::Document* result,
                                             UINT exit_code) {
-  const std::string& exit_type = result[0][kExitResponseKey].GetString();
+
+  rapidjson::Value::ConstMemberIterator itr = result->FindMember(kExitResponseKey);
+  if (itr == result->MemberEnd() || !itr->value.IsString()) {
+    FML_LOG(ERROR) << "Application request response did not contain a valid response value";
+    return;
+  }
+  const std::string& exit_type = itr->value.GetString();
+
   if (exit_type.compare(kExitResponseExit) == 0) {
     QuitApplication(exit_code);
   }
@@ -415,8 +427,21 @@ void PlatformHandler::HandleMethodCall(
   const std::string& method = method_call.method_name();
   if (method.compare(kExitApplicationMethod) == 0) {
     const rapidjson::Value& arguments = method_call.arguments()[0];
-    const std::string& exit_type = arguments[kExitTypeKey].GetString();
-    UINT exit_code = arguments[kExitCodeKey].GetInt64();
+
+    rapidjson::Value::ConstMemberIterator itr = arguments.FindMember(kExitTypeKey);
+    if (itr == arguments.MemberEnd() || !itr->value.IsString()) {
+      result->Error(kExitRequestError, kInvalidExitRequestMessage);
+      return;
+    }
+    const std::string& exit_type = itr->value.GetString();
+
+    itr = arguments.FindMember(kExitCodeKey);
+    if (itr == arguments.MemberEnd() || !itr->value.IsInt()) {
+      result->Error(kExitRequestError, kInvalidExitRequestMessage);
+      return;
+    }
+    UINT exit_code = arguments[kExitCodeKey].GetInt();
+
     SystemExitApplication(StringToExitType(exit_type), exit_code,
                           std::move(result));
   } else if (method.compare(kGetClipboardDataMethod) == 0) {

@@ -22,6 +22,8 @@ namespace flutter {
 class FlutterWindowsEngine;
 class ScopedClipboardInterface;
 
+// Indicates whether an exit request may be canceled by the framework.
+// These values must be kept in sync with kExitTypeNames in platform_handler.cc
 enum class ExitType {
   required,
   cancelable,

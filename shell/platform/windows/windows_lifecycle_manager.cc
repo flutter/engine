@@ -37,23 +37,14 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
   return false;
 }
 
-static BOOL CALLBACK WindowEnumCallback(HWND hwnd, LPARAM user_data) {
-  HWND parent = GetParent(hwnd);
-  if (parent == NULL) {
-    int64_t& count = *reinterpret_cast<int64_t*>(user_data);
-    count++;
-  }
-  return true;
-}
-
 class ThreadSnapshot {
  public:
   ThreadSnapshot() {
-    thread_snapshot_ = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+    thread_snapshot_ = ::CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
   }
   ~ThreadSnapshot() {
     if (thread_snapshot_ != INVALID_HANDLE_VALUE) {
-      CloseHandle(thread_snapshot_);
+      ::CloseHandle(thread_snapshot_);
     }
   }
 
@@ -64,10 +55,10 @@ class ThreadSnapshot {
     }
     THREADENTRY32 thread;
     thread.dwSize = sizeof(thread);
-    if (!Thread32First(thread_snapshot_, &thread)) {
-      DWORD error_num = GetLastError();
+    if (!::Thread32First(thread_snapshot_, &thread)) {
+      DWORD error_num = ::GetLastError();
       char msg[256];
-      FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+      ::FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                      NULL, error_num, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
                      msg, 256, nullptr);
       FML_LOG(ERROR) << "Failed to get thread(" << error_num << "): " << msg;
@@ -80,7 +71,7 @@ class ThreadSnapshot {
     if (thread_snapshot_ == INVALID_HANDLE_VALUE) {
       return false;
     }
-    return Thread32Next(thread_snapshot_, &thread);
+    return ::Thread32Next(thread_snapshot_, &thread);
   }
 
  private:
@@ -89,11 +80,11 @@ class ThreadSnapshot {
 
 static int64_t NumWindowsForThread(const THREADENTRY32& thread) {
   int64_t num_windows = 0;
-  EnumThreadWindows(
+  ::EnumThreadWindows(
       thread.th32ThreadID,
       [](HWND hwnd, LPARAM lparam) {
         int64_t* windows_ptr = reinterpret_cast<int64_t*>(lparam);
-        if (GetParent(hwnd) == nullptr) {
+        if (::GetParent(hwnd) == nullptr) {
           (*windows_ptr)++;
         }
         return *windows_ptr <= 1 ? TRUE : FALSE;
@@ -103,7 +94,7 @@ static int64_t NumWindowsForThread(const THREADENTRY32& thread) {
 }
 
 bool WindowsLifecycleManager::IsLastWindowOfProcess() {
-  DWORD pid = GetCurrentProcessId();
+  DWORD pid = ::GetCurrentProcessId();
   ThreadSnapshot thread_snapshot;
   std::optional<THREADENTRY32> first_thread = thread_snapshot.GetFirstThread();
   if (!first_thread.has_value()) {
