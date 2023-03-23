@@ -95,7 +95,10 @@
                 "device_type=none",
                 "os=Linux"
             ],
-	    "dependencies": ["wasm_release", "web_tests"],
+	    "build_dependencies": ["wasm_release", "web_tests"],
+	    "dependencies": [
+                {"dependency": "chrome_and_driver", "version": "version:111.0"}
+	    ],
 	    "recipe": "engine_v2/tester_engine",
             "gclient_variables": {
                 "download_android_deps": false
