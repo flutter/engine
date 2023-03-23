@@ -41,7 +41,7 @@
                 "os=Linux",
                 "cores=32"
             ],
-            "name": "web_tests",
+            "name": "web_tests/test_bundles/dart2js-html-engine",
             "generators": {
                 "tasks": [
                     {
@@ -66,7 +66,32 @@
                         "name": "compile web_tests",
                         "parameters": [
                             "test",
-                            "--compile"
+                            "--compile",
+                            "--bundle=dart2js-html-engine"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    }
+                ]
+            },
+            "tests": []
+        },
+        {
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux",
+                "cores=32"
+            ],
+            "name": "web_tests/test_bundles/dart2js-canvaskit-canvaskit",
+            "generators": {
+                "tasks": [
+                    {
+                        "name": "compile dart2js-canvaskit-canvaskit",
+                        "parameters": [
+                            "test",
+                            "--compile",
+                            "--bundle=dart2js-canvaskit-canvaskit"
                         ],
                         "scripts": [
                             "flutter/lib/web_ui/dev/felt"
@@ -102,19 +127,46 @@
             },
             "tasks": [
                 {
-                    "name": "linux chrome js tests",
+                    "name": "linux chrome-dart2js-html-engine",
                     "parameters": [
                         "test",
                         "--run",
                         "--copy-artifacts",
-                        "--suite=chrome-dart2js-html-engine",
-                        "--suite=chrome-dart2js-html-html",
-                        "--suite=chrome-dart2js-html-ui",
-                        "--suite=chrome-dart2js-canvaskit-canvaskit",
-                        "--suite=chrome-dart2js-canvaskit-ui",
-                        "--suite=chrome-dart2js-skwasm-skwasm_stub",
-                        "--suite=chrome-full-dart2js-canvaskit-canvaskit",
-                        "--suite=chrome-full-dart2js-canvaskit-ui"
+                        "--suite=chrome-dart2js-html-engine"
+                    ],
+                    "script": "flutter/lib/web_ui/dev/felt"
+                }
+            ]
+        },
+        {
+            "name": "linux chrome dart2js web tests",
+            "drone_dimensions": [
+                "device_type=none",
+                "os=Linux"
+            ],
+            "dependencies": [ "wasm_release", "web_tests" ],
+            "test_dependencies": [
+                {
+                "dependency": "chrome_and_driver",
+                "version": "version:111.0"
+                },
+                {
+                    "dependency": "goldctl",
+                    "version": "git_revision:3a77d0b12c697a840ca0c7705208e8622dc94603"
+                }
+            ],
+            "recipe": "engine_v2/tester_engine",
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "tasks": [
+                {
+                    "name": "linux chrome-dart2js-canvaskit-canvaskit",
+                    "parameters": [
+                        "test",
+                        "--run",
+                        "--copy-artifacts",
+                        "--suite=chrome-dart2js-canvaskit-canvaskit"
                     ],
                     "script": "flutter/lib/web_ui/dev/felt"
                 }
