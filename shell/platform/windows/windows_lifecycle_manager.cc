@@ -87,7 +87,7 @@ class ThreadSnapshot {
   HANDLE thread_snapshot_;
 };
 
-static int64_t NumWindowsOfThread(const THREADENTRY32& thread) {
+static int64_t NumWindowsForThread(const THREADENTRY32& thread) {
   int64_t num_windows = 0;
   EnumThreadWindows(
       thread.th32ThreadID,
