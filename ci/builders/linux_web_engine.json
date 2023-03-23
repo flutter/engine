@@ -26,7 +26,7 @@
                 "--runtime-mode=release",
                 "--no-goma"
             ],
-            "name": "wasm_release",
+            "name": "web_tests/artifacts",
             "ninja": {
                 "config": "wasm_release",
                 "targets": [
@@ -34,43 +34,38 @@
                 ]
             },
             "tests": [],
-            "builds": [
-                {
-                    "name": "web_tests/artifacts",
-                    "generators": {
-                        "tasks": [
-                            {
-                                "name": "check licenses",
-                                "parameters": [
-                                    "check-licenses"
-                                ],
-                                "scripts": [
-                                    "flutter/lib/web_ui/dev/felt"
-                                ]
-                            },
-                            {
-                                "name": "web engine analysis",
-                                "parameters": [
-                                    "analyze"
-                                ],
-                                "scripts": [
-                                    "flutter/lib/web_ui/dev/felt"
-                                ]
-                            },
-                            {
-                                "name": "copy artifacts for web tests",
-                                "parameters": [
-                                    "test",
-                                    "--copy-artifacts"
-                                ],
-                                "scripts": [
-                                    "flutter/lib/web_ui/dev/felt"
-                                ]
-                            }
+            "generators": {
+                "tasks": [
+                    {
+                        "name": "check licenses",
+                        "parameters": [
+                            "check-licenses"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    },
+                    {
+                        "name": "web engine analysis",
+                        "parameters": [
+                            "analyze"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
+                        ]
+                    },
+                    {
+                        "name": "copy artifacts for web tests",
+                        "parameters": [
+                            "test",
+                            "--copy-artifacts"
+                        ],
+                        "scripts": [
+                            "flutter/lib/web_ui/dev/felt"
                         ]
                     }
-                }
-            ]
+                ]
+            }
         },
         {
             "drone_dimensions": [
