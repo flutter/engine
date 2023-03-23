@@ -223,7 +223,9 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       return null;
     }
 
-    final Iterable<String> allBundleNames = config.testSuites.map((TestSuite suite) => suite.name);
+    final Iterable<String> allBundleNames = config.testSuites.map(
+      (TestSuite suite) => suite.testBundle.name
+    );
     for (final String bundleName in bundleNameArgs) {
       if (!allBundleNames.contains(bundleName)) {
         throw ToolExit('No bundle found named $bundleName');
