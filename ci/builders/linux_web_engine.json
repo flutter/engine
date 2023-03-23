@@ -38,7 +38,8 @@
         {
             "drone_dimensions": [
                 "device_type=none",
-                "os=Linux"
+                "os=Linux",
+                "cores=32"
             ],
             "name": "web_tests",
             "generators": {
@@ -96,20 +97,27 @@
                 }
             ],
             "recipe": "engine_v2/tester_engine",
-            "parameters": [
-                "test",
-                "--run",
-                "--copy-artifacts",
-                "--suite=chrome-dart2js-html-engine",
-                "--suite=chrome-dart2js-html-html",
-                "--suite=chrome-dart2js-html-ui",
-                "--suite=chrome-dart2js-canvaskit-canvaskit",
-                "--suite=chrome-dart2js-canvaskit-ui",
-                "--suite=chrome-dart2js-skwasm-skwasm_stub",
-                "--suite=chrome-full-dart2js-canvaskit-canvaskit",
-                "--suite=chrome-full-dart2js-canvaskit-ui"
-            ],
-            "script": "flutter/lib/web_ui/dev/felt"
+            "gclient_variables": {
+                "download_android_deps": false
+            },
+            "tasks": [
+                {
+                    "parameters": [
+                        "test",
+                        "--run",
+                        "--copy-artifacts",
+                        "--suite=chrome-dart2js-html-engine",
+                        "--suite=chrome-dart2js-html-html",
+                        "--suite=chrome-dart2js-html-ui",
+                        "--suite=chrome-dart2js-canvaskit-canvaskit",
+                        "--suite=chrome-dart2js-canvaskit-ui",
+                        "--suite=chrome-dart2js-skwasm-skwasm_stub",
+                        "--suite=chrome-full-dart2js-canvaskit-canvaskit",
+                        "--suite=chrome-full-dart2js-canvaskit-ui"
+                    ],
+                    "script": "flutter/lib/web_ui/dev/felt"
+                }
+            ]
         }
     ]
 }
