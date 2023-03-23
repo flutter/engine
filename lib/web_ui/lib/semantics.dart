@@ -80,6 +80,9 @@ class SemanticsAction {
     _kSetTextIndex: setText,
   };
 
+  /// Temporary API until [values] return a list.
+  List<SemanticsAction> get valuesAsList => values.values.toList(growable: false);
+
   @override
   String toString() {
     switch (index) {
@@ -220,6 +223,9 @@ class SemanticsFlag {
     _kIsKeyboardKeyIndex: isKeyboardKey,
     _kIsCheckStateMixedIndex: isCheckStateMixed,
   };
+
+  /// Temporary API until [values] return a list.
+  List<SemanticsFlag> get valuesAsList => values.values.toList(growable: false);
 
   @override
   String toString() {
