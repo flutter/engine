@@ -193,11 +193,6 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
       FML_DLOG(ERROR) << "Could not decompress image.";
       return std::nullopt;
     }
-  } else if (image_info.colorType() == base_image_info.colorType()) {
-    auto pixel_ref = SkMallocPixelRef::MakeWithData(
-        image_info, descriptor->row_bytes(), descriptor->data());
-    bitmap->setPixelRef(pixel_ref, 0, 0);
-    bitmap->setImmutable();
   } else {
     auto temp_bitmap = std::make_shared<SkBitmap>();
     temp_bitmap->setInfo(base_image_info);
@@ -274,6 +269,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+  texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
