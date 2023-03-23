@@ -235,7 +235,7 @@ Future<void> testMain() async {
       skip: browserEngine == BrowserEngine.firefox);
 
   test('adds Arial and sans-serif as fallback fonts', () {
-    // Set this to false so it doesn't default test font.
+    // Set this to false so it doesn't default to the test font.
     debugEmulateFlutterTesterEnvironment = false;
 
     final CanvasParagraph paragraph = plain(EngineParagraphStyle(
