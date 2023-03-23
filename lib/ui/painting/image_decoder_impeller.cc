@@ -17,9 +17,17 @@
 #include "flutter/lib/ui/painting/image_decoder_skia.h"
 #include "impeller/base/strings.h"
 #include "impeller/geometry/size.h"
-#include "include/core/SkSize.h"
+#include "third_party/skia/include/core/SkAlphaType.h"
+#include "third_party/skia/include/core/SkBitmap.h"
+#include "third_party/skia/include/core/SkColorSpace.h"
+#include "third_party/skia/include/core/SkColorType.h"
+#include "third_party/skia/include/core/SkImageInfo.h"
 #include "third_party/skia/include/core/SkMallocPixelRef.h"
+#include "third_party/skia/include/core/SkPixelRef.h"
 #include "third_party/skia/include/core/SkPixmap.h"
+#include "third_party/skia/include/core/SkPoint.h"
+#include "third_party/skia/include/core/SkSamplingOptions.h"
+#include "third_party/skia/include/core/SkSize.h"
 
 namespace flutter {
 
@@ -185,11 +193,6 @@ std::optional<DecompressResult> ImageDecoderImpeller::DecompressTexture(
       FML_DLOG(ERROR) << "Could not decompress image.";
       return std::nullopt;
     }
-  } else if (image_info.colorType() == base_image_info.colorType()) {
-    auto pixel_ref = SkMallocPixelRef::MakeWithData(
-        image_info, descriptor->row_bytes(), descriptor->data());
-    bitmap->setPixelRef(pixel_ref, 0, 0);
-    bitmap->setImmutable();
   } else {
     auto temp_bitmap = std::make_shared<SkBitmap>();
     temp_bitmap->setInfo(base_image_info);
@@ -266,6 +269,7 @@ sk_sp<DlImage> ImageDecoderImpeller::UploadTextureToPrivate(
   texture_descriptor.format = pixel_format.value();
   texture_descriptor.size = {image_info.width(), image_info.height()};
   texture_descriptor.mip_count = texture_descriptor.size.MipCount();
+  texture_descriptor.compression_type = impeller::CompressionType::kLossy;
 
   auto dest_texture =
       context->GetResourceAllocator()->CreateTexture(texture_descriptor);
