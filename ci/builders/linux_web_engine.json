@@ -95,6 +95,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
+	    "dependencies": ["wasm_release", "web_tests"],
 	    "recipe": "engine_v2/tester_engine",
             "gclient_variables": {
                 "download_android_deps": false
