@@ -43,6 +43,9 @@ void PlatformConfiguration::DidCreateIsolate() {
 
   on_error_.Set(tonic::DartState::Current(),
                 Dart_GetField(library, tonic::ToDart("_onError")));
+  update_displays_.Set(
+      tonic::DartState::Current(),
+      Dart_GetField(library, tonic::ToDart("_updateDisplays")));
   update_locales_.Set(tonic::DartState::Current(),
                       Dart_GetField(library, tonic::ToDart("_updateLocales")));
   update_user_settings_data_.Set(
@@ -76,6 +79,17 @@ void PlatformConfiguration::DidCreateIsolate() {
   windows_.emplace(kImplicitViewId,
                    std::make_unique<Window>(
                        kImplicitViewId, ViewportMetrics{1.0, 0.0, 0.0, -1}));
+}
+
+void PlatformConfiguration::UpdateDisplays(
+    const std::vector<Display> displays) {
+  std::vector<DisplayId> ids;
+  std::vector<double> sizes;
+  std::vector<double> device_pixel_ratios;
+  for (const auto display : displays) {
+    ids.push_back(display.id);
+    refresh_rates.push_back(display.GetRefreshRate());
+  }
 }
 
 void PlatformConfiguration::UpdateLocales(

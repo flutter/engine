@@ -149,6 +149,14 @@ class PlatformDispatcher {
     _onPlatformConfigurationChangedZone = Zone.current;
   }
 
+  /// The current list of displays.
+  ///
+  /// If any of their configurations change, [onMetricsChanged] will be called.
+  ///
+  /// To get the display for a [FlutterView], use [FlutterView.display].
+  Iterable<Display> get displays => _displays.values;
+  final Map<int, Display> _displays = <int, Display>{};
+
   /// The current list of views, including top level platform windows used by
   /// the application.
   ///
@@ -215,6 +223,17 @@ class PlatformDispatcher {
     _onMetricsChangedZone = Zone.current;
   }
 
+  // Called from the engine, via hooks.dart.
+  //
+  // Updates the available displays.
+  void _updateDisplays(List<Display> displays) {
+    _displays.clear();
+    for (final Display display in displays) {
+      _displays[display.id] = display;
+    }
+    _invoke(onMetricsChanged, _onMetricsChangedZone);
+  }
+
   // Called from the engine, via hooks.dart
   //
   // Updates the metrics of the window with the given id.
@@ -239,6 +258,7 @@ class PlatformDispatcher {
     List<double> displayFeaturesBounds,
     List<int> displayFeaturesType,
     List<int> displayFeaturesState,
+    int displayId,
   ) {
     final _ViewConfiguration previousConfiguration =
         _viewConfigurations[id] ?? const _ViewConfiguration();
@@ -283,6 +303,7 @@ class PlatformDispatcher {
         state: displayFeaturesState,
         devicePixelRatio: devicePixelRatio,
       ),
+      displayId: displayId,
     );
     _invoke(onMetricsChanged, _onMetricsChangedZone);
   }
@@ -1319,6 +1340,7 @@ class _ViewConfiguration {
     this.padding = ViewPadding.zero,
     this.gestureSettings = const GestureSettings(),
     this.displayFeatures = const <DisplayFeature>[],
+    this.displayId = 0,
   });
 
   /// Copy this configuration with some fields replaced.
@@ -1333,6 +1355,7 @@ class _ViewConfiguration {
     ViewPadding? padding,
     GestureSettings? gestureSettings,
     List<DisplayFeature>? displayFeatures,
+    int? displayId,
   }) {
     return _ViewConfiguration(
       view: view ?? this.view,
@@ -1345,10 +1368,15 @@ class _ViewConfiguration {
       padding: padding ?? this.padding,
       gestureSettings: gestureSettings ?? this.gestureSettings,
       displayFeatures: displayFeatures ?? this.displayFeatures,
+      displayId: displayId ?? this.displayId,
     );
   }
 
   final FlutterView?  view;
+
+  /// The identifier for a display for this view, in
+  /// [PlatformDispatcher._displays].
+  final int displayId;
 
   /// The pixel density of the output surface.
   final double devicePixelRatio;

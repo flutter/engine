@@ -26,7 +26,7 @@ void DisplayManager::HandleDisplayUpdates(
     DisplayUpdateType update_type,
     std::vector<std::unique_ptr<Display>> displays) {
   std::scoped_lock lock(displays_mutex_);
-  CheckDisplayConfiguration(displays);
+  FML_CHECK(!displays.empty());
   switch (update_type) {
     case DisplayUpdateType::kStartup:
       FML_CHECK(displays_.empty());
@@ -34,16 +34,6 @@ void DisplayManager::HandleDisplayUpdates(
       return;
     default:
       FML_CHECK(false) << "Unknown DisplayUpdateType.";
-  }
-}
-
-void DisplayManager::CheckDisplayConfiguration(
-    const std::vector<std::unique_ptr<Display>>& displays) const {
-  FML_CHECK(!displays.empty());
-  if (displays.size() > 1) {
-    for (auto& display : displays) {
-      FML_CHECK(display->GetDisplayId().has_value());
-    }
   }
 }
 

@@ -69,6 +69,7 @@ void Window::UpdateWindowMetrics(const ViewportMetrics& metrics) {
           tonic::ToDart(metrics.physical_display_features_bounds),
           tonic::ToDart(metrics.physical_display_features_type),
           tonic::ToDart(metrics.physical_display_features_state),
+          tonic::ToDart(metrics.display_id),
       }));
 }
 

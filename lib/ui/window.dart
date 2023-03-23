@@ -3,6 +3,35 @@
 // found in the LICENSE file.
 part of dart.ui;
 
+/// A configurable display that a [FlutterView] renders on.
+///
+/// Use [FlutterView.display] to get the current display for that view.
+class Display {
+  const Display._({
+    required this.id,
+    required this.devicePixelRatio,
+    required this.size,
+  });
+
+  /// A unique identifier for this display.
+  ///
+  /// This identifier is unique among a list of displays the Flutter framework
+  /// is aware of, and is not derived from any platform specific identifiers for
+  /// displays.
+  final int id;
+
+  /// The device pixel ratio of this display.
+  final double devicePixelRatio;
+
+  /// The physical size of this display.
+  final Size size;
+
+  // TODO(dnfield): Implement refresh rate here. This would have to be a native
+  // getter to avoid trying to send updates to the display array every time
+  // the refresh rate changes, particularly on platforms that dynamically adjust
+  // the refresh rate during scrolling.
+}
+
 /// A view into which a Flutter [Scene] is drawn.
 ///
 /// Each [FlutterView] has its own layer tree that is rendered
@@ -66,6 +95,9 @@ class FlutterView {
     assert(platformDispatcher._viewConfigurations.containsKey(viewId));
     return platformDispatcher._viewConfigurations[viewId]!;
   }
+
+  ///
+  Display get display => _viewConfiguration.display;
 
   /// The number of device pixels for each logical pixel for the screen this
   /// view is displayed on.

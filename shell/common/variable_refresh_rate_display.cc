@@ -22,11 +22,6 @@ VariableRefreshRateDisplay::VariableRefreshRateDisplay(
     : Display(display_id, GetInitialRefreshRate(refresh_rate_reporter)),
       refresh_rate_reporter_(refresh_rate_reporter) {}
 
-VariableRefreshRateDisplay::VariableRefreshRateDisplay(
-    const std::weak_ptr<VariableRefreshRateReporter>& refresh_rate_reporter)
-    : Display(GetInitialRefreshRate(refresh_rate_reporter)),
-      refresh_rate_reporter_(refresh_rate_reporter) {}
-
 double VariableRefreshRateDisplay::GetRefreshRate() const {
   return GetInitialRefreshRate(refresh_rate_reporter_);
 }

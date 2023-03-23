@@ -46,13 +46,6 @@ class DisplayManager {
   /// Guards `displays_` vector.
   mutable std::mutex displays_mutex_;
   std::vector<std::unique_ptr<Display>> displays_;
-
-  /// Checks that the provided display configuration is valid. Currently this
-  /// ensures that all the displays have an id in the case there are multiple
-  /// displays. In case where there is a single display, it is valid for the
-  /// display to not have an id.
-  void CheckDisplayConfiguration(
-      const std::vector<std::unique_ptr<Display>>& displays) const;
 };
 
 }  // namespace flutter

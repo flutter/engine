@@ -5,6 +5,23 @@
 part of dart.ui;
 
 @pragma('vm:entry-point')
+void _updateDisplays(
+  List<int> ids,
+  List<double> devicePixelRatios,
+  List<double> sizes,
+) {
+  final List<Display> displays = <Display>[];
+  for (int i = 0; i < ids.length; i += 1) {
+    displays.add(Display._(
+      id: ids[i],
+      devicePixelRatio: devicePixelRatios[i],
+      size: Size(sizes[i * 2], sizes[i * 2 + 1]),
+    ));
+  }
+  PlatformDispatcher.instance._updateDisplays(displays);
+}
+
+@pragma('vm:entry-point')
 void _updateWindowMetrics(
   Object id,
   double devicePixelRatio,
@@ -26,6 +43,7 @@ void _updateWindowMetrics(
   List<double> displayFeaturesBounds,
   List<int> displayFeaturesType,
   List<int> displayFeaturesState,
+  int displayId,
 ) {
   PlatformDispatcher.instance._updateWindowMetrics(
     id,
@@ -48,6 +66,7 @@ void _updateWindowMetrics(
     displayFeaturesBounds,
     displayFeaturesType,
     displayFeaturesState,
+    displayId,
   );
 }
 
