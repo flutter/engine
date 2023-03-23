@@ -33,7 +33,44 @@
                     "flutter/web_sdk:flutter_web_sdk_archive"
                 ]
             },
-            "tests": []
+            "tests": [],
+            "builds": [
+                {
+                    "name": "web_tests/artifacts",
+                    "generators": {
+                        "tasks": [
+                            {
+                                "name": "check licenses",
+                                "parameters": [
+                                    "check-licenses"
+                                ],
+                                "scripts": [
+                                    "flutter/lib/web_ui/dev/felt"
+                                ]
+                            },
+                            {
+                                "name": "web engine analysis",
+                                "parameters": [
+                                    "analyze"
+                                ],
+                                "scripts": [
+                                    "flutter/lib/web_ui/dev/felt"
+                                ]
+                            },
+                            {
+                                "name": "copy artifacts for web tests",
+                                "parameters": [
+                                    "test",
+                                    "--copy-artifacts"
+                                ],
+                                "scripts": [
+                                    "flutter/lib/web_ui/dev/felt"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
         },
         {
             "drone_dimensions": [
@@ -105,12 +142,15 @@
     "generators": {},
     "tests": [
         {
-            "name": "linux chrome dart2js web tests",
+            "name": "linux run chrome-dart2js-html-engine suite",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
             ],
-            "dependencies": [ "wasm_release", "web_tests" ],
+            "dependencies": [
+                "web_tests/artifacts",
+                "web_tests/test_bundle/dart2js-html-engine"
+            ],
             "test_dependencies": [
                 {
                 "dependency": "chrome_and_driver",
@@ -131,7 +171,6 @@
                     "parameters": [
                         "test",
                         "--run",
-                        "--copy-artifacts",
                         "--suite=chrome-dart2js-html-engine"
                     ],
                     "script": "flutter/lib/web_ui/dev/felt"
@@ -139,12 +178,15 @@
             ]
         },
         {
-            "name": "linux chrome dart2js web tests",
+            "name": "linux run chrome-dart2js-html-engine suite",
             "drone_dimensions": [
                 "device_type=none",
                 "os=Linux"
             ],
-            "dependencies": [ "wasm_release", "web_tests" ],
+            "dependencies": [
+                "web_tests/artifacts",
+                "web_tests/test_bundle/dart2js-canvaskit-canvaskit"
+            ],
             "test_dependencies": [
                 {
                 "dependency": "chrome_and_driver",
@@ -165,7 +207,6 @@
                     "parameters": [
                         "test",
                         "--run",
-                        "--copy-artifacts",
                         "--suite=chrome-dart2js-canvaskit-canvaskit"
                     ],
                     "script": "flutter/lib/web_ui/dev/felt"

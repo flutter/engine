@@ -77,8 +77,8 @@ class BrowserPlatform extends PlatformPlugin {
         // Serves files from the bundle's output build directory
         .add(createSimpleDirectoryHandler(getBundleBuildDirectory(suite.testBundle)))
 
-        // Serves files from the out/web_tests/ directory at the root (/) URL path.
-        .add(createSimpleDirectoryHandler(env.environment.webUiBuildDir))
+        // Serves files from the out/web_tests/artifacts directory at the root (/) URL path.
+        .add(createSimpleDirectoryHandler(env.environment.webTestsArtifactsDir))
 
         // Serves files from thes test set directory
         .add(createSimpleDirectoryHandler(getTestSetDirectory(suite.testBundle.testSet)))
@@ -238,7 +238,7 @@ class BrowserPlatform extends PlatformPlugin {
     }
 
     final Directory testImageDirectory = Directory(p.join(
-      env.environment.webUiBuildDir.path,
+      env.environment.webTestsArtifactsDir.path,
       'test_images',
     ));
 

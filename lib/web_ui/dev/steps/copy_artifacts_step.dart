@@ -32,7 +32,7 @@ class CopyArtifactsStep implements PipelineStep {
 
   @override
   Future<void> run() async {
-    await environment.webUiBuildDir.create();
+    await environment.webTestsArtifactsDir.create(recursive: true);
     await copyDart2WasmTestScript();
     await buildHostPage();
     await copyTestFonts();
@@ -57,7 +57,7 @@ class CopyArtifactsStep implements PipelineStep {
       'test_dart2wasm.js',
     ));
     final io.File targetFile = io.File(pathlib.join(
-      environment.webUiBuildDir.path,
+      environment.webTestsArtifactsDir.path,
       'test_dart2wasm.js',
     ));
     await sourceFile.copy(targetFile.path);
@@ -96,7 +96,7 @@ class CopyArtifactsStep implements PipelineStep {
 
       final io.File sourceTtf = io.File(pathlib.join(fontsPath, fontFile));
       final io.File destinationTtf = io.File(pathlib.join(
-        environment.webUiBuildDir.path,
+        environment.webTestsArtifactsDir.path,
         'assets',
         'fonts',
         fontFile,
@@ -106,7 +106,7 @@ class CopyArtifactsStep implements PipelineStep {
     }
 
     final io.File fontManifestFile = io.File(pathlib.join(
-      environment.webUiBuildDir.path,
+      environment.webTestsArtifactsDir.path,
       'assets',
       'FontManifest.json',
     ));
@@ -127,7 +127,7 @@ class CopyArtifactsStep implements PipelineStep {
 
     for (final io.File imageFile in testImagesDir.listSync(recursive: true).whereType<io.File>()) {
       final io.File destination = io.File(pathlib.join(
-        environment.webUiBuildDir.path,
+        environment.webTestsArtifactsDir.path,
         'test_images',
         pathlib.relative(imageFile.path, from: testImagesDir.path),
       ));
@@ -143,7 +143,7 @@ class CopyArtifactsStep implements PipelineStep {
     );
 
     final String targetDirectoryPath = pathlib.join(
-      environment.webUiBuildDir.path,
+      environment.webTestsArtifactsDir.path,
       destinationPath,
     );
 
@@ -173,7 +173,7 @@ class CopyArtifactsStep implements PipelineStep {
 
   Future<void> copySkwasm() async {
     final io.Directory targetDir = io.Directory(pathlib.join(
-      environment.webUiBuildDir.path,
+      environment.webTestsArtifactsDir.path,
       'canvaskit',
     ));
 
@@ -203,7 +203,7 @@ class CopyArtifactsStep implements PipelineStep {
       hostDartPath,
     ));
     final String targetDirectoryPath = pathlib.join(
-      environment.webUiBuildDir.path,
+      environment.webTestsArtifactsDir.path,
       'host',
     );
     io.Directory(targetDirectoryPath).createSync(recursive: true);
