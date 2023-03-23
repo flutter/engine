@@ -642,7 +642,7 @@ TEST_F(FlutterWindowsEngineTest, TestExit) {
     finished = exit_code == 0;
   });
   EXPECT_CALL(*handler, Quit).Times(1);
-  modifier.SetTopLevelHandler(std::move(handler));
+  modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());
@@ -681,7 +681,7 @@ TEST_F(FlutterWindowsEngineTest, TestExitCancel) {
     finished = true;
   });
   EXPECT_CALL(*handler, Quit).Times(0);
-  modifier.SetTopLevelHandler(std::move(handler));
+  modifier.SetLifecycleManager(std::move(handler));
 
   auto binary_messenger =
       std::make_unique<BinaryMessengerImpl>(engine->messenger());

@@ -115,7 +115,7 @@ bool WindowsLifecycleManager::IsLastWindowOfProcess() {
   THREADENTRY32 thread = *first_thread;
   do {
     if (thread.th32OwnerProcessID == pid) {
-      num_windows += NumWindowsOfThread(thread);
+      num_windows += NumWindowsForThread(thread);
       if (num_windows > 1) {
         return false;
       }
