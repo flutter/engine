@@ -8,7 +8,6 @@
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "tests/embedder_test_context.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "vulkan/vulkan_core.h"
 
 #ifdef SHELL_ENABLE_GL
 #include "flutter/shell/platform/embedder/tests/embedder_test_compositor_gl.h"
@@ -17,7 +16,8 @@
 
 #ifdef SHELL_ENABLE_VULKAN
 #include "flutter/shell/platform/embedder/tests/embedder_test_context_vulkan.h"
-#include "flutter/vulkan/vulkan_device.h"
+#include "flutter/vulkan/vulkan_device.h"  // nogncheck
+#include "vulkan/vulkan_core.h"            // nogncheck
 #endif
 
 #ifdef SHELL_ENABLE_METAL
@@ -247,6 +247,8 @@ void EmbedderConfigBuilder::SetIsolateCreateCallbackHook() {
 }
 
 void EmbedderConfigBuilder::SetSemanticsCallbackHooks() {
+  project_args_.update_semantics_callback2 =
+      context_.GetUpdateSemanticsCallback2Hook();
   project_args_.update_semantics_callback =
       context_.GetUpdateSemanticsCallbackHook();
   project_args_.update_semantics_node_callback =

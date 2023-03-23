@@ -52,14 +52,15 @@ class BlitPassMTL final : public BlitPass {
                                     IRect source_region,
                                     size_t destination_offset,
                                     std::string label) override;
+  // |BlitPass|
+  bool OnCopyBufferToTextureCommand(BufferView source,
+                                    std::shared_ptr<Texture> destination,
+                                    IPoint destination_origin,
+                                    std::string label) override;
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,
                                std::string label) override;
-
-  // |BlitPass|
-  bool OnOptimizeForGPUAccess(std::shared_ptr<Texture> texture,
-                              std::string label) override;
 
   FML_DISALLOW_COPY_AND_ASSIGN(BlitPassMTL);
 };

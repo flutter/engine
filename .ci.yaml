@@ -156,7 +156,6 @@ targets:
       emulator_arch: "x64"
       enable_cso: "true"
     timeout: 60
-    bringup: true
 
   - name: Linux Fuchsia arm64 FEMU
     recipe: engine/femu_test
@@ -310,6 +309,8 @@ targets:
         ]
       framework: "true"
       no_goma: "true"
+      drone_dimensions: >
+        ["device_type=none"]
       shard: web_tests
       subshards: >-
               ["0", "1", "2", "3", "4", "5", "6", "7_last"]
@@ -465,6 +466,9 @@ targets:
   - name: Windows windows_arm_host_engine
     recipe: engine_v2/engine_v2
     timeout: 60
+    enabled_branches:
+      # Don't run this on release branches
+      - main
     properties:
       release_build: "true"
       config_name: windows_arm_host_engine

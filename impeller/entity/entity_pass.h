@@ -16,6 +16,7 @@
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
+#include "impeller/renderer/texture.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
@@ -29,6 +30,13 @@ class EntityPass {
       FilterInput::Ref,
       const Matrix& effect_transform,
       bool is_subpass)>;
+
+  struct StencilCoverageLayer {
+    std::optional<Rect> coverage;
+    size_t stencil_depth;
+  };
+
+  using StencilCoverageStack = std::vector<StencilCoverageLayer>;
 
   EntityPass();
 
@@ -107,14 +115,16 @@ class EntityPass {
                                    ISize root_pass_size,
                                    Point position,
                                    uint32_t pass_depth,
+                                   StencilCoverageStack& stencil_coverage_stack,
                                    size_t stencil_depth_floor) const;
 
   bool OnRender(ContentContext& renderer,
                 ISize root_pass_size,
-                const RenderTarget& render_target,
+                EntityPassTarget& render_target,
                 Point position,
                 Point parent_position,
                 uint32_t pass_depth,
+                StencilCoverageStack& stencil_coverage_stack,
                 size_t stencil_depth_floor = 0,
                 std::shared_ptr<Contents> backdrop_filter_contents = nullptr,
                 std::optional<InlinePassContext::RenderPassResult>
