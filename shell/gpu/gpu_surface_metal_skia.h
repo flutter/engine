@@ -55,11 +55,6 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalSkia : public Surface {
   GrDirectContext* GetContext() override;
 
   // |Surface|
-  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
-
-  // |Surface|
-  bool AllowsDrawingWhenGpuDisabled() const override;
-
   std::unique_ptr<SurfaceFrame> AcquireFrameFromCAMetalLayer(
       const SkISize& frame_info);
 

@@ -244,18 +244,4 @@ GrDirectContext* GPUSurfaceMetalSkia::GetContext() {
   return context_.get();
 }
 
-// |Surface|
-std::unique_ptr<GLContextResult> GPUSurfaceMetalSkia::MakeRenderContextCurrent() {
-  // A context may either be necessary to render to the surface or to snapshot an offscreen
-  // surface. Either way, SkSL precompilation must be attempted.
-  sksl_precompiler_->PrecompileKnownSkSLsIfNecessary(GetContext());
-
-  // This backend has no such concept.
-  return std::make_unique<GLContextDefaultResult>(true);
-}
-
-bool GPUSurfaceMetalSkia::AllowsDrawingWhenGpuDisabled() const {
-  return delegate_->AllowsDrawingWhenGpuDisabled();
-}
-
 }  // namespace flutter
