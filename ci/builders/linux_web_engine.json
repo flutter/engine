@@ -85,7 +85,7 @@
                 "device_type=none",
                 "os=Linux"
             ],
-            "dependencies": ["wasm_release", "web_tests"],
+            "dependencies": [ "wasm_release", "web_tests" ],
             "test_dependencies": [
                 {
                 "dependency": "chrome_and_driver",
@@ -102,6 +102,7 @@
             },
             "tasks": [
                 {
+                    "name": "linux chrome js tests",
                     "parameters": [
                         "test",
                         "--run",
