@@ -103,13 +103,17 @@
             "gclient_variables": {
                 "download_android_deps": false
             },
-            "name": "felt test: chrome-unit-linux",
-            "parameters": [
-                "test",
-                "--browser=chrome",
-                "--require-skia-gold"
-            ],
-            "script": "flutter/lib/web_ui/dev/felt"
-        }
+	    "tasks": [
+                {
+                    "name": "felt test: chrome-unit-linux",
+                    "parameters": [
+                        "test",
+                        "--browser=chrome",
+                        "--require-skia-gold"
+                    ],
+                    "script": "flutter/lib/web_ui/dev/felt"
+                }
+            ]
+	}
     ]
 }
