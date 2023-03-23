@@ -386,7 +386,8 @@ void PlatformHandler::SystemExitApplication(
 
 // Indicates whether an exit request may be canceled by the framework.
 // These values must be kept in sync with ExitType in platform_handler.h
-static const char* kExitTypeNames[] = {PlatformHandler::kExitTypeRequired, PlatformHandler::kExitTypeCancelable};
+static constexpr const char* kExitTypeNames[] = {PlatformHandler::kExitTypeRequired,
+                                                 PlatformHandler::kExitTypeCancelable};
 
 void PlatformHandler::RequestAppExit(ExitType exit_type, UINT exit_code) {
   auto callback = std::make_unique<MethodResultFunctions<rapidjson::Document>>(
