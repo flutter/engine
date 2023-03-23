@@ -10,26 +10,6 @@ Surface::Surface() = default;
 
 Surface::~Surface() = default;
 
-std::unique_ptr<GLContextResult> Surface::MakeRenderContextCurrent() {
-  return std::make_unique<GLContextDefaultResult>(true);
-}
-
-bool Surface::ClearRenderContext() {
-  return false;
-}
-
-bool Surface::AllowsDrawingWhenGpuDisabled() const {
-  return true;
-}
-
-bool Surface::EnableRasterCache() const {
-  return true;
-}
-
-impeller::AiksContext* Surface::GetAiksContext() const {
-  return nullptr;
-}
-
 Surface::SurfaceData Surface::GetSurfaceData() const {
   return {};
 }

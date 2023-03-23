@@ -321,19 +321,4 @@ GrDirectContext* GPUSurfaceGLSkia::GetContext() {
   return context_.get();
 }
 
-// |Surface|
-std::unique_ptr<GLContextResult> GPUSurfaceGLSkia::MakeRenderContextCurrent() {
-  return delegate_->GLContextMakeCurrent();
-}
-
-// |Surface|
-bool GPUSurfaceGLSkia::ClearRenderContext() {
-  return delegate_->GLContextClearCurrent();
-}
-
-// |Surface|
-bool GPUSurfaceGLSkia::AllowsDrawingWhenGpuDisabled() const {
-  return delegate_->AllowsDrawingWhenGpuDisabled();
-}
-
 }  // namespace flutter

@@ -503,9 +503,7 @@ class Rasterizer final : public SnapshotDelegate,
   fml::Milliseconds GetFrameBudget() const override;
 
   // |SnapshotController::Delegate|
-  const std::unique_ptr<Surface>& GetSurface() const override {
-    return surface_;
-  }
+  Studio* GetStudio() const override { return studio_.get(); }
 
   // |SnapshotController::Delegate|
   const std::unique_ptr<SnapshotSurfaceProducer>& GetSnapshotSurfaceProducer()

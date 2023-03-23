@@ -139,29 +139,4 @@ GrDirectContext* GPUSurfaceGLImpeller::GetContext() {
   return nullptr;
 }
 
-// |Surface|
-std::unique_ptr<GLContextResult>
-GPUSurfaceGLImpeller::MakeRenderContextCurrent() {
-  return delegate_->GLContextMakeCurrent();
-}
-
-// |Surface|
-bool GPUSurfaceGLImpeller::ClearRenderContext() {
-  return delegate_->GLContextClearCurrent();
-}
-
-bool GPUSurfaceGLImpeller::AllowsDrawingWhenGpuDisabled() const {
-  return delegate_->AllowsDrawingWhenGpuDisabled();
-}
-
-// |Surface|
-bool GPUSurfaceGLImpeller::EnableRasterCache() const {
-  return false;
-}
-
-// |Surface|
-impeller::AiksContext* GPUSurfaceGLImpeller::GetAiksContext() const {
-  return aiks_context_.get();
-}
-
 }  // namespace flutter

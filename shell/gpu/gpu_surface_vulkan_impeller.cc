@@ -109,21 +109,4 @@ GrDirectContext* GPUSurfaceVulkanImpeller::GetContext() {
   return nullptr;
 }
 
-// |Surface|
-std::unique_ptr<GLContextResult>
-GPUSurfaceVulkanImpeller::MakeRenderContextCurrent() {
-  // This backend has no such concept.
-  return std::make_unique<GLContextDefaultResult>(true);
-}
-
-// |Surface|
-bool GPUSurfaceVulkanImpeller::EnableRasterCache() const {
-  return false;
-}
-
-// |Surface|
-impeller::AiksContext* GPUSurfaceVulkanImpeller::GetAiksContext() const {
-  return aiks_context_.get();
-}
-
 }  // namespace flutter

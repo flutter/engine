@@ -43,15 +43,6 @@ class GPUSurfaceGLSkia : public Surface {
   // |Surface|
   GrDirectContext* GetContext() override;
 
-  // |Surface|
-  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
-
-  // |Surface|
-  bool ClearRenderContext() override;
-
-  // |Surface|
-  bool AllowsDrawingWhenGpuDisabled() const override;
-
  private:
   bool CreateOrUpdateSurfaces(const SkISize& size);
 

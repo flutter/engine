@@ -41,16 +41,6 @@ class Surface {
 
   virtual GrDirectContext* GetContext() = 0;
 
-  virtual std::unique_ptr<GLContextResult> MakeRenderContextCurrent();
-
-  virtual bool ClearRenderContext();
-
-  virtual bool AllowsDrawingWhenGpuDisabled() const;
-
-  virtual bool EnableRasterCache() const;
-
-  virtual impeller::AiksContext* GetAiksContext() const;
-
   /// Capture the `SurfaceData` currently present in the surface.
   ///
   /// Not guaranteed to work on all setups and not intended to be used in

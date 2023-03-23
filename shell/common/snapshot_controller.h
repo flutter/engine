@@ -7,6 +7,7 @@
 
 #include "flutter/common/settings.h"
 #include "flutter/display_list/image/dl_image.h"
+#include "flutter/flow/studio.h"
 #include "flutter/flow/surface.h"
 #include "flutter/fml/synchronization/sync_switch.h"
 #include "flutter/lib/ui/snapshot_delegate.h"
@@ -19,7 +20,7 @@ class SnapshotController {
   class Delegate {
    public:
     virtual ~Delegate() = default;
-    virtual const std::unique_ptr<Surface>& GetSurface() const = 0;
+    virtual Studio* GetStudio() const = 0;
     virtual const std::unique_ptr<SnapshotSurfaceProducer>&
     GetSnapshotSurfaceProducer() const = 0;
     virtual std::shared_ptr<const fml::SyncSwitch> GetIsGpuDisabledSyncSwitch()

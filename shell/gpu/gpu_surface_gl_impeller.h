@@ -43,21 +43,6 @@ class GPUSurfaceGLImpeller final : public Surface {
   // |Surface|
   GrDirectContext* GetContext() override;
 
-  // |Surface|
-  std::unique_ptr<GLContextResult> MakeRenderContextCurrent() override;
-
-  // |Surface|
-  bool ClearRenderContext() override;
-
-  // |Surface|
-  bool AllowsDrawingWhenGpuDisabled() const override;
-
-  // |Surface|
-  bool EnableRasterCache() const override;
-
-  // |Surface|
-  impeller::AiksContext* GetAiksContext() const override;
-
   FML_DISALLOW_COPY_AND_ASSIGN(GPUSurfaceGLImpeller);
 };
 

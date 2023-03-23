@@ -57,11 +57,6 @@ class SurfaceMock : public Surface {
   MOCK_METHOD(SkMatrix, GetRootTransformation, (), (const, override));
 
   MOCK_METHOD(GrDirectContext*, GetContext, (), (override));
-
-  MOCK_METHOD(std::unique_ptr<GLContextResult>,
-              MakeRenderContextCurrent,
-              (),
-              (override));
 };
 
 fml::RefPtr<fml::RasterThreadMerger> GetThreadMergerFromPlatformThread(

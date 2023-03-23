@@ -36,10 +36,10 @@ sk_sp<DlImage> SnapshotControllerImpeller::DoMakeRasterSnapshot(
   impeller::DisplayListDispatcher dispatcher;
   display_list->Dispatch(dispatcher);
   impeller::Picture picture = dispatcher.EndRecordingAsPicture();
-  if (GetDelegate().GetSurface() &&
-      GetDelegate().GetSurface()->GetAiksContext()) {
+  if (GetDelegate().GetStudio() &&
+      GetDelegate().GetStudio()->GetAiksContext()) {
     impeller::AiksContext* context =
-        GetDelegate().GetSurface()->GetAiksContext();
+        GetDelegate().GetStudio()->GetAiksContext();
 
     auto max_size = context->GetContext()
                         ->GetResourceAllocator()
