@@ -9,6 +9,7 @@
 #include "flutter/common/graphics/persistent_cache.h"
 #include "flutter/flutter_vma/flutter_skia_vma.h"
 #include "flutter/shell/common/context_options.h"
+#include "flutter/shell/gpu/gpu_studio_vulkan.h"
 #include "flutter/vulkan/vulkan_skia_proc_table.h"
 #include "flutter/vulkan/vulkan_utilities.h"
 
@@ -52,9 +53,20 @@ void ShellTestPlatformViewVulkan::SimulateVSync() {
 }
 
 // |PlatformView|
+std::unique_ptr<Studio> ShellTestPlatformViewVulkan::CreateRenderingStudio() {
+  if (!offscreen_context_) {
+    offscreen_context_ = std::unique_ptr<OffScreenContext>();
+  }
+  return std::make_unique<OffScreenStudio>(offscreen_context_);
+}
+
+// |PlatformView|
 std::unique_ptr<Surface> ShellTestPlatformViewVulkan::CreateRenderingSurface(
     int64_t view_id) {
-  return std::make_unique<OffScreenSurface>(proc_table_,
+  if (!offscreen_context_) {
+    offscreen_context_ = std::unique_ptr<OffScreenContext>();
+  }
+  return std::make_unique<OffScreenSurface>(offscreen_context_,
                                             shell_test_external_view_embedder_);
 }
 
@@ -75,14 +87,9 @@ PointerDataDispatcherMaker ShellTestPlatformViewVulkan::GetDispatcherMaker() {
 // shell_test.
 //              We need to merge this functionality back into //vulkan.
 //              https://github.com/flutter/flutter/issues/51132
-ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
-    fml::RefPtr<vulkan::VulkanProcTable> vk,
-    std::shared_ptr<ShellTestExternalViewEmbedder>
-        shell_test_external_view_embedder)
-    : valid_(false),
-      vk_(std::move(vk)),
-      shell_test_external_view_embedder_(
-          std::move(shell_test_external_view_embedder)) {
+ShellTestPlatformViewVulkan::OffScreenContext::OffScreenContext(
+    fml::RefPtr<vulkan::VulkanProcTable> vk)
+    : vk_(std::move(vk)) {
   if (!vk_ || !vk_->HasAcquiredMandatoryProcAddresses()) {
     FML_DLOG(ERROR) << "Proc table has not acquired mandatory proc addresses.";
     return;
@@ -124,13 +131,12 @@ ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
   // Create the Skia GrContext.
   if (!CreateSkiaGrContext()) {
     FML_DLOG(ERROR) << "Could not create Skia context.";
-    return;
   }
-
-  valid_ = true;
 }
 
-bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
+ShellTestPlatformViewVulkan::OffScreenContext::~OffScreenContext() {}
+
+bool ShellTestPlatformViewVulkan::OffScreenContext::CreateSkiaGrContext() {
   GrVkBackendContext backend_context;
 
   if (!CreateSkiaBackendContext(&backend_context)) {
@@ -156,7 +162,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaGrContext() {
   return true;
 }
 
-bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaBackendContext(
+bool ShellTestPlatformViewVulkan::OffScreenContext::CreateSkiaBackendContext(
     GrVkBackendContext* context) {
   auto getProc = CreateSkiaGetProc(vk_);
 
@@ -186,10 +192,18 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::CreateSkiaBackendContext(
   return true;
 }
 
+ShellTestPlatformViewVulkan::OffScreenSurface::OffScreenSurface(
+    const std::shared_ptr<OffScreenContext>& offscreen_context,
+    std::shared_ptr<ShellTestExternalViewEmbedder>
+        shell_test_external_view_embedder)
+    : shell_test_external_view_embedder_(
+          std::move(shell_test_external_view_embedder)),
+      offscreen_context_(offscreen_context) {}
+
 ShellTestPlatformViewVulkan::OffScreenSurface::~OffScreenSurface() {}
 
 bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
-  return valid_;
+  return GetContext();
 }
 
 std::unique_ptr<SurfaceFrame>
@@ -197,8 +211,8 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
     const SkISize& size) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);
-  auto surface = SkSurface::MakeRenderTarget(
-      context_.get(), skgpu::Budgeted::kNo, image_info, 0, nullptr);
+  auto surface = SkSurface::MakeRenderTarget(GetContext(), skgpu::Budgeted::kNo,
+                                             image_info, 0, nullptr);
   SurfaceFrame::SubmitCallback callback = [](const SurfaceFrame&,
                                              DlCanvas* canvas) -> bool {
     canvas->Flush();
@@ -214,7 +228,7 @@ ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
 }
 
 GrDirectContext* ShellTestPlatformViewVulkan::OffScreenSurface::GetContext() {
-  return context_.get();
+  return offscreen_context_->GetContext().get();
 }
 
 SkMatrix ShellTestPlatformViewVulkan::OffScreenSurface::GetRootTransformation()
