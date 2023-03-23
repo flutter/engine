@@ -8,7 +8,6 @@
 #include <ostream>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_path_effect.h"
 #include "flutter/display_list/dl_op_receiver.h"
 
 namespace flutter {
@@ -36,10 +35,14 @@ extern std::ostream& operator<<(std::ostream& os,
 extern std::ostream& operator<<(std::ostream& os, const DlPaint& paint);
 extern std::ostream& operator<<(std::ostream& os, const DlBlendMode& mode);
 extern std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op);
+extern std::ostream& operator<<(std::ostream& os,
+                                const DlCanvas::PointMode& op);
+extern std::ostream& operator<<(std::ostream& os,
+                                const DlCanvas::SrcRectConstraint& op);
 extern std::ostream& operator<<(std::ostream& os, const DlStrokeCap& cap);
 extern std::ostream& operator<<(std::ostream& os, const DlStrokeJoin& join);
 extern std::ostream& operator<<(std::ostream& os, const DlDrawStyle& style);
-extern std::ostream& operator<<(std::ostream& os, const SkBlurStyle& style);
+extern std::ostream& operator<<(std::ostream& os, const DlBlurStyle& style);
 extern std::ostream& operator<<(std::ostream& os, const DlFilterMode& mode);
 extern std::ostream& operator<<(std::ostream& os, const DlColor& color);
 extern std::ostream& operator<<(std::ostream& os, DlImageSampling sampling);
@@ -121,7 +124,7 @@ class DisplayListStreamDispatcher final : public DlOpReceiver {
                      const SkRect& dst,
                      DlImageSampling sampling,
                      bool render_with_attributes,
-                     bool enforce_src_edges) override;
+                     SrcRectConstraint constraint) override;
   void drawImageNine(const sk_sp<DlImage> image,
                      const SkIRect& center,
                      const SkRect& dst,

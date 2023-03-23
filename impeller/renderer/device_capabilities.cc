@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 #include "impeller/renderer/device_capabilities.h"
+#include "device_capabilities.h"
 
 namespace impeller {
 
@@ -10,14 +11,22 @@ IDeviceCapabilities::IDeviceCapabilities(bool has_threading_restrictions,
                                          bool supports_offscreen_msaa,
                                          bool supports_ssbo,
                                          bool supports_texture_to_texture_blits,
+                                         bool supports_framebuffer_fetch,
                                          PixelFormat default_color_format,
-                                         PixelFormat default_stencil_format)
+                                         PixelFormat default_stencil_format,
+                                         bool supports_compute,
+                                         bool supports_compute_subgroups,
+                                         bool supports_read_from_resolve)
     : has_threading_restrictions_(has_threading_restrictions),
       supports_offscreen_msaa_(supports_offscreen_msaa),
       supports_ssbo_(supports_ssbo),
       supports_texture_to_texture_blits_(supports_texture_to_texture_blits),
+      supports_framebuffer_fetch_(supports_framebuffer_fetch),
       default_color_format_(default_color_format),
-      default_stencil_format_(default_stencil_format) {}
+      default_stencil_format_(default_stencil_format),
+      supports_compute_(supports_compute),
+      supports_compute_subgroups_(supports_compute_subgroups),
+      supports_read_from_resolve_(supports_read_from_resolve) {}
 
 IDeviceCapabilities::~IDeviceCapabilities() = default;
 
@@ -37,12 +46,28 @@ bool IDeviceCapabilities::SupportsTextureToTextureBlits() const {
   return supports_texture_to_texture_blits_;
 }
 
+bool IDeviceCapabilities::SupportsFramebufferFetch() const {
+  return supports_framebuffer_fetch_;
+}
+
 PixelFormat IDeviceCapabilities::GetDefaultColorFormat() const {
   return default_color_format_;
 }
 
 PixelFormat IDeviceCapabilities::GetDefaultStencilFormat() const {
   return default_stencil_format_;
+}
+
+bool IDeviceCapabilities::SupportsCompute() const {
+  return supports_compute_;
+}
+
+bool IDeviceCapabilities::SupportsComputeSubgroups() const {
+  return supports_compute_subgroups_;
+}
+
+bool IDeviceCapabilities::SupportsReadFromResolve() const {
+  return supports_read_from_resolve_;
 }
 
 DeviceCapabilitiesBuilder::DeviceCapabilitiesBuilder() = default;
@@ -73,6 +98,12 @@ DeviceCapabilitiesBuilder::SetSupportsTextureToTextureBlits(bool value) {
   return *this;
 }
 
+DeviceCapabilitiesBuilder&
+DeviceCapabilitiesBuilder::SetSupportsFramebufferFetch(bool value) {
+  supports_framebuffer_fetch_ = value;
+  return *this;
+}
+
 DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetDefaultColorFormat(
     PixelFormat value) {
   default_color_format_ = value;
@@ -82,6 +113,20 @@ DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetDefaultColorFormat(
 DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetDefaultStencilFormat(
     PixelFormat value) {
   default_stencil_format_ = value;
+  return *this;
+}
+
+DeviceCapabilitiesBuilder& DeviceCapabilitiesBuilder::SetSupportsCompute(
+    bool value,
+    bool subgroups) {
+  supports_compute_ = value;
+  supports_compute_subgroups_ = subgroups;
+  return *this;
+}
+
+DeviceCapabilitiesBuilder&
+DeviceCapabilitiesBuilder::SetSupportsReadFromResolve(bool value) {
+  supports_read_from_resolve_ = value;
   return *this;
 }
 
@@ -96,8 +141,12 @@ std::unique_ptr<IDeviceCapabilities> DeviceCapabilitiesBuilder::Build() {
       supports_offscreen_msaa_,                                 //
       supports_ssbo_,                                           //
       supports_texture_to_texture_blits_,                       //
+      supports_framebuffer_fetch_,                              //
       *default_color_format_,                                   //
-      *default_stencil_format_                                  //
+      *default_stencil_format_,                                 //
+      supports_compute_,                                        //
+      supports_compute_subgroups_,                              //
+      supports_read_from_resolve_                               //
   );
   return std::unique_ptr<IDeviceCapabilities>(capabilities);
 }

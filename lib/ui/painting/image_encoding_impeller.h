@@ -6,7 +6,7 @@
 #define FLUTTER_LIB_UI_PAINTING_IMAGE_ENCODING_IMPELLER_H_
 
 #include "flutter/common/task_runners.h"
-#include "flutter/display_list/display_list_image.h"
+#include "flutter/display_list/image/dl_image.h"
 #include "flutter/fml/synchronization/sync_switch.h"
 
 namespace impeller {
@@ -17,6 +17,8 @@ namespace flutter {
 
 class ImageEncodingImpeller {
  public:
+  static int GetColorSpace(const std::shared_ptr<impeller::Texture>& texture);
+
   /// Converts a DlImage to a SkImage.
   /// This should be called from the thread that corresponds to
   /// `dl_image->owning_context()` when gpu access is guaranteed.

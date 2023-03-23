@@ -197,8 +197,15 @@ std::ostream& operator<<(std::ostream& os, const DlCanvas::ClipOp& op) {
   switch (op) {
     case DlCanvas::ClipOp::kDifference: return os << "ClipOp::kDifference";
     case DlCanvas::ClipOp::kIntersect:  return os << "ClipOp::kIntersect";
+  }
+}
 
-    default: return os << "ClipOp::????";
+std::ostream& operator<<(std::ostream& os, const DlCanvas::SrcRectConstraint& constraint) {
+  switch (constraint) {
+    case DlCanvas::SrcRectConstraint::kFast:
+      return os << "SrcRectConstraint::kFast";
+    case DlCanvas::SrcRectConstraint::kStrict:
+      return os << "SrcRectConstraint::kStrict";
   }
 }
 
@@ -207,8 +214,6 @@ std::ostream& operator<<(std::ostream& os, const DlStrokeCap& cap) {
     case DlStrokeCap::kButt:   return os << "Cap::kButt";
     case DlStrokeCap::kRound:  return os << "Cap::kRound";
     case DlStrokeCap::kSquare: return os << "Cap::kSquare";
-
-    default: return os << "Cap::????";
   }
 }
 
@@ -217,8 +222,6 @@ std::ostream& operator<<(std::ostream& os, const DlStrokeJoin& join) {
     case DlStrokeJoin::kMiter: return os << "Join::kMiter";
     case DlStrokeJoin::kRound: return os << "Join::kRound";
     case DlStrokeJoin::kBevel: return os << "Join::kBevel";
-
-    default: return os << "Join::????";
   }
 }
 
@@ -227,30 +230,23 @@ std::ostream& operator<<(std::ostream& os, const DlDrawStyle& style) {
     case DlDrawStyle::kFill:          return os << "Style::kFill";
     case DlDrawStyle::kStroke:        return os << "Style::kStroke";
     case DlDrawStyle::kStrokeAndFill: return os << "Style::kStrokeAnFill";
-
-    default: return os << "Style::????";
   }
 }
 
-std::ostream& operator<<(std::ostream& os, const SkBlurStyle& style) {
+std::ostream& operator<<(std::ostream& os, const DlBlurStyle& style) {
   switch (style) {
-    case kNormal_SkBlurStyle: return os << "BlurStyle::kNormal";
-    case kSolid_SkBlurStyle:  return os << "BlurStyle::kSolid";
-    case kOuter_SkBlurStyle:  return os << "BlurStyle::kOuter";
-    case kInner_SkBlurStyle:  return os << "BlurStyle::kInner";
-
-    default: return os << "Style::????";
+    case DlBlurStyle::kNormal: return os << "BlurStyle::kNormal";
+    case DlBlurStyle::kSolid:  return os << "BlurStyle::kSolid";
+    case DlBlurStyle::kOuter:  return os << "BlurStyle::kOuter";
+    case DlBlurStyle::kInner:  return os << "BlurStyle::kInner";
   }
 }
 
-static std::ostream& operator<<(std::ostream& os,
-                                const DlCanvas::PointMode& mode) {
+std::ostream& operator<<(std::ostream& os, const DlCanvas::PointMode& mode) {
   switch (mode) {
     case DlCanvas::PointMode::kPoints:  return os << "PointMode::kPoints";
     case DlCanvas::PointMode::kLines:   return os << "PointMode::kLines";
     case DlCanvas::PointMode::kPolygon: return os << "PointMode::kPolygon";
-
-    default: return os << "PointMode::????";
   }
 }
 
@@ -810,13 +806,13 @@ void DisplayListStreamDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                                 const SkRect& dst,
                                                 DlImageSampling sampling,
                                                 bool render_with_attributes,
-                                                bool enforce_src_edges) {
+                                                SrcRectConstraint constraint) {
   startl() << "drawImageRect(" << image.get() << "," << std::endl;
   startl() << "              src: " << src << "," << std::endl;
   startl() << "              dst: " << dst << "," << std::endl;
   startl() << "              " << sampling << ", "
                                << "with attributes: " << render_with_attributes << ", "
-                               << "enforce src edges: " << enforce_src_edges
+                               << constraint
            << ");" << std::endl;
 }
 void DisplayListStreamDispatcher::drawImageNine(const sk_sp<DlImage> image,

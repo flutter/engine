@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-#include "flutter/display_list/display_list_builder.h"
+#include "flutter/display_list/dl_builder.h"
 #include "flutter/lib/ui/floating_point.h"
 #include "flutter/lib/ui/painting/image.h"
 #include "flutter/lib/ui/painting/image_filter.h"
@@ -447,7 +447,7 @@ Dart_Handle Canvas::drawImageRect(const CanvasImage* image,
     const DlPaint* opt_paint =
         paint.paint(dl_paint, kDrawImageRectWithPaintFlags);
     builder()->DrawImageRect(dl_image, src, dst, sampling, opt_paint,
-                             SkCanvas::kFast_SrcRectConstraint);
+                             DlCanvas::SrcRectConstraint::kFast);
   }
   return Dart_Null();
 }

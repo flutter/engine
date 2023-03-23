@@ -4,9 +4,11 @@
 
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 
-#include "flutter/display_list/display_list_blend_mode.h"
+#include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/skia/dl_sk_conversions.h"
+#include "flutter/display_list/skia/dl_sk_types.h"
 #include "flutter/fml/trace_event.h"
+
 #include "third_party/skia/include/utils/SkShadowUtils.h"
 
 namespace flutter {
@@ -192,10 +194,10 @@ void DlSkCanvasDispatcher::drawImageRect(const sk_sp<DlImage> image,
                                          const SkRect& dst,
                                          DlImageSampling sampling,
                                          bool render_with_attributes,
-                                         bool enforce_src_edges) {
+                                         SrcRectConstraint constraint) {
   canvas_->drawImageRect(image ? image->skia_image() : nullptr, src, dst,
                          ToSk(sampling), safe_paint(render_with_attributes),
-                         ToSkConstraint(enforce_src_edges));
+                         ToSk(constraint));
 }
 void DlSkCanvasDispatcher::drawImageNine(const sk_sp<DlImage> image,
                                          const SkIRect& center,
@@ -236,19 +238,18 @@ void DlSkCanvasDispatcher::drawAtlas(const sk_sp<DlImage> atlas,
 void DlSkCanvasDispatcher::drawDisplayList(
     const sk_sp<DisplayList> display_list,
     SkScalar opacity) {
-  int restore_count;
+  const int restore_count = canvas_->getSaveCount();
 
   // Compute combined opacity and figure out whether we can apply it
   // during dispatch or if we need a saveLayer.
   SkScalar combined_opacity = opacity * this->opacity();
   if (combined_opacity < SK_Scalar1 &&
       !display_list->can_apply_group_opacity()) {
-    SkPaint save_paint;
-    save_paint.setAlphaf(combined_opacity);
-    restore_count = canvas_->saveLayer(display_list->bounds(), &save_paint);
+    TRACE_EVENT0("flutter", "Canvas::saveLayer");
+    canvas_->saveLayerAlphaf(&display_list->bounds(), combined_opacity);
     combined_opacity = SK_Scalar1;
   } else {
-    restore_count = canvas_->save();
+    canvas_->save();
   }
 
   // Create a new CanvasDispatcher to isolate the actions of the

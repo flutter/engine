@@ -23,17 +23,28 @@ class IDeviceCapabilities {
 
   bool SupportsTextureToTextureBlits() const;
 
+  bool SupportsFramebufferFetch() const;
+
   PixelFormat GetDefaultColorFormat() const;
 
   PixelFormat GetDefaultStencilFormat() const;
+
+  bool SupportsCompute() const;
+  bool SupportsComputeSubgroups() const;
+
+  bool SupportsReadFromResolve() const;
 
  private:
   IDeviceCapabilities(bool has_threading_restrictions,
                       bool supports_offscreen_msaa,
                       bool supports_ssbo,
                       bool supports_texture_to_texture_blits,
+                      bool supports_framebuffer_fetch,
                       PixelFormat default_color_format,
-                      PixelFormat default_stencil_format);
+                      PixelFormat default_stencil_format,
+                      bool supports_compute,
+                      bool supports_compute_subgroups,
+                      bool supports_read_from_resolve);
 
   friend class DeviceCapabilitiesBuilder;
 
@@ -41,8 +52,12 @@ class IDeviceCapabilities {
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
   bool supports_texture_to_texture_blits_ = false;
+  bool supports_framebuffer_fetch_ = false;
   PixelFormat default_color_format_;
   PixelFormat default_stencil_format_;
+  bool supports_compute_ = false;
+  bool supports_compute_subgroups_ = false;
+  bool supports_read_from_resolve_ = false;
 
   FML_DISALLOW_COPY_AND_ASSIGN(IDeviceCapabilities);
 };
@@ -61,9 +76,15 @@ class DeviceCapabilitiesBuilder {
 
   DeviceCapabilitiesBuilder& SetSupportsTextureToTextureBlits(bool value);
 
+  DeviceCapabilitiesBuilder& SetSupportsFramebufferFetch(bool value);
+
   DeviceCapabilitiesBuilder& SetDefaultColorFormat(PixelFormat value);
 
   DeviceCapabilitiesBuilder& SetDefaultStencilFormat(PixelFormat value);
+
+  DeviceCapabilitiesBuilder& SetSupportsCompute(bool value, bool subgroups);
+
+  DeviceCapabilitiesBuilder& SetSupportsReadFromResolve(bool value);
 
   std::unique_ptr<IDeviceCapabilities> Build();
 
@@ -72,6 +93,10 @@ class DeviceCapabilitiesBuilder {
   bool supports_offscreen_msaa_ = false;
   bool supports_ssbo_ = false;
   bool supports_texture_to_texture_blits_ = false;
+  bool supports_framebuffer_fetch_ = false;
+  bool supports_compute_ = false;
+  bool supports_compute_subgroups_ = false;
+  bool supports_read_from_resolve_ = false;
   std::optional<PixelFormat> default_color_format_ = std::nullopt;
   std::optional<PixelFormat> default_stencil_format_ = std::nullopt;
 

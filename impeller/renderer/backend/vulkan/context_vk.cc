@@ -15,7 +15,6 @@
 #include "flutter/fml/string_conversion.h"
 #include "flutter/fml/trace_event.h"
 #include "impeller/base/validation.h"
-#include "impeller/base/work_queue_common.h"
 #include "impeller/renderer/backend/vulkan/allocator_vk.h"
 #include "impeller/renderer/backend/vulkan/capabilities_vk.h"
 #include "impeller/renderer/backend/vulkan/command_buffer_vk.h"
@@ -51,7 +50,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugUtilsMessengerCallback(
   }
 
   const auto prefix = impeller::vk::to_string(
-      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT{severity});
+      impeller::vk::DebugUtilsMessageSeverityFlagBitsEXT(severity));
   // Just so that the log doesn't say FML_DCHECK(false).
   constexpr bool kVulkanValidationFailure = false;
   FML_DCHECK(kVulkanValidationFailure)
@@ -479,13 +478,6 @@ ContextVK::ContextVK(
     return;
   }
 
-  auto work_queue = WorkQueueCommon::Create();
-
-  if (!work_queue) {
-    VALIDATION_LOG << "Could not create workqueue.";
-    return;
-  }
-
   //----------------------------------------------------------------------------
   /// Setup the command pool.
   ///
@@ -541,7 +533,6 @@ ContextVK::ContextVK(
   shader_library_ = std::move(shader_library);
   sampler_library_ = std::move(sampler_library);
   pipeline_library_ = std::move(pipeline_library);
-  work_queue_ = std::move(work_queue);
   graphics_queue_ =
       device_->getQueue(graphics_queue->family, graphics_queue->index);
   compute_queue_ =
@@ -554,8 +545,12 @@ ContextVK::ContextVK(
           .SetSupportsOffscreenMSAA(true)
           .SetSupportsSSBO(false)
           .SetSupportsTextureToTextureBlits(true)
+          .SetSupportsFramebufferFetch(false)
           .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
           .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+          // TODO(110622): detect this and enable.
+          .SetSupportsCompute(false, false)
+          .SetSupportsReadFromResolve(false)
           .Build();
   graphics_command_pool_ = std::move(graphics_command_pool.value);
   descriptor_pool_ = std::move(descriptor_pool.value);
@@ -586,11 +581,6 @@ std::shared_ptr<SamplerLibrary> ContextVK::GetSamplerLibrary() const {
 
 std::shared_ptr<PipelineLibrary> ContextVK::GetPipelineLibrary() const {
   return pipeline_library_;
-}
-
-// |Context|
-std::shared_ptr<WorkQueue> ContextVK::GetWorkQueue() const {
-  return work_queue_;
 }
 
 std::shared_ptr<CommandBuffer> ContextVK::CreateCommandBuffer() const {

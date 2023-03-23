@@ -6,17 +6,17 @@
 #define FLUTTER_DISPLAY_LIST_DISPLAY_LIST_DISPATCHER_H_
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_color_filter.h"
-#include "flutter/display_list/display_list_color_source.h"
-#include "flutter/display_list/display_list_image.h"
-#include "flutter/display_list/display_list_image_filter.h"
-#include "flutter/display_list/display_list_mask_filter.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_path_effect.h"
-#include "flutter/display_list/display_list_sampling_options.h"
-#include "flutter/display_list/display_list_vertices.h"
+#include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/dl_vertices.h"
+#include "flutter/display_list/effects/dl_color_filter.h"
+#include "flutter/display_list/effects/dl_color_source.h"
+#include "flutter/display_list/effects/dl_image_filter.h"
+#include "flutter/display_list/effects/dl_mask_filter.h"
+#include "flutter/display_list/effects/dl_path_effect.h"
+#include "flutter/display_list/image/dl_image.h"
 
 namespace flutter {
 
@@ -32,12 +32,13 @@ class DlOpReceiver {
  protected:
   using ClipOp = DlCanvas::ClipOp;
   using PointMode = DlCanvas::PointMode;
+  using SrcRectConstraint = DlCanvas::SrcRectConstraint;
 
  public:
   // MaxDrawPointsCount * sizeof(SkPoint) must be less than 1 << 32
   static constexpr int kMaxDrawPointsCount = ((1 << 29) - 1);
 
-  // The following methods are nearly 1:1 with the methods on SkPaint and
+  // The following methods are nearly 1:1 with the methods on DlPaint and
   // carry the same meanings. Each method sets a persistent value for the
   // attribute for the rest of the display list or until it is reset by
   // another method that changes the same attribute. The current set of
@@ -52,8 +53,8 @@ class DlOpReceiver {
   virtual void setStrokeJoin(DlStrokeJoin join) = 0;
   virtual void setColorSource(const DlColorSource* source) = 0;
   virtual void setColorFilter(const DlColorFilter* filter) = 0;
-  // setInvertColors does not exist in SkPaint, but is a quick way to set
-  // a ColorFilter that inverts the rgb values of all rendered colors.
+  // setInvertColors is a quick way to set a ColorFilter that inverts the
+  // rgb values of all rendered colors.
   // It is not reset by |setColorFilter|, but instead composed with that
   // filter so that the color inversion happens after the ColorFilter.
   virtual void setInvertColors(bool invert) = 0;
@@ -219,12 +220,13 @@ class DlOpReceiver {
                          const SkPoint point,
                          DlImageSampling sampling,
                          bool render_with_attributes) = 0;
-  virtual void drawImageRect(const sk_sp<DlImage> image,
-                             const SkRect& src,
-                             const SkRect& dst,
-                             DlImageSampling sampling,
-                             bool render_with_attributes,
-                             bool enforce_src_edges = false) = 0;
+  virtual void drawImageRect(
+      const sk_sp<DlImage> image,
+      const SkRect& src,
+      const SkRect& dst,
+      DlImageSampling sampling,
+      bool render_with_attributes,
+      SrcRectConstraint constraint = SrcRectConstraint::kFast) = 0;
   virtual void drawImageNine(const sk_sp<DlImage> image,
                              const SkIRect& center,
                              const SkRect& dst,

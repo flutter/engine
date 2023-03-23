@@ -8,6 +8,26 @@ import '../dom.dart';
 import '../text/line_breaker.dart';
 import 'canvaskit_api.dart';
 
+/// Injects required ICU data into the [builder].
+///
+/// This should only be used with the CanvasKit Chromium variant that's compiled
+/// without ICU data.
+void injectClientICU(SkParagraphBuilder builder) {
+  assert(
+    canvasKit.ParagraphBuilder.RequiresClientICU(),
+    'This method should only be used with the CanvasKit Chromium variant.',
+  );
+
+  final String text = builder.getText();
+  builder.setWordsUtf16(
+    fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.word),
+  );
+  builder.setGraphemeBreaksUtf16(
+    fragmentUsingIntlSegmenter(text, IntlSegmenterGranularity.grapheme),
+  );
+  builder.setLineBreaksUtf16(fragmentUsingV8LineBreaker(text));
+}
+
 /// The granularity at which to segment text.
 ///
 /// To find all supported granularities, see:
@@ -34,8 +54,7 @@ Uint32List fragmentUsingIntlSegmenter(
     breaks.add(iterator.current.index);
   }
   breaks.add(text.length);
-
-  return mallocUint32List(breaks.length).toTypedArray()..setAll(0, breaks);
+  return Uint32List.fromList(breaks);
 }
 
 // These are the soft/hard line break values expected by Skia's SkParagraph.
@@ -49,7 +68,7 @@ Uint32List fragmentUsingV8LineBreaker(String text) {
       breakLinesUsingV8BreakIterator(text, _v8LineBreaker);
 
   final int size = (fragments.length + 1) * 2;
-  final Uint32List typedArray = mallocUint32List(size).toTypedArray();
+  final Uint32List typedArray = Uint32List(size);
 
   typedArray[0] = 0; // start index
   typedArray[1] = _kSoftLineBreak; // break type

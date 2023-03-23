@@ -5,6 +5,7 @@
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:js/js.dart';
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 
@@ -1624,6 +1625,9 @@ void _paragraphTests() {
     builder.pushStyle(
         canvasKit.TextStyle(SkTextStyleProperties()..halfLeading = true));
     builder.pop();
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1739,6 +1743,10 @@ void _paragraphTests() {
     );
     builder.addText('hello');
 
+    if (canvasKit.ParagraphBuilder.RequiresClientICU()) {
+      injectClientICU(builder);
+    }
+
     final SkParagraph paragraph = builder.build();
     paragraph.layout(500);
 
@@ -1827,6 +1835,49 @@ void _paragraphTests() {
     expect(surface, isNotNull);
   }, skip: isFirefox); // Intended: Headless firefox has no webgl support https://github.com/flutter/flutter/issues/109265
 
+  group('getCanvasKitJsFileNames', () {
+    late dynamic oldV8BreakIterator = v8BreakIterator;
+    setUp(() {
+      oldV8BreakIterator = v8BreakIterator;
+    });
+    tearDown(() {
+      v8BreakIterator = oldV8BreakIterator;
+      debugResetBrowserSupportsImageDecoder();
+    });
+
+    test('in Chromium-based browsers', () {
+      v8BreakIterator = Object(); // Any non-null value.
+      browserSupportsImageDecoder = true;
+
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>[
+        'chromium/canvaskit.js',
+        'canvaskit.js',
+      ]);
+    });
+
+    test('in other browsers', () {
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = true;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+
+      v8BreakIterator = Object();
+      browserSupportsImageDecoder = false;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+
+      v8BreakIterator = null;
+      browserSupportsImageDecoder = false;
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.full), <String>['canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.chromium), <String>['chromium/canvaskit.js']);
+      expect(getCanvasKitJsFileNames(CanvasKitVariant.auto), <String>['canvaskit.js']);
+    });
+  });
+
   test('respects actual location of canvaskit files', () {
     expect(
       canvasKitWasmModuleUrl('canvaskit.wasm', 'https://example.com/'),
@@ -1842,3 +1893,10 @@ void _paragraphTests() {
     );
   });
 }
+
+
+@JS('window.Intl.v8BreakIterator')
+external dynamic get v8BreakIterator;
+
+@JS('window.Intl.v8BreakIterator')
+external set v8BreakIterator(dynamic x);

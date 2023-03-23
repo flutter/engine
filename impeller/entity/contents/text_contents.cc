@@ -50,6 +50,23 @@ void TextContents::SetColor(Color color) {
   color_ = color;
 }
 
+Color TextContents::GetColor() const {
+  return color_;
+}
+
+bool TextContents::CanAcceptOpacity(const Entity& entity) const {
+  return !frame_.MaybeHasOverlapping();
+}
+
+void TextContents::SetInheritedOpacity(Scalar opacity) {
+  auto color = color_;
+  color_ = color.WithAlpha(color.alpha * opacity);
+}
+
+void TextContents::SetInverseMatrix(Matrix matrix) {
+  inverse_matrix_ = matrix;
+}
+
 std::optional<Rect> TextContents::GetCoverage(const Entity& entity) const {
   auto bounds = frame_.GetBounds();
   if (!bounds.has_value()) {
@@ -71,6 +88,7 @@ static bool CommonRender(
     RenderPass& pass,
     const Color& color,
     const TextFrame& frame,
+    const Matrix& inverse_matrix,
     std::shared_ptr<GlyphAtlas>
         atlas,  // NOLINT(performance-unnecessary-value-param)
     Command& cmd) {
@@ -96,7 +114,7 @@ static bool CommonRender(
     sampler_desc.min_filter = MinMagFilter::kLinear;
     sampler_desc.mag_filter = MinMagFilter::kLinear;
   }
-  sampler_desc.mip_filter = MipFilter::kNone;
+  sampler_desc.mip_filter = MipFilter::kNearest;
 
   typename FS::FragInfo frag_info;
   frag_info.text_color = ToVector(color.Premultiply());
@@ -117,9 +135,9 @@ static bool CommonRender(
   // interpolated vertex information is also used in the fragment shader to
   // sample from the glyph atlas.
 
-  const std::array<Point, 4> unit_points = {Point{0, 0}, Point{1, 0},
-                                            Point{0, 1}, Point{1, 1}};
-  const std::array<uint32_t, 6> indices = {0, 1, 2, 1, 2, 3};
+  constexpr std::array<Point, 4> unit_points = {Point{0, 0}, Point{1, 0},
+                                                Point{0, 1}, Point{1, 1}};
+  constexpr std::array<uint32_t, 6> indices = {0, 1, 2, 1, 2, 3};
 
   VertexBufferBuilder<typename VS::PerVertexData> vertex_builder;
 
@@ -159,8 +177,10 @@ static bool CommonRender(
 
       auto uv_scaler_a = atlas_glyph_pos->size / atlas_size;
       auto uv_scaler_b = (Point::Round(atlas_glyph_pos->origin) / atlas_size);
-      auto translation = Matrix::MakeTranslation(
-          Vector3(offset_glyph_position.x, offset_glyph_position.y, 0));
+      auto translation =
+          Matrix::MakeTranslation(
+              Vector3(offset_glyph_position.x, offset_glyph_position.y, 0)) *
+          inverse_matrix;
 
       for (const auto& point : unit_points) {
         typename VS::PerVertexData vtx;
@@ -209,8 +229,8 @@ bool TextContents::RenderSdf(const ContentContext& renderer,
   cmd.pipeline = renderer.GetGlyphAtlasSdfPipeline(opts);
   cmd.stencil_reference = entity.GetStencilDepth();
 
-  return CommonRender<GlyphAtlasSdfPipeline>(renderer, entity, pass, color_,
-                                             frame_, atlas, cmd);
+  return CommonRender<GlyphAtlasSdfPipeline>(
+      renderer, entity, pass, color_, frame_, inverse_matrix_, atlas, cmd);
 }
 
 bool TextContents::Render(const ContentContext& renderer,
@@ -245,7 +265,7 @@ bool TextContents::Render(const ContentContext& renderer,
   cmd.stencil_reference = entity.GetStencilDepth();
 
   return CommonRender<GlyphAtlasPipeline>(renderer, entity, pass, color_,
-                                          frame_, atlas, cmd);
+                                          frame_, inverse_matrix_, atlas, cmd);
 }
 
 }  // namespace impeller

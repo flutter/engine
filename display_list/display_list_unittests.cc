@@ -9,13 +9,13 @@
 #include <vector>
 
 #include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_builder.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_rtree.h"
-#include "flutter/display_list/display_list_utils.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_builder.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/geometry/dl_rtree.h"
 #include "flutter/display_list/skia/dl_sk_dispatcher.h"
 #include "flutter/display_list/testing/dl_test_snippets.h"
+#include "flutter/display_list/utils/dl_receiver_utils.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/math.h"
 #include "flutter/testing/display_list_testing.h"
@@ -678,10 +678,10 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
              , true);
   RUN_TESTS(receiver.drawImageRect(TestImage1, {10, 10, 20, 20}, {0, 0, 10, 10},
                                    kNearestSampling, true,
-                                   SkCanvas::kFast_SrcRectConstraint););
+                                   DlCanvas::SrcRectConstraint::kFast););
   RUN_TESTS2(receiver.drawImageRect(TestImage1, {10, 10, 20, 20},
                                     {0, 0, 10, 10}, kNearestSampling, false,
-                                    SkCanvas::kFast_SrcRectConstraint);
+                                    DlCanvas::SrcRectConstraint::kFast);
              , true);
   RUN_TESTS(receiver.drawImageNine(TestImage2, {20, 20, 30, 30}, {0, 0, 20, 20},
                                    DlFilterMode::kLinear, true););
@@ -708,7 +708,7 @@ TEST_F(DisplayListTest, SingleOpsMightSupportGroupOpacityBlendMode) {
     static auto display_list = builder.Build();
     RUN_TESTS2(receiver.drawDisplayList(display_list);, false);
   }
-  RUN_TESTS(receiver.drawTextBlob(TestBlob1, 0, 0););
+  RUN_TESTS2(receiver.drawTextBlob(TestBlob1, 0, 0);, false);
   RUN_TESTS2(receiver.drawShadow(kTestPath1, SK_ColorBLACK, 1.0, false, 1.0);
              , false);
 
@@ -2608,6 +2608,18 @@ TEST_F(DisplayListTest, RTreeRenderCulling) {
 
     EXPECT_TRUE(DisplayListsEQ_Verbose(culling_builder.Build(), main));
   }
+}
+
+TEST_F(DisplayListTest, DrawSaveDrawCannotInheritOpacity) {
+  DisplayListBuilder builder;
+  builder.DrawCircle({10, 10}, 5, DlPaint());
+  builder.Save();
+  builder.ClipRect({0, 0, 20, 20}, DlCanvas::ClipOp::kIntersect, false);
+  builder.DrawRect({5, 5, 15, 15}, DlPaint());
+  builder.Restore();
+  auto display_list = builder.Build();
+
+  ASSERT_FALSE(display_list->can_apply_group_opacity());
 }
 
 }  // namespace testing

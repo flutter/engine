@@ -4,12 +4,11 @@
 
 #include "flutter/display_list/skia/dl_sk_conversions.h"
 
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_paint.h"
-#include "flutter/display_list/display_list_sampling_options.h"
-#include "flutter/display_list/display_list_tile_mode.h"
-#include "flutter/display_list/display_list_vertices.h"
-#include "flutter/display_list/types.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_paint.h"
+#include "flutter/display_list/dl_sampling_options.h"
+#include "flutter/display_list/dl_tile_mode.h"
+#include "flutter/display_list/dl_vertices.h"
 #include "gtest/gtest.h"
 #include "include/core/SkSamplingOptions.h"
 
@@ -31,6 +30,13 @@ TEST(DisplayListSkConversions, ToSkTileMode) {
   ASSERT_EQ(ToSk(DlTileMode::kRepeat), SkTileMode::kRepeat);
   ASSERT_EQ(ToSk(DlTileMode::kMirror), SkTileMode::kMirror);
   ASSERT_EQ(ToSk(DlTileMode::kDecal), SkTileMode::kDecal);
+}
+
+TEST(DisplayListSkConversions, ToSkBlurStyle) {
+  ASSERT_EQ(ToSk(DlBlurStyle::kInner), SkBlurStyle::kInner_SkBlurStyle);
+  ASSERT_EQ(ToSk(DlBlurStyle::kOuter), SkBlurStyle::kOuter_SkBlurStyle);
+  ASSERT_EQ(ToSk(DlBlurStyle::kSolid), SkBlurStyle::kSolid_SkBlurStyle);
+  ASSERT_EQ(ToSk(DlBlurStyle::kNormal), SkBlurStyle::kNormal_SkBlurStyle);
 }
 
 TEST(DisplayListSkConversions, ToSkDrawStyle) {
@@ -65,6 +71,13 @@ TEST(DisplayListSkConversions, ToSkFilterMode) {
   ASSERT_EQ(ToSk(DlFilterMode::kLinear), SkFilterMode::kLinear);
   ASSERT_EQ(ToSk(DlFilterMode::kNearest), SkFilterMode::kNearest);
   ASSERT_EQ(ToSk(DlFilterMode::kLast), SkFilterMode::kLast);
+}
+
+TEST(DisplayListSkConversions, ToSkSrcRectConstraint) {
+  ASSERT_EQ(ToSk(DlCanvas::SrcRectConstraint::kFast),
+            SkCanvas::SrcRectConstraint::kFast_SrcRectConstraint);
+  ASSERT_EQ(ToSk(DlCanvas::SrcRectConstraint::kStrict),
+            SkCanvas::SrcRectConstraint::kStrict_SrcRectConstraint);
 }
 
 TEST(DisplayListSkConversions, ToSkSamplingOptions) {

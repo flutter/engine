@@ -890,7 +890,7 @@ enum FilterQuality {
 ///
 ///  * [Paint.strokeCap] for how this value is used.
 ///  * [StrokeJoin] for the different kinds of line segment joins.
-// These enum values must be kept in sync with SkPaint::Cap.
+// These enum values must be kept in sync with DlStrokeCap.
 enum StrokeCap {
   /// Begin and end contours with a flat edge and no extension.
   ///
@@ -936,7 +936,7 @@ enum StrokeCap {
 /// * [Paint.strokeJoin] and [Paint.strokeMiterLimit] for how this value is
 ///   used.
 /// * [StrokeCap] for the different kinds of line endings.
-// These enum values must be kept in sync with SkPaint::Join.
+// These enum values must be kept in sync with DlStrokeJoin.
 enum StrokeJoin {
   /// Joins between line segments form sharp corners.
   ///
@@ -987,9 +987,9 @@ enum StrokeJoin {
 /// Strategies for painting shapes and paths on a canvas.
 ///
 /// See [Paint.style].
-// These enum values must be kept in sync with SkPaint::Style.
+// These enum values must be kept in sync with DlDrawStyle.
 enum PaintingStyle {
-  // This list comes from Skia's SkPaint.h and the values (order) should be kept
+  // This list comes from dl_paint.h and the values (order) should be kept
   // in sync.
 
   /// Apply the [Paint] to the inside of the shape. For example, when
@@ -1568,6 +1568,31 @@ class Paint {
   }
 }
 
+/// The color space describes the colors that are available to an [Image].
+///
+/// This value can help decide which [ImageByteFormat] to use with
+/// [Image.toByteData]. Images that are in the [extendedSRGB] color space
+/// should use something like [ImageByteFormat.rawExtendedRgba128] so that
+/// colors outside of the sRGB gamut aren't lost.
+///
+/// This is also the result of [Image.colorSpace].
+///
+/// See also: https://en.wikipedia.org/wiki/Color_space
+enum ColorSpace {
+  /// The sRGB color space.
+  ///
+  /// You may know this as the standard color space for the web or the color
+  /// space of non-wide-gamut Flutter apps.
+  ///
+  /// See also: https://en.wikipedia.org/wiki/SRGB
+  sRGB,
+  /// A color space that is backwards compatible with sRGB but can represent
+  /// colors outside of that gamut with values outside of [0..1]. In order to
+  /// see the extended values an [ImageByteFormat] like
+  /// [ImageByteFormat.rawExtendedRgba128] must be used.
+  extendedSRGB,
+}
+
 /// The format in which image bytes should be returned when using
 /// [Image.toByteData].
 // We do not expect to add more encoding formats to the ImageByteFormat enum,
@@ -1591,6 +1616,31 @@ enum ImageByteFormat {
   /// image may use a single 8-bit channel for each pixel.
   rawUnmodified,
 
+  /// Raw extended range RGBA format.
+  ///
+  /// Unencoded bytes, in RGBA row-primary form with straight alpha, 32 bit
+  /// float (IEEE 754 binary32) per channel.
+  ///
+  /// Example usage:
+  ///
+  /// ```dart
+  /// import 'dart:ui' as ui;
+  /// import 'dart:typed_data';
+  ///
+  /// Future<Map<String, double>> getFirstPixel(ui.Image image) async {
+  ///   final ByteData data =
+  ///       (await image.toByteData(format: ui.ImageByteFormat.rawExtendedRgba128))!;
+  ///   final Float32List floats = Float32List.view(data.buffer);
+  ///   return <String, double>{
+  ///     'r': floats[0],
+  ///     'g': floats[1],
+  ///     'b': floats[2],
+  ///     'a': floats[3],
+  ///   };
+  /// }
+  /// ```
+  rawExtendedRgba128,
+
   /// PNG format.
   ///
   /// A loss-less compression format for images. This format is well suited for
@@ -1613,13 +1663,19 @@ enum ImageByteFormat {
 enum PixelFormat {
   /// Each pixel is 32 bits, with the highest 8 bits encoding red, the next 8
   /// bits encoding green, the next 8 bits encoding blue, and the lowest 8 bits
-  /// encoding alpha.
+  /// encoding alpha. Premultiplied alpha is used.
   rgba8888,
 
   /// Each pixel is 32 bits, with the highest 8 bits encoding blue, the next 8
   /// bits encoding green, the next 8 bits encoding red, and the lowest 8 bits
-  /// encoding alpha.
+  /// encoding alpha. Premultiplied alpha is used.
   bgra8888,
+
+  /// Each pixel is 128 bits, where each color component is a 32 bit float that
+  /// is normalized across the sRGB gamut.  The first float is the red
+  /// component, followed by: green, blue and alpha. Premultiplied alpha isn't
+  /// used, matching [ImageByteFormat.rawExtendedRgba128].
+  rgbaFloat32,
 }
 
 /// Signature for [Image] lifecycle events.
@@ -1726,6 +1782,10 @@ class Image {
   /// The [format] argument specifies the format in which the bytes will be
   /// returned.
   ///
+  /// Using [ImageByteFormat.rawRgba] on an image in the color space
+  /// [ColorSpace.extendedSRGB] will result in the gamut being squished to fit
+  /// into the sRGB gamut, resulting in the loss of wide-gamut colors.
+  ///
   /// Returns a future that completes with the binary image data or an error
   /// if encoding fails.
   // We do not expect to add more encoding formats to the ImageByteFormat enum,
@@ -1735,6 +1795,29 @@ class Image {
   Future<ByteData?> toByteData({ImageByteFormat format = ImageByteFormat.rawRgba}) {
     assert(!_disposed && !_image._disposed);
     return _image.toByteData(format: format);
+  }
+
+  /// The color space that is used by the [Image]'s colors.
+  ///
+  /// This value is a consequence of how the [Image] has been created.  For
+  /// example, loading a PNG that is in the Display P3 color space will result
+  /// in a [ColorSpace.extendedSRGB] image.
+  ///
+  /// On rendering backends that don't support wide gamut colors (anything but
+  /// iOS impeller), wide gamut images will still report [ColorSpace.sRGB] if
+  /// rendering wide gamut colors isn't supported.
+  // Note: The docstring will become outdated as new platforms support wide
+  // gamut color, please keep it up to date.
+  ColorSpace get colorSpace {
+    final int colorSpaceValue = _image.colorSpace;
+    switch (colorSpaceValue) {
+      case 0:
+        return ColorSpace.sRGB;
+      case 1:
+        return ColorSpace.extendedSRGB;
+      default:
+        throw UnsupportedError('Unrecognized color space: $colorSpaceValue');
+    }
   }
 
   /// If asserts are enabled, returns the [StackTrace]s of each open handle from
@@ -1902,6 +1985,9 @@ class _Image extends NativeFieldWrapperClass1 {
   external void _dispose();
 
   final Set<Image> _handles = <Image>{};
+
+  @Native<Int32 Function(Pointer<Void>)>(symbol: 'Image::colorSpace')
+  external int get colorSpace;
 
   @override
   String toString() => '[$width\u00D7$height]';
@@ -3179,9 +3265,9 @@ class _PathMeasure extends NativeFieldWrapperClass1 {
 }
 
 /// Styles to use for blurs in [MaskFilter] objects.
-// These enum values must be kept in sync with SkBlurStyle.
+// These enum values must be kept in sync with DlBlurStyle.
 enum BlurStyle {
-  // These mirror SkBlurStyle and must be kept in sync.
+  // These mirror DlBlurStyle and must be kept in sync.
 
   /// Fuzzy inside and outside. This is useful for painting shadows that are
   /// offset from the shape that ostensibly is casting the shadow.
@@ -3234,10 +3320,10 @@ class MaskFilter {
   final BlurStyle _style;
   final double _sigma;
 
-  // The type of MaskFilter class to create for Skia.
+  // The type of MaskFilter class to create for flutter::DisplayList.
   // These constants must be kept in sync with MaskFilterType in paint.cc.
   static const int _TypeNone = 0; // null
-  static const int _TypeBlur = 1; // SkBlurMaskFilter
+  static const int _TypeBlur = 1; // DlBlurMaskFilter
 
   @override
   bool operator ==(Object other) {
@@ -3360,13 +3446,13 @@ class ColorFilter implements ImageFilter {
   final List<double>? _matrix;
   final int _type;
 
-  // The type of SkColorFilter class to create for Skia.
+  // The type of DlColorFilter class to create.
   static const int _kTypeMode = 1; // MakeModeFilter
   static const int _kTypeMatrix = 2; // MakeMatrixFilterRowMajor255
   static const int _kTypeLinearToSrgbGamma = 3; // MakeLinearToSRGBGamma
   static const int _kTypeSrgbToLinearGamma = 4; // MakeSRGBToLinearGamma
 
-  // SkImageFilters::ColorFilter
+  // DlColorImageFilter
   @override
   _ImageFilter _toNativeImageFilter() => _ImageFilter.fromColorFilter(this);
 
@@ -3440,7 +3526,7 @@ class ColorFilter implements ImageFilter {
   }
 }
 
-/// A [ColorFilter] that is backed by a native SkColorFilter.
+/// A [ColorFilter] that is backed by a native DlColorFilter.
 ///
 /// This is a private class, rather than being the implementation of the public
 /// ColorFilter, because we want ColorFilter to be const constructible and
@@ -3542,8 +3628,8 @@ abstract class ImageFilter {
     return _ComposeImageFilter(innerFilter: inner, outerFilter: outer);
   }
 
-  // Converts this to a native SkImageFilter. See the comments of this method in
-  // subclasses for the exact type of SkImageFilter this method converts to.
+  // Converts this to a native DlImageFilter. See the comments of this method in
+  // subclasses for the exact type of DlImageFilter this method converts to.
   _ImageFilter _toNativeImageFilter();
 
   // The description text to show when the filter is part of a composite
@@ -3690,7 +3776,7 @@ class _ComposeImageFilter implements ImageFilter {
   final ImageFilter innerFilter;
   final ImageFilter outerFilter;
 
-  // SkImageFilters::Compose
+  // DlComposeImageFilter
   late final _ImageFilter nativeFilter = _ImageFilter.composed(this);
   @override
   _ImageFilter _toNativeImageFilter() => nativeFilter;
@@ -3715,7 +3801,7 @@ class _ComposeImageFilter implements ImageFilter {
   int get hashCode => Object.hash(innerFilter, outerFilter);
 }
 
-/// An [ImageFilter] that is backed by a native SkImageFilter.
+/// An [ImageFilter] that is backed by a native DlImageFilter.
 ///
 /// This is a private class, rather than being the implementation of the public
 /// ImageFilter, because we want ImageFilter to be efficiently comparable, so that
@@ -3870,7 +3956,7 @@ class Shader extends NativeFieldWrapperClass1 {
 ///  * [dart:ui.ImageFilter.blur], an ImageFilter that may sometimes need to
 ///    read samples from outside an image to combine with the pixels near the
 ///    edge of the image.
-// These enum values must be kept in sync with SkTileMode.
+// These enum values must be kept in sync with DlTileMode.
 enum TileMode {
   /// Samples beyond the edge are clamped to the nearest color in the defined inner area.
   ///
@@ -4431,7 +4517,7 @@ class FragmentShader extends Shader {
 /// Defines how a list of points is interpreted when drawing a set of triangles.
 ///
 /// Used by [Canvas.drawVertices].
-// These enum values must be kept in sync with SkVertices::VertexMode.
+// These enum values must be kept in sync with DlVertexMode.
 enum VertexMode {
   /// Draw each sequence of three points as the vertices of a triangle.
   triangles,
@@ -4769,7 +4855,7 @@ class Canvas extends NativeFieldWrapperClass1 {
   @Native<Void Function(Handle, Pointer<Void>, Double, Double, Double, Double)>(symbol: 'Canvas::Create')
   external void _constructor(PictureRecorder recorder, double left, double top, double right, double bottom);
 
-  // The underlying Skia SkCanvas is owned by the PictureRecorder used to create this Canvas.
+  // The underlying DlCanvas is owned by the DisplayListBuilder used to create this Canvas.
   // The Canvas holds a reference to the PictureRecorder to prevent the recorder from being
   // garbage collected until PictureRecorder.endRecording is called.
   PictureRecorder? _recorder;
@@ -6294,7 +6380,12 @@ class ImmutableBuffer extends NativeFieldWrapperClass1 {
     final ImmutableBuffer instance = ImmutableBuffer._(0);
     return _futurize((_Callback<int> callback) {
       return instance._initFromAsset(encodedKey, callback);
-    }).then((int length) => instance.._length = length);
+    }).then((int length) {
+      if (length == -1) {
+        throw Exception('Asset not found');
+      }
+      return instance.._length = length;
+    });
   }
 
   /// Create a buffer from the file with [path].

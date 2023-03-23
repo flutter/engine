@@ -4,9 +4,6 @@
 
 #pragma once
 
-#include "display_list/display_list_path_effect.h"
-#include "flutter/display_list/display_list.h"
-#include "flutter/display_list/display_list_blend_mode.h"
 #include "flutter/display_list/dl_op_receiver.h"
 #include "flutter/fml/macros.h"
 #include "impeller/aiks/canvas.h"
@@ -182,7 +179,7 @@ class DisplayListDispatcher final : public flutter::DlOpReceiver {
                      const SkRect& dst,
                      flutter::DlImageSampling sampling,
                      bool render_with_attributes,
-                     bool enforce_src_edges) override;
+                     SrcRectConstraint constraint) override;
 
   // |flutter::DlOpReceiver|
   void drawImageNine(const sk_sp<flutter::DlImage> image,

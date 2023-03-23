@@ -9,7 +9,6 @@
 #include "flutter/fml/file.h"
 #include "flutter/fml/logging.h"
 #include "flutter/fml/paths.h"
-#include "impeller/base/platform/darwin/work_queue_darwin.h"
 #include "impeller/renderer/backend/metal/sampler_library_mtl.h"
 #include "impeller/renderer/device_capabilities.h"
 #include "impeller/renderer/sampler_descriptor.h"
@@ -74,15 +73,6 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
     }
   }
 
-  // Setup the work queue.
-  {
-    work_queue_ = WorkQueueDarwin::Create();
-    if (!work_queue_) {
-      VALIDATION_LOG << "Could not setup the work queue.";
-      return;
-    }
-  }
-
 #if (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_DEBUG) || \
     (FLUTTER_RUNTIME_MODE == FLUTTER_RUNTIME_MODE_PROFILE)
   // Setup the gpu tracer.
@@ -90,18 +80,48 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
 #endif
 
   {
+    bool supports_subgroups = false;
+    // Refer to the "SIMD-scoped reduction operations" feature in the table
+    // below: https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf
+    if (@available(ios 13.0, tvos 13.0, macos 10.15, *)) {
+      supports_subgroups = [device supportsFamily:MTLGPUFamilyApple7] ||
+                           [device supportsFamily:MTLGPUFamilyMac2];
+    }
+
     device_capabilities_ =
         DeviceCapabilitiesBuilder()
             .SetHasThreadingRestrictions(false)
             .SetSupportsOffscreenMSAA(true)
             .SetSupportsSSBO(true)
             .SetSupportsTextureToTextureBlits(true)
+            .SetSupportsFramebufferFetch(SupportsFramebufferFetch())
             .SetDefaultColorFormat(PixelFormat::kB8G8R8A8UNormInt)
             .SetDefaultStencilFormat(PixelFormat::kS8UInt)
+            .SetSupportsCompute(true, supports_subgroups)
+            .SetSupportsReadFromResolve(true)
             .Build();
   }
 
   is_valid_ = true;
+}
+
+bool ContextMTL::SupportsFramebufferFetch() const {
+  // The iOS simulator lies about supporting framebuffer fetch.
+#if FML_OS_IOS_SIMULATOR
+  return false;
+#endif  // FML_OS_IOS_SIMULATOR
+
+  if (@available(macOS 10.15, iOS 13, tvOS 13, *)) {
+    return [device_ supportsFamily:MTLGPUFamilyApple2];
+  }
+  // According to
+  // https://developer.apple.com/metal/Metal-Feature-Set-Tables.pdf , Apple2
+  // corresponds to iOS GPU family 2, which supports A8 devices.
+#if FML_OS_IOS
+  return [device_ supportsFeatureSet:MTLFeatureSet_iOS_GPUFamily2_v1];
+#else
+  return false;
+#endif  // FML_OS_IOS
 }
 
 static NSArray<id<MTLLibrary>>* MTLShaderLibraryFromFilePaths(
@@ -225,11 +245,6 @@ std::shared_ptr<SamplerLibrary> ContextMTL::GetSamplerLibrary() const {
 // |Context|
 std::shared_ptr<CommandBuffer> ContextMTL::CreateCommandBuffer() const {
   return CreateCommandBufferInQueue(command_queue_);
-}
-
-// |Context|
-std::shared_ptr<WorkQueue> ContextMTL::GetWorkQueue() const {
-  return work_queue_;
 }
 
 std::shared_ptr<GPUTracer> ContextMTL::GetGPUTracer() const {

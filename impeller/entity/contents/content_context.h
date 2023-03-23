@@ -18,6 +18,7 @@
 #include "impeller/entity/border_mask_blur.vert.h"
 #include "impeller/entity/color_matrix_color_filter.frag.h"
 #include "impeller/entity/color_matrix_color_filter.vert.h"
+#include "impeller/entity/conical_gradient_fill.frag.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/gaussian_blur.frag.h"
 #include "impeller/entity/gaussian_blur.vert.h"
@@ -52,12 +53,12 @@
 #include "impeller/renderer/pipeline.h"
 #include "impeller/scene/scene_context.h"
 
-#include "impeller/entity/position.vert.h"
 #include "impeller/entity/position_color.vert.h"
 
 #include "impeller/scene/scene_context.h"
 #include "impeller/typographer/glyph_atlas.h"
 
+#include "impeller/entity/conical_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/linear_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/radial_gradient_ssbo_fill.frag.h"
 #include "impeller/entity/sweep_gradient_ssbo_fill.frag.h"
@@ -78,7 +79,7 @@
 #include "impeller/entity/advanced_blend_saturation.frag.h"
 #include "impeller/entity/advanced_blend_screen.frag.h"
 #include "impeller/entity/advanced_blend_softlight.frag.h"
-#if FML_OS_PHYSICAL_IOS
+
 #include "impeller/entity/framebuffer_blend.vert.h"
 #include "impeller/entity/framebuffer_blend_color.frag.h"
 #include "impeller/entity/framebuffer_blend_colorburn.frag.h"
@@ -95,7 +96,6 @@
 #include "impeller/entity/framebuffer_blend_saturation.frag.h"
 #include "impeller/entity/framebuffer_blend_screen.frag.h"
 #include "impeller/entity/framebuffer_blend_softlight.frag.h"
-#endif  // FML_OS_PHYSICAL_IOS
 
 namespace impeller {
 
@@ -105,11 +105,17 @@ using SolidFillPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 using RadialGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, RadialGradientFillFragmentShader>;
+using ConicalGradientFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    ConicalGradientFillFragmentShader>;
 using SweepGradientFillPipeline =
     RenderPipelineT<GradientFillVertexShader, SweepGradientFillFragmentShader>;
 using LinearGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     LinearGradientSsboFillFragmentShader>;
+using ConicalGradientSSBOFillPipeline =
+    RenderPipelineT<GradientFillVertexShader,
+                    ConicalGradientSsboFillFragmentShader>;
 using RadialGradientSSBOFillPipeline =
     RenderPipelineT<GradientFillVertexShader,
                     RadialGradientSsboFillFragmentShader>;
@@ -153,8 +159,6 @@ using GlyphAtlasSdfPipeline =
 using ClipPipeline =
     RenderPipelineT<SolidFillVertexShader, SolidFillFragmentShader>;
 
-using GeometryPositionPipeline =
-    RenderPipelineT<PositionVertexShader, VerticesFragmentShader>;
 using GeometryColorPipeline =
     RenderPipelineT<PositionColorVertexShader, VerticesFragmentShader>;
 using YUVToRGBFilterPipeline =
@@ -202,8 +206,7 @@ using BlendScreenPipeline = RenderPipelineT<AdvancedBlendVertexShader,
 using BlendSoftLightPipeline =
     RenderPipelineT<AdvancedBlendVertexShader,
                     AdvancedBlendSoftlightFragmentShader>;
-#if FML_OS_PHYSICAL_IOS
-// iOS only advanced blends.
+// Framebuffer Advanced Blends
 using FramebufferBlendColorPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendColorFragmentShader>;
@@ -249,7 +252,6 @@ using FramebufferBlendScreenPipeline =
 using FramebufferBlendSoftLightPipeline =
     RenderPipelineT<FramebufferBlendVertexShader,
                     FramebufferBlendSoftlightFragmentShader>;
-#endif  // FML_OS_PHYSICAL_IOS
 
 /// Pipeline state configuration.
 ///
@@ -330,6 +332,12 @@ class ContentContext {
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
+  GetConicalGradientSSBOFillPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
+    return GetPipeline(conical_gradient_ssbo_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetSweepGradientSSBOFillPipeline(ContentContextOptions opts) const {
     FML_DCHECK(GetDeviceCapabilities().SupportsSSBO());
     return GetPipeline(sweep_gradient_ssbo_fill_pipelines_, opts);
@@ -338,6 +346,11 @@ class ContentContext {
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRadialGradientFillPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(radial_gradient_fill_pipelines_, opts);
+  }
+
+  std::shared_ptr<Pipeline<PipelineDescriptor>> GetConicalGradientFillPipeline(
+      ContentContextOptions opts) const {
+    return GetPipeline(conical_gradient_fill_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetRRectBlurPipeline(
@@ -430,11 +443,6 @@ class ContentContext {
     return GetPipeline(geometry_color_pipelines_, opts);
   }
 
-  std::shared_ptr<Pipeline<PipelineDescriptor>> GetGeometryPositionPipeline(
-      ContentContextOptions opts) const {
-    return GetPipeline(geometry_position_pipelines_, opts);
-  }
-
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetYUVToRGBFilterPipeline(
       ContentContextOptions opts) const {
     return GetPipeline(yuv_to_rgb_filter_pipelines_, opts);
@@ -516,83 +524,97 @@ class ContentContext {
       ContentContextOptions opts) const {
     return GetPipeline(blend_softlight_pipelines_, opts);
   }
-#if FML_OS_PHYSICAL_IOS
-  // iOS advanced blends.
+
+  // Framebuffer Advanced Blends
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_color_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorBurnPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colorburn_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendColorDodgePipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_colordodge_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendDarkenPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_darken_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendDifferencePipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_difference_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendExclusionPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_exclusion_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendHardLightPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hardlight_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetFramebufferBlendHuePipeline(
       ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_hue_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendLightenPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_lighten_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendLuminosityPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_luminosity_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendMultiplyPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_multiply_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendOverlayPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_overlay_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendSaturationPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_saturation_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendScreenPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_screen_pipelines_, opts);
   }
 
   std::shared_ptr<Pipeline<PipelineDescriptor>>
   GetFramebufferBlendSoftLightPipeline(ContentContextOptions opts) const {
+    FML_DCHECK(GetDeviceCapabilities().SupportsFramebufferFetch());
     return GetPipeline(framebuffer_blend_softlight_pipelines_, opts);
   }
-#endif  // FML_OS_PHYSICAL_IOS
 
   std::shared_ptr<Context> GetContext() const;
 
@@ -627,11 +649,15 @@ class ContentContext {
   mutable Variants<SolidFillPipeline> solid_fill_pipelines_;
   mutable Variants<LinearGradientFillPipeline> linear_gradient_fill_pipelines_;
   mutable Variants<RadialGradientFillPipeline> radial_gradient_fill_pipelines_;
+  mutable Variants<ConicalGradientFillPipeline>
+      conical_gradient_fill_pipelines_;
   mutable Variants<SweepGradientFillPipeline> sweep_gradient_fill_pipelines_;
   mutable Variants<LinearGradientSSBOFillPipeline>
       linear_gradient_ssbo_fill_pipelines_;
   mutable Variants<RadialGradientSSBOFillPipeline>
       radial_gradient_ssbo_fill_pipelines_;
+  mutable Variants<ConicalGradientSSBOFillPipeline>
+      conical_gradient_ssbo_fill_pipelines_;
   mutable Variants<SweepGradientSSBOFillPipeline>
       sweep_gradient_ssbo_fill_pipelines_;
   mutable Variants<RRectBlurPipeline> rrect_blur_pipelines_;
@@ -650,7 +676,6 @@ class ContentContext {
   mutable Variants<ClipPipeline> clip_pipelines_;
   mutable Variants<GlyphAtlasPipeline> glyph_atlas_pipelines_;
   mutable Variants<GlyphAtlasSdfPipeline> glyph_atlas_sdf_pipelines_;
-  mutable Variants<GeometryPositionPipeline> geometry_position_pipelines_;
   mutable Variants<GeometryColorPipeline> geometry_color_pipelines_;
   mutable Variants<YUVToRGBFilterPipeline> yuv_to_rgb_filter_pipelines_;
   // Advanced blends.
@@ -669,7 +694,7 @@ class ContentContext {
   mutable Variants<BlendSaturationPipeline> blend_saturation_pipelines_;
   mutable Variants<BlendScreenPipeline> blend_screen_pipelines_;
   mutable Variants<BlendSoftLightPipeline> blend_softlight_pipelines_;
-#if FML_OS_PHYSICAL_IOS
+  // Framebuffer Advanced blends.
   mutable Variants<FramebufferBlendColorPipeline>
       framebuffer_blend_color_pipelines_;
   mutable Variants<FramebufferBlendColorBurnPipeline>
@@ -700,7 +725,6 @@ class ContentContext {
       framebuffer_blend_screen_pipelines_;
   mutable Variants<FramebufferBlendSoftLightPipeline>
       framebuffer_blend_softlight_pipelines_;
-#endif  // FML_OS_PHYSICAL_IOS
 
   template <class TypedPipeline>
   std::shared_ptr<Pipeline<PipelineDescriptor>> GetPipeline(

@@ -11,6 +11,8 @@ impeller_component("playground") {
     "playground.h",
     "playground_impl.cc",
     "playground_impl.h",
+    "switches.cc",
+    "switches.h",
     "widgets.cc",
     "widgets.h",
   ]
@@ -40,8 +42,10 @@ impeller_component("playground") {
 
   public_deps = [
     "../entity:entity_shaders",
+    "../entity:framebuffer_blend_entity_shaders",
     "../entity:modern_entity_shaders",
     "../fixtures:shader_fixtures",
+    "../image:image_skia_backend",
     "../renderer",
     "../scene/shaders",
     "imgui:imgui_impeller_backend",

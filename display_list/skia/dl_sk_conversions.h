@@ -6,6 +6,7 @@
 #define FLUTTER_DISPLAY_LIST_SKIA_DL_SK_CONVERSIONS_H_
 
 #include "flutter/display_list/dl_op_receiver.h"
+#include "flutter/display_list/skia/dl_sk_types.h"
 
 namespace flutter {
 
@@ -29,6 +30,10 @@ inline SkTileMode ToSk(DlTileMode dl_mode) {
   return static_cast<SkTileMode>(dl_mode);
 }
 
+inline SkBlurStyle ToSk(const DlBlurStyle blur_style) {
+  return static_cast<SkBlurStyle>(blur_style);
+}
+
 inline SkFilterMode ToSk(const DlFilterMode filter_mode) {
   return static_cast<SkFilterMode>(filter_mode);
 }
@@ -50,9 +55,9 @@ inline SkSamplingOptions ToSk(DlImageSampling sampling) {
   }
 }
 
-inline SkCanvas::SrcRectConstraint ToSkConstraint(bool enforce_edges) {
-  return enforce_edges ? SkCanvas::kStrict_SrcRectConstraint
-                       : SkCanvas::kFast_SrcRectConstraint;
+inline SkCanvas::SrcRectConstraint ToSk(
+    DlCanvas::SrcRectConstraint constraint) {
+  return static_cast<SkCanvas::SrcRectConstraint>(constraint);
 }
 
 inline SkClipOp ToSk(DlCanvas::ClipOp op) {

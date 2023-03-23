@@ -264,7 +264,9 @@ def to_gn_args(args):
   gn_args['full_dart_sdk'] = args.full_dart_sdk
 
   if args.enable_unittests:
-    gn_args['enable_unittests'] = args.enable_unittests
+    gn_args['enable_unittests'] = True
+  if args.no_enable_unittests:
+    gn_args['enable_unittests'] = False
 
   # Skia GN args.
   gn_args['skia_enable_flutter_defines'
@@ -323,6 +325,9 @@ def to_gn_args(args):
     gn_args['target_cpu'] = get_target_cpu(args)
     gn_args['dart_target_arch'] = gn_args['target_cpu']
 
+  if not args.build_engine_artifacts:
+    gn_args['flutter_build_engine_artifacts'] = False
+
   # We cannot cross-compile for 32 bit arm on a Windows host. We work around
   # this by leaving 'target_cpu' and 'dart_target_arch' set to 'arm' so that
   # Dart tools such as gen_snapshot that are built for the host will correctly
@@ -379,6 +384,10 @@ def to_gn_args(args):
     gn_args['dart_runtime_mode'] = 'release'
   else:
     gn_args['dart_runtime_mode'] = runtime_mode
+
+  # If we are building the dart sdk in-tree, exclude the wasm-opt target, as
+  # it doesn't build properly with our gn configuration.
+  gn_args['dart_include_wasm_opt'] = False
 
   # Desktop embeddings can have more dependencies than the engine library,
   # which can be problematic in some build environments (e.g., building on
@@ -437,7 +446,7 @@ def to_gn_args(args):
   # Enable Vulkan on all platforms except for iOS. This is just
   # to save on mobile binary size, as there's no reason the Vulkan embedder
   # features can't work on these platforms.
-  if args.target_os not in ['ios']:
+  if gn_args['target_os'] not in ['ios', 'mac']:
     gn_args['skia_use_vulkan'] = True
     gn_args['skia_use_vma'] = False
     gn_args['shell_enable_vulkan'] = True
@@ -545,11 +554,21 @@ def to_gn_args(args):
   if args.enable_impeller_3d:
     gn_args['impeller_enable_3d'] = True
 
+  if args.enable_impeller_vulkan:
+    gn_args['impeller_enable_vulkan'] = True
+
+  if args.enable_impeller_opengles:
+    gn_args['impeller_enable_opengles'] = True
+
   if args.prebuilt_impellerc is not None:
     gn_args['impeller_use_prebuilt_impellerc'] = args.prebuilt_impellerc
 
   if args.malioc_path is not None:
     gn_args['impeller_malioc_path'] = args.malioc_path
+  else:
+    malioc_path = os.environ.get('MALIOC_PATH')
+    if malioc_path:
+      gn_args['impeller_malioc_path'] = malioc_path
 
   # ANGLE is exclusively used for:
   #  - Windows at runtime
@@ -604,17 +623,16 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['skia_use_vulkan'] = False
   gn_args['skia_use_webgpu'] = False
   gn_args['skia_use_libheif'] = False
-  gn_args['skia_use_libjpeg_turbo_decode'] = True
   gn_args['skia_use_libjpeg_turbo_encode'] = False
-  gn_args['skia_use_libpng_decode'] = True
+  # TODO(yjbanov): https://github.com/flutter/flutter/issues/122759
+  # Remove this and implement it through Canvas2d.
   gn_args['skia_use_libpng_encode'] = True
-  gn_args['skia_use_libwebp_decode'] = True
   gn_args['skia_use_libwebp_encode'] = False
   gn_args['skia_use_lua'] = False
   gn_args['skia_use_wuffs'] = True
   gn_args['skia_use_zlib'] = True
   gn_args['skia_gl_standard'] = 'webgl'
-  gn_args['skia_enable_gpu'] = True
+  gn_args['skia_enable_ganesh'] = True
   gn_args['skia_enable_sksl_tracing'] = False
   gn_args['icu_use_data_file'] = False
   gn_args['skia_use_freetype'] = True
@@ -656,7 +674,18 @@ def parse_args(args):
 
   parser.add_argument('--unoptimized', default=False, action='store_true')
 
-  parser.add_argument('--enable-unittests', action='store_true', default=False)
+  parser.add_argument(
+      '--enable-unittests',
+      action='store_true',
+      default=False,
+      help='Force enable building unit test binaries.'
+  )
+  parser.add_argument(
+      '--no-enable-unittests',
+      default=False,
+      action='store_true',
+      help='Force disable building unit test binaries.'
+  )
 
   parser.add_argument(
       '--runtime-mode',
@@ -749,6 +778,19 @@ def parse_args(args):
   )
   parser.add_argument(
       '--arm-float-abi', type=str, choices=['hard', 'soft', 'softfp']
+  )
+
+  parser.add_argument(
+      '--build-engine-artifacts',
+      default=True,
+      action='store_true',
+      help='Build the host-side development artifacts.'
+  )
+  parser.add_argument(
+      '--no-build-engine-artifacts',
+      dest='build_engine_artifacts',
+      action='store_false',
+      help='Do not build the host-side development artifacts.'
   )
 
   parser.add_argument('--goma', default=True, action='store_true')
@@ -940,6 +982,20 @@ def parse_args(args):
       default=False,
       action='store_true',
       help='Whether impeller unit tests run in playground mode.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-vulkan',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller Vulkan backend.'
+  )
+
+  parser.add_argument(
+      '--enable-impeller-opengles',
+      default=False,
+      action='store_true',
+      help='Enable the Impeller OpenGL ES backend.'
   )
 
   parser.add_argument(
