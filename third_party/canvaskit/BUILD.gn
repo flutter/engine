@@ -56,8 +56,8 @@ copy("skwasm_group") {
 
   sources = [
     "$root_out_dir/canvaskit_chromium/skwasm.js",
-    "$root_out_dir/canvaskit_chromium/skwasm.worker.js",
     "$root_out_dir/canvaskit_chromium/skwasm.wasm",
+    "$root_out_dir/canvaskit_chromium/skwasm.worker.js",
   ]
   outputs = [ "$root_out_dir/canvaskit/{{source_file_part}}" ]
 }
