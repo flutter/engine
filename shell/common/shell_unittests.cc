@@ -274,7 +274,7 @@ static bool RasterizerHasLayerTree(Shell* shell) {
   fml::TaskRunner::RunNowOrPostTask(
       shell->GetTaskRunners().GetRasterTaskRunner(),
       [shell, &latch, &has_layer_tree]() {
-        has_layer_tree = shell->GetRasterizer()->GetLastLayerTree() != nullptr;
+        has_layer_tree = shell->GetRasterizer()->HasLastLayerTree();
         latch.Signal();
       });
   latch.Wait();

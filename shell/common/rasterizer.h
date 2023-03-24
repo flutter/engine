@@ -203,7 +203,7 @@ class Rasterizer final : public SnapshotDelegate,
   /// @return     A pointer to the last layer or `nullptr` if this rasterizer
   ///             has never rendered a frame.
   ///
-  flutter::LayerTree* GetLastLayerTree();
+  bool HasLastLayerTree() const;
 
   //----------------------------------------------------------------------------
   /// @brief      Draws a last layer tree to the render surface. This may seem
@@ -219,7 +219,8 @@ class Rasterizer final : public SnapshotDelegate,
   ///             to generate the layer tree describing the same contents.
   ///
   void DrawLastLayerTree(
-      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder);
+      std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+      bool enable_leaf_layer_tracing = false);
 
   // |SnapshotDelegate|
   GrDirectContext* GetGrContext() override;

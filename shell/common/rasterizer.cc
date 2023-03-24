@@ -159,14 +159,18 @@ GrDirectContext* Rasterizer::GetGrContext() {
   return studio_ ? studio_->GetContext() : nullptr;
 }
 
-flutter::LayerTree* Rasterizer::GetLastLayerTree() {
-  return last_layer_tree_.get();
+bool Rasterizer::HasLastLayerTree() const {
+  return !!last_layer_tree_;
 }
 
 void Rasterizer::DrawLastLayerTree(
-    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder) {
+    std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
+    bool enable_leaf_layer_tracing) {
   if (!last_layer_tree_ || !studio_) {
     return;
+  }
+  if (enable_leaf_layer_tracing) {
+    last_layer_tree_->enable_leaf_layer_tracing(true);
   }
   RasterStatus raster_status =
       DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
@@ -177,6 +181,9 @@ void Rasterizer::DrawLastLayerTree(
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
+  }
+  if (enable_leaf_layer_tracing) {
+    last_layer_tree_->enable_leaf_layer_tracing(false);
   }
 }
 
@@ -724,7 +731,7 @@ sk_sp<SkData> Rasterizer::ScreenshotLayerTreeAsImage(
 Rasterizer::Screenshot Rasterizer::ScreenshotLastLayerTree(
     Rasterizer::ScreenshotType type,
     bool base64_encode) {
-  auto* layer_tree = GetLastLayerTree();
+  auto* layer_tree = last_layer_tree_.get();
   if (layer_tree == nullptr) {
     FML_LOG(ERROR) << "Last layer tree was null when screenshotting.";
     return {};

@@ -1896,7 +1896,7 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
-  if (auto last_layer_tree = rasterizer_->GetLastLayerTree()) {
+  if (rasterizer_->HasLastLayerTree()) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
     response->AddMember("type", "RenderFrameWithRasterStats", allocator);
@@ -1910,9 +1910,8 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     frame_timings_recorder->RecordBuildStart(now);
     frame_timings_recorder->RecordBuildEnd(now);
 
-    last_layer_tree->enable_leaf_layer_tracing(true);
-    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder));
-    last_layer_tree->enable_leaf_layer_tracing(false);
+    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder),
+                                   /* enable_leaf_layer_tracing=*/true);
 
     rapidjson::Value snapshots;
     snapshots.SetArray();
