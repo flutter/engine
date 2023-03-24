@@ -280,9 +280,7 @@ struct TVector4 {
 
   template <class U>
   constexpr TVector4(const TVector3<U>& v)
-      : x(Cast<T, U>(v.x)),
-        y(Cast<T, U>(v.y)),
-        z(Cast<T, U>(v.z)) {}
+      : x(Cast<T, U>(v.x)), y(Cast<T, U>(v.y)), z(Cast<T, U>(v.z)) {}
 
   constexpr TVector4(const Point& p) : x(p.x), y(p.y) {}
 

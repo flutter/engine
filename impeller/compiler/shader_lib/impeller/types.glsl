@@ -7,7 +7,7 @@
 
 #extension GL_AMD_gpu_shader_half_float : enable
 #extension GL_AMD_gpu_shader_half_float_fetch : enable
-#extension GL_EXT_shader_explicit_arithmetic_types_float16: enable
+#extension GL_EXT_shader_explicit_arithmetic_types_float16 : enable
 
 #ifndef IMPELLER_TARGET_METAL
 
