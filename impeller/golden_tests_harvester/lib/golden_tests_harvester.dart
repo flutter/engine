@@ -29,16 +29,15 @@ Future<void> harvest(
   final List<Future<void>> pendingComparisons = <Future<void>>[];
   for (final Object? entry in entries) {
     final Map<String, Object?> map = (entry as Map<String, Object?>?)!;
-    final String testName = (map['testName'] as String?)!;
     final String filename = (map['filename'] as String?)!;
     final int width = (map['width'] as int?)!;
     final int height = (map['height'] as int?)!;
     final File goldenImage = File(p.join(workDirectory.path, filename));
     final Future<void> future = skiaGoldClient
-        .addImg(testName, goldenImage, screenshotSize: width * height)
+        .addImg(filename, goldenImage, screenshotSize: width * height)
         .catchError((dynamic err) {
       Logger.instance.log('skia gold comparison failed: $err');
-      throw Exception('Failed comparison: $testName');
+      throw Exception('Failed comparison: $filename');
     });
     pendingComparisons.add(future);
   }
