@@ -1235,7 +1235,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrame) {
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc"));
 #else
-                                  "NotoColorEmoji.ttf"));
+                                 "NotoColorEmoji.ttf"));
 #endif
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
 }
@@ -1247,7 +1247,7 @@ TEST_P(AiksTest, CanRenderEmojiTextFrameWithAlpha) {
 #if FML_OS_MACOSX
                                  "Apple Color Emoji.ttc", { .alpha = 0.5 }
 #else
-                                  "NotoColorEmoji.ttf", {.alpha = 0.5}
+                                 "NotoColorEmoji.ttf", {.alpha = 0.5}
 #endif
                                  ));
   ASSERT_TRUE(OpenPlaygroundHere(canvas.EndRecordingAsPicture()));
