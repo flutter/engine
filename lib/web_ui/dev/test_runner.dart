@@ -13,6 +13,7 @@ import 'package:watcher/src/watch_event.dart';
 import 'environment.dart';
 import 'exceptions.dart';
 import 'felt_config.dart';
+import 'generate_builder_json.dart';
 import 'pipeline.dart';
 import 'steps/compile_bundle_step.dart';
 import 'steps/copy_artifacts_step.dart';
@@ -47,6 +48,13 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
             'Lists the bundles that would be compiled and the suites that '
             'will be run as part of this invocation, without actually '
             'compiling or running them.'
+      )
+      ..addFlag(
+        'generate-builder-json',
+        help:
+            'Generates JSON for the engine_v2 builders to build and copy all'
+            'artifacts, compile all test bundles, and run all test suites on'
+            'all platforms.'
       )
       ..addFlag(
         'compile',
@@ -315,6 +323,10 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
     final List<TestSuite> filteredSuites = _filterTestSuites();
     final List<TestBundle> bundles = _filterBundlesForSuites(filteredSuites);
     final ArtifactDependencies artifacts = _artifactsForSuites(filteredSuites);
+    if (boolArg('generate-builder-json')) {
+      print(generateBuilderJson(config));
+      return true;
+    }
     if (isList || isVerbose) {
       print('Suites:');
       for (final TestSuite suite in filteredSuites) {
