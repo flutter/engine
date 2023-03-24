@@ -767,6 +767,29 @@ std::vector<StructMember> Reflector::ReadStructMembers(
       continue;
     }
 
+    // Tightly packed Half Float Vector.
+    if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
+        member.width == sizeof(float) * 4 &&                         //
+        member.columns == 1 &&                                       //
+        member.vecsize == 4                                          //
+    ) {
+      uint32_t stride =
+          GetArrayStride<sizeof(HalfVector4)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(HalfVector4);
+      result.emplace_back(StructMember{
+          "HalfVector4",                         // type
+          BaseTypeToString(member.basetype),     // basetype
+          GetMemberNameAtIndex(struct_type, i),  // name
+          struct_member_offset,                  // offset
+          sizeof(HalfVector4),                   // size
+          stride * array_elements.value_or(1),   // byte_length
+          array_elements,                        // array_elements
+          element_padding,                       // element_padding
+      });
+      current_byte_offset += stride * array_elements.value_or(1);
+      continue;
+    }
+
     // Other isolated scalars (like bool, int, float/Scalar, etc..).
     {
       auto maybe_known_type = ReadKnownScalarType(member.basetype);

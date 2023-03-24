@@ -19,4 +19,10 @@ std::string Vector4::ToString() const {
   return stream.str();
 }
 
+std::string HalfVector4::ToString() const {
+  std::stringstream stream;
+  stream << "{" << x << ", " << y << ", " << z << ", " << w << "}";
+  return stream.str();
+}
+
 }  // namespace impeller

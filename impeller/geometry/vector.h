@@ -288,6 +288,43 @@ struct Vector4 {
 static_assert(sizeof(Vector3) == 3 * sizeof(Scalar));
 static_assert(sizeof(Vector4) == 4 * sizeof(Scalar));
 
+struct HalfVector4 {
+  union {
+    struct {
+      Half x = 0.0;
+      Half y = 0.0;
+      Half z = 0.0;
+      Half w = 1.0;
+    };
+    Half e[4];
+  };
+
+  constexpr HalfVector4() {}
+
+  constexpr HalfVector4(const Color& c)
+      : x(ScalarToHalf(c.red)),
+        y(ScalarToHalf(c.green)),
+        z(ScalarToHalf(c.blue)),
+        w(ScalarToHalf(c.alpha)) {}
+
+  constexpr HalfVector4(Half x, Half y, Half z, Half w)
+      : x(x), y(y), z(z), w(w) {}
+
+  constexpr HalfVector4(const HalfVector2& p) : x(p.x), y(p.y) {}
+
+  constexpr bool operator==(const HalfVector4& v) const {
+    return (x == v.x) && (y == v.y) && (z == v.z) && (w == v.w);
+  }
+
+  constexpr bool operator!=(const HalfVector4& v) const {
+    return (x != v.x) || (y != v.y) || (z != v.z) || (w != v.w);
+  }
+
+  std::string ToString() const;
+};
+
+static_assert(sizeof(HalfVector4) == 4 * sizeof(Half));
+
 }  // namespace impeller
 
 namespace std {
@@ -298,6 +335,12 @@ inline std::ostream& operator<<(std::ostream& out, const impeller::Vector3& p) {
 }
 
 inline std::ostream& operator<<(std::ostream& out, const impeller::Vector4& p) {
+  out << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
+  return out;
+}
+
+inline std::ostream& operator<<(std::ostream& out,
+                                const impeller::HalfVector4& p) {
   out << "(" << p.x << ", " << p.y << ", " << p.z << ", " << p.w << ")";
   return out;
 }

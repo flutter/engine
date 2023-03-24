@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cfloat>
+#include <cstdint>
 #include <type_traits>
 #include <valarray>
 
@@ -13,6 +14,7 @@
 namespace impeller {
 
 using Scalar = float;
+using Half = uint16_t;
 
 template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
 constexpr T Absolute(const T& val) {
@@ -51,5 +53,11 @@ struct Degrees {
     return Radians{degrees * kPi / 180.0f};
   };
 };
+
+/// @brief Convert a scalar to a half precision float.
+///
+/// Adapted from
+/// https://developer.android.com/games/optimize/vertex-data-management .
+uint16_t ScalarToHalf(Scalar f);
 
 }  // namespace impeller
