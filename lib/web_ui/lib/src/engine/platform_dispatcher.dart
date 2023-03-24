@@ -518,9 +518,13 @@ class EnginePlatformDispatcher extends ui.PlatformDispatcher {
             final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
             // TODO(ferhat): Find more appropriate defaults? Or noop when values are null?
             final String label = arguments['label'] as String? ?? '';
-            final int primaryColor = arguments['primaryColor'] as int? ?? 0xFF000000;
             domDocument.title = label;
-            setThemeColor(ui.Color(primaryColor));
+            replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
+            return;
+          case 'SystemChrome.setSystemUIOverlayStyle':
+            final Map<String, dynamic> arguments = decoded.arguments as Map<String, dynamic>;
+            final int? statusBarColor = arguments['statusBarColor'] as int?;
+            setThemeColor(statusBarColor == null ? null : ui.Color(statusBarColor));
             replyToPlatformMessage(callback, codec.encodeSuccessEnvelope(true));
             return;
           case 'SystemChrome.setPreferredOrientations':

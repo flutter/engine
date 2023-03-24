@@ -72,6 +72,26 @@ void testMain() {
       );
     });
 
+    test('responds to flutter/platform SystemChrome.setSystemUIOverlayStyle',
+        () async {
+      const MethodCodec codec = JSONMethodCodec();
+      final Completer<ByteData?> completer = Completer<ByteData?>();
+      ui.PlatformDispatcher.instance.sendPlatformMessage(
+        'flutter/platform',
+        codec.encodeMethodCall(const MethodCall(
+          'SystemChrome.setSystemUIOverlayStyle',
+        )),
+        completer.complete,
+      );
+
+      final ByteData? response = await completer.future;
+      expect(response, isNotNull);
+      expect(
+        codec.decodeEnvelope(response!),
+        true,
+      );
+    });
+
     test('responds to flutter/contextmenu enable', () async {
       const MethodCodec codec = JSONMethodCodec();
       final Completer<ByteData?> completer = Completer<ByteData?>();
