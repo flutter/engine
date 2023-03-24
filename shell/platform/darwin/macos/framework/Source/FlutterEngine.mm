@@ -933,13 +933,13 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)setUpAccessibilityChannel {
-  _accessibilityChannel =
-      [FlutterBasicMessageChannel messageChannelWithName:@"flutter/accessibility"
-                                         binaryMessenger:self.binaryMessenger
-                                                   codec:[FlutterStandardMessageCodec sharedInstance]];
+  _accessibilityChannel = [FlutterBasicMessageChannel
+      messageChannelWithName:@"flutter/accessibility"
+             binaryMessenger:self.binaryMessenger
+                       codec:[FlutterStandardMessageCodec sharedInstance]];
   __weak FlutterEngine* weakSelf = self;
   [_accessibilityChannel setMessageHandler:^(id message, FlutterReply reply) {
-    [weakSelf handleAccessibilityEvent: message];
+    [weakSelf handleAccessibilityEvent:message];
   }];
 }
 - (void)setUpNotificationCenterListeners {
@@ -986,27 +986,20 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 
   self.semanticsEnabled = enabled;
 }
-- (void)handleAccessibilityEvent: (NSDictionary<NSString*, id>*) annotatedEvent {
-
+- (void)handleAccessibilityEvent:(NSDictionary<NSString*, id>*)annotatedEvent {
   NSString* type = annotatedEvent[@"type"];
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     NSNumber* assertiveness = annotatedEvent[@"data"][@"assertiveness"];
 
-      NSAccessibilityPriorityLevel priority =
-     [assertiveness isEqualToNumber:@1]
-     ? NSAccessibilityPriorityHigh
-     : NSAccessibilityPriorityMedium  
-      ;
+    NSAccessibilityPriorityLevel priority = [assertiveness isEqualToNumber:@1]
+                                                ? NSAccessibilityPriorityHigh
+                                                : NSAccessibilityPriorityMedium;
 
     NSAccessibilityPostNotificationWithUserInfo(
-      [self viewControllerForId:kFlutterDefaultViewId].flutterView,
-      NSAccessibilityAnnouncementRequestedNotification,
-      @{
-        NSAccessibilityAnnouncementKey : message
-      ,  NSAccessibilityPriorityKey : @(priority)
-      }
-    );
+        [self viewControllerForId:kFlutterDefaultViewId].flutterView,
+        NSAccessibilityAnnouncementRequestedNotification,
+        @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
   }
 }
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
