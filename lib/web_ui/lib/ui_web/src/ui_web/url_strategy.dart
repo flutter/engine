@@ -2,7 +2,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-part of ui_web;
+import 'package:ui/ui.dart' as ui;
+
+import '../../../src/engine.dart';
+
+set urlStrategy(UrlStrategy? strategy) => customUrlStrategy = strategy;
+
+typedef PopStateListener = void Function(Object? state);
 
 /// Represents and reads route state from the browser's URL.
 ///
@@ -15,7 +21,7 @@ abstract class UrlStrategy {
 
   /// Adds a listener to the `popstate` event and returns a function that, when
   /// invoked, removes the listener.
-  ui.VoidCallback addPopStateListener(DomEventListener fn);
+  ui.VoidCallback addPopStateListener(PopStateListener fn);
 
   /// Returns the active path in the browser.
   String getPath();

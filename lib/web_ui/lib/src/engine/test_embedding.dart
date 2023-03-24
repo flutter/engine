@@ -8,6 +8,7 @@
 import 'dart:async';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../engine.dart';
 
@@ -54,7 +55,7 @@ class TestHistoryEntry {
 ///
 /// It keeps a list of history entries and event listeners in memory and
 /// manipulates them in order to achieve the desired functionality.
-class TestUrlStrategy extends UrlStrategy {
+class TestUrlStrategy extends ui_web.UrlStrategy {
   /// Creates a instance of [TestUrlStrategy] with an empty string as the
   /// path.
   factory TestUrlStrategy() => TestUrlStrategy.fromEntry(const TestHistoryEntry(null, null, ''));

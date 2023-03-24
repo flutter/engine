@@ -5,59 +5,11 @@
 import 'dart:async';
 
 import 'package:ui/ui.dart' as ui;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../dom.dart';
 import '../safe_browser_api.dart';
 import 'js_url_strategy.dart';
-
-/// Represents and reads route state from the browser's URL.
-///
-/// By default, the [HashUrlStrategy] subclass is used if the app doesn't
-/// specify one.
-abstract class UrlStrategy {
-  /// Abstract const constructor. This constructor enables subclasses to provide
-  /// const constructors so that they can be used in const expressions.
-  const UrlStrategy();
-
-  /// Adds a listener to the `popstate` event and returns a function that, when
-  /// invoked, removes the listener.
-  ui.VoidCallback addPopStateListener(DomEventListener fn);
-
-  /// Returns the active path in the browser.
-  String getPath();
-
-  /// The state of the current browser history entry.
-  ///
-  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/state
-  Object? getState();
-
-  /// Given a path that's internal to the app, create the external url that
-  /// will be used in the browser.
-  String prepareExternalUrl(String internalUrl);
-
-  /// Push a new history entry.
-  ///
-  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/pushState
-  void pushState(Object? state, String title, String url);
-
-  /// Replace the currently active history entry.
-  ///
-  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/replaceState
-  void replaceState(Object? state, String title, String url);
-
-  /// Moves forwards or backwards through the history stack.
-  ///
-  /// A negative [count] value causes a backward move in the history stack. And
-  /// a positive [count] value causs a forward move.
-  ///
-  /// Examples:
-  ///
-  /// * `go(-2)` moves back 2 steps in history.
-  /// * `go(3)` moves forward 3 steps in hisotry.
-  ///
-  /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
-  Future<void> go(double count);
-}
 
 /// This is an implementation of [UrlStrategy] that uses the browser URL's
 /// [hash fragments](https://en.wikipedia.org/wiki/Uniform_Resource_Locator#Syntax)
@@ -71,7 +23,7 @@ abstract class UrlStrategy {
 /// // Somewhere before calling `runApp()` do:
 /// setUrlStrategy(const HashUrlStrategy());
 /// ```
-class HashUrlStrategy extends UrlStrategy {
+class HashUrlStrategy extends ui_web.UrlStrategy {
   /// Creates an instance of [HashUrlStrategy].
   ///
   /// The [PlatformLocation] parameter is useful for testing to mock out browser
@@ -150,7 +102,7 @@ class HashUrlStrategy extends UrlStrategy {
 
 /// Wraps a custom implementation of [UrlStrategy] that was previously converted
 /// to a [JsUrlStrategy].
-class CustomUrlStrategy extends UrlStrategy {
+class CustomUrlStrategy extends ui_web.UrlStrategy {
   /// Wraps the [delegate] in a [CustomUrlStrategy] instance.
   CustomUrlStrategy.fromJs(this.delegate);
 
