@@ -59,7 +59,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
           'parameters': <String>[
             'check-licenses'
           ],
-          'script': 'flutter/lib/web_ui/dev/felt',
+          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
 
         },
         <String, dynamic>{
@@ -67,7 +67,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
           'parameters': <String>[
             'analyze'
           ],
-          'script': 'flutter/lib/web_ui/dev/felt',
+          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
         },
         <String, dynamic>{
           'name': 'copy artifacts for web tests',
@@ -75,7 +75,7 @@ Map<String, dynamic> _getArtifactBuildStep() {
             'test',
             '--copy-artifacts',
           ],
-          'script': 'flutter/lib/web_ui/dev/felt',
+          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
         },
       ]
     },
@@ -99,7 +99,7 @@ Map<String, dynamic> _getBundleBuildStep(TestBundle bundle) {
             '--compile',
             '--bundle=${bundle.name}',
           ],
-          'script': 'flutter/lib/web_ui/dev/felt',
+          'scripts': <String>[ 'flutter/lib/web_ui/dev/felt' ],
         }
       ]
     },
