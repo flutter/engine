@@ -45,7 +45,7 @@ class AndroidSurface {
 
   virtual bool SetNativeWindow(fml::RefPtr<AndroidNativeWindow> window) = 0;
 
-  virtual std::unique_ptr<Surface> CreateSnapshotSurface();
+  virtual std::unique_ptr<Studio> CreateSnapshotStudio();
 
   virtual std::shared_ptr<impeller::Context> GetImpellerContext();
 

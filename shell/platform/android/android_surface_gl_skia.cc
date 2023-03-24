@@ -227,7 +227,7 @@ AndroidContextGLSkia* AndroidSurfaceGLSkia::GLContextPtr() const {
   return reinterpret_cast<AndroidContextGLSkia*>(android_context_.get());
 }
 
-std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
+std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateSnapshotStudio() {
   if (!onscreen_surface_ || !onscreen_surface_->IsValid()) {
     onscreen_surface_ = GLContextPtr()->CreatePbufferSurface();
   }
@@ -238,7 +238,7 @@ std::unique_ptr<Surface> AndroidSurfaceGLSkia::CreateSnapshotSurface() {
     GLContextPtr()->SetMainSkiaContext(main_skia_context);
   }
 
-  return std::make_unique<GPUSurfaceGLSkia>(main_skia_context, this, true);
+  return std::make_unique<GPUStudioGLSkia>(main_skia_context, this);
 }
 
 }  // namespace flutter

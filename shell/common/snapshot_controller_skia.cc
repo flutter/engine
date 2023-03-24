@@ -57,6 +57,12 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   auto& delegate = GetDelegate();
   if (delegate.GetStudio() && delegate.GetStudio()->GetContext()) {
     snapshot_studio = delegate.GetStudio();
+  } else if (delegate.GetSnapshotSurfaceProducer()) {
+    std::unique_ptr<Studio> pbuffer_studio =
+        delegate.GetSnapshotSurfaceProducer()->CreateSnapshotStudio();
+    if (pbuffer_studio && pbuffer_studio->GetContext()) {
+      snapshot_studio = pbuffer_studio.get();
+    }
   }
 
   if (!snapshot_studio) {
