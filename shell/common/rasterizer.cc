@@ -51,10 +51,8 @@ fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> Rasterizer::GetSnapshotDelegate()
   return weak_factory_.GetWeakPtr();
 }
 
-void Rasterizer::Setup(std::unique_ptr<Studio> studio,
-                       std::unique_ptr<Surface> surface) {
+void Rasterizer::Setup(std::unique_ptr<Studio> studio) {
   studio_ = std::move(studio);
-  surface_ = std::move(surface);
 
   if (max_cache_bytes_.has_value()) {
     SetResourceCacheMaxBytes(max_cache_bytes_.value(),
@@ -144,6 +142,13 @@ void Rasterizer::NotifyLowMemoryWarning() const {
     return;
   }
   context->performDeferredCleanup(std::chrono::milliseconds(0));
+}
+
+void Rasterizer::RegisterSurface(int64_t view_id,
+                                 std::unique_ptr<Surface> surface) {
+  // TODO(dkwingsmt)
+  FML_DCHECK(view_id == 0ll);
+  surface_ = std::move(surface);
 }
 
 std::shared_ptr<flutter::TextureRegistry> Rasterizer::GetTextureRegistry() {

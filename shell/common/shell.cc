@@ -792,7 +792,9 @@ void Shell::OnPlatformViewCreated() {
           // Enables the thread merger which may be used by the external view
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
-          rasterizer->Setup(std::move(studio), std::move(surface));
+          rasterizer->Setup(std::move(studio));
+          // TODO(dkwingsmt): Change 0ll
+          rasterizer->RegisterSurface(0ll, std::move(surface));
         }
 
         waiting_for_first_frame.store(true);

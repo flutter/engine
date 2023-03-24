@@ -153,7 +153,9 @@ class Rasterizer final : public SnapshotDelegate,
   ///
   /// @param[in]  surface  The on-screen render surface.
   ///
-  void Setup(std::unique_ptr<Studio> studio, std::unique_ptr<Surface> surface);
+  void Setup(std::unique_ptr<Studio> studio);
+
+  void RegisterSurface(int64_t view_id, std::unique_ptr<Surface> surface);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and
