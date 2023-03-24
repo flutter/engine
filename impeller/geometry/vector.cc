@@ -3,26 +3,22 @@
 // found in the LICENSE file.
 
 #include "vector.h"
-#include <sstream>
 
 namespace impeller {
 
-std::string Vector3::ToString() const {
-  std::stringstream stream;
-  stream << "{" << x << ", " << y << ", " << z << "}";
-  return stream.str();
+template <>
+Half Cast<Half, Scalar>(const Scalar& s) {
+  return ScalarToHalf(s);
 }
 
-std::string Vector4::ToString() const {
-  std::stringstream stream;
-  stream << "{" << x << ", " << y << ", " << z << ", " << w << "}";
-  return stream.str();
+template <>
+Half Cast<Half, Half>(const Half& s) {
+  return s;
 }
 
-std::string HalfVector4::ToString() const {
-  std::stringstream stream;
-  stream << "{" << x << ", " << y << ", " << z << ", " << w << "}";
-  return stream.str();
+template <>
+Scalar Cast<Scalar, Scalar>(const Scalar& s) {
+  return s;
 }
 
 }  // namespace impeller

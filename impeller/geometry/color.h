@@ -13,7 +13,9 @@
 namespace impeller {
 
 struct ColorHSB;
-struct Vector4;
+
+template <typename T> struct TVector4;
+using Vector4 = TVector4<Scalar>;
 
 enum class YUVColorSpace { kBT601LimitedRange, kBT601FullRange };
 

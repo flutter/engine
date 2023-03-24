@@ -57,7 +57,8 @@ struct Degrees {
 /// @brief Convert a scalar to a half precision float.
 ///
 /// Can express numbers in the range of 2^-14 to 65504.
-/// See also: https://gcc.gnu.org/onlinedocs/gcc-4.9.4/gcc/Half-Precision.html#:~:text=The%20__fp16%20type%20is,parameters%20of%20type%20__fp16%20.
+/// Adapted from
+/// https://developer.android.com/games/optimize/vertex-data-management .
 Half ScalarToHalf(Scalar f);
 
 }  // namespace impeller
