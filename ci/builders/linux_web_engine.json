@@ -64,7 +64,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-html-engine",
@@ -87,7 +88,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-html-html",
@@ -110,7 +112,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-html-ui",
@@ -133,7 +136,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-canvaskit-canvaskit",
@@ -156,7 +160,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-canvaskit-ui",
@@ -179,7 +184,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2js-skwasm-skwasm_stub",
@@ -202,7 +208,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-html-engine",
@@ -225,7 +232,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-html-html",
@@ -248,7 +256,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-html-ui",
@@ -271,7 +280,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-canvaskit-canvaskit",
@@ -294,7 +304,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-canvaskit-ui",
@@ -317,7 +328,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     },
     {
       "name": "web_tests/test_bundles/dart2wasm-skwasm-ui",
@@ -340,7 +352,8 @@
             ]
           }
         ]
-      }
+      },
+      "tests": []
     }
   ],
   "tests": [
