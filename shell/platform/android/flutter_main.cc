@@ -92,11 +92,10 @@ void ConfigureShorebird(std::string android_cache_path,
   app_parameters.release_version = version.c_str();
   app_parameters.cache_dir = cache_dir.c_str();
 
-  // The intent is that the rust side could hash or otherwise check that the
-  // libapp version matches the version the patch is intended for, but currently
-  // that's not implemented.
+  // This seems to be ['libapp.so', 'real/path/to/libapp.so']
+  // not sure why, but we need to use the real path (second entry).
   app_parameters.original_libapp_path =
-      settings.application_library_path[0].c_str();
+      settings.application_library_path.back().c_str();
   // TODO: How do can we get the path to libflutter.so?
   // The Rust side doesn't actually use this yet.  The intent is so that
   // Rust could hash it, or otherwise know that it matches the version the patch
@@ -112,19 +111,20 @@ void ConfigureShorebird(std::string android_cache_path,
   if (c_active_path != NULL) {
     std::string active_path = c_active_path;
     shorebird_free_string(c_active_path);
-    FML_LOG(INFO) << "Active path: " << active_path;
+    FML_LOG(INFO) << "Shorebird updater: active path: " << active_path;
 
     settings.application_library_path.clear();
     settings.application_library_path.emplace_back(active_path);
 
-    char* c_version = shorebird_active_version();
-    if (c_version != NULL) {
-      std::string version = c_version;
-      shorebird_free_string(c_version);
-      FML_LOG(INFO) << "Active version: " << version;
+    char* c_patch_number = shorebird_active_patch_number();
+    if (c_patch_number != NULL) {
+      std::string patch_number = c_patch_number;
+      shorebird_free_string(c_patch_number);
+      FML_LOG(INFO) << "Shorebird updater: active patch number: "
+                    << patch_number;
     }
   } else {
-    FML_LOG(ERROR) << "Shorebird updater: no active path.";
+    FML_LOG(INFO) << "Shorebird updater: no active patch.";
   }
 }
 
