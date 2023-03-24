@@ -183,15 +183,15 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
   }
 
   @override
-  void onPopState(covariant DomPopStateEvent state) {
+  void onPopState(Object? state) {
     assert(urlStrategy != null);
     // May be a result of direct url access while the flutter application is
     // already running.
-    if (!_hasSerialCount(state.state)) {
+    if (!_hasSerialCount(state)) {
       // In this case we assume this will be the next history entry from the
       // last seen entry.
       urlStrategy!.replaceState(
-          _tagWithSerialCount(state.state, _lastSeenSerialCount + 1),
+          _tagWithSerialCount(state, _lastSeenSerialCount + 1),
           'flutter',
           currentPath);
     }
@@ -201,7 +201,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
       const JSONMethodCodec().encodeMethodCall(
           MethodCall('pushRouteInformation', <dynamic, dynamic>{
         'location': currentPath,
-        'state': state.state?['state'],
+        'state': state,
       })),
       (_) {},
     );
@@ -311,8 +311,8 @@ class SingleEntryBrowserHistory extends BrowserHistory {
 
   String? _userProvidedRouteName;
   @override
-  void onPopState(covariant DomPopStateEvent state) {
-    if (_isOriginEntry(state.state)) {
+  void onPopState(Object? state) {
+    if (_isOriginEntry(state)) {
       _setupFlutterEntry(urlStrategy!);
 
       // 2. Send a 'popRoute' platform message so the app can handle it accordingly.
@@ -321,7 +321,7 @@ class SingleEntryBrowserHistory extends BrowserHistory {
         const JSONMethodCodec().encodeMethodCall(_popRouteMethodCall),
         (_) {},
       );
-    } else if (_isFlutterEntry(state.state)) {
+    } else if (_isFlutterEntry(state)) {
       // We get into this scenario when the user changes the url manually. It
       // causes a new entry to be pushed on top of our "flutter" one. When this
       // happens it first goes to the "else" section below where we capture the

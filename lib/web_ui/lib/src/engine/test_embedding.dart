@@ -149,16 +149,15 @@ class TestUrlStrategy extends ui_web.UrlStrategy {
     });
   }
 
-  final List<DomEventListener> listeners = <DomEventListener>[];
+  final List<ui_web.PopStateListener> listeners = <ui_web.PopStateListener>[];
 
   @override
-  ui.VoidCallback addPopStateListener(DomEventListener fn) {
-    final DomEventListener wrappedFn = allowInterop(fn);
-    listeners.add(wrappedFn);
+  ui.VoidCallback addPopStateListener(ui_web.PopStateListener fn) {
+    listeners.add(fn);
     return () {
       // Schedule a micro task here to avoid removing the listener during
       // iteration in [_firePopStateEvent].
-      scheduleMicrotask(() => listeners.remove(wrappedFn));
+      scheduleMicrotask(() => listeners.remove(fn));
     };
   }
 
@@ -173,16 +172,12 @@ class TestUrlStrategy extends ui_web.UrlStrategy {
   /// like a real browser.
   void _firePopStateEvent() {
     assert(withinAppHistory);
-    final DomPopStateEvent event = createDomPopStateEvent(
-      'popstate',
-      <String, dynamic>{'state': currentEntry.state},
-    );
     for (int i = 0; i < listeners.length; i++) {
-      listeners[i](event);
+      listeners[i](currentEntry.state);
     }
 
     if (_debugLogHistoryActions) {
-      print('$runtimeType: fired popstate event $event');
+      print('$runtimeType: fired popstate with state ${currentEntry.state}');
     }
   }
 
