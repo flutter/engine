@@ -1101,11 +1101,11 @@
       ]
     },
     {
-      "name": "MacOS run safari-dart2js-html-engine suite",
+      "name": "Mac run safari-dart2js-html-engine suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
-        "os=MacOS"
+        "os=Mac"
       ],
       "gclient_variables": {
         "download_android_deps": false
@@ -1133,11 +1133,11 @@
       ]
     },
     {
-      "name": "MacOS run safari-dart2js-html-html suite",
+      "name": "Mac run safari-dart2js-html-html suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
-        "os=MacOS"
+        "os=Mac"
       ],
       "gclient_variables": {
         "download_android_deps": false
@@ -1165,11 +1165,11 @@
       ]
     },
     {
-      "name": "MacOS run safari-dart2js-html-ui suite",
+      "name": "Mac run safari-dart2js-html-ui suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
-        "os=MacOS"
+        "os=Mac"
       ],
       "gclient_variables": {
         "download_android_deps": false
@@ -1197,11 +1197,11 @@
       ]
     },
     {
-      "name": "MacOS run safari-dart2js-canvaskit-canvaskit suite",
+      "name": "Mac run safari-dart2js-canvaskit-canvaskit suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
-        "os=MacOS"
+        "os=Mac"
       ],
       "gclient_variables": {
         "download_android_deps": false
@@ -1229,11 +1229,11 @@
       ]
     },
     {
-      "name": "MacOS run safari-dart2js-canvaskit-ui suite",
+      "name": "Mac run safari-dart2js-canvaskit-ui suite",
       "recipe": "engine_v2/tester_engine",
       "drone_dimensions": [
         "device_type=none",
-        "os=MacOS"
+        "os=Mac"
       ],
       "gclient_variables": {
         "download_android_deps": false

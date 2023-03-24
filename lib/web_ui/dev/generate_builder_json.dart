@@ -112,7 +112,7 @@ Iterable<dynamic> _getAllTestSteps(List<TestSuite> suites) {
       BrowserName.chrome,
       BrowserName.firefox,
     }),
-    ..._getTestStepsForPlatform(suites, 'MacOS', <BrowserName>{
+    ..._getTestStepsForPlatform(suites, 'Mac', <BrowserName>{
       BrowserName.safari,
     }),
     ..._getTestStepsForPlatform(suites, 'Windows', <BrowserName>{
