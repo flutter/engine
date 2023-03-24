@@ -77,24 +77,6 @@
             "generators": {
                 "tasks": [
                     {
-                        "name": "check licenses",
-                        "parameters": [
-                            "check-licenses"
-                        ],
-                        "scripts": [
-                            "flutter/lib/web_ui/dev/felt"
-                        ]
-                    },
-                    {
-                        "name": "web engine analysis",
-                        "parameters": [
-                            "analyze"
-                        ],
-                        "scripts": [
-                            "flutter/lib/web_ui/dev/felt"
-                        ]
-                    },
-                    {
                         "name": "compile web_tests",
                         "parameters": [
                             "test",
@@ -144,7 +126,7 @@
             ],
             "dependencies": [
                 "web_tests/artifacts",
-                "web_tests/test_bundle/dart2js-html-engine"
+                "web_tests/test_bundles/dart2js-html-engine"
             ],
             "test_dependencies": [
                 {
@@ -180,7 +162,7 @@
             ],
             "dependencies": [
                 "web_tests/artifacts",
-                "web_tests/test_bundle/dart2js-canvaskit-canvaskit"
+                "web_tests/test_bundles/dart2js-canvaskit-canvaskit"
             ],
             "test_dependencies": [
                 {
