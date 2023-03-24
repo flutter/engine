@@ -505,7 +505,7 @@ static void CommonInit(FlutterViewController* controller, FlutterEngine* engine)
   }
   for (size_t i = 0; i < update->node_count; i++) {
     const FlutterSemanticsNode2* node = update->nodes[i];
-    _bridge->AddFlutterSemanticsNodeUpdate((*node));
+    _bridge->AddFlutterSemanticsNodeUpdate(*node);
   }
 
   for (size_t i = 0; i < update->custom_action_count; i++) {
