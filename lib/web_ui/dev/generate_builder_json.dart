@@ -79,7 +79,6 @@ Map<String, dynamic> _getArtifactBuildStep() {
         },
       ]
     },
-    'tests': <dynamic>[],
   };
 }
 
@@ -104,7 +103,6 @@ Map<String, dynamic> _getBundleBuildStep(TestBundle bundle) {
         }
       ]
     },
-    'tests': <dynamic>[],
   };
 }
 
