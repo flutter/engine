@@ -14,7 +14,6 @@
 namespace impeller {
 
 using Scalar = float;
-using Half = uint16_t;
 
 template <class T, class = std::enable_if_t<std::is_arithmetic_v<T>>>
 constexpr T Absolute(const T& val) {
@@ -53,12 +52,5 @@ struct Degrees {
     return Radians{degrees * kPi / 180.0f};
   };
 };
-
-/// @brief Convert a scalar to a half precision float.
-///
-/// Can express numbers in the range of 2^-14 to 65504.
-/// Adapted from
-/// https://developer.android.com/games/optimize/vertex-data-management .
-Half ScalarToHalf(Scalar f);
 
 }  // namespace impeller

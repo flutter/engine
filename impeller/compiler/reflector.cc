@@ -18,6 +18,7 @@
 #include "impeller/compiler/code_gen_template.h"
 #include "impeller/compiler/uniform_sorter.h"
 #include "impeller/compiler/utilities.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/scalar.h"
 
@@ -779,14 +780,14 @@ std::vector<StructMember> Reflector::ReadStructMembers(
         member.vecsize == 2                                          //
     ) {
       uint32_t stride =
-          GetArrayStride<sizeof(HalfPoint)>(struct_type, member, i);
-      uint32_t element_padding = stride - sizeof(HalfPoint);
+          GetArrayStride<sizeof(HalfVector2)>(struct_type, member, i);
+      uint32_t element_padding = stride - sizeof(HalfVector2);
       result.emplace_back(StructMember{
-          "HalfPoint",                           // type
+          "HalfVector2",                         // type
           BaseTypeToString(member.basetype),     // basetype
           GetMemberNameAtIndex(struct_type, i),  // name
           struct_member_offset,                  // offset
-          sizeof(HalfPoint),                     // size
+          sizeof(HalfVector2),                   // size
           stride * array_elements.value_or(1),   // byte_length
           array_elements,                        // array_elements
           element_padding,                       // element_padding

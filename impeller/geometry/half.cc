@@ -2,14 +2,23 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "scalar.h"
+#include "half.h"
 
 namespace impeller {
+
+template <>
+Half Cast<Half, Scalar>(const Scalar& s) {
+  return ScalarToHalf(s);
+}
+
+template <>
+Scalar Cast<Scalar, Scalar>(const Scalar& s) {
+  return s;
+}
 
 uint16_t ScalarToHalf(Scalar f) {
   // __fp16 foo = f;
   // return foo;
-
   uint32_t x = *reinterpret_cast<const uint32_t*>(&f);
   uint32_t sign = (uint16_t)(x >> 31);
   uint32_t mantissa;
@@ -30,6 +39,7 @@ uint16_t ScalarToHalf(Scalar f) {
     hf = (((uint16_t)sign) << 15) | (uint16_t)((0x1F << 10)) |
          (uint16_t)(mantissa >> 13);
   }
+
   // check if exponent is <= -15
   else if (exp <= 0x38000000) {
     hf = 0;  // too small to be represented
