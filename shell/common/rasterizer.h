@@ -206,12 +206,12 @@ class Rasterizer final : public SnapshotDelegate,
   bool HasLastLayerTree() const;
 
   //----------------------------------------------------------------------------
-  /// @brief      Draws a last layer tree to the render surface. This may seem
-  ///             entirely redundant at first glance. After all, on surface loss
-  ///             and re-acquisition, the framework generates a new layer tree.
-  ///             Otherwise, why render the same contents to the screen again?
-  ///             This is used as an optimization in cases where there are
-  ///             external textures (video or camera streams for example) in
+  /// @brief      Draws to all render surfaces their last layer trees. This may
+  ///             seem entirely redundant at first glance. After all, on surface
+  ///             loss and re-acquisition, the framework generates a new layer
+  ///             tree. Otherwise, why render the same contents to the screen
+  ///             again? This is used as an optimization in cases where there
+  ///             are external textures (video or camera streams for example) in
   ///             referenced in the layer tree. These textures may be updated at
   ///             a cadence different from that of the Flutter application.
   ///             Flutter can re-render the layer tree with just the updated

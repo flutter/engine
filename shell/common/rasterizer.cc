@@ -169,11 +169,16 @@ void Rasterizer::DrawLastLayerTree(
   if (!last_layer_tree_ || !studio_) {
     return;
   }
+  // TODO(dkwingsmt): Apply to all last trees
+  flutter::LayerTree& layer_tree = *last_layer_tree_;
   if (enable_leaf_layer_tracing) {
-    last_layer_tree_->enable_leaf_layer_tracing(true);
+    layer_tree.enable_leaf_layer_tracing(true);
   }
   RasterStatus raster_status =
-      DrawToSurface(*frame_timings_recorder, *last_layer_tree_);
+      DrawToSurface(*frame_timings_recorder, layer_tree);
+  if (enable_leaf_layer_tracing) {
+    layer_tree.enable_leaf_layer_tracing(false);
+  }
 
   // EndFrame should perform cleanups for the external_view_embedder.
   if (external_view_embedder_ && external_view_embedder_->GetUsedThisFrame()) {
@@ -181,9 +186,6 @@ void Rasterizer::DrawLastLayerTree(
     external_view_embedder_->SetUsedThisFrame(false);
     external_view_embedder_->EndFrame(should_resubmit_frame,
                                       raster_thread_merger_);
-  }
-  if (enable_leaf_layer_tracing) {
-    last_layer_tree_->enable_leaf_layer_tracing(false);
   }
 }
 
