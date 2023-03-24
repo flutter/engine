@@ -80,6 +80,7 @@ void testMain() {
         'flutter/platform',
         codec.encodeMethodCall(const MethodCall(
           'SystemChrome.setSystemUIOverlayStyle',
+          <String, dynamic>{},
         )),
         completer.complete,
       );
@@ -164,7 +165,8 @@ void testMain() {
         () async {
       final DomElement root = domDocument.documentElement!;
       final String oldFontSize = root.style.fontSize;
-      final ui.VoidCallback? oldCallback = ui.PlatformDispatcher.instance.onTextScaleFactorChanged;
+      final ui.VoidCallback? oldCallback =
+          ui.PlatformDispatcher.instance.onTextScaleFactorChanged;
 
       addTearDown(() {
         root.style.fontSize = oldFontSize;
@@ -182,7 +184,8 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       expect(root.style.fontSize, '20px');
       expect(isCalled, isTrue);
-      expect(ui.PlatformDispatcher.instance.textScaleFactor, findBrowserTextScaleFactor());
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
 
       isCalled = false;
 
@@ -190,7 +193,8 @@ void testMain() {
       await Future<void>.delayed(Duration.zero);
       expect(root.style.fontSize, '16px');
       expect(isCalled, isTrue);
-      expect(ui.PlatformDispatcher.instance.textScaleFactor, findBrowserTextScaleFactor());
+      expect(ui.PlatformDispatcher.instance.textScaleFactor,
+          findBrowserTextScaleFactor());
     });
   });
 }
@@ -202,7 +206,6 @@ class MockHighContrastSupport implements HighContrastSupport {
 
   @override
   bool get isHighContrastEnabled => isEnabled;
-
 
   void invokeListeners(bool val) {
     for (final HighContrastListener listener in _listeners) {
