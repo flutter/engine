@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:html';
 
 import 'package:ui/ui.dart' as ui;
 import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
@@ -34,8 +35,9 @@ class HashUrlStrategy extends ui_web.UrlStrategy {
   final PlatformLocation _platformLocation;
 
   @override
-  ui.VoidCallback addPopStateListener(DomEventListener fn) {
-    final DomEventListener wrappedFn = allowInterop(fn);
+  ui.VoidCallback addPopStateListener(ui_web.PopStateListener fn) {
+    final DomEventListener wrappedFn =
+      allowInterop((DomEvent event) => fn((event as PopStateEvent).state));
     _platformLocation.addPopStateListener(wrappedFn);
     return () => _platformLocation.removePopStateListener(wrappedFn);
   }
