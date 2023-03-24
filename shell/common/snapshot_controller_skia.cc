@@ -53,12 +53,13 @@ sk_sp<DlImage> SnapshotControllerSkia::DoMakeRasterSnapshot(
   SkImageInfo image_info = SkImageInfo::MakeN32Premul(
       size.width(), size.height(), SkColorSpace::MakeSRGB());
 
+  std::unique_ptr<Studio> pbuffer_studio;
   Studio* snapshot_studio = nullptr;
   auto& delegate = GetDelegate();
   if (delegate.GetStudio() && delegate.GetStudio()->GetContext()) {
     snapshot_studio = delegate.GetStudio();
   } else if (delegate.GetSnapshotSurfaceProducer()) {
-    std::unique_ptr<Studio> pbuffer_studio =
+    pbuffer_studio =
         delegate.GetSnapshotSurfaceProducer()->CreateSnapshotStudio();
     if (pbuffer_studio && pbuffer_studio->GetContext()) {
       snapshot_studio = pbuffer_studio.get();
