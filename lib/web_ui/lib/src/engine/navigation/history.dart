@@ -4,7 +4,7 @@
 
 import 'package:meta/meta.dart';
 import 'package:ui/ui.dart' as ui;
-import '../../../ui_web/src/ui_web.dart' as ui_web;
+import 'package:ui/ui_web/src/ui_web.dart' as ui_web;
 
 import '../dom.dart';
 import '../platform_dispatcher.dart';
