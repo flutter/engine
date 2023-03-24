@@ -5,7 +5,6 @@
 #pragma once
 
 #include <cfloat>
-#include <cstdint>
 #include <type_traits>
 #include <valarray>
 
