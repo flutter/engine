@@ -42,7 +42,10 @@ std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
       [CIContext contextWithMTLDevice:context_mtl->GetMTLDevice()];
   FML_CHECK(context);
 
-  CGImageRef cgImage = [cicontext createCGImage:ciImage
+  CIImage* flipped = [ciImage
+      imageByApplyingOrientation:kCGImagePropertyOrientationDownMirrored];
+
+  CGImageRef cgImage = [cicontext createCGImage:flipped
                                        fromRect:[ciImage extent]];
 
   return std::unique_ptr<MetalScreenshot>(new MetalScreenshot(cgImage));

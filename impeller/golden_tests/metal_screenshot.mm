@@ -36,11 +36,8 @@ bool MetalScreenshot::WriteToPNG(const std::string& path) const {
   CGImageDestinationRef destination = CGImageDestinationCreateWithURL(
       (__bridge CFURLRef)output_url, kUTTypePNG, 1, nullptr);
   if (destination != nullptr) {
-    CGImageDestinationAddImage(
-        destination, cgImage_, (__bridge CFDictionaryRef) @{
-          (__bridge NSString*)kCGImagePropertyOrientation :
-              @(kCGImagePropertyOrientationDownMirrored),
-        });
+    CGImageDestinationAddImage(destination, cgImage_,
+                               (__bridge CFDictionaryRef) @{});
 
     if (CGImageDestinationFinalize(destination)) {
       result = true;
