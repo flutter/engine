@@ -13,9 +13,7 @@ String generateBuilderJson(FeltConfig config) {
       for (final TestBundle bundle in config.testBundles)
         _getBundleBuildStep(bundle),
     ],
-    'tests': <dynamic>[
-        _getAllTestSteps(config.testSuites)
-    ]
+    'tests': _getAllTestSteps(config.testSuites)
   };
   return const JsonEncoder.withIndent('  ').convert(outputJson);
 }
