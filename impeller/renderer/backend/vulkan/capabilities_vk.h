@@ -24,7 +24,7 @@ class ContextVK;
 class CapabilitiesVK final : public Capabilities,
                              public BackendCast<CapabilitiesVK, Capabilities> {
  public:
-  explicit CapabilitiesVK(bool enable_validations = true);
+  explicit CapabilitiesVK(bool enable_validations = false);
 
   ~CapabilitiesVK();
 
