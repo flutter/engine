@@ -30,7 +30,7 @@ bool WindowsLifecycleManager::WindowProc(HWND hwnd,
   switch (msg) {
     case WM_CLOSE:
       if (IsLastWindowOfProcess()) {
-        engine_->RequestApplicationQuit(ExitType::cancelable, wpar);
+        engine_->RequestApplicationQuit(ExitType::cancelable, 0);
       }
       return true;
   }
