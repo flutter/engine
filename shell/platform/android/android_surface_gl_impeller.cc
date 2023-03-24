@@ -252,7 +252,7 @@ bool AndroidSurfaceGLImpeller::SetNativeWindow(
 }
 
 // |AndroidSurface|
-std::unique_ptr<Surface> AndroidSurfaceGLImpeller::CreateSnapshotStudio() {
+std::unique_ptr<Studio> AndroidSurfaceGLImpeller::CreateSnapshotStudio() {
   FML_UNREACHABLE();
 }
 
