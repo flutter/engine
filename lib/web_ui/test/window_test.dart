@@ -315,14 +315,14 @@ void testMain() {
       const JSONMethodCodec().encodeMethodCall(const MethodCall(
         'routeInformationUpdated',
         <String, dynamic>{
-          'uri': 'http://myhostname.com/baz',
+          'uri': 'http://myhostname.com/baz?abc=def#fragment',
         },
       )),
       (_) { callback.complete(); },
     );
     await callback.future;
     expect(window.browserHistory, isA<MultiEntriesBrowserHistory>());
-    expect(window.browserHistory.urlStrategy!.getPath(), '/baz');
+    expect(window.browserHistory.urlStrategy!.getPath(), '/baz?abc=def#fragment');
   });
 
   test('can replace in MultiEntriesBrowserHistory',
