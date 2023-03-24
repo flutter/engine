@@ -110,9 +110,9 @@ class CustomUrlStrategy extends ui_web.UrlStrategy {
 
   @override
   ui.VoidCallback addPopStateListener(ui_web.PopStateListener fn) =>
-      delegate.addPopStateListener((DomEvent event) =>
+      delegate.addPopStateListener(allowInterop((DomEvent event) =>
         fn((event as DomPopStateEvent).state)
-      );
+      ));
 
   @override
   String getPath() => delegate.getPath();
