@@ -514,7 +514,7 @@ class Rasterizer final : public SnapshotDelegate,
     if (found_surface == surfaces_.end()) {
       return nullptr;
     }
-    return found_surface->second.get();
+    return &found_surface->second;
   }
 
   SurfaceRecord* GetFirstSurface() {
@@ -586,7 +586,7 @@ class Rasterizer final : public SnapshotDelegate,
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::unique_ptr<Studio> studio_;
-  std::unordered_map<int64_t, std::unique_ptr<SurfaceRecord>> surfaces_;
+  std::unordered_map<int64_t, SurfaceRecord> surfaces_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
   // Set when we need attempt to rasterize the layer tree again. This layer_tree

@@ -145,10 +145,7 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 void Rasterizer::RegisterSurface(int64_t view_id,
                                  std::unique_ptr<Surface> surface) {
   bool insertion_happened =
-      surfaces_
-          .try_emplace(view_id,
-                       std::make_unique<SurfaceRecord>(std::move(surface)))
-          .second;
+      surfaces_.try_emplace(view_id, std::move(surface)).second;
   if (!insertion_happened) {
     FML_DLOG(INFO)
         << "Rasterizer::RegisterSurface called with an existing view ID "
@@ -167,7 +164,7 @@ GrDirectContext* Rasterizer::GetGrContext() {
 bool Rasterizer::HasLastLayerTree() const {
   // TODO(dkwingsmt): This method is only available in unittests now
   for (auto& record_pair : surfaces_) {
-    auto& layer_tree = record_pair.second->last_tree;
+    auto& layer_tree = record_pair.second.last_tree;
     if (layer_tree) {
       return true;
     }
@@ -184,16 +181,16 @@ int Rasterizer::DrawLastLayerTree(
   int success_count = 0;
   bool should_resubmit_frame = false;
   for (auto& record_pair : surfaces_) {
-    Surface* surface = record_pair.second->surface.get();
-    flutter::LayerTree* layer_tree = record_pair.second->last_tree.get();
+    Surface* surface = record_pair.second.surface.get();
+    flutter::LayerTree* layer_tree = record_pair.second.last_tree.get();
     if (!surface || !layer_tree) {
       continue;
     }
     if (enable_leaf_layer_tracing) {
       layer_tree->enable_leaf_layer_tracing(true);
     }
-    RasterStatus raster_status = DrawToSurface(
-        *frame_timings_recorder, layer_tree, record_pair.second.get());
+    RasterStatus raster_status =
+        DrawToSurface(*frame_timings_recorder, layer_tree, &record_pair.second);
     if (enable_leaf_layer_tracing) {
       layer_tree->enable_leaf_layer_tracing(false);
     }
