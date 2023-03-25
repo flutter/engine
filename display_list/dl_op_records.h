@@ -197,6 +197,42 @@ struct SetBlendModeOp final : DLOp {
 
 // Clear: 4 byte header + unused 4 byte payload uses 8 bytes
 //        (4 bytes unused)
+// Set: 4 byte header + unused 4 byte struct padding + dl_shared
+//      instance uses 16 bytes (4 bytes unused)
+#define DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(name, field_name)               \
+  struct Clear##name##Op final : DLOp {                                   \
+    static const auto kType = DisplayListOpType::kClear##name;            \
+                                                                          \
+    Clear##name##Op() {}                                                  \
+                                                                          \
+    void dispatch(DispatchContext& ctx) const {                           \
+      ctx.receiver.set##name(nullptr);                                    \
+    }                                                                     \
+  };                                                                      \
+  struct Set##name##Op final : DLOp {                                     \
+    static const auto kType = DisplayListOpType::kSet##name;              \
+                                                                          \
+    Set##name##Op(const Dl##name* field_name) : field_name(field_name) {} \
+                                                                          \
+    const dl_shared<const Dl##name> field_name;                           \
+                                                                          \
+    void dispatch(DispatchContext& ctx) const {                           \
+      ctx.receiver.set##name(field_name.get());                           \
+    }                                                                     \
+                                                                          \
+    DisplayListCompare equals(const Set##name##Op* other) const {         \
+      return Equals(field_name, other->field_name)                        \
+                 ? DisplayListCompare::kEqual                             \
+                 : DisplayListCompare::kNotEqual;                         \
+    }                                                                     \
+  };
+DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorFilter, filter)
+DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(MaskFilter, filter)
+DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(PathEffect, effect)
+#undef DEFINE_SET_CLEAR_DLSHARED_ATTR_OP
+
+// Clear: 4 byte header + unused 4 byte payload uses 8 bytes
+//        (4 bytes unused)
 // Set: 4 byte header + unused 4 byte struct padding + Dl<name>
 //      instance copied to the memory following the record
 //      yields a size and efficiency that has somewhere between
@@ -221,11 +257,8 @@ struct SetBlendModeOp final : DLOp {
       ctx.receiver.set##name(filter);                                       \
     }                                                                       \
   };
-DEFINE_SET_CLEAR_DLATTR_OP(ColorFilter, ColorFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
-DEFINE_SET_CLEAR_DLATTR_OP(MaskFilter, MaskFilter, filter)
 DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
-DEFINE_SET_CLEAR_DLATTR_OP(PathEffect, PathEffect, effect)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
 
 // 4 byte header + 80 bytes for the embedded DlImageColorSource

@@ -137,19 +137,18 @@ TEST(DisplayListSkConversions, BlendColorFilterModifiesTransparency) {
     std::stringstream desc_str;
     desc_str << "blend[" << static_cast<int>(mode) << ", " << color << "]";
     std::string desc = desc_str.str();
-    DlBlendColorFilter filter(color, mode);
-    if (filter.modifies_transparent_black()) {
-      auto dl_filter = DlBlendColorFilter::Make(color, mode);
-      auto sk_filter = ToSk(filter);
+    auto dl_filter = DlColorFilter::MakeBlend(color, mode);
+    if (dl_filter) {
+      auto sk_filter = ToSk(dl_filter);
       ASSERT_NE(dl_filter, nullptr) << desc;
       ASSERT_NE(sk_filter, nullptr) << desc;
-      ASSERT_TRUE(sk_filter->filterColor(0) != 0) << desc;
-    } else {
-      auto dl_filter = DlBlendColorFilter::Make(color, mode);
-      auto sk_filter = ToSk(filter);
-      EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr) << desc;
-      ASSERT_TRUE(sk_filter == nullptr || sk_filter->filterColor(0) == 0)
+      ASSERT_EQ(dl_filter->modifies_transparent_black(),
+                sk_filter->filterColor(0) != 0)
           << desc;
+    } else {
+      auto sk_filter = SkColorFilters::Blend(color, ToSk(mode));
+      ASSERT_EQ(dl_filter, nullptr);
+      ASSERT_EQ(sk_filter, nullptr);
     }
   };
 
@@ -246,11 +245,10 @@ TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
     std::string desc =
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     matrix[element] = value;
-    DlMatrixColorFilter filter(matrix);
     auto dl_filter = DlMatrixColorFilter::Make(matrix);
-    auto sk_filter = ToSk(filter);
+    auto sk_filter = ToSk(dl_filter);
     EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr);
-    EXPECT_EQ(filter.modifies_transparent_black(),
+    EXPECT_EQ(dl_filter && dl_filter->modifies_transparent_black(),
               sk_filter && sk_filter->filterColor(0) != 0);
   };
 

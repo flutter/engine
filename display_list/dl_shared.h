@@ -10,6 +10,8 @@
 
 #include "fml/logging.h"
 
+// #define DL_SHAREABLE_STATS
+
 namespace flutter {
 
 /// ----------------------------------------------------------------------
@@ -39,27 +41,69 @@ class dl_shared {
   dl_shared() : shareable_(nullptr) {}
   dl_shared(std::nullptr_t) : shareable_(nullptr) {}
 
-  dl_shared(T* shareable) : shareable_(shareable) {  //
-    shareable->AddStrongRef();
-  }
-  dl_shared(T& shareable) : dl_shared(&shareable) {}
-  dl_shared(T&& shareable) : dl_shared(&shareable) {}
-
-  ~dl_shared() {
+  dl_shared(T* shareable) : shareable_(shareable) {
     if (shareable_) {
-      shareable_->RemoveStrongRef();
-      shareable_ = nullptr;
+      shareable_->AddStrongRef();
     }
   }
 
-  [[nodiscard]] T* release() {
-    T* ret = shareable_;
-    shareable_ = nullptr;
-    return ret;
+  dl_shared(const dl_shared<T>& that) : dl_shared(that.get()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_shared(const dl_shared<U>& that) : dl_shared(that.get()) {}
+
+  dl_shared(dl_shared<T>&& that) : shareable_(that.release()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_shared(dl_shared<U>&& that) : shareable_(that.release()) {}
+
+  ~dl_shared() {  //
+    capture(nullptr, false);
   }
 
+  dl_shared<T>& operator=(std::nullptr_t) {  //
+    capture(nullptr, false);
+    return *this;
+  }
+
+  // Assign from pointer creates a new shared reference
+  dl_shared<T>& operator=(T* that) {
+    this->capture(that, true);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_shared<T>& operator=(U* that) {
+    this->capture(that, true);
+    return *this;
+  }
+
+  // Assign from lvalue creates a new shared reference
+  dl_shared<T>& operator=(const dl_shared<T>& that) {
+    this->capture(that.get(), true);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_shared<T>& operator=(const dl_shared<U>& that) {
+    this->capture(that.get(), true);
+    return *this;
+  }
+
+  // Assign from rvalue steals the reference
   dl_shared<T>& operator=(dl_shared<T>&& that) {
-    this->reset(that.release());
+    this->capture(that.release(), false);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_shared<T>& operator=(dl_shared<U>&& that) {
+    this->capture(that.release(), false);
     return *this;
   }
 
@@ -72,9 +116,39 @@ class dl_shared {
 
   T* get() const { return shareable_; }
   T* operator->() const { return shareable_; }
+  auto& operator[](int i) const { return (*shareable_)[i]; }
 
  private:
   T* shareable_;
+
+  dl_shared(T* shareable, bool add_ref) : shareable_(shareable) {
+    if (add_ref) {
+      shareable_->AddStrongRef();
+    }
+  }
+  template <typename U, typename... Args>
+  friend inline dl_shared<U> dl_make_shared(Args&&... args);
+  template <typename U, typename... Args>
+  friend inline dl_shared<U> dl_place_shared(void*, Args&&... args);
+
+  [[nodiscard]] T* release() {
+    T* ret = shareable_;
+    shareable_ = nullptr;
+    return ret;
+  }
+  template <typename>
+  friend class dl_shared;
+
+  void capture(T* value, bool add_ref = false) {
+    if (add_ref && value) {
+      value->AddStrongRef();
+    }
+    T* old_shareable = shareable_;
+    shareable_ = value;
+    if (old_shareable) {
+      old_shareable->RemoveStrongRef();
+    }
+  }
 };
 
 /// ----------------------------------------------------------------------
@@ -102,15 +176,102 @@ class dl_weak_shared {
   dl_weak_shared(T* shareable) : shareable_(shareable) {
     shareable->AddWeakRef();
   }
-  dl_weak_shared(T& shareable) : dl_weak_shared(&shareable) {}
-  dl_weak_shared(T&& shareable) : dl_weak_shared(&shareable) {}
 
-  ~dl_weak_shared() {
-    if (shareable_) {
-      shareable_->RemoveWeakRef();
-      shareable_ = nullptr;
-    }
+  dl_weak_shared(const dl_shared<T>& that) : dl_weak_shared(that.get()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared(const dl_shared<U>& that) : dl_weak_shared(that.get()) {}
+
+  dl_weak_shared(const dl_weak_shared<T>& that) : dl_weak_shared(that.get()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared(const dl_weak_shared<U>& that) : dl_weak_shared(that.get()) {}
+
+  dl_weak_shared(dl_shared<T>&& that) : shareable_(that.release()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared(dl_shared<U>&& that) : shareable_(that.release()) {}
+
+  dl_weak_shared(dl_weak_shared<T>&& that) : shareable_(that.release()) {}
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared(dl_weak_shared<U>&& that) : shareable_(that.release()) {}
+
+  ~dl_weak_shared() {  //
+    capture(nullptr, false);
   }
+
+  dl_weak_shared<T>& operator=(std::nullptr_t) {  //
+    capture(nullptr, false);
+    return *this;
+  }
+
+  // Assign from pointer creates a new shared reference
+  dl_weak_shared<T>& operator=(T* that) {
+    capture(that, true);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared<T>& operator=(U* that) {
+    capture(that, true);
+    return *this;
+  }
+
+  // Assign from lvalue creates a new shared reference
+  dl_weak_shared<T>& operator=(const dl_shared<T>& that) {
+    capture(that.get(), true);
+    return *this;
+  }
+  dl_weak_shared<T>& operator=(const dl_weak_shared<T>& that) {
+    capture(that.shareable_, true);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared<T>& operator=(const dl_shared<U>& that) {
+    capture(that.get(), true);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared<T>& operator=(const dl_weak_shared<U>& that) {
+    capture(that.get(), true);
+    return *this;
+  }
+
+  // Assign from rvalue steals the reference
+  dl_weak_shared<T>& operator=(dl_shared<T>&& that) {
+    capture(that.release(), false);
+    return *this;
+  }
+  dl_weak_shared<T>& operator=(dl_weak_shared<T>&& that) {
+    capture(that.release(), false);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared<T>& operator=(dl_shared<U>&& that) {
+    capture(that.release(), false);
+    return *this;
+  }
+  template <typename U,
+            typename = typename std::enable_if<
+                std::is_convertible<U*, T*>::value>::type>
+  dl_weak_shared<T>& operator=(dl_weak_shared<U>&& that) {
+    capture(that.release(), false);
+    return *this;
+  }
+
+  explicit operator bool() const { return shareable_ != nullptr; }
 
   /// Returns true iff the underlying shareable object is weakly held.
   /// This property can be used during cache management to clean out
@@ -142,6 +303,17 @@ class dl_weak_shared {
 
  private:
   T* shareable_;
+
+  void capture(T* value, bool add_ref = false) {
+    if (shareable_ != value) {
+      if (shareable_) {
+        shareable_->RemoveWeakRef();
+      }
+      if ((shareable_ = value) && add_ref) {
+        shareable_->AddWeakRef();
+      }
+    }
+  }
 };
 
 /// ----------------------------------------------------------------------
@@ -156,23 +328,32 @@ class dl_weak_shared {
 /// clean out any caches holding weak references to objects.
 class DlShareable {
  public:
-  uint32_t total_ref_count() { return total_ref_count_.load(); }
-  uint32_t strong_ref_count() {
+  uint32_t total_ref_count() const { return total_ref_count_.load(); }
+  uint32_t strong_ref_count() const {
     // Internally weak references also add a strong reference
     // for lifetime management, but their contribution to the
     // weak ref count indicates the weakness of their interest
     // in the object itself.
     return total_ref_count_.load() - weak_ref_count_.load();
   }
-  uint32_t weak_ref_count() { return weak_ref_count_.load(); }
+  uint32_t weak_ref_count() const { return weak_ref_count_.load(); }
 
-  bool is_unique() { return total_ref_count_.load() == 1; }
-  bool is_weakly_held() { return strong_ref_count() == 0; }
+  bool is_unique() const { return total_ref_count_.load() == 1; }
+  bool is_weakly_held() const { return strong_ref_count() == 0; }
 
  protected:
-  DlShareable() : total_ref_count_(1), weak_ref_count_(0) {}
+  DlShareable() : total_ref_count_(1), weak_ref_count_(0) {
+#ifdef DL_SHAREABLE_STATS
+    total_made_++;
+    report_shareable_counts();
+#endif  // DL_SHAREABLE_STATS
+  }
   virtual ~DlShareable() {  //
     FML_DCHECK(total_ref_count_.load() == 0);
+#ifdef DL_SHAREABLE_STATS
+    total_disposed_++;
+    report_shareable_counts();
+#endif  // DL_SHAREABLE_STATS
   }
 
   virtual void DlShareableDispose() const {  //
@@ -180,30 +361,51 @@ class DlShareable {
   }
 
  private:
+#ifdef DL_SHAREABLE_STATS
+  static int64_t total_made_;
+  static int64_t total_disposed_;
+  static void report_shareable_counts();
+#endif  // DL_SHAREABLE_STATS
+
   mutable std::atomic<uint32_t> total_ref_count_;
   mutable std::atomic<uint32_t> weak_ref_count_;
 
-  void AddStrongRef() { total_ref_count_.fetch_add(1u); }
-  void RemoveStrongRef() {
+  void AddStrongRef() const { total_ref_count_.fetch_add(1u); }
+  void RemoveStrongRef() const {
     FML_DCHECK(total_ref_count_ > 0);
     if (total_ref_count_.fetch_sub(1u) == 1) {
       DlShareableDispose();
     }
   }
-  void AddWeakRef() {
-    total_ref_count_.fetch_add(1u);
+  void AddWeakRef() const {
+    AddStrongRef();
     weak_ref_count_.fetch_add(1u);
   }
-  void RemoveWeakRef() {
+  void RemoveWeakRef() const {
     FML_DCHECK(weak_ref_count_.load() > 0);
     weak_ref_count_.fetch_sub(1u);
     RemoveStrongRef();
   }
 
-  friend class dl_shared<DlShareable>;
-  friend class dl_weak_shared<DlShareable>;
+  template <typename T>
+  friend class dl_shared;
+  template <typename T>
+  friend class dl_weak_shared;
 };
 
+// ------------ make_shared ------------
+template <typename T, typename... Args>
+inline dl_shared<T> dl_make_shared(Args&&... args) {
+  return dl_shared<T>(new T(std::forward<Args>(args)...), false);
+}
+template <typename T, typename... Args>
+inline dl_shared<T> dl_place_shared(void* ptr, Args&&... args) {
+  return dl_shared<T>(new (ptr) T(std::forward<Args>(args)...), false);
+}
+// No weak version of make_shared. Does it make sense to start out
+// life without a strong reference?
+
+// ------------ shared == ------------
 template <typename T, typename U>
 inline bool operator==(const dl_shared<T>& a, const dl_shared<U>& b) {
   return a.get() == b.get();
@@ -217,6 +419,21 @@ inline bool operator==(std::nullptr_t, const dl_shared<T>& b) {
   return !b;
 }
 
+// ------------ shared != ------------
+template <typename T, typename U>
+inline bool operator!=(const dl_shared<T>& a, const dl_shared<U>& b) {
+  return a.get() != b.get();
+}
+template <typename T>
+inline bool operator!=(const dl_shared<T>& a, std::nullptr_t) {
+  return !!a;
+}
+template <typename T>
+inline bool operator!=(std::nullptr_t, const dl_shared<T>& b) {
+  return !!b;
+}
+
+// ------------ weak_shared == ------------
 template <typename T, typename U>
 inline bool operator==(const dl_weak_shared<T>& a, const dl_weak_shared<U>& b) {
   return a.get() == b.get();
@@ -230,6 +447,21 @@ inline bool operator==(std::nullptr_t, const dl_weak_shared<T>& b) {
   return !b;
 }
 
+// ------------ weak_shared != ------------
+template <typename T, typename U>
+inline bool operator!=(const dl_weak_shared<T>& a, const dl_weak_shared<U>& b) {
+  return a.get() != b.get();
+}
+template <typename T>
+inline bool operator!=(const dl_weak_shared<T>& a, std::nullptr_t) {
+  return !!a;
+}
+template <typename T>
+inline bool operator!=(std::nullptr_t, const dl_weak_shared<T>& b) {
+  return !!b;
+}
+
+// ------------ shared == weak_shared ------------
 template <typename T, typename U>
 inline bool operator==(const dl_shared<T>& a, const dl_weak_shared<U>& b) {
   return a.get() == b.get();
@@ -237,6 +469,28 @@ inline bool operator==(const dl_shared<T>& a, const dl_weak_shared<U>& b) {
 template <typename T, typename U>
 inline bool operator==(const dl_weak_shared<T>& a, const dl_shared<U>& b) {
   return a.get() == b.get();
+}
+
+// ------------ shared != weak_shared ------------
+template <typename T, typename U>
+inline bool operator!=(const dl_shared<T>& a, const dl_weak_shared<U>& b) {
+  return a.get() != b.get();
+}
+template <typename T, typename U>
+inline bool operator!=(const dl_weak_shared<T>& a, const dl_shared<U>& b) {
+  return a.get() != b.get();
+}
+
+// ------------ (weak_)shared ostream ------------
+template <typename C, typename CT, typename T>
+auto operator<<(std::basic_ostream<C, CT>& os, const dl_shared<T>& shared)
+    -> decltype(os << shared.get()) {
+  return os << shared.get();
+}
+template <typename C, typename CT, typename T>
+auto operator<<(std::basic_ostream<C, CT>& os, const dl_weak_shared<T>& shared)
+    -> decltype(os << shared.get()) {
+  return os << shared.get();
 }
 
 }  // namespace flutter

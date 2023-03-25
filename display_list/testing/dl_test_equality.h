@@ -5,7 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_EQUALITY_H_
 #define FLUTTER_DISPLAY_LIST_TESTING_DL_TEST_EQUALITY_H_
 
-#include "flutter/display_list/dl_attributes.h"
+#include "flutter/display_list/effects/dl_attributes.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "gtest/gtest.h"
 
@@ -13,7 +13,7 @@ namespace flutter {
 namespace testing {
 
 template <class T>
-static void TestEquals(T& source1, T& source2) {
+static void TestEquals(const T& source1, const T& source2) {
   ASSERT_TRUE(source1 == source2);
   ASSERT_TRUE(source2 == source1);
   ASSERT_FALSE(source1 != source2);
@@ -25,7 +25,9 @@ static void TestEquals(T& source1, T& source2) {
 }
 
 template <class T>
-static void TestNotEquals(T& source1, T& source2, std::string label) {
+static void TestNotEquals(const T& source1,
+                          const T& source2,
+                          std::string label) {
   ASSERT_FALSE(source1 == source2) << label;
   ASSERT_FALSE(source2 == source1) << label;
   ASSERT_TRUE(source1 != source2) << label;

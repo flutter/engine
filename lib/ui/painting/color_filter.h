@@ -30,10 +30,10 @@ class ColorFilter : public RefCountedDartWrappable<ColorFilter> {
 
   ~ColorFilter() override;
 
-  const std::shared_ptr<const DlColorFilter> filter() const { return filter_; }
+  const dl_shared<const DlColorFilter> filter() const { return filter_; }
 
  private:
-  std::shared_ptr<const DlColorFilter> filter_;
+  dl_shared<const DlColorFilter> filter_;
 };
 
 }  // namespace flutter

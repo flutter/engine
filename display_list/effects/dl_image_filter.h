@@ -5,9 +5,9 @@
 #ifndef FLUTTER_DISPLAY_LIST_EFFECTS_DL_IMAGE_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_EFFECTS_DL_IMAGE_FILTER_H_
 
-#include "flutter/display_list/dl_attributes.h"
 #include "flutter/display_list/dl_sampling_options.h"
 #include "flutter/display_list/dl_tile_mode.h"
+#include "flutter/display_list/effects/dl_attributes.h"
 #include "flutter/display_list/effects/dl_color_filter.h"
 #include "flutter/display_list/utils/dl_comparable.h"
 #include "flutter/fml/logging.h"
@@ -574,19 +574,19 @@ class DlComposeImageFilter final : public DlImageFilter {
 
 class DlColorFilterImageFilter final : public DlImageFilter {
  public:
-  explicit DlColorFilterImageFilter(std::shared_ptr<const DlColorFilter> filter)
+  explicit DlColorFilterImageFilter(dl_shared<const DlColorFilter> filter)
       : color_filter_(std::move(filter)) {}
   explicit DlColorFilterImageFilter(const DlColorFilter* filter)
-      : color_filter_(filter->shared()) {}
+      : color_filter_(filter) {}
   explicit DlColorFilterImageFilter(const DlColorFilter& filter)
-      : color_filter_(filter.shared()) {}
+      : color_filter_(&filter) {}
   explicit DlColorFilterImageFilter(const DlColorFilterImageFilter* filter)
       : DlColorFilterImageFilter(filter->color_filter_) {}
   explicit DlColorFilterImageFilter(const DlColorFilterImageFilter& filter)
       : DlColorFilterImageFilter(&filter) {}
 
   static std::shared_ptr<DlImageFilter> Make(
-      std::shared_ptr<const DlColorFilter> filter) {
+      dl_shared<const DlColorFilter> filter) {
     if (filter) {
       return std::make_shared<DlColorFilterImageFilter>(filter);
     }
@@ -602,7 +602,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
   size_t size() const override { return sizeof(*this); }
 
-  const std::shared_ptr<const DlColorFilter> color_filter() const {
+  const dl_shared<const DlColorFilter> color_filter() const {
     return color_filter_;
   }
 
@@ -653,7 +653,7 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
  private:
-  std::shared_ptr<const DlColorFilter> color_filter_;
+  dl_shared<const DlColorFilter> color_filter_;
 };
 
 class DlLocalMatrixImageFilter final : public DlImageFilter {

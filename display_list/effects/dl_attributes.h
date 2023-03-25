@@ -7,6 +7,8 @@
 
 #include <memory>
 
+#include "flutter/display_list/dl_shared.h"
+
 namespace flutter {
 
 // ===========================================================================

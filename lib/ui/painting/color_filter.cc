@@ -43,11 +43,11 @@ void ColorFilter::initMatrix(const tonic::Float32List& color_matrix) {
 }
 
 void ColorFilter::initLinearToSrgbGamma() {
-  filter_ = DlLinearToSrgbGammaColorFilter::instance;
+  filter_ = DlLinearToSrgbGammaColorFilter::Make();
 }
 
 void ColorFilter::initSrgbToLinearGamma() {
-  filter_ = DlSrgbToLinearGammaColorFilter::instance;
+  filter_ = DlSrgbToLinearGammaColorFilter::Make();
 }
 
 ColorFilter::~ColorFilter() = default;

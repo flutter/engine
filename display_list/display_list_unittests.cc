@@ -301,6 +301,79 @@ TEST_F(DisplayListTest, AllBlendModeNops) {
   ASSERT_EQ(dl->op_count(true), 0u);
 }
 
+TEST_F(DisplayListTest, ReconstructedColorFiltersRecordAsEqual) {
+  auto run_test = [](const std::string& name, void setup(DlPaint & paint)) {
+    SkRect rect = {0, 0, 100, 100};
+    DisplayListBuilder builder1;
+    DlPaint paint1;
+    setup(paint1);
+    builder1.DrawRect(rect, paint1);
+    DisplayListBuilder builder2;
+    DlPaint paint2;
+    setup(paint2);
+    builder2.DrawRect(rect, paint2);
+    ASSERT_NE(paint1.getColorFilterPtr(), paint2.getColorFilterPtr()) << name;
+    ASSERT_EQ(paint1, paint2);
+    ASSERT_TRUE(builder1.Build()->Equals(builder2.Build())) << name;
+  };
+  run_test("BlendColorFilter", [](DlPaint& paint) {
+    paint.setColorFilter(
+        DlColorFilter::MakeBlend(DlColor::kRed(), DlBlendMode::kSrcIn));
+  });
+  run_test("MatrixColorFilter", [](DlPaint& paint) {
+    // clang-format off
+    const float matrix[20] = {
+        1, 2, 3, 4, 5,
+        6, 7, 8, 9, 10,
+        11, 12, 13, 14, 15,
+        16, 17, 18, 19, 20,
+    };
+    // clang-format on
+    paint.setColorFilter(DlColorFilter::MakeMatrix(matrix));
+  });
+}
+
+TEST_F(DisplayListTest, ReconstructedPathEffectsRecordAsEqual) {
+  auto run_test = [](const std::string& name, void setup(DlPaint & paint)) {
+    SkRect rect = {0, 0, 100, 100};
+    DisplayListBuilder builder1;
+    DlPaint paint1;
+    setup(paint1);
+    builder1.DrawRect(rect, paint1);
+    DisplayListBuilder builder2;
+    DlPaint paint2;
+    setup(paint2);
+    builder2.DrawRect(rect, paint2);
+    ASSERT_NE(paint1.getPathEffectPtr(), paint2.getPathEffectPtr()) << name;
+    ASSERT_EQ(paint1, paint2);
+    ASSERT_TRUE(builder1.Build()->Equals(builder2.Build())) << name;
+  };
+  run_test("DashPathEffect", [](DlPaint& paint) {
+    const SkScalar dashes[3] = {10, 5, 2};
+    paint.setPathEffect(DlPathEffect::MakeDash(dashes, 3, 0.0));
+  });
+}
+
+TEST_F(DisplayListTest, ReconstructedMaskFiltersRecordAsEqual) {
+  auto run_test = [](const std::string& name, void setup(DlPaint & paint)) {
+    SkRect rect = {0, 0, 100, 100};
+    DisplayListBuilder builder1;
+    DlPaint paint1;
+    setup(paint1);
+    builder1.DrawRect(rect, paint1);
+    DisplayListBuilder builder2;
+    DlPaint paint2;
+    setup(paint2);
+    builder2.DrawRect(rect, paint2);
+    ASSERT_NE(paint1.getMaskFilterPtr(), paint2.getMaskFilterPtr()) << name;
+    ASSERT_EQ(paint1, paint2);
+    ASSERT_TRUE(builder1.Build()->Equals(builder2.Build())) << name;
+  };
+  run_test("BlurMaskFilter", [](DlPaint& paint) {
+    paint.setMaskFilter(DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 2.0));
+  });
+}
+
 TEST_F(DisplayListTest, DisplayListsWithVaryingOpComparisons) {
   sk_sp<DisplayList> default_dl = Build(allGroups.size(), 0);
   ASSERT_TRUE(default_dl->Equals(*default_dl)) << "Default == itself";
@@ -346,7 +419,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 1, 0,
   };
   // clang-format on
-  DlMatrixColorFilter base_color_filter(color_matrix);
+  auto base_color_filter = DlColorFilter::MakeMatrix(color_matrix);
   // clang-format off
   const float alpha_matrix[] = {
     0, 0, 0, 0, 0,
@@ -355,7 +428,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   sk_sp<SkColorFilter> sk_alpha_color_filter =
       SkColorFilters::Matrix(alpha_matrix);
 
@@ -374,7 +447,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Now checking that a normal color filter still produces rect bounds
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    receiver.setColorFilter(&base_color_filter);
+    receiver.setColorFilter(base_color_filter.get());
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
     receiver.drawRect(rect);
@@ -407,7 +480,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // save layer that modifies an unbounded region
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    receiver.setColorFilter(&alpha_color_filter);
+    receiver.setColorFilter(alpha_color_filter.get());
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
     receiver.drawRect(rect);
@@ -421,7 +494,7 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // to the behavior in the previous example
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    receiver.setColorFilter(&alpha_color_filter);
+    receiver.setColorFilter(alpha_color_filter.get());
     receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
     receiver.setColorFilter(nullptr);
     receiver.drawRect(rect);
@@ -948,7 +1021,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterDoesNotInheritOpacity) {
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
-  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  receiver.setColorFilter(kTestMatrixColorFilter1.get());
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setColorFilter(nullptr);
   receiver.drawRect({10, 10, 20, 20});
@@ -1000,7 +1073,7 @@ TEST_F(DisplayListTest, SaveLayerColorFilterOnChildDoesNotInheritOpacity) {
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
-  receiver.setColorFilter(&kTestMatrixColorFilter1);
+  receiver.setColorFilter(kTestMatrixColorFilter1.get());
   receiver.drawRect({10, 10, 20, 20});
   receiver.restore();
 
@@ -1954,7 +2027,7 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
       0, 0, 0, 0, 1,
   };
   // clang-format on
-  DlMatrixColorFilter alpha_color_filter(alpha_matrix);
+  auto alpha_color_filter = DlColorFilter::MakeMatrix(alpha_matrix);
   // Making sure hiding a problematic ColorFilter as an ImageFilter
   // will generate the same behavior as setting it as a ColorFilter
 

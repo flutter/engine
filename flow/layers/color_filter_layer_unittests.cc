@@ -81,7 +81,7 @@ TEST_F(ColorFilterLayerTest, SimpleFilter) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
 
-  auto dl_color_filter = DlLinearToSrgbGammaColorFilter::instance;
+  auto dl_color_filter = DlLinearToSrgbGammaColorFilter::Make();
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
   layer->Add(mock_layer);
@@ -121,7 +121,7 @@ TEST_F(ColorFilterLayerTest, MultipleChildren) {
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto dl_color_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto dl_color_filter = DlSrgbToLinearGammaColorFilter::Make();
   auto layer = std::make_shared<ColorFilterLayer>(dl_color_filter);
   layer->Add(mock_layer1);
   layer->Add(mock_layer2);
@@ -171,7 +171,7 @@ TEST_F(ColorFilterLayerTest, Nested) {
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
-  auto dl_color_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto dl_color_filter = DlSrgbToLinearGammaColorFilter::Make();
   auto layer1 = std::make_shared<ColorFilterLayer>(dl_color_filter);
 
   auto layer2 = std::make_shared<ColorFilterLayer>(dl_color_filter);
@@ -231,7 +231,7 @@ TEST_F(ColorFilterLayerTest, Readback) {
 
   // ColorFilterLayer does not read from surface
   auto layer = std::make_shared<ColorFilterLayer>(
-      DlLinearToSrgbGammaColorFilter::instance);
+      DlLinearToSrgbGammaColorFilter::Make());
   preroll_context()->surface_needs_readback = false;
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
@@ -247,7 +247,7 @@ TEST_F(ColorFilterLayerTest, Readback) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheChild) {
-  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::Make();
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -288,7 +288,7 @@ TEST_F(ColorFilterLayerTest, CacheChild) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheChildren) {
-  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::Make();
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -334,7 +334,7 @@ TEST_F(ColorFilterLayerTest, CacheChildren) {
 }
 
 TEST_F(ColorFilterLayerTest, CacheColorFilterLayerSelf) {
-  auto layer_filter = DlSrgbToLinearGammaColorFilter::instance;
+  auto layer_filter = DlSrgbToLinearGammaColorFilter::Make();
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path1 = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -400,12 +400,12 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
     0, 0, 0, 1, 0,
   };
   // clang-format on
-  auto layer_filter = DlMatrixColorFilter(matrix);
+  auto layer_filter = DlColorFilter::MakeMatrix(matrix);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
   auto mock_layer = std::make_shared<MockLayer>(child_path);
-  auto color_filter_layer = std::make_shared<ColorFilterLayer>(
-      std::make_shared<DlMatrixColorFilter>(matrix));
+  auto color_filter_layer =
+      std::make_shared<ColorFilterLayer>(DlColorFilter::MakeMatrix(matrix));
   color_filter_layer->Add(mock_layer);
 
   PrerollContext* context = preroll_context();
@@ -432,7 +432,7 @@ TEST_F(ColorFilterLayerTest, OpacityInheritance) {
       /* ColorFilterLayer::Paint() */ {
         DlPaint dl_paint;
         dl_paint.setColor(opacity_alpha << 24);
-        dl_paint.setColorFilter(&layer_filter);
+        dl_paint.setColorFilter(layer_filter);
         expected_builder.SaveLayer(&child_path.getBounds(), &dl_paint);
         /* MockLayer::Paint() */ {
           expected_builder.DrawPath(child_path, DlPaint(0xFF000000));

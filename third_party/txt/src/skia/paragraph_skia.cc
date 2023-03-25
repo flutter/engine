@@ -90,8 +90,9 @@ class DisplayListParagraphPainter : public skt::ParagraphPainter {
     DlPaint paint;
     paint.setColor(color);
     if (blur_sigma > 0.0) {
-      DlBlurMaskFilter filter(DlBlurStyle::kNormal, blur_sigma, false);
-      paint.setMaskFilter(&filter);
+      auto filter =
+          DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, blur_sigma, false);
+      paint.setMaskFilter(filter);
     }
     builder_->DrawTextBlob(blob, x, y, paint);
   }

@@ -127,14 +127,16 @@ static const std::shared_ptr<DlColorSource> kTestSource5 =
                              kColors,
                              kStops,
                              DlTileMode::kDecal);
-static const DlBlendColorFilter kTestBlendColorFilter1(DlColor::kRed(),
-                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter kTestBlendColorFilter2(DlColor::kBlue(),
-                                                       DlBlendMode::kDstATop);
-static const DlBlendColorFilter kTestBlendColorFilter3(DlColor::kRed(),
-                                                       DlBlendMode::kDstIn);
-static const DlMatrixColorFilter kTestMatrixColorFilter1(kRotateColorMatrix);
-static const DlMatrixColorFilter kTestMatrixColorFilter2(kInvertColorMatrix);
+static const auto kTestBlendColorFilter1 =
+    DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+static const auto kTestBlendColorFilter2 =
+    DlBlendColorFilter::Make(DlColor::kBlue(), DlBlendMode::kDstATop);
+static const auto kTestBlendColorFilter3 =
+    DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kXor);
+static const auto kTestMatrixColorFilter1 =
+    DlMatrixColorFilter::Make(kRotateColorMatrix);
+static const auto kTestMatrixColorFilter2 =
+    DlMatrixColorFilter::Make(kInvertColorMatrix);
 static const DlBlurImageFilter kTestBlurImageFilter1(5.0,
                                                      5.0,
                                                      DlTileMode::kClamp);
@@ -175,15 +177,20 @@ static const DlColorFilterImageFilter kTestCFImageFilter1(
     kTestBlendColorFilter1);
 static const DlColorFilterImageFilter kTestCFImageFilter2(
     kTestBlendColorFilter2);
-static const std::shared_ptr<DlPathEffect> kTestPathEffect1 =
+static const auto kTestPathEffect1 =
     DlDashPathEffect::Make(kTestDashes1, 2, 0.0f);
-static const std::shared_ptr<DlPathEffect> kTestPathEffect2 =
+static const auto kTestPathEffect2 =
     DlDashPathEffect::Make(kTestDashes2, 2, 0.0f);
-static const DlBlurMaskFilter kTestMaskFilter1(DlBlurStyle::kNormal, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter2(DlBlurStyle::kNormal, 5.0);
-static const DlBlurMaskFilter kTestMaskFilter3(DlBlurStyle::kSolid, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter4(DlBlurStyle::kInner, 3.0);
-static const DlBlurMaskFilter kTestMaskFilter5(DlBlurStyle::kOuter, 3.0);
+static const auto kTestMaskFilter1 =
+    DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 3.0);
+static const auto kTestMaskFilter2 =
+    DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 5.0);
+static const auto kTestMaskFilter3 =
+    DlMaskFilter::MakeBlur(DlBlurStyle::kSolid, 3.0);
+static const auto kTestMaskFilter4 =
+    DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.0);
+static const auto kTestMaskFilter5 =
+    DlMaskFilter::MakeBlur(DlBlurStyle::kOuter, 3.0);
 constexpr SkRect kTestBounds = SkRect::MakeLTRB(10, 10, 50, 60);
 static const SkRRect kTestRRect = SkRRect::MakeRectXY(kTestBounds, 5, 5);
 static const SkRRect kTestRRectRect = SkRRect::MakeRect(kTestBounds);
@@ -272,12 +279,6 @@ struct DisplayListInvocation {
   size_t sk_byte_count() { return sizeof(DisplayList) + sk_byte_count_; }
 
   void Invoke(DlOpReceiver& builder) { invoker(builder); }
-
-  // sk_sp<DisplayList> Build() {
-  //   DisplayListBuilder builder;
-  //   invoker(builder.asReceiver());
-  //   return builder.Build();
-  // }
 };
 
 struct DisplayListInvocationGroup {

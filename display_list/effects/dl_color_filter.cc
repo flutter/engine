@@ -8,8 +8,25 @@
 
 namespace flutter {
 
-std::shared_ptr<DlColorFilter> DlBlendColorFilter::Make(DlColor color,
-                                                        DlBlendMode mode) {
+dl_shared<DlColorFilter> DlColorFilter::MakeBlend(DlColor color,
+                                                  DlBlendMode mode) {
+  return DlBlendColorFilter::Make(color, mode);
+}
+
+dl_shared<DlColorFilter> DlColorFilter::MakeMatrix(const float matrix[20]) {
+  return DlMatrixColorFilter::Make(matrix);
+}
+
+dl_shared<DlColorFilter> DlColorFilter::MakeSrgbToLinearGamma() {
+  return DlSrgbToLinearGammaColorFilter::instance;
+}
+
+dl_shared<DlColorFilter> DlColorFilter::MakeLinearToSrgbGamma() {
+  return DlLinearToSrgbGammaColorFilter::instance;
+}
+
+dl_shared<DlBlendColorFilter> DlBlendColorFilter::Make(DlColor color,
+                                                       DlBlendMode mode) {
   switch (mode) {
     case DlBlendMode::kDst: {
       return nullptr;
@@ -42,7 +59,7 @@ std::shared_ptr<DlColorFilter> DlBlendColorFilter::Make(DlColor color,
     default:
       break;
   }
-  return std::make_shared<DlBlendColorFilter>(color, mode);
+  return dl_make_shared<DlBlendColorFilter>(color, mode);
 }
 
 bool DlBlendColorFilter::modifies_transparent_black() const {
@@ -124,16 +141,27 @@ bool DlBlendColorFilter::can_commute_with_opacity() const {
   }
 }
 
-std::shared_ptr<DlColorFilter> DlMatrixColorFilter::Make(
+dl_shared<DlMatrixColorFilter> DlMatrixColorFilter::Make(
     const float matrix[20]) {
+  // clang-format off
+  static const float identity_matrix[20] = {
+      1, 0, 0, 0, 0,
+      0, 1, 0, 0, 0,
+      0, 0, 1, 0, 0,
+      0, 0, 0, 1, 0,
+  };
+  // clang-format on
   float product = 0;
+  bool is_identity = true;
   for (int i = 0; i < 20; i++) {
-    product *= matrix[i];
+    float entry = matrix[i];
+    product *= entry;
+    is_identity = is_identity && (entry == identity_matrix[i]);
   }
   // If any of the elements of the matrix are infinity or NaN, then
   // |product| will be NaN, otherwise 0.
-  if (product == 0) {
-    return std::make_shared<DlMatrixColorFilter>(matrix);
+  if (product == 0 && !is_identity) {
+    return dl_make_shared<DlMatrixColorFilter>(matrix);
   }
   return nullptr;
 }
@@ -189,12 +217,12 @@ bool DlMatrixColorFilter::can_commute_with_opacity() const {
   return true;
 }
 
-const std::shared_ptr<DlSrgbToLinearGammaColorFilter>
+dl_shared<DlSrgbToLinearGammaColorFilter>
     DlSrgbToLinearGammaColorFilter::instance =
-        std::make_shared<DlSrgbToLinearGammaColorFilter>();
+        dl_make_shared<DlSrgbToLinearGammaColorFilter>();
 
-const std::shared_ptr<DlLinearToSrgbGammaColorFilter>
+dl_shared<DlLinearToSrgbGammaColorFilter>
     DlLinearToSrgbGammaColorFilter::instance =
-        std::make_shared<DlLinearToSrgbGammaColorFilter>();
+        dl_make_shared<DlLinearToSrgbGammaColorFilter>();
 
 }  // namespace flutter

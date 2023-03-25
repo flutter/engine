@@ -5,7 +5,7 @@
 #ifndef FLUTTER_DISPLAY_LIST_EFFECTS_DL_MASK_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_EFFECTS_DL_MASK_FILTER_H_
 
-#include "flutter/display_list/dl_attributes.h"
+#include "flutter/display_list/effects/dl_attributes.h"
 #include "flutter/fml/logging.h"
 
 #include "third_party/skia/include/core/SkScalar.h"
@@ -28,11 +28,21 @@ enum class DlBlurStyle {
   kInner,   //!< fuzzy inside, nothing outside
 };
 
-class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
+class DlMaskFilter : public DlShareable,
+                     public DlAttribute<DlMaskFilter, DlMaskFilterType> {
  public:
+  static dl_shared<DlMaskFilter> MakeBlur(DlBlurStyle style,
+                                          SkScalar sigma,
+                                          bool respect_ctm = true);
+
   // Return a DlBlurMaskFilter pointer to this object iff it is a Blur
   // type of MaskFilter, otherwise return nullptr.
   virtual const DlBlurMaskFilter* asBlur() const { return nullptr; }
+
+  std::shared_ptr<DlMaskFilter> shared() const override {
+    FML_DCHECK(false);
+    return nullptr;
+  }
 };
 
 // The Blur type of MaskFilter which specifies modifying the
@@ -42,29 +52,12 @@ class DlMaskFilter : public DlAttribute<DlMaskFilter, DlMaskFilterType> {
 // filter is then used to combine those colors.
 class DlBlurMaskFilter final : public DlMaskFilter {
  public:
-  DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma, bool respect_ctm = true)
-      : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
-  DlBlurMaskFilter(const DlBlurMaskFilter& filter)
-      : DlBlurMaskFilter(filter.style_, filter.sigma_, filter.respect_ctm_) {}
-  DlBlurMaskFilter(const DlBlurMaskFilter* filter)
-      : DlBlurMaskFilter(filter->style_, filter->sigma_, filter->respect_ctm_) {
-  }
-
-  static std::shared_ptr<DlMaskFilter> Make(DlBlurStyle style,
-                                            SkScalar sigma,
-                                            bool respect_ctm = true) {
-    if (SkScalarIsFinite(sigma) && sigma > 0) {
-      return std::make_shared<DlBlurMaskFilter>(style, sigma, respect_ctm);
-    }
-    return nullptr;
-  }
+  static dl_shared<DlBlurMaskFilter> Make(DlBlurStyle style,
+                                          SkScalar sigma,
+                                          bool respect_ctm = true);
 
   DlMaskFilterType type() const override { return DlMaskFilterType::kBlur; }
   size_t size() const override { return sizeof(*this); }
-
-  std::shared_ptr<DlMaskFilter> shared() const override {
-    return std::make_shared<DlBlurMaskFilter>(this);
-  }
 
   const DlBlurMaskFilter* asBlur() const override { return this; }
 
@@ -81,6 +74,12 @@ class DlBlurMaskFilter final : public DlMaskFilter {
   }
 
  private:
+  DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma, bool respect_ctm = true)
+      : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
+
+  friend inline dl_shared<DlBlurMaskFilter>
+  dl_make_shared<DlBlurMaskFilter>(DlBlurStyle&, SkScalar&, bool&);
+
   DlBlurStyle style_;
   SkScalar sigma_;
   // Added for backward compatibility with Flutter text shadow rendering which

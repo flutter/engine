@@ -11,11 +11,11 @@
 
 namespace flutter {
 
-ColorFilterLayer::ColorFilterLayer(std::shared_ptr<const DlColorFilter> filter)
+ColorFilterLayer::ColorFilterLayer(const dl_shared<const DlColorFilter>& filter)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer,
           true),
-      filter_(std::move(filter)) {}
+      filter_(filter) {}
 
 void ColorFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);

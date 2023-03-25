@@ -264,33 +264,8 @@ void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
     current_.setColorFilter(nullptr);
     Push<ClearColorFilterOp>(0, 0);
   } else {
-    current_.setColorFilter(filter->shared());
-    switch (filter->type()) {
-      case DlColorFilterType::kBlend: {
-        const DlBlendColorFilter* blend_filter = filter->asBlend();
-        FML_DCHECK(blend_filter);
-        void* pod = Push<SetPodColorFilterOp>(blend_filter->size(), 0);
-        new (pod) DlBlendColorFilter(blend_filter);
-        break;
-      }
-      case DlColorFilterType::kMatrix: {
-        const DlMatrixColorFilter* matrix_filter = filter->asMatrix();
-        FML_DCHECK(matrix_filter);
-        void* pod = Push<SetPodColorFilterOp>(matrix_filter->size(), 0);
-        new (pod) DlMatrixColorFilter(matrix_filter);
-        break;
-      }
-      case DlColorFilterType::kSrgbToLinearGamma: {
-        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
-        new (pod) DlSrgbToLinearGammaColorFilter();
-        break;
-      }
-      case DlColorFilterType::kLinearToSrgbGamma: {
-        void* pod = Push<SetPodColorFilterOp>(filter->size(), 0);
-        new (pod) DlLinearToSrgbGammaColorFilter();
-        break;
-      }
-    }
+    current_.setColorFilter(filter);
+    Push<SetColorFilterOp>(0, 0, filter);
   }
   UpdateCurrentOpacityCompatibility();
 }
@@ -299,15 +274,8 @@ void DisplayListBuilder::onSetPathEffect(const DlPathEffect* effect) {
     current_.setPathEffect(nullptr);
     Push<ClearPathEffectOp>(0, 0);
   } else {
-    current_.setPathEffect(effect->shared());
-    switch (effect->type()) {
-      case DlPathEffectType::kDash: {
-        const DlDashPathEffect* dash_effect = effect->asDash();
-        void* pod = Push<SetPodPathEffectOp>(dash_effect->size(), 0);
-        new (pod) DlDashPathEffect(dash_effect);
-        break;
-      }
-    }
+    current_.setPathEffect(effect);
+    Push<SetPathEffectOp>(0, 0, effect);
   }
 }
 void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
@@ -315,16 +283,8 @@ void DisplayListBuilder::onSetMaskFilter(const DlMaskFilter* filter) {
     current_.setMaskFilter(nullptr);
     Push<ClearMaskFilterOp>(0, 0);
   } else {
-    current_.setMaskFilter(filter->shared());
-    switch (filter->type()) {
-      case DlMaskFilterType::kBlur: {
-        const DlBlurMaskFilter* blur_filter = filter->asBlur();
-        FML_DCHECK(blur_filter);
-        void* pod = Push<SetPodMaskFilterOp>(blur_filter->size(), 0);
-        new (pod) DlBlurMaskFilter(blur_filter);
-        break;
-      }
-    }
+    current_.setMaskFilter(filter);
+    Push<SetMaskFilterOp>(0, 0, filter);
   }
 }
 

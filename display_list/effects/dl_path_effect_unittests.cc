@@ -11,12 +11,6 @@
 namespace flutter {
 namespace testing {
 
-TEST(DisplayListPathEffect, EffectShared) {
-  const SkScalar TestDashes2[] = {1.0, 1.5};
-  auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);
-  ASSERT_TRUE(Equals(effect->shared(), effect));
-}
-
 TEST(DisplayListPathEffect, DashEffectAsDash) {
   const SkScalar TestDashes2[] = {1.0, 1.5};
   auto effect = DlDashPathEffect::Make(TestDashes2, 2, 0.0);

@@ -549,9 +549,10 @@ TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInner) {
   auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   auto expected_bounds = SkRect::MakeLTRB(5, 2, 95, 98);
 
-  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
   auto outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
-  auto inner = DlColorFilterImageFilter(color_filter.shared());
+  auto inner = DlColorFilterImageFilter(color_filter);
   auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
 
   TestUnboundedBounds(composed, input_bounds, expected_bounds, expected_bounds);
@@ -561,8 +562,9 @@ TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedOuter) {
   auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   auto expected_bounds = SkRect::MakeLTRB(5, 2, 95, 98);
 
-  DlBlendColorFilter color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
-  auto outer = DlColorFilterImageFilter(color_filter.shared());
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter);
   auto inner = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
   auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
 
@@ -573,10 +575,12 @@ TEST(DisplayListImageFilter, ComposeBoundsWithUnboundedInnerAndOuter) {
   auto input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   auto expected_bounds = input_bounds;
 
-  DlBlendColorFilter color_filter1(DlColor::kRed(), DlBlendMode::kSrcOver);
-  DlBlendColorFilter color_filter2(DlColor::kBlue(), DlBlendMode::kSrcOver);
-  auto outer = DlColorFilterImageFilter(color_filter1.shared());
-  auto inner = DlColorFilterImageFilter(color_filter2.shared());
+  auto color_filter1 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto color_filter2 =
+      DlBlendColorFilter::Make(DlColor::kBlue(), DlBlendMode::kSrcOver);
+  auto outer = DlColorFilterImageFilter(color_filter1);
+  auto inner = DlColorFilterImageFilter(color_filter2);
   auto composed = DlComposeImageFilter(outer.shared(), inner.shared());
 
   TestUnboundedBounds(composed, input_bounds, expected_bounds, expected_bounds);
@@ -591,9 +595,10 @@ TEST(DisplayListImageFilter, Issue108433) {
   auto sk_inner = SkImageFilters::ColorFilter(sk_filter, nullptr);
   auto sk_compose = SkImageFilters::Compose(sk_outer, sk_inner);
 
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
   auto dl_outer = DlBlurImageFilter(5.0, 6.0, DlTileMode::kRepeat);
-  auto dl_inner = DlColorFilterImageFilter(dl_color_filter.shared());
+  auto dl_inner = DlColorFilterImageFilter(dl_filter);
   auto dl_compose = DlComposeImageFilter(dl_outer, dl_inner);
 
   auto sk_bounds = sk_compose->filterBounds(
@@ -608,19 +613,22 @@ TEST(DisplayListImageFilter, Issue108433) {
 }
 
 TEST(DisplayListImageFilter, ColorFilterConstructor) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter(dl_color_filter);
 }
 
 TEST(DisplayListImageFilter, ColorFilterShared) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter(dl_color_filter);
 
   ASSERT_EQ(*filter.shared(), filter);
 }
 
 TEST(DisplayListImageFilter, ColorFilterAsColorFilter) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter(dl_color_filter);
 
   ASSERT_NE(filter.asColorFilter(), nullptr);
@@ -628,27 +636,32 @@ TEST(DisplayListImageFilter, ColorFilterAsColorFilter) {
 }
 
 TEST(DisplayListImageFilter, ColorFilterContents) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter(dl_color_filter);
 
-  ASSERT_EQ(*filter.color_filter().get(), dl_color_filter);
+  ASSERT_EQ(*filter.color_filter(), *dl_color_filter);
 }
 
 TEST(DisplayListImageFilter, ColorFilterEquals) {
-  DlBlendColorFilter dl_color_filter1(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter1 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter1(dl_color_filter1);
 
-  DlBlendColorFilter dl_color_filter2(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter2 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter2(dl_color_filter2);
 
   TestEquals(filter1, filter2);
 }
 
 TEST(DisplayListImageFilter, ColorFilterWithLocalMatrixEquals) {
-  DlBlendColorFilter dl_color_filter1(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter1 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter1(dl_color_filter1);
 
-  DlBlendColorFilter dl_color_filter2(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter2 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter2(dl_color_filter2);
 
   SkMatrix local_matrix = SkMatrix::Translate(10, 10);
@@ -657,13 +670,16 @@ TEST(DisplayListImageFilter, ColorFilterWithLocalMatrixEquals) {
 }
 
 TEST(DisplayListImageFilter, ColorFilterNotEquals) {
-  DlBlendColorFilter dl_color_filter1(DlColor::kRed(), DlBlendMode::kLighten);
+  auto dl_color_filter1 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter1(dl_color_filter1);
 
-  DlBlendColorFilter dl_color_filter2(DlColor::kBlue(), DlBlendMode::kLighten);
+  auto dl_color_filter2 =
+      DlBlendColorFilter::Make(DlColor::kBlue(), DlBlendMode::kLighten);
   DlColorFilterImageFilter filter2(dl_color_filter2);
 
-  DlBlendColorFilter dl_color_filter3(DlColor::kRed(), DlBlendMode::kDarken);
+  auto dl_color_filter3 =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDarken);
   DlColorFilterImageFilter filter3(dl_color_filter3);
 
   TestNotEquals(filter1, filter2, "Color differs");
@@ -671,14 +687,16 @@ TEST(DisplayListImageFilter, ColorFilterNotEquals) {
 }
 
 TEST(DisplayListImageFilter, ColorFilterBounds) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcIn);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcIn);
   DlColorFilterImageFilter filter(dl_color_filter);
   SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   TestBounds(filter, input_bounds, input_bounds);
 }
 
 TEST(DisplayListImageFilter, ColorFilterModifiesTransparencyBounds) {
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
   DlColorFilterImageFilter filter(dl_color_filter);
   SkRect input_bounds = SkRect::MakeLTRB(20, 20, 80, 80);
   TestInvalidBounds(filter, SkMatrix::I(), input_bounds);
@@ -701,17 +719,17 @@ TEST(DisplayListImageFilter, LocalImageFilterBounds) {
               SkColorFilters::Blend(SK_ColorRED, SkBlendMode::kSrcOver),
               nullptr))};
 
-  DlBlendColorFilter dl_color_filter(DlColor::kRed(), DlBlendMode::kSrcOver);
+  auto dl_color_filter =
+      DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kSrcOver);
   std::vector<std::shared_ptr<DlImageFilter>> dl_filters{
       std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
-      std::make_shared<DlColorFilterImageFilter>(dl_color_filter.shared()),
+      std::make_shared<DlColorFilterImageFilter>(dl_color_filter),
       std::make_shared<DlDilateImageFilter>(5, 10),
       std::make_shared<DlMatrixImageFilter>(filter_matrix,
                                             DlImageSampling::kLinear),
       std::make_shared<DlComposeImageFilter>(
           std::make_shared<DlBlurImageFilter>(5.0, 6.0, DlTileMode::kRepeat),
-          std::make_shared<DlColorFilterImageFilter>(
-              dl_color_filter.shared()))};
+          std::make_shared<DlColorFilterImageFilter>(dl_color_filter))};
 
   auto persp = SkMatrix::I();
   persp.setPerspY(0.001);

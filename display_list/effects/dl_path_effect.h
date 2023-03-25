@@ -7,7 +7,7 @@
 
 #include <optional>
 
-#include "flutter/display_list/dl_attributes.h"
+#include "flutter/display_list/effects/dl_attributes.h"
 #include "flutter/fml/logging.h"
 #include "include/core/SkRect.h"
 
@@ -24,11 +24,21 @@ enum class DlPathEffectType {
   kDash,
 };
 
-class DlPathEffect : public DlAttribute<DlPathEffect, DlPathEffectType> {
+class DlPathEffect : public DlShareable,
+                     public DlAttribute<DlPathEffect, DlPathEffectType> {
  public:
+  static dl_shared<DlPathEffect> MakeDash(const SkScalar intervals[],
+                                          int count,
+                                          SkScalar phase);
+
   virtual const DlDashPathEffect* asDash() const { return nullptr; }
 
   virtual std::optional<SkRect> effect_bounds(SkRect&) const = 0;
+
+  std::shared_ptr<DlPathEffect> shared() const override {
+    FML_DCHECK(false);
+    return nullptr;
+  }
 
  protected:
   DlPathEffect() = default;
@@ -60,17 +70,13 @@ class DlPathEffect : public DlAttribute<DlPathEffect, DlPathEffectType> {
 ///
 class DlDashPathEffect final : public DlPathEffect {
  public:
-  static std::shared_ptr<DlPathEffect> Make(const SkScalar intervals[],
-                                            int count,
-                                            SkScalar phase);
+  static dl_shared<DlPathEffect> Make(const SkScalar intervals[],
+                                      int count,
+                                      SkScalar phase);
 
   DlPathEffectType type() const override { return DlPathEffectType::kDash; }
   size_t size() const override {
     return sizeof(*this) + sizeof(SkScalar) * count_;
-  }
-
-  std::shared_ptr<DlPathEffect> shared() const override {
-    return Make(intervals(), count_, phase_);
   }
 
   const DlDashPathEffect* asDash() const override { return this; }
@@ -104,6 +110,9 @@ class DlDashPathEffect final : public DlPathEffect {
     }
   }
 
+  friend inline dl_shared<DlDashPathEffect>
+  dl_place_shared<DlDashPathEffect>(void*, const SkScalar*&, int&, SkScalar&);
+
   DlDashPathEffect(const DlDashPathEffect* dash_effect)
       : DlDashPathEffect(dash_effect->intervals(),
                          dash_effect->count_,
@@ -114,7 +123,6 @@ class DlDashPathEffect final : public DlPathEffect {
   int count_;
   SkScalar phase_;
 
-  friend class DisplayListBuilder;
   friend class DlPathEffect;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlDashPathEffect);

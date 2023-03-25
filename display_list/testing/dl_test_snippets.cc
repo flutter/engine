@@ -194,51 +194,57 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorFilter",
        {
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter1); }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter2); }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setColorFilter(&kTestBlendColorFilter3); }},
-           {0, 96, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter1);
-            }},
-           {0, 96, 0, 0,
-            [](DlOpReceiver& r) {
-              r.setColorFilter(&kTestMatrixColorFilter2);
+              r.setColorFilter(kTestBlendColorFilter1.get());
             }},
            {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlSrgbToLinearGammaColorFilter::instance.get());
+              r.setColorFilter(kTestBlendColorFilter2.get());
             }},
            {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setColorFilter(DlLinearToSrgbGammaColorFilter::instance.get());
+              r.setColorFilter(kTestBlendColorFilter3.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestMatrixColorFilter1.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(kTestMatrixColorFilter2.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(DlSrgbToLinearGammaColorFilter::Make().get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setColorFilter(DlLinearToSrgbGammaColorFilter::Make().get());
             }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setColorFilter(nullptr); }},
        }},
       {"SetPathEffect",
        {
            // sizeof(DlDashPathEffect) + 2 * sizeof(SkScalar)
-           {0, 32, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setPathEffect(kTestPathEffect1.get()); }},
-           {0, 32, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setPathEffect(kTestPathEffect2.get()); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setPathEffect(nullptr); }},
        }},
       {"SetMaskFilter",
        {
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setMaskFilter(&kTestMaskFilter1); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setMaskFilter(&kTestMaskFilter2); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setMaskFilter(&kTestMaskFilter3); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setMaskFilter(&kTestMaskFilter4); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setMaskFilter(&kTestMaskFilter5); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setMaskFilter(kTestMaskFilter1.get()); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setMaskFilter(kTestMaskFilter2.get()); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setMaskFilter(kTestMaskFilter3.get()); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setMaskFilter(kTestMaskFilter4.get()); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setMaskFilter(kTestMaskFilter5.get()); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setMaskFilter(nullptr); }},
        }},
   };

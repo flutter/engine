@@ -305,7 +305,7 @@ class ImageFilterEntry : public LayerStateStack::StateEntry {
 class ColorFilterEntry : public LayerStateStack::StateEntry {
  public:
   ColorFilterEntry(const SkRect& bounds,
-                   const std::shared_ptr<const DlColorFilter>& filter,
+                   const dl_shared<const DlColorFilter>& filter,
                    const LayerStateStack::RenderingAttributes& prev)
       : bounds_(bounds),
         filter_(filter),
@@ -327,8 +327,8 @@ class ColorFilterEntry : public LayerStateStack::StateEntry {
 
  private:
   const SkRect bounds_;
-  const std::shared_ptr<const DlColorFilter> filter_;
-  const std::shared_ptr<const DlColorFilter> old_filter_;
+  const dl_shared<const DlColorFilter> filter_;
+  const dl_shared<const DlColorFilter> old_filter_;
   const SkRect old_bounds_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(ColorFilterEntry);
@@ -545,7 +545,7 @@ void MutatorContext::applyImageFilter(
 
 void MutatorContext::applyColorFilter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlColorFilter>& filter) {
+    const dl_shared<const DlColorFilter>& filter) {
   if (filter) {
     layer_state_stack_->push_color_filter(bounds, filter);
   }
@@ -654,7 +654,7 @@ void LayerStateStack::reapply_all() {
   for (auto& state : state_stack_) {
     state->reapply(this);
   }
-  FML_DCHECK(attributes == outstanding_);
+  FML_CHECK(attributes == outstanding_);
 }
 
 void LayerStateStack::fill(MutatorsStack* mutators) {
@@ -679,7 +679,7 @@ void LayerStateStack::push_opacity(const SkRect& bounds, SkScalar opacity) {
 
 void LayerStateStack::push_color_filter(
     const SkRect& bounds,
-    const std::shared_ptr<const DlColorFilter>& filter) {
+    const dl_shared<const DlColorFilter>& filter) {
   maybe_save_layer(filter);
   state_stack_.emplace_back(
       std::make_unique<ColorFilterEntry>(bounds, filter, outstanding_));
@@ -799,7 +799,7 @@ void LayerStateStack::maybe_save_layer(SkScalar opacity) {
 }
 
 void LayerStateStack::maybe_save_layer(
-    const std::shared_ptr<const DlColorFilter>& filter) {
+    const dl_shared<const DlColorFilter>& filter) {
   if (outstanding_.color_filter || outstanding_.image_filter ||
       (outstanding_.opacity < SK_Scalar1 &&
        !filter->can_commute_with_opacity())) {

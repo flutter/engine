@@ -27,6 +27,7 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   EXPECT_EQ(paint.getColorFilter(), nullptr);
   EXPECT_EQ(paint.getImageFilter(), nullptr);
   EXPECT_EQ(paint.getMaskFilter(), nullptr);
+  EXPECT_EQ(paint.getPathEffect(), nullptr);
   EXPECT_TRUE(paint.isDefault());
   EXPECT_EQ(paint, DlPaint::kDefault);
 
@@ -60,14 +61,19 @@ TEST(DisplayListPaint, ConstructorDefaults) {
   DlColorColorSource color_source(DlColor::kMagenta());
   EXPECT_NE(paint, DlPaint().setColorSource(color_source.shared()));
 
-  DlBlendColorFilter color_filter(DlColor::kYellow(), DlBlendMode::kDstIn);
-  EXPECT_NE(paint, DlPaint().setColorFilter(color_filter.shared()));
+  auto color_filter =
+      DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kSrcIn);
+  EXPECT_NE(paint, DlPaint().setColorFilter(color_filter));
 
   DlBlurImageFilter image_filter(1.3, 4.7, DlTileMode::kClamp);
   EXPECT_NE(paint, DlPaint().setImageFilter(image_filter.shared()));
 
-  DlBlurMaskFilter mask_filter(DlBlurStyle::kInner, 3.14);
-  EXPECT_NE(paint, DlPaint().setMaskFilter(mask_filter.shared()));
+  auto mask_filter = DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14);
+  EXPECT_NE(paint, DlPaint().setMaskFilter(mask_filter));
+
+  const SkScalar dashes[3] = {10, 5, 2};
+  auto path_effect = DlPathEffect::MakeDash(dashes, 3, 2.0);
+  EXPECT_NE(paint, DlPaint().setPathEffect(path_effect));
 }
 
 TEST(DisplayListPaint, NullPointerSetGet) {
@@ -75,26 +81,31 @@ TEST(DisplayListPaint, NullPointerSetGet) {
   DlColorFilter* null_color_filter = nullptr;
   DlImageFilter* null_image_filter = nullptr;
   DlMaskFilter* null_mask_filter = nullptr;
+  DlPathEffect* null_path_effect = nullptr;
   DlPaint paint;
   EXPECT_EQ(paint.setColorSource(null_color_source).getColorSource(), nullptr);
   EXPECT_EQ(paint.setColorFilter(null_color_filter).getColorFilter(), nullptr);
   EXPECT_EQ(paint.setImageFilter(null_image_filter).getImageFilter(), nullptr);
   EXPECT_EQ(paint.setMaskFilter(null_mask_filter).getMaskFilter(), nullptr);
+  EXPECT_EQ(paint.setPathEffect(null_path_effect).getPathEffect(), nullptr);
 }
 
 TEST(DisplayListPaint, NullSharedPointerSetGet) {
   std::shared_ptr<DlColorSource> null_color_source;
-  std::shared_ptr<DlColorFilter> null_color_filter;
+  dl_shared<DlColorFilter> null_color_filter;
   std::shared_ptr<DlImageFilter> null_image_filter;
-  std::shared_ptr<DlMaskFilter> null_mask_filter;
+  dl_shared<DlMaskFilter> null_mask_filter;
+  dl_shared<DlPathEffect> null_path_effect;
   DlPaint paint;
   EXPECT_EQ(paint.setColorSource(null_color_source).getColorSource(), nullptr);
   EXPECT_EQ(paint.setColorFilter(null_color_filter).getColorFilter(), nullptr);
   EXPECT_EQ(paint.setImageFilter(null_image_filter).getImageFilter(), nullptr);
   EXPECT_EQ(paint.setMaskFilter(null_mask_filter).getMaskFilter(), nullptr);
+  EXPECT_EQ(paint.setPathEffect(null_path_effect).getPathEffect(), nullptr);
 }
 
 TEST(DisplayListPaint, ChainingConstructor) {
+  const SkScalar dashes[3] = {10, 5, 2};
   DlPaint paint =
       DlPaint()                                                              //
           .setAntiAlias(true)                                                //
@@ -110,11 +121,11 @@ TEST(DisplayListPaint, ChainingConstructor) {
           .setStrokeMiter(1.5)                                               //
           .setColorSource(DlColorColorSource(DlColor::kMagenta()).shared())  //
           .setColorFilter(
-              DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn)
-                  .shared())
+              DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kDstIn))
           .setImageFilter(
               DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp).shared())
-          .setMaskFilter(DlBlurMaskFilter(DlBlurStyle::kInner, 3.14).shared());
+          .setMaskFilter(DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14))
+          .setPathEffect(DlPathEffect::MakeDash(dashes, 3, 2.0));
   EXPECT_TRUE(paint.isAntiAlias());
   EXPECT_TRUE(paint.isDither());
   EXPECT_TRUE(paint.isInvertColors());
@@ -127,12 +138,15 @@ TEST(DisplayListPaint, ChainingConstructor) {
   EXPECT_EQ(paint.getStrokeWidth(), 42);
   EXPECT_EQ(paint.getStrokeMiter(), 1.5);
   EXPECT_EQ(*paint.getColorSource(), DlColorColorSource(DlColor::kMagenta()));
-  EXPECT_EQ(*paint.getColorFilter(),
-            DlBlendColorFilter(DlColor::kYellow(), DlBlendMode::kDstIn));
+  EXPECT_TRUE(Equals(
+      paint.getColorFilter(),
+      DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kDstIn)));
   EXPECT_EQ(*paint.getImageFilter(),
             DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp));
-  EXPECT_EQ(*paint.getMaskFilter(),
-            DlBlurMaskFilter(DlBlurStyle::kInner, 3.14));
+  EXPECT_TRUE(Equals(paint.getMaskFilter(),
+                     DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14)));
+  EXPECT_TRUE(
+      Equals(paint.getPathEffect(), DlPathEffect::MakeDash(dashes, 3, 2.0)));
 
   EXPECT_NE(paint, DlPaint());
 }

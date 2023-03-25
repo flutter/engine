@@ -1093,7 +1093,8 @@ class CanvasCompareTester {
           0, 0, 0, 0.5, 0,
       };
       // clang-format on
-      DlMatrixColorFilter dl_alpha_rotate_filter(rotate_alpha_color_matrix);
+      auto dl_alpha_rotate_filter =
+          DlColorFilter::MakeMatrix(rotate_alpha_color_matrix);
       auto sk_alpha_rotate_filter =
           SkColorFilters::Matrix(rotate_alpha_color_matrix);
       {
@@ -1108,7 +1109,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
-                         save_p.setColorFilter(&dl_alpha_rotate_filter);
+                         save_p.setColorFilter(dl_alpha_rotate_filter);
                          cv->SaveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        })
@@ -1126,7 +1127,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
-                         save_p.setColorFilter(&dl_alpha_rotate_filter);
+                         save_p.setColorFilter(dl_alpha_rotate_filter);
                          cv->SaveLayer(&kRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        })
@@ -1143,7 +1144,7 @@ class CanvasCompareTester {
           0, 0, 0, 1, 0,
       };
       // clang-format on
-      DlMatrixColorFilter dl_color_filter(color_matrix);
+      auto dl_color_filter = DlColorFilter::MakeMatrix(color_matrix);
       DlColorFilterImageFilter dl_cf_image_filter(dl_color_filter);
       auto sk_cf_image_filter = SkImageFilters::ColorFilter(
           SkColorFilters::Matrix(color_matrix), nullptr);
@@ -1461,7 +1462,7 @@ class CanvasCompareTester {
          1.0,  1.0,  1.0, 1.0,   0,
       };
       // clang-format on
-      DlMatrixColorFilter dl_color_filter(rotate_color_matrix);
+      auto dl_color_filter = DlColorFilter::MakeMatrix(rotate_color_matrix);
       auto sk_color_filter = SkColorFilters::Matrix(rotate_color_matrix);
       {
         DlColor bg = DlColor::kWhite();
@@ -1474,7 +1475,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas*, DlPaint& p) {
                          p.setColor(DlColor::kYellow());
-                         p.setColorFilter(&dl_color_filter);
+                         p.setColorFilter(dl_color_filter);
                        })
                        .with_bg(bg));
       }
@@ -1497,7 +1498,7 @@ class CanvasCompareTester {
     }
 
     {
-      const DlBlurMaskFilter dl_mask_filter(DlBlurStyle::kNormal, 5.0);
+      auto dl_mask_filter = DlMaskFilter::MakeBlur(DlBlurStyle::kNormal, 5.0);
       auto sk_mask_filter = SkMaskFilter::MakeBlur(kNormal_SkBlurStyle, 5.0);
       BoundsTolerance blur_5_tolerance = tolerance.addBoundsPadding(4, 4);
       {
@@ -1511,7 +1512,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas*, DlPaint& p) {
                          p.setStrokeWidth(5.0);
-                         p.setMaskFilter(&dl_mask_filter);
+                         p.setMaskFilter(dl_mask_filter);
                        }));
       }
     }
@@ -3473,13 +3474,12 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
       0.5f,
       SK_Scalar1,
   };
-  std::vector<std::shared_ptr<DlColorFilter>> color_filters = {
-      std::make_shared<DlBlendColorFilter>(DlColor::kCyan(),
-                                           DlBlendMode::kSrcATop),
-      std::make_shared<DlMatrixColorFilter>(commutable_color_matrix),
-      std::make_shared<DlMatrixColorFilter>(non_commutable_color_matrix),
-      DlSrgbToLinearGammaColorFilter::instance,
-      DlLinearToSrgbGammaColorFilter::instance,
+  std::vector<dl_shared<DlColorFilter>> color_filters = {
+      DlColorFilter::MakeBlend(DlColor::kCyan(), DlBlendMode::kSrcATop),
+      DlColorFilter::MakeMatrix(commutable_color_matrix),
+      DlColorFilter::MakeMatrix(non_commutable_color_matrix),
+      DlSrgbToLinearGammaColorFilter::Make(),
+      DlLinearToSrgbGammaColorFilter::Make(),
   };
   std::vector<std::shared_ptr<DlImageFilter>> image_filters = {
       std::make_shared<DlBlurImageFilter>(5.0f, 5.0f, DlTileMode::kDecal),
@@ -3652,12 +3652,11 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     float original_value = matrix[element];
     matrix[element] = value;
-    DlMatrixColorFilter filter(matrix);
-    auto dl_filter = DlMatrixColorFilter::Make(matrix);
-    bool is_identity = (dl_filter == nullptr || original_value == value);
+    auto filter = DlColorFilter::MakeMatrix(matrix);
+    bool is_identity = (filter == nullptr || original_value == value);
 
     DlPaint paint(0x7f7f7f7f);
-    DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
+    DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
 
     DisplayListBuilder builder1;
     builder1.Translate(kTestCenter.fX, kTestCenter.fY);
@@ -3684,7 +3683,7 @@ TEST_F(DisplayListCanvas, MatrixColorFilterModifyTransparencyCheck) {
       int modified_transparent_pixels =
           CanvasCompareTester::countModifiedTransparentPixels(results1.get(),
                                                               results2.get());
-      EXPECT_EQ(filter.modifies_transparent_black(),
+      EXPECT_EQ(filter && filter->modifies_transparent_black(),
                 modified_transparent_pixels != 0)
           << desc;
     }
@@ -3724,9 +3723,10 @@ TEST_F(DisplayListCanvas, MatrixColorFilterOpacityCommuteCheck) {
     // clang-format on
     std::string desc =
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
+    bool is_identity = (matrix[element] == value);
     matrix[element] = value;
     auto filter = DlMatrixColorFilter::Make(matrix);
-    EXPECT_EQ(SkScalarIsFinite(value), filter != nullptr);
+    EXPECT_EQ(!is_identity && SkScalarIsFinite(value), filter != nullptr);
 
     DlPaint paint(0x80808080);
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
@@ -3823,13 +3823,10 @@ TEST_F(DisplayListCanvas, BlendColorFilterModifyTransparencyCheck) {
     std::stringstream desc_str;
     desc_str << "blend[" << mode << ", " << color << "]";
     std::string desc = desc_str.str();
-    DlBlendColorFilter filter(color, mode);
-    if (filter.modifies_transparent_black()) {
-      ASSERT_NE(DlBlendColorFilter::Make(color, mode), nullptr) << desc;
-    }
+    auto filter = DlColorFilter::MakeBlend(color, mode);
 
     DlPaint paint(0x7f7f7f7f);
-    DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
+    DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
 
     DisplayListBuilder builder1;
     builder1.Translate(kTestCenter.fX, kTestCenter.fY);
@@ -3853,7 +3850,7 @@ TEST_F(DisplayListCanvas, BlendColorFilterModifyTransparencyCheck) {
       int modified_transparent_pixels =
           CanvasCompareTester::countModifiedTransparentPixels(results1.get(),
                                                               results2.get());
-      EXPECT_EQ(filter.modifies_transparent_black(),
+      EXPECT_EQ(filter && filter->modifies_transparent_black(),
                 modified_transparent_pixels != 0)
           << desc;
     }
@@ -3884,17 +3881,19 @@ TEST_F(DisplayListCanvas, BlendColorFilterOpacityCommuteCheck) {
     std::stringstream desc_str;
     desc_str << "blend[" << mode << ", " << color << "]";
     std::string desc = desc_str.str();
-    DlBlendColorFilter filter(color, mode);
-    if (filter.can_commute_with_opacity()) {
-      // If it can commute with opacity, then it might also be a NOP,
-      // so we won't necessarily get a non-null return from |::Make()|
-    } else {
-      ASSERT_NE(DlBlendColorFilter::Make(color, mode), nullptr) << desc;
-    }
+    auto filter = DlColorFilter::MakeBlend(color, mode);
+    auto sk_filter = DlBlendColorFilter::Make(color, mode);
+    ASSERT_EQ(filter == nullptr, sk_filter == nullptr);
+    // if (filter->can_commute_with_opacity()) {
+    //   // If it can commute with opacity, then it might also be a NOP,
+    //   // so we won't necessarily get a non-null return from |::Make()|
+    // } else {
+    //   ASSERT_NE(DlBlendColorFilter::Make(color, mode), nullptr) << desc;
+    // }
 
     DlPaint paint(0x80808080);
     DlPaint opacity_save_paint = DlPaint().setOpacity(0.5);
-    DlPaint filter_save_paint = DlPaint().setColorFilter(&filter);
+    DlPaint filter_save_paint = DlPaint().setColorFilter(filter);
 
     DisplayListBuilder builder1;
     builder1.SaveLayer(&kTestBounds, &opacity_save_paint);
@@ -3917,7 +3916,7 @@ TEST_F(DisplayListCanvas, BlendColorFilterOpacityCommuteCheck) {
     for (auto& env : environments) {
       auto results1 = env->getResult(display_list1);
       auto results2 = env->getResult(display_list2);
-      if (filter.can_commute_with_opacity()) {
+      if (!filter || filter->can_commute_with_opacity()) {
         CanvasCompareTester::compareToReference(
             results2.get(), results1.get(), desc, nullptr, nullptr,
             DlColor::kTransparent(), true, kTestWidth, kTestHeight, true);

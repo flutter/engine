@@ -5,15 +5,17 @@
 #ifndef FLUTTER_DISPLAY_LIST_EFFECTS_DL_COLOR_FILTER_H_
 #define FLUTTER_DISPLAY_LIST_EFFECTS_DL_COLOR_FILTER_H_
 
-#include "flutter/display_list/dl_attributes.h"
 #include "flutter/display_list/dl_blend_mode.h"
 #include "flutter/display_list/dl_color.h"
+#include "flutter/display_list/effects/dl_attributes.h"
 #include "flutter/fml/logging.h"
 
 namespace flutter {
 
 class DlBlendColorFilter;
 class DlMatrixColorFilter;
+class DlSrgbToLinearGammaColorFilter;
+class DlLinearToSrgbGammaColorFilter;
 
 // The DisplayList ColorFilter class. This class implements all of the
 // facilities and adheres to the design goals of the |DlAttribute| base
@@ -27,8 +29,30 @@ enum class DlColorFilterType {
   kLinearToSrgbGamma,
 };
 
-class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
+class DlColorFilter : public DlShareable,
+                      public DlAttribute<DlColorFilter, DlColorFilterType> {
  public:
+  // Construct and return a |dl_shared| pointer to a |DlBlendColorFilter|
+  // based on the supplied parameters, or nullptr if the parameters specify
+  // a NOP operation.
+  static dl_shared<DlColorFilter> MakeBlend(DlColor color, DlBlendMode mode);
+
+  // Construct and return a |dl_shared| pointer to a |DlMatrixColorFilter|
+  // based on the supplied parameters, or nullptr if the parameters specify
+  // a NOP operation.
+  static dl_shared<DlColorFilter> MakeMatrix(const float matrix[20]);
+
+  // Return a |dl_shared| pointer to a |DlSrgbToLinearGammaColorFilter|.
+  static dl_shared<DlColorFilter> MakeSrgbToLinearGamma();
+
+  // Return a |dl_shared| pointer to a |DlLinearToSrgbGammaColorFilter|.
+  static dl_shared<DlColorFilter> MakeLinearToSrgbGamma();
+
+  std::shared_ptr<DlColorFilter> shared() const override {
+    FML_DCHECK(false);
+    return nullptr;
+  }
+
   // Return a boolean indicating whether the color filtering operation will
   // modify transparent black. This is typically used to determine if applying
   // the ColorFilter to a temporary saveLayer buffer will turn the surrounding
@@ -59,24 +83,13 @@ class DlColorFilter : public DlAttribute<DlColorFilter, DlColorFilterType> {
 // filter is then used to combine those colors.
 class DlBlendColorFilter final : public DlColorFilter {
  public:
-  DlBlendColorFilter(DlColor color, DlBlendMode mode)
-      : color_(color), mode_(mode) {}
-  DlBlendColorFilter(const DlBlendColorFilter& filter)
-      : DlBlendColorFilter(filter.color_, filter.mode_) {}
-  DlBlendColorFilter(const DlBlendColorFilter* filter)
-      : DlBlendColorFilter(filter->color_, filter->mode_) {}
-
-  static std::shared_ptr<DlColorFilter> Make(DlColor color, DlBlendMode mode);
+  static dl_shared<DlBlendColorFilter> Make(DlColor color, DlBlendMode mode);
 
   DlColorFilterType type() const override { return DlColorFilterType::kBlend; }
   size_t size() const override { return sizeof(*this); }
 
   bool modifies_transparent_black() const override;
   bool can_commute_with_opacity() const override;
-
-  std::shared_ptr<DlColorFilter> shared() const override {
-    return std::make_shared<DlBlendColorFilter>(this);
-  }
 
   const DlBlendColorFilter* asBlend() const override { return this; }
 
@@ -91,6 +104,12 @@ class DlBlendColorFilter final : public DlColorFilter {
   }
 
  private:
+  DlBlendColorFilter(DlColor color, DlBlendMode mode)
+      : color_(color), mode_(mode) {}
+
+  friend inline dl_shared<DlBlendColorFilter>
+  dl_make_shared<DlBlendColorFilter>(DlColor&, DlBlendMode&);
+
   DlColor color_;
   DlBlendMode mode_;
 };
@@ -113,25 +132,13 @@ class DlBlendColorFilter final : public DlColorFilter {
 // pixel data, the necessary pre<->non-pre conversions must be performed.
 class DlMatrixColorFilter final : public DlColorFilter {
  public:
-  DlMatrixColorFilter(const float matrix[20]) {
-    memcpy(matrix_, matrix, sizeof(matrix_));
-  }
-  DlMatrixColorFilter(const DlMatrixColorFilter& filter)
-      : DlMatrixColorFilter(filter.matrix_) {}
-  DlMatrixColorFilter(const DlMatrixColorFilter* filter)
-      : DlMatrixColorFilter(filter->matrix_) {}
-
-  static std::shared_ptr<DlColorFilter> Make(const float matrix[20]);
+  static dl_shared<DlMatrixColorFilter> Make(const float matrix[20]);
 
   DlColorFilterType type() const override { return DlColorFilterType::kMatrix; }
   size_t size() const override { return sizeof(*this); }
 
   bool modifies_transparent_black() const override;
   bool can_commute_with_opacity() const override;
-
-  std::shared_ptr<DlColorFilter> shared() const override {
-    return std::make_shared<DlMatrixColorFilter>(this);
-  }
 
   const DlMatrixColorFilter* asMatrix() const override { return this; }
 
@@ -148,6 +155,13 @@ class DlMatrixColorFilter final : public DlColorFilter {
   }
 
  private:
+  DlMatrixColorFilter(const float* matrix) {
+    memcpy(matrix_, matrix, sizeof(matrix_));
+  }
+
+  friend inline dl_shared<DlMatrixColorFilter>
+  dl_make_shared<DlMatrixColorFilter>(const float*&);
+
   float matrix_[20];
 };
 
@@ -155,13 +169,7 @@ class DlMatrixColorFilter final : public DlColorFilter {
 // gamma curve to the rendered pixels.
 class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
  public:
-  static const std::shared_ptr<DlSrgbToLinearGammaColorFilter> instance;
-
-  DlSrgbToLinearGammaColorFilter() {}
-  DlSrgbToLinearGammaColorFilter(const DlSrgbToLinearGammaColorFilter& filter)
-      : DlSrgbToLinearGammaColorFilter() {}
-  DlSrgbToLinearGammaColorFilter(const DlSrgbToLinearGammaColorFilter* filter)
-      : DlSrgbToLinearGammaColorFilter() {}
+  static dl_shared<DlSrgbToLinearGammaColorFilter> Make() { return instance; }
 
   DlColorFilterType type() const override {
     return DlColorFilterType::kSrgbToLinearGamma;
@@ -170,8 +178,6 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   bool modifies_transparent_black() const override { return false; }
   bool can_commute_with_opacity() const override { return true; }
 
-  std::shared_ptr<DlColorFilter> shared() const override { return instance; }
-
  protected:
   bool equals_(const DlColorFilter& other) const override {
     FML_DCHECK(other.type() == DlColorFilterType::kSrgbToLinearGamma);
@@ -179,6 +185,13 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   }
 
  private:
+  static dl_shared<DlSrgbToLinearGammaColorFilter> instance;
+
+  DlSrgbToLinearGammaColorFilter() {}
+
+  friend inline dl_shared<DlSrgbToLinearGammaColorFilter>
+  dl_make_shared<DlSrgbToLinearGammaColorFilter>();
+
   friend class DlColorFilter;
 };
 
@@ -186,13 +199,7 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
 // to the rendered pixels.
 class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
  public:
-  static const std::shared_ptr<DlLinearToSrgbGammaColorFilter> instance;
-
-  DlLinearToSrgbGammaColorFilter() {}
-  DlLinearToSrgbGammaColorFilter(const DlLinearToSrgbGammaColorFilter& filter)
-      : DlLinearToSrgbGammaColorFilter() {}
-  DlLinearToSrgbGammaColorFilter(const DlLinearToSrgbGammaColorFilter* filter)
-      : DlLinearToSrgbGammaColorFilter() {}
+  static dl_shared<DlLinearToSrgbGammaColorFilter> Make() { return instance; }
 
   DlColorFilterType type() const override {
     return DlColorFilterType::kLinearToSrgbGamma;
@@ -201,8 +208,6 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   bool modifies_transparent_black() const override { return false; }
   bool can_commute_with_opacity() const override { return true; }
 
-  std::shared_ptr<DlColorFilter> shared() const override { return instance; }
-
  protected:
   bool equals_(const DlColorFilter& other) const override {
     FML_DCHECK(other.type() == DlColorFilterType::kLinearToSrgbGamma);
@@ -210,6 +215,13 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   }
 
  private:
+  static dl_shared<DlLinearToSrgbGammaColorFilter> instance;
+
+  DlLinearToSrgbGammaColorFilter() {}
+
+  friend inline dl_shared<DlLinearToSrgbGammaColorFilter>
+  dl_make_shared<DlLinearToSrgbGammaColorFilter>();
+
   friend class DlColorFilter;
 };
 

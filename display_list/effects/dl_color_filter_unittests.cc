@@ -15,76 +15,71 @@ static const float kMatrix[20] = {
     16, 17, 18, 19, 20,  //
 };
 
-TEST(DisplayListColorFilter, BlendConstructor) {
-  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
-}
-
-TEST(DisplayListColorFilter, BlendShared) {
-  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
-  ASSERT_NE(filter.shared().get(), &filter);
-  ASSERT_EQ(*filter.shared(), filter);
+TEST(DisplayListColorFilter, BlendFactory) {
+  auto cf = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  ASSERT_NE(cf.get(), nullptr);
+  ASSERT_EQ(cf->total_ref_count(), 1u);
+  ASSERT_EQ(cf->strong_ref_count(), 1u);
 }
 
 TEST(DisplayListColorFilter, BlendAsBlend) {
-  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
-  ASSERT_NE(filter.asBlend(), nullptr);
-  ASSERT_EQ(filter.asBlend(), &filter);
+  auto cf = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  ASSERT_NE(cf->asBlend(), nullptr);
+  ASSERT_EQ(cf->asBlend(), cf.get());
 }
 
 TEST(DisplayListColorFilter, BlendContents) {
-  DlBlendColorFilter filter(DlColor::kRed(), DlBlendMode::kDstATop);
-  ASSERT_EQ(filter.color(), DlColor::kRed());
-  ASSERT_EQ(filter.mode(), DlBlendMode::kDstATop);
+  auto cf = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  ASSERT_EQ(cf->color(), DlColor::kRed());
+  ASSERT_EQ(cf->mode(), DlBlendMode::kDstATop);
 }
 
 TEST(DisplayListColorFilter, BlendEquals) {
-  DlBlendColorFilter filter1(DlColor::kRed(), DlBlendMode::kDstATop);
-  DlBlendColorFilter filter2(DlColor::kRed(), DlBlendMode::kDstATop);
-  TestEquals(filter1, filter2);
+  auto cf1 = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  auto cf2 = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  TestEquals(*cf1, *cf2);
 }
 
 TEST(DisplayListColorFilter, BlendNotEquals) {
-  DlBlendColorFilter filter1(DlColor::kRed(), DlBlendMode::kDstATop);
-  DlBlendColorFilter filter2(DlColor::kBlue(), DlBlendMode::kDstATop);
-  DlBlendColorFilter filter3(DlColor::kRed(), DlBlendMode::kDstIn);
-  TestNotEquals(filter1, filter2, "Color differs");
-  TestNotEquals(filter1, filter3, "Blend mode differs");
+  auto cf1 = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
+  auto cf2 = DlBlendColorFilter::Make(DlColor::kBlue(), DlBlendMode::kDstATop);
+  auto cf3 = DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kXor);
+  TestNotEquals(*cf1, *cf2, "Color differs");
+  TestNotEquals(*cf1, *cf3, "Blend mode differs");
 }
 
-TEST(DisplayListColorFilter, NopBlendShouldNotCrash) {
-  DlBlendColorFilter filter(DlColor::kTransparent(), DlBlendMode::kSrcOver);
-  ASSERT_FALSE(filter.modifies_transparent_black());
+TEST(DisplayListColorFilter, NopBlendProducesNull) {
+  auto cf =
+      DlBlendColorFilter::Make(DlColor::kTransparent(), DlBlendMode::kSrcOver);
+  ASSERT_EQ(cf.get(), nullptr);
 }
 
-TEST(DisplayListColorFilter, MatrixConstructor) {
-  DlMatrixColorFilter filter(kMatrix);
-}
-
-TEST(DisplayListColorFilter, MatrixShared) {
-  DlMatrixColorFilter filter(kMatrix);
-  ASSERT_NE(filter.shared().get(), &filter);
-  ASSERT_EQ(*filter.shared(), filter);
+TEST(DisplayListColorFilter, MatrixFactory) {
+  auto cf = DlMatrixColorFilter::Make(kMatrix);
+  ASSERT_NE(cf.get(), nullptr);
+  ASSERT_EQ(cf->total_ref_count(), 1u);
+  ASSERT_EQ(cf->strong_ref_count(), 1u);
 }
 
 TEST(DisplayListColorFilter, MatrixAsMatrix) {
-  DlMatrixColorFilter filter(kMatrix);
-  ASSERT_NE(filter.asMatrix(), nullptr);
-  ASSERT_EQ(filter.asMatrix(), &filter);
+  auto cf = DlMatrixColorFilter::Make(kMatrix);
+  ASSERT_NE(cf->asMatrix(), nullptr);
+  ASSERT_EQ(cf->asMatrix(), cf.get());
 }
 
 TEST(DisplayListColorFilter, MatrixContents) {
   float matrix[20];
   memcpy(matrix, kMatrix, sizeof(matrix));
-  DlMatrixColorFilter filter(matrix);
+  auto cf = DlMatrixColorFilter::Make(matrix);
 
   // Test deref operator []
   for (int i = 0; i < 20; i++) {
-    ASSERT_EQ(filter[i], matrix[i]);
+    ASSERT_EQ(cf[i], matrix[i]);
   }
 
   // Test get_matrix
   float matrix2[20];
-  filter.get_matrix(matrix2);
+  cf->get_matrix(matrix2);
   for (int i = 0; i < 20; i++) {
     ASSERT_EQ(matrix2[i], matrix[i]);
   }
@@ -92,67 +87,59 @@ TEST(DisplayListColorFilter, MatrixContents) {
   // Test perturbing original array does not affect filter
   float original_value = matrix[4];
   matrix[4] += 101;
-  ASSERT_EQ(filter[4], original_value);
+  ASSERT_EQ(cf[4], original_value);
 }
 
 TEST(DisplayListColorFilter, MatrixEquals) {
-  DlMatrixColorFilter filter1(kMatrix);
-  DlMatrixColorFilter filter2(kMatrix);
-  TestEquals(filter1, filter2);
+  auto cf1 = DlMatrixColorFilter::Make(kMatrix);
+  auto cf2 = DlMatrixColorFilter::Make(kMatrix);
+  TestEquals(*cf1, *cf2);
 }
 
 TEST(DisplayListColorFilter, MatrixNotEquals) {
   float matrix[20];
   memcpy(matrix, kMatrix, sizeof(matrix));
-  DlMatrixColorFilter filter1(matrix);
+  auto cf1 = DlMatrixColorFilter::Make(matrix);
   matrix[4] += 101;
-  DlMatrixColorFilter filter2(matrix);
-  TestNotEquals(filter1, filter2, "Matrix differs");
+  auto cf2 = DlMatrixColorFilter::Make(matrix);
+  TestNotEquals(*cf1, *cf2, "Matrix differs");
 }
 
-TEST(DisplayListColorFilter, NopMatrixShouldNotCrash) {
+TEST(DisplayListColorFilter, NopMatrixProducesNull) {
   float matrix[20] = {
       1, 0, 0, 0, 0,  //
       0, 1, 0, 0, 0,  //
       0, 0, 1, 0, 0,  //
       0, 0, 0, 1, 0,  //
   };
-  DlMatrixColorFilter filter(matrix);
-  ASSERT_FALSE(filter.modifies_transparent_black());
+  auto cf = DlMatrixColorFilter::Make(matrix);
+  ASSERT_EQ(cf.get(), nullptr);
 }
 
-TEST(DisplayListColorFilter, SrgbToLinearConstructor) {
-  DlSrgbToLinearGammaColorFilter filter;
-}
-
-TEST(DisplayListColorFilter, SrgbToLinearShared) {
-  DlSrgbToLinearGammaColorFilter filter;
-  ASSERT_NE(filter.shared().get(), &filter);
-  ASSERT_EQ(*filter.shared(), filter);
+TEST(DisplayListColorFilter, SrgbToLinearFactory) {
+  auto cf = DlSrgbToLinearGammaColorFilter::Make();
+  ASSERT_NE(cf.get(), nullptr);
+  ASSERT_EQ(cf->total_ref_count(), 2u);
+  ASSERT_EQ(cf->strong_ref_count(), 2u);
 }
 
 TEST(DisplayListColorFilter, SrgbToLinearEquals) {
-  DlSrgbToLinearGammaColorFilter filter1;
-  DlSrgbToLinearGammaColorFilter filter2;
-  TestEquals(filter1, filter2);
-  TestEquals(filter1, *DlSrgbToLinearGammaColorFilter::instance);
+  auto cf1 = DlSrgbToLinearGammaColorFilter::Make();
+  auto cf2 = DlSrgbToLinearGammaColorFilter::Make();
+  TestEquals(*cf1, *cf2);
 }
 
-TEST(DisplayListColorFilter, LinearToSrgbConstructor) {
-  DlLinearToSrgbGammaColorFilter filter;
-}
-
-TEST(DisplayListColorFilter, LinearToSrgbShared) {
-  DlLinearToSrgbGammaColorFilter filter;
-  ASSERT_NE(filter.shared().get(), &filter);
-  ASSERT_EQ(*filter.shared(), filter);
+TEST(DisplayListColorFilter, LinearToSrgbFactory) {
+  auto cf = DlLinearToSrgbGammaColorFilter::Make();
+  ASSERT_NE(cf.get(), nullptr);
+  ASSERT_EQ(cf->total_ref_count(), 2u);
+  ASSERT_EQ(cf->strong_ref_count(), 2u);
 }
 
 TEST(DisplayListColorFilter, LinearToSrgbEquals) {
-  DlLinearToSrgbGammaColorFilter filter1;
-  DlLinearToSrgbGammaColorFilter filter2;
-  TestEquals(filter1, filter2);
-  TestEquals(filter1, *DlLinearToSrgbGammaColorFilter::instance);
+  auto cf1 = DlLinearToSrgbGammaColorFilter::Make();
+  auto cf2 = DlLinearToSrgbGammaColorFilter::Make();
+  TestEquals(*cf1, *cf2);
 }
 
 }  // namespace testing

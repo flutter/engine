@@ -7,15 +7,60 @@
 
 #include <memory>
 
+#include "flutter/display_list/dl_shared.h"
+
 namespace flutter {
 
-// These templates implement deep pointer comparisons that compare not
-// just the pointers to the objects, but also their contents (provided
-// that the <T> class implements the == operator override).
-// Any combination of shared_ptr<T> or T* are supported and null pointers
-// are not equal to anything but another null pointer.
+// These templates implement content comparisons that compare any two
+// objects of the same type whether they are held as a raw pointer (T*),
+// a reference (T&), a standard shared pointer (std::shared_ptr<T>), or a
+// DisplayList shared pointer (dl_shared<T>) (provided that the <T> class
+// implements the == operator override).
+// Any combination of pointers or references to T are supported and
+// null pointers are not equal to anything but another null pointer.
 
-template <class T>
+namespace dl_comparable {
+
+// Templates inside the dl_comparable namespace are considered private
+// implementation details for the public-facing templates defined below
+// just after the namespace
+
+// -----------------------------------------------------------------------
+// The ToPtr templates simply strip any of the supported reference types
+// down into a raw pointer to their underlying object type.
+
+template <typename T>
+T* ToPtr(dl_shared<T>& value) {
+  return value.get();
+}
+
+template <typename T>
+T* ToPtr(std::shared_ptr<T>& value) {
+  return value.get();
+}
+
+template <typename T>
+T* ToPtr(T* value) {
+  return value;
+}
+
+template <typename T>
+T* ToPtr(T& value) {
+  return &value;
+}
+
+template <typename T>
+T* ToPtr(std::nullptr_t) {
+  return nullptr;
+}
+
+// -----------------------------------------------------------------------
+// The EqualsHelper template performs the actual content comparison once
+// we have established that there are two pointers to the same underlying
+// object type. Pointer comparisons are used solely as an optimization
+// under the assumption that A == A in the overloaded operator.
+
+template <typename T>
 bool Equals(const T* a, const T* b) {
   if (a == b) {
     return true;
@@ -26,89 +71,26 @@ bool Equals(const T* a, const T* b) {
   return *a == *b;
 }
 
-template <class T>
-bool Equals(std::shared_ptr<const T> a, const T* b) {
-  return Equals(a.get(), b);
+}  // namespace dl_comparable
+
+// -----------------------------------------------------------------------
+// The two Equals templates first break any pair of reference types down
+// into raw pointers and then attempt to pass them to the internal Equals
+// template, succeeding iff both underlying object types are identical.
+//
+// Thus Equals(T* a, dl_shared<const T> b) compiles (if T implements == T)
+// but  Equals(T* a, U* b)                 does not.
+
+template <typename T, typename U>
+bool Equals(T a, U b) {
+  return dl_comparable::Equals(dl_comparable::ToPtr(a),
+                               dl_comparable::ToPtr(b));
 }
 
-template <class T>
-bool Equals(std::shared_ptr<T> a, const T* b) {
-  return Equals(a.get(), b);
-}
-
-template <class T>
-bool Equals(const T* a, std::shared_ptr<const T> b) {
-  return Equals(a, b.get());
-}
-
-template <class T>
-bool Equals(const T* a, std::shared_ptr<T> b) {
-  return Equals(a, b.get());
-}
-
-template <class T>
-bool Equals(std::shared_ptr<const T> a, std::shared_ptr<const T> b) {
-  return Equals(a.get(), b.get());
-}
-
-template <class T>
-bool Equals(std::shared_ptr<T> a, std::shared_ptr<const T> b) {
-  return Equals(a.get(), b.get());
-}
-
-template <class T>
-bool Equals(std::shared_ptr<const T> a, std::shared_ptr<T> b) {
-  return Equals(a.get(), b.get());
-}
-
-template <class T>
-bool Equals(std::shared_ptr<T> a, std::shared_ptr<T> b) {
-  return Equals(a.get(), b.get());
-}
-
-template <class T>
-bool NotEquals(const T* a, const T* b) {
-  return !Equals<T>(a, b);
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<const T> a, const T* b) {
-  return !Equals(a.get(), b);
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<T> a, const T* b) {
-  return !Equals(a.get(), b);
-}
-
-template <class T>
-bool NotEquals(const T* a, std::shared_ptr<const T> b) {
-  return !Equals(a, b.get());
-}
-
-template <class T>
-bool NotEquals(const T* a, std::shared_ptr<T> b) {
-  return !Equals(a, b.get());
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<const T> a, std::shared_ptr<const T> b) {
-  return !Equals(a.get(), b.get());
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<T> a, std::shared_ptr<const T> b) {
-  return !Equals(a.get(), b.get());
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<const T> a, std::shared_ptr<T> b) {
-  return !Equals(a.get(), b.get());
-}
-
-template <class T>
-bool NotEquals(std::shared_ptr<T> a, std::shared_ptr<T> b) {
-  return !Equals(a.get(), b.get());
+template <typename T, typename U>
+bool NotEquals(T a, U b) {
+  return !dl_comparable::Equals(dl_comparable::ToPtr(a),
+                                dl_comparable::ToPtr(b));
 }
 
 }  // namespace flutter
