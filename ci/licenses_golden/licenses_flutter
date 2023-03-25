@@ -1315,6 +1315,19 @@ ORIGIN: ../../../flutter/impeller/geometry/type_traits.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/impeller/geometry/type_traits.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/vector.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/vector.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/golden_digest.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/golden_digest.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/golden_tests.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/main.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshoter.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshoter.mm + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests_harvester/lib/golden_tests_harvester.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/golden_tests_harvester/lib/logger.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/compressed_image.cc + ../../../flutter/LICENSE
@@ -1644,6 +1657,7 @@ ORIGIN: ../../../flutter/lib/ui/dart_wrapper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/scene.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/setup_hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/ui.dart + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/lib/ui/floating_point.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/geometry.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hash_codes.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hooks.dart + ../../../flutter/LICENSE
@@ -3855,6 +3869,19 @@ FILE: ../../../flutter/impeller/geometry/type_traits.cc
 FILE: ../../../flutter/impeller/geometry/type_traits.h
 FILE: ../../../flutter/impeller/geometry/vector.cc
 FILE: ../../../flutter/impeller/geometry/vector.h
+FILE: ../../../flutter/impeller/golden_tests/golden_digest.cc
+FILE: ../../../flutter/impeller/golden_tests/golden_digest.h
+FILE: ../../../flutter/impeller/golden_tests/golden_tests.cc
+FILE: ../../../flutter/impeller/golden_tests/main.cc
+FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.h
+FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.mm
+FILE: ../../../flutter/impeller/golden_tests/metal_screenshoter.h
+FILE: ../../../flutter/impeller/golden_tests/metal_screenshoter.mm
+FILE: ../../../flutter/impeller/golden_tests/working_directory.cc
+FILE: ../../../flutter/impeller/golden_tests/working_directory.h
+FILE: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart
+FILE: ../../../flutter/impeller/golden_tests_harvester/lib/golden_tests_harvester.dart
+FILE: ../../../flutter/impeller/golden_tests_harvester/lib/logger.dart
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h
 FILE: ../../../flutter/impeller/image/compressed_image.cc
@@ -4186,6 +4213,7 @@ FILE: ../../../flutter/lib/ui/dart_wrapper.h
 FILE: ../../../flutter/lib/ui/experiments/scene.dart
 FILE: ../../../flutter/lib/ui/experiments/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/experiments/ui.dart
+FILE: ../../../flutter/lib/ui/floating_point.h
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
