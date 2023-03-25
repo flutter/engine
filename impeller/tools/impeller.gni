@@ -422,6 +422,7 @@ template("_impeller_shaders_metal") {
     shaders = invoker.shaders
     metal_version = metal_version
     sl_file_extension = "metal"
+    use_half_textures = use_half_textures
     shader_target_flag = ""
     defines = [ "IMPELLER_TARGET_METAL" ]
     if (is_ios) {
@@ -688,7 +689,7 @@ template("impeller_shaders") {
 
   use_half_textures = false
   if (defined(invoker.use_half_textures) && invoker.use_half_textures) {
-    use_half_textures = false
+    use_half_textures = true
   }
 
   not_needed([
