@@ -10,6 +10,7 @@
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/path.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/geometry/path_component.h"
@@ -2084,6 +2085,17 @@ TEST(GeometryTest, Gradient) {
     ASSERT_EQ(gradient.texture_size, 1024u);
     ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
   }
+}
+
+TEST(GeometryTest, Half) {
+  ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
+  ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
+  ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
+  ASSERT_EQ(ScalarToHalf(-1.45), -1.45f16);
+
+  // 65504 is the largest possible half.
+  ASSERT_EQ(ScalarToHalf(65504.0f), 65504.0f16);
+  ASSERT_EQ(ScalarToHalf(65504.0f + 1), 65504.0f16);
 }
 
 }  // namespace testing
