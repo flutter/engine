@@ -36,6 +36,7 @@ struct Switches {
   uint32_t gles_language_version;
   std::string metal_version;
   std::string entry_point;
+  bool use_half_textures;
 
   Switches();
 
