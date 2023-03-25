@@ -6,16 +6,6 @@
 
 namespace impeller {
 
-template <>
-Half Cast<Half, Scalar>(const Scalar& s) {
-  return ScalarToHalf(s);
-}
-
-template <>
-Scalar Cast<Scalar, Scalar>(const Scalar& s) {
-  return s;
-}
-
 uint16_t ScalarToHalf(Scalar f) {
   // __fp16 foo = f;
   // return foo;

@@ -16,6 +16,7 @@
 #include "impeller/geometry/point.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
+#include "impeller/geometry/half.h"
 #include "impeller/geometry/size.h"
 
 namespace impeller {
@@ -2084,6 +2085,14 @@ TEST(GeometryTest, Gradient) {
     ASSERT_EQ(gradient.texture_size, 1024u);
     ASSERT_EQ(gradient.color_bytes.size(), 1024u * 4);
   }
+}
+
+TEST(GeometryTest, Half) {
+  ASSERT_EQ(ScalarToHalf(0.0), 0);
+
+  // 65504 is the largest possible half.
+  ASSERT_EQ(ScalarToHalf(65504.0f), 31743);
+  ASSERT_EQ(ScalarToHalf(65504.0f + 1), 31743);
 }
 
 }  // namespace testing

@@ -11,33 +11,33 @@
 
 namespace impeller {
 
-using Half = uint16_t;
-
 /// @brief Convert a scalar to a half precision float.
 ///
 /// Can express numbers in the range of 2^-14 to 65504.
 /// Adapted from
 /// https://developer.android.com/games/optimize/vertex-data-management .
-Half ScalarToHalf(Scalar f);
+uint16_t ScalarToHalf(Scalar f);
 
-template <class T, class U>
-T Cast(const U& u);
 
-template <>
-Half Cast<Half, Scalar>(const Scalar& s);
+/// @brief A storage only class for half precision floating point.
+struct Half {
+  uint16_t x = 0;
 
-template <>
-Scalar Cast<Scalar, Scalar>(const Scalar& s);
+  Half() = default;
 
+  Half(Scalar value) : x(ScalarToHalf(value)) {}
+};
+
+/// @brief A storage only class for half precision floating point vector 4.
 struct HalfVector4 {
   union {
     struct {
-      Half x = 0;
-      Half y = 0;
-      Half z = 0;
-      Half w = 0;
+      uint16_t x = 0;
+      uint16_t y = 0;
+      uint16_t z = 0;
+      uint16_t w = 0;
     };
-    Half e[4];
+    uint16_t e[4];
   };
 
   constexpr HalfVector4() {}
@@ -55,14 +55,15 @@ struct HalfVector4 {
         w(ScalarToHalf(a.w)){};
 };
 
+/// @brief A storage only class for half precision floating point vector 3.
 struct HalfVector3 {
   union {
     struct {
-      Half x = 0;
-      Half y = 0;
-      Half z = 0;
+      uint16_t x = 0;
+      uint16_t y = 0;
+      uint16_t z = 0;
     };
-    Half e[3];
+    uint16_t e[3];
   };
 
   constexpr HalfVector3(){};
@@ -71,13 +72,14 @@ struct HalfVector3 {
       : x(ScalarToHalf(a.x)), y(ScalarToHalf(a.y)), z(ScalarToHalf(a.z)){};
 };
 
+/// @brief A storage only class for half precision floating point vector 2.
 struct HalfVector2 {
   union {
     struct {
-      Half x = 0;
-      Half y = 0;
+      uint16_t x = 0;
+      uint16_t y = 0;
     };
-    Half e[2];
+    uint16_t e[2];
   };
 
   constexpr HalfVector2(){};
@@ -85,5 +87,10 @@ struct HalfVector2 {
   constexpr HalfVector2(const Vector2& a)
       : x(ScalarToHalf(a.x)), y(ScalarToHalf(a.y)){};
 };
+
+static_assert(sizeof(Half) == sizeof(uint16_t));
+static_assert(sizeof(HalfVector2) == 2 * sizeof(Half));
+static_assert(sizeof(HalfVector3) == 3 * sizeof(Half));
+static_assert(sizeof(HalfVector4) == 4 * sizeof(Half));
 
 }  // namespace impeller
