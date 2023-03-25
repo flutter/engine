@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <optional>
+#include <unordered_map>
 
 #include "flutter/common/settings.h"
 #include "flutter/common/task_runners.h"
@@ -139,23 +140,21 @@ class Rasterizer final : public SnapshotDelegate,
   ~Rasterizer();
 
   //----------------------------------------------------------------------------
-  /// @brief      Rasterizers may be created well before an on-screen surface is
+  /// @brief      Rasterizers may be created well before an on-screen studio is
   ///             available for rendering. Shells usually create a rasterizer in
-  ///             their constructors. Once an on-screen surface is available
+  ///             their constructors. Once an on-screen studio is available
   ///             however, one may be provided to the rasterizer using this
-  ///             call. No rendering may occur before this call. The surface is
+  ///             call. No rendering may occur before this call. The studio is
   ///             held till the balancing call to `Rasterizer::Teardown` is
-  ///             made. Calling a setup before tearing down the previous surface
+  ///             made. Calling a setup before tearing down the studio
   ///             (if this is not the first time the surface has been set up) is
   ///             user error.
   ///
   /// @see        `Rasterizer::Teardown`
   ///
-  /// @param[in]  surface  The on-screen render surface.
+  /// @param[in]  studio  The on-screen render studio.
   ///
   void Setup(std::unique_ptr<Studio> studio);
-
-  void RegisterSurface(int64_t view_id, std::unique_ptr<Surface> surface);
 
   //----------------------------------------------------------------------------
   /// @brief      Releases the previously set up on-screen render surface and
@@ -190,13 +189,9 @@ class Rasterizer final : public SnapshotDelegate,
 
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
+  void RegisterSurface(int64_t view_id, std::unique_ptr<Surface> surface);
+
   //----------------------------------------------------------------------------
-  /// @brief      Sometimes, it may be necessary to render the same frame again
-  ///             without having to wait for the framework to build a whole new
-  ///             layer tree describing the same contents. One such case is when
-  ///             external textures (video or camera streams for example) are
-  ///             updated in an otherwise static layer tree. To support this use
-  ///             case, the rasterizer holds onto the last rendered layer tree.
   ///
   /// @bug        https://github.com/flutter/flutter/issues/33939
   ///
@@ -218,7 +213,8 @@ class Rasterizer final : public SnapshotDelegate,
   ///             textures instead of waiting for the framework to do the work
   ///             to generate the layer tree describing the same contents.
   ///
-  void DrawLastLayerTree(
+  /// @return     The number of surfaces that are drawn this way.
+  int DrawLastLayerTree(
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       bool enable_leaf_layer_tracing = false);
 
@@ -497,6 +493,35 @@ class Rasterizer final : public SnapshotDelegate,
     std::unique_ptr<FrameTimingsRecorder> resubmitted_recorder;
   };
 
+  struct SurfaceRecord {
+    explicit SurfaceRecord(std::unique_ptr<Surface> surface)
+        : surface(std::move(surface)) {}
+
+    std::unique_ptr<Surface> surface;
+    // This is the information for the last successfully drawing.
+    //
+    // Sometimes, it may be necessary to render the same frame again without
+    // having to wait for the framework to build a whole new layer tree
+    // describing the same contents. One such case is when external textures
+    // (video or camera streams for example) are updated in an otherwise static
+    // layer tree. To support this use case, the rasterizer holds onto the last
+    // rendered layer tree.
+    std::shared_ptr<flutter::LayerTree> last_tree;
+  };
+
+  SurfaceRecord* GetSurface(int64_t view_id) {
+    auto found_surface = surfaces_.find(view_id);
+    if (found_surface == surfaces_.end()) {
+      return nullptr;
+    }
+    return found_surface->second.get();
+  }
+
+  SurfaceRecord* GetFirstSurface() {
+    // TODO(dkwingsmt)
+    return GetSurface(0ll);
+  }
+
   // |SnapshotDelegate|
   std::unique_ptr<GpuImageResult> MakeSkiaGpuImage(
       sk_sp<DisplayList> display_list,
@@ -537,14 +562,21 @@ class Rasterizer final : public SnapshotDelegate,
       bool compressed);
 
   DoDrawResult DoDraw(
+      int64_t view_id,
       std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder,
       std::shared_ptr<flutter::LayerTree> layer_tree);
 
   RasterStatus DrawToSurface(FrameTimingsRecorder& frame_timings_recorder,
-                             flutter::LayerTree& layer_tree);
+                             flutter::LayerTree* layer_tree,
+                             SurfaceRecord* surface_record);
 
   RasterStatus DrawToSurfaceUnsafe(FrameTimingsRecorder& frame_timings_recorder,
-                                   flutter::LayerTree& layer_tree);
+                                   flutter::LayerTree* layer_tree,
+                                   SurfaceRecord* surface_record);
+
+  Screenshot ScreenshotLayerTree(ScreenshotType type,
+                                 bool base64_encode,
+                                 SurfaceRecord& surface_record);
 
   void FireNextFrameCallbackIfPresent();
 
@@ -554,11 +586,12 @@ class Rasterizer final : public SnapshotDelegate,
   Delegate& delegate_;
   MakeGpuImageBehavior gpu_image_behavior_;
   std::unique_ptr<Studio> studio_;
-  std::unique_ptr<Surface> surface_;
+  std::unordered_map<int64_t, std::unique_ptr<SurfaceRecord>> surfaces_;
   std::unique_ptr<SnapshotSurfaceProducer> snapshot_surface_producer_;
   std::unique_ptr<flutter::CompositorContext> compositor_context_;
-  // This is the last successfully rasterized layer tree.
-  std::shared_ptr<flutter::LayerTree> last_layer_tree_;
+  // Set when we need attempt to rasterize the layer tree again. This layer_tree
+  // has not successfully rasterized. This can happen due to the change in the
+  // thread configuration. This will be inserted to the front of the pipeline.
   fml::closure next_frame_callback_;
   bool user_override_resource_cache_bytes_;
   std::optional<size_t> max_cache_bytes_;

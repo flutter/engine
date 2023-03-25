@@ -1896,22 +1896,23 @@ bool Shell::OnServiceProtocolRenderFrameWithRasterStats(
     rapidjson::Document* response) {
   FML_DCHECK(task_runners_.GetRasterTaskRunner()->RunsTasksOnCurrentThread());
 
-  if (rasterizer_->HasLastLayerTree()) {
+  // When rendering the last layer tree, we do not need to build a frame,
+  // invariants in FrameTimingRecorder enforce that raster timings can not be
+  // set before build-end.
+  auto frame_timings_recorder = std::make_unique<FrameTimingsRecorder>();
+  const auto now = fml::TimePoint::Now();
+  frame_timings_recorder->RecordVsync(now, now);
+  frame_timings_recorder->RecordBuildStart(now);
+  frame_timings_recorder->RecordBuildEnd(now);
+
+  int success_count =
+      rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder),
+                                     /* enable_leaf_layer_tracing=*/true);
+
+  if (success_count > 0) {
     auto& allocator = response->GetAllocator();
     response->SetObject();
     response->AddMember("type", "RenderFrameWithRasterStats", allocator);
-
-    // When rendering the last layer tree, we do not need to build a frame,
-    // invariants in FrameTimingRecorder enforce that raster timings can not be
-    // set before build-end.
-    auto frame_timings_recorder = std::make_unique<FrameTimingsRecorder>();
-    const auto now = fml::TimePoint::Now();
-    frame_timings_recorder->RecordVsync(now, now);
-    frame_timings_recorder->RecordBuildStart(now);
-    frame_timings_recorder->RecordBuildEnd(now);
-
-    rasterizer_->DrawLastLayerTree(std::move(frame_timings_recorder),
-                                   /* enable_leaf_layer_tracing=*/true);
 
     rapidjson::Value snapshots;
     snapshots.SetArray();
