@@ -86,7 +86,7 @@ bool SolidColorContents::Render(const ContentContext& renderer,
   VS::BindFrameInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frame_info));
 
   FS::FragInfo frag_info;
-  frag_info.color = color_.Premultiply();
+  frag_info.color = Vector4(color_.Premultiply());
   FS::BindFragInfo(cmd, pass.GetTransientsBuffer().EmplaceUniform(frag_info));
 
   if (!pass.AddCommand(std::move(cmd))) {

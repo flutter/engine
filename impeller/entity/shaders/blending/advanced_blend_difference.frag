@@ -4,7 +4,7 @@
 
 #include <impeller/blending.glsl>
 
-vec3 Blend(vec3 dst, vec3 src) {
+f16vec3 Blend(f16vec3 dst, f16vec3 src) {
   return IPBlendDifference(dst, src);
 }
 

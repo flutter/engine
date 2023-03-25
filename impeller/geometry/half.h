@@ -42,7 +42,7 @@ struct HalfVector4 {
   constexpr HalfVector4(const Color& a)
       : x(ScalarToHalf(a.red)),
         y(ScalarToHalf(a.green)),
-        z(ScalarToHalf(a.green)),
+        z(ScalarToHalf(a.blue)),
         w(ScalarToHalf(a.alpha)){};
 
   constexpr HalfVector4(const Vector4& a)

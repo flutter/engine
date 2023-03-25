@@ -46,7 +46,27 @@ vec3 IPVec3ChooseCutoff(vec3 a, vec3 b, vec3 value, float cutoff) {
 
 /// For each vec3 component, if value > 0.5, return b, otherwise return a.
 vec3 IPVec3Choose(vec3 a, vec3 b, vec3 value) {
-  return IPVec3ChooseCutoff(a, b, value, 0.5);
+  return IPVec3ChooseCutoff(a, b, value, 0.5hf);
+}
+
+/// Perform a branchless greater than check for each vec3 component.
+///
+/// Returns 1.0 if x > y, otherwise 0.0.
+f16vec3 IPVec3IsGreaterThanHf(f16vec3 x, f16vec3 y) {
+  return max(sign(x - y), 0.0hf);
+}
+
+/// For each vec3 component, if value > cutoff, return b, otherwise return a.
+f16vec3 IPVec3ChooseCutoffHf(f16vec3 a,
+                             f16vec3 b,
+                             f16vec3 value,
+                             float16_t cutoff) {
+  return f16vec3(mix(a, b, IPVec3IsGreaterThanHf(value, f16vec3(cutoff))));
+}
+
+/// For each vec3 component, if value > 0.5, return b, otherwise return a.
+f16vec3 IPVec3ChooseHf(f16vec3 a, f16vec3 b, f16vec3 value) {
+  return IPVec3ChooseCutoffHf(a, b, value, 0.5hf);
 }
 
 #endif

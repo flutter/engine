@@ -17,10 +17,16 @@ const float k1Over2Pi = 0.1591549430918;
 // sqrt(2 * pi)
 const float kSqrtTwoPi = 2.50662827463;
 
+const float16_t kSqrtTwoPiHf = 2.50662827463hf;
+
 // sqrt(2) / 2 == 1 / sqrt(2)
 const float kHalfSqrtTwo = 0.70710678118;
 
+const float16_t kHalfSqrtTwoHf = 0.70710678118hf;
+
 // sqrt(3)
 const float kSqrtThree = 1.73205080757;
+
+const float16_t kSqrtThreeHf = 1.73205080757hf;
 
 #endif

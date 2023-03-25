@@ -3,8 +3,9 @@
 // found in the LICENSE file.
 
 #include <impeller/texture.glsl>
+#include <impeller/types.glsl>
 
-vec4 Sample(sampler2D tex, vec2 coords) {
+f16vec4 Sample(f16sampler2D tex, f16vec2 coords) {
   return texture(tex, coords);
 }
 

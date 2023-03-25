@@ -125,8 +125,8 @@ static std::optional<Entity> AdvancedBlend(
     blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity : 1.0;
 
     if (foreground_color.has_value()) {
-      blend_info.color_factor = 1;
-      blend_info.color = foreground_color.value();
+      blend_info.color_factor = 1.0f;
+      blend_info.color = Vector4(foreground_color.value());
       // This texture will not be sampled from due to the color factor. But
       // this is present so that validation doesn't trip on a missing
       // binding.
@@ -134,7 +134,7 @@ static std::optional<Entity> AdvancedBlend(
     } else {
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           src_snapshot->sampler_descriptor);
-      blend_info.color_factor = 0;
+      blend_info.color_factor = 0.0f;
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
@@ -220,9 +220,9 @@ static std::optional<Entity> PipelineBlend(
       frame_info.mvp = Matrix::MakeOrthographic(pass.GetRenderTargetSize()) *
                        Matrix::MakeTranslation(-coverage.origin) *
                        input->transform;
-      FS::FragInfo frag_info;
-      frag_info.texture_sampler_y_coord_scale =
+      frame_info.texture_sampler_y_coord_scale =
           input->texture->GetYCoordScale();
+      FS::FragInfo frag_info;
       frag_info.input_alpha = absorb_opacity ? input->opacity : 1.0;
       FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
       VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
