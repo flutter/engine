@@ -13,15 +13,12 @@ namespace impeller {
 
 /// @brief Convert a scalar to a half precision float.
 ///
-/// Can express numbers in the range of 2^-14 to 65504.
-/// Adapted from
-/// https://developer.android.com/games/optimize/vertex-data-management .
-uint16_t ScalarToHalf(Scalar f);
-
+/// See also: https://clang.llvm.org/docs/LanguageExtensions.html
+_Float16 ScalarToHalf(Scalar f);
 
 /// @brief A storage only class for half precision floating point.
 struct Half {
-  uint16_t x = 0;
+  _Float16 x = 0;
 
   Half() = default;
 
@@ -32,12 +29,12 @@ struct Half {
 struct HalfVector4 {
   union {
     struct {
-      uint16_t x = 0;
-      uint16_t y = 0;
-      uint16_t z = 0;
-      uint16_t w = 0;
+      _Float16 x = 0;
+      _Float16 y = 0;
+      _Float16 z = 0;
+      _Float16 w = 0;
     };
-    uint16_t e[4];
+    _Float16 e[4];
   };
 
   constexpr HalfVector4() {}
@@ -59,11 +56,11 @@ struct HalfVector4 {
 struct HalfVector3 {
   union {
     struct {
-      uint16_t x = 0;
-      uint16_t y = 0;
-      uint16_t z = 0;
+      _Float16 x = 0;
+      _Float16 y = 0;
+      _Float16 z = 0;
     };
-    uint16_t e[3];
+    _Float16 e[3];
   };
 
   constexpr HalfVector3(){};
@@ -76,10 +73,10 @@ struct HalfVector3 {
 struct HalfVector2 {
   union {
     struct {
-      uint16_t x = 0;
-      uint16_t y = 0;
+      _Float16 x = 0;
+      _Float16 y = 0;
     };
-    uint16_t e[2];
+    _Float16 e[2];
   };
 
   constexpr HalfVector2(){};
