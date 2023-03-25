@@ -47,7 +47,7 @@ static bool DeviceSupportsComputeSubgroups(id<MTLDevice> device) {
 
 static std::unique_ptr<Capabilities> InferMetalCapabilities(
     id<MTLDevice> device,
-    PixelFormat color_format = PixelFormat::kB8G8R8A8UNormInt) {
+    PixelFormat color_format) {
   return CapabilitiesBuilder()
       .SetHasThreadingRestrictions(false)
       .SetSupportsOffscreenMSAA(true)
@@ -125,7 +125,8 @@ ContextMTL::ContextMTL(id<MTLDevice> device,
   { gpu_tracer_ = std::shared_ptr<GPUTracerMTL>(new GPUTracerMTL(device_)); }
 #endif
 
-  device_capabilities_ = InferMetalCapabilities(device_);
+  device_capabilities_ =
+      InferMetalCapabilities(device_, PixelFormat::kB8G8R8A8UNormInt);
 
   is_valid_ = true;
 }
@@ -285,7 +286,7 @@ const std::shared_ptr<const Capabilities>& ContextMTL::GetCapabilities() const {
 
 // |Context|
 bool ContextMTL::UpdateOffscreenLayerPixelFormat(PixelFormat format) {
-  device_capabilities_ = InferMetalCapabilities(device_);
+  device_capabilities_ = InferMetalCapabilities(device_, format);
   return true;
 }
 
