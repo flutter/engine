@@ -661,7 +661,12 @@ FLUTTER_ASSERT_ARC
   [self setClientId:123 configuration:config];
 
   NSArray<FlutterTextInputView*>* inputFields = self.installedInputViews;
-  FlutterTextInputView* inputView = inputFields[0];
+  FlutterTextInputView* inputView = OCMPartialMock(inputFields[0]);
+
+  __block int callCount = 0;
+  OCMStub([inputView reloadInputViews]).andDo(^(NSInvocation* invocation) {
+    callCount++;
+  });
 
   XCTAssertTrue(inputView.isSecureTextEntry);
 
@@ -669,6 +674,7 @@ FLUTTER_ASSERT_ARC
   [config setValue:@"NO" forKey:@"obscureText"];
   [self updateConfig:config];
 
+  XCTAssertEqual(callCount, 1);
   XCTAssertFalse(inputView.isSecureTextEntry);
 }
 
