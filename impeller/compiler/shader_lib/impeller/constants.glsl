@@ -5,7 +5,11 @@
 #ifndef CONSTANTS_GLSL_
 #define CONSTANTS_GLSL_
 
+#include <impeller/types.glsl>
+
 const float kEhCloseEnough = 0.000001;
+
+const float16_t kEhCloseEnoughHf = 0.001hf;
 
 // 1 / (2 * pi)
 const float k1Over2Pi = 0.1591549430918;
