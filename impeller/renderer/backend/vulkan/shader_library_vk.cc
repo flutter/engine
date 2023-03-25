@@ -109,7 +109,7 @@ void ShaderLibraryVK::RegisterFunction(std::string name,
                                        ShaderStage stage,
                                        std::shared_ptr<fml::Mapping> code,
                                        RegistrationCallback callback) {
-  const auto result = RegisterFunction(std::move(name), stage, std::move(code));
+  const auto result = RegisterFunction(name, stage, code);
   if (callback) {
     callback(result);
   }
@@ -126,9 +126,10 @@ static bool IsMappingSPIRV(const fml::Mapping& mapping) {
   return magic == kSPIRVMagic;
 }
 
-bool ShaderLibraryVK::RegisterFunction(std::string name,
-                                       ShaderStage stage,
-                                       std::shared_ptr<fml::Mapping> code) {
+bool ShaderLibraryVK::RegisterFunction(
+    const std::string& name,
+    ShaderStage stage,
+    const std::shared_ptr<fml::Mapping>& code) {
   if (!code) {
     return false;
   }

@@ -43,9 +43,9 @@ class ShaderLibraryVK final : public ShaderLibrary {
                         std::shared_ptr<fml::Mapping> code,
                         RegistrationCallback callback) override;
 
-  bool RegisterFunction(std::string name,
+  bool RegisterFunction(const std::string& name,
                         ShaderStage stage,
-                        std::shared_ptr<fml::Mapping> code);
+                        const std::shared_ptr<fml::Mapping>& code);
 
   // |ShaderLibrary|
   void UnregisterFunction(std::string name, ShaderStage stage) override;

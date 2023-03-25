@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+// FLUTTER_NOLINT: https://github.com/flutter/flutter/issues/123467
+
 #include "impeller/renderer/backend/vulkan/pipeline_cache_vk.h"
 
 #include <sstream>
@@ -97,6 +99,7 @@ PipelineCacheVK::PipelineCacheVK(std::shared_ptr<const Capabilities> caps,
     auto [result2, new_cache] = device_.createPipelineCacheUnique(cache_info);
     if (result2 == vk::Result::eSuccess) {
       cache_ = std::move(new_cache);
+
     } else {
       VALIDATION_LOG << "Could not create new pipeline cache: "
                      << vk::to_string(result2);
