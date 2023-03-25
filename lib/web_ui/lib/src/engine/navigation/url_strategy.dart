@@ -81,8 +81,8 @@ class HashUrlStrategy extends ui_web.UrlStrategy {
   }
 
   @override
-  Future<void> go(double count) {
-    _platformLocation.go(count);
+  Future<void> go(int count) {
+    _platformLocation.go(count.toDouble());
     return _waitForPopState();
   }
 
@@ -134,7 +134,7 @@ class CustomUrlStrategy extends ui_web.UrlStrategy {
       delegate.replaceState(state, title, url);
 
   @override
-  Future<void> go(double count) => delegate.go(count);
+  Future<void> go(int count) => delegate.go(count.toDouble());
 }
 
 /// Encapsulates all calls to DOM apis, which allows the [UrlStrategy] classes

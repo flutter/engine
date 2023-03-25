@@ -220,7 +220,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
     assert(_hasSerialCount(currentState));
     final int backCount = _currentSerialCount;
     if (backCount > 0) {
-      await urlStrategy!.go(-backCount.toDouble());
+      await urlStrategy!.go(-backCount);
     }
     // Unwrap state.
     assert(_hasSerialCount(currentState) && _currentSerialCount == 0);

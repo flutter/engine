@@ -56,5 +56,5 @@ abstract class UrlStrategy {
   /// * `go(3)` moves forward 3 steps in hisotry.
   ///
   /// See: https://developer.mozilla.org/en-US/docs/Web/API/History/go
-  Future<void> go(double count);
+  Future<void> go(int count);
 }
