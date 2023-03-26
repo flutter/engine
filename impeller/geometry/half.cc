@@ -4,6 +4,8 @@
 
 #include "half.h"
 
+#include "flutter/fml/trace_event.h"
+
 namespace impeller {
 
 _Half ScalarToHalf(Scalar f) {
