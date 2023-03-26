@@ -4,7 +4,7 @@
 
 #include "half.h"
 
-#include "flutter/fml/trace_event.h"
+#include "flutter/fml/logging.h"
 
 namespace impeller {
 
