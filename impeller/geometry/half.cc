@@ -6,8 +6,11 @@
 
 namespace impeller {
 
-_Float16 ScalarToHalf(Scalar f) {
-  return static_cast<_Float16>(f);
+_Half ScalarToHalf(Scalar f) {
+#ifdef FML_OS_WIN
+  FML_LOG(ERROR) << "ScalarToHalf conversion on unsupported platform.";
+#endif
+  return static_cast<_Half>(f);
 }
 
 }  // namespace impeller

@@ -7,6 +7,7 @@
 #include <limits>
 #include <sstream>
 
+#include "flutter/fml/build_config.h"
 #include "flutter/testing/testing.h"
 #include "impeller/geometry/constants.h"
 #include "impeller/geometry/gradient.h"
@@ -2087,7 +2088,8 @@ TEST(GeometryTest, Gradient) {
   }
 }
 
-TEST(GeometryTest, Half) {
+TEST(GeometryTest, HalfConversions) {
+#ifndef FML_OS_WIN
   ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
   ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
   ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
@@ -2096,6 +2098,25 @@ TEST(GeometryTest, Half) {
   // 65504 is the largest possible half.
   ASSERT_EQ(ScalarToHalf(65504.0f), 65504.0f16);
   ASSERT_EQ(ScalarToHalf(65504.0f + 1), 65504.0f16);
+
+  // Colors
+  ASSERT_EQ(HalfVector4(Color::Red()),
+            HalfVector4(1.0f16, 0.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Green()),
+            HalfVector4(0.0f16, 1.0f16, 0.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Blue()),
+            HalfVector4(0.0f16, 0.0f16, 1.0f16, 1.0f16));
+  ASSERT_EQ(HalfVector4(Color::Black().WithAlpha(0)),
+            HalfVector4(0.0f16, 0.0f16, 0.0f16, 0.0f16));
+
+  ASSERT_EQ(HalfVector3(Vector3(4.0, 6.0, -1.0)),
+            HalfVector3(4.0f16, 6.0f16, -1.0f16));
+  ASSERT_EQ(HalfVector2(Vector2(4.0, 6.0)), HalfVector2(4.0f16, 6.0f16));
+
+  ASSERT_EQ(Half(0.5f), Half(0.5f16));
+  ASSERT_EQ(Half(0.5), Half(0.5f16));
+  ASSERT_EQ(Half(5), Half(5.0f16));
+#endif  // FML_OS_WIN
 }
 
 }  // namespace testing
