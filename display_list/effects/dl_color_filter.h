@@ -107,9 +107,6 @@ class DlBlendColorFilter final : public DlColorFilter {
   DlBlendColorFilter(DlColor color, DlBlendMode mode)
       : color_(color), mode_(mode) {}
 
-  friend inline dl_shared<DlBlendColorFilter>
-  dl_make_shared<DlBlendColorFilter>(DlColor&, DlBlendMode&);
-
   DlColor color_;
   DlBlendMode mode_;
 };
@@ -159,9 +156,6 @@ class DlMatrixColorFilter final : public DlColorFilter {
     memcpy(matrix_, matrix, sizeof(matrix_));
   }
 
-  friend inline dl_shared<DlMatrixColorFilter>
-  dl_make_shared<DlMatrixColorFilter>(const float*&);
-
   float matrix_[20];
 };
 
@@ -188,11 +182,6 @@ class DlSrgbToLinearGammaColorFilter final : public DlColorFilter {
   static dl_shared<DlSrgbToLinearGammaColorFilter> instance;
 
   DlSrgbToLinearGammaColorFilter() {}
-
-  friend inline dl_shared<DlSrgbToLinearGammaColorFilter>
-  dl_make_shared<DlSrgbToLinearGammaColorFilter>();
-
-  friend class DlColorFilter;
 };
 
 // The LinearToSrgb type of ColorFilter that applies the sRGB gamma curve
@@ -218,11 +207,6 @@ class DlLinearToSrgbGammaColorFilter final : public DlColorFilter {
   static dl_shared<DlLinearToSrgbGammaColorFilter> instance;
 
   DlLinearToSrgbGammaColorFilter() {}
-
-  friend inline dl_shared<DlLinearToSrgbGammaColorFilter>
-  dl_make_shared<DlLinearToSrgbGammaColorFilter>();
-
-  friend class DlColorFilter;
 };
 
 }  // namespace flutter

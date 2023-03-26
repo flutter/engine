@@ -42,8 +42,8 @@ class dl_shared {
   dl_shared(std::nullptr_t) : shareable_(nullptr) {}
 
   dl_shared(T* shareable) : shareable_(shareable) {
-    if (shareable_) {
-      shareable_->AddStrongRef();
+    if (shareable) {
+      shareable->AddStrongRef();
     }
   }
 
@@ -121,16 +121,6 @@ class dl_shared {
  private:
   T* shareable_;
 
-  dl_shared(T* shareable, bool add_ref) : shareable_(shareable) {
-    if (add_ref) {
-      shareable_->AddStrongRef();
-    }
-  }
-  template <typename U, typename... Args>
-  friend inline dl_shared<U> dl_make_shared(Args&&... args);
-  template <typename U, typename... Args>
-  friend inline dl_shared<U> dl_place_shared(void*, Args&&... args);
-
   [[nodiscard]] T* release() {
     T* ret = shareable_;
     shareable_ = nullptr;
@@ -174,7 +164,9 @@ class dl_weak_shared {
   dl_weak_shared(std::nullptr_t) : shareable_(nullptr) {}
 
   dl_weak_shared(T* shareable) : shareable_(shareable) {
-    shareable->AddWeakRef();
+    if (shareable) {
+      shareable->AddWeakRef();
+    }
   }
 
   dl_weak_shared(const dl_shared<T>& that) : dl_weak_shared(that.get()) {}
@@ -342,7 +334,7 @@ class DlShareable {
   bool is_weakly_held() const { return strong_ref_count() == 0; }
 
  protected:
-  DlShareable() : total_ref_count_(1), weak_ref_count_(0) {
+  DlShareable() : total_ref_count_(0), weak_ref_count_(0) {
 #ifdef DL_SHAREABLE_STATS
     total_made_++;
     report_shareable_counts();
@@ -396,11 +388,11 @@ class DlShareable {
 // ------------ make_shared ------------
 template <typename T, typename... Args>
 inline dl_shared<T> dl_make_shared(Args&&... args) {
-  return dl_shared<T>(new T(std::forward<Args>(args)...), false);
+  return dl_shared<T>(new T(std::forward<Args>(args)...));
 }
 template <typename T, typename... Args>
 inline dl_shared<T> dl_place_shared(void* ptr, Args&&... args) {
-  return dl_shared<T>(new (ptr) T(std::forward<Args>(args)...), false);
+  return dl_shared<T>(new (ptr) T(std::forward<Args>(args)...));
 }
 // No weak version of make_shared. Does it make sense to start out
 // life without a strong reference?

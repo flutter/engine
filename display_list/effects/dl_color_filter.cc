@@ -18,11 +18,11 @@ dl_shared<DlColorFilter> DlColorFilter::MakeMatrix(const float matrix[20]) {
 }
 
 dl_shared<DlColorFilter> DlColorFilter::MakeSrgbToLinearGamma() {
-  return DlSrgbToLinearGammaColorFilter::instance;
+  return DlSrgbToLinearGammaColorFilter::Make();
 }
 
 dl_shared<DlColorFilter> DlColorFilter::MakeLinearToSrgbGamma() {
-  return DlLinearToSrgbGammaColorFilter::instance;
+  return DlLinearToSrgbGammaColorFilter::Make();
 }
 
 dl_shared<DlBlendColorFilter> DlBlendColorFilter::Make(DlColor color,
@@ -59,7 +59,7 @@ dl_shared<DlBlendColorFilter> DlBlendColorFilter::Make(DlColor color,
     default:
       break;
   }
-  return dl_make_shared<DlBlendColorFilter>(color, mode);
+  return dl_shared(new DlBlendColorFilter(color, mode));
 }
 
 bool DlBlendColorFilter::modifies_transparent_black() const {
@@ -161,7 +161,7 @@ dl_shared<DlMatrixColorFilter> DlMatrixColorFilter::Make(
   // If any of the elements of the matrix are infinity or NaN, then
   // |product| will be NaN, otherwise 0.
   if (product == 0 && !is_identity) {
-    return dl_make_shared<DlMatrixColorFilter>(matrix);
+    return dl_shared(new DlMatrixColorFilter(matrix));
   }
   return nullptr;
 }
@@ -219,10 +219,10 @@ bool DlMatrixColorFilter::can_commute_with_opacity() const {
 
 dl_shared<DlSrgbToLinearGammaColorFilter>
     DlSrgbToLinearGammaColorFilter::instance =
-        dl_make_shared<DlSrgbToLinearGammaColorFilter>();
+        dl_shared(new DlSrgbToLinearGammaColorFilter());
 
 dl_shared<DlLinearToSrgbGammaColorFilter>
     DlLinearToSrgbGammaColorFilter::instance =
-        dl_make_shared<DlLinearToSrgbGammaColorFilter>();
+        dl_shared(new DlLinearToSrgbGammaColorFilter());
 
 }  // namespace flutter

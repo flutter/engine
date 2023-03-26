@@ -110,9 +110,6 @@ class DlDashPathEffect final : public DlPathEffect {
     }
   }
 
-  friend inline dl_shared<DlDashPathEffect>
-  dl_place_shared<DlDashPathEffect>(void*, const SkScalar*&, int&, SkScalar&);
-
   DlDashPathEffect(const DlDashPathEffect* dash_effect)
       : DlDashPathEffect(dash_effect->intervals(),
                          dash_effect->count_,

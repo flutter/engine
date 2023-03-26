@@ -16,7 +16,7 @@ dl_shared<DlBlurMaskFilter> DlBlurMaskFilter::Make(DlBlurStyle style,
                                                    SkScalar sigma,
                                                    bool respect_ctm) {
   if (SkScalarIsFinite(sigma) && sigma > 0) {
-    return dl_make_shared<DlBlurMaskFilter>(style, sigma, respect_ctm);
+    return dl_shared(new DlBlurMaskFilter(style, sigma, respect_ctm));
   }
   return nullptr;
 }

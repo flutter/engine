@@ -77,9 +77,6 @@ class DlBlurMaskFilter final : public DlMaskFilter {
   DlBlurMaskFilter(DlBlurStyle style, SkScalar sigma, bool respect_ctm = true)
       : style_(style), sigma_(sigma), respect_ctm_(respect_ctm) {}
 
-  friend inline dl_shared<DlBlurMaskFilter>
-  dl_make_shared<DlBlurMaskFilter>(DlBlurStyle&, SkScalar&, bool&);
-
   DlBlurStyle style_;
   SkScalar sigma_;
   // Added for backward compatibility with Flutter text shadow rendering which

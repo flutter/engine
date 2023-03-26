@@ -18,7 +18,7 @@ dl_shared<DlPathEffect> DlDashPathEffect::Make(const SkScalar* intervals,
   size_t needed = sizeof(DlDashPathEffect) + sizeof(SkScalar) * count;
   void* storage = ::operator new(needed);
 
-  return dl_place_shared<DlDashPathEffect>(storage, intervals, count, phase);
+  return dl_shared(new (storage) DlDashPathEffect(intervals, count, phase));
 }
 
 std::optional<SkRect> DlDashPathEffect::effect_bounds(SkRect& rect) const {
