@@ -25,14 +25,11 @@ import '../utils.dart';
 class CompileTestsStep implements PipelineStep {
   CompileTestsStep({
     this.testFiles,
-    this.useLocalCanvasKit = false,
     this.isWasm = false
   });
 
   final List<FilePath>? testFiles;
   final bool isWasm;
-
-  final bool useLocalCanvasKit;
 
   @override
   String get description => 'compile_tests';
@@ -52,7 +49,7 @@ class CompileTestsStep implements PipelineStep {
       await copyDart2WasmTestScript();
       await copySkwasm();
     }
-    await copyCanvasKitFiles(useLocalCanvasKit: useLocalCanvasKit);
+    await copyCanvasKitFiles();
     await buildHostPage();
     await copyTestFonts();
     await copySkiaTestImages();
@@ -179,57 +176,25 @@ final io.File _localCanvasKitWasm = io.File(pathlib.join(
   'canvaskit.wasm',
 ));
 
-Future<void> copyCanvasKitFiles({bool useLocalCanvasKit = false}) async {
-  // If CanvasKit has been built locally, use that instead of the CIPD version.
-  final bool localCanvasKitExists = _localCanvasKitWasm.existsSync();
-  if (useLocalCanvasKit && !localCanvasKitExists) {
-    throw ArgumentError('Requested to use local CanvasKit but could not find the '
-        'built CanvasKit at ${_localCanvasKitWasm.path}. Falling back to '
-        'CanvasKit from CIPD.');
-  }
-
+Future<void> copyCanvasKitFiles() async {
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
   ));
 
-  if (useLocalCanvasKit) {
-    final Iterable<io.File> canvasKitFiles =
-        _localCanvasKitDir.listSync(recursive: true).whereType<io.File>();
-    for (final io.File file in canvasKitFiles) {
-      if (!file.path.endsWith('.wasm') && !file.path.endsWith('.js')) {
-        // We only need the .wasm and .js files.
-        continue;
-      }
-      final String relativePath =
-          pathlib.relative(file.path, from: _localCanvasKitDir.path);
-      final io.File normalTargetFile =
-          io.File(pathlib.join(targetDir.path, relativePath));
-      await normalTargetFile.create(recursive: true);
-      await file.copy(normalTargetFile.path);
+  final Iterable<io.File> canvasKitFiles =
+      _localCanvasKitDir.listSync(recursive: true).whereType<io.File>();
+  for (final io.File file in canvasKitFiles) {
+    if (!file.path.endsWith('.wasm') && !file.path.endsWith('.js')) {
+      // We only need the .wasm and .js files.
+      continue;
     }
-  } else {
-    final io.Directory canvasKitDir = io.Directory(pathlib.join(
-      environment.engineSrcDir.path,
-      'third_party',
-      'web_dependencies',
-      'canvaskit',
-    ));
-
-    final Iterable<io.File> canvasKitFiles = canvasKitDir
-        .listSync(recursive: true)
-        .whereType<io.File>();
-
-    for (final io.File file in canvasKitFiles) {
-      final String relativePath =
-          pathlib.relative(file.path, from: canvasKitDir.path);
-      final io.File targetFile = io.File(pathlib.join(
-        targetDir.path,
-        relativePath,
-      ));
-      await targetFile.create(recursive: true);
-      await file.copy(targetFile.path);
-    }
+    final String relativePath =
+        pathlib.relative(file.path, from: _localCanvasKitDir.path);
+    final io.File normalTargetFile =
+        io.File(pathlib.join(targetDir.path, relativePath));
+    await normalTargetFile.create(recursive: true);
+    await file.copy(normalTargetFile.path);
   }
 }
 

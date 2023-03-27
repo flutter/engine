@@ -80,8 +80,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'use-local-canvaskit',
-        help: 'Optional. Whether or not to use the locally built version of '
-              'CanvasKit in the tests.',
+        help: 'Deprecated. Has no effect. The local CanvasKit is always used.'
       );
   }
 
@@ -126,9 +125,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
   /// Path to a CanvasKit build. Overrides the default CanvasKit.
   String? get overridePathToCanvasKit => argResults!['canvaskit-path'] as String?;
 
-  /// Whether or not to use the locally built version of CanvasKit.
-  bool get useLocalCanvasKit => boolArg('use-local-canvaskit');
-
   @override
   Future<bool> run() async {
     final List<FilePath> testFiles = runAllTests
@@ -139,7 +135,6 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       if (isWatchMode) ClearTerminalScreenStep(),
       CompileTestsStep(
         testFiles: testFiles,
-        useLocalCanvasKit: useLocalCanvasKit,
         isWasm: isWasm
       ),
       RunTestsStep(
