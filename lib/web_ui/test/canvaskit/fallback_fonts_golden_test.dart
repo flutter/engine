@@ -332,7 +332,7 @@ void testMain() {
             'Noto Sans Mro',
             'Noto Sans Multani',
             'Noto Sans Myanmar',
-            'Noto Sans N Ko',
+            'Noto Sans NKo',
             'Noto Sans Nabataean',
             'Noto Sans New Tai Lue',
             'Noto Sans Newa',
