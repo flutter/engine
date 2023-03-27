@@ -29,19 +29,17 @@
 
 namespace impeller {
 namespace testing {
-using ComputeTest = ComputePlaygroundTest;
-INSTANTIATE_COMPUTE_SUITE(ComputeTest);
+using ComputeSubgroupTest = ComputePlaygroundTest;
+INSTANTIATE_COMPUTE_SUITE(ComputeSubgroupTest);
 
-// TODO(dnfield): Re-enable
-// https://github.com/flutter/flutter/issues/122828
-TEST_P(ComputeTest, DISABLED_HeartCubicsToStrokeVertices) {
+TEST_P(ComputeSubgroupTest, HeartCubicsToStrokeVertices) {
   using CS = CubicToQuadsComputeShader;
   using QS = QuadPolylineComputeShader;
   using SS = StrokeComputeShader;
 
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsComputeSubgroups());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateComputePass();
@@ -258,13 +256,11 @@ TEST_P(ComputeTest, DISABLED_HeartCubicsToStrokeVertices) {
   ASSERT_TRUE(OpenPlaygroundHere(callback));
 }
 
-// TODO(dnfield): Re-enable
-// https://github.com/flutter/flutter/issues/122828
-TEST_P(ComputeTest, DISABLED_QuadsToPolyline) {
+TEST_P(ComputeSubgroupTest, QuadsToPolyline) {
   using QS = QuadPolylineComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsComputeSubgroups());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
 
   auto cmd_buffer = context->CreateCommandBuffer();
   auto pass = cmd_buffer->CreateComputePass();

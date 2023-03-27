@@ -72,6 +72,11 @@ bool OpacityPeepholePassDelegate::CanElide() {
 // |EntityPassDelgate|
 bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
     EntityPass* entity_pass) {
+  if (paint_.color.alpha <= 0.0 || paint_.color.alpha >= 1.0 ||
+      paint_.image_filter.has_value() || paint_.color_filter.has_value()) {
+    return false;
+  }
+
   // Note: determing whether any coverage intersects has quadradic complexity in
   // the number of rectangles, and depending on whether or not we cache at
   // different levels of the entity tree may end up cubic. In the interest of
@@ -92,7 +97,7 @@ bool OpacityPeepholePassDelegate::CanCollapseIntoParentPass(
   auto had_subpass = entity_pass->IterateUntilSubpass(
       [&all_coverages, &all_can_accept](Entity& entity) {
         auto contents = entity.GetContents();
-        if (!contents->CanAcceptOpacity(entity)) {
+        if (!contents->CanInheritOpacity(entity)) {
           all_can_accept = false;
           return false;
         }

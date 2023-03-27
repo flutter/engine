@@ -61,7 +61,11 @@ class MockBlitPass : public BlitPass {
                     IRect source_region,
                     size_t destination_offset,
                     std::string label));
-
+  MOCK_METHOD4(OnCopyBufferToTextureCommand,
+               bool(BufferView source,
+                    std::shared_ptr<Texture> destination,
+                    IPoint destination_origin,
+                    std::string label));
   MOCK_METHOD2(OnGenerateMipmapCommand,
                bool(std::shared_ptr<Texture> texture, std::string label));
 };
@@ -95,9 +99,8 @@ class MockImpellerContext : public Context {
 
   MOCK_CONST_METHOD0(GetGPUTracer, std::shared_ptr<GPUTracer>());
 
-  MOCK_CONST_METHOD0(GetColorAttachmentPixelFormat, PixelFormat());
-
-  MOCK_CONST_METHOD0(GetDeviceCapabilities, const IDeviceCapabilities&());
+  MOCK_CONST_METHOD0(GetCapabilities,
+                     const std::shared_ptr<const Capabilities>&());
 };
 
 class MockTexture : public Texture {

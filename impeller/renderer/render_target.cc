@@ -210,7 +210,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   }
 
   RenderTarget target;
-  PixelFormat pixel_format = context.GetColorAttachmentPixelFormat();
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
   TextureDescriptor color_tex0;
   color_tex0.storage_mode = color_attachment_config.storage_mode;
   color_tex0.format = pixel_format;
@@ -233,8 +233,7 @@ RenderTarget RenderTarget::CreateOffscreen(
   if (stencil_attachment_config.has_value()) {
     TextureDescriptor stencil_tex0;
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
-    stencil_tex0.format =
-        context.GetDeviceCapabilities().GetDefaultStencilFormat();
+    stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
@@ -269,7 +268,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
   }
 
   RenderTarget target;
-  PixelFormat pixel_format = context.GetColorAttachmentPixelFormat();
+  PixelFormat pixel_format = context.GetCapabilities()->GetDefaultColorFormat();
 
   // Create MSAA color texture.
 
@@ -297,6 +296,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
       color_attachment_config.resolve_storage_mode;
   color0_resolve_tex_desc.format = pixel_format;
   color0_resolve_tex_desc.size = size;
+  color0_resolve_tex_desc.compression_type = CompressionType::kLossy;
   color0_resolve_tex_desc.usage =
       static_cast<uint64_t>(TextureUsage::kRenderTarget) |
       static_cast<uint64_t>(TextureUsage::kShaderRead);
@@ -327,8 +327,7 @@ RenderTarget RenderTarget::CreateOffscreenMSAA(
     stencil_tex0.storage_mode = stencil_attachment_config->storage_mode;
     stencil_tex0.type = TextureType::kTexture2DMultisample;
     stencil_tex0.sample_count = SampleCount::kCount4;
-    stencil_tex0.format =
-        context.GetDeviceCapabilities().GetDefaultStencilFormat();
+    stencil_tex0.format = context.GetCapabilities()->GetDefaultStencilFormat();
     stencil_tex0.size = size;
     stencil_tex0.usage =
         static_cast<TextureUsageMask>(TextureUsage::kRenderTarget);
