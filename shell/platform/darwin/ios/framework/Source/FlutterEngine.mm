@@ -1095,7 +1095,13 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
                               arguments:@[ @(client) ]];
 }
 
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView {
+- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView
+                                             client:(int)client {
+  // When flutter text input view resign first responder, send a message to
+  // framework to ensure the focus state is correct. This is useful when close
+  // keyboard from platform side.
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.unfocus" arguments:@[ @(client) ]];
+
   // Platform view's first responder detection logic:
   //
   // All text input widgets (e.g. EditableText) are backed by a dummy UITextInput view

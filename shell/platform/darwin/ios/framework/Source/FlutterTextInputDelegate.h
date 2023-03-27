@@ -59,7 +59,8 @@ typedef NS_ENUM(NSInteger, FlutterFloatingCursorDragState) {
     insertTextPlaceholderWithSize:(CGSize)size
                        withClient:(int)client;
 - (void)flutterTextInputView:(FlutterTextInputView*)textInputView removeTextPlaceholder:(int)client;
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView;
+- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView
+                                             client:(int)client;
 
 @end
 
