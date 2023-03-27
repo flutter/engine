@@ -20,10 +20,6 @@ vars = {
   'ocmock_git': 'https://github.com/erikdoe/ocmock.git',
   'skia_revision': 'c55605969a599681f4a5530ba84402f67f55bfa1',
 
-  # WARNING: DO NOT EDIT canvaskit_cipd_instance MANUALLY
-  # See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-  'canvaskit_cipd_instance': '61aeJQ9laGfEFF_Vlc_u0MCkqB6xb2hAYHRBxKH-Uw4C',
-
   # Do not download the Emscripten SDK by default.
   # This prevents us from downloading the Emscripten toolchain for builds
   # which do not build for the web. This toolchain is needed to build CanvasKit
@@ -720,16 +716,6 @@ deps = {
        }
      ],
      'condition': 'download_android_deps',
-     'dep_type': 'cipd',
-   },
-
-  'src/third_party/web_dependencies': {
-     'packages': [
-       {
-         'package': 'flutter/web/canvaskit_bundle',
-         'version': Var('canvaskit_cipd_instance')
-       }
-     ],
      'dep_type': 'cipd',
    },
 

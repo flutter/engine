@@ -4,14 +4,21 @@
 
 import 'dart:convert' show JsonEncoder;
 import 'dart:io' as io;
+import 'dart:typed_data';
 
+import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as pathlib;
 import 'package:pool/pool.dart';
 
+import '../common.dart';
 import '../environment.dart';
 import '../exceptions.dart';
 import '../pipeline.dart';
 import '../utils.dart';
+
+// TODO(het): : We are using this hack while we wait for the built CanvasKit
+//   artifacts to be available on all platforms we test on, https://github.com/flutter/flutter/issues/119036.
+const String _goodCanvasKitRevision = 'cc060144e81bff619f9c94bfeecf2a2987f166bb';
 
 /// Compiles web tests and their dependencies into web_ui/build/.
 ///
@@ -21,7 +28,7 @@ import '../utils.dart';
 ///  * assets/      - test fonts
 ///  * host/        - compiled test host page and static artifacts
 ///  * test/        - compiled test code
-///  * test_images/ - test images copied from Skis sources.
+///  * test_images/ - test images copied from Skia sources.
 class CompileTestsStep implements PipelineStep {
   CompileTestsStep({
     this.testFiles,
@@ -177,10 +184,32 @@ final io.File _localCanvasKitWasm = io.File(pathlib.join(
 ));
 
 Future<void> copyCanvasKitFiles() async {
+  final bool localCanvasKitExists = _localCanvasKitWasm.existsSync();
+  // if (!localCanvasKitExists && !isLuci) {
+  //   throw ArgumentError('Could not find the local CanvasKit build. Try running `felt build`');
+  // }
+  
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
   ));
+
+  // TODO(het): Remove this hack once we are able to share build artifacts
+  //   across multiple builders on LUCI.
+  if (!localCanvasKitExists) {
+    // If we're running on LUCI then we should temporarily just download
+    // a known good version of CanvasKit if we didn't already build one.
+    const String canvasKitBaseUrl = 'https://www.gstatic.com/flutter-canvaskit/$_goodCanvasKitRevision/';
+    final Uint8List canvasKitJs = (await http.get(Uri.parse('${canvasKitBaseUrl}canvaskit.js'))).bodyBytes;
+    final Uint8List canvasKitWasm = (await http.get(Uri.parse('${canvasKitBaseUrl}canvaskit.wasm'))).bodyBytes;
+    final io.File targetJsFile = io.File(pathlib.join(targetDir.path, 'canvaskit.js'));
+    final io.File targetWasmFile = io.File(pathlib.join(targetDir.path, 'canvaskit.wasm'));
+    await targetJsFile.create(recursive: true);
+    await targetWasmFile.create(recursive: true);
+    await targetJsFile.writeAsBytes(canvasKitJs);
+    await targetWasmFile.writeAsBytes(canvasKitWasm);
+    return;
+  }
 
   final Iterable<io.File> canvasKitFiles =
       _localCanvasKitDir.listSync(recursive: true).whereType<io.File>();
