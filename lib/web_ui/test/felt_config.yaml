@@ -1,3 +1,5 @@
+# See the `README.md` in this directory for documentation on the structure of
+# this file.
 compile-configs:
   - name: dart2js-html
     compiler: dart2js

@@ -131,7 +131,22 @@ class CompileBundleStep implements PipelineStep {
       'results.json',
     ));
     outputResultsFile.writeAsStringSync(resultsJson);
-    print('\rCompleted compilation of ${bundle.name.ansiMagenta} in ${stopwatch.elapsedMilliseconds}ms.'.padRight(82));
+    final List<String> failedFiles = <String>[];
+    results.forEach((String fileName, CompileResult result) {
+      if (result == CompileResult.compilationFailure) {
+        failedFiles.add(fileName);
+      }
+    });
+    if (failedFiles.isEmpty) {
+      print('\rCompleted compilation of ${bundle.name.ansiMagenta} in ${stopwatch.elapsedMilliseconds}ms.'.padRight(82));
+    } else {
+      print('\rThe bundle ${bundle.name.ansiMagenta} compiled with some failures in ${stopwatch.elapsedMilliseconds}ms.');
+      print('Compilation failures:');
+      for (final String fileName in failedFiles) {
+        print('  $fileName');
+      }
+      throw ToolExit('Failed to compile ${bundle.name.ansiMagenta}.');
+    }
   }
 }
 
@@ -210,6 +225,7 @@ class Dart2JSCompiler extends TestCompiler {
       environment.dartExecutable,
       arguments,
       workingDirectory: inputTestSetDirectory.path,
+      failureIsSuccess: true,
       evalOutput: !isVerbose,
     );
     final int exitCode = await process.wait();
@@ -276,6 +292,7 @@ class Dart2WasmCompiler extends TestCompiler {
       environment.dartAotRuntimePath,
       arguments,
       workingDirectory: inputTestSetDirectory.path,
+      failureIsSuccess: true,
       evalOutput: true,
     );
     final int exitCode = await process.wait();

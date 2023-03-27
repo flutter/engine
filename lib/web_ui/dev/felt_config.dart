@@ -66,10 +66,10 @@ class ArtifactDependencies {
     required this.skwasm
   });
 
-  ArtifactDependencies.none()
-    : canvasKit = false
-    , canvasKitChromium = false
-    , skwasm = false;
+  ArtifactDependencies.none() :
+    canvasKit = false,
+    canvasKitChromium = false,
+    skwasm = false;
   final bool canvasKit;
   final bool canvasKitChromium;
   final bool skwasm;
@@ -214,19 +214,16 @@ class FeltConfig {
                 throw AssertionError('Artifact dep $dep listed twice in suite $name.');
               }
               canvasKit = true;
-              break;
             case 'canvaskit_chromium':
               if (canvasKitChromium) {
                 throw AssertionError('Artifact dep $dep listed twice in suite $name.');
               }
               canvasKitChromium = true;
-              break;
             case 'skwasm':
               if (skwasm) {
                 throw AssertionError('Artifact dep $dep listed twice in suite $name.');
               }
               skwasm = true;
-              break;
             default:
               throw AssertionError('Unrecognized artifact dependency: $dep');
           }
