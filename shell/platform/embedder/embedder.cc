@@ -3099,6 +3099,7 @@ FlutterEngineResult FlutterEngineGetProcAddresses(
   SET_PROC(Initialize, FlutterEngineInitialize);
   SET_PROC(Deinitialize, FlutterEngineDeinitialize);
   SET_PROC(RunInitialized, FlutterEngineRunInitialized);
+  SET_PROC(AddRenderSurface, FlutterEngineAddRenderSurface);
   SET_PROC(SendWindowMetricsEvent, FlutterEngineSendWindowMetricsEvent);
   SET_PROC(SendPointerEvent, FlutterEngineSendPointerEvent);
   SET_PROC(SendKeyEvent, FlutterEngineSendKeyEvent);
