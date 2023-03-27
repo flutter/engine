@@ -56,6 +56,7 @@ class SkiaFontCollection implements FlutterFontCollection {
     }
     _fontProvider = canvasKit.TypefaceFontProvider.Make();
     skFontCollection = canvasKit.FontCollection.Make();
+    skFontCollection!.enableFontFallback();
     skFontCollection!.setDefaultFontManager(_fontProvider);
     familyToFontMap.clear();
 
