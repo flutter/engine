@@ -167,8 +167,9 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
-  if (GetCurrentPass().GetElementCount() == 0 &&
-      paint.color == Color::BlackTransparent()) {
+  bool is_clear = (paint.blend_mode == BlendMode::kSource &&
+                   paint.color == Color::BlackTransparent());
+  if (is_clear && GetCurrentPass().GetElementCount() == 0) {
     return;
   }
 
