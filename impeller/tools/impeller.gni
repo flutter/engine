@@ -46,6 +46,8 @@ declare_args() {
   impeller_supports_rendering =
       impeller_enable_metal || impeller_enable_opengles ||
       impeller_enable_vulkan
+
+  impeller_enable_compute = impeller_enable_vulkan || impeller_enable_metal
 }
 
 # ------------------------------------------------------------------------------
@@ -388,7 +390,7 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/renderer",
+      "//flutter/impeller/renderer:buffer",
       impellerc_invocation,
     ]
   }

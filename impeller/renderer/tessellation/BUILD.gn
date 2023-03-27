@@ -1,0 +1,46 @@
+# Copyright 2013 The Flutter Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+import("//flutter/impeller/tools/impeller.gni")
+
+if (impeller_enable_compute) {
+  impeller_shaders("tessellation_shaders") {
+    enable_opengles = false
+    name = "tessellation"
+
+    if (is_ios) {
+      metal_version = "2.4"
+    } else if (is_mac) {
+      metal_version = "2.1"
+    }
+
+    shaders = [
+      "stroke.comp",
+      "path_polyline.comp",
+    ]
+  }
+
+  impeller_component("tessellation") {
+    sources = [
+      "compute_tessellator.cc",
+      "compute_tessellator.h",
+    ]
+
+    public_deps = [ ":tessellation_shaders" ]
+  }
+
+  impeller_component("compute_tessellation_unittests") {
+    testonly = true
+    sources = [ "compute_subgroup_unittests.cc" ]
+
+    deps = [
+      ":tessellation_shaders",
+      "../",
+      "../../entity",
+      "../../fixtures",
+      "../../playground:playground_test",
+      "//flutter/testing:testing_lib",
+    ]
+  }
+}

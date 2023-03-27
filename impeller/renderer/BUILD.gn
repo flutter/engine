@@ -4,6 +4,23 @@
 
 import("//flutter/impeller/tools/impeller.gni")
 
+impeller_component("buffer") {
+  sources = [
+    "buffer.cc",
+    "buffer.h",
+    "buffer_view.cc",
+    "buffer_view.h",
+    "host_buffer.cc",
+    "host_buffer.h",
+    "platform.cc",
+    "platform.h",
+    "range.cc",
+    "range.h",
+    "vertex_buffer.cc",
+    "vertex_buffer.h",
+  ]
+}
+
 impeller_component("renderer") {
   sources = [
     "allocator.cc",
@@ -12,10 +29,6 @@ impeller_component("renderer") {
     "blit_command.h",
     "blit_pass.cc",
     "blit_pass.h",
-    "buffer.cc",
-    "buffer.h",
-    "buffer_view.cc",
-    "buffer_view.h",
     "command.cc",
     "command.h",
     "command_buffer.cc",
@@ -41,8 +54,6 @@ impeller_component("renderer") {
     "formats.h",
     "gpu_tracer.cc",
     "gpu_tracer.h",
-    "host_buffer.cc",
-    "host_buffer.h",
     "pipeline.cc",
     "pipeline.h",
     "pipeline_builder.cc",
@@ -51,10 +62,6 @@ impeller_component("renderer") {
     "pipeline_descriptor.h",
     "pipeline_library.cc",
     "pipeline_library.h",
-    "platform.cc",
-    "platform.h",
-    "range.cc",
-    "range.h",
     "render_pass.cc",
     "render_pass.h",
     "render_target.cc",
@@ -83,8 +90,6 @@ impeller_component("renderer") {
     "texture.h",
     "texture_descriptor.cc",
     "texture_descriptor.h",
-    "vertex_buffer.cc",
-    "vertex_buffer.h",
     "vertex_buffer_builder.cc",
     "vertex_buffer_builder.h",
     "vertex_descriptor.cc",
@@ -92,12 +97,17 @@ impeller_component("renderer") {
   ]
 
   public_deps = [
+    ":buffer",
     "../base",
     "../geometry",
     "../image",
     "../runtime_stage",
     "../tessellator",
   ]
+
+  if (impeller_enable_compute) {
+    public_deps += [ "./tessellation" ]
+  }
 
   deps = [ "//flutter/fml" ]
 }
@@ -112,20 +122,16 @@ impeller_component("renderer_unittests") {
     "renderer_unittests.cc",
   ]
 
-  if (impeller_enable_vulkan || impeller_enable_metal) {
-    sources += [
-      "compute_subgroup_unittests.cc",
-      "compute_unittests.cc",
-    ]
-  }
-
   deps = [
     ":renderer",
-    "../entity",
     "../fixtures",
     "../playground:playground_test",
     "//flutter/testing:testing_lib",
   ]
+
+  if (impeller_enable_compute) {
+    sources += [ "compute_unittests.cc" ]
+  }
 }
 
 test_fixtures("renderer_dart_fixtures") {

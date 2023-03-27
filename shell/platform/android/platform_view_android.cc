@@ -46,15 +46,16 @@ std::unique_ptr<AndroidSurface> AndroidSurfaceFactoryImpl::CreateSurface() {
                                                       jni_facade_);
     case AndroidRenderingAPI::kOpenGLES:
       if (enable_impeller_) {
-// TODO(kaushikiska@): Enable this after wiring a preference for Vulkan backend.
-#if false
+        // TODO(kaushikiska@): Enable this after wiring a preference for Vulkan
+        // backend. #if false
         return std::make_unique<AndroidSurfaceVulkanImpeller>(android_context_,
                                                               jni_facade_);
 
-#else
-        return std::make_unique<AndroidSurfaceGLImpeller>(android_context_,
-                                                          jni_facade_);
-#endif
+        // #else
+        //         return
+        //         std::make_unique<AndroidSurfaceGLImpeller>(android_context_,
+        //                                                           jni_facade_);
+        // #endif
       } else {
         return std::make_unique<AndroidSurfaceGLSkia>(android_context_,
                                                       jni_facade_);
