@@ -185,9 +185,9 @@ final io.File _localCanvasKitWasm = io.File(pathlib.join(
 
 Future<void> copyCanvasKitFiles() async {
   final bool localCanvasKitExists = _localCanvasKitWasm.existsSync();
-  // if (!localCanvasKitExists && !isLuci) {
-  //   throw ArgumentError('Could not find the local CanvasKit build. Try running `felt build`');
-  // }
+  if (!localCanvasKitExists && !isLuci) {
+    throw ArgumentError('Could not find the local CanvasKit build. Try running `felt build`');
+  }
   
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
