@@ -123,7 +123,7 @@ void testMain() {
 
       expect(FontFallbackData.instance.globalFontFallbacks, <String>[
         'Roboto',
-        'Noto Emoji',
+        'Noto Color Emoji',
         'Noto Sans Arabic',
       ]);
     });
