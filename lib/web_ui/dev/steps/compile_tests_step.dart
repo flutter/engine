@@ -188,7 +188,7 @@ Future<void> copyCanvasKitFiles() async {
   if (!localCanvasKitExists && !isLuci) {
     throw ArgumentError('Could not find the local CanvasKit build. Try running `felt build`');
   }
-  
+ 
   final io.Directory targetDir = io.Directory(pathlib.join(
     environment.webUiBuildDir.path,
     'canvaskit',
