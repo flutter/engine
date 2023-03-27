@@ -744,6 +744,8 @@ DartVM* Shell::GetDartVM() {
   return &vm_;
 }
 
+constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 // |PlatformView::Delegate|
 void Shell::OnPlatformViewCreated() {
   TRACE_EVENT0("flutter", "Shell::OnPlatformViewCreated");
@@ -792,8 +794,7 @@ void Shell::OnPlatformViewCreated() {
           // embedder.
           rasterizer->EnableThreadMergerIfNeeded();
           rasterizer->Setup(std::move(studio));
-          // TODO(dkwingsmt): Change 0ll
-          rasterizer->RegisterSurface(0ll, std::move(surface));
+          rasterizer->AddSurface(kFlutterDefaultViewId, std::move(surface));
         }
 
         waiting_for_first_frame.store(true);
@@ -1980,6 +1981,27 @@ bool Shell::OnServiceProtocolReloadAssetFonts(
   response->AddMember("type", "Success", allocator);
 
   return true;
+}
+
+void Shell::AddRenderSurface(int64_t view_id) {
+  TRACE_EVENT0("flutter", "Shell::AddRenderSurface");
+  FML_DCHECK(is_setup_);
+  FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
+
+  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
+  fml::AutoResetWaitableEvent latch;
+  task_runners_.GetRasterTaskRunner()->PostTask(
+      fml::MakeCopyable([&latch,                                  //
+                         rasterizer = rasterizer_->GetWeakPtr(),  //
+                         surface = std::move(surface),            //
+                         view_id                                  //
+  ]() mutable {
+        if (rasterizer) {
+          rasterizer->AddSurface(view_id, std::move(surface));
+        }
+        latch.Signal();
+      }));
+  latch.Wait();
 }
 
 Rasterizer::Screenshot Shell::Screenshot(

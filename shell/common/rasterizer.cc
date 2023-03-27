@@ -142,14 +142,12 @@ void Rasterizer::NotifyLowMemoryWarning() const {
   context->performDeferredCleanup(std::chrono::milliseconds(0));
 }
 
-void Rasterizer::RegisterSurface(int64_t view_id,
-                                 std::unique_ptr<Surface> surface) {
+void Rasterizer::AddSurface(int64_t view_id, std::unique_ptr<Surface> surface) {
   bool insertion_happened =
       surfaces_.try_emplace(view_id, std::move(surface)).second;
   if (!insertion_happened) {
-    FML_DLOG(INFO)
-        << "Rasterizer::RegisterSurface called with an existing view ID "
-        << view_id << ".";
+    FML_DLOG(INFO) << "Rasterizer::AddSurface called with an existing view ID "
+                   << view_id << ".";
   }
 }
 

@@ -2046,6 +2046,22 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
   return kSuccess;
 }
 
+FLUTTER_EXPORT
+FlutterEngineResult FlutterEngineAddRenderSurface(
+    FLUTTER_API_SYMBOL(FlutterEngine) engine,
+    const FlutterRendererConfig* config,
+    void* user_data,
+    int64_t view_id) {
+  if (engine == nullptr) {
+    return LOG_EMBEDDER_ERROR(kInvalidArguments, "Engine handle was invalid.");
+  }
+  flutter::EmbedderEngine* embedder_engine =
+      reinterpret_cast<flutter::EmbedderEngine*>(engine);
+  embedder_engine->GetShell().AddRenderSurface(view_id);
+
+  return kSuccess;
+}
+
 FlutterEngineResult FlutterEngineSendWindowMetricsEvent(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
     const FlutterWindowMetricsEvent* flutter_metrics) {

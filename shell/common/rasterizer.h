@@ -189,7 +189,7 @@ class Rasterizer final : public SnapshotDelegate,
 
   fml::TaskRunnerAffineWeakPtr<SnapshotDelegate> GetSnapshotDelegate() const;
 
-  void RegisterSurface(int64_t view_id, std::unique_ptr<Surface> surface);
+  void AddSurface(int64_t view_id, std::unique_ptr<Surface> surface);
 
   //----------------------------------------------------------------------------
   ///
