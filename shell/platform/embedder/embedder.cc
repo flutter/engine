@@ -2049,7 +2049,6 @@ FlutterEngineResult FlutterEngineShutdown(FLUTTER_API_SYMBOL(FlutterEngine)
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineAddRenderSurface(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterRendererConfig* config,
     void* user_data,
     int64_t view_id) {
   if (engine == nullptr) {

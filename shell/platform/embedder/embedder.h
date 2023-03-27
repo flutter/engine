@@ -2246,7 +2246,6 @@ FlutterEngineResult FlutterEngineRunInitialized(
 FLUTTER_EXPORT
 FlutterEngineResult FlutterEngineAddRenderSurface(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterRendererConfig* config,
     void* user_data,
     int64_t view_id);
 
@@ -2826,7 +2825,6 @@ typedef FlutterEngineResult (*FlutterEngineRunInitializedFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine);
 typedef FlutterEngineResult (*FlutterEngineAddRenderSurfaceFnPtr)(
     FLUTTER_API_SYMBOL(FlutterEngine) engine,
-    const FlutterRendererConfig* config,
     void* user_data,
     int64_t view_id);
 typedef FlutterEngineResult (*FlutterEngineSendWindowMetricsEventFnPtr)(
