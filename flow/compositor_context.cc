@@ -6,6 +6,7 @@
 
 #include <optional>
 #include <utility>
+
 #include "flutter/flow/layers/layer_tree.h"
 #include "third_party/skia/include/core/SkCanvas.h"
 
@@ -162,7 +163,10 @@ RasterStatus CompositorContext::ScopedFrame::Raster(
       paint.setBlendMode(DlBlendMode::kSrc);
       canvas()->SaveLayer(&bounds, &paint);
     }
-    canvas()->Clear(DlColor::kTransparent());
+    // Impeller does not require a full screen clear.
+    if (gr_context_) {
+      canvas()->Clear(DlColor::kTransparent());
+    }
   }
   layer_tree.Paint(*this, ignore_raster_cache);
   // The canvas()->Restore() is taken care of by the DlAutoCanvasRestore
