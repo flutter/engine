@@ -494,8 +494,8 @@ class PlatformView {
   ///
   virtual void NotifyDestroyed();
 
-  std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>>
-  CreateStudioAndSurface();
+  std::unique_ptr<Studio> CreateStudio();
+  std::unique_ptr<Surface> CreateSurface();
 
   //----------------------------------------------------------------------------
   /// @brief      Used by embedders to schedule a frame. In response to this

@@ -65,9 +65,31 @@ void PlatformView::NotifyDestroyed() {
 
 constexpr int64_t kFlutterDefaultViewId = 0;
 
-std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>>
-PlatformView::CreateStudioAndSurface() {
+std::unique_ptr<Studio> PlatformView::CreateStudio() {
   std::unique_ptr<Studio> studio;
+  // Threading: We want to use the platform view on the non-platform thread.
+  // Using the weak pointer is illegal. But, we are going to introduce a latch
+  // so that the platform view is not collected till the studio and the surface
+  // are obtained.
+  auto* platform_view = this;
+  fml::ManualResetWaitableEvent latch;
+  fml::TaskRunner::RunNowOrPostTask(
+      task_runners_.GetRasterTaskRunner(), [platform_view, &studio, &latch]() {
+        studio = platform_view->CreateRenderingStudio();
+        if (!studio || !studio->IsValid()) {
+          studio.reset();
+        }
+        latch.Signal();
+      });
+  latch.Wait();
+  if (!studio) {
+    FML_LOG(ERROR) << "Failed to create platform view rendering studio";
+    return nullptr;
+  }
+  return studio;
+}
+
+std::unique_ptr<Surface> PlatformView::CreateSurface() {
   std::unique_ptr<Surface> surface;
   // Threading: We want to use the platform view on the non-platform thread.
   // Using the weak pointer is illegal. But, we are going to introduce a latch
@@ -76,25 +98,19 @@ PlatformView::CreateStudioAndSurface() {
   auto* platform_view = this;
   fml::ManualResetWaitableEvent latch;
   fml::TaskRunner::RunNowOrPostTask(
-      task_runners_.GetRasterTaskRunner(),
-      [platform_view, &studio, &surface, &latch]() {
-        studio = platform_view->CreateRenderingStudio();
+      task_runners_.GetRasterTaskRunner(), [platform_view, &surface, &latch]() {
         surface = platform_view->CreateRenderingSurface(kFlutterDefaultViewId);
-        if (!studio || !studio->IsValid() || !surface || !surface->IsValid()) {
+        if (!surface || !surface->IsValid()) {
           surface.reset();
-          studio.reset();
         }
         latch.Signal();
       });
   latch.Wait();
-  std::pair<std::unique_ptr<Studio>, std::unique_ptr<Surface>> result;
-  if (!studio || !surface) {
+  if (!surface) {
     FML_LOG(ERROR) << "Failed to create platform view rendering surface";
-    return result;
+    return nullptr;
   }
-  result.first = std::move(studio);
-  result.second = std::move(surface);
-  return result;
+  return surface;
 }
 
 void PlatformView::ScheduleFrame() {

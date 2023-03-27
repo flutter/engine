@@ -750,9 +750,8 @@ void Shell::OnPlatformViewCreated() {
   FML_DCHECK(is_setup_);
   FML_DCHECK(task_runners_.GetPlatformTaskRunner()->RunsTasksOnCurrentThread());
 
-  auto studio_and_surface = platform_view_->CreateStudioAndSurface();
-  std::unique_ptr<Studio> studio = std::move(studio_and_surface.first);
-  std::unique_ptr<Surface> surface = std::move(studio_and_surface.second);
+  std::unique_ptr<Studio> studio = platform_view_->CreateStudio();
+  std::unique_ptr<Surface> surface = platform_view_->CreateSurface();
   if (studio == nullptr || surface == nullptr) {
     // TODO(dkwingsmt): This case is observed in windows unit tests. Anyway,
     // we're probably not creating the surface in this callback eventually.
