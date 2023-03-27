@@ -41,7 +41,7 @@ TEST_P(ComputeSubgroupTest, QuadAndCubicInOnePath) {
 
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsComputeSubgroups());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsComputeSubgroups());
 
   auto vertex_buffer = CreateHostVisibleDeviceBuffer<SS::VertexBuffer<2048>>(
       context, "VertexBuffer");

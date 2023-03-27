@@ -86,15 +86,18 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
 
   path.EnumerateComponents(
       [&lines, &components](size_t index, const LinearPathComponent& linear) {
-        lines.data[lines.count] = {linear.p1, linear.p2};
+        ::memcpy(&lines.data[lines.count], &linear,
+                 sizeof(LinearPathComponent));
         components.data[components.count++] = {lines.count++, 2};
       },
       [&quads, &components](size_t index, const QuadraticPathComponent& quad) {
-        quads.data[quads.count] = {quad.p1, quad.cp, quad.p2};
+        ::memcpy(&quads.data[quads.count], &quad,
+                 sizeof(QuadraticPathComponent));
         components.data[components.count++] = {quads.count++, 3};
       },
       [&cubics, &components](size_t index, const CubicPathComponent& cubic) {
-        cubics.data[cubics.count] = {cubic.p1, cubic.cp1, cubic.cp2, cubic.p2};
+        ::memcpy(&cubics.data[cubics.count], &cubic,
+                 sizeof(CubicPathComponent));
         components.data[components.count++] = {cubics.count++, 4};
       },
       [](size_t index, const ContourComponent& contour) {});
