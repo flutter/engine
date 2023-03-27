@@ -10,7 +10,7 @@ namespace impeller {
 
 InternalHalf ScalarToHalf(Scalar f) {
 #ifdef FML_OS_WIN
-  FML_LOG(ERROR) << "ScalarToHalf conversion on unsupported platform.";
+  FML_UNREACHABLE();
 #endif
   return static_cast<InternalHalf>(f);
 }
