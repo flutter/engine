@@ -1019,11 +1019,9 @@ class BrowserManager {
 
       case 'restart':
         _onRestartController.add(null);
-        break;
 
       case 'resume':
         _pauseCompleter?.complete();
-        break;
 
       default:
         // Unreachable.

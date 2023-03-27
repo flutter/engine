@@ -1,4 +1,4 @@
-Signature: 0ea3ea6ab5861d6d88abf930f6551037
+Signature: add25930c863bb9bf27de96c9235bce5
 
 ====================================================================================================
 LIBRARY: fuchsia_sdk
@@ -38,7 +38,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
@@ -137,7 +136,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/shm.h
@@ -217,7 +215,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
@@ -316,7 +313,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/shm.h
@@ -1747,7 +1743,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
@@ -1846,7 +1841,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/shm.h
@@ -1926,7 +1920,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
@@ -2025,7 +2018,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/shm.h
@@ -3980,6 +3972,8 @@ ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/compon
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/component/incoming/cpp/service.h + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/internal.cc + ../../../fuchsia/sdk/linux/LICENSE
 ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc + ../../../fuchsia/sdk/linux/LICENSE
+ORIGIN: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h + ../../../fuchsia/sdk/linux/LICENSE
 TYPE: LicenseType.bsd
 FILE: ../../../fuchsia/sdk/linux/dart/sl4f/lib/src/flatland_example.dart
 FILE: ../../../fuchsia/sdk/linux/fidl/fuchsia.diagnostics/inspect_sink.fidl
@@ -3995,6 +3989,8 @@ FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/componen
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/include/lib/component/incoming/cpp/service.h
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/internal.cc
 FILE: ../../../fuchsia/sdk/linux/pkg/component_incoming_cpp/protocol.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/globals.cc
+FILE: ../../../fuchsia/sdk/linux/pkg/component_outgoing_cpp/include/lib/component/outgoing/cpp/globals.h
 ----------------------------------------------------------------------------------------------------
 Copyright 2023 The Fuchsia Authors. All rights reserved.
 
@@ -4060,7 +4056,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/bits/ioctl.h
@@ -4159,7 +4154,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/arm64/sysroot/include/sys/shm.h
@@ -4239,7 +4233,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/aarch64/setjmp.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/alltypes.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/errno.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fcntl.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/fenv.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/io.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/bits/ioctl.h
@@ -4338,7 +4331,6 @@ FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/mtio.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/param.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/poll.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/random.h
-FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/reg.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/select.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/sem.h
 FILE: ../../../fuchsia/sdk/linux/arch/x64/sysroot/include/sys/shm.h
