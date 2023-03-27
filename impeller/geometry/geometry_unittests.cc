@@ -2122,7 +2122,7 @@ TEST(GeometryTest, HalfConversions) {
   ASSERT_EQ(Half(0.5f), Half(0.5f16));
   ASSERT_EQ(Half(0.5), Half(0.5f16));
   ASSERT_EQ(Half(5), Half(5.0f16));
-#endif // FML_OS_WIN
+#endif  // FML_OS_WIN
 }
 
 }  // namespace testing
