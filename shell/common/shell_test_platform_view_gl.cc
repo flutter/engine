@@ -40,7 +40,7 @@ void ShellTestPlatformViewGL::SimulateVSync() {
 // |PlatformView|
 std::unique_ptr<Studio> ShellTestPlatformViewGL::CreateRenderingStudio() {
   if (main_context_ == nullptr) {
-    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_context_ = GPUStudioGLSkia::MakeGLContext(this);
   }
   return std::make_unique<GPUStudioGLSkia>(main_context_, this);
 }
@@ -49,7 +49,7 @@ std::unique_ptr<Studio> ShellTestPlatformViewGL::CreateRenderingStudio() {
 std::unique_ptr<Surface> ShellTestPlatformViewGL::CreateRenderingSurface(
     int64_t view_id) {
   if (main_context_ == nullptr) {
-    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_context_ = GPUStudioGLSkia::MakeGLContext(this);
   }
   return std::make_unique<GPUSurfaceGLSkia>(main_context_, this, true);
 }

@@ -17,15 +17,40 @@
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/gpu/GrContextOptions.h"
 
-// These are common defines present on all OpenGL headers. However, we don't
-// want to perform GL header reasolution on each platform we support. So just
-// define these upfront. It is unlikely we will need more. But, if we do, we can
-// add the same here.
-#define GPU_GL_RGBA8 0x8058
-#define GPU_GL_RGBA4 0x8056
-#define GPU_GL_RGB565 0x8D62
-
 namespace flutter {
+
+// Default maximum number of bytes of GPU memory of budgeted resources in the
+// cache.
+// The shell will dynamically increase or decrease this cache based on the
+// viewport size, unless a user has specifically requested a size on the Skia
+// system channel.
+static const size_t kGrCacheMaxByteSize = 24 * (1 << 20);
+
+sk_sp<GrDirectContext> GPUStudioGLSkia::MakeGLContext(
+    GPUSurfaceGLDelegate* delegate) {
+  auto context_switch = delegate->GLContextMakeCurrent();
+  if (!context_switch->GetResult()) {
+    FML_LOG(ERROR)
+        << "Could not make the context current to set up the Gr context.";
+    return nullptr;
+  }
+
+  const auto options =
+      MakeDefaultContextOptions(ContextType::kRender, GrBackendApi::kOpenGL);
+
+  auto context = GrDirectContext::MakeGL(delegate->GetGLInterface(), options);
+
+  if (!context) {
+    FML_LOG(ERROR) << "Failed to set up Skia Gr context.";
+    return nullptr;
+  }
+
+  context->setResourceCacheLimit(kGrCacheMaxByteSize);
+
+  PersistentCache::GetCacheForProcess()->PrecompileKnownSkSLs(context.get());
+
+  return context;
+}
 
 GPUStudioGLSkia::GPUStudioGLSkia(const sk_sp<GrDirectContext>& gr_context,
                                  GPUSurfaceGLDelegate* delegate)

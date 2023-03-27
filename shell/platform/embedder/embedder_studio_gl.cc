@@ -147,7 +147,7 @@ sk_sp<GrDirectContext> EmbedderStudioGL::CreateResourceContext() const {
 
 sk_sp<GrDirectContext> EmbedderStudioGL::MainContext() {
   if (!main_context_) {
-    main_context_ = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_context_ = GPUStudioGLSkia::MakeGLContext(this);
   }
   return main_context_;
 }

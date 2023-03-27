@@ -58,7 +58,7 @@ sk_sp<GrDirectContext> AndroidSurfaceGLSkia::UseExistingMainContextOrCreate(
     sk_sp<GrDirectContext> main_skia_context =
         GLContextPtr()->GetMainSkiaContext();
     if (!main_skia_context) {
-      main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+      main_skia_context = GPUStudioGLSkia::MakeGLContext(this);
       GLContextPtr()->SetMainSkiaContext(main_skia_context);
     }
     FML_DCHECK(GLContextPtr()->GetMainSkiaContext() == main_skia_context);
@@ -234,7 +234,7 @@ std::unique_ptr<Studio> AndroidSurfaceGLSkia::CreateSnapshotStudio() {
   sk_sp<GrDirectContext> main_skia_context =
       GLContextPtr()->GetMainSkiaContext();
   if (!main_skia_context) {
-    main_skia_context = GPUSurfaceGLSkia::MakeGLContext(this);
+    main_skia_context = GPUStudioGLSkia::MakeGLContext(this);
     GLContextPtr()->SetMainSkiaContext(main_skia_context);
   }
 

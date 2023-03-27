@@ -22,6 +22,8 @@ namespace flutter {
 
 class GPUStudioGLSkia : public Studio {
  public:
+  static sk_sp<GrDirectContext> MakeGLContext(GPUSurfaceGLDelegate* delegate);
+
   GPUStudioGLSkia(const sk_sp<GrDirectContext>& gr_context,
                   GPUSurfaceGLDelegate* delegate);
 
