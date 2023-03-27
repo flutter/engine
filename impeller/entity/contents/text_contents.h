@@ -56,7 +56,7 @@ class TextContents final : public Contents {
  private:
   TextFrame frame_;
   Color color_;
-  Scalar inherited_opacity_ = 1.0;
+  Scalar inherited_opacity_;
   mutable std::shared_ptr<LazyGlyphAtlas> lazy_atlas_;
   Matrix inverse_matrix_;
 
