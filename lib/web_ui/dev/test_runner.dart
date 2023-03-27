@@ -80,6 +80,7 @@ class TestCommand extends Command<bool> with ArgUtils<bool> {
       )
       ..addFlag(
         'use-local-canvaskit',
+        defaultsTo: true,
         help: 'Optional. Whether or not to use the locally built version of '
               'CanvasKit in the tests.',
       );

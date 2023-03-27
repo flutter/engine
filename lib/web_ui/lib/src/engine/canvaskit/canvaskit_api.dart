@@ -2172,7 +2172,7 @@ extension TypefaceFontProviderExtension on TypefaceFontProvider {
   external void registerFont(Uint8List font, String family);
 }
 
-@JS('window.flutterCanvasKit.FontCollection')
+@JS()
 @anonymous
 @staticInterop
 class SkFontCollection {}

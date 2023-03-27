@@ -25,7 +25,7 @@ import '../utils.dart';
 class CompileTestsStep implements PipelineStep {
   CompileTestsStep({
     this.testFiles,
-    this.useLocalCanvasKit = false,
+    this.useLocalCanvasKit = true,
     this.isWasm = false
   });
 
