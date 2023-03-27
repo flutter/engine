@@ -2089,7 +2089,9 @@ TEST(GeometryTest, Gradient) {
 }
 
 TEST(GeometryTest, HalfConversions) {
-#ifndef FML_OS_WIN
+#ifdef FML_OS_WIN
+  GTEST_SKIP() << "The reason this doesn't work on Windows";
+#endif
   ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
   ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
   ASSERT_EQ(ScalarToHalf(2.43), 2.43f16);
@@ -2116,7 +2118,6 @@ TEST(GeometryTest, HalfConversions) {
   ASSERT_EQ(Half(0.5f), Half(0.5f16));
   ASSERT_EQ(Half(0.5), Half(0.5f16));
   ASSERT_EQ(Half(5), Half(5.0f16));
-#endif  // FML_OS_WIN
 }
 
 }  // namespace testing

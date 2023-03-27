@@ -6,15 +6,15 @@
 
 #include "flutter/fml/build_config.h"
 
-#include "color.h"
-#include "point.h"
-#include "scalar.h"
-#include "vector.h"
+#include "impeller/geometry/color.h"
+#include "impeller/geometry/point.h"
+#include "impeller/geometry/scalar.h"
+#include "impeller/geometry/vector.h"
 
 #ifdef FML_OS_WIN
-using _Half = uint16_t;
+using InternalHalf = uint16_t;
 #else
-using _Half = _Float16;
+using InternalHalf = _Float16;
 #endif
 
 namespace impeller {
@@ -23,11 +23,11 @@ namespace impeller {
 ///
 /// See also: https://clang.llvm.org/docs/LanguageExtensions.html
 /// This is not currently supported on windows toolchains.
-_Half ScalarToHalf(Scalar f);
+InternalHalf ScalarToHalf(Scalar f);
 
 /// @brief A storage only class for half precision floating point.
 struct Half {
-  _Half x = 0;
+  InternalHalf x = 0;
 
   constexpr Half() {}
 
@@ -37,7 +37,7 @@ struct Half {
 
   constexpr Half(int value) : x(ScalarToHalf(static_cast<Scalar>(value))) {}
 
-  constexpr Half(_Half x) : x(x) {}
+  constexpr Half(InternalHalf x) : x(x) {}
 
   constexpr bool operator==(const Half& v) const { return v.x == x; }
 
@@ -48,12 +48,12 @@ struct Half {
 struct HalfVector4 {
   union {
     struct {
-      _Half x = 0;
-      _Half y = 0;
-      _Half z = 0;
-      _Half w = 0;
+      InternalHalf x = 0;
+      InternalHalf y = 0;
+      InternalHalf z = 0;
+      InternalHalf w = 0;
     };
-    _Half e[4];
+    InternalHalf e[4];
   };
 
   constexpr HalfVector4() {}
@@ -70,7 +70,10 @@ struct HalfVector4 {
         z(ScalarToHalf(a.z)),
         w(ScalarToHalf(a.w)) {}
 
-  constexpr HalfVector4(_Half x, _Half y, _Half z, _Half w)
+  constexpr HalfVector4(InternalHalf x,
+                        InternalHalf y,
+                        InternalHalf z,
+                        InternalHalf w)
       : x(x), y(y), z(z), w(w) {}
 
   constexpr bool operator==(const HalfVector4& v) const {
@@ -86,11 +89,11 @@ struct HalfVector4 {
 struct HalfVector3 {
   union {
     struct {
-      _Half x = 0;
-      _Half y = 0;
-      _Half z = 0;
+      InternalHalf x = 0;
+      InternalHalf y = 0;
+      InternalHalf z = 0;
     };
-    _Half e[3];
+    InternalHalf e[3];
   };
 
   constexpr HalfVector3() {}
@@ -98,7 +101,8 @@ struct HalfVector3 {
   constexpr HalfVector3(const Vector3& a)
       : x(ScalarToHalf(a.x)), y(ScalarToHalf(a.y)), z(ScalarToHalf(a.z)) {}
 
-  constexpr HalfVector3(_Half x, _Half y, _Half z) : x(x), y(y), z(z) {}
+  constexpr HalfVector3(InternalHalf x, InternalHalf y, InternalHalf z)
+      : x(x), y(y), z(z) {}
 
   constexpr bool operator==(const HalfVector3& v) const {
     return v.x == x && v.y == y && v.z == z;
@@ -113,10 +117,10 @@ struct HalfVector3 {
 struct HalfVector2 {
   union {
     struct {
-      _Half x = 0;
-      _Half y = 0;
+      InternalHalf x = 0;
+      InternalHalf y = 0;
     };
-    _Half e[2];
+    InternalHalf e[2];
   };
 
   constexpr HalfVector2() {}
@@ -124,7 +128,7 @@ struct HalfVector2 {
   constexpr HalfVector2(const Vector2& a)
       : x(ScalarToHalf(a.x)), y(ScalarToHalf(a.y)) {}
 
-  constexpr HalfVector2(_Half x, _Half y) : x(x), y(y){};
+  constexpr HalfVector2(InternalHalf x, InternalHalf y) : x(x), y(y){};
 
   constexpr bool operator==(const HalfVector2& v) const {
     return v.x == x && v.y == y;

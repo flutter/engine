@@ -8,11 +8,11 @@
 
 namespace impeller {
 
-_Half ScalarToHalf(Scalar f) {
+InternalHalf ScalarToHalf(Scalar f) {
 #ifdef FML_OS_WIN
   FML_LOG(ERROR) << "ScalarToHalf conversion on unsupported platform.";
 #endif
-  return static_cast<_Half>(f);
+  return static_cast<InternalHalf>(f);
 }
 
 }  // namespace impeller
