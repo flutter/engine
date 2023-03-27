@@ -201,7 +201,7 @@ class MultiEntriesBrowserHistory extends BrowserHistory {
       const JSONMethodCodec().encodeMethodCall(
           MethodCall('pushRouteInformation', <dynamic, dynamic>{
         'location': currentPath,
-        'state': state,
+        'state': (state as Map<dynamic, dynamic>?)?['state'],
       })),
       (_) {},
     );
