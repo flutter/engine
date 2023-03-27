@@ -77,8 +77,8 @@ class EntityPass {
   /// @return Returns whether a subpass was encountered.
   bool IterateUntilSubpass(const std::function<bool(Entity&)>& iterator);
 
-  /// @brief Return the number of entities on this pass.
-  size_t GetEntityCount() const;
+  /// @brief Return the number of elements on this pass.
+  size_t GetElementCount() const;
 
   void SetTransformation(Matrix xformation);
 

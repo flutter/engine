@@ -701,7 +701,7 @@ bool EntityPass::IterateUntilSubpass(
   return false;
 }
 
-size_t EntityPass::GetEntityCount() const {
+size_t EntityPass::GetElementCount() const {
   return elements_.size();
 }
 

@@ -167,6 +167,11 @@ void Canvas::DrawPath(const Path& path, const Paint& paint) {
 }
 
 void Canvas::DrawPaint(const Paint& paint) {
+  if (GetCurrentPass().GetElementCount() == 0 &&
+      paint.color == Color::BlackTransparent()) {
+    return;
+  }
+
   Entity entity;
   entity.SetTransformation(GetCurrentTransformation());
   entity.SetStencilDepth(GetStencilDepth());
