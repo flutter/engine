@@ -24,6 +24,7 @@ Future<String> compareImage(
   String filename,
   SkiaGoldClient? skiaClient, {
   required bool isCanvaskitTest,
+  required bool verbose,
 }) async {
   if (skiaClient == null) {
     return 'OK';
@@ -73,7 +74,9 @@ Future<String> compareImage(
   }
 
   // TODO(mdebbar): Use the Gold tool to locally diff the golden.
-
+  if (verbose) {
+    print('Screenshot generated: file://$screenshotPath'); // ignore: avoid_print
+  }
   return 'OK';
 }
 

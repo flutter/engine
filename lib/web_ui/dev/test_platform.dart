@@ -431,6 +431,7 @@ class BrowserPlatform extends PlatformPlugin {
       filename,
       skiaClient,
       isCanvaskitTest: isCanvaskitTest,
+      verbose: isVerbose,
     );
   }
 
