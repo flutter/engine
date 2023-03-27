@@ -35,7 +35,7 @@ void testMain() {
           .singleWhere((NotoFont font) => font.name == 'Noto Sans Arabic')
           .url;
       final String notoEmojiUrl = fallbackFonts
-          .singleWhere((NotoFont font) => font.name == 'Noto Emoji')
+          .singleWhere((NotoFont font) => font.name == 'Noto Color Emoji')
           .url;
       TestDownloader.mockDownloads[notoSansArabicUrl] =
           '/assets/fonts/NotoNaskhArabic-Regular.ttf';
