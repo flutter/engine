@@ -233,6 +233,11 @@ class SemanticsAction {
   @Deprecated('This getter is temporary and will be removed shortly.')
   static List<SemanticsAction> get valuesAsList => values.values.toList(growable: false);
 
+  /// Temporary API until [values] return a list.
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This getter is temporary and will be removed shortly.')
+  static Iterable<int> get keys => values.keys;
+
   @override
   String toString() {
     switch (index) {
@@ -607,6 +612,11 @@ class SemanticsFlag {
   /// https://github.com/flutter/flutter/issues/123346
   @Deprecated('This getter is temporary and will be removed shortly.')
   static List<SemanticsFlag> get valuesAsList => values.values.toList(growable: false);
+
+  /// Temporary API until [values] return a list.
+  /// https://github.com/flutter/flutter/issues/123346
+  @Deprecated('This getter is temporary and will be removed shortly.')
+  static Iterable<int> get keys => values.keys;
 
   @override
   String toString() {
