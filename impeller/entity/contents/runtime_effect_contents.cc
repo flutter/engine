@@ -37,6 +37,10 @@ void RuntimeEffectContents::SetTextureInputs(
   texture_inputs_ = std::move(texture_inputs);
 }
 
+bool RuntimeEffectContents::CanInheritOpacity(const Entity& entity) const {
+  return false;
+}
+
 bool RuntimeEffectContents::Render(const ContentContext& renderer,
                                    const Entity& entity,
                                    RenderPass& pass) const {
@@ -102,10 +106,9 @@ bool RuntimeEffectContents::Render(const ContentContext& renderer,
   /// Get or create runtime stage pipeline.
   ///
 
-  const auto& device_capabilities = context->GetDeviceCapabilities();
-  const auto color_attachment_format = context->GetColorAttachmentPixelFormat();
-  const auto stencil_attachment_format =
-      device_capabilities.GetDefaultStencilFormat();
+  const auto& caps = context->GetCapabilities();
+  const auto color_attachment_format = caps->GetDefaultColorFormat();
+  const auto stencil_attachment_format = caps->GetDefaultStencilFormat();
 
   using VS = RuntimeEffectVertexShader;
   PipelineDescriptor desc;
