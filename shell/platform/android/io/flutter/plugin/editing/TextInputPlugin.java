@@ -94,6 +94,17 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
               WindowInsets.Type.ime() // Deferred, insets that will animate
               );
       imeSyncCallback.install();
+
+      // When the keyboard is hidden, unfocus the text field.
+      imeSyncCallback.setImeVisibleListener(
+          new ImeSyncDeferringInsetsCallback.ImeVisibleListener() {
+            @Override
+            public void onImeVisibleChanged(boolean visible) {
+              if (!visible) {
+                unfocus();
+              }
+            }
+          });
     }
 
     this.textInputChannel = textInputChannel;
@@ -838,4 +849,8 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
     textInputChannel.updateEditingStateWithTag(inputTarget.id, editingValues);
   }
   // -------- End: Autofill -------
+
+  public void unfocus() {
+    textInputChannel.unfocus(inputTarget.id);
+  }
 }

@@ -367,6 +367,13 @@ public class TextInputChannel {
         "TextInputClient.performPrivateCommand", Arrays.asList(inputClientId, json));
   }
 
+  /** Instructs Flutter to execute a "unfocus" action. */
+  public void unfocus(int inputClientId) {
+    Log.v(TAG, "Sending 'unfocus' message.");
+    channel.invokeMethod(
+        "TextInputClient.unfocus", Arrays.asList(inputClientId, "TextInputAction.unfocus"));
+  }
+
   /**
    * Sets the {@link TextInputMethodHandler} which receives all events and requests that are parsed
    * from the underlying platform channel.
