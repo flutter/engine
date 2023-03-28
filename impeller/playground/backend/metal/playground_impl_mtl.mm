@@ -24,8 +24,8 @@
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
+#include "impeller/renderer/mtl/tessellation_shaders.h"
 #include "impeller/scene/shaders/mtl/scene_shaders.h"
-#include "impeller/tessellator/mtl/tessellation_shaders.h"
 
 namespace impeller {
 
