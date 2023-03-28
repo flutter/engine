@@ -991,6 +991,9 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
   if ([type isEqualToString:@"announce"]) {
     NSString* message = annotatedEvent[@"data"][@"message"];
     NSNumber* assertiveness = annotatedEvent[@"data"][@"assertiveness"];
+    if (message == nil) {
+      return;
+    }
 
     NSAccessibilityPriorityLevel priority = [assertiveness isEqualToNumber:@1]
                                                 ? NSAccessibilityPriorityHigh
