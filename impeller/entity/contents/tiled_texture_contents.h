@@ -55,6 +55,8 @@ class TiledTextureContents final : public ColorSourceContents {
 
   SamplerDescriptor CreateDescriptor() const;
 
+  bool UsesEmulatedTileMode() const;
+
   std::shared_ptr<Texture> texture_;
   SamplerDescriptor sampler_descriptor_ = {};
   Entity::TileMode x_tile_mode_ = Entity::TileMode::kClamp;
