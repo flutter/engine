@@ -1877,9 +1877,6 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
 }
 
 TEST_P(AiksTest, SceneColorSource) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Temporarily disabled.");
-  }
   // Load up the scene.
   auto mapping =
       flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
