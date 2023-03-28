@@ -1246,10 +1246,12 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag 
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag + ../../../flutter/LICENSE
@@ -1315,19 +1317,6 @@ ORIGIN: ../../../flutter/impeller/geometry/type_traits.cc + ../../../flutter/LIC
 ORIGIN: ../../../flutter/impeller/geometry/type_traits.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/vector.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/vector.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/golden_digest.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/golden_digest.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/golden_tests.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/main.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshot.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshoter.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/metal_screenshoter.mm + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests/working_directory.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests_harvester/lib/golden_tests_harvester.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/golden_tests_harvester/lib/logger.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/image/compressed_image.cc + ../../../flutter/LICENSE
@@ -1433,22 +1422,12 @@ ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc +
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc + ../../../flutter/LICENSE
@@ -1488,8 +1467,6 @@ ORIGIN: ../../../flutter/impeller/renderer/buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/buffer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/buffer_view.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/buffer_view.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/capabilities.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/capabilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/command_buffer.cc + ../../../flutter/LICENSE
@@ -1504,10 +1481,13 @@ ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc + ../.
 ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/descriptor_set_layout.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer_descriptor.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/device_capabilities.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/formats.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.cc + ../../../flutter/LICENSE
@@ -1666,7 +1646,6 @@ ORIGIN: ../../../flutter/lib/ui/dart_wrapper.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/scene.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/setup_hooks.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/experiments/ui.dart + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/lib/ui/floating_point.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/geometry.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hash_codes.dart + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/lib/ui/hooks.dart + ../../../flutter/LICENSE
@@ -3809,10 +3788,12 @@ FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
@@ -3878,19 +3859,6 @@ FILE: ../../../flutter/impeller/geometry/type_traits.cc
 FILE: ../../../flutter/impeller/geometry/type_traits.h
 FILE: ../../../flutter/impeller/geometry/vector.cc
 FILE: ../../../flutter/impeller/geometry/vector.h
-FILE: ../../../flutter/impeller/golden_tests/golden_digest.cc
-FILE: ../../../flutter/impeller/golden_tests/golden_digest.h
-FILE: ../../../flutter/impeller/golden_tests/golden_tests.cc
-FILE: ../../../flutter/impeller/golden_tests/main.cc
-FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.h
-FILE: ../../../flutter/impeller/golden_tests/metal_screenshot.mm
-FILE: ../../../flutter/impeller/golden_tests/metal_screenshoter.h
-FILE: ../../../flutter/impeller/golden_tests/metal_screenshoter.mm
-FILE: ../../../flutter/impeller/golden_tests/working_directory.cc
-FILE: ../../../flutter/impeller/golden_tests/working_directory.h
-FILE: ../../../flutter/impeller/golden_tests_harvester/bin/golden_tests_harvester.dart
-FILE: ../../../flutter/impeller/golden_tests_harvester/lib/golden_tests_harvester.dart
-FILE: ../../../flutter/impeller/golden_tests_harvester/lib/logger.dart
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.cc
 FILE: ../../../flutter/impeller/image/backends/skia/compressed_image_skia.h
 FILE: ../../../flutter/impeller/image/compressed_image.cc
@@ -3996,22 +3964,12 @@ FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_buffer_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_encoder_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/command_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/context_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/debug_report_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/descriptor_pool_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/device_buffer_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/fence_waiter_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/formats_vk.h
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.cc
-FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_cache_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.cc
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_library_vk.h
 FILE: ../../../flutter/impeller/renderer/backend/vulkan/pipeline_vk.cc
@@ -4051,8 +4009,6 @@ FILE: ../../../flutter/impeller/renderer/buffer.cc
 FILE: ../../../flutter/impeller/renderer/buffer.h
 FILE: ../../../flutter/impeller/renderer/buffer_view.cc
 FILE: ../../../flutter/impeller/renderer/buffer_view.h
-FILE: ../../../flutter/impeller/renderer/capabilities.cc
-FILE: ../../../flutter/impeller/renderer/capabilities.h
 FILE: ../../../flutter/impeller/renderer/command.cc
 FILE: ../../../flutter/impeller/renderer/command.h
 FILE: ../../../flutter/impeller/renderer/command_buffer.cc
@@ -4067,10 +4023,13 @@ FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
+FILE: ../../../flutter/impeller/renderer/descriptor_set_layout.h
 FILE: ../../../flutter/impeller/renderer/device_buffer.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer.h
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/device_buffer_descriptor.h
+FILE: ../../../flutter/impeller/renderer/device_capabilities.cc
+FILE: ../../../flutter/impeller/renderer/device_capabilities.h
 FILE: ../../../flutter/impeller/renderer/formats.cc
 FILE: ../../../flutter/impeller/renderer/formats.h
 FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
@@ -4231,7 +4190,6 @@ FILE: ../../../flutter/lib/ui/dart_wrapper.h
 FILE: ../../../flutter/lib/ui/experiments/scene.dart
 FILE: ../../../flutter/lib/ui/experiments/setup_hooks.dart
 FILE: ../../../flutter/lib/ui/experiments/ui.dart
-FILE: ../../../flutter/lib/ui/floating_point.h
 FILE: ../../../flutter/lib/ui/geometry.dart
 FILE: ../../../flutter/lib/ui/hash_codes.dart
 FILE: ../../../flutter/lib/ui/hooks.dart
