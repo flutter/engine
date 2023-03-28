@@ -53,7 +53,7 @@ impeller_component("geometry_unittests") {
   ]
   deps = [
     ":geometry",
-    "//flutter/testing",
+    "//flutter/testing:testing_lib",
   ]
 }
 

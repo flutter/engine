@@ -6,10 +6,6 @@ import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 
 if (is_mac) {
-  test_fixtures("impeller_golden_tests_fixtures") {
-    fixtures = []
-  }
-
   impeller_component("impeller_golden_tests") {
     target_type = "executable"
 
@@ -29,8 +25,9 @@ if (is_mac) {
     ]
 
     deps = [
-      ":impeller_golden_tests_fixtures",
       "//flutter/impeller/aiks",
+      "//flutter/impeller/aiks:aiks_unittests",
+      "//flutter/impeller/fixtures",
       "//flutter/impeller/playground",
       "//flutter/impeller/renderer/backend/metal:metal",
       "//third_party/googletest:gtest",

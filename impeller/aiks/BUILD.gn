@@ -42,6 +42,6 @@ impeller_component("aiks_unittests") {
     ":aiks",
     "../geometry:geometry_unittests",
     "../playground:playground_test",
-    "//flutter/testing",
+    "//flutter/testing:testing_lib",
   ]
 }

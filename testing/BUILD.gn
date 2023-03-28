@@ -27,6 +27,12 @@ source_set("testing_lib") {
     "testing.h",
     "thread_test.cc",
     "thread_test.h",
+    "debugger_detection.cc",
+    "debugger_detection.h",
+    "test_args.cc",
+    "test_args.h",
+    "test_timeout_listener.cc",
+    "test_timeout_listener.h",
   ]
 
   public_deps = [
@@ -42,13 +48,7 @@ source_set("testing") {
   testonly = true
 
   sources = [
-    "debugger_detection.cc",
-    "debugger_detection.h",
     "run_all_unittests.cc",
-    "test_args.cc",
-    "test_args.h",
-    "test_timeout_listener.cc",
-    "test_timeout_listener.h",
   ]
 
   public_deps = [ ":testing_lib" ]
