@@ -1551,9 +1551,9 @@ ORIGIN: ../../../flutter/impeller/renderer/shader_types.cc + ../../../flutter/LI
 ORIGIN: ../../../flutter/impeller/renderer/shader_types.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/snapshot.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture_descriptor.cc + ../../../flutter/LICENSE
