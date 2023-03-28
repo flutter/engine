@@ -30,18 +30,6 @@ enum GeometryVertexType {
   kUV,
 };
 
-enum class Cap {
-  kButt,
-  kRound,
-  kSquare,
-};
-
-enum class Join {
-  kMiter,
-  kRound,
-  kBevel,
-};
-
 class Geometry {
  public:
   Geometry();

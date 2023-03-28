@@ -24,12 +24,12 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
+#include "impeller/renderer/compute_tessellator.h"
 #include "impeller/renderer/formats.h"
+#include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
 #include "impeller/renderer/render_pass.h"
-#include "impeller/renderer/tessellation/compute_tessellator.h"
-#include "impeller/renderer/tessellation/path_polyline.comp.h"
-#include "impeller/renderer/tessellation/stroke.comp.h"
+#include "impeller/renderer/stroke.comp.h"
 
 namespace impeller {
 namespace testing {

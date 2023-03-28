@@ -1502,6 +1502,8 @@ ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc + ../../.
 ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_builder.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/compute_tessellator.cc + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/compute_tessellator.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/context.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/device_buffer.cc + ../../../flutter/LICENSE
@@ -1514,6 +1516,7 @@ ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.cc + ../../../flutter/LICE
 ORIGIN: ../../../flutter/impeller/renderer/gpu_tracer.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/host_buffer.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/host_buffer.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/path_polyline.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/pipeline_builder.cc + ../../../flutter/LICENSE
@@ -1550,10 +1553,7 @@ ORIGIN: ../../../flutter/impeller/renderer/snapshot.cc + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/impeller/renderer/snapshot.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/surface.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/tessellation/compute_tessellator.cc + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/tessellation/compute_tessellator.h + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/tessellation/path_polyline.comp + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/renderer/tessellation/stroke.comp + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/renderer/stroke.comp + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/renderer/texture_descriptor.cc + ../../../flutter/LICENSE
@@ -4069,6 +4069,8 @@ FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_builder.h
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.cc
 FILE: ../../../flutter/impeller/renderer/compute_pipeline_descriptor.h
+FILE: ../../../flutter/impeller/renderer/compute_tessellator.cc
+FILE: ../../../flutter/impeller/renderer/compute_tessellator.h
 FILE: ../../../flutter/impeller/renderer/context.cc
 FILE: ../../../flutter/impeller/renderer/context.h
 FILE: ../../../flutter/impeller/renderer/device_buffer.cc
@@ -4081,6 +4083,7 @@ FILE: ../../../flutter/impeller/renderer/gpu_tracer.cc
 FILE: ../../../flutter/impeller/renderer/gpu_tracer.h
 FILE: ../../../flutter/impeller/renderer/host_buffer.cc
 FILE: ../../../flutter/impeller/renderer/host_buffer.h
+FILE: ../../../flutter/impeller/renderer/path_polyline.comp
 FILE: ../../../flutter/impeller/renderer/pipeline.cc
 FILE: ../../../flutter/impeller/renderer/pipeline.h
 FILE: ../../../flutter/impeller/renderer/pipeline_builder.cc
@@ -4115,12 +4118,9 @@ FILE: ../../../flutter/impeller/renderer/shader_types.cc
 FILE: ../../../flutter/impeller/renderer/shader_types.h
 FILE: ../../../flutter/impeller/renderer/snapshot.cc
 FILE: ../../../flutter/impeller/renderer/snapshot.h
+FILE: ../../../flutter/impeller/renderer/stroke.comp
 FILE: ../../../flutter/impeller/renderer/surface.cc
 FILE: ../../../flutter/impeller/renderer/surface.h
-FILE: ../../../flutter/impeller/renderer/tessellation/compute_tessellator.cc
-FILE: ../../../flutter/impeller/renderer/tessellation/compute_tessellator.h
-FILE: ../../../flutter/impeller/renderer/tessellation/path_polyline.comp
-FILE: ../../../flutter/impeller/renderer/tessellation/stroke.comp
 FILE: ../../../flutter/impeller/renderer/texture.cc
 FILE: ../../../flutter/impeller/renderer/texture.h
 FILE: ../../../flutter/impeller/renderer/texture_descriptor.cc

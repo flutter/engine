@@ -4,27 +4,76 @@
 
 import("//flutter/impeller/tools/impeller.gni")
 
-impeller_component("buffer") {
+impeller_component("allocation") {
   sources = [
+    "allocator.cc",
+    "allocator.h",
     "buffer.cc",
     "buffer.h",
     "buffer_view.cc",
     "buffer_view.h",
+    "device_buffer.cc",
+    "device_buffer.h",
+    "device_buffer_descriptor.cc",
+    "device_buffer_descriptor.h",
+    "formats.cc",
+    "formats.h",
     "host_buffer.cc",
     "host_buffer.h",
     "platform.cc",
     "platform.h",
     "range.cc",
     "range.h",
+    "texture.cc",
+    "texture.h",
+    "texture_descriptor.cc",
+    "texture_descriptor.h",
     "vertex_buffer.cc",
     "vertex_buffer.h",
   ]
+
+  deps = [
+    "../base",
+    "../geometry",
+    "../image",
+    "//flutter/fml",
+  ]
+}
+
+if (impeller_enable_compute) {
+  impeller_shaders("tessellation_shaders") {
+    enable_opengles = false
+    name = "tessellation"
+
+    if (is_ios) {
+      metal_version = "2.4"
+    } else if (is_mac) {
+      metal_version = "2.1"
+    }
+
+    shaders = [
+      "stroke.comp",
+      "path_polyline.comp",
+    ]
+  }
+
+  impeller_component("compute_tessellation_unittests") {
+    testonly = true
+    sources = [ "compute_subgroup_unittests.cc" ]
+
+    deps = [
+      ":renderer",
+      ":tessellation_shaders",
+      "../entity",
+      "../fixtures",
+      "../playground:playground_test",
+      "//flutter/testing:testing_lib",
+    ]
+  }
 }
 
 impeller_component("renderer") {
   sources = [
-    "allocator.cc",
-    "allocator.h",
     "blit_command.cc",
     "blit_command.h",
     "blit_pass.cc",
@@ -45,12 +94,6 @@ impeller_component("renderer") {
     "compute_pipeline_descriptor.h",
     "context.cc",
     "context.h",
-    "device_buffer.cc",
-    "device_buffer.h",
-    "device_buffer_descriptor.cc",
-    "device_buffer_descriptor.h",
-    "formats.cc",
-    "formats.h",
     "gpu_tracer.cc",
     "gpu_tracer.h",
     "pipeline.cc",
@@ -85,10 +128,6 @@ impeller_component("renderer") {
     "snapshot.h",
     "surface.cc",
     "surface.h",
-    "texture.cc",
-    "texture.h",
-    "texture_descriptor.cc",
-    "texture_descriptor.h",
     "vertex_buffer_builder.cc",
     "vertex_buffer_builder.h",
     "vertex_descriptor.cc",
@@ -96,7 +135,7 @@ impeller_component("renderer") {
   ]
 
   public_deps = [
-    ":buffer",
+    ":allocation",
     "../base",
     "../geometry",
     "../image",
@@ -105,7 +144,11 @@ impeller_component("renderer") {
   ]
 
   if (impeller_enable_compute) {
-    public_deps += [ "./tessellation" ]
+    sources += [
+      "compute_tessellator.cc",
+      "compute_tessellator.h",
+    ]
+    public_deps += [ ":tessellation_shaders" ]
   }
 
   deps = [ "//flutter/fml" ]

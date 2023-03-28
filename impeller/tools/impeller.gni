@@ -390,7 +390,7 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/renderer:buffer",
+      "//flutter/impeller/renderer:allocation",
       impellerc_invocation,
     ]
   }
