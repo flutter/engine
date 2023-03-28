@@ -575,7 +575,8 @@ class Rasterizer final : public SnapshotDelegate,
                                    flutter::LayerTree* layer_tree,
                                    SurfaceRecord* surface_record);
 
-  Screenshot ScreenshotLayerTree(ScreenshotType type,
+  Screenshot ScreenshotLayerTree(view_id,
+                                 ScreenshotType type,
                                  bool base64_encode,
                                  SurfaceRecord& surface_record);
 

@@ -47,11 +47,10 @@ void IOSSurfaceMetalImpeller::UpdateStorageSizeIfNecessary() {
 
 // |IOSSurface|
 std::unique_ptr<Studio> IOSSurfaceMetalImpeller::CreateGPUStudio(GrDirectContext*) {
-  auto context = std::make_shared<CustomColorAttachmentPixelFormatContext>(
-      impeller_context_,
-      InferOffscreenLayerPixelFormat(FromMTLPixelFormat(layer_.get().pixelFormat)));
-  return std::make_unique<GPUStudioMetalImpeller>(this,    //
-                                                  context  //
+  impeller_context_->UpdateOffscreenLayerPixelFormat(
+      InferOffscreenLayerPixelFormat(impeller::FromMTLPixelFormat(layer_.get().pixelFormat)));
+  return std::make_unique<GPUStudioMetalImpeller>(this,              //
+                                                  impeller_context_  //
   );
 }
 

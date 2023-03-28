@@ -550,7 +550,6 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
     flutter::LayerTree* layer_tree,
     SurfaceRecord* surface_record) {
   Surface* surface = surface_record->surface.get();
-  flutter::LayerTree* last_layer_tree = surface_record->last_tree.get();
   FML_DCHECK(surface);
 
   compositor_context_->ui_time().SetLapTime(
@@ -618,7 +617,7 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
 
       damage = std::make_unique<FrameDamage>();
       if (frame->framebuffer_info().existing_damage && !force_full_repaint) {
-        damage->SetPreviousLayerTree(last_layer_tree);
+        damage->SetPreviousLayerTree(surface_record->last_tree.get());
         damage->AddAdditionalDamage(*frame->framebuffer_info().existing_damage);
         damage->SetClipAlignment(
             frame->framebuffer_info().horizontal_clip_alignment,
