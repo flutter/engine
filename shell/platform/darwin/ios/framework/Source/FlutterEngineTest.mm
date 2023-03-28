@@ -13,8 +13,14 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterBinaryMessengerRelay.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterDartProject_Internal.h"
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterEngine_Test.h"
+#import "flutter/shell/platform/darwin/ios/framework/Source/FlutterTextInputPlugin.h"
 
 FLUTTER_ASSERT_ARC
+
+@interface FlutterEngine ()
+- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView
+                                             client:(int)client;
+@end
 
 @interface FlutterEngineTest : XCTestCase
 @end
@@ -311,6 +317,18 @@ FLUTTER_ASSERT_ARC
     FlutterEngine* engine = [[FlutterEngine alloc] initWithName:@"foobar" project:project];
     XCTAssertTrue(engine.enableEmbedderAPI);
   }
+}
+
+- (void)testEngineFlutterTextInputViewDidResignFirstResponderWillUnfocusTextInputClient {
+  id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
+  FlutterEngine* engine = [[FlutterEngine alloc] init];
+  [engine setBinaryMessenger:mockBinaryMessenger];
+  [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
+  [engine flutterTextInputViewDidResignFirstResponder:nil client:1];
+  FlutterMethodCall* methodCall =
+      [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.unfocus" arguments:@[ @(1) ]];
+  NSData* encodedMethodCall = [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:methodCall];
+  OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/textinput" message:encodedMethodCall]);
 }
 
 @end
