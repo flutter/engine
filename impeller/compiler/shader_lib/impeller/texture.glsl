@@ -99,10 +99,10 @@ const float16_t kTileModeDecalHf = 3.0hf;
 ///
 /// This is useful for Impeller graphics backend that don't have native support
 /// for Decal.
-f16vec4 IPSampleWithTileMode(f16sampler2D tex,
-                             f16vec2 coords,
-                             float16_t x_tile_mode,
-                             float16_t y_tile_mode) {
+f16vec4 IPSampleWithTileModeHf(f16sampler2D tex,
+                               f16vec2 coords,
+                               float16_t x_tile_mode,
+                               float16_t y_tile_mode) {
   if (x_tile_mode == kTileModeDecalHf &&
           (coords.x < 0.0hf || coords.x >= 1.0hf) ||
       y_tile_mode == kTileModeDecalHf &&
