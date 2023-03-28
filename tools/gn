@@ -617,6 +617,7 @@ def to_gn_wasm_args(args, gn_args):
   gn_args['is_clang'] = True
   gn_args['target_os'] = 'wasm'
   gn_args['target_cpu'] = 'wasm'
+  gn_args['enable_lto'] = args.lto
   gn_args['skia_use_angle'] = False
   gn_args['skia_use_dng_sdk'] = False
   gn_args['skia_use_expat'] = False
