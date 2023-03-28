@@ -140,8 +140,12 @@ source_set("flutter_shell_native_src") {
     "android",
     "EGL",
     "GLESv2",
-    "//flutter/updater/android_aarch64/libupdater.a",
   ]
+  if (target_cpu == "arm") {
+    libs += [ "//flutter/updater/android_arm/libupdater.a" ]
+  } else if (target_cpu == "arm64") {
+    libs += [ "//flutter/updater/android_aarch64/libupdater.a" ]
+  }
 }
 
 action("gen_android_build_config_java") {

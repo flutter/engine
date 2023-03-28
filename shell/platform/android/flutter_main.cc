@@ -77,6 +77,22 @@ const flutter::Settings& FlutterMain::GetSettings() const {
   return settings_;
 }
 
+// Old Android versions (e.g. the v16 ndk Flutter uses) don't always include a
+// getauxval symbol, but the Rust ring crate assumes it exists:
+// https://github.com/briansmith/ring/blob/fa25bf3a7403c9fe6458cb87bd8427be41225ca2/src/cpu/arm.rs#L22
+// It uses it to determine if the CPU supports AES instructions.
+// Making this a weak symbol allows the linker to use a real version instead
+// if it can find one.
+// BoringSSL just reads from procfs instead, which is what we would do if
+// we needed to implement this ourselves.  Implementation looks straightforward:
+// https://lwn.net/Articles/519085/
+// https://github.com/google/boringssl/blob/6ab4f0ae7f2db96d240eb61a5a8b4724e5a09b2f/crypto/cpu_arm_linux.c
+#if defined(__ANDROID__) && defined(__arm__)
+extern "C" __attribute__((weak)) unsigned long getauxval(unsigned long type) {
+  return 0;
+}
+#endif
+
 // TODO: Move this out into a separate file?
 void ConfigureShorebird(std::string android_cache_path,
                         flutter::Settings& settings,
