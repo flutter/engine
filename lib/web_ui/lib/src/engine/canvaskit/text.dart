@@ -115,10 +115,8 @@ class CkParagraphStyle implements ui.ParagraphStyle {
         break;
       case ui.TextLeadingDistribution.even:
         skStrutStyle.halfLeading = true;
-        break;
       case ui.TextLeadingDistribution.proportional:
         skStrutStyle.halfLeading = false;
-        break;
     }
 
     if (style._leading != null) {
@@ -420,10 +418,8 @@ class CkTextStyle implements ui.TextStyle {
         break;
       case ui.TextLeadingDistribution.even:
         properties.halfLeading = true;
-        break;
       case ui.TextLeadingDistribution.proportional:
         properties.halfLeading = false;
-        break;
     }
 
     if (locale != null) {
@@ -604,16 +600,12 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         switch (command.type) {
           case _ParagraphCommandType.addText:
             builder.addText(command.text!);
-            break;
           case _ParagraphCommandType.pop:
             builder.pop();
-            break;
           case _ParagraphCommandType.pushStyle:
             builder.pushStyle(command.style!);
-            break;
           case _ParagraphCommandType.addPlaceholder:
             builder._addPlaceholder(command.placeholderStyle!);
-            break;
         }
       }
       paragraph = builder._buildSkParagraph();
@@ -637,8 +629,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
         _minIntrinsicWidth = paragraph.getMinIntrinsicWidth();
         _width = paragraph.getMaxWidth();
         _boxesForPlaceholders =
-            skRectsToTextBoxes(
-                paragraph.getRectsForPlaceholders().cast<SkRectWithDirection>());
+            skRectsToTextBoxes(paragraph.getRectsForPlaceholders());
       } catch (e) {
         printWarning('CanvasKit threw an exception while laying '
             'out the paragraph. The font was "${_paragraphStyle._fontFamily}". '
@@ -744,7 +735,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
       end.toDouble(),
       toSkRectHeightStyle(boxHeightStyle),
       toSkRectWidthStyle(boxWidthStyle),
-    ).cast<SkRectWithDirection>();
+    );
 
     return skRectsToTextBoxes(skRects);
   }
@@ -786,10 +777,8 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
     switch (position.affinity) {
       case ui.TextAffinity.upstream:
         characterPosition = position.offset - 1;
-        break;
       case ui.TextAffinity.downstream:
         characterPosition = position.offset;
-        break;
     }
     final SkTextRange skRange = paragraph.getWordBoundary(characterPosition.toDouble());
     return ui.TextRange(start: skRange.start.toInt(), end: skRange.end.toInt());
@@ -810,8 +799,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   @override
   ui.TextRange getLineBoundary(ui.TextPosition position) {
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<SkLineMetrics> metrics =
-        paragraph.getLineMetrics().cast<SkLineMetrics>();
+    final List<SkLineMetrics> metrics = paragraph.getLineMetrics();
     final int offset = position.offset;
     for (final SkLineMetrics metric in metrics) {
       if (offset >= metric.startIndex && offset <= metric.endIndex) {
@@ -824,8 +812,7 @@ class CkParagraph extends SkiaObject<SkParagraph> implements ui.Paragraph {
   @override
   List<ui.LineMetrics> computeLineMetrics() {
     final SkParagraph paragraph = _ensureInitialized(_lastLayoutConstraints!);
-    final List<SkLineMetrics> skLineMetrics =
-        paragraph.getLineMetrics().cast<SkLineMetrics>();
+    final List<SkLineMetrics> skLineMetrics = paragraph.getLineMetrics();
     final List<ui.LineMetrics> result = <ui.LineMetrics>[];
     for (final SkLineMetrics metric in skLineMetrics) {
       result.add(CkLineMetrics._(metric));
