@@ -32,14 +32,15 @@ namespace flutter {
 
 class PlatformMessageTaskQueue {
  public:
-  typedef void (*TaskQueueCallback)(fml::closure, void*);
+  // typedef void (*TaskQueueCallback)(fml::closure, void*);
+  using TaskQueueCallbackEmbedder = std::function<void(fml::closure, void*)>;
 
-  PlatformMessageTaskQueue(const TaskQueueCallback& task_queue_call_back, void* user_data);
+  PlatformMessageTaskQueue(const TaskQueueCallbackEmbedder task_queue_callback, void* user_data);
 
   void CallDispatch(fml::closure callback);
 
  private:
-  const TaskQueueCallback task_queue_call_back_;
+  const TaskQueueCallbackEmbedder task_queue_callback_;
   void* user_data_;
 };
 

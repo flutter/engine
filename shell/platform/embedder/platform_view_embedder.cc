@@ -303,12 +303,12 @@ PlatformViewEmbedder::GetPlatformMessageHandler() const {
 }
 
 PlatformMessageTaskQueue::PlatformMessageTaskQueue(
-    const TaskQueueCallback& task_queue_call_back, void* user_data)
-    : task_queue_call_back_(task_queue_call_back),
+    const TaskQueueCallbackEmbedder task_queue_callback, void* user_data)
+    : task_queue_callback_(task_queue_callback),
       user_data_(user_data) {}
 
 void PlatformMessageTaskQueue::CallDispatch(fml::closure callback) {
-  task_queue_call_back_(callback, user_data_);
+  task_queue_callback_(callback, user_data_);
 }
 
 }  // namespace flutter

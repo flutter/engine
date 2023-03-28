@@ -1079,7 +1079,7 @@ typedef void (*TaskQueueCallback)(DispatchCallback /* dispatch_call */,
 typedef struct {
   size_t struct_size;
 
-  TaskQueueCallback dispatch_call;
+  TaskQueueCallback task_queue_callback;
   void* user_data;
 } FlutterTaskQueueEmbedder;
 

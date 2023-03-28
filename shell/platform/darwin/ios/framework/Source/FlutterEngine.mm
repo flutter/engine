@@ -1480,7 +1480,7 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
 
     FlutterTaskQueueEmbedder flutterTaskQueueStruct = {
         .struct_size = sizeof(flutterTaskQueueStruct),
-        .dispatch_call = [](DispatchCallback dispatch_call, void* user_data) -> void {
+        .task_queue_callback = [](DispatchCallback dispatch_call, void* user_data) -> void {
           id<FlutterTaskQueue> callbackTaskQueue = (id<FlutterTaskQueue>)(__bridge NSObject<FlutterTaskQueue>*)user_data;
           dispatch_block_t block = ^{
             dispatch_call(nullptr);
