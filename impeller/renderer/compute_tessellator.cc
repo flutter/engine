@@ -16,7 +16,7 @@ ComputeTessellator::~ComputeTessellator() = default;
 
 template <typename T>
 static std::shared_ptr<DeviceBuffer> CreateDeviceBuffer(
-    std::shared_ptr<Context> context,
+    const std::shared_ptr<Context>& context,
     const std::string& label) {
   DeviceBufferDescriptor desc;
   desc.storage_mode = StorageMode::kDevicePrivate;
@@ -59,7 +59,7 @@ ComputeTessellator& ComputeTessellator::SetQuadraticTolerance(Scalar value) {
 
 ComputeTessellator::Status ComputeTessellator::Tessellate(
     const Path& path,
-    std::shared_ptr<Context> context,
+    const std::shared_ptr<Context>& context,
     BufferView vertex_buffer,
     BufferView vertex_buffer_count,
     const CommandBuffer::CompletionCallback& callback) const {
@@ -163,8 +163,8 @@ ComputeTessellator::Status ComputeTessellator::Tessellate(
     SS::BindConfig(cmd, pass->GetTransientsBuffer().EmplaceUniform(config));
 
     SS::BindPolyline(cmd, polyline_buffer->AsBufferView());
-    SS::BindVertexBufferCount(cmd, vertex_buffer_count);
-    SS::BindVertexBuffer(cmd, vertex_buffer);
+    SS::BindVertexBufferCount(cmd, std::move(vertex_buffer_count));
+    SS::BindVertexBuffer(cmd, std::move(vertex_buffer));
 
     if (!pass->AddCommand(std::move(cmd))) {
       return Status::kCommandInvalid;
