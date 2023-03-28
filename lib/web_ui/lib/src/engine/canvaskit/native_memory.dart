@@ -2,20 +2,18 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'dart:js_interop';
 import 'package:meta/meta.dart';
 
 import '../../engine.dart' show Instrumentation;
-import '../safe_browser_api.dart';
 import '../util.dart';
 import 'canvaskit_api.dart';
 
 /// Collects native objects that weren't explicitly disposed of using
 /// [UniqueRef.dispose] or [CountedRef.unref].
-SkObjectFinalizationRegistry _finalizationRegistry = SkObjectFinalizationRegistry(
-  allowInterop((UniqueRef<Object> uniq) {
-    uniq.collect();
-  }
-));
+SkObjectFinalizationRegistry _finalizationRegistry = SkObjectFinalizationRegistry((UniqueRef<Object> uniq) {
+  uniq.collect();
+}.toJS);
 
 NativeMemoryFinalizationRegistry nativeMemoryFinalizationRegistry = NativeMemoryFinalizationRegistry();
 
