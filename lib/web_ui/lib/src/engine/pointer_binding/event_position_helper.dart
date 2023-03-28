@@ -33,7 +33,7 @@ ui.Offset computeEventOffsetToTarget(DomMouseEvent event, DomElement actualTarge
   return ui.Offset(event.offsetX, event.offsetY);
 }
 
-/// Computes the event offset when hovering over any nodes that don't exist in 
+/// Computes the event offset when hovering over any nodes that don't exist in
 /// the shadowDOM such as platform views or text editing nodes.
 ///
 /// This still uses offsetX/Y, but adds the offset from the top/left corner of the
