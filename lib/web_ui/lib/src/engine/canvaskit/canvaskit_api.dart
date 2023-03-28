@@ -2030,7 +2030,7 @@ extension SkPathExtension on SkPath {
     double pers1,
     double pers2,
   ) => _transform(scaleX.toJS, skewX.toJS, transX.toJS,
-                  scaleY.toJS, skewY.toJS, transY.toJS,
+                  skewY.toJS, scaleY.toJS, transY.toJS,
                   pers0.toJS, pers1.toJS, pers2.toJS);
 
   /// Serializes the path into a list of commands.
@@ -3717,11 +3717,11 @@ Object? get _flutterWebCachedExports =>
 external JSAny get _objectConstructor;
 Object get objectConstructor => _objectConstructor.toObjectShallow;
 
-@JS()
+@JS('exports')
 external JSAny? get _exports;
 Object? get exports => _exports?.toObjectShallow;
 
-@JS()
+@JS('module')
 external JSAny? get _module;
 Object? get module => _module?.toObjectShallow;
 
