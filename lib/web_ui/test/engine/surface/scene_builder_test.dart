@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 @TestOn('chrome || firefox')
+library;
 
 import 'dart:async';
 import 'dart:js_interop';
@@ -13,7 +14,7 @@ import 'package:test/test.dart';
 import 'package:ui/src/engine.dart';
 import 'package:ui/ui.dart' as ui;
 
-import '../../matchers.dart';
+import '../../common/matchers.dart';
 
 void main() {
   internalBootstrapBrowserTest(() => testMain);
