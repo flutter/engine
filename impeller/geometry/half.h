@@ -26,7 +26,11 @@ namespace impeller {
 /// See also: https://clang.llvm.org/docs/LanguageExtensions.html
 /// This is not currently supported on Windows toolchains.
 inline constexpr InternalHalf ScalarToHalf(Scalar f) {
+#ifdef FML_OS_WIN
+  return static_cast<InternalHalf>(0);
+#else
   return static_cast<InternalHalf>(f);
+#endif
 }
 
 /// @brief A storage only class for half precision floating point.
