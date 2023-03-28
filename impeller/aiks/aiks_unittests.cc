@@ -23,7 +23,7 @@
 #include "impeller/entity/contents/tiled_texture_contents.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/constants.h"
-#include "impeller/geometry/geometry_unittests.h"
+#include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
 #include "impeller/playground/widgets.h"
