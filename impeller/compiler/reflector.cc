@@ -775,7 +775,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed half Point (vec2).
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 2                                          //
     ) {
@@ -798,7 +798,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed Half Float Vector3.
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 3                                          //
     ) {
@@ -821,7 +821,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed Half Float Vector4.
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 4                                          //
     ) {

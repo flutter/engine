@@ -12,7 +12,6 @@ impeller_component("geometry") {
     "constants.h",
     "gradient.cc",
     "gradient.h",
-    "half.cc",
     "half.h",
     "matrix.cc",
     "matrix.h",

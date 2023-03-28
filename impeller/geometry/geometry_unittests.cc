@@ -2094,7 +2094,8 @@ TEST(GeometryTest, Gradient) {
 
 TEST(GeometryTest, HalfConversions) {
 #ifdef FML_OS_WIN
-  GTEST_SKIP() << "The reason this doesn't work on Windows";
+  GTEST_SKIP() << "Half-precision floats (IEEE 754) are not portable and "
+                  "unavailable on Windows.";
 #else
   ASSERT_EQ(ScalarToHalf(0.0), 0.0f16);
   ASSERT_EQ(ScalarToHalf(0.05), 0.05f16);
