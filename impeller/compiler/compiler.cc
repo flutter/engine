@@ -57,6 +57,10 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   sl_options.platform =
       TargetPlatformToMSLPlatform(source_options.target_platform);
   sl_options.msl_version = ParseMSLVersion(source_options.metal_version);
+  sl_options.ios_use_simdgroup_functions =
+      sl_options.is_ios() &&
+      sl_options.msl_version >=
+          spirv_cross::CompilerMSL::Options::make_msl_version(2, 4, 0);
   sl_options.use_framebuffer_fetch_subpasses = true;
   sl_compiler->set_msl_options(sl_options);
 
