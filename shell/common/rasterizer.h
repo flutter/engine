@@ -485,6 +485,7 @@ class Rasterizer final : public SnapshotDelegate,
  private:
   struct DoDrawResult {
     RasterStatus raster_status = RasterStatus::kFailed;
+    int64_t resubmitted_view_id;
     // Set when we need attempt to rasterize the layer tree again. This
     // layer_tree has not successfully rasterized. This can happen due to the
     // change in the thread configuration. This will be inserted to the front of

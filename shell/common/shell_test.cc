@@ -20,6 +20,8 @@
 namespace flutter {
 namespace testing {
 
+constexpr int64_t kDefaultViewId = 0;
+
 ShellTest::ShellTest()
     : thread_host_("io.flutter.test." + GetCurrentTestName() + ".",
                    ThreadHost::Type::Platform | ThreadHost::Type::IO |
@@ -208,7 +210,7 @@ void ShellTest::PumpOneFrame(Shell* shell,
         if (builder) {
           builder(root_layer);
         }
-        runtime_delegate->Render(std::move(layer_tree));
+        runtime_delegate->Render(kDefaultViewId, std::move(layer_tree));
         latch.Signal();
       });
   latch.Wait();

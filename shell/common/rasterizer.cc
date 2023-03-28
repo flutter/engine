@@ -226,11 +226,10 @@ RasterStatus Rasterizer::Draw(
         std::shared_ptr<LayerTree> layer_tree = std::move(item->layer_tree);
         std::unique_ptr<FrameTimingsRecorder> frame_timings_recorder =
             std::move(item->frame_timings_recorder);
+        int64_t view_id = item->view_id;
         if (discard_callback(*layer_tree.get())) {
           draw_result.raster_status = RasterStatus::kDiscarded;
         } else {
-          // TODO(dkwingsmt)
-          int64_t view_id = 0ll;
           draw_result = DoDraw(view_id, std::move(frame_timings_recorder),
                                std::move(layer_tree));
         }
@@ -246,6 +245,7 @@ RasterStatus Rasterizer::Draw(
   bool should_resubmit_frame = ShouldResubmitFrame(draw_result.raster_status);
   if (should_resubmit_frame) {
     auto resubmitted_layer_tree_item = std::make_unique<LayerTreeItem>(
+        draw_result.resubmitted_view_id,
         std::move(draw_result.resubmitted_layer_tree),
         std::move(draw_result.resubmitted_recorder));
     auto front_continuation = pipeline->ProduceIfEmpty();
@@ -431,6 +431,7 @@ Rasterizer::DoDrawResult Rasterizer::DoDraw(
   } else if (ShouldResubmitFrame(raster_status)) {
     return DoDrawResult{
         .raster_status = raster_status,
+        .resubmitted_view_id = view_id,
         .resubmitted_layer_tree = std::move(layer_tree),
         .resubmitted_recorder = frame_timings_recorder->CloneUntil(
             FrameTimingsRecorder::State::kBuildEnd),

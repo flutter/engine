@@ -450,7 +450,8 @@ void Engine::ScheduleFrame(bool regenerate_layer_tree) {
   animator_->RequestFrame(regenerate_layer_tree);
 }
 
-void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
+void Engine::Render(int64_t view_id,
+                    std::shared_ptr<flutter::LayerTree> layer_tree) {
   if (!layer_tree) {
     return;
   }
@@ -461,7 +462,7 @@ void Engine::Render(std::shared_ptr<flutter::LayerTree> layer_tree) {
     return;
   }
 
-  animator_->Render(std::move(layer_tree));
+  animator_->Render(view_id, std::move(layer_tree));
 }
 
 void Engine::UpdateSemantics(SemanticsNodeUpdates update,
