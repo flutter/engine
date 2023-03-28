@@ -14,6 +14,11 @@ uniform FragInfo {
 }
 frag_info;
 
+in float16_t pos_a;
+in f16vec2 pos_b;
+in f16vec3 pos_c;
+in f16vec4 pos_d;
+
 out vec4 frag_color;
 
 void main() {

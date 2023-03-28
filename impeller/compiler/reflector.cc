@@ -1000,6 +1000,22 @@ static VertexType VertexTypeFromInputResource(
              type.columns == 1u && type.vecsize == 1u &&
              type.width == sizeof(int32_t) * 8u) {
     result.type_name = "int32_t";
+  } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
+             type.columns == 1u && type.vecsize == 2u &&
+             type.width == sizeof(float) * 4u) {
+    result.type_name = "HalfVector2";
+  } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
+             type.columns == 1u && type.vecsize == 4u &&
+             type.width == sizeof(float) * 4u) {
+    result.type_name = "HalfVector3";
+  } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
+             type.columns == 1u && type.vecsize == 3u &&
+             type.width == sizeof(float) * 4u) {
+    result.type_name = "HalfVector4";
+  } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
+             type.columns == 1u && type.vecsize == 1u &&
+             type.width == sizeof(float) * 4u) {
+    result.type_name = "Half";
   } else {
     // Catch all unknown padding.
     result.type_name = TypeNameWithPaddingOfSize(total_size);
