@@ -24,11 +24,8 @@ namespace impeller {
 /// @brief Convert a scalar to a half precision float.
 ///
 /// See also: https://clang.llvm.org/docs/LanguageExtensions.html
-/// This is not currently supported on windows toolchains.
+/// This is not currently supported on Windows toolchains.
 inline constexpr InternalHalf ScalarToHalf(Scalar f) {
-#ifdef FML_OS_WIN
-  FML_UNREACHABLE();
-#endif
   return static_cast<InternalHalf>(f);
 }
 
