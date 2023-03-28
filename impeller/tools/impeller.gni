@@ -722,8 +722,6 @@ template("impeller_shaders") {
         vulkan_language_version = invoker.vulkan_language_version
       }
       shaders = invoker.shaders
-
-      # metal_version = metal_version
       analyze = analyze
     }
   }
