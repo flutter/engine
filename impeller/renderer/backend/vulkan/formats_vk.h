@@ -240,6 +240,8 @@ constexpr vk::SamplerAddressMode ToVKSamplerAddressMode(
       return vk::SamplerAddressMode::eMirroredRepeat;
     case SamplerAddressMode::kClampToEdge:
       return vk::SamplerAddressMode::eClampToEdge;
+    case SamplerAddressMode::kDecal:
+      break;  // Unsupported.
   }
 
   FML_UNREACHABLE();

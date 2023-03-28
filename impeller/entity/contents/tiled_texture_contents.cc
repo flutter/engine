@@ -75,8 +75,8 @@ TiledTextureContents::CreateFilterTexture(
 SamplerDescriptor TiledTextureContents::CreateDescriptor(
     const Capabilities& capabilities) const {
   SamplerDescriptor descriptor = sampler_descriptor_;
-  auto width_mode = TileModeToAddressMode(x_tile_mode_);
-  auto height_mode = TileModeToAddressMode(y_tile_mode_);
+  auto width_mode = TileModeToAddressMode(x_tile_mode_, capabilities);
+  auto height_mode = TileModeToAddressMode(y_tile_mode_, capabilities);
   if (width_mode.has_value()) {
     descriptor.width_address_mode = width_mode.value();
   }
@@ -86,7 +86,7 @@ SamplerDescriptor TiledTextureContents::CreateDescriptor(
   return descriptor;
 }
 
-bool TiledTextureContents::UsesEmulatedTiledMode(
+bool TiledTextureContents::UsesEmulatedTileMode(
     const Capabilities& capabilities) const {
   return TileModeToAddressMode(x_tile_mode_, capabilities).has_value() &&
          TileModeToAddressMode(y_tile_mode_, capabilities);
@@ -114,24 +114,11 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
       Rect(bounds_origin, Size(texture_size)), GetInverseMatrix(), renderer,
       entity, pass);
   bool uses_emulated_tile_mode =
-      UsesEmulatedTiledMode(renderer.GetDeviceCapabilities());
+      UsesEmulatedTileMode(renderer.GetDeviceCapabilities());
 
   VS::FrameInfo frame_info;
   frame_info.mvp = geometry_result.transform;
   frame_info.texture_sampler_y_coord_scale = texture_->GetYCoordScale();
-
-  if (uses_emulated_tile_mode) {
-    FS::FragInfo frag_info;
-    frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
-    frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
-    frag_info.alpha = GetOpacity();
-    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
-  } else {
-    TextureFillFragmentShader::FragInfo frag_info;
-    frag_info.alpha = GetOpacity();
-    TextureFillFragmentShader::BindFragInfo(
-        cmd, host_buffer.EmplaceUniform(frag_info));
-  }
 
   Command cmd;
   cmd.label = "TiledTextureFill";
@@ -149,6 +136,19 @@ bool TiledTextureContents::Render(const ContentContext& renderer,
 
   cmd.BindVertices(geometry_result.vertex_buffer);
   VS::BindFrameInfo(cmd, host_buffer.EmplaceUniform(frame_info));
+
+  if (uses_emulated_tile_mode) {
+    FS::FragInfo frag_info;
+    frag_info.x_tile_mode = static_cast<Scalar>(x_tile_mode_);
+    frag_info.y_tile_mode = static_cast<Scalar>(y_tile_mode_);
+    frag_info.alpha = GetOpacity();
+    FS::BindFragInfo(cmd, host_buffer.EmplaceUniform(frag_info));
+  } else {
+    TextureFillFragmentShader::FragInfo frag_info;
+    frag_info.alpha = GetOpacity();
+    TextureFillFragmentShader::BindFragInfo(
+        cmd, host_buffer.EmplaceUniform(frag_info));
+  }
 
   if (color_filter_.has_value()) {
     auto filtered_texture = CreateFilterTexture(renderer);

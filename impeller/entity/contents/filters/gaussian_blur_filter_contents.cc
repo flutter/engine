@@ -217,7 +217,15 @@ std::optional<Entity> DirectionalGaussianBlurFilterContents::RenderFilter(
     auto source_descriptor = source_snapshot->sampler_descriptor;
     switch (tile_mode_) {
       case Entity::TileMode::kDecal:
-        cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+        if (renderer.GetDeviceCapabilities().SupportsDecalTileMode()) {
+          cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
+          input_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          input_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.width_address_mode = SamplerAddressMode::kDecal;
+          source_descriptor.height_address_mode = SamplerAddressMode::kDecal;
+        } else {
+          cmd.pipeline = renderer.GetGaussianBlurDecalPipeline(options);
+        }
         break;
       case Entity::TileMode::kClamp:
         cmd.pipeline = renderer.GetGaussianBlurPipeline(options);
