@@ -19,6 +19,8 @@ struct PlaygroundSwitches {
   std::optional<std::chrono::milliseconds> timeout;
   bool enable_vulkan_validation = false;
 
+  PlaygroundSwitches();
+
   explicit PlaygroundSwitches(const fml::CommandLine& args);
 };
 

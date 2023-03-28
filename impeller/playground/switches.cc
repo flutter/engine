@@ -8,6 +8,8 @@
 
 namespace impeller {
 
+PlaygroundSwitches::PlaygroundSwitches() = default;
+
 PlaygroundSwitches::PlaygroundSwitches(const fml::CommandLine& args) {
   std::string timeout_str;
   if (args.GetOptionValue("playground_timeout_ms", &timeout_str)) {
