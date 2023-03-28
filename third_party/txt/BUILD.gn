@@ -91,8 +91,9 @@ source_set("txt") {
     "//third_party/skia/modules/skparagraph",
   ]
 
+  libs = []
   if (flutter_use_fontconfig) {
-    deps += [ "//third_party/fontconfig" ]
+    libs += [ "fontconfig" ]
   }
 
   if (is_mac || is_ios) {
