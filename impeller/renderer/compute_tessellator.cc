@@ -4,11 +4,10 @@
 
 #include "impeller/renderer/compute_tessellator.h"
 
-#include "compute_tessellator.h"
 #include "impeller/renderer/command_buffer.h"
+#include "impeller/renderer/path_polyline.comp.h"
 #include "impeller/renderer/pipeline_library.h"
-#include "impeller/renderer/tessellation/path_polyline.comp.h"
-#include "impeller/renderer/tessellation/stroke.comp.h"
+#include "impeller/renderer/stroke.comp.h"
 
 namespace impeller {
 

@@ -303,6 +303,7 @@ template("impellerc") {
     }
 
     if (defined(invoker.metal_version)) {
+      assert(is_mac || is_ios)
       metal_version = invoker.metal_version
       args += [ "--metal-version=$metal_version" ]
     }
@@ -669,7 +670,6 @@ template("_impeller_shaders_vk") {
 #    The SPIR-V version required by the shaders.
 #
 template("impeller_shaders") {
-  metal_version = "1.2"
   if (defined(invoker.metal_version)) {
     metal_version = invoker.metal_version
   }
@@ -722,7 +722,8 @@ template("impeller_shaders") {
         vulkan_language_version = invoker.vulkan_language_version
       }
       shaders = invoker.shaders
-      metal_version = metal_version
+
+      # metal_version = metal_version
       analyze = analyze
     }
   }

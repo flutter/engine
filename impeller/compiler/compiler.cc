@@ -108,6 +108,18 @@ static CompilerBackend CreateMSLCompiler(const spirv_cross::ParsedIR& ir,
   return CompilerBackend(sl_compiler);
 }
 
+static CompilerBackend CreateVulkanCompiler(
+    const spirv_cross::ParsedIR& ir,
+    const SourceOptions& source_options) {
+  auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
+  spirv_cross::CompilerGLSL::Options sl_options;
+  sl_options.vulkan_semantics = true;
+  sl_options.vertex.fixup_clipspace = true;
+  sl_options.force_zero_initialized_variables = true;
+  gl_compiler->set_common_options(sl_options);
+  return CompilerBackend(gl_compiler);
+}
+
 static CompilerBackend CreateGLSLCompiler(const spirv_cross::ParsedIR& ir,
                                           const SourceOptions& source_options) {
   auto gl_compiler = std::make_shared<spirv_cross::CompilerGLSL>(ir);
@@ -162,9 +174,11 @@ static CompilerBackend CreateCompiler(const spirv_cross::ParsedIR& ir,
     case TargetPlatform::kMetalDesktop:
     case TargetPlatform::kMetalIOS:
     case TargetPlatform::kRuntimeStageMetal:
+      compiler = CreateMSLCompiler(ir, source_options);
+      break;
     case TargetPlatform::kVulkan:
     case TargetPlatform::kRuntimeStageVulkan:
-      compiler = CreateMSLCompiler(ir, source_options);
+      compiler = CreateVulkanCompiler(ir, source_options);
       break;
     case TargetPlatform::kUnknown:
     case TargetPlatform::kOpenGLES:
