@@ -10,7 +10,7 @@
 #include "impeller/renderer/backend/metal/device_buffer_mtl.h"
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
-#include "impeller/renderer/buffer.h"
+#include "impeller/core/buffer.h"
 
 namespace impeller {
 

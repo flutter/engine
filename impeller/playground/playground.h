@@ -10,11 +10,11 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {

@@ -5,8 +5,8 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/buffer_view.h"
 #include "impeller/geometry/path.h"
-#include "impeller/renderer/buffer_view.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/context.h"
 

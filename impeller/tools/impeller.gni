@@ -391,7 +391,7 @@ template("impellerc_reflect") {
                              ])
 
     deps = [
-      "//flutter/impeller/renderer:allocation",
+      "//flutter/impeller/core",
       impellerc_invocation,
     ]
   }

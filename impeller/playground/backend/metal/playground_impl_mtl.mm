@@ -24,7 +24,7 @@
 #include "impeller/renderer/backend/metal/formats_mtl.h"
 #include "impeller/renderer/backend/metal/surface_mtl.h"
 #include "impeller/renderer/backend/metal/texture_mtl.h"
-#include "impeller/renderer/mtl/tessellation_shaders.h"
+#include "impeller/renderer/mtl/compute_shaders.h"
 #include "impeller/scene/shaders/mtl/scene_shaders.h"
 
 namespace impeller {
@@ -52,8 +52,7 @@ ShaderLibraryMappingsForPlayground() {
           std::make_shared<fml::NonOwnedMapping>(impeller_scene_shaders_data,
                                                  impeller_scene_shaders_length),
           std::make_shared<fml::NonOwnedMapping>(
-              impeller_tessellation_shaders_data,
-              impeller_tessellation_shaders_length)
+              impeller_compute_shaders_data, impeller_compute_shaders_length)
 
   };
 }

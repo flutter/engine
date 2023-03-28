@@ -4,45 +4,9 @@
 
 import("//flutter/impeller/tools/impeller.gni")
 
-impeller_component("allocation") {
-  sources = [
-    "allocator.cc",
-    "allocator.h",
-    "buffer.cc",
-    "buffer.h",
-    "buffer_view.cc",
-    "buffer_view.h",
-    "device_buffer.cc",
-    "device_buffer.h",
-    "device_buffer_descriptor.cc",
-    "device_buffer_descriptor.h",
-    "formats.cc",
-    "formats.h",
-    "host_buffer.cc",
-    "host_buffer.h",
-    "platform.cc",
-    "platform.h",
-    "range.cc",
-    "range.h",
-    "texture.cc",
-    "texture.h",
-    "texture_descriptor.cc",
-    "texture_descriptor.h",
-    "vertex_buffer.cc",
-    "vertex_buffer.h",
-  ]
-
-  deps = [
-    "../base",
-    "../geometry",
-    "../image",
-    "//flutter/fml",
-  ]
-}
-
 if (impeller_enable_compute) {
-  impeller_shaders("tessellation_shaders") {
-    name = "tessellation"
+  impeller_shaders("compute_shaders") {
+    name = "compute"
     enable_opengles = false
 
     if (impeller_enable_vulkan) {
@@ -66,8 +30,8 @@ if (impeller_enable_compute) {
     sources = [ "compute_subgroup_unittests.cc" ]
 
     deps = [
+      ":compute_shaders",
       ":renderer",
-      ":tessellation_shaders",
       "../entity",
       "../fixtures",
       "../playground:playground_test",
@@ -139,8 +103,8 @@ impeller_component("renderer") {
   ]
 
   public_deps = [
-    ":allocation",
     "../base",
+    "../core",
     "../geometry",
     "../image",
     "../runtime_stage",
@@ -152,7 +116,7 @@ impeller_component("renderer") {
       "compute_tessellator.cc",
       "compute_tessellator.h",
     ]
-    public_deps += [ ":tessellation_shaders" ]
+    public_deps += [ ":compute_shaders" ]
   }
 
   deps = [ "//flutter/fml" ]
