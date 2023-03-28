@@ -42,8 +42,12 @@ impeller_component("allocation") {
 
 if (impeller_enable_compute) {
   impeller_shaders("tessellation_shaders") {
-    enable_opengles = false
     name = "tessellation"
+    enable_opengles = false
+
+    if (impeller_enable_vulkan) {
+      vulkan_language_version = 130
+    }
 
     if (is_ios) {
       metal_version = "2.4"
