@@ -14,7 +14,7 @@ namespace impeller {
 
 //------------------------------------------------------------------------------
 /// @brief      A utility that generates triangles of the specified fill type
-///             given a polyline. This happens on the CPU.
+///             given a path.
 ///
 class ComputeTessellator {
  public:
@@ -49,9 +49,19 @@ class ComputeTessellator {
 
   //----------------------------------------------------------------------------
   /// @brief      Generates triangles from the path.
+  ///             If the data needs to be synchronized back to the CPU, e.g.
+  ///             because one of the buffer views are host visible and will be
+  ///             used without creating a blit pass to copy them back, the
+  ///             callback is used to determine when the GPU calculation is
+  ///             complete and its status.
+  ///             On Metal, no additional synchronization is needed as long as
+  ///             the buffers are not heap allocated, so no additional
+  ///             synchronization mechanism is provided.
   ///
-  /// @return  A buffer view that will be filled with the tessellation result.
+  /// @return  A |Status| value indicating success or failure of the submission.
   ///
+  // TODO(dnfield): Provide additional synchronization methods here for Vulkan
+  // and heap allocated buffers on Metal.
   Status Tessellate(
       const Path& path,
       std::shared_ptr<Context> context,
