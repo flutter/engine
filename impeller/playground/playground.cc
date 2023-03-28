@@ -74,7 +74,7 @@ struct Playground::GLFWInitializer {
 };
 
 Playground::Playground(PlaygroundSwitches switches)
-    : switches_(std::move(switches)),
+    : switches_(switches),
       glfw_initializer_(std::make_unique<GLFWInitializer>()) {}
 
 Playground::~Playground() = default;

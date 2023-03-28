@@ -52,7 +52,7 @@ void PlaygroundImplGLES::DestroyWindowHandle(WindowHandle handle) {
 }
 
 PlaygroundImplGLES::PlaygroundImplGLES(PlaygroundSwitches switches)
-    : PlaygroundImpl(std::move(switches)),
+    : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
       worker_(std::shared_ptr<ReactorWorker>(new ReactorWorker())) {
   ::glfwDefaultWindowHints();

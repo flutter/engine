@@ -49,7 +49,7 @@ void PlaygroundImplVK::DestroyWindowHandle(WindowHandle handle) {
 }
 
 PlaygroundImplVK::PlaygroundImplVK(PlaygroundSwitches switches)
-    : PlaygroundImpl(std::move(switches)),
+    : PlaygroundImpl(switches),
       concurrent_loop_(fml::ConcurrentMessageLoop::Create()),
       handle_(nullptr, &DestroyWindowHandle) {
   if (!::glfwVulkanSupported()) {

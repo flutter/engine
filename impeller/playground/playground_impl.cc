@@ -27,15 +27,15 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
   switch (backend) {
 #if IMPELLER_ENABLE_METAL
     case PlaygroundBackend::kMetal:
-      return std::make_unique<PlaygroundImplMTL>(std::move(switches));
+      return std::make_unique<PlaygroundImplMTL>(switches);
 #endif  // IMPELLER_ENABLE_METAL
 #if IMPELLER_ENABLE_OPENGLES
     case PlaygroundBackend::kOpenGLES:
-      return std::make_unique<PlaygroundImplGLES>(std::move(switches));
+      return std::make_unique<PlaygroundImplGLES>(switches);
 #endif  // IMPELLER_ENABLE_OPENGLES
 #if IMPELLER_ENABLE_VULKAN
     case PlaygroundBackend::kVulkan:
-      return std::make_unique<PlaygroundImplVK>(std::move(switches));
+      return std::make_unique<PlaygroundImplVK>(switches);
 #endif  // IMPELLER_ENABLE_VULKAN
     default:
       FML_CHECK(false) << "Attempted to create playground with backend that "
@@ -46,7 +46,7 @@ std::unique_ptr<PlaygroundImpl> PlaygroundImpl::Create(
 }
 
 PlaygroundImpl::PlaygroundImpl(PlaygroundSwitches switches)
-    : switches_(std::move(switches)) {}
+    : switches_(switches) {}
 
 PlaygroundImpl::~PlaygroundImpl() = default;
 

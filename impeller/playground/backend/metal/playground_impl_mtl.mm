@@ -63,7 +63,7 @@ void PlaygroundImplMTL::DestroyWindowHandle(WindowHandle handle) {
 }
 
 PlaygroundImplMTL::PlaygroundImplMTL(PlaygroundSwitches switches)
-    : PlaygroundImpl(std::move(switches)),
+    : PlaygroundImpl(switches),
       handle_(nullptr, &DestroyWindowHandle),
       data_(std::make_unique<Data>()) {
   ::glfwDefaultWindowHints();
