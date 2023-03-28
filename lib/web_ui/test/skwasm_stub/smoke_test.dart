@@ -3,13 +3,11 @@
 // found in the LICENSE file.
 
 @TestOn('chrome || safari || firefox')
-library;
 
 import 'dart:async';
 
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
-import 'package:ui/src/engine/browser_detection.dart';
 import 'package:ui/src/engine/renderer.dart';
 import 'package:ui/src/engine/skwasm/skwasm_stub/renderer.dart';
 
@@ -24,8 +22,6 @@ Future<void> testMain() async {
       expect(() {
         renderer.initialize();
       }, throwsUnimplementedError);
-    }, skip: isWasm);
-    // This test is specifically designed for the JS case, to make sure we
-    // compile to the skwasm stub renderer.
+    });
   });
 }
