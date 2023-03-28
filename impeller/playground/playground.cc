@@ -180,7 +180,7 @@ void Playground::SetCursorPosition(Point pos) {
 
 bool Playground::OpenPlaygroundHere(
     const Renderer::RenderCallback& render_callback) {
-  if (!is_enabled()) {
+  if (!switches_.enable_playground) {
     return true;
   }
 
