@@ -86,6 +86,10 @@ class EntityPass {
 
   void SetBlendMode(BlendMode blend_mode);
 
+  void SetClearColor(Color clear_color);
+
+  Color GetClearColor() const;
+
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
   std::optional<Rect> GetSubpassCoverage(
@@ -204,6 +208,7 @@ class EntityPass {
   size_t stencil_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
+  Color clear_color_ = Color::BlackTransparent();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in
