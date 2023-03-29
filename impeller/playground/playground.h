@@ -10,12 +10,12 @@
 #include "flutter/fml/closure.h"
 #include "flutter/fml/macros.h"
 #include "flutter/fml/time/time_delta.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/point.h"
 #include "impeller/image/compressed_image.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/playground/switches.h"
 #include "impeller/renderer/renderer.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/runtime_stage/runtime_stage.h"
 
 namespace impeller {
@@ -37,8 +37,6 @@ class Playground {
   explicit Playground(PlaygroundSwitches switches);
 
   virtual ~Playground();
-
-  static constexpr bool is_enabled() { return is_enabled_; }
 
   static bool ShouldOpenNewPlaygrounds();
 
@@ -98,15 +96,9 @@ class Playground {
   virtual bool ShouldKeepRendering() const;
 
  private:
-#if IMPELLER_ENABLE_PLAYGROUND
-  static const bool is_enabled_ = true;
-#else
-  static const bool is_enabled_ = false;
-#endif  // IMPELLER_ENABLE_PLAYGROUND
+  struct GLFWInitializer;
 
   fml::TimeDelta start_time_;
-
-  struct GLFWInitializer;
   std::unique_ptr<GLFWInitializer> glfw_initializer_;
   std::unique_ptr<PlaygroundImpl> impl_;
   std::shared_ptr<Context> context_;
