@@ -101,7 +101,8 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   return SaveScreenshot(std::move(screenshot));
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksPlaygroundCallback& callback) {
   return false;
 }
 

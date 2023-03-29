@@ -28,7 +28,7 @@ class GoldenPlaygroundTest
 
   bool OpenPlaygroundHere(const Picture& picture);
 
-  bool OpenPlaygroundHere(AiksPlaygroundCallback callback);
+  bool OpenPlaygroundHere(const AiksPlaygroundCallback& callback);
 
   std::shared_ptr<Texture> CreateTextureForFixture(
       const char* fixture_name,

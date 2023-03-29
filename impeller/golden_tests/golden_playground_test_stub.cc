@@ -20,7 +20,8 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
   return false;
 }
 
-bool GoldenPlaygroundTest::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
+bool GoldenPlaygroundTest::OpenPlaygroundHere(
+    const AiksPlaygroundCallback& callback) {
   return false;
 }
 
