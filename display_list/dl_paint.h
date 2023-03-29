@@ -132,16 +132,14 @@ class DlPaint {
     return *this;
   }
 
-  std::shared_ptr<const DlColorSource> getColorSource() const {
-    return colorSource_;
-  }
+  dl_shared<const DlColorSource> getColorSource() const { return colorSource_; }
   const DlColorSource* getColorSourcePtr() const { return colorSource_.get(); }
-  DlPaint& setColorSource(std::shared_ptr<const DlColorSource> source) {
+  DlPaint& setColorSource(dl_shared<const DlColorSource> source) {
     colorSource_ = source;
     return *this;
   }
   DlPaint& setColorSource(const DlColorSource* source) {
-    colorSource_ = source ? source->shared() : nullptr;
+    colorSource_ = source;
     return *this;
   }
 
@@ -226,7 +224,7 @@ class DlPaint {
   float strokeWidth_;
   float strokeMiter_;
 
-  std::shared_ptr<const DlColorSource> colorSource_;
+  dl_shared<const DlColorSource> colorSource_;
   dl_shared<const DlColorFilter> colorFilter_;
   std::shared_ptr<const DlImageFilter> imageFilter_;
   dl_shared<const DlMaskFilter> maskFilter_;

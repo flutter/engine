@@ -74,7 +74,7 @@ void ReusableFragmentShader::SetImageSampler(Dart_Handle index_handle,
 
   // TODO(115794): Once the DlImageSampling enum is replaced, expose the
   //               sampling options as a new default parameter for users.
-  samplers_[index] = std::make_shared<DlImageColorSource>(
+  samplers_[index] = DlImageColorSource::Make(
       image->image(), DlTileMode::kClamp, DlTileMode::kClamp,
       DlImageSampling::kNearestNeighbor, nullptr);
 
@@ -84,7 +84,7 @@ void ReusableFragmentShader::SetImageSampler(Dart_Handle index_handle,
   uniform_floats[float_count_ + 2 * index + 1] = image->height();
 }
 
-std::shared_ptr<DlColorSource> ReusableFragmentShader::shader(
+dl_shared<DlColorSource> ReusableFragmentShader::shader(
     DlImageSampling sampling) {
   FML_CHECK(program_);
 

@@ -15,14 +15,14 @@ namespace flutter {
 DlRuntimeEffect::DlRuntimeEffect() = default;
 DlRuntimeEffect::~DlRuntimeEffect() = default;
 
-sk_sp<DlRuntimeEffect> DlRuntimeEffect::MakeSkia(
+dl_shared<DlRuntimeEffect> DlRuntimeEffect::MakeSkia(
     const sk_sp<SkRuntimeEffect>& runtime_effect) {
-  return sk_make_sp<DlRuntimeEffectSkia>(runtime_effect);
+  return dl_shared(new DlRuntimeEffectSkia(runtime_effect));
 }
 
-sk_sp<DlRuntimeEffect> DlRuntimeEffect::MakeImpeller(
+dl_shared<DlRuntimeEffect> DlRuntimeEffect::MakeImpeller(
     std::shared_ptr<impeller::RuntimeStage> runtime_stage) {
-  return sk_make_sp<DlRuntimeEffectImpeller>(std::move(runtime_stage));
+  return dl_shared(new DlRuntimeEffectImpeller(std::move(runtime_stage)));
 }
 
 //------------------------------------------------------------------------------

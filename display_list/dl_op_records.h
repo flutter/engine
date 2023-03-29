@@ -227,6 +227,7 @@ struct SetBlendModeOp final : DLOp {
     }                                                                     \
   };
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorFilter, filter)
+DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorSource, source)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(MaskFilter, filter)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_DLSHARED_ATTR_OP
@@ -258,69 +259,7 @@ DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(PathEffect, effect)
     }                                                                       \
   };
 DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
-DEFINE_SET_CLEAR_DLATTR_OP(ColorSource, Shader, source)
 #undef DEFINE_SET_CLEAR_DLATTR_OP
-
-// 4 byte header + 80 bytes for the embedded DlImageColorSource
-// uses 84 total bytes (4 bytes unused)
-struct SetImageColorSourceOp : DLOp {
-  static const auto kType = DisplayListOpType::kSetImageColorSource;
-
-  SetImageColorSourceOp(const DlImageColorSource* source)
-      : source(source->image(),
-               source->horizontal_tile_mode(),
-               source->vertical_tile_mode(),
-               source->sampling(),
-               source->matrix_ptr()) {}
-
-  const DlImageColorSource source;
-
-  void dispatch(DispatchContext& ctx) const {
-    ctx.receiver.setColorSource(&source);
-  }
-};
-
-// 56 bytes: 4 byte header, 4 byte padding, 8 for vtable, 8 * 2 for sk_sps, 24
-// for the std::vector.
-struct SetRuntimeEffectColorSourceOp : DLOp {
-  static const auto kType = DisplayListOpType::kSetRuntimeEffectColorSource;
-
-  SetRuntimeEffectColorSourceOp(const DlRuntimeEffectColorSource* source)
-      : source(source->runtime_effect(),
-               source->samplers(),
-               source->uniform_data()) {}
-
-  const DlRuntimeEffectColorSource source;
-
-  void dispatch(DispatchContext& ctx) const {
-    ctx.receiver.setColorSource(&source);
-  }
-
-  DisplayListCompare equals(const SetRuntimeEffectColorSourceOp* other) const {
-    return (source == other->source) ? DisplayListCompare::kEqual
-                                     : DisplayListCompare::kNotEqual;
-  }
-};
-
-#ifdef IMPELLER_ENABLE_3D
-struct SetSceneColorSourceOp : DLOp {
-  static const auto kType = DisplayListOpType::kSetSceneColorSource;
-
-  SetSceneColorSourceOp(const DlSceneColorSource* source)
-      : source(source->scene_node(), source->camera_matrix()) {}
-
-  const DlSceneColorSource source;
-
-  void dispatch(DispatchContext& ctx) const {
-    ctx.receiver.setColorSource(&source);
-  }
-
-  DisplayListCompare equals(const SetSceneColorSourceOp* other) const {
-    return (source == other->source) ? DisplayListCompare::kEqual
-                                     : DisplayListCompare::kNotEqual;
-  }
-};
-#endif  // IMPELLER_ENABLE_3D
 
 // 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)
 struct SetSharedImageFilterOp : DLOp {

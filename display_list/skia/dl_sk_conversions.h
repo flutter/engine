@@ -69,7 +69,7 @@ inline SkCanvas::PointMode ToSk(DlCanvas::PointMode mode) {
 }
 
 extern sk_sp<SkShader> ToSk(const DlColorSource* source);
-inline sk_sp<SkShader> ToSk(std::shared_ptr<const DlColorSource> source) {
+inline sk_sp<SkShader> ToSk(dl_shared<const DlColorSource> source) {
   return ToSk(source.get());
 }
 inline sk_sp<SkShader> ToSk(const DlColorSource& source) {

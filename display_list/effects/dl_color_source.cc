@@ -10,16 +10,46 @@
 
 namespace flutter {
 
-static void DlGradientDeleter(void* p) {
-  // Some of our target environments would prefer a sized delete,
-  // but other target environments do not have that operator.
-  // Use an unsized delete until we get better agreement in the
-  // environments.
-  // See https://github.com/flutter/flutter/issues/100327
-  ::operator delete(p);
+dl_shared<DlColorSource> DlColorSource::MakeColor(DlColor color) {
+  return DlColorColorSource::Make(color);
 }
 
-std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
+dl_shared<DlColorColorSource> DlColorColorSource::Make(DlColor color) {
+  return dl_shared(new DlColorColorSource(color));
+}
+
+dl_shared<DlColorSource> DlColorSource::MakeImage(
+    sk_sp<const DlImage> image,
+    DlTileMode horizontal_tile_mode,
+    DlTileMode vertical_tile_mode,
+    DlImageSampling sampling,
+    const SkMatrix* matrix) {
+  return DlImageColorSource::Make(image, horizontal_tile_mode,
+                                  vertical_tile_mode, sampling, matrix);
+}
+
+dl_shared<DlImageColorSource> DlImageColorSource::Make(
+    sk_sp<const DlImage> image,
+    DlTileMode horizontal_tile_mode,
+    DlTileMode vertical_tile_mode,
+    DlImageSampling sampling,
+    const SkMatrix* matrix) {
+  return dl_shared(new DlImageColorSource(
+      image, horizontal_tile_mode, vertical_tile_mode, sampling, matrix));
+}
+
+dl_shared<DlColorSource> DlColorSource::MakeLinear(const SkPoint start_point,
+                                                   const SkPoint end_point,
+                                                   uint32_t stop_count,
+                                                   const DlColor* colors,
+                                                   const float* stops,
+                                                   DlTileMode tile_mode,
+                                                   const SkMatrix* matrix) {
+  return DlLinearGradientColorSource::Make(start_point, end_point, stop_count,
+                                           colors, stops, tile_mode, matrix);
+}
+
+dl_shared<DlLinearGradientColorSource> DlLinearGradientColorSource::Make(
     const SkPoint start_point,
     const SkPoint end_point,
     uint32_t stop_count,
@@ -32,15 +62,22 @@ std::shared_ptr<DlLinearGradientColorSource> DlColorSource::MakeLinear(
 
   void* storage = ::operator new(needed);
 
-  std::shared_ptr<DlLinearGradientColorSource> ret;
-  ret.reset(new (storage)
-                DlLinearGradientColorSource(start_point, end_point, stop_count,
-                                            colors, stops, tile_mode, matrix),
-            DlGradientDeleter);
-  return ret;
+  return dl_shared(new (storage) DlLinearGradientColorSource(
+      start_point, end_point, stop_count, colors, stops, tile_mode, matrix));
 }
 
-std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
+dl_shared<DlColorSource> DlColorSource::MakeRadial(SkPoint center,
+                                                   SkScalar radius,
+                                                   uint32_t stop_count,
+                                                   const DlColor* colors,
+                                                   const float* stops,
+                                                   DlTileMode tile_mode,
+                                                   const SkMatrix* matrix) {
+  return DlRadialGradientColorSource::Make(center, radius, stop_count,  //
+                                           colors, stops, tile_mode, matrix);
+}
+
+dl_shared<DlRadialGradientColorSource> DlRadialGradientColorSource::Make(
     SkPoint center,
     SkScalar radius,
     uint32_t stop_count,
@@ -53,14 +90,25 @@ std::shared_ptr<DlRadialGradientColorSource> DlColorSource::MakeRadial(
 
   void* storage = ::operator new(needed);
 
-  std::shared_ptr<DlRadialGradientColorSource> ret;
-  ret.reset(new (storage) DlRadialGradientColorSource(
-                center, radius, stop_count, colors, stops, tile_mode, matrix),
-            DlGradientDeleter);
-  return ret;
+  return dl_shared(new (storage) DlRadialGradientColorSource(
+      center, radius, stop_count, colors, stops, tile_mode, matrix));
 }
 
-std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
+dl_shared<DlColorSource> DlColorSource::MakeConical(SkPoint start_center,
+                                                    SkScalar start_radius,
+                                                    SkPoint end_center,
+                                                    SkScalar end_radius,
+                                                    uint32_t stop_count,
+                                                    const DlColor* colors,
+                                                    const float* stops,
+                                                    DlTileMode tile_mode,
+                                                    const SkMatrix* matrix) {
+  return DlConicalGradientColorSource::Make(start_center, start_radius,
+                                            end_center, end_radius, stop_count,
+                                            colors, stops, tile_mode, matrix);
+}
+
+dl_shared<DlConicalGradientColorSource> DlConicalGradientColorSource::Make(
     SkPoint start_center,
     SkScalar start_radius,
     SkPoint end_center,
@@ -75,15 +123,24 @@ std::shared_ptr<DlConicalGradientColorSource> DlColorSource::MakeConical(
 
   void* storage = ::operator new(needed);
 
-  std::shared_ptr<DlConicalGradientColorSource> ret;
-  ret.reset(new (storage) DlConicalGradientColorSource(
-                start_center, start_radius, end_center, end_radius, stop_count,
-                colors, stops, tile_mode, matrix),
-            DlGradientDeleter);
-  return ret;
+  return dl_shared(new (storage) DlConicalGradientColorSource(
+      start_center, start_radius, end_center, end_radius,  //
+      stop_count, colors, stops, tile_mode, matrix));
 }
 
-std::shared_ptr<DlSweepGradientColorSource> DlColorSource::MakeSweep(
+dl_shared<DlColorSource> DlColorSource::MakeSweep(SkPoint center,
+                                                  SkScalar start,
+                                                  SkScalar end,
+                                                  uint32_t stop_count,
+                                                  const DlColor* colors,
+                                                  const float* stops,
+                                                  DlTileMode tile_mode,
+                                                  const SkMatrix* matrix) {
+  return DlSweepGradientColorSource::Make(center, start, end, stop_count,
+                                          colors, stops, tile_mode, matrix);
+}
+
+dl_shared<DlSweepGradientColorSource> DlSweepGradientColorSource::Make(
     SkPoint center,
     SkScalar start,
     SkScalar end,
@@ -97,21 +154,39 @@ std::shared_ptr<DlSweepGradientColorSource> DlColorSource::MakeSweep(
 
   void* storage = ::operator new(needed);
 
-  std::shared_ptr<DlSweepGradientColorSource> ret;
-  ret.reset(new (storage)
-                DlSweepGradientColorSource(center, start, end, stop_count,
-                                           colors, stops, tile_mode, matrix),
-            DlGradientDeleter);
-  return ret;
+  return dl_shared(new (storage) DlSweepGradientColorSource(
+      center, start, end, stop_count, colors, stops, tile_mode, matrix));
 }
 
-std::shared_ptr<DlRuntimeEffectColorSource> DlColorSource::MakeRuntimeEffect(
-    sk_sp<DlRuntimeEffect> runtime_effect,
-    std::vector<std::shared_ptr<DlColorSource>> samplers,
+dl_shared<DlColorSource> DlColorSource::MakeRuntimeEffect(
+    dl_shared<DlRuntimeEffect> runtime_effect,
+    std::vector<dl_shared<DlColorSource>> samplers,
+    std::shared_ptr<std::vector<uint8_t>> uniform_data) {
+  return DlRuntimeEffectColorSource::Make(runtime_effect, samplers,
+                                          uniform_data);
+}
+
+dl_shared<DlRuntimeEffectColorSource> DlRuntimeEffectColorSource::Make(
+    dl_shared<DlRuntimeEffect> runtime_effect,
+    std::vector<dl_shared<DlColorSource>> samplers,
     std::shared_ptr<std::vector<uint8_t>> uniform_data) {
   FML_DCHECK(uniform_data != nullptr);
-  return std::make_shared<DlRuntimeEffectColorSource>(
-      std::move(runtime_effect), std::move(samplers), std::move(uniform_data));
+  return dl_shared(new DlRuntimeEffectColorSource(
+      std::move(runtime_effect), std::move(samplers), std::move(uniform_data)));
 }
+
+#ifdef IMPELLER_ENABLE_3D
+dl_shared<DlColorSource> DlColorSource::MakeScene(
+    std::shared_ptr<impeller::scene::Node> node,
+    impeller::Matrix camera_matrix) {
+  return DlSceneColorSource::Make(node, camera_matrix);
+}
+
+dl_shared<DlSceneColorSource> DlSceneColorSource::Make(
+    std::shared_ptr<impeller::scene::Node> node,
+    impeller::Matrix camera_matrix) {
+  return dl_shared(new DlSceneColorSource(node, camera_matrix));
+}
+#endif  // IMPELLER_ENABLE_3D
 
 }  // namespace flutter

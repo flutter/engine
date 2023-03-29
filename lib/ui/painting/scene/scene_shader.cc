@@ -68,7 +68,7 @@ static impeller::Matrix DefaultCameraTransform() {
          impeller::Matrix::MakeLookAt({0, 0, -5}, {0, 0, 0}, {0, 1, 0});
 }
 
-std::shared_ptr<DlColorSource> SceneShader::shader(DlImageSampling sampling) {
+dl_shared<DlColorSource> SceneShader::shader(DlImageSampling sampling) {
   FML_CHECK(scene_node_);
 
   if (!scene_node_->node_) {
@@ -78,10 +78,10 @@ std::shared_ptr<DlColorSource> SceneShader::shader(DlImageSampling sampling) {
   // TODO(bdero): Gather the mutation log and include it in the scene color
   // source.
 
-  return std::make_shared<DlSceneColorSource>(scene_node_->node_,
-                                              camera_transform_.IsIdentity()
-                                                  ? DefaultCameraTransform()
-                                                  : camera_transform_);
+  return DlSceneColorSource::Make(scene_node_->node_,
+                                  camera_transform_.IsIdentity()
+                                      ? DefaultCameraTransform()
+                                      : camera_transform_);
 }
 
 void SceneShader::Dispose() {

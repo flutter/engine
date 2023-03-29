@@ -92,41 +92,37 @@ static auto TestImage1 = MakeTestImage(40, 40, 5);
 static auto TestImage2 = MakeTestImage(50, 50, 5);
 static auto TestSkImage = MakeTestImage(30, 30, 5) -> skia_image();
 
-static const DlImageColorSource kTestSource1(TestImage1,
-                                             DlTileMode::kClamp,
-                                             DlTileMode::kMirror,
-                                             kLinearSampling);
-static const std::shared_ptr<DlColorSource> kTestSource2 =
-    DlColorSource::MakeLinear(kEndPoints[0],
-                              kEndPoints[1],
-                              3,
-                              kColors,
-                              kStops,
-                              DlTileMode::kMirror);
-static const std::shared_ptr<DlColorSource> kTestSource3 =
-    DlColorSource::MakeRadial(kEndPoints[0],
-                              10.0,
-                              3,
-                              kColors,
-                              kStops,
-                              DlTileMode::kMirror);
-static const std::shared_ptr<DlColorSource> kTestSource4 =
-    DlColorSource::MakeConical(kEndPoints[0],
-                               10.0,
-                               kEndPoints[1],
-                               200.0,
-                               3,
-                               kColors,
-                               kStops,
-                               DlTileMode::kDecal);
-static const std::shared_ptr<DlColorSource> kTestSource5 =
-    DlColorSource::MakeSweep(kEndPoints[0],
-                             0.0,
-                             360.0,
-                             3,
-                             kColors,
-                             kStops,
-                             DlTileMode::kDecal);
+static const auto kTestSource1 = DlColorSource::MakeImage(TestImage1,
+                                                          DlTileMode::kClamp,
+                                                          DlTileMode::kMirror,
+                                                          kLinearSampling);
+static const auto kTestSource2 = DlColorSource::MakeLinear(kEndPoints[0],
+                                                           kEndPoints[1],
+                                                           3,
+                                                           kColors,
+                                                           kStops,
+                                                           DlTileMode::kMirror);
+static const auto kTestSource3 = DlColorSource::MakeRadial(kEndPoints[0],
+                                                           10.0,
+                                                           3,
+                                                           kColors,
+                                                           kStops,
+                                                           DlTileMode::kMirror);
+static const auto kTestSource4 = DlColorSource::MakeConical(kEndPoints[0],
+                                                            10.0,
+                                                            kEndPoints[1],
+                                                            200.0,
+                                                            3,
+                                                            kColors,
+                                                            kStops,
+                                                            DlTileMode::kDecal);
+static const auto kTestSource5 = DlColorSource::MakeSweep(kEndPoints[0],
+                                                          0.0,
+                                                          360.0,
+                                                          3,
+                                                          kColors,
+                                                          kStops,
+                                                          DlTileMode::kDecal);
 static const auto kTestBlendColorFilter1 =
     DlBlendColorFilter::Make(DlColor::kRed(), DlBlendMode::kDstATop);
 static const auto kTestBlendColorFilter2 =

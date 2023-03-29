@@ -7,7 +7,7 @@
 
 namespace flutter {
 
-ShaderMaskLayer::ShaderMaskLayer(std::shared_ptr<DlColorSource> color_source,
+ShaderMaskLayer::ShaderMaskLayer(dl_shared<DlColorSource> color_source,
                                  const SkRect& mask_rect,
                                  DlBlendMode blend_mode)
     : CacheableContainerLayer(

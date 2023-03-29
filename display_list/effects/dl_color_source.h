@@ -61,51 +61,68 @@ enum class DlColorSourceType {
 #endif  // IMPELLER_ENABLE_3D
 };
 
-class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
+class DlColorSource : public DlShareable,
+                      public DlAttribute<DlColorSource, DlColorSourceType> {
  public:
-  static std::shared_ptr<DlLinearGradientColorSource> MakeLinear(
-      const SkPoint start_point,
-      const SkPoint end_point,
-      uint32_t stop_count,
-      const DlColor* colors,
-      const float* stops,
-      DlTileMode tile_mode,
+  static dl_shared<DlColorSource> MakeColor(DlColor color);
+
+  static dl_shared<DlColorSource> MakeImage(
+      sk_sp<const DlImage> image,
+      DlTileMode horizontal_tile_mode,
+      DlTileMode vertical_tile_mode,
+      DlImageSampling sampling = DlImageSampling::kLinear,
       const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlRadialGradientColorSource> MakeRadial(
-      SkPoint center,
-      SkScalar radius,
-      uint32_t stop_count,
-      const DlColor* colors,
-      const float* stops,
-      DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+  static dl_shared<DlColorSource> MakeLinear(const SkPoint start_point,
+                                             const SkPoint end_point,
+                                             uint32_t stop_count,
+                                             const DlColor* colors,
+                                             const float* stops,
+                                             DlTileMode tile_mode,
+                                             const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlConicalGradientColorSource> MakeConical(
-      SkPoint start_center,
-      SkScalar start_radius,
-      SkPoint end_center,
-      SkScalar end_radius,
-      uint32_t stop_count,
-      const DlColor* colors,
-      const float* stops,
-      DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+  static dl_shared<DlColorSource> MakeRadial(SkPoint center,
+                                             SkScalar radius,
+                                             uint32_t stop_count,
+                                             const DlColor* colors,
+                                             const float* stops,
+                                             DlTileMode tile_mode,
+                                             const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlSweepGradientColorSource> MakeSweep(
-      SkPoint center,
-      SkScalar start,
-      SkScalar end,
-      uint32_t stop_count,
-      const DlColor* colors,
-      const float* stops,
-      DlTileMode tile_mode,
-      const SkMatrix* matrix = nullptr);
+  static dl_shared<DlColorSource> MakeConical(SkPoint start_center,
+                                              SkScalar start_radius,
+                                              SkPoint end_center,
+                                              SkScalar end_radius,
+                                              uint32_t stop_count,
+                                              const DlColor* colors,
+                                              const float* stops,
+                                              DlTileMode tile_mode,
+                                              const SkMatrix* matrix = nullptr);
 
-  static std::shared_ptr<DlRuntimeEffectColorSource> MakeRuntimeEffect(
-      sk_sp<DlRuntimeEffect> runtime_effect,
-      std::vector<std::shared_ptr<DlColorSource>> samplers,
+  static dl_shared<DlColorSource> MakeSweep(SkPoint center,
+                                            SkScalar start,
+                                            SkScalar end,
+                                            uint32_t stop_count,
+                                            const DlColor* colors,
+                                            const float* stops,
+                                            DlTileMode tile_mode,
+                                            const SkMatrix* matrix = nullptr);
+
+  static dl_shared<DlColorSource> MakeRuntimeEffect(
+      dl_shared<DlRuntimeEffect> runtime_effect,
+      std::vector<dl_shared<DlColorSource>> samplers,
       std::shared_ptr<std::vector<uint8_t>> uniform_data);
+
+#ifdef IMPELLER_ENABLE_3D
+  static dl_shared<DlColorSource> MakeScene(
+      std::shared_ptr<impeller::scene::Node> node,
+      impeller::Matrix camera_matrix);
+#endif  // IMPELLER_ENABLE_3D
+
+  std::shared_ptr<DlColorSource> shared() const override {
+    FML_DCHECK(false);
+    return nullptr;
+  }
 
   virtual bool is_opaque() const = 0;
 
@@ -158,11 +175,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
 
 class DlColorColorSource final : public DlColorSource {
  public:
-  DlColorColorSource(DlColor color) : color_(color) {}
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return std::make_shared<DlColorColorSource>(color_);
-  }
+  static dl_shared<DlColorColorSource> Make(DlColor color);
 
   const DlColorColorSource* asColor() const override { return this; }
 
@@ -181,6 +194,8 @@ class DlColorColorSource final : public DlColorSource {
   }
 
  private:
+  DlColorColorSource(DlColor color) : color_(color) {}
+
   DlColor color_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlColorColorSource);
@@ -201,30 +216,21 @@ class DlMatrixColorSourceBase : public DlColorSource {
   const SkMatrix matrix_;
 };
 
-class DlImageColorSource final : public SkRefCnt,
-                                 public DlMatrixColorSourceBase {
+class DlImageColorSource final : public DlMatrixColorSourceBase {
  public:
-  DlImageColorSource(sk_sp<const DlImage> image,
-                     DlTileMode horizontal_tile_mode,
-                     DlTileMode vertical_tile_mode,
-                     DlImageSampling sampling = DlImageSampling::kLinear,
-                     const SkMatrix* matrix = nullptr)
-      : DlMatrixColorSourceBase(matrix),
-        image_(image),
-        horizontal_tile_mode_(horizontal_tile_mode),
-        vertical_tile_mode_(vertical_tile_mode),
-        sampling_(sampling) {}
+  static dl_shared<DlImageColorSource> Make(
+      sk_sp<const DlImage> image,
+      DlTileMode horizontal_tile_mode,
+      DlTileMode vertical_tile_mode,
+      DlImageSampling sampling = DlImageSampling::kLinear,
+      const SkMatrix* matrix = nullptr);
 
   const DlImageColorSource* asImage() const override { return this; }
 
-  std::shared_ptr<DlColorSource> shared() const override {
-    return with_sampling(sampling_);
-  }
-
-  std::shared_ptr<DlColorSource> with_sampling(DlImageSampling sampling) const {
-    return std::make_shared<DlImageColorSource>(image_, horizontal_tile_mode_,
-                                                vertical_tile_mode_, sampling,
-                                                matrix_ptr());
+  dl_shared<DlColorSource> with_sampling(DlImageSampling sampling) const {
+    return dl_shared(new DlImageColorSource(image_, horizontal_tile_mode_,
+                                            vertical_tile_mode_, sampling,
+                                            matrix_ptr()));
   }
 
   DlColorSourceType type() const override { return DlColorSourceType::kImage; }
@@ -248,6 +254,17 @@ class DlImageColorSource final : public SkRefCnt,
   }
 
  private:
+  DlImageColorSource(sk_sp<const DlImage> image,
+                     DlTileMode horizontal_tile_mode,
+                     DlTileMode vertical_tile_mode,
+                     DlImageSampling sampling = DlImageSampling::kLinear,
+                     const SkMatrix* matrix = nullptr)
+      : DlMatrixColorSourceBase(matrix),
+        image_(image),
+        horizontal_tile_mode_(horizontal_tile_mode),
+        vertical_tile_mode_(vertical_tile_mode),
+        sampling_(sampling) {}
+
   sk_sp<const DlImage> image_;
   DlTileMode horizontal_tile_mode_;
   DlTileMode vertical_tile_mode_;
@@ -334,6 +351,15 @@ class DlGradientColorSourceBase : public DlMatrixColorSourceBase {
 
 class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
  public:
+  static dl_shared<DlLinearGradientColorSource> Make(
+      const SkPoint start_point,
+      const SkPoint end_point,
+      uint32_t stop_count,
+      const DlColor* colors,
+      const float* stops,
+      DlTileMode tile_mode,
+      const SkMatrix* matrix = nullptr);
+
   const DlLinearGradientColorSource* asLinearGradient() const override {
     return this;
   }
@@ -342,11 +368,6 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
     return DlColorSourceType::kLinearGradient;
   }
   size_t size() const override { return sizeof(*this) + vector_sizes(); }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return MakeLinear(start_point_, end_point_, stop_count(), colors(), stops(),
-                      tile_mode(), matrix_ptr());
-  }
 
   const SkPoint& start_point() const { return start_point_; }
   const SkPoint& end_point() const { return end_point_; }
@@ -375,15 +396,6 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, colors, stops);
   }
 
-  DlLinearGradientColorSource(const DlLinearGradientColorSource* source)
-      : DlGradientColorSourceBase(source->stop_count(),
-                                  source->tile_mode(),
-                                  source->matrix_ptr()),
-        start_point_(source->start_point()),
-        end_point_(source->end_point()) {
-    store_color_stops(this + 1, source->colors(), source->stops());
-  }
-
   SkPoint start_point_;
   SkPoint end_point_;
 
@@ -395,13 +407,17 @@ class DlLinearGradientColorSource final : public DlGradientColorSourceBase {
 
 class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
  public:
+  static dl_shared<DlRadialGradientColorSource> Make(
+      SkPoint center,
+      SkScalar radius,
+      uint32_t stop_count,
+      const DlColor* colors,
+      const float* stops,
+      DlTileMode tile_mode,
+      const SkMatrix* matrix = nullptr);
+
   const DlRadialGradientColorSource* asRadialGradient() const override {
     return this;
-  }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return MakeRadial(center_, radius_, stop_count(), colors(), stops(),
-                      tile_mode(), matrix_ptr());
   }
 
   DlColorSourceType type() const override {
@@ -436,15 +452,6 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, colors, stops);
   }
 
-  DlRadialGradientColorSource(const DlRadialGradientColorSource* source)
-      : DlGradientColorSourceBase(source->stop_count(),
-                                  source->tile_mode(),
-                                  source->matrix_ptr()),
-        center_(source->center()),
-        radius_(source->radius()) {
-    store_color_stops(this + 1, source->colors(), source->stops());
-  }
-
   SkPoint center_;
   SkScalar radius_;
 
@@ -456,14 +463,19 @@ class DlRadialGradientColorSource final : public DlGradientColorSourceBase {
 
 class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
  public:
+  static dl_shared<DlConicalGradientColorSource> Make(
+      SkPoint start_center,
+      SkScalar start_radius,
+      SkPoint end_center,
+      SkScalar end_radius,
+      uint32_t stop_count,
+      const DlColor* colors,
+      const float* stops,
+      DlTileMode tile_mode,
+      const SkMatrix* matrix = nullptr);
+
   const DlConicalGradientColorSource* asConicalGradient() const override {
     return this;
-  }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return MakeConical(start_center_, start_radius_, end_center_, end_radius_,
-                       stop_count(), colors(), stops(), tile_mode(),
-                       matrix_ptr());
   }
 
   DlColorSourceType type() const override {
@@ -506,17 +518,6 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, colors, stops);
   }
 
-  DlConicalGradientColorSource(const DlConicalGradientColorSource* source)
-      : DlGradientColorSourceBase(source->stop_count(),
-                                  source->tile_mode(),
-                                  source->matrix_ptr()),
-        start_center_(source->start_center()),
-        start_radius_(source->start_radius()),
-        end_center_(source->end_center()),
-        end_radius_(source->end_radius()) {
-    store_color_stops(this + 1, source->colors(), source->stops());
-  }
-
   SkPoint start_center_;
   SkScalar start_radius_;
   SkPoint end_center_;
@@ -530,13 +531,18 @@ class DlConicalGradientColorSource final : public DlGradientColorSourceBase {
 
 class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
  public:
+  static dl_shared<DlSweepGradientColorSource> Make(
+      SkPoint center,
+      SkScalar start,
+      SkScalar end,
+      uint32_t stop_count,
+      const DlColor* colors,
+      const float* stops,
+      DlTileMode tile_mode,
+      const SkMatrix* matrix = nullptr);
+
   const DlSweepGradientColorSource* asSweepGradient() const override {
     return this;
-  }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return MakeSweep(center_, start_, end_, stop_count(), colors(), stops(),
-                     tile_mode(), matrix_ptr());
   }
 
   DlColorSourceType type() const override {
@@ -574,16 +580,6 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
     store_color_stops(this + 1, colors, stops);
   }
 
-  DlSweepGradientColorSource(const DlSweepGradientColorSource* source)
-      : DlGradientColorSourceBase(source->stop_count(),
-                                  source->tile_mode(),
-                                  source->matrix_ptr()),
-        center_(source->center()),
-        start_(source->start()),
-        end_(source->end()) {
-    store_color_stops(this + 1, source->colors(), source->stops());
-  }
-
   SkPoint center_;
   SkScalar start_;
   SkScalar end_;
@@ -596,21 +592,13 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
 
 class DlRuntimeEffectColorSource final : public DlColorSource {
  public:
-  DlRuntimeEffectColorSource(
-      sk_sp<DlRuntimeEffect> runtime_effect,
-      std::vector<std::shared_ptr<DlColorSource>> samplers,
-      std::shared_ptr<std::vector<uint8_t>> uniform_data)
-      : runtime_effect_(std::move(runtime_effect)),
-        samplers_(std::move(samplers)),
-        uniform_data_(std::move(uniform_data)) {}
+  static dl_shared<DlRuntimeEffectColorSource> Make(
+      dl_shared<DlRuntimeEffect> runtime_effect,
+      std::vector<dl_shared<DlColorSource>> samplers,
+      std::shared_ptr<std::vector<uint8_t>> uniform_data);
 
   const DlRuntimeEffectColorSource* asRuntimeEffect() const override {
     return this;
-  }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return std::make_shared<DlRuntimeEffectColorSource>(
-        runtime_effect_, samplers_, uniform_data_);
   }
 
   DlColorSourceType type() const override {
@@ -620,10 +608,10 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
 
   bool is_opaque() const override { return false; }
 
-  const sk_sp<DlRuntimeEffect> runtime_effect() const {
+  const dl_shared<DlRuntimeEffect> runtime_effect() const {
     return runtime_effect_;
   }
-  const std::vector<std::shared_ptr<DlColorSource>> samplers() const {
+  const std::vector<dl_shared<DlColorSource>> samplers() const {
     return samplers_;
   }
   const std::shared_ptr<std::vector<uint8_t>> uniform_data() const {
@@ -652,8 +640,15 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   }
 
  private:
-  sk_sp<DlRuntimeEffect> runtime_effect_;
-  std::vector<std::shared_ptr<DlColorSource>> samplers_;
+  DlRuntimeEffectColorSource(dl_shared<DlRuntimeEffect> runtime_effect,
+                             std::vector<dl_shared<DlColorSource>> samplers,
+                             std::shared_ptr<std::vector<uint8_t>> uniform_data)
+      : runtime_effect_(std::move(runtime_effect)),
+        samplers_(std::move(samplers)),
+        uniform_data_(std::move(uniform_data)) {}
+
+  dl_shared<DlRuntimeEffect> runtime_effect_;
+  std::vector<dl_shared<DlColorSource>> samplers_;
   std::shared_ptr<std::vector<uint8_t>> uniform_data_;
 
   FML_DISALLOW_COPY_ASSIGN_AND_MOVE(DlRuntimeEffectColorSource);
@@ -662,15 +657,11 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
 #ifdef IMPELLER_ENABLE_3D
 class DlSceneColorSource final : public DlColorSource {
  public:
-  DlSceneColorSource(std::shared_ptr<impeller::scene::Node> node,
-                     impeller::Matrix camera_matrix)
-      : node_(std::move(node)), camera_matrix_(camera_matrix) {}
+  static dl_shared<DlSceneColorSource> Make(
+      std::shared_ptr<impeller::scene::Node> node,
+      impeller::Matrix camera_matrix);
 
   const DlSceneColorSource* asScene() const override { return this; }
-
-  std::shared_ptr<DlColorSource> shared() const override {
-    return std::make_shared<DlSceneColorSource>(node_, camera_matrix_);
-  }
 
   DlColorSourceType type() const override { return DlColorSourceType::kScene; }
   size_t size() const override { return sizeof(*this); }
@@ -692,6 +683,10 @@ class DlSceneColorSource final : public DlColorSource {
   }
 
  private:
+  DlSceneColorSource(std::shared_ptr<impeller::scene::Node> node,
+                     impeller::Matrix camera_matrix)
+      : node_(std::move(node)), camera_matrix_(camera_matrix) {}
+
   std::shared_ptr<impeller::scene::Node> node_;
   impeller::Matrix camera_matrix_;  // the view-projection matrix of the scene.
 

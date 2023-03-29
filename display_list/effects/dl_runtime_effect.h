@@ -7,20 +7,20 @@
 
 #include <memory>
 
+#include "flutter/display_list/dl_shared.h"
 #include "flutter/fml/macros.h"
 #include "flutter/impeller/runtime_stage/runtime_stage.h"
 
-#include "third_party/skia/include/core/SkRefCnt.h"
 #include "third_party/skia/include/effects/SkRuntimeEffect.h"
 
 namespace flutter {
 
-class DlRuntimeEffect : public SkRefCnt {
+class DlRuntimeEffect : public DlShareable {
  public:
-  static sk_sp<DlRuntimeEffect> MakeSkia(
+  static dl_shared<DlRuntimeEffect> MakeSkia(
       const sk_sp<SkRuntimeEffect>& runtime_effect);
 
-  static sk_sp<DlRuntimeEffect> MakeImpeller(
+  static dl_shared<DlRuntimeEffect> MakeImpeller(
       std::shared_ptr<impeller::RuntimeStage> runtime_stage);
 
   virtual sk_sp<SkRuntimeEffect> skia_runtime_effect() const = 0;
@@ -37,8 +37,6 @@ class DlRuntimeEffect : public SkRefCnt {
 
 class DlRuntimeEffectSkia final : public DlRuntimeEffect {
  public:
-  explicit DlRuntimeEffectSkia(const sk_sp<SkRuntimeEffect>& runtime_effect);
-
   // |DlRuntimeEffect|
   sk_sp<SkRuntimeEffect> skia_runtime_effect() const override;
 
@@ -47,6 +45,8 @@ class DlRuntimeEffectSkia final : public DlRuntimeEffect {
 
  private:
   DlRuntimeEffectSkia() = delete;
+  explicit DlRuntimeEffectSkia(const sk_sp<SkRuntimeEffect>& runtime_effect);
+
   // |DlRuntimeEffect|
   ~DlRuntimeEffectSkia() override;
 
@@ -59,9 +59,6 @@ class DlRuntimeEffectSkia final : public DlRuntimeEffect {
 
 class DlRuntimeEffectImpeller final : public DlRuntimeEffect {
  public:
-  explicit DlRuntimeEffectImpeller(
-      std::shared_ptr<impeller::RuntimeStage> runtime_stage);
-
   // |DlRuntimeEffect|
   sk_sp<SkRuntimeEffect> skia_runtime_effect() const override;
 
@@ -71,6 +68,9 @@ class DlRuntimeEffectImpeller final : public DlRuntimeEffect {
  private:
   DlRuntimeEffectImpeller() = delete;
   // |DlRuntimeEffect|
+  explicit DlRuntimeEffectImpeller(
+      std::shared_ptr<impeller::RuntimeStage> runtime_stage);
+
   ~DlRuntimeEffectImpeller() override;
 
   std::shared_ptr<impeller::RuntimeStage> runtime_stage_;

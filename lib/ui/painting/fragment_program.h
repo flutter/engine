@@ -34,13 +34,13 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
                                      Dart_Handle uniforms_handle,
                                      Dart_Handle samplers);
 
-  std::shared_ptr<DlColorSource> MakeDlColorSource(
+  dl_shared<DlColorSource> MakeDlColorSource(
       std::shared_ptr<std::vector<uint8_t>> float_uniforms,
-      const std::vector<std::shared_ptr<DlColorSource>>& children);
+      const std::vector<dl_shared<DlColorSource>>& children);
 
  private:
   FragmentProgram();
-  sk_sp<DlRuntimeEffect> runtime_effect_;
+  dl_shared<DlRuntimeEffect> runtime_effect_;
 };
 
 }  // namespace flutter

@@ -196,23 +196,20 @@ TEST(DisplayListVertices, ConvertWithZeroAndNegativeVerticesAndIndices) {
 }
 
 TEST(DisplayListColorSource, ConvertRuntimeEffect) {
-  const sk_sp<DlRuntimeEffect> kTestRuntimeEffect1 = DlRuntimeEffect::MakeSkia(
+  const auto kTestRuntimeEffect1 = DlRuntimeEffect::MakeSkia(
       SkRuntimeEffect::MakeForShader(
           SkString("vec4 main(vec2 p) { return vec4(0); }"))
           .effect);
-  const sk_sp<DlRuntimeEffect> kTestRuntimeEffect2 = DlRuntimeEffect::MakeSkia(
+  const auto kTestRuntimeEffect2 = DlRuntimeEffect::MakeSkia(
       SkRuntimeEffect::MakeForShader(
           SkString("vec4 main(vec2 p) { return vec4(1); }"))
           .effect);
-  std::shared_ptr<DlRuntimeEffectColorSource> source1 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source2 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source3 =
-      DlColorSource::MakeRuntimeEffect(
-          nullptr, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source1 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source2 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source3 = DlColorSource::MakeRuntimeEffect(
+      nullptr, {}, std::make_shared<std::vector<uint8_t>>());
 
   ASSERT_NE(ToSk(source1), nullptr);
   ASSERT_NE(ToSk(source2), nullptr);
@@ -220,14 +217,12 @@ TEST(DisplayListColorSource, ConvertRuntimeEffect) {
 }
 
 TEST(DisplayListColorSource, ConvertRuntimeEffectWithNullSampler) {
-  const sk_sp<DlRuntimeEffect> kTestRuntimeEffect1 = DlRuntimeEffect::MakeSkia(
+  const auto kTestRuntimeEffect1 = DlRuntimeEffect::MakeSkia(
       SkRuntimeEffect::MakeForShader(
           SkString("vec4 main(vec2 p) { return vec4(0); }"))
           .effect);
-  std::shared_ptr<DlRuntimeEffectColorSource> source1 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect1, {nullptr},
-          std::make_shared<std::vector<uint8_t>>());
+  auto source1 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect1, {nullptr}, std::make_shared<std::vector<uint8_t>>());
 
   ASSERT_EQ(ToSk(source1), nullptr);
 }

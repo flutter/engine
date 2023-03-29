@@ -114,16 +114,15 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetColorSource",
        {
-           {0, 96, 0, 0,
-            [](DlOpReceiver& r) { r.setColorSource(&kTestSource1); }},
-           // stop_count * (sizeof(float) + sizeof(uint32_t)) = 80
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) { r.setColorSource(kTestSource1.get()); }},
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource2.get()); }},
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource3.get()); }},
-           {0, 88 + 6 * 4, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource4.get()); }},
-           {0, 80 + 6 * 4, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setColorSource(kTestSource5.get()); }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setColorSource(nullptr); }},
        }},
@@ -226,7 +225,6 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetPathEffect",
        {
-           // sizeof(DlDashPathEffect) + 2 * sizeof(SkScalar)
            {0, 16, 0, 0,
             [](DlOpReceiver& r) { r.setPathEffect(kTestPathEffect1.get()); }},
            {0, 16, 0, 0,

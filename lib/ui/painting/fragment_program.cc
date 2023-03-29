@@ -95,9 +95,9 @@ std::string FragmentProgram::initFromAsset(const std::string& asset_name) {
   return "";
 }
 
-std::shared_ptr<DlColorSource> FragmentProgram::MakeDlColorSource(
+dl_shared<DlColorSource> FragmentProgram::MakeDlColorSource(
     std::shared_ptr<std::vector<uint8_t>> float_uniforms,
-    const std::vector<std::shared_ptr<DlColorSource>>& children) {
+    const std::vector<dl_shared<DlColorSource>>& children) {
   return DlColorSource::MakeRuntimeEffect(runtime_effect_, children,
                                           std::move(float_uniforms));
 }

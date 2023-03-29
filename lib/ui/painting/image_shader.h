@@ -30,7 +30,7 @@ class ImageShader : public Shader {
                             int filter_quality_index,
                             Dart_Handle matrix_handle);
 
-  std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
+  dl_shared<DlColorSource> shader(DlImageSampling) override;
 
   int width();
   int height();
@@ -43,7 +43,7 @@ class ImageShader : public Shader {
   sk_sp<const DlImage> image_;
   bool sampling_is_locked_;
 
-  flutter::SkiaGPUObject<DlImageColorSource> cached_shader_;
+  dl_shared<DlImageColorSource> cached_shader_;
 };
 
 }  // namespace flutter

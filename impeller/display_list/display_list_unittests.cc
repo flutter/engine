@@ -1207,9 +1207,9 @@ TEST_P(DisplayListTest, CanDrawPaintWithColorSource) {
   builder.Translate(500, 500);
   builder.ClipRect(clip_bounds, flutter::DlCanvas::ClipOp::kIntersect, false);
   auto texture = CreateTextureForFixture("table_mountain_nx.png");
-  auto image = std::make_shared<flutter::DlImageColorSource>(
-      DlImageImpeller::Make(texture), flutter::DlTileMode::kRepeat,
-      flutter::DlTileMode::kRepeat);
+  auto image = flutter::DlImageColorSource::Make(DlImageImpeller::Make(texture),
+                                                 flutter::DlTileMode::kRepeat,
+                                                 flutter::DlTileMode::kRepeat);
   paint.setColorSource(image);
   builder.DrawPaint(paint);
   builder.Restore();
@@ -1306,8 +1306,8 @@ TEST_P(DisplayListTest, MaskBlursApplyCorrectlyToColorSources) {
   std::array<flutter::DlColor, 2> colors = {flutter::DlColor::kBlue(),
                                             flutter::DlColor::kGreen()};
   std::array<float, 2> stops = {0, 1};
-  std::array<std::shared_ptr<flutter::DlColorSource>, 2> color_sources = {
-      std::make_shared<flutter::DlColorColorSource>(flutter::DlColor::kWhite()),
+  std::array<flutter::dl_shared<flutter::DlColorSource>, 2> color_sources = {
+      flutter::DlColorColorSource::Make(flutter::DlColor::kWhite()),
       flutter::DlColorSource::MakeLinear(
           SkPoint::Make(0, 0), SkPoint::Make(100, 50), 2, colors.data(),
           stops.data(), flutter::DlTileMode::kClamp)};
@@ -1429,10 +1429,10 @@ TEST_P(DisplayListTest, DrawVerticesImageSourceWithTextureCoordinates) {
   flutter::DisplayListBuilder builder;
   flutter::DlPaint paint;
 
-  auto image_source = flutter::DlImageColorSource(
+  auto image_source = flutter::DlImageColorSource::Make(
       dl_image, flutter::DlTileMode::kRepeat, flutter::DlTileMode::kRepeat);
 
-  paint.setColorSource(&image_source);
+  paint.setColorSource(image_source);
   builder.DrawVertices(vertices, flutter::DlBlendMode::kSrcOver, paint);
 
   ASSERT_TRUE(OpenPlaygroundHere(builder.Build()));
@@ -1600,7 +1600,7 @@ TEST_P(DisplayListTest, SceneColorSource) {
 
   flutter::DisplayListBuilder builder;
 
-  auto color_source = std::make_shared<flutter::DlSceneColorSource>(
+  auto color_source = flutter::DlSceneColorSource::Make(
       gltf_scene,
       Matrix::MakePerspective(Degrees(45), GetWindowSize(), 0.1, 1000) *
           Matrix::MakeLookAt({3, 2, -5}, {0, 0, 0}, {0, 1, 0}));

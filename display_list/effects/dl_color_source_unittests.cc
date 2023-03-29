@@ -31,12 +31,12 @@ static sk_sp<DlImage> MakeTestImage(int w, int h, SkColor color) {
   return DlImage::Make(surface->makeImageSnapshot());
 }
 
-static const sk_sp<DlRuntimeEffect> kTestRuntimeEffect1 =
+static const dl_shared<DlRuntimeEffect> kTestRuntimeEffect1 =
     DlRuntimeEffect::MakeSkia(
         SkRuntimeEffect::MakeForShader(
             SkString("vec4 main(vec2 p) { return vec4(0); }"))
             .effect);
-static const sk_sp<DlRuntimeEffect> kTestRuntimeEffect2 =
+static const dl_shared<DlRuntimeEffect> kTestRuntimeEffect2 =
     DlRuntimeEffect::MakeSkia(
         SkRuntimeEffect::MakeForShader(
             SkString("vec4 main(vec2 p) { return vec4(1); }"))
@@ -86,163 +86,144 @@ static constexpr SkPoint kTestPoints2[2] = {
 };
 
 TEST(DisplayListColorSource, ColorConstructor) {
-  DlColorColorSource source(SK_ColorRED);
-}
-
-TEST(DisplayListColorSource, ColorShared) {
-  DlColorColorSource source(SK_ColorRED);
-  ASSERT_NE(source.shared().get(), &source);
-  ASSERT_EQ(*source.shared(), source);
+  auto source = DlColorSource::MakeColor(SK_ColorRED);
 }
 
 TEST(DisplayListColorSource, ColorAsColor) {
-  DlColorColorSource source(SK_ColorRED);
-  ASSERT_NE(source.asColor(), nullptr);
-  ASSERT_EQ(source.asColor(), &source);
+  auto source = DlColorSource::MakeColor(SK_ColorRED);
+  ASSERT_NE(source->asColor(), nullptr);
+  ASSERT_EQ(source->asColor(), source.get());
 
-  ASSERT_EQ(source.asImage(), nullptr);
-  ASSERT_EQ(source.asLinearGradient(), nullptr);
-  ASSERT_EQ(source.asRadialGradient(), nullptr);
-  ASSERT_EQ(source.asConicalGradient(), nullptr);
-  ASSERT_EQ(source.asSweepGradient(), nullptr);
-  ASSERT_EQ(source.asRuntimeEffect(), nullptr);
+  ASSERT_EQ(source->asImage(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asRuntimeEffect(), nullptr);
 }
 
 TEST(DisplayListColorSource, ColorContents) {
-  DlColorColorSource source(SK_ColorRED);
-  ASSERT_EQ(source.color(), SK_ColorRED);
-  ASSERT_EQ(source.is_opaque(), true);
+  auto source = DlColorColorSource::Make(SK_ColorRED);
+  ASSERT_EQ(source->color(), SK_ColorRED);
+  ASSERT_EQ(source->is_opaque(), true);
   for (int i = 0; i < 255; i++) {
     SkColor alpha_color = SkColorSetA(SK_ColorRED, i);
-    DlColorColorSource alpha_source(alpha_color);
-    ASSERT_EQ(alpha_source.color(), alpha_color);
-    ASSERT_EQ(alpha_source.is_opaque(), false);
+    auto alpha_source = DlColorColorSource::Make(alpha_color);
+    ASSERT_EQ(alpha_source->color(), alpha_color);
+    ASSERT_EQ(alpha_source->is_opaque(), false);
   }
 }
 
 TEST(DisplayListColorSource, ColorEquals) {
-  DlColorColorSource source1(SK_ColorRED);
-  DlColorColorSource source2(SK_ColorRED);
-  TestEquals(source1, source2);
+  auto source1 = DlColorSource::MakeColor(SK_ColorRED);
+  auto source2 = DlColorSource::MakeColor(SK_ColorRED);
+  TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, ColorNotEquals) {
-  DlColorColorSource source1(SK_ColorRED);
-  DlColorColorSource source2(SK_ColorBLUE);
-  TestNotEquals(source1, source2, "Color differs");
+  auto source1 = DlColorSource::MakeColor(SK_ColorRED);
+  auto source2 = DlColorSource::MakeColor(SK_ColorBLUE);
+  TestNotEquals(*source1, *source2, "Color differs");
 }
 
 TEST(DisplayListColorSource, ImageConstructor) {
-  DlImageColorSource source(kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
-                            DlImageSampling::kLinear, &kTestMatrix1);
-}
-
-TEST(DisplayListColorSource, ImageShared) {
-  DlImageColorSource source(kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
-                            DlImageSampling::kLinear, &kTestMatrix1);
-  ASSERT_NE(source.shared().get(), &source);
-  ASSERT_EQ(*source.shared(), source);
+  auto source = DlColorSource::MakeImage(
+      kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
+      DlImageSampling::kLinear, &kTestMatrix1);
 }
 
 TEST(DisplayListColorSource, ImageAsImage) {
-  DlImageColorSource source(kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
-                            DlImageSampling::kLinear, &kTestMatrix1);
-  ASSERT_NE(source.asImage(), nullptr);
-  ASSERT_EQ(source.asImage(), &source);
+  auto source = DlColorSource::MakeImage(
+      kTestImage1, DlTileMode::kClamp, DlTileMode::kClamp,
+      DlImageSampling::kLinear, &kTestMatrix1);
+  ASSERT_NE(source->asImage(), nullptr);
+  ASSERT_EQ(source->asImage(), source.get());
 
-  ASSERT_EQ(source.asColor(), nullptr);
-  ASSERT_EQ(source.asLinearGradient(), nullptr);
-  ASSERT_EQ(source.asRadialGradient(), nullptr);
-  ASSERT_EQ(source.asConicalGradient(), nullptr);
-  ASSERT_EQ(source.asSweepGradient(), nullptr);
+  ASSERT_EQ(source->asColor(), nullptr);
+  ASSERT_EQ(source->asLinearGradient(), nullptr);
+  ASSERT_EQ(source->asRadialGradient(), nullptr);
+  ASSERT_EQ(source->asConicalGradient(), nullptr);
+  ASSERT_EQ(source->asSweepGradient(), nullptr);
 }
 
 TEST(DisplayListColorSource, ImageContents) {
-  DlImageColorSource source(kTestImage1, DlTileMode::kRepeat,
-                            DlTileMode::kMirror, DlImageSampling::kLinear,
-                            &kTestMatrix1);
-  ASSERT_EQ(source.image(), kTestImage1);
-  ASSERT_EQ(source.horizontal_tile_mode(), DlTileMode::kRepeat);
-  ASSERT_EQ(source.vertical_tile_mode(), DlTileMode::kMirror);
-  ASSERT_EQ(source.sampling(), DlImageSampling::kLinear);
-  ASSERT_EQ(source.matrix(), kTestMatrix1);
-  ASSERT_EQ(source.is_opaque(), true);
+  auto source = DlImageColorSource::Make(
+      kTestImage1, DlTileMode::kRepeat, DlTileMode::kMirror,
+      DlImageSampling::kLinear, &kTestMatrix1);
+  ASSERT_EQ(source->image(), kTestImage1);
+  ASSERT_EQ(source->horizontal_tile_mode(), DlTileMode::kRepeat);
+  ASSERT_EQ(source->vertical_tile_mode(), DlTileMode::kMirror);
+  ASSERT_EQ(source->sampling(), DlImageSampling::kLinear);
+  ASSERT_EQ(source->matrix(), kTestMatrix1);
+  ASSERT_EQ(source->is_opaque(), true);
 }
 
 TEST(DisplayListColorSource, AlphaImageContents) {
-  DlImageColorSource source(kTestAlphaImage1, DlTileMode::kRepeat,
-                            DlTileMode::kMirror, DlImageSampling::kLinear,
-                            &kTestMatrix1);
-  ASSERT_EQ(source.image(), kTestAlphaImage1);
-  ASSERT_EQ(source.horizontal_tile_mode(), DlTileMode::kRepeat);
-  ASSERT_EQ(source.vertical_tile_mode(), DlTileMode::kMirror);
-  ASSERT_EQ(source.sampling(), DlImageSampling::kLinear);
-  ASSERT_EQ(source.matrix(), kTestMatrix1);
-  ASSERT_EQ(source.is_opaque(), false);
+  auto source = DlImageColorSource::Make(
+      kTestAlphaImage1, DlTileMode::kRepeat, DlTileMode::kMirror,
+      DlImageSampling::kLinear, &kTestMatrix1);
+  ASSERT_EQ(source->image(), kTestAlphaImage1);
+  ASSERT_EQ(source->horizontal_tile_mode(), DlTileMode::kRepeat);
+  ASSERT_EQ(source->vertical_tile_mode(), DlTileMode::kMirror);
+  ASSERT_EQ(source->sampling(), DlImageSampling::kLinear);
+  ASSERT_EQ(source->matrix(), kTestMatrix1);
+  ASSERT_EQ(source->is_opaque(), false);
 }
 
 TEST(DisplayListColorSource, ImageEquals) {
-  DlImageColorSource source1(kTestImage1, DlTileMode::kClamp,
-                             DlTileMode::kMirror, DlImageSampling::kLinear,
-                             &kTestMatrix1);
-  DlImageColorSource source2(kTestImage1, DlTileMode::kClamp,
-                             DlTileMode::kMirror, DlImageSampling::kLinear,
-                             &kTestMatrix1);
-  TestEquals(source1, source2);
+  auto source1 = DlColorSource::MakeImage(
+      kTestImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+      DlImageSampling::kLinear, &kTestMatrix1);
+  auto source2 = DlColorSource::MakeImage(
+      kTestImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+      DlImageSampling::kLinear, &kTestMatrix1);
+  TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, ImageNotEquals) {
-  DlImageColorSource source1(kTestImage1, DlTileMode::kClamp,
-                             DlTileMode::kMirror, DlImageSampling::kLinear,
-                             &kTestMatrix1);
+  auto source1 = DlColorSource::MakeImage(
+      kTestImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+      DlImageSampling::kLinear, &kTestMatrix1);
   {
-    DlImageColorSource source2(kTestAlphaImage1, DlTileMode::kClamp,
-                               DlTileMode::kMirror, DlImageSampling::kLinear,
-                               &kTestMatrix1);
-    TestNotEquals(source1, source2, "Image differs");
+    auto source2 = DlColorSource::MakeImage(
+        kTestAlphaImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+        DlImageSampling::kLinear, &kTestMatrix1);
+    TestNotEquals(*source1, *source2, "Image differs");
   }
   {
-    DlImageColorSource source2(kTestImage1, DlTileMode::kRepeat,
-                               DlTileMode::kMirror, DlImageSampling::kLinear,
-                               &kTestMatrix1);
-    TestNotEquals(source1, source2, "hTileMode differs");
+    auto source2 = DlColorSource::MakeImage(
+        kTestImage1, DlTileMode::kRepeat, DlTileMode::kMirror,
+        DlImageSampling::kLinear, &kTestMatrix1);
+    TestNotEquals(*source1, *source2, "hTileMode differs");
   }
   {
-    DlImageColorSource source2(kTestImage1, DlTileMode::kClamp,
-                               DlTileMode::kRepeat, DlImageSampling::kLinear,
-                               &kTestMatrix1);
-    TestNotEquals(source1, source2, "vTileMode differs");
+    auto source2 = DlColorSource::MakeImage(
+        kTestImage1, DlTileMode::kClamp, DlTileMode::kRepeat,
+        DlImageSampling::kLinear, &kTestMatrix1);
+    TestNotEquals(*source1, *source2, "vTileMode differs");
   }
   {
-    DlImageColorSource source2(kTestImage1, DlTileMode::kClamp,
-                               DlTileMode::kMirror, DlImageSampling::kCubic,
-                               &kTestMatrix1);
-    TestNotEquals(source1, source2, "Sampling differs");
+    auto source2 = DlColorSource::MakeImage(
+        kTestImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+        DlImageSampling::kCubic, &kTestMatrix1);
+    TestNotEquals(*source1, *source2, "Sampling differs");
   }
   {
-    DlImageColorSource source2(kTestImage1, DlTileMode::kClamp,
-                               DlTileMode::kMirror, DlImageSampling::kLinear,
-                               &kTestMatrix2);
-    TestNotEquals(source1, source2, "Matrix differs");
+    auto source2 = DlColorSource::MakeImage(
+        kTestImage1, DlTileMode::kClamp, DlTileMode::kMirror,
+        DlImageSampling::kLinear, &kTestMatrix2);
+    TestNotEquals(*source1, *source2, "Matrix differs");
   }
 }
 
 TEST(DisplayListColorSource, LinearGradientConstructor) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  auto source = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
-}
-
-TEST(DisplayListColorSource, LinearGradientShared) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
-      kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_NE(source->shared().get(), source.get());
-  ASSERT_EQ(*source->shared().get(), *source.get());
 }
 
 TEST(DisplayListColorSource, LinearGradientAsLinear) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  auto source = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->asLinearGradient(), nullptr);
@@ -257,7 +238,7 @@ TEST(DisplayListColorSource, LinearGradientAsLinear) {
 }
 
 TEST(DisplayListColorSource, LinearGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  auto source = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
@@ -273,7 +254,7 @@ TEST(DisplayListColorSource, LinearGradientContents) {
 }
 
 TEST(DisplayListColorSource, AlphaLinearGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeLinear(
+  auto source = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestAlphaColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asLinearGradient()->start_point(), kTestPoints[0]);
@@ -289,81 +270,82 @@ TEST(DisplayListColorSource, AlphaLinearGradientContents) {
 }
 
 TEST(DisplayListColorSource, LinearGradientEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeLinear(
+  auto source1 = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
-  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
+  auto source2 = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, LinearGradientNotEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeLinear(
+  auto source1 = DlColorSource::MakeLinear(
       kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints2[0], kTestPoints[1], kTestStopCount, kTestColors,
-        kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints2[0], kTestPoints[1],
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Point 0 differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints2[1], kTestStopCount, kTestColors,
-        kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints2[1],
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Point 1 differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints[1], 2, kTestColors, kTestStops,  //
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                                 //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints[1],  //
+                                  2, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stop count differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints[1], kTestStopCount, kTestAlphaColors,
-        kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints[1],
+                                  kTestStopCount, kTestAlphaColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Colors differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors,
-        kTestStops2, DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints[1],
+                                  kTestStopCount, kTestColors, kTestStops2,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stops differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kMirror, &kTestMatrix1);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints[1],
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kMirror, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Tile Mode differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeLinear(
-        kTestPoints[0], kTestPoints[1], kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix2);
+    auto source2 =  //
+        DlColorSource::MakeLinear(kTestPoints[0], kTestPoints[1],
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix2);
     TestNotEquals(*source1, *source2, "Matrix differs");
   }
 }
 
 TEST(DisplayListColorSource, RadialGradientConstructor) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
-}
-
-TEST(DisplayListColorSource, RadialGradientShared) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_NE(source->shared().get(), source.get());
-  ASSERT_EQ(*source->shared().get(), *source.get());
+  auto source =                                        //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
 }
 
 TEST(DisplayListColorSource, RadialGradientAsRadial) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source =                                        //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->asRadialGradient(), nullptr);
   ASSERT_EQ(source->asRadialGradient(), source.get());
 
@@ -376,9 +358,10 @@ TEST(DisplayListColorSource, RadialGradientAsRadial) {
 }
 
 TEST(DisplayListColorSource, RadialGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source =                                        //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asRadialGradient()->center(), kTestPoints[0]);
   ASSERT_EQ(source->asRadialGradient()->radius(), 10.0);
   ASSERT_EQ(source->asRadialGradient()->stop_count(), kTestStopCount);
@@ -392,9 +375,10 @@ TEST(DisplayListColorSource, RadialGradientContents) {
 }
 
 TEST(DisplayListColorSource, AlphaRadialGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestAlphaColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source =                                        //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestAlphaColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asRadialGradient()->center(), kTestPoints[0]);
   ASSERT_EQ(source->asRadialGradient()->radius(), 10.0);
   ASSERT_EQ(source->asRadialGradient()->stop_count(), kTestStopCount);
@@ -408,79 +392,81 @@ TEST(DisplayListColorSource, AlphaRadialGradientContents) {
 }
 
 TEST(DisplayListColorSource, RadialGradientEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
-  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source1 =                                       //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
+  auto source2 =                                       //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
   TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, RadialGradientNotEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeRadial(
-      kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source1 =                                       //
+      DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                kTestStopCount, kTestColors, kTestStops,
+                                DlTileMode::kClamp, &kTestMatrix1);
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints2[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                        //
+        DlColorSource::MakeRadial(kTestPoints2[0], 10.0,  //
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Center differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 20.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 20.0,  //
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Radius differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 10.0, 2, kTestColors, kTestStops,  //
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                  2, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stop count differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 10.0, kTestStopCount, kTestAlphaColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                  kTestStopCount, kTestAlphaColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Colors differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops2,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                  kTestStopCount, kTestColors, kTestStops2,
+                                  DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stops differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kMirror, &kTestMatrix1);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kMirror, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Tile Mode differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeRadial(
-        kTestPoints[0], 10.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix2);
+    auto source2 =                                       //
+        DlColorSource::MakeRadial(kTestPoints[0], 10.0,  //
+                                  kTestStopCount, kTestColors, kTestStops,
+                                  DlTileMode::kClamp, &kTestMatrix2);
     TestNotEquals(*source1, *source2, "Matrix differs");
   }
 }
 
 TEST(DisplayListColorSource, ConicalGradientConstructor) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+  auto source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
-}
-
-TEST(DisplayListColorSource, ConicalGradientShared) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
-      kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
-      kTestStops, DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_NE(source->shared().get(), source.get());
-  ASSERT_EQ(*source->shared().get(), *source.get());
 }
 
 TEST(DisplayListColorSource, ConicalGradientAsConical) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+  auto source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->asConicalGradient(), nullptr);
@@ -495,7 +481,7 @@ TEST(DisplayListColorSource, ConicalGradientAsConical) {
 }
 
 TEST(DisplayListColorSource, ConicalGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+  auto source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asConicalGradient()->start_center(), kTestPoints[0]);
@@ -513,7 +499,7 @@ TEST(DisplayListColorSource, ConicalGradientContents) {
 }
 
 TEST(DisplayListColorSource, AlphaConicalGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeConical(
+  auto source = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount,
       kTestAlphaColors, kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asConicalGradient()->start_center(), kTestPoints[0]);
@@ -531,69 +517,69 @@ TEST(DisplayListColorSource, AlphaConicalGradientContents) {
 }
 
 TEST(DisplayListColorSource, ConicalGradientEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeConical(
+  auto source1 = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
-  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+  auto source2 = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, ConicalGradientNotEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeConical(
+  auto source1 = DlColorSource::MakeConical(
       kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
       kTestStops, DlTileMode::kClamp, &kTestMatrix1);
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints2[0], 10.0, kTestPoints[1], 20.0, kTestStopCount,
         kTestColors, kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Start Center differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 15.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Start Radius differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints2[1], 20.0, kTestStopCount,
         kTestColors, kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "End Center differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 25.0, kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "End Radius differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 20.0, 2, kTestColors, kTestStops,
         DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stop count differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount,
         kTestAlphaColors, kTestStops, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Colors differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
         kTestStops2, DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stops differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kMirror, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Tile Mode differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeConical(
+    auto source2 = DlColorSource::MakeConical(
         kTestPoints[0], 10.0, kTestPoints[1], 20.0, kTestStopCount, kTestColors,
         kTestStops, DlTileMode::kClamp, &kTestMatrix2);
     TestNotEquals(*source1, *source2, "Matrix differs");
@@ -601,21 +587,13 @@ TEST(DisplayListColorSource, ConicalGradientNotEquals) {
 }
 
 TEST(DisplayListColorSource, SweepGradientConstructor) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
+  auto source = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
-}
-
-TEST(DisplayListColorSource, SweepGradientShared) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
-      kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
-  ASSERT_NE(source->shared().get(), source.get());
-  ASSERT_EQ(*source->shared().get(), *source.get());
 }
 
 TEST(DisplayListColorSource, SweepGradientAsSweep) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
+  auto source = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_NE(source->asSweepGradient(), nullptr);
@@ -630,7 +608,7 @@ TEST(DisplayListColorSource, SweepGradientAsSweep) {
 }
 
 TEST(DisplayListColorSource, SweepGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
+  auto source = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asSweepGradient()->center(), kTestPoints[0]);
@@ -647,7 +625,7 @@ TEST(DisplayListColorSource, SweepGradientContents) {
 }
 
 TEST(DisplayListColorSource, AlphaSweepGradientContents) {
-  std::shared_ptr<DlColorSource> source = DlColorSource::MakeSweep(
+  auto source = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestAlphaColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   ASSERT_EQ(source->asSweepGradient()->center(), kTestPoints[0]);
@@ -664,79 +642,85 @@ TEST(DisplayListColorSource, AlphaSweepGradientContents) {
 }
 
 TEST(DisplayListColorSource, SweepGradientEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeSweep(
+  auto source1 = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
-  std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
+  auto source2 = DlColorSource::MakeSweep(
       kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
       DlTileMode::kClamp, &kTestMatrix1);
   TestEquals(*source1, *source2);
 }
 
 TEST(DisplayListColorSource, SweepGradientNotEquals) {
-  std::shared_ptr<DlColorSource> source1 = DlColorSource::MakeSweep(
-      kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-      DlTileMode::kClamp, &kTestMatrix1);
+  auto source1 =                                            //
+      DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                               kTestStopCount, kTestColors, kTestStops,
+                               DlTileMode::kClamp, &kTestMatrix1);
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints2[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                             //
+        DlColorSource::MakeSweep(kTestPoints2[0], 10.0, 20.0,  //
+                                 kTestStopCount, kTestColors, kTestStops,
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Center differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 15.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 15.0, 20.0,  //
+                                 kTestStopCount, kTestColors, kTestStops,
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Start Angle differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 25.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 25.0,  //
+                                 kTestStopCount, kTestColors, kTestStops,
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "End Angle differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 20.0, 2, kTestColors, kTestStops,  //
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                                 2, kTestColors, kTestStops,  //
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stop count differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestAlphaColors,
-        kTestStops, DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                                 kTestStopCount, kTestAlphaColors, kTestStops,
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Colors differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops2,
-        DlTileMode::kClamp, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                                 kTestStopCount, kTestColors, kTestStops2,
+                                 DlTileMode::kClamp, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Stops differ");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kMirror, &kTestMatrix1);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                                 kTestStopCount, kTestColors, kTestStops,
+                                 DlTileMode::kMirror, &kTestMatrix1);
     TestNotEquals(*source1, *source2, "Tile Mode differs");
   }
   {
-    std::shared_ptr<DlColorSource> source2 = DlColorSource::MakeSweep(
-        kTestPoints[0], 10.0, 20.0, kTestStopCount, kTestColors, kTestStops,
-        DlTileMode::kClamp, &kTestMatrix2);
+    auto source2 =                                            //
+        DlColorSource::MakeSweep(kTestPoints[0], 10.0, 20.0,  //
+                                 kTestStopCount, kTestColors, kTestStops,
+                                 DlTileMode::kClamp, &kTestMatrix2);
     TestNotEquals(*source1, *source2, "Matrix differs");
   }
 }
 
 TEST(DisplayListColorSource, RuntimeEffect) {
-  std::shared_ptr<DlRuntimeEffectColorSource> source1 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source2 =
-      DlColorSource::MakeRuntimeEffect(
-          kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
-  std::shared_ptr<DlRuntimeEffectColorSource> source3 =
-      DlColorSource::MakeRuntimeEffect(
-          nullptr, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source1 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect1, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source2 = DlColorSource::MakeRuntimeEffect(
+      kTestRuntimeEffect2, {}, std::make_shared<std::vector<uint8_t>>());
+  auto source3 = DlColorSource::MakeRuntimeEffect(
+      nullptr, {}, std::make_shared<std::vector<uint8_t>>());
 
   ASSERT_EQ(source1->type(), DlColorSourceType::kRuntimeEffect);
   ASSERT_EQ(source1->asRuntimeEffect(), source1.get());
@@ -749,10 +733,10 @@ TEST(DisplayListColorSource, RuntimeEffect) {
   ASSERT_EQ(source1->asConicalGradient(), nullptr);
   ASSERT_EQ(source1->asSweepGradient(), nullptr);
 
-  TestEquals(source1, source1);
-  TestEquals(source3, source3);
-  TestNotEquals(source1, source2, "SkRuntimeEffect differs");
-  TestNotEquals(source2, source3, "SkRuntimeEffect differs");
+  TestEquals(*source1, *source1);
+  TestEquals(*source3, *source3);
+  TestNotEquals(*source1, *source2, "SkRuntimeEffect differs");
+  TestNotEquals(*source2, *source3, "SkRuntimeEffect differs");
 }
 
 }  // namespace testing

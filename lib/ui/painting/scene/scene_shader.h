@@ -31,7 +31,7 @@ class SceneShader : public Shader {
   void Dispose();
 
   // |Shader|
-  std::shared_ptr<DlColorSource> shader(DlImageSampling) override;
+  dl_shared<DlColorSource> shader(DlImageSampling) override;
 
  private:
   explicit SceneShader(fml::RefPtr<SceneNode> scene_node);

@@ -40,25 +40,16 @@ Dart_Handle ImageShader::initWithImage(CanvasImage* image,
   DlImageSampling sampling =
       sampling_is_locked_ ? ImageFilter::SamplingFromIndex(filter_quality_index)
                           : DlImageSampling::kLinear;
-  cached_shader_ = UIDartState::CreateGPUObject(sk_make_sp<DlImageColorSource>(
-      image_, tmx, tmy, sampling, &local_matrix));
+  cached_shader_ =
+      DlImageColorSource::Make(image_, tmx, tmy, sampling, &local_matrix);
   return Dart_Null();
 }
 
-std::shared_ptr<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
+dl_shared<DlColorSource> ImageShader::shader(DlImageSampling sampling) {
   if (sampling_is_locked_) {
-    return cached_shader_.skia_object()->with_sampling(
-        cached_shader_.skia_object()->sampling());
+    return cached_shader_;
   }
-  // It might seem that if the sampling is locked we can just return the
-  // cached version, but since we need to hold the cached shader in a
-  // Skia GPU wrapper, and that wrapper requires an sk_sp<>, we are holding
-  // an sk_sp<> version of the shared object and we need a shared_ptr version.
-  // So, either way, we need the with_sampling() method to shared_ptr'ify
-  // our copy.
-  // If we can get rid of the need for the GPU unref queue, then this can all
-  // be simplified down to just a shared_ptr.
-  return cached_shader_.skia_object()->with_sampling(sampling);
+  return cached_shader_->with_sampling(sampling);
 }
 
 int ImageShader::width() {
@@ -70,7 +61,7 @@ int ImageShader::height() {
 }
 
 void ImageShader::dispose() {
-  cached_shader_.reset();
+  cached_shader_ = nullptr;
   image_.reset();
   ClearDartWrapper();
 }

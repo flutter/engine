@@ -1019,7 +1019,7 @@ class CanvasCompareTester {
       };
       DlSetup dl_backdrop_setup = [=](DlCanvas* cv, DlPaint& p) {
         DlPaint setup_p;
-        setup_p.setColorSource(&kTestDlImageColorSource);
+        setup_p.setColorSource(kTestDlImageColorSource);
         cv->DrawPaint(setup_p);
       };
       SkSetup sk_content_setup = [=](SkCanvas* cv, SkPaint& p) {
@@ -1252,7 +1252,7 @@ class CanvasCompareTester {
           p.setStrokeWidth(5.0);
         };
         DlSetup dl_dither_setup = [=](DlCanvas*, DlPaint& p) {
-          p.setColorSource(&kTestDlImageColorSource);
+          p.setColorSource(kTestDlImageColorSource);
           p.setAlpha(0xf0);
           p.setStrokeWidth(5.0);
         };
@@ -1342,7 +1342,7 @@ class CanvasCompareTester {
         p.setStrokeWidth(5.0);
       };
       DlSetup dl_blur_setup = [=](DlCanvas*, DlPaint& p) {
-        p.setColorSource(&kTestDlImageColorSource);
+        p.setColorSource(kTestDlImageColorSource);
         p.setStrokeWidth(5.0);
       };
       blur_env.init_ref(sk_blur_setup, testP.sk_renderer(),  //
@@ -1393,7 +1393,7 @@ class CanvasCompareTester {
         p.setStrokeWidth(5.0);
       };
       DlSetup dl_dilate_setup = [=](DlCanvas*, DlPaint& p) {
-        p.setColorSource(&kTestDlImageColorSource);
+        p.setColorSource(kTestDlImageColorSource);
         p.setStrokeWidth(5.0);
       };
       dilate_env.init_ref(sk_dilate_setup, testP.sk_renderer(),  //
@@ -1424,7 +1424,7 @@ class CanvasCompareTester {
         p.setStrokeWidth(6.0);
       };
       DlSetup dl_erode_setup = [=](DlCanvas*, DlPaint& p) {
-        p.setColorSource(&kTestDlImageColorSource);
+        p.setColorSource(kTestDlImageColorSource);
         p.setStrokeWidth(6.0);
       };
       erode_env.init_ref(sk_erode_setup, testP.sk_renderer(),  //
@@ -2402,7 +2402,7 @@ class CanvasCompareTester {
     return surface->makeImageSnapshot();
   }
 
-  static const DlImageColorSource kTestDlImageColorSource;
+  static const dl_shared<DlColorSource> kTestDlImageColorSource;
   static const sk_sp<SkShader> kTestSkImageColorSource;
 
   static sk_sp<SkTextBlob> MakeTextBlob(const std::string& string,
@@ -2421,11 +2421,11 @@ BoundsTolerance CanvasCompareTester::DefaultTolerance =
     BoundsTolerance().addAbsolutePadding(1, 1);
 
 const sk_sp<SkImage> CanvasCompareTester::kTestImage = makeTestImage();
-const DlImageColorSource CanvasCompareTester::kTestDlImageColorSource(
-    DlImage::Make(kTestImage),
-    DlTileMode::kRepeat,
-    DlTileMode::kRepeat,
-    DlImageSampling::kLinear);
+const dl_shared<DlColorSource> CanvasCompareTester::kTestDlImageColorSource =
+    DlColorSource::MakeImage(DlImage::Make(kTestImage),
+                             DlTileMode::kRepeat,
+                             DlTileMode::kRepeat,
+                             DlImageSampling::kLinear);
 const sk_sp<SkShader> CanvasCompareTester::kTestSkImageColorSource =
     kTestImage->makeShader(SkTileMode::kRepeat,
                            SkTileMode::kRepeat,
@@ -3001,7 +3001,7 @@ TEST_F(DisplayListCanvas, DrawVerticesWithImage) {
             DlPaint v_paint = paint;
             if (v_paint.getColorSource() == nullptr) {
               v_paint.setColorSource(
-                  &CanvasCompareTester::kTestDlImageColorSource);
+                  CanvasCompareTester::kTestDlImageColorSource);
             }
             canvas->DrawVertices(dl_vertices, DlBlendMode::kSrcOver, v_paint);
           },

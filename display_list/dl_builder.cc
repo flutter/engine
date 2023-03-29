@@ -154,65 +154,12 @@ void DisplayListBuilder::onSetColorSource(const DlColorSource* source) {
   if (source == nullptr) {
     current_.setColorSource(nullptr);
     Push<ClearColorSourceOp>(0, 0);
+  } else if (source->type() == DlColorSourceType::kColor) {
+    current_.setColorSource(nullptr);
+    setColor(source->asColor()->color());
   } else {
-    current_.setColorSource(source->shared());
-    switch (source->type()) {
-      case DlColorSourceType::kColor: {
-        const DlColorColorSource* color_source = source->asColor();
-        current_.setColorSource(nullptr);
-        setColor(color_source->color());
-        break;
-      }
-      case DlColorSourceType::kImage: {
-        const DlImageColorSource* image_source = source->asImage();
-        FML_DCHECK(image_source);
-        Push<SetImageColorSourceOp>(0, 0, image_source);
-        break;
-      }
-      case DlColorSourceType::kLinearGradient: {
-        const DlLinearGradientColorSource* linear = source->asLinearGradient();
-        FML_DCHECK(linear);
-        void* pod = Push<SetPodColorSourceOp>(linear->size(), 0);
-        new (pod) DlLinearGradientColorSource(linear);
-        break;
-      }
-      case DlColorSourceType::kRadialGradient: {
-        const DlRadialGradientColorSource* radial = source->asRadialGradient();
-        FML_DCHECK(radial);
-        void* pod = Push<SetPodColorSourceOp>(radial->size(), 0);
-        new (pod) DlRadialGradientColorSource(radial);
-        break;
-      }
-      case DlColorSourceType::kConicalGradient: {
-        const DlConicalGradientColorSource* conical =
-            source->asConicalGradient();
-        FML_DCHECK(conical);
-        void* pod = Push<SetPodColorSourceOp>(conical->size(), 0);
-        new (pod) DlConicalGradientColorSource(conical);
-        break;
-      }
-      case DlColorSourceType::kSweepGradient: {
-        const DlSweepGradientColorSource* sweep = source->asSweepGradient();
-        FML_DCHECK(sweep);
-        void* pod = Push<SetPodColorSourceOp>(sweep->size(), 0);
-        new (pod) DlSweepGradientColorSource(sweep);
-        break;
-      }
-      case DlColorSourceType::kRuntimeEffect: {
-        const DlRuntimeEffectColorSource* effect = source->asRuntimeEffect();
-        FML_DCHECK(effect);
-        Push<SetRuntimeEffectColorSourceOp>(0, 0, effect);
-        break;
-      }
-#ifdef IMPELLER_ENABLE_3D
-      case DlColorSourceType::kScene: {
-        const DlSceneColorSource* scene = source->asScene();
-        FML_DCHECK(scene);
-        Push<SetSceneColorSourceOp>(0, 0, scene);
-        break;
-      }
-#endif  // IMPELLER_ENABLE_3D
-    }
+    current_.setColorSource(source);
+    Push<SetColorSourceOp>(0, 0, source);
   }
 }
 void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {

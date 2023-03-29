@@ -21,7 +21,7 @@ namespace testing {
 
 using ShaderMaskLayerTest = LayerTest;
 
-static std::shared_ptr<DlColorSource> MakeFilter(DlColor color) {
+static dl_shared<DlColorSource> MakeFilter(DlColor color) {
   DlColor colors[] = {
       color.withAlpha(0x7f),
       color,

@@ -184,9 +184,6 @@ void DisplayList::Dispatch(DlOpReceiver& receiver,
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPATCH)
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_DISPATCH(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPATCH
 
@@ -212,9 +209,6 @@ void DisplayList::DisposeOps(uint8_t* ptr, uint8_t* end) {
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_DISPOSE)
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_DISPOSE(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_DISPOSE
 
@@ -253,9 +247,6 @@ static bool CompareOps(uint8_t* ptrA,
     break;
 
       FOR_EACH_DISPLAY_LIST_OP(DL_OP_EQUALS)
-#ifdef IMPELLER_ENABLE_3D
-      DL_OP_EQUALS(SetSceneColorSource)
-#endif  // IMPELLER_ENABLE_3D
 
 #undef DL_OP_EQUALS
 
