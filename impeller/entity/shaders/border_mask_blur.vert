@@ -19,6 +19,6 @@ out vec2 v_texture_coords;
 
 void main() {
   gl_Position = frame_info.mvp * vec4(vertices, 0.0, 1.0);
-  v_texture_coords =
-      IPRemapCoords(texture_coords, frame_info.texture_sampler_y_coord_scale);
+  v_texture_coords = f16vec2(
+      IPRemapCoords(texture_coords, frame_info.texture_sampler_y_coord_scale));
 }
