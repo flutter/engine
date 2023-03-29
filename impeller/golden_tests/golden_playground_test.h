@@ -14,7 +14,8 @@
 
 namespace impeller {
 
-class GoldenPlaygroundTest : public ::testing::TestWithParam<PlaygroundBackend> {
+class GoldenPlaygroundTest
+    : public ::testing::TestWithParam<PlaygroundBackend> {
  public:
   using AiksPlaygroundCallback =
       std::function<bool(AiksContext& renderer, RenderTarget& render_target)>;

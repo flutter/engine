@@ -7,10 +7,8 @@ import("//flutter/impeller/tools/impeller.gni")
 
 impeller_component("golden_playground_test") {
   testonly = true
-  sources = [
-    "golden_playground_test.cc",
-    "golden_playground_test.h",
-  ]
+
+  sources = [ "golden_playground_test.h" ]
 
   deps = [
     "//flutter/fml",
@@ -18,9 +16,33 @@ impeller_component("golden_playground_test") {
     "//flutter/impeller/playground",
     "//flutter/testing:testing_lib",
   ]
+
+  if (is_mac) {
+    sources += [ "golden_playground_test_mac.cc" ]
+  } else {
+    sources += [ "golden_playground_test_stub.cc" ]
+    deps += [ ":metal_screenshot" ]
+  }
 }
 
 if (is_mac) {
+  impeller_component("metal_screenshot") {
+    testonly = true
+
+    sources = [
+      "metal_screenshot.h",
+      "metal_screenshot.mm",
+      "metal_screenshoter.h",
+      "metal_screenshoter.mm",
+    ]
+
+    deps = [
+      "//flutter/impeller/aiks",
+      "//flutter/impeller/playground",
+      "//flutter/impeller/renderer/backend/metal:metal",
+    ]
+  }
+
   impeller_component("impeller_golden_tests") {
     target_type = "executable"
 
@@ -31,20 +53,15 @@ if (is_mac) {
       "golden_digest.h",
       "golden_tests.cc",
       "main.cc",
-      "metal_screenshot.h",
-      "metal_screenshot.mm",
-      "metal_screenshoter.h",
-      "metal_screenshoter.mm",
       "working_directory.cc",
       "working_directory.h",
     ]
 
     deps = [
+      ":metal_screenshot",
       "//flutter/impeller/aiks",
       "//flutter/impeller/aiks:aiks_unittests_golden",
       "//flutter/impeller/fixtures",
-      "//flutter/impeller/playground",
-      "//flutter/impeller/renderer/backend/metal:metal",
       "//third_party/googletest:gtest",
     ]
   }
