@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+#pragma once
+
 #include <cstdint>
 
 #include "flutter/fml/build_config.h"
@@ -22,8 +24,14 @@ namespace impeller {
 /// @brief Convert a scalar to a half precision float.
 ///
 /// See also: https://clang.llvm.org/docs/LanguageExtensions.html
-/// This is not currently supported on windows toolchains.
-InternalHalf ScalarToHalf(Scalar f);
+/// This is not currently supported on Windows toolchains.
+inline constexpr InternalHalf ScalarToHalf(Scalar f) {
+#ifdef FML_OS_WIN
+  return static_cast<InternalHalf>(0);
+#else
+  return static_cast<InternalHalf>(f);
+#endif
+}
 
 /// @brief A storage only class for half precision floating point.
 struct Half {

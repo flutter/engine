@@ -775,7 +775,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed half Point (vec2).
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 2                                          //
     ) {
@@ -798,7 +798,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed Half Float Vector3.
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 3                                          //
     ) {
@@ -821,7 +821,7 @@ std::vector<StructMember> Reflector::ReadStructMembers(
 
     // Tightly packed Half Float Vector4.
     if (member.basetype == spirv_cross::SPIRType::BaseType::Half &&  //
-        member.width == sizeof(float) * 4 &&                         //
+        member.width == sizeof(Half) * 8 &&                          //
         member.columns == 1 &&                                       //
         member.vecsize == 4                                          //
     ) {
@@ -1002,19 +1002,19 @@ static VertexType VertexTypeFromInputResource(
     result.type_name = "int32_t";
   } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
              type.columns == 1u && type.vecsize == 2u &&
-             type.width == sizeof(float) * 4u) {
+             type.width == sizeof(Half) * 8u) {
     result.type_name = "HalfVector2";
   } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
-             type.columns == 1u && type.vecsize == 4u &&
-             type.width == sizeof(float) * 4u) {
+             type.columns == 1u && type.vecsize == 3u &&
+             type.width == sizeof(Half) * 8u) {
     result.type_name = "HalfVector3";
   } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
-             type.columns == 1u && type.vecsize == 3u &&
-             type.width == sizeof(float) * 4u) {
+             type.columns == 1u && type.vecsize == 4u &&
+             type.width == sizeof(Half) * 8u) {
     result.type_name = "HalfVector4";
   } else if (type.basetype == spirv_cross::SPIRType::BaseType::Half &&
              type.columns == 1u && type.vecsize == 1u &&
-             type.width == sizeof(float) * 4u) {
+             type.width == sizeof(Half) * 8u) {
     result.type_name = "Half";
   } else {
     // Catch all unknown padding.
