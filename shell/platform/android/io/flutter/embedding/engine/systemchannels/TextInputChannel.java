@@ -367,7 +367,7 @@ public class TextInputChannel {
         "TextInputClient.performPrivateCommand", Arrays.asList(inputClientId, json));
   }
 
-  /** Instructs Flutter to execute a "unfocus" action. */
+  /** Instructs Flutter to execute a "onConnectionClosed" action. */
   public void onConnectionClosed(int inputClientId) {
     Log.v(TAG, "Sending 'onConnectionClosed' message.");
     channel.invokeMethod(
