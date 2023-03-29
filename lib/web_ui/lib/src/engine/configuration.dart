@@ -50,11 +50,6 @@ import 'package:meta/meta.dart';
 import 'canvaskit/renderer.dart';
 import 'dom.dart';
 
-/// The version of CanvasKit used by the web engine by default.
-// DO NOT EDIT THE NEXT LINE OF CODE MANUALLY
-// See `lib/web_ui/README.md` for how to roll CanvasKit to a new version.
-const String _canvaskitVersion = '0.38.0';
-
 /// The Web Engine configuration for the current application.
 FlutterConfiguration get configuration =>
   _configuration ??= FlutterConfiguration.legacy(_jsConfiguration);
@@ -158,6 +153,32 @@ class FlutterConfiguration {
   // runtime. Runtime-supplied values take precedence over environment
   // variables.
 
+  /// The absolute base URL of the location of the `assets` directory of the app.
+  ///
+  /// This value is useful when Flutter web assets are deployed to a separate
+  /// domain (or subdirectory) from which the index.html is served, for example:
+  ///
+  /// * Application: https://www.my-app.com/
+  /// * Flutter Assets: https://cdn.example.com/my-app/build-hash/assets/
+  ///
+  /// The `assetBase` value would be set to:
+  ///
+  /// * `'https://cdn.example.com/my-app/build-hash/'`
+  ///
+  /// It is also useful in the case that a Flutter web application is embedded
+  /// into another web app, in a way that the `<base>` tag of the index.html
+  /// cannot be set (because it'd break the host app), for example:
+  ///
+  /// * Application: https://www.my-app.com/
+  /// * Flutter Assets: https://www.my-app.com/static/companion/flutter/assets/
+  ///
+  /// The `assetBase` would be set to:
+  ///
+  /// * `'/static/companion/flutter/'`
+  ///
+  /// Do not confuse this configuration value with [canvasKitBaseUrl].
+  String? get assetBase => _configuration?.assetBase;
+
   /// The base URL to use when downloading the CanvasKit script and associated
   /// wasm.
   ///
@@ -183,7 +204,7 @@ class FlutterConfiguration {
   String get canvasKitBaseUrl => _configuration?.canvasKitBaseUrl ?? _defaultCanvasKitBaseUrl;
   static const String _defaultCanvasKitBaseUrl = String.fromEnvironment(
     'FLUTTER_WEB_CANVASKIT_URL',
-    defaultValue: 'https://unpkg.com/canvaskit-wasm@$_canvaskitVersion/bin/',
+    defaultValue: 'canvaskit/',
   );
 
   /// The variant of CanvasKit to download.
@@ -267,6 +288,10 @@ external JsFlutterConfiguration? get _jsConfiguration;
 class JsFlutterConfiguration {}
 
 extension JsFlutterConfigurationExtension on JsFlutterConfiguration {
+  @JS('assetBase')
+  external JSString? get _assetBase;
+  String? get assetBase => _assetBase?.toDart;
+
   @JS('canvasKitBaseUrl')
   external JSString? get _canvasKitBaseUrl;
   String? get canvasKitBaseUrl => _canvasKitBaseUrl?.toDart;

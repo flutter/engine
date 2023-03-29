@@ -9,11 +9,11 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/texture.h"
 #include "impeller/geometry/color.h"
 #include "impeller/geometry/rect.h"
 #include "impeller/renderer/sampler_descriptor.h"
 #include "impeller/renderer/snapshot.h"
-#include "impeller/renderer/texture.h"
 
 namespace impeller {
 
@@ -94,7 +94,7 @@ class Contents {
   ///        a way that makes accepting opacity impossible. It is always safe
   ///        to return false, especially if computing overlap would be
   ///        computationally expensive.
-  virtual bool CanAcceptOpacity(const Entity& entity) const;
+  virtual bool CanInheritOpacity(const Entity& entity) const;
 
   /// @brief Inherit the provided opacity.
   ///

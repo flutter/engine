@@ -161,7 +161,8 @@ FlutterWindowsEngine::FlutterWindowsEngine(
     std::unique_ptr<WindowsRegistry> registry)
     : project_(std::make_unique<FlutterProjectBundle>(project)),
       aot_data_(nullptr, nullptr),
-      windows_registry_(std::move(registry)) {
+      windows_registry_(std::move(registry)),
+      lifecycle_manager_(std::make_unique<WindowsLifecycleManager>(this)) {
   embedder_api_.struct_size = sizeof(FlutterEngineProcTable);
   FlutterEngineGetProcAddresses(&embedder_api_);
 
@@ -203,6 +204,17 @@ FlutterWindowsEngine::FlutterWindowsEngine(
       std::make_unique<FlutterWindowsTextureRegistrar>(this, gl_procs_);
   surface_manager_ = AngleSurfaceManager::Create();
   window_proc_delegate_manager_ = std::make_unique<WindowProcDelegateManager>();
+  window_proc_delegate_manager_->RegisterTopLevelWindowProcDelegate(
+      [](HWND hwnd, UINT msg, WPARAM wpar, LPARAM lpar, void* user_data,
+         LRESULT* result) {
+        BASE_DCHECK(user_data);
+        FlutterWindowsEngine* that =
+            static_cast<FlutterWindowsEngine*>(user_data);
+        BASE_DCHECK(that->lifecycle_manager_);
+        return that->lifecycle_manager_->WindowProc(hwnd, msg, wpar, lpar,
+                                                    result);
+      },
+      static_cast<void*>(this));
 
   // Set up internal channels.
   // TODO: Replace this with an embedder.h API. See
@@ -327,18 +339,19 @@ bool FlutterWindowsEngine::Run(std::string_view entrypoint) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
     host->OnPreEngineRestart();
   };
-  args.update_semantics_callback = [](const FlutterSemanticsUpdate* update,
-                                      void* user_data) {
+  args.update_semantics_callback2 = [](const FlutterSemanticsUpdate2* update,
+                                       void* user_data) {
     auto host = static_cast<FlutterWindowsEngine*>(user_data);
 
-    for (size_t i = 0; i < update->nodes_count; i++) {
-      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(
-          update->nodes[i]);
+    for (size_t i = 0; i < update->node_count; i++) {
+      const FlutterSemanticsNode2* node = update->nodes[i];
+      host->accessibility_bridge_->AddFlutterSemanticsNodeUpdate(*node);
     }
 
-    for (size_t i = 0; i < update->custom_actions_count; i++) {
+    for (size_t i = 0; i < update->custom_action_count; i++) {
+      const FlutterSemanticsCustomAction2* action = update->custom_actions[i];
       host->accessibility_bridge_->AddFlutterSemanticsCustomActionUpdate(
-          update->custom_actions[i]);
+          *action);
     }
 
     host->accessibility_bridge_->CommitUpdates();
@@ -403,9 +416,7 @@ bool FlutterWindowsEngine::Stop() {
 
 void FlutterWindowsEngine::SetView(FlutterWindowsView* view) {
   view_ = view;
-  if (view) {
-    InitializeKeyboard();
-  }
+  InitializeKeyboard();
 }
 
 void FlutterWindowsEngine::OnVsync(intptr_t baton) {
@@ -749,6 +760,15 @@ void FlutterWindowsEngine::HandleAccessibilityMessage(
   }
   SendPlatformMessageResponse(message->response_handle,
                               reinterpret_cast<const uint8_t*>(""), 0);
+}
+
+void FlutterWindowsEngine::RequestApplicationQuit(ExitType exit_type,
+                                                  UINT exit_code) {
+  platform_handler_->RequestAppExit(exit_type, exit_code);
+}
+
+void FlutterWindowsEngine::OnQuit(UINT exit_code) {
+  lifecycle_manager_->Quit(exit_code);
 }
 
 }  // namespace flutter

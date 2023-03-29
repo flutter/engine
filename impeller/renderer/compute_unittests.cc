@@ -7,6 +7,7 @@
 #include "flutter/testing/testing.h"
 #include "gmock/gmock.h"
 #include "impeller/base/strings.h"
+#include "impeller/core/formats.h"
 #include "impeller/fixtures/sample.comp.h"
 #include "impeller/fixtures/stage1.comp.h"
 #include "impeller/fixtures/stage2.comp.h"
@@ -16,7 +17,6 @@
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/compute_command.h"
 #include "impeller/renderer/compute_pipeline_builder.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/pipeline_library.h"
 
 namespace impeller {
@@ -28,7 +28,7 @@ TEST_P(ComputeTest, CanCreateComputePass) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
   auto pipeline_desc =
@@ -111,7 +111,7 @@ TEST_P(ComputeTest, MultiStageInputAndOutput) {
 
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   auto pipeline_desc_1 =
       Stage1PipelineBuilder::MakeDefaultPipelineDescriptor(*context);
@@ -208,7 +208,7 @@ TEST_P(ComputeTest, CanCorrectlyDownScaleLargeGridSize) {
   using CS = SampleComputeShader;
   auto context = GetContext();
   ASSERT_TRUE(context);
-  ASSERT_TRUE(context->GetDeviceCapabilities().SupportsCompute());
+  ASSERT_TRUE(context->GetCapabilities()->SupportsCompute());
 
   using SamplePipelineBuilder = ComputePipelineBuilder<CS>;
   auto pipeline_desc =

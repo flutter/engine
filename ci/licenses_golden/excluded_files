@@ -135,6 +135,14 @@
 ../../../flutter/impeller/geometry/README.md
 ../../../flutter/impeller/geometry/geometry_unittests.cc
 ../../../flutter/impeller/geometry/geometry_unittests.h
+../../../flutter/impeller/golden_tests/README.md
+../../../flutter/impeller/golden_tests_harvester/.dart_tool
+../../../flutter/impeller/golden_tests_harvester/.gitignore
+../../../flutter/impeller/golden_tests_harvester/README.md
+../../../flutter/impeller/golden_tests_harvester/analysis_options.yaml
+../../../flutter/impeller/golden_tests_harvester/pubspec.lock
+../../../flutter/impeller/golden_tests_harvester/pubspec.yaml
+../../../flutter/impeller/golden_tests_harvester/test
 ../../../flutter/impeller/image/README.md
 ../../../flutter/impeller/playground
 ../../../flutter/impeller/renderer/compute_subgroup_unittests.cc
@@ -2618,6 +2626,10 @@
 ../../../third_party/skia/include/android/BUILD.bazel
 ../../../third_party/skia/include/codec/BUILD.bazel
 ../../../third_party/skia/include/config/BUILD.bazel
+../../../third_party/skia/include/config/OWNERS
+../../../third_party/skia/include/config/WORKSPACE.bazel
+../../../third_party/skia/include/config/copts.bzl
+../../../third_party/skia/include/config/linkopts.bzl
 ../../../third_party/skia/include/core/BUILD.bazel
 ../../../third_party/skia/include/docs/BUILD.bazel
 ../../../third_party/skia/include/effects/BUILD.bazel
@@ -2625,6 +2637,7 @@
 ../../../third_party/skia/include/gpu/BUILD.bazel
 ../../../third_party/skia/include/gpu/d3d/BUILD.bazel
 ../../../third_party/skia/include/gpu/dawn/BUILD.bazel
+../../../third_party/skia/include/gpu/ganesh/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/egl/BUILD.bazel
 ../../../third_party/skia/include/gpu/gl/glx/BUILD.bazel
@@ -2728,6 +2741,7 @@
 ../../../third_party/skia/modules/skunicode/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/include/BUILD.bazel
 ../../../third_party/skia/modules/skunicode/src/BUILD.bazel
+../../../third_party/skia/modules/skunicode/tests
 ../../../third_party/skia/modules/svg/include/BUILD.bazel
 ../../../third_party/skia/modules/svg/src/BUILD.bazel
 ../../../third_party/skia/modules/svg/tests
@@ -2769,9 +2783,11 @@
 ../../../third_party/skia/src/gpu/ganesh/glsl/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/gradients/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/gradients/README.md
+../../../third_party/skia/src/gpu/ganesh/image/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/mock/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/mtl/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/ops/BUILD.bazel
+../../../third_party/skia/src/gpu/ganesh/surface/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/tessellate/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/text/BUILD.bazel
 ../../../third_party/skia/src/gpu/ganesh/vk/BUILD.bazel

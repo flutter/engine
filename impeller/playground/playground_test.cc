@@ -10,7 +10,7 @@
 namespace impeller {
 
 PlaygroundTest::PlaygroundTest()
-    : switches_(flutter::testing::GetArgsForProcess()) {}
+    : Playground(PlaygroundSwitches{flutter::testing::GetArgsForProcess()}) {}
 
 PlaygroundTest::~PlaygroundTest() = default;
 
@@ -27,6 +27,10 @@ void PlaygroundTest::SetUp() {
 
   SetupContext(GetParam());
   SetupWindow();
+}
+
+PlaygroundBackend PlaygroundTest::GetBackend() const {
+  return GetParam();
 }
 
 void PlaygroundTest::TearDown() {
