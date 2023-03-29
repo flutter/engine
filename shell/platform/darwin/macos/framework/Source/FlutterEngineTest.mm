@@ -770,7 +770,8 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   __block BOOL announced = FALSE;
   id engineMock = CreateMockFlutterEngine(nil);
 
-  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any] withPriority:NSAccessibilityPriorityMedium])
+  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
+                                      withPriority:NSAccessibilityPriorityMedium])
       .andDo((^(NSInvocation* invocation) {
         announced = TRUE;
       }));
