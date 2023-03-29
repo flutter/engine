@@ -767,12 +767,12 @@ TEST_F(FlutterEngineTest, HandlesTerminationRequest) {
 }
 
 TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
-  bool announced = false;
+  __block BOOL announced = FALSE;
   id engineMock = CreateMockFlutterEngine(nil);
 
   OCMStub([engineMock announceAccessibilityMessage:[OCMArg any] withPriority:[OCMArg any]])
       .andDo((^(NSInvocation* invocation) {
-        announced = true;
+        announced = TRUE;
       }));
 
   NSDictionary<NSString*, id>* annotatedEvent =
@@ -782,7 +782,7 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   FlutterStandardMessageCodec* codec = [FlutterStandardMessageCodec sharedInstance];
   NSData* test_message = [codec encode:annotatedEvent];
 
-  [engine.binaryMessenger sendOnChannel:@"flutter/accessibility" message:test_message];
+  [engineMock sendOnChannel:@"flutter/accessibility" message:test_message];
 
   EXPECT_TRUE(announced);
 }

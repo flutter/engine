@@ -1004,7 +1004,7 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
 }
 
 - (void)announceAccessibilityMessage:(NSString*)message
-                        withPriority:(NSAccessibilityPrioirityKey)priority {
+                        withPriority:(NSAccessibilityPriorityLevel)priority {
   NSAccessibilityPostNotificationWithUserInfo(
       [self viewControllerForId:kFlutterDefaultViewId].flutterView,
       NSAccessibilityAnnouncementRequestedNotification,
