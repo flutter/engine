@@ -5,6 +5,7 @@
 import 'package:test/bootstrap/browser.dart';
 import 'package:test/test.dart';
 import 'package:ui/ui.dart';
+import 'package:web_engine_tester/golden_tester.dart';
 
 import 'utils.dart';
 
@@ -24,7 +25,7 @@ Future<void> testMain() async {
 
     drawPictureUsingCurrentRenderer(recorder.endRecording());
 
-    await matchGolden('canvas_lines_thickness.png', region: region);
+    await matchGoldenFile('canvas_lines_thickness.png', region: region);
   });
 
   test('draws lines with negative Offset values', () async {
@@ -57,7 +58,7 @@ Future<void> testMain() async {
     paintLinesFromPoints(canvas, paintWithoutStyle, shiftedPoints);
 
     drawPictureUsingCurrentRenderer(recorder.endRecording());
-    await matchGolden('canvas_lines_with_negative_offset.png', region: region);
+    await matchGoldenFile('canvas_lines_with_negative_offset.png', region: region);
   });
 
   test('drawLines method respects strokeCap', () async {
@@ -93,7 +94,7 @@ Future<void> testMain() async {
     paintLinesFromPoints(canvas, paintStrokeCapButt, twiceShiftedPoints);
 
     drawPictureUsingCurrentRenderer(recorder.endRecording());
-    await matchGolden('canvas_lines_with_strokeCap.png', region: region);
+    await matchGoldenFile('canvas_lines_with_strokeCap.png', region: region);
   });
 }
 

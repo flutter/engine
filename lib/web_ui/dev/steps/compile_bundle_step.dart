@@ -293,7 +293,7 @@ class Dart2WasmCompiler extends TestCompiler {
       arguments,
       workingDirectory: inputTestSetDirectory.path,
       failureIsSuccess: true,
-      evalOutput: !isVerbose,
+      evalOutput: true,
     );
     final int exitCode = await process.wait();
 

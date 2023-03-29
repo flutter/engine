@@ -22,6 +22,7 @@ Future<String> compareImage(
   Image screenshot,
   bool doUpdateScreenshotGoldens,
   String filename,
+  Directory suiteGoldenDirectory,
   SkiaGoldClient? skiaClient, {
   required bool isCanvaskitTest,
   required bool verbose,
@@ -30,7 +31,7 @@ Future<String> compareImage(
     return 'OK';
   }
 
-  final String screenshotPath = _getFullScreenshotPath(filename);
+  final String screenshotPath = p.join(suiteGoldenDirectory.path, filename);
   final File screenshotFile = File(screenshotPath);
   await screenshotFile.create(recursive: true);
   await screenshotFile.writeAsBytes(encodePng(screenshot), flush: true);
@@ -83,8 +84,4 @@ Future<String> compareImage(
 Future<Image?> _getGolden(String filename) {
   // TODO(mdebbar): Fetch the golden from Skia Gold.
   return Future<Image?>.value();
-}
-
-String _getFullScreenshotPath(String filename) {
-  return p.join(environment.webUiSkiaGoldDirectory.path, filename);
 }

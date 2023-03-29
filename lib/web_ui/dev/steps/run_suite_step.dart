@@ -167,7 +167,7 @@ class RunSuiteStep implements PipelineStep {
     final Renderer renderer = suite.testBundle.compileConfig.renderer;
     final CanvasKitVariant? variant = suite.runConfig.variant;
     final SkiaGoldClient skiaClient = SkiaGoldClient(
-      environment.webUiSkiaGoldDirectory,
+      getSkiaGoldDirectoryForSuite(suite),
       dimensions: <String, String> {
         'Browser': suite.runConfig.browser.name,
         if (isWasm) 'Wasm': 'true',

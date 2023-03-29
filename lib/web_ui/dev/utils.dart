@@ -390,6 +390,15 @@ io.Directory getBundleBuildDirectory(TestBundle bundle) {
   );
 }
 
+io.Directory getSkiaGoldDirectoryForSuite(TestSuite suite) {
+  return io.Directory(
+    path.join(
+      environment.webUiSkiaGoldDirectory.path,
+      suite.name,
+    )
+  );
+}
+
 extension AnsiColors on String {
   static bool shouldEscape = io.stdout.hasTerminal && io.stdout.supportsAnsiEscapes;
 
