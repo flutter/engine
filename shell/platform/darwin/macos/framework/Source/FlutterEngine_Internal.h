@@ -181,7 +181,7 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 
 /**
  * Handles accessibility events.
- */  
+ */
 - (void)handleAccessibilityEvent:(NSDictionary<NSString*, id>*)annotatedEvent;
 
 /**

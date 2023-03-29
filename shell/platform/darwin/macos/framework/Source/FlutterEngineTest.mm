@@ -780,7 +780,7 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
       @{@"type" : @"announce",
         @"data" : @{@"message" : @"error message"}};
 
-  [engineMock handleAccessibilityEvent: annotatedEvent];
+  [engineMock handleAccessibilityEvent:annotatedEvent];
 
   EXPECT_TRUE(announced);
 }
