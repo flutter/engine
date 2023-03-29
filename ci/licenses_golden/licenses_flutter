@@ -1270,10 +1270,12 @@ ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag 
 ORIGIN: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert + ../../../flutter/LICENSE
-ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag + ../../../flutter/LICENSE
@@ -1312,6 +1314,7 @@ ORIGIN: ../../../flutter/impeller/geometry/constants.h + ../../../flutter/LICENS
 ORIGIN: ../../../flutter/impeller/geometry/geometry_benchmarks.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/gradient.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/gradient.h + ../../../flutter/LICENSE
+ORIGIN: ../../../flutter/impeller/geometry/half.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/matrix.cc + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/matrix.h + ../../../flutter/LICENSE
 ORIGIN: ../../../flutter/impeller/geometry/matrix_decomposition.cc + ../../../flutter/LICENSE
@@ -3837,10 +3840,12 @@ FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.frag
 FILE: ../../../flutter/impeller/entity/shaders/color_matrix_color_filter.vert
 FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_fill.frag
 FILE: ../../../flutter/impeller/entity/shaders/conical_gradient_ssbo_fill.frag
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.frag
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.glsl
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur.vert
-FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.glsl
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur.vert
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_alpha_nodecal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_decal.frag
+FILE: ../../../flutter/impeller/entity/shaders/gaussian_blur/gaussian_blur_noalpha_nodecal.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.frag
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas.vert
 FILE: ../../../flutter/impeller/entity/shaders/glyph_atlas_sdf.frag
@@ -3879,6 +3884,7 @@ FILE: ../../../flutter/impeller/geometry/constants.h
 FILE: ../../../flutter/impeller/geometry/geometry_benchmarks.cc
 FILE: ../../../flutter/impeller/geometry/gradient.cc
 FILE: ../../../flutter/impeller/geometry/gradient.h
+FILE: ../../../flutter/impeller/geometry/half.h
 FILE: ../../../flutter/impeller/geometry/matrix.cc
 FILE: ../../../flutter/impeller/geometry/matrix.h
 FILE: ../../../flutter/impeller/geometry/matrix_decomposition.cc
