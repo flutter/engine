@@ -1100,7 +1100,8 @@ static void SetEntryPoint(flutter::Settings* settings, NSString* entrypoint, NSS
   // When flutter text input view resign first responder, send a message to
   // framework to ensure the focus state is correct. This is useful when close
   // keyboard from platform side.
-  [_textInputChannel.get() invokeMethod:@"TextInputClient.unfocus" arguments:@[ @(client) ]];
+  [_textInputChannel.get() invokeMethod:@"TextInputClient.onConnectionClosed"
+                              arguments:@[ @(client) ]];
 
   // Platform view's first responder detection logic:
   //

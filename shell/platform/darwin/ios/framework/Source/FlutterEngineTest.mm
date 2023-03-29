@@ -319,14 +319,15 @@ FLUTTER_ASSERT_ARC
   }
 }
 
-- (void)testEngineFlutterTextInputViewDidResignFirstResponderWillUnfocusTextInputClient {
+- (void)testFlutterTextInputViewDidResignFirstResponderWillCallTextInputClientConnectionClosed {
   id mockBinaryMessenger = OCMClassMock([FlutterBinaryMessengerRelay class]);
   FlutterEngine* engine = [[FlutterEngine alloc] init];
   [engine setBinaryMessenger:mockBinaryMessenger];
   [engine runWithEntrypoint:FlutterDefaultDartEntrypoint initialRoute:@"test"];
   [engine flutterTextInputViewDidResignFirstResponder:nil client:1];
   FlutterMethodCall* methodCall =
-      [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.unfocus" arguments:@[ @(1) ]];
+      [FlutterMethodCall methodCallWithMethodName:@"TextInputClient.onConnectionClosed"
+                                        arguments:@[ @(1) ]];
   NSData* encodedMethodCall = [[FlutterJSONMethodCodec sharedInstance] encodeMethodCall:methodCall];
   OCMVerify([mockBinaryMessenger sendOnChannel:@"flutter/textinput" message:encodedMethodCall]);
 }
