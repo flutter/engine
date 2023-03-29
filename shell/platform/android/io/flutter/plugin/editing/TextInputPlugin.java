@@ -95,13 +95,13 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
               );
       imeSyncCallback.install();
 
-      // When the keyboard is hidden, unfocus the text field.
+      // When the IME is hidden, we need to notify the framework that close connection.
       imeSyncCallback.setImeVisibleListener(
           new ImeSyncDeferringInsetsCallback.ImeVisibleListener() {
             @Override
             public void onImeVisibleChanged(boolean visible) {
               if (!visible) {
-                unfocus();
+                onConnectionClosed();
               }
             }
           });
@@ -850,7 +850,7 @@ public class TextInputPlugin implements ListenableEditingState.EditingStateWatch
   }
   // -------- End: Autofill -------
 
-  public void unfocus() {
-    textInputChannel.unfocus(inputTarget.id);
+  public void onConnectionClosed() {
+    textInputChannel.onConnectionClosed(inputTarget.id);
   }
 }

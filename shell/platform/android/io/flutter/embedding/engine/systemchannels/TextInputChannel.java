@@ -368,10 +368,11 @@ public class TextInputChannel {
   }
 
   /** Instructs Flutter to execute a "unfocus" action. */
-  public void unfocus(int inputClientId) {
-    Log.v(TAG, "Sending 'unfocus' message.");
+  public void onConnectionClosed(int inputClientId) {
+    Log.v(TAG, "Sending 'onConnectionClosed' message.");
     channel.invokeMethod(
-        "TextInputClient.unfocus", Arrays.asList(inputClientId, "TextInputAction.unfocus"));
+        "TextInputClient.onConnectionClosed",
+        Arrays.asList(inputClientId, "TextInputClient.onConnectionClosed"));
   }
 
   /**
