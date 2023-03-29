@@ -999,11 +999,15 @@ static void OnPlatformMessage(const FlutterPlatformMessage* message, FlutterEngi
                                                 ? NSAccessibilityPriorityHigh
                                                 : NSAccessibilityPriorityMedium;
 
-    NSAccessibilityPostNotificationWithUserInfo(
-        [self viewControllerForId:kFlutterDefaultViewId].flutterView,
-        NSAccessibilityAnnouncementRequestedNotification,
-        @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
+   [self announceAccessibilityMessage: message withPriority: priority];
   }
+}
+
+- (void)announceAccessibilityMessage:(NSString*)withPriority:(NSAccessibilityPrioirityKey){
+  NSAccessibilityPostNotificationWithUserInfo(
+    [self viewControllerForId:kFlutterDefaultViewId].flutterView,
+    NSAccessibilityAnnouncementRequestedNotification,
+    @{NSAccessibilityAnnouncementKey : message, NSAccessibilityPriorityKey : @(priority)});
 }
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
   if ([call.method isEqualToString:@"SystemNavigator.pop"]) {
