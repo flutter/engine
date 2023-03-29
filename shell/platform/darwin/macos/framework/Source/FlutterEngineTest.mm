@@ -775,15 +775,12 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
         announced = true;
       }));
 
-  NSDictionary<NSString *, id> *annotatedEvent = @{
-      @"type": @"announce",
-      @"data": @{
-          @"message": @"error message"
-      }
-  };
+  NSDictionary<NSString*, id>* annotatedEvent =
+      @{@"type" : @"announce",
+        @"data" : @{@"message" : @"error message"}};
 
-  FlutterStandardMessageCodec *codec = [FlutterStandardMessageCodec sharedInstance];
-  NSData *test_message = [codec encode:annotatedEvent];
+  FlutterStandardMessageCodec* codec = [FlutterStandardMessageCodec sharedInstance];
+  NSData* test_message = [codec encode:annotatedEvent];
 
   [engine.binaryMessenger sendOnChannel:@"flutter/accessibility" message:test_message];
 
