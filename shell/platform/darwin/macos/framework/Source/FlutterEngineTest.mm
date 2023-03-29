@@ -770,16 +770,15 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
   bool announced = false;
   id engineMock = CreateMockFlutterEngine(nil);
 
-  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any]
-                        withPriority:[OCMArg any]])
+  OCMStub([engineMock announceAccessibilityMessage:[OCMArg any] withPriority:[OCMArg any]])
       .andDo((^(NSInvocation* invocation) {
-        announced =true;
+        announced = true;
       }));
 
   NSData* test_message = [@"a message" dataUsingEncoding:FlutterStandardMessageCodec];
 
   [engine.binaryMessenger sendOnChannel:@"flutter/accessibility" message:test_message];
-  
+
   EXPECT_TRUE(announced);
 }
 
