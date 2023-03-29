@@ -45,6 +45,7 @@ struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
   GoldenPlaygroundTestImpl()
       : screenshoter_(new testing::MetalScreenshoter()) {}
   std::unique_ptr<testing::MetalScreenshoter> screenshoter_;
+  ISize window_size_ = ISize{1024, 768};
 };
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
@@ -62,7 +63,7 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
-  auto screenshot = pimpl_->screenshoter_->MakeScreenshot(picture);
+  auto screenshot = pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
   return SaveScreenshot(std::move(screenshot));
 }
 
@@ -89,7 +90,7 @@ Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
 }
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
-  return ISize();
+  return pimpl_->window_size_;
 }
 
 }  // namespace impeller
