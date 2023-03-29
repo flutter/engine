@@ -5,10 +5,10 @@
 #include <optional>
 
 #include "fml/logging.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/contents/clip_contents.h"
 #include "impeller/entity/contents/content_context.h"
 #include "impeller/entity/entity.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/vertex_buffer_builder.h"
 
@@ -70,7 +70,7 @@ bool ClipContents::ShouldRender(
   return true;
 }
 
-bool ClipContents::CanAcceptOpacity(const Entity& entity) const {
+bool ClipContents::CanInheritOpacity(const Entity& entity) const {
   return true;
 }
 
@@ -172,7 +172,7 @@ bool ClipRestoreContents::ShouldRender(
   return true;
 }
 
-bool ClipRestoreContents::CanAcceptOpacity(const Entity& entity) const {
+bool ClipRestoreContents::CanInheritOpacity(const Entity& entity) const {
   return true;
 }
 

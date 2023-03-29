@@ -8,9 +8,9 @@
 #include <sstream>
 
 #include "impeller/base/strings.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
@@ -154,7 +154,8 @@ static std::unique_ptr<PipelineT> CreateDefaultPipeline(
     return nullptr;
   }
   // Apply default ContentContextOptions to the descriptor.
-  const auto default_color_fmt = context.GetColorAttachmentPixelFormat();
+  const auto default_color_fmt =
+      context.GetCapabilities()->GetDefaultColorFormat();
   ContentContextOptions{.color_attachment_pixel_format = default_color_fmt}
       .ApplyToPipelineDescriptor(*desc);
   return std::make_unique<PipelineT>(context, desc);
@@ -177,7 +178,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
   conical_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<ConicalGradientFillPipeline>(*context_);
-  if (context_->GetDeviceCapabilities().SupportsSSBO()) {
+  if (context_->GetCapabilities()->SupportsSSBO()) {
     linear_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<LinearGradientSSBOFillPipeline>(*context_);
     radial_gradient_ssbo_fill_pipelines_[{}] =
@@ -187,7 +188,7 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
   }
-  if (context_->GetDeviceCapabilities().SupportsFramebufferFetch()) {
+  if (context_->GetCapabilities()->SupportsFramebufferFetch()) {
     framebuffer_blend_color_pipelines_[{}] =
         CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
     framebuffer_blend_colorburn_pipelines_[{}] =
@@ -260,10 +261,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<PositionUVPipeline>(*context_);
   tiled_texture_pipelines_[{}] =
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
-  gaussian_blur_pipelines_[{}] =
-      CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
-  gaussian_blur_decal_pipelines_[{}] =
+  gaussian_blur_alpha_decal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurAlphaDecalPipeline>(*context_);
+  gaussian_blur_alpha_nodecal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurAlphaPipeline>(*context_);
+  gaussian_blur_noalpha_decal_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurDecalPipeline>(*context_);
+  gaussian_blur_noalpha_nodecal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
   morphology_filter_pipelines_[{}] =
@@ -319,8 +324,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   auto context = GetContext();
 
   RenderTarget subpass_target;
-  if (context->GetDeviceCapabilities().SupportsOffscreenMSAA() &&
-      msaa_enabled) {
+  if (context->GetCapabilities()->SupportsOffscreenMSAA() && msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
         *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA, std::nullopt);
@@ -378,8 +382,8 @@ std::shared_ptr<Context> ContentContext::GetContext() const {
   return context_;
 }
 
-const IDeviceCapabilities& ContentContext::GetDeviceCapabilities() const {
-  return context_->GetDeviceCapabilities();
+const Capabilities& ContentContext::GetDeviceCapabilities() const {
+  return *context_->GetCapabilities();
 }
 
 void ContentContext::SetWireframe(bool wireframe) {

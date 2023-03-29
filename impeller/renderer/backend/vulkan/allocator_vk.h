@@ -7,7 +7,7 @@
 #include "flutter/fml/macros.h"
 #include "flutter/fml/memory/ref_ptr.h"
 #include "flutter/vulkan/procs/vulkan_proc_table.h"
-#include "impeller/renderer/allocator.h"
+#include "impeller/core/allocator.h"
 #include "impeller/renderer/backend/vulkan/context_vk.h"
 #include "impeller/renderer/backend/vulkan/device_buffer_vk.h"
 #include "impeller/renderer/backend/vulkan/vk.h"
@@ -28,7 +28,7 @@ class AllocatorVK final : public Allocator {
   VmaAllocator allocator_ = {};
   std::weak_ptr<Context> context_;
   vk::Device device_;
-  ISize max_texture_size_ = {4096, 4096};
+  ISize max_texture_size_;
   bool is_valid_ = false;
 
   AllocatorVK(std::weak_ptr<Context> context,

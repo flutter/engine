@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-@TestOn('!safari')
 // TODO(mdebbar): https://github.com/flutter/flutter/issues/51169
+@TestOn('!safari')
+library;
 
 import 'dart:async';
 
@@ -16,7 +17,7 @@ import 'package:ui/src/engine/navigation.dart';
 import 'package:ui/src/engine/services.dart';
 import 'package:ui/src/engine/test_embedding.dart';
 
-import '../spy.dart';
+import '../common/spy.dart';
 
 Map<String, dynamic> _wrapOriginState(dynamic state) {
   return <String, dynamic>{'origin': true, 'state': state};
