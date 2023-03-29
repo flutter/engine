@@ -31,6 +31,7 @@ class Surface final : public flutter::Surface {
 
   // |flutter::Surface|
   std::unique_ptr<flutter::SurfaceFrame> AcquireFrame(
+      int64_t view_id,
       const SkISize& size) override;
 
   // |flutter::Surface|
