@@ -16,13 +16,12 @@ namespace flutter {
 namespace testing {
 
 TEST(DisplayListImageFilter, LocalImageSkiaNull) {
-  auto blur_filter =
-      std::make_shared<DlBlurImageFilter>(0, 0, DlTileMode::kClamp);
-  DlLocalMatrixImageFilter dl_local_matrix_filter(SkMatrix::RotateDeg(45),
-                                                  blur_filter);
+  auto blur_filter = DlBlurImageFilter::Make(0, 0, DlTileMode::kClamp);
+  auto dl_local_matrix_filter =
+      DlLocalMatrixImageFilter::Make(SkMatrix::RotateDeg(45), blur_filter);
   // With sigmas set to zero on the blur filter, Skia will return a null filter.
   // The local matrix filter should return nullptr instead of crashing.
-  ASSERT_EQ(ToSk(dl_local_matrix_filter), nullptr);
+  ASSERT_EQ(ToSk(dl_local_matrix_filter.get()), nullptr);
 }
 
 TEST(DisplayListSkConversions, ToSkTileMode) {
@@ -139,7 +138,7 @@ TEST(DisplayListSkConversions, BlendColorFilterModifiesTransparency) {
     std::string desc = desc_str.str();
     auto dl_filter = DlColorFilter::MakeBlend(color, mode);
     if (dl_filter) {
-      auto sk_filter = ToSk(dl_filter);
+      auto sk_filter = ToSk(dl_filter.get());
       ASSERT_NE(dl_filter, nullptr) << desc;
       ASSERT_NE(sk_filter, nullptr) << desc;
       ASSERT_EQ(dl_filter->modifies_transparent_black(),
@@ -171,12 +170,12 @@ TEST(DisplayListSkConversions, ConvertWithZeroAndNegativeVerticesAndIndices) {
   std::shared_ptr<const DlVertices> vertices1 = DlVertices::Make(
       DlVertexMode::kTriangles, 0, nullptr, nullptr, nullptr, 0, nullptr);
   EXPECT_NE(vertices1, nullptr);
-  EXPECT_NE(ToSk(vertices1), nullptr);
+  EXPECT_NE(ToSk(vertices1.get()), nullptr);
 
   std::shared_ptr<const DlVertices> vertices2 = DlVertices::Make(
       DlVertexMode::kTriangles, -1, nullptr, nullptr, nullptr, -1, nullptr);
   EXPECT_NE(vertices2, nullptr);
-  EXPECT_NE(ToSk(vertices2), nullptr);
+  EXPECT_NE(ToSk(vertices2.get()), nullptr);
 }
 
 TEST(DisplayListVertices, ConvertWithZeroAndNegativeVerticesAndIndices) {
@@ -185,14 +184,14 @@ TEST(DisplayListVertices, ConvertWithZeroAndNegativeVerticesAndIndices) {
   EXPECT_TRUE(builder1.is_valid());
   std::shared_ptr<DlVertices> vertices1 = builder1.build();
   EXPECT_NE(vertices1, nullptr);
-  EXPECT_NE(ToSk(vertices1), nullptr);
+  EXPECT_NE(ToSk(vertices1.get()), nullptr);
 
   DlVertices::Builder builder2(DlVertexMode::kTriangles, -1,
                                DlVertices::Builder::kNone, -1);
   EXPECT_TRUE(builder2.is_valid());
   std::shared_ptr<DlVertices> vertices2 = builder2.build();
   EXPECT_NE(vertices2, nullptr);
-  EXPECT_NE(ToSk(vertices2), nullptr);
+  EXPECT_NE(ToSk(vertices2.get()), nullptr);
 }
 
 TEST(DisplayListColorSource, ConvertRuntimeEffect) {
@@ -211,9 +210,9 @@ TEST(DisplayListColorSource, ConvertRuntimeEffect) {
   auto source3 = DlColorSource::MakeRuntimeEffect(
       nullptr, {}, std::make_shared<std::vector<uint8_t>>());
 
-  ASSERT_NE(ToSk(source1), nullptr);
-  ASSERT_NE(ToSk(source2), nullptr);
-  ASSERT_EQ(ToSk(source3), nullptr);
+  ASSERT_NE(ToSk(source1.get()), nullptr);
+  ASSERT_NE(ToSk(source2.get()), nullptr);
+  ASSERT_EQ(ToSk(source3.get()), nullptr);
 }
 
 TEST(DisplayListColorSource, ConvertRuntimeEffectWithNullSampler) {
@@ -224,7 +223,7 @@ TEST(DisplayListColorSource, ConvertRuntimeEffectWithNullSampler) {
   auto source1 = DlColorSource::MakeRuntimeEffect(
       kTestRuntimeEffect1, {nullptr}, std::make_shared<std::vector<uint8_t>>());
 
-  ASSERT_EQ(ToSk(source1), nullptr);
+  ASSERT_EQ(ToSk(source1.get()), nullptr);
 }
 
 TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
@@ -241,7 +240,7 @@ TEST(DisplayListSkConversions, MatrixColorFilterModifiesTransparency) {
         "matrix[" + std::to_string(element) + "] = " + std::to_string(value);
     matrix[element] = value;
     auto dl_filter = DlMatrixColorFilter::Make(matrix);
-    auto sk_filter = ToSk(dl_filter);
+    auto sk_filter = ToSk(dl_filter.get());
     EXPECT_EQ(dl_filter == nullptr, sk_filter == nullptr);
     EXPECT_EQ(dl_filter && dl_filter->modifies_transparent_black(),
               sk_filter && sk_filter->filterColor(0) != 0);

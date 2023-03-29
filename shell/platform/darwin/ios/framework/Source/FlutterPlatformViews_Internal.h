@@ -262,7 +262,7 @@ class FlutterPlatformViewsController {
   long FindFirstResponderPlatformViewId();
 
   // Pushes backdrop filter mutation to the mutator stack of each visited platform view.
-  void PushFilterToVisitedPlatformViews(const std::shared_ptr<const DlImageFilter>& filter,
+  void PushFilterToVisitedPlatformViews(const dl_shared<const DlImageFilter>& filter,
                                         const SkRect& filter_rect);
 
   // Pushes the view id of a visted platform view to the list of visied platform views.

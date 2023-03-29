@@ -228,57 +228,10 @@ struct SetBlendModeOp final : DLOp {
   };
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorFilter, filter)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ColorSource, source)
+DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(ImageFilter, filter)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(MaskFilter, filter)
 DEFINE_SET_CLEAR_DLSHARED_ATTR_OP(PathEffect, effect)
 #undef DEFINE_SET_CLEAR_DLSHARED_ATTR_OP
-
-// Clear: 4 byte header + unused 4 byte payload uses 8 bytes
-//        (4 bytes unused)
-// Set: 4 byte header + unused 4 byte struct padding + Dl<name>
-//      instance copied to the memory following the record
-//      yields a size and efficiency that has somewhere between
-//      4 and 8 bytes unused
-#define DEFINE_SET_CLEAR_DLATTR_OP(name, sk_name, field)                    \
-  struct Clear##name##Op final : DLOp {                                     \
-    static const auto kType = DisplayListOpType::kClear##name;              \
-                                                                            \
-    Clear##name##Op() {}                                                    \
-                                                                            \
-    void dispatch(DispatchContext& ctx) const {                             \
-      ctx.receiver.set##name(nullptr);                                      \
-    }                                                                       \
-  };                                                                        \
-  struct SetPod##name##Op final : DLOp {                                    \
-    static const auto kType = DisplayListOpType::kSetPod##name;             \
-                                                                            \
-    SetPod##name##Op() {}                                                   \
-                                                                            \
-    void dispatch(DispatchContext& ctx) const {                             \
-      const Dl##name* filter = reinterpret_cast<const Dl##name*>(this + 1); \
-      ctx.receiver.set##name(filter);                                       \
-    }                                                                       \
-  };
-DEFINE_SET_CLEAR_DLATTR_OP(ImageFilter, ImageFilter, filter)
-#undef DEFINE_SET_CLEAR_DLATTR_OP
-
-// 4 byte header + 16 byte payload uses 24 total bytes (4 bytes unused)
-struct SetSharedImageFilterOp : DLOp {
-  static const auto kType = DisplayListOpType::kSetSharedImageFilter;
-
-  SetSharedImageFilterOp(const DlImageFilter* filter)
-      : filter(filter->shared()) {}
-
-  const std::shared_ptr<DlImageFilter> filter;
-
-  void dispatch(DispatchContext& ctx) const {
-    ctx.receiver.setImageFilter(filter.get());
-  }
-
-  DisplayListCompare equals(const SetSharedImageFilterOp* other) const {
-    return Equals(filter, other->filter) ? DisplayListCompare::kEqual
-                                         : DisplayListCompare::kNotEqual;
-  }
-};
 
 // The base object for all save() and saveLayer() ops
 // 4 byte header + 8 byte payload packs neatly into 16 bytes (4 bytes unused)
@@ -301,7 +254,7 @@ struct SaveOpBase : DLOp {
     return needed;
   }
 };
-// 24 byte SaveOpBase with no additional data (options is unsed here)
+// 16 byte SaveOpBase with no additional data (options is unsed here)
 struct SaveOp final : SaveOpBase {
   static const auto kType = DisplayListOpType::kSave;
 
@@ -325,7 +278,7 @@ struct SaveLayerOp final : SaveOpBase {
     }
   }
 };
-// 24 byte SaveOpBase + 16 byte payload packs evenly into 40 bytes
+// 16 byte SaveOpBase + 16 byte payload packs evenly into 32 bytes
 struct SaveLayerBoundsOp final : SaveOpBase {
   static const auto kType = DisplayListOpType::kSaveLayerBounds;
 
@@ -340,15 +293,15 @@ struct SaveLayerBoundsOp final : SaveOpBase {
     }
   }
 };
-// 24 byte SaveOpBase + 16 byte payload packs into minimum 40 bytes
+// 16 byte SaveOpBase + 8 byte payload packs into 24 bytes
 struct SaveLayerBackdropOp final : SaveOpBase {
   static const auto kType = DisplayListOpType::kSaveLayerBackdrop;
 
   explicit SaveLayerBackdropOp(const SaveLayerOptions options,
                                const DlImageFilter* backdrop)
-      : SaveOpBase(options), backdrop(backdrop->shared()) {}
+      : SaveOpBase(options), backdrop(backdrop) {}
 
-  const std::shared_ptr<DlImageFilter> backdrop;
+  const dl_shared<const DlImageFilter> backdrop;
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {
@@ -362,17 +315,17 @@ struct SaveLayerBackdropOp final : SaveOpBase {
                : DisplayListCompare::kNotEqual;
   }
 };
-// 24 byte SaveOpBase + 32 byte payload packs into minimum 56 bytes
+// 24 byte SaveOpBase + 24 byte payload packs into 48 bytes
 struct SaveLayerBackdropBoundsOp final : SaveOpBase {
   static const auto kType = DisplayListOpType::kSaveLayerBackdropBounds;
 
   SaveLayerBackdropBoundsOp(const SaveLayerOptions options,
                             const SkRect& rect,
                             const DlImageFilter* backdrop)
-      : SaveOpBase(options), rect(rect), backdrop(backdrop->shared()) {}
+      : SaveOpBase(options), rect(rect), backdrop(backdrop) {}
 
   const SkRect rect;
-  const std::shared_ptr<DlImageFilter> backdrop;
+  const dl_shared<const DlImageFilter> backdrop;
 
   void dispatch(DispatchContext& ctx) const {
     if (save_needed(ctx)) {

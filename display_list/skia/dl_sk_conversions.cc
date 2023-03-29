@@ -93,7 +93,7 @@ sk_sp<SkShader> ToSk(const DlColorSource* source) {
         if (sampler == nullptr) {
           return nullptr;
         }
-        sk_samplers[i] = ToSk(sampler);
+        sk_samplers[i] = ToSk(sampler.get());
       }
 
       auto uniform_data = runtime_source->uniform_data();
@@ -150,19 +150,19 @@ sk_sp<SkImageFilter> ToSk(const DlImageFilter* filter) {
     case DlImageFilterType::kCompose: {
       const DlComposeImageFilter* compose_filter = filter->asCompose();
       FML_DCHECK(compose_filter != nullptr);
-      return SkImageFilters::Compose(ToSk(compose_filter->outer()),
-                                     ToSk(compose_filter->inner()));
+      return SkImageFilters::Compose(ToSk(compose_filter->outer().get()),
+                                     ToSk(compose_filter->inner().get()));
     }
     case DlImageFilterType::kColorFilter: {
       const DlColorFilterImageFilter* cf_filter = filter->asColorFilter();
       FML_DCHECK(cf_filter != nullptr);
-      return SkImageFilters::ColorFilter(ToSk(cf_filter->color_filter()),
+      return SkImageFilters::ColorFilter(ToSk(cf_filter->color_filter().get()),
                                          nullptr);
     }
     case DlImageFilterType::kLocalMatrix: {
       const DlLocalMatrixImageFilter* lm_filter = filter->asLocalMatrix();
       FML_DCHECK(lm_filter != nullptr);
-      sk_sp<SkImageFilter> skia_filter = ToSk(lm_filter->image_filter());
+      sk_sp<SkImageFilter> skia_filter = ToSk(lm_filter->image_filter().get());
       // The image_filter property itself might have been null, or the
       // construction of the SkImageFilter might be optimized to null
       // for any number of reasons. In any case, if the filter is null

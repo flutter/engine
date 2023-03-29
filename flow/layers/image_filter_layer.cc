@@ -10,12 +10,12 @@
 
 namespace flutter {
 
-ImageFilterLayer::ImageFilterLayer(std::shared_ptr<const DlImageFilter> filter,
+ImageFilterLayer::ImageFilterLayer(const dl_shared<const DlImageFilter>& filter,
                                    const SkPoint& offset)
     : CacheableContainerLayer(
           RasterCacheUtil::kMinimumRendersBeforeCachingFilterLayer),
       offset_(offset),
-      filter_(std::move(filter)),
+      filter_(filter),
       transformed_filter_(nullptr) {}
 
 void ImageFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {

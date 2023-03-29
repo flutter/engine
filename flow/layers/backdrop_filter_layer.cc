@@ -7,9 +7,9 @@
 namespace flutter {
 
 BackdropFilterLayer::BackdropFilterLayer(
-    std::shared_ptr<const DlImageFilter> filter,
+    const dl_shared<const DlImageFilter>& filter,
     DlBlendMode blend_mode)
-    : filter_(std::move(filter)), blend_mode_(blend_mode) {}
+    : filter_(filter), blend_mode_(blend_mode) {}
 
 void BackdropFilterLayer::Diff(DiffContext* context, const Layer* old_layer) {
   DiffContext::AutoSubtreeRestore subtree(context);

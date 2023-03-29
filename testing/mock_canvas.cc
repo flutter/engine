@@ -52,8 +52,7 @@ void MockCanvas::SaveLayer(const SkRect* bounds,
   draw_calls_.emplace_back(DrawCall{
       current_layer_,
       SaveLayerData{bounds ? *bounds : SkRect(), paint ? *paint : DlPaint(),
-                    backdrop ? backdrop->shared() : nullptr,
-                    current_layer_ + 1}});
+                    backdrop, current_layer_ + 1}});
   tracker_.save();
   current_layer_++;  // Must go here; func params order of eval is undefined
 }

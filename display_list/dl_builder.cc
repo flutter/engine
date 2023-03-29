@@ -167,43 +167,8 @@ void DisplayListBuilder::onSetImageFilter(const DlImageFilter* filter) {
     current_.setImageFilter(nullptr);
     Push<ClearImageFilterOp>(0, 0);
   } else {
-    current_.setImageFilter(filter->shared());
-    switch (filter->type()) {
-      case DlImageFilterType::kBlur: {
-        const DlBlurImageFilter* blur_filter = filter->asBlur();
-        FML_DCHECK(blur_filter);
-        void* pod = Push<SetPodImageFilterOp>(blur_filter->size(), 0);
-        new (pod) DlBlurImageFilter(blur_filter);
-        break;
-      }
-      case DlImageFilterType::kDilate: {
-        const DlDilateImageFilter* dilate_filter = filter->asDilate();
-        FML_DCHECK(dilate_filter);
-        void* pod = Push<SetPodImageFilterOp>(dilate_filter->size(), 0);
-        new (pod) DlDilateImageFilter(dilate_filter);
-        break;
-      }
-      case DlImageFilterType::kErode: {
-        const DlErodeImageFilter* erode_filter = filter->asErode();
-        FML_DCHECK(erode_filter);
-        void* pod = Push<SetPodImageFilterOp>(erode_filter->size(), 0);
-        new (pod) DlErodeImageFilter(erode_filter);
-        break;
-      }
-      case DlImageFilterType::kMatrix: {
-        const DlMatrixImageFilter* matrix_filter = filter->asMatrix();
-        FML_DCHECK(matrix_filter);
-        void* pod = Push<SetPodImageFilterOp>(matrix_filter->size(), 0);
-        new (pod) DlMatrixImageFilter(matrix_filter);
-        break;
-      }
-      case DlImageFilterType::kCompose:
-      case DlImageFilterType::kLocalMatrix:
-      case DlImageFilterType::kColorFilter: {
-        Push<SetSharedImageFilterOp>(0, 0, filter);
-        break;
-      }
-    }
+    current_.setImageFilter(filter);
+    Push<SetImageFilterOp>(0, 0, filter);
   }
 }
 void DisplayListBuilder::onSetColorFilter(const DlColorFilter* filter) {
@@ -313,7 +278,7 @@ void DisplayListBuilder::Restore() {
 
     // Before we pop_back we will get the current layer bounds from the
     // current accumulator and adjust it as required based on the filter.
-    std::shared_ptr<const DlImageFilter> filter = layer_info.filter();
+    dl_shared<const DlImageFilter> filter = layer_info.filter();
     if (filter) {
       const SkRect clip = tracker_.device_cull_rect();
       if (!accumulator()->restore(

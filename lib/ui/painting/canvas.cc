@@ -244,7 +244,7 @@ void Canvas::drawPaint(Dart_Handle paint_objects, Dart_Handle paint_data) {
   if (display_list_builder_) {
     DlPaint dl_paint;
     paint.paint(dl_paint, kDrawPaintFlags);
-    std::shared_ptr<const DlImageFilter> filter = dl_paint.getImageFilter();
+    dl_shared<const DlImageFilter> filter = dl_paint.getImageFilter();
     if (filter && !filter->asColorFilter()) {
       // drawPaint does an implicit saveLayer if an SkImageFilter is
       // present that cannot be replaced by an SkColorFilter.

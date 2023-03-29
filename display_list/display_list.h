@@ -69,9 +69,6 @@ namespace flutter {
   V(SetColor)                       \
   V(SetBlendMode)                   \
                                     \
-  V(ClearPathEffect)                \
-  V(SetPathEffect)                  \
-                                    \
   V(ClearColorFilter)               \
   V(SetColorFilter)                 \
                                     \
@@ -79,11 +76,13 @@ namespace flutter {
   V(SetColorSource)                 \
                                     \
   V(ClearImageFilter)               \
-  V(SetPodImageFilter)              \
-  V(SetSharedImageFilter)           \
+  V(SetImageFilter)                 \
                                     \
   V(ClearMaskFilter)                \
   V(SetMaskFilter)                  \
+                                    \
+  V(ClearPathEffect)                \
+  V(SetPathEffect)                  \
                                     \
   V(Save)                           \
   V(SaveLayer)                      \

@@ -128,66 +128,84 @@ std::vector<DisplayListInvocationGroup> CreateAllAttributesOps() {
        }},
       {"SetImageFilter",
        {
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestBlurImageFilter1); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestBlurImageFilter2); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestBlurImageFilter3); }},
-           {0, 32, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestBlurImageFilter4); }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestDilateImageFilter1);
+              r.setImageFilter(kTestBlurImageFilter1.get());
             }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestDilateImageFilter2);
+              r.setImageFilter(kTestBlurImageFilter2.get());
             }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestDilateImageFilter3);
+              r.setImageFilter(kTestBlurImageFilter3.get());
             }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter1); }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter2); }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestErodeImageFilter3); }},
-           {0, 64, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestMatrixImageFilter1);
+              r.setImageFilter(kTestBlurImageFilter4.get());
             }},
-           {0, 64, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestMatrixImageFilter2);
+              r.setImageFilter(kTestDilateImageFilter1.get());
             }},
-           {0, 64, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestMatrixImageFilter3);
+              r.setImageFilter(kTestDilateImageFilter2.get());
             }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestComposeImageFilter1);
+              r.setImageFilter(kTestDilateImageFilter3.get());
             }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestComposeImageFilter2);
+              r.setImageFilter(kTestErodeImageFilter1.get());
             }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
-              r.setImageFilter(&kTestComposeImageFilter3);
+              r.setImageFilter(kTestErodeImageFilter2.get());
             }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestCFImageFilter1); }},
-           {0, 24, 0, 0,
-            [](DlOpReceiver& r) { r.setImageFilter(&kTestCFImageFilter2); }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestErodeImageFilter3.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestMatrixImageFilter1.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestMatrixImageFilter2.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestMatrixImageFilter3.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestComposeImageFilter1.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestComposeImageFilter2.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestComposeImageFilter3.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestCFImageFilter1.get());
+            }},
+           {0, 16, 0, 0,
+            [](DlOpReceiver& r) {
+              r.setImageFilter(kTestCFImageFilter2.get());
+            }},
            {0, 0, 0, 0, [](DlOpReceiver& r) { r.setImageFilter(nullptr); }},
-           {0, 24, 0, 0,
+           {0, 16, 0, 0,
             [](DlOpReceiver& r) {
               r.setImageFilter(
                   kTestBlurImageFilter1
-                      .makeWithLocalMatrix(SkMatrix::Translate(2, 2))
+                      ->makeWithLocalMatrix(SkMatrix::Translate(2, 2))
                       .get());
             }},
        }},
@@ -252,10 +270,10 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
   return {
       {"Save(Layer)+Restore",
        {
-           {5, 112, 5, 112,
+           {5, 104, 5, 104,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-                          &kTestCFImageFilter1);
+                          kTestCFImageFilter1.get());
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               r.drawRect({5, 5, 15, 15});
               r.drawRect({10, 10, 20, 20});
@@ -310,35 +328,28 @@ std::vector<DisplayListInvocationGroup> CreateAllSaveRestoreOps() {
             }},
            // backdrop variants - using the TestCFImageFilter because it can be
            // reconstituted in the DL->SkCanvas->DL stream
-           // {5, 104, 5, 104, [](DlOpReceiver& r) {
-           //   r.saveLayer(nullptr, SaveLayerOptions::kNoAttributes,
-           //   &kTestCFImageFilter1); r.clipRect({0, 0, 25, 25},
-           //   SkClipOp::kIntersect, true); r.drawRect({5, 5, 15, 15});
-           //   r.drawRect({10, 10, 20, 20});
-           //   r.restore();
-           // }},
-           {5, 112, 5, 112,
+           {5, 104, 5, 104,
             [](DlOpReceiver& r) {
               r.saveLayer(nullptr, SaveLayerOptions::kWithAttributes,
-                          &kTestCFImageFilter1);
+                          kTestCFImageFilter1.get());
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               r.drawRect({5, 5, 15, 15});
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 5, 128,
+           {5, 120, 5, 120,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kNoAttributes,
-                          &kTestCFImageFilter1);
+                          kTestCFImageFilter1.get());
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               r.drawRect({5, 5, 15, 15});
               r.drawRect({10, 10, 20, 20});
               r.restore();
             }},
-           {5, 128, 5, 128,
+           {5, 120, 5, 120,
             [](DlOpReceiver& r) {
               r.saveLayer(&kTestBounds, SaveLayerOptions::kWithAttributes,
-                          &kTestCFImageFilter1);
+                          kTestCFImageFilter1.get());
               r.clipRect({0, 0, 25, 25}, DlCanvas::ClipOp::kIntersect, true);
               r.drawRect({5, 5, 15, 15});
               r.drawRect({10, 10, 20, 20});

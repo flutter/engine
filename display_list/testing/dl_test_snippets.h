@@ -133,46 +133,36 @@ static const auto kTestMatrixColorFilter1 =
     DlMatrixColorFilter::Make(kRotateColorMatrix);
 static const auto kTestMatrixColorFilter2 =
     DlMatrixColorFilter::Make(kInvertColorMatrix);
-static const DlBlurImageFilter kTestBlurImageFilter1(5.0,
-                                                     5.0,
-                                                     DlTileMode::kClamp);
-static const DlBlurImageFilter kTestBlurImageFilter2(6.0,
-                                                     5.0,
-                                                     DlTileMode::kClamp);
-static const DlBlurImageFilter kTestBlurImageFilter3(5.0,
-                                                     6.0,
-                                                     DlTileMode::kClamp);
-static const DlBlurImageFilter kTestBlurImageFilter4(5.0,
-                                                     5.0,
-                                                     DlTileMode::kDecal);
-static const DlDilateImageFilter kTestDilateImageFilter1(5.0, 5.0);
-static const DlDilateImageFilter kTestDilateImageFilter2(6.0, 5.0);
-static const DlDilateImageFilter kTestDilateImageFilter3(5.0, 6.0);
-static const DlErodeImageFilter kTestErodeImageFilter1(5.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter2(6.0, 5.0);
-static const DlErodeImageFilter kTestErodeImageFilter3(5.0, 6.0);
-static const DlMatrixImageFilter kTestMatrixImageFilter1(
-    SkMatrix::RotateDeg(45),
-    kNearestSampling);
-static const DlMatrixImageFilter kTestMatrixImageFilter2(
-    SkMatrix::RotateDeg(85),
-    kNearestSampling);
-static const DlMatrixImageFilter kTestMatrixImageFilter3(
-    SkMatrix::RotateDeg(45),
-    kLinearSampling);
-static const DlComposeImageFilter kTestComposeImageFilter1(
-    kTestBlurImageFilter1,
-    kTestMatrixImageFilter1);
-static const DlComposeImageFilter kTestComposeImageFilter2(
-    kTestBlurImageFilter2,
-    kTestMatrixImageFilter1);
-static const DlComposeImageFilter kTestComposeImageFilter3(
-    kTestBlurImageFilter1,
-    kTestMatrixImageFilter2);
-static const DlColorFilterImageFilter kTestCFImageFilter1(
-    kTestBlendColorFilter1);
-static const DlColorFilterImageFilter kTestCFImageFilter2(
-    kTestBlendColorFilter2);
+static const auto kTestBlurImageFilter1 =
+    DlBlurImageFilter::Make(5.0, 5.0, DlTileMode::kClamp);
+static const auto kTestBlurImageFilter2 =
+    DlBlurImageFilter::Make(6.0, 5.0, DlTileMode::kClamp);
+static const auto kTestBlurImageFilter3 =
+    DlBlurImageFilter::Make(5.0, 6.0, DlTileMode::kClamp);
+static const auto kTestBlurImageFilter4 =
+    DlBlurImageFilter::Make(5.0, 5.0, DlTileMode::kDecal);
+static const auto kTestDilateImageFilter1 = DlDilateImageFilter::Make(5.0, 5.0);
+static const auto kTestDilateImageFilter2 = DlDilateImageFilter::Make(6.0, 5.0);
+static const auto kTestDilateImageFilter3 = DlDilateImageFilter::Make(5.0, 6.0);
+static const auto kTestErodeImageFilter1 = DlErodeImageFilter::Make(5.0, 5.0);
+static const auto kTestErodeImageFilter2 = DlErodeImageFilter::Make(6.0, 5.0);
+static const auto kTestErodeImageFilter3 = DlErodeImageFilter::Make(5.0, 6.0);
+static const auto kTestMatrixImageFilter1 =
+    DlMatrixImageFilter::Make(SkMatrix::RotateDeg(45), kNearestSampling);
+static const auto kTestMatrixImageFilter2 =
+    DlMatrixImageFilter::Make(SkMatrix::RotateDeg(85), kNearestSampling);
+static const auto kTestMatrixImageFilter3 =
+    DlMatrixImageFilter::Make(SkMatrix::RotateDeg(45), kLinearSampling);
+static const auto kTestComposeImageFilter1 =
+    DlComposeImageFilter::Make(kTestBlurImageFilter1, kTestMatrixImageFilter1);
+static const auto kTestComposeImageFilter2 =
+    DlComposeImageFilter::Make(kTestBlurImageFilter2, kTestMatrixImageFilter1);
+static const auto kTestComposeImageFilter3 =
+    DlComposeImageFilter::Make(kTestBlurImageFilter1, kTestMatrixImageFilter2);
+static const auto kTestCFImageFilter1 =
+    DlColorFilterImageFilter::Make(kTestBlendColorFilter1);
+static const auto kTestCFImageFilter2 =
+    DlColorFilterImageFilter::Make(kTestBlendColorFilter2);
 static const auto kTestPathEffect1 =
     DlDashPathEffect::Make(kTestDashes1, 2, 0.0f);
 static const auto kTestPathEffect2 =

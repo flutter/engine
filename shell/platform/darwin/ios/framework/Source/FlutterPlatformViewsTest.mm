@@ -1372,7 +1372,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->BeginFrame(SkISize::Make(0, 0));
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams));
   flutterPlatformViewsController->PushVisitedPlatformView(2);
-  auto filter = std::make_shared<flutter::DlBlurImageFilter>(5, 2, flutter::DlTileMode::kClamp);
+  auto filter = flutter::DlBlurImageFilter::Make(5, 2, flutter::DlTileMode::kClamp);
   flutterPlatformViewsController->PushFilterToVisitedPlatformViews(
       filter, SkRect::MakeXYWH(0, 0, screenScale * 10, screenScale * 10));
   flutterPlatformViewsController->CompositeEmbeddedView(2);

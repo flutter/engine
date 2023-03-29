@@ -508,8 +508,9 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    DlColorFilterImageFilter color_filter_image_filter(base_color_filter);
-    receiver.setImageFilter(&color_filter_image_filter);
+    auto color_filter_image_filter =
+        DlColorFilterImageFilter::Make(base_color_filter);
+    receiver.setImageFilter(color_filter_image_filter.get());
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setImageFilter(nullptr);
     receiver.drawRect(rect);
@@ -523,8 +524,9 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // will generate the same behavior as setting it as a ColorFilter
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
-    receiver.setImageFilter(&color_filter_image_filter);
+    auto color_filter_image_filter =
+        DlColorFilterImageFilter::Make(alpha_color_filter);
+    receiver.setImageFilter(color_filter_image_filter.get());
     receiver.saveLayer(&save_bounds, SaveLayerOptions::kWithAttributes);
     receiver.setImageFilter(nullptr);
     receiver.drawRect(rect);
@@ -537,8 +539,9 @@ TEST_F(DisplayListTest, DisplayListSaveLayerBoundsWithAlphaFilter) {
     // Same as above (ImageFilter hiding ColorFilter) with no save bounds
     DisplayListBuilder builder(build_bounds);
     DlOpReceiver& receiver = ToReceiver(builder);
-    DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
-    receiver.setImageFilter(&color_filter_image_filter);
+    auto color_filter_image_filter =
+        DlColorFilterImageFilter::Make(alpha_color_filter);
+    receiver.setImageFilter(color_filter_image_filter.get());
     receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
     receiver.setImageFilter(nullptr);
     receiver.drawRect(rect);
@@ -873,7 +876,7 @@ TEST_F(DisplayListTest, SaveLayerBoundsSnapshotsImageFilter) {
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.drawRect({50, 50, 100, 100});
   // This image filter should be ignored since it was not set before saveLayer
-  receiver.setImageFilter(&kTestBlurImageFilter1);
+  receiver.setImageFilter(kTestBlurImageFilter1.get());
   receiver.restore();
   SkRect bounds = builder.Build()->bounds();
   EXPECT_EQ(bounds, SkRect::MakeLTRB(50, 50, 100, 100));
@@ -1004,7 +1007,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterDoesNotInheritOpacity) {
   DisplayListBuilder builder;
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
-  receiver.setImageFilter(&kTestBlurImageFilter1);
+  receiver.setImageFilter(kTestBlurImageFilter1.get());
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
   receiver.setImageFilter(nullptr);
   receiver.drawRect({10, 10, 20, 20});
@@ -1057,7 +1060,7 @@ TEST_F(DisplayListTest, SaveLayerImageFilterOnChildInheritsOpacity) {
   DlOpReceiver& receiver = ToReceiver(builder);
   receiver.setColor(SkColorSetARGB(127, 255, 255, 255));
   receiver.saveLayer(nullptr, SaveLayerOptions::kWithAttributes);
-  receiver.setImageFilter(&kTestBlurImageFilter1);
+  receiver.setImageFilter(kTestBlurImageFilter1.get());
   receiver.drawRect({10, 10, 20, 20});
   receiver.restore();
 
@@ -1871,9 +1874,9 @@ TEST_F(DisplayListTest, RTreeOfSaveRestoreScene) {
 TEST_F(DisplayListTest, RTreeOfSaveLayerFilterScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 3 on all sides
-  auto filter = DlBlurImageFilter(1.0, 1.0, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter::Make(1.0, 1.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
-  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  DlPaint filter_paint = DlPaint().setImageFilter(filter);
   builder.DrawRect({10, 10, 20, 20}, default_paint);
   builder.SaveLayer(nullptr, &filter_paint);
   // the following rectangle will be expanded to 50,50,60,60
@@ -2031,19 +2034,20 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
   // Making sure hiding a problematic ColorFilter as an ImageFilter
   // will generate the same behavior as setting it as a ColorFilter
 
-  DlColorFilterImageFilter color_filter_image_filter(alpha_color_filter);
+  auto color_filter_image_filter =
+      DlColorFilterImageFilter::Make(alpha_color_filter);
   {
     DisplayListBuilder builder(build_bounds);
     builder.Save();
     DlPaint paint;
-    paint.setImageFilter(&color_filter_image_filter);
+    paint.setImageFilter(color_filter_image_filter);
     builder.DrawRect(rect, paint);
     builder.Restore();
     sk_sp<DisplayList> display_list1 = builder.Build();
 
     DisplayListBuilder builder2(build_bounds);
     DlPaint paint2;
-    paint2.setImageFilter(&color_filter_image_filter);
+    paint2.setImageFilter(color_filter_image_filter);
     builder2.DrawRect(rect, paint2);
     sk_sp<DisplayList> display_list2 = builder2.Build();
     ASSERT_TRUE(DisplayListsEQ_Verbose(display_list1, display_list2));
@@ -2054,7 +2058,7 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
     builder.Save();
     builder.SaveLayer(&build_bounds);
     DlPaint paint;
-    paint.setImageFilter(&color_filter_image_filter);
+    paint.setImageFilter(color_filter_image_filter);
     builder.DrawRect(rect, paint);
     builder.Restore();
     builder.Restore();
@@ -2063,7 +2067,7 @@ TEST_F(DisplayListTest, RemoveUnnecessarySaveRestorePairsInSetPaint) {
     DisplayListBuilder builder2(build_bounds);
     builder2.SaveLayer(&build_bounds);
     DlPaint paint2;
-    paint2.setImageFilter(&color_filter_image_filter);
+    paint2.setImageFilter(color_filter_image_filter);
     builder2.DrawRect(rect, paint2);
     builder2.Restore();
     sk_sp<DisplayList> display_list2 = builder2.Build();
@@ -2562,9 +2566,9 @@ TEST_F(DisplayListTest, NOPClipDoesNotTriggerDeferredSave) {
 TEST_F(DisplayListTest, RTreeOfClippedSaveLayerFilterScene) {
   DisplayListBuilder builder(/*prepare_rtree=*/true);
   // blur filter with sigma=1 expands by 30 on all sides
-  auto filter = DlBlurImageFilter(10.0, 10.0, DlTileMode::kClamp);
+  auto filter = DlBlurImageFilter::Make(10.0, 10.0, DlTileMode::kClamp);
   DlPaint default_paint = DlPaint();
-  DlPaint filter_paint = DlPaint().setImageFilter(&filter);
+  DlPaint filter_paint = DlPaint().setImageFilter(filter);
   builder.DrawRect({10, 10, 20, 20}, default_paint);
   builder.ClipRect({50, 50, 60, 60}, ClipOp::kIntersect, false);
   builder.SaveLayer(nullptr, &filter_paint);

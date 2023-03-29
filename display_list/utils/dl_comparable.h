@@ -71,6 +71,36 @@ bool Equals(const T* a, const T* b) {
   return *a == *b;
 }
 
+template <typename T,
+          typename U,
+          typename =
+              typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+bool Equals(const T* a, const U* b) {
+  if (a == b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  // Let the convertible-from type manage the ==
+  return *b == *a;
+}
+
+template <typename T,
+          typename U,
+          typename =
+              typename std::enable_if<std::is_convertible<U*, T*>::value>::type>
+bool Equals(const U* a, const T* b) {
+  if (a == b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  // Let the convertible-from type manage the ==
+  return *a == *b;
+}
+
 }  // namespace dl_comparable
 
 // -----------------------------------------------------------------------

@@ -285,10 +285,8 @@ TEST(LayerStateStack, ColorFilter) {
 
 TEST(LayerStateStack, ImageFilter) {
   SkRect rect = {10, 10, 20, 20};
-  std::shared_ptr<DlBlurImageFilter> outer_filter =
-      std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
-  std::shared_ptr<DlBlurImageFilter> inner_filter =
-      std::make_shared<DlBlurImageFilter>(3.0f, 3.0f, DlTileMode::kClamp);
+  auto outer_filter = DlBlurImageFilter::Make(2.0f, 2.0f, DlTileMode::kClamp);
+  auto inner_filter = DlBlurImageFilter::Make(3.0f, 3.0f, DlTileMode::kClamp);
   SkRect inner_src_rect = rect;
   SkRect outer_src_rect;
   ASSERT_EQ(inner_filter->map_local_bounds(rect, outer_src_rect),
@@ -426,8 +424,7 @@ TEST(LayerStateStack, OpacityAndColorFilterInteraction) {
 
 TEST(LayerStateStack, OpacityAndImageFilterInteraction) {
   SkRect rect = {10, 10, 20, 20};
-  std::shared_ptr<DlBlurImageFilter> image_filter =
-      std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
+  auto image_filter = DlBlurImageFilter::Make(2.0f, 2.0f, DlTileMode::kClamp);
 
   DisplayListBuilder builder;
   LayerStateStack state_stack;
@@ -487,8 +484,7 @@ TEST(LayerStateStack, ColorFilterAndImageFilterInteraction) {
   SkRect rect = {10, 10, 20, 20};
   auto color_filter =
       DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kColorBurn);
-  std::shared_ptr<DlBlurImageFilter> image_filter =
-      std::make_shared<DlBlurImageFilter>(2.0f, 2.0f, DlTileMode::kClamp);
+  auto image_filter = DlBlurImageFilter::Make(2.0f, 2.0f, DlTileMode::kClamp);
 
   DisplayListBuilder builder;
   LayerStateStack state_stack;

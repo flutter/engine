@@ -184,7 +184,7 @@ class LayerStateStack {
     // outstanding attributes.
     // (Currently only opacity is recorded for batching)
     void applyImageFilter(const SkRect& bounds,
-                          const std::shared_ptr<const DlImageFilter>& filter);
+                          const dl_shared<const DlImageFilter>& filter);
 
     // Records the color filter for application at the next call to
     // saveLayer or applyState. A saveLayer may be executed at
@@ -203,7 +203,7 @@ class LayerStateStack {
     // subsequent canvas or builder objects that are made delegates
     // will only see a saveLayer with the indicated blend_mode.
     void applyBackdropFilter(const SkRect& bounds,
-                             const std::shared_ptr<const DlImageFilter>& filter,
+                             const dl_shared<const DlImageFilter>& filter,
                              DlBlendMode blend_mode);
 
     void translate(SkScalar tx, SkScalar ty);
@@ -259,7 +259,7 @@ class LayerStateStack {
     return outstanding_.color_filter;
   }
 
-  std::shared_ptr<const DlImageFilter> outstanding_image_filter() const {
+  dl_shared<const DlImageFilter> outstanding_image_filter() const {
     return outstanding_.image_filter;
   }
 
@@ -339,9 +339,9 @@ class LayerStateStack {
   void push_color_filter(const SkRect& bounds,
                          const dl_shared<const DlColorFilter>& filter);
   void push_image_filter(const SkRect& bounds,
-                         const std::shared_ptr<const DlImageFilter>& filter);
+                         const dl_shared<const DlImageFilter>& filter);
   void push_backdrop(const SkRect& bounds,
-                     const std::shared_ptr<const DlImageFilter>& filter,
+                     const dl_shared<const DlImageFilter>& filter,
                      DlBlendMode blend_mode);
 
   void push_translate(SkScalar tx, SkScalar ty);
@@ -368,7 +368,7 @@ class LayerStateStack {
   void maybe_save_layer(int apply_flags);
   void maybe_save_layer(SkScalar opacity);
   void maybe_save_layer(const dl_shared<const DlColorFilter>& filter);
-  void maybe_save_layer(const std::shared_ptr<const DlImageFilter>& filter);
+  void maybe_save_layer(const dl_shared<const DlImageFilter>& filter);
   // ---------------------
 
   struct RenderingAttributes {
@@ -385,7 +385,7 @@ class LayerStateStack {
 
     SkScalar opacity = SK_Scalar1;
     dl_shared<const DlColorFilter> color_filter;
-    std::shared_ptr<const DlImageFilter> image_filter;
+    dl_shared<const DlImageFilter> image_filter;
 
     DlPaint* fill(DlPaint& paint,
                   DlBlendMode mode = DlBlendMode::kSrcOver) const;

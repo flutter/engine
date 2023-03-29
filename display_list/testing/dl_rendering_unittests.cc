@@ -1032,7 +1032,7 @@ class CanvasCompareTester {
                             dl_backdrop_setup, testP.dl_renderer());
       quickCompareToReference(backdrop_env, "backdrop");
 
-      DlBlurImageFilter dl_backdrop(5, 5, DlTileMode::kDecal);
+      auto dl_backdrop = DlBlurImageFilter::Make(5, 5, DlTileMode::kDecal);
       auto sk_backdrop =
           SkImageFilters::Blur(5, 5, SkTileMode::kDecal, nullptr);
       RenderWith(testP, backdrop_env, tolerance,
@@ -1046,7 +1046,7 @@ class CanvasCompareTester {
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_backdrop_setup(cv, p);
-                       cv->SaveLayer(nullptr, nullptr, &dl_backdrop);
+                       cv->SaveLayer(nullptr, nullptr, dl_backdrop.get());
                        dl_content_setup(cv, p);
                      })
                      .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1061,7 +1061,7 @@ class CanvasCompareTester {
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_backdrop_setup(cv, p);
-                       cv->SaveLayer(&layer_bounds, nullptr, &dl_backdrop);
+                       cv->SaveLayer(&layer_bounds, nullptr, dl_backdrop.get());
                        dl_content_setup(cv, p);
                      })
                      .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1078,7 +1078,7 @@ class CanvasCompareTester {
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_backdrop_setup(cv, p);
                        cv->ClipRect(layer_bounds);
-                       cv->SaveLayer(nullptr, nullptr, &dl_backdrop);
+                       cv->SaveLayer(nullptr, nullptr, dl_backdrop.get());
                        dl_content_setup(cv, p);
                      })
                      .with_restore(sk_safe_restore, dl_safe_restore, true));
@@ -1145,7 +1145,7 @@ class CanvasCompareTester {
       };
       // clang-format on
       auto dl_color_filter = DlColorFilter::MakeMatrix(color_matrix);
-      DlColorFilterImageFilter dl_cf_image_filter(dl_color_filter);
+      auto dl_cf_image_filter = DlColorFilterImageFilter::Make(dl_color_filter);
       auto sk_cf_image_filter = SkImageFilters::ColorFilter(
           SkColorFilters::Matrix(color_matrix), nullptr);
       {
@@ -1160,7 +1160,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
-                         save_p.setImageFilter(&dl_cf_image_filter);
+                         save_p.setImageFilter(dl_cf_image_filter);
                          cv->SaveLayer(nullptr, &save_p);
                          p.setStrokeWidth(5.0);
                        })
@@ -1178,7 +1178,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          DlPaint save_p;
-                         save_p.setImageFilter(&dl_cf_image_filter);
+                         save_p.setImageFilter(dl_cf_image_filter);
                          cv->SaveLayer(&kRenderBounds, &save_p);
                          p.setStrokeWidth(5.0);
                        })
@@ -1348,7 +1348,8 @@ class CanvasCompareTester {
       blur_env.init_ref(sk_blur_setup, testP.sk_renderer(),  //
                         dl_blur_setup, testP.dl_renderer());
       quickCompareToReference(blur_env, "blur");
-      DlBlurImageFilter dl_filter_decal_5(5.0, 5.0, DlTileMode::kDecal);
+      auto dl_filter_decal_5 =
+          DlBlurImageFilter::Make(5.0, 5.0, DlTileMode::kDecal);
       auto sk_filter_decal_5 =
           SkImageFilters::Blur(5.0, 5.0, SkTileMode::kDecal, nullptr);
       BoundsTolerance blur_5_tolerance = tolerance.addBoundsPadding(4, 4);
@@ -1362,10 +1363,11 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          dl_blur_setup(cv, p);
-                         p.setImageFilter(&dl_filter_decal_5);
+                         p.setImageFilter(dl_filter_decal_5);
                        }));
       }
-      DlBlurImageFilter dl_filter_clamp_5(5.0, 5.0, DlTileMode::kClamp);
+      auto dl_filter_clamp_5 =
+          DlBlurImageFilter::Make(5.0, 5.0, DlTileMode::kClamp);
       auto sk_filter_clamp_5 =
           SkImageFilters::Blur(5.0, 5.0, SkTileMode::kClamp, nullptr);
       {
@@ -1378,7 +1380,7 @@ class CanvasCompareTester {
                        },
                        [=](DlCanvas* cv, DlPaint& p) {
                          dl_blur_setup(cv, p);
-                         p.setImageFilter(&dl_filter_clamp_5);
+                         p.setImageFilter(dl_filter_clamp_5);
                        }));
       }
     }
@@ -1399,7 +1401,7 @@ class CanvasCompareTester {
       dilate_env.init_ref(sk_dilate_setup, testP.sk_renderer(),  //
                           dl_dilate_setup, testP.dl_renderer());
       quickCompareToReference(dilate_env, "dilate");
-      DlDilateImageFilter dl_dilate_filter_5(5.0, 5.0);
+      auto dl_dilate_filter_5 = DlDilateImageFilter::Make(5.0, 5.0);
       auto sk_dilate_filter_5 = SkImageFilters::Dilate(5.0, 5.0, nullptr);
       RenderWith(testP, dilate_env, tolerance,
                  CaseParameters(
@@ -1410,7 +1412,7 @@ class CanvasCompareTester {
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_dilate_setup(cv, p);
-                       p.setImageFilter(&dl_dilate_filter_5);
+                       p.setImageFilter(dl_dilate_filter_5);
                      }));
     }
 
@@ -1432,7 +1434,7 @@ class CanvasCompareTester {
       quickCompareToReference(erode_env, "erode");
       // do not erode too much, because some tests assert there are enough
       // pixels that are changed.
-      DlErodeImageFilter dl_erode_filter_1(1.0, 1.0);
+      auto dl_erode_filter_1 = DlErodeImageFilter::Make(1.0, 1.0);
       auto sk_erode_filter_1 = SkImageFilters::Erode(1.0, 1.0, nullptr);
       RenderWith(testP, erode_env, tolerance,
                  CaseParameters(
@@ -1443,7 +1445,7 @@ class CanvasCompareTester {
                      },
                      [=](DlCanvas* cv, DlPaint& p) {
                        dl_erode_setup(cv, p);
-                       p.setImageFilter(&dl_erode_filter_1);
+                       p.setImageFilter(dl_erode_filter_1);
                      }));
     }
 
@@ -3481,12 +3483,11 @@ TEST_F(DisplayListCanvas, SaveLayerConsolidation) {
       DlSrgbToLinearGammaColorFilter::Make(),
       DlLinearToSrgbGammaColorFilter::Make(),
   };
-  std::vector<std::shared_ptr<DlImageFilter>> image_filters = {
-      std::make_shared<DlBlurImageFilter>(5.0f, 5.0f, DlTileMode::kDecal),
-      std::make_shared<DlDilateImageFilter>(5.0f, 5.0f),
-      std::make_shared<DlErodeImageFilter>(5.0f, 5.0f),
-      std::make_shared<DlMatrixImageFilter>(contract_matrix,
-                                            DlImageSampling::kLinear),
+  std::vector<dl_shared<const DlImageFilter>> image_filters = {
+      DlImageFilter::MakeBlur(5.0f, 5.0f, DlTileMode::kDecal),
+      DlImageFilter::MakeDilate(5.0f, 5.0f),
+      DlImageFilter::MakeErode(5.0f, 5.0f),
+      DlImageFilter::MakeMatrix(contract_matrix, DlImageSampling::kLinear),
   };
   std::vector<std::unique_ptr<RenderEnvironment>> environments;
   for (auto& provider : CanvasCompareTester::kTestProviders) {

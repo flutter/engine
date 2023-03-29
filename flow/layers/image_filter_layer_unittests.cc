@@ -76,14 +76,14 @@ TEST_F(ImageFilterLayerTest, SimpleFilter) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter);
   layer->Add(mock_layer);
 
   const SkRect child_rounded_bounds =
-      SkRect::MakeLTRB(5.0f, 6.0f, 21.0f, 22.0f);
+      SkRect::MakeLTRB(6.0f, 8.0f, 22.0f, 24.0f);
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
@@ -117,8 +117,8 @@ TEST_F(ImageFilterLayerTest, SimpleFilterWithOffset) {
   const SkPath child_path = SkPath().addRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   const SkPoint layer_offset = SkPoint::Make(5.5, 6.5);
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer =
       std::make_shared<ImageFilterLayer>(dl_image_filter, layer_offset);
@@ -127,7 +127,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterWithOffset) {
   SkMatrix child_matrix = initial_transform;
   child_matrix.preTranslate(layer_offset.fX, layer_offset.fY);
   const SkRect child_rounded_bounds =
-      SkRect::MakeLTRB(10.5f, 12.5f, 26.5f, 28.5f);
+      SkRect::MakeLTRB(11.5f, 14.5f, 27.5f, 30.5f);
 
   preroll_context()->state_stack.set_preroll_delegate(initial_cull_rect,
                                                       initial_transform);
@@ -169,7 +169,7 @@ TEST_F(ImageFilterLayerTest, SimpleFilterBounds) {
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
   const SkMatrix filter_transform = SkMatrix::Scale(2.0, 2.0);
 
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
+  auto dl_image_filter = DlMatrixImageFilter::Make(
       filter_transform, DlImageSampling::kMipmapLinear);
   auto mock_layer = std::make_shared<MockLayer>(child_path, child_paint);
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter);
@@ -210,8 +210,8 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter);
@@ -220,7 +220,8 @@ TEST_F(ImageFilterLayerTest, MultipleChildren) {
 
   SkRect children_bounds = child_path1.getBounds();
   children_bounds.join(child_path2.getBounds());
-  SkRect children_rounded_bounds = SkRect::Make(children_bounds.roundOut());
+  SkRect children_rounded_bounds =
+      SkRect::Make(children_bounds.roundOut().makeOffset(1.0f, 2.0f));
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer->Preroll(preroll_context());
@@ -263,10 +264,10 @@ TEST_F(ImageFilterLayerTest, Nested) {
       SkPath().addRect(child_bounds.makeOffset(3.0f, 0.0f));
   const DlPaint child_paint1 = DlPaint(DlColor::kYellow());
   const DlPaint child_paint2 = DlPaint(DlColor::kCyan());
-  auto dl_image_filter1 = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
-  auto dl_image_filter2 = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter1 = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter2 = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(3.0f, 4.0f), DlImageSampling::kMipmapLinear);
   auto mock_layer1 = std::make_shared<MockLayer>(child_path1, child_paint1);
   auto mock_layer2 = std::make_shared<MockLayer>(child_path2, child_paint2);
   auto layer1 = std::make_shared<ImageFilterLayer>(dl_image_filter1);
@@ -275,20 +276,20 @@ TEST_F(ImageFilterLayerTest, Nested) {
   layer1->Add(mock_layer1);
   layer1->Add(layer2);
 
-  SkRect children_bounds = child_path1.getBounds();
-  children_bounds.join(SkRect::Make(child_path2.getBounds().roundOut()));
-  const SkRect children_rounded_bounds =
-      SkRect::Make(children_bounds.roundOut());
-  const SkRect mock_layer2_rounded_bounds =
-      SkRect::Make(child_path2.getBounds().roundOut());
+  SkRect child2_filtered_bounds =
+      SkRect::Make(child_path2.getBounds().roundOut()).makeOffset(3.0f, 4.0f);
+  SkRect layer1_child_bounds = child2_filtered_bounds;
+  layer1_child_bounds.join(child_path1.getBounds());
+  SkRect layer1_bounds =
+      SkRect::Make(layer1_child_bounds.roundOut()).makeOffset(1.0f, 2.0f);
 
   preroll_context()->state_stack.set_preroll_delegate(initial_transform);
   layer1->Preroll(preroll_context());
   EXPECT_EQ(mock_layer1->paint_bounds(), child_path1.getBounds());
   EXPECT_EQ(mock_layer2->paint_bounds(), child_path2.getBounds());
-  EXPECT_EQ(layer1->paint_bounds(), children_rounded_bounds);
-  EXPECT_EQ(layer1->child_paint_bounds(), children_bounds);
-  EXPECT_EQ(layer2->paint_bounds(), mock_layer2_rounded_bounds);
+  EXPECT_EQ(layer1->paint_bounds(), layer1_bounds);
+  EXPECT_EQ(layer1->child_paint_bounds(), layer1_child_bounds);
+  EXPECT_EQ(layer2->paint_bounds(), child2_filtered_bounds);
   EXPECT_EQ(layer2->child_paint_bounds(), child_path2.getBounds());
   EXPECT_TRUE(mock_layer1->needs_painting(paint_context()));
   EXPECT_TRUE(mock_layer2->needs_painting(paint_context()));
@@ -301,7 +302,7 @@ TEST_F(ImageFilterLayerTest, Nested) {
   /* ImageFilterLayer::Paint() */ {
     DlPaint dl_paint;
     dl_paint.setImageFilter(dl_image_filter1.get());
-    expected_builder.SaveLayer(&children_bounds, &dl_paint);
+    expected_builder.SaveLayer(&layer1_child_bounds, &dl_paint);
     {
       /* MockLayer::Paint() */ {
         expected_builder.DrawPath(child_path1, DlPaint(DlColor::kYellow()));
@@ -325,8 +326,8 @@ TEST_F(ImageFilterLayerTest, Nested) {
 }
 
 TEST_F(ImageFilterLayerTest, Readback) {
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kLinear);
 
   // ImageFilterLayer does not read from surface
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter);
@@ -344,8 +345,8 @@ TEST_F(ImageFilterLayerTest, Readback) {
 }
 
 TEST_F(ImageFilterLayerTest, CacheChild) {
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   const SkPath child_path = SkPath().addRect(SkRect::MakeWH(5.0f, 5.0f));
@@ -385,8 +386,8 @@ TEST_F(ImageFilterLayerTest, CacheChild) {
 }
 
 TEST_F(ImageFilterLayerTest, CacheChildren) {
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
   DlPaint paint;
@@ -461,8 +462,8 @@ TEST_F(ImageFilterLayerTest, CacheChildren) {
 }
 
 TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
 
   auto initial_transform = SkMatrix::Translate(50.0, 25.5);
   auto other_transform = SkMatrix::Scale(1.0, 2.0);
@@ -472,8 +473,8 @@ TEST_F(ImageFilterLayerTest, CacheImageFilterLayerSelf) {
   auto offset = SkPoint::Make(53.8, 24.4);
   auto offset_rounded =
       SkPoint::Make(std::round(offset.x()), std::round(offset.y()));
-  auto offset_rounded_out =
-      SkPoint::Make(std::floor(offset.x()), std::floor(offset.y()));
+  auto offset_rounded_out = SkPoint::Make(std::floor(offset.x() + 1.0f),
+                                          std::floor(offset.y() + 2.0f));
   auto layer = std::make_shared<ImageFilterLayer>(dl_image_filter, offset);
   layer->Add(mock_layer);
 
@@ -558,8 +559,8 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
   const SkRect child_bounds = SkRect::MakeLTRB(5.0f, 6.0f, 20.5f, 21.5f);
   const SkPath child_path = SkPath().addRect(child_bounds);
   const DlPaint child_paint = DlPaint(DlColor::kYellow());
-  auto dl_image_filter = std::make_shared<DlMatrixImageFilter>(
-      SkMatrix(), DlImageSampling::kMipmapLinear);
+  auto dl_image_filter = DlMatrixImageFilter::Make(
+      SkMatrix::Translate(1.0f, 2.0f), DlImageSampling::kMipmapLinear);
 
   // The mock_layer child will not be compatible with opacity
   auto mock_layer = MockLayer::Make(child_path, child_paint);
@@ -611,8 +612,7 @@ TEST_F(ImageFilterLayerTest, OpacityInheritance) {
 using ImageFilterLayerDiffTest = DiffContextTest;
 
 TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
-  auto dl_blur_filter =
-      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  auto dl_blur_filter = DlBlurImageFilter::Make(10, 10, DlTileMode::kClamp);
   {
     // tests later assume 30px paint area, fail early if that's not the case
     SkIRect input_bounds;
@@ -658,8 +658,7 @@ TEST_F(ImageFilterLayerDiffTest, ImageFilterLayer) {
 }
 
 TEST_F(ImageFilterLayerDiffTest, ImageFilterLayerInflatestChildSize) {
-  auto dl_blur_filter =
-      std::make_shared<DlBlurImageFilter>(10, 10, DlTileMode::kClamp);
+  auto dl_blur_filter = DlBlurImageFilter::Make(10, 10, DlTileMode::kClamp);
 
   {
     // tests later assume 30px paint area, fail early if that's not the case

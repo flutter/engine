@@ -6,10 +6,121 @@
 
 namespace flutter {
 
-std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
+static bool checkAndClampPositive(SkScalar& value1, SkScalar& value2) {
+  if (SkScalarIsFinite(value1) && SkScalarIsFinite(value2)) {
+    bool positive = false;
+    if (value1 < SK_ScalarNearlyZero) {
+      value1 = 0.0f;
+    } else {
+      positive = true;
+    }
+    if (value2 < SK_ScalarNearlyZero) {
+      value2 = 0.0f;
+    } else {
+      positive = true;
+    }
+    return positive;
+  }
+  return false;
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeBlur(SkScalar sigma_x,
+                                                       SkScalar sigma_y,
+                                                       DlTileMode tile_mode) {
+  return DlBlurImageFilter::Make(sigma_x, sigma_y, tile_mode);
+}
+
+dl_shared<DlBlurImageFilter> DlBlurImageFilter::Make(SkScalar sigma_x,
+                                                     SkScalar sigma_y,
+                                                     DlTileMode tile_mode) {
+  if (checkAndClampPositive(sigma_x, sigma_y)) {
+    return dl_shared(new DlBlurImageFilter(sigma_x, sigma_y, tile_mode));
+  }
+  return nullptr;
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeDilate(SkScalar radius_x,
+                                                         SkScalar radius_y) {
+  return DlDilateImageFilter::Make(radius_x, radius_y);
+}
+
+dl_shared<DlDilateImageFilter> DlDilateImageFilter::Make(SkScalar radius_x,
+                                                         SkScalar radius_y) {
+  if (checkAndClampPositive(radius_x, radius_y)) {
+    return dl_shared(new DlDilateImageFilter(radius_x, radius_y));
+  }
+  return nullptr;
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeErode(SkScalar radius_x,
+                                                        SkScalar radius_y) {
+  return DlErodeImageFilter::Make(radius_x, radius_y);
+}
+
+dl_shared<DlErodeImageFilter> DlErodeImageFilter::Make(SkScalar radius_x,
+                                                       SkScalar radius_y) {
+  if (checkAndClampPositive(radius_x, radius_y)) {
+    return dl_shared(new DlErodeImageFilter(radius_x, radius_y));
+  }
+  return nullptr;
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeMatrix(
+    const SkMatrix& matrix,
+    DlImageSampling sampling) {
+  return DlMatrixImageFilter::Make(matrix, sampling);
+}
+
+dl_shared<DlMatrixImageFilter> DlMatrixImageFilter::Make(
+    const SkMatrix& matrix,
+    DlImageSampling sampling) {
+  if (matrix.isFinite() && !matrix.isIdentity()) {
+    return dl_shared(new DlMatrixImageFilter(matrix, sampling));
+  }
+  return nullptr;
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeCompose(
+    dl_shared<const DlImageFilter> outer,
+    dl_shared<const DlImageFilter> inner) {
+  return DlComposeImageFilter::Make(outer, inner);
+}
+
+dl_shared<const DlImageFilter> DlComposeImageFilter::Make(
+    dl_shared<const DlImageFilter> outer,
+    dl_shared<const DlImageFilter> inner) {
+  if (!outer) {
+    return inner;
+  }
+  if (!inner) {
+    return outer;
+  }
+  return dl_shared(new DlComposeImageFilter(outer, inner));
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::MakeColorFilter(
+    dl_shared<const DlColorFilter> filter) {
+  return DlColorFilterImageFilter::Make(filter);
+}
+
+dl_shared<DlColorFilterImageFilter> DlColorFilterImageFilter::Make(
+    dl_shared<const DlColorFilter> filter) {
+  if (filter) {
+    return dl_shared(new DlColorFilterImageFilter(filter));
+  }
+  return nullptr;
+}
+
+dl_shared<DlLocalMatrixImageFilter> DlLocalMatrixImageFilter::Make(
+    const SkMatrix& matrix,
+    dl_shared<const DlImageFilter> filter) {
+  return dl_shared(new DlLocalMatrixImageFilter(matrix, filter));
+}
+
+dl_shared<const DlImageFilter> DlImageFilter::makeWithLocalMatrix(
     const SkMatrix& matrix) const {
   if (matrix.isIdentity()) {
-    return shared();
+    return this;
   }
   // Matrix
   switch (this->matrix_capability()) {
@@ -30,7 +141,7 @@ std::shared_ptr<DlImageFilter> DlImageFilter::makeWithLocalMatrix(
     default:
       break;
   }
-  return std::make_shared<DlLocalMatrixImageFilter>(matrix, shared());
+  return DlLocalMatrixImageFilter::Make(matrix, this);
 }
 
 SkRect* DlComposeImageFilter::map_local_bounds(const SkRect& input_bounds,

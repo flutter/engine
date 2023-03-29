@@ -65,8 +65,8 @@ TEST(DisplayListPaint, ConstructorDefaults) {
       DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kSrcIn);
   EXPECT_NE(paint, DlPaint().setColorFilter(color_filter));
 
-  DlBlurImageFilter image_filter(1.3, 4.7, DlTileMode::kClamp);
-  EXPECT_NE(paint, DlPaint().setImageFilter(image_filter.shared()));
+  auto image_filter = DlBlurImageFilter::Make(1.3, 4.7, DlTileMode::kClamp);
+  EXPECT_NE(paint, DlPaint().setImageFilter(image_filter));
 
   auto mask_filter = DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14);
   EXPECT_NE(paint, DlPaint().setMaskFilter(mask_filter));
@@ -93,7 +93,7 @@ TEST(DisplayListPaint, NullPointerSetGet) {
 TEST(DisplayListPaint, NullSharedPointerSetGet) {
   dl_shared<DlColorSource> null_color_source;
   dl_shared<DlColorFilter> null_color_filter;
-  std::shared_ptr<DlImageFilter> null_image_filter;
+  dl_shared<DlImageFilter> null_image_filter;
   dl_shared<DlMaskFilter> null_mask_filter;
   dl_shared<DlPathEffect> null_path_effect;
   DlPaint paint;
@@ -122,8 +122,7 @@ TEST(DisplayListPaint, ChainingConstructor) {
           .setColorSource(DlColorColorSource::Make(DlColor::kMagenta()))  //
           .setColorFilter(
               DlBlendColorFilter::Make(DlColor::kYellow(), DlBlendMode::kDstIn))
-          .setImageFilter(
-              DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp).shared())
+          .setImageFilter(DlBlurImageFilter::Make(1.3, 4.7, DlTileMode::kClamp))
           .setMaskFilter(DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14))
           .setPathEffect(DlPathEffect::MakeDash(dashes, 3, 2.0));
   EXPECT_TRUE(paint.isAntiAlias());
@@ -142,8 +141,8 @@ TEST(DisplayListPaint, ChainingConstructor) {
   EXPECT_TRUE(Equals(
       paint.getColorFilter(),
       DlColorFilter::MakeBlend(DlColor::kYellow(), DlBlendMode::kDstIn)));
-  EXPECT_EQ(*paint.getImageFilter(),
-            DlBlurImageFilter(1.3, 4.7, DlTileMode::kClamp));
+  EXPECT_TRUE(Equals(paint.getImageFilter(),
+                     DlBlurImageFilter::Make(1.3, 4.7, DlTileMode::kClamp)));
   EXPECT_TRUE(Equals(paint.getMaskFilter(),
                      DlMaskFilter::MakeBlur(DlBlurStyle::kInner, 3.14)));
   EXPECT_TRUE(
