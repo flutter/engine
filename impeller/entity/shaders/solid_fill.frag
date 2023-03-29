@@ -5,11 +5,11 @@
 #include <impeller/types.glsl>
 
 uniform FragInfo {
-  f16vec4 color;
+  vec4 color;
 }
 frag_info;
 
-out f16vec4 frag_color;
+out vec4 frag_color;
 
 void main() {
   frag_color = frag_info.color;
