@@ -2,15 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include <impeller/types.glsl>
+#define ENABLE_ALPHA_MASK 1
+#define ENABLE_DECAL_SPECIALIZATION 1
 
-uniform FragInfo {
-  f16vec4 color;
-}
-frag_info;
-
-out f16vec4 frag_color;
-
-void main() {
-  frag_color = frag_info.color;
-}
+#include "gaussian_blur.glsl"
