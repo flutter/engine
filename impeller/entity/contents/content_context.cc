@@ -8,9 +8,9 @@
 #include <sstream>
 
 #include "impeller/base/strings.h"
+#include "impeller/core/formats.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/render_pass.h"
 #include "impeller/renderer/render_target.h"
 #include "impeller/tessellator/tessellator.h"
@@ -261,10 +261,14 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<PositionUVPipeline>(*context_);
   tiled_texture_pipelines_[{}] =
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
-  gaussian_blur_pipelines_[{}] =
-      CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
-  gaussian_blur_decal_pipelines_[{}] =
+  gaussian_blur_alpha_decal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurAlphaDecalPipeline>(*context_);
+  gaussian_blur_alpha_nodecal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurAlphaPipeline>(*context_);
+  gaussian_blur_noalpha_decal_pipelines_[{}] =
       CreateDefaultPipeline<GaussianBlurDecalPipeline>(*context_);
+  gaussian_blur_noalpha_nodecal_pipelines_[{}] =
+      CreateDefaultPipeline<GaussianBlurPipeline>(*context_);
   border_mask_blur_pipelines_[{}] =
       CreateDefaultPipeline<BorderMaskBlurPipeline>(*context_);
   morphology_filter_pipelines_[{}] =

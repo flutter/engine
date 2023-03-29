@@ -10,13 +10,13 @@
 #include <vector>
 
 #include "flutter/fml/macros.h"
+#include "impeller/core/texture.h"
 #include "impeller/entity/contents/contents.h"
 #include "impeller/entity/contents/filters/filter_contents.h"
 #include "impeller/entity/entity.h"
 #include "impeller/entity/entity_pass_delegate.h"
 #include "impeller/entity/inline_pass_context.h"
 #include "impeller/renderer/render_target.h"
-#include "impeller/renderer/texture.h"
 #include "impeller/typographer/lazy_glyph_atlas.h"
 
 namespace impeller {
@@ -77,14 +77,18 @@ class EntityPass {
   /// @return Returns whether a subpass was encountered.
   bool IterateUntilSubpass(const std::function<bool(Entity&)>& iterator);
 
-  /// @brief Return the number of entities on this pass.
-  size_t GetEntityCount() const;
+  /// @brief Return the number of elements on this pass.
+  size_t GetElementCount() const;
 
   void SetTransformation(Matrix xformation);
 
   void SetStencilDepth(size_t stencil_depth);
 
   void SetBlendMode(BlendMode blend_mode);
+
+  void SetClearColor(Color clear_color);
+
+  Color GetClearColor() const;
 
   void SetBackdropFilter(std::optional<BackdropFilterProc> proc);
 
@@ -204,6 +208,7 @@ class EntityPass {
   size_t stencil_depth_ = 0u;
   BlendMode blend_mode_ = BlendMode::kSourceOver;
   bool cover_whole_screen_ = false;
+  Color clear_color_ = Color::BlackTransparent();
 
   /// These values are incremented whenever something is added to the pass that
   /// requires reading from the backdrop texture. Currently, this can happen in

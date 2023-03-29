@@ -11,6 +11,7 @@
 #include "flutter/fml/mapping.h"
 #include "flutter/fml/unique_fd.h"
 #include "impeller/base/backend_cast.h"
+#include "impeller/core/formats.h"
 #include "impeller/renderer/backend/vulkan/pipeline_library_vk.h"
 #include "impeller/renderer/backend/vulkan/sampler_library_vk.h"
 #include "impeller/renderer/backend/vulkan/shader_library_vk.h"
@@ -18,7 +19,6 @@
 #include "impeller/renderer/backend/vulkan/vk.h"
 #include "impeller/renderer/capabilities.h"
 #include "impeller/renderer/context.h"
-#include "impeller/renderer/formats.h"
 #include "impeller/renderer/surface.h"
 
 namespace impeller {
@@ -36,6 +36,7 @@ class ContextVK final : public Context, public BackendCast<ContextVK, Context> {
     std::vector<std::shared_ptr<fml::Mapping>> shader_libraries_data;
     fml::UniqueFD cache_directory;
     std::shared_ptr<fml::ConcurrentTaskRunner> worker_task_runner;
+    bool enable_validation = false;
 
     Settings() = default;
 

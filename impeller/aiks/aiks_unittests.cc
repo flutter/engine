@@ -1823,10 +1823,6 @@ TEST_P(AiksTest, SiblingSaveLayerBoundsAreRespected) {
 }
 
 TEST_P(AiksTest, CanRenderClippedLayers) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Temporarily disabled.");
-  }
-
   Canvas canvas;
 
   canvas.DrawPaint({.color = Color::White()});
@@ -1877,9 +1873,6 @@ TEST_P(AiksTest, SaveLayerFiltersScaleWithTransform) {
 }
 
 TEST_P(AiksTest, SceneColorSource) {
-  if (GetBackend() == PlaygroundBackend::kVulkan) {
-    GTEST_SKIP_("Temporarily disabled.");
-  }
   // Load up the scene.
   auto mapping =
       flutter::testing::OpenFixtureAsMapping("flutter_logo_baked.glb.ipscene");
@@ -1998,6 +1991,18 @@ TEST_P(AiksTest, OpacityPeepHoleApplicationTest) {
 
   delegate = std::make_shared<OpacityPeepholePassDelegate>(paint, rect);
   ASSERT_TRUE(delegate->CanCollapseIntoParentPass(entity_pass.get()));
+}
+
+TEST_P(AiksTest, DrawPaintAbsorbsClears) {
+  Canvas canvas;
+  canvas.DrawPaint({.color = Color::Red(), .blend_mode = BlendMode::kSource});
+  canvas.DrawPaint(
+      {.color = Color::CornflowerBlue(), .blend_mode = BlendMode::kSource});
+
+  Picture picture = canvas.EndRecordingAsPicture();
+
+  ASSERT_EQ(picture.pass->GetElementCount(), 0u);
+  ASSERT_EQ(picture.pass->GetClearColor(), Color::CornflowerBlue());
 }
 
 }  // namespace testing
