@@ -21,7 +21,7 @@ MetalScreenshoter::MetalScreenshoter() {
 }
 
 std::unique_ptr<MetalScreenshot> MetalScreenshoter::MakeScreenshot(
-    Picture&& picture,
+    const Picture& picture,
     const ISize& size) {
   std::shared_ptr<Image> image = picture.ToImage(*aiks_context_, size);
   std::shared_ptr<Texture> texture = image->GetTexture();

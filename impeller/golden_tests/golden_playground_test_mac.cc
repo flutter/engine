@@ -4,12 +4,48 @@
 
 #include "flutter/impeller/golden_tests/golden_playground_test.h"
 
+#include "flutter/impeller/aiks/picture.h"
 #include "flutter/impeller/golden_tests/golden_digest.h"
 #include "flutter/impeller/golden_tests/metal_screenshoter.h"
 
 namespace impeller {
 
-struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {};
+namespace {
+std::string GetTestName() {
+  std::string suite_name =
+      ::testing::UnitTest::GetInstance()->current_test_suite()->name();
+  std::string test_name =
+      ::testing::UnitTest::GetInstance()->current_test_info()->name();
+  std::stringstream ss;
+  ss << "impeller_" << suite_name << "_" << test_name;
+  std::string result = ss.str();
+  // Make sure there are no slashes in the test name.
+  std::replace(result.begin(), result.end(), '/', '_');
+  return result;
+}
+
+std::string GetGoldenFilename() {
+  return GetTestName() + ".png";
+}
+
+bool SaveScreenshot(std::unique_ptr<testing::MetalScreenshot> screenshot) {
+  if (!screenshot || !screenshot->GetBytes()) {
+    return false;
+  }
+  std::string test_name = GetTestName();
+  std::string filename = GetGoldenFilename();
+  testing::GoldenDigest::Instance()->AddImage(
+      test_name, filename, screenshot->GetWidth(), screenshot->GetHeight());
+  return screenshot->WriteToPNG(
+      testing::WorkingDirectory::Instance()->GetFilenamePath(filename));
+}
+}  // namespace
+
+struct GoldenPlaygroundTest::GoldenPlaygroundTestImpl {
+  GoldenPlaygroundTestImpl()
+      : screenshoter_(new testing::MetalScreenshoter()) {}
+  std::unique_ptr<testing::MetalScreenshoter> screenshoter_;
+};
 
 GoldenPlaygroundTest::GoldenPlaygroundTest()
     : pimpl_(new GoldenPlaygroundTest::GoldenPlaygroundTestImpl()) {}
@@ -26,7 +62,8 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
-  return false;
+  auto screenshot = pimpl_->screenshoter_->MakeScreenshot(picture);
+  return SaveScreenshot(std::move(screenshot));
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
@@ -40,7 +77,7 @@ std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
-  return nullptr;
+  return pimpl_->screenshoter_->GetContext().GetContext();
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
