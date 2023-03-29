@@ -2125,7 +2125,7 @@ public class TextInputPluginTest {
     FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
     TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
     TextInputPlugin textInputPlugin =
-            new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+        new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
     imeSyncCallback.getImeVisibleListener().onImeVisibleChanged(false);
     verify(textInputChannel, times(0)).onConnectionClosed(anyInt());
