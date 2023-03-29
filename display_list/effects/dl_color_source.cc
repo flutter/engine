@@ -19,7 +19,7 @@ dl_shared<DlColorColorSource> DlColorColorSource::Make(DlColor color) {
 }
 
 dl_shared<DlColorSource> DlColorSource::MakeImage(
-    sk_sp<const DlImage> image,
+    const sk_sp<const DlImage>& image,
     DlTileMode horizontal_tile_mode,
     DlTileMode vertical_tile_mode,
     DlImageSampling sampling,
@@ -29,7 +29,7 @@ dl_shared<DlColorSource> DlColorSource::MakeImage(
 }
 
 dl_shared<DlImageColorSource> DlImageColorSource::Make(
-    sk_sp<const DlImage> image,
+    const sk_sp<const DlImage>& image,
     DlTileMode horizontal_tile_mode,
     DlTileMode vertical_tile_mode,
     DlImageSampling sampling,
@@ -159,31 +159,31 @@ dl_shared<DlSweepGradientColorSource> DlSweepGradientColorSource::Make(
 }
 
 dl_shared<DlColorSource> DlColorSource::MakeRuntimeEffect(
-    dl_shared<DlRuntimeEffect> runtime_effect,
-    std::vector<dl_shared<DlColorSource>> samplers,
-    std::shared_ptr<std::vector<uint8_t>> uniform_data) {
+    const dl_shared<DlRuntimeEffect>& runtime_effect,
+    const std::vector<dl_shared<DlColorSource>>& samplers,
+    const std::shared_ptr<std::vector<uint8_t>>& uniform_data) {
   return DlRuntimeEffectColorSource::Make(runtime_effect, samplers,
                                           uniform_data);
 }
 
 dl_shared<DlRuntimeEffectColorSource> DlRuntimeEffectColorSource::Make(
-    dl_shared<DlRuntimeEffect> runtime_effect,
-    std::vector<dl_shared<DlColorSource>> samplers,
-    std::shared_ptr<std::vector<uint8_t>> uniform_data) {
+    const dl_shared<DlRuntimeEffect>& runtime_effect,
+    const std::vector<dl_shared<DlColorSource>>& samplers,
+    const std::shared_ptr<std::vector<uint8_t>>& uniform_data) {
   FML_DCHECK(uniform_data != nullptr);
-  return dl_shared(new DlRuntimeEffectColorSource(
-      std::move(runtime_effect), std::move(samplers), std::move(uniform_data)));
+  return dl_shared(
+      new DlRuntimeEffectColorSource(runtime_effect, samplers, uniform_data));
 }
 
 #ifdef IMPELLER_ENABLE_3D
 dl_shared<DlColorSource> DlColorSource::MakeScene(
-    std::shared_ptr<impeller::scene::Node> node,
+    const std::shared_ptr<impeller::scene::Node>& node,
     impeller::Matrix camera_matrix) {
   return DlSceneColorSource::Make(node, camera_matrix);
 }
 
 dl_shared<DlSceneColorSource> DlSceneColorSource::Make(
-    std::shared_ptr<impeller::scene::Node> node,
+    const std::shared_ptr<impeller::scene::Node>& node,
     impeller::Matrix camera_matrix) {
   return dl_shared(new DlSceneColorSource(node, camera_matrix));
 }

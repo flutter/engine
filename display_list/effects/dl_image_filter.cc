@@ -81,14 +81,14 @@ dl_shared<DlMatrixImageFilter> DlMatrixImageFilter::Make(
 }
 
 dl_shared<const DlImageFilter> DlImageFilter::MakeCompose(
-    dl_shared<const DlImageFilter> outer,
-    dl_shared<const DlImageFilter> inner) {
+    const dl_shared<const DlImageFilter>& outer,
+    const dl_shared<const DlImageFilter>& inner) {
   return DlComposeImageFilter::Make(outer, inner);
 }
 
 dl_shared<const DlImageFilter> DlComposeImageFilter::Make(
-    dl_shared<const DlImageFilter> outer,
-    dl_shared<const DlImageFilter> inner) {
+    const dl_shared<const DlImageFilter>& outer,
+    const dl_shared<const DlImageFilter>& inner) {
   if (!outer) {
     return inner;
   }
@@ -99,12 +99,12 @@ dl_shared<const DlImageFilter> DlComposeImageFilter::Make(
 }
 
 dl_shared<const DlImageFilter> DlImageFilter::MakeColorFilter(
-    dl_shared<const DlColorFilter> filter) {
+    const dl_shared<const DlColorFilter>& filter) {
   return DlColorFilterImageFilter::Make(filter);
 }
 
 dl_shared<DlColorFilterImageFilter> DlColorFilterImageFilter::Make(
-    dl_shared<const DlColorFilter> filter) {
+    const dl_shared<const DlColorFilter>& filter) {
   if (filter) {
     return dl_shared(new DlColorFilterImageFilter(filter));
   }
@@ -113,7 +113,7 @@ dl_shared<DlColorFilterImageFilter> DlColorFilterImageFilter::Make(
 
 dl_shared<DlLocalMatrixImageFilter> DlLocalMatrixImageFilter::Make(
     const SkMatrix& matrix,
-    dl_shared<const DlImageFilter> filter) {
+    const dl_shared<const DlImageFilter>& filter) {
   return dl_shared(new DlLocalMatrixImageFilter(matrix, filter));
 }
 

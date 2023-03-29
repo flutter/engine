@@ -64,11 +64,11 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
                                                    DlImageSampling sampling);
 
   static dl_shared<const DlImageFilter> MakeCompose(
-      dl_shared<const DlImageFilter> outer,
-      dl_shared<const DlImageFilter> inner);
+      const dl_shared<const DlImageFilter>& outer,
+      const dl_shared<const DlImageFilter>& inner);
 
   static dl_shared<const DlImageFilter> MakeColorFilter(
-      dl_shared<const DlColorFilter> filter);
+      const dl_shared<const DlColorFilter>& filter);
 
   // Return a DlBlurImageFilter pointer to this object iff it is a Blur
   // type of ImageFilter, otherwise return nullptr.
@@ -89,9 +89,6 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   virtual const DlLocalMatrixImageFilter* asLocalMatrix() const {
     return nullptr;
   }
-
-  virtual dl_shared<const DlImageFilter> makeWithLocalMatrix(
-      const SkMatrix& matrix) const;
 
   // Return a DlComposeImageFilter pointer to this object iff it is a Compose
   // type of ImageFilter, otherwise return nullptr.
@@ -151,6 +148,9 @@ class DlImageFilter : public DlAttribute<DlImageFilter, DlImageFilterType> {
   virtual MatrixCapability matrix_capability() const {
     return MatrixCapability::kScaleTranslate;
   }
+
+  virtual dl_shared<const DlImageFilter> makeWithLocalMatrix(
+      const SkMatrix& matrix) const;
 
  protected:
   static SkVector map_vectors_affine(const SkMatrix& ctm,
@@ -461,8 +461,8 @@ class DlMatrixImageFilter final : public DlImageFilter {
 class DlComposeImageFilter final : public DlImageFilter {
  public:
   static dl_shared<const DlImageFilter> Make(
-      dl_shared<const DlImageFilter> outer,
-      dl_shared<const DlImageFilter> inner);
+      const dl_shared<const DlImageFilter>& outer,
+      const dl_shared<const DlImageFilter>& inner);
 
   DlImageFilterType type() const override {
     return DlImageFilterType::kCompose;
@@ -507,8 +507,8 @@ class DlComposeImageFilter final : public DlImageFilter {
   }
 
  private:
-  DlComposeImageFilter(dl_shared<const DlImageFilter> outer,
-                       dl_shared<const DlImageFilter> inner)
+  DlComposeImageFilter(const dl_shared<const DlImageFilter>& outer,
+                       const dl_shared<const DlImageFilter>& inner)
       : outer_(std::move(outer)), inner_(std::move(inner)) {}
 
   dl_shared<const DlImageFilter> outer_;
@@ -518,7 +518,7 @@ class DlComposeImageFilter final : public DlImageFilter {
 class DlColorFilterImageFilter final : public DlImageFilter {
  public:
   static dl_shared<DlColorFilterImageFilter> Make(
-      dl_shared<const DlColorFilter> filter);
+      const dl_shared<const DlColorFilter>& filter);
 
   DlImageFilterType type() const override {
     return DlImageFilterType::kColorFilter;
@@ -576,7 +576,8 @@ class DlColorFilterImageFilter final : public DlImageFilter {
   }
 
  private:
-  explicit DlColorFilterImageFilter(dl_shared<const DlColorFilter> filter)
+  explicit DlColorFilterImageFilter(
+      const dl_shared<const DlColorFilter>& filter)
       : color_filter_(std::move(filter)) {}
 
   dl_shared<const DlColorFilter> color_filter_;
@@ -586,7 +587,7 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
  public:
   static dl_shared<DlLocalMatrixImageFilter> Make(
       const SkMatrix& matrix,
-      dl_shared<const DlImageFilter> filter);
+      const dl_shared<const DlImageFilter>& filter);
 
   DlImageFilterType type() const override {
     return DlImageFilterType::kLocalMatrix;
@@ -645,8 +646,9 @@ class DlLocalMatrixImageFilter final : public DlImageFilter {
   }
 
  private:
-  explicit DlLocalMatrixImageFilter(const SkMatrix& matrix,
-                                    dl_shared<const DlImageFilter> filter)
+  explicit DlLocalMatrixImageFilter(
+      const SkMatrix& matrix,
+      const dl_shared<const DlImageFilter>& filter)
       : matrix_(matrix), image_filter_(filter) {}
 
   SkMatrix matrix_;

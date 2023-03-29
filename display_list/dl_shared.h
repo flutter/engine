@@ -41,18 +41,21 @@ class dl_shared {
   dl_shared() : shareable_(nullptr) {}
   dl_shared(std::nullptr_t) : shareable_(nullptr) {}
 
+  // Construct from raw pointer creates a new shared reference
   dl_shared(T* shareable) : shareable_(shareable) {
     if (shareable) {
       shareable->AddStrongRef();
     }
   }
 
+  // Construct from lvalue creates a new shared reference
   dl_shared(const dl_shared<T>& that) : dl_shared(that.get()) {}
   template <typename U,
             typename = typename std::enable_if<
                 std::is_convertible<U*, T*>::value>::type>
   dl_shared(const dl_shared<U>& that) : dl_shared(that.get()) {}
 
+  // Construct from rvalue steals the reference
   dl_shared(dl_shared<T>&& that) : shareable_(that.release()) {}
   template <typename U,
             typename = typename std::enable_if<
@@ -68,7 +71,7 @@ class dl_shared {
     return *this;
   }
 
-  // Assign from pointer creates a new shared reference
+  // Assign from raw pointer creates a new shared reference
   dl_shared<T>& operator=(T* that) {
     this->capture(that, true);
     return *this;
@@ -163,12 +166,14 @@ class dl_weak_shared {
   dl_weak_shared() : shareable_(nullptr) {}
   dl_weak_shared(std::nullptr_t) : shareable_(nullptr) {}
 
+  // Construct from raw pointer creates a new shared reference
   dl_weak_shared(T* shareable) : shareable_(shareable) {
     if (shareable) {
       shareable->AddWeakRef();
     }
   }
 
+  // Construct from lvalue creates a new shared reference
   dl_weak_shared(const dl_shared<T>& that) : dl_weak_shared(that.get()) {}
   template <typename U,
             typename = typename std::enable_if<
@@ -181,6 +186,7 @@ class dl_weak_shared {
                 std::is_convertible<U*, T*>::value>::type>
   dl_weak_shared(const dl_weak_shared<U>& that) : dl_weak_shared(that.get()) {}
 
+  // Construct from rvalue steals the reference
   dl_weak_shared(dl_shared<T>&& that) : shareable_(that.release()) {}
   template <typename U,
             typename = typename std::enable_if<
@@ -202,7 +208,7 @@ class dl_weak_shared {
     return *this;
   }
 
-  // Assign from pointer creates a new shared reference
+  // Assign from raw pointer creates a new shared reference
   dl_weak_shared<T>& operator=(T* that) {
     capture(that, true);
     return *this;

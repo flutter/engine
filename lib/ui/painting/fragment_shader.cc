@@ -95,7 +95,7 @@ dl_shared<DlColorSource> ReusableFragmentShader::shader(
   uniform_data->resize(uniform_data_->size());
   memcpy(uniform_data->data(), uniform_data_->bytes(), uniform_data->size());
 
-  return program_->MakeDlColorSource(std::move(uniform_data), samplers_);
+  return program_->MakeDlColorSource(uniform_data, samplers_);
 }
 
 void ReusableFragmentShader::Dispose() {

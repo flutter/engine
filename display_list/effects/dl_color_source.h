@@ -66,7 +66,7 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
   static dl_shared<DlColorSource> MakeColor(DlColor color);
 
   static dl_shared<DlColorSource> MakeImage(
-      sk_sp<const DlImage> image,
+      const sk_sp<const DlImage>& image,
       DlTileMode horizontal_tile_mode,
       DlTileMode vertical_tile_mode,
       DlImageSampling sampling = DlImageSampling::kLinear,
@@ -108,13 +108,13 @@ class DlColorSource : public DlAttribute<DlColorSource, DlColorSourceType> {
                                             const SkMatrix* matrix = nullptr);
 
   static dl_shared<DlColorSource> MakeRuntimeEffect(
-      dl_shared<DlRuntimeEffect> runtime_effect,
-      std::vector<dl_shared<DlColorSource>> samplers,
-      std::shared_ptr<std::vector<uint8_t>> uniform_data);
+      const dl_shared<DlRuntimeEffect>& runtime_effect,
+      const std::vector<dl_shared<DlColorSource>>& samplers,
+      const std::shared_ptr<std::vector<uint8_t>>& uniform_data);
 
 #ifdef IMPELLER_ENABLE_3D
   static dl_shared<DlColorSource> MakeScene(
-      std::shared_ptr<impeller::scene::Node> node,
+      const std::shared_ptr<impeller::scene::Node>& node,
       impeller::Matrix camera_matrix);
 #endif  // IMPELLER_ENABLE_3D
 
@@ -213,7 +213,7 @@ class DlMatrixColorSourceBase : public DlColorSource {
 class DlImageColorSource final : public DlMatrixColorSourceBase {
  public:
   static dl_shared<DlImageColorSource> Make(
-      sk_sp<const DlImage> image,
+      const sk_sp<const DlImage>& image,
       DlTileMode horizontal_tile_mode,
       DlTileMode vertical_tile_mode,
       DlImageSampling sampling = DlImageSampling::kLinear,
@@ -248,7 +248,7 @@ class DlImageColorSource final : public DlMatrixColorSourceBase {
   }
 
  private:
-  DlImageColorSource(sk_sp<const DlImage> image,
+  DlImageColorSource(const sk_sp<const DlImage>& image,
                      DlTileMode horizontal_tile_mode,
                      DlTileMode vertical_tile_mode,
                      DlImageSampling sampling = DlImageSampling::kLinear,
@@ -587,9 +587,9 @@ class DlSweepGradientColorSource final : public DlGradientColorSourceBase {
 class DlRuntimeEffectColorSource final : public DlColorSource {
  public:
   static dl_shared<DlRuntimeEffectColorSource> Make(
-      dl_shared<DlRuntimeEffect> runtime_effect,
-      std::vector<dl_shared<DlColorSource>> samplers,
-      std::shared_ptr<std::vector<uint8_t>> uniform_data);
+      const dl_shared<DlRuntimeEffect>& runtime_effect,
+      const std::vector<dl_shared<DlColorSource>>& samplers,
+      const std::shared_ptr<std::vector<uint8_t>>& uniform_data);
 
   const DlRuntimeEffectColorSource* asRuntimeEffect() const override {
     return this;
@@ -634,9 +634,10 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
   }
 
  private:
-  DlRuntimeEffectColorSource(dl_shared<DlRuntimeEffect> runtime_effect,
-                             std::vector<dl_shared<DlColorSource>> samplers,
-                             std::shared_ptr<std::vector<uint8_t>> uniform_data)
+  DlRuntimeEffectColorSource(
+      const dl_shared<DlRuntimeEffect>& runtime_effect,
+      const std::vector<dl_shared<DlColorSource>>& samplers,
+      const std::shared_ptr<std::vector<uint8_t>>& uniform_data)
       : runtime_effect_(std::move(runtime_effect)),
         samplers_(std::move(samplers)),
         uniform_data_(std::move(uniform_data)) {}
@@ -652,7 +653,7 @@ class DlRuntimeEffectColorSource final : public DlColorSource {
 class DlSceneColorSource final : public DlColorSource {
  public:
   static dl_shared<DlSceneColorSource> Make(
-      std::shared_ptr<impeller::scene::Node> node,
+      const std::shared_ptr<impeller::scene::Node>& node,
       impeller::Matrix camera_matrix);
 
   const DlSceneColorSource* asScene() const override { return this; }
@@ -677,7 +678,7 @@ class DlSceneColorSource final : public DlColorSource {
   }
 
  private:
-  DlSceneColorSource(std::shared_ptr<impeller::scene::Node> node,
+  DlSceneColorSource(const std::shared_ptr<impeller::scene::Node>& node,
                      impeller::Matrix camera_matrix)
       : node_(std::move(node)), camera_matrix_(camera_matrix) {}
 

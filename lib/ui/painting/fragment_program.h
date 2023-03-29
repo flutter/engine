@@ -35,7 +35,7 @@ class FragmentProgram : public RefCountedDartWrappable<FragmentProgram> {
                                      Dart_Handle samplers);
 
   dl_shared<DlColorSource> MakeDlColorSource(
-      std::shared_ptr<std::vector<uint8_t>> float_uniforms,
+      const std::shared_ptr<std::vector<uint8_t>>& float_uniforms,
       const std::vector<dl_shared<DlColorSource>>& children);
 
  private:
