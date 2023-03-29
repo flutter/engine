@@ -780,10 +780,7 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
       @{@"type" : @"announce",
         @"data" : @{@"message" : @"error message"}};
 
-  FlutterStandardMessageCodec* codec = [FlutterStandardMessageCodec sharedInstance];
-  NSData* test_message = [codec encode:annotatedEvent];
-
-  [engineMock sendOnChannel:@"flutter/accessibility" message:test_message];
+  [engineMock handleAccessibilityEvent: annotatedEvent];
 
   EXPECT_TRUE(announced);
 }

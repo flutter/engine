@@ -178,6 +178,12 @@ typedef NS_ENUM(NSInteger, FlutterAppExitResponse) {
 - (void)dispatchSemanticsAction:(FlutterSemanticsAction)action
                        toTarget:(uint16_t)target
                        withData:(fml::MallocMapping)data;
+
+/**
+ * Handles accessibility events.
+ */  
+- (void)handleAccessibilityEvent:(NSDictionary<NSString*, id>*)annotatedEvent;
+
 /**
  * Announces accessibility messages.
  */
