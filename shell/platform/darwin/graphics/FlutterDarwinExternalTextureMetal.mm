@@ -306,8 +306,9 @@ FLUTTER_ASSERT_ARC
   GrYUVABackendTextures yuvaBackendTextures(yuvaInfo, skiaBackendTextures,
                                             kTopLeft_GrSurfaceOrigin);
 
-  return SkImage::MakeFromYUVATextures(grContext, yuvaBackendTextures, /*imageColorSpace=*/nullptr,
-                                       /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
+  return SkImages::TextureFromYUVATextures(grContext, yuvaBackendTextures,
+                                           /*imageColorSpace=*/nullptr,
+                                           /*releaseProc*/ nullptr, /*releaseContext*/ nullptr);
 }
 
 + (sk_sp<SkImage>)wrapRGBATexture:(id<MTLTexture>)rgbaTex
