@@ -135,7 +135,7 @@ static std::optional<Entity> AdvancedBlend(
 
       auto mapping = std::make_shared<fml::NonOwnedMapping>(
           foreground_color.value().ToR8G8B8A8().begin(), 4u);
-      if (!texture->SetContents(mapping)) {
+      if (!texture->SetContents(std::move(mapping))) {
         return false;
       }
       auto src_sampler =
