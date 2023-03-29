@@ -150,6 +150,16 @@ constexpr MTLPrimitiveType ToMTLPrimitiveType(PrimitiveType type) {
   return MTLPrimitiveTypePoint;
 }
 
+constexpr MTLTriangleFillMode ToMTLTriangleFillMode(PolygonMode mode) {
+  switch (mode) {
+    case PolygonMode::kFill:
+      return MTLTriangleFillModeFill;
+    case PolygonMode::kLine:
+      return MTLTriangleFillModeLines;
+  }
+  return MTLTriangleFillModeFill;
+}
+
 constexpr MTLIndexType ToMTLIndexType(IndexType type) {
   switch (type) {
     case IndexType::k16bit:
@@ -322,8 +332,6 @@ constexpr MTLSamplerMinMagFilter ToMTLSamplerMinMagFilter(MinMagFilter filter) {
 
 constexpr MTLSamplerMipFilter ToMTLSamplerMipFilter(MipFilter filter) {
   switch (filter) {
-    case MipFilter::kNone:
-      return MTLSamplerMipFilterNotMipmapped;
     case MipFilter::kNearest:
       return MTLSamplerMipFilterNearest;
     case MipFilter::kLinear:

@@ -382,6 +382,13 @@ static bool Bind(PassBindingsCache& pass,
     return false;
   }
 
+  if (texture.NeedsMipmapGeneration()) {
+    VALIDATION_LOG
+        << "Texture at binding index " << bind_index
+        << " has a mip count > 1, but the mipmap has not been generated.";
+    return false;
+  }
+
   return pass.SetTexture(stage, bind_index,
                          TextureMTL::Cast(texture).GetMTLTexture());
 }
@@ -468,6 +475,8 @@ bool RenderPassMTL::EncodeCommands(const std::shared_ptr<Allocator>& allocator,
                                        ? MTLWindingClockwise
                                        : MTLWindingCounterClockwise];
     [encoder setCullMode:ToMTLCullMode(pipeline_desc.GetCullMode())];
+    [encoder setTriangleFillMode:ToMTLTriangleFillMode(
+                                     pipeline_desc.GetPolygonMode())];
     [encoder setStencilReferenceValue:command.stencil_reference];
 
     if (!bind_stage_resources(command.vertex_bindings, ShaderStage::kVertex)) {

@@ -80,7 +80,7 @@ bool BlitPassMTL::EncodeCommands(id<MTLBlitCommandEncoder> encoder) const {
       auto_pop_debug_marker.Release();
     }
 
-    if (command->Encode(encoder)) {
+    if (!command->Encode(encoder)) {
       return false;
     }
   }
@@ -118,6 +118,21 @@ bool BlitPassMTL::OnCopyTextureToBufferCommand(
   command->destination = std::move(destination);
   command->source_region = source_region;
   command->destination_offset = destination_offset;
+
+  commands_.emplace_back(std::move(command));
+  return true;
+}
+
+bool BlitPassMTL::OnCopyBufferToTextureCommand(
+    BufferView source,
+    std::shared_ptr<Texture> destination,
+    IPoint destination_origin,
+    std::string label) {
+  auto command = std::make_unique<BlitCopyBufferToTextureCommandMTL>();
+  command->label = label;
+  command->source = std::move(source);
+  command->destination = std::move(destination);
+  command->destination_origin = destination_origin;
 
   commands_.emplace_back(std::move(command));
   return true;

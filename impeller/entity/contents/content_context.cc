@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 
+#include "impeller/base/strings.h"
 #include "impeller/entity/entity.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/formats.h"
@@ -141,6 +142,8 @@ void ContentContextOptions::ApplyToPipelineDescriptor(
   }
 
   desc.SetPrimitiveType(primitive_type);
+
+  desc.SetPolygonMode(wireframe ? PolygonMode::kLine : PolygonMode::kFill);
 }
 
 template <typename PipelineT>
@@ -172,13 +175,49 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<LinearGradientFillPipeline>(*context_);
   radial_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<RadialGradientFillPipeline>(*context_);
+  conical_gradient_fill_pipelines_[{}] =
+      CreateDefaultPipeline<ConicalGradientFillPipeline>(*context_);
   if (context_->GetDeviceCapabilities().SupportsSSBO()) {
     linear_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<LinearGradientSSBOFillPipeline>(*context_);
     radial_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<RadialGradientSSBOFillPipeline>(*context_);
+    conical_gradient_ssbo_fill_pipelines_[{}] =
+        CreateDefaultPipeline<ConicalGradientSSBOFillPipeline>(*context_);
     sweep_gradient_ssbo_fill_pipelines_[{}] =
         CreateDefaultPipeline<SweepGradientSSBOFillPipeline>(*context_);
+  }
+  if (context_->GetDeviceCapabilities().SupportsFramebufferFetch()) {
+    framebuffer_blend_color_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
+    framebuffer_blend_colorburn_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorBurnPipeline>(*context_);
+    framebuffer_blend_colordodge_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendColorDodgePipeline>(*context_);
+    framebuffer_blend_darken_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendDarkenPipeline>(*context_);
+    framebuffer_blend_difference_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendDifferencePipeline>(*context_);
+    framebuffer_blend_exclusion_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendExclusionPipeline>(*context_);
+    framebuffer_blend_hardlight_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendHardLightPipeline>(*context_);
+    framebuffer_blend_hue_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendHuePipeline>(*context_);
+    framebuffer_blend_lighten_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendLightenPipeline>(*context_);
+    framebuffer_blend_luminosity_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendLuminosityPipeline>(*context_);
+    framebuffer_blend_multiply_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendMultiplyPipeline>(*context_);
+    framebuffer_blend_overlay_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
+    framebuffer_blend_saturation_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
+    framebuffer_blend_screen_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
+    framebuffer_blend_softlight_pipelines_[{}] =
+        CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
   }
 
   blend_color_pipelines_[{}] =
@@ -210,39 +249,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<BlendScreenPipeline>(*context_);
   blend_softlight_pipelines_[{}] =
       CreateDefaultPipeline<BlendSoftLightPipeline>(*context_);
-#if FML_OS_PHYSICAL_IOS
-  framebuffer_blend_color_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorPipeline>(*context_);
-  framebuffer_blend_colorburn_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorBurnPipeline>(*context_);
-  framebuffer_blend_colordodge_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendColorDodgePipeline>(*context_);
-  framebuffer_blend_darken_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendDarkenPipeline>(*context_);
-  framebuffer_blend_difference_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendDifferencePipeline>(*context_);
-  framebuffer_blend_exclusion_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendExclusionPipeline>(*context_);
-  framebuffer_blend_hardlight_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendHardLightPipeline>(*context_);
-  framebuffer_blend_hue_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendHuePipeline>(*context_);
-  framebuffer_blend_lighten_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendLightenPipeline>(*context_);
-  framebuffer_blend_luminosity_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendLuminosityPipeline>(*context_);
-  framebuffer_blend_multiply_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendMultiplyPipeline>(*context_);
-  framebuffer_blend_overlay_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendOverlayPipeline>(*context_);
-  framebuffer_blend_saturation_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendSaturationPipeline>(*context_);
-  framebuffer_blend_screen_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendScreenPipeline>(*context_);
-  framebuffer_blend_softlight_pipelines_[{}] =
-      CreateDefaultPipeline<FramebufferBlendSoftLightPipeline>(*context_);
-#endif  // FML_OS_PHYSICAL_IOS
-
   sweep_gradient_fill_pipelines_[{}] =
       CreateDefaultPipeline<SweepGradientFillPipeline>(*context_);
   rrect_blur_pipelines_[{}] =
@@ -250,6 +256,8 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
   texture_blend_pipelines_[{}] =
       CreateDefaultPipeline<BlendPipeline>(*context_);
   texture_pipelines_[{}] = CreateDefaultPipeline<TexturePipeline>(*context_);
+  position_uv_pipelines_[{}] =
+      CreateDefaultPipeline<PositionUVPipeline>(*context_);
   tiled_texture_pipelines_[{}] =
       CreateDefaultPipeline<TiledTexturePipeline>(*context_);
   gaussian_blur_pipelines_[{}] =
@@ -272,8 +280,6 @@ ContentContext::ContentContext(std::shared_ptr<Context> context)
       CreateDefaultPipeline<GlyphAtlasSdfPipeline>(*context_);
   geometry_color_pipelines_[{}] =
       CreateDefaultPipeline<GeometryColorPipeline>(*context_);
-  geometry_position_pipelines_[{}] =
-      CreateDefaultPipeline<GeometryPositionPipeline>(*context_);
   yuv_to_rgb_filter_pipelines_[{}] =
       CreateDefaultPipeline<YUVToRGBFilterPipeline>(*context_);
 
@@ -306,6 +312,7 @@ bool ContentContext::IsValid() const {
 }
 
 std::shared_ptr<Texture> ContentContext::MakeSubpass(
+    const std::string& label,
     ISize texture_size,
     const SubpassCallback& subpass_callback,
     bool msaa_enabled) const {
@@ -315,11 +322,11 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   if (context->GetDeviceCapabilities().SupportsOffscreenMSAA() &&
       msaa_enabled) {
     subpass_target = RenderTarget::CreateOffscreenMSAA(
-        *context, texture_size, "Contents Offscreen MSAA",
+        *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfigMSAA, std::nullopt);
   } else {
     subpass_target = RenderTarget::CreateOffscreen(
-        *context, texture_size, "Contents Offscreen",
+        *context, texture_size, SPrintF("%s Offscreen", label.c_str()),
         RenderTarget::kDefaultColorAttachmentConfig, std::nullopt);
   }
   auto subpass_texture = subpass_target.GetRenderTargetTexture();
@@ -328,7 +335,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   }
 
   auto sub_command_buffer = context->CreateCommandBuffer();
-  sub_command_buffer->SetLabel("Offscreen Contents Command Buffer");
+  sub_command_buffer->SetLabel(SPrintF("%s CommandBuffer", label.c_str()));
   if (!sub_command_buffer) {
     return nullptr;
   }
@@ -337,7 +344,7 @@ std::shared_ptr<Texture> ContentContext::MakeSubpass(
   if (!sub_renderpass) {
     return nullptr;
   }
-  sub_renderpass->SetLabel("OffscreenContentsPass");
+  sub_renderpass->SetLabel(SPrintF("%s RenderPass", label.c_str()));
 
   if (!subpass_callback(*this, *sub_renderpass)) {
     return nullptr;
@@ -373,6 +380,10 @@ std::shared_ptr<Context> ContentContext::GetContext() const {
 
 const IDeviceCapabilities& ContentContext::GetDeviceCapabilities() const {
   return context_->GetDeviceCapabilities();
+}
+
+void ContentContext::SetWireframe(bool wireframe) {
+  wireframe_ = wireframe;
 }
 
 }  // namespace impeller

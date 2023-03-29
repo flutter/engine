@@ -5,25 +5,27 @@
 #pragma once
 
 #include "flutter/fml/macros.h"
+#include "flutter/impeller/base/config.h"
 #include "impeller/renderer/backend/vulkan/blit_command_vk.h"
-#include "impeller/renderer/backend/vulkan/fenced_command_buffer_vk.h"
 #include "impeller/renderer/blit_pass.h"
 
 namespace impeller {
 
+class CommandEncoderVK;
+
 class BlitPassVK final : public BlitPass {
  public:
-  explicit BlitPassVK(std::shared_ptr<FencedCommandBufferVK> command_buffer);
-
   // |BlitPass|
   ~BlitPassVK() override;
 
  private:
   friend class CommandBufferVK;
 
-  std::shared_ptr<FencedCommandBufferVK> command_buffer_;
+  std::weak_ptr<CommandEncoderVK> encoder_;
   std::vector<std::unique_ptr<BlitEncodeVK>> commands_;
   std::string label_;
+
+  BlitPassVK(std::weak_ptr<CommandEncoderVK> encoder);
 
   // |BlitPass|
   bool IsValid() const override;
@@ -48,6 +50,15 @@ class BlitPassVK final : public BlitPass {
                                     IRect source_region,
                                     size_t destination_offset,
                                     std::string label) override;
+
+  // |BlitPass|
+  bool OnCopyBufferToTextureCommand(BufferView source,
+                                    std::shared_ptr<Texture> destination,
+                                    IPoint destination_origin,
+                                    std::string label) override {
+    IMPELLER_UNIMPLEMENTED;
+    return false;
+  }
 
   // |BlitPass|
   bool OnGenerateMipmapCommand(std::shared_ptr<Texture> texture,

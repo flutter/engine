@@ -18,6 +18,8 @@
 #import "flutter/shell/platform/darwin/ios/framework/Source/FlutterViewController_Internal.h"
 #import "flutter/shell/platform/darwin/ios/ios_surface.h"
 
+static const NSUInteger kFlutterClippingMaskViewPoolCapacity = 5;
+
 @implementation UIView (FirstResponder)
 - (BOOL)flt_hasFirstResponderInViewHierarchySubtree {
   if (self.isFirstResponder) {
@@ -388,11 +390,7 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
 
   SkRect view_bounds = SkRect::Make(frame_size_);
   std::unique_ptr<EmbedderViewSlice> view;
-  if (params->display_list_enabled()) {
-    view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
-  } else {
-    view = std::make_unique<SkPictureEmbedderViewSlice>(view_bounds);
-  }
+  view = std::make_unique<DisplayListEmbedderViewSlice>(view_bounds);
   slices_.insert_or_assign(view_id, std::move(view));
 
   composition_order_.push_back(view_id);
@@ -404,6 +402,10 @@ void FlutterPlatformViewsController::PrerollCompositeEmbeddedView(
   }
   current_composition_params_[view_id] = EmbeddedViewParams(*params.get());
   views_to_recomposite_.insert(view_id);
+}
+
+size_t FlutterPlatformViewsController::EmbeddedViewCount() {
+  return composition_order_.size();
 }
 
 UIView* FlutterPlatformViewsController::GetPlatformViewByID(int64_t view_id) {
@@ -422,24 +424,6 @@ long FlutterPlatformViewsController::FindFirstResponderPlatformViewId() {
   return -1;
 }
 
-std::vector<SkCanvas*> FlutterPlatformViewsController::GetCurrentCanvases() {
-  std::vector<SkCanvas*> canvases;
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    int64_t view_id = composition_order_[i];
-    canvases.push_back(slices_[view_id]->canvas());
-  }
-  return canvases;
-}
-
-std::vector<DisplayListBuilder*> FlutterPlatformViewsController::GetCurrentBuilders() {
-  std::vector<DisplayListBuilder*> builders;
-  for (size_t i = 0; i < composition_order_.size(); i++) {
-    int64_t view_id = composition_order_[i];
-    builders.push_back(slices_[view_id]->builder());
-  }
-  return builders;
-}
-
 int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_stack) {
   std::vector<std::shared_ptr<Mutator>>::const_reverse_iterator iter = mutators_stack.Bottom();
   int clipCount = 0;
@@ -452,6 +436,17 @@ int FlutterPlatformViewsController::CountClips(const MutatorsStack& mutators_sta
   return clipCount;
 }
 
+void FlutterPlatformViewsController::ClipViewSetMaskView(UIView* clipView) {
+  if (clipView.maskView) {
+    return;
+  }
+  UIView* flutterView = flutter_view_.get();
+  CGRect frame =
+      CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
+                 CGRectGetWidth(flutterView.bounds), CGRectGetHeight(flutterView.bounds));
+  clipView.maskView = [mask_view_pool_.get() getMaskViewWithFrame:frame];
+}
+
 void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators_stack,
                                                    UIView* embedded_view,
                                                    const SkRect& bounding_rect) {
@@ -462,18 +457,17 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
   ResetAnchor(embedded_view.layer);
   ChildClippingView* clipView = (ChildClippingView*)embedded_view.superview;
 
-  CGFloat screenScale = [UIScreen mainScreen].scale;
-
-  UIView* flutter_view = flutter_view_.get();
-  FlutterClippingMaskView* maskView = [[[FlutterClippingMaskView alloc]
-      initWithFrame:CGRectMake(-clipView.frame.origin.x, -clipView.frame.origin.y,
-                               CGRectGetWidth(flutter_view.bounds),
-                               CGRectGetHeight(flutter_view.bounds))
-        screenScale:screenScale] autorelease];
-
   SkMatrix transformMatrix;
   NSMutableArray* blurFilters = [[[NSMutableArray alloc] init] autorelease];
+  FML_DCHECK(!clipView.maskView ||
+             [clipView.maskView isKindOfClass:[FlutterClippingMaskView class]]);
+  if (mask_view_pool_.get() == nil) {
+    mask_view_pool_.reset([[FlutterClippingMaskViewPool alloc]
+        initWithCapacity:kFlutterClippingMaskViewPoolCapacity]);
+  }
+  [mask_view_pool_.get() recycleMaskViews];
   clipView.maskView = nil;
+  CGFloat screenScale = [UIScreen mainScreen].scale;
   auto iter = mutators_stack.Begin();
   while (iter != mutators_stack.End()) {
     switch ((*iter)->GetType()) {
@@ -486,8 +480,9 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                      transformMatrix)) {
           break;
         }
-        [maskView clipRect:(*iter)->GetRect() matrix:transformMatrix];
-        clipView.maskView = maskView;
+        ClipViewSetMaskView(clipView);
+        [(FlutterClippingMaskView*)clipView.maskView clipRect:(*iter)->GetRect()
+                                                       matrix:transformMatrix];
         break;
       }
       case kClipRRect: {
@@ -495,16 +490,18 @@ void FlutterPlatformViewsController::ApplyMutators(const MutatorsStack& mutators
                                                       transformMatrix)) {
           break;
         }
-        [maskView clipRRect:(*iter)->GetRRect() matrix:transformMatrix];
-        clipView.maskView = maskView;
+        ClipViewSetMaskView(clipView);
+        [(FlutterClippingMaskView*)clipView.maskView clipRRect:(*iter)->GetRRect()
+                                                        matrix:transformMatrix];
         break;
       }
       case kClipPath: {
         // TODO(cyanglaz): Find a way to pre-determine if path contains the PlatformView boudning
         // rect. See `ClipRRectContainsPlatformViewBoundingRect`.
         // https://github.com/flutter/flutter/issues/118650
-        [maskView clipPath:(*iter)->GetPath() matrix:transformMatrix];
-        clipView.maskView = maskView;
+        ClipViewSetMaskView(clipView);
+        [(FlutterClippingMaskView*)clipView.maskView clipPath:(*iter)->GetPath()
+                                                       matrix:transformMatrix];
         break;
       }
       case kOpacity:
@@ -612,16 +609,16 @@ void FlutterPlatformViewsController::CompositeWithParams(int64_t view_id,
   ApplyMutators(mutatorStack, touchInterceptor, rect);
 }
 
-EmbedderPaintContext FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
+DlCanvas* FlutterPlatformViewsController::CompositeEmbeddedView(int64_t view_id) {
   // Any UIKit related code has to run on main thread.
   FML_DCHECK([[NSThread currentThread] isMainThread]);
   // Do nothing if the view doesn't need to be composited.
   if (views_to_recomposite_.count(view_id) == 0) {
-    return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
+    return slices_[view_id]->canvas();
   }
   CompositeWithParams(view_id, current_composition_params_[view_id]);
   views_to_recomposite_.erase(view_id);
-  return {slices_[view_id]->canvas(), slices_[view_id]->builder()};
+  return slices_[view_id]->canvas();
 }
 
 void FlutterPlatformViewsController::Reset() {
@@ -667,15 +664,14 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
 
   DisposeViews();
 
-  SkCanvas* background_canvas = frame->SkiaCanvas();
-  DisplayListBuilder* background_builder = frame->GetDisplayListBuilder().get();
+  DlCanvas* background_canvas = frame->Canvas();
 
   // Resolve all pending GPU operations before allocating a new surface.
-  background_canvas->flush();
+  background_canvas->Flush();
 
   // Clipping the background canvas before drawing the picture recorders requires
   // saving and restoring the clip context.
-  SkAutoCanvasRestore save(background_canvas, /*doSave=*/true);
+  DlAutoCanvasRestore save(background_canvas, /*doSave=*/true);
 
   // Maps a platform view id to a vector of `FlutterPlatformViewLayer`.
   LayersMap platform_view_layers;
@@ -727,7 +723,7 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
                             std::ceil(joined_rect.right()), std::ceil(joined_rect.bottom()));
         // Clip the background canvas, so it doesn't contain any of the pixels drawn
         // on the overlay layer.
-        background_canvas->clipRect(joined_rect, SkClipOp::kDifference);
+        background_canvas->ClipRect(joined_rect, DlCanvas::ClipOp::kDifference);
         // Get a new host layer.
         std::shared_ptr<FlutterPlatformViewLayer> layer = GetLayer(gr_context,                //
                                                                    ios_context,               //
@@ -741,15 +737,11 @@ bool FlutterPlatformViewsController::SubmitFrame(GrDirectContext* gr_context,
         overlay_id++;
       }
     }
-    if (background_builder) {
-      slice->render_into(background_builder);
-    } else {
-      slice->render_into(background_canvas);
-    }
+    slice->render_into(background_canvas);
   }
 
   // Manually trigger the SkAutoCanvasRestore before we submit the frame
-  save.restore();
+  save.Restore();
 
   // If a layer was allocated in the previous frame, but it's not used in the current frame,
   // then it can be removed from the scene.
@@ -773,16 +765,33 @@ void FlutterPlatformViewsController::BringLayersIntoView(LayersMap layer_map) {
   UIView* flutter_view = flutter_view_.get();
   // Clear the `active_composition_order_`, which will be populated down below.
   active_composition_order_.clear();
+  NSMutableArray* desired_platform_subviews = [NSMutableArray array];
   for (size_t i = 0; i < composition_order_.size(); i++) {
     int64_t platform_view_id = composition_order_[i];
     std::vector<std::shared_ptr<FlutterPlatformViewLayer>> layers = layer_map[platform_view_id];
     UIView* platform_view_root = root_views_[platform_view_id].get();
-    // `addSubview` will automatically reorder subview if it is already added.
-    [flutter_view addSubview:platform_view_root];
+    [desired_platform_subviews addObject:platform_view_root];
     for (const std::shared_ptr<FlutterPlatformViewLayer>& layer : layers) {
-      [flutter_view addSubview:layer->overlay_view_wrapper];
+      [desired_platform_subviews addObject:layer->overlay_view_wrapper];
     }
     active_composition_order_.push_back(platform_view_id);
+  }
+
+  NSSet* desired_platform_subviews_set = [NSSet setWithArray:desired_platform_subviews];
+  NSArray* existing_platform_subviews = [flutter_view.subviews
+      filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(id object,
+                                                                        NSDictionary* bindings) {
+        return [desired_platform_subviews_set containsObject:object];
+      }]];
+  // Manipulate view hierarchy only if needed, to address a performance issue where
+  // `BringLayersIntoView` is called even when view hierarchy stays the same.
+  // See: https://github.com/flutter/flutter/issues/121833
+  // TODO(hellohuanlin): investigate if it is possible to skip unnecessary BringLayersIntoView.
+  if (![desired_platform_subviews isEqualToArray:existing_platform_subviews]) {
+    for (UIView* subview in desired_platform_subviews) {
+      // `addSubview` will automatically reorder subview if it is already added.
+      [flutter_view addSubview:subview];
+    }
   }
 }
 
@@ -820,14 +829,13 @@ std::shared_ptr<FlutterPlatformViewLayer> FlutterPlatformViewsController::GetLay
   if (!frame) {
     return layer;
   }
-  SkCanvas* overlay_canvas = frame->SkiaCanvas();
-  overlay_canvas->clipRect(rect);
-  overlay_canvas->clear(SK_ColorTRANSPARENT);
-  if (frame->GetDisplayListBuilder()) {
-    slice->render_into(frame->GetDisplayListBuilder().get());
-  } else {
-    slice->render_into(overlay_canvas);
-  }
+  DlCanvas* overlay_canvas = frame->Canvas();
+  int restore_count = overlay_canvas->GetSaveCount();
+  overlay_canvas->Save();
+  overlay_canvas->ClipRect(rect);
+  overlay_canvas->Clear(DlColor::kTransparent());
+  slice->render_into(overlay_canvas);
+  overlay_canvas->RestoreToCount(restore_count);
 
   layer->did_submit_last_frame = frame->Submit();
   return layer;

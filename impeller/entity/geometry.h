@@ -50,6 +50,8 @@ class Geometry {
 
   static std::unique_ptr<Geometry> MakeFillPath(const Path& path);
 
+  static std::unique_ptr<Geometry> MakeRRect(Rect rect, Scalar corner_radius);
+
   static std::unique_ptr<Geometry> MakeStrokePath(
       const Path& path,
       Scalar stroke_width = 0.0,
@@ -65,6 +67,12 @@ class Geometry {
                                            const Entity& entity,
                                            RenderPass& pass) = 0;
 
+  virtual GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                             Matrix effect_transform,
+                                             const ContentContext& renderer,
+                                             const Entity& entity,
+                                             RenderPass& pass);
+
   virtual GeometryVertexType GetVertexType() const = 0;
 
   virtual std::optional<Rect> GetCoverage(const Matrix& transform) const = 0;
@@ -77,11 +85,11 @@ class VerticesGeometry : public Geometry {
                                                 const Entity& entity,
                                                 RenderPass& pass) = 0;
 
-  virtual GeometryResult GetPositionUVBuffer(const ContentContext& renderer,
-                                             const Entity& entity,
-                                             RenderPass& pass) = 0;
-
   virtual bool HasVertexColors() const = 0;
+
+  virtual bool HasTextureCoordinates() const = 0;
+
+  virtual std::optional<Rect> GetTextureCoordinateCoverge() const = 0;
 };
 
 /// @brief A geometry that is created from a filled path object.
@@ -102,6 +110,13 @@ class FillPathGeometry : public Geometry {
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
 
   Path path_;
 
@@ -134,14 +149,14 @@ class StrokePathGeometry : public Geometry {
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
                          const Point& offset,
-                         Scalar tolerance)>;
+                         Scalar scale)>;
   using JoinProc =
       std::function<void(VertexBufferBuilder<VS::PerVertexData>& vtx_builder,
                          const Point& position,
                          const Point& start_offset,
                          const Point& end_offset,
                          Scalar miter_limit,
-                         Scalar tolerance)>;
+                         Scalar scale)>;
 
   // |Geometry|
   GeometryResult GetPositionBuffer(const ContentContext& renderer,
@@ -149,10 +164,19 @@ class StrokePathGeometry : public Geometry {
                                    RenderPass& pass) override;
 
   // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
+  // |Geometry|
   GeometryVertexType GetVertexType() const override;
 
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  bool SkipRendering() const;
 
   static Scalar CreateBevelAndGetDirection(
       VertexBufferBuilder<SolidFillVertexShader::PerVertexData>& vtx_builder,
@@ -160,14 +184,14 @@ class StrokePathGeometry : public Geometry {
       const Point& start_offset,
       const Point& end_offset);
 
-  static VertexBuffer CreateSolidStrokeVertices(const Path& path,
-                                                HostBuffer& buffer,
-                                                Scalar stroke_width,
-                                                Scalar scaled_miter_limit,
-                                                Cap cap,
-                                                const JoinProc& join_proc,
-                                                const CapProc& cap_proc,
-                                                Scalar tolerance);
+  static VertexBufferBuilder<SolidFillVertexShader::PerVertexData>
+  CreateSolidStrokeVertices(const Path& path,
+                            Scalar stroke_width,
+                            Scalar scaled_miter_limit,
+                            Cap cap,
+                            const JoinProc& join_proc,
+                            const CapProc& cap_proc,
+                            Scalar scale);
 
   static StrokePathGeometry::JoinProc GetJoinProc(Join stroke_join);
 
@@ -202,6 +226,13 @@ class CoverGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
   FML_DISALLOW_COPY_AND_ASSIGN(CoverGeometry);
 };
 
@@ -223,9 +254,49 @@ class RectGeometry : public Geometry {
   // |Geometry|
   std::optional<Rect> GetCoverage(const Matrix& transform) const override;
 
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
   Rect rect_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(RectGeometry);
+};
+
+class RRectGeometry : public Geometry {
+ public:
+  explicit RRectGeometry(Rect rect, Scalar corner_radius);
+
+  ~RRectGeometry();
+
+ private:
+  // |Geometry|
+  GeometryResult GetPositionBuffer(const ContentContext& renderer,
+                                   const Entity& entity,
+                                   RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryResult GetPositionUVBuffer(Rect texture_coverage,
+                                     Matrix effect_transform,
+                                     const ContentContext& renderer,
+                                     const Entity& entity,
+                                     RenderPass& pass) override;
+
+  // |Geometry|
+  GeometryVertexType GetVertexType() const override;
+
+  // |Geometry|
+  std::optional<Rect> GetCoverage(const Matrix& transform) const override;
+
+  VertexBufferBuilder<Point> CreatePositionBuffer(const Entity& entity) const;
+
+  Rect rect_;
+  Scalar corner_radius_;
+
+  FML_DISALLOW_COPY_AND_ASSIGN(RRectGeometry);
 };
 
 }  // namespace impeller

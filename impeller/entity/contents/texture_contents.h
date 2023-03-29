@@ -46,6 +46,8 @@ class TextureContents final : public Contents {
 
   void SetOpacity(Scalar opacity);
 
+  Scalar GetOpacity() const;
+
   void SetStencilEnabled(bool enabled);
 
   // |Contents|
@@ -63,13 +65,19 @@ class TextureContents final : public Contents {
               const Entity& entity,
               RenderPass& pass) const override;
 
+  // |Contents|
+  bool CanAcceptOpacity(const Entity& entity) const override;
+
+  // |Contents|
+  void SetInheritedOpacity(Scalar opacity) override;
+
   void SetDeferApplyingOpacity(bool defer_applying_opacity);
 
  private:
   std::string label_;
 
   Path path_;
-  bool is_rect_ = false;
+  std::optional<Rect> rect_;
   bool stencil_enabled_ = true;
 
   std::shared_ptr<Texture> texture_;

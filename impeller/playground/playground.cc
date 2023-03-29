@@ -8,6 +8,7 @@
 #include <sstream>
 
 #include "fml/time/time_point.h"
+#include "impeller/image/backends/skia/compressed_image_skia.h"
 #include "impeller/image/decompressed_image.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/runtime_stage/runtime_stage.h"
@@ -195,7 +196,11 @@ bool Playground::OpenPlaygroundHere(
   fml::ScopedCleanupClosure destroy_imgui_context(
       []() { ImGui::DestroyContext(); });
   ImGui::StyleColorsDark();
-  ImGui::GetIO().IniFilename = nullptr;
+
+  auto& io = ImGui::GetIO();
+  io.IniFilename = nullptr;
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+  io.ConfigWindowsResizeFromEdges = true;
 
   auto window = reinterpret_cast<GLFWwindow*>(impl_->GetWindowHandle());
   if (!window) {
@@ -210,8 +215,7 @@ bool Playground::OpenPlaygroundHere(
         if (!playground) {
           return;
         }
-        playground->SetWindowSize(
-            ISize{std::max(width, 0), std::max(height, 0)});
+        playground->SetWindowSize(ISize{width, height}.Max({}));
       });
   ::glfwSetKeyCallback(window, &PlaygroundKeyCallback);
   ::glfwSetCursorPosCallback(window, [](GLFWwindow* window, double x,
@@ -246,6 +250,8 @@ bool Playground::OpenPlaygroundHere(
         [render_callback,
          &renderer = renderer_](RenderTarget& render_target) -> bool {
       ImGui::NewFrame();
+      ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
+                                   ImGuiDockNodeFlags_PassthruCentralNode);
       bool result = render_callback(render_target);
       ImGui::Render();
 
@@ -295,6 +301,10 @@ bool Playground::OpenPlaygroundHere(
       VALIDATION_LOG << "Could not render into the surface.";
       return false;
     }
+
+    if (!ShouldKeepRendering()) {
+      break;
+    }
   }
 
   ::glfwHideWindow(window);
@@ -331,7 +341,7 @@ bool Playground::OpenPlaygroundHere(SinglePassCallback pass_callback) {
 
 std::shared_ptr<CompressedImage> Playground::LoadFixtureImageCompressed(
     std::shared_ptr<fml::Mapping> mapping) const {
-  auto compressed_image = CompressedImage::Create(std::move(mapping));
+  auto compressed_image = CompressedImageSkia::Create(std::move(mapping));
   if (!compressed_image) {
     VALIDATION_LOG << "Could not create compressed image.";
     return nullptr;
@@ -391,13 +401,14 @@ std::shared_ptr<Texture> Playground::CreateTextureForFixture(
   if (!image.has_value()) {
     return nullptr;
   }
-  return CreateTextureForFixture(image.value());
+  return CreateTextureForFixture(image.value(), enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name));
+  return CreateTextureForFixture(OpenAssetAsMapping(fixture_name),
+                                 enable_mipmapping);
 }
 
 std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
@@ -442,6 +453,10 @@ std::shared_ptr<Texture> Playground::CreateTextureCubeForFixture(
 
 void Playground::SetWindowSize(ISize size) {
   window_size_ = size;
+}
+
+bool Playground::ShouldKeepRendering() const {
+  return true;
 }
 
 }  // namespace impeller

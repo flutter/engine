@@ -17,7 +17,6 @@
 #include "impeller/geometry/rect.h"
 #include "impeller/geometry/scalar.h"
 #include "impeller/geometry/size.h"
-#include "path_component.h"
 
 namespace impeller {
 namespace testing {
@@ -577,7 +576,7 @@ TEST(GeometryTest, EmptyPath) {
   path.GetContourComponentAtIndex(0, c);
   ASSERT_POINT_NEAR(c.destination, Point());
 
-  Path::Polyline polyline = path.CreatePolyline();
+  Path::Polyline polyline = path.CreatePolyline(1.0f);
   ASSERT_TRUE(polyline.points.empty());
   ASSERT_TRUE(polyline.contours.empty());
 }
@@ -1060,6 +1059,111 @@ TEST(GeometryTest, PointAngleTo) {
   }
 }
 
+TEST(GeometryTest, PointMin) {
+  Point p(1, 2);
+  Point result = p.Min({0, 10});
+  Point expected(0, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Min) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Min({0, 10, 2});
+  Vector3 expected(0, 2, 2);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Min) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Min({0, 10, 2, 1});
+  Vector4 expected(0, 2, 2, 1);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointMax) {
+  Point p(1, 2);
+  Point result = p.Max({0, 10});
+  Point expected(1, 10);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Max) {
+  Vector3 p(1, 2, 3);
+  Vector3 result = p.Max({0, 10, 2});
+  Vector3 expected(1, 10, 3);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Max) {
+  Vector4 p(1, 2, 3, 4);
+  Vector4 result = p.Max({0, 10, 2, 1});
+  Vector4 expected(1, 10, 3, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointFloor) {
+  Point p(1.5, 2.3);
+  Point result = p.Floor();
+  Point expected(1, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Floor) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Floor();
+  Vector3 expected(1, 2, 3);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Floor) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Floor();
+  Vector4 expected(1, 2, 3, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointCeil) {
+  Point p(1.5, 2.3);
+  Point result = p.Ceil();
+  Point expected(2, 3);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Ceil) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Ceil();
+  Vector3 expected(2, 3, 4);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Ceil) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Ceil();
+  Vector4 expected(2, 3, 4, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
+TEST(GeometryTest, PointRound) {
+  Point p(1.5, 2.3);
+  Point result = p.Round();
+  Point expected(2, 2);
+  ASSERT_POINT_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector3Round) {
+  Vector3 p(1.5, 2.3, 3.9);
+  Vector3 result = p.Round();
+  Vector3 expected(2, 2, 4);
+  ASSERT_VECTOR3_NEAR(result, expected);
+}
+
+TEST(GeometryTest, Vector4Round) {
+  Vector4 p(1.5, 2.3, 3.9, 4.0);
+  Vector4 result = p.Round();
+  Vector4 expected(2, 2, 4, 4);
+  ASSERT_VECTOR4_NEAR(result, expected);
+}
+
 TEST(GeometryTest, PointLerp) {
   Point p(1, 2);
   Point result = p.Lerp({5, 10}, 0.75);
@@ -1389,6 +1493,22 @@ TEST(GeometryTest, RectIntersection) {
     auto u = a.Intersection(b);
     ASSERT_FALSE(u.has_value());
   }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(10, 10, 300, 300);
+    auto u = a.Intersection(b);
+    ASSERT_TRUE(u);
+    ASSERT_RECT_NEAR(u.value(), b);
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b = Rect::MakeMaximum();
+    auto u = a.Intersection(b);
+    ASSERT_TRUE(u);
+    ASSERT_EQ(u, Rect::MakeMaximum());
+  }
 }
 
 TEST(GeometryTest, RectIntersectsWithRect) {
@@ -1414,6 +1534,18 @@ TEST(GeometryTest, RectIntersectsWithRect) {
     Rect a(0, 0, 100, 100);
     Rect b(100, 100, 100, 100);
     ASSERT_FALSE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(10, 10, 100, 100);
+    ASSERT_TRUE(a.IntersectsWithRect(b));
+  }
+
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b = Rect::MakeMaximum();
+    ASSERT_TRUE(a.IntersectsWithRect(b));
   }
 }
 
@@ -1499,6 +1631,12 @@ TEST(GeometryTest, RectContainsPoint) {
     Point p(199, 199);
     ASSERT_TRUE(r.Contains(p));
   }
+
+  {
+    Rect r = Rect::MakeMaximum();
+    Point p(199, 199);
+    ASSERT_TRUE(r.Contains(p));
+  }
 }
 
 TEST(GeometryTest, RectContainsRect) {
@@ -1531,15 +1669,42 @@ TEST(GeometryTest, RectContainsRect) {
     Rect b(0, 0, 300, 300);
     ASSERT_FALSE(a.Contains(b));
   }
+  {
+    Rect a = Rect::MakeMaximum();
+    Rect b(0, 0, 300, 300);
+    ASSERT_TRUE(a.Contains(b));
+  }
 }
 
 TEST(GeometryTest, RectGetPoints) {
-  Rect r(100, 200, 300, 400);
-  auto points = r.GetPoints();
-  ASSERT_POINT_NEAR(points[0], Point(100, 200));
-  ASSERT_POINT_NEAR(points[1], Point(400, 200));
-  ASSERT_POINT_NEAR(points[2], Point(100, 600));
-  ASSERT_POINT_NEAR(points[3], Point(400, 600));
+  {
+    Rect r(100, 200, 300, 400);
+    auto points = r.GetPoints();
+    ASSERT_POINT_NEAR(points[0], Point(100, 200));
+    ASSERT_POINT_NEAR(points[1], Point(400, 200));
+    ASSERT_POINT_NEAR(points[2], Point(100, 600));
+    ASSERT_POINT_NEAR(points[3], Point(400, 600));
+  }
+
+  {
+    Rect r = Rect::MakeMaximum();
+    auto points = r.GetPoints();
+    ASSERT_EQ(points[0], Point(-std::numeric_limits<float>::infinity(),
+                               -std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[1], Point(std::numeric_limits<float>::infinity(),
+                               -std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[2], Point(-std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::infinity()));
+    ASSERT_EQ(points[3], Point(std::numeric_limits<float>::infinity(),
+                               std::numeric_limits<float>::infinity()));
+  }
+}
+
+TEST(GeometryTest, RectShift) {
+  auto r = Rect::MakeLTRB(0, 0, 100, 100);
+
+  ASSERT_EQ(r.Shift(Point(10, 5)), Rect::MakeLTRB(10, 5, 110, 105));
+  ASSERT_EQ(r.Shift(Point(-10, -5)), Rect::MakeLTRB(-10, -5, 90, 95));
 }
 
 TEST(GeometryTest, RectGetTransformedPoints) {
@@ -1553,13 +1718,14 @@ TEST(GeometryTest, RectGetTransformedPoints) {
 
 TEST(GeometryTest, RectMakePointBounds) {
   {
-    Rect r =
-        Rect::MakePointBounds({Point(1, 5), Point(4, -1), Point(0, 6)}).value();
+    std::vector<Point> points{{1, 5}, {4, -1}, {0, 6}};
+    Rect r = Rect::MakePointBounds(points.begin(), points.end()).value();
     auto expected = Rect(0, -1, 4, 7);
     ASSERT_RECT_NEAR(r, expected);
   }
   {
-    std::optional<Rect> r = Rect::MakePointBounds({});
+    std::vector<Point> points;
+    std::optional<Rect> r = Rect::MakePointBounds(points.begin(), points.end());
     ASSERT_FALSE(r.has_value());
   }
 }
@@ -1580,7 +1746,7 @@ TEST(GeometryTest, RectGetPositive) {
 
 TEST(GeometryTest, CubicPathComponentPolylineDoesNotIncludePointOne) {
   CubicPathComponent component({10, 10}, {20, 35}, {35, 20}, {40, 40});
-  auto polyline = component.CreatePolyline();
+  auto polyline = component.CreatePolyline(1.0f);
   ASSERT_NE(polyline.front().x, 10);
   ASSERT_NE(polyline.front().y, 10);
   ASSERT_EQ(polyline.back().x, 40);
@@ -1595,7 +1761,7 @@ TEST(GeometryTest, PathCreatePolyLineDoesNotDuplicatePoints) {
   path.AddContourComponent({40, 40});
   path.AddLinearComponent({40, 40}, {50, 50});
 
-  auto polyline = path.CreatePolyline();
+  auto polyline = path.CreatePolyline(1.0f);
 
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.points.size(), 5u);
@@ -1681,7 +1847,7 @@ TEST(GeometryTest, PathCreatePolylineGeneratesCorrectContourData) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.points.size(), 6u);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].is_closed, false);
@@ -1698,7 +1864,7 @@ TEST(GeometryTest, PolylineGetContourPointBoundsReturnsCorrectRanges) {
                                 .LineTo({200, 200})
                                 .Close()
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   size_t a1, a2, b1, b2;
   std::tie(a1, a2) = polyline.GetContourPointBounds(0);
   std::tie(b1, b2) = polyline.GetContourPointBounds(1);
@@ -1712,7 +1878,7 @@ TEST(GeometryTest, PathAddRectPolylineHasCorrectContourData) {
   Path::Polyline polyline = PathBuilder{}
                                 .AddRect(Rect::MakeLTRB(50, 60, 70, 80))
                                 .TakePath()
-                                .CreatePolyline();
+                                .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 1u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
@@ -1737,7 +1903,7 @@ TEST(GeometryTest, PathPolylineDuplicatesAreRemovedForSameContour) {
           .LineTo({0, 100})
           .LineTo({0, 100})  // Insert duplicate at end of contour.
           .TakePath()
-          .CreatePolyline();
+          .CreatePolyline(1.0f);
   ASSERT_EQ(polyline.contours.size(), 2u);
   ASSERT_EQ(polyline.contours[0].start_index, 0u);
   ASSERT_TRUE(polyline.contours[0].is_closed);
@@ -1842,6 +2008,12 @@ TEST(GeometryTest, ColorPrinting) {
     stream << m;
     ASSERT_EQ(stream.str(), "(1, 2, 3, 4)");
   }
+}
+
+TEST(GeometryTest, ToIColor) {
+  ASSERT_EQ(Color::ToIColor(Color(0, 0, 0, 0)), 0u);
+  ASSERT_EQ(Color::ToIColor(Color(1.0, 1.0, 1.0, 1.0)), 0xFFFFFFFF);
+  ASSERT_EQ(Color::ToIColor(Color(0.5, 0.5, 1.0, 1.0)), 0xFF8080FF);
 }
 
 TEST(GeometryTest, Gradient) {

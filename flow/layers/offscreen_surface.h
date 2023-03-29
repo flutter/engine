@@ -8,7 +8,11 @@
 #include "flutter/fml/logging.h"
 #include "flutter/fml/macros.h"
 
+#include "flutter/display_list/dl_canvas.h"
+#include "flutter/display_list/skia/dl_sk_canvas.h"
 #include "third_party/skia/include/core/SkSurface.h"
+
+class GrDirectContext;
 
 namespace flutter {
 
@@ -21,12 +25,13 @@ class OffscreenSurface {
 
   sk_sp<SkData> GetRasterData(bool compressed) const;
 
-  SkCanvas* GetCanvas() const;
+  DlCanvas* GetCanvas();
 
   bool IsValid() const;
 
  private:
   sk_sp<SkSurface> offscreen_surface_;
+  DlSkCanvasAdapter adapter_;
 
   FML_DISALLOW_COPY_AND_ASSIGN(OffscreenSurface);
 };

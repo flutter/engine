@@ -73,12 +73,12 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
 
     VS::FrameInfo frame_info;
     frame_info.mvp = Matrix::MakeOrthographic(ISize(1, 1));
+    frame_info.texture_sampler_y_coord_scale =
+        input_snapshot->texture->GetYCoordScale();
 
     FS::FragInfo frag_info;
     const float* matrix = matrix_.array;
     frag_info.color_v = Vector4(matrix[4], matrix[9], matrix[14], matrix[19]);
-    frag_info.texture_sampler_y_coord_scale =
-        input_snapshot->texture->GetYCoordScale();
     // clang-format off
     frag_info.color_m = Matrix(
         matrix[0], matrix[5], matrix[10], matrix[15],
@@ -97,14 +97,13 @@ std::optional<Entity> ColorMatrixFilterContents::RenderFilter(
     return pass.AddCommand(std::move(cmd));
   };
 
-  auto out_texture =
-      renderer.MakeSubpass(input_snapshot->texture->GetSize(), callback);
+  auto out_texture = renderer.MakeSubpass(
+      "Color Matrix Filter", input_snapshot->texture->GetSize(), callback);
   if (!out_texture) {
     return std::nullopt;
   }
-  out_texture->SetLabel("ColorMatrixFilter Texture");
 
-  return Contents::EntityFromSnapshot(
+  return Entity::FromSnapshot(
       Snapshot{.texture = out_texture,
                .transform = input_snapshot->transform,
                .sampler_descriptor = input_snapshot->sampler_descriptor,

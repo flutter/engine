@@ -215,6 +215,11 @@ enum class PrimitiveType {
   // checks. Hence, they are not supported here.
 };
 
+enum class PolygonMode {
+  kFill,
+  kLine,
+};
+
 struct DepthRange {
   Scalar z_near = 0.0;
   Scalar z_far = 1.0;
@@ -242,8 +247,6 @@ enum class MinMagFilter {
 };
 
 enum class MipFilter {
-  /// Always sample from mip level 0. Other mip levels are ignored.
-  kNone,
   /// Sample from the nearest mip level.
   kNearest,
   /// Sample from the two nearest mip levels and linearly interpolate between

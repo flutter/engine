@@ -2223,7 +2223,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
-      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return false; },
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return false; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertFalse(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
@@ -2234,7 +2234,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutterPlatformViewsController->CompositeEmbeddedView(2);
   auto mock_surface_submit_true = std::make_unique<flutter::SurfaceFrame>(
       nullptr, framebuffer_info,
-      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(flutterPlatformViewsController->SubmitFrame(nullptr, nullptr,
                                                             std::move(mock_surface_submit_true)));
@@ -2321,7 +2321,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
                          arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
       result);
 
-  // First frame, |GetCurrentCanvases| is not empty after composite.
+  // First frame, |EmbeddedViewCount| is not empty after composite.
   flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
   flutter::MutatorsStack stack;
   SkMatrix finalMatrix;
@@ -2329,23 +2329,21 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), 1UL);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentBuilders().size(), 1UL);
+  XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
 
-  // Second frame, |GetCurrentCanvases| should be empty at the start
+  // Second frame, |EmbeddedViewCount| should be empty at the start
   flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
-  XCTAssertTrue(flutterPlatformViewsController->GetCurrentCanvases().empty());
-  XCTAssertTrue(flutterPlatformViewsController->GetCurrentBuilders().empty());
+  XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 0UL);
 
   auto embeddedViewParams2 =
       std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
   flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams2));
   flutterPlatformViewsController->CompositeEmbeddedView(0);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentCanvases().size(), 1UL);
-  XCTAssertEqual(flutterPlatformViewsController->GetCurrentBuilders().size(), 1UL);
+  XCTAssertEqual(flutterPlatformViewsController->EmbeddedViewCount(), 1UL);
 }
 
-- (void)testFlutterPlatformViewControllerSubmitFrameShouldOrderSubviewsCorrectly {
+- (void)
+    testFlutterPlatformViewControllerSubmitFrameShouldOrderSubviewsCorrectlyWithDifferentViewHierarchy {
   flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
   auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
   flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
@@ -2403,7 +2401,7 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
   auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
-      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
 
   XCTAssertTrue(
@@ -2431,13 +2429,109 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   mock_sk_surface = SkSurface::MakeRaster(image_info);
   mock_surface = std::make_unique<flutter::SurfaceFrame>(
       std::move(mock_sk_surface), framebuffer_info,
-      [](const flutter::SurfaceFrame& surface_frame, SkCanvas* canvas) { return true; },
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
       /*frame_size=*/SkISize::Make(800, 600));
   XCTAssertTrue(
       flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
   XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] >
                     [flutterView.subviews indexOfObject:clippingView2],
                 @"The first clipping view should be added after the second clipping view.");
+}
+
+- (void)
+    testFlutterPlatformViewControllerSubmitFrameShouldOrderSubviewsCorrectlyWithSameViewHierarchy {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 500, 500)] autorelease];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @0, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+  UIView* view1 = gMockPlatformView;
+
+  // This overwrites `gMockPlatformView` to another view.
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+  UIView* view2 = gMockPlatformView;
+
+  flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+  flutter::MutatorsStack stack;
+  SkMatrix finalMatrix;
+  auto embeddedViewParams1 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
+  flutterPlatformViewsController->CompositeEmbeddedView(0);
+  auto embeddedViewParams2 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
+  flutterPlatformViewsController->CompositeEmbeddedView(1);
+
+  // SKSurface is required if the root FlutterView is present.
+  const SkImageInfo image_info = SkImageInfo::MakeN32Premul(1000, 1000);
+  sk_sp<SkSurface> mock_sk_surface = SkSurface::MakeRaster(image_info);
+  flutter::SurfaceFrame::FramebufferInfo framebuffer_info;
+  auto mock_surface = std::make_unique<flutter::SurfaceFrame>(
+      std::move(mock_sk_surface), framebuffer_info,
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
+
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+  // platform view is wrapped by touch interceptor, which itself is wrapped by clipping view.
+  UIView* clippingView1 = view1.superview.superview;
+  UIView* clippingView2 = view2.superview.superview;
+  UIView* flutterView = clippingView1.superview;
+  XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
+                    [flutterView.subviews indexOfObject:clippingView2],
+                @"The first clipping view should be added before the second clipping view.");
+
+  // Need to recreate these params since they are `std::move`ed.
+  flutterPlatformViewsController->BeginFrame(SkISize::Make(300, 300));
+  // Process the second frame in the same order.
+  embeddedViewParams1 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(300, 300), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(0, std::move(embeddedViewParams1));
+  flutterPlatformViewsController->CompositeEmbeddedView(0);
+  embeddedViewParams2 =
+      std::make_unique<flutter::EmbeddedViewParams>(finalMatrix, SkSize::Make(500, 500), stack);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams2));
+  flutterPlatformViewsController->CompositeEmbeddedView(1);
+
+  mock_sk_surface = SkSurface::MakeRaster(image_info);
+  mock_surface = std::make_unique<flutter::SurfaceFrame>(
+      std::move(mock_sk_surface), framebuffer_info,
+      [](const flutter::SurfaceFrame& surface_frame, flutter::DlCanvas* canvas) { return true; },
+      /*frame_size=*/SkISize::Make(800, 600));
+  XCTAssertTrue(
+      flutterPlatformViewsController->SubmitFrame(nullptr, nullptr, std::move(mock_surface)));
+  XCTAssertTrue([flutterView.subviews indexOfObject:clippingView1] <
+                    [flutterView.subviews indexOfObject:clippingView2],
+                @"The first clipping view should be added before the second clipping view.");
 }
 
 - (void)testThreadMergeAtEndFrame {
@@ -2548,6 +2642,125 @@ fml::RefPtr<fml::TaskRunner> CreateNewThread(std::string name) {
   [textField resignFirstResponder];
   XCTAssertFalse(textField.isFirstResponder);
   XCTAssertFalse(view.flt_hasFirstResponderInViewHierarchySubtree);
+}
+
+- (void)testFlutterClippingMaskViewPoolReuseViewsAfterRecycle {
+  FlutterClippingMaskViewPool* pool =
+      [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+  FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
+  FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
+  [pool recycleMaskViews];
+  CGRect newRect = CGRectMake(0, 0, 10, 10);
+  FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:newRect];
+  FlutterClippingMaskView* view4 = [pool getMaskViewWithFrame:newRect];
+  XCTAssertEqual(view1, view3);
+  XCTAssertEqual(view2, view4);
+  XCTAssertTrue(CGRectEqualToRect(view3.frame, newRect));
+  XCTAssertTrue(CGRectEqualToRect(view4.frame, newRect));
+}
+
+- (void)testFlutterClippingMaskViewPoolAllocsNewMaskViewsAfterReachingCapacity {
+  FlutterClippingMaskViewPool* pool =
+      [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+  FlutterClippingMaskView* view1 = [pool getMaskViewWithFrame:CGRectZero];
+  FlutterClippingMaskView* view2 = [pool getMaskViewWithFrame:CGRectZero];
+  FlutterClippingMaskView* view3 = [pool getMaskViewWithFrame:CGRectZero];
+  XCTAssertNotEqual(view1, view3);
+  XCTAssertNotEqual(view2, view3);
+}
+
+- (void)testMaskViewsReleasedWhenPoolIsReleased {
+  UIView* retainedView;
+  @autoreleasepool {
+    FlutterClippingMaskViewPool* pool =
+        [[[FlutterClippingMaskViewPool alloc] initWithCapacity:2] autorelease];
+    FlutterClippingMaskView* view = [pool getMaskViewWithFrame:CGRectZero];
+    retainedView = [view retain];
+    XCTAssertGreaterThan(retainedView.retainCount, 1u);
+  }
+  // The only retain left is our manual retain called inside the autorelease pool, meaning the
+  // maskViews are dealloc'd.
+  XCTAssertEqual(retainedView.retainCount, 1u);
+}
+
+- (void)testClipMaskViewIsReused {
+  flutter::FlutterPlatformViewsTestMockPlatformViewDelegate mock_delegate;
+  auto thread_task_runner = CreateNewThread("FlutterPlatformViewsTest");
+  flutter::TaskRunners runners(/*label=*/self.name.UTF8String,
+                               /*platform=*/thread_task_runner,
+                               /*raster=*/thread_task_runner,
+                               /*ui=*/thread_task_runner,
+                               /*io=*/thread_task_runner);
+  auto flutterPlatformViewsController = std::make_shared<flutter::FlutterPlatformViewsController>();
+  auto platform_view = std::make_unique<flutter::PlatformViewIOS>(
+      /*delegate=*/mock_delegate,
+      /*rendering_api=*/flutter::IOSRenderingAPI::kSoftware,
+      /*platform_views_controller=*/flutterPlatformViewsController,
+      /*task_runners=*/runners);
+
+  FlutterPlatformViewsTestMockFlutterPlatformFactory* factory =
+      [[FlutterPlatformViewsTestMockFlutterPlatformFactory new] autorelease];
+  flutterPlatformViewsController->RegisterViewFactory(
+      factory, @"MockFlutterPlatformView",
+      FlutterPlatformViewGestureRecognizersBlockingPolicyEager);
+  FlutterResult result = ^(id result) {
+  };
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @1, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+
+  XCTAssertNotNil(gMockPlatformView);
+  UIView* mockFlutterView = [[[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 10)] autorelease];
+  flutterPlatformViewsController->SetFlutterView(mockFlutterView);
+  // Create embedded view params
+  flutter::MutatorsStack stack1;
+  // Layer tree always pushes a screen scale factor to the stack
+  SkMatrix screenScaleMatrix =
+      SkMatrix::Scale([UIScreen mainScreen].scale, [UIScreen mainScreen].scale);
+  stack1.PushTransform(screenScaleMatrix);
+  // Push a clip rect
+  SkRect rect = SkRect::MakeXYWH(2, 2, 3, 3);
+  stack1.PushClipRect(rect);
+
+  auto embeddedViewParams1 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack1);
+
+  flutter::MutatorsStack stack2;
+  auto embeddedViewParams2 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack2);
+
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams1));
+  flutterPlatformViewsController->CompositeEmbeddedView(1);
+  UIView* childClippingView1 = gMockPlatformView.superview.superview;
+  UIView* maskView1 = childClippingView1.maskView;
+  XCTAssertNotNil(maskView1);
+
+  // Composite a new frame.
+  auto embeddedViewParams3 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack2);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(1, std::move(embeddedViewParams3));
+  flutterPlatformViewsController->CompositeEmbeddedView(1);
+  childClippingView1 = gMockPlatformView.superview.superview;
+
+  // This overrides gMockPlatformView to point to the newly created platform view.
+  flutterPlatformViewsController->OnMethodCall(
+      [FlutterMethodCall
+          methodCallWithMethodName:@"create"
+                         arguments:@{@"id" : @2, @"viewType" : @"MockFlutterPlatformView"}],
+      result);
+
+  auto embeddedViewParams4 = std::make_unique<flutter::EmbeddedViewParams>(
+      screenScaleMatrix, SkSize::Make(10, 10), stack1);
+  flutterPlatformViewsController->PrerollCompositeEmbeddedView(2, std::move(embeddedViewParams4));
+  flutterPlatformViewsController->CompositeEmbeddedView(2);
+  UIView* childClippingView2 = gMockPlatformView.superview.superview;
+
+  UIView* maskView2 = childClippingView2.maskView;
+  XCTAssertEqual(maskView1, maskView2);
+  XCTAssertNotNil(childClippingView2.maskView);
+  XCTAssertNil(childClippingView1.maskView);
 }
 
 // Return true if a correct visual effect view is found. It also implies all the validation in this

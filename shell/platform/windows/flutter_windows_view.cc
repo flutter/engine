@@ -49,6 +49,9 @@ FlutterWindowsView::FlutterWindowsView(
 }
 
 FlutterWindowsView::~FlutterWindowsView() {
+  if (engine_) {
+    engine_->SetView(nullptr);
+  }
   DestroyRenderSurface();
 }
 
@@ -247,7 +250,7 @@ void FlutterWindowsView::OnUpdateSemanticsEnabled(bool enabled) {
 }
 
 gfx::NativeViewAccessible FlutterWindowsView::GetNativeViewAccessible() {
-  return engine_->GetNativeAccessibleFromId(AccessibilityBridge::kRootNodeId);
+  return engine_->GetNativeViewAccessible();
 }
 
 void FlutterWindowsView::OnCursorRectUpdated(const Rect& rect) {

@@ -5,8 +5,8 @@
 #ifndef FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 #define FLUTTER_LIB_UI_PAINTING_CANVAS_H_
 
-#include "flutter/display_list/display_list_blend_mode.h"
-#include "flutter/display_list/display_list_flags.h"
+#include "flutter/display_list/dl_blend_mode.h"
+#include "flutter/display_list/dl_op_flags.h"
 #include "flutter/lib/ui/dart_wrapper.h"
 #include "flutter/lib/ui/painting/path.h"
 #include "flutter/lib/ui/painting/picture.h"
@@ -58,7 +58,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
                 double top,
                 double right,
                 double bottom,
-                SkClipOp clipOp,
+                DlCanvas::ClipOp clipOp,
                 bool doAntiAlias = true);
   void clipRRect(const RRect& rrect, bool doAntiAlias = true);
   void clipPath(const CanvasPath* path, bool doAntiAlias = true);
@@ -161,7 +161,7 @@ class Canvas : public RefCountedDartWrappable<Canvas>, DisplayListOpFlags {
 
   void drawPoints(Dart_Handle paint_objects,
                   Dart_Handle paint_data,
-                  SkCanvas::PointMode point_mode,
+                  DlCanvas::PointMode point_mode,
                   const tonic::Float32List& points);
 
   void drawVertices(const Vertices* vertices,

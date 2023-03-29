@@ -30,6 +30,8 @@
 
 - (instancetype)initWithFrame:(CGRect)frame screenScale:(CGFloat)screenScale;
 
+- (void)reset;
+
 // Adds a clip rect operation to the queue.
 //
 // The `clipSkRect` is transformed with the `matrix` before adding to the queue.
@@ -44,6 +46,28 @@
 //
 // The `path` is transformed with the `matrix` before adding to the queue.
 - (void)clipPath:(const SkPath&)path matrix:(const SkMatrix&)matrix;
+
+@end
+
+// A pool that provides |FlutterClippingMaskView|s.
+//
+// The pool has a capacity that can be set in the initializer.
+// When requesting a FlutterClippingMaskView, the pool will first try to reuse an available maskView
+// in the pool. If there are none available, a new FlutterClippingMaskView is constructed. If the
+// capacity is reached, the newly constructed FlutterClippingMaskView is not added to the pool.
+//
+// Call |recycleMaskViews| to mark all the FlutterClippingMaskViews in the pool available.
+@interface FlutterClippingMaskViewPool : NSObject
+
+// Initialize the pool with `capacity`. When the `capacity` is reached, a FlutterClippingMaskView is
+// constructed when requested, and it is not added to the pool.
+- (instancetype)initWithCapacity:(NSInteger)capacity;
+
+// Reuse a maskView from the pool, or allocate a new one.
+- (FlutterClippingMaskView*)getMaskViewWithFrame:(CGRect)frame;
+
+// Mark all the maskViews available.
+- (void)recycleMaskViews;
 
 @end
 
@@ -203,6 +227,8 @@ class FlutterPlatformViewsController {
   void PrerollCompositeEmbeddedView(int64_t view_id,
                                     std::unique_ptr<flutter::EmbeddedViewParams> params);
 
+  size_t EmbeddedViewCount();
+
   // Returns the `FlutterPlatformView`'s `view` object associated with the view_id.
   //
   // If the `FlutterPlatformViewsController` does not contain any `FlutterPlatformView` object or
@@ -216,11 +242,7 @@ class FlutterPlatformViewsController {
   void EndFrame(bool should_resubmit_frame,
                 const fml::RefPtr<fml::RasterThreadMerger>& raster_thread_merger);
 
-  std::vector<SkCanvas*> GetCurrentCanvases();
-
-  std::vector<DisplayListBuilder*> GetCurrentBuilders();
-
-  EmbedderPaintContext CompositeEmbeddedView(int64_t view_id);
+  DlCanvas* CompositeEmbeddedView(int64_t view_id);
 
   // The rect of the platform view at index view_id. This rect has been translated into the
   // host view coordinate system. Units are device screen pixels.
@@ -268,6 +290,7 @@ class FlutterPlatformViewsController {
   // Traverse the `mutators_stack` and return the number of clip operations.
   int CountClips(const MutatorsStack& mutators_stack);
 
+  void ClipViewSetMaskView(UIView* clipView);
   // Applies the mutators in the mutators_stack to the UIView chain that was constructed by
   // `ReconstructClipViewsChain`
   //
@@ -328,6 +351,7 @@ class FlutterPlatformViewsController {
   fml::scoped_nsobject<FlutterMethodChannel> channel_;
   fml::scoped_nsobject<UIView> flutter_view_;
   fml::scoped_nsobject<UIViewController> flutter_view_controller_;
+  fml::scoped_nsobject<FlutterClippingMaskViewPool> mask_view_pool_;
   std::map<std::string, fml::scoped_nsobject<NSObject<FlutterPlatformViewFactory>>> factories_;
   std::map<int64_t, fml::scoped_nsobject<NSObject<FlutterPlatformView>>> views_;
   std::map<int64_t, fml::scoped_nsobject<FlutterTouchInterceptingView>> touch_interceptors_;
