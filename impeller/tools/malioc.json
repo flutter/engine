@@ -178,7 +178,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
+          "uniform_registers_used": 10,
           "work_registers_used": 15
         }
       }
@@ -252,7 +252,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 10,
+          "uniform_registers_used": 8,
           "work_registers_used": 16
         }
       }
@@ -326,7 +326,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 10,
+          "uniform_registers_used": 8,
           "work_registers_used": 14
         }
       }
@@ -403,7 +403,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -481,7 +481,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -560,7 +560,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -637,7 +637,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 10,
+          "uniform_registers_used": 8,
           "work_registers_used": 15
         }
       }
@@ -710,7 +710,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
+          "uniform_registers_used": 10,
           "work_registers_used": 15
         }
       }
@@ -787,7 +787,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -860,7 +860,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
+          "uniform_registers_used": 10,
           "work_registers_used": 15
         }
       }
@@ -938,7 +938,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -1015,7 +1015,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 10,
+          "uniform_registers_used": 8,
           "work_registers_used": 15
         }
       }
@@ -1088,7 +1088,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 12,
+          "uniform_registers_used": 10,
           "work_registers_used": 15
         }
       }
@@ -1166,7 +1166,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 8,
+          "uniform_registers_used": 6,
           "work_registers_used": 11
         }
       }
@@ -1239,7 +1239,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 14,
+          "uniform_registers_used": 12,
           "work_registers_used": 25
         }
       }
@@ -3332,7 +3332,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 14,
+          "uniform_registers_used": 12,
           "work_registers_used": 20
         }
       }
@@ -3404,7 +3404,7 @@
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 16,
+          "uniform_registers_used": 14,
           "work_registers_used": 15
         }
       }
@@ -13478,16 +13478,17 @@
           "has_stack_spilling": false,
           "performance": {
             "longest_path_bound_pipelines": [
+              "varying",
               "texture"
             ],
             "longest_path_cycles": [
               0.15625,
               0.15625,
-              0.015625,
+              0.0,
               0.0,
               0.0,
               0.25,
-              0.5
+              0.25
             ],
             "pipelines": [
               "arith_total",
@@ -13499,34 +13500,36 @@
               "texture"
             ],
             "shortest_path_bound_pipelines": [
+              "varying",
               "texture"
             ],
             "shortest_path_cycles": [
               0.15625,
               0.15625,
-              0.015625,
+              0.0,
               0.0,
               0.0,
               0.25,
-              0.5
+              0.25
             ],
             "total_bound_pipelines": [
+              "varying",
               "texture"
             ],
             "total_cycles": [
               0.15625,
               0.15625,
-              0.015625,
+              0.0,
               0.0,
               0.0,
               0.25,
-              0.5
+              0.25
             ]
           },
           "stack_spill_bytes": 0,
           "thread_occupancy": 100,
-          "uniform_registers_used": 14,
-          "work_registers_used": 8
+          "uniform_registers_used": 12,
+          "work_registers_used": 6
         }
       }
     }
