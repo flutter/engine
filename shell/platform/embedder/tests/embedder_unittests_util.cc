@@ -157,7 +157,8 @@ bool ImageMatchesFixture(const std::string& fixture_file_name,
   auto encoded_image = SkData::MakeWithoutCopy(
       fixture_image_mapping.GetMapping(), fixture_image_mapping.GetSize());
   auto fixture_image =
-      SkImages::DeferredFromEncodedData(std::move(encoded_image))->makeRasterImage();
+      SkImages::DeferredFromEncodedData(std::move(encoded_image))
+          ->makeRasterImage();
 
   FML_CHECK(fixture_image) << "Could not create image from fixture: "
                            << fixture_file_name;

@@ -670,9 +670,9 @@ TEST_F(ImageDecoderFixtureTest, CanDecodeWithoutAGPUContext) {
 }
 
 TEST_F(ImageDecoderFixtureTest, CanDecodeWithResizes) {
-  const auto image_dimensions =
-      SkImages::DeferredFromEncodedData(OpenFixtureAsSkData("DashInNooglerHat.jpg"))
-          ->dimensions();
+  const auto image_dimensions = SkImages::DeferredFromEncodedData(
+                                    OpenFixtureAsSkData("DashInNooglerHat.jpg"))
+                                    ->dimensions();
 
   ASSERT_FALSE(image_dimensions.isEmpty());
 

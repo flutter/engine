@@ -12,9 +12,9 @@
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
-#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 namespace flutter {
 
@@ -82,13 +82,13 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
   SkImage::TextureReleaseProc release_proc = texture->destruction_callback;
   auto image =
       SkImages::BorrowTextureFrom(context,                   // context
-                               gr_backend_texture,        // texture handle
-                               kTopLeft_GrSurfaceOrigin,  // origin
-                               kRGBA_8888_SkColorType,    // color type
-                               kPremul_SkAlphaType,       // alpha type
-                               nullptr,                   // colorspace
-                               release_proc,       // texture release proc
-                               texture->user_data  // texture release context
+                                  gr_backend_texture,        // texture handle
+                                  kTopLeft_GrSurfaceOrigin,  // origin
+                                  kRGBA_8888_SkColorType,    // color type
+                                  kPremul_SkAlphaType,       // alpha type
+                                  nullptr,                   // colorspace
+                                  release_proc,       // texture release proc
+                                  texture->user_data  // texture release context
       );
 
   if (!image) {

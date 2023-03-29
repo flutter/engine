@@ -10,8 +10,8 @@
 #include "flutter/fml/make_copyable.h"
 #include "flutter/lib/ui/painting/display_list_image_gpu.h"
 #include "third_party/skia/include/core/SkBitmap.h"
-#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/core/SkImage.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 
 namespace flutter {
 
@@ -198,12 +198,13 @@ static SkiaGPUObject<SkImage> UploadRasterImage(
           .SetIfFalse([&result, context = io_manager->GetResourceContext(),
                        &pixmap, queue = io_manager->GetSkiaUnrefQueue()] {
             TRACE_EVENT0("flutter", "MakeCrossContextImageFromPixmap");
-            sk_sp<SkImage> texture_image = SkImages::CrossContextTextureFromPixmap(
-                context.get(),  // context
-                pixmap,         // pixmap
-                true,           // buildMips,
-                true            // limitToMaxTextureSize
-            );
+            sk_sp<SkImage> texture_image =
+                SkImages::CrossContextTextureFromPixmap(
+                    context.get(),  // context
+                    pixmap,         // pixmap
+                    true,           // buildMips,
+                    true            // limitToMaxTextureSize
+                );
             if (!texture_image) {
               FML_LOG(ERROR) << "Could not make x-context image.";
               result = {};
