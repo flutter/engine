@@ -11,6 +11,7 @@ impeller_component("golden_playground_test") {
   sources = [ "golden_playground_test.h" ]
 
   deps = [
+    ":digest",
     "//flutter/fml",
     "//flutter/impeller/aiks",
     "//flutter/impeller/playground",
@@ -23,6 +24,19 @@ impeller_component("golden_playground_test") {
     sources += [ "golden_playground_test_stub.cc" ]
     deps += [ ":metal_screenshot" ]
   }
+}
+
+impeller_component("digest") {
+  testonly = true
+
+  sources = [
+    "golden_digest.cc",
+    "golden_digest.h",
+    "working_directory.cc",
+    "working_directory.h",
+  ]
+
+  deps = [ "//flutter/fml" ]
 }
 
 if (is_mac) {
@@ -49,15 +63,12 @@ if (is_mac) {
     testonly = true
 
     sources = [
-      "golden_digest.cc",
-      "golden_digest.h",
       "golden_tests.cc",
       "main.cc",
-      "working_directory.cc",
-      "working_directory.h",
     ]
 
     deps = [
+      ":digest",
       ":metal_screenshot",
       "//flutter/impeller/aiks",
       "//flutter/impeller/aiks:aiks_unittests_golden",
