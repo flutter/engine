@@ -89,7 +89,7 @@ SamplerDescriptor TiledTextureContents::CreateDescriptor(
 bool TiledTextureContents::UsesEmulatedTileMode(
     const Capabilities& capabilities) const {
   return TileModeToAddressMode(x_tile_mode_, capabilities).has_value() &&
-         TileModeToAddressMode(y_tile_mode_, capabilities);
+         TileModeToAddressMode(y_tile_mode_, capabilities).has_value();
 }
 
 bool TiledTextureContents::Render(const ContentContext& renderer,
