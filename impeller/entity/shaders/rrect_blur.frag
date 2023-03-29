@@ -21,8 +21,8 @@ const int kSampleCount = 4;
 
 float16_t RRectDistance(f16vec2 sample_position, f16vec2 half_size) {
   f16vec2 space = abs(sample_position) - half_size + frag_info.corner_radius;
-  return length(max(space, 0.0hf)) + min(max(space.x, space.y), 0.0hf) -
-         frag_info.corner_radius;
+  return length(max(space, float16_t(0.0hf))) +
+         min(max(space.x, space.y), float16_t(0.0hf)) - frag_info.corner_radius;
 }
 
 /// Closed form unidirectional rounded rect blur mask solution using the
@@ -30,12 +30,14 @@ float16_t RRectDistance(f16vec2 sample_position, f16vec2 half_size) {
 float16_t RRectShadowX(f16vec2 sample_position, f16vec2 half_size) {
   // Compute the X direction distance field (not incorporating the Y distance)
   // for the rounded rect.
-  float16_t space = min(
-      0.0hf, half_size.y - frag_info.corner_radius - abs(sample_position.y));
+  float16_t space =
+      min(float16_t(0.0hf),
+          half_size.y - frag_info.corner_radius - abs(sample_position.y));
   float16_t rrect_distance =
       half_size.x - frag_info.corner_radius +
-      sqrt(max(0.0hf, frag_info.corner_radius * frag_info.corner_radius -
-                          space * space));
+      sqrt(max(
+          float16_t(0.0hf),
+          frag_info.corner_radius * frag_info.corner_radius - space * space));
 
   // Map the linear distance field to the approximate Gaussian integral.
   f16vec2 integral = IPVec2FastGaussianIntegral(
