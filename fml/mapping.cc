@@ -73,6 +73,9 @@ DataMapping::DataMapping(std::vector<uint8_t> data) : data_(std::move(data)) {}
 DataMapping::DataMapping(const std::string& string)
     : data_(string.begin(), string.end()) {}
 
+DataMapping::DataMapping(std::array<uint8_t, 4> color)
+    : data_(color.begin(), color.end()) {}
+
 DataMapping::~DataMapping() = default;
 
 size_t DataMapping::GetSize() const {

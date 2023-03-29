@@ -95,6 +95,8 @@ class DataMapping final : public Mapping {
 
   explicit DataMapping(const std::string& string);
 
+  explicit DataMapping(std::array<uint8_t, 4> color);
+
   ~DataMapping() override;
 
   // |Mapping|

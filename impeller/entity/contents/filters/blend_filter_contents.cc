@@ -133,8 +133,8 @@ static std::optional<Entity> AdvancedBlend(
           renderer.GetContext()->GetResourceAllocator()->CreateTexture(
               texture_descriptor);
 
-      auto mapping = std::make_shared<fml::NonOwnedMapping>(
-          foreground_color.value().ToR8G8B8A8().begin(), 4u);
+      auto mapping = std::make_shared<fml::DataMapping>(
+          foreground_color.value().ToR8G8B8A8());
       if (!texture->SetContents(std::move(mapping))) {
         return false;
       }
