@@ -701,9 +701,13 @@ public class FlutterView extends FrameLayout
         windowInsetsControllerCompat = WindowCompat.getInsetsController(window, view);
       }
 
-      // Override navigation bar visibility to false in this case as the transient bars overlay the apps content.
+      // Override navigation bar visibility to false in this case as the transient bars overlay the
+      // apps content.
       if (navigationBarVisible) {
-        navigationBarVisible = (controller.getSystemBarsBehavior() & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE) == 0;
+        navigationBarVisible = 
+            (controller.getSystemBarsBehavior() 
+                    & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
+                     == 0;
       }
       
       int mask = 0;
