@@ -17,9 +17,8 @@
 
 FLUTTER_ASSERT_ARC
 
-@interface FlutterEngine ()
-- (void)flutterTextInputViewDidResignFirstResponder:(FlutterTextInputView*)textInputView
-                                             client:(int)client;
+@interface FlutterEngine () <FlutterTextInputDelegate>
+
 @end
 
 @interface FlutterEngineTest : XCTestCase
