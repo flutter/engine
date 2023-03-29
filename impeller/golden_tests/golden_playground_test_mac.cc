@@ -87,7 +87,8 @@ void GoldenPlaygroundTest::SetUp() {
       test_name == "impeller_Play_AiksTest_SceneColorSource_Metal" ||
       test_name == "impeller_Play_AiksTest_CanRenderLinearGradient_Metal") {
     GTEST_SKIP_(
-        "GoldenPlaygroundTest doesn't interactive playground tests yet.");
+        "GoldenPlaygroundTest doesn't support interactive playground tests "
+        "yet.");
   }
 }
 
