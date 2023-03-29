@@ -32,7 +32,8 @@ class PlatformViewEmbedder::EmbedderPlatformMessageHandler
     //       if (parent) {
     //         parent->HandlePlatformMessage(std::move(message));
     //       } else {
-    //         FML_DLOG(WARNING) << "Deleted engine dropping message on channel "
+    //         FML_DLOG(WARNING) << "Deleted engine dropping message on channel
+    //         "
     //                           << message->channel();
     //       }
     //     }));
@@ -132,12 +133,12 @@ void PlatformViewEmbedder::UpdateSemantics(
   }
 }
 
-  // struct HandlerInfo {
-  //   std::unique_ptr<flutter::PlatformMessageTaskQueue> task_queue;
-  //   FlutterEmbedderMessageHandler handler;
-  //   void* user_data;
-  //   int64_t connection;
-  // };
+// struct HandlerInfo {
+//   std::unique_ptr<flutter::PlatformMessageTaskQueue> task_queue;
+//   FlutterEmbedderMessageHandler handler;
+//   void* user_data;
+//   int64_t connection;
+// };
 
 void PlatformViewEmbedder::HandlePlatformMessage(
     std::unique_ptr<flutter::PlatformMessage> message) {
@@ -164,44 +165,43 @@ void PlatformViewEmbedder::HandlePlatformMessage(
     }
 
     uint64_t platform_message_id = platform_message_counter++;
-    TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler", platform_message_id,
-                             "channel", message->channel().c_str());
+    TRACE_EVENT_ASYNC_BEGIN1("flutter", "PlatformChannel ScheduleHandler",
+                             platform_message_id, "channel",
+                             message->channel().c_str());
     fml::closure run_handler = []() {};
-      // handler(data, size, handler_info.user_data, nullptr);
-      // handler(data, size, handler_info.user_data, [&completer, &platform_message_id](const uint8_t* data,
-      //                               size_t size,
-      //                               void* user_data) {
-        // TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleHandler", platform_message_id);
-        // // Called from any thread.
-        // if (completer) {
-        //   if (size > 0) {
-        //     completer->Complete(std::make_unique<fml::NonOwnedMapping>(data, size));
-        //   } else {
-        //     completer->CompleteEmpty();
-        //   }
-        // }
-      // });
+    // handler(data, size, handler_info.user_data, nullptr);
+    // handler(data, size, handler_info.user_data, [&completer,
+    // &platform_message_id](const uint8_t* data,
+    //                               size_t size,
+    //                               void* user_data) {
+    // TRACE_EVENT_ASYNC_END0("flutter", "PlatformChannel ScheduleHandler",
+    // platform_message_id);
+    // // Called from any thread.
+    // if (completer) {
+    //   if (size > 0) {
+    //     completer->Complete(std::make_unique<fml::NonOwnedMapping>(data,
+    //     size));
+    //   } else {
+    //     completer->CompleteEmpty();
+    //   }
+    // }
+    // });
     // };
 
     if (handler_info.task_queue.get()) {
       handler_info.task_queue.get()->CallDispatch(run_handler);
     } else {
-      task_runners_.GetPlatformTaskRunner()->PostTask(fml::MakeCopyable(
-        [&run_handler]() mutable {
-          run_handler();
-        }));
+      task_runners_.GetPlatformTaskRunner()->PostTask(
+          fml::MakeCopyable([&run_handler]() mutable { run_handler(); }));
     }
-  }
-  else {
+  } else {
     if (completer) {
       completer->CompleteEmpty();
     }
   }
 
-
-
-
-  // if (platform_dispatch_table_.platform_message_response_callback == nullptr) {
+  // if (platform_dispatch_table_.platform_message_response_callback == nullptr)
+  // {
   //   if (message->response()) {
   //     message->response()->CompleteEmpty();
   //   }
@@ -303,9 +303,9 @@ PlatformViewEmbedder::GetPlatformMessageHandler() const {
 }
 
 PlatformMessageTaskQueue::PlatformMessageTaskQueue(
-    const TaskQueueCallbackEmbedder task_queue_callback, void* user_data)
-    : task_queue_callback_(task_queue_callback),
-      user_data_(user_data) {}
+    const TaskQueueCallbackEmbedder task_queue_callback,
+    void* user_data)
+    : task_queue_callback_(task_queue_callback), user_data_(user_data) {}
 
 void PlatformMessageTaskQueue::CallDispatch(fml::closure callback) {
   task_queue_callback_(callback, user_data_);

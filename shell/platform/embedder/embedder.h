@@ -1075,7 +1075,7 @@ typedef struct {
 
 typedef void (*DispatchCallback)();
 typedef void (*TaskQueueCallback)(DispatchCallback /* dispatch_call */,
-                                  void* /* user_data */ );
+                                  void* /* user_data */);
 typedef struct {
   size_t struct_size;
 

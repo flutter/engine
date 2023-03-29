@@ -3038,17 +3038,22 @@ int64_t FlutterEngineSetMessageHandlerOnQueue(
   if (task_queue == nullptr) {
     return LOG_EMBEDDER_ERROR(kInvalidArguments, "task_queue was nullptr.");
   }
-  auto task_queue_callback = SAFE_ACCESS(task_queue, task_queue_callback, nullptr);
+  auto task_queue_callback =
+      SAFE_ACCESS(task_queue, task_queue_callback, nullptr);
   if (task_queue_callback == nullptr) {
-    return LOG_EMBEDDER_ERROR(kInvalidArguments, "task_queue_callback was nullptr.");
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "task_queue_callback was nullptr.");
   }
   auto task_queue_user_data = SAFE_ACCESS(task_queue, user_data, nullptr);
   if (task_queue_user_data == nullptr) {
-    return LOG_EMBEDDER_ERROR(kInvalidArguments, "task_queue_user_data was nullptr.");
+    return LOG_EMBEDDER_ERROR(kInvalidArguments,
+                              "task_queue_user_data was nullptr.");
   }
-  const flutter::PlatformMessageTaskQueue::TaskQueueCallbackEmbedder task_queue_call_back_embedder = [task_queue_callback](fml::closure closure, void* user_data) {
-    task_queue_callback(dispatch_callback, user_data);
-  };
+  const flutter::PlatformMessageTaskQueue::TaskQueueCallbackEmbedder
+      task_queue_call_back_embedder =
+          [task_queue_callback](fml::closure closure, void* user_data) {
+            task_queue_callback(dispatch_callback, user_data);
+          };
 
   std::shared_ptr<flutter::PlatformMessageTaskQueue> queue =
       std::make_shared<flutter::PlatformMessageTaskQueue>(

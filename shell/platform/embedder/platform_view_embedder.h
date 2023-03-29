@@ -8,8 +8,8 @@
 #include <functional>
 
 #include "flow/embedded_views.h"
-#include "flutter/fml/macros.h"
 #include "flutter/fml/closure.h"
+#include "flutter/fml/macros.h"
 #include "flutter/shell/common/platform_view.h"
 #include "flutter/shell/platform/embedder/embedder.h"
 #include "flutter/shell/platform/embedder/embedder_surface.h"
@@ -35,7 +35,8 @@ class PlatformMessageTaskQueue {
   // typedef void (*TaskQueueCallback)(fml::closure, void*);
   using TaskQueueCallbackEmbedder = std::function<void(fml::closure, void*)>;
 
-  PlatformMessageTaskQueue(const TaskQueueCallbackEmbedder task_queue_callback, void* user_data);
+  PlatformMessageTaskQueue(const TaskQueueCallbackEmbedder task_queue_callback,
+                           void* user_data);
 
   void CallDispatch(fml::closure callback);
 
@@ -121,10 +122,10 @@ class PlatformViewEmbedder final : public PlatformView {
       const override;
 
   int64_t SetMessageHandlerOnQueue(
-    const char* channel,
-    FlutterEmbedderMessageHandler handler,
-    std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
-    void* user_data);
+      const char* channel,
+      FlutterEmbedderMessageHandler handler,
+      std::shared_ptr<flutter::PlatformMessageTaskQueue> task_queue,
+      void* user_data);
 
  private:
   class EmbedderPlatformMessageHandler;
