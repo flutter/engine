@@ -2122,8 +2122,8 @@ public class TextInputPluginTest {
   @TargetApi(30)
   @Config(sdk = 30)
   public void onConnectionClosed_imeInvisible() {
-    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
-    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    View testView = new View(ctx);
+    TextInputChannel textInputChannel = spy(new TextInputChannel(mock(DartExecutor.class)));
     TextInputPlugin textInputPlugin =
         new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
     ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
