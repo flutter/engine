@@ -203,29 +203,69 @@ TEST(DlShared, PointerAssignmentToWeak) {
     ASSERT_EQ(shareable->weak_ref_count(), 1u);
     ASSERT_TRUE(weak_copy);
     ASSERT_FALSE(weak_copy.is_weakly_held());
-    // dl_weak_shared<DlShareableTest> weak_copy2 = weak_copy;
+  }
+
+  ASSERT_TRUE(shareable);
+  ASSERT_EQ(shareable->total_ref_count(), 1u);
+
+  {
+    dl_weak_shared<DlShareableTest> weak_copy;
+    ASSERT_FALSE(weak_copy);
+    weak_copy = shareable.get();
+    ASSERT_TRUE(shareable);
+    ASSERT_EQ(shareable->total_ref_count(), 2u);
+    ASSERT_EQ(shareable->weak_ref_count(), 1u);
+    ASSERT_TRUE(weak_copy);
+    ASSERT_FALSE(weak_copy.is_weakly_held());
+    weak_copy = nullptr;
+    ASSERT_TRUE(shareable);
+    ASSERT_EQ(shareable->total_ref_count(), 1u);
+    ASSERT_EQ(shareable->weak_ref_count(), 0u);
+    ASSERT_FALSE(weak_copy);
   }
 
   ASSERT_TRUE(shareable);
   ASSERT_EQ(shareable->total_ref_count(), 1u);
 }
 
-// TEST(DlShared, SharedAssignmentToWeak) {
-//   auto shareable = dl_make_shared<DlShareableTest>();
-//   ASSERT_TRUE(shareable);
-//   ASSERT_EQ(shareable->total_ref_count(), 1u);
+TEST(DlShared, SharedAssignmentToWeak) {
+  auto shareable = dl_make_shared<DlShareableTest>();
+  ASSERT_TRUE(shareable);
+  ASSERT_EQ(shareable->total_ref_count(), 1u);
 
-//   {
-//     dl_weak_shared<DlShareableTest> weak_copy;
-//     weak_copy = shareable;
-//     ASSERT_TRUE(shareable);
-//     ASSERT_EQ(shareable->total_ref_count(), 2u);
-//     ASSERT_TRUE(weak_copy);
-//   }
+  {
+    dl_weak_shared<DlShareableTest> weak_copy;
+    ASSERT_FALSE(weak_copy);
+    weak_copy = shareable;
+    ASSERT_TRUE(shareable);
+    ASSERT_EQ(shareable->total_ref_count(), 2u);
+    ASSERT_EQ(shareable->weak_ref_count(), 1u);
+    ASSERT_TRUE(weak_copy);
+    ASSERT_FALSE(weak_copy.is_weakly_held());
+  }
 
-//   ASSERT_TRUE(shareable);
-//   ASSERT_EQ(shareable->total_ref_count(), 1u);
-// }
+  ASSERT_TRUE(shareable);
+  ASSERT_EQ(shareable->total_ref_count(), 1u);
+
+  {
+    dl_weak_shared<DlShareableTest> weak_copy;
+    ASSERT_FALSE(weak_copy);
+    weak_copy = shareable;
+    ASSERT_TRUE(shareable);
+    ASSERT_EQ(shareable->total_ref_count(), 2u);
+    ASSERT_EQ(shareable->weak_ref_count(), 1u);
+    ASSERT_TRUE(weak_copy);
+    ASSERT_FALSE(weak_copy.is_weakly_held());
+    weak_copy = nullptr;
+    ASSERT_TRUE(shareable);
+    ASSERT_EQ(shareable->total_ref_count(), 1u);
+    ASSERT_EQ(shareable->weak_ref_count(), 0u);
+    ASSERT_FALSE(weak_copy);
+  }
+
+  ASSERT_TRUE(shareable);
+  ASSERT_EQ(shareable->total_ref_count(), 1u);
+}
 
 }  // namespace testing
 }  // namespace flutter
