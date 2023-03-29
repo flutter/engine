@@ -12,6 +12,8 @@
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 #include "third_party/skia/include/gpu/GrYUVABackendTextures.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
+#include "third_party/skia/include/core/SkImage.h"
 
 FLUTTER_ASSERT_ARC
 
@@ -208,8 +210,8 @@ FLUTTER_ASSERT_ARC
             ? impeller::YUVColorSpace::kBT601LimitedRange
             : impeller::YUVColorSpace::kBT601FullRange;
 
-    return impeller::DlImageImpeller::MakeFromYUVTextures(context.aiks_context, yTexture, uvTexture,
-                                                          yuvColorSpace);
+    return impeller::DlImageImpeller::TextureFromYUVATextures(context.aiks_context, yTexture, uvTexture,
+                                                              yuvColorSpace);
   }
 
   SkYUVColorSpace colorSpace = _pixelFormat == kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
@@ -320,7 +322,7 @@ FLUTTER_ASSERT_ARC
                                       /*mipMapped=*/GrMipMapped ::kNo,
                                       /*textureInfo=*/skiaTextureInfo);
 
-  return SkImage::MakeFromTexture(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
+  return SkImages::BorrowTextureFrom(grContext, skiaBackendTexture, kTopLeft_GrSurfaceOrigin,
                                   kBGRA_8888_SkColorType, kPremul_SkAlphaType,
                                   /*imageColorSpace=*/nullptr, /*releaseProc*/ nullptr,
                                   /*releaseContext*/ nullptr);

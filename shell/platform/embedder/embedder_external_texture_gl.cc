@@ -12,6 +12,7 @@
 #include "third_party/skia/include/core/SkColorType.h"
 #include "third_party/skia/include/core/SkImage.h"
 #include "third_party/skia/include/core/SkSize.h"
+#include "third_party/skia/include/gpu/ganesh/SkImageGanesh.h"
 #include "third_party/skia/include/gpu/GrBackendSurface.h"
 #include "third_party/skia/include/gpu/GrDirectContext.h"
 
@@ -80,7 +81,7 @@ sk_sp<DlImage> EmbedderExternalTextureGL::ResolveTexture(
                                       gr_texture_info);
   SkImage::TextureReleaseProc release_proc = texture->destruction_callback;
   auto image =
-      SkImage::MakeFromTexture(context,                   // context
+      SkImages::BorrowTextureFrom(context,                   // context
                                gr_backend_texture,        // texture handle
                                kTopLeft_GrSurfaceOrigin,  // origin
                                kRGBA_8888_SkColorType,    // color type
