@@ -774,6 +774,10 @@ TEST_F(FlutterEngineTest, HandleAccessibilityEvent) {
                                       withPriority:NSAccessibilityPriorityMedium])
       .andDo((^(NSInvocation* invocation) {
         announced = TRUE;
+        [invocation retainArguments];
+        NSString* message;
+        [invocation getArgument:&message atIndex:2];
+        EXPECT_EQ(message, @"error message");
       }));
 
   NSDictionary<NSString*, id>* annotatedEvent =
