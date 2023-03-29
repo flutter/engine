@@ -62,21 +62,18 @@ TEST(FlutterRenderer, PresentDelegatesToFlutterView) {
   OCMStub([viewMock surfaceManager]).andReturn(surfaceManagerMock);
 
   id surfaceMock = OCMClassMock([FlutterSurface class]);
-  FlutterMetalTexture mockReturnTexture{
-      .texture_id = 100ll, // Arbitrary
+
+  FlutterMetalTexture texture = {
       .user_data = (__bridge void*)surfaceMock,
+      .view_id = 0ll,
   };
-  OCMStub([surfaceMock asFlutterMetalTexture]).andReturn(mockReturnTexture);
-  OCMStub([surfaceManagerMock surfaceForSize:CGSize{}])
-      .ignoringNonObjectArgs()
-      .andReturn(surfaceMock);
+
   [[surfaceManagerMock expect] present:[OCMArg checkWithBlock:^(id obj) {
                                  NSArray* array = (NSArray*)obj;
                                  return array.count == 1 ? YES : NO;
                                }]
                                 notify:nil];
 
-  FlutterMetalTexture texture = [renderer createTextureForView:0ll size:CGSize{}];
   [renderer present:&texture];
   [surfaceManagerMock verify];
 }

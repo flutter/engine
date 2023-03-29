@@ -91,16 +91,12 @@ static bool OnAcquireExternalTexture(FlutterEngine* engine,
     return FlutterMetalTexture{};
   }
   FlutterMetalTexture texture = [view.surfaceManager surfaceForSize:size].asFlutterMetalTexture;
-  _texture_to_view[@(texture.texture_id)] = @(viewId);
+  texture.view_id = viewId;
   return texture;
 }
 
 - (BOOL)present:(const FlutterMetalTexture*)texture {
-  NSNumber* viewId = _texture_to_view[@(texture->texture_id)];
-  if (viewId == nil) {
-    return NO;
-  }
-  FlutterView* view = [_viewProvider viewForId:[viewId longLongValue]];
+  FlutterView* view = [_viewProvider viewForId:texture->view_id];
   if (view == nil) {
     return NO;
   }

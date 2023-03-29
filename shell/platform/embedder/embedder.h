@@ -654,6 +654,7 @@ typedef struct {
   /// The callback invoked by the engine when it no longer needs this backing
   /// store.
   VoidCallback destruction_callback;
+  int64_t view_id;
 } FlutterMetalTexture;
 
 /// Callback for when a metal texture is requested.
