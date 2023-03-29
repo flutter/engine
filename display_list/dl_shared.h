@@ -117,7 +117,10 @@ class dl_shared {
 
   explicit operator bool() const { return shareable_ != nullptr; }
 
-  T* get() const { return shareable_; }
+  T* get() const {
+    // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDelete)
+    return shareable_;
+  }
   T* operator->() const { return shareable_; }
   auto& operator[](int i) const { return (*shareable_)[i]; }
 
@@ -139,6 +142,7 @@ class dl_shared {
     T* old_shareable = shareable_;
     shareable_ = value;
     if (old_shareable) {
+      // NOLINTNEXTLINE(clang-analyzer-cplusplus.NewDelete)
       old_shareable->RemoveStrongRef();
     }
   }
@@ -326,17 +330,23 @@ class dl_weak_shared {
 /// clean out any caches holding weak references to objects.
 class DlShareable {
  public:
-  uint32_t total_ref_count() const { return total_ref_count_.load(); }
+  uint32_t total_ref_count() const {
+    return total_ref_count_.load(std::memory_order_relaxed);
+  }
   uint32_t strong_ref_count() const {
     // Internally weak references also add a strong reference
     // for lifetime management, but their contribution to the
     // weak ref count indicates the weakness of their interest
     // in the object itself.
-    return total_ref_count_.load() - weak_ref_count_.load();
+    return total_ref_count() - weak_ref_count();
   }
-  uint32_t weak_ref_count() const { return weak_ref_count_.load(); }
+  uint32_t weak_ref_count() const {
+    return weak_ref_count_.load(std::memory_order_relaxed);
+  }
 
-  bool is_unique() const { return total_ref_count_.load() == 1; }
+  bool is_unique() const {
+    return total_ref_count_.load(std::memory_order_acquire) == 1;
+  }
   bool is_weakly_held() const { return strong_ref_count() == 0; }
 
  protected:
@@ -347,7 +357,7 @@ class DlShareable {
 #endif  // DL_SHAREABLE_STATS
   }
   virtual ~DlShareable() {  //
-    FML_DCHECK(total_ref_count_.load() == 0);
+    FML_DCHECK(total_ref_count() == 0);
 #ifdef DL_SHAREABLE_STATS
     total_disposed_++;
     report_shareable_counts();
@@ -368,20 +378,22 @@ class DlShareable {
   mutable std::atomic<uint32_t> total_ref_count_;
   mutable std::atomic<uint32_t> weak_ref_count_;
 
-  void AddStrongRef() const { total_ref_count_.fetch_add(1u); }
+  void AddStrongRef() const {
+    total_ref_count_.fetch_add(1u, std::memory_order_relaxed);
+  }
   void RemoveStrongRef() const {
-    FML_DCHECK(total_ref_count_ > 0);
-    if (total_ref_count_.fetch_sub(1u) == 1) {
+    FML_DCHECK(total_ref_count() > 0);
+    if (total_ref_count_.fetch_sub(1u, std::memory_order_acq_rel) == 1) {
       DlShareableDispose();
     }
   }
   void AddWeakRef() const {
     AddStrongRef();
-    weak_ref_count_.fetch_add(1u);
+    weak_ref_count_.fetch_add(1u, std::memory_order_relaxed);
   }
   void RemoveWeakRef() const {
-    FML_DCHECK(weak_ref_count_.load() > 0);
-    weak_ref_count_.fetch_sub(1u);
+    FML_DCHECK(weak_ref_count() > 0);
+    weak_ref_count_.fetch_sub(1u, std::memory_order_acq_rel);
     RemoveStrongRef();
   }
 
