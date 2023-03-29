@@ -2118,6 +2118,19 @@ public class TextInputPluginTest {
     assertEquals(0, viewportMetricsCaptor.getValue().viewInsetTop);
   }
 
+  @Test
+  @TargetApi(30)
+  @Config(sdk = 30)
+  public void onConnectionClosed_imeInvisible() {
+    FlutterView testView = new FlutterView(Robolectric.setupActivity(Activity.class));
+    TextInputChannel textInputChannel = new TextInputChannel(mock(DartExecutor.class));
+    TextInputPlugin textInputPlugin =
+            new TextInputPlugin(testView, textInputChannel, mock(PlatformViewsController.class));
+    ImeSyncDeferringInsetsCallback imeSyncCallback = textInputPlugin.getImeSyncCallback();
+    imeSyncCallback.getImeVisibleListener().onImeVisibleChanged(false);
+    verify(textInputChannel, times(0)).onConnectionClosed(anyInt());
+  }
+
   interface EventHandler {
     void sendAppPrivateCommand(View view, String action, Bundle data);
   }
