@@ -8,6 +8,8 @@
 
 namespace flutter {
 
+constexpr int64_t kFlutterDefaultViewId = 0ll;
+
 AndroidExternalViewEmbedder::AndroidExternalViewEmbedder(
     const AndroidContext& android_context,
     std::shared_ptr<PlatformViewAndroidJNI> jni_facade,
@@ -171,6 +173,8 @@ void AndroidExternalViewEmbedder::SubmitFrame(
     }
     std::unique_ptr<SurfaceFrame> frame =
         CreateSurfaceIfNeeded(context,                    //
+                                                          // TODO(dkwingsmt)
+                              kFlutterDefaultViewId,      //
                               view_id,                    //
                               slices_.at(view_id).get(),  //
                               overlay->second             //
@@ -184,6 +188,7 @@ void AndroidExternalViewEmbedder::SubmitFrame(
 // |ExternalViewEmbedder|
 std::unique_ptr<SurfaceFrame>
 AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
+                                                   int64_t render_view_id,
                                                    int64_t view_id,
                                                    EmbedderViewSlice* slice,
                                                    const SkRect& rect) {
@@ -191,7 +196,7 @@ AndroidExternalViewEmbedder::CreateSurfaceIfNeeded(GrDirectContext* context,
       context, android_context_, jni_facade_, surface_factory_);
 
   std::unique_ptr<SurfaceFrame> frame =
-      layer->surface->AcquireFrame(frame_size_);
+      layer->surface->AcquireFrame(render_view_id, frame_size_);
   // Display the overlay surface. If it's already displayed, then it's
   // just positioned and sized.
   jni_facade_->FlutterViewDisplayOverlaySurface(layer->id,     //

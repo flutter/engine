@@ -43,7 +43,8 @@ bool GPUSurfaceMetalImpeller::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(const SkISize& frame_info) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalImpeller::AcquireFrame(int64_t view_id,
+                                                                    const SkISize& frame_info) {
   TRACE_EVENT0("impeller", "GPUSurfaceMetalImpeller::AcquireFrame");
 
   if (!IsValid()) {

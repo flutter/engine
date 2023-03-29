@@ -138,6 +138,7 @@ class AndroidExternalViewEmbedder final : public ExternalViewEmbedder {
   // Creates a Surface when needed or recycles an existing one.
   // Finally, draws the picture on the frame's canvas.
   std::unique_ptr<SurfaceFrame> CreateSurfaceIfNeeded(GrDirectContext* context,
+                                                      int64_t render_view_id,
                                                       int64_t view_id,
                                                       EmbedderViewSlice* slice,
                                                       const SkRect& rect);

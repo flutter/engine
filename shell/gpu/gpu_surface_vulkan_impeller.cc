@@ -44,6 +44,7 @@ bool GPUSurfaceVulkanImpeller::IsValid() {
 
 // |Surface|
 std::unique_ptr<SurfaceFrame> GPUSurfaceVulkanImpeller::AcquireFrame(
+    int64_t view_id,
     const SkISize& size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Vulkan surface was invalid.";

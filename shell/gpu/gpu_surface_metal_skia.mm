@@ -77,7 +77,8 @@ bool GPUSurfaceMetalSkia::IsValid() {
 }
 
 // |Surface|
-std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& frame_size) {
+std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(int64_t view_id,
+                                                                const SkISize& frame_size) {
   if (!IsValid()) {
     FML_LOG(ERROR) << "Metal surface was invalid.";
     return nullptr;
@@ -100,7 +101,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrame(const SkISize& f
     case MTLRenderTargetType::kCAMetalLayer:
       return AcquireFrameFromCAMetalLayer(frame_size);
     case MTLRenderTargetType::kMTLTexture:
-      return AcquireFrameFromMTLTexture(frame_size);
+      return AcquireFrameFromMTLTexture(view_id, frame_size);
     default:
       FML_CHECK(false) << "Unknown MTLRenderTargetType type.";
   }
@@ -190,6 +191,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
 }
 
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
+    int64_t view_id,
     const SkISize& frame_info) {
   GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);

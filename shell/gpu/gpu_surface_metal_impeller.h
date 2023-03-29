@@ -36,7 +36,8 @@ class SK_API_AVAILABLE_CA_METAL_LAYER GPUSurfaceMetalImpeller : public Surface {
   fml::scoped_nsprotocol<id<MTLDrawable>> last_drawable_;
 
   // |Surface|
-  std::unique_ptr<SurfaceFrame> AcquireFrame(const SkISize& size) override;
+  std::unique_ptr<SurfaceFrame> AcquireFrame(int64_t view_id,
+                                             const SkISize& size) override;
 
   // |Surface|
   SkMatrix GetRootTransformation() const override;

@@ -144,7 +144,10 @@ void Rasterizer::NotifyLowMemoryWarning() const {
 
 void Rasterizer::AddSurface(int64_t view_id, std::unique_ptr<Surface> surface) {
   bool insertion_happened =
-      surfaces_.try_emplace(view_id, std::move(surface)).second;
+      surfaces_
+          .try_emplace(/* map key=*/view_id, /*constructor args:*/ view_id,
+                       std::move(surface))
+          .second;
   if (!insertion_happened) {
     FML_DLOG(INFO) << "Rasterizer::AddSurface called with an existing view ID "
                    << view_id << ".";
@@ -571,7 +574,8 @@ RasterStatus Rasterizer::DrawToSurfaceUnsafe(
   //
   // Deleting a surface also clears the GL context. Therefore, acquire the
   // frame after calling `BeginFrame` as this operation resets the GL context.
-  auto frame = surface->AcquireFrame(layer_tree->frame_size());
+  auto frame =
+      surface->AcquireFrame(surface_record->view_id, layer_tree->frame_size());
   if (frame == nullptr) {
     frame_timings_recorder.RecordRasterEnd(
         &compositor_context_->raster_cache());

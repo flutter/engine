@@ -208,6 +208,7 @@ bool ShellTestPlatformViewVulkan::OffScreenSurface::IsValid() {
 
 std::unique_ptr<SurfaceFrame>
 ShellTestPlatformViewVulkan::OffScreenSurface::AcquireFrame(
+    int64_t view_id,
     const SkISize& size) {
   auto image_info = SkImageInfo::Make(size, SkColorType::kRGBA_8888_SkColorType,
                                       SkAlphaType::kOpaque_SkAlphaType);

@@ -495,8 +495,10 @@ class Rasterizer final : public SnapshotDelegate,
   };
 
   struct SurfaceRecord {
-    explicit SurfaceRecord(std::unique_ptr<Surface> surface)
-        : surface(std::move(surface)) {}
+    SurfaceRecord(int64_t view_id, std::unique_ptr<Surface> surface)
+        : view_id(view_id), surface(std::move(surface)) {}
+
+    int64_t view_id;
 
     std::unique_ptr<Surface> surface;
     // This is the information for the last successfully drawing.
