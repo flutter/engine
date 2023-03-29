@@ -1318,12 +1318,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 
 // Set _viewportMetrics physical size.
 - (void)setViewportMetricsSize {
-  // TODO(hellohuanlin): Use [self mainScreenIfViewLoaded] instead of [UIScreen mainScreen].
-  // This requires adding the view to window during unit tests, which calls multiple engine calls
-  // that is hard to mock since they take/return structs. An alternative approach is to partial mock
-  // the FlutterViewController to make view controller life cycle methods no-op, and insert
-  // this mock into the responder chain.
-  CGFloat scale = [UIScreen mainScreen].scale;
+  UIScreen* mainScreen = [self mainScreenIfViewLoaded];
+  if (!mainScreen) {
+    return;
+  }
+
+  CGFloat scale = mainScreen.scale;
   _viewportMetrics.physical_width = self.view.bounds.size.width * scale;
   _viewportMetrics.physical_height = self.view.bounds.size.height * scale;
 }
@@ -1332,7 +1332,12 @@ static flutter::PointerData::DeviceKind DeviceKindFromTouchType(UITouch* touch) 
 //
 // Viewport paddings represent the iOS safe area insets.
 - (void)setViewportMetricsPaddings {
-  CGFloat scale = [UIScreen mainScreen].scale;
+  UIScreen* mainScreen = [self mainScreenIfViewLoaded];
+  if (!mainScreen) {
+    return;
+  }
+
+  CGFloat scale = mainScreen.scale;
   _viewportMetrics.physical_padding_top = self.view.safeAreaInsets.top * scale;
   _viewportMetrics.physical_padding_left = self.view.safeAreaInsets.left * scale;
   _viewportMetrics.physical_padding_right = self.view.safeAreaInsets.right * scale;
