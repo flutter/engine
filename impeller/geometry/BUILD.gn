@@ -47,9 +47,7 @@ impeller_component("geometry") {
 
 impeller_component("geometry_asserts") {
   testonly = true
-  sources = [
-    "geometry_asserts.h",
-  ]
+  sources = [ "geometry_asserts.h" ]
   deps = [
     ":geometry",
     "//flutter/testing:testing_lib",
@@ -58,9 +56,7 @@ impeller_component("geometry_asserts") {
 
 impeller_component("geometry_unittests") {
   testonly = true
-  sources = [
-    "geometry_unittests.cc",
-  ]
+  sources = [ "geometry_unittests.cc" ]
   deps = [
     ":geometry",
     ":geometry_asserts",

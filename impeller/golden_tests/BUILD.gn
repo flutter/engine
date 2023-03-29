@@ -5,6 +5,21 @@
 import("//flutter/common/config.gni")
 import("//flutter/impeller/tools/impeller.gni")
 
+impeller_component("golden_playground_test") {
+  testonly = true
+  sources = [
+    "golden_playground_test.cc",
+    "golden_playground_test.h",
+  ]
+
+  deps = [
+    "//flutter/fml",
+    "//flutter/impeller/aiks",
+    "//flutter/impeller/playground",
+    "//flutter/testing:testing_lib",
+  ]
+}
+
 if (is_mac) {
   impeller_component("impeller_golden_tests") {
     target_type = "executable"
@@ -26,7 +41,7 @@ if (is_mac) {
 
     deps = [
       "//flutter/impeller/aiks",
-      "//flutter/impeller/aiks:aiks_unittests",
+      "//flutter/impeller/aiks:aiks_unittests_golden",
       "//flutter/impeller/fixtures",
       "//flutter/impeller/playground",
       "//flutter/impeller/renderer/backend/metal:metal",

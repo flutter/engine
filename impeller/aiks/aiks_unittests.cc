@@ -26,6 +26,7 @@
 #include "impeller/geometry/geometry_asserts.h"
 #include "impeller/geometry/matrix.h"
 #include "impeller/geometry/path_builder.h"
+#include "impeller/golden_tests/golden_playground_test.h"
 #include "impeller/playground/widgets.h"
 #include "impeller/renderer/command_buffer.h"
 #include "impeller/renderer/snapshot.h"
@@ -39,7 +40,11 @@
 namespace impeller {
 namespace testing {
 
+#ifdef IMPELLER_GOLDEN_TESTS
+using AiksTest = GoldenPlaygroundTest;
+#else
 using AiksTest = AiksPlayground;
+#endif
 INSTANTIATE_PLAYGROUND_SUITE(AiksTest);
 
 TEST_P(AiksTest, CanvasCTMCanBeUpdated) {
