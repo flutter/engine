@@ -20,12 +20,14 @@
 
 using namespace Skwasm;
 
-namespace {
+using OnRenderCompleteCallback = void(uint32_t);
 
+namespace {
 class Surface;
 void fDispose(Surface* surface);
 void fSetCanvasSize(Surface* surface, int width, int height);
-void fRenderPicture(Surface* surface, SkPicture* picture);
+void fRenderPicture(Surface* surface, SkPicture* picture, uint32_t renderId);
+void fOnRenderComplete(Surface* surface, uint32_t renderId);
 
 class Surface {
  public:
@@ -56,11 +58,17 @@ class Surface {
                                   nullptr, this, width, height);
   }
 
-  void renderPicture(SkPicture* picture) {
+  uint32_t renderPicture(SkPicture* picture) {
+    uint32_t renderId = ++_currentRenderId;
     picture->ref();
-    emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VII,
+    emscripten_dispatch_to_thread(_thread, EM_FUNC_SIG_VIII,
                                   reinterpret_cast<void*>(fRenderPicture),
-                                  nullptr, this, picture);
+                                  nullptr, this, picture, renderId);
+    return renderId;
+  }
+
+  void setOnRenderCallback(OnRenderCompleteCallback* callback) {
+    _onRenderCompleteCallback = callback;
   }
 
  private:
@@ -135,7 +143,7 @@ class Surface {
         kRGBA_8888_SkColorType, SkColorSpace::MakeSRGB(), nullptr);
   }
 
-  void _renderPicture(const SkPicture* picture) {
+  void _renderPicture(const SkPicture* picture, uint32_t renderId) {
     if (!_surface) {
       printf("Can't render picture with no surface.\n");
       return;
@@ -145,9 +153,22 @@ class Surface {
     auto canvas = _surface->getCanvas();
     canvas->drawPicture(picture);
     _surface->flush();
+
+    emscripten_sync_run_in_main_runtime_thread(
+      EM_FUNC_SIG_VII,
+      fOnRenderComplete,
+      this,
+      renderId
+    );
+  }
+
+  void _onRenderComplete(uint32_t renderId) {
+    _onRenderCompleteCallback(renderId);
   }
 
   std::string _canvasID;
+  OnRenderCompleteCallback *_onRenderCompleteCallback = nullptr;
+  uint32_t _currentRenderId = 0;
 
   int _canvasWidth = 0;
   int _canvasHeight = 0;
@@ -163,7 +184,8 @@ class Surface {
 
   friend void fDispose(Surface* surface);
   friend void fSetCanvasSize(Surface* surface, int width, int height);
-  friend void fRenderPicture(Surface* surface, SkPicture* picture);
+  friend void fRenderPicture(Surface* surface, SkPicture* picture, uint32_t renderId);
+  friend void fOnRenderComplete(Surface* surface, uint32_t renderId);
 };
 
 void fDispose(Surface* surface) {
@@ -174,15 +196,26 @@ void fSetCanvasSize(Surface* surface, int width, int height) {
   surface->_setCanvasSize(width, height);
 }
 
-void fRenderPicture(Surface* surface, SkPicture* picture) {
-  surface->_renderPicture(picture);
+void fRenderPicture(Surface* surface, SkPicture* picture, uint32_t renderId) {
+  surface->_renderPicture(picture, renderId);
   picture->unref();
 }
 
+void fOnRenderComplete(Surface* surface, uint32_t renderId) {
+  surface->_onRenderComplete(renderId);
+}
 }  // namespace
 
-SKWASM_EXPORT Surface* surface_createFromCanvas(const char* canvasID) {
+SKWASM_EXPORT Surface* surface_createFromCanvas(
+  const char* canvasID) {
   return new Surface(canvasID);
+}
+
+SKWASM_EXPORT void surface_setOnRenderCallback(
+  Surface* surface,
+  OnRenderCompleteCallback *callback
+) {
+  surface->setOnRenderCallback(callback);
 }
 
 SKWASM_EXPORT void surface_destroy(Surface* surface) {
@@ -195,6 +228,6 @@ SKWASM_EXPORT void surface_setCanvasSize(Surface* surface,
   surface->setCanvasSize(width, height);
 }
 
-SKWASM_EXPORT void surface_renderPicture(Surface* surface, SkPicture* picture) {
-  surface->renderPicture(picture);
+SKWASM_EXPORT uint32_t surface_renderPicture(Surface* surface, SkPicture* picture) {
+  return surface->renderPicture(picture);
 }
