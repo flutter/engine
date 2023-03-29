@@ -166,7 +166,9 @@ bool CommandBufferMTL::OnSubmitCommands(CompletionCallback callback) {
   }
 
   [buffer_ commit];
+#if (FML_OS_MACOSX || FML_OS_IOS_SIMULATOR)
   [buffer_ waitUntilScheduled];
+#endif
   buffer_ = nil;
   return true;
 }
