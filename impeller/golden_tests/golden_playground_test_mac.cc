@@ -63,7 +63,8 @@ PlaygroundBackend GoldenPlaygroundTest::GetBackend() const {
 }
 
 bool GoldenPlaygroundTest::OpenPlaygroundHere(const Picture& picture) {
-  auto screenshot = pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
+  auto screenshot =
+      pimpl_->screenshoter_->MakeScreenshot(picture, pimpl_->window_size_);
   return SaveScreenshot(std::move(screenshot));
 }
 
@@ -74,7 +75,14 @@ bool GoldenPlaygroundTest::OpenPlaygroundHere(AiksPlaygroundCallback callback) {
 std::shared_ptr<Texture> GoldenPlaygroundTest::CreateTextureForFixture(
     const char* fixture_name,
     bool enable_mipmapping) const {
-  return nullptr;
+  std::shared_ptr<fml::Mapping> mapping =
+      flutter::testing::OpenFixtureAsMapping(fixture_name);
+  auto result = Playground::CreateTextureForMapping(GetContext(), mapping,
+                                                    enable_mipmapping);
+  if (result) {
+    result->SetLabel(fixture_name);
+  }
+  return result;
 }
 
 std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
@@ -82,11 +90,11 @@ std::shared_ptr<Context> GoldenPlaygroundTest::GetContext() const {
 }
 
 Point GoldenPlaygroundTest::GetContentScale() const {
-  return Point();
+  return Point(1.0, 1.0);
 }
 
 Scalar GoldenPlaygroundTest::GetSecondsElapsed() const {
-  return Scalar();
+  return 0.0f;
 }
 
 ISize GoldenPlaygroundTest::GetWindowSize() const {
