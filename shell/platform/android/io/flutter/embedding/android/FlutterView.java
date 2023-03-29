@@ -692,7 +692,8 @@ public class FlutterView extends FrameLayout
     }
 
     boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
-    boolean navigationBarVisible = (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+    boolean navigationBarVisible =
+        (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
       if (windowInsetsControllerCompat == null) {
@@ -704,12 +705,12 @@ public class FlutterView extends FrameLayout
       // Override navigation bar visibility to false in this case as the transient bars overlay the
       // apps content.
       if (navigationBarVisible) {
-        navigationBarVisible = 
-            (controller.getSystemBarsBehavior() 
+        navigationBarVisible =
+            (controller.getSystemBarsBehavior()
                     & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE)
-                     == 0;
+                == 0;
       }
-      
+
       int mask = 0;
       if (navigationBarVisible) {
         mask = mask | android.view.WindowInsets.Type.navigationBars();
