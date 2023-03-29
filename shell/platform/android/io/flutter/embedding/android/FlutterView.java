@@ -138,6 +138,8 @@ public class FlutterView extends FrameLayout
   @Nullable private AccessibilityBridge accessibilityBridge;
   @Nullable private TextServicesManager textServicesManager;
 
+  @Nullable @VisibleForTesting WindowInsetsControllerCompat windowInsetsControllerCompat;
+
   // Provides access to foldable/hinge information
   @Nullable private WindowInfoRepositoryCallbackAdapterWrapper windowInfoRepo;
   // Directly implemented View behavior that communicates with Flutter.
@@ -689,14 +691,17 @@ public class FlutterView extends FrameLayout
       viewportMetrics.systemGestureInsetLeft = systemGestureInsets.left;
     }
 
-    boolean statusBarVisible = (SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
-    boolean navigationBarVisible =(SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
+    boolean statusBarVisible = (SYSTEM_UI_FLAG_FULLSCREEN & getWindowSystemUiVisibility()) == 0;
+    boolean navigationBarVisible = (SYSTEM_UI_FLAG_HIDE_NAVIGATION & getWindowSystemUiVisibility()) == 0;
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-      Window window = ((Activity) getContext()).getWindow();
-      View view = window.getDecorView();
-      WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(window, view);
+      if (windowInsetsControllerCompat == null) {
+        Window window = ((Activity) getContext()).getWindow();
+        View view = window.getDecorView();
+        windowInsetsControllerCompat = WindowCompat.getInsetsController(window, view);
+      }
 
+      // Override navigation bar visibility to false in this case as the transient bars overlay the apps content.
       if (navigationBarVisible) {
         navigationBarVisible = (controller.getSystemBarsBehavior() & WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE) == 0;
       }
