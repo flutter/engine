@@ -125,16 +125,27 @@ static std::optional<Entity> AdvancedBlend(
     blend_info.dst_input_alpha = absorb_opacity ? dst_snapshot->opacity : 1.0;
 
     if (foreground_color.has_value()) {
-      blend_info.color_factor = 1;
-      blend_info.color = foreground_color.value();
-      // This texture will not be sampled from due to the color factor. But
-      // this is present so that validation doesn't trip on a missing
-      // binding.
-      FS::BindTextureSamplerSrc(cmd, dst_snapshot->texture, dst_sampler);
+      impeller::TextureDescriptor texture_descriptor;
+      texture_descriptor.storage_mode = impeller::StorageMode::kHostVisible;
+      texture_descriptor.format = PixelFormat::kR8G8B8A8UNormInt;
+      texture_descriptor.size = {1, 1};
+      auto texture =
+          renderer.GetContext()->GetResourceAllocator()->CreateTexture(
+              texture_descriptor);
+
+      auto mapping = std::make_shared<fml::NonOwnedMapping>(
+          foreground_color.value().ToR8G8B8A8().begin(), 4u);
+      if (!texture->SetContents(mapping)) {
+        return false;
+      }
+      auto src_sampler =
+          renderer.GetContext()->GetSamplerLibrary()->GetSampler({});
+
+      FS::BindTextureSamplerSrc(cmd, texture, src_sampler);
     } else {
       auto src_sampler = renderer.GetContext()->GetSamplerLibrary()->GetSampler(
           src_snapshot->sampler_descriptor);
-      blend_info.color_factor = 0;
+
       FS::BindTextureSamplerSrc(cmd, src_snapshot->texture, src_sampler);
       frame_info.src_y_coord_scale = src_snapshot->texture->GetYCoordScale();
     }
