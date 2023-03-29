@@ -8,7 +8,7 @@
 
 #include "flutter/fml/macros.h"
 #include "impeller/base/backend_cast.h"
-#include "impeller/renderer/texture.h"
+#include "impeller/core/texture.h"
 
 namespace impeller {
 
@@ -28,6 +28,8 @@ class TextureMTL final : public Texture,
   id<MTLTexture> GetMTLTexture() const;
 
   bool IsWrapped() const;
+
+  bool GenerateMipmap(id<MTLBlitCommandEncoder> encoder);
 
  private:
   id<MTLTexture> texture_ = nullptr;
