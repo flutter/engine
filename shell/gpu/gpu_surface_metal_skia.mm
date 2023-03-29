@@ -193,7 +193,7 @@ std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromCAMetalLayer(
 std::unique_ptr<SurfaceFrame> GPUSurfaceMetalSkia::AcquireFrameFromMTLTexture(
     int64_t view_id,
     const SkISize& frame_info) {
-  GPUMTLTextureInfo texture = delegate_->GetMTLTexture(frame_info);
+  GPUMTLTextureInfo texture = delegate_->GetMTLTexture(view_id, frame_info);
   id<MTLTexture> mtl_texture = (id<MTLTexture>)(texture.texture);
 
   if (!mtl_texture) {

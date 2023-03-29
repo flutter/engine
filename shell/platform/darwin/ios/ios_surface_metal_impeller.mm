@@ -86,7 +86,8 @@ bool IOSSurfaceMetalImpeller::PresentDrawable(GrMTLHandle drawable) const {
 }
 
 // |GPUSurfaceMetalDelegate|
-GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(const SkISize& frame_info) const {
+GPUMTLTextureInfo IOSSurfaceMetalImpeller::GetMTLTexture(int64_t view_id,
+                                                         const SkISize& frame_info) const {
   FML_CHECK(false);
   return GPUMTLTextureInfo{
       .texture_id = -1,   //

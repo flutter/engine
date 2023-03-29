@@ -20,7 +20,7 @@ class EmbedderStudioMetal final : public EmbedderStudio,
  public:
   struct MetalDispatchTable {
     std::function<bool(GPUMTLTextureInfo texture)> present;  // required
-    std::function<GPUMTLTextureInfo(const SkISize& frame_size)>
+    std::function<GPUMTLTextureInfo(int64_t view_id, const SkISize& frame_size)>
         get_texture;  // required
   };
 
@@ -52,7 +52,8 @@ class EmbedderStudioMetal final : public EmbedderStudio,
   bool PresentDrawable(GrMTLHandle drawable) const override;
 
   // |GPUSurfaceMetalDelegate|
-  GPUMTLTextureInfo GetMTLTexture(const SkISize& frame_size) const override;
+  GPUMTLTextureInfo GetMTLTexture(int64_t view_id,
+                                  const SkISize& frame_size) const override;
 
   // |GPUSurfaceMetalDelegate|
   bool PresentTexture(GPUMTLTextureInfo texture) const override;

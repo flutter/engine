@@ -464,6 +464,7 @@ typedef struct {
   size_t struct_size;
   /// The size of the surface that will be backed by the fbo.
   FlutterUIntSize size;
+  int64_t view_id;
 } FlutterFrameInfo;
 
 /// Callback for when a frame buffer object is requested.
